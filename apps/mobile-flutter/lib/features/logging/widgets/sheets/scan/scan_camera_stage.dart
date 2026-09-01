@@ -20,6 +20,7 @@ class ScanCameraStage extends StatelessWidget {
     super.key,
     required this.builder,
     this.hint,
+    this.notice,
     this.leading,
     this.onShutter,
     this.shutterLabel,
@@ -31,6 +32,13 @@ class ScanCameraStage extends StatelessWidget {
 
   /// One quiet line of guidance over the view.
   final String? hint;
+
+  /// What the frame says BACK, in the hint's slot: the barcode branch's lookup
+  /// spinner and its misses. A status the scanner reports belongs over the
+  /// live view — replacing the stage with a panel throws the camera away at
+  /// the moment it is still the answer. Takes the slot from [hint]; the two
+  /// are never up at once.
+  final Widget? notice;
 
   /// A 44pt control at the stage's bottom-left (torch, photo library).
   final Widget? leading;
@@ -54,19 +62,21 @@ class ScanCameraStage extends StatelessWidget {
             children: [
               const ColoredBox(color: _stage),
               builder(context, constraints.biggest),
-              if (hint != null)
+              if (notice != null || hint != null)
                 Positioned(
                   left: KalloSpacing.sp4,
                   right: KalloSpacing.sp4,
                   bottom: hasControls ? 100 : KalloSpacing.sp4,
-                  child: Text(
-                    hint!,
-                    textAlign: TextAlign.center,
-                    // Meta 12 in the app's own family — a bare TextStyle here
-                    // would inherit Material's default face on the one surface
-                    // where nothing else sets it.
-                    style: dashMeta(color: const Color(0xBFFFFFFF)),
-                  ),
+                  child:
+                      notice ??
+                      Text(
+                        hint!,
+                        textAlign: TextAlign.center,
+                        // Meta in the app's own family — a bare TextStyle here
+                        // would inherit Material's default face on the one
+                        // surface where nothing else sets it.
+                        style: dashMeta(color: const Color(0xBFFFFFFF)),
+                      ),
                 ),
               if (onShutter != null)
                 Positioned(

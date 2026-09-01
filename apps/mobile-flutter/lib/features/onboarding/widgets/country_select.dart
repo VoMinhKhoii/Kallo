@@ -272,9 +272,11 @@ class _OptionRowState extends State<_OptionRow> {
 
   @override
   Widget build(BuildContext context) {
-    final Color fill = widget.selected
-        ? KalloColors.accent10
-        : (_pressed ? KalloColors.track : Colors.transparent);
+    // Pressed only. Selection is the tick's job here, as in every other
+    // single-select list in a sheet — a row that is both filled AND ticked AND
+    // bolded says the same thing three times, and the fill is the one of the
+    // three that collides with the press state sharing the row.
+    final Color fill = _pressed ? KalloColors.track : Colors.transparent;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),

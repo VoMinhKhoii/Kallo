@@ -7,6 +7,7 @@ import '../../../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
 import '../../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../../theme/calm_tokens.dart';
+import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 
 /// Type the barcode by hand when the camera cannot read it (or does not
@@ -23,11 +24,23 @@ class BarcodeManualInput extends StatelessWidget {
     required this.controller,
     required this.onSubmit,
     required this.onBackToCamera,
+    this.errorText,
+    this.searching = false,
   });
 
   final TextEditingController controller;
   final VoidCallback onSubmit;
   final VoidCallback onBackToCamera;
+
+  /// Inline, under the field — the quantity step's idiom. A typed code keeps
+  /// its keyboard when the lookup comes back empty, so this is where that miss
+  /// is reported.
+  final String? errorText;
+
+  /// The typed code is being looked up: the primary spins in place. Someone
+  /// who told us the camera isn't working must not be shown a viewport (or a
+  /// standalone spinner panel) mid-lookup.
+  final bool searching;
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +72,18 @@ class BarcodeManualInput extends StatelessWidget {
               ),
             ),
           ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: KalloSpacing.sp2),
+              child: Text(
+                errorText!,
+                style: dashMeta(color: KalloColors.danger),
+              ),
+            ),
           const SizedBox(height: KalloSpacing.sp3),
           KalloButton(
             title: 'logging.barcode.lookUp'.tr(),
+            loading: searching,
             onPressed: onSubmit,
           ),
           const SizedBox(height: KalloSpacing.sp1),

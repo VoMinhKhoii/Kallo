@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -5,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import 'kallo_sheet.dart';
 
 /// The unified sheet header: a centered grabber, then the X close button on
 /// the LEFT, a bold centered 17/600 title (with an optional [subtitle]), and a
@@ -49,6 +52,14 @@ class KalloSheetHeader extends StatelessWidget {
   /// The close button's tap target — the app's 44pt minimum.
   static const double _closeTarget = 44;
 
+  /// The part of [kSheetContentInset] this header still has to add itself.
+  ///
+  /// Clamped at 0: a sheet that insets its body further than the standard line
+  /// (the 20pt group and country sheets) wants its X on THAT line too, not
+  /// pulled back out to 16.
+  static double _ownInset(BuildContext context) =>
+      math.max(0, kSheetContentInset - SheetContentInset.of(context));
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -66,13 +77,15 @@ class KalloSheetHeader extends StatelessWidget {
         ),
         const SizedBox(height: KalloSpacing.sp2),
         Padding(
-          // The content inset, so the X's GLYPH starts on the same 16pt line
-          // the sheet's body does. It used to sit at 8pt of padding plus
-          // IconButton's own 48pt centring — 32pt in, level with nothing.
-          padding: const EdgeInsets.fromLTRB(
-            KalloSpacing.sp4,
+          // Only the inset the SURFACE has not already applied, so the X's
+          // glyph starts on exactly the line the sheet's body starts on —
+          // whatever that line is. Adding a flat 16 here regardless is what
+          // put the X 32pt in on every sheet that pads its own content, a
+          // full inset right of the row icons immediately beneath it.
+          padding: EdgeInsets.fromLTRB(
+            _ownInset(context),
             0,
-            KalloSpacing.sp4,
+            _ownInset(context),
             KalloSpacing.sp1,
           ),
           child: Row(
