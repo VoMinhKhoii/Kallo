@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/list/list_row.dart';
@@ -10,7 +11,9 @@ import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../data/logging_providers.dart';
 import '../../logic/meal_log_mode.dart';
+import '../cheat/cheat_intensity_group.dart';
 
 /// Opens the "select mode" chooser — the first step before the composer.
 /// Returns the picked mode (or null if dismissed).
@@ -31,13 +34,13 @@ Future<MealLogMode?> showMealModeSheet(
 /// The icons lost their per-mode colours here: the palette keeps tan and umber
 /// for non-text moments, and four differently-tinted glyphs in one list read as
 /// four categories rather than one choice. Selection carries the state instead.
-class _MealModeSheet extends StatelessWidget {
+class _MealModeSheet extends ConsumerWidget {
   const _MealModeSheet({required this.current});
 
   final MealLogMode current;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Floors at sp4 for phones with no home indicator to inset against.
     final bottomInset = math.max(
       MediaQuery.viewPaddingOf(context).bottom,
@@ -67,6 +70,18 @@ class _MealModeSheet extends StatelessWidget {
                   Navigator.of(context).pop(mode);
                 },
               ),
+          // Cheat's magnitude is a property OF the cheat mode, so it hangs off
+          // the mode list as its own grouped card — the iOS "Effort … Medium ›"
+          // shape. It writes straight through to the provider the analyze call
+          // reads, so the choice survives this sheet closing.
+          if (current == MealLogMode.cheat) ...[
+            const SizedBox(height: KalloSpacing.sp3),
+            CheatIntensityGroup(
+              value: ref.watch(cheatIntensityProvider),
+              onChange: (intensity) =>
+                  ref.read(cheatIntensityProvider.notifier).state = intensity,
+            ),
+          ],
         ],
       ),
     );

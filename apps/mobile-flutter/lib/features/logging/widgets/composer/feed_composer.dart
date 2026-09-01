@@ -7,7 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat/cheat_intensity_row.dart';
+import '../cheat/cheat_intensity_group.dart';
 import '../cheat/cheat_occasion_chips.dart';
 import 'composer_dock.dart';
 import 'meal_input.dart';
@@ -25,7 +25,6 @@ class FeedComposer extends StatelessWidget {
     required this.errorText,
     required this.mode,
     required this.cheatIntensity,
-    required this.onCheatIntensityChange,
     required this.userId,
     required this.stagingRepeat,
     required this.onRepeatCheat,
@@ -52,8 +51,10 @@ class FeedComposer extends StatelessWidget {
   /// which surface as the failed-attempt card.
   final String? errorText;
   final MealLogMode mode;
+
+  /// Read-only here: the mode sheet owns the writing. It rides the mode pill so
+  /// the magnitude the next send will use is legible without opening anything.
   final CheatIntensity cheatIntensity;
-  final ValueChanged<CheatIntensity> onCheatIntensityChange;
   final String userId;
 
   /// True while a "log it again" occasion is being re-staged server-side.
@@ -114,18 +115,14 @@ class FeedComposer extends StatelessWidget {
               style: dashMeta(),
             ),
           ),
-        // Cheat mode's per-meal controls sit above the composer: the
-        // light/medium/heavy intensity strip and the "log it again" chips
-        // (the web keeps both above the input too).
+        // Cheat mode's "log it again" chips sit above the composer, as on the
+        // web. The intensity moved OUT of here: it now hangs off the mode sheet
+        // that sets the mode, and reads back on the composer's mode pill.
         if (mode == MealLogMode.cheat) ...[
           CheatOccasionChips(
             userId: userId,
             disabled: stagingRepeat || analyzing,
             onSelect: onRepeatCheat,
-          ),
-          CheatIntensityRow(
-            value: cheatIntensity,
-            onChange: onCheatIntensityChange,
           ),
           const SizedBox(height: LoggingSpacing.block),
         ],
@@ -157,6 +154,11 @@ class FeedComposer extends StatelessWidget {
                   )
                   : null,
           modeLabel: mealModeLabel(mode),
+          // Only cheat carries a qualifier; every other mode is its name alone.
+          modeDetail:
+              mode == MealLogMode.cheat
+                  ? cheatIntensityLabel(cheatIntensity)
+                  : null,
           modeIcon: mealModeIcon(mode),
           hintText:
               mode == MealLogMode.cheat

@@ -1078,6 +1078,7 @@
       "title": "Ghi nhận bữa ăn"
     },
     "cheatIntensity": {
+      "title": "Mức độ",
       "label": "Bạn đã ăn nhiều cỡ nào?",
       "helper": "Điều chỉnh mức ước tính",
       "light": "Nhẹ",

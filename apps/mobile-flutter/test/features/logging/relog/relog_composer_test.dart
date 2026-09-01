@@ -136,7 +136,6 @@ FeedComposer _composerFor({
   errorText: null,
   mode: mode,
   cheatIntensity: CheatIntensity.medium,
-  onCheatIntensityChange: (_) {},
   userId: 'user-1',
   stagingRepeat: false,
   onRepeatCheat: (_) {},

@@ -286,7 +286,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           errorText: _errorText,
           mode: mode,
           cheatIntensity: cheatIntensity,
-          onCheatIntensityChange: cheatActions.setIntensity,
           userId: profile.userId,
           stagingRepeat: _stagingRepeat,
           onRepeatCheat: cheatActions.repeat,

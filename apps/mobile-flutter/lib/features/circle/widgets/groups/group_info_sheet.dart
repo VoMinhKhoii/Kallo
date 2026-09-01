@@ -85,7 +85,13 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   @override
   Widget build(BuildContext context) => KalloSheetSurface(
     constraints: BoxConstraints(
-      maxHeight: MediaQuery.sizeOf(context).height * .9,
+      // Off the height the keyboard LEAVES. This sheet had no keyboard
+      // handling at all, so the pad covered both the inline rename field and
+      // the member search; `KalloSheetSurface` now lifts it clear.
+      maxHeight:
+          (MediaQuery.sizeOf(context).height -
+              MediaQuery.viewInsetsOf(context).bottom) *
+          .9,
     ),
     child: ref
         .watch(chatGroupDetailProvider(widget.groupId))

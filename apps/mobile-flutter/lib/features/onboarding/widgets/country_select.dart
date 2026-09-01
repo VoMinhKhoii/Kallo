@@ -140,87 +140,83 @@ class _CountrySheetState extends State<_CountrySheet> {
             .toList()
         : kCountries;
 
-    // Keyboard inset → the sheet lifts so the pinned search + list clear it.
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: FractionallySizedBox(
-        heightFactor: 0.85,
-        child: KalloSheetSurface(
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              KalloSheetHeader(title: tr('common.country')),
-              // Pinned search.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: TextField(
-                  controller: _search,
-                  autofocus: false,
-                  onChanged: (v) => setState(() => _query = v),
-                  cursorColor: KalloColors.accent,
-                  style: dashBody(),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    fillColor: KalloColors.track,
-                    prefixIcon: const Icon(
-                      LucideIcons.search300,
-                      size: 16,
-                      color: KalloColors.textHelp,
-                    ),
-                    hintText: tr('onboarding.origin.searchCountry'),
-                    hintStyle: dashBody(color: kInkMuted),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: KalloSpacing.sp3,
-                      vertical: KalloSpacing.sp3,
-                    ),
-                    border: _border(),
-                    enabledBorder: _border(),
-                    focusedBorder: _border(),
+    // The keyboard inset is `KalloSheetSurface`'s job now — it lifts the
+    // surface so the pinned search + list clear the pad.
+    return FractionallySizedBox(
+      heightFactor: 0.85,
+      child: KalloSheetSurface(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            KalloSheetHeader(title: tr('common.country')),
+            // Pinned search.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                controller: _search,
+                autofocus: false,
+                onChanged: (v) => setState(() => _query = v),
+                cursorColor: KalloColors.accent,
+                style: dashBody(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: KalloColors.track,
+                  prefixIcon: const Icon(
+                    LucideIcons.search300,
+                    size: 16,
+                    color: KalloColors.textHelp,
                   ),
+                  hintText: tr('onboarding.origin.searchCountry'),
+                  hintStyle: dashBody(color: kInkMuted),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: KalloSpacing.sp3,
+                    vertical: KalloSpacing.sp3,
+                  ),
+                  border: _border(),
+                  enabledBorder: _border(),
+                  focusedBorder: _border(),
                 ),
               ),
-              const _SheetDivider(),
-              Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          tr('onboarding.origin.noCountries'),
-                          style: dashBody(color: kInkMuted),
-                        ),
-                      )
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        children: [
-                          if (!searching) ...[
-                            _SectionLabel(
-                              tr('onboarding.origin.commonCountries'),
-                            ),
-                            for (final c in _pinned)
-                              _OptionRow(
-                                country: c,
-                                selected: widget.selectedValue == c.value,
-                                onTap: () => Navigator.of(context).pop(c.value),
-                              ),
-                            const SizedBox(height: 8),
-                            const _SheetDivider(),
-                            const SizedBox(height: 8),
-                          ],
-                          for (final c in filtered)
+            ),
+            const _SheetDivider(),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        tr('onboarding.origin.noCountries'),
+                        style: dashBody(color: kInkMuted),
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      children: [
+                        if (!searching) ...[
+                          _SectionLabel(
+                            tr('onboarding.origin.commonCountries'),
+                          ),
+                          for (final c in _pinned)
                             _OptionRow(
                               country: c,
                               selected: widget.selectedValue == c.value,
                               onTap: () => Navigator.of(context).pop(c.value),
                             ),
+                          const SizedBox(height: 8),
+                          const _SheetDivider(),
+                          const SizedBox(height: 8),
                         ],
-                      ),
-              ),
-            ],
-          ),
+                        for (final c in filtered)
+                          _OptionRow(
+                            country: c,
+                            selected: widget.selectedValue == c.value,
+                            onTap: () => Navigator.of(context).pop(c.value),
+                          ),
+                      ],
+                    ),
+            ),
+          ],
         ),
       ),
     );

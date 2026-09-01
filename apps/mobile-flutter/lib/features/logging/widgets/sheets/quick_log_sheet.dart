@@ -5,15 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../services/auth/session_provider.dart';
-import '../../../../models/logging/cheat.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
-import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat/cheat_intensity_row.dart';
+import '../cheat/cheat_intensity_group.dart';
 import '../composer/composer_actions.dart';
 import '../composer/meal_input.dart';
 import 'manual/manual_log_sheet.dart';
@@ -128,10 +126,6 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     if (mounted) Navigator.of(context).pop(mode);
   }
 
-  void _setCheatIntensity(CheatIntensity intensity) {
-    ref.read(cheatIntensityProvider.notifier).state = intensity;
-  }
-
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -142,56 +136,48 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     final mode = ref.watch(mealLogModeProvider);
     final isCheat = mode == MealLogMode.cheat;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: KalloSheetSurface(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            KalloSheetHeader(
-              title: 'logging.quickLog.title'.tr(),
+    // `KalloSheetSurface` lifts itself clear of the keyboard for every
+    // sheet; `keyboardInset` is only read here to size the bottom gap.
+    return KalloSheetSurface(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          KalloSheetHeader(
+            title: 'logging.quickLog.title'.tr(),
+          ),
+          Padding(
+            // The keyboard's inset already clears the home indicator when it
+            // is up; only pay the safe-area bottom when it is down.
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp4,
+              KalloSpacing.sp2,
+              KalloSpacing.sp4,
+              keyboardInset > 0
+                  ? KalloSpacing.sp3
+                  : bottomInset + KalloSpacing.sp1,
             ),
-            Padding(
-              // The keyboard's inset already clears the home indicator when it
-              // is up; only pay the safe-area bottom when it is down.
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp4,
-                KalloSpacing.sp2,
-                KalloSpacing.sp4,
-                keyboardInset > 0
-                    ? KalloSpacing.sp3
-                    : bottomInset + KalloSpacing.sp1,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cheat magnitude sits above the field as it does on the
-                  // feed: it silently scales the estimate, so it must be
-                  // visible and changeable wherever cheat was chosen.
-                  if (isCheat) ...[
-                    CheatIntensityRow(
-                      value: ref.watch(cheatIntensityProvider),
-                      onChange: _setCheatIntensity,
-                    ),
-                    const SizedBox(height: LoggingSpacing.block),
-                  ],
-                  // No "log it again" chips here: they re-stage server-side and
-                  // their only feedback is the seeded slider card on the FEED,
-                  // so from the dashboard a tap would look like nothing.
-                  MealInput(
-                    controller: _controller,
-                    onSubmit: _submit,
-                    modeLabel: mealModeLabel(mode),
-                    modeIcon: mealModeIcon(mode),
-                    hintText: isCheat ? 'logging.cheatPlaceholder'.tr() : null,
-                    onModePressed: _openModeSheet,
-                  ),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // No "log it again" chips here: they re-stage server-side and
+                // their only feedback is the seeded slider card on the FEED,
+                // so from the dashboard a tap would look like nothing.
+                MealInput(
+                  controller: _controller,
+                  onSubmit: _submit,
+                  modeLabel: mealModeLabel(mode),
+                  modeDetail: isCheat
+                      ? cheatIntensityLabel(ref.watch(cheatIntensityProvider))
+                      : null,
+                  modeIcon: mealModeIcon(mode),
+                  hintText: isCheat ? 'logging.cheatPlaceholder'.tr() : null,
+                  onModePressed: _openModeSheet,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

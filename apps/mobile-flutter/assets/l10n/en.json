@@ -1078,6 +1078,7 @@
       "title": "Log a meal"
     },
     "cheatIntensity": {
+      "title": "Intensity",
       "label": "How much did you eat?",
       "helper": "Scales the estimate",
       "light": "Light",
