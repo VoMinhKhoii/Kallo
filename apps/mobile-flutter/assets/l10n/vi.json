@@ -1075,7 +1075,7 @@
     "cheatIntensity": {
       "title": "Mức độ",
       "label": "Bạn đã ăn nhiều cỡ nào?",
-      "helper": "Điều chỉnh mức ước tính",
+      "helper": "Điều chỉnh mức ước tính theo lượng bạn đã ăn.",
       "light": "Nhẹ",
       "medium": "Vừa",
       "heavy": "Nhiều"
@@ -1341,7 +1341,7 @@
     "scan": {
       "title": "Quét",
       "barcodeTab": "Mã vạch",
-      "labelTab": "Bảng dinh dưỡng",
+      "labelTab": "Dinh dưỡng",
       "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
       "tryBarcodeInstead": "Quét mã vạch thay vì bảng dinh dưỡng",
       "savedMeal": "Đã thêm bữa ăn"

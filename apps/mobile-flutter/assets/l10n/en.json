@@ -1075,7 +1075,7 @@
     "cheatIntensity": {
       "title": "Intensity",
       "label": "How much did you eat?",
-      "helper": "Scales the estimate",
+      "helper": "Scales the estimate to how big the treat was.",
       "light": "Light",
       "medium": "Medium",
       "heavy": "Heavy"
@@ -1344,7 +1344,7 @@
     "scan": {
       "title": "Scan",
       "barcodeTab": "Barcode",
-      "labelTab": "Nutrition label",
+      "labelTab": "Nutrition",
       "tryLabelInstead": "Scan the nutrition label instead",
       "tryBarcodeInstead": "Scan the barcode instead",
       "savedMeal": "Meal added"

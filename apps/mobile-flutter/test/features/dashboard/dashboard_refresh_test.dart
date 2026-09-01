@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
+import 'package:kallo_mobile/shell/header/profile_avatar_button.dart';
 import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/screens/dashboard_screen.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -115,6 +117,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(loads, 1, reason: 'the first load should have run');
+
+    // The masthead is the BRAND's vector wordmark — the same path
+    // `lib/brand/kallo.ts` hands the web — not the app's name set in the
+    // serif, which is a different mark from the one the logo actually is.
+    expect(
+      find.byType(KalloWordmark),
+      findsOneWidget,
+      reason: 'Today wears the real wordmark, hard left',
+    );
+    expect(
+      find.text('Kallo'),
+      findsNothing,
+      reason: 'the Lora type fallback is retired',
+    );
+    final mark = tester.getRect(find.byType(KalloWordmark));
+    final avatar = tester.getRect(find.byType(ProfileAvatarButton));
+    expect(mark.left, lessThan(avatar.left), reason: 'wordmark left of avatar');
+    expect(
+      mark.height,
+      closeTo(26, 0.5),
+      reason: 'sized to the header line it replaced',
+    );
     // skipOffstage: false — at rest the control has ZERO sliver extent and
     // sits above the viewport's leading edge, so it is legitimately not
     // "onstage". That is the point of it: it costs no layout until pulled.

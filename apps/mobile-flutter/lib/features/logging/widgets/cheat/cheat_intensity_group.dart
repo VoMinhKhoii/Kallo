@@ -10,29 +10,25 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
-/// The cheat-meal intensity picker as a grouped disclosure row — "Intensity …
-/// Medium ›" — sitting under the mode list in the meal-mode sheet.
+/// The cheat-meal intensity row — "Intensity … Medium ›" — sitting under the
+/// mode list in the meal-mode sheet.
 ///
-/// It replaces the segmented strip that used to ride above the composer: the
-/// magnitude belongs to the mode that owns it, so it is set where the mode is
-/// chosen and read back from the composer's mode pill. Tapping the row expands
-/// the three levels in place rather than stacking a second sheet on the first.
-class CheatIntensityGroup extends StatefulWidget {
+/// A disclosure that PUSHES, not one that expands: tapping it hands the sheet
+/// [onOpen] and the sheet swaps in [CheatIntensityPage]. Expanding in place
+/// grew the card by three rows in a single frame and left the chosen level and
+/// the row that names it visible at the same time, saying the same thing
+/// twice. The chevron points off to a page again because it now goes to one.
+class CheatIntensityGroup extends StatelessWidget {
   const CheatIntensityGroup({
     super.key,
     required this.value,
-    required this.onChange,
+    required this.onOpen,
   });
 
   final CheatIntensity value;
-  final ValueChanged<CheatIntensity> onChange;
 
-  @override
-  State<CheatIntensityGroup> createState() => _CheatIntensityGroupState();
-}
-
-class _CheatIntensityGroupState extends State<CheatIntensityGroup> {
-  bool _expanded = false;
+  /// Opens the second-level page. The sheet owns that navigation.
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -42,37 +38,76 @@ class _CheatIntensityGroupState extends State<CheatIntensityGroup> {
       children: [
         ListRow(
           label: 'logging.cheatIntensity.title'.tr(),
-          value: cheatIntensityLabel(widget.value),
-          onTap: () => setState(() => _expanded = !_expanded),
-          // The chevron turns down while the levels are open — a disclosure
-          // that expands in place must not keep pointing off to a page.
-          trailing: AnimatedRotation(
-            turns: _expanded ? 0.25 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: const Icon(
-              LucideIcons.chevronRight300,
-              size: KalloIcons.tertiary,
-              color: kInkMuted,
-            ),
+          value: cheatIntensityLabel(value),
+          onTap: onOpen,
+          trailing: const Icon(
+            LucideIcons.chevronRight300,
+            size: KalloIcons.tertiary,
+            color: kInkMuted,
           ),
         ),
-        if (_expanded)
-          for (final intensity in CheatIntensity.values)
-            ListRow(
-              label: cheatIntensityLabel(intensity),
-              onTap: () {
-                HapticFeedback.selectionClick();
-                widget.onChange(intensity);
-                setState(() => _expanded = false);
-              },
-              trailing: intensity == widget.value
-                  ? const Icon(
-                      LucideIcons.check300,
-                      size: KalloIcons.size,
-                      color: KalloColors.text,
-                    )
-                  : null,
-            ),
+      ],
+    );
+  }
+}
+
+/// The second level: the three levels as one grouped card, a tick on the
+/// current one, and a muted line under the card saying what the choice does.
+///
+/// No fill behind the chosen row — the tick is the whole signal, which is the
+/// pattern every other single-select list in a sheet now follows.
+class CheatIntensityPage extends StatelessWidget {
+  const CheatIntensityPage({
+    super.key,
+    required this.value,
+    required this.onChange,
+  });
+
+  final CheatIntensity value;
+
+  /// Fired with the picked level; the sheet applies it and pops back.
+  final ValueChanged<CheatIntensity> onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GroupedListCard(
+          separatorInset: 0,
+          children: [
+            for (final intensity in CheatIntensity.values)
+              ListRow(
+                label: cheatIntensityLabel(intensity),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChange(intensity);
+                },
+                trailing: intensity == value
+                    ? const Icon(
+                        LucideIcons.check300,
+                        size: KalloIcons.size,
+                        color: KalloColors.text,
+                      )
+                    : null,
+              ),
+          ],
+        ),
+        Padding(
+          // Hangs off the card on the card's own text inset, the way a
+          // grouped-list footnote does.
+          padding: const EdgeInsets.fromLTRB(
+            KalloSpacing.sp4,
+            KalloSpacing.sp2,
+            KalloSpacing.sp4,
+            0,
+          ),
+          child: Text(
+            'logging.cheatIntensity.helper'.tr(),
+            style: dashMeta(),
+          ),
+        ),
       ],
     );
   }

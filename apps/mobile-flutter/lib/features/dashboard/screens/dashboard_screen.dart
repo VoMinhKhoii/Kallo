@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/profile/dashboard.dart';
+import '../../../shared/widgets/brand/kallo_wordmark.dart';
 import '../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
@@ -29,7 +30,6 @@ import '../../../services/auth/session_provider.dart';
 import '../../../shell/header/app_header.dart';
 import '../../../shell/header/profile_avatar_button.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
 import '../../../shared/logic/display_format.dart';
@@ -84,14 +84,14 @@ class DashboardScreen extends ConsumerWidget {
           padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             // Wordmark hard left, avatar hard right: the leading slot is
-            // collapsed so the serif line starts at the page inset rather than
+            // collapsed so the mark starts at the page inset rather than
             // 44pt in behind an empty spacer.
             leading: SizedBox.shrink(),
             // Settings moved behind the avatar when the drawer retired.
             trailing: ProfileAvatarButton(),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _Wordmark(),
+              child: KalloWordmark(height: _wordmarkHeight),
             ),
           ),
         ),
@@ -162,30 +162,9 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-/// The app's name, set as type — the home screen's masthead.
-///
-/// Replaces the time-of-day greeting (2026-09-01). "Good morning" is a warm
-/// line the first time and furniture by the third: it changes four times a day
-/// while saying nothing about the day it sits above, and it left the app's own
-/// name nowhere on its own home screen. The wordmark says one thing and keeps
-/// saying it, which is what a masthead is for.
-///
-/// Drawn rather than dropped in: there is no lockup asset in the repo, and one
-/// word in the brand serif IS the lockup. Lora at the page-title size, in ink,
-/// never bold — the single serif moment per viewport, which is exactly the slot
-/// the greeting used to hold. Not localised: a name is not translated.
-class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) => Text(
-    'Kallo',
-    style: KalloTextStyles.serifRegular(
-      fontSize: 28,
-      height: 1.15,
-    ).copyWith(color: kInk, letterSpacing: -0.3),
-  );
-}
+/// Optical height of the masthead wordmark, matching the header line the
+/// serif setting used to occupy.
+const double _wordmarkHeight = 26;
 
 class _Content extends StatefulWidget {
   const _Content({

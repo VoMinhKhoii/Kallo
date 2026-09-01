@@ -27,6 +27,20 @@ const double _deg = math.pi / 180;
 /// `547g` ran straight across the stroke on both sides, because the readout
 /// `Text`s are `softWrap: false` with visible overflow and nothing had ever
 /// bounded them.
+/// Breathing room held between a readout line and the band it sits inside.
+///
+/// The clear area alone only guarantees the figure does not CROSS the stroke.
+/// Touching it is still "inside", and on device a figure that stops exactly on
+/// the band reads as a collision even though the geometry says otherwise. This
+/// is the gap the eye actually checks for, so the clamp reserves it explicitly
+/// rather than leaving the figure to graze the pigment.
+///
+/// 4pt, matching the smallest step in the spacing scale. Only figures that are
+/// ALREADY being taken in (four digits, or a large text scale) give anything up
+/// for it: at 1.0x a three-digit figure clears the band by 4.5-13.7pt on its
+/// own, so the margin costs the ramp nothing in the case that matters.
+const double kGaugeReadoutClearMargin = 4;
+
 double gaugeClearHalfWidth(double outerRadius, double depth) {
   final inner = gaugeInnerRadius(outerRadius);
   final ring = depth.abs() < inner
