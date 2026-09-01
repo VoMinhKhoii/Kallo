@@ -36,6 +36,8 @@ DaySummary _daySummary({
   required CalorieAverages averages,
   List<MacroPattern> macros = const [],
   ValueChanged<NutritionDayScope>? onScopeChange,
+  int? selectedIndex,
+  bool isEmpty = false,
 }) =>
     DaySummary(
       macros: macros,
@@ -51,9 +53,9 @@ DaySummary _daySummary({
       onScopeChange: onScopeChange ?? (_) {},
       dateSpan: '10 – 16 Aug 2026',
       todayIndex: -1,
-      selectedIndex: null,
+      selectedIndex: selectedIndex,
       onSelect: (_) {},
-      isEmpty: false,
+      isEmpty: isEmpty,
     );
 
 void main() {
@@ -136,9 +138,68 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // No hint copy any more — the dash says it, and the switch offers the way
-    // out by naming the other scope.
+    // The dash says it, and the switch offers the way out by naming the other
+    // scope.
     expect(find.text('—'), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
+  });
+
+  // The complete-day rule, ported from the web card. Same three conditions:
+  // the COMPLETE scope only, no column selected, something logged.
+  const hintStart = 'Only days logging at least 85%';
+
+  testWidgets('names the 85% rule under the complete-scope figure', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        _daySummary(
+          scope: NutritionDayScope.complete,
+          averages: _averages(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final hint = find.textContaining(hintStart);
+    expect(hint, findsOneWidget);
+    // The note names the OTHER scope with the SAME label the switch uses, so
+    // the two cannot drift: no raw placeholder survives to the screen.
+    expect(tester.widget<Text>(hint).data, contains('\u201cAll\u201d'));
+    expect(tester.widget<Text>(hint).data, isNot(contains('{allLabel}')));
+  });
+
+  testWidgets('drops the rule on All, where nothing is set aside', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        _daySummary(scope: NutritionDayScope.all, averages: _averages()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(hintStart), findsNothing);
+  });
+
+  testWidgets('drops the rule for a selected column and an empty range', (
+    tester,
+  ) async {
+    for (final variant in [
+      _daySummary(
+        scope: NutritionDayScope.complete,
+        averages: _averages(),
+        selectedIndex: 2,
+      ),
+      _daySummary(
+        scope: NutritionDayScope.complete,
+        averages: _averages(),
+        isEmpty: true,
+      ),
+    ]) {
+      await tester.pumpWidget(_wrap(variant));
+      await tester.pumpAndSettle();
+      expect(find.textContaining(hintStart), findsNothing);
+    }
   });
 }

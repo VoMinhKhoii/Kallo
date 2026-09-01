@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
+import '../../../../features/logging/logic/format.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
@@ -59,7 +61,10 @@ class FeedNutrition extends StatelessWidget {
         for (final key in kCompositionKeys)
           key: '${_prefixes[key]} ${_grams(grams[key])}',
       },
-      kcalLabel: kcal == null ? '— kcal' : '${kcal.round()} kcal',
+      kcalLabel:
+          kcal == null
+              ? '— kcal'
+              : fmtKcal(kcal, locale: localeOf(context)),
       kcalPlacement: MealBlockKcal.legendLeading,
       // Four lines, not the block's default two: a Circle post carries text
       // somebody TYPED, in their own words, while Recent meals shows a name

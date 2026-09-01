@@ -543,6 +543,7 @@
       "calories": "kcal",
       "loggedDays": "All",
       "completeDays": "Complete days",
+      "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in \u201c{allLabel}\u201d.",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "avgValue": "{value} avg",
@@ -944,12 +945,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "greeting": {
-      "morning": "Good morning",
-      "afternoon": "Good afternoon",
-      "evening": "Good evening",
-      "night": "Good evening"
-    },
     "today": "Today",
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",

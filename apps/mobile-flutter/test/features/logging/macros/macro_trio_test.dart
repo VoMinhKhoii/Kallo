@@ -201,14 +201,22 @@ void main() {
     tester,
   ) async {
     // Past what the column can absorb, the value is taken in — never clipped.
-    // A clipped `1794 kcal` renders as `1794`, which reads as a different unit.
+    // A clipped `1,794 kcal` renders as `1,794`, a different unit. Grouped
+    // since 2026-09-01, so the card and the dial above it say a four-figure
+    // calorie count the same way.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 1794, textScale: 1.3));
-    expect(find.text('1794 kcal'), findsOneWidget);
-    final scale = _paintedScale(tester, find.text('1794 kcal'));
+    expect(find.text('1,794 kcal'), findsOneWidget);
+    final scale = _paintedScale(tester, find.text('1,794 kcal'));
     expect(scale, lessThan(1.0), reason: 'it had to be taken in');
+    // 0.66, down from 0.70 with the grouping separator (2026-09-01): the comma
+    // widens the string ~4% inside a column whose width is deliberately fixed
+    // (see MacroColumns.kcal — widening it would push the macros away from the
+    // calories on EVERY row to serve the rare four-digit one). At 1.3 scale
+    // 0.68 still paints ~15pt, the app's secondary tier, and this row is the
+    // only place in the app a kcal figure is taken in at all.
     expect(
       scale,
-      greaterThan(0.7),
+      greaterThan(0.66),
       reason: 'but not to the point of illegible',
     );
   });
@@ -339,7 +347,7 @@ void main() {
         isNull,
         reason: 'totals overflowed at text scale $scale',
       );
-      expect(find.text('1794 kcal'), findsOneWidget);
+      expect(find.text('1,794 kcal'), findsOneWidget);
     }
   });
 

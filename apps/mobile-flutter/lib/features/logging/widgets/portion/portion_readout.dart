@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../logic/format.dart';
 
@@ -22,7 +23,7 @@ class PortionReadout extends StatelessWidget {
           // dashValue is tabular by construction — no flag to pass.
           TextSpan(text: '$grams g', style: dashValue()),
           TextSpan(
-            text: ' · ${fmtKcal(kcal)}',
+            text: ' · ${fmtKcal(kcal, locale: localeOf(context))}',
             style: dashMeta(tabular: true),
           ),
         ],

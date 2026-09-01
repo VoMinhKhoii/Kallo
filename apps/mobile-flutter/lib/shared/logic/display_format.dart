@@ -9,6 +9,7 @@
 /// `YYYY-MM-DD` day key in `lib/core/date/day-key.ts` (keep in sync).
 library;
 
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 /// Rounds to a whole number, mapping null to 0. Mirrors web `round0`.
@@ -18,6 +19,17 @@ int round0(num? n) => n == null ? 0 : n.round();
 /// web's `toLocaleString()` instead of the hardcoded comma grouping.
 String formatCount(int n, String locale) =>
     NumberFormat.decimalPattern(locale).format(n);
+
+/// The locale to format figures for, from whatever scope is mounted.
+///
+/// `Localizations.maybeLocaleOf`, not easy_localization's `context.locale`:
+/// the app's `MaterialApp` is always configured with the latter, so inside the
+/// app the two agree — but the widget tests that make GEOMETRY claims pump a
+/// bare `Directionality` with no localization scope at all, and a number
+/// formatter has no business forcing them to mount one. Falls back to `en`,
+/// whose grouping is what an unlocalized surface would have shown anyway.
+String localeOf(BuildContext context) =>
+    Localizations.maybeLocaleOf(context)?.toString() ?? 'en';
 
 /// Local `YYYY-MM-DD` for [date] (defaults to now). Matches the web/RN
 /// `todayDateString` — uses LOCAL date components, not UTC.

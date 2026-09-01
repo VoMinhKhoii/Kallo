@@ -114,6 +114,33 @@ Map<int, String> weightXTickLabels({
   return {lastIndex: tr('dashboard.now')};
 }
 
+/// Between a Y bound label and the plot it scales — the same breathing room
+/// the x tick thinning keeps between neighbouring date labels.
+const double kWeightAxisGap = 6;
+
+/// The width the Y axis needs on the LEFT: the wider of the domain's two bound
+/// labels, plus [kWeightAxisGap].
+///
+/// Reserved rather than overlaid. The bounds used to sit against the RIGHT
+/// edge precisely so they would not land on the line, which is drawn from the
+/// left — but a Y axis on the right is not where a reader looks for it, and
+/// that trade was the wrong way round. The plot gives up the width instead.
+double weightYAxisGutter(
+  String maxLabel,
+  String minLabel,
+  TextStyle style,
+  TextScaler textScaler,
+) =>
+    math.max(
+      _measure(maxLabel, style, textScaler),
+      _measure(minLabel, style, textScaler),
+    ) +
+    kWeightAxisGap;
+
+/// One Y bound, at the precision the domain's [step] warrants.
+String weightBoundLabel(double value, double step) =>
+    step >= 1 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+
 double _measure(String text, TextStyle style, TextScaler textScaler) {
   final painter = TextPainter(
     text: TextSpan(text: text, style: style),

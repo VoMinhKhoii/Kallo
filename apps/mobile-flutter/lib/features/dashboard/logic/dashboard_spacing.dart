@@ -10,7 +10,7 @@ import '../../../theme/kallo_theme.dart';
 /// flat 12. The 20 it ran at was compensation for a canvas one step off white,
 /// where unenclosed dials had nothing to separate them; on `#F8F7F4` a white
 /// card reads as its own object and the extra 8 only made the tab scroll
-/// longer. The one deliberate exception is [majorBreak].
+/// longer. The one deliberate exception is [sectionBreak].
 ///
 /// The logging feed's tighter 8px block is a separate documented exception for
 /// a dense scrolling list and does not apply here.
@@ -24,10 +24,19 @@ abstract final class DashboardSpacing {
   /// the calorie dial ↔ the macro dials that qualify it.
   static const double block = KalloSpacing.sp3; // 12
 
-  /// The one break that separates SUBJECTS rather than blocks: today's numbers
-  /// from the meals behind them. Used once per section at most — a second one
-  /// on the same screen and neither reads as a break any more.
-  static const double majorBreak = KalloSpacing.sp5; // 20
+  /// The gap ABOVE a [SectionHeaderRow] — twice [block], and deliberately
+  /// asymmetric with the [block] that follows it.
+  ///
+  /// A header at the same 12 above and below is equidistant between the card
+  /// it labels and the card it does not, so the eye has nothing to group it
+  /// with and the page reads as an undifferentiated stack. Doubling only the
+  /// gap ABOVE binds the header to the content BELOW it, which is the one
+  /// relationship a section header exists to state. Scaling both would just
+  /// make the same flat stack taller.
+  ///
+  /// Absorbs the old `majorBreak` (20), whose single use — today's numbers
+  /// from the meals behind them — was this same break under another name.
+  static const double sectionBreak = KalloSpacing.sp6; // 24
 
   /// Inside a card: the space above/below the hairline and between the card's
   /// zones, and the vertical padding on one meal row.

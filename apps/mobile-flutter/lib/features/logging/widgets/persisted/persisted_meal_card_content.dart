@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../logic/logging_spacing.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
@@ -78,7 +79,10 @@ class PersistedMealCardContent extends StatelessWidget {
                   'carbohydrate': 'C ${fmtG(n.carbohydrateG)}',
                 if (n.fatG != null) 'fat': 'F ${fmtG(n.fatG)}',
               },
-              kcalLabel: fmtKcal(n.caloriesKcal),
+              kcalLabel: fmtKcal(
+                n.caloriesKcal,
+                locale: localeOf(context),
+              ),
               kcalPlacement: MealBlockKcal.legendTrailing,
               titleTrailing: PersistedMealChevronToggle(
                 expand: curvedExpand,

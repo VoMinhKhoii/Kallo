@@ -1,8 +1,8 @@
 /// WeightChartCanvas — the weight card's trend chart.
 ///
-/// Native pass (2026-08-31): an unframed plot running the FULL inner width of
-/// the card (334 on a 390pt phone), dashed hairline gridlines, the Y domain's
-/// two bounds against the right edge instead of in a left gutter, numeric date
+/// Native pass (2026-08-31): an unframed plot the inner width of the card
+/// (334 on a 390pt phone), dashed hairline gridlines, the Y domain's two
+/// bounds in a narrow LEFT gutter (2026-09-01, back from the right), date
 /// ticks below ("2/8" … "Now"), a short dotted forecast tail, a faint "today"
 /// marker, and a dot at every logged point with the most recent emphasized.
 ///
@@ -104,17 +104,23 @@ class WeightChartCanvas extends StatelessWidget {
       dashArray: [3, 4],
     );
 
+    final maxLabel = weightBoundLabel(axis.max, yStep);
+    final minLabel = weightBoundLabel(axis.min, yStep);
+
     return AspectRatio(
       aspectRatio: _chartAspect,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final scaler = MediaQuery.textScalerOf(context);
+          final gutter = weightYAxisGutter(maxLabel, minLabel, axisLabel, scaler);
+          final plotWidth = math.max(constraints.maxWidth - gutter, 1.0);
           final xLabels = weightXTickLabels(
             pointCount: weights.length,
             dates: weightDates,
             locale: context.locale.toString(),
-            plotWidth: math.max(constraints.maxWidth, 1),
+            plotWidth: plotWidth,
             style: axisLabel,
-            textScaler: MediaQuery.textScalerOf(context),
+            textScaler: scaler,
           );
           final chart = LineChart(
             LineChartData(
@@ -125,7 +131,7 @@ class WeightChartCanvas extends StatelessWidget {
               clipData: const FlClipData.all(),
               backgroundColor: Colors.transparent,
               // Uniform gridline at every round-number Y step, spanning the
-              // full card width now that the label gutter is gone.
+              // plot — which now starts just inside the axis gutter.
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
@@ -141,8 +147,8 @@ class WeightChartCanvas extends StatelessWidget {
                     const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 rightTitles:
                     const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                // The Y bounds are labelled by the overlay below, not by a
-                // gutter — the gutter cost the plot 34 of its 334.
+                // Only the DOMAIN's two bounds are labelled, by the overlay
+                // below — fl_chart's left titles would number every gridline.
                 leftTitles:
                     const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 bottomTitles: AxisTitles(
@@ -246,23 +252,16 @@ class WeightChartCanvas extends StatelessWidget {
             curve: Curves.easeInOut,
           );
 
-          // The Y domain's two bounds, set against the right edge at the top
-          // and bottom of the plot. The line is drawn from the left, so the
-          // right edge is the one place a label rarely lands on data.
-          String bound(double value) =>
-              yStep >= 1 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+          // The bounds sit in the gutter, level with the plot's top and
+          // bottom; plot, gridlines and date row share one left edge.
           return Stack(
             children: [
-              Positioned.fill(child: chart),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Text(bound(axis.max), style: axisLabel),
-              ),
+              Positioned.fill(left: gutter, child: chart),
+              Positioned(top: 0, left: 0, child: Text(maxLabel, style: axisLabel)),
               Positioned(
                 bottom: _dateAxisHeight,
-                right: 0,
-                child: Text(bound(axis.min), style: axisLabel),
+                left: 0,
+                child: Text(minLabel, style: axisLabel),
               ),
             ],
           );

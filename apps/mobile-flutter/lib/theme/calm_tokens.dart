@@ -206,7 +206,9 @@ TextStyle dashEyebrow({
       color: color,
     );
 
-/// Lora 22 / 400 — the single editorial serif moment per viewport (greeting).
+/// Lora 22 / 400 — the single editorial serif moment per viewport. The
+/// dashboard's serif slot is now the "Kallo" wordmark (2026-09-01), set at 28;
+/// this stays for editorial moments inside a screen.
 /// 17 / 600 — the page title on the header line.
 ///
 /// Sans, not the Lora [dashHeadline] this replaced on headers: at 17 its
