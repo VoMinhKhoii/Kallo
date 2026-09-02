@@ -11,6 +11,7 @@ import {
   numeric,
   pgSchema,
   pgTable,
+  primaryKey,
   real,
   serial,
   smallint,
@@ -1913,6 +1914,94 @@ export const pushTokens = pgTable(
     check(
       'push_tokens_platform_check',
       sql`${table.platform} IN ('ios', 'android', 'web')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Generic rate limiter (lib/infra/rate-limit/limiter/)
+//
+// `rate_limit_counters` holds ONE row per (key_kind, key_hash, route) carrying
+// all three windows, so a consume is a single INSERT … ON CONFLICT statement
+// instead of the three-row upsert the analysis guard uses. The row is soft
+// state: a later Domain B migration sets the table UNLOGGED and the rows are
+// pruned nightly, so nothing here is a durable record.
+//
+// Deliberately no secondary index: the only reader is the primary key, and an
+// index on `updated_at` would be written on every consume just to serve one
+// nightly batched reaper.
+// ---------------------------------------------------------------------------
+
+export const rateLimitCounters = pgTable(
+  'rate_limit_counters',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    minuteStart: timestamp('minute_start', { withTimezone: true }).notNull(),
+    minuteCount: integer('minute_count').notNull().default(0),
+    hourStart: timestamp('hour_start', { withTimezone: true }).notNull(),
+    hourCount: integer('hour_count').notNull().default(0),
+    dayStart: timestamp('day_start', { withTimezone: true }).notNull(),
+    dayCount: integer('day_count').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Named explicitly because `rate_limit_consume` targets the arbiter by name
+    // (`ON CONFLICT ON CONSTRAINT`) rather than by column list.
+    primaryKey({
+      name: 'rate_limit_counters_pkey',
+      columns: [table.keyKind, table.keyHash, table.route],
+    }),
+    check(
+      'rate_limit_counters_key_kind_check',
+      sql`${table.keyKind} IN ('user', 'ip', 'account', 'recipient', 'global')`
+    ),
+    check(
+      'rate_limit_counters_minute_count_check',
+      sql`${table.minuteCount} >= 0`
+    ),
+    check('rate_limit_counters_hour_count_check', sql`${table.hourCount} >= 0`),
+    check('rate_limit_counters_day_count_check', sql`${table.dayCount} >= 0`),
+  ]
+);
+
+// Audit trail for every block (and every limiter outage). LOGGED on purpose —
+// unlike the counters this is the attack-visibility signal, so it has to
+// survive a crash. Hashed keys only; never a raw IP or email.
+//
+// One row is an AGGREGATE, not a single block: the writer coalesces identical
+// (route, key, reason, source) tuples in memory and writes `hits` with the
+// first/last timestamps, so a flood costs one row per five seconds instead of
+// one write per blocked request on the same 2-connection pool the limiter is
+// protecting. Read counts as `sum(hits)`, never `count(*)`.
+export const rateLimitEvents = pgTable(
+  'rate_limit_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** When the FIRST block in this aggregate happened. */
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    route: text('route').notNull(),
+    reason: text('reason').notNull(),
+    source: text('source').notNull(),
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    retryAfterSeconds: integer('retry_after_seconds'),
+    /** Blocks folded into this row. */
+    hits: integer('hits').notNull().default(1),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Triage reads are always "what happened on this route lately".
+    index('rate_limit_events_route_created_idx').on(
+      table.route,
+      table.createdAt
     ),
   ]
 );

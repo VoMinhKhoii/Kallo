@@ -470,6 +470,13 @@
       "when": 1788091243374,
       "tag": "20260830120043_add_product_telemetry_pipeline_correlation",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788292032527,
+      "tag": "20260901194712_add_rate_limit_tables",
+      "breakpoints": true
     }
   ]
 }

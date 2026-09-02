@@ -13,13 +13,20 @@ import {
   FeatureLockedError,
   type FeatureLockedReason,
   RateLimitedError,
+  RateLimitUnavailableError,
+  type RateLimitUnavailableKind,
 } from '@/lib/core/errors/app-error';
+
+/** Fixed back-off handed to clients when the limiter itself is unavailable. */
+const RATE_LIMITER_UNAVAILABLE_RETRY_AFTER_SECONDS = 10;
 
 const DEFAULT_MESSAGES = {
   notAuthenticated: 'You need to sign in to use this feature.',
   profileNotFound: 'Profile not found. Please sign in again.',
   pipelineTimeout: 'Analysis took too long. Please try again.',
   rateLimited: 'The service is busy. Please wait a moment and try again.',
+  rateLimiterUnavailable:
+    'The service is temporarily unavailable. Please try again shortly.',
   featureLocked: 'Upgrade to keep using this feature.',
   internal: 'Something went wrong. Please try again.',
 } as const;
@@ -66,6 +73,22 @@ export const Errors = {
     new RateLimitedError(
       message ?? DEFAULT_MESSAGES.rateLimited,
       retryAfterSeconds
+    ),
+
+  // The limiter could not decide, on a route whose policy fails closed.
+  // `kind` separates "the deadline fired" (pool saturated, shedding) from
+  // "the round trip failed" (database down) for telemetry; both are the same
+  // 503 to the caller.
+  rateLimiterUnavailable: (
+    cause?: unknown,
+    kind: RateLimitUnavailableKind = 'error',
+    message?: string
+  ) =>
+    new RateLimitUnavailableError(
+      message ?? DEFAULT_MESSAGES.rateLimiterUnavailable,
+      RATE_LIMITER_UNAVAILABLE_RETRY_AFTER_SECONDS,
+      kind,
+      cause
     ),
 
   featureLocked: (

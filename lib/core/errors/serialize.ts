@@ -6,7 +6,11 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import { isAppError, RateLimitedError } from '@/lib/core/errors/app-error';
+import {
+  isAppError,
+  RateLimitedError,
+  RateLimitUnavailableError,
+} from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
 
 /**
@@ -22,8 +26,13 @@ export function serializeError(e: unknown): NextResponse {
       // long, so it guesses — and a client that guesses low re-enters the limit
       // immediately. Carried on the error rather than added by each route so a
       // throttle stays correct wherever it is thrown from, including a Server
-      // Action that never touches a Response.
-      ...(e instanceof RateLimitedError && e.retryAfterSeconds != null
+      // Action that never touches a Response. `RateLimitUnavailableError` (503,
+      // limiter down on a fail-closed route) carries the same header for the
+      // same reason — a client that guesses its own back-off hammers a service
+      // that is already struggling.
+      ...((e instanceof RateLimitedError ||
+        e instanceof RateLimitUnavailableError) &&
+      e.retryAfterSeconds != null
         ? { headers: { 'Retry-After': String(e.retryAfterSeconds) } }
         : {}),
     });
