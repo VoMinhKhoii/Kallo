@@ -40,6 +40,7 @@
     "not_found": "No product found for this barcode.",
     "not_cached": "This product is no longer available. Please scan it again.",
     "stage_failed": "Couldn't add this meal. Please try again.",
+    "rate_limited": "The barcode scanner is busy. Please try again in a moment.",
     "server_error": "Something went wrong. Please try again."
   },
   "ocrTab": "Scan Label",

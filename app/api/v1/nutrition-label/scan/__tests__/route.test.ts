@@ -4,8 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requireAuthAndProfile = vi.fn();
 const validateNutritionLabelImage = vi.fn();
 const scanNutritionLabelWithGemini = vi.fn();
+const withOcrGuard = vi.fn();
+const chargeGlobal = vi.fn();
 
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
+
+// The OCR spend guard is exercised in its own unit test; here it is a
+// transparent pass-through by default, so the route's own behaviour is what is
+// under test. Individual cases override it to prove a guard block/outage
+// surfaces on the standard envelope.
+vi.mock('@/lib/infra/rate-limit/ocr-guard', () => ({ withOcrGuard }));
 
 vi.mock('@/lib/domain/nutrition/ocr/image', async (importActual) => {
   // Keep the real NutritionOcrImageError so the route's mapper sees the same
@@ -28,8 +36,19 @@ const { NutritionOcrImageError } = await import(
 );
 const { POST } = await import('@/app/api/v1/nutrition-label/scan/route');
 
-function makeRequest(body: unknown): NextRequest {
-  return { json: async () => body } as unknown as NextRequest;
+/** A real `Request`, because the route now reads its body through
+ *  `readBoundedJson` (a streaming reader), not `req.json()`. */
+function makeRequest(
+  body: unknown,
+  init?: { contentLength?: string }
+): NextRequest {
+  return new Request('http://localhost/api/v1/nutrition-label/scan', {
+    method: 'POST',
+    headers: init?.contentLength
+      ? { 'content-length': init.contentLength }
+      : undefined,
+    body: JSON.stringify(body),
+  }) as unknown as NextRequest;
 }
 
 /** A 1x1 JPEG is irrelevant here (validation is mocked) — only the base64
@@ -54,6 +73,18 @@ beforeEach(() => {
   requireAuthAndProfile.mockReset();
   validateNutritionLabelImage.mockReset();
   scanNutritionLabelWithGemini.mockReset();
+  withOcrGuard.mockReset();
+  // Default: run the guarded work directly with a no-op `chargeGlobal`,
+  // exactly as a passing guard would. `chargeGlobal` is a spy so the cases
+  // below can prove WHEN the app-wide budget is charged.
+  chargeGlobal.mockReset();
+  chargeGlobal.mockResolvedValue(undefined);
+  withOcrGuard.mockImplementation(
+    (
+      _userId: string,
+      work: (charge: () => Promise<void>) => Promise<unknown>
+    ) => work(chargeGlobal)
+  );
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
     profile: {},
@@ -132,19 +163,31 @@ describe('POST /api/v1/nutrition-label/scan', () => {
     });
   });
 
-  it('maps a provider 429 to a retryable OCR_RATE_LIMITED envelope', async () => {
+  it('maps a provider 429 to a retryable 429 carrying Retry-After', async () => {
     scanNutritionLabelWithGemini.mockRejectedValueOnce(
       Object.assign(new Error('busy'), { status: 429 })
     );
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(429);
+    // A 429 with no Retry-After makes the client guess, and a client that
+    // guesses low walks straight back into the provider's wall.
+    expect(res.headers.get('Retry-After')).toBe('30');
     const { error } = await res.json();
     expect(error).toMatchObject({
-      code: 'OCR_RATE_LIMITED',
+      code: 'RATE_LIMITED',
       status: 429,
       retryable: true,
     });
+  });
+
+  it("preserves the provider's own retry hint when it sent one", async () => {
+    scanNutritionLabelWithGemini.mockRejectedValueOnce(
+      Object.assign(new Error('busy'), { status: 429, retryDelay: '12s' })
+    );
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.headers.get('Retry-After')).toBe('12');
   });
 
   it('falls through to a generic 500 for an unclassified provider fault', async () => {
@@ -152,5 +195,79 @@ describe('POST /api/v1/nutrition-label/scan', () => {
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(500);
+  });
+
+  it('charges the app-wide budget only after validation, right before Gemini', async () => {
+    const order: string[] = [];
+    validateNutritionLabelImage.mockImplementation(async () => {
+      order.push('validate');
+    });
+    chargeGlobal.mockImplementation(async () => {
+      order.push('charge');
+    });
+    scanNutritionLabelWithGemini.mockImplementation(async () => {
+      order.push('gemini');
+      return parsedLabel;
+    });
+
+    await POST(makeRequest(validBody));
+    expect(order).toEqual(['validate', 'charge', 'gemini']);
+  });
+
+  it('never charges the app-wide budget for a body that fails validation', async () => {
+    const res = await POST(
+      makeRequest({ ...validBody, mimeType: 'image/gif' })
+    );
+
+    expect(res.status).toBe(400);
+    expect(chargeGlobal).not.toHaveBeenCalled();
+  });
+
+  it('refuses an oversized body with 413 before parsing or charging anything', async () => {
+    // The content-length prefilter: refused before a byte is read, so the
+    // multi-MB payload never reaches JSON.parse or the base64 regex.
+    const res = await POST(
+      makeRequest(validBody, { contentLength: String(64 * 1024 * 1024) })
+    );
+
+    expect(res.status).toBe(413);
+    const { error } = await res.json();
+    expect(error).toMatchObject({
+      code: 'PAYLOAD_TOO_LARGE',
+      status: 413,
+      retryable: false,
+    });
+    expect(validateNutritionLabelImage).not.toHaveBeenCalled();
+    expect(chargeGlobal).not.toHaveBeenCalled();
+  });
+
+  it('passes a per-user OCR guard block through as 429 + Retry-After', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    // The guard runs BEFORE the work, so a block never reaches Gemini.
+    withOcrGuard.mockRejectedValueOnce(Errors.rateLimited(undefined, 5));
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe('5');
+    const { error } = await res.json();
+    // Passed through UNTOUCHED — the limiter's own `RATE_LIMITED`, not the
+    // provider-shaped `OCR_RATE_LIMITED` (which would have dropped Retry-After).
+    expect(error).toMatchObject({ code: 'RATE_LIMITED', status: 429 });
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+  });
+
+  it('passes a fail-closed limiter outage through as 503 + Retry-After', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    withOcrGuard.mockRejectedValueOnce(Errors.rateLimiterUnavailable());
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Retry-After')).toBe('10');
+    const { error } = await res.json();
+    expect(error).toMatchObject({
+      code: 'RATE_LIMITER_UNAVAILABLE',
+      status: 503,
+      retryable: true,
+    });
   });
 });

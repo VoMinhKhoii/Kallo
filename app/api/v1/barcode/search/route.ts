@@ -3,6 +3,7 @@ import { barcodeSearchQuerySchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
 import { searchBarcodeProduct } from '@/lib/domain/barcode/service';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { mapBarcodeServiceError } from '../_errors';
 
 export const runtime = 'nodejs';
@@ -15,10 +16,15 @@ export const runtime = 'nodejs';
  */
 export async function GET(req: NextRequest) {
   try {
-    await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
     const { code } = barcodeSearchQuerySchema.parse({
       code: req.nextUrl.searchParams.get('code') ?? undefined,
     });
+
+    // Per-user cap before the Open Food Facts fan-out. The web share of this
+    // surface (`searchBarcodeAction`) carries the same guard; the two clients
+    // hit disjoint entry points, so neither double-counts the other.
+    await assertRateLimit('barcodeSearch', { kind: 'user', value: user.id });
 
     const product = await searchBarcodeProduct(code);
     return Response.json({ product });

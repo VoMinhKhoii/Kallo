@@ -65,6 +65,7 @@ code.
 | `authRefresh` (flood breaker, not a quota — a refusal here is a sign-out risk) | ip | 600 / — / — | memory |
 | `authRefreshGlobal` (the botnet backstop for refresh) | global | 3000 / 60000 / — | degraded |
 | `authOther` | ip | 60 / — / — | memory |
+| `authLinkIp` (emailed verify links + the OAuth callback) | ip | 20 / 100 / — | degraded |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
 | `waitlistGlobal` (app-wide backstop for both waitlist surfaces — runs even with a null IP) | global | 30 / 300 / — | degraded |
@@ -76,7 +77,9 @@ code.
 | `barcodeSearch` | user | 30 / 300 / 1500 | degraded |
 | `avatarUpload` | user | 5 / 20 / 50 | degraded |
 | `feedbackScreenshot` | user | 5 / 20 / 50 | degraded |
-| `ocrGlobalDaily` | global | — / — / 5000 | **closed** |
+| `nutritionCandidates` | user | 30 / 300 / — | degraded |
+| `adminDebugAnalysis` | user | 3 / 20 / — | **closed** |
+| `ocrGlobalDaily` | global | 60 / — / 5000 | **closed** |
 | `pushGlobalHourly` | global | — / 20000 / — | degraded |
 
 Shape of the numbers:
@@ -234,6 +237,7 @@ not retryable: the same bytes will be refused again.
 |---|---|---|
 | `/api/supabase-proxy/auth/v1/*` | 64 KB | GoTrue `{code:413, error_code:'payload_too_large', msg}` |
 | `POST /api/v1/waitlist` | 8 KB | app envelope, via `handleRouteError` |
+| `POST /api/v1/nutrition-label/scan` | `ceil(OCR_MAX_IMAGE_BYTES × 4/3) + 4 KB` (base64 inflation + JSON framing), derived from the image cap so the two cannot drift | app envelope, via `mapNutritionLabelError`'s pass-through → `handleRouteError` |
 | RevenueCat + Supabase auth-hook webhooks | unchanged | `readBoundedWebhookBody`, now a thin adapter over the same reader, still throwing `WebhookPayloadTooLargeError` so each handler answers in its provider's shape |
 
 ### Upstream sees one IP, and that — not `authGlobal` — is the real ceiling
@@ -262,6 +266,118 @@ it is not a fairness mechanism between our users. Raising the dashboard limits
 is an ops action, tracked in `docs/PROD_DOMAIN_SETUP.md` along with the
 structural fix (a `Sb-Forwarded-For` + secret-key proxy redesign).
 
+## Wired surfaces (PR 3 — authenticated surfaces)
+
+The authenticated routes an attacker reaches only *after* signing in: spend
+(OCR), the push fan-out, and a few per-user reads/writes. All are user-keyed
+except invite lookup (IP) and the two global budgets.
+
+| Route / action | Policies | Key | Refusal, and what the client sees |
+|---|---|---|---|
+| `POST /api/v1/nutrition-label/scan` + `scanNutritionLabelAction` (via `withOcrGuard`) | `checkAnalysisGuards` (5/min, 30/hr, 100/day, 1 concurrent) **then**, immediately before the Gemini call, `ocrGlobalDaily` | `user`, then `global:'ocr'` | Per-user/concurrency block → **429** + `Retry-After`, and it spends nothing app-wide. Global budget exhausted → **429**; its limiter down (fail-closed) → **503** `RATE_LIMITER_UNAVAILABLE` + `Retry-After: 10`. An oversized body → **413** `PAYLOAD_TOO_LARGE`. All pass through `mapNutritionLabelError` untouched; the web action folds them to the `rate_limited` / `server_error` codes. |
+| `sendChatGroupMessage` (`POST /api/v1/chat-groups/{groupId}/messages`) | `chatMessageSend`, charged before any database read | `user` (actor) | Route → **429** + `Retry-After` via `handleRouteError`. Placed after `requireGroupAccess` it bounded neither the membership lookup nor the circle-quota read, so bogus group ids drove unlimited reads on a two-connection pool. |
+| `createShareReplyAction` (`POST /api/v1/groups/shares/reply`) | `shareReply` | `user` (actor) | same |
+| `toggleShareReactionAction` (`POST /api/v1/groups/shares/reaction`) | `shareReaction` | `user` (actor) | same |
+| Push fan-out — inside `sendNotificationPush` (both the notification path and `sendChatMessagePush`) | `pushGlobalHourly`, charged only once there are messages to send | `global:'push'` | **Skip, not block.** A block SKIPs the send and returns — the message/notification row is already committed, so the worst case is a dropped push, never a failed write. Caught locally, logged once per 30 s per instance, never propagated. Most events notify nobody with a registered device, so the charge happens AFTER `buildMessages`: charging before it made the hourly budget count recipients rather than pushes. |
+| `searchBarcodeAction` + `GET /api/v1/barcode/search` | `barcodeSearch` | `user` | Route → **429** + `Retry-After`. Web action → typed `{success:false, code:'rate_limited'}`. |
+| `POST /api/v1/feedback/screenshot` | `feedbackScreenshot` | `user` | **429** + `Retry-After`. Auth runs FIRST and the guard before `formData()`, so an anonymous or throttled caller never makes the server buffer the multipart body — the route previously read it before asking who was calling. A missing / non-numeric / oversized `Content-Length` is a 400 `VALIDATION_FAILED`, also pre-buffer. |
+| `POST /api/v1/groups/profile/avatar` | `avatarUpload` | `user` | **429** + `Retry-After` (via `serializeError`), before the body is buffered. |
+| `GET /api/v1/groups/invite/{slug}` | `inviteLookupIp` | `ip` (skipped when null) | **429** + `Retry-After`. Anonymous viewers are allowed, so a null IP admits — the memory-only policy has nothing else to key on. |
+| `GET /auth/verify`, `GET /auth/callback` | `authLinkIp` | `ip` (skipped when null) | **A redirect, never JSON.** Both are browser navigations, so a block lands on the same `?error=verify_failed` / `?error=oauth_exchange` screen a failed verify or exchange already produces. |
+| `getFoodSourceCandidates` (`POST /api/v1/nutrition/candidates`) | `nutritionCandidates` | `user` | **429** + `Retry-After`. Guarded in the action, not the route: the web calls it directly as a Server Action. |
+| `POST /api/analyze-meal/debug` | `adminDebugAnalysis` | `user` (the admin) | **429**, or **503** while the limiter is down. Admin auth is a gate, not a budget — the route runs the live pipeline against arbitrary input. |
+| `DELETE /api/v1/groups/profile/avatar` | `avatarUpload` | `user` | **429** + `Retry-After`. The same policy the POST carries: a delete still writes storage and the profile row. |
+
+### The server-action 429 contract
+
+`serializeError` only runs at the *route* edge, so a `RateLimitedError` thrown
+inside a Server Action does not become an HTTP 429 on its own. What the web
+caller actually receives depends on how it reaches the action:
+
+- **Reply / reaction / chat.** The web does NOT call these actions directly. It
+  goes through `lib/domain/social/circle-client.ts`, which `fetch`es the REST
+  routes; the route's `handleRouteError` → `serializeError` produces the 429 +
+  `Retry-After`, and `client-fetch.ts` reads it back as an `ApiError` the
+  TanStack `onError` turns into a toast. The thrown error surfaces correctly on
+  both the Flutter (route) and web (route-via-fetch) paths — no typed result is
+  needed, and adding one to the action would be dead code.
+- **Barcode.** The web calls `searchBarcodeAction` DIRECTLY as a Server Action
+  (`use-barcode-scanner-dialog-state.ts`). A thrown error there is caught by the
+  action and returned as `{success:false, code}` — before this change a limiter
+  block folded to `code:'server_error'`, a generic error with no `Retry-After`.
+  So barcode grew a `rate_limited` code (`BarcodeErrorCode`), which the dialog
+  maps to the "scanner is busy" copy, plus a `retryAfterSeconds` field — an
+  action has no response headers, so `Retry-After` has nowhere else to go. The
+  Flutter route path keeps its 429.
+- **OCR.** `scanNutritionLabelAction` already returns a `rate_limited` code (via
+  `scanErrorCode`), so its web path needed nothing new.
+
+### Where the OCR guard charges what, and why the order changed
+
+`withOcrGuard` used to consume `ocrGlobalDaily` FIRST, before the per-user
+check. The global daily counter is never refunded, so a request the per-user
+guard was about to refuse still burned one unit of the app-wide 5000/day
+budget: **one trial account posting 5000 empty bodies took label scanning away
+from every user for the rest of the UTC day.** The order is now
+
+1. `checkAnalysisGuards` — the per-user window and the single in-flight slot.
+   A block throws the 429 and consumes nothing app-wide; it also writes an
+   `analysis_guard_events` row (fire-and-forget) so OCR blocks are visible in
+   the same trail every other guarded surface uses.
+2. `work`, running INSIDE that slot: the bounded body read, the schema, and the
+   `sharp` decode. All of it is metered by the per-user window and by
+   `concurrentUser`, which is the reason the slot wraps it rather than only the
+   provider call.
+3. `chargeGlobal()` — handed to `work` and called immediately before the Gemini
+   request, so the app-wide budget counts provider calls and nothing else.
+4. The slot is released in an outer `finally` on **every** exit — validation
+   throw, global 429/503, work failure, success — and the release is itself
+   wrapped, so a failed release can never turn an already-paid-for result into
+   a client error.
+
+`ocrGlobalDaily` also carries a `perMinute` now. A policy that declares only
+`perDay` gets no per-instance bucket in front of it (`burstConfig` reads
+`perMinute`), so every request in a flood reached Postgres — on the one policy
+whose DB failure is a 503 for everybody. 60/min is far above real OCR traffic
+and caps what one instance can push at the limiter.
+
+## Route inventory
+
+`lib/api/route-inventory.ts` is the checked-in map of how every route handler in
+`app/**` is protected — `[auth, bodyBound, rateLimit]`, plus `guardedIn` when
+the guard lives in the action a route delegates to. `route-inventory.test.ts`
+enforces it.
+
+**It walks `app/**`, not `app/api/**`.** Keying on `app/api/` is what let six
+handlers sit outside the map entirely — including `/auth/verify` and
+`/auth/callback`, two anonymous endpoints that call GoTrue directly and had no
+limit at all until `authLinkIp`.
+
+What the test actually proves:
+
+| Check | What fails it |
+|---|---|
+| Coverage | A `route.ts(x)` on disk with no entry, or an entry with no file. |
+| `bodyBound: true` | The file reads a body (`req.json()`, `formData()`, `text()`, `arrayBuffer()`, `readJsonBody()`) with no cap in sight (`readBounded*`, or an explicit `content-length` guard). |
+| `bodyBound: false` | The file DOES bound its body — the map claims a hole that is not there. |
+| A named policy | Neither the route nor its `guardedIn` file contains an `assertRateLimit(` call. |
+
+`auth` and `none-cheap` are **not** machine-verified, and cannot be: both are
+judgements about who may call a route and what it costs. `none-cheap` means a
+maintainer looked at the handler and decided it is a cheap read or mutation
+that does not need a ceiling. Its value is the **review gate** — a reviewer
+seeing `none-cheap` on a new route that fans out to a provider, scans a table
+or spends model quota is supposed to push back — not a runtime guarantee.
+`v1/nutrition/candidates` sat there wrongly (an unindexed sequential scan per
+call) until this pass, which is exactly the failure mode the gate exists for.
+
+The regex checks are heuristics on purpose. They catch the drift that actually
+happened — a bound removed while the declaration stayed, a policy renamed out
+of a route — and they cannot see a body read that a route delegates to a lib
+(`webhooks/revenuecat` is bounded inside `lib/domain/billing/`, and declares
+`true` honestly). A heuristic that fired on that would be turned off within a
+month, which is worth less than one that never cries wolf.
+
 ## failMode: what happens when the limiter cannot answer
 
 A consume is raced against `LIMITER_DB_TIMEOUT_MS` (default 400 ms). The pool
@@ -280,15 +396,17 @@ works even when the pool is the exhausted resource.
 
 | failMode | On DB error or timeout | Used by |
 |---|---|---|
-| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | Spend routes only |
+| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | Spend routes only (`ocrGlobalDaily`, `adminDebugAnalysis`) |
 | `degraded` | Fall back to a per-instance bucket at the policy's raw `perMinute` (no burst) and keep serving; result `source: 'degraded'` | Auth proxy, cheap IP routes, authenticated surfaces |
 | `memory` | Never touches the DB at all; the bucket *is* the policy (`perMinute` only, per instance) | healthz, invite lookup, auth refresh |
 
-**Spend-only fail-closed.** `ocrGlobalDaily` is the single `closed` policy: an
-OCR call spends Gemini quota, so admitting it with the guard down means
-spending money with no ceiling — a 503 is cheaper than an uncapped bill.
-Everything else degrades, because failing an *auth* route closed hands an
-attacker a denial-of-service against sign-in by attacking the limiter instead.
+**Spend-only fail-closed.** `ocrGlobalDaily` and `adminDebugAnalysis` are the
+only `closed` policies, and the rule is the same for both: each admitted
+request spends Gemini quota, so admitting with the guard down means spending
+money with no ceiling — a 503 is cheaper than an uncapped bill. Everything else
+degrades, because failing an *auth* route closed hands an attacker a
+denial-of-service against sign-in by attacking the limiter instead.
+`consume.test.ts` pins the `closed` set so a third one cannot be added quietly.
 
 `pushGlobalHourly` is `degraded` and has no `perMinute`, so during a limiter
 outage it admits. That is intentional: the guard runs inside the send path, and
@@ -454,7 +572,7 @@ Four nightly `pg_cron` jobs, all installed by
 | Job | Function | Horizon |
 |---|---|---|
 | `reap-rate-limit-counters-daily` (03:53) | `reap_rate_limit_counters()` | `updated_at` older than 2 days, deleted in 50k batches |
-| `reap-rate-limit-events-daily` (03:54) | `reap_rate_limit_events()` | `created_at` older than 30 days, deleted in 50k batches |
+| `reap-rate-limit-events-daily` (03:54) | `reap_rate_limit_events()` | `created_at` older than 30 days |
 | `reap-analysis-rate-limit-windows-daily` (03:55) | `reap_analysis_rate_limit_windows()` | `updated_at` older than 2 days |
 | `reap-analysis-in-flight-limits-daily` (03:57) | `reap_analysis_in_flight_limits()` | `updated_at` older than 1 day, **including rows with `count > 0`** (crash-abandoned leases) |
 
@@ -531,7 +649,7 @@ Two consequences:
 - **No secondary index on `rate_limit_counters`.** The only reader is the
   primary key; an `updated_at` index would be written on every consume purely
   to serve one nightly reaper, which is why the reaper batches instead.
-- **The counters and events reapers are FUNCTIONs, so they cannot `COMMIT`
-  between batches.** The 50k batching bounds each *statement*, not the
-  transaction. If either table ever outgrows one transaction, the fix is a
-  `PROCEDURE` invoked with `CALL`, not a larger batch.
+- **The counters reaper is a FUNCTION, so it cannot `COMMIT` between batches.**
+  The 50k batching bounds each *statement*, not the transaction. If the table
+  ever outgrows one transaction, the fix is a `PROCEDURE` invoked with `CALL`,
+  not a larger batch.

@@ -94,9 +94,22 @@ String _errorKeyFor(Object error) {
       case 'OCR_NO_LABEL_DETECTED':
         return 'logging.labelScan.error.noLabelDetected';
       case 'OCR_RATE_LIMITED':
+      // The scan route's own throttles, which pass through the OCR mapper
+      // untouched so their Retry-After survives: RATE_LIMITED is the per-user
+      // window or the app-wide daily budget, RATE_LIMITER_UNAVAILABLE is the
+      // fail-closed 503 when the limiter cannot answer. Both mean "busy, try
+      // again shortly", which is exactly what rateLimited already says; without
+      // these arms they fell through to the generic serverError copy.
+      case 'RATE_LIMITED':
+      case 'RATE_LIMITER_UNAVAILABLE':
         return 'logging.labelScan.error.rateLimited';
       case 'VALIDATION_FAILED':
         return 'logging.labelScan.error.invalidImage';
+      // The scan body now has a byte cap, so an oversized photo is a 413 rather
+      // than a slow 400 — the same failure the client-side resize guards, and
+      // the same copy it uses.
+      case 'PAYLOAD_TOO_LARGE':
+        return 'logging.labelScan.error.imageTooLarge';
     }
   }
   return 'logging.labelScan.error.serverError';

@@ -13,6 +13,7 @@ import {
   chatGroupMessages,
   chatGroups,
 } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { ChatGroupMessage } from './types';
 
@@ -63,6 +64,15 @@ export async function sendChatGroupMessage(
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupMessage> {
   const parsed = sendChatGroupMessageSchema.parse(input);
+
+  // Per-actor cap FIRST, before any database work. It bounds the write and the
+  // push fan-out the write triggers — but placed after `requireGroupAccess` it
+  // bounded neither for a caller feeding it group ids it has no access to:
+  // every rejected send still cost the membership lookup (and, for groups, the
+  // circle-quota read) on a two-connection pool. `degraded`, so a limiter
+  // outage never blocks a message.
+  await assertRateLimit('chatMessageSend', { kind: 'user', value: actorId });
+
   const access = await requireGroupAccess(actorId, parsed.groupId, db);
   // Group chat is premium; 1:1 direct chats stay free.
   if (access.kind === 'group') {

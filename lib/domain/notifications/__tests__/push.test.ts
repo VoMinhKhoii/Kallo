@@ -13,12 +13,18 @@ vi.mock('server-only', () => ({}));
 // key-echoing double would make every asserted body a key.
 vi.unmock('next-intl');
 
-const { mockSelect, mockDelete } = vi.hoisted(() => ({
+const { mockSelect, mockDelete, mockAssertRateLimit } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockDelete: vi.fn(),
+  mockAssertRateLimit: vi.fn(),
 }));
 vi.mock('@/lib/infra/db/client', () => ({
   db: { select: mockSelect, delete: mockDelete },
+}));
+// The global fan-out budget (`pushGlobalHourly`) admits by default here; one
+// case rejects it to prove the fan-out is SKIPPED (not blocked, never thrown).
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  assertRateLimit: mockAssertRateLimit,
 }));
 
 import {
@@ -115,6 +121,11 @@ describe('sendNotificationPush', () => {
     );
 
     expect(sender.send).not.toHaveBeenCalled();
+    // And it spends NOTHING from the hourly fan-out budget. Most events notify
+    // nobody with a phone, so charging before the token read made the budget
+    // count recipients rather than pushes — the ceiling was reached by traffic
+    // that never sent one.
+    expect(mockAssertRateLimit).not.toHaveBeenCalled();
   });
 
   it('builds one message per device in that device owner’s locale', async () => {
@@ -310,6 +321,37 @@ describe('sendNotificationPush', () => {
 
     vi.unstubAllEnvs();
     errors.mockRestore();
+  });
+
+  it('skips the fan-out when the global push budget is exhausted', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    // A block, not an outage: `pushGlobalHourly` is degraded, so only a real
+    // over-budget verdict throws `RateLimitedError`.
+    mockAssertRateLimit.mockRejectedValueOnce(
+      Errors.rateLimited(undefined, 60)
+    );
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { sender } = fakeSender(allOk);
+
+    await expect(
+      sendNotificationPush(
+        [OWNER],
+        { type: 'share.reaction', actor: { id: FRIEND } },
+        sender
+      )
+    ).resolves.toBeUndefined();
+
+    // The budget is charged with the messages already built, immediately before
+    // the send — so it counts real pushes. The row is already committed, so a
+    // block drops the push and returns; it never touches the sender and never
+    // throws.
+    expect(mockAssertRateLimit).toHaveBeenCalledOnce();
+    expect(sender.send).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('swallows a database failure the same way', async () => {

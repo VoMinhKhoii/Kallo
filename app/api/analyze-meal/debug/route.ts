@@ -13,8 +13,10 @@ import {
   type GeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
+import { serializeError } from '@/lib/core/errors/serialize';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { createClient } from '@/lib/infra/supabase/server';
 
 import { runDbLookupDebugStep } from './step-db-lookup';
@@ -41,6 +43,21 @@ export async function POST(request: NextRequest) {
     userId = user.id;
   } catch {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Admin auth is a gate, not a budget. This route runs the live pipeline —
+  // two Gemini calls plus embeddings — against arbitrary input, so a stolen
+  // admin session (or an admin with a loop) spends real money. `checkAdminReplayGuard`
+  // could not be reused: its counter key is the fixed `adminReplayGuardRoute`,
+  // so sharing it would make a debug run eat the replay quota and vice versa.
+  // Fail-CLOSED for the same reason `ocrGlobalDaily` is.
+  try {
+    await assertRateLimit('adminDebugAnalysis', {
+      kind: 'user',
+      value: userId,
+    });
+  } catch (error) {
+    return serializeError(error);
   }
 
   const totalStart = Date.now();

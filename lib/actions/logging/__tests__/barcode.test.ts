@@ -1,15 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDbSelect, mockDbInsert, mockUser } = vi.hoisted(() => {
-  const mockDbSelect = vi.fn();
-  const mockDbInsert = vi.fn();
-  const mockUser = { id: 'user-123', email: 'test@example.com' };
-  return {
-    mockDbSelect,
-    mockDbInsert,
-    mockUser,
-  };
-});
+const { mockDbSelect, mockDbInsert, mockUser, mockAssertRateLimit } =
+  vi.hoisted(() => {
+    const mockDbSelect = vi.fn();
+    const mockDbInsert = vi.fn();
+    const mockUser = { id: 'user-123', email: 'test@example.com' };
+    const mockAssertRateLimit = vi.fn();
+    return {
+      mockDbSelect,
+      mockDbInsert,
+      mockUser,
+      mockAssertRateLimit,
+    };
+  });
+
+// The generic limiter has its own suite; here it admits by default so the
+// barcode logic is what is under test. One case overrides it to prove a block
+// surfaces as the `rate_limited` code (a Server Action returns it, not a 429).
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  assertRateLimit: mockAssertRateLimit,
+}));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -168,6 +178,26 @@ describe('searchBarcodeAction', () => {
       servingSizeG: '75',
       packageSizeG: null,
     });
+  });
+
+  it('returns the rate_limited code when the per-user limit blocks', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mockAssertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 7));
+
+    const result = await searchBarcodeAction({ barcode: '8934563138162' });
+
+    // A Server Action cannot return an HTTP 429; the typed code carries the
+    // signal instead, and the dialog maps it to the "slow down" copy. The block
+    // fires before any provider fetch or DB read. `retryAfterSeconds` rides
+    // along because a Server Action has no headers to put `Retry-After` in —
+    // without it the caller knows to back off but not for how long.
+    expect(result).toEqual({
+      success: false,
+      code: 'rate_limited',
+      retryAfterSeconds: 7,
+    });
+    expect(mockDbSelect).not.toHaveBeenCalled();
+    expect(resolveBarcodeProduct).not.toHaveBeenCalled();
   });
 });
 

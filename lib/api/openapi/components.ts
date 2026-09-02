@@ -82,6 +82,19 @@ export const PAYLOAD_TOO_LARGE_ERROR: JsonSchema = {
   ),
 };
 
+/**
+ * The 503 a fail-closed spend route can produce. Not in COMMON_ERRORS: only a
+ * route whose rate-limit policy has `failMode: 'closed'` (today, OCR alone via
+ * `withOcrGuard`) answers it — when the limiter itself cannot reach a verdict,
+ * admitting the request would mean unbounded spend, so it fails closed rather
+ * than serving. Retryable, carries `Retry-After`.
+ */
+export const RATE_LIMITER_UNAVAILABLE_ERROR: JsonSchema = {
+  '503': errorResponse(
+    'The rate limiter could not reach a verdict on a spend-gated route (`RATE_LIMITER_UNAVAILABLE`). Retryable — honour `Retry-After`.'
+  ),
+};
+
 const AUTH_ERRORS: JsonSchema = {
   '401': errorResponse('No valid session (`NOT_AUTHENTICATED`).'),
   '402': errorResponse(

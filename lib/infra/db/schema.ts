@@ -2003,8 +2003,5 @@ export const rateLimitEvents = pgTable(
       table.route,
       table.createdAt
     ),
-    // Serves the nightly reaper's `created_at`-only predicate; inserts are
-    // coalesced, so the extra index write is cheap.
-    index('rate_limit_events_created_idx').on(table.createdAt),
   ]
 );

@@ -14,6 +14,7 @@ import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealShareReactions, mealShares } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 const toggleShareReactionSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),
@@ -29,6 +30,9 @@ export async function toggleShareReactionAction(input: {
 }): Promise<{ reacted: boolean; count: number }> {
   const parsed = toggleShareReactionSchema.parse(input);
   const { user } = await requireAuthAndProfile();
+
+  // Per-actor cap before the toggle — bounds the write and any push fan-out.
+  await assertRateLimit('shareReaction', { kind: 'user', value: user.id });
 
   // Only a reaction turning ON notifies; un-reacting is silent by design, so
   // the else branch below queues no push at all.

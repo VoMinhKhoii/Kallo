@@ -40,6 +40,7 @@
     "not_found": "Không tìm thấy sản phẩm với mã vạch này.",
     "not_cached": "Sản phẩm không còn khả dụng. Vui lòng quét lại.",
     "stage_failed": "Không thể thêm bữa ăn này. Vui lòng thử lại.",
+    "rate_limited": "Máy quét mã vạch đang bận. Vui lòng thử lại sau giây lát.",
     "server_error": "Đã xảy ra lỗi. Vui lòng thử lại."
   },
   "ocrTab": "Quét bảng dinh dưỡng",
