@@ -71,8 +71,21 @@ export function parseAuthBody(
   if (json) return json;
 
   // URLSearchParams never throws: garbage becomes one key with an empty value,
-  // which no lookup below asks for.
-  return Object.fromEntries(new URLSearchParams(text));
+  // which no lookup below asks for. Take the FIRST value of each repeated key,
+  // not the last: Go's `Request.FormValue` (what GoTrue calls) returns the
+  // first, so `email=victim@x.com&email=attacker@x.com` mails `victim` upstream
+  // and must key the recipient budget on `victim` too. `Object.fromEntries`
+  // (used over a plain `form[key] =` assignment) keeps the same safe
+  // own-property construction as the JSON path, so a `__proto__` key stays an
+  // own key rather than reaching the prototype setter.
+  const seen = new Set<string>();
+  const entries: [string, string][] = [];
+  for (const [key, value] of new URLSearchParams(text)) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push([key, value]);
+  }
+  return Object.fromEntries(entries);
 }
 
 /**

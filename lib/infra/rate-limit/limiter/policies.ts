@@ -145,6 +145,21 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /**
+   * App-wide backstop for the waitlist surfaces — the botnet cap that applies
+   * even when there is no IP to key on. `getRequestIp` returns `null` whenever
+   * `cf-connecting-ip` is absent, and the per-IP policy is skipped there; a
+   * caller flooding DISTINCT addresses with a null IP would otherwise be bounded
+   * only by the per-address cooldown, i.e. not at all. Keyed on a constant
+   * `global` value so signup and confirm each get their own counter row.
+   */
+  waitlistGlobal: {
+    route: 'waitlist:global',
+    limits: { perMinute: 30, perHour: 300 },
+    keyKinds: ['global'],
+    failMode: 'degraded',
+  },
+
   waitlistConfirmIp: {
     route: 'waitlist:confirm:ip',
     limits: { perMinute: 20, perHour: 100 },

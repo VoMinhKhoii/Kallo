@@ -1,4 +1,4 @@
-import { bearerSubjectKey, targetKeyFromBody } from './auth-target';
+import { targetKeyFromBody } from './auth-target';
 
 /**
  * What KIND of auth operation a proxied request is, and who it targets.
@@ -60,8 +60,6 @@ export interface ClassifyAuthRequestInput {
   grantType: string | null;
   /** Parsed body — see `parseAuthBody`. */
   body: Record<string, unknown> | undefined;
-  /** The `Authorization` header, for the ops whose target is the caller. */
-  authorization: string | null;
 }
 
 /** Paths whose POST sends a message to an address the CALLER supplied. */
@@ -105,13 +103,15 @@ export function classifyAuthRequest(
   // /reauthenticate SENDS MAIL (or an SMS): it is GoTrue's "confirm it is you
   // before changing a password" nonce. GoTrue routes it on GET *and* POST, and
   // classifying only the POST let the GET spelling mail a user's inbox on the
-  // cheap `other` budget. The body names nobody, so the account is the bearer
-  // token's subject; with no usable token it falls back to IP + global rather
-  // than refusing, because a 400 here would break a real signed-in flow.
+  // cheap `other` budget. The body names nobody, and the bearer token that
+  // does is UNVERIFIED at this proxy (no JWKS), so keying an account budget on
+  // its `sub` would let a forged token spend another user's budget. It is
+  // therefore left unkeyed — limited by IP + global only — and never refused,
+  // because a 400 here would break a real signed-in flow.
   if (head === 'reauthenticate' && segments.length === 1) {
     return {
       op: 'email',
-      targetKey: bearerSubjectKey(input.authorization),
+      targetKey: null,
       requiresTarget: false,
     };
   }

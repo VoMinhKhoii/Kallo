@@ -10,9 +10,14 @@ import { readBodyField } from './auth-body';
  * them survive IP rotation. This module produces that value, and only that
  * value: it is never what gets forwarded upstream.
  *
- * Three namespaces share the key space, so they are kept apart by construction:
- * a canonical email (always contains `@`), `phone:<digits>`, and `user:<sub>`
- * for the bearer-identified operations that name no target in their body.
+ * Two namespaces share the key space, so they are kept apart by construction:
+ * a canonical email (always contains `@`) and `phone:<digits>`.
+ *
+ * There is deliberately NO key derived from a bearer token's `sub`. The proxy
+ * holds no JWKS, so a token here is cryptographically UNVERIFIED — a forged
+ * `sub` would let an attacker consume another account's budget before Supabase
+ * ever authenticates the request. Operations that name no target in their body
+ * (reauthentication) are therefore limited by their IP and global budgets only.
  */
 
 /**
@@ -30,8 +35,6 @@ const MAX_KEY_CHARS = 320;
  * not a TypeError inside the limiter and a 500 in front of auth.
  */
 const targetField = z.string().min(1);
-
-const jwtPayload = z.object({ sub: z.string().min(1) });
 
 function capped(value: string): string {
   return value.length > MAX_KEY_CHARS ? value.slice(0, MAX_KEY_CHARS) : value;
@@ -70,33 +73,4 @@ export function targetKeyFromBody(
   if (phone.success) return phoneKey(phone.data);
 
   return null;
-}
-
-/**
- * The `sub` claim of a bearer JWT, as a key.
- *
- * `GET /reauthenticate` sends a nonce to the caller's own address and names no
- * target in a body — the account is whoever the access token says it is. The
- * payload is base64url-decoded and read; the signature is NOT verified,
- * because this is a counter identity, not an authorization decision. A forged
- * token buys the forger a key that Supabase will then reject, and every
- * failure mode here returns `null`, which leaves the request on its IP and
- * global budgets.
- */
-export function bearerSubjectKey(authorization: string | null): string | null {
-  if (!authorization) return null;
-
-  const match = authorization.match(/^Bearer\s+(\S+)$/i);
-  const segments = match?.[1].split('.');
-  if (!segments || segments.length !== 3) return null;
-
-  try {
-    const payload = jwtPayload.safeParse(
-      JSON.parse(Buffer.from(segments[1], 'base64url').toString('utf8'))
-    );
-
-    return payload.success ? capped(`user:${payload.data.sub}`) : null;
-  } catch {
-    return null;
-  }
 }

@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  bearerSubjectKey,
-  targetKeyFromBody,
-} from '@/app/api/supabase-proxy/_lib/auth-target';
-
-function jwt(payload: unknown): string {
-  return `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.sig`;
-}
+import { targetKeyFromBody } from '@/app/api/supabase-proxy/_lib/auth-target';
 
 describe('targetKeyFromBody', () => {
   it('normalises and canonicalises the address', () => {
-    expect(targetKeyFromBody({ email: '  Victim+Tag@Example.COM ' })).toBe(
-      'victim@example.com'
+    // Plus-addressing collapses on a known-alias domain (Gmail); case and
+    // surrounding whitespace are always folded.
+    expect(targetKeyFromBody({ email: '  Victim+Tag@GMail.COM ' })).toBe(
+      'victim@gmail.com'
     );
   });
 
@@ -44,30 +39,5 @@ describe('targetKeyFromBody', () => {
     ['a phone with no digits', { phone: '+++' }],
   ])('returns null for %s', (_name, body) => {
     expect(targetKeyFromBody(body as Record<string, unknown>)).toBeNull();
-  });
-});
-
-describe('bearerSubjectKey', () => {
-  it('reads the sub claim without verifying the signature', () => {
-    expect(
-      bearerSubjectKey(`Bearer ${jwt({ sub: 'user-1', role: 'x' })}`)
-    ).toBe('user:user-1');
-  });
-
-  it('accepts the header in any case', () => {
-    expect(bearerSubjectKey(`bearer ${jwt({ sub: 'user-1' })}`)).toBe(
-      'user:user-1'
-    );
-  });
-
-  it.each([
-    ['an absent header', null],
-    ['a non-bearer scheme', 'Basic abc'],
-    ['a token with the wrong segment count', 'Bearer a.b'],
-    ['a payload that is not base64url JSON', 'Bearer a.!!!.c'],
-    ['a payload with no sub', `Bearer ${jwt({ role: 'authenticated' })}`],
-    ['a non-string sub', `Bearer ${jwt({ sub: 42 })}`],
-  ])('returns null for %s — the request falls back to IP + global', (_n, h) => {
-    expect(bearerSubjectKey(h)).toBeNull();
   });
 });

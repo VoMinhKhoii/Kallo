@@ -17,13 +17,25 @@ import { db } from '@/lib/infra/db/client';
  * a sequential scan run by an endpoint anyone on the internet may call.
  */
 
-interface SharedDatabaseHealthRow extends Record<string, unknown> {
+/**
+ * The structural probe — table/column/trigger presence and orphaned users. It
+ * references the food table ONLY through `to_regclass` / `information_schema`,
+ * never by a direct `FROM public.vietnamese_food_composition`. Postgres binds
+ * table references at PARSE time, even inside an unreachable `CASE` branch, so a
+ * direct reference to an absent table throws before any row is returned. Reading
+ * existence out of the catalog instead never errors, so the seeded-row check can
+ * be gated on the result rather than parsed alongside it.
+ */
+interface StructuralHealthRow extends Record<string, unknown> {
   has_user_profiles: boolean;
   has_food_table: boolean;
   has_food_source_id: boolean;
   has_new_user_trigger: boolean;
-  has_seeded_food: boolean;
   has_orphaned_auth_users: boolean;
+}
+
+interface SeededFoodRow extends Record<string, unknown> {
+  has_seeded_food: boolean;
 }
 
 export interface SharedDatabaseHealth {
@@ -46,8 +58,25 @@ const CACHE_TTL_MS = 30_000;
 let inFlight: Promise<SharedDatabaseHealthResult> | null = null;
 let cached: { at: number; result: SharedDatabaseHealthResult } | null = null;
 
+/**
+ * Whether the food table is seeded — a SEPARATE query, run only once the
+ * structural probe has confirmed the table and column exist. Direct references
+ * to `public.vietnamese_food_composition` are safe here precisely because we
+ * never reach this statement when the table is absent.
+ */
+async function seededFood(): Promise<boolean> {
+  const rows = await db.execute<SeededFoodRow>(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM public.vietnamese_food_composition
+      WHERE source_id = 1
+    ) AS has_seeded_food;
+  `);
+  return rows[0]?.has_seeded_food ?? false;
+}
+
 async function query(): Promise<SharedDatabaseHealthResult> {
-  const rows = await db.execute<SharedDatabaseHealthRow>(sql`
+  const rows = await db.execute<StructuralHealthRow>(sql`
     WITH checks AS (
       SELECT
         (to_regclass('public.user_profiles') IS NOT NULL) AS has_user_profiles,
@@ -70,21 +99,6 @@ async function query(): Promise<SharedDatabaseHealthResult> {
             AND NOT trigger.tgisinternal
         ) AS has_new_user_trigger
     ),
-    food AS (
-      SELECT
-        CASE
-          WHEN (
-            SELECT has_food_table AND has_food_source_id
-            FROM checks
-          )
-          THEN EXISTS (
-            SELECT 1
-            FROM public.vietnamese_food_composition
-            WHERE source_id = 1
-          )
-          ELSE false
-        END AS has_seeded_food
-    ),
     orphans AS (
       SELECT
         CASE
@@ -104,9 +118,8 @@ async function query(): Promise<SharedDatabaseHealthResult> {
       has_food_table,
       has_food_source_id,
       has_new_user_trigger,
-      has_seeded_food,
       has_orphaned_auth_users
-    FROM checks, food, orphans;
+    FROM checks, orphans;
   `);
   const [row] = rows;
 
@@ -114,12 +127,18 @@ async function query(): Promise<SharedDatabaseHealthResult> {
     throw new Error('Shared database health query returned no rows.');
   }
 
+  // Only probe the seeded row when the table and its column both exist —
+  // otherwise the `FROM public.vietnamese_food_composition` inside it would fail
+  // to parse. An absent table is `hasSeededFood: false`, reported not thrown.
+  const hasSeededFood =
+    row.has_food_table && row.has_food_source_id ? await seededFood() : false;
+
   const checks: SharedDatabaseHealth = {
     hasUserProfiles: row.has_user_profiles,
     hasFoodTable: row.has_food_table,
     hasFoodSourceId: row.has_food_source_id,
     hasNewUserTrigger: row.has_new_user_trigger,
-    hasSeededFood: row.has_seeded_food,
+    hasSeededFood,
     hasOrphanedAuthUsers: row.has_orphaned_auth_users,
   };
 

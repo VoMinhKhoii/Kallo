@@ -40,9 +40,13 @@ beforeEach(() => {
 });
 
 describe('GET /api/v1/waitlist/confirm', () => {
-  it('charges the IP policy, then redirects with the outcome', async () => {
+  it('charges the global then IP policy, then redirects with the outcome', async () => {
     const res = await GET(makeRequest('tok_123'));
 
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist-confirm',
+    });
     expect(assertRateLimit).toHaveBeenCalledWith('waitlistConfirmIp', {
       kind: 'ip',
       value: '203.0.113.4',
@@ -52,11 +56,31 @@ describe('GET /api/v1/waitlist/confirm', () => {
     expect(confirmWaitlistSignup).toHaveBeenCalledWith('tok_123');
   });
 
-  it('skips the limiter when there is no usable client IP', async () => {
+  it('still charges the global policy when there is no usable client IP', async () => {
     const res = await GET(makeRequest('tok_123', {}));
 
-    expect(assertRateLimit).not.toHaveBeenCalled();
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist-confirm',
+    });
+    expect(assertRateLimit).not.toHaveBeenCalledWith(
+      'waitlistConfirmIp',
+      expect.anything()
+    );
     expect(res.status).toBe(307);
+  });
+
+  it('refuses a null-IP guessing flood once the global limit is hit', async () => {
+    assertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 12));
+
+    const res = await GET(makeRequest('guess', {}));
+
+    expect(res.status).toBe(429);
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist-confirm',
+    });
+    expect(confirmWaitlistSignup).not.toHaveBeenCalled();
   });
 
   // Token guessing must cost something: every outcome returns the same shape,
