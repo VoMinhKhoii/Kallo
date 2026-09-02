@@ -66,7 +66,7 @@ class QuietActionButton extends StatelessWidget {
                 ],
                 Text(
                   busy ? (busyLabel ?? label) : label,
-                  style: dashBody(color: kInk, weight: FontWeight.w500),
+                  style: dashBody(color: kInk),
                 ),
               ],
             ),

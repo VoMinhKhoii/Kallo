@@ -207,7 +207,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
         // ── Name ────────────────────────────────────────────────────────
         Text(
           tr('settings.identity.nameLabel'),
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         const SizedBox(height: KalloSpacing.sp2),
         KalloTextField(

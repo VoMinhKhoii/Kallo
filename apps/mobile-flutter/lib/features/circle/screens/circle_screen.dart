@@ -143,7 +143,7 @@ class _GroupHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: dashBody(weight: FontWeight.w500)),
+            Text(name, style: dashBody()),
             if (count != null)
               Text(
                 tr('groups.info.memberCount', namedArgs: {'count': '$count'}),

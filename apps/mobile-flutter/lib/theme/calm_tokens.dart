@@ -80,28 +80,32 @@ const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 // the reference numbers. The sizes below are the SF relationships translated
 // into this face: BVP 16 has the cap height of SF 17, BVP 14 that of SF 15.
 // Body and meta also carry a little negative tracking to pull the wide
-// advance back toward SF's. Hierarchy is still weight + colour, never size.
+// advance back toward SF's. Weight is reserved for titles and names (600);
+// everything else is regular, since BVP Medium already reads semibold.
 
-/// 40 / 500 — the ONE hero number per card (calories remaining, weight).
-/// Full size (the number is the point) but MEDIUM, not semibold — Be Vietnam
-/// Pro reads heavy, so w500 keeps it prominent without the "thick" feel.
+/// 40 / 400 — the ONE hero number per card (calories remaining, weight).
+/// Full size (the number is the point) and REGULAR: Be Vietnam Pro's Medium
+/// reads as semibold, and at 40pt the size alone carries the figure.
 TextStyle dashHero({Color color = kInk}) => TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
       fontSize: 40,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w400,
       height: 1.0,
       letterSpacing: -1.0,
       color: color,
       fontFeatures: _tnum,
     );
 
-/// 16 / 500 — macro gram values, metric values, the figure in a stepper.
-/// (The dial figures are pinned separately in `gauge_readout_type.dart` —
-/// a number inside an arc is sized by the arc, not by this ramp.)
+/// 16 / 400 — macro gram values, metric values, the figure in a stepper.
+/// Regular, tabular, ink: a figure is set apart from the label beside it by
+/// colour (ink vs muted) and tabular digits, never by weight — BVP Medium
+/// reads semibold and made every number shout (2026-09-02). (The dial figures
+/// are pinned separately in `gauge_readout_type.dart` — a number inside an
+/// arc is sized by the arc, not by this ramp.)
 TextStyle dashValue({Color color = kInk}) => TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
       fontSize: 16,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w400,
       height: 1.1,
       color: color,
       fontFeatures: _tnum,
@@ -113,9 +117,10 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
 /// Metric-compensated (2026-09-02): SF 17 → BVP 16 by cap height, with −0.2
 /// tracking against the wider advance. Leading 1.3 (~21pt) keeps the Threads
 /// relationship — enough air for a two-line wrap without a paragraph feel.
-/// Regular by default; w500 is for a label that must carry more than its
-/// neighbours, never for a list-row label (Threads and the Claude app set
-/// theirs regular, and that is most of the "calm").
+/// Regular. [weight] exists for the API; in practice nothing on the reading
+/// surfaces passes it any more (2026-09-02): BVP Medium reads semibold, and
+/// weight is reserved for titles and names ([kPageTitle], [kSectionHeader],
+/// [dashName]). Emphasis elsewhere is colour — ink against muted.
 TextStyle dashBody({
   Color color = kInk,
   FontWeight weight = FontWeight.w400,
@@ -195,13 +200,13 @@ TextStyle dashCaption({
       fontFeatures: tabular ? _tnum : null,
     );
 
-/// 11 / 500 — ALL-CAPS labels, COMPONENT-INTERNAL ONLY (the macro dial
+/// 11 / 400 — ALL-CAPS labels, COMPONENT-INTERNAL ONLY (the macro dial
 /// PROTEIN/CARBS/FAT eyebrows). Retired as a section header in the native
 /// pass (2026-08-31): visible section headers are mixed-case ink — use
-/// [kSectionHeader] (16/600) or [kGroupLabel] (14/500 muted) instead.
+/// [kSectionHeader] (16/600) or [kGroupLabel] (14 muted) instead.
 TextStyle dashEyebrow({
   Color color = kInkMuted,
-  FontWeight weight = FontWeight.w500,
+  FontWeight weight = FontWeight.w400,
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
@@ -226,7 +231,8 @@ TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
 
 // ── Header ramp (native pass 2026-08-31, metric-compensated 2026-09-02) ───
 // page title 28/600 → section header 16/600 (optional 14 muted meta right) →
-// group label 14/500 muted (Settings-style card qualifier) → content.
+// group label 14/400 muted (Settings-style card qualifier) → content.
+// These two are the ONLY semibold in the app besides [dashName].
 
 /// 28 / 600 / -0.6 — the page title (Nutrition, Circle, Settings).
 ///
@@ -256,13 +262,13 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
       color: color,
     );
 
-/// 14 / 500 muted — group labels above grouped cards ("Targets",
-/// "Preferences", "Today"). Sits on the secondary tier ([dashMeta]) one
-/// weight up, so it labels the card without competing with its rows.
+/// 14 / 400 muted — group labels above grouped cards ("Targets",
+/// "Preferences", "Today"). Metrically [dashMeta] in its own role: the muted
+/// colour and the 12 of air under it are what make it a label.
 TextStyle kGroupLabel({Color color = kInkMuted}) => TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
       fontSize: 14,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w400,
       height: 1.3,
       color: color,
     );

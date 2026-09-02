@@ -164,7 +164,7 @@ class _EmptyState extends StatelessWidget {
         const SizedBox(height: KalloSpacing.sp3),
         Text(
           tr(titleKey, namedArgs: namedArgs),
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         const SizedBox(height: KalloSpacing.sp1),
         Text(

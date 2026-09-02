@@ -141,9 +141,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: dashValue().copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: kSectionHeader(),
                                 ),
                               ),
                               if (group.myRole == 'owner')

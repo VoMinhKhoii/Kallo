@@ -143,7 +143,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'logging.persistedMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
+                'logging.persistedMealCard.total'.tr(), style: dashBody(tabular: true),),
               Row(
                 children: [
                   Text(

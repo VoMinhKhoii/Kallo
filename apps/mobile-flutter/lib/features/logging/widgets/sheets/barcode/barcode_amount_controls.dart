@@ -85,7 +85,6 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
               label,
               style: dashMeta(
                 color: isSelected ? kInk : kInkMuted,
-                weight: FontWeight.w600,
               ),
             ),
           ),

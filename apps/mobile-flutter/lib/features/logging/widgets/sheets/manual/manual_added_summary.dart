@@ -70,7 +70,7 @@ for (final key in kCompositionKeys)
               kcal == null
                   ? '—'
                   : '${kcal.round()} ${'logging.manualLogging.kcal'.tr()}',
-              style: dashBody(weight: FontWeight.w500, tabular: true),
+              style: dashBody(tabular: true),
             ),
           ],
         ),

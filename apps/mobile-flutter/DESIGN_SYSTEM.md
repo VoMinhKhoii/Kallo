@@ -9,15 +9,15 @@ colours, and the 12px spacing rhythm — lives in the `kallo-design` skill:
 
 | Role | Size / weight | Token |
 |------|---------------|-------|
-| Hero | 40 / 500 | `dashHero` |
+| Hero | 40 / 400 | `dashHero` |
 | Page title | 28 / 600, −0.6 | `kPageTitle` |
-| Section header · Value | 16 / 600 · 16 / 500 | `kSectionHeader` · `dashValue` |
-| **Body** | **16 / 400·500, leading 1.3, −0.2** | `dashBody` |
+| Section header · Value | 16 / 600 · 16 / 400 | `kSectionHeader` · `dashValue` |
+| **Body** | **16 / 400, leading 1.3, −0.2** | `dashBody` |
 | **Name** (identity only) | **15 / 600** | `dashName` |
 | **Meta** (secondary) | **14 / 400, −0.1** | `dashMeta` |
-| Group label | 14 / 500 muted | `kGroupLabel` |
-| **Caption** (by exception) | **12 / 400·500** | `dashCaption` |
-| Eyebrow (dial labels only) | 11 / 500 UPPERCASE | `dashEyebrow` |
+| Group label | 14 / 400 muted | `kGroupLabel` |
+| **Caption** (by exception) | **12 / 400** | `dashCaption` |
+| Eyebrow (dial labels only) | 11 / 400 UPPERCASE | `dashEyebrow` |
 | Editorial serif | Lora 22 / 400 | `dashHeadline` |
 | Wordmark (home masthead) | Lora 28 / 400 ink | `KalloTextStyles.serifRegular` |
 
@@ -31,14 +31,16 @@ at the reference values. 16/14 is the SF relationship translated into this
 face (BVP 16 caps 11.8pt ≈ SF 17's 12.0), with a little negative tracking to
 pull the wide advance in. The same pass set `ListRow` labels regular, lightened
 `kInkMuted` to `#7A7870`, dropped the page title from 700 to 600, and made the
-pill nav icon-only. `dashCaption` 12 is an escape hatch for compact components
+pill nav icon-only. Weight: BVP Medium reads semibold, so every 500 is now
+400 and 600 survives only on page title, section header and name. `dashCaption`
+12 is an escape hatch for compact components
 that 14 measurably breaks, never a general tier.
 
 The **gauge dials are outside this ramp**, on purpose. A figure pinned inside a
 30–52pt arc is sized by the arc, not by the reading scale: `dashCaption`'s
 "number pinned inside a gauge" exception is spelled out as four styles in
-`shared/widgets/gauge/gauge_readout_type.dart` — figure **17/500** (Today),
-**14/500** (Log header), unit **14/400**, denominator **12/400**, the same in
+`shared/widgets/gauge/gauge_readout_type.dart` — figure **17/400** (Today),
+**14/400** (Log header), unit **14/400**, denominator **12/400**, the same in
 both variants. They are **pinned, not aliased**: the reading ramp has moved
 underneath them twice (14/12 → 17/15 → 16/14) and the dial stayed at the sizes
 the reference screenshot measures.

@@ -52,7 +52,17 @@ shipped a visible bug first.
 > `ListRow` labels go **regular** (Threads and the Claude app set theirs
 > regular — medium made every settings row shout), `kInkMuted` lightens one
 > step (`#6E6D66` → `#7A7870`), and the pill nav is **icon-only**. Hero 40 and
-> the gauge dials are untouched.
+> the gauge dials keep their sizes.
+>
+> **Weight (same pass, second commit).** BVP **Medium (500) reads as
+> semibold**, and it was the default on hero, value, group label and eyebrow
+> plus ~85 explicit `weight:` call sites (buttons, kcal figures, selected
+> segments, day numbers, chips). All of it is now **regular (400)**. Semibold
+> (600) survives in exactly three tokens — `kPageTitle`, `kSectionHeader`,
+> `dashName` — which is what Threads and the Claude app do: bold the title and
+> the author, nothing else. Emphasis everywhere else is colour (ink against
+> muted) and size, never weight. Dialog, sheet and empty-state titles that
+> used to fake a header with `dashValue` + 600 now use `kSectionHeader`.
 
 > **Threads-scale ramp (2026-09-01).** Supersedes the calm 14/12 ramp below its
 > own row. Threads on iOS was measured directly: its feed body is **not** small.
@@ -66,22 +76,26 @@ shipped a visible bug first.
 
 | Role | Size | Weight | Leading | Tracking | Used for |
 |------|------|--------|---------|----------|----------|
-| Hero | 40 | 500 (medium) | 1.0 | −1.0 | the ONE big number per card (calories remaining, weight) |
+| Hero | 40 | 400 | 1.0 | −1.0 | the ONE big number per card (calories remaining, weight) |
 | Page title | 28 | 600 | 1.15 | −0.6 | the screen's name (Nutrition, Circle, Settings) |
 | Section header | 16 | 600 | 1.2 | −0.3 | section headers, centred sheet titles, the title on a header line |
-| Value | 16 | 500 | 1.1 | — | macro gram values, metric values (dial figures are pinned separately — see _Gauge readouts_) |
-| **Body** | **16** | 400·500 | **1.3** | −0.2 | meal names, post bodies, list-row labels (regular), composer input, button labels |
+| Value | 16 | 400 | 1.1 | — | macro gram values, metric values (dial figures are pinned separately — see _Gauge readouts_) |
+| **Body** | **16** | 400 | **1.3** | −0.2 | meal names, post bodies, list-row labels, composer input, button labels |
 | **Name** | **15** | **600** | 1.3 | — | an emphasised NAME against 16 body — Circle post/reply authors. Identity only |
 | **Meta** | **14** | 400 | 1.25 | −0.1 | captions, units, stat values, dates, quiet values |
-| Group label | **14** | 500 | 1.3 | — | muted qualifier above a grouped card ("Targets", "Preferences") |
-| **Caption** | **12** | 400·500 | 1.25 | — | **by exception only** — a compact component 14 measurably breaks |
-| Eyebrow | 11 | 500 | 1.3 | +0.3, UPPERCASE | macro-dial labels ONLY (muted) |
+| Group label | **14** | 400 | 1.3 | — | muted qualifier above a grouped card ("Targets", "Preferences") |
+| **Caption** | **12** | 400 | 1.25 | — | **by exception only** — a compact component 14 measurably breaks |
+| Eyebrow | 11 | 400 | 1.3 | +0.3, UPPERCASE | macro-dial labels ONLY (muted) |
 | Greeting | 22 | 400 | — | −0.3 | Lora serif — the single editorial moment per viewport |
 
-Medium (500) is the **weight ceiling for data** — Be Vietnam Pro reads heavy, so
-semibold felt thick; body/meta stay regular (400). Serif is never bold. Names
-are the one exception (600): a name is identity, not a figure, and the cap
-exists to stop numbers shouting at each other.
+**Regular is the weight for everything but titles and names.** Be Vietnam Pro
+reads heavy — its Medium (500) is what most faces call semibold — so 500 is
+not a step, it is bold, and it is gone from every data, label, button and
+figure role (2026-09-02). 600 lives in three tokens only: page title, section
+header, name. A selected segment, today's day number, the total row, a
+primary button label: all regular, told apart by ink versus muted. Serif is
+never bold. If something needs to stand out and colour is not enough, the
+answer is size or position, not weight.
 
 **Body 16 vs Name 15.** Two 16s stacked — a w600 name over a w400 body — read as
 a wall. Stepping the name down one notch while taking it to semibold keeps the
@@ -402,6 +416,7 @@ a few shared form internals; do not add new call sites.
 | Text scaling capped at 1.3x (`app.dart`) | every surface |
 | **Threads scale (2026-09-01): `dashBody` 14 → 17 (leading 1.35), `dashMeta` 12 → 15, `kGroupLabel` 14 → 15** | every surface |
 | **Metric compensation (2026-09-02): `dashBody` 17 → 16 (leading 1.3, −0.2), `dashMeta` 15 → 14 (−0.1), `dashName` 16 → 15, `kSectionHeader` 17 → 16, `kGroupLabel` 15 → 14, `dashCaption` 13 → 12, `kPageTitle` 700 → 600; `kInkMuted` lightened; `ListRow` regular; nav icon-only** | every surface |
+| **Weight (2026-09-02): every 500 → 400 (hero, value, group label, eyebrow, ~85 call sites); 600 only on `kPageTitle` / `kSectionHeader` / `dashName`** | every surface |
 
 If a screen ever "feels big" again, the leading is still the first lever — two
 numbers in `calm_tokens.dart` that move every screen at once.
@@ -432,7 +447,7 @@ Reach for these before writing a local variant:
 `lib/shell/nav/pill_nav_bar.dart`: a floating 358×72 white capsule (radius 36,
 `kNavShadows` — the nav is TRUE elevation), four tabs as 24pt stroke glyphs
 alone (ink when active, muted idle — icon-only since 2026-09-02, the tab name
-lives in `Semantics`; `kNavShowsLabels` restores 10pt labels), Nutrition's
+lives in `Semantics`; `kNavShowsLabels` restores 10pt regular labels), Nutrition's
 glyph is the apple, and a 52pt beige `+` circle opening
 the Add sheet (Log a meal / Log weight). Today/Nutrition/Circle switch shell
 branches; **Log pushes the feed full-screen** (root CupertinoPage — the

@@ -128,7 +128,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                       namedArgs: {'portion': portion},
                     ),
                     // Caption: a fixed pill on the title line, component-internal.
-                    style: dashCaption(color: kInk, weight: FontWeight.w500),
+                    style: dashCaption(color: kInk),
                   ),
                 ),
             ],

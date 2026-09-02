@@ -78,7 +78,7 @@ class NutrientRow extends StatelessWidget {
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: dashBody(weight: FontWeight.w500),
+                          style: dashBody(),
                         ),
                       ),
                       const SizedBox(width: KalloSpacing.sp2),

@@ -52,7 +52,6 @@ class InviteValueRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: dashBody(
                     color: muted ? kInkMuted : kInk,
-                    weight: FontWeight.w500,
                   ),
                 ),
               ],

@@ -57,7 +57,7 @@ class SubmitButton extends StatelessWidget {
               const SizedBox(width: KalloSpacing.sp2),
               Text(
                 label,
-                style: dashBody(weight: FontWeight.w500),
+                style: dashBody(),
               ),
             ],
           ),

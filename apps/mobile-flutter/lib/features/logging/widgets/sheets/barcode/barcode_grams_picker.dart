@@ -123,7 +123,6 @@ class _QuickChip extends StatelessWidget {
             // Caption: a fixed-width preset chip, component-internal.
             style: dashCaption(
               color: selected ? kInk : kInkMuted,
-              weight: FontWeight.w500,
               tabular: true,
             ),
           ),

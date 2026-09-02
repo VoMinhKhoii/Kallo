@@ -22,28 +22,28 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_typography.dart';
 
-/// 17 / 500 — the figure a FULL-SIZE dial holds: the Today row's `202g`, the
+/// 17 / 400 — the figure a FULL-SIZE dial holds: the Today row's `202g`, the
 /// Log header's calorie headline. Pinned (2026-09-02): it used to alias
 /// [dashValue], which stepped to 16 with the metric-compensated ramp.
 TextStyle gaugeFigure() => const TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 17,
-  fontWeight: FontWeight.w500,
+  fontWeight: FontWeight.w400,
   height: 1.1,
   color: kInk,
   fontFeatures: [FontFeature.tabularFigures()],
 );
 
-/// 40 / 500 — the one hero figure, in the dial that gets the top of a screen.
+/// 40 / 400 — the one hero figure, in the dial that gets the top of a screen.
 TextStyle gaugeHeroFigure() => dashHero();
 
-/// 14 / 500 — the figure a COMPACT dial holds. Two thirds of the radius means
+/// 14 / 400 — the figure a COMPACT dial holds. Two thirds of the radius means
 /// two thirds of the room, so the compact variant steps its figure down one
 /// notch and keeps the same denominator beneath it.
 TextStyle gaugeCompactFigure() => const TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
-  fontWeight: FontWeight.w500,
+  fontWeight: FontWeight.w400,
   height: 1.3,
   color: kInk,
   fontFeatures: [FontFeature.tabularFigures()],

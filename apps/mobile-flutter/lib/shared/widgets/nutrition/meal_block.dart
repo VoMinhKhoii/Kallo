@@ -61,7 +61,7 @@ class MealBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final kcal = kcalLabel == null
         ? null
-        : Text(kcalLabel!, style: dashBody(weight: FontWeight.w500));
+        : Text(kcalLabel!, style: dashBody());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

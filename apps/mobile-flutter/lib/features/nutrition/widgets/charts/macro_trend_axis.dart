@@ -70,7 +70,6 @@ AxisTitles bucketAxisTitles({
             label,
             style: dashMeta(
               color: emphasised ? kInk : kInkMuted,
-              weight: emphasised ? FontWeight.w500 : FontWeight.w400,
             ),
           ),
         );

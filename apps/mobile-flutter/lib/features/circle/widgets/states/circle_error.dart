@@ -54,7 +54,7 @@ class CircleErrorCard extends StatelessWidget {
                   children: [
                     Text(
                       tr('groups.error.title'),
-                      style: dashBody(weight: FontWeight.w600),
+                      style: kSectionHeader(),
                     ),
                     const SizedBox(height: KalloSpacing.sp1),
                     Text(tr('groups.error.body'), style: dashMeta()),
@@ -147,7 +147,6 @@ class _RetryPillState extends State<_RetryPill>
                   tr('groups.error.retry'),
                   style: dashBody(
                     color: KalloColors.danger,
-                    weight: FontWeight.w500,
                   ),
                 ),
               ],

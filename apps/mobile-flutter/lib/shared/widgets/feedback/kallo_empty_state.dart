@@ -108,7 +108,6 @@ class _NhamEmptyStateActionState extends State<KalloEmptyStateAction> {
           child: Text(
             widget.label,
             style: dashBody(
-              weight: FontWeight.w500,
               color: KalloColors.surface,
             ),
           ),

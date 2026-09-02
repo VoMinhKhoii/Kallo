@@ -35,7 +35,7 @@ class TickerText extends StatelessWidget {
     if (verbText != null) {
       // Umber, so "working" reads as the app's own voice rather than as data.
       return TextSpan(
-        style: dashBody(color: KalloColors.btn, weight: FontWeight.w500),
+        style: dashBody(color: KalloColors.btn),
         text: verbText,
       );
     }

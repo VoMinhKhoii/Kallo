@@ -123,7 +123,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
                 ),
                 child: Text(
                   tr('groups.circle.remove'),
-                  style: dashMeta(weight: FontWeight.w500),
+                  style: dashMeta(),
                 ),
               ),
             ),

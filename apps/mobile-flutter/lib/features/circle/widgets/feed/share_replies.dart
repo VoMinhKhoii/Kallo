@@ -172,7 +172,7 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
               alignment: Alignment.center,
               child: Text(
                 tr('groups.feed.reply'),
-                style: dashBody(weight: FontWeight.w500),
+                style: dashBody(),
               ),
             ),
           ),

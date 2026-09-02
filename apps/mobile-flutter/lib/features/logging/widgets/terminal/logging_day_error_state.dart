@@ -46,7 +46,7 @@ class LoggingDayErrorState extends StatelessWidget {
                   children: [
                     Text(
                       'logging.feedArea.loadErrorTitle'.tr(),
-                      style: dashBody(weight: FontWeight.w500),
+                      style: dashBody(),
                     ),
                     const SizedBox(height: 4), // mt-1
                     Text(
@@ -97,7 +97,6 @@ class _RetryPill extends StatelessWidget {
               'logging.feedArea.retryDay'.tr(),
               style: dashBody(
                 color: KalloColors.danger,
-                weight: FontWeight.w500,
               ),
             ),
           ],

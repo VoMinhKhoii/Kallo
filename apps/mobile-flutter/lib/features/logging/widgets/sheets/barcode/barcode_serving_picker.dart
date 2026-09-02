@@ -85,7 +85,7 @@ class BarcodePackageCard extends StatelessWidget {
         children: [
           Text(
             'logging.barcode.wholePackage'.tr(),
-            style: dashBody(weight: FontWeight.w500),
+            style: dashBody(),
           ),
           const SizedBox(height: 2),
           Text(

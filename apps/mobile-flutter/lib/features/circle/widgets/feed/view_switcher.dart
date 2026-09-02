@@ -156,7 +156,6 @@ class _Pill extends StatelessWidget {
                 Text(
                   label,
                   style: dashBody(
-                    weight: selected ? FontWeight.w500 : FontWeight.w400,
                   ),
                 ),
               ],

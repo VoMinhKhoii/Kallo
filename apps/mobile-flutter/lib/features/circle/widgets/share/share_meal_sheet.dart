@@ -123,7 +123,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                         'groups.shareMeal.splitPreview',
                         namedArgs: {'portion': portion},
                       ),
-                      style: dashMeta(color: kInk, weight: FontWeight.w500),
+                      style: dashMeta(color: kInk),
                     ),
                   ],
                   const SizedBox(height: KalloSpacing.sp4),

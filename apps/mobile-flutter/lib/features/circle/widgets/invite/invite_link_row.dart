@@ -134,7 +134,7 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
                   maxLength: kHandleMaxLength,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _save(),
-                  style: dashBody(weight: FontWeight.w500),
+                  style: dashBody(),
                   decoration: const InputDecoration(
                     prefixText: '…/invite/',
                     isDense: true,

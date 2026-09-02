@@ -59,7 +59,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'logging.cheatMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
+                'logging.cheatMealCard.total'.tr(), style: dashBody(tabular: true),),
               Flexible(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -100,7 +100,7 @@ class _YouSetRow extends StatelessWidget {
       children: [
         Text(
           slider.label,
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         const SizedBox(width: KalloSpacing.sp2),
         _StopScale(level: level, color: cheatSliderColor(slider.key)),

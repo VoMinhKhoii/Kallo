@@ -100,7 +100,7 @@ class _LabelMicronutrientsState extends State<LabelMicronutrients> {
 
   Widget _field(LabelNutrientDefinition definition) => LabelField(
     controller: widget.controllerFor(definition.key),
-    textStyle: dashBody(weight: FontWeight.w500),
+    textStyle: dashBody(),
     hint: '—',
     unit: definition.unit,
     hasError: widget.hasError(definition.key),

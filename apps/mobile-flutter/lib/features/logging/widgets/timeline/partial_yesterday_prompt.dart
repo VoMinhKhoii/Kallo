@@ -86,7 +86,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                 children: [
                   Text(
                     '$t.title'.tr(),
-                    style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: KalloColors.danger)),
+                    style: dashBody().merge(const TextStyle(color: KalloColors.danger)),
                   ),
                   const SizedBox(height: 4), // mt-1
                   Text(
@@ -175,7 +175,7 @@ class _OpenButtonState extends State<_OpenButton> {
               const SizedBox(width: 8), // gap-2
               Text(
                 widget.label,
-                style: dashBody(weight: FontWeight.w500),
+                style: dashBody(),
               ),
             ],
           ),

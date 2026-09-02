@@ -78,7 +78,7 @@ class _ManualGramFieldState extends State<ManualGramField> {
         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
         onChanged: (raw) => widget.onChanged(_parse(raw)),
         cursorColor: KalloColors.accent,
-        style: dashBody(weight: FontWeight.w500),
+        style: dashBody(),
         decoration: InputDecoration(
           isDense: true,
           // The app theme fills and outlines every field; a field this small

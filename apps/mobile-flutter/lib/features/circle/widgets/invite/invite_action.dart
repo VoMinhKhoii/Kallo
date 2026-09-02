@@ -60,7 +60,7 @@ class InviteAction extends StatelessWidget {
               const SizedBox(width: KalloSpacing.sp1_5),
               Text(
                 label,
-                style: dashMeta(color: fg, weight: FontWeight.w500),
+                style: dashMeta(color: fg),
               ),
             ],
           ),

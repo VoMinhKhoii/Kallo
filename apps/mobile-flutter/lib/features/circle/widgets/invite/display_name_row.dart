@@ -105,7 +105,7 @@ class _DisplayNameRowState extends ConsumerState<DisplayNameRow> {
                   maxLength: kDisplayNameMax,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _save(),
-                  style: dashBody(weight: FontWeight.w500),
+                  style: dashBody(),
                   decoration: InputDecoration(
                     hintText: tr('groups.invite.appearPlaceholder'),
                     isDense: true,

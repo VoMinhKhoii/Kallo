@@ -31,7 +31,7 @@ class EmptyMeals extends StatelessWidget {
           Text(
             tr('dashboard.noMealsToday'),
             textAlign: TextAlign.center,
-            style: dashBody(weight: FontWeight.w600),
+            style: kSectionHeader(),
           ),
           const SizedBox(height: DashboardSpacing.row),
           Text(

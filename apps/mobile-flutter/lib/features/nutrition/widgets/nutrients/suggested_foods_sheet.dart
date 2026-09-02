@@ -113,7 +113,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
           children: [
             Expanded(
               child: Text(tr(card.labelKey),
-                  style: dashBody(weight: FontWeight.w600)),
+                  style: kSectionHeader()),
             ),
             const SizedBox(width: KalloSpacing.sp2),
             if (shortBy != null && shortBy > 0)

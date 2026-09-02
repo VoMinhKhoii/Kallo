@@ -43,7 +43,7 @@ class ModeCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: dashBody(weight: FontWeight.w500),
+                style: dashBody(),
               ),
               const SizedBox(height: 2),
               Text(

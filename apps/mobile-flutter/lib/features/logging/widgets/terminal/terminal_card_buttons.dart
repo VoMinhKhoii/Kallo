@@ -73,7 +73,7 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
               children: [
                 Icon(widget.icon, size: 16, color: KalloColors.text),
                 const SizedBox(width: 6),
-                Text(widget.label, style: dashBody(weight: FontWeight.w500)),
+                Text(widget.label, style: dashBody()),
               ],
             ),
           ),
@@ -115,7 +115,7 @@ class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
           ),
           child: Text(
             'logging.discard'.tr(),
-            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
+            style: dashBody(color: kInkMuted),
           ),
         ),
       ),

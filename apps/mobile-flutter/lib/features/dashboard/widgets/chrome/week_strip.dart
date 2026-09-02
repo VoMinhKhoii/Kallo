@@ -136,10 +136,9 @@ class _DayCell extends StatelessWidget {
           Text(
             weekday,
             maxLines: 1,
-            // Meta 12 like every other caption on the surface (mixed-case,
-            // locale-safe); medium weight is what marks today, not size.
-            style: dashMeta(color: labelColor)
-                .copyWith(fontWeight: FontWeight.w500),
+            // Meta like every other caption on the surface (mixed-case,
+            // locale-safe); colour is what marks today, not weight or size.
+            style: dashMeta(color: labelColor),
           ),
           const SizedBox(height: DashboardSpacing.row),
           SizedBox(
@@ -157,7 +156,6 @@ class _DayCell extends StatelessWidget {
                   '${dt.day}',
                   style: dashBody(
                     color: isFuture ? kInkMuted : kInk,
-                    weight: isToday ? FontWeight.w600 : FontWeight.w400,
                     tabular: true,
                   ),
                 ),

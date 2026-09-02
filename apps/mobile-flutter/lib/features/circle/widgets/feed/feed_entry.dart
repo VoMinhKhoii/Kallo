@@ -64,13 +64,12 @@ class _FeedEntryState extends State<FeedEntry> {
                       children: [
                         TextSpan(
                           text: name,
-                          // 16/600 ink against the 15 muted timestamp beside
+                          // 15/600 ink against the 14 muted timestamp beside
                           // it: the Threads relationship, where a bold author
-                          // sits over regular body copy. w600 is above the
-                          // w500 that `mobile.md` caps DATA at — a name is
-                          // identity, not a figure, and the cap exists to stop
-                          // numbers shouting at each other. One notch under
-                          // the 17 post body so the two do not read as a wall.
+                          // sits over regular body copy. Names are one of the
+                          // three places semibold survives — identity, not a
+                          // figure. One notch under the 16 post body so the
+                          // two do not read as a wall.
                           style: dashName(),
                         ),
                         // A backfilled (past-date) meal carries a sharedAt of

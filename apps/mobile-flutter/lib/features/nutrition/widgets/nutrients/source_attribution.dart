@@ -105,7 +105,7 @@ class _Citation extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: dashBody(weight: FontWeight.w600)),
+          Text(label, style: kSectionHeader()),
           const SizedBox(height: 2),
           Text(detail, style: dashMeta(color: kInkMuted)),
         ],

@@ -13,7 +13,7 @@ class CreateGroupEmpty extends StatelessWidget {
       children: [
         Text(
           tr('groups.createGroup.emptyTitle'),
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         Text(
           tr('groups.createGroup.noFriends'),

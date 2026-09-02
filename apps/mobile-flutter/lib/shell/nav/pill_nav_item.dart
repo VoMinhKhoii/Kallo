@@ -68,7 +68,7 @@ class PillNavItem extends ConsumerWidget {
                   style: TextStyle(
                     fontFamily: KalloTextStyles.sansFamily,
                     fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                     color: color,
                   ),
                 ),
