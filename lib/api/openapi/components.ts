@@ -70,6 +70,18 @@ const COMMON_ERRORS: JsonSchema = {
   '500': errorResponse('Unhandled server error (`INTERNAL`).'),
 };
 
+/**
+ * The 413 a bounded-body route can produce. Not in COMMON_ERRORS: only the
+ * handful of routes that read a request body through `readBoundedBody` can
+ * answer it, and documenting it on the rest would describe a response they
+ * cannot give.
+ */
+export const PAYLOAD_TOO_LARGE_ERROR: JsonSchema = {
+  '413': errorResponse(
+    'Request body exceeded the route’s byte cap (`PAYLOAD_TOO_LARGE`). Not retryable — send less.'
+  ),
+};
+
 const AUTH_ERRORS: JsonSchema = {
   '401': errorResponse('No valid session (`NOT_AUTHENTICATED`).'),
   '402': errorResponse(
@@ -98,6 +110,8 @@ interface OperationInput {
   okDescription?: string;
   /** Media type of the success response. Defaults to `application/json`. */
   okMedia?: string;
+  /** Extra documented failures, e.g. `PAYLOAD_TOO_LARGE_ERROR`. */
+  extraErrors?: JsonSchema;
 }
 
 function build(input: OperationInput, authenticated: boolean): Operation {
@@ -115,6 +129,7 @@ function build(input: OperationInput, authenticated: boolean): Operation {
     },
     ...COMMON_ERRORS,
     ...(authenticated ? AUTH_ERRORS : {}),
+    ...(input.extraErrors ?? {}),
   };
 
   return {

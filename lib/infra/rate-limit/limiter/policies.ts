@@ -65,9 +65,20 @@ export const rateLimitPolicies = {
   },
 
   /**
-   * Every proxied auth operation, app-wide. Sized against the upstream GoTrue
-   * budget so we shed load before Supabase does and can answer in our own
-   * envelope instead of leaking theirs.
+   * Every proxied `email` / `login` operation, app-wide — a BOTNET BACKSTOP,
+   * not a fairness mechanism and not an upstream-shaped budget.
+   *
+   * It would be comfortable to claim this is sized against GoTrue's own limits
+   * so we shed before Supabase does. It is not, and it cannot be: every
+   * proxied user reaches Supabase through this service's single Cloud Run
+   * egress address, and `Sb-Forwarded-For` (the only way to tell Supabase who
+   * the real caller is) requires a secret key this layer does not hold. So
+   * Supabase's PER-IP auth limits — `sign_in_sign_ups` 30 / 5 min,
+   * `token_verifications` 30 / 5 min, `token_refresh` 150 / 5 min per
+   * supabase/config.toml, plus whatever the hosted dashboard is set to — apply
+   * to ALL of our users together and are the app's real auth ceiling. This
+   * number only caps total spend when no individual key looks abusive. See
+   * docs/RATE_LIMITING.md and the ops action in docs/PROD_DOMAIN_SETUP.md.
    */
   authGlobal: {
     route: 'auth:global',
@@ -77,18 +88,42 @@ export const rateLimitPolicies = {
   },
 
   /**
-   * Token refresh and everything unclassified. Memory-only: a refresh storm is
-   * a client bug, not an attack, and it must never cost a DB round trip on the
-   * path that keeps a signed-in user signed in.
+   * Token refresh, per source IP. A FLOOD BREAKER, NOT A QUOTA.
+   *
+   * Deliberately loose (600/min per instance). One CGNAT or carrier-NAT
+   * address fronts thousands of unrelated phones, each refreshing on its own
+   * schedule and each retrying after a network blip, so a tight number here
+   * refuses real sessions long before it inconveniences anyone. And a refusal
+   * on this path is not a delay — it is a SIGN-OUT unless it is spoken as a
+   * retryable status (see `_lib/guard-auth-request.ts`). The control that
+   * actually bounds a distributed refresh flood is `authRefreshGlobal`.
    *
    * `perMinute` only — see the `memory` arm of `RateLimitPolicy`. An hourly
    * number here would be a ceiling nothing enforces.
    */
   authRefresh: {
     route: 'auth:refresh',
-    limits: { perMinute: 60 },
+    limits: { perMinute: 600 },
     keyKinds: ['ip'],
     failMode: 'memory',
+  },
+
+  /**
+   * Refresh, app-wide — the only thing that can see a botnet replaying stolen
+   * refresh tokens from a million addresses, each of which looks like one
+   * ordinary phone to `authRefresh`.
+   *
+   * It costs one database round trip on the path that keeps every signed-in
+   * user signed in, which the memory-only design of `authRefresh` exists to
+   * avoid. That is the accepted trade: one shared counter row, `degraded` so a
+   * limiter outage never blocks refresh, and sized (3000/min ≈ 50/s) far above
+   * anything the real fleet produces so it only ever fires on an attack.
+   */
+  authRefreshGlobal: {
+    route: 'auth:refresh:global',
+    limits: { perMinute: 3000, perHour: 60000 },
+    keyKinds: ['global'],
+    failMode: 'degraded',
   },
 
   authOther: {
@@ -107,6 +142,21 @@ export const rateLimitPolicies = {
     route: 'waitlist:signup:ip',
     limits: { perMinute: 5, perHour: 20, perDay: 50 },
     keyKinds: ['ip'],
+    failMode: 'degraded',
+  },
+
+  /**
+   * App-wide backstop for the waitlist surfaces — the botnet cap that applies
+   * even when there is no IP to key on. `getRequestIp` returns `null` whenever
+   * `cf-connecting-ip` is absent, and the per-IP policy is skipped there; a
+   * caller flooding DISTINCT addresses with a null IP would otherwise be bounded
+   * only by the per-address cooldown, i.e. not at all. Keyed on a constant
+   * `global` value so signup and confirm each get their own counter row.
+   */
+  waitlistGlobal: {
+    route: 'waitlist:global',
+    limits: { perMinute: 30, perHour: 300 },
+    keyKinds: ['global'],
     failMode: 'degraded',
   },
 

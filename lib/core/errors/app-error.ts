@@ -50,6 +50,8 @@ function resolutionFor(status: number, retryable: boolean): string {
       return 'Verify the path and resource identifier against /openapi.json.';
     case 409:
       return 'Read the latest resource state, reconcile the conflict, then retry.';
+    case 413:
+      return 'Send a smaller request body; retrying the same bytes will fail again.';
     case 422:
       return 'Change the supplied content as described by the error message.';
     case 429:
@@ -73,6 +75,23 @@ export class RateLimitedError extends AppError {
   ) {
     super('RATE_LIMITED', 429, true, userMessage);
     this.name = 'RateLimitedError';
+  }
+}
+
+/**
+ * A request body exceeded the cap its reader was given.
+ *
+ * 413, and NOT retryable: the same bytes will be refused again, so a client
+ * that backs off and retries is only wasting both sides' time. A distinct
+ * class rather than a bare `AppError` because a handler that speaks someone
+ * else's error envelope (the Supabase auth proxy) has to recognise this one
+ * case to translate it, and `code === 'PAYLOAD_TOO_LARGE'` string-matching is
+ * a worse way to say the same thing.
+ */
+export class PayloadTooLargeError extends AppError {
+  constructor(userMessage: string) {
+    super('PAYLOAD_TOO_LARGE', 413, false, userMessage);
+    this.name = 'PayloadTooLargeError';
   }
 }
 

@@ -12,6 +12,7 @@ import {
   AppError,
   FeatureLockedError,
   type FeatureLockedReason,
+  PayloadTooLargeError,
   RateLimitedError,
   RateLimitUnavailableError,
   type RateLimitUnavailableKind,
@@ -62,6 +63,11 @@ export const Errors = {
   notFound: (detail: string) => new AppError('NOT_FOUND', 404, false, detail),
 
   conflict: (detail: string) => new AppError('CONFLICT', 409, false, detail),
+
+  // A body that blew its cap. 413 rather than 400: the request was well-formed
+  // as far as anyone got to look, it was simply too big, and the distinction is
+  // what tells a client to send less instead of to send something different.
+  payloadTooLarge: (detail: string) => new PayloadTooLargeError(detail),
 
   // A circle quota (groups, friends) that belongs to SOMEONE OTHER than the
   // actor. Deliberately 409, not 402: a paywall would be shown to the wrong
