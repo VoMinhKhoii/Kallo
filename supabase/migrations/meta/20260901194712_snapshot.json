@@ -1,5 +1,5 @@
 {
-  "id": "c3eac8ba-9cc2-425f-8cd5-554dc05c056a",
+  "id": "6e21ee1d-e93d-42c5-b150-86caa350ee4b",
   "prevId": "4d9077fa-c842-4882-92dc-e4c3da940c45",
   "version": "7",
   "dialect": "postgresql",
@@ -5026,6 +5026,21 @@
               "asc": true,
               "nulls": "last"
             },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rate_limit_events_created_idx": {
+          "name": "rate_limit_events_created_idx",
+          "columns": [
             {
               "expression": "created_at",
               "isExpression": false,

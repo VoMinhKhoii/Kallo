@@ -357,9 +357,11 @@ database level:
   fillfactor keeps the consume upsert's updates HOT (there is no secondary
   index, so HOT applies to essentially every update).
 - **`rate_limit_events`** — the audit trail, ordinary LOGGED storage, indexed on
-  `(route, created_at)`. Hashed keys only. Rows are **aggregates**: the writer
-  coalesces identical `(route, key_kind, key_hash, reason, source)` tuples in
-  memory and flushes batched inserts, so a row carries `hits` plus
+  `(route, created_at)` for triage reads and on `(created_at)` for the nightly
+  reaper (the composite leads with `route`, so it cannot serve a
+  `created_at`-only predicate). Hashed keys only. Rows are **aggregates**: the
+  writer coalesces identical `(route, key_kind, key_hash, reason, source)`
+  tuples in memory and flushes batched inserts, so a row carries `hits` plus
   `created_at` (first seen) and `last_seen_at`. Read volumes with `sum(hits)`,
   never `count(*)` — one write per blocked request would have turned a flood
   into database write amplification on the same 2-connection pool the limiter
@@ -380,8 +382,8 @@ session `TimeZone`, which under a transaction pooler is not a session we own.
 
 **Reapers** (`20260901194715`, all on the fail-loud pg_cron schedule):
 `reap_rate_limit_counters()` (2 days, deleted in 50k `ctid` batches),
-`reap_rate_limit_events()` (30 days), plus retention for the two *legacy*
-analysis-guard tables that shipped without any:
+`reap_rate_limit_events()` (30 days, likewise in 50k `ctid` batches), plus
+retention for the two *legacy* analysis-guard tables that shipped without any:
 `reap_analysis_rate_limit_windows()` (2 days) and
 `reap_analysis_in_flight_limits()` (1 day, **including rows with `count > 0`** —
 those are crash-abandoned concurrency leases; the live path is covered by the

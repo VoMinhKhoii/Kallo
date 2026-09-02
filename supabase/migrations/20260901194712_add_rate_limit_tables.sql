@@ -43,6 +43,7 @@ CREATE TABLE "rate_limit_events" (
 );
 --> statement-breakpoint
 CREATE INDEX "rate_limit_events_route_created_idx" ON "rate_limit_events" USING btree ("route","created_at");--> statement-breakpoint
+CREATE INDEX "rate_limit_events_created_idx" ON "rate_limit_events" USING btree ("created_at");--> statement-breakpoint
 ALTER TABLE "rate_limit_counters" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "rate_limit_events" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 REVOKE ALL ON "rate_limit_counters" FROM anon, authenticated;--> statement-breakpoint

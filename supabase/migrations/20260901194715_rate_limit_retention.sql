@@ -8,7 +8,12 @@
 --    row per /64 prefix, so a botnet can mint them faster than any human
 --    population; 2 days is well past the longest window (a day) plus slack.
 --  * rate_limit_events     — the audit trail; 30 days is long enough to
---    reconstruct an incident and short enough to stay cheap.
+--    reconstruct an incident and short enough to stay cheap. This is the
+--    larger, LOGGED table, so its reaper is batched like the counters one and
+--    Domain A carries a `created_at` index (rate_limit_events_created_idx)
+--    purely so each batch's scan is an index range, not a seq scan of the
+--    whole trail — the composite (route, created_at) leads with `route` and
+--    cannot serve a created_at-only predicate.
 --  * analysis_rate_limit_windows — the LEGACY analysis guard's per-window rows,
 --    shipped in 20260506173558 with an `updated_at` index and no retention at
 --    all. Same 2-day horizon, same reasoning.
@@ -18,15 +23,15 @@
 --    by the 90-second stale-reset in analysis-guard-counters.ts, and a day is
 --    orders of magnitude past any request's wall clock).
 --
--- BATCHING CAVEAT, stated honestly: reap_rate_limit_counters deletes in
--- 50k-row batches via a ctid subselect so no single DELETE statement has to
--- plan and lock the whole table. It is a FUNCTION, not a PROCEDURE, so it
--- cannot COMMIT between batches — the batching bounds each STATEMENT, not the
--- transaction. That is the right trade today (the table is small and the
--- statement-level bound is what keeps the nightly run off the hot path); if
--- the counter table ever grows past what one transaction should hold, the
--- follow-up is a PROCEDURE with COMMIT invoked via `CALL` from cron, not a
--- bigger batch.
+-- BATCHING CAVEAT, stated honestly: reap_rate_limit_counters and
+-- reap_rate_limit_events both delete in 50k-row batches via a ctid subselect,
+-- so no single DELETE statement has to plan and lock the whole table. They are
+-- FUNCTIONs, not PROCEDUREs, so they cannot COMMIT between batches — the
+-- batching bounds each STATEMENT, not the transaction. That is the right trade
+-- today (the tables are small and the statement-level bound is what keeps the
+-- nightly run off the hot path); if either ever grows past what one
+-- transaction should hold, the follow-up is a PROCEDURE with COMMIT invoked
+-- via `CALL` from cron, not a bigger batch.
 -- =============================================================================
 
 SET search_path TO public, extensions;
@@ -57,12 +62,26 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.reap_rate_limit_events()
 RETURNS void
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
 AS $$
-  DELETE FROM public.rate_limit_events t
-  WHERE t.created_at < (now() - interval '30 days');
+DECLARE
+  v_deleted int;
+BEGIN
+  LOOP
+    DELETE FROM public.rate_limit_events t
+    WHERE t.ctid IN (
+      SELECT c.ctid
+      FROM public.rate_limit_events c
+      WHERE c.created_at < (now() - interval '30 days')
+      LIMIT 50000
+    );
+
+    GET DIAGNOSTICS v_deleted = ROW_COUNT;
+    EXIT WHEN v_deleted = 0;
+  END LOOP;
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.reap_analysis_rate_limit_windows()

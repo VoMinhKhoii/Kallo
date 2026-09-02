@@ -288,7 +288,7 @@ Four nightly `pg_cron` jobs, all installed by
 | Job | Function | Horizon |
 |---|---|---|
 | `reap-rate-limit-counters-daily` (03:53) | `reap_rate_limit_counters()` | `updated_at` older than 2 days, deleted in 50k batches |
-| `reap-rate-limit-events-daily` (03:54) | `reap_rate_limit_events()` | `created_at` older than 30 days |
+| `reap-rate-limit-events-daily` (03:54) | `reap_rate_limit_events()` | `created_at` older than 30 days, deleted in 50k batches |
 | `reap-analysis-rate-limit-windows-daily` (03:55) | `reap_analysis_rate_limit_windows()` | `updated_at` older than 2 days |
 | `reap-analysis-in-flight-limits-daily` (03:57) | `reap_analysis_in_flight_limits()` | `updated_at` older than 1 day, **including rows with `count > 0`** (crash-abandoned leases) |
 
@@ -365,7 +365,7 @@ Two consequences:
 - **No secondary index on `rate_limit_counters`.** The only reader is the
   primary key; an `updated_at` index would be written on every consume purely
   to serve one nightly reaper, which is why the reaper batches instead.
-- **The counters reaper is a FUNCTION, so it cannot `COMMIT` between batches.**
-  The 50k batching bounds each *statement*, not the transaction. If the table
-  ever outgrows one transaction, the fix is a `PROCEDURE` invoked with `CALL`,
-  not a larger batch.
+- **The counters and events reapers are FUNCTIONs, so they cannot `COMMIT`
+  between batches.** The 50k batching bounds each *statement*, not the
+  transaction. If either table ever outgrows one transaction, the fix is a
+  `PROCEDURE` invoked with `CALL`, not a larger batch.
