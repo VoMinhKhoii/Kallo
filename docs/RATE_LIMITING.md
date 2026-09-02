@@ -295,6 +295,18 @@ Four nightly `pg_cron` jobs, all installed by
 The last two clean up the *legacy* analysis-guard tables, which shipped in
 May 2026 with no retention at all.
 
+## Testing
+
+`lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts` pins the
+SQL against a real Postgres; CI runs it in the `migrations` job through the
+local transaction pooler, which is how production connects. The two cases that
+switch role (`SET LOCAL ROLE anon`) instead run on `RATE_LIMIT_DB_DIRECT_URL`, a
+direct non-pooled connection, because Supavisor (supabase CLI >= 2.90) closes
+the client socket when the backend raises inside a transaction after a role
+switch — the assertion then sees `CONNECTION_CLOSED` instead of the SQLSTATE
+`42501` that the grant boundary, a property of Postgres and not of the pooler,
+is supposed to prove.
+
 ## Known edges
 
 - **The memory bucket is per-isolate.** A 20-instance fleet has 20 independent

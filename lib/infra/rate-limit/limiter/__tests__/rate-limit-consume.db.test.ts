@@ -20,11 +20,21 @@
  * CI runs it in the `migrations` job against local Supabase THROUGH THE
  * TRANSACTION POOLER, which is how production connects.
  *
+ * `RATE_LIMIT_DB_DIRECT_URL` is an OPTIONAL, DIRECT (non-pooled) Postgres URL
+ * used by the two role-switch cases only, falling back to `DATABASE_URL`.
+ * Supavisor (supabase CLI >= 2.90) closes the client socket when the backend
+ * raises inside a transaction after a `SET LOCAL ROLE`, so through the pooler
+ * those two cases surface a `CONNECTION_CLOSED` connection error instead of
+ * SQLSTATE 42501. The grant boundary is a property of Postgres, not of the
+ * pooler, so it must not be asserted through one. Every other case — including
+ * cancellation and the 20-way race — stays on `DATABASE_URL`.
+ *
  * Run locally (the pooler username is tenant-qualified — a plain `postgres`
  * gets "Tenant or user not found"; `pooler-dev` is the CLI's fixed local
  * tenant id, not this project's project_id):
  *   supabase start && supabase db reset
  *   DATABASE_URL=postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres \
+ *     RATE_LIMIT_DB_DIRECT_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
  *     bunx vitest run lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
  */
 
@@ -54,6 +64,9 @@ const CONSUME_SIGNATURE =
   'public.rate_limit_consume(text,text,text,int,int,int,timestamptz)';
 
 const databaseUrl = process.env.DATABASE_URL;
+// Role-switch cases only. See the docblock: on Supavisor an error raised in a
+// transaction after `SET LOCAL ROLE` kills the socket, so 42501 never arrives.
+const directDatabaseUrl = process.env.RATE_LIMIT_DB_DIRECT_URL ?? databaseUrl;
 // The cancellation case needs to saturate the pool the consumer itself uses,
 // and `lib/infra/db/client.ts` reads this once, lazily, on first access.
 process.env.DB_POOL_MAX = '2';
@@ -65,6 +78,7 @@ function redactDbUrl(url: string) {
 
 const describe = databaseUrl ? describeBase : describeBase.skip;
 let sql: postgres.Sql;
+let directSql: postgres.Sql;
 
 if (databaseUrl) {
   beforeAll(async () => {
@@ -72,6 +86,10 @@ if (databaseUrl) {
     // mode has no prepared statements, which is exactly why every parameter in
     // the call below carries an explicit ::cast.
     sql = postgres(encodeDbUrl(databaseUrl), { max: 25, prepare: false });
+    directSql = postgres(encodeDbUrl(directDatabaseUrl ?? databaseUrl), {
+      max: 2,
+      prepare: false,
+    });
 
     let present: boolean;
 
@@ -137,6 +155,7 @@ describe('public.rate_limit_consume', () => {
   afterAll(async () => {
     await clearCounters();
     await sql.end({ timeout: 5 });
+    await directSql.end({ timeout: 5 });
   });
 
   it('inserts on first use and reports remaining headroom', async () => {
@@ -331,11 +350,13 @@ describe('public.rate_limit_consume', () => {
 
   it('denies anon and authenticated, and allows service_role', async () => {
     // `SET LOCAL` inside a transaction rather than SET ROLE / RESET ROLE:
-    // under the transaction pooler consecutive statements are not guaranteed
-    // the same backend, so session-scoped role state would silently leak or
-    // vanish. A transaction pins one connection and resets on commit.
+    // consecutive statements are not guaranteed the same backend, so
+    // session-scoped role state would silently leak or vanish. A transaction
+    // pins one connection and resets on commit. On `directSql` because a
+    // role switch inside a pooled transaction is what Supavisor kills the
+    // socket over — see the docblock.
     async function privilegesAs(role: string) {
-      return sql.begin(async (tx) => {
+      return directSql.begin(async (tx) => {
         await tx.unsafe(`SET LOCAL ROLE ${role}`);
 
         const [row] = await tx<
@@ -392,7 +413,9 @@ describe('public.rate_limit_consume', () => {
 
   it('actually refuses a consume executed as anon', async () => {
     // The privilege bits above are what Postgres THINKS; this is what it does.
-    const attempt = sql.begin(async (tx) => {
+    // On `directSql`: through the pooler the backend error after the role
+    // switch reaches us as a closed socket, not as 42501 (see the docblock).
+    const attempt = directSql.begin(async (tx) => {
       await tx.unsafe('SET LOCAL ROLE anon');
       await tx.unsafe(
         `SELECT * FROM public.rate_limit_consume(
