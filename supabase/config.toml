@@ -33,8 +33,14 @@ shadow_port = 54320
 # server_version;` on the remote database to check.
 major_version = 17
 
+# Enabled so local development and CI connect the way production does:
+# through a TRANSACTION-mode pooler. It is not a performance knob here — it is
+# the only way `prepare: false`, the explicit ::casts in the rate-limiter's
+# `rate_limit_consume` call, and any future statement that depends on pooled
+# session behaviour get exercised before they reach production. CI's
+# `migrations` job runs the rate-limit DB test against port 54329.
 [db.pooler]
-enabled = false
+enabled = true
 # Port to use for the local connection pooler.
 port = 54329
 # Specifies when a server connection can be reused by other clients.

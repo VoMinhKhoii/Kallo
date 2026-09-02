@@ -88,6 +88,45 @@ jobs:
         run: supabase db reset
       - name: Lint database schema
         run: supabase db lint
+      # The rate limiter's correctness lives in plpgsql, not TypeScript: UTC
+      # window pinning, "a blocked request consumes nothing", and the
+      # ON CONFLICT ... WHERE race can only be wrong in a real database. This
+      # runs THROUGH THE TRANSACTION POOLER (port 54329, enabled in
+      # supabase/config.toml) because that is how production connects — the
+      # explicit ::casts in the consume call exist only because pooled
+      # connections run with `prepare: false`.
+      #
+      # The username is tenant-qualified (`postgres.pooler-dev`): Supavisor
+      # resolves the tenant from the user part, and a plain `postgres` is
+      # rejected with "Tenant or user not found". `pooler-dev` is the CLI's
+      # fixed local tenant id (_supavisor.tenants in the `_supabase` database),
+      # NOT this project's `project_id`.
+      - uses: ./.github/actions/setup-bun
+      # Prove the function is REACHABLE before vitest gets a chance to have an
+      # opinion. A test suite is the wrong place to discover that the gate
+      # itself is broken — this step fails the job on a wrong tenant, an
+      # unapplied migration, or a pooler that never came up, with no test
+      # framework in between.
+      - name: Assert rate_limit_consume exists (fail-loud gate)
+        env:
+          DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
+          QUERY: "select to_regprocedure('public.rate_limit_consume(text,text,text,integer,integer,integer,timestamptz)') is not null"
+        run: |
+          set -euo pipefail
+          if command -v psql >/dev/null 2>&1; then
+            present=$(psql "$DATABASE_URL" -tAc "$QUERY")
+          else
+            # supabase/setup-cli does not ship psql; fall back to the one
+            # inside the local Postgres container (project_id = nham).
+            present=$(docker exec supabase_db_nham \
+              psql -U postgres -d postgres -tAc "$QUERY")
+          fi
+          echo "rate_limit_consume present: '$present'"
+          test "$present" = "t"
+      - name: Rate limiter DB test (via transaction pooler)
+        env:
+          DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
+        run: bun vitest run lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
       - name: Stop Supabase
         if: always()
         run: supabase stop --no-backup

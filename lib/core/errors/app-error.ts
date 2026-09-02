@@ -76,6 +76,36 @@ export class RateLimitedError extends AppError {
   }
 }
 
+/**
+ * The rate limiter itself could not reach a verdict (its database round trip
+ * errored or blew its deadline) on a policy whose `failMode` is `'closed'`.
+ *
+ * 503, not 429: nothing about the caller is over quota — the guard in front of
+ * a spend route is down, and admitting the request would mean spending money
+ * with no ceiling. Retryable with a fixed `Retry-After`, because the outage is
+ * expected to be brief and the client should not treat it as a quota denial.
+ */
+export class RateLimitUnavailableError extends AppError {
+  constructor(
+    userMessage: string,
+    public readonly retryAfterSeconds: number,
+    /**
+     * WHY the limiter could not answer. `timeout` means the DB deadline fired
+     * — the pool is saturated and we are shedding load; `error` means the
+     * round trip failed outright — the database is unreachable or the function
+     * is wrong. Same 503 to the client, but the two demand opposite operator
+     * responses, so telemetry keeps them apart.
+     */
+    public readonly kind: RateLimitUnavailableKind = 'error',
+    cause?: unknown
+  ) {
+    super('RATE_LIMITER_UNAVAILABLE', 503, true, userMessage, cause);
+    this.name = 'RateLimitUnavailableError';
+  }
+}
+
+export type RateLimitUnavailableKind = 'timeout' | 'error';
+
 // Reasons a gated feature is locked, mirrored from the entitlement service.
 export type FeatureLockedReason = 'trial_expired' | 'not_entitled';
 
