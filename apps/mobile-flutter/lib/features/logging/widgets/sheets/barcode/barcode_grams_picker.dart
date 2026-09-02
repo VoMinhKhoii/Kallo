@@ -10,9 +10,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../shared/widgets/form/decimal_input.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import '../../../../../theme/kallo_typography.dart';
 import '../../../logic/barcode_amount.dart';
 import 'barcode_amount_controls.dart';
+import '../../../../../theme/calm_tokens.dart';
 
 class BarcodeGramsPicker extends StatelessWidget {
   const BarcodeGramsPicker({
@@ -120,10 +120,11 @@ class _QuickChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: KalloTextStyles.sansMedium(
-              fontSize: KalloFontSize.xs,
-            ).copyWith(
-              color: selected ? KalloColors.text : KalloColors.textMuted,
+            // Caption: a fixed-width preset chip, component-internal.
+            style: dashCaption(
+              color: selected ? kInk : kInkMuted,
+              weight: FontWeight.w500,
+              tabular: true,
             ),
           ),
         ),

@@ -27,7 +27,7 @@ class MicronutrientsLockedCard extends StatelessWidget {
         duration: const Duration(milliseconds: 550),
         delay: const Duration(milliseconds: 100),
         child: KalloEmptyState(
-          mark: const Icon(LucideIcons.lock300, size: 28, color: kInkMuted),
+          mark: const Icon(LucideIcons.lock300, size: KalloIcons.primary, color: kInkMuted),
           title: tr('nutrition.locked.title'),
           description: tr('nutrition.locked.description'),
           action: KalloEmptyStateAction(

@@ -51,8 +51,8 @@ class NutrientRow extends StatelessWidget {
       label: '$label, $value',
       excludeSemantics: true,
       child: ConstrainedBox(
-        // 56 single-line, the app-wide grouped-row minimum.
-        constraints: const BoxConstraints(minHeight: 56),
+        // 52 single-line, the app-wide grouped-row minimum (ListRow).
+        constraints: const BoxConstraints(minHeight: 52),
         child: Row(
           children: [
             if (icon != null) ...[

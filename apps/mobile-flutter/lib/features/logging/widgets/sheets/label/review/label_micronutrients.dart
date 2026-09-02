@@ -71,7 +71,7 @@ class _LabelMicronutrientsState extends State<LabelMicronutrients> {
                     duration: const Duration(milliseconds: 160),
                     child: const Icon(
                       LucideIcons.chevronDown300,
-                      size: 18,
+                      size: KalloIcons.tertiary,
                       color: KalloColors.textMuted,
                     ),
                   ),

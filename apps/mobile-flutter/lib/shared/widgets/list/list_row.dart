@@ -6,10 +6,11 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
 /// One row inside a [GroupedListCard] — the Settings anchor anatomy
-/// generalized (native pass, 2026-08-31): optional leading 24pt glyph, 14pt
-/// title (12pt subline below), a quiet 12pt value on the right, optional
-/// 16pt chevron. 56pt minimum single-line, 64pt with a subline; the whole
-/// row is the tap target.
+/// generalized (native pass, 2026-08-31): optional leading 24pt glyph, Body
+/// title in REGULAR weight (Threads and the Claude app set theirs regular —
+/// medium made every row shout), Meta subline below, a quiet Meta value on
+/// the right, optional 18pt chevron. 52pt minimum single-line, 60pt with a
+/// subline; the whole row is the tap target.
 ///
 /// On the white card the press affordance is the warm wash (the canvas-side
 /// rows use the neutral ink wash instead — see the original SettingsRow
@@ -80,7 +81,7 @@ class _ListRowState extends State<ListRow> {
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeInOut,
       constraints:
-          BoxConstraints(minHeight: widget.subline != null ? 64 : 56),
+          BoxConstraints(minHeight: widget.subline != null ? 60 : 52),
       color: _pressed ? fill : Colors.transparent,
       child: Row(
         children: [
@@ -101,7 +102,7 @@ class _ListRowState extends State<ListRow> {
               children: [
                 Text(
                   widget.label,
-                  style: dashBody(color: inkColor, weight: FontWeight.w500),
+                  style: dashBody(color: inkColor),
                 ),
                 if (widget.subline != null) ...[
                   const SizedBox(height: 2),
@@ -169,7 +170,7 @@ class _ListRowState extends State<ListRow> {
       if (widget.trailing != null) widget.trailing!,
       if (widget.showChevron)
         // Disclosure chevrons join the tertiary tier (18) rather than keeping
-        // a private 16 (Threads icon tiers, 2026-09-01): beside a 17pt row
+        // a private 16 (Threads icon tiers, 2026-09-01): beside a 16pt row
         // label a 16pt chevron read as a speck.
         const Icon(
           LucideIcons.chevronRight300,

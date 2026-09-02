@@ -67,7 +67,7 @@ class BarcodeManualInput extends StatelessWidget {
               padding: EdgeInsets.only(left: 18, right: 10),
               child: Icon(
                 LucideIcons.scanBarcode300,
-                size: 20,
+                size: KalloIcons.tertiary,
                 color: kInkMuted,
               ),
             ),

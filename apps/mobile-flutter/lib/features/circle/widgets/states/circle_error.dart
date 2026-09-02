@@ -43,7 +43,7 @@ class CircleErrorCard extends StatelessWidget {
                 padding: EdgeInsets.only(top: KalloSpacing.sp0_5),
                 child: Icon(
                   LucideIcons.circleAlert300,
-                  size: 20,
+                  size: KalloIcons.action,
                   color: KalloColors.danger,
                 ),
               ),

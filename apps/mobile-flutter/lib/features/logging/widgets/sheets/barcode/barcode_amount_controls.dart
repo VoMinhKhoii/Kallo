@@ -5,11 +5,10 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import '../../../../../theme/kallo_typography.dart';
 import '../../../logic/barcode_amount.dart';
+import '../../../../../theme/calm_tokens.dart';
 
 /// Serving / whole package / grams, under its own label — rendered only when
 /// the product has sizing for more than one of them.
@@ -36,13 +35,7 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        KalloText(
-          'logging.barcode.amountModeLabel'.tr(),
-          variant: KalloTextVariant.small,
-          style: KalloTextStyles.sansSemiBold(
-            fontSize: KalloFontSize.xs,
-          ).copyWith(color: KalloColors.text),
-        ),
+        Text('logging.barcode.amountModeLabel'.tr(), style: kGroupLabel()),
         const SizedBox(height: KalloSpacing.sp2),
         Container(
           padding: const EdgeInsets.all(3),
@@ -90,10 +83,9 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: KalloTextStyles.sansSemiBold(
-                fontSize: KalloFontSize.xs,
-              ).copyWith(
-                color: isSelected ? KalloColors.text : KalloColors.textMuted,
+              style: dashMeta(
+                color: isSelected ? kInk : kInkMuted,
+                weight: FontWeight.w600,
               ),
             ),
           ),

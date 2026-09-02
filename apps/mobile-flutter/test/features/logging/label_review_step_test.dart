@@ -6,6 +6,7 @@ import 'package:kallo_mobile/features/logging/logic/label/review.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/label/review/label_review_step.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -103,7 +104,7 @@ void main() {
       final field = tester.widget<TextField>(
         find.widgetWithText(TextField, macro),
       );
-      expect(field.style?.fontSize, 17);
+      expect(field.style?.fontSize, dashValue().fontSize);
     }
   });
 

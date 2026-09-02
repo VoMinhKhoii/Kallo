@@ -5,12 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../states/circle_error.dart';
+import '../../../../theme/calm_tokens.dart';
 
 /// Who is already in your circle, with a Remove beside each. Mirrors
 /// `components/groups/invite/circle-list.tsx`.
@@ -31,20 +30,20 @@ class CircleListSection extends ConsumerWidget {
         if (circle.isEmpty) {
           return Text(
             tr('groups.circle.empty'),
-            style: KalloTextStyles.sansRegular(
-              fontSize: KalloFontSize.xs,
-            ).copyWith(color: KalloColors.textMuted),
+            style: dashMeta(),
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            KalloText(
+            // Group label, mixed case: the uppercase eyebrow is retired as a
+            // section header (calm_tokens.dart, dashEyebrow).
+            Text(
               tr(
                 'groups.circle.title',
                 namedArgs: {'count': '${circle.length}'},
               ),
-              variant: KalloTextVariant.eyebrow,
+              style: kGroupLabel(),
             ),
             const SizedBox(height: KalloSpacing.sp2),
             for (final member in circle) ...[
@@ -106,9 +105,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
               profile.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: KalloTextStyles.sansRegular(
-                fontSize: KalloFontSize.sm,
-              ).copyWith(color: KalloColors.text),
+              style: dashBody(),
             ),
           ),
           Opacity(
@@ -126,9 +123,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
                 ),
                 child: Text(
                   tr('groups.circle.remove'),
-                  style: KalloTextStyles.sansMedium(
-                    fontSize: KalloFontSize.xs,
-                  ).copyWith(color: KalloColors.textMuted),
+                  style: dashMeta(weight: FontWeight.w500),
                 ),
               ),
             ),

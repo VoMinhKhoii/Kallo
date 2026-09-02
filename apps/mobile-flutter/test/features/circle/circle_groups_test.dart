@@ -159,8 +159,8 @@ void main() {
     expect(row.top, greaterThan(button.bottom));
     expect(row.right, lessThanOrEqualTo(button.right));
 
-    // Grouped-card metrics: 56pt rows, the whole row tappable.
-    expect(row.height, greaterThanOrEqualTo(56));
+    // Grouped-card metrics: 52pt rows, the whole row tappable.
+    expect(row.height, greaterThanOrEqualTo(52));
     for (final widget in tester.widgetList<ListRow>(find.byType(ListRow))) {
       expect(widget.onTap, isNotNull);
     }

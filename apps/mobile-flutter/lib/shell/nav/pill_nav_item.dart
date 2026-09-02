@@ -8,9 +8,10 @@ import '../../theme/kallo_theme.dart';
 import '../../theme/kallo_typography.dart';
 import '../header/app_header_status_dots.dart';
 
-/// One pill-nav tab: a 24pt stroke glyph over a 10pt label, ink when active
-/// and muted otherwise, filling its flex slot so the whole column is the
-/// target (well past 44pt).
+/// One pill-nav tab: a 24pt stroke glyph, ink when active and muted
+/// otherwise, filling its flex slot so the whole column is the target (well
+/// past 44pt). Icon-only since 2026-09-02 ([kNavShowsLabels]); the tab name
+/// still reaches assistive tech through [Semantics].
 class PillNavItem extends ConsumerWidget {
   const PillNavItem({
     super.key,
@@ -60,16 +61,18 @@ class PillNavItem extends ConsumerWidget {
                     const Positioned(top: -2, right: -2, child: InviteBadge()),
                 ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: KalloTextStyles.sansFamily,
-                  fontSize: 10,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                  color: color,
+              if (kNavShowsLabels) ...[
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: KalloTextStyles.sansFamily,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

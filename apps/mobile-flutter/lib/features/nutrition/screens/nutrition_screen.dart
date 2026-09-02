@@ -8,7 +8,6 @@ import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition/nutrition.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/feedback/kallo_refresh.dart';
-import '../../../shared/widgets/typography/kallo_text.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_theme.dart';
@@ -80,9 +79,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: KalloText(
+            child: Text(
               tr('common.notSignedIn'),
-              variant: KalloTextVariant.small,
+              style: dashBody(color: kInkMuted),
             ),
           ),
         ),

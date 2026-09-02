@@ -53,14 +53,15 @@ class _Cell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Caption 13, not Meta 15 (Threads scale, 2026-09-01). This is the card's
-    // densest component: three label+figure cells sharing one row with a 17pt
-    // dish name and a 74pt kcal column, inside the 334pt a row really gets on
-    // a 390pt phone. At Meta 15 the cells grew to 54 each and squeezed the
-    // name column to 78 — under the 84 a real dish name needs for its longest
-    // word ("Top blade", 83.0), so "Top blade áp chảo" no longer fit the two
-    // lines it is allowed. The figures are a dense numeric cluster, the name
-    // is reading text: the cluster gives way.
+    // Caption, not Meta. This is the card's densest component: three
+    // label+figure cells sharing one row with a 16pt dish name and a 74pt
+    // kcal column, inside the 334pt a row really gets on a 390pt phone. At
+    // Meta the cells grew to ~54 each and squeezed the name column under what
+    // a real dish name needs for its longest word ("Top blade"), so "Top
+    // blade áp chảo" no longer fit the two lines it is allowed. At Meta 14 it
+    // would now fit by ~3pt on a 390 phone, but not at 1.3x Dynamic Type and
+    // not on the totals row. The figures are a dense numeric cluster, the
+    // name is reading text: the cluster gives way.
     final style = dashCaption(tabular: true);
     final value = grams == null ? 'N/A' : '${grams!.round()}g';
 

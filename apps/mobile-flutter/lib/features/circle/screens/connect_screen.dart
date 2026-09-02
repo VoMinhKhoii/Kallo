@@ -12,7 +12,6 @@ import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import '../widgets/states/connect_skeleton.dart';
 
@@ -240,11 +239,7 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
                       namedArgs: {'name': widget.inviter.label}),
               key: ValueKey(_connected),
               textAlign: TextAlign.center,
-              style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
-                  .copyWith(
-                color: KalloColors.text,
-                letterSpacing: KalloTracking.tight,
-              ),
+              style: dashHeadline(),
             ),
           ),
           const SizedBox(height: KalloSpacing.sp2),
@@ -340,11 +335,7 @@ class _Shell extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
-                .copyWith(
-              color: KalloColors.text,
-              letterSpacing: KalloTracking.tight,
-            ),
+            style: dashHeadline(),
           ),
           const SizedBox(height: KalloSpacing.sp2),
           Text(

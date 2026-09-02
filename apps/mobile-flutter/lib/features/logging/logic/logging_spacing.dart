@@ -44,12 +44,23 @@ abstract final class LoggingSpacing {
   /// layer and its expanded day row share this height, or the morph pushes the
   /// feed as it runs. ONE number, because the two layers must agree exactly.
   ///
-  /// 56 → 60 with the Threads scale (2026-09-01): a day cell stacks weekday
-  /// (Meta 15 → 18.75), day number (Body 17 → 22.95), the meal dot (6) and two
-  /// 2pt gaps inside 4pt of vertical padding — 59.7 in total, which overflowed
-  /// the old 56 by 4. Grown to the content rather than shrinking the type: the
-  /// day number is the thing being read here.
-  static const double strip = 60;
+  /// Sized to the content at 1.0x: a day cell stacks weekday (Meta 14 →
+  /// 17.5), day number (Body 16 → 20.8), the meal dot (6) and two 2pt gaps
+  /// inside 4pt of vertical padding — 56.3 in total. 58 leaves 1.7 of slack on
+  /// the 2px grid (60 → 58 with the metric-compensated ramp, 2026-09-02; 56
+  /// would overflow by 0.3 and throw). Re-derive this sum whenever Body or
+  /// Meta moves, and prefer [stripFor] in layout: only the two text lines
+  /// grow with Dynamic Type, and at the 1.3x cap they overflowed this constant
+  /// by 10pt.
+  static const double strip = 58;
+
+  /// The text lines inside [strip] — the only part Dynamic Type scales.
+  static const double _stripText = 17.5 + 20.8;
+
+  /// [strip] at the ambient text scale: the fixed chrome (padding, gaps, dot,
+  /// slack) plus the two text lines scaled. Equals [strip] at 1.0x.
+  static double stripFor(BuildContext context) =>
+      (strip - _stripText) + MediaQuery.textScalerOf(context).scale(_stripText);
 
   /// A card's own inset. Vertical is 12, not the horizontal 16, so the padding
   /// reads EQUAL on all four sides: the first and last lines each carry ~4px of
@@ -99,7 +110,7 @@ abstract final class LoggingIcons {
   ///
   /// 16 → [KalloIcons.tertiary] (18) with the Threads scale (2026-09-01): the
   /// divergence stands, but it now names the app's tertiary tier instead of a
-  /// private number, and 16 read as a speck beside a 17pt row label.
+  /// private number, and 16 read as a speck beside a 16pt row label.
   static const double size = KalloIcons.tertiary; // 18
 
   /// The action row under a card is the ONE cluster that leaves [size] for the

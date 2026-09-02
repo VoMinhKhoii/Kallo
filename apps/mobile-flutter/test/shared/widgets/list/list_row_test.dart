@@ -11,7 +11,7 @@ Widget _wrap(Widget child) =>
 /// The Settings anchor anatomy, generalized app-wide by the native pass —
 /// every grouped card rides on this row, so its behavior is load-bearing.
 void main() {
-  testWidgets('the whole row is the tap target and meets the 56pt floor', (
+  testWidgets('the whole row is the tap target and meets the 52pt floor', (
     tester,
   ) async {
     var taps = 0;
@@ -31,14 +31,14 @@ void main() {
     );
 
     expect(tester.getSize(find.byType(ListRow)).height,
-        greaterThanOrEqualTo(56));
+        greaterThanOrEqualTo(52));
 
     // Tap the quiet value text, far from the label — still the row's tap.
     await tester.tap(find.text('On'));
     expect(taps, 1);
   });
 
-  testWidgets('a subline grows the row to 64pt and joins the semantics', (
+  testWidgets('a subline grows the row to 60pt and joins the semantics', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -54,7 +54,7 @@ void main() {
       ),
     );
     expect(tester.getSize(find.byType(ListRow)).height,
-        greaterThanOrEqualTo(64));
+        greaterThanOrEqualTo(60));
     expect(
       find.bySemanticsLabel('Account, khoi@example.com'),
       findsOneWidget,

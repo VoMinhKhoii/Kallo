@@ -16,7 +16,7 @@ uniform vertical rhythm; exactly one editorial serif moment per viewport.
 > `kallo_colors.dart`), icon hit target 44, the drawer/hamburger replaced by a
 > floating pill tab bar (`lib/shell/nav/`), Log pushed full-screen, a two-tier
 > button system (black auth CTA / beige in-app primary, fully rounded),
-> full-round 52pt input pills, header ramp 28/700 → 17/600 → 15/500-muted with
+> full-round 52pt input pills, header ramp 28/600 → 16/600 → 14/500-muted with
 > uppercase eyebrows confined to dial labels, and shared
 > `GroupedListCard`/`ListRow`/`SectionHeaderRow`/`MealBlock`/`KalloTextField`
 > primitives. The approved reference canvas:
@@ -38,6 +38,22 @@ shipped a visible bug first.
 
 ## Type scale
 
+> **Metric-compensated ramp (2026-09-02).** Supersedes the sizes in the
+> Threads-scale callout below; keeps its relationships. The 2026-09-01 ramp
+> copied Threads' numbers — body 17, meta 15 — but those are **SF Pro** sizes,
+> and the app renders **Be Vietnam Pro**. Measured from the bundled TTFs, BVP's
+> cap height is 0.74em against SF Pro's 0.705, its average advance is ~10%
+> wider, and it reads one weight step heavier; a nominal 17 therefore rendered
+> like an SF 18–19, and the app kept "feeling big" at the reference numbers.
+> The ramp is now the SF relationships translated into this face: Body 17 →
+> **16** (leading 1.3, tracking −0.2), Meta 15 → **14** (tracking −0.1), Name
+> 16 → **15**, Section header 17 → **16**, Group label 15 → **14**, Caption 13 →
+> **12**, Page title stays 28 but drops 700 → **600**. Alongside the sizes:
+> `ListRow` labels go **regular** (Threads and the Claude app set theirs
+> regular — medium made every settings row shout), `kInkMuted` lightens one
+> step (`#6E6D66` → `#7A7870`), and the pill nav is **icon-only**. Hero 40 and
+> the gauge dials are untouched.
+
 > **Threads-scale ramp (2026-09-01).** Supersedes the calm 14/12 ramp below its
 > own row. Threads on iOS was measured directly: its feed body is **not** small.
 > The density that made it the reference all along comes from a **narrow measure
@@ -50,15 +66,15 @@ shipped a visible bug first.
 
 | Role | Size | Weight | Leading | Tracking | Used for |
 |------|------|--------|---------|----------|----------|
-| Hero | 40 | 500 (medium) | 1.05 | −1.0 | the ONE big number per card (calories remaining, weight) |
-| Page title | 28 | 700 | 1.15 | −0.5 | the screen's name (Nutrition, Circle, Settings) |
-| Section header | 17 | 600 | 1.2 | −0.2 | section headers, centred sheet titles |
-| Value | 17 | 500 | 1.1 | — | ring-centre number, metric values |
-| **Body** | **17** | 400·500 | **1.35** | — | meal names, post bodies, list-row labels, composer input, button labels |
-| **Name** | **16** | **600** | 1.3 | — | an emphasised NAME against 17 body — Circle post/reply authors. Identity only |
-| **Meta** | **15** | 400 | 1.25 | — | captions, units, stat values, dates, quiet values |
-| Group label | **15** | 500 | 1.3 | — | muted qualifier above a grouped card ("Targets", "Preferences") |
-| **Caption** | **13** | 400·500 | 1.25 | — | **by exception only** — a compact component 15 measurably breaks |
+| Hero | 40 | 500 (medium) | 1.0 | −1.0 | the ONE big number per card (calories remaining, weight) |
+| Page title | 28 | 600 | 1.15 | −0.6 | the screen's name (Nutrition, Circle, Settings) |
+| Section header | 16 | 600 | 1.2 | −0.3 | section headers, centred sheet titles, the title on a header line |
+| Value | 16 | 500 | 1.1 | — | macro gram values, metric values (dial figures are pinned separately — see _Gauge readouts_) |
+| **Body** | **16** | 400·500 | **1.3** | −0.2 | meal names, post bodies, list-row labels (regular), composer input, button labels |
+| **Name** | **15** | **600** | 1.3 | — | an emphasised NAME against 16 body — Circle post/reply authors. Identity only |
+| **Meta** | **14** | 400 | 1.25 | −0.1 | captions, units, stat values, dates, quiet values |
+| Group label | **14** | 500 | 1.3 | — | muted qualifier above a grouped card ("Targets", "Preferences") |
+| **Caption** | **12** | 400·500 | 1.25 | — | **by exception only** — a compact component 14 measurably breaks |
 | Eyebrow | 11 | 500 | 1.3 | +0.3, UPPERCASE | macro-dial labels ONLY (muted) |
 | Greeting | 22 | 400 | — | −0.3 | Lora serif — the single editorial moment per viewport |
 
@@ -67,40 +83,43 @@ semibold felt thick; body/meta stay regular (400). Serif is never bold. Names
 are the one exception (600): a name is identity, not a figure, and the cap
 exists to stop numbers shouting at each other.
 
-**Body 17 vs Name 16.** Two 17s stacked — a w600 name over a w400 body — read as
+**Body 16 vs Name 15.** Two 16s stacked — a w600 name over a w400 body — read as
 a wall. Stepping the name down one notch while taking it to semibold keeps the
 identity/content relationship. The tier is for identity ONLY: a label that IS
-the row's body (a Settings row label, a button, a sheet title) stays at 17.
+the row's body (a Settings row label, a button, a sheet title) stays at 16.
 
-**Caption 13 is an escape hatch, not a tier.** Reach for Meta 15 first; drop to
-13 only when the component measurably overflows, and say why at the call site.
-It is used in exactly three places, all the same shape — a dense numeric
-cluster sharing one line with 17pt text:
+**Caption 12 is an escape hatch, not a tier.** Reach for Meta 14 first; drop to
+12 only when the component measurably overflows, and say why at the call site.
+Its uses are all the same shape — a dense numeric cluster sharing one line with
+16pt text (the three below, plus the Circle invite card's macro line and
+portion pill and the barcode gram-preset chips):
 
 | Where | Why 15 broke |
 |-------|--------------|
-| `MacroSplit` — the Log card's `P:/C:/F:` cells | cells grew to 54 each and squeezed the dish-name column from 96pt to 78, where "Top blade áp chảo" (155.4pt) no longer fit its two allowed lines |
-| `MealBlock` macro legend | three icon+figure pairs plus a 73.9pt kcal need 253.4pt of legend at Meta 15 — past a 320pt phone's card |
-| `ManualAddedSummary` macro legend | same anatomy: 288.2pt needed of a 288pt row on a 320pt phone |
+| `MacroSplit` — the Log card's `P:/C:/F:` cells | at Meta the cells grew to ~54 each and squeezed the dish-name column under what "Top blade áp chảo" needs for its two allowed lines (measured at the old 17/15; at 16/14 it fits by ~3pt on a 390 phone but not at 1.3x, and not on the totals row) |
+| `MealBlock` macro legend | three icon+figure pairs plus a ~70pt kcal need ~253pt of legend at Meta — past a 320pt phone's card |
+| `ManualAddedSummary` macro legend | same anatomy: ~288pt needed of a 288pt row on a 320pt phone |
 
 The 14pt macro food icons beside them stay 14 — see _Icons_.
 
-**Leading is still the first lever.** Body sits at 1.35 (~23pt) and meta at
+**Leading is still the first lever.** Body sits at 1.3 (~21pt) and meta at
 1.25 — Threads' relationship, enough air for a two-line wrap without the
 paragraph feel 1.5 brings. When a screen "feels big", move the leading before
-the sizes: the sizes are now AT the iOS native ramp and should stay there.
+the sizes: the sizes are now the iOS ramp *after* metric compensation for Be
+Vietnam Pro and should stay there. If the typeface ever changes, re-measure
+cap height and advance width before touching a single number.
 
 ### One scale per surface
 
 A screen picks **at most three sizes**. The logging feed is the reference
-implementation: Value 17 for the one figure per card, Body 17 for content, Meta
-15 for everything quiet — with the serif quote as the single editorial moment.
+implementation: Value 16 for the one figure per card, Body 16 for content, Meta
+14 for everything quiet — with the serif quote as the single editorial moment.
 Anything outside those three needs a comment saying why.
 
 Do NOT mix `KalloTextVariant` with `dash*` on the same screen. `KalloText` does
 `base.merge(style)`, so a `dash*` override silently beats the variant's size and
-weight — which is how one card ended up rendering collapsed kcal at 17/500 and
-its total kcal three lines below at 16/700. On calm surfaces, use plain `Text`
+weight — which is how one card ended up rendering collapsed kcal at Value and
+its total kcal three lines below at 16/700 from the legacy scale. On calm surfaces, use plain `Text`
 with a `dash*` token.
 
 ### Text scaling
@@ -131,7 +150,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 | `kTrack` | `#EDECE7` | ring/bar tracks (warm), the only low-contrast surface |
 | `kHairline` | `#E2DFD4` | the one border — neutral hairline |
 | `kInk` | `#141413` | primary data — numbers, meal names, macro labels |
-| `kInkMuted` | `#6E6D66` | everything secondary — labels, units, captions, dates |
+| `kInkMuted` | `#7A7870` | everything secondary — labels, units, captions, dates (lightened from `#6E6D66`, 2026-09-02) |
 
 `KalloColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
 (warm select wash — also the in-app primary button fill `btnPrimarySoft`), the accent `#C9A87C`, umber `#695E4E` (toggles/progress only — no longer a button fill),
@@ -150,6 +169,16 @@ rather than destructive, and at 2.7:1 on the canvas it was the weakest text
 colour in the app. Splitting the token is what lets destructive UI go properly
 red without the dashboard turning alarming the moment you go 10 kcal over — the
 ring's own rule is still "never red, never a pill".
+
+**Secondary text is deliberately under AA.** `kInkMuted #7A7870` measures
+4.1:1 on the canvas and 4.4:1 on white — under the 4.5:1 that `kInk`, `danger`
+and `mention` are held to. The references it is tuned against sit far lower
+(iOS `secondaryLabel` ≈ 3.4:1, Threads' meta grey ≈ 2.9:1), and at the old
+`#6E6D66` (4.85:1) the "quiet" tier was barely quieter than the ink beside
+it. The rule that follows: muted is for text that *labels* — units, dates,
+captions, group labels — never for text a user must read to act (errors,
+row labels, values they are editing). White copy on the muted band keeps the
+old value (`bandSurface` is pinned to `#6E6D66`, 5.2:1) rather than following.
 
 `danger` is a **text** colour (row labels, error copy, the danger button), so it
 clears WCAG AA for normal text at **4.8:1** on the canvas. The obvious reds do
@@ -203,17 +232,13 @@ gap — and today no surface does.
 ## Spacing — one rhythm per surface
 
 Gaps resolve to a small named set, not per-widget guesses. The logging feed's
-`LoggingSpacing` is the pattern to copy.
-
-**It deliberately overrides the 12px default above**: `block` is 8, not 12,
-including for card ↔ card. The logging feed is a dense scrolling list where the
-default rhythm left the day feeling padded — and every card there also carries a
-time divider and an action row, which already separate them. Presentational
-surfaces stay at 12; this is the documented exception, not a new default.
+`LoggingSpacing` is the pattern to copy. It runs the same 12px `block` as every
+other surface (the dense-8 exemption was retired 2026-08-31, above); what it
+adds is the smaller named steps inside a card.
 
 | Token | Value | Used for |
 |-------|-------|----------|
-| `block` | 8 | between the big blocks — header ↔ list ↔ composer, and card ↔ card |
+| `block` | 12 | between the big blocks — header ↔ list ↔ composer, and card ↔ card |
 | `section` | 12 | inside a card: above/below every hairline, between sections |
 | `row` | 4 | vertical padding on one item row (so neighbours sit `block` apart) |
 | `actions` | 2 | a card ↔ the action icons under it (they carry their own inset) |
@@ -242,7 +267,7 @@ app's tiers instead of private numbers.
 
 **Non-action DATA glyphs are outside the tiers.** The 14pt macro-legend food
 icons are content, not controls; they stay 14 (the legend text beside them sits
-on Caption 13, so 14 still reads as the larger of the pair).
+on Caption 12, so 14 still reads as the larger of the pair).
 
 **Stroke weight is 1.5, not Lucide's default 2.0.** Every glyph comes from the
 `300` constants (`LucideIcons.user300`, not `LucideIcons.user`) — the package
@@ -264,9 +289,8 @@ content.
 
 A row-leading glyph is centred on the **title's first line**, not on the row.
 Rows with a subline are two lines tall, and centring across both leaves the icon
-floating in the gap. See `settings_row_leading.dart` — the `OverflowBox` there is
-load-bearing, not incidental: a 24 glyph is close to the 23pt title line, and a
-plain `Center` in a tight `SizedBox` would hand the icon a squashed box.
+floating in the gap. `ListRow` (`shared/widgets/list/list_row.dart`) owns this
+anatomy: a 24 glyph in a 24-wide slot beside a 21pt title line.
 
 The logging page now holds the three sizes with **no exceptions** — the calorie
 ring's label was the last holdout at 8px and is on Meta like every other
@@ -356,18 +380,19 @@ mobile UI — no longer provisional.
 
 | Surface | Type + colour | Named spacing | Notes |
 |---------|---------------|---------------|-------|
-| **Logging** | ✅ 17/17/15 | `logging/logic/logging_spacing.dart` (12px block) | the reference implementation |
-| **Dashboard** | ✅ 40/17/15 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
-| **Settings** | ✅ 22/17/15 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
+| **Logging** | ✅ 16/16/14 | `logging/logic/logging_spacing.dart` (12px block) | the reference implementation |
+| **Dashboard** | ✅ 40/16/14 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
+| **Settings** | ✅ 28/16/14 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
 | **Feedback** | ✅ | uses the 12px default | |
 | **Shell / pill nav** | ✅ | `KalloSpacing` + `kNav*` tokens | drawer/hamburger retired 2026-08-31; Log pushes full-screen |
-| **Circle** | 🔸 header + add-menu + padding only | 12px root inset | the feed's 35 files are unported |
-| **Nutrition** | 🔸 range selector + padding | 12px root inset | `dashEyebrow` + raw sizes remain |
-| **Logging `sheets/`** | ❌ | — | 4 files, 35 `KalloText` calls, still the old scale |
+| **Circle** | ✅ (2026-09-02) | 12px root inset | feed, invite, share and group widgets all on `dash*` |
+| **Nutrition** | ✅ (2026-09-02) | 12px root inset | |
+| **Logging `sheets/`** | ✅ (2026-09-02) | — | barcode + manual sheets ported; no `KalloText` left |
 | **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
 
-The `kallo_text.dart` `KalloTextVariant` defaults and the logging `mealQuote`
-serif remain outside the calm set on purpose.
+`kallo_text.dart` / `KalloTextVariant` and `KalloTextStyles` sizes now survive
+only on the light-touch narrative surfaces (auth, onboarding, paywall) and in
+a few shared form internals; do not add new call sites.
 
 ### Two app-wide changes worth remembering
 
@@ -376,6 +401,7 @@ serif remain outside the calm set on purpose.
 | `dashBody` leading 1.45 → 1.3, `dashMeta` 1.35 → 1.25 | every surface |
 | Text scaling capped at 1.3x (`app.dart`) | every surface |
 | **Threads scale (2026-09-01): `dashBody` 14 → 17 (leading 1.35), `dashMeta` 12 → 15, `kGroupLabel` 14 → 15** | every surface |
+| **Metric compensation (2026-09-02): `dashBody` 17 → 16 (leading 1.3, −0.2), `dashMeta` 15 → 14 (−0.1), `dashName` 16 → 15, `kSectionHeader` 17 → 16, `kGroupLabel` 15 → 14, `dashCaption` 13 → 12, `kPageTitle` 700 → 600; `kInkMuted` lightened; `ListRow` regular; nav icon-only** | every surface |
 
 If a screen ever "feels big" again, the leading is still the first lever — two
 numbers in `calm_tokens.dart` that move every screen at once.
@@ -404,8 +430,10 @@ Reach for these before writing a local variant:
 ### The pill nav (replaces the drawer, 2026-08-31)
 
 `lib/shell/nav/pill_nav_bar.dart`: a floating 358×72 white capsule (radius 36,
-`kNavShadows` — the nav is TRUE elevation), four tabs at 24pt stroke glyphs +
-10pt labels (ink when active, muted idle), and a 52pt beige `+` circle opening
+`kNavShadows` — the nav is TRUE elevation), four tabs as 24pt stroke glyphs
+alone (ink when active, muted idle — icon-only since 2026-09-02, the tab name
+lives in `Semantics`; `kNavShowsLabels` restores 10pt labels), Nutrition's
+glyph is the apple, and a 52pt beige `+` circle opening
 the Add sheet (Log a meal / Log weight). Today/Nutrition/Circle switch shell
 branches; **Log pushes the feed full-screen** (root CupertinoPage — the
 composer owns that screen's bottom edge; a back chevron in the timeline picker

@@ -4,14 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import 'invite_action.dart';
+import '../../../../theme/calm_tokens.dart';
 
 String _fmtKcal(double? value) =>
     value == null ? tr('groups.invites.na') : '${value.round()} kcal';
@@ -98,9 +97,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                         : 'groups.invites.sharedCopy',
                     namedArgs: {'name': invite.from.label},
                   ),
-                  style: KalloTextStyles.sansRegular(
-                    fontSize: KalloFontSize.xs,
-                  ).copyWith(color: KalloColors.text),
+                  style: dashMeta(color: kInk),
                 ),
               ),
             ],
@@ -110,11 +107,9 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: KalloText(
-                  invite.rawInput,
-                  variant: KalloTextVariant.mealQuote,
-                  style: const TextStyle(fontSize: 17, height: 28 / 17),
-                ),
+                // Body, not serif: the meal text is content, and the serif slot
+                // is spent once per viewport (mobile.md).
+                child: Text(invite.rawInput, style: dashBody()),
               ),
               if (invite.isSplit && portion.isNotEmpty)
                 Container(
@@ -132,9 +127,8 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                       'groups.invites.portion',
                       namedArgs: {'portion': portion},
                     ),
-                    style: KalloTextStyles.sansMedium(
-                      fontSize: KalloFontSize.xxs,
-                    ).copyWith(color: KalloColors.text),
+                    // Caption: a fixed pill on the title line, component-internal.
+                    style: dashCaption(color: kInk, weight: FontWeight.w500),
                   ),
                 ),
             ],
@@ -143,14 +137,13 @@ class _InviteCardState extends ConsumerState<InviteCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              KalloText(
+              // Caption: three tabular pairs sharing the line with the kcal
+              // figure — the same dense-legend shape MealBlock justifies.
+              Text(
                 'P: ${_fmtG(invite.proteinG)}  C: ${_fmtG(invite.carbohydrateG)}  F: ${_fmtG(invite.fatG)}',
-                variant: KalloTextVariant.captionTabular,
+                style: dashCaption(tabular: true),
               ),
-              KalloText(
-                _fmtKcal(invite.caloriesKcal),
-                variant: KalloTextVariant.numStrong,
-              ),
+              Text(_fmtKcal(invite.caloriesKcal), style: dashValue()),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp3),

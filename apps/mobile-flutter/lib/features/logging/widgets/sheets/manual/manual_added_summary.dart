@@ -60,9 +60,9 @@ for (final key in kCompositionKeys)
                     color: kCompositionColors[key],
                   ),
                   const SizedBox(width: 4),
-                  // Caption 13, not Meta 15 — same one-line macro legend as
-                  // [MealBlock]; on a 320pt phone Meta 15 needed 288.2pt of a
-                  // 288pt row (Threads scale, 2026-09-01).
+                  // Caption, not Meta — same one-line macro legend as
+                  // [MealBlock]; on a 320pt phone Meta needed ~288pt of a
+                  // 288pt row, and the totals row has no slack at 1.3x.
                   Text(labels[key]!, style: dashCaption()),
                 ],
               ),

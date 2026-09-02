@@ -186,10 +186,10 @@ void main() {
     // 80 the macros sat a visible hole away from the calories on every row.
     //
     // The bound was 0.9 while the row figure was Body 14 (73.4 → 78.5 at
-    // 1.3x). On the Threads scale (2026-09-01) that figure is Body 17, so it
-    // already fills the column at 1.0x and 1.3x now costs ~22%. The user still
-    // gains from scaling — 17 × 1.3 × 0.78 ≈ 17.5pt is larger than the 17pt
-    // they started at — and the figure is still whole, which is the claim.
+    // 1.3x). At Value 16 (metric-compensated ramp, 2026-09-02) "999 kcal"
+    // measures ~69.5 in the 74pt column, so 1.3x (~90) costs ~18%. The user
+    // still gains from scaling — 16 × 1.3 × 0.82 ≈ 17pt is larger than the
+    // 16pt they started at — and the figure is still whole, which is the claim.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
     expect(find.text('240 kcal'), findsOneWidget);
     final scale = _paintedScale(tester, find.text('240 kcal'));
@@ -438,8 +438,11 @@ void main() {
 
   testWidgets('the dish name still clears its longest word', (tester) async {
     // The gutter above is paid for out of the figure columns, not this one.
-    // "Top blade" alone measures 83.0 at Body 17, so anything under ~84 sends
-    // the name back to the ellipsis the second line exists to prevent.
+    // "Top blade" alone measures ~78 at Body 16 (83.0 at the old 17), so
+    // anything under ~79 sends the name back to the ellipsis the second line
+    // exists to prevent. The floor stays at the old 84: the column has grown
+    // wider than the word, and the bound should not loosen just because the
+    // type shrank.
     await tester.pumpWidget(_row('Top blade áp chảo', 37, 0, 14, 268));
     expect(
       tester.getSize(find.text('Top blade áp chảo')).width,

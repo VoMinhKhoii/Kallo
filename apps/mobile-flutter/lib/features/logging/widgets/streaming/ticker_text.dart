@@ -40,12 +40,14 @@ class TickerText extends StatelessWidget {
       );
     }
 
-    // The meal's own words, as on web: serif italic in primary ink. NOT
-    // KalloTextVariant.italicAccent, which is Lora italic in TAN — the palette
-    // rule is that tan never colours running text.
+    // The meal's own words, as on web: serif italic in primary ink, set to
+    // the Body tier's size and leading so it sits level with the sans around
+    // it. Ink, never tan — the palette rule is that tan never colours
+    // running text.
+    final body = dashBody();
     final words = KalloTextStyles.serifItalic(
-      fontSize: 14,
-      height: 1.3,
+      fontSize: body.fontSize!,
+      height: body.height!,
     ).copyWith(color: kInk);
 
     return switch (frame) {

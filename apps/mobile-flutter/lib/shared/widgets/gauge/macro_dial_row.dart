@@ -62,8 +62,8 @@ class MacroDialRow extends StatelessWidget {
       _isCompact = false;
 
   /// The variant that sits beside `CalorieDial.compact` in a fixed header:
-  /// two thirds of the radius, and the gram figure steps from Value 17 to Body
-  /// 14 so it still clears the mouth at the 1.3 text-scale cap.
+  /// two thirds of the radius, and the gram figure steps from the dial's
+  /// pinned 17 to 14 so it still clears the mouth at the 1.3 text-scale cap.
   const MacroDialRow.compact({
     required this.current,
     required this.target,

@@ -152,7 +152,7 @@ class _TimelineStripState extends State<TimelineStrip> {
     final locale = context.locale.toString();
 
     return SizedBox(
-      height: LoggingSpacing.strip,
+      height: LoggingSpacing.stripFor(context),
       child: Row(
         children: [
           TimelineNavButton(

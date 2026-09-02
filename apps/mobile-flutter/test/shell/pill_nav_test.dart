@@ -157,11 +157,11 @@ void main() {
     await tester.pump();
     expect(find.text('dash:1'), findsOneWidget);
 
-    await tester.tap(find.text('Nutrition'));
+    await tester.tap(find.bySemanticsLabel('Nutrition'));
     await tester.pumpAndSettle();
     expect(find.text('nutrition:0'), findsOneWidget);
 
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.bySemanticsLabel('Today'));
     await tester.pumpAndSettle();
     expect(find.text('dash:1'), findsOneWidget);
   });
@@ -171,7 +171,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Log'));
+    await tester.tap(find.bySemanticsLabel('Log'));
     await tester.pumpAndSettle();
 
     expect(find.text('logging-page'), findsOneWidget);
@@ -212,7 +212,7 @@ void main() {
     // A tap where the covered pill sits must not reach it. (With the sheet on
     // top the tap lands on its barrier and dismisses it — either way the tab
     // must not change.)
-    await tester.tap(find.text('Nutrition'), warnIfMissed: false);
+    await tester.tap(find.bySemanticsLabel('Nutrition'), warnIfMissed: false);
     await tester.pumpAndSettle();
     expect(find.text('nutrition:0'), findsNothing,
         reason: 'the nav stole a tap through the open sheet');
@@ -233,7 +233,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('Today'),
+      find.bySemanticsLabel('Today'),
       findsOneWidget,
       reason: 'the bar must still be laid out for the slide to animate it',
     );

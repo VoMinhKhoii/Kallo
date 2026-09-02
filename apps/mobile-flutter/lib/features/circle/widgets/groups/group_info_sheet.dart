@@ -155,7 +155,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                   },
                                   icon: const Icon(
                                     LucideIcons.pencil300,
-                                    size: 16,
+                                    size: KalloIcons.tertiary,
                                   ),
                                 ),
                             ],
@@ -186,7 +186,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                         const Divider(height: KalloSpacing.sp6, color: kHairline),
                         TextButton.icon(
                           onPressed: _leave,
-                          icon: const Icon(LucideIcons.logOut300, size: 16),
+                          icon: const Icon(LucideIcons.logOut300, size: KalloIcons.tertiary),
                           label: Text(tr('groups.feed.leave')),
                         ),
                       ],

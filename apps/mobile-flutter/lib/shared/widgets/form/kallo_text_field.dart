@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_typography.dart';
 
 /// The full-width text field (native pass, 2026-08-31): a 52pt full-round
 /// pill — white fill, hairline border, 18 left inset, 17pt input text and a
@@ -85,19 +83,11 @@ class KalloTextField extends StatelessWidget {
         textCapitalization: textCapitalization,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        style: const TextStyle(
-          fontFamily: KalloTextStyles.sansFamily,
-          fontSize: 17,
-          color: KalloColors.text,
-        ),
+        style: dashBody(),
         decoration: InputDecoration(
           counterText: '',
           hintText: hintText,
-          hintStyle: const TextStyle(
-            fontFamily: KalloTextStyles.sansFamily,
-            fontSize: 17,
-            color: kInkMuted,
-          ),
+          hintStyle: dashBody(color: kInkMuted),
           prefixIcon: prefixIcon,
           suffixIcon: suffixIcon,
         ),

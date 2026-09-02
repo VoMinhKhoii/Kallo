@@ -36,7 +36,7 @@ class InviteValueRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 64),
+      constraints: const BoxConstraints(minHeight: 60),
       child: Row(
         children: [
           Expanded(
