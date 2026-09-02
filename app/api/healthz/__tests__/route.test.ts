@@ -26,6 +26,10 @@ const { resetSharedDatabaseHealthForTests } = await import(
   '@/app/api/healthz/_lib/shared-db-health'
 );
 
+// One object serving both probe queries: the structural query reads its
+// presence flags, the separate seeded-food query reads `has_seeded_food`. A
+// blanket `mockResolvedValue([HEALTHY])` therefore answers both calls a healthy
+// probe makes.
 const HEALTHY = {
   has_user_profiles: true,
   has_food_table: true,
@@ -54,7 +58,7 @@ describe('GET /api/healthz', () => {
   });
 
   it('returns exactly { ok, service } when the invariants hold', async () => {
-    execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValue([HEALTHY]);
 
     const res = await GET(makeRequest());
 
@@ -68,7 +72,7 @@ describe('GET /api/healthz', () => {
   });
 
   it('returns 503 and logs which invariant failed', async () => {
-    execute.mockResolvedValueOnce([
+    execute.mockResolvedValue([
       {
         ...HEALTHY,
         has_new_user_trigger: false,
@@ -104,7 +108,7 @@ describe('GET /api/healthz', () => {
   });
 
   it('charges the memory-only IP policy', async () => {
-    execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValue([HEALTHY]);
 
     await GET(makeRequest());
 
@@ -115,7 +119,7 @@ describe('GET /api/healthz', () => {
   });
 
   it('skips the limiter when there is no usable client IP', async () => {
-    execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValue([HEALTHY]);
 
     const res = await GET(makeRequest({}));
 
@@ -134,7 +138,7 @@ describe('GET /api/healthz', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('runs one query for concurrent probes, then serves the cached result', async () => {
+  it('runs one probe for concurrent callers, then serves the cached result', async () => {
     execute.mockResolvedValue([HEALTHY]);
 
     const [first, second] = await Promise.all([
@@ -143,7 +147,9 @@ describe('GET /api/healthz', () => {
     ]);
     const third = await GET(makeRequest());
 
-    expect(execute).toHaveBeenCalledTimes(1);
+    // One probe, two statements (structural + seeded food). Concurrent callers
+    // share the in-flight promise; the third reads the cached result.
+    expect(execute).toHaveBeenCalledTimes(2);
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(third.status).toBe(200);
@@ -153,19 +159,48 @@ describe('GET /api/healthz', () => {
   // answer were cached, every retry would replay it and the loop would be
   // decoration.
   it('does not cache an unhealthy result', async () => {
-    execute.mockResolvedValueOnce([{ ...HEALTHY, has_seeded_food: false }]);
+    // First probe: structural is fine, but the seeded-food query reports none.
     execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValueOnce([{ has_seeded_food: false }]);
+    // Second probe (not cached): structural fine, seeded row present.
+    execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValueOnce([{ has_seeded_food: true }]);
 
     expect((await GET(makeRequest())).status).toBe(503);
     expect((await GET(makeRequest())).status).toBe(200);
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledTimes(4);
   });
 
   it('does not cache a failed probe', async () => {
     execute.mockRejectedValueOnce(new Error('connection refused'));
     execute.mockResolvedValueOnce([HEALTHY]);
+    execute.mockResolvedValueOnce([{ has_seeded_food: true }]);
 
     expect((await GET(makeRequest())).status).toBe(503);
     expect((await GET(makeRequest())).status).toBe(200);
+  });
+
+  // The optional food table is probed WITHOUT a direct reference (to_regclass /
+  // information_schema), so an absent table is reported as `hasFoodTable:false`
+  // and never runs the seeded-row query that would fail to parse against it.
+  it('reports a missing food table without throwing', async () => {
+    execute.mockResolvedValueOnce([
+      {
+        ...HEALTHY,
+        has_food_table: false,
+        has_food_source_id: false,
+      },
+    ]);
+
+    const res = await GET(makeRequest());
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ ok: false, service: 'kallo' });
+    // Only the structural query ran — the seeded-row query was never reached.
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('FAILED'),
+      expect.objectContaining({ hasFoodTable: false, hasSeededFood: false })
+    );
   });
 });

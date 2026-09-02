@@ -20,8 +20,8 @@ export const runtime = 'nodejs';
  * The IP limit is what stops that uniformity from becoming a free token
  * oracle: identical responses mean guessing costs nothing to interpret, so the
  * cost has to be on the guessing itself. Skipped when there is no usable IP —
- * a limiter called with no key counts nothing, and the token is unguessable in
- * one attempt regardless.
+ * but `waitlistGlobal` runs ALWAYS, so a null-IP guessing flood is still capped
+ * app-wide. Global first, then IP.
  *
  * Lives under `/api` so `middleware.ts` skips the next-intl locale rewrite; the
  * locale for the redirect comes from the stored row instead.
@@ -29,6 +29,10 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   try {
     const ip = getRequestIp(request);
+    await assertRateLimit('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist-confirm',
+    });
     if (ip)
       await assertRateLimit('waitlistConfirmIp', { kind: 'ip', value: ip });
 

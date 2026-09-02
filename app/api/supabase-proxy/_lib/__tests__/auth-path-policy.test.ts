@@ -24,16 +24,9 @@ interface Case {
   grantType?: string | null;
   /** Raw request body, exactly as it would arrive on the wire. */
   body?: string;
-  authorization?: string;
   op: AuthOpClass;
   targetKey?: string | null;
   requiresTarget?: boolean;
-}
-
-/** A JWT whose payload is `{"sub":"…"}`; the signature is never checked. */
-function bearer(payload: Record<string, unknown>): string {
-  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  return `Bearer header.${encoded}.signature`;
 }
 
 const LONG_LOCAL = 'x'.repeat(300);
@@ -128,9 +121,9 @@ const cases: Case[] = [
     name: 'plus-addressing collapses onto the mailbox it delivers to',
     method: 'POST',
     path: 'recover',
-    body: '{"email":"victim+42@example.com"}',
+    body: '{"email":"victim+42@gmail.com"}',
     op: 'email',
-    targetKey: 'victim@example.com',
+    targetKey: 'victim@gmail.com',
   },
   {
     name: 'gmail dots collapse too',
@@ -191,28 +184,21 @@ const cases: Case[] = [
   },
 
   // --- reauthenticate: sends a nonce, on GET as well as POST ---------------
+  // Never keyed on an account: the bearer token that names one is UNVERIFIED at
+  // this proxy, so a forged `sub` must not spend another user's budget. Limited
+  // by IP + global only, and never refused (no `requiresTarget`).
   {
-    name: 'GET /reauthenticate sends mail and is keyed on the bearer subject',
+    name: 'GET /reauthenticate is limited by IP + global, never on the bearer',
     method: 'GET',
     path: 'reauthenticate',
-    authorization: bearer({ sub: '2b1f0d8e-0000-4000-8000-000000000000' }),
     op: 'email',
-    targetKey: 'user:2b1f0d8e-0000-4000-8000-000000000000',
+    targetKey: null,
     requiresTarget: false,
   },
   {
     name: 'POST /reauthenticate is the same operation',
     method: 'POST',
     path: 'reauthenticate',
-    authorization: bearer({ sub: 'abc' }),
-    op: 'email',
-    targetKey: 'user:abc',
-  },
-  {
-    name: 'reauthenticate with an unreadable token falls back to IP + global',
-    method: 'GET',
-    path: 'reauthenticate',
-    authorization: 'Bearer not-a-jwt',
     op: 'email',
     targetKey: null,
     requiresTarget: false,
@@ -351,7 +337,6 @@ describe('classifyAuthRequest', () => {
       body: parseAuthBody(
         testCase.body ? new TextEncoder().encode(testCase.body) : undefined
       ),
-      authorization: testCase.authorization ?? null,
     });
 
     expect(result.op).toBe(testCase.op);
@@ -372,7 +357,6 @@ describe('classifyAuthRequest', () => {
         path,
         grantType: null,
         body: {},
-        authorization: null,
       });
 
       expect(result.op).toBe('email');

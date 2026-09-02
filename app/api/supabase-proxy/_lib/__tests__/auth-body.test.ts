@@ -21,6 +21,15 @@ describe('parseAuthBody', () => {
     });
   });
 
+  it('takes the FIRST value of a repeated key, matching Go FormValue', () => {
+    // GoTrue's `Request.FormValue` returns the first value, so it mails the
+    // first address; keying the recipient budget on the last one would let
+    // `email=victim@x.com&email=attacker@x.com` bypass the victim's counter.
+    expect(
+      parseAuthBody(encode('email=victim%40x.com&email=attacker%40x.com'))
+    ).toEqual({ email: 'victim@x.com' });
+  });
+
   it('never returns an array or a primitive', () => {
     expect(parseAuthBody(encode('[1,2,3]'))).toEqual({ '[1,2,3]': '' });
     expect(parseAuthBody(encode('"just a string"'))).toEqual({

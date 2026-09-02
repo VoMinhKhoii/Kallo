@@ -390,7 +390,7 @@ describe('supabase-proxy rate limiting', () => {
     const { req, params } = makeRequest('auth/v1/recover', {
       method: 'POST',
       headers: { ...FROM_IP, 'content-type': 'application/json' },
-      body: '{"Email":"Victim+tag@Example.COM"}',
+      body: '{"Email":"Victim@Example.COM"}',
     });
 
     await POST(req, params);
@@ -427,7 +427,11 @@ describe('supabase-proxy rate limiting', () => {
     ]);
   });
 
-  it('charges the email policies for GET /reauthenticate, which sends mail', async () => {
+  // /reauthenticate sends mail, but the bearer token that names the account is
+  // UNVERIFIED at this proxy — keying a per-account budget on its `sub` would
+  // let a forged token spend another user's budget. So it charges global + IP
+  // only, never a recipient/account key, even when a readable token is present.
+  it('charges only global + IP for GET /reauthenticate, never the bearer', async () => {
     const payload = Buffer.from(JSON.stringify({ sub: 'user-1' })).toString(
       'base64url'
     );
@@ -441,7 +445,6 @@ describe('supabase-proxy rate limiting', () => {
     expect(policyCalls()).toEqual([
       ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authEmailIp', { kind: 'ip', value: '203.0.113.9' }],
-      ['authEmailRecipient', { kind: 'recipient', value: 'user:user-1' }],
     ]);
   });
 

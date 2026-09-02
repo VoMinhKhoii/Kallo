@@ -68,6 +68,7 @@ code.
 | `authLinkIp` (emailed verify links + the OAuth callback) | ip | 20 / 100 / — | degraded |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
+| `waitlistGlobal` (app-wide backstop for both waitlist surfaces — runs even with a null IP) | global | 30 / 300 / — | degraded |
 | `healthzIp` | ip | 30 / — / — | memory |
 | `inviteLookupIp` | ip | 30 / — / — | memory |
 | `chatMessageSend` | user | 30 / 600 / 3000 | degraded |
@@ -108,13 +109,13 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 | Route | Class / condition | Policies, in order | Keys | Refusal envelope |
 |---|---|---|---|---|
 | `POST /api/supabase-proxy/auth/v1/{signup,recover,otp,magiclink,resend}`, `PUT\|POST .../user` with an `email` **or `phone`** | `email` | `authGlobal` → `authEmailIp` → `authEmailRecipient` | `global:'auth'`, `ip`, `recipient` (canonical target — see "What a target key is") | GoTrue: `{code:429, error_code:'over_request_rate_limit', msg}` + `Retry-After` |
-| `GET\|POST .../reauthenticate` (sends a nonce by mail/SMS — an `email` op on BOTH verbs) | `email` | `authGlobal` → `authEmailIp` → `authEmailRecipient` | `global:'auth'`, `ip`, `recipient` = `user:<jwt sub>` | same |
+| `GET\|POST .../reauthenticate` (sends a nonce by mail/SMS — an `email` op on BOTH verbs) | `email` | `authGlobal` → `authEmailIp` | `global:'auth'`, `ip` (no account key — the bearer token is unverified here) | same |
 | `POST .../token?grant_type=password\|pkce\|id_token`, `POST .../verify`, `POST .../factors/{id}/{verify,challenge}` | `login` | `authGlobal` → `authLoginIp` → `authLoginAccount` | `global:'auth'`, `ip`, `account` (canonical target account) | same |
 | `POST .../token?grant_type=refresh_token` | `refresh` | `authRefreshGlobal` → `authRefresh` | `global:'auth:refresh'`, `ip` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
 | everything else under `auth/v1/` (`GET /user`, `logout`, `settings`, `authorize`, `callback`, unknown paths) | `other` | `authOther` | `ip` only | 429, as above |
 | `auth/v1/admin/*` and `auth/v1/invite` | — | none (never forwarded) | — | `404 {"error":"Not found"}` — both are service-key surfaces no client of this proxy holds a key for |
-| `POST /api/v1/waitlist` | — | `waitlistSignupIp` | `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
-| `GET /api/v1/waitlist/confirm` | — | `waitlistConfirmIp` | `ip` | same |
+| `POST /api/v1/waitlist` | — | `waitlistGlobal` → `waitlistSignupIp` | `global:'waitlist'`, `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
+| `GET /api/v1/waitlist/confirm` | — | `waitlistGlobal` → `waitlistConfirmIp` | `global:'waitlist-confirm'`, `ip` | same |
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
 
 Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
@@ -136,12 +137,14 @@ GOTRUE will act on — not what our own clients happen to send:
   `application/x-www-form-urlencoded`, so the same request re-encoded slipped
   past a JSON-only reader. The parser is chosen by trying JSON then form —
   never from `content-type`, which the attacker also writes.
-- **Plus-addressing and Gmail dots are collapsed** (`canonicalizeEmailForKey`
-  in `lib/core/text/email.ts`): `victim+1@x.com` … `victim+9999@x.com` are one
-  mailbox and must be one counter. Gmail's dot-insensitivity is applied to
-  `gmail.com` / `googlemail.com` only, because dots are significant elsewhere.
-  **For the key only** — the address forwarded upstream is always the one the
-  caller typed.
+- **Plus-addressing and Gmail dots are collapsed on known-alias domains**
+  (`canonicalizeEmailForKey` in `lib/core/text/email.ts`):
+  `victim+1@gmail.com` … `victim+9999@gmail.com` are one mailbox and must be one
+  counter. Both collapses are applied to `gmail.com` / `googlemail.com` only,
+  because on an arbitrary domain the operator is free to provision `a@d.com` and
+  `a+x@d.com` as SEPARATE mailboxes — collapsing them would let a flood at one
+  exhaust the other's budget. **For the key only** — the address forwarded
+  upstream is always the one the caller typed.
 - **Phones are keyed as `phone:<digits>`**, matching GoTrue's own
   `formatPhoneNumber` (which strips every non-digit), and namespaced so a phone
   can never share a counter with an email.
@@ -202,14 +205,15 @@ each client; it does not by itself make it correct there. Builder + test:
   On `authRefresh` / `authOther` (IP-only memory policies) there is genuinely
   nothing to enforce, and the request is admitted — both are cheap, and refusing
   token refresh over a missing edge header would be the worse failure.
-- **The waitlist backstop is not the IP, and it is narrower than it sounds.**
-  What still applies when the IP key is unavailable is `signUpForWaitlist`'s
-  per-ADDRESS resend cooldown — and nothing else. It bounds repeat submissions
-  of ONE address; a caller submitting distinct addresses with a null IP is
-  unbounded by this layer. That is only reachable by something that already
-  holds the origin secret (a null IP in production means the request did not
-  come through Cloudflare), which is why it is an accepted edge rather than a
-  hole.
+- **The waitlist has an app-wide backstop, not only a per-IP one.**
+  `waitlistGlobal` (30/min, 300/hr) runs on every signup and confirm regardless
+  of whether an IP could be resolved, so a caller submitting DISTINCT addresses
+  with a null IP is now bounded app-wide rather than only by `signUpForWaitlist`'s
+  per-ADDRESS resend cooldown. Signup and confirm key it on distinct values
+  (`waitlist` / `waitlist-confirm`), so each gets its own counter under the same
+  ceiling. A null IP in production means the request did not come through
+  Cloudflare (something already holding the origin secret); the global cap makes
+  that a bounded edge rather than a hole.
 - **`other` skips every DB policy**; `refresh` carries `authRefreshGlobal`
   instead of `authGlobal`. `authRefresh` is per-IP and per-instance, so a botnet
   replaying stolen refresh tokens from a million addresses looks like a million

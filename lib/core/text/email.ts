@@ -17,8 +17,15 @@ export function normaliseEmail(email: string): string {
   return email.trim().normalize('NFC').toLowerCase();
 }
 
-/** Providers that ignore dots in the local part, so `a.b@` == `ab@`. */
-const DOT_INSENSITIVE_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
+/**
+ * Providers with VERIFIED sub-addressing semantics: a `+tag` all delivers to
+ * the tag-free mailbox, and (for these two) dots in the local part are ignored.
+ * Both collapses are applied ONLY here, because on an arbitrary domain the
+ * operator is free to provision `a@d.com` and `a+x@d.com` as separate
+ * mailboxes — collapsing them would let a flood at one exhaust the other's
+ * budget.
+ */
+const KNOWN_ALIAS_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
 
 /**
  * Collapse the spellings of ONE mailbox onto a single rate-limit key.
@@ -27,10 +34,12 @@ const DOT_INSENSITIVE_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
  * an attacker uses to buy a fresh mail-bombing budget for a mailbox that is
  * already at its limit:
  *
- *  - **Plus addressing.** `victim+1@x.com` … `victim+9999@x.com` all deliver
- *    to `victim@x.com`. Every major provider (Gmail, Outlook, Fastmail,
- *    Proton, iCloud) implements it, so a per-spelling counter is a per-request
- *    counter.
+ *  - **Plus addressing, on known-alias domains only.** `victim+1@gmail.com` …
+ *    `victim+9999@gmail.com` all deliver to `victim@gmail.com`. Many providers
+ *    implement this, but not all — an arbitrary domain can provision `a@d.com`
+ *    and `a+x@d.com` as SEPARATE mailboxes — so the collapse is restricted to
+ *    the domains whose alias semantics are verified (`KNOWN_ALIAS_DOMAINS`).
+ *    Elsewhere the local part is kept intact (still lowercased / NFC / trimmed).
  *  - **Dots, on Google only.** `v.i.c.t.i.m@gmail.com` is `victim@gmail.com`.
  *    This is NOT generic behaviour — dots are significant almost everywhere
  *    else — so it is applied to `gmail.com` / `googlemail.com` and nowhere
@@ -39,9 +48,9 @@ const DOT_INSENSITIVE_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
  * FOR THE LIMITER KEY ONLY. What we forward upstream is always the address the
  * caller actually typed: GoTrue is what decides where mail goes and which
  * account exists, and rewriting an address on the way through would create
- * accounts nobody asked for. Two people who really do own `a+work@x.com` and
- * `a+home@x.com` share one counter here — which is correct, because they share
- * one inbox.
+ * accounts nobody asked for. Two people who really do own `a+work@gmail.com`
+ * and `a+home@gmail.com` share one counter here — which is correct, because
+ * they share one inbox.
  */
 export function canonicalizeEmailForKey(email: string): string {
   const normalised = normaliseEmail(email);
@@ -51,9 +60,11 @@ export function canonicalizeEmailForKey(email: string): string {
   const domain = normalised.slice(at + 1);
   let local = normalised.slice(0, at);
 
-  const plus = local.indexOf('+');
-  if (plus > 0) local = local.slice(0, plus);
-  if (DOT_INSENSITIVE_DOMAINS.has(domain)) local = local.replaceAll('.', '');
+  if (KNOWN_ALIAS_DOMAINS.has(domain)) {
+    const plus = local.indexOf('+');
+    if (plus > 0) local = local.slice(0, plus);
+    local = local.replaceAll('.', '');
+  }
 
   // A local part that was NOTHING but a tag (`+tag@x.com`) has no mailbox to
   // collapse onto; keep the normalised original rather than inventing `@x.com`.

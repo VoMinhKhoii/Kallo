@@ -38,7 +38,6 @@ export async function guardAuthRequest(
     path: input.path,
     grantType: input.grantType,
     body: parseAuthBody(input.body),
-    authorization: request.headers.get('authorization'),
   });
 
   // A refresh we cannot read is a refresh we cannot forward: it would spend the

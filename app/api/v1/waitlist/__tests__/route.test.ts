@@ -33,11 +33,15 @@ beforeEach(() => {
 });
 
 describe('POST /api/v1/waitlist', () => {
-  it('charges the IP policy, then signs the address up', async () => {
+  it('charges the global then IP policy, then signs the address up', async () => {
     const res = await POST(makeRequest('{"email":"a@b.co","locale":"vi"}'));
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist',
+    });
     expect(assertRateLimit).toHaveBeenCalledWith('waitlistSignupIp', {
       kind: 'ip',
       value: '203.0.113.4',
@@ -48,18 +52,39 @@ describe('POST /api/v1/waitlist', () => {
     );
   });
 
-  // With no IP there is no key, and a limiter called with no key counts
-  // nothing. The per-address cooldown inside signUpForWaitlist is the control
-  // that still applies, which is why skipping is safe rather than a hole.
-  it('skips the limiter when there is no usable client IP', async () => {
+  // With no IP the per-IP policy is skipped, but the app-wide `waitlistGlobal`
+  // still runs — a null-IP flood of distinct addresses is bounded there.
+  it('still charges the global policy when there is no usable client IP', async () => {
     const res = await POST(makeRequest('{"email":"a@b.co"}', {}));
 
     expect(res.status).toBe(200);
-    expect(assertRateLimit).not.toHaveBeenCalled();
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist',
+    });
+    expect(assertRateLimit).not.toHaveBeenCalledWith(
+      'waitlistSignupIp',
+      expect.anything()
+    );
     expect(signUpForWaitlist).toHaveBeenCalledWith(
       { email: 'a@b.co' },
       { ip: null }
     );
+  });
+
+  // The point of the global backstop: a null-IP burst of distinct addresses is
+  // refused once the app-wide counter is exhausted, before the domain runs.
+  it('refuses a null-IP burst once the global limit is hit', async () => {
+    assertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 30));
+
+    const res = await POST(makeRequest('{"email":"a@b.co"}', {}));
+
+    expect(res.status).toBe(429);
+    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist',
+    });
+    expect(signUpForWaitlist).not.toHaveBeenCalled();
   });
 
   it('answers a rate-limited signup with 429 and Retry-After', async () => {
