@@ -5,6 +5,7 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { vietnameseFoodComposition } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { NUTRIENT_META } from '../catalog/nutrients';
 import { foodSourceCandidatesInputSchema } from '../schemas';
 
@@ -53,6 +54,15 @@ export async function getFoodSourceCandidates(input: unknown) {
     { userId: user.id, profileCreatedAt: profile.createdAt },
     'micronutrients'
   );
+  // The query below is an unindexed sequential scan of the whole composition
+  // table (a `> 0` on an arbitrary nutrient column, three `NOT ILIKE` patterns,
+  // an `ORDER BY` on that same column) against a two-connection pool. Guarded
+  // in the action rather than at the route because the web calls this directly
+  // as a Server Action, so a route-only guard would leave that path open.
+  await assertRateLimit('nutritionCandidates', {
+    kind: 'user',
+    value: user.id,
+  });
 
   const column = vietnameseFoodComposition[nutrient];
   const unit = NUTRIENT_META[nutrient].unit;

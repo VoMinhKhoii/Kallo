@@ -22,6 +22,7 @@ import {
   mealShares,
   publicProfiles,
 } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 const createShareReplySchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),
@@ -50,6 +51,9 @@ export async function createShareReplyAction(input: {
 }): Promise<ShareReply> {
   const parsed = createShareReplySchema.parse(input);
   const { user } = await requireAuthAndProfile();
+
+  // Per-actor cap before the write — bounds the reply and its push fan-out.
+  await assertRateLimit('shareReply', { kind: 'user', value: user.id });
 
   return withNotifications(db, async (tx, notify) => {
     const lockedShares = await tx

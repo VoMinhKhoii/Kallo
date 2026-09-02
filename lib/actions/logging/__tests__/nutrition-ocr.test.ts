@@ -25,15 +25,28 @@ vi.mock('@/lib/infra/db/client', () => ({
   },
 }));
 
-const { mockRequireAuthAndProfile, mockUser, mockCheckFeatureGate } =
-  vi.hoisted(() => ({
-    mockRequireAuthAndProfile: vi.fn(),
-    mockUser: { id: 'user-123', email: 'test@example.com' },
-    mockCheckFeatureGate: vi.fn(),
-  }));
+const {
+  mockRequireAuthAndProfile,
+  mockUser,
+  mockCheckFeatureGate,
+  mockWithOcrGuard,
+  mockChargeGlobal,
+} = vi.hoisted(() => ({
+  mockRequireAuthAndProfile: vi.fn(),
+  mockUser: { id: 'user-123', email: 'test@example.com' },
+  mockCheckFeatureGate: vi.fn(),
+  mockWithOcrGuard: vi.fn(),
+  mockChargeGlobal: vi.fn(),
+}));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
+}));
+
+// The OCR spend guard has its own unit test; here it is a transparent
+// pass-through by default so the real validation + the mocked Gemini call run.
+vi.mock('@/lib/infra/rate-limit/ocr-guard', () => ({
+  withOcrGuard: mockWithOcrGuard,
 }));
 
 vi.mock('@/lib/domain/billing/feature-gate', () => ({
@@ -126,6 +139,15 @@ afterEach(cleanup);
 // Entitled by default: every pre-existing expectation is the unlocked path.
 beforeEach(() => {
   mockCheckFeatureGate.mockResolvedValue({ locked: false });
+  // The guard hands `work` the app-wide-budget charge; here it is a spy, so
+  // the cases below can prove WHEN (and whether) that budget is spent.
+  mockChargeGlobal.mockResolvedValue(undefined);
+  mockWithOcrGuard.mockImplementation(
+    (
+      _userId: string,
+      work: (charge: () => Promise<void>) => Promise<unknown>
+    ) => work(mockChargeGlobal)
+  );
   mockRequireAuthAndProfile.mockResolvedValue({
     user: mockUser,
     profile: {
@@ -211,7 +233,7 @@ describe('scanNutritionLabelAction', () => {
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
   });
 
-  it('rejects oversized input before auth or Gemini', async () => {
+  it('rejects oversized input after auth, by length, without touching the budget', async () => {
     const oversizedBase64 = 'A'.repeat(
       Math.ceil(((OCR_MAX_IMAGE_BYTES + 1) * 4) / 3 / 4) * 4
     );
@@ -222,8 +244,42 @@ describe('scanNutritionLabelAction', () => {
         mimeType: 'image/png',
       })
     ).toEqual({ success: false, code: 'invalid_image' });
-    expect(mockRequireAuthAndProfile).not.toHaveBeenCalled();
+    // Validation now runs AFTER auth and inside the per-user slot, on purpose:
+    // the schema's base64 refinement walks the whole string, so an anonymous
+    // caller could otherwise make the server spend that CPU. It is still
+    // rejected by a `length` comparison — the cheap check — before the regex,
+    // and the app-wide daily budget is never charged for it.
+    expect(mockRequireAuthAndProfile).toHaveBeenCalled();
+    expect(mockChargeGlobal).not.toHaveBeenCalled();
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+  });
+
+  it('charges the app-wide budget only after the image decodes, right before Gemini', async () => {
+    const order: string[] = [];
+    mockChargeGlobal.mockImplementation(async () => {
+      order.push('charge');
+    });
+    vi.mocked(scanNutritionLabelWithGemini).mockImplementation(async () => {
+      order.push('gemini');
+      return servingLabel(nutrition({ calories: 100 }));
+    });
+
+    await scanNutritionLabelAction({
+      imageBase64: validPngBase64,
+      mimeType: 'image/png',
+    });
+
+    expect(order).toEqual(['charge', 'gemini']);
+  });
+
+  it('never charges the app-wide budget for an image that fails validation', async () => {
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/jpeg',
+      })
+    ).toEqual({ success: false, code: 'invalid_image' });
+    expect(mockChargeGlobal).not.toHaveBeenCalled();
   });
 
   it('does not call Gemini when authentication fails', async () => {
@@ -293,6 +349,20 @@ describe('scanNutritionLabelAction', () => {
         mimeType: 'image/png',
       })
     ).toEqual({ success: false, code });
+  });
+
+  it('surfaces an OCR guard block as the rate_limited code', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    // The guard throws BEFORE the work runs, so Gemini is never called.
+    mockWithOcrGuard.mockRejectedValueOnce(Errors.rateLimited(undefined, 5));
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code: 'rate_limited' });
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
   });
 });
 

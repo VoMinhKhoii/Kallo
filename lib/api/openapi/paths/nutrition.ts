@@ -7,6 +7,7 @@ import {
   authed,
   fromZod,
   type PathItem,
+  RATE_LIMITER_UNAVAILABLE_ERROR,
   ref,
   tzParam,
 } from '@/lib/api/openapi/components';
@@ -69,6 +70,10 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       bodyDescription: 'Base64-encoded image bytes.',
       ok: ref('Acknowledgement'),
       okDescription: 'The parsed label figures.',
+      // OCR is spend-gated (`withOcrGuard`): the global Gemini budget fails
+      // closed, so this op alone can answer 503 when the limiter is down. The
+      // shared 429 (per-user / concurrency block) is already in COMMON_ERRORS.
+      extraErrors: RATE_LIMITER_UNAVAILABLE_ERROR,
     }),
   },
 

@@ -14,6 +14,7 @@
 // time; this module only ever reads tokens/locales FOR those ids.
 
 import { eq, inArray } from 'drizzle-orm';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { db } from '@/lib/infra/db/client';
 import {
   publicProfiles,
@@ -22,6 +23,7 @@ import {
 } from '@/lib/infra/db/schema';
 import { getPushSender } from '@/lib/infra/push/sender';
 import type { PushMessage, PushSender } from '@/lib/infra/push/types';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import {
   type PushCopyType,
   type PushCopyValues,
@@ -127,6 +129,45 @@ async function buildMessages(
   });
 }
 
+/** Throttle for the global-budget skip log: one line per 30s per instance,
+ *  so a sustained flood past the hourly cap cannot storm the log. */
+let lastPushBudgetLogAt = 0;
+
+/**
+ * The app-wide FCM fan-out budget (`pushGlobalHourly`). Charged once per
+ * fan-out, immediately before `send` and only when there are messages to send,
+ * INSIDE the send path: a block means skip sending and return, never
+ * throw. The producer's message/notification row is already committed, so a
+ * skipped push is the correct worst case — turning it into a thrown error would
+ * fail an already-successful write. The policy is `degraded` with no
+ * `perMinute`, so a limiter outage admits rather than blocks.
+ *
+ * Returns `true` when the budget is exhausted (caller should skip).
+ */
+async function pushGlobalBudgetExhausted(): Promise<boolean> {
+  try {
+    await assertRateLimit('pushGlobalHourly', {
+      kind: 'global',
+      value: 'push',
+    });
+    return false;
+  } catch (error) {
+    if (error instanceof RateLimitedError) {
+      const now = Date.now();
+      if (now - lastPushBudgetLogAt > 30_000) {
+        lastPushBudgetLogAt = now;
+        console.warn(
+          'push fan-out skipped: global hourly budget exhausted (pushGlobalHourly)'
+        );
+      }
+      return true;
+    }
+    // Anything else is unexpected on a `degraded` policy; let the caller's
+    // own try/catch log it and swallow it — push must never throw.
+    throw error;
+  }
+}
+
 /** Drop registrations FCM has told us are permanently dead. */
 async function pruneTokens(dead: string[]): Promise<void> {
   if (dead.length === 0) return;
@@ -147,7 +188,13 @@ export async function sendNotificationPush(
     const unique = [...new Set(recipientIds)];
     if (unique.length === 0) return;
     const messages = await buildMessages(unique, payload);
+    // Most events notify nobody with a registered device. Returning here BEFORE
+    // charging the budget is the point: the counter is an FCM fan-out budget,
+    // and every recipient-with-no-token used to spend one unit of it, so the
+    // hourly ceiling was reached by traffic that never sent a push. On a block
+    // the send is skipped — the row/message is already committed.
     if (messages.length === 0) return;
+    if (await pushGlobalBudgetExhausted()) return;
     // Resolved INSIDE the try, never as a default argument: default arguments
     // evaluate before the function body, so a malformed
     // FCM_SERVICE_ACCOUNT_JSON would throw past this boundary and reject the

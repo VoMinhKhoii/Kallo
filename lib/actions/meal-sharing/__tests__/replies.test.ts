@@ -37,6 +37,7 @@ vi.mock('@/lib/domain/notifications/notify', () => ({
 const {
   mockUser,
   mockCanViewShare,
+  mockAssertRateLimit,
   mockTxInsert,
   mockTxSelect,
   mockTxSelectDistinct,
@@ -48,6 +49,7 @@ const {
   return {
     mockUser: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
     mockCanViewShare: vi.fn(),
+    mockAssertRateLimit: vi.fn(),
     mockTxInsert,
     mockTxSelect,
     mockTxSelectDistinct,
@@ -58,6 +60,13 @@ const {
     },
   };
 });
+
+// The per-actor `shareReply` limit admits by default; one case blocks it to
+// prove it fires BEFORE the write transaction. On the REST route this thrown
+// `RateLimitedError` becomes a 429 + Retry-After via `handleRouteError`.
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  assertRateLimit: mockAssertRateLimit,
+}));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -144,6 +153,19 @@ describe('createShareReplyAction', () => {
     vi.clearAllMocks();
     mockCanViewShare.mockResolvedValue(true);
     repliers([mockUser.id]);
+  });
+
+  it('blocks on the per-actor limit before locking or writing anything', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mockAssertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 9));
+
+    await expect(
+      createShareReplyAction({ shareId: SHARE_ID, body: 'Ngon quá' })
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED', retryAfterSeconds: 9 });
+
+    // The block fires before the transaction, so the share is never read.
+    expect(mockCanViewShare).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
   it('locks and authorizes the share before inserting the client reply id', async () => {

@@ -12,6 +12,7 @@ export type BarcodeErrorCode =
   | 'not_found'
   | 'not_cached'
   | 'stage_failed'
+  | 'rate_limited'
   | 'server_error';
 
 /**

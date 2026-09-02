@@ -1,11 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRequireAuthAndProfile, mockLimit, mockAssertFeatureAccess } =
-  vi.hoisted(() => ({
-    mockRequireAuthAndProfile: vi.fn(),
-    mockLimit: vi.fn(),
-    mockAssertFeatureAccess: vi.fn(),
-  }));
+const {
+  mockRequireAuthAndProfile,
+  mockLimit,
+  mockAssertFeatureAccess,
+  mockAssertRateLimit,
+} = vi.hoisted(() => ({
+  mockRequireAuthAndProfile: vi.fn(),
+  mockLimit: vi.fn(),
+  mockAssertFeatureAccess: vi.fn(),
+  mockAssertRateLimit: vi.fn(),
+}));
+
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  assertRateLimit: mockAssertRateLimit,
+}));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
@@ -38,6 +47,24 @@ describe('getFoodSourceCandidates', () => {
       profile: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
     });
     mockAssertFeatureAccess.mockResolvedValue(undefined);
+    mockAssertRateLimit.mockResolvedValue(undefined);
+  });
+
+  it('throttles per user before running the unindexed scan', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mockAssertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 2));
+
+    // The query below is a sequential scan of the whole composition table on a
+    // two-connection pool, and the web reaches this as a Server Action — so the
+    // guard lives here, not at the route, and it fires before the scan.
+    await expect(
+      getFoodSourceCandidates({ nutrient: 'calciumMg' })
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED', status: 429 });
+    expect(mockAssertRateLimit).toHaveBeenCalledWith('nutritionCandidates', {
+      kind: 'user',
+      value: 'user-1',
+    });
+    expect(mockLimit).not.toHaveBeenCalled();
   });
 
   it('refuses a viewer without the micronutrients feature, before any query', async () => {

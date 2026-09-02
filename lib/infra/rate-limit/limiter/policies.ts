@@ -133,6 +133,25 @@ export const rateLimitPolicies = {
     failMode: 'memory',
   },
 
+  /**
+   * The emailed-link and OAuth-callback legs (`/auth/verify`, `/auth/callback`).
+   *
+   * Both are anonymous browser navigations that call GoTrue directly —
+   * `verifyOtp` and `exchangeCodeForSession` — from this service's single Cloud
+   * Run egress address, so an unbounded flood of guessed `token_hash` /`code`
+   * values spends the app's SHARED `token_verifications` budget upstream. They
+   * are not proxied, so the auth-proxy policies never saw them.
+   *
+   * Generous, like every IP policy, and `degraded`: a limiter outage must not
+   * strand people mid signup-confirmation.
+   */
+  authLinkIp: {
+    route: 'auth:link:ip',
+    limits: { perMinute: 20, perHour: 100 },
+    keyKinds: ['ip'],
+    failMode: 'degraded',
+  },
+
   // ---------------------------------------------------------------------
   // Public, unauthenticated surfaces (wired in PR 2)
   // ---------------------------------------------------------------------
@@ -222,6 +241,34 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /**
+   * Food-source candidates: one unindexed sequential scan of
+   * `vietnamese_food_composition` per call (`>0` on an arbitrary nutrient
+   * column, three `NOT ILIKE` patterns, an `ORDER BY` on the same column), on a
+   * two-connection pool. Cheap for a human tapping a nutrient, ruinous on a
+   * loop.
+   */
+  nutritionCandidates: {
+    route: 'nutrition:candidates',
+    limits: { perMinute: 30, perHour: 300 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /**
+   * The admin pipeline-debug route. Admin-gated, but it runs the live
+   * decomposition + nutrition calls against arbitrary input, so a stolen admin
+   * session (or an admin with a loop) spends real Gemini quota. Fail-CLOSED for
+   * the same reason `ocrGlobalDaily` is: admitting with the guard down means
+   * spending with no ceiling, and there are single-digit admins to inconvenience.
+   */
+  adminDebugAnalysis: {
+    route: 'admin:debug:analysis',
+    limits: { perMinute: 3, perHour: 20 },
+    keyKinds: ['user'],
+    failMode: 'closed',
+  },
+
   // ---------------------------------------------------------------------
   // Global spend budgets
   // ---------------------------------------------------------------------
@@ -230,10 +277,17 @@ export const rateLimitPolicies = {
    * The only FAIL-CLOSED policy in the table. Every OCR call spends Gemini
    * quota, so if the limiter cannot answer, admitting the request means
    * spending money with no ceiling — 503 is cheaper than an uncapped bill.
+   *
+   * `perMinute` is a BURST BREAKER, not the budget. Without one, a policy that
+   * declares only `perDay` has no per-instance bucket in front of it (see
+   * `burstConfig`), so every request in a flood reached Postgres — on the one
+   * policy whose DB failure is a 503 for everybody. 60/min is far above real
+   * OCR traffic (the per-user ceiling is 5/min) and still caps what one
+   * instance can push at the limiter.
    */
   ocrGlobalDaily: {
     route: 'ocr:global:day',
-    limits: { perDay: 5000 },
+    limits: { perMinute: 60, perDay: 5000 },
     keyKinds: ['global'],
     failMode: 'closed',
   },

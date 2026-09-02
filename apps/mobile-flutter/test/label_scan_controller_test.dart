@@ -183,6 +183,23 @@ void main() {
         await keyFor(ApiError('OCR_RATE_LIMITED', 429, true, '')),
         'logging.labelScan.error.rateLimited',
       );
+      // The scan route's own throttles, which pass through the OCR error mapper
+      // untouched (so their Retry-After survives) and therefore reach the client
+      // under the limiter's codes, not the OCR_ ones. Without their own arms
+      // they fell through to the generic serverError copy.
+      expect(
+        await keyFor(ApiError('RATE_LIMITED', 429, true, '')),
+        'logging.labelScan.error.rateLimited',
+      );
+      expect(
+        await keyFor(ApiError('RATE_LIMITER_UNAVAILABLE', 503, true, '')),
+        'logging.labelScan.error.rateLimited',
+      );
+      // The scan body is byte-capped now, so an oversized photo is a 413.
+      expect(
+        await keyFor(ApiError('PAYLOAD_TOO_LARGE', 413, false, '')),
+        'logging.labelScan.error.imageTooLarge',
+      );
       expect(
         await keyFor(ApiError('INTERNAL_ERROR', 500, false, '')),
         'logging.labelScan.error.serverError',

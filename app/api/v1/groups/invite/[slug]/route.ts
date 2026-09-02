@@ -3,6 +3,8 @@ import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
 import { getProfileBySlug } from '@/lib/actions/groups/profile';
 import { handleRouteError } from '@/lib/api/respond';
 import { Errors } from '@/lib/core/errors/catalog';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
+import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
@@ -27,11 +29,20 @@ export const runtime = 'nodejs';
  * never reveals that a block exists.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params;
+
+    // Anonymous viewers are allowed here, so the IP key may be absent (in
+    // production a null IP means the request did not come through Cloudflare).
+    // Skip the guard rather than call it with zero keys — `inviteLookupIp` is
+    // a memory-only flood breaker and its whole point is the per-IP bucket.
+    const ip = getRequestIp(request);
+    if (ip) {
+      await assertRateLimit('inviteLookupIp', { kind: 'ip', value: ip });
+    }
 
     const inviter = await getProfileBySlug(slug);
     if (!inviter) {

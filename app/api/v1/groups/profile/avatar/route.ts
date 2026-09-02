@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { removeMyAvatar, uploadMyAvatar } from '@/lib/actions/groups/avatar';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { createClient } from '@/lib/infra/supabase/server';
 import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
@@ -26,6 +27,9 @@ async function requireSessionUser() {
 export async function POST(req: NextRequest) {
   try {
     const { supabase, userId } = await requireSessionUser();
+    // Per-user cap after auth, before the body is buffered: uploads are low-
+    // limit because each costs storage plus image processing.
+    await assertRateLimit('avatarUpload', { kind: 'user', value: userId });
     // Reject oversized requests before req.formData() buffers the whole body
     // (multipart framing overhead on top of the 5 MB file cap). A missing or
     // non-numeric Content-Length is rejected too — otherwise a chunked upload
@@ -56,6 +60,10 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   try {
     const { supabase, userId } = await requireSessionUser();
+    // Same per-user cap as the upload: a delete still writes storage and the
+    // profile row, and the inventory declares ONE policy for this file — a
+    // method that skipped it made that declaration false.
+    await assertRateLimit('avatarUpload', { kind: 'user', value: userId });
     const profile = await removeMyAvatar(userId, supabase);
     return NextResponse.json({ profile });
   } catch (error) {
