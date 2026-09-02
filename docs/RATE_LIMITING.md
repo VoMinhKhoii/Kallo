@@ -299,13 +299,45 @@ May 2026 with no retention at all.
 
 `lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts` pins the
 SQL against a real Postgres; CI runs it in the `migrations` job through the
-local transaction pooler, which is how production connects. The two cases that
-switch role (`SET LOCAL ROLE anon`) instead run on `RATE_LIMIT_DB_DIRECT_URL`, a
-direct non-pooled connection, because Supavisor (supabase CLI >= 2.90) closes
-the client socket when the backend raises inside a transaction after a role
-switch — the assertion then sees `CONNECTION_CLOSED` instead of the SQLSTATE
-`42501` that the grant boundary, a property of Postgres and not of the pooler,
-is supposed to prove.
+local transaction pooler, which is how production connects. Every case goes
+through the pooler, including the two that switch role.
+
+### Do not execute a denied function AS `anon` or `authenticated`
+
+`supautils`, loaded by the Supabase Postgres image, decorates permission-denied
+errors with a `GRANT … TO <role>` hint for the roles in its
+`supautils.hint_roles` GUC (`anon, authenticated, service_role`). On supautils
+3.2.0–3.2.1 — shipped by Postgres images before `17.6.1.155`, which is what
+supabase CLI 2.90.0 (our CI pin) installs — the FUNCTION arm of that hint
+dereferences a NULL relation name and **segfaults the backend**:
+
+```
+LOG:  server process (PID …) was terminated by signal 11: Segmentation fault
+DETAIL:  Failed process was running: SELECT * FROM public.rate_limit_consume(…)
+```
+
+The postmaster then terminates every other backend (SQLSTATE `57P02`) and runs
+crash recovery, so a single such call takes down everything else connected. It
+is not the pooler (a plain `psql` on the direct port crashes identically), not
+postgres.js, and not this function — any EXECUTE-denied function does it, while
+denied tables, sequences and schemas are fine. The neighbouring
+`GRANT <role> TO CURRENT_USER` crashes the same way; spell the grantee out by
+name.
+
+Two consequences:
+
+- **In tests**, the "anon really cannot execute it" case runs as a throwaway
+  role that INHERITS `anon` rather than as `anon` itself. An inheriting member
+  holds exactly anon's privileges plus PUBLIC's and owns nothing, so both
+  `REVOKE … FROM anon` and `REVOKE … FROM PUBLIC` still have to hold for the
+  call to be refused — but the role is not in `hint_roles`, so the error
+  arrives as a clean `42501`.
+- **In production**, the same shape is reachable from the internet: `public` is
+  a PostgREST-exposed schema, so `POST /rest/v1/rpc/rate_limit_consume` runs as
+  `anon` and hits the identical denied-function path. Upstream fixed it in
+  supautils 3.2.2 (supabase/supautils #196, #200, #214, #225); hosted projects
+  on an image `17.6.1.155` or newer are not affected. Bumping the CI pin to
+  supabase CLI ~2.112+ would clear it locally too.
 
 ## Known edges
 

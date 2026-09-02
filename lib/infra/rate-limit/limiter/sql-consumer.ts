@@ -40,6 +40,14 @@ export function readLimiterDbTimeoutMs() {
  * and rejected immediately with SQLSTATE 57014; one already in flight gets a
  * CancelRequest on a SEPARATE socket, so cancellation works even when the pool
  * is exactly the resource that is exhausted.
+ *
+ * That second socket is also why the cancel must be treated as BEST EFFORT.
+ * `cancel()` returns a promise and dials a fresh connection; when the server
+ * has gone away underneath us (restart, crash recovery, reset peer) it rejects
+ * — and an unhandled rejection from a limiter timeout would take the process
+ * down over a request we had already decided to refuse. Swallowing it changes
+ * nothing we owe the caller: the deadline expired either way, and `reject`
+ * below is still what the caller sees.
  */
 async function withDeadline<TRow extends readonly MaybeRow[]>(
   pending: PendingQuery<TRow>,
@@ -53,8 +61,15 @@ async function withDeadline<TRow extends readonly MaybeRow[]>(
       new Promise<never>((_resolve, reject) => {
         timer = setTimeout(() => {
           // Cancel FIRST, then reject: the order is what guarantees the caller
-          // never returns before the abort has been issued.
-          pending.cancel();
+          // never returns before the abort has been issued. Both failure
+          // shapes are absorbed — a synchronous throw and a rejected promise
+          // — because a cancel that cannot be delivered must not escalate a
+          // 503 into a crash.
+          try {
+            void Promise.resolve(pending.cancel()).catch(() => undefined);
+          } catch {
+            // Nothing to do: the query is unreachable, the deadline stands.
+          }
           reject(
             Errors.rateLimiterUnavailable(
               new Error(`rate limiter DB deadline of ${timeoutMs}ms expired`),

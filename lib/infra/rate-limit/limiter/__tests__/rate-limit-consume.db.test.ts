@@ -18,23 +18,40 @@
  * passing one.
  *
  * CI runs it in the `migrations` job against local Supabase THROUGH THE
- * TRANSACTION POOLER, which is how production connects.
+ * TRANSACTION POOLER, which is how production connects. Every case, including
+ * the role-switch ones, goes through it.
  *
- * `RATE_LIMIT_DB_DIRECT_URL` is an OPTIONAL, DIRECT (non-pooled) Postgres URL
- * used by the two role-switch cases only, falling back to `DATABASE_URL`.
- * Supavisor (supabase CLI >= 2.90) closes the client socket when the backend
- * raises inside a transaction after a `SET LOCAL ROLE`, so through the pooler
- * those two cases surface a `CONNECTION_CLOSED` connection error instead of
- * SQLSTATE 42501. The grant boundary is a property of Postgres, not of the
- * pooler, so it must not be asserted through one. Every other case — including
- * cancellation and the 20-way race — stays on `DATABASE_URL`.
+ * DO NOT execute a privilege-denied function AS `anon` OR `authenticated`.
+ * `supautils` (loaded by the Supabase Postgres image) attaches a "GRANT … TO
+ * <role>" hint to permission-denied errors for the roles named in its
+ * `supautils.hint_roles` GUC — `anon, authenticated, service_role` — and on
+ * image `supabase/postgres:17.6.1.106` (supabase CLI 2.90) the FUNCTION arm of
+ * that hint SEGFAULTS the backend:
+ *
+ *   LOG: server process (PID …) was terminated by signal 11: Segmentation fault
+ *   DETAIL: Failed process was running: SELECT * FROM public.rate_limit_consume(…)
+ *
+ * The postmaster then kills every other backend (SQLSTATE 57P02) and runs crash
+ * recovery, so ONE such call takes down the whole suite — which is exactly what
+ * it did. It is not the pooler (a plain `psql` on port 54322 crashes the same
+ * way), not postgres.js, and not this function (any EXECUTE-denied function
+ * does it, while denied TABLES, SEQUENCES and SCHEMAS are fine). A role that is
+ * NOT in `hint_roles` gets the clean `42501` instead — which is how the case
+ * below still proves the boundary: it runs as a throwaway role that INHERITS
+ * `anon`, so the ACL under test is byte-for-byte anon's.
+ *
+ * Upstream: supautils #196 / #200 / #214 / #225, fixed in supautils 3.2.2 —
+ * the hint path assumed the denied object was a RELATION and dereferenced a
+ * NULL name for a function. It reaches Postgres images `17.6.1.155`+, i.e.
+ * supabase CLI ~2.112+. Bumping the CLI in `.github/workflows/ci.yml` would
+ * make an `anon` invocation safe again; the inheriting probe role below is
+ * correct on either image, so this file does not depend on that bump.
  *
  * Run locally (the pooler username is tenant-qualified — a plain `postgres`
  * gets "Tenant or user not found"; `pooler-dev` is the CLI's fixed local
  * tenant id, not this project's project_id):
  *   supabase start && supabase db reset
  *   DATABASE_URL=postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres \
- *     RATE_LIMIT_DB_DIRECT_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
  *     bunx vitest run lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
  */
 
@@ -64,9 +81,6 @@ const CONSUME_SIGNATURE =
   'public.rate_limit_consume(text,text,text,int,int,int,timestamptz)';
 
 const databaseUrl = process.env.DATABASE_URL;
-// Role-switch cases only. See the docblock: on Supavisor an error raised in a
-// transaction after `SET LOCAL ROLE` kills the socket, so 42501 never arrives.
-const directDatabaseUrl = process.env.RATE_LIMIT_DB_DIRECT_URL ?? databaseUrl;
 // The cancellation case needs to saturate the pool the consumer itself uses,
 // and `lib/infra/db/client.ts` reads this once, lazily, on first access.
 process.env.DB_POOL_MAX = '2';
@@ -78,7 +92,6 @@ function redactDbUrl(url: string) {
 
 const describe = databaseUrl ? describeBase : describeBase.skip;
 let sql: postgres.Sql;
-let directSql: postgres.Sql;
 
 if (databaseUrl) {
   beforeAll(async () => {
@@ -86,10 +99,6 @@ if (databaseUrl) {
     // mode has no prepared statements, which is exactly why every parameter in
     // the call below carries an explicit ::cast.
     sql = postgres(encodeDbUrl(databaseUrl), { max: 25, prepare: false });
-    directSql = postgres(encodeDbUrl(directDatabaseUrl ?? databaseUrl), {
-      max: 2,
-      prepare: false,
-    });
 
     let present: boolean;
 
@@ -155,7 +164,6 @@ describe('public.rate_limit_consume', () => {
   afterAll(async () => {
     await clearCounters();
     await sql.end({ timeout: 5 });
-    await directSql.end({ timeout: 5 });
   });
 
   it('inserts on first use and reports remaining headroom', async () => {
@@ -352,11 +360,12 @@ describe('public.rate_limit_consume', () => {
     // `SET LOCAL` inside a transaction rather than SET ROLE / RESET ROLE:
     // consecutive statements are not guaranteed the same backend, so
     // session-scoped role state would silently leak or vanish. A transaction
-    // pins one connection and resets on commit. On `directSql` because a
-    // role switch inside a pooled transaction is what Supavisor kills the
-    // socket over — see the docblock.
+    // pins one connection and resets on commit.
+    //
+    // Reading privilege bits AS anon is safe — it is only EXECUTING a denied
+    // function as anon that segfaults the backend (see the docblock).
     async function privilegesAs(role: string) {
-      return directSql.begin(async (tx) => {
+      return sql.begin(async (tx) => {
         await tx.unsafe(`SET LOCAL ROLE ${role}`);
 
         const [row] = await tx<
@@ -411,22 +420,52 @@ describe('public.rate_limit_consume', () => {
     });
   });
 
-  it('actually refuses a consume executed as anon', async () => {
+  it("actually refuses a consume executed with anon's privileges", async () => {
     // The privilege bits above are what Postgres THINKS; this is what it does.
-    // On `directSql`: through the pooler the backend error after the role
-    // switch reaches us as a closed socket, not as 42501 (see the docblock).
-    const attempt = directSql.begin(async (tx) => {
-      await tx.unsafe('SET LOCAL ROLE anon');
-      await tx.unsafe(
-        `SELECT * FROM public.rate_limit_consume(
-           $1::text, $2::text, $3::text, $4::integer, NULL::integer,
-           NULL::integer, NULL::timestamptz
-         )`,
-        ['user', keyHash, `${route}:anon`, 1]
-      );
-    });
+    //
+    // The call runs as a throwaway role that INHERITS `anon` rather than as
+    // `anon` itself. That is not a softer assertion — an inheriting member
+    // holds exactly the union of anon's privileges and PUBLIC's, and it owns
+    // nothing of its own, so the ACL this exercises IS the one the migration
+    // wrote (both the `REVOKE … FROM anon` and the `REVOKE … FROM PUBLIC`
+    // have to hold for it to be refused). It is the only way to run the call
+    // at all: as `anon` the error's supautils hint segfaults the backend and
+    // takes the cluster with it — see the docblock.
+    const probeRole = `rl_anon_probe_${randomUUID().replace(/-/g, '')}`;
 
-    await expect(attempt).rejects.toMatchObject({ code: '42501' });
+    await sql.unsafe(`CREATE ROLE "${probeRole}" INHERIT IN ROLE anon`);
+
+    try {
+      const [membership] = await sql<Array<{ inherits_anon: boolean }>>`
+        SELECT pg_has_role(${probeRole}, 'anon', 'USAGE') AS inherits_anon
+      `;
+      // If this ever goes false the case below stops proving anything.
+      expect(membership.inherits_anon).toBe(true);
+
+      // The connecting role may only SET ROLE to a role it is a member of.
+      // Spelled out by name, never `TO CURRENT_USER`: supautils segfaults the
+      // backend on that too (`GRANT … TO CURRENT_USER`, signal 11), and one
+      // crash restarts the cluster under every other case in this file.
+      const [{ role: connectedRole }] = await sql<Array<{ role: string }>>`
+        SELECT current_user AS role
+      `;
+      await sql.unsafe(`GRANT "${probeRole}" TO "${connectedRole}"`);
+
+      const attempt = sql.begin(async (tx) => {
+        await tx.unsafe(`SET LOCAL ROLE "${probeRole}"`);
+        await tx.unsafe(
+          `SELECT * FROM public.rate_limit_consume(
+             $1::text, $2::text, $3::text, $4::integer, NULL::integer,
+             NULL::integer, NULL::timestamptz
+           )`,
+          ['user', keyHash, `${route}:anon`, 1]
+        );
+      });
+
+      await expect(attempt).rejects.toMatchObject({ code: '42501' });
+    } finally {
+      await sql.unsafe(`DROP ROLE IF EXISTS "${probeRole}"`);
+    }
   });
 
   it('CANCELS the query when the deadline fires on a saturated pool', async () => {

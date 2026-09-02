@@ -126,11 +126,6 @@ jobs:
       - name: Rate limiter DB test (via transaction pooler)
         env:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
-          # The two role-switch cases only. Supavisor closes the client socket
-          # when the backend raises inside a transaction after `SET LOCAL
-          # ROLE`, so through the pooler they surface CONNECTION_CLOSED instead
-          # of SQLSTATE 42501. `[db] port` from supabase/config.toml.
-          RATE_LIMIT_DB_DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: bun vitest run lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
       - name: Stop Supabase
         if: always()
