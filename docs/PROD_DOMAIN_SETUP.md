@@ -147,8 +147,25 @@ Left sidebar **SSL/TLS**:
 Left sidebar **Security**:
 - **WAF** → **Managed rules** → deploy the **Cloudflare Managed Ruleset**.
 - **WAF** → **Rate limiting rules** → add a basic rule (e.g. 100 req / 10s / IP →
-  Block) — tune later.
+  Block) — tune later. **Add a second, tighter rule scoped to the auth proxy**:
+  `starts_with(http.request.uri.path, "/api/supabase-proxy/auth/v1/")`, e.g.
+  20 req / 10s / IP → Block. That path is the only unauthenticated write surface
+  a stranger can reach in volume (signup, password reset, login), and the edge
+  is the one layer that can refuse it without spending a Cloud Run request.
+  The app enforces its own global / per-IP / per-mailbox budgets behind this —
+  see `docs/RATE_LIMITING.md` — so the edge rule is a coarse flood breaker, not
+  the security boundary.
 - **Bots** → turn on **Bot Fight Mode**.
+
+> **`cf-connecting-ip` is what the app trusts.** In production
+> (`ORIGIN_SHARED_SECRET` set) `lib/infra/security/request-ip.ts` reads that
+> header and nothing else — a request arriving without it gets a `null` IP and
+> is limited only by the app-wide budgets. Cloudflare rewrites the header on
+> every proxied request, so it cannot be forged from outside; the client-writable
+> `x-forwarded-for` is deliberately never consulted. Do not add a Transform Rule
+> that strips or renames `CF-Connecting-IP`, and keep the proxy status on the
+> `kallo.fit` record **Proxied** — an unproxied (grey-cloud) record silently
+> turns every per-IP limit into no limit at all.
 
 Left sidebar **Redirect Rules** (under Rules):
 - Create a rule: if `Hostname equals www.kallo.fit` → **Dynamic redirect** to
@@ -244,6 +261,39 @@ Configuration**:
 
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
+
+### ⚠️ Ops action — raise Authentication → Rate Limits (do this before launch)
+
+**Auth for the whole app runs through one Supabase per-IP bucket, and the
+dashboard defaults are sized for one user.** The Flutter app and the browser
+client point their `SUPABASE_URL` at `https://kallo.fit/api/supabase-proxy`, so
+every request reaches Supabase from this service's single Cloud Run egress
+address. Supabase's per-IP auth limits therefore apply to the **entire user
+base together** — they are the app's real auth ceiling, and no limit in our own
+code can raise them (`docs/RATE_LIMITING.md` → "Upstream sees one IP").
+
+Supabase dashboard → **Authentication** → **Rate Limits**. The defaults, which
+`supabase/config.toml` mirrors, are:
+
+| Limit | Default | Raise to |
+|---|---|---|
+| Sign-ins / sign-ups | 30 per 5 min per IP | sized for the whole user base |
+| Token refreshes | 150 per 5 min per IP | sized for the whole user base — every signed-in session refreshes hourly |
+| Token verifications (OTP / magic link) | 30 per 5 min per IP | sized for the whole user base |
+
+Symptom if this is not done: sign-in and refresh start failing for *everyone at
+once* under ordinary load, with 429s that our own limiter never issued — so the
+`rate_limit_events` table shows nothing and the cause is invisible from our side.
+
+**Deferred structural fix.** Supabase honours a caller-supplied client address
+via `Sb-Forwarded-For`, but only when the request also presents a **secret** API
+key. The proxy runs on the anon/publishable key today, so it cannot use it. The
+redesign — hold the secret key server-side in the proxy, forward the real client
+IP, and let Supabase's per-IP limits work per user again — is the actual fix and
+is not in scope for the rate-limiting work; until it lands, the dashboard values
+above are the only lever.
+
+---
 
 Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…&type=…`
 (never `…supabase.co/auth/v1/verify`, which is unreachable on many VN networks).

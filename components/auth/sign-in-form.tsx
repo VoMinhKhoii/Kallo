@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { isRateLimitedAuthError } from '@/lib/infra/auth/rate-limited';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { createClient } from '@/lib/infra/supabase/client';
 
@@ -46,11 +47,18 @@ export function SignInForm() {
     if (error) {
       // Supabase returns the same error for a wrong password and a nonexistent
       // account (anti-enumeration), so the copy stays neutral and renders
-      // inline — never a raw API string in a toast.
+      // inline — never a raw API string in a toast. A THROTTLE is the one case
+      // that must not read as "wrong password": telling someone with the right
+      // password that it is wrong makes them retype it and get throttled
+      // harder.
       setFormError(
-        error.message === 'Email not confirmed'
-          ? t('errorUnconfirmed')
-          : t('error')
+        isRateLimitedAuthError(error)
+          ? t('errors.rateLimited')
+          : t(
+              error.message === 'Email not confirmed'
+                ? 'errorUnconfirmed'
+                : 'error'
+            )
       );
       setLoading(false);
       return;

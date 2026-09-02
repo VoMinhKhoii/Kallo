@@ -2,6 +2,7 @@ import { waitlistSignupSchema } from '@/lib/api/contracts/waitlist';
 import {
   fromZod,
   open,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
   ref,
@@ -20,7 +21,7 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
       operationId: 'getHealth',
       summary: 'Service health',
       description:
-        'Liveness probe. Returns 200 when the service is up and the database invariants it depends on hold, 503 otherwise. Safe to poll; no authentication.',
+        'Liveness probe. Returns 200 when the service is up and the database invariants it depends on hold, 503 otherwise. The body is `{ok, service}` only — which invariant failed is logged server-side, not published. Safe to poll: the probe is cached for 30 seconds per instance and rate limited per IP.',
       tags: ['Public'],
       ok: ref('HealthCheck'),
       okDescription: 'All checks passed.',
@@ -32,8 +33,9 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
       operationId: 'joinWaitlist',
       summary: 'Join the launch waitlist',
       description:
-        'Registers an email address for the mobile launch announcement and sends a confirmation link. Rate limited per IP address.',
+        'Registers an email address for the mobile launch announcement and sends a confirmation link. Rate limited per IP address, and per address by a resend cooldown. The request body is capped at 8 KB.',
       tags: ['Public'],
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(waitlistSignupSchema),
       bodyDescription:
         'The address to add, and optionally where the signup came from.',
@@ -48,7 +50,7 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
       operationId: 'confirmWaitlist',
       summary: 'Confirm a waitlist signup',
       description:
-        'The target of the emailed confirmation link. Always redirects to the landing page with `?waitlist=<confirmed|already|expired|invalid>`; it never returns a body.',
+        'The target of the emailed confirmation link. Always redirects to the landing page with `?waitlist=<confirmed|already|expired|invalid>`; it never returns a body. Rate limited per IP address, so an identical-looking response cannot be used to guess tokens cheaply.',
       tags: ['Public'],
       parameters: [
         {

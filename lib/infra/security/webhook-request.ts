@@ -1,4 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
+import { PayloadTooLargeError } from '@/lib/core/errors/app-error';
+import { readBoundedBody } from '@/lib/infra/http/bounded-body';
 
 /**
  * Transport-level helpers shared by every inbound webhook handler
@@ -20,41 +22,25 @@ export function timingSafeMatch(first: string, second: string): boolean {
 export class WebhookPayloadTooLargeError extends Error {}
 
 /**
- * Read a request body as text, refusing anything over `maxBytes`.
+ * Read a webhook body as text, refusing anything over `maxBytes`.
  *
- * Checks `content-length` first (cheap rejection) and then enforces the cap
- * while streaming, so a lying or absent header can't be used to stuff the
- * handler with an unbounded payload.
+ * A thin adapter over the generic `readBoundedBody` (content-length prefilter
+ * plus streaming cap), differing only in what it throws: the two webhook
+ * handlers catch `WebhookPayloadTooLargeError` and answer in the SHAPE THEIR
+ * PROVIDER EXPECTS, not in our own error envelope, so the generic 413
+ * `AppError` must not leak out of here.
  */
 export async function readBoundedWebhookBody(
   request: Request,
   maxBytes: number
 ): Promise<string> {
-  const contentLength = request.headers.get('content-length');
-  if (
-    contentLength &&
-    /^\d+$/.test(contentLength) &&
-    Number(contentLength) > maxBytes
-  ) {
-    throw new WebhookPayloadTooLargeError();
-  }
-
-  if (!request.body) return '';
-  const reader = request.body.getReader();
-  const decoder = new TextDecoder();
-  let totalBytes = 0;
-  let rawBody = '';
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    if (totalBytes > maxBytes) {
-      await reader.cancel();
+  try {
+    const body = await readBoundedBody(request, maxBytes);
+    return new TextDecoder().decode(body);
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
       throw new WebhookPayloadTooLargeError();
     }
-    rawBody += decoder.decode(value, { stream: true });
+    throw error;
   }
-
-  return rawBody + decoder.decode();
 }

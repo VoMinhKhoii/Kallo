@@ -61,6 +61,23 @@ export async function middleware(request: NextRequest) {
     if (provided === null || !timingSafeEqual(provided, originSecret)) {
       return new NextResponse('Forbidden', { status: 403 });
     }
+  } else if (process.env.K_SERVICE) {
+    // `K_SERVICE` is injected by Cloud Run and by nothing else, so its presence
+    // means this process is a deployed revision — and a deployed revision with
+    // no shared secret is an origin serving the open internet with its edge WAF
+    // bypassable by anyone who learns the run.app hostname. Before this, that
+    // failed OPEN: the check simply skipped, and the only symptom was silence.
+    //
+    // Safe to key on `K_SERVICE` because every Cloud Run pipeline in this repo
+    // binds the secret — there is exactly one (`cloud-run-prod.yml`), and it
+    // both mounts ORIGIN_SHARED_SECRET and now asserts the secret version
+    // exists before deploying. A future preview pipeline that does not bind it
+    // will 503 loudly on its first request, which is the correct way to find
+    // out.
+    console.error(
+      '[middleware] ORIGIN_SHARED_SECRET is unset on Cloud Run — refusing to serve with the origin lock disabled.'
+    );
+    return new NextResponse('Origin lock misconfigured', { status: 503 });
   }
 
   // API + locale-agnostic auth routes: origin-locked above, but no locale

@@ -215,6 +215,18 @@ jobs:
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      # The origin lock is the app's only trust boundary, and middleware.ts now
+      # fails CLOSED when it is missing (503 on every request of a Cloud Run
+      # revision with no ORIGIN_SHARED_SECRET). That in-process check is
+      # per-isolate and only fires once traffic arrives; THIS is the
+      # once-per-deployment guard. `secrets describe` above proves the secret
+      # RESOURCE exists — a secret with zero enabled versions passes it and
+      # then fails the deploy at mount time, so assert a readable version.
+      # Output is discarded: the value must never reach the log.
+      - name: Assert the origin-lock secret has a readable version
+        run: |
+          gcloud secrets versions access latest \
+            --secret=kallo-prod-origin-shared-secret > /dev/null
       - id: svc
         name: Check if service already exists
         # --no-traffic + --tag are only valid once a first revision exists. On the

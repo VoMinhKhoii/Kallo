@@ -61,8 +61,9 @@ code.
 | `authEmailRecipient` (same ops, keyed on the target mailbox) | recipient | 2 / 6 / 20 | degraded |
 | `authLoginIp` (password grant, verify, MFA) | ip | 30 / 300 / 1000 | degraded |
 | `authLoginAccount` (password grant, keyed on the target account) | account | 10 / 30 / 100 | degraded |
-| `authGlobal` (all proxied auth ops) | global | 300 / 3000 / — | degraded |
-| `authRefresh` | ip | 60 / — / — | memory |
+| `authGlobal` (every proxied auth op that reaches the DB layer — the `email` and `login` classes; see "Wired surfaces") | global | 300 / 3000 / — | degraded |
+| `authRefresh` (flood breaker, not a quota — a refusal here is a sign-out risk) | ip | 600 / — / — | memory |
+| `authRefreshGlobal` (the botnet backstop for refresh) | global | 3000 / 60000 / — | degraded |
 | `authOther` | ip | 60 / — / — | memory |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
@@ -95,6 +96,167 @@ Shape of the numbers:
 When a caller applies several policies to one request, the order is
 `global → ip → account/recipient`: cheapest rejection first, and a block
 short-circuits so a refused request never charges the narrower counters.
+
+## Wired surfaces (PR 2)
+
+Which routes actually call the limiter, what they key on, and — the part that
+is easy to get wrong — **what a refusal looks like to the client that made it**.
+
+| Route | Class / condition | Policies, in order | Keys | Refusal envelope |
+|---|---|---|---|---|
+| `POST /api/supabase-proxy/auth/v1/{signup,recover,otp,magiclink,resend}`, `PUT\|POST .../user` with an `email` **or `phone`** | `email` | `authGlobal` → `authEmailIp` → `authEmailRecipient` | `global:'auth'`, `ip`, `recipient` (canonical target — see "What a target key is") | GoTrue: `{code:429, error_code:'over_request_rate_limit', msg}` + `Retry-After` |
+| `GET\|POST .../reauthenticate` (sends a nonce by mail/SMS — an `email` op on BOTH verbs) | `email` | `authGlobal` → `authEmailIp` → `authEmailRecipient` | `global:'auth'`, `ip`, `recipient` = `user:<jwt sub>` | same |
+| `POST .../token?grant_type=password\|pkce\|id_token`, `POST .../verify`, `POST .../factors/{id}/{verify,challenge}` | `login` | `authGlobal` → `authLoginIp` → `authLoginAccount` | `global:'auth'`, `ip`, `account` (canonical target account) | same |
+| `POST .../token?grant_type=refresh_token` | `refresh` | `authRefreshGlobal` → `authRefresh` | `global:'auth:refresh'`, `ip` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
+| everything else under `auth/v1/` (`GET /user`, `logout`, `settings`, `authorize`, `callback`, unknown paths) | `other` | `authOther` | `ip` only | 429, as above |
+| `auth/v1/admin/*` and `auth/v1/invite` | — | none (never forwarded) | — | `404 {"error":"Not found"}` — both are service-key surfaces no client of this proxy holds a key for |
+| `POST /api/v1/waitlist` | — | `waitlistSignupIp` | `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
+| `GET /api/v1/waitlist/confirm` | — | `waitlistConfirmIp` | `ip` | same |
+| `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
+
+Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
+covered by an exhaustive test table; body reading in `_lib/auth-body.ts`, target
+extraction in `_lib/auth-target.ts`, enforcement order in `_lib/enforce-limits.ts`,
+and the whole pre-forward sequence in `_lib/guard-auth-request.ts`.
+
+### What a target key is, and why a request without one is refused
+
+The `recipient` / `account` budgets are the only controls an attacker cannot
+escape by rotating source addresses, so the value they key on has to match what
+GOTRUE will act on — not what our own clients happen to send:
+
+- **Case-insensitive field lookup.** GoTrue is Go, and `encoding/json` binds
+  struct fields case-insensitively. `{"Email":…}` and `{"EMAIL":…}` mail the
+  same stranger `{"email":…}` does; an exact-key lookup returned "no recipient"
+  and skipped the mail-bombing budget entirely.
+- **Form encoding too.** `ParseForm` accepts
+  `application/x-www-form-urlencoded`, so the same request re-encoded slipped
+  past a JSON-only reader. The parser is chosen by trying JSON then form —
+  never from `content-type`, which the attacker also writes.
+- **Plus-addressing and Gmail dots are collapsed** (`canonicalizeEmailForKey`
+  in `lib/core/text/email.ts`): `victim+1@x.com` … `victim+9999@x.com` are one
+  mailbox and must be one counter. Gmail's dot-insensitivity is applied to
+  `gmail.com` / `googlemail.com` only, because dots are significant elsewhere.
+  **For the key only** — the address forwarded upstream is always the one the
+  caller typed.
+- **Phones are keyed as `phone:<digits>`**, matching GoTrue's own
+  `formatPhoneNumber` (which strips every non-digit), and namespaced so a phone
+  can never share a counter with an email.
+- **Length is a CAP, not a filter.** An over-long value is truncated onto a
+  (shared, therefore stricter) key at 320 chars. Dropping it was a bypass: a
+  255-character address became "no target".
+- **`requiresTarget` fails closed.** Mail-sending ops and the password grant are
+  refused locally with `400 {"error_code":"validation_failed"}` when no email or
+  phone can be extracted — forwarding an unkeyed `signup`/`recover` is exactly
+  the mail bomb the recipient budget exists to stop. `/verify` (a `token_hash`
+  link names nobody), `/reauthenticate`, the PKCE/id_token grants and MFA are
+  deliberately exempt.
+- **A refresh must be JSON with a plausible `refresh_token`** (non-empty string,
+  ≤ 2048 chars) or it is refused the same way. That also removes a grant
+  confusion: Go's `ParseForm` merges the body into `r.Form` with the body taking
+  precedence over the query string, so a form-encoded `grant_type=password`
+  body sent to `?grant_type=refresh_token` would be a password grant upstream
+  and a cheap memory-bucket `refresh` to us.
+
+### Why a refusal on refresh is a 503
+
+`POST /token?grant_type=refresh_token` is the one request where "slow down"
+cannot be spoken as 429. supabase-js's `_callRefreshToken` and
+supabase-flutter's gotrue both call `_removeSession()` on any **non-retryable**
+error, and only auth-js's `NETWORK_ERROR_CODES` (502, 503, 504, 520-524, 530)
+are retryable. A local 429 on refresh is therefore a forced sign-out of a user
+whose only crime was a shared IP.
+
+So a limiter block on `op === 'refresh'` answers **503 + `Retry-After`**
+(`limiterUnavailableResponse`): the client backs off and keeps the session.
+`handleError` short-circuits on the status before reading the body, so on this
+path supabase-js never parses `error_code`/`msg` at all — the status is the
+whole message. Everything else keeps its 429.
+
+### Why the auth proxy speaks GoTrue's dialect
+
+supabase-js and supabase-flutter do not know they are talking to a proxy. Both
+feed every non-2xx response to gotrue's error handler, which reads the code
+from `error_code` (the numeric HTTP status sits in `code`, failing its
+string check) and the message from `msg`. Answering in **our** envelope would
+surface as the generic "something went wrong" line in both apps — the wrong
+copy for the one failure a user most needs to understand. `over_request_rate_limit`
+is the code the clients map to their localized "too many attempts" string —
+supabase-flutter has since launch (`auth_form_controller.dart`), and the web
+forms were taught to (`lib/infra/auth/rate-limited.ts`, used by
+`components/auth/sign-{in,up}-form.tsx`, copy at `auth.sign*.errors.rateLimited`
+in both locales). Speaking the dialect is what makes the right copy POSSIBLE on
+each client; it does not by itself make it correct there. Builder + test:
+`_lib/gotrue-error.ts`.
+
+### Guard rails at these call sites
+
+- **A policy is never applied with zero keys.** `getRequestIp` returns `null`
+  in production whenever `cf-connecting-ip` is absent, so every per-IP policy is
+  called under `if (ip)`. A call that resolves no key counts nothing and throws
+  `RateLimitPolicyMisuseError` outside production.
+- **A `null` IP is not unlimited** on the auth proxy: `authGlobal` still ran.
+  On `authRefresh` / `authOther` (IP-only memory policies) there is genuinely
+  nothing to enforce, and the request is admitted — both are cheap, and refusing
+  token refresh over a missing edge header would be the worse failure.
+- **The waitlist backstop is not the IP, and it is narrower than it sounds.**
+  What still applies when the IP key is unavailable is `signUpForWaitlist`'s
+  per-ADDRESS resend cooldown — and nothing else. It bounds repeat submissions
+  of ONE address; a caller submitting distinct addresses with a null IP is
+  unbounded by this layer. That is only reachable by something that already
+  holds the origin secret (a null IP in production means the request did not
+  come through Cloudflare), which is why it is an accepted edge rather than a
+  hole.
+- **`other` skips every DB policy**; `refresh` carries `authRefreshGlobal`
+  instead of `authGlobal`. `authRefresh` is per-IP and per-instance, so a botnet
+  replaying stolen refresh tokens from a million addresses looks like a million
+  ordinary phones to it and is visible only in a total. That backstop costs one
+  database round trip on the path that keeps every signed-in user signed in —
+  the exact cost the memory-only design of `authRefresh` was meant to avoid —
+  and it is accepted deliberately: one shared counter row, `degraded` so a
+  limiter outage never blocks refresh, sized far above anything the real fleet
+  produces. `authRefresh` itself is loose (600/min per instance) because it is a
+  flood breaker, not a quota: one carrier-NAT address fronts thousands of
+  phones, and a refusal there is a sign-out risk rather than a delay.
+
+### Bodies are bounded before they are buffered
+
+`lib/infra/http/bounded-body.ts` — `content-length` prefilter plus a streaming
+cap, so a lying or absent header buys nothing. `readBoundedJson` layers
+`JSON.parse` on top. Over the cap is **413 `PAYLOAD_TOO_LARGE`**, not 400, and
+not retryable: the same bytes will be refused again.
+
+| Reader | Cap | Refusal |
+|---|---|---|
+| `/api/supabase-proxy/auth/v1/*` | 64 KB | GoTrue `{code:413, error_code:'payload_too_large', msg}` |
+| `POST /api/v1/waitlist` | 8 KB | app envelope, via `handleRouteError` |
+| RevenueCat + Supabase auth-hook webhooks | unchanged | `readBoundedWebhookBody`, now a thin adapter over the same reader, still throwing `WebhookPayloadTooLargeError` so each handler answers in its provider's shape |
+
+### Upstream sees one IP, and that — not `authGlobal` — is the real ceiling
+
+The proxy does **not** forward `X-Forwarded-For`. Supabase honours a
+caller-supplied client address only via `Sb-Forwarded-For` presented with a
+secret API key this layer does not hold, so every proxied user already shares
+one bucket in Supabase's per-IP auth limits: this service's Cloud Run egress
+address. Sending a header upstream ignores would only look like a fix.
+
+Be precise about what follows from that, because the comfortable version is
+wrong. **Supabase's per-IP auth limits are the app's real auth ceiling**, and
+they apply to the entire user base at once:
+
+| Supabase limit (`supabase/config.toml`) | Value | Applies to |
+|---|---|---|
+| `sign_in_sign_ups` | 30 / 5 min **per IP** | every proxied sign-in and sign-up, together |
+| `token_verifications` | 30 / 5 min **per IP** | every OTP / magic-link verification, together |
+| `token_refresh` | 150 / 5 min **per IP** | every session refresh, together |
+
+The hosted project's dashboard values are what actually run — `config.toml` is
+the local-dev source and the documented default shape, not the deployed
+setting. `authGlobal` is **not** sized against these and cannot be: it is a
+botnet backstop that caps total spend when no individual key looks abusive, and
+it is not a fairness mechanism between our users. Raising the dashboard limits
+is an ops action, tracked in `docs/PROD_DOMAIN_SETUP.md` along with the
+structural fix (a `Sb-Forwarded-For` + secret-key proxy redesign).
 
 ## failMode: what happens when the limiter cannot answer
 

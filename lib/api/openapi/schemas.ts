@@ -67,24 +67,12 @@ export const SCHEMAS: Record<string, JsonSchema> = {
   HealthCheck: {
     type: 'object',
     required: ['ok', 'service'],
-    description: 'Liveness plus a handful of schema invariants.',
+    description:
+      'Liveness. `ok` folds in a set of schema invariants the deploy gate checks; which one failed is recorded server-side rather than published, so the response cannot be used to map the schema.',
     properties: {
       ok: { type: 'boolean', description: 'True when every check passed.' },
       service: { type: 'string', enum: ['kallo'] },
-      checks: {
-        type: 'object',
-        properties: {
-          hasUserProfiles: { type: 'boolean' },
-          hasFoodTable: { type: 'boolean' },
-          hasFoodSourceId: { type: 'boolean' },
-          hasNewUserTrigger: { type: 'boolean' },
-          seededFoodRows: { type: 'integer' },
-          orphanedAuthUsers: { type: 'integer' },
-        },
-      },
-      error: string(
-        'Present instead of `checks` when the probe itself failed.'
-      ),
+      error: string('Present when the probe itself failed.'),
     },
   },
 
