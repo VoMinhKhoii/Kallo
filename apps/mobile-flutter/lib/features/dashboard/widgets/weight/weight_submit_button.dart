@@ -68,7 +68,6 @@ class WeightSubmitButton extends StatelessWidget {
                   // a word, not a techy 11px all-caps eyebrow.
                   style: dashBody(
                     color: KalloColors.text,
-                    weight: FontWeight.w600,
                   ),
                 ),
         ),

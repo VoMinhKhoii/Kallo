@@ -331,9 +331,6 @@ class _DropdownRowState extends State<_DropdownRow> {
                 child: Text(
                   widget.option.label,
                   style: dashBody(
-                    weight: widget.selected
-                        ? FontWeight.w500
-                        : FontWeight.w400,
                   ),
                 ),
               ),

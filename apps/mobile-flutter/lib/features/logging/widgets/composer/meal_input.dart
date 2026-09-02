@@ -102,9 +102,9 @@ class _MealInputState extends State<MealInput>
   /// One line, growing to about eight before the field scrolls itself.
   static const _fieldBox = BoxConstraints(minHeight: 24, maxHeight: 200);
 
-  /// 17 (iOS's body size) — the ONE place this surface goes above 14: a
-  /// sentence typed under a keyboard, not a data row being scanned.
-  static final _fieldText = dashBody().copyWith(fontSize: 17, height: 1.35);
+  /// Body — a sentence typed under a keyboard reads at the same size it will
+  /// be read back at in the feed.
+  static final _fieldText = dashBody();
 
   /// Owned only when the caller didn't supply one — a controller belongs to
   /// whoever created it, and disposing a borrowed one would break the feed the

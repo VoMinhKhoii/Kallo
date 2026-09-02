@@ -52,7 +52,7 @@ class ProfileAvatarButton extends ConsumerWidget {
                     style: const TextStyle(
                       fontFamily: KalloTextStyles.sansFamily,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: kInkMuted,
                     ),
                   ),

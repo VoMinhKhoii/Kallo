@@ -74,7 +74,7 @@ class _AddedRow extends StatelessWidget {
     // sitting inches away. The totals live in the summary and on Save.
     final kcal = item.ingredient.per100g.caloriesKcal;
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 64),
+      constraints: const BoxConstraints(minHeight: 60),
       child: Row(
         children: [
           Expanded(

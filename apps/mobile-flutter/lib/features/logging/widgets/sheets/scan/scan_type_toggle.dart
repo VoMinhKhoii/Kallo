@@ -109,7 +109,6 @@ class _Segment extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: dashBody(
                 color: selected ? kInk : kInkMuted,
-                weight: selected ? FontWeight.w500 : FontWeight.w400,
               ),
             ),
           ),

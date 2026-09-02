@@ -205,7 +205,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
                         onTap: _retry,
                         child: Text(
                           tr('settings.profilePanel.retry'),
-                          style: dashBody(weight: FontWeight.w500),
+                          style: dashBody(),
                         ),
                       ),
                     ),

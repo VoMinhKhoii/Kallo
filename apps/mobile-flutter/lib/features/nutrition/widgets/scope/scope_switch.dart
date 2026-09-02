@@ -49,7 +49,7 @@ class ScopeSwitch extends StatelessWidget {
                     color: kInkMuted),
                 const SizedBox(width: 6),
               ],
-              Text(label, style: dashMeta(weight: FontWeight.w500)),
+              Text(label, style: dashMeta()),
               if (onComplete) ...[
                 const SizedBox(width: 6),
                 const Icon(LucideIcons.arrowRight400, size: 14,

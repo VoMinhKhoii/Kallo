@@ -165,10 +165,9 @@ class _CalorieDelta extends StatelessWidget {
         const SizedBox(width: 2),
         Text(
           formatLocalizedNumber(diff.abs(), locale),
-          // Medium: the delta is a figure qualifying the hero, not a caption.
+          // Tabular: the delta is a figure qualifying the hero, not a caption.
           style: dashMeta(
             color: kInkMuted,
-            weight: FontWeight.w500,
             tabular: true,
           ),
         ),

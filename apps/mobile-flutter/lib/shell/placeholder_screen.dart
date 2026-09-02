@@ -39,7 +39,7 @@ class PlaceholderScreen extends StatelessWidget {
           ),
           Expanded(
             child: Center(
-              child: Text(tr(titleKey), style: dashPageTitle()),
+              child: Text(tr(titleKey), style: kSectionHeader()),
             ),
           ),
         ],

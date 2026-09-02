@@ -396,9 +396,6 @@ class _CountryRowState extends State<_CountryRow> {
                 child: Text(
                   widget.label,
                   style: dashBody(
-                    weight: widget.selected
-                        ? FontWeight.w500
-                        : FontWeight.w400,
                   ),
                 ),
               ),

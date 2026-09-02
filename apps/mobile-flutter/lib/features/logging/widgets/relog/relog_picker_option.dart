@@ -92,7 +92,6 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                       overflow: TextOverflow.ellipsis,
                       style: dashBody(
                         color: KalloColors.bandForeground,
-                        weight: FontWeight.w500,
                       ),
                     ),
                     Text(

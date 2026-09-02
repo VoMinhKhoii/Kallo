@@ -389,7 +389,7 @@ class _SegmentButtonState extends State<_SegmentButton> {
         child: Text(
           widget.label,
           textAlign: TextAlign.center,
-          style: dashBody(weight: FontWeight.w500, color: color),
+          style: dashBody(color: color),
         ),
       ),
     );
@@ -509,7 +509,7 @@ class _CarbCardState extends State<_CarbCard> {
           children: [
             Text(
               widget.label,
-              style: dashBody(weight: FontWeight.w500),
+              style: dashBody(),
             ),
             const SizedBox(height: KalloSpacing.sp1),
             Text(
@@ -634,7 +634,7 @@ class _HeroTarget extends StatelessWidget {
             const SizedBox(height: 2), // gap-0.5
             Text(
               '${grams}g',
-              style: dashBody(weight: FontWeight.w500),
+              style: dashBody(),
             ),
           ],
         ),

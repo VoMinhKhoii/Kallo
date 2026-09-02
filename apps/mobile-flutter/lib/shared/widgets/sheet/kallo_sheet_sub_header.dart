@@ -95,7 +95,7 @@ class KalloSheetSubHeader extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: dashValue().copyWith(fontWeight: FontWeight.w600),
+                      style: kSectionHeader(),
                     ),
                   ),
                 ),

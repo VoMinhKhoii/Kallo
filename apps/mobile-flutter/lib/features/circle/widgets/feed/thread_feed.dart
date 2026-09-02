@@ -160,11 +160,11 @@ class _EmptyState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
     child: Column(
       children: [
-        const Icon(LucideIcons.users300, color: kInkMuted, size: 24),
+        const Icon(LucideIcons.users300, color: kInkMuted, size: KalloIcons.primary),
         const SizedBox(height: KalloSpacing.sp3),
         Text(
           tr(titleKey, namedArgs: namedArgs),
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         const SizedBox(height: KalloSpacing.sp1),
         Text(

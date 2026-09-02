@@ -73,7 +73,7 @@ class ScanErrorCard extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: dashBody(weight: FontWeight.w500),
+            style: dashBody(),
           ),
           if (detail != null && detail!.isNotEmpty) ...[
             const SizedBox(height: KalloSpacing.sp1),

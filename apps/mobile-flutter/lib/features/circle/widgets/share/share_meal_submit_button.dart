@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 class SubmitButton extends StatelessWidget {
   const SubmitButton({
@@ -57,9 +57,7 @@ class SubmitButton extends StatelessWidget {
               const SizedBox(width: KalloSpacing.sp2),
               Text(
                 label,
-                style: KalloTextStyles.sansMedium(
-                  fontSize: KalloFontSize.sm,
-                ).copyWith(color: KalloColors.text),
+                style: dashBody(),
               ),
             ],
           ),

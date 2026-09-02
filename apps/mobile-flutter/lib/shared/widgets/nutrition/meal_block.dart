@@ -6,14 +6,14 @@ import 'composition_bar.dart';
 
 /// Where the kcal figure sits in a [MealBlock].
 ///
-/// Own meals (Recent meals, the logging feed card) put kcal 14/500 at the
+/// Own meals (Recent meals, the logging feed card) put kcal (Value) at the
 /// TITLE row's right or the LEGEND's right; Circle posts lead the legend
 /// with it. One anatomy, two documented placements.
 enum MealBlockKcal { titleRight, legendLeading, legendTrailing }
 
 /// The shared meal-block anatomy (native pass, 2026-08-31):
-/// meal text 14 → 6px calorie-share bar → legend row with 14px macro food
-/// glyphs + 12 muted gram labels. Used by Recent meals, the logging feed
+/// meal text (Body) → 6px calorie-share bar → legend row with 14px macro food
+/// glyphs + Caption muted gram labels. Used by Recent meals, the logging feed
 /// card and Circle posts — same bones, different kcal placement.
 class MealBlock extends StatelessWidget {
   const MealBlock({
@@ -28,7 +28,7 @@ class MealBlock extends StatelessWidget {
     this.middle,
   });
 
-  /// The meal text — 14pt regular ink (no serif; the greeting is the app's
+  /// The meal text — Body regular ink (no serif; the greeting is the app's
   /// only serif moment).
   final String title;
 
@@ -61,7 +61,7 @@ class MealBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final kcal = kcalLabel == null
         ? null
-        : Text(kcalLabel!, style: dashBody(weight: FontWeight.w500));
+        : Text(kcalLabel!, style: dashBody());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,12 +109,11 @@ class MealBlock extends StatelessWidget {
                       color: kCompositionColors[key],
                     ),
                     const SizedBox(width: 4),
-                    // Caption 13, not Meta 15 (Threads scale, 2026-09-01).
-                    // This legend is three icon+figure pairs and a kcal total
-                    // on ONE line: at Meta 15 it measures 253.4pt of legend
-                    // plus a 73.9pt kcal, which does not fit a 320pt phone's
-                    // card. The tier exists for exactly this — a compact
-                    // component the secondary size visibly breaks.
+                    // Caption, not Meta. This legend is three icon+figure
+                    // pairs and a kcal total on ONE line: at Meta it measured
+                    // ~253pt of legend plus a ~70pt kcal, which does not fit
+                    // a 320pt phone's card. The tier exists for exactly this
+                    // — a compact component the secondary size visibly breaks.
                     Text(gramLabels[key]!, style: dashCaption()),
                   ],
                 ),

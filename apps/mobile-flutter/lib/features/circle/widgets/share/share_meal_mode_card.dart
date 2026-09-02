@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 class ModeCard extends StatelessWidget {
   const ModeCard({
@@ -43,16 +43,12 @@ class ModeCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: KalloTextStyles.sansMedium(
-                  fontSize: KalloFontSize.detail,
-                ).copyWith(color: KalloColors.text),
+                style: dashBody(),
               ),
               const SizedBox(height: 2),
               Text(
                 hint,
-                style: KalloTextStyles.sansRegular(
-                  fontSize: KalloFontSize.xxs,
-                ).copyWith(color: KalloColors.textMuted),
+                style: dashMeta(),
               ),
             ],
           ),

@@ -113,7 +113,7 @@ class _DateMorphState extends State<DateMorph>
     // Fixed height = the expanded strip's height, so morphing never pushes the
     // feed; the collapsed chip just centers in it.
     return SizedBox(
-      height: LoggingSpacing.strip,
+      height: LoggingSpacing.stripFor(context),
       child: Stack(
         alignment: Alignment.center,
         children: [

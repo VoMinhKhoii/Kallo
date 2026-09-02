@@ -95,7 +95,7 @@ class PillNavBar extends ConsumerWidget {
                 showAddSheet(context, ref);
               }),
               PillNavItem(
-                icon: LucideIcons.chartLine300,
+                icon: LucideIcons.apple300,
                 label: tr('app.nav.nutrition'),
                 active: current == _nutritionBranch,
                 onTap: () => _goBranch(_nutritionBranch),

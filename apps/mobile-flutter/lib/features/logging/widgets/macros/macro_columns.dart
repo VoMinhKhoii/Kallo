@@ -16,19 +16,22 @@ abstract final class MacroColumns {
   /// Caption 13) and nothing else, so the label sits tight against its own
   /// figure instead of being flung to the far side of the cell.
   ///
-  /// Re-measured for the Threads scale (2026-09-01): the cluster sits on
-  /// Caption 13 rather than the new Meta 15 — see [MacroSplit] for why — and at
-  /// the old 14 the colon of `C:` clipped outright.
+  /// The cluster sits on Caption (12 since the metric-compensated ramp,
+  /// 2026-09-02; 13 before) rather than Meta — see [MacroSplit] for why. `C:`
+  /// measures ~12.7 at 12; at the old 14 the colon clipped outright, and the
+  /// column keeps that slack rather than chasing the type down.
   static const double label = 15;
 
   /// Sized so the block, its gutters and the kcal column leave the dish name
-  /// the 84pt its longest word needs ("Top blade", 83.0 at Body 17) — the real
-  /// floor on a 390pt phone, where the row gets 334.
+  /// the ~79pt its longest word needs ("Top blade", ~78 at Body 16; it was
+  /// 83.0 at the old 17) — the real floor on a 390pt phone, where the row
+  /// gets 334.
   ///
   /// 33 → 32 when [cellGap] grew to a structural 8 (device QA, 2026-09-01).
   /// The block gives up 3pt so the gutters can be real, which leaves the name
-  /// 87 — 4pt over its floor. Three digits are then taken in by the cell's own
-  /// `FittedBox`: `490g` (35.2) renders at 0.91, `1047g` (37.9) at 0.84.
+  /// 87 — now ~9pt over its floor. Three digits are taken in by the cell's
+  /// own `FittedBox`: at Caption 12 `490g` (~32.5) renders at ~0.98, `1047g`
+  /// (~35) at ~0.91.
   /// Scaling the FIGURE is the right thing to spend here; the alternative is
   /// letting it run into the next label, which is the defect this fixed.
   ///
@@ -53,17 +56,13 @@ abstract final class MacroColumns {
   /// One macro's full cell.
   static const double cell = label + value;
 
-  /// Sized for `999 kcal` at Value 17 (73.9) — every three-digit total at full
-  /// size.
-  ///
-  /// The item rows used to clear it with room to spare at Body 14; on the
-  /// Threads scale (2026-09-01) their figure is also 17, so a three-digit row
-  /// kcal now fills the column exactly at 1.0x and is taken in by the
-  /// [MacroKcal] `FittedBox` past that. Never clipped — that is the guarantee
-  /// this column exists to make — but the slack at the 1.3x Dynamic Type
-  /// ceiling is gone. Widening it is not the fix: this width is what sets
-  /// where the P/C/F block stops, and every extra point reads as a hole
-  /// between the macros and the calories on every row.
+  /// Sized for `999 kcal` at the old Value 17 (73.9) and kept there when the
+  /// figure stepped to 16 (~69.5, metric-compensated ramp 2026-09-02): a
+  /// three-digit total now has ~4.5pt of slack at 1.0x and is taken in by the
+  /// [MacroKcal] `FittedBox` (~0.82) at the 1.3x Dynamic Type ceiling. Never
+  /// clipped — that is the guarantee this column exists to make. Narrowing it
+  /// to the new figure is not free: this width is what sets where the P/C/F
+  /// block stops, and every point pushes the macros toward the calories.
   ///
   /// This column is SHARED with the totals line by necessity: both readouts end
   /// at the card's right edge, so its width is what sets where the P/C/F block

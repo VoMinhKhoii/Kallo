@@ -401,13 +401,13 @@ class _SavedConfirmation extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           tr('settings.saved'),
-          style: dashBody(weight: FontWeight.w500),
+          style: dashBody(),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             '·',
-            style: dashBody(weight: FontWeight.w500, color: KalloColors.border),
+            style: dashBody(color: KalloColors.border),
           ),
         ),
         CountUpText(
@@ -416,7 +416,7 @@ class _SavedConfirmation extends StatelessWidget {
           enabled: !reduceMotion,
           format: (v) => '${fmt.format(v.round())} '
               '${tr('onboarding.bodyMetrics.perDay')}',
-          style: dashBody(weight: FontWeight.w500, tabular: true),
+          style: dashBody(tabular: true),
         ),
       ],
     );

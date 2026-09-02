@@ -154,7 +154,6 @@ class TimelineDayCellState extends State<TimelineDayCell> {
                 dayNum,
                 style: dashBody(
                   color: labelColor,
-                  weight: FontWeight.w500,
                   tabular: true,
                 ),
               ),

@@ -145,13 +145,12 @@ class _ComposerModeButtonState extends State<ComposerModeButton> {
                         children: [
                           TextSpan(
                             text: widget.label,
-                            style: dashBody(weight: FontWeight.w500),
+                            style: dashBody(),
                           ),
                           if (detail != null)
                             TextSpan(
                               text: ' $detail',
                               style: dashBody(
-                                weight: FontWeight.w500,
                                 color: kInkMuted,
                               ),
                             ),

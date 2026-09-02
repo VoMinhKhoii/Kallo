@@ -55,9 +55,9 @@ class WeightAmountField extends StatelessWidget {
     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
     autocorrect: false,
     cursorColor: KalloColors.accent,
-    // Body at medium weight — the surface holds three sizes (Hero / Body /
-    // Meta), so a number entry reads as data via weight, not a size of its own.
-    style: dashBody(color: kInk, weight: FontWeight.w500, tabular: true),
+    // Body, tabular — the surface holds three sizes (Hero / Body / Meta), so
+    // a number entry reads as data via ink + tabular digits, not its own size.
+    style: dashBody(color: kInk, tabular: true),
     decoration: InputDecoration(
       constraints: const BoxConstraints(minHeight: 52),
       filled: true,

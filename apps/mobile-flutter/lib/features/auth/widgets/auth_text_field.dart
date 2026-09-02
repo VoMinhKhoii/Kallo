@@ -5,7 +5,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 
 /// The auth email/password field (native pass, 2026-08-31): a 52pt full-round
 /// pill on the app's field metrics — white fill, hairline border, 18 left
@@ -96,11 +95,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
     }
 
     final isPassword = widget.obscureText;
-    const inputStyle = TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 17,
-      color: KalloColors.text,
-    );
+    final inputStyle = dashBody();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

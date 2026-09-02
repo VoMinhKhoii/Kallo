@@ -36,7 +36,7 @@ class InviteValueRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 64),
+      constraints: const BoxConstraints(minHeight: 60),
       child: Row(
         children: [
           Expanded(
@@ -52,7 +52,6 @@ class InviteValueRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: dashBody(
                     color: muted ? kInkMuted : kInk,
-                    weight: FontWeight.w500,
                   ),
                 ),
               ],

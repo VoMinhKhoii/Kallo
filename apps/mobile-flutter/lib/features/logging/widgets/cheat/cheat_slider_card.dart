@@ -239,7 +239,7 @@ class _CheatSliderRow extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               slider.label,
-              style: dashBody(weight: FontWeight.w500),
+              style: dashBody(),
             ),
           ],
         ),
@@ -314,7 +314,7 @@ class _StopLabel extends StatelessWidget {
 
     final style = dashMeta(color: exact || between ? kInk : kInkMuted).copyWith(
       height: 1.25,
-      fontWeight: exact ? FontWeight.w500 : FontWeight.w400,
+      fontWeight: FontWeight.w400,
     );
 
     return Positioned(
@@ -545,7 +545,7 @@ class _SaveButtonState extends State<_SaveButton> {
                 const SizedBox(width: 6),
                 Text(
                   'logging.cheatSliders.confirm'.tr(),
-                  style: dashBody(weight: FontWeight.w500),
+                  style: dashBody(),
                 ),
               ],
             ),

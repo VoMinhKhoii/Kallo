@@ -116,7 +116,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
             child: Text(
               widget.label,
               textAlign: TextAlign.center,
-              style: dashBody(color: label, weight: FontWeight.w500),
+              style: dashBody(color: label),
             ),
           ),
         ),
@@ -168,7 +168,7 @@ class _CancelButtonState extends State<_CancelButton> {
           child: Text(
             widget.label,
             textAlign: TextAlign.center,
-            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
+            style: dashBody(color: kInkMuted),
           ),
         ),
       ),

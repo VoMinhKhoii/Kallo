@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../models/nutrition/barcode_product.dart';
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
 import '../../../../../shared/widgets/form/sheet_confirm_button.dart';
-import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/barcode_amount.dart';
@@ -14,6 +13,7 @@ import 'barcode_amount_controls.dart';
 import 'barcode_grams_picker.dart';
 import 'barcode_nutrition_preview.dart';
 import 'barcode_serving_picker.dart';
+import '../../../../../theme/calm_tokens.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
 /// package, or custom grams — offering only the modes the product actually
@@ -95,13 +95,10 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product header: brand eyebrow + serif name.
+                // Product header: brand eyebrow + name as the sheet's title.
                 if (product.brand != null && product.brand!.isNotEmpty)
-                  KalloText(
-                    product.brand!.toUpperCase(),
-                    variant: KalloTextVariant.eyebrow,
-                  ),
-                KalloText(product.name, variant: KalloTextVariant.h3),
+                  Text(product.brand!.toUpperCase(), style: dashEyebrow()),
+                Text(product.name, style: kSectionHeader()),
                 const SizedBox(height: KalloSpacing.sp3),
 
                 // Amount-mode segmented control (only when there's a choice).
@@ -154,10 +151,9 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
             ),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: KalloText(
+              child: Text(
                 widget.errorText!,
-                variant: KalloTextVariant.small,
-                style: const TextStyle(color: KalloColors.danger),
+                style: dashMeta(color: KalloColors.danger),
               ),
             ),
           ),

@@ -8,12 +8,13 @@
 /// four styles are that exception made explicit, in one place, instead of four
 /// call sites reaching for whatever tier happens to measure right this month.
 ///
-/// The sizes are not new. They are what the dial shipped at before the
-/// Threads-scale ramp (2026-09-01) lifted body 14→17 and meta 12→15 underneath
-/// it, and they are what the reference screenshot measures: at @3x its compact
-/// macro figure inks 32px tall and its denominator 28px, which is 14 and 12 to
-/// within a pixel. The ramp is right for reading surfaces and was never a claim
-/// about the inside of a 60pt mark.
+/// The sizes are not new. They are what the dial shipped at and what the
+/// reference screenshot measures: at @3x its compact macro figure inks 32px
+/// tall and its denominator 28px, which is 14 and 12 to within a pixel. The
+/// reading ramp has moved twice underneath them (14/12 → 17/15 → 16/14) and
+/// they stayed put each time — so every style here is PINNED, not aliased to
+/// a ramp token that may move again. The hero is the one exception: it IS the
+/// ramp's hero.
 library;
 
 import 'package:flutter/material.dart';
@@ -21,20 +22,28 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_typography.dart';
 
-/// 17 / 500 — the figure a FULL-SIZE dial holds: the Today row's `202g`, the
-/// Log header's calorie headline.
-TextStyle gaugeFigure() => dashValue();
+/// 17 / 400 — the figure a FULL-SIZE dial holds: the Today row's `202g`, the
+/// Log header's calorie headline. Pinned (2026-09-02): it used to alias
+/// [dashValue], which stepped to 16 with the metric-compensated ramp.
+TextStyle gaugeFigure() => const TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 17,
+  fontWeight: FontWeight.w400,
+  height: 1.1,
+  color: kInk,
+  fontFeatures: [FontFeature.tabularFigures()],
+);
 
-/// 40 / 500 — the one hero figure, in the dial that gets the top of a screen.
+/// 40 / 400 — the one hero figure, in the dial that gets the top of a screen.
 TextStyle gaugeHeroFigure() => dashHero();
 
-/// 14 / 500 — the figure a COMPACT dial holds. Two thirds of the radius means
+/// 14 / 400 — the figure a COMPACT dial holds. Two thirds of the radius means
 /// two thirds of the room, so the compact variant steps its figure down one
 /// notch and keeps the same denominator beneath it.
 TextStyle gaugeCompactFigure() => const TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
-  fontWeight: FontWeight.w500,
+  fontWeight: FontWeight.w400,
   height: 1.3,
   color: kInk,
   fontFeatures: [FontFeature.tabularFigures()],

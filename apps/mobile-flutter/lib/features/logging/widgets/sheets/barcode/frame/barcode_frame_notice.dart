@@ -87,7 +87,6 @@ class BarcodeFrameNotice extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: dashMeta(
                   color: KalloColors.bandForeground,
-                  weight: FontWeight.w500,
                 ),
               ),
               if (code != null && code.isNotEmpty) ...[
@@ -146,7 +145,6 @@ class _RouteLink extends StatelessWidget {
             // sentences of the message they sit under.
             style: dashMeta(
               color: KalloColors.bandForeground,
-              weight: FontWeight.w500,
             ).copyWith(
               decoration: TextDecoration.underline,
               decorationColor: KalloColors.bandForeground70,

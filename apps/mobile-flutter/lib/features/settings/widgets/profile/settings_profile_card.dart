@@ -61,7 +61,7 @@ class SettingsProfileCard extends ConsumerWidget {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: dashBody(weight: FontWeight.w500),
+                      style: dashBody(),
                     ),
                     if (email != null) ...[
                       const SizedBox(height: 2),

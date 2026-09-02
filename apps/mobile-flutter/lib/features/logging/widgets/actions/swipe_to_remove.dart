@@ -107,7 +107,7 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
             const SizedBox(width: 6),
             Text(
               'logging.remove'.tr(),
-              style: dashBody(color: Colors.white, weight: FontWeight.w500),
+              style: dashBody(color: Colors.white),
             ),
           ],
         ),

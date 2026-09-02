@@ -6,7 +6,6 @@ import '../../../../../shared/widgets/form/decimal_input.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import '../../../../../theme/kallo_typography.dart';
 
 /// The gram amount on an added row: a bordered FIELD showing "180 g" (44pt,
 /// radius 12, hairline), not a chip with a chevron — a chevron reads as a
@@ -79,7 +78,7 @@ class _ManualGramFieldState extends State<ManualGramField> {
         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
         onChanged: (raw) => widget.onChanged(_parse(raw)),
         cursorColor: KalloColors.accent,
-        style: dashBody(weight: FontWeight.w500),
+        style: dashBody(),
         decoration: InputDecoration(
           isDense: true,
           // The app theme fills and outlines every field; a field this small
@@ -89,14 +88,12 @@ class _ManualGramFieldState extends State<ManualGramField> {
           hintText: '100',
           hintStyle: dashBody(color: kInkMuted),
           suffixText: ' ${'logging.manualLogging.gramsUnit'.tr()}',
-          suffixStyle: KalloTextStyles.sansRegular(
-            fontSize: 14,
-          ).copyWith(color: kInkMuted),
-          // Vertical 11 over a 17/1.35 line lands the box on ~45pt — the 44pt
-          // minimum, paid symmetrically so the value is centred in it.
+          suffixStyle: dashMeta(),
+          // Vertical 12 over a 16/1.3 line (20.8) lands the box on ~45pt —
+          // the 44pt minimum, paid symmetrically so the value is centred in it.
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 10,
-            vertical: 11,
+            vertical: 12,
           ),
           border: border,
           enabledBorder: border,

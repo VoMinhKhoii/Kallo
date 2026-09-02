@@ -70,7 +70,7 @@ class _ManualResultRowState extends State<ManualResultRow> {
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeInOut,
           color: _pressed ? KalloColors.hover : Colors.transparent,
-          constraints: const BoxConstraints(minHeight: 64),
+          constraints: const BoxConstraints(minHeight: 60),
           child: Row(
             children: [
               Expanded(

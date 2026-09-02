@@ -9,6 +9,7 @@ import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../data/chat_group_providers.dart';
+import '../../../../theme/kallo_theme.dart';
 
 class GroupMembersList extends ConsumerWidget {
   const GroupMembersList({required this.group, super.key});
@@ -41,7 +42,7 @@ class GroupMembersList extends ConsumerWidget {
                   'groups.info.removeLabel',
                   namedArgs: {'name': member.label},
                 ),
-                icon: const Icon(LucideIcons.x300, size: 16),
+                icon: const Icon(LucideIcons.x300, size: KalloIcons.tertiary),
                 onPressed: () => _confirmRemove(context, ref, member),
               ),
           ],

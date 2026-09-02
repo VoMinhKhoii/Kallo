@@ -122,9 +122,7 @@ class KalloSheetHeader extends StatelessWidget {
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: dashValue().copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: kSectionHeader(),
                         ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),

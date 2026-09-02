@@ -149,7 +149,6 @@ class _TrendBadge extends StatelessWidget {
       '$arrow ${delta.abs().toStringAsFixed(1)}',
       style: dashBody(
         color: kInkMuted,
-        weight: FontWeight.w500,
         tabular: true,
       ),
     );

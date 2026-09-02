@@ -184,7 +184,7 @@ class _TorchButton extends StatelessWidget {
                 ),
                 child: Icon(
                   on ? LucideIcons.flashlight300 : LucideIcons.flashlightOff300,
-                  size: 20,
+                  size: KalloIcons.action,
                   color: on ? const Color(0xFF141413) : Colors.white,
                 ),
               ),

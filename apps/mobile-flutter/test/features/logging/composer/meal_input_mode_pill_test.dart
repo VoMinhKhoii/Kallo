@@ -99,7 +99,7 @@ void main() {
     // explicitly not bold.
     expect(intensity.fontSize, mode.fontSize);
     expect(intensity.fontWeight, mode.fontWeight);
-    expect(mode.fontWeight, FontWeight.w500);
+    expect(mode.fontWeight, FontWeight.w400);
     expect(mode.fontWeight, isNot(FontWeight.bold));
   });
 

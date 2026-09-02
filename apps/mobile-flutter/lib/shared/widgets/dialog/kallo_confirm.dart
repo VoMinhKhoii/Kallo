@@ -83,7 +83,7 @@ class _KalloConfirmDialog extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: dashValue().copyWith(fontWeight: FontWeight.w600),
+              style: kSectionHeader(),
             ),
             if (message != null) ...[
               const SizedBox(height: KalloSpacing.sp2),

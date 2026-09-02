@@ -116,7 +116,7 @@ class _CookingCard extends StatelessWidget {
         children: [
           Text(
             field.label,
-            style: dashBody(weight: FontWeight.w500),
+            style: dashBody(),
           ),
           const SizedBox(height: KalloSpacing.sp3),
           OptionStrip.settings(

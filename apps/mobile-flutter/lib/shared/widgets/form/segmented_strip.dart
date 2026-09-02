@@ -116,14 +116,10 @@ class SegmentedStrip extends StatelessWidget {
                       child: Center(
                         child: AnimatedDefaultTextStyle(
                           duration: KalloMotion.quick,
-                          // Medium on the active segment, regular beside it —
-                          // 500 is this palette's weight ceiling.
+                          // Ink on the active segment, muted beside it —
+                          // colour marks the selection, never weight.
                           style: dashBody(
                             color: i == activeIndex ? kInk : kInkMuted,
-                            weight:
-                                i == activeIndex
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
                           ),
                           // Words are wider than "7d" was, and Vietnamese
                           // wider still, so the longest label scales down

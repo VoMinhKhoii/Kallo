@@ -94,7 +94,7 @@ class _TimelineChipState extends State<TimelineChip> {
                       formatted,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: dashBody(weight: FontWeight.w500),
+                      style: dashBody(),
                     ),
                   ),
                   // "This day has meals on it" — ink, like every other mark in

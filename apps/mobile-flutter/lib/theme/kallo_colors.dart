@@ -35,7 +35,11 @@ abstract final class KalloColors {
 
   // ── Text ─────────────────────────────────────────────────────────────
   static const Color text = Color(0xFF141413); // near-black ink
-  static const Color textMuted = Color(0xFF6E6D66); // neutral muted
+  // 6E6D66 → 7A7870 (2026-09-02): one step lighter so secondary text recedes
+  // the way Threads' and the Claude app's does. 4.1:1 on the canvas, 4.4:1 on
+  // white — deliberately under AA's 4.5 for small text; `text`, `danger` and
+  // `mention` still clear it. Not for anything that must be READ to act.
+  static const Color textMuted = Color(0xFF7A7870); // neutral muted
   static const Color textSoft = Color(0xFF3D3D3A); // soft long-body text
 
   // ── Accent ───────────────────────────────────────────────────────────
@@ -44,10 +48,11 @@ abstract final class KalloColors {
 
   // ── The muted band ───────────────────────────────────────────────────
   // The surface the composer's inline under-logged notice (`PartialDayNotice`)
-  // and the relog `/` picker both paint: white copy on muted grey. [textMuted]
-  // is the lightest grey that still clears 4.5:1 against white (~5.2:1), which
-  // is why the notice picked it.
-  static const Color bandSurface = textMuted;
+  // and the relog `/` picker both paint: white copy on muted grey. Pinned to
+  // the pre-2026-09-02 muted value rather than aliased to [textMuted]: this is
+  // the lightest grey that still clears 4.5:1 for WHITE copy (~5.2:1), and
+  // lightening the text token must not silently wash the band under it.
+  static const Color bandSurface = Color(0xFF6E6D66);
   static const Color bandForeground = Color(0xFFFFFFFF);
 
   /// Only for GLYPHS on the band, never copy. Text there must stay full white
@@ -135,11 +140,11 @@ abstract final class KalloColors {
   // accent bar there competes with the art instead of supporting it.
   static const Color text30 = Color(0x4D141413); // 30%
   static const Color text25 = Color(0x40141413); // 25% — ruler anchor ticks
-  static const Color textMuted50 = Color(0x806E6D66); // 50%
-  static const Color textMuted60 = Color(0x996E6D66); // 60%
-  static const Color textMuted70 = Color(0xB36E6D66); // 70% — macro-bar labels
-  static const Color textMuted80 = Color(0xCC6E6D66); // 80% — legacy-macro note
-  static const Color placeholderMuted40 = Color(0x666E6D66); // 40%
+  static const Color textMuted50 = Color(0x807A7870); // 50%
+  static const Color textMuted60 = Color(0x997A7870); // 60%
+  static const Color textMuted70 = Color(0xB37A7870); // 70% — macro-bar labels
+  static const Color textMuted80 = Color(0xCC7A7870); // 80% — legacy-macro note
+  static const Color placeholderMuted40 = Color(0x667A7870); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────
   // Only for washes over an OPAQUE LIGHTER surface (a white card, a field). On

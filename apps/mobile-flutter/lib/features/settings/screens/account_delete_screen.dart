@@ -208,7 +208,6 @@ class _DeleteButton extends StatelessWidget {
                       : Text(
                         tr('settings.account.deleteConfirmAction'),
                         style: dashBody(
-                          weight: FontWeight.w500,
                           color: Colors.white,
                         ),
                       ),

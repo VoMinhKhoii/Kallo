@@ -59,7 +59,6 @@ class PartialDayNotice extends StatelessWidget {
                 Text(
                   'logging.feedArea.partialDayNotice.title'.tr(),
                   style: dashBody(
-                    weight: FontWeight.w500,
                     color: Colors.white,
                   ),
                 ),

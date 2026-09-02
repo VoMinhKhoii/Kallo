@@ -91,11 +91,11 @@ class TopToastPill extends StatelessWidget {
                     horizontal: KalloSpacing.sp2,
                     vertical: KalloSpacing.sp1,
                   ),
-                  // Medium is the weight ceiling — semibold read thick in
-                  // Be Vietnam Pro.
+                  // Regular, like every button label: Be Vietnam Pro's
+                  // Medium already reads semibold.
                   child: Text(
                     actionLabel!,
-                    style: dashBody(weight: FontWeight.w500),
+                    style: dashBody(),
                   ),
                 ),
               ),
