@@ -61,6 +61,10 @@ class TodaySection extends ConsumerWidget {
         isToday ? loggingDayProvider(args) : dashboardDayProvider(args);
     final async = ref.watch(provider);
     return async.when(
+      // A weigh-in invalidates the bundle, so loggingDayProvider goes
+      // isReloading and .when would flash the whole Today card back to its
+      // skeleton — skipLoadingOnReload only defaults true on refresh.
+      skipLoadingOnReload: true,
       loading:
           () => const Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

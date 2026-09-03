@@ -34,6 +34,10 @@ class WeightChart extends ConsumerWidget {
     return KalloCard(
       padding: DashboardSpacing.card,
       child: async.when(
+        // A weigh-in invalidates the bundle, so weightSummaryProvider goes
+        // isReloading and .when would flash the skeleton back over a card that
+        // already has data — skipLoadingOnReload only defaults true on refresh.
+        skipLoadingOnReload: true,
         // Skeleton of the card body (no spinner) — the card is already drawn,
         // so only its inner rows shimmer.
         loading: () => SkeletonPulse(
