@@ -14,24 +14,25 @@ import 'kallo_confirm_actions.dart';
 /// radius, an `OverflowBar` footer — which matched nothing else in the app.
 ///
 /// **2026-09-03 (user decision): both options are explicit verbs, and the
-/// destructive one is a RED-FILLED button.** The dialog used to answer every
-/// question with "Đồng ý" / "Huỷ", on the theory that a verb beside "huỷ" —
-/// which in Vietnamese means both *cancel* and *destroy* — reads as the same
-/// choice twice. The fix for that ambiguity was the wrong one: it removed the
+/// destructive one is red.** The dialog used to answer every question with
+/// "Đồng ý" / "Huỷ", on the theory that a verb beside "huỷ" — which in
+/// Vietnamese means both *cancel* and *destroy* — reads as the same choice
+/// twice. The fix for that ambiguity was the wrong one: it removed the
 /// information instead of the collision, so the user had to read the title to
 /// find out what "Đồng ý" agreed to. Both labels now name their own outcome
-/// ("Xoá" / "Giữ lại", "Đăng xuất" / "Ở lại"), and the two are unmistakable by
-/// colour as well as by word — the affirmative is a filled pill, red when it
-/// destroys something, and the safe option is a quiet ghost button under it.
-/// That is why [confirmLabel] and [cancelLabel] are REQUIRED: there is no
-/// generic pair left to fall back to, and every call site must state its verbs.
+/// ("Xoá" / "Giữ lại", "Đăng xuất" / "Ở lại"). That is why [confirmLabel] and
+/// [cancelLabel] are REQUIRED: there is no generic pair left to fall back to,
+/// and every call site must state its verbs.
 ///
-/// The chrome is the platform's: an iOS scale-in over a blurred barrier
-/// ([showCupertinoDialog] + [CupertinoPopupSurface], 270pt like a system
-/// alert). The CONTENT is the app's — Be Vietnam Pro, the app's press language,
-/// the app's red — because the two buttons are stacked full-width rather than
-/// split across a hairline, which is what makes "which one is safe" answerable
-/// at a glance in two languages with very different word lengths.
+/// **2026-09-03, second pass (user reference: Instagram's iOS "Delete post?"
+/// alert): the filled pills are retired for the native alert anatomy.** The
+/// chrome AND the content are the platform's now — a 270pt
+/// [CupertinoPopupSurface] scaled in over a blurred barrier, a centred title
+/// and message, then stacked full-width text actions divided by 0.5pt
+/// hairlines: the destructive verb red and semibold, the safe one quiet ink.
+/// Only the type is the app's (Be Vietnam Pro, [kSectionHeader]/[dashBody]).
+/// The stack survives the rewrite: [CupertinoAlertDialog] would put two short
+/// verbs side by side, which is the arrangement the labels change was about.
 ///
 /// Returns false for every way out that is not the affirmative — cancel, the
 /// barrier, and the system back gesture alike.
@@ -105,32 +106,53 @@ class _KalloConfirmDialog extends StatelessWidget {
           child: SizedBox(
             width: _kAlertWidth,
             child: CupertinoPopupSurface(
-              // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
-              // phone; the card scrolls rather than overflowing.
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: KalloSpacing.sp4,
-                    vertical: KalloSpacing.sp5,
-                  ),
+              // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
+              // is the red/double-yellow-underline error style, and every
+              // `Text(style: …)` here MERGES onto it — which is where the
+              // yellow underline under the title came from. Naming the default
+              // (with an explicit `decoration: none`) is the fix.
+              child: DefaultTextStyle(
+                style: dashBody().copyWith(decoration: TextDecoration.none),
+                // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
+                // phone; the card scrolls rather than overflowing.
+                child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: kSectionHeader(),
-                      ),
-                      if (message != null) ...[
-                        const SizedBox(height: KalloSpacing.sp2),
-                        Text(
-                          message,
-                          textAlign: TextAlign.center,
-                          style: dashMeta(),
+                      Padding(
+                        // The system alert's own content inset: 20 top/bottom,
+                        // 16 sides. The actions below run full-bleed so their
+                        // hairlines reach both edges.
+                        padding: const EdgeInsets.fromLTRB(
+                          KalloSpacing.sp4,
+                          KalloSpacing.sp5,
+                          KalloSpacing.sp4,
+                          KalloSpacing.sp5,
                         ),
-                      ],
-                      const SizedBox(height: KalloSpacing.sp5),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: kSectionHeader(),
+                            ),
+                            if (message != null) ...[
+                              const SizedBox(height: KalloSpacing.sp1),
+                              Text(
+                                message,
+                                textAlign: TextAlign.center,
+                                // Ink, not muted: an alert's message is the
+                                // consequence being consented to, and iOS
+                                // paints it near-black under the title.
+                                style: dashMeta(color: kInk),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                       KalloConfirmActions(
                         confirmLabel: confirmLabel,
                         cancelLabel: cancelLabel,

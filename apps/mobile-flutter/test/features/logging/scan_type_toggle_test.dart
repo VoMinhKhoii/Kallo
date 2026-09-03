@@ -5,11 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/scan_type_toggle.dart';
+import 'package:kallo_mobile/shared/widgets/form/segmented_strip.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
 
 /// The scan sheet's Barcode / Nutrition segmented control, measured.
+///
+/// It draws through the shared [SegmentedStrip] — it used to own a private
+/// copy with a pill track and a per-segment cross-fade. The width claims below
+/// survived that move and are the reason it may not shrink back.
 ///
 /// It was pinned to `width: 240`, which left ~105pt per segment — enough to
 /// ellipsise "Nutrition label" into "Nutrition l…" in English, and nowhere
@@ -27,10 +33,11 @@ void main() {
   // content width for the control.
   const double screenWidth = 320;
   const double trackWidth = screenWidth - 2 * 16;
-  const double trackPadding = 3;
-  const double segmentPadding = 4;
+  const double trackPadding = SegmentedStrip.inset;
+  // The thumb (and the label slot under it) is one segment of the INNER track.
   const double segmentWidth = (trackWidth - 2 * trackPadding) / 2;
-  const double textRoom = segmentWidth - 2 * segmentPadding;
+  // The tap layer spans the full 44pt row, outside the track's inner padding.
+  const double targetWidth = trackWidth / 2;
 
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -81,10 +88,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// The two segment boxes, left to right.
-  List<Size> segmentSizes(WidgetTester tester) => [
-    tester.getSize(find.byType(AnimatedContainer).at(0)),
-    tester.getSize(find.byType(AnimatedContainer).at(1)),
+  /// The two tap targets, left to right.
+  List<Size> targetSizes(WidgetTester tester) => [
+    for (var i = 0; i < 2; i++)
+      tester.getSize(
+        find
+            .descendant(
+              of: find.byType(SegmentedStrip),
+              matching: find.byType(GestureDetector),
+            )
+            .at(i),
+      ),
   ];
 
   for (final locale in const [Locale('en'), Locale('vi')]) {
@@ -113,7 +127,7 @@ void main() {
             // segment actually gives it, ellipsis or not.
             expect(
               paragraph.size.width,
-              lessThanOrEqualTo(textRoom),
+              lessThanOrEqualTo(segmentWidth),
               reason: '"$label" ($name) is wider than the segment',
             );
           }
@@ -128,14 +142,75 @@ void main() {
             tester.getSize(find.byType(ScanTypeToggle)).width,
             screenWidth,
           );
-          final sizes = segmentSizes(tester);
+          final sizes = targetSizes(tester);
           expect(sizes[0].width, closeTo(sizes[1].width, 0.5));
-          // Equal AND the full content width: a selected pill that is wider
-          // than the segment beside it, or a control floating at 240, are both
-          // failures of the same rule.
-          expect(sizes[0].width, closeTo(segmentWidth, 0.5));
+          // Equal AND the full content width: a selected thumb wider than the
+          // segment beside it, or a control floating at 240, are both failures
+          // of the same rule.
+          expect(sizes[0].width, closeTo(targetWidth, 0.5));
+          // The thumb covers exactly one segment of the inner track.
+          expect(
+            tester
+                .getSize(
+                  find.descendant(
+                    of: find.byType(FractionallySizedBox),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .width,
+            closeTo(segmentWidth, 0.5),
+          );
         });
       }
     }
   }
+
+  testWidgets('draws the shared primitive on a rounded-rectangle track', (
+    tester,
+  ) async {
+    await pumpToggle(
+      tester,
+      locale: const Locale('en'),
+      scale: 1,
+      selected: ScanType.barcode,
+    );
+
+    expect(find.byType(SegmentedStrip), findsOneWidget);
+    // No pill anywhere: the toggle used to be a capsule, and the shape is the
+    // whole point of routing it through the primitive.
+    expect(find.byType(StadiumBorder), findsNothing);
+
+    BorderRadius radiusOf(Finder finder) {
+      final decoration =
+          tester.widget<Container>(finder).decoration! as BoxDecoration;
+      return decoration.borderRadius! as BorderRadius;
+    }
+
+    final track = radiusOf(
+      find
+          .descendant(
+            of: find.byType(SegmentedStrip),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect(track, BorderRadius.circular(KalloRadii.buttonXl));
+    // 12 is a rounded rectangle; 18 (half the 36pt track) would be the pill.
+    expect(track.topLeft.x, lessThan(SegmentedStrip.height / 2));
+
+    final thumb =
+        tester
+                .widget<DecoratedBox>(
+                  find.descendant(
+                    of: find.byType(FractionallySizedBox),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .decoration
+            as BoxDecoration;
+    expect(
+      thumb.borderRadius,
+      const BorderRadius.all(Radius.circular(KalloRadii.md)),
+    );
+  });
 }

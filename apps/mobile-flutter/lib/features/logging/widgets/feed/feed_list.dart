@@ -79,11 +79,20 @@ class FeedList extends StatelessWidget {
     final entries = view.entries;
     final hasCards = entries.isNotEmpty || view.hasLiveTail;
 
+    // The room the last card needs to clear the dock. `/logging` is a root
+    // route with no `Scaffold`, so this viewport is NOT resized by the
+    // keyboard: the dock lifts itself by `viewInsets.bottom` and the feed owes
+    // the same inset on top of the dock's own height. Read here rather than
+    // received through [dockHeight] so both move on the SAME frame — and so
+    // the ramp rebuilds this subtree only, never the whole feed.
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final reserve = dockHeight + keyboardInset;
+
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (view.hasError && !hasCards) {
       return Padding(
         // Centre the alert in the space the dock leaves, not behind it.
-        padding: EdgeInsets.only(bottom: dockHeight),
+        padding: EdgeInsets.only(bottom: reserve),
         child: LoggingDayErrorState(onRetry: onRetryDay),
       );
     }
@@ -94,7 +103,13 @@ class FeedList extends StatelessWidget {
     // confirming a meal tore the whole feed down and replayed every card's
     // entrance.
     if (!hasCards) {
-      return FeedNoMealsView(view: view, dockHeight: dockHeight);
+      // Split, not summed: the empty state eases dock-height steps and must
+      // not ease the keyboard's own frame-by-frame ramp a second time.
+      return FeedNoMealsView(
+        view: view,
+        dockHeight: dockHeight,
+        keyboardInset: keyboardInset,
+      );
     }
 
     final itemCount = entries.length + (view.hasLiveTail ? 1 : 0);
@@ -103,7 +118,7 @@ class FeedList extends StatelessWidget {
     // the tail, so riding to the bottom puts the newest turn at the top.
     return FeedTailRoom(
       pin: pin,
-      dockHeight: dockHeight,
+      dockHeight: reserve,
       date: view.date,
       builder:
           (context, tailRoom) => KalloRefreshableScroll(
@@ -119,7 +134,7 @@ class FeedList extends StatelessWidget {
                   KalloSpacing.sp3,
                   0,
                   KalloSpacing.sp3,
-                  dockHeight,
+                  reserve,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(

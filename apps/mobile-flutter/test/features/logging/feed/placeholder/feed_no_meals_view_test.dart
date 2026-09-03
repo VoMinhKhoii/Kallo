@@ -41,6 +41,7 @@ const _empty = FeedViewState(
 Widget _view({
   required double height,
   double dockHeight = 120,
+  double keyboardInset = 0,
 }) => ProviderScope(
   overrides: [
     // Never resolves — the name-less prompt is the one on screen, and the test
@@ -68,6 +69,7 @@ Widget _view({
                   child: FeedNoMealsView(
                     view: _empty,
                     dockHeight: dockHeight,
+                    keyboardInset: keyboardInset,
                   ),
                 ),
               ),
@@ -156,4 +158,31 @@ void main() {
       );
     },
   );
+
+  testWidgets('the keyboard inset moves the block on the same frame', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_view(height: 600));
+    await tester.pumpAndSettle();
+    var previous = markCentre(tester);
+
+    // `/logging` has no Scaffold, so the viewport does not shrink; the inset
+    // arrives as a per-frame ramp from the platform and the block must land
+    // where it will rest on that very frame — not ease there over 250ms the
+    // way a dock-height step does.
+    for (final inset in [40.0, 120.0, 200.0]) {
+      await tester.pumpWidget(_view(height: 600, keyboardInset: inset));
+      await tester.pump();
+      final sameFrame = markCentre(tester);
+      expect(sameFrame, lessThan(previous), reason: 'it rose with the inset');
+
+      await tester.pumpAndSettle();
+      expect(
+        markCentre(tester),
+        moreOrLessEquals(sameFrame, epsilon: 0.01),
+        reason: 'nothing was left to animate after the inset frame',
+      );
+      previous = sameFrame;
+    }
+  });
 }

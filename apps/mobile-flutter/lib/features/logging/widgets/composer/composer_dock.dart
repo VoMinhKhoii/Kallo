@@ -60,7 +60,22 @@ class _ComposerDockState extends State<ComposerDock> {
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // The dock rides the keyboard, and this is the ONE place that says so:
+    // `/logging` is a root route with no `Scaffold`, so no
+    // `resizeToAvoidBottomInset` lifts anything here — without this the dock
+    // stays pinned to the physical screen bottom and the keyboard covers it.
+    //
+    // A plain `Padding`, never an `AnimatedPadding`: iOS ramps `viewInsets`
+    // continuously over ~250ms, so this already follows the keyboard frame by
+    // frame; animating it again would lag the keyboard and double-animate the
+    // dismiss into the flicker this exists to remove.
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    // `padding.bottom` is the home indicator ALREADY netted against the
+    // keyboard — `max(viewPadding.bottom - viewInsets.bottom, 0)` — so paying
+    // it inside a box that is itself lifted by `keyboardInset` is one
+    // continuous expression (the same shape as `LoggingSpacing.quickLogGap`):
+    // never double-counted, and no step where the two cross.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     // Rebuilding the dock is NOT the only way it changes height: the composer
     // grows a line under the user's thumb via its own setState, which never
@@ -73,53 +88,62 @@ class _ComposerDockState extends State<ComposerDock> {
         return false;
       },
       child: SizeChangedLayoutNotifier(
-        child: Column(
-          key: _dockKey,
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // The fade band. Full-bleed (no horizontal inset) so the wall the
-            // feed used to hit disappears across the whole width. It replaces
-            // the dock's old top padding, so the composer keeps its breathing
-            // room and the measured height stays comparable.
-            const SizedBox(
-              height: ComposerDock.scrimHeight,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    // KalloColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
-                    // not linear: a straight alpha ramp still reads as a
-                    // visible seam where it meets transparency. All four stops
-                    // come from the token — the first three used to restate
-                    // the hex, so moving the canvas left the ramp fading
-                    // toward the *old* colour, i.e. the seam it exists to
-                    // remove.
-                    colors: [
-                      KalloColors.surface0,
-                      KalloColors.surface35,
-                      KalloColors.surface85,
-                      KalloColors.surface,
-                    ],
-                    stops: [0, 0.45, 0.8, 1],
+        child: Padding(
+          padding: EdgeInsets.only(bottom: keyboardInset),
+          // Keyed INSIDE the lift, so the height reported up is the dock's own
+          // and does NOT move with the keyboard. The feed adds the same inset
+          // to its reserve itself, in the same frame — routing the lift through
+          // this measurement instead would report it a frame late (the report
+          // is post-frame) and rebuild the whole feed on every frame of the
+          // 250ms ramp.
+          child: Column(
+            key: _dockKey,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // The fade band. Full-bleed (no horizontal inset) so the wall the
+              // feed used to hit disappears across the whole width. It replaces
+              // the dock's old top padding, so the composer keeps its breathing
+              // room and the measured height stays comparable.
+              const SizedBox(
+                height: ComposerDock.scrimHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      // KalloColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
+                      // not linear: a straight alpha ramp still reads as a
+                      // visible seam where it meets transparency. All four stops
+                      // come from the token — the first three used to restate
+                      // the hex, so moving the canvas left the ramp fading
+                      // toward the *old* colour, i.e. the seam it exists to
+                      // remove.
+                      colors: [
+                        KalloColors.surface0,
+                        KalloColors.surface35,
+                        KalloColors.surface85,
+                        KalloColors.surface,
+                      ],
+                      stops: [0, 0.45, 0.8, 1],
+                    ),
                   ),
                 ),
               ),
-            ),
-            // The opaque base — everything from the composer card down is a
-            // solid surface, including the home-indicator inset.
-            Container(
-              color: KalloColors.surface,
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                0,
-                KalloSpacing.sp3,
-                bottomInset + LoggingSpacing.block,
+              // The opaque base — everything from the composer card down is a
+              // solid surface, including the home-indicator inset.
+              Container(
+                color: KalloColors.surface,
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  0,
+                  KalloSpacing.sp3,
+                  bottomInset + LoggingSpacing.block,
+                ),
+                child: widget.child,
               ),
-              child: widget.child,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/actions/confirm_meal_removal.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
-import 'package:kallo_mobile/theme/kallo_motion.dart';
 
 import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
@@ -67,14 +67,22 @@ Future<void> _open(WidgetTester tester, Widget host) async {
   await tester.pumpAndSettle();
 }
 
-/// The fill painted directly behind an action label — the whole point of the
-/// two-tier look, so it is read off the render tree rather than restated.
-Color _fillBehind(WidgetTester tester, String label) {
-  final box = tester.widget<Container>(
-    find.ancestor(of: find.text(label), matching: find.byType(Container)).first,
-  );
-  return (box.decoration! as BoxDecoration).color!;
-}
+/// The style a label actually PAINTS with — the merge of the dialog's
+/// DefaultTextStyle and the `Text.style`, not either one restated.
+TextStyle _painted(WidgetTester tester, String label) => tester
+    .widget<RichText>(
+      find.descendant(of: find.text(label), matching: find.byType(RichText)),
+    )
+    .text
+    .style!;
+
+/// Every 0.5pt rule currently on screen, read off the render tree.
+List<Container> _hairlines() => find
+    .byType(Container)
+    .evaluate()
+    .where((e) => (e.renderObject! as RenderBox).size.height == 0.5)
+    .map((e) => e.widget as Container)
+    .toList();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -112,10 +120,94 @@ void main() {
     final cancel = tester.getRect(find.text('Giữ lại'));
     expect(
       confirm.bottom,
-      lessThan(cancel.top),
-      reason: 'the two buttons must stack, not sit on one line',
+      lessThanOrEqualTo(cancel.top),
+      reason: 'the two actions must stack, not sit on one line',
     );
     expect(confirm.center.dx, closeTo(cancel.center.dx, 0.5));
+  });
+
+  testWidgets('the action rows are full-width and share their edges', (
+    tester,
+  ) async {
+    await _open(tester, _host(onResult: (_) {}));
+    Rect row(String label) => tester.getRect(
+      find
+          .ancestor(
+            of: find.text(label),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final confirm = row('Xoá');
+    final cancel = row('Giữ lại');
+    expect(confirm.left, closeTo(cancel.left, 0.01));
+    expect(confirm.right, closeTo(cancel.right, 0.01));
+    // Full-bleed: the hairlines reach both edges of the 270pt card.
+    expect(confirm.width, 270);
+    // The iOS action row floor, which is also the tap-target floor.
+    expect(confirm.height, greaterThanOrEqualTo(44));
+    expect(cancel.height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('divides the anatomy with 0.5pt hairlines', (tester) async {
+    await _open(tester, _host(onResult: (_) {}));
+    final rules = _hairlines();
+    expect(
+      rules.length,
+      greaterThanOrEqualTo(2),
+      reason: 'one above each action row',
+    );
+    expect(rules.first.color, kHairline);
+  });
+
+  testWidgets('paints the destructive verb red and semibold', (tester) async {
+    await _open(tester, _host(onResult: (_) {}, destructive: true));
+    final confirm = _painted(tester, 'Xoá');
+    expect(confirm.color, KalloColors.danger);
+    expect(confirm.fontWeight, FontWeight.w600);
+    // No fill anywhere behind it — the pills are retired.
+    final wash = tester
+        .widget<AnimatedContainer>(
+          find
+              .ancestor(
+                of: find.text('Xoá'),
+                matching: find.byType(AnimatedContainer),
+              )
+              .first,
+        )
+        .decoration;
+    expect((wash! as BoxDecoration).color, const Color(0x00000000));
+  });
+
+  testWidgets('the safe option is regular ink', (tester) async {
+    await _open(tester, _host(onResult: (_) {}, destructive: true));
+    final cancel = _painted(tester, 'Giữ lại');
+    expect(cancel.color, kInk);
+    expect(cancel.fontWeight, FontWeight.w400);
+  });
+
+  testWidgets('a non-destructive affirmative is ink, not red', (tester) async {
+    await _open(
+      tester,
+      _host(onResult: (_) {}, confirmLabel: 'Lưu', cancelLabel: 'Bỏ qua'),
+    );
+    final confirm = _painted(tester, 'Lưu');
+    expect(confirm.color, isNot(KalloColors.danger));
+    expect(confirm.color, kInk);
+    expect(confirm.fontWeight, FontWeight.w600);
+  });
+
+  testWidgets('no yellow error underline leaks onto the text', (tester) async {
+    await _open(tester, _host(onResult: (_) {}));
+    // Outside a Material, WidgetsApp's fallback DefaultTextStyle is the
+    // red/double-yellow-underline error style and `Text.style` merges ONTO it.
+    for (final label in ['Xoá bữa ăn này?', 'Bữa ăn sẽ biến mất.', 'Xoá']) {
+      expect(
+        _painted(tester, label).decoration,
+        TextDecoration.none,
+        reason: '$label must not inherit the error style',
+      );
+    }
   });
 
   testWidgets('centres the title and the description', (tester) async {
@@ -156,26 +248,6 @@ void main() {
     expect(answer, isFalse, reason: 'dismissing must never read as consent');
   });
 
-  testWidgets('fills the affirmative red only when it destroys something', (
-    tester,
-  ) async {
-    await _open(tester, _host(onResult: (_) {}, destructive: true));
-    expect(_fillBehind(tester, 'Xoá'), KalloColors.danger);
-    expect(_fillBehind(tester, 'Giữ lại'), const Color(0x00000000));
-  });
-
-  testWidgets('a non-destructive affirmative is the beige primary', (
-    tester,
-  ) async {
-    await _open(
-      tester,
-      _host(onResult: (_) {}, confirmLabel: 'Lưu', cancelLabel: 'Bỏ qua'),
-    );
-    final fill = _fillBehind(tester, 'Lưu');
-    expect(fill, isNot(KalloColors.danger));
-    expect(fill, KalloColors.btnPrimarySoft);
-  });
-
   testWidgets('confirmMealRemoval names Remove against Keep', (tester) async {
     await _open(tester, _host(onResult: (_) {}, open: confirmMealRemoval));
     expect(find.text(tr('common.actions.remove')), findsOneWidget);
@@ -210,53 +282,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(tester.getRect(find.text('Giữ lại')).bottom, lessThan(568));
-  });
-
-  testWidgets('both buttons are one height and clear the 44pt tap floor', (
-    tester,
-  ) async {
-    await _open(tester, _host(onResult: (_) {}));
-    Rect pill(String label) => tester.getRect(
-      find
-          .ancestor(of: find.text(label), matching: find.byType(DecoratedBox))
-          .first,
-    );
-    final confirm = pill('Xoá');
-    final cancel = pill('Giữ lại');
-    expect(
-      confirm.height,
-      closeTo(cancel.height, 0.5),
-      reason: 'a stacked pair reads as one control; two heights reads as a bug',
-    );
-    expect(confirm.height, greaterThanOrEqualTo(44));
-  });
-
-  testWidgets('the cancel fades its wash in rather than snapping it', (
-    tester,
-  ) async {
-    await _open(tester, _host(onResult: (_) {}));
-
-    // Every other quiet button in the app crossfades — a bare Container would
-    // put the whole wash on screen in a single frame.
-    final animated = tester.widgetList<AnimatedContainer>(
-      find.ancestor(
-        of: find.text('Giữ lại'),
-        matching: find.byType(AnimatedContainer),
-      ),
-    );
-    expect(animated, isNotEmpty);
-    expect(animated.first.duration, KalloMotion.press);
-
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.text('Giữ lại')),
-    );
-    await tester.pump();
-    await tester.pump(KalloMotion.press ~/ 2);
-    final mid = _fillBehind(tester, 'Giữ lại');
-    expect(mid, isNot(const Color(0x00000000)), reason: 'it has started');
-    expect(mid, isNot(KalloColors.hover), reason: 'and has not finished');
-
-    await gesture.up();
-    await tester.pumpAndSettle();
   });
 }

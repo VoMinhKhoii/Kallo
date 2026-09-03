@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import 'composer_card_surface.dart';
@@ -125,10 +126,11 @@ class _MealInputState extends State<MealInput>
 
   final FocusNode _focusNode = FocusNode();
 
-  // Border + shadow crossfade on focus over 300ms.
+  // Border + shadow crossfade on focus — `emphasis` is the token for exactly
+  // this ("a control changing shape: a field taking focus").
   late final AnimationController _focus = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
+    duration: KalloMotion.emphasis,
   );
 
   @override

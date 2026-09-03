@@ -5,13 +5,20 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../../shared/widgets/form/option_strip.dart';
+import '../../../../../shared/widgets/form/segmented_strip.dart';
+import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/barcode_amount.dart';
-import '../../../../../theme/calm_tokens.dart';
 
 /// Serving / whole package / grams, under its own label — rendered only when
 /// the product has sizing for more than one of them.
+///
+/// The look this control had IS the app's mode-switch look (beige track,
+/// white rounded-rectangle thumb); it now draws through the shared
+/// [SegmentedStrip] so the thumb slides and pops instead of one segment's
+/// background fading out while another's fades in.
 class BarcodeAmountModeSwitch extends StatelessWidget {
   const BarcodeAmountModeSwitch({
     super.key,
@@ -37,59 +44,16 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
       children: [
         Text('logging.barcode.amountModeLabel'.tr(), style: kGroupLabel()),
         const SizedBox(height: KalloSpacing.sp2),
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: KalloColors.hover,
-            borderRadius: BorderRadius.circular(KalloRadii.lg),
-          ),
-          child: Row(
-            children: [
-              for (final mode in modes) Expanded(child: _segment(mode)),
-            ],
-          ),
+        SegmentedStrip(
+          options: [
+            for (final mode in modes)
+              OptionStripItem(value: mode.name, label: _label(mode)),
+          ],
+          activeIndex: modes.indexOf(selected),
+          onChange: (name) =>
+              onSelect(modes.firstWhere((m) => m.name == name)),
         ),
       ],
-    );
-  }
-
-  Widget _segment(BarcodeAmountMode mode) {
-    final isSelected = mode == selected;
-    final label = _label(mode);
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => onSelect(mode),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
-          decoration: BoxDecoration(
-            color: isSelected ? KalloColors.elev : Colors.transparent,
-            borderRadius: BorderRadius.circular(KalloRadii.md),
-            boxShadow:
-                isSelected
-                    ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ]
-                    : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: dashMeta(
-                color: isSelected ? kInk : kInkMuted,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
