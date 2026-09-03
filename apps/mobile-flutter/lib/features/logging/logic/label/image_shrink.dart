@@ -13,21 +13,33 @@ import 'image.dart';
 
 /// The one extra rung for a still that overshot [maxLabelImageBytes]: decode,
 /// downscale to [labelImageMaxWidth], re-encode as JPEG at [labelImageQuality]
-/// (the picker's own numbers), write it beside the original and run the same
-/// [labelImageFromFile] guard on the result. Decoding a multi-megabyte photo
-/// is CPU-bound, so it runs on a worker isolate via [compute].
+/// (the picker's own numbers), run the same [labelImageFromFile] guard on the
+/// result, and hand back a [LabelImage] whose bytes are the shrunk encoding
+/// and whose [LabelImage.path] is still the ORIGINAL still. The shrunk copy
+/// only exists on disk long enough to be guarded and read — it is deleted
+/// before this returns, on success and failure alike, so no retake, replace,
+/// scan failure or sheet teardown has a temp file to forget. Decoding a
+/// multi-megabyte photo is CPU-bound, so it runs on a worker isolate via
+/// [compute].
 Future<LabelImageResult> shrinkLabelImageFile(String path) async {
+  final shrunkFile = File('$path.shrunk.jpg');
   try {
     final bytes = await File(path).readAsBytes();
     final shrunk = await compute(_shrinkLabelImageBytes, bytes);
     if (shrunk == null) {
       return const LabelImageResult.failure(LabelImageFailure.unsupported);
     }
-    final shrunkPath = '$path.shrunk.jpg';
-    await File(shrunkPath).writeAsBytes(shrunk, flush: true);
-    return labelImageFromFile(shrunkPath);
+    await shrunkFile.writeAsBytes(shrunk, flush: true);
+    final result = await labelImageFromFile(shrunkFile.path);
+    final image = result.image;
+    if (image == null) return result;
+    return LabelImageResult.success(
+      LabelImage(bytes: image.bytes, mimeType: image.mimeType, path: path),
+    );
   } on FileSystemException {
     return const LabelImageResult.failure(LabelImageFailure.cameraUnavailable);
+  } finally {
+    if (await shrunkFile.exists()) await shrunkFile.delete();
   }
 }
 

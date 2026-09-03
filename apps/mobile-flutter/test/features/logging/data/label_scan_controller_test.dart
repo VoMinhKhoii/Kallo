@@ -452,7 +452,10 @@ void main() {
       expect(image.mimeType, 'image/jpeg');
       expect(image.bytes.length, lessThanOrEqualTo(maxLabelImageBytes));
       expect(img.decodeJpg(image.bytes)!.width, labelImageMaxWidth.toInt());
-      expect(image.path, endsWith('.shrunk.jpg'));
+      // The shrunk copy is a means to the bytes, not a file anyone owns:
+      // the result points at the original still and the temp is gone.
+      expect(image.path, path);
+      expect(File('$path.shrunk.jpg').existsSync(), isFalse);
     });
 
     test('a file that is not an image is unsupported', () async {
@@ -462,6 +465,7 @@ void main() {
         (await shrinkLabelImageFile(path)).failure,
         LabelImageFailure.unsupported,
       );
+      expect(File('$path.shrunk.jpg').existsSync(), isFalse);
     });
   });
 }

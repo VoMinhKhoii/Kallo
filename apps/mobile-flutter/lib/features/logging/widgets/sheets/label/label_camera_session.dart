@@ -34,6 +34,12 @@ class LabelCameraSession {
   bool _shooting = false;
   bool _disposed = false;
 
+  /// The in-flight teardown of the last live controller. `CameraController
+  /// .dispose()` releases the device asynchronously, and opening a new
+  /// controller on the same iOS camera before that completes races the
+  /// hardware ("camera in use", a black preview) — so every open waits for it.
+  Future<void>? _teardown;
+
   bool get _isBackgrounded =>
       _lifecycle == AppLifecycleState.inactive ||
       _lifecycle == AppLifecycleState.paused;
@@ -44,6 +50,12 @@ class LabelCameraSession {
     // can re-enter here); one at a time.
     if (_opening || _disposed) return;
     _opening = true;
+    await _teardown;
+    _teardown = null;
+    if (_disposed || _isBackgrounded || controller.value != null) {
+      _opening = false;
+      return;
+    }
     try {
       final camera = _camera ??= await _backCamera();
       if (camera == null) {
@@ -87,8 +99,10 @@ class LabelCameraSession {
         state == AppLifecycleState.paused) {
       if (live == null) return;
       controller.value = null;
-      live.dispose();
+      _teardown = live.dispose();
     } else if (state == AppLifecycleState.resumed && live == null) {
+      // `open()` awaits [_teardown] and re-checks the lifecycle after it, so
+      // a resume that lands mid-teardown reopens only once the device is free.
       open();
     }
   }

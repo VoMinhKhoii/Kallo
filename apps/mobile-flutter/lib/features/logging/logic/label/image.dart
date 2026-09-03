@@ -160,12 +160,13 @@ Future<LabelImageResult> labelImageFromFile(String path) async {
 }
 
 /// Map a `CameraException.code` onto the failure the sheet reports. Only a
-/// refused permission is worth sending someone to Settings for; the rest are
-/// retries. Takes the code rather than the exception so this file stays free
-/// of `package:camera`.
+/// refused permission is worth sending someone to Settings for — a denial the
+/// user can reverse there. `CameraAccessRestricted` is iOS's parental-control
+/// / MDM lock, which Settings cannot lift, so it reads as "no camera" like
+/// every other non-permission failure. Takes the code rather than the
+/// exception so this file stays free of `package:camera`.
 LabelImageFailure labelFailureForCamera(String code) => switch (code) {
   'CameraAccessDenied' ||
-  'CameraAccessDeniedWithoutPrompt' ||
-  'CameraAccessRestricted' => LabelImageFailure.permissionDenied,
+  'CameraAccessDeniedWithoutPrompt' => LabelImageFailure.permissionDenied,
   _ => LabelImageFailure.cameraUnavailable,
 };
