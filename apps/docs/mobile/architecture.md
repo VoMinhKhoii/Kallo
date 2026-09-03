@@ -31,8 +31,10 @@ lib/
   models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
   shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
-                       calorie_ring/ feedback/ form/ motion/ sheet/ surface/
-                       toast/ typography/
+                       chrome/ dialog/ feedback/ form/ gauge/ list/ motion/
+                       nutrition/ sheet/ surface/ toast/ typography/
+                       (`apps/mobile-flutter/AGENTS.md` §3 is the authoritative
+                       folder map; keep this line in step with it)
   shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
   shared/data/         static tables >1 feature reads: countries.dart
   shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,

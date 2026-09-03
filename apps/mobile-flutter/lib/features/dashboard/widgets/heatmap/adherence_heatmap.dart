@@ -184,6 +184,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         maxLines: 1,
       )..layout();
       if (painter.width > widest) widest = painter.width;
+      painter.dispose();
     }
     final needed = widest + _dayLabelPadRight;
     return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;

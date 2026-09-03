@@ -26,7 +26,7 @@ import 'pill_nav_veil.dart';
 /// feed full-screen over the shell (see [goToLogging]) — the composer owns
 /// that screen's bottom edge, and swipe-back returns here. The bar slides
 /// away while the keyboard is up, and while the user scrolls DOWN a long
-/// branch (revealed again on the first upward flick — see [navHiddenProvider]
+/// branch (revealed again on the first upward flick — see [NavVisibility]
 /// and [PillNavVeil]).
 class PillNavBar extends ConsumerWidget {
   const PillNavBar({super.key, required this.navigationShell});
@@ -42,7 +42,7 @@ class PillNavBar extends ConsumerWidget {
   void _goBranch(WidgetRef ref, int index) {
     // Switching tabs always brings the bar back: the destination scrolls from
     // its own offset and the user has just told us they want the nav.
-    ref.read(navHiddenProvider.notifier).state = false;
+    ref.read(navVisibilityProvider.notifier).reveal();
     navigationShell.goBranch(
       index,
       // Re-tapping the active tab pops that branch to its root (the standard
@@ -102,7 +102,7 @@ class PillNavBar extends ConsumerWidget {
                 HapticFeedback.lightImpact();
                 // The sheet lands over the bar, so leave the bar showing
                 // underneath it rather than half-slid away.
-                ref.read(navHiddenProvider.notifier).state = false;
+                ref.read(navVisibilityProvider.notifier).reveal();
                 showAddSheet(context, ref);
               }),
               PillNavItem(
@@ -130,7 +130,7 @@ class PillNavBar extends ConsumerWidget {
     // while the user reads DOWN a long branch. Both hide the SAME way: the
     // veil translates the bar, never resizes it.
     return PillNavVeil(
-      hidden: keyboardUp || ref.watch(navHiddenProvider),
+      hidden: keyboardUp || !ref.watch(navVisibilityProvider),
       child: bar,
     );
   }

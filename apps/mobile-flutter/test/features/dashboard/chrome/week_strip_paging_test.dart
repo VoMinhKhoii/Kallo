@@ -10,7 +10,7 @@ import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/chrome/week_strip.dart';
 import 'package:kallo_mobile/models/profile/dashboard.dart';
 
-import '../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 /// The home date chip strip could not be swiped: it was a plain Row of the 7
 /// days around today, so a day older than three days ago was unreachable. It

@@ -17,6 +17,7 @@ import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
 import '../logic/label/image.dart';
+import '../logic/label/image_shrink.dart';
 import '../logic/label/review.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
@@ -155,19 +156,22 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
 
   /// Ingest a still the sheet's own live camera just wrote to disk.
   ///
-  /// Deliberate divergence from [pickImage]: `image_picker` resizes to
+  /// Divergence from [pickImage]: `image_picker` resizes to
   /// [labelImageMaxWidth] (1600px, q85) on the way out, while the live preview
-  /// shoots at `ResolutionPreset.veryHigh` (~1080p) and is handed over
-  /// untouched. Both land comfortably under [maxLabelImageBytes] and give the
-  /// vision model a legible nutrition table; re-encoding the still here would
-  /// need a JPEG encoder Flutter core does not have.
+  /// shoots at `ResolutionPreset.veryHigh` (~1080p) and is handed over as
+  /// written — the preset is a target, not a byte guarantee. A still the size
+  /// guard rejects is therefore shrunk to the picker's own rung and re-run
+  /// ([shrinkLabelImageFile]) instead of being dropped as `tooLarge`.
   Future<void> captureFromFile(String path) async {
     if (state.phase == LabelScanPhase.scanning ||
         state.phase == LabelScanPhase.saving) {
       return;
     }
 
-    final result = await labelImageFromFile(path);
+    var result = await labelImageFromFile(path);
+    if (result.failure == LabelImageFailure.tooLarge) {
+      result = await shrinkLabelImageFile(path);
+    }
     final failure = result.failure;
     if (failure == LabelImageFailure.cancelled) return;
     if (failure != null) {

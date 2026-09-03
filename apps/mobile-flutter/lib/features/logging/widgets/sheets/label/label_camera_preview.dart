@@ -1,9 +1,9 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show MissingPluginException;
 
 import '../../../logic/label/image.dart';
 import '../scan/scan_camera_stage.dart';
+import 'label_camera_session.dart';
 
 /// The label branch's live viewport: the back camera running inside the shared
 /// dark [ScanCameraStage], with the shutter and the photo-library button in
@@ -14,9 +14,8 @@ import '../scan/scan_camera_stage.dart';
 /// a live picture from the first frame all along; this makes the two branches
 /// behave the same way, and the framing hint finally has a frame to describe.
 ///
-/// Owns the [CameraController] outright: it is built here, torn down when the
-/// app leaves the foreground (iOS revokes the capture session anyway), rebuilt
-/// on resume, and disposed on unmount. Nothing outside holds a reference.
+/// The camera itself lives in [LabelCameraSession]; this widget only wires it
+/// to the app lifecycle and paints whatever controller it currently holds.
 class LabelCameraPreview extends StatefulWidget {
   const LabelCameraPreview({
     super.key,
@@ -46,122 +45,47 @@ class LabelCameraPreview extends StatefulWidget {
 
 class _LabelCameraPreviewState extends State<LabelCameraPreview>
     with WidgetsBindingObserver {
-  CameraController? _controller;
-  CameraDescription? _camera;
-  bool _shooting = false;
-  bool _opening = false;
+  late final LabelCameraSession _session = LabelCameraSession(
+    onCaptured: (path) {
+      if (mounted) widget.onCaptured(path);
+    },
+    onFailure: (failure) {
+      if (mounted) widget.onFailure(failure);
+    },
+  );
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _open();
+    _session.open();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _controller?.dispose();
+    _session.dispose();
     super.dispose();
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final controller = _controller;
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      if (controller == null) return;
-      setState(() => _controller = null);
-      controller.dispose();
-    } else if (state == AppLifecycleState.resumed && controller == null) {
-      _open();
-    }
-  }
-
-  Future<void> _open() async {
-    // A second open while the first `initialize()` is still pending would build
-    // a rival CameraController on the same sensor (the resumed lifecycle path
-    // can re-enter here); one at a time.
-    if (_opening) return;
-    _opening = true;
-    try {
-      final camera = _camera ??= await _backCamera();
-      if (camera == null) {
-        if (!mounted) return;
-        widget.onFailure(LabelImageFailure.cameraUnavailable);
-        return;
-      }
-      // veryHigh is ~1080p: enough to read small print on a nutrition panel
-      // without the memory spike a full-resolution still costs on the stage.
-      final controller = CameraController(
-        camera,
-        ResolutionPreset.veryHigh,
-        enableAudio: false,
-      );
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() => _controller = controller);
-    } on CameraException catch (error) {
-      if (!mounted) return;
-      widget.onFailure(_failureFor(error));
-    } on MissingPluginException {
-      // No camera plugin behind the channel (widget tests, unsupported host).
-      // The stage stays dark and the library button is still the way in — this
-      // is not something to report to the user as a failure.
-    } finally {
-      _opening = false;
-    }
-  }
-
-  Future<CameraDescription?> _backCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return null;
-    return cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
-    );
-  }
-
-  /// Only a refused permission is worth sending someone to Settings for; the
-  /// rest are retries.
-  LabelImageFailure _failureFor(CameraException error) => switch (error.code) {
-    'CameraAccessDenied' ||
-    'CameraAccessDeniedWithoutPrompt' ||
-    'CameraAccessRestricted' => LabelImageFailure.permissionDenied,
-    _ => LabelImageFailure.cameraUnavailable,
-  };
-
-  Future<void> _shutter() async {
-    final controller = _controller;
-    if (controller == null || _shooting) return;
-    setState(() => _shooting = true);
-    try {
-      final file = await controller.takePicture();
-      if (!mounted) return;
-      widget.onCaptured(file.path);
-    } on CameraException catch (error) {
-      if (!mounted) return;
-      widget.onFailure(_failureFor(error));
-    } finally {
-      if (mounted) setState(() => _shooting = false);
-    }
-  }
+  void didChangeAppLifecycleState(AppLifecycleState state) =>
+      _session.handleLifecycle(state);
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
     return ScanCameraStage(
       hint: widget.hint,
       shutterLabel: widget.shutterLabel,
-      onShutter: _shutter,
+      onShutter: _session.shoot,
       leading: widget.leading,
-      builder: (context, size) =>
-          controller == null || !controller.value.isInitialized
-          ? const SizedBox.shrink()
-          : _preview(controller, size),
+      builder: (context, size) => ValueListenableBuilder<CameraController?>(
+        valueListenable: _session.controller,
+        builder: (context, controller, _) =>
+            controller == null || !controller.value.isInitialized
+            ? const SizedBox.shrink()
+            : _preview(controller, size),
+      ),
     );
   }
 

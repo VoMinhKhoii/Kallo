@@ -9,8 +9,8 @@ import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart_canvas.dart';
 import 'package:kallo_mobile/models/profile/weight.dart';
 
-import '../../app_fonts.dart';
-import '../../l10n_test_loader.dart';
+import '../../../app_fonts.dart';
+import '../../../l10n_test_loader.dart';
 
 /// The FIRST weigh-in draws a chart with exactly one point. Its x domain was
 /// 0…1 with the lone spot pinned at x = 0, so the tick label under it started

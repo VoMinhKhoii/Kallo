@@ -235,7 +235,8 @@ void main() {
     test('the same code, while its miss is showing, does not re-search', () async {
       await missOn('8934563138162');
       expect(api.requests, hasLength(1));
-      expect(state().blockedBarcode, '8934563138162');
+      expect(state().lastBarcode, '8934563138162');
+      expect(state().errorKey, 'logging.barcode.error.notFound');
 
       // The next frame off the same package, and the one after it.
       await notifier().search('8934563138162');
@@ -262,7 +263,7 @@ void main() {
       await missOn('8934563138162');
 
       notifier().scanAgain();
-      expect(state().blockedBarcode, isNull);
+      expect(state().errorKey, isNull);
       await notifier().search('8934563138162');
 
       expect(api.requests, hasLength(2));
@@ -273,7 +274,7 @@ void main() {
 
       notifier().enterManualMode();
 
-      expect(state().blockedBarcode, isNull);
+      expect(state().errorKey, isNull);
     });
 
     test('force: true bypasses it — a typed retry must get through', () async {
@@ -291,7 +292,7 @@ void main() {
       await notifier().search('8934563138162', force: true);
 
       expect(state().phase, BarcodeFlowPhase.product);
-      expect(state().blockedBarcode, isNull);
+      expect(state().errorKey, isNull);
     });
   });
 }

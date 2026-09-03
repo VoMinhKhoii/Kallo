@@ -5,8 +5,6 @@
 /// the strip owns paging, the cell owns one day's presentation.
 library;
 
-import 'dart:math' as math;
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +14,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../logging/logic/timeline_utils.dart';
 import '../../logic/dashboard_spacing.dart';
+import 'week_day_ring_painter.dart';
 
 class WeekDayCell extends StatelessWidget {
   const WeekDayCell({
@@ -137,58 +136,4 @@ class WeekDayCell extends StatelessWidget {
       child: cell0,
     );
   }
-}
-
-/// A small progress ring: a faint track + a rounded arc swept clockwise from 12
-/// o'clock for [fraction] of the circle, in the heatmap tier [arcColor].
-class WeekDayRingPainter extends CustomPainter {
-  WeekDayRingPainter({
-    required this.fraction,
-    required this.arcColor,
-    required this.showTrack,
-  });
-
-  final double fraction;
-  final Color? arcColor;
-  final bool showTrack;
-
-  static const double _stroke = 2.5;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - _stroke) / 2;
-
-    if (showTrack) {
-      canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _stroke
-          ..color = KalloColors.track, // same grey track as the calorie ring,
-        // so the accent progress arc reads clearly
-      );
-    }
-
-    if (arcColor != null && fraction > 0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2, // 12 o'clock
-        2 * math.pi * fraction,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _stroke
-          ..strokeCap = StrokeCap.round
-          ..color = arcColor!,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(WeekDayRingPainter old) =>
-      old.fraction != fraction ||
-      old.arcColor != arcColor ||
-      old.showTrack != showTrack;
 }

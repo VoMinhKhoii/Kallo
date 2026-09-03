@@ -289,8 +289,7 @@ class _ContentState extends State<_Content> {
               else
                 DayPager(
                   controller: _pageController,
-                  dateForPage: (p) => dateForDayPage(widget.todayDate, p),
-                  todayPage: kDayPageBase,
+                  todayDate: widget.todayDate,
                   userId: widget.args.userId,
                   targets: widget.targets,
                   onPageChanged: _onPageChanged,

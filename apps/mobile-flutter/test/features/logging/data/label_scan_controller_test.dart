@@ -3,9 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
+import 'package:kallo_mobile/features/logging/logic/label/image_shrink.dart';
 import 'package:kallo_mobile/features/logging/logic/label/review.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
@@ -412,6 +414,54 @@ void main() {
       notifier().reportCaptureFailure(LabelImageFailure.cameraUnavailable);
 
       expect(state().errorKey, 'logging.labelScan.error.serverError');
+    });
+  });
+
+  // A live-camera still is handed over at whatever size the sensor produced,
+  // and `ResolutionPreset.veryHigh` is a target, not a byte guarantee. A still
+  // over the 4 MiB guard must be shrunk to the picker's rung, not dropped.
+  group('shrinkLabelImageFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_big_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    test('an oversized still comes back under the guard at 1600px', () async {
+      // Noise does not compress: 2400² at q100 is comfortably past 4 MiB.
+      final noisy = img.Image(width: 2400, height: 2400);
+      var seed = 7;
+      for (final px in noisy) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        px.setRgb(seed & 0xff, (seed >> 8) & 0xff, (seed >> 16) & 0xff);
+      }
+      final big = img.encodeJpg(noisy, quality: 100);
+      expect(big.length, greaterThan(maxLabelImageBytes));
+      final path = '${dir.path}/big.jpg';
+      await File(path).writeAsBytes(big);
+      expect(
+        (await labelImageFromFile(path)).failure,
+        LabelImageFailure.tooLarge,
+      );
+
+      final result = await shrinkLabelImageFile(path);
+
+      expect(result.failure, isNull);
+      final image = result.image!;
+      expect(image.mimeType, 'image/jpeg');
+      expect(image.bytes.length, lessThanOrEqualTo(maxLabelImageBytes));
+      expect(img.decodeJpg(image.bytes)!.width, labelImageMaxWidth.toInt());
+      expect(image.path, endsWith('.shrunk.jpg'));
+    });
+
+    test('a file that is not an image is unsupported', () async {
+      final path = '${dir.path}/junk.jpg';
+      await File(path).writeAsBytes(List<int>.filled(64, 0x41));
+      expect(
+        (await shrinkLabelImageFile(path)).failure,
+        LabelImageFailure.unsupported,
+      );
     });
   });
 }

@@ -15,6 +15,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/profile/dashboard.dart';
+import '../../../../theme/text_metrics.dart';
 import '../../logic/heatmap_month_labels.dart';
 
 class HeatmapMonthStrip extends StatelessWidget {
@@ -42,7 +43,7 @@ class HeatmapMonthStrip extends StatelessWidget {
   /// leading, rounded up to a whole pixel so the grid below never starts on a
   /// fraction of a row.
   static double heightFor(TextStyle style, TextScaler scaler) =>
-      (scaler.scale(style.fontSize!) * (style.height ?? 1.25)).ceilToDouble();
+      lineBoxHeight(style, scaler);
 
   @override
   Widget build(BuildContext context) {

@@ -10,6 +10,8 @@ import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/painting.dart';
 
+import '../../../theme/text_metrics.dart';
+
 /// A tight, uniform, round-number Y axis fitted to [values].
 ///
 /// The series is padded *before* the bounds are snapped, so it lands roughly
@@ -171,3 +173,20 @@ double _measure(String text, TextStyle style, TextScaler textScaler) {
   painter.dispose();
   return width;
 }
+
+/// Floor for the date row: the ticks' lead plus a 12pt line box. It is a FLOOR
+/// only — [weightDateAxisHeight] measures the real one, because this constant
+/// was sized for the retired 12pt meta tier and silently clipped the current
+/// 14 × 1.25 line box (and every scaled-up variant of it).
+const double _minDateAxisHeight = 22;
+
+/// Between a tick label and the plot above it. fl_chart's own default is 8,
+/// which pushed the row past the artboard's date band.
+const double kWeightDateTickLead = 4;
+
+/// The height the date row needs for [style] at [scaler]: the label's own line
+/// box plus its lead, never below [_minDateAxisHeight].
+double weightDateAxisHeight(TextStyle style, TextScaler scaler) => math.max(
+  _minDateAxisHeight,
+  kWeightDateTickLead + lineBoxHeight(style, scaler),
+);

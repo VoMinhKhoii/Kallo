@@ -17,10 +17,5 @@ String dateForDayPage(String today, int page) =>
     addDays(today, page - kDayPageBase);
 
 /// The inverse of [dateForDayPage]: the page index showing [date].
-int dayPageForDate(String today, String date) {
-  final base = dateStringToDate(today);
-  final target = dateStringToDate(date);
-  // Hours ÷ 24, rounded: a DST boundary makes a one-day gap 23 or 25 hours,
-  // which `inDays` would truncate to 0 (or 1 too few).
-  return kDayPageBase + (target.difference(base).inHours / 24).round();
-}
+int dayPageForDate(String today, String date) =>
+    kDayPageBase + calendarDaysBetween(today, date);

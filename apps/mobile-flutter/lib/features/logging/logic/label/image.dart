@@ -7,11 +7,13 @@
 /// model comparable pixels.
 ///
 /// Parity gap, deliberate: the web retries at four quality/scale rungs when
-/// the first encode overshoots the budget. Flutter has no JPEG encoder in
-/// core and `image_picker` cannot re-encode a file it already wrote, so this
-/// is a single pass plus a size guard — 1600px at q85 lands far under 4 MB in
-/// practice, and an overshoot surfaces as `invalidImage` asking for another
-/// photo rather than silently sending something the server will reject.
+/// the first encode overshoots the budget. Here the picker's own resize is
+/// the single pass, and only a still that STILL overshoots the size guard
+/// (a live-camera capture, which the `camera` plugin hands over at whatever
+/// size the sensor produced) gets one more rung: `shrinkLabelImageFile` in
+/// `image_shrink.dart` downscales to the same 1600px / q85 with the pure-Dart
+/// `image` package, off the UI isolate, so the size guard rejects nothing a
+/// resize would save.
 library;
 
 import 'dart:convert';
@@ -63,8 +65,7 @@ enum LabelImageFailure {
 
 class LabelImageResult {
   const LabelImageResult.success(LabelImage this.image) : failure = null;
-  const LabelImageResult.failure(LabelImageFailure this.failure)
-    : image = null;
+  const LabelImageResult.failure(LabelImageFailure this.failure) : image = null;
 
   final LabelImage? image;
   final LabelImageFailure? failure;
@@ -157,3 +158,14 @@ Future<LabelImageResult> labelImageFromFile(String path) async {
     return const LabelImageResult.failure(LabelImageFailure.cameraUnavailable);
   }
 }
+
+/// Map a `CameraException.code` onto the failure the sheet reports. Only a
+/// refused permission is worth sending someone to Settings for; the rest are
+/// retries. Takes the code rather than the exception so this file stays free
+/// of `package:camera`.
+LabelImageFailure labelFailureForCamera(String code) => switch (code) {
+  'CameraAccessDenied' ||
+  'CameraAccessDeniedWithoutPrompt' ||
+  'CameraAccessRestricted' => LabelImageFailure.permissionDenied,
+  _ => LabelImageFailure.cameraUnavailable,
+};

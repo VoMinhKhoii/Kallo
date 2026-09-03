@@ -241,9 +241,7 @@ class _IdentitySkeleton extends StatelessWidget {
         child: ListView(
           padding: SettingsSpacing.page(context),
           children: const [
-            // Mirrors the real body: description line, then the avatar row.
-            SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
-            SizedBox(height: KalloSpacing.sp5),
+            // Mirrors the real body, which opens on the avatar row.
             Row(
               children: [
                 SkeletonCircle(size: 64),

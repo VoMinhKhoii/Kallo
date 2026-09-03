@@ -28,24 +28,11 @@ class BarcodeFlowState {
   /// The last barcode we searched — kept for the error card's context line.
   final String? lastBarcode;
 
-  /// The code whose failed lookup is currently on screen. A scan that keeps
-  /// landing on it is the SAME miss, not a new one, so it is dropped instead
-  /// of re-searching: `DetectionSpeed.noDuplicates` is a no-op on iOS, and the
-  /// sheet re-arms its own decode guard every time the phase returns to
-  /// `scanning` — which the catch block below does on every failure. Pointing
-  /// at one unknown package therefore searched it forever.
-  ///
-  /// Cleared by success, [BarcodeFlowController.scanAgain] and
-  /// [BarcodeFlowController.enterManualMode]; bypassed by `search(force:
-  /// true)`, which is what a deliberate manual submit passes.
-  final String? blockedBarcode;
-
   const BarcodeFlowState({
     this.phase = BarcodeFlowPhase.scanning,
     this.product,
     this.errorKey,
     this.lastBarcode,
-    this.blockedBarcode,
   });
 
   BarcodeFlowState copyWith({
@@ -53,14 +40,11 @@ class BarcodeFlowState {
     BarcodeProduct? Function()? product,
     String? Function()? errorKey,
     String? lastBarcode,
-    String? Function()? blockedBarcode,
   }) => BarcodeFlowState(
     phase: phase ?? this.phase,
     product: product != null ? product() : this.product,
     errorKey: errorKey != null ? errorKey() : this.errorKey,
     lastBarcode: lastBarcode ?? this.lastBarcode,
-    blockedBarcode:
-        blockedBarcode != null ? blockedBarcode() : this.blockedBarcode,
   );
 
   /// Not-found is the one error where "describe it instead" (the AI composer)
@@ -100,9 +84,14 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   /// (EAN/UPC decoders and keyboards both occasionally sneak separators in);
   /// an empty result surfaces as invalid input without a round trip.
   ///
-  /// A code whose failure is still on screen is dropped — see
-  /// [BarcodeFlowState.blockedBarcode]. [force] is the deliberate retry: the
-  /// user typed (or re-typed) this code and pressed look up.
+  /// A code whose failure is still on screen is dropped: it is
+  /// [BarcodeFlowState.lastBarcode] with an [BarcodeFlowState.errorKey] still
+  /// set, so a re-scan of it is the SAME miss, not a new one.
+  /// `DetectionSpeed.noDuplicates` is a no-op on iOS and the sheet re-arms its
+  /// own decode guard every time the phase returns to `scanning` — which the
+  /// catch block below does on every failure — so pointing at one unknown
+  /// package would otherwise search it forever. [force] is the deliberate
+  /// retry: the user typed (or re-typed) this code and pressed look up.
   Future<void> search(String rawBarcode, {bool force = false}) async {
     if (state.phase == BarcodeFlowPhase.searching ||
         state.phase == BarcodeFlowPhase.saving) {
@@ -119,7 +108,7 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
 
     // The camera is still pointed at the package we just failed on. Re-running
     // the same lookup would only redraw the same miss.
-    if (!force && code == state.blockedBarcode && state.errorKey != null) {
+    if (!force && code == state.lastBarcode && state.errorKey != null) {
       return;
     }
 
@@ -139,16 +128,15 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       state = state.copyWith(
         phase: BarcodeFlowPhase.product,
         product: () => product,
-        blockedBarcode: () => null,
       );
     } catch (error) {
-      // Back to the scanner phase with the miss reported inside the frame, and
-      // this code blocked so the live camera cannot re-search it on the very
-      // next frame — resumable via scanAgain() or a forced manual submit.
+      // Back to the scanner phase with the miss reported inside the frame.
+      // The error key left standing on this code is what blocks the live
+      // camera from re-searching it on the very next frame — resumable via
+      // scanAgain() or a forced manual submit.
       state = state.copyWith(
         phase: BarcodeFlowPhase.scanning,
         errorKey: () => _errorKeyFor(error),
-        blockedBarcode: () => code,
       );
     }
   }
@@ -202,7 +190,6 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       phase: BarcodeFlowPhase.scanning,
       product: () => null,
       errorKey: () => null,
-      blockedBarcode: () => null,
     );
   }
 
@@ -212,7 +199,6 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       phase: BarcodeFlowPhase.manualEntry,
       product: () => null,
       errorKey: () => null,
-      blockedBarcode: () => null,
     );
   }
 }

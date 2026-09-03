@@ -9,7 +9,7 @@ import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_amount_fie
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
-import '../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 Widget _wrap() => ProviderScope(
   child: EasyLocalization(

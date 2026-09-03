@@ -11,8 +11,8 @@ import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_month_st
 import 'package:kallo_mobile/models/profile/heatmap.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 
-import '../../app_fonts.dart';
-import '../../l10n_test_loader.dart';
+import '../../../app_fonts.dart';
+import '../../../l10n_test_loader.dart';
 
 /// The month strip was a hard-coded 16pt box — sized when meta was 12pt. Meta
 /// is now 14 × 1.25 = 17.5, so the label's line box already overran its own

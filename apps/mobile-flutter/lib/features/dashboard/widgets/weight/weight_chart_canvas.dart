@@ -21,7 +21,7 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../logic/weight_chart_axis.dart';
-import 'weight_chart_axes.dart';
+import 'weight_chart_titles.dart';
 import 'weight_chart_dot_painter.dart';
 
 /// Canvas width : height — 334 × ~139 on a 390pt phone, of which the date row
