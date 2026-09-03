@@ -85,7 +85,8 @@ class FeedList extends StatelessWidget {
     // the same inset on top of the dock's own height. Read here rather than
     // received through [dockHeight] so both move on the SAME frame — and so
     // the ramp rebuilds this subtree only, never the whole feed.
-    final reserve = dockHeight + MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final reserve = dockHeight + keyboardInset;
 
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (view.hasError && !hasCards) {
@@ -102,7 +103,13 @@ class FeedList extends StatelessWidget {
     // confirming a meal tore the whole feed down and replayed every card's
     // entrance.
     if (!hasCards) {
-      return FeedNoMealsView(view: view, dockHeight: reserve);
+      // Split, not summed: the empty state eases dock-height steps and must
+      // not ease the keyboard's own frame-by-frame ramp a second time.
+      return FeedNoMealsView(
+        view: view,
+        dockHeight: dockHeight,
+        keyboardInset: keyboardInset,
+      );
     }
 
     final itemCount = entries.length + (view.hasLiveTail ? 1 : 0);
