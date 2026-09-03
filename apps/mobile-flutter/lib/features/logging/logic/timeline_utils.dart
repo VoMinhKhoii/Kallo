@@ -49,3 +49,24 @@ WeekStrip buildCenteredStripFromAnchor(String anchor) {
   }
   return WeekStrip(days);
 }
+
+// ── Week paging ───────────────────────────────────────────────────────────
+//
+// A large midpoint so a PageView can page many weeks into the past while the
+// current week sits at a known index (weeks are unbounded backwards, and
+// clamped at today going forward).
+const int kWeekPageBase = 5000;
+
+/// The anchor date (the centre day, index 3 of [buildCenteredStripFromAnchor])
+/// of the week shown at [page], counting weeks back from [today] at
+/// [kWeekPageBase].
+String weekAnchorForPage(String today, int page) =>
+    addDays(today, (page - kWeekPageBase) * 7);
+
+/// The inverse of [weekAnchorForPage]: the page index whose week holds [anchor].
+int weekPageForAnchor(String today, String anchor) {
+  final base = dateStringToDate(today);
+  final target = dateStringToDate(anchor);
+  final weeks = (target.difference(base).inDays / 7).round();
+  return kWeekPageBase + weeks;
+}
