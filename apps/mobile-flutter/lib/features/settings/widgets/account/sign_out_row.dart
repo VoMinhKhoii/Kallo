@@ -32,12 +32,12 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
   bool _signingOut = false;
 
   Future<void> _confirm() async {
-    // "Đăng xuất" beside "Huỷ" is unambiguous, so it keeps its verb; the
-    // open cue now lives inside showKalloConfirm.
+    // Both sides name an outcome: leaving the session, or staying in it.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('settings.account.signOutConfirmTitle'),
       confirmLabel: tr('settings.account.signOut'),
+      cancelLabel: tr('common.actions.staySignedIn'),
       destructive: true,
     );
     if (!confirmed || _signingOut || !mounted) return;

@@ -57,14 +57,14 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
 
   Future<void> _leave() async {
     final sheetContext = context;
-    // This one KEEPS its verb: "Rời nhóm" above "Huỷ" is two different words
-    // for two different things, so there is nothing to disambiguate. Only the
-    // confirms whose affirmative collides with the cancel go to "Đồng ý".
+    // "Rời nhóm" against "Ở lại" — the two things that can happen to your
+    // membership, one per button.
     final yes = await showKalloConfirm(
       sheetContext,
       title: tr('groups.feed.leaveTitle'),
       description: tr('groups.feed.leaveDescription'),
       confirmLabel: tr('groups.feed.leaveConfirm'),
+      cancelLabel: tr('common.actions.stay'),
       destructive: true,
     );
     if (!yes || !sheetContext.mounted) return;

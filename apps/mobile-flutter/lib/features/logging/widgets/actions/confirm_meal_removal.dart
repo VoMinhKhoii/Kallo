@@ -7,14 +7,17 @@ import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 /// meal card (the trailing swipe and the trash action).
 ///
 /// The chrome, the stacked buttons and the haptics all live in
-/// [showKalloConfirm] now; this only names the copy. The affirmative is
-/// `common.agree` rather than the verb "Xoá": beside "Huỷ" — which in
-/// Vietnamese means both *cancel* and *destroy* — the two verbs read as the
-/// same choice, which is the ambiguity this whole dialog was reported for.
+/// [showKalloConfirm] now; this only names the copy. Both options are verbs
+/// (2026-09-03): "Xoá" against "Giữ lại", so neither button needs the title to
+/// explain it. The earlier neutral pair went the other way — it removed "Xoá"
+/// to avoid colliding with "Huỷ", which reads as *cancel* and *destroy* alike —
+/// and cost the user the one word that said what would happen.
 Future<bool> confirmMealRemoval(BuildContext context) => showKalloConfirm(
   context,
   title: 'logging.removeConfirmTitle'.tr(),
   description: 'logging.removeConfirmDescription'.tr(),
+  confirmLabel: 'common.actions.remove'.tr(),
+  cancelLabel: 'common.actions.keep'.tr(),
   destructive: true,
 );
 
@@ -30,5 +33,7 @@ Future<bool> confirmPendingDiscard(BuildContext context) => showKalloConfirm(
   context,
   title: 'logging.stagedMealCard.discardConfirmTitle'.tr(),
   description: 'logging.stagedMealCard.discardConfirmDescription'.tr(),
+  confirmLabel: 'common.actions.discard'.tr(),
+  cancelLabel: 'common.actions.keep'.tr(),
   destructive: true,
 );

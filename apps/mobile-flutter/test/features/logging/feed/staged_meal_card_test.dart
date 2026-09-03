@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,8 +138,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(discarded, 0, reason: 'the confirm must come first');
 
+    // "Discard" against "Keep" — both options name their own outcome, on the
+    // native alert surface the confirm moved to on 2026-09-03.
     await tester.tap(
-      find.descendant(of: find.byType(Dialog), matching: find.text('Agree')),
+      find.descendant(
+        of: find.byType(CupertinoPopupSurface),
+        matching: find.text('Discard'),
+      ),
     );
     await tester.pumpAndSettle();
     expect(discarded, 1);
@@ -166,7 +172,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Discard'), warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsNothing);
+    expect(find.byType(CupertinoPopupSurface), findsNothing);
     expect(discarded, 0);
   });
 

@@ -22,7 +22,15 @@
     "increase": "Increase",
     "decrease": "Decrease",
     "country": "Country",
-    "remove": "Remove"
+    "remove": "Remove",
+    "actions": {
+      "discard": "Discard",
+      "disconnect": "Disconnect",
+      "keep": "Keep",
+      "remove": "Remove",
+      "stay": "Stay",
+      "staySignedIn": "Stay signed in"
+    }
   },
   "nav": {
     "logging": "Logging",
@@ -543,7 +551,7 @@
       "calories": "kcal",
       "loggedDays": "All",
       "completeDays": "Complete days",
-      "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in \u201c{allLabel}\u201d.",
+      "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in “{allLabel}”.",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "avgValue": "{value} avg",
