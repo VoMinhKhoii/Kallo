@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
@@ -6,25 +6,21 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 
-/// The confirm dialog's two buttons, STACKED rather than sat side by side.
+/// The confirm dialog's actions: full-width 44pt TEXT rows, stacked, each one
+/// separated from the content above it by a 0.5pt hairline.
 ///
-/// Side-by-side is where the ambiguity lived: two short Vietnamese words of the
-/// same size and weight, on one line, neither of which reads as the safe one.
-/// Stacking separates them by position as well as by colour, which is what the
-/// web dialog already does on a phone (`components/ui/alert-dialog.tsx`,
-/// `flex-col-reverse`: cancel first in the DOM, affirmative first on screen).
-/// This is that layout in Flutter.
+/// **2026-09-03, second pass (user reference: Instagram's iOS "Delete post?"
+/// alert): the filled pills are retired.** The first pass answered "which one
+/// is safe" with a red-filled affirmative over a ghost cancel, which read as an
+/// app card wearing an alert's chrome — no iOS alert on the phone this dialog
+/// opens over paints a fill behind an action. The anatomy is the platform's
+/// now: hairline, destructive verb in red, hairline, safe verb in ink. What
+/// carries over unchanged is the STACK — [CupertinoAlertDialog] would sit two
+/// short verbs side by side across a vertical hairline, and two short
+/// Vietnamese words on one line is exactly the ambiguity the stack fixed.
 ///
-/// It outlived the card it was built for: [showKalloConfirm] now opens a native
-/// iOS alert surface, and a stock `CupertinoDialogAction` pair would put the two
-/// verbs side by side across a hairline again — the exact arrangement the
-/// report was about. So the platform supplies the chrome and this supplies the
-/// actions.
-///
-/// Since 2026-09-03 both labels are explicit verbs ("Xoá" / "Giữ lại"), so the
-/// safe option is something the user reads to ACT, not a label — hence ink
-/// rather than muted on the ghost button (mobile.md: muted never carries text a
-/// user must read to act).
+/// The labels stay explicit verbs ("Xoá" / "Giữ lại"), so the safe option is
+/// something the user reads to ACT: ink, never muted (mobile.md).
 class KalloConfirmActions extends StatelessWidget {
   const KalloConfirmActions({
     super.key,
@@ -48,107 +44,69 @@ class KalloConfirmActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ConfirmButton(
+        const KalloAlertHairline(),
+        KalloAlertAction(
           label: confirmLabel,
-          destructive: destructive,
-          onTap: onConfirm,
+          // Instagram's "Delete" is red AND bold: emphasis is the default
+          // action's, colour is the destructive one's. A non-destructive
+          // affirmative keeps the weight and drops the red.
+          color: destructive ? KalloColors.danger : kInk,
+          weight: FontWeight.w600,
+          // The one moment worth a firmer tap than a selection click: past this
+          // point something is gone.
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onConfirm();
+          },
         ),
-        const SizedBox(height: KalloSpacing.sp2),
-        _CancelButton(label: cancelLabel, onTap: onCancel),
+        const KalloAlertHairline(),
+        KalloAlertAction(
+          label: cancelLabel,
+          color: kInk,
+          weight: FontWeight.w400,
+          onTap: onCancel,
+        ),
       ],
     );
   }
 }
 
-/// The affirmative: a full-width filled pill, umber by default and [danger] red
-/// when the action destroys something. Press behaviour copies
-/// the retired `SheetPrimaryButton` so the app has ONE press language.
-class _ConfirmButton extends StatefulWidget {
-  const _ConfirmButton({
+/// The 0.5pt rule an iOS alert draws between its content and every action, and
+/// between one action and the next. Half a logical pixel, not one: at 3x it is
+/// the same 1.5 device pixels the system draws.
+class KalloAlertHairline extends StatelessWidget {
+  const KalloAlertHairline({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      Container(height: 0.5, color: kHairline);
+}
+
+/// One alert action: a full-width, centred, 44pt-minimum text row that washes
+/// on press. No fill, no radius — the row IS the button, which is why the
+/// hairlines above and below it are what separate it from its neighbours.
+class KalloAlertAction extends StatefulWidget {
+  const KalloAlertAction({
+    super.key,
     required this.label,
-    required this.destructive,
+    required this.color,
+    required this.weight,
     required this.onTap,
   });
 
   final String label;
-  final bool destructive;
+  final Color color;
+  final FontWeight weight;
   final VoidCallback onTap;
 
   @override
-  State<_ConfirmButton> createState() => _ConfirmButtonState();
+  State<KalloAlertAction> createState() => _KalloAlertActionState();
 }
 
-class _ConfirmButtonState extends State<_ConfirmButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // The affirmative follows the button tiers: red only when something is
-    // destroyed, the beige in-app primary otherwise (the umber fill predated
-    // the button retirement — missed on the first native pass).
-    final Color resting =
-        widget.destructive ? KalloColors.danger : KalloColors.btnPrimarySoft;
-    final Color held = widget.destructive
-        ? KalloColors.dangerHover
-        : Color.alphaBlend(KalloColors.pressWash, KalloColors.btnPrimarySoft);
-    final Color label = widget.destructive ? Colors.white : KalloColors.text;
-
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: () {
-          // The one moment worth a firmer tap than a selection click: past this
-          // point something is gone.
-          HapticFeedback.mediumImpact();
-          widget.onTap();
-        },
-        child: AnimatedScale(
-          scale: _pressed ? 0.97 : 1,
-          duration: KalloMotion.press,
-          curve: KalloEase.press,
-          child: Container(
-            alignment: Alignment.center,
-            // Height comes from the padding alone, like every other button in
-            // the app — 14 + 14 + a 14pt label's 18.2 line box is 46.2, so the
-            // minHeight this used to carry was never the thing clearing the
-            // 44pt tap floor. It was also the only one in the app.
-            padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3_5),
-            decoration: BoxDecoration(
-              color: _pressed ? held : resting,
-              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-            ),
-            child: Text(
-              widget.label,
-              textAlign: TextAlign.center,
-              style: dashBody(color: label),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The way out: no fill, no border, an ink label. It presses with the WARM wash
-/// rather than [KalloColors.pressWash] because it sits on the dialog's white
-/// card, not on the canvas — warm for controls over a lighter surface.
-class _CancelButton extends StatefulWidget {
-  const _CancelButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_CancelButton> createState() => _CancelButtonState();
-}
-
-class _CancelButtonState extends State<_CancelButton> {
+class _KalloAlertActionState extends State<KalloAlertAction> {
   bool _pressed = false;
 
   @override
@@ -163,22 +121,21 @@ class _CancelButtonState extends State<_CancelButton> {
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         // Animated, not a bare Container: every other quiet button in the app
-        // crossfades its wash rather than snapping it on (TerminalDiscardButton,
-        // profile_form's ghost button).
+        // crossfades its wash rather than snapping it on.
         child: AnimatedContainer(
           duration: KalloMotion.press,
           curve: KalloEase.press,
           alignment: Alignment.center,
-          // Matches the affirmative above it, so the stack is one height.
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3_5),
-          decoration: BoxDecoration(
-            color: _pressed ? KalloColors.hover : Colors.transparent,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp2,
           ),
+          color: _pressed ? KalloColors.hover : const Color(0x00000000),
           child: Text(
             widget.label,
             textAlign: TextAlign.center,
-            style: dashBody(color: kInk),
+            style: dashBody(color: widget.color, weight: widget.weight),
           ),
         ),
       ),
