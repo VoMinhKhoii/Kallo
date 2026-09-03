@@ -7,6 +7,7 @@ import '../../../services/http/api_client.dart';
 import '../../../services/billing/entitlements_provider.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/form/kallo_text_field.dart';
+import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -15,7 +16,6 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/chrome/settings_header.dart';
 
 /// Pushed delete-account screen: plain-language consequences and a type-to-
 /// confirm gate before the irreversible deletion.
@@ -83,7 +83,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsHeader(title: tr('settings.account.deleteScreenTitle')),
+        header: PageHeader(title: tr('settings.account.deleteScreenTitle')),
         child: SingleChildScrollView(
           padding: SettingsSpacing.page(context),
           child: Column(

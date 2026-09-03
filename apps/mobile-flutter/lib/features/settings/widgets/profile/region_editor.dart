@@ -25,7 +25,8 @@ class RegionEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return InstantCommitEditor(
       profile: profile,
-      subtitle: tr('settings.profilePanel.regionalSubtitle'),
+      // No subtitle: "Country of origin and current residence" only restated
+      // the "Region & language" title in the header (2026-09-03).
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -64,10 +65,7 @@ class _LanguageFieldState extends State<_LanguageField> {
               color: KalloColors.textMuted,
             ),
             const SizedBox(width: KalloSpacing.sp2),
-            Text(
-              tr('settings.language'),
-              style: dashBody(),
-            ),
+            Text(tr('settings.language'), style: dashBody()),
           ],
         ),
         const SizedBox(height: KalloSpacing.sp2),

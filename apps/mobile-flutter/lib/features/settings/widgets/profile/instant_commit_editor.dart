@@ -24,15 +24,17 @@ class InstantCommitEditor extends ConsumerStatefulWidget {
   const InstantCommitEditor({
     super.key,
     required this.profile,
-    required this.subtitle,
+    this.subtitle,
     required this.child,
   });
 
   final ProfileRow profile;
 
-  /// The description line under the header bar. The screen's TITLE is not this
-  /// widget's business — it lives in the shared settings header.
-  final String subtitle;
+  /// The description line under the header bar, or null when the header's
+  /// title already says everything (Region & language, 2026-09-03). The
+  /// screen's TITLE is not this widget's business — it lives in the shared
+  /// page header.
+  final String? subtitle;
   final Widget child;
 
   @override
@@ -173,14 +175,12 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
           // No title here — it lives in the header bar. This is the subtitle
-          // that used to sit under it.
-          Padding(
-            padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
-            child: Text(
-              widget.subtitle,
-              style: dashMeta(),
+          // that used to sit under it, and only when it adds something.
+          if (widget.subtitle case final subtitle?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
+              child: Text(subtitle, style: dashMeta()),
             ),
-          ),
           if (_errorText != null)
             Padding(
               padding: const EdgeInsets.only(bottom: KalloSpacing.sp3),

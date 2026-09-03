@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/billing/entitlements_provider.dart';
+import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
@@ -29,7 +30,6 @@ import '../widgets/profile/profile_status_views.dart';
 import '../widgets/profile/region_editor.dart';
 import '../widgets/profile/settings_profile_card.dart';
 import '../widgets/list/settings_group.dart';
-import '../widgets/chrome/settings_header.dart';
 import '../widgets/chrome/settings_navigator.dart';
 import '../widgets/profile/settings_skeleton.dart';
 import '../widgets/account/sign_out_row.dart';
@@ -146,7 +146,7 @@ class _SettingsList extends ConsumerWidget {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsHeader(
+        header: PageHeader(
           title: tr('settings.title'),
           // The root's back leaves settings entirely, so it pops the ROUTER,
           // not the nested navigator.
@@ -250,7 +250,7 @@ class _ProfileScreen extends ConsumerWidget {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsHeader(title: kind.title),
+        header: PageHeader(title: kind.title),
         child:
             userId == null
                 ? _Centered(
