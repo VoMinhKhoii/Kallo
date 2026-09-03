@@ -38,12 +38,17 @@ class ComposerCardSurface extends StatelessWidget {
         final t = focus.value;
         // Transparent at rest rather than absent, so the card's size never
         // changes as the ring arrives.
-        final borderColor =
-            Color.lerp(
-              const Color(0x00000000),
-              KalloColors.borderAccent40,
-              t,
-            )!;
+        //
+        // ALPHA only, the same shape as the glow below — never a lerp toward a
+        // transparent BLACK. That lerp drags the ring's RGB to black as it
+        // fades, and a half-transparent border is only ever seen composited
+        // over the white card: the two effects cross, so the ring DEEPENS for
+        // the first third of the dismiss (composited luminance 0.730 → 0.695)
+        // before it withdraws. One tap outside, two visible changes to the
+        // card — the flicker, and it read as one because the deepening lands
+        // in the same 250ms as the keyboard's retract.
+        const ring = KalloColors.borderAccent40;
+        final borderColor = ring.withValues(alpha: ring.a * t);
         return Container(
           // No padding here — the notice sets its own inset, so the field and
           // controls carry theirs on the column below.
