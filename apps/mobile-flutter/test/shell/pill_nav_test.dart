@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
@@ -241,6 +242,37 @@ void main() {
       tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset,
       const Offset(0, 1),
     );
+  });
+
+  testWidgets('the active tab weighs its glyph up to the 400 family', (
+    tester,
+  ) async {
+    // Selection used to be colour-only (kInk vs kInkMuted), which at 24pt on
+    // a white capsule is not enough to find your place at a glance. The
+    // active tab swaps to Lucide's 2.0-stroke family over the same codepoint;
+    // everything else in the app — these idle tabs included — stays on 300.
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    IconData glyph(String label) => tester
+        .widget<Icon>(
+          find.descendant(
+            of: find.bySemanticsLabel(label),
+            matching: find.byType(Icon),
+          ),
+        )
+        .icon!;
+
+    expect(glyph('Today'), LucideIcons.house400);
+    expect(glyph('Nutrition'), LucideIcons.apple300);
+    expect(glyph('Circle'), LucideIcons.users300);
+    // Log pushes full-screen and is never "active" — it has no 400 form.
+    expect(glyph('Log'), LucideIcons.pencilLine300);
+
+    await tester.tap(find.bySemanticsLabel('Nutrition'));
+    await tester.pumpAndSettle();
+    expect(glyph('Nutrition'), LucideIcons.apple400);
+    expect(glyph('Today'), LucideIcons.house300);
   });
 
   testWidgets('center "+" opens the Add sheet', (tester) async {

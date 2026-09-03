@@ -10,10 +10,6 @@ import '../../logic/timeline_utils.dart';
 import 'timeline_day_cell.dart';
 import 'timeline_nav_button.dart';
 
-// A large midpoint so the PageView can page many weeks into the past while the
-// current week sits at a known index (weeks are unbounded backwards).
-const int _kWeekPageBase = 5000;
-
 /// The expanded week strip, shown as a dropdown overlay below the header. Real
 /// week paging via [PageView] (swipe + chevrons). Selecting a day reports it and
 /// asks the parent to close.
@@ -58,15 +54,10 @@ class _TimelineStripState extends State<TimelineStrip> {
 
   bool get _canNavigateNext => _visibleAnchor.compareTo(_currentAnchor) < 0;
 
-  String _anchorForPage(int page) =>
-      addDays(_currentAnchor, (page - _kWeekPageBase) * 7);
+  String _anchorForPage(int page) => weekAnchorForPage(_currentAnchor, page);
 
-  int _pageForAnchor(String anchor) {
-    final base = dateStringToDate(_currentAnchor);
-    final target = dateStringToDate(anchor);
-    final weeks = (target.difference(base).inDays / 7).round();
-    return _kWeekPageBase + weeks;
-  }
+  int _pageForAnchor(String anchor) =>
+      weekPageForAnchor(_currentAnchor, anchor);
 
   @override
   void dispose() {
@@ -165,7 +156,7 @@ class _TimelineStripState extends State<TimelineStrip> {
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
-              itemCount: _kWeekPageBase + 1,
+              itemCount: kWeekPageBase + 1,
               itemBuilder: (context, page) {
                 final week = buildCenteredStripFromAnchor(_anchorForPage(page));
                 return TimelineWeekRow(

@@ -220,4 +220,79 @@ void main() {
       expect(state().errorKey, isNull);
     });
   });
+
+  /// `DetectionSpeed.noDuplicates` is a no-op on iOS and the sheet re-arms its
+  /// own decode guard every time the phase returns to `scanning` — which the
+  /// failure path does. Pointing the camera at one unknown package therefore
+  /// searched it on every frame, forever.
+  group('blocked barcode', () {
+    Future<void> missOn(String code) async {
+      api.handler =
+          (_, __, ___) => throw ApiError('BARCODE_NOT_FOUND', 404, false, 'x');
+      await notifier().search(code);
+    }
+
+    test('the same code, while its miss is showing, does not re-search', () async {
+      await missOn('8934563138162');
+      expect(api.requests, hasLength(1));
+      expect(state().lastBarcode, '8934563138162');
+      expect(state().errorKey, 'logging.barcode.error.notFound');
+
+      // The next frame off the same package, and the one after it.
+      await notifier().search('8934563138162');
+      await notifier().search(' 8934563-138162 ');
+
+      expect(api.requests, hasLength(1));
+      expect(state().errorKey, 'logging.barcode.error.notFound');
+      // The miss on screen still names the code it belongs to.
+      expect(state().lastBarcode, '8934563138162');
+    });
+
+    test('a different package still searches', () async {
+      await missOn('8934563138162');
+
+      await notifier().search('4008400402222');
+
+      expect(api.requests.map((r) => r.$2), [
+        '/api/v1/barcode/search?code=8934563138162',
+        '/api/v1/barcode/search?code=4008400402222',
+      ]);
+    });
+
+    test('scanAgain clears the block, so the same code searches again', () async {
+      await missOn('8934563138162');
+
+      notifier().scanAgain();
+      expect(state().errorKey, isNull);
+      await notifier().search('8934563138162');
+
+      expect(api.requests, hasLength(2));
+    });
+
+    test('enterManualMode clears the block too', () async {
+      await missOn('8934563138162');
+
+      notifier().enterManualMode();
+
+      expect(state().errorKey, isNull);
+    });
+
+    test('force: true bypasses it — a typed retry must get through', () async {
+      await missOn('8934563138162');
+
+      await notifier().search('8934563138162', force: true);
+
+      expect(api.requests, hasLength(2));
+    });
+
+    test('a success clears the block', () async {
+      await missOn('8934563138162');
+      api.handler = (_, __, ___) => <String, dynamic>{'product': productJson};
+
+      await notifier().search('8934563138162', force: true);
+
+      expect(state().phase, BarcodeFlowPhase.product);
+      expect(state().errorKey, isNull);
+    });
+  });
 }

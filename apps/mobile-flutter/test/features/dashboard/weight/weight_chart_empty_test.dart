@@ -8,7 +8,7 @@ import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart';
 import 'package:kallo_mobile/models/profile/weight.dart';
 
-import '../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 /// Device QA: a fresh account's Progress card headlined "65.9 kg" — the
 /// ONBOARDING profile weight — directly above "Log your first weight to start

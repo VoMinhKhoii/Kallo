@@ -10,7 +10,9 @@ import '../../theme/kallo_colors.dart';
 import '../../theme/kallo_theme.dart';
 import 'add_sheet.dart';
 import 'nav_actions.dart';
+import 'nav_visibility.dart';
 import 'pill_nav_item.dart';
+import 'pill_nav_veil.dart';
 
 /// The floating pill tab bar (native pass, 2026-08-31): a 72pt-tall white
 /// capsule with the two-layer nav shadow, four tabs (Today / Log / Nutrition
@@ -23,7 +25,9 @@ import 'pill_nav_item.dart';
 /// Today, Nutrition and Circle switch shell branches; Log PUSHES the logging
 /// feed full-screen over the shell (see [goToLogging]) — the composer owns
 /// that screen's bottom edge, and swipe-back returns here. The bar slides
-/// away while the keyboard is up.
+/// away while the keyboard is up, and while the user scrolls DOWN a long
+/// branch (revealed again on the first upward flick — see [NavVisibility]
+/// and [PillNavVeil]).
 class PillNavBar extends ConsumerWidget {
   const PillNavBar({super.key, required this.navigationShell});
 
@@ -35,7 +39,10 @@ class PillNavBar extends ConsumerWidget {
   static const int _nutritionBranch = 1;
   static const int _circleBranch = 2;
 
-  void _goBranch(int index) {
+  void _goBranch(WidgetRef ref, int index) {
+    // Switching tabs always brings the bar back: the destination scrolls from
+    // its own offset and the user has just told us they want the nav.
+    ref.read(navVisibilityProvider.notifier).reveal();
     navigationShell.goBranch(
       index,
       // Re-tapping the active tab pops that branch to its root (the standard
@@ -80,9 +87,10 @@ class PillNavBar extends ConsumerWidget {
             children: [
               PillNavItem(
                 icon: LucideIcons.house300,
+                activeIcon: LucideIcons.house400,
                 label: tr('app.nav.today'),
                 active: current == _dashboardBranch,
-                onTap: () => _goBranch(_dashboardBranch),
+                onTap: () => _goBranch(ref, _dashboardBranch),
               ),
               PillNavItem(
                 icon: LucideIcons.pencilLine300,
@@ -92,19 +100,24 @@ class PillNavBar extends ConsumerWidget {
               ),
               _AddButton(onTap: () {
                 HapticFeedback.lightImpact();
+                // The sheet lands over the bar, so leave the bar showing
+                // underneath it rather than half-slid away.
+                ref.read(navVisibilityProvider.notifier).reveal();
                 showAddSheet(context, ref);
               }),
               PillNavItem(
                 icon: LucideIcons.apple300,
+                activeIcon: LucideIcons.apple400,
                 label: tr('app.nav.nutrition'),
                 active: current == _nutritionBranch,
-                onTap: () => _goBranch(_nutritionBranch),
+                onTap: () => _goBranch(ref, _nutritionBranch),
               ),
               PillNavItem(
                 icon: LucideIcons.users300,
+                activeIcon: LucideIcons.users400,
                 label: tr('app.nav.circle'),
                 active: current == _circleBranch,
-                onTap: () => _goBranch(_circleBranch),
+                onTap: () => _goBranch(ref, _circleBranch),
                 showInviteBadge: true,
               ),
             ],
@@ -113,20 +126,12 @@ class PillNavBar extends ConsumerWidget {
       ),
     );
 
-    // Slide + fade out while typing; the composer (or any focused field)
-    // owns the bottom edge then.
-    return AnimatedSlide(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      offset: keyboardUp ? const Offset(0, 1) : Offset.zero,
-      // The bar stays BUILT while it slides: collapsing it to a zero-size box
-      // on the same frame the offset starts animating killed both the slide
-      // and the fade — it simply vanished.
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 150),
-        opacity: keyboardUp ? 0 : 1,
-        child: bar,
-      ),
+    // Out of the way while typing (the composer owns the bottom edge) and
+    // while the user reads DOWN a long branch. Both hide the SAME way: the
+    // veil translates the bar, never resizes it.
+    return PillNavVeil(
+      hidden: keyboardUp || !ref.watch(navVisibilityProvider),
+      child: bar,
     );
   }
 }

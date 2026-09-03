@@ -10,6 +10,8 @@ import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/painting.dart';
 
+import '../../../theme/text_metrics.dart';
+
 /// A tight, uniform, round-number Y axis fitted to [values].
 ///
 /// The series is padded *before* the bounds are snapped, so it lands roughly
@@ -68,7 +70,6 @@ Map<int, String> weightXTickLabels({
   required TextScaler textScaler,
 }) {
   if (pointCount <= 0) return const {};
-  if (pointCount == 1) return {0: tr('dashboard.start')};
 
   final hasDates = dates.length == pointCount;
   final lastIndex = pointCount - 1;
@@ -102,6 +103,19 @@ Map<int, String> weightXTickLabels({
         .reduce(math.max);
     // 6px of breathing room between neighbouring labels.
     return (widest + 6) * labels.length <= plotWidth;
+  }
+
+  // One logged weight: that day IS the axis, so label it with its own date
+  // rather than the placeholder "Start" — which named a range the chart does
+  // not have. Falling back to "Now" keeps the single tick meaningful on an
+  // older server that sends no dates. It runs the same width guard as every
+  // other tick count: a label the plot cannot hold is dropped, not clipped.
+  if (pointCount == 1) {
+    final parsed = hasDates ? DateTime.tryParse(dates[0]) : null;
+    final labels = {
+      0: parsed != null ? format.format(parsed) : tr('dashboard.now'),
+    };
+    return fits(labels) ? labels : const {};
   }
 
   // Without dates there is nothing to tick but the two ends.
@@ -159,3 +173,20 @@ double _measure(String text, TextStyle style, TextScaler textScaler) {
   painter.dispose();
   return width;
 }
+
+/// Floor for the date row: the ticks' lead plus a 12pt line box. It is a FLOOR
+/// only — [weightDateAxisHeight] measures the real one, because this constant
+/// was sized for the retired 12pt meta tier and silently clipped the current
+/// 14 × 1.25 line box (and every scaled-up variant of it).
+const double _minDateAxisHeight = 22;
+
+/// Between a tick label and the plot above it. fl_chart's own default is 8,
+/// which pushed the row past the artboard's date band.
+const double kWeightDateTickLead = 4;
+
+/// The height the date row needs for [style] at [scaler]: the label's own line
+/// box plus its lead, never below [_minDateAxisHeight].
+double weightDateAxisHeight(TextStyle style, TextScaler scaler) => math.max(
+  _minDateAxisHeight,
+  kWeightDateTickLead + lineBoxHeight(style, scaler),
+);

@@ -45,6 +45,9 @@ dependencies:
   app_links: ^7.1.1
   purchases_flutter: ^10.4.1
   url_launcher: ^6.3.2
+  cached_network_image: ^4.0.0
+  camera: ^0.12.0+2
+  image: ^4.9.2
 
 dev_dependencies:
   flutter_test:

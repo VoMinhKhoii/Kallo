@@ -9,7 +9,7 @@ import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_log_sheet.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 
-import '../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 /// "Log weight" from the "+" Add sheet reads the dashboard bundle for its
 /// prefills before it can present. That await had no error branch, so a failed

@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
+import 'package:kallo_mobile/features/logging/logic/label/image_shrink.dart';
 import 'package:kallo_mobile/features/logging/logic/label/review.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
@@ -302,6 +305,167 @@ void main() {
         LabelReviewState(state().label, defaultProductName: 'Scanned food').unit,
         'serving',
       );
+    });
+  });
+
+  /// The in-sheet live camera writes a still to disk and hands over the path;
+  /// the picker path now ends in the same function. These cover it directly
+  /// with real temp files — the size guard, the magic-byte sniff, and success.
+  group('labelImageFromFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    Future<String> write(String name, List<int> bytes) async {
+      final file = File('${dir.path}/$name');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    }
+
+    test('a JPEG comes back with bytes, mime and its path', () async {
+      final path = await write('label.jpg', _jpegBytes);
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.failure, isNull);
+      expect(result.image!.mimeType, 'image/jpeg');
+      expect(result.image!.bytes, _jpegBytes);
+      expect(result.image!.path, path);
+    });
+
+    test('a PNG is recognised from its magic bytes, not its extension', () async {
+      final path = await write('label.jpg', [
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00,
+      ]);
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.image!.mimeType, 'image/png');
+    });
+
+    test('anything that is not JPEG/PNG/WebP is unsupported', () async {
+      final path = await write('label.jpg', List<int>.filled(64, 0x41));
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.image, isNull);
+      expect(result.failure, LabelImageFailure.unsupported);
+    });
+
+    test('over the payload cap is rejected without buffering it', () async {
+      final path = await write(
+        'huge.jpg',
+        List<int>.filled(maxLabelImageBytes + 1, 0xff),
+      );
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.failure, LabelImageFailure.tooLarge);
+    });
+
+    test('an empty file is rejected too', () async {
+      final path = await write('empty.jpg', const <int>[]);
+
+      expect((await labelImageFromFile(path)).failure,
+          LabelImageFailure.tooLarge);
+    });
+
+    test('a file that vanished reports the camera, not a bad image', () async {
+      final result = await labelImageFromFile('${dir.path}/never_written.jpg');
+
+      expect(result.failure, LabelImageFailure.cameraUnavailable);
+    });
+  });
+
+  /// The controller side of the live camera: it holds the still for review the
+  /// same way the picker path does, and a camera failure lands on the capture
+  /// phase with an error the branch renders as its ScanErrorCard.
+  group('captureFromFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_ctrl_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    test('a good still lands on preview, ready to scan', () async {
+      final file = File('${dir.path}/shot.jpg');
+      await file.writeAsBytes(_jpegBytes);
+
+      await notifier().captureFromFile(file.path);
+
+      expect(state().phase, LabelScanPhase.preview);
+      expect(state().image!.mimeType, 'image/jpeg');
+      expect(state().errorKey, isNull);
+    });
+
+    test('a refused camera lands on capture with the permission copy', () {
+      notifier().reportCaptureFailure(LabelImageFailure.permissionDenied);
+
+      expect(state().phase, LabelScanPhase.capture);
+      expect(state().image, isNull);
+      expect(state().errorKey, 'logging.labelScan.error.permissionDenied');
+    });
+
+    test('a camera that would not open is a retry, not a settings trip', () {
+      notifier().reportCaptureFailure(LabelImageFailure.cameraUnavailable);
+
+      expect(state().errorKey, 'logging.labelScan.error.serverError');
+    });
+  });
+
+  // A live-camera still is handed over at whatever size the sensor produced,
+  // and `ResolutionPreset.veryHigh` is a target, not a byte guarantee. A still
+  // over the 4 MiB guard must be shrunk to the picker's rung, not dropped.
+  group('shrinkLabelImageFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_big_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    test('an oversized still comes back under the guard at 1600px', () async {
+      // Noise does not compress: 2400² at q100 is comfortably past 4 MiB.
+      final noisy = img.Image(width: 2400, height: 2400);
+      var seed = 7;
+      for (final px in noisy) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        px.setRgb(seed & 0xff, (seed >> 8) & 0xff, (seed >> 16) & 0xff);
+      }
+      final big = img.encodeJpg(noisy, quality: 100);
+      expect(big.length, greaterThan(maxLabelImageBytes));
+      final path = '${dir.path}/big.jpg';
+      await File(path).writeAsBytes(big);
+      expect(
+        (await labelImageFromFile(path)).failure,
+        LabelImageFailure.tooLarge,
+      );
+
+      final result = await shrinkLabelImageFile(path);
+
+      expect(result.failure, isNull);
+      final image = result.image!;
+      expect(image.mimeType, 'image/jpeg');
+      expect(image.bytes.length, lessThanOrEqualTo(maxLabelImageBytes));
+      expect(img.decodeJpg(image.bytes)!.width, labelImageMaxWidth.toInt());
+      // The shrunk copy is a means to the bytes, not a file anyone owns:
+      // the result points at the original still and the temp is gone.
+      expect(image.path, path);
+      expect(File('$path.shrunk.jpg').existsSync(), isFalse);
+    });
+
+    test('a file that is not an image is unsupported', () async {
+      final path = '${dir.path}/junk.jpg';
+      await File(path).writeAsBytes(List<int>.filled(64, 0x41));
+      expect(
+        (await shrinkLabelImageFile(path)).failure,
+        LabelImageFailure.unsupported,
+      );
+      expect(File('$path.shrunk.jpg').existsSync(), isFalse);
     });
   });
 }

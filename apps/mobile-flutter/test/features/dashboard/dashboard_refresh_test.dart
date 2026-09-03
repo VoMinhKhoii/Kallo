@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
+import 'package:kallo_mobile/models/social/circle.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
 import 'package:kallo_mobile/shell/header/profile_avatar_button.dart';
 import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
@@ -14,6 +16,11 @@ import 'package:kallo_mobile/features/dashboard/screens/dashboard_screen.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/chrome/week_strip.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_grid_painter.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/states/card_skeletons.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart';
+import 'package:kallo_mobile/shared/logic/display_format.dart';
+import 'package:kallo_mobile/shared/widgets/feedback/skeleton.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -71,6 +78,13 @@ void main() {
     overrides: [
       currentSessionProvider.overrideWithValue(_session),
       dashboardBundleProvider.overrideWith((ref, args) => load()),
+      // The header avatar reads the circle profile. Left un-overridden it
+      // would reach the real HTTP client; a future that never completes keeps
+      // it in its loading state for the whole test. Written as an async body
+      // so it compiles against the provider whether or not it is autoDispose.
+      myCircleProfileProvider.overrideWith(
+        (ref) async => await Completer<CircleProfile>().future,
+      ),
     ],
     child: EasyLocalization(
       supportedLocales: const [Locale('en')],
@@ -243,5 +257,66 @@ void main() {
       closeTo(resting, 0.5),
       reason: 'and springs back only once the load has completed',
     );
+  });
+
+  testWidgets('a bundle refetch does NOT put the loaded page back on skeletons',
+      (tester) async {
+    // Device report: logging a weight blanked the whole home page. `logWeight`
+    // invalidates the bundle, every derived section provider goes isReloading,
+    // and `AsyncValue.when` defaults `skipLoadingOnReload: false` in Riverpod
+    // 2.6.1 — so each already-drawn section fell back to its loading branch for
+    // the round trip. Only `skipLoadingOnRefresh` is true by default.
+    // The refetch is gated open so the assertions land while the sections are
+    // genuinely isReloading, not after the replacement value has arrived.
+    final gate = Completer<DashboardBundle>();
+    var loads = 0;
+    await tester.pumpWidget(
+      app(
+        load: () {
+          loads++;
+          return loads == 1
+              ? Future.value(DashboardBundle.fromJson(_bundleJson()))
+              : gate.future;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WeightChart), findsOneWidget, reason: 'loaded first');
+
+    // The same instance the screen watches: it keys the bundle on the signed-in
+    // user and today's local date.
+    ProviderScope.containerOf(
+      tester.element(find.byType(DashboardScreen)),
+    ).invalidate(
+      dashboardBundleProvider((userId: _userId, date: todayDateString())),
+    );
+    // Two pumps, not `pumpAndSettle`: the first flushes the invalidation, the
+    // second draws the frame where the refetch is in flight and nothing has
+    // resolved. Settling would resolve the gate and hide the very frame the
+    // sections used to blank on.
+    await tester.pump();
+    await tester.pump();
+
+    expect(loads, 2, reason: 'the invalidate started a refetch that is stuck');
+    expect(find.byType(WeightChart), findsOneWidget,
+        reason: 'the drawn page survives the reload');
+    expect(find.byType(TodayCardSkeleton), findsNothing,
+        reason: 'Today keeps its rows while the bundle refetches');
+    expect(find.byType(SkeletonPulse), findsNothing,
+        reason: 'no card may shimmer over data it already has');
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is CustomPaint &&
+            w.painter is HeatmapGridPainter &&
+            (w.painter as HeatmapGridPainter).data == null,
+      ),
+      findsNothing,
+      reason: 'the heatmap keeps its cells instead of redrawing them empty',
+    );
+
+    gate.complete(DashboardBundle.fromJson(_bundleJson()));
+    await tester.pumpAndSettle();
   });
 }

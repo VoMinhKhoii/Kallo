@@ -27,9 +27,10 @@ lib/features/<feature>/          — feature code (auth, circle, dashboard, feed
   data/                          — Riverpod providers and feature-static tables
   providers/                     — Riverpod wiring
 lib/shared/     — cross-feature widgets/helpers (second consumer required)
-  widgets/<m>/                     — one folder per primitive: avatar/ brand/ calorie_ring/
-                                     feedback/ form/ motion/ sheet/ surface/ toast/
-                                     typography/. No loose files at widgets/ root.
+  widgets/<m>/                     — one folder per primitive: avatar/ brand/ chrome/
+                                     dialog/ feedback/ form/ gauge/ list/ motion/ sheet/
+                                     surface/ toast/ typography/ nutrition/. No loose
+                                     files at widgets/ root.
   logic/ data/
 lib/services/   — infrastructure edges, one subfolder per concern:
                   http/ (api_client, uploads, query cache policy), auth/

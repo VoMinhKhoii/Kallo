@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/social/circle.dart';
+import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/avatar/profile_avatar.dart';
@@ -19,7 +20,6 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/chrome/settings_header.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;
@@ -140,7 +140,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsHeader(title: tr('settings.identity.title')),
+        header: PageHeader(title: tr('settings.identity.title')),
         child: profileAsync.when(
           loading: () => const _IdentitySkeleton(),
           error: (_, __) => Center(
@@ -162,13 +162,8 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return ListView(
       padding: SettingsSpacing.page(context),
       children: [
-        // No title here — it lives in the header bar. This is the description
-        // that used to sit under it.
-        Text(
-          tr('settings.identity.description'),
-          style: dashBody(color: kInkMuted),
-        ),
-        const SizedBox(height: KalloSpacing.sp5),
+        // No title and no description here — the title lives in the header
+        // bar and the description only restated it.
 
         // ── Avatar ──────────────────────────────────────────────────────
         Row(
@@ -246,9 +241,7 @@ class _IdentitySkeleton extends StatelessWidget {
         child: ListView(
           padding: SettingsSpacing.page(context),
           children: const [
-            // Mirrors the real body: description line, then the avatar row.
-            SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
-            SizedBox(height: KalloSpacing.sp5),
+            // Mirrors the real body, which opens on the avatar row.
             Row(
               children: [
                 SkeletonCircle(size: 64),

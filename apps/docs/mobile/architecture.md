@@ -31,8 +31,10 @@ lib/
   models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
   shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
-                       calorie_ring/ feedback/ form/ motion/ sheet/ surface/
-                       toast/ typography/
+                       chrome/ dialog/ feedback/ form/ gauge/ list/ motion/
+                       nutrition/ sheet/ surface/ toast/ typography/
+                       (`apps/mobile-flutter/AGENTS.md` §3 is the authoritative
+                       folder map; keep this line in step with it)
   shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
   shared/data/         static tables >1 feature reads: countries.dart
   shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,
@@ -104,10 +106,11 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`
   (`showKalloConfirm`) — a centred title, a centred muted line, and the two buttons
   **stacked**, affirmative above cancel. It replaced three separate chromes (bare Material
-  `AlertDialog`, `CupertinoActionSheet`, and a hand-rolled one). Vietnamese affirmatives
-  default to `common.agree` ("Đồng ý") because "huỷ" means both *cancel* and *destroy*, so a
-  verb like "Xoá" beside "Huỷ" reads as the same choice twice; a confirm whose verb does not
-  collide (e.g. "Rời nhóm") passes its own `confirmLabel`.
+  `AlertDialog`, `CupertinoActionSheet`, and a hand-rolled one). It renders through
+  `showCupertinoDialog` on a 270pt `CupertinoPopupSurface`, both buttons full-width pills with
+  the destructive one filled `KalloColors.danger`. There is no default affirmative: every call
+  passes explicit `confirmLabel`/`cancelLabel` verbs — Remove/Keep, Discard/Keep, Sign out/Stay
+  signed in, Leave group/Stay — so both options name what they do (user decision 2026-09-03).
 - **Sheets:** `showNhamSheet` (`shared/widgets/sheet/kallo_sheet.dart`) + `KalloSheetSurface` +
   `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
@@ -127,6 +130,9 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 `apps/mobile-flutter/FIDELITY_AUDIT.md` tracks web↔Flutter divergences per surface
 (**298 catalogued, 141 applied** at last audit) with `web ↔ Flutter` file:line refs. It's the
 source of truth for "does this match the web view." `flutter analyze` is kept clean (0 errors).
+
+For the opposite direction — hand-built widgets that should become native Cupertino ones —
+see [native-components-audit.md](./native-components-audit.md).
 
 ## History: the RN app
 

@@ -29,9 +29,11 @@ import '../widgets/states/section_state.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shell/header/app_header.dart';
 import '../../../shell/header/profile_avatar_button.dart';
+import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
+import '../logic/day_window.dart';
 import '../../../shared/logic/display_format.dart';
 import '../logic/dashboard_spacing.dart';
 import '../widgets/heatmap/adherence_heatmap.dart';
@@ -192,22 +194,16 @@ class _Content extends StatefulWidget {
 }
 
 class _ContentState extends State<_Content> {
-  /// The browsable days, oldest → today (future days aren't pageable). Today is
-  /// always the last page; the strip centers today at index 3, so the past half
-  /// (indices 0..3) is exactly today and the three days before it.
-  late final List<String> _days = buildCenteredStripFromAnchor(
-    widget.todayDate,
-  ).days.sublist(0, 4);
-  late final int _todayPage = _days.length - 1;
-
   // The day whose summary the Today card shows; tapping a strip day or swiping
-  // the card changes it. Defaults to today (the last page).
-  late int _page = _todayPage;
-  late final PageController _pageController = PageController(
-    initialPage: _todayPage,
+  // the card changes it. The window is unbounded into the past and clamped at
+  // today, so pages map to dates through `logic/day_window.dart` instead of
+  // indexing a fixed list — today is [kDayPageBase], the last page.
+  int _page = kDayPageBase;
+  final PageController _pageController = PageController(
+    initialPage: kDayPageBase,
   );
 
-  String get _selectedDate => _days[_page];
+  String get _selectedDate => dateForDayPage(widget.todayDate, _page);
 
   @override
   void dispose() {
@@ -216,14 +212,20 @@ class _ContentState extends State<_Content> {
   }
 
   /// Strip tap → animate the day card to that page (selection haptic fires in
-  /// the strip's own GestureDetector). Future / out-of-window days are ignored.
+  /// the strip's own GestureDetector). Days after today have no page.
   void _onSelectDay(String date) {
-    final idx = _days.indexOf(date);
-    if (idx < 0 || idx == _page) return;
+    final page = dayPageForDate(widget.todayDate, date);
+    if (page == _page || page < 0 || page > kDayPageBase) return;
+    // Animating across many pages builds every intermediate day, and each one
+    // fetches `/api/v1/logging/day` — jump straight there beyond a neighbour.
+    if ((page - _page).abs() > 1) {
+      _pageController.jumpToPage(page);
+      return;
+    }
     _pageController.animateToPage(
-      idx,
-      duration: const Duration(milliseconds: 280),
-      curve: const Cubic(0.16, 1, 0.3, 1),
+      page,
+      duration: KalloMotion.page,
+      curve: KalloEase.decelerate,
     );
   }
 
@@ -287,8 +289,7 @@ class _ContentState extends State<_Content> {
               else
                 DayPager(
                   controller: _pageController,
-                  days: _days,
-                  todayPage: _todayPage,
+                  todayDate: widget.todayDate,
                   userId: widget.args.userId,
                   targets: widget.targets,
                   onPageChanged: _onPageChanged,

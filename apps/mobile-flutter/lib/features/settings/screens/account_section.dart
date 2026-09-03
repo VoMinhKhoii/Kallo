@@ -142,13 +142,15 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   Future<void> _disconnect(UserIdentity identity) async {
     if ((_identities?.length ?? 0) <= 1 || _busyProvider != null) return;
-    // The sharpest case for the neutral affirmative in the app: this action is
-    // called "Huỷ liên kết", so keeping the verb put "Huỷ liên kết" directly
-    // above "Huỷ" — the destructive button literally opening with the cancel
-    // word. It defers to "Đồng ý"; the title already says what is being undone.
+    // This site is why the neutral pair had to go rather than be tuned: its
+    // action is called "Huỷ liên kết", so a verb affirmative once sat directly
+    // above "Huỷ" — the destructive button opening with the cancel word. Naming
+    // the safe side "Giữ lại" removes the collision without removing the verb.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('settings.account.disconnectConfirmTitle'),
+      confirmLabel: tr('common.actions.disconnect'),
+      cancelLabel: tr('common.actions.keep'),
       destructive: true,
     );
     if (!confirmed) return;

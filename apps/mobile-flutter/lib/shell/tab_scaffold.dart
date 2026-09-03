@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/kallo_colors.dart';
+import 'nav/nav_visibility.dart';
 import 'nav/pill_nav_bar.dart';
 
 /// App shell for the primary surfaces (native pass, 2026-08-31).
@@ -18,6 +19,13 @@ import 'nav/pill_nav_bar.dart';
 /// active branch draw under the floating bar while the scaffold rewrites the
 /// body's `MediaQuery.padding.bottom` to clear it — scroll views that respect
 /// their safe area lift above the pill for free.
+///
+/// The shell also owns the hide-on-scroll rule for the bar: reading DOWN a
+/// long branch slides the pill away, the first upward flick (including the
+/// pull-to-refresh overscroll) brings it back. The rule itself lives in
+/// [NavVisibility]; the listener only forwards to it, and the bar keeps its
+/// laid-out height either way, because that height IS the bottom inset every
+/// branch scrolls against.
 class TabScaffold extends ConsumerWidget {
   const TabScaffold({required this.navigationShell, super.key});
 
@@ -28,7 +36,11 @@ class TabScaffold extends ConsumerWidget {
     return Scaffold(
       backgroundColor: KalloColors.surface,
       extendBody: true,
-      body: navigationShell,
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (n) =>
+            ref.read(navVisibilityProvider.notifier).applyScroll(n),
+        child: navigationShell,
+      ),
       bottomNavigationBar: PillNavBar(navigationShell: navigationShell),
     );
   }

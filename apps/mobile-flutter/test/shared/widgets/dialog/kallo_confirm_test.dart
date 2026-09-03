@@ -1,8 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/logging/widgets/actions/confirm_meal_removal.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/theme/kallo_motion.dart';
@@ -10,10 +12,12 @@ import 'package:kallo_mobile/theme/kallo_motion.dart';
 import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
 
-/// Pumps a screen whose one button opens the confirm and records its answer.
+/// Pumps a screen whose one button opens a confirm and records its answer.
 Widget _host({
   required void Function(bool) onResult,
-  String? confirmLabel,
+  Future<bool> Function(BuildContext)? open,
+  String confirmLabel = 'Xoá',
+  String cancelLabel = 'Giữ lại',
   bool destructive = false,
   Locale locale = const Locale('vi'),
 }) => EasyLocalization(
@@ -35,13 +39,15 @@ Widget _host({
                     child: ElevatedButton(
                       onPressed:
                           () async => onResult(
-                            await showKalloConfirm(
-                              inner,
-                              title: 'Xoá bữa ăn này?',
-                              description: 'Bữa ăn sẽ biến mất.',
-                              confirmLabel: confirmLabel,
-                              destructive: destructive,
-                            ),
+                            await (open?.call(inner) ??
+                                showKalloConfirm(
+                                  inner,
+                                  title: 'Xoá bữa ăn này?',
+                                  description: 'Bữa ăn sẽ biến mất.',
+                                  confirmLabel: confirmLabel,
+                                  cancelLabel: cancelLabel,
+                                  destructive: destructive,
+                                )),
                           ),
                       child: const Text('open'),
                     ),
@@ -61,6 +67,15 @@ Future<void> _open(WidgetTester tester, Widget host) async {
   await tester.pumpAndSettle();
 }
 
+/// The fill painted directly behind an action label — the whole point of the
+/// two-tier look, so it is read off the render tree rather than restated.
+Color _fillBehind(WidgetTester tester, String label) {
+  final box = tester.widget<Container>(
+    find.ancestor(of: find.text(label), matching: find.byType(Container)).first,
+  );
+  return (box.decoration! as BoxDecoration).color!;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -74,48 +89,60 @@ void main() {
     await loadAppFonts();
   });
 
-  testWidgets('defaults to the two neutral labels', (tester) async {
+  testWidgets('opens on the native iOS alert surface', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
-    // The whole point of the report: neither button is a verb that could be
-    // read as the other one.
-    expect(find.text('Đồng ý'), findsOneWidget);
-    expect(find.text('Huỷ'), findsOneWidget);
+    expect(find.byType(CupertinoPopupSurface), findsOneWidget);
+    // A system alert is 270 wide; a lookalike that is not reads as a lookalike.
+    expect(tester.getSize(find.byType(CupertinoPopupSurface)).width, 270);
   });
 
-  testWidgets('stacks the affirmative above the cancel', (tester) async {
+  testWidgets('both options are the verbs the caller named', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
-    final confirm = tester.getRect(find.text('Đồng ý'));
-    final cancel = tester.getRect(find.text('Huỷ'));
+    expect(find.text('Xoá'), findsOneWidget);
+    expect(find.text('Giữ lại'), findsOneWidget);
+    // The pair the API used to default to is gone: neither label may be a
+    // generic that makes the user read the title to find out what it does.
+    expect(find.text('Đồng ý'), findsNothing);
+    expect(find.text('Huỷ'), findsNothing);
+  });
+
+  testWidgets('stacks the affirmative above the safe option', (tester) async {
+    await _open(tester, _host(onResult: (_) {}));
+    final confirm = tester.getRect(find.text('Xoá'));
+    final cancel = tester.getRect(find.text('Giữ lại'));
     expect(
       confirm.bottom,
       lessThan(cancel.top),
       reason: 'the two buttons must stack, not sit on one line',
     );
-    // Full-width, so neither can be mistaken for the other by size.
     expect(confirm.center.dx, closeTo(cancel.center.dx, 0.5));
   });
 
   testWidgets('centres the title and the description', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
-    final title = tester.getRect(find.text('Xoá bữa ăn này?'));
-    final body = tester.getRect(find.text('Bữa ăn sẽ biến mất.'));
-    final dialog = tester.getRect(find.byType(Dialog));
-    expect(title.center.dx, closeTo(dialog.center.dx, 0.5));
-    expect(body.center.dx, closeTo(dialog.center.dx, 0.5));
+    final card = tester.getRect(find.byType(CupertinoPopupSurface));
+    expect(
+      tester.getRect(find.text('Xoá bữa ăn này?')).center.dx,
+      closeTo(card.center.dx, 0.5),
+    );
+    expect(
+      tester.getRect(find.text('Bữa ăn sẽ biến mất.')).center.dx,
+      closeTo(card.center.dx, 0.5),
+    );
   });
 
   testWidgets('answers true only for the affirmative', (tester) async {
     bool? answer;
     await _open(tester, _host(onResult: (v) => answer = v));
-    await tester.tap(find.text('Đồng ý'));
+    await tester.tap(find.text('Xoá'));
     await tester.pumpAndSettle();
     expect(answer, isTrue);
   });
 
-  testWidgets('answers false for cancel', (tester) async {
+  testWidgets('answers false for the safe option', (tester) async {
     bool? answer;
     await _open(tester, _host(onResult: (v) => answer = v));
-    await tester.tap(find.text('Huỷ'));
+    await tester.tap(find.text('Giữ lại'));
     await tester.pumpAndSettle();
     expect(answer, isFalse);
   });
@@ -123,39 +150,45 @@ void main() {
   testWidgets('answers false when the barrier is tapped', (tester) async {
     bool? answer;
     await _open(tester, _host(onResult: (v) => answer = v));
-    // Top-left corner is scrim, never the card.
+    // Top-left corner is scrim, never the 270pt card.
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
-    expect(
-      answer,
-      isFalse,
-      reason: 'dismissing must never read as consent',
-    );
+    expect(answer, isFalse, reason: 'dismissing must never read as consent');
   });
 
-  testWidgets('paints the affirmative red only when destructive', (
+  testWidgets('fills the affirmative red only when it destroys something', (
     tester,
   ) async {
     await _open(tester, _host(onResult: (_) {}, destructive: true));
-    Color fillBehind(String label) {
-      final box = tester.widget<Container>(
-        find
-            .ancestor(of: find.text(label), matching: find.byType(Container))
-            .first,
-      );
-      return (box.decoration! as BoxDecoration).color!;
-    }
-
-    expect(fillBehind('Đồng ý'), KalloColors.danger);
-    expect(fillBehind('Huỷ'), Colors.transparent);
+    expect(_fillBehind(tester, 'Xoá'), KalloColors.danger);
+    expect(_fillBehind(tester, 'Giữ lại'), const Color(0x00000000));
   });
 
-  testWidgets('keeps a distinct verb when one is given', (tester) async {
-    await _open(tester, _host(onResult: (_) {}, confirmLabel: 'Rời nhóm'));
-    // Not every confirm is ambiguous — "Rời nhóm" beside "Huỷ" is two clearly
-    // different things, so the caller may keep its verb.
-    expect(find.text('Rời nhóm'), findsOneWidget);
-    expect(find.text('Đồng ý'), findsNothing);
+  testWidgets('a non-destructive affirmative is the beige primary', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      _host(onResult: (_) {}, confirmLabel: 'Lưu', cancelLabel: 'Bỏ qua'),
+    );
+    final fill = _fillBehind(tester, 'Lưu');
+    expect(fill, isNot(KalloColors.danger));
+    expect(fill, KalloColors.btnPrimarySoft);
+  });
+
+  testWidgets('confirmMealRemoval names Remove against Keep', (tester) async {
+    await _open(tester, _host(onResult: (_) {}, open: confirmMealRemoval));
+    expect(find.text(tr('common.actions.remove')), findsOneWidget);
+    expect(find.text(tr('common.actions.keep')), findsOneWidget);
+    expect(find.text(tr('logging.removeConfirmTitle')), findsOneWidget);
+  });
+
+  testWidgets('confirmPendingDiscard names Discard against Keep', (
+    tester,
+  ) async {
+    await _open(tester, _host(onResult: (_) {}, open: confirmPendingDiscard));
+    expect(find.text(tr('common.actions.discard')), findsOneWidget);
+    expect(find.text(tr('common.actions.keep')), findsOneWidget);
   });
 
   testWidgets('fits a small phone at the Dynamic Type cap', (tester) async {
@@ -165,38 +198,31 @@ void main() {
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
-        child: _host(onResult: (_) {}),
+        child: _host(
+          onResult: (_) {},
+          confirmLabel: 'Ngắt kết nối',
+          cancelLabel: 'Giữ lại',
+        ),
       ),
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(tester.getRect(find.text('Huỷ')).bottom, lessThan(568));
+    expect(tester.getRect(find.text('Giữ lại')).bottom, lessThan(568));
   });
 
-  testWidgets('the two buttons are one height, and both clear the tap floor', (
+  testWidgets('both buttons are one height and clear the 44pt tap floor', (
     tester,
   ) async {
     await _open(tester, _host(onResult: (_) {}));
-
-    // Read the rendered pills rather than restating their padding, so this
-    // fails on the drift itself. Both numbers matter: the buttons used to be
-    // the only ones in the app propped up by a minHeight, and taking that away
-    // is only safe while the padding alone still clears 44.
-    final confirm = tester.getRect(
-      find.ancestor(
-        of: find.text('Đồng ý'),
-        matching: find.byType(DecoratedBox),
-      ).first,
+    Rect pill(String label) => tester.getRect(
+      find
+          .ancestor(of: find.text(label), matching: find.byType(DecoratedBox))
+          .first,
     );
-    final cancel = tester.getRect(
-      find.ancestor(
-        of: find.text('Huỷ'),
-        matching: find.byType(DecoratedBox),
-      ).first,
-    );
-
+    final confirm = pill('Xoá');
+    final cancel = pill('Giữ lại');
     expect(
       confirm.height,
       closeTo(cancel.height, 0.5),
@@ -210,15 +236,27 @@ void main() {
   ) async {
     await _open(tester, _host(onResult: (_) {}));
 
-    // Every other quiet button in the app crossfades — this one was a bare
-    // Container, so the wash appeared in one frame.
+    // Every other quiet button in the app crossfades — a bare Container would
+    // put the whole wash on screen in a single frame.
     final animated = tester.widgetList<AnimatedContainer>(
       find.ancestor(
-        of: find.text('Huỷ'),
+        of: find.text('Giữ lại'),
         matching: find.byType(AnimatedContainer),
       ),
     );
     expect(animated, isNotEmpty);
     expect(animated.first.duration, KalloMotion.press);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Giữ lại')),
+    );
+    await tester.pump();
+    await tester.pump(KalloMotion.press ~/ 2);
+    final mid = _fillBehind(tester, 'Giữ lại');
+    expect(mid, isNot(const Color(0x00000000)), reason: 'it has started');
+    expect(mid, isNot(KalloColors.hover), reason: 'and has not finished');
+
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 }

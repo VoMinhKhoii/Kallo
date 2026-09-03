@@ -104,6 +104,8 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
           image: state.image,
           scanning: state.phase == LabelScanPhase.scanning,
           onPick: notifier.pickImage,
+          onCapture: notifier.captureFromFile,
+          onCaptureFailure: notifier.reportCaptureFailure,
           onScan: notifier.scan,
           onRetake: notifier.retake,
           onManualEntry: _enterManualReview,

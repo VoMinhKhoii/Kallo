@@ -12,6 +12,7 @@ import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/label/image.dart';
 import '../../../logic/meal_log_mode.dart';
 import '../scan/scan_camera_stage.dart';
+import 'label_camera_preview.dart';
 
 /// Take (or choose) a photo of the nutrition table, then send it to be read.
 ///
@@ -20,12 +21,18 @@ import '../scan/scan_camera_stage.dart';
 /// it, replacing the umber "Take photo" bar and the beige library pill that
 /// used to stack under the frame. Only the held-photo step still shows a
 /// full-width button, because "read this label" is a commit, not a capture.
+///
+/// The stage now runs a LIVE camera ([LabelCameraPreview]) rather than sitting
+/// dark behind a shutter that opened the OS camera modal — the barcode branch
+/// has shown a picture from the first frame all along.
 class LabelCaptureStep extends StatelessWidget {
   const LabelCaptureStep({
     super.key,
     required this.image,
     required this.scanning,
     required this.onPick,
+    required this.onCapture,
+    required this.onCaptureFailure,
     required this.onScan,
     required this.onRetake,
     required this.onManualEntry,
@@ -33,7 +40,21 @@ class LabelCaptureStep extends StatelessWidget {
 
   final LabelImage? image;
   final bool scanning;
+
+  /// The photo-library path only — the shutter no longer goes through the
+  /// picker's camera modal.
   final ValueChanged<ImageSource> onPick;
+
+  /// The path of a still the in-sheet camera wrote. Deliberately NOT the
+  /// picker's pixels: the live camera shoots at `veryHigh` (~1080p) and hands
+  /// the file over untouched, where `image_picker` resizes to 1600px at q85 on
+  /// the way out. Both clear the model's needs and the payload cap; see
+  /// `LabelScanController.captureFromFile`.
+  final ValueChanged<String> onCapture;
+
+  /// A camera that would not open or would not shoot.
+  final ValueChanged<LabelImageFailure> onCaptureFailure;
+
   final VoidCallback onScan;
   final VoidCallback onRetake;
 
@@ -61,12 +82,12 @@ class LabelCaptureStep extends StatelessWidget {
   }
 
   List<Widget> _chooseChildren(BuildContext context) => [
-    ScanCameraStage(
+    LabelCameraPreview(
       hint: 'logging.labelScan.captureGuide'.tr(),
       shutterLabel: 'logging.labelScan.takePhoto'.tr(),
-      onShutter: () => onPick(ImageSource.camera),
       leading: _LibraryButton(onTap: () => onPick(ImageSource.gallery)),
-      builder: (context, size) => const SizedBox.shrink(),
+      onCaptured: onCapture,
+      onFailure: onCaptureFailure,
     ),
     if (isManualNutritionEntryOffered) ...[
       const SizedBox(height: KalloSpacing.sp1),

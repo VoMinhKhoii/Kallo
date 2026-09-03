@@ -54,12 +54,13 @@ class GroupMembersList extends ConsumerWidget {
     WidgetRef ref,
     ChatGroupMember member,
   ) async {
-    // "Xoá {name}?" — the affirmative is the neutral "Đồng ý", not the verb
-    // "Xoá", which beside "Huỷ" reads as the same choice twice.
+    // "Xoá {name}?" — "Xoá" against "Giữ lại": the member goes, or stays.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('groups.info.removeTitle', namedArgs: {'name': member.label}),
       description: tr('groups.info.removeDescription'),
+      confirmLabel: tr('common.actions.remove'),
+      cancelLabel: tr('common.actions.keep'),
       destructive: true,
     );
     if (!confirmed || !context.mounted) return;

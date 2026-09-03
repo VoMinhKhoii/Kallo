@@ -17,6 +17,7 @@ import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
 import '../logic/label/image.dart';
+import '../logic/label/image_shrink.dart';
 import '../logic/label/review.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
@@ -118,6 +119,10 @@ String _errorKeyFor(Object error) {
 String _captureErrorKeyFor(LabelImageFailure failure) => switch (failure) {
   LabelImageFailure.permissionDenied =>
     'logging.labelScan.error.permissionDenied',
+  // No dedicated copy: "Could not scan label. Please try again." is exactly
+  // right for a camera that would not open or would not shoot, and the error
+  // card's primary action already IS that retry.
+  LabelImageFailure.cameraUnavailable => 'logging.labelScan.error.serverError',
   LabelImageFailure.tooLarge => 'logging.labelScan.error.imageTooLarge',
   LabelImageFailure.unsupported => 'logging.labelScan.error.invalidImage',
   // Backing out of the picker is not an error — handled before this is called.
@@ -142,14 +147,54 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
     final failure = result.failure;
     if (failure == LabelImageFailure.cancelled) return;
     if (failure != null) {
-      state = state.copyWith(
-        phase: LabelScanPhase.capture,
-        image: () => null,
-        errorKey: () => _captureErrorKeyFor(failure),
-      );
+      reportCaptureFailure(failure);
       return;
     }
 
+    _hold(result);
+  }
+
+  /// Ingest a still the sheet's own live camera just wrote to disk.
+  ///
+  /// Divergence from [pickImage]: `image_picker` resizes to
+  /// [labelImageMaxWidth] (1600px, q85) on the way out, while the live preview
+  /// shoots at `ResolutionPreset.veryHigh` (~1080p) and is handed over as
+  /// written — the preset is a target, not a byte guarantee. A still the size
+  /// guard rejects is therefore shrunk to the picker's own rung and re-run
+  /// ([shrinkLabelImageFile]) instead of being dropped as `tooLarge`.
+  Future<void> captureFromFile(String path) async {
+    if (state.phase == LabelScanPhase.scanning ||
+        state.phase == LabelScanPhase.saving) {
+      return;
+    }
+
+    var result = await labelImageFromFile(path);
+    if (result.failure == LabelImageFailure.tooLarge) {
+      result = await shrinkLabelImageFile(path);
+    }
+    final failure = result.failure;
+    if (failure == LabelImageFailure.cancelled) return;
+    if (failure != null) {
+      reportCaptureFailure(failure);
+      return;
+    }
+    _hold(result);
+  }
+
+  /// A camera failure raised by the live preview itself (permission refused,
+  /// no usable sensor, a shutter that threw). Lands on the capture phase with
+  /// an error, which is the branch's ScanErrorCard.
+  void reportCaptureFailure(LabelImageFailure failure) {
+    if (failure == LabelImageFailure.cancelled) return;
+    state = state.copyWith(
+      phase: LabelScanPhase.capture,
+      image: () => null,
+      errorKey: () => _captureErrorKeyFor(failure),
+    );
+  }
+
+  /// Hold a captured photo for review, clearing whatever the last attempt left.
+  void _hold(LabelImageResult result) {
     state = state.copyWith(
       phase: LabelScanPhase.preview,
       image: () => result.image,

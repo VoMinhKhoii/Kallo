@@ -7,11 +7,13 @@
 /// model comparable pixels.
 ///
 /// Parity gap, deliberate: the web retries at four quality/scale rungs when
-/// the first encode overshoots the budget. Flutter has no JPEG encoder in
-/// core and `image_picker` cannot re-encode a file it already wrote, so this
-/// is a single pass plus a size guard — 1600px at q85 lands far under 4 MB in
-/// practice, and an overshoot surfaces as `invalidImage` asking for another
-/// photo rather than silently sending something the server will reject.
+/// the first encode overshoots the budget. Here the picker's own resize is
+/// the single pass, and only a still that STILL overshoots the size guard
+/// (a live-camera capture, which the `camera` plugin hands over at whatever
+/// size the sensor produced) gets one more rung: `shrinkLabelImageFile` in
+/// `image_shrink.dart` downscales to the same 1600px / q85 with the pure-Dart
+/// `image` package, off the UI isolate, so the size guard rejects nothing a
+/// resize would save.
 library;
 
 import 'dart:convert';
@@ -49,13 +51,21 @@ class LabelImage {
 }
 
 /// Why a capture produced no usable image. [cancelled] is not an error — the
-/// user backed out of the picker.
-enum LabelImageFailure { cancelled, permissionDenied, tooLarge, unsupported }
+/// user backed out of the picker. [cameraUnavailable] is the in-sheet live
+/// preview failing to open or to shoot for a reason that is NOT a denied
+/// permission (no camera on the device, the sensor busy elsewhere, a plugin
+/// error) — a plain retry, not a trip to Settings.
+enum LabelImageFailure {
+  cancelled,
+  permissionDenied,
+  cameraUnavailable,
+  tooLarge,
+  unsupported,
+}
 
 class LabelImageResult {
   const LabelImageResult.success(LabelImage this.image) : failure = null;
-  const LabelImageResult.failure(LabelImageFailure this.failure)
-    : image = null;
+  const LabelImageResult.failure(LabelImageFailure this.failure) : image = null;
 
   final LabelImage? image;
   final LabelImageFailure? failure;
@@ -105,8 +115,26 @@ Future<LabelImageResult> captureLabelImage(
     if (picked == null) {
       return const LabelImageResult.failure(LabelImageFailure.cancelled);
     }
+    return labelImageFromFile(picked.path);
+  } on PlatformException {
+    // Distinguish a denied camera/photo permission from a plain cancellation,
+    // as `feedback_screen.dart` does.
+    return const LabelImageResult.failure(LabelImageFailure.permissionDenied);
+  } catch (_) {
+    return const LabelImageResult.failure(LabelImageFailure.cancelled);
+  }
+}
 
-    final file = File(picked.path);
+/// Read a still already on disk into a [LabelImage]: on-disk size guard first
+/// so an oversized photo is never buffered just to reject it, then the bytes,
+/// then the mime derived from them.
+///
+/// Both capture paths end here — the photo-library picker (resized to
+/// [labelImageMaxWidth] on the way out) and the in-sheet live camera, which
+/// hands over the still it just wrote.
+Future<LabelImageResult> labelImageFromFile(String path) async {
+  try {
+    final file = File(path);
     if (await file.length() > maxLabelImageBytes) {
       return const LabelImageResult.failure(LabelImageFailure.tooLarge);
     }
@@ -122,13 +150,23 @@ Future<LabelImageResult> captureLabelImage(
     }
 
     return LabelImageResult.success(
-      LabelImage(bytes: bytes, mimeType: mimeType, path: picked.path),
+      LabelImage(bytes: bytes, mimeType: mimeType, path: path),
     );
-  } on PlatformException {
-    // Distinguish a denied camera/photo permission from a plain cancellation,
-    // as `feedback_screen.dart` does.
-    return const LabelImageResult.failure(LabelImageFailure.permissionDenied);
-  } catch (_) {
-    return const LabelImageResult.failure(LabelImageFailure.cancelled);
+  } on FileSystemException {
+    // The file the camera or picker named is gone or unreadable. Nothing to
+    // send; ask for another shot rather than crashing the sheet.
+    return const LabelImageResult.failure(LabelImageFailure.cameraUnavailable);
   }
 }
+
+/// Map a `CameraException.code` onto the failure the sheet reports. Only a
+/// refused permission is worth sending someone to Settings for — a denial the
+/// user can reverse there. `CameraAccessRestricted` is iOS's parental-control
+/// / MDM lock, which Settings cannot lift, so it reads as "no camera" like
+/// every other non-permission failure. Takes the code rather than the
+/// exception so this file stays free of `package:camera`.
+LabelImageFailure labelFailureForCamera(String code) => switch (code) {
+  'CameraAccessDenied' ||
+  'CameraAccessDeniedWithoutPrompt' => LabelImageFailure.permissionDenied,
+  _ => LabelImageFailure.cameraUnavailable,
+};

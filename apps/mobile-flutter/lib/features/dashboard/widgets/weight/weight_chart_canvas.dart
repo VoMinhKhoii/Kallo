@@ -21,13 +21,13 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../logic/weight_chart_axis.dart';
+import 'weight_chart_titles.dart';
 import 'weight_chart_dot_painter.dart';
 
 /// Canvas width : height — 334 × ~139 on a 390pt phone, of which the date row
-/// takes [_dateAxisHeight] and the plot itself keeps the artboard's ~120.
+/// takes the measured date-row height and the plot keeps the artboard's ~120.
 const double _chartAspect = 2.4;
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days
-const double _dateAxisHeight = 22; // date ticks + their 4px lead
 
 class WeightChartCanvas extends StatelessWidget {
   const WeightChartCanvas({
@@ -85,7 +85,12 @@ class WeightChartCanvas extends StatelessWidget {
     final axis =
         niceYAxis([...weights, if (showForecast) projectedEndWeight]);
     final yStep = axis.step;
-    final maxX = isSinglePoint ? 1.0 : forecastDay;
+    // One point: centre it. The lone spot sits at x = 0, so a 0…1 domain
+    // pinned it (and its tick label) against the plot's left edge with the
+    // label's own width hanging outside; a symmetric −0.5…0.5 puts both in the
+    // middle. The "today" VerticalLine at lastIndex (= 0) stays inside it.
+    final minX = isSinglePoint ? -0.5 : 0.0;
+    final maxX = isSinglePoint ? 0.5 : forecastDay;
 
     final actualSpots = <FlSpot>[
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
@@ -112,6 +117,8 @@ class WeightChartCanvas extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final scaler = MediaQuery.textScalerOf(context);
+          // Measured, not assumed — see [weightDateAxisHeight].
+          final dateAxisHeight = weightDateAxisHeight(axisLabel, scaler);
           final gutter = weightYAxisGutter(maxLabel, minLabel, axisLabel, scaler);
           final plotWidth = math.max(constraints.maxWidth - gutter, 1.0);
           final xLabels = weightXTickLabels(
@@ -124,7 +131,7 @@ class WeightChartCanvas extends StatelessWidget {
           );
           final chart = LineChart(
             LineChartData(
-              minX: 0,
+              minX: minX,
               maxX: maxX,
               minY: axis.min,
               maxY: axis.max,
@@ -141,34 +148,10 @@ class WeightChartCanvas extends StatelessWidget {
               // No frame: the dashed gridlines carry the scale, and an axis box
               // around a card-width plot reads as a second card edge.
               borderData: FlBorderData(show: false),
-              titlesData: FlTitlesData(
-                show: true,
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                // Only the DOMAIN's two bounds are labelled, by the overlay
-                // below — fl_chart's left titles would number every gridline.
-                leftTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: _dateAxisHeight,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final i = value.round();
-                      final label = xLabels[i];
-                      if (label == null || (value - i).abs() > 0.01) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(label, style: axisLabel),
-                      );
-                    },
-                  ),
-                ),
+              titlesData: weightChartTitles(
+                labels: xLabels,
+                style: axisLabel,
+                dateAxisHeight: dateAxisHeight,
               ),
               // "Today" marker at the most recent logged weight.
               extraLinesData: ExtraLinesData(
@@ -259,7 +242,7 @@ class WeightChartCanvas extends StatelessWidget {
               Positioned.fill(left: gutter, child: chart),
               Positioned(top: 0, left: 0, child: Text(maxLabel, style: axisLabel)),
               Positioned(
-                bottom: _dateAxisHeight,
+                bottom: dateAxisHeight,
                 left: 0,
                 child: Text(minLabel, style: axisLabel),
               ),

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import '../../../theme/kallo_theme.dart';
@@ -80,9 +82,15 @@ abstract final class LoggingSpacing {
   /// and the mode mark under it all start on the same line a meal card's text
   /// does. Right comes in to 8, where the send button's 44pt tap target already
   /// carries 6 of its own around a 32pt visual — at 16 the circle floated a
-  /// quarter-inch off the edge. Top is 0 and bottom 6: the field owns its own
-  /// 8/6 content padding, and the control row below is a 44pt target wrapping a
-  /// 32pt button.
+  /// quarter-inch off the edge.
+  ///
+  /// Top is 0 and bottom 4, and that is what makes the two ends read equal.
+  /// Measured down from the card's top edge: 0 + the field's own 8pt
+  /// `contentPadding.top` = 8 to the text. Measured up from the bottom edge: 4
+  /// + the (44 − 32) / 2 = 6 the send target carries under its circle = 10. The
+  /// 2pt of difference is the half-leading `dashBody` (16 × 1.3) hangs above
+  /// its glyphs, so 8 and 10 land optically level; bottom 6 (→ 12) sat visibly
+  /// low.
   ///
   /// Count every inset in the stack before setting the outermost one; a
   /// control-dense card needs less than a text-only one to land in the same
@@ -91,7 +99,27 @@ abstract final class LoggingSpacing {
     KalloSpacing.sp4, // 16 — the text gutter
     0, // the field carries its own top padding
     KalloSpacing.sp2, // 8 — the send target carries the rest
-    KalloSpacing.sp1_5, // 6
+    KalloSpacing.sp1, // 4 — + the send target's own 6 = 10
+  );
+
+  /// The gap under the composer inside the quick-log SHEET, as ONE continuous
+  /// function of the two insets it answers to — [bottomInset] is
+  /// `viewPadding.bottom` (the home indicator; `padding` is already zeroed
+  /// while the keyboard is up) and [keyboardInset] is `viewInsets.bottom`.
+  ///
+  /// Continuous, not a branch on `keyboardInset > 0`. On iOS the keyboard inset
+  /// RAMPS over ~250ms, so swapping one constant for another the instant it
+  /// leaves zero is a step discontinuity: the gap jumped on frame 1 while the
+  /// sheet was still travelling. At rest this is the indicator inset + 4 —
+  /// exactly what the sheet owed before. As the keyboard rises, its own inset
+  /// clears that indicator, so the sheet pays the debt off linearly and floors
+  /// at 8, the gap a composer sitting straight on the keyboard wants.
+  static double quickLogGap({
+    required double bottomInset,
+    required double keyboardInset,
+  }) => math.max(
+    bottomInset + KalloSpacing.sp1 - keyboardInset,
+    KalloSpacing.sp2,
   );
 }
 

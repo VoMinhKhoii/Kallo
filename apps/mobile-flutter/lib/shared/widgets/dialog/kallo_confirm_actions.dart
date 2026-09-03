@@ -9,12 +9,22 @@ import '../../../theme/kallo_theme.dart';
 /// The confirm dialog's two buttons, STACKED rather than sat side by side.
 ///
 /// Side-by-side is where the ambiguity lived: two short Vietnamese words of the
-/// same size and weight, on one line, neither of which reads as the safe one —
-/// and "huỷ" means both *cancel* and *destroy*, so "Huỷ | Xoá" gave the user two
-/// words for the same thing. Stacking separates them by position as well as by
-/// colour, which is what the web dialog already does on a phone
-/// (`components/ui/alert-dialog.tsx`, `flex-col-reverse`: cancel first in the
-/// DOM, affirmative first on screen). This is that layout in Flutter.
+/// same size and weight, on one line, neither of which reads as the safe one.
+/// Stacking separates them by position as well as by colour, which is what the
+/// web dialog already does on a phone (`components/ui/alert-dialog.tsx`,
+/// `flex-col-reverse`: cancel first in the DOM, affirmative first on screen).
+/// This is that layout in Flutter.
+///
+/// It outlived the card it was built for: [showKalloConfirm] now opens a native
+/// iOS alert surface, and a stock `CupertinoDialogAction` pair would put the two
+/// verbs side by side across a hairline again — the exact arrangement the
+/// report was about. So the platform supplies the chrome and this supplies the
+/// actions.
+///
+/// Since 2026-09-03 both labels are explicit verbs ("Xoá" / "Giữ lại"), so the
+/// safe option is something the user reads to ACT, not a label — hence ink
+/// rather than muted on the ghost button (mobile.md: muted never carries text a
+/// user must read to act).
 class KalloConfirmActions extends StatelessWidget {
   const KalloConfirmActions({
     super.key,
@@ -125,7 +135,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
   }
 }
 
-/// The way out: no fill, no border, muted label. It presses with the WARM wash
+/// The way out: no fill, no border, an ink label. It presses with the WARM wash
 /// rather than [KalloColors.pressWash] because it sits on the dialog's white
 /// card, not on the canvas — warm for controls over a lighter surface.
 class _CancelButton extends StatefulWidget {
@@ -168,7 +178,7 @@ class _CancelButtonState extends State<_CancelButton> {
           child: Text(
             widget.label,
             textAlign: TextAlign.center,
-            style: dashBody(color: kInkMuted),
+            style: dashBody(color: kInk),
           ),
         ),
       ),

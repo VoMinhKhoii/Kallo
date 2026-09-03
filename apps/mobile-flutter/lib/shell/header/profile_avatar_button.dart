@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/circle/data/circle_providers.dart';
 import '../../features/onboarding/providers/onboarding_providers.dart';
+import '../../shared/widgets/avatar/profile_avatar.dart';
 import '../../services/auth/session_provider.dart';
 import '../../theme/calm_tokens.dart';
 import '../../theme/kallo_typography.dart';
@@ -15,6 +17,12 @@ import 'app_header_status_dots.dart';
 /// retired hamburger/drawer used to provide. Carries the onboarding
 /// pulse-dot while setup is incomplete (the resume nudge now lives at the
 /// top of Settings).
+///
+/// It renders the viewer's actual photo when there is one: the button used to
+/// draw an initials disc off the session email and never looked at
+/// `avatarUrl` at all, so a user who had uploaded a picture saw it everywhere
+/// EXCEPT the header. The email initial stays as the fallback for the frames
+/// before the profile resolves (and if it ever fails).
 class ProfileAvatarButton extends ConsumerWidget {
   const ProfileAvatarButton({super.key});
 
@@ -23,6 +31,7 @@ class ProfileAvatarButton extends ConsumerWidget {
     final onboardingIncomplete = ref.watch(onboardingResumeProvider);
     final email = ref.watch(currentSessionProvider)?.user.email ?? '';
     final initial = email.isEmpty ? '·' : email[0].toUpperCase();
+    final profile = ref.watch(myCircleProfileProvider).valueOrNull;
 
     return Semantics(
       button: true,
@@ -39,24 +48,27 @@ class ProfileAvatarButton extends ConsumerWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: kTrack,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontFamily: KalloTextStyles.sansFamily,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: kInkMuted,
+                if (profile != null)
+                  ProfileAvatarDisc(profile: profile, size: 36)
+                else
+                  Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: kTrack,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        fontFamily: KalloTextStyles.sansFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: kInkMuted,
+                      ),
                     ),
                   ),
-                ),
                 if (onboardingIncomplete)
                   const Positioned(top: 0, right: 0, child: OnboardingDot()),
               ],

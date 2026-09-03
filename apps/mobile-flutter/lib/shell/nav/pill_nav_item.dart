@@ -16,6 +16,7 @@ class PillNavItem extends ConsumerWidget {
   const PillNavItem({
     super.key,
     required this.icon,
+    this.activeIcon,
     required this.label,
     required this.active,
     required this.onTap,
@@ -23,6 +24,16 @@ class PillNavItem extends ConsumerWidget {
   });
 
   final IconData icon;
+
+  /// The glyph to swap in while [active]. Lucide ships each stroke weight as
+  /// a separate const family over the same codepoints, so the selected tab
+  /// reads bolder (`400`, 2.0) than the idle ones (`300`, 1.5) without any
+  /// runtime-built [IconData] — `--tree-shake-icons` needs the const form.
+  /// Colour alone was carrying selection and it did not survive a glance.
+  /// Null (the Log tab, which pushes full-screen and is never active) keeps
+  /// [icon] in both states.
+  final IconData? activeIcon;
+
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -56,7 +67,11 @@ class PillNavItem extends ConsumerWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(icon, size: KalloIcons.primary, color: color),
+                  Icon(
+                    active ? (activeIcon ?? icon) : icon,
+                    size: KalloIcons.primary,
+                    color: color,
+                  ),
                   if (hasInvites)
                     const Positioned(top: -2, right: -2, child: InviteBadge()),
                 ],
