@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/social/circle.dart';
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_typography.dart';
 
 /// Per-person initials-disc tints. A person's seed (or handle) picks one, so
@@ -30,6 +32,14 @@ int discTintIndex(String? seed, String handle) {
 /// fails to load falls back to the initials, so a stale URL never renders
 /// broken. Excluded from semantics because every call site places the person's
 /// visible name beside the avatar.
+///
+/// The photo goes through [CachedNetworkImage], not `Image.network`: the same
+/// handful of faces repeat down the Circle feed and across re-entries, and the
+/// bare widget kept only an in-memory cache at FULL source resolution — every
+/// cold start re-downloaded, and a 1024px upload was decoded whole to fill a
+/// 24pt disc. `memCacheWidth` decodes at the disc's device-pixel size, and the
+/// disk cache survives the app. The initials disc is both placeholder and
+/// error widget, so a slow or dead URL degrades to the same thing.
 class ProfileAvatarDisc extends StatelessWidget {
   const ProfileAvatarDisc({required this.profile, this.size = 24, super.key});
 
@@ -50,12 +60,14 @@ class ProfileAvatarDisc extends StatelessWidget {
           dimension: size,
           child: url == null || url.isEmpty
               ? fallback
-              : Image.network(
-                  url,
+              : CachedNetworkImage(
+                  imageUrl: url,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => fallback,
-                  loadingBuilder: (context, child, progress) =>
-                      progress == null ? child : fallback,
+                  memCacheWidth:
+                      (size * MediaQuery.devicePixelRatioOf(context)).round(),
+                  fadeInDuration: KalloMotion.quick,
+                  placeholder: (_, _) => fallback,
+                  errorWidget: (_, _, _) => fallback,
                 ),
         ),
       ),

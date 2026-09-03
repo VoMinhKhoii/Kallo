@@ -290,6 +290,14 @@ ships each stroke weight as a separate font family over the same codepoints. At
 icon-first; 1.5 matches Be Vietnam Pro's stem at w400. 1.0 (`200`) goes lighter
 than the text and the ring glyphs (target, info) turn fragile.
 
+**The pill nav's ACTIVE tab is the one sanctioned `400`** (2026-09-03). The
+selected tab used to differ from its neighbours by colour alone (`kInk` vs
+`kInkMuted`), which at 24pt on a white capsule is not enough to find your place
+at a glance. The active glyph now renders the `400` (2.0) family — same
+codepoint, heavier stem — and every other icon in the app, this bar's idle tabs
+included, stays on `300`. No crossfade: the swap is instant, because a
+tab-selection change is not travel. This is the exception, not a loosening.
+
 Use the const constants, never a runtime-built `IconData`. `IconData`'s
 constructor params are `@mustBeConst` so that `--tree-shake-icons` (on by
 default for release builds) can strip unused glyphs; a runtime-restroked icon

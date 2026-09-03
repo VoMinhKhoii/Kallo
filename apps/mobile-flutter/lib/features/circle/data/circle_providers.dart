@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
@@ -96,9 +97,21 @@ final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
 
 /// The viewer's own public profile — auto-provisioned server-side, so the
 /// invite link + handle are ready immediately (never null).
-final myCircleProfileProvider = FutureProvider.autoDispose<CircleProfile>((
+///
+/// Deliberately NOT `autoDispose`. This is the viewer's OWN profile, watched
+/// from four-plus surfaces (the dashboard header avatar, Settings, Connect,
+/// the add-friend sheet, the logging empty state) and identical for all of
+/// them. Auto-disposing dropped it the moment the last of those left the
+/// tree, so every re-entry refetched and showed a blank/initials disc for the
+/// round-trip. It is one small object for the session; the explicit
+/// `ref.invalidate(myCircleProfileProvider)` calls below (rename, avatar
+/// upload, handle change) still refresh it exactly as before.
+final myCircleProfileProvider = FutureProvider<CircleProfile>((
   ref,
 ) async {
+  // Keyed on the account: without this watch a sign-out/sign-in on a shared
+  // device would carry the previous user's avatar, name and invite slug over.
+  ref.watch(currentSessionProvider)?.user.id;
   final api = ref.watch(apiClientProvider);
   return runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/profile');
