@@ -81,6 +81,7 @@ Create or confirm these resources:
   - `kallo-prod-revenuecat-webhook-secret`
   - `kallo-prod-resend-api-key`
   - `kallo-prod-send-email-hook-secret`
+  - `kallo-prod-usda-api-key`
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
