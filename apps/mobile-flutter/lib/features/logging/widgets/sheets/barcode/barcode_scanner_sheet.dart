@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../data/barcode_providers.dart';
+import 'frame/barcode_camera_session.dart';
 import 'frame/barcode_camera_view.dart';
 import 'frame/barcode_frame_status.dart';
 import 'barcode_manual_input.dart';
@@ -76,7 +77,9 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     if (text.isEmpty) return;
     HapticFeedback.lightImpact();
     _manualLookup = true;
-    await ref.read(barcodeFlowProvider.notifier).search(text);
+    // Forced: typing a code and pressing look up is a deliberate retry, so it
+    // must get through even when that same code's miss is what is on screen.
+    await ref.read(barcodeFlowProvider.notifier).search(text, force: true);
   }
 
   void _backToCamera() {

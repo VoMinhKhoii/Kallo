@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -302,6 +303,115 @@ void main() {
         LabelReviewState(state().label, defaultProductName: 'Scanned food').unit,
         'serving',
       );
+    });
+  });
+
+  /// The in-sheet live camera writes a still to disk and hands over the path;
+  /// the picker path now ends in the same function. These cover it directly
+  /// with real temp files — the size guard, the magic-byte sniff, and success.
+  group('labelImageFromFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    Future<String> write(String name, List<int> bytes) async {
+      final file = File('${dir.path}/$name');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    }
+
+    test('a JPEG comes back with bytes, mime and its path', () async {
+      final path = await write('label.jpg', _jpegBytes);
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.failure, isNull);
+      expect(result.image!.mimeType, 'image/jpeg');
+      expect(result.image!.bytes, _jpegBytes);
+      expect(result.image!.path, path);
+    });
+
+    test('a PNG is recognised from its magic bytes, not its extension', () async {
+      final path = await write('label.jpg', [
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00,
+      ]);
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.image!.mimeType, 'image/png');
+    });
+
+    test('anything that is not JPEG/PNG/WebP is unsupported', () async {
+      final path = await write('label.jpg', List<int>.filled(64, 0x41));
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.image, isNull);
+      expect(result.failure, LabelImageFailure.unsupported);
+    });
+
+    test('over the payload cap is rejected without buffering it', () async {
+      final path = await write(
+        'huge.jpg',
+        List<int>.filled(maxLabelImageBytes + 1, 0xff),
+      );
+
+      final result = await labelImageFromFile(path);
+
+      expect(result.failure, LabelImageFailure.tooLarge);
+    });
+
+    test('an empty file is rejected too', () async {
+      final path = await write('empty.jpg', const <int>[]);
+
+      expect((await labelImageFromFile(path)).failure,
+          LabelImageFailure.tooLarge);
+    });
+
+    test('a file that vanished reports the camera, not a bad image', () async {
+      final result = await labelImageFromFile('${dir.path}/never_written.jpg');
+
+      expect(result.failure, LabelImageFailure.cameraUnavailable);
+    });
+  });
+
+  /// The controller side of the live camera: it holds the still for review the
+  /// same way the picker path does, and a camera failure lands on the capture
+  /// phase with an error the branch renders as its ScanErrorCard.
+  group('captureFromFile', () {
+    late Directory dir;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('kallo_label_ctrl_');
+      addTearDown(() => dir.delete(recursive: true));
+    });
+
+    test('a good still lands on preview, ready to scan', () async {
+      final file = File('${dir.path}/shot.jpg');
+      await file.writeAsBytes(_jpegBytes);
+
+      await notifier().captureFromFile(file.path);
+
+      expect(state().phase, LabelScanPhase.preview);
+      expect(state().image!.mimeType, 'image/jpeg');
+      expect(state().errorKey, isNull);
+    });
+
+    test('a refused camera lands on capture with the permission copy', () {
+      notifier().reportCaptureFailure(LabelImageFailure.permissionDenied);
+
+      expect(state().phase, LabelScanPhase.capture);
+      expect(state().image, isNull);
+      expect(state().errorKey, 'logging.labelScan.error.permissionDenied');
+    });
+
+    test('a camera that would not open is a retry, not a settings trip', () {
+      notifier().reportCaptureFailure(LabelImageFailure.cameraUnavailable);
+
+      expect(state().errorKey, 'logging.labelScan.error.serverError');
     });
   });
 }
