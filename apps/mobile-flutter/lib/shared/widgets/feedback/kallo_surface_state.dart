@@ -118,6 +118,14 @@ class KalloSurfaceState extends StatelessWidget {
                   child: Text(
                     subtitle!,
                     textAlign: TextAlign.center,
+                    // In-card the block is a guest in someone else's section,
+                    // and a caller-supplied error message has no length limit:
+                    // two lines at 320 × 1.3 is 72pt, three is 108. Clamp the
+                    // compact variant so a long message cannot push the action
+                    // out of the card. The full-size state owns its screen and
+                    // keeps every word.
+                    maxLines: compact ? 2 : null,
+                    overflow: compact ? TextOverflow.ellipsis : null,
                     style: dashBody(color: kInkMuted).copyWith(height: 28 / 16),
                   ),
                 ),
