@@ -26,6 +26,7 @@ class LoggingDayErrorState extends StatelessWidget {
             title: tr('logging.feedArea.loadErrorTitle'),
             subtitle: tr('logging.feedArea.loadErrorDescription'),
             action: KalloButton(
+              variant: KalloButtonVariant.cta,
               title: tr('logging.feedArea.retryDay'),
               onPressed: onRetry,
             ),

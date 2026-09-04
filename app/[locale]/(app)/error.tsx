@@ -27,7 +27,7 @@ export default function AppError({
   return (
     <SurfaceState
       action={
-        <Button onClick={() => reset()} size="sm">
+        <Button onClick={() => reset()} size="sm" variant="ink">
           {t('route.retry')}
         </Button>
       }

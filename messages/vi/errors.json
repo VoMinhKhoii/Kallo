@@ -8,7 +8,7 @@
   "internal": "Đã xảy ra lỗi. Vui lòng thử lại.",
   "route": {
     "title": "Trang này chưa tải được.",
-    "body": "Có lỗi từ phía chúng tôi. Bạn thử lại nhé.",
+    "body": "Có lỗi từ phía chúng tôi, bạn thử lại nhé.",
     "retry": "Thử lại"
   }
 }

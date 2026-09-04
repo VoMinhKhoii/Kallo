@@ -355,7 +355,7 @@
     "vitaminH": "Biotin"
   },
   "errors": {
-    "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+    "overview": "Hãy làm mới trang hoặc thử lại sau khi ghi thêm một bữa ăn.",
     "overviewToast": "Không tải được tổng quan dinh dưỡng.",
     "retry": "Tải lại tổng quan",
     "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này.",

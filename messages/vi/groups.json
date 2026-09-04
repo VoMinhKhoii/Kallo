@@ -16,7 +16,7 @@
   },
   "empty": {
     "title": "Vòng kết nối đang yên ắng",
-    "subtitle": "Chia sẻ liên kết mời để kết nối. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
+    "subtitle": "Chia sẻ liên kết mời để kết nối, nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
     "cta": "Thêm một người bạn"
   },
   "wall": {
@@ -137,7 +137,7 @@
     "emptyTitle": "Chưa có bạn bè",
     "addFriendCta": "Thêm bạn",
     "noMatches": "Không tìm thấy",
-    "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+    "noFriends": "Bạn chỉ có thể thêm người đã có trong vòng kết nối.",
     "submit": "Tạo nhóm",
     "creating": "Đang tạo…",
     "created": "Đã tạo nhóm",
@@ -168,7 +168,7 @@
   },
   "circle": {
     "title": "Vòng kết nối ({count})",
-    "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
+    "empty": "Chia sẻ liên kết để mời ai đó vào vòng kết nối.",
     "remove": "Xoá",
     "removeError": "Không thể xoá. Vui lòng thử lại.",
     "emptyTitle": "Hiện chỉ có bạn"
@@ -178,7 +178,7 @@
   },
   "error": {
     "title": "Không thể tải vòng kết nối",
-    "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",
+    "body": "Kiểm tra kết nối rồi thử lại nhé.",
     "retry": "Thử lại"
   },
   "connect": {

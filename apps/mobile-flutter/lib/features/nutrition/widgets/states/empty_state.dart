@@ -28,6 +28,7 @@ class EmptyState extends StatelessWidget {
         // locked-micronutrients card next door keeps the black pill: it opens
         // the paywall.)
         action: KalloButton(
+          variant: KalloButtonVariant.cta,
           title: tr('nutrition.emptyV2.logMeal'),
           onPressed: () => goToLogging(context),
         ),

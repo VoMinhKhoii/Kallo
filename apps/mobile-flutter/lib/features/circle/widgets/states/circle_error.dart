@@ -36,6 +36,7 @@ class CircleErrorCard extends StatelessWidget {
       title: tr('groups.error.title'),
       subtitle: tr('groups.error.body'),
       action: KalloButton(
+        variant: KalloButtonVariant.cta,
         title: tr('groups.error.retry'),
         loading: isRetrying,
         onPressed: onRetry,

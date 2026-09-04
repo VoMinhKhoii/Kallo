@@ -45,7 +45,7 @@ export default function NotFound() {
       <div className="w-full max-w-md text-center">
         <SurfaceState
           action={
-            <Button asChild size="sm">
+            <Button asChild size="sm" variant="ink">
               <Link href="/">{t('notFoundHome')}</Link>
             </Button>
           }

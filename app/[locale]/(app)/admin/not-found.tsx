@@ -9,7 +9,7 @@ export default function AdminNotFound() {
   return (
     <SurfaceState
       action={
-        <Button asChild size="sm" variant="outline">
+        <Button asChild size="sm" variant="ink">
           <Link href="/admin">{t('back')}</Link>
         </Button>
       }

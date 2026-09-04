@@ -10,7 +10,7 @@
         --surface: #fcfcfc;
         --ink: #141413;
         --muted: #6e6d66;
-        --btn: #695e4e;
+        --btn: #141413;
       }
       * {
         box-sizing: border-box;
@@ -90,7 +90,7 @@
       </div>
       <h1 data-i18n="title">You're offline.</h1>
       <p data-i18n="body">
-        Your note is kept — we'll estimate when you're back.
+        Your note is kept and we'll estimate when you're back.
       </p>
       <button type="button" data-i18n="retry" onclick="location.reload()">
         Try again
@@ -102,7 +102,7 @@
       (() => {
         var vi = {
           title: 'Bạn đang ngoại tuyến.',
-          body: 'Ghi chú của bạn được giữ lại — chúng tôi sẽ ước tính khi bạn quay lại.',
+          body: 'Ghi chú của bạn được giữ lại và chúng tôi sẽ ước tính khi bạn quay lại.',
           retry: 'Thử lại',
         };
         if ((navigator.language || '').toLowerCase().indexOf('vi') === 0) {

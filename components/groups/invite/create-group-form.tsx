@@ -114,7 +114,7 @@ export function CreateGroupForm({
         <SurfaceState
           action={
             onAddFriend ? (
-              <Button onClick={onAddFriend} size="sm">
+              <Button onClick={onAddFriend} size="sm" variant="ink">
                 {t('addFriendCta')}
               </Button>
             ) : undefined

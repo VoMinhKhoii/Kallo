@@ -45,6 +45,7 @@ class InlineError extends StatelessWidget {
         title: tr('nutrition.errors.overviewTitle'),
         subtitle: message,
         action: KalloButton(
+          variant: KalloButtonVariant.cta,
           title: retryLabel,
           loading: isRetrying,
           onPressed: onRetry,

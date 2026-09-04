@@ -29,7 +29,7 @@ export function DashboardSectionState({
 
   const action =
     actionLabel && onAction ? (
-      <Button onClick={onAction} size="sm">
+      <Button onClick={onAction} size="sm" variant="ink">
         {actionLabel}
       </Button>
     ) : null;

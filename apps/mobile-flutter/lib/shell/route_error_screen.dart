@@ -53,6 +53,7 @@ class RouteErrorScreen extends StatelessWidget {
                     notFound ? 'errors.route.notFoundBody' : 'errors.route.body',
                   ),
                   action: KalloButton(
+                    variant: KalloButtonVariant.cta,
                     title: tr('errors.route.home'),
                     onPressed: () => context.go('/'),
                   ),

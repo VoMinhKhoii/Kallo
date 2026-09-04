@@ -19,6 +19,7 @@ export function RetryAction({ onRetry, isRetrying, label }: RetryActionProps) {
       disabled={isRetrying}
       onClick={onRetry}
       size="sm"
+      variant="ink"
     >
       {label}
     </Button>

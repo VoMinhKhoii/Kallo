@@ -21,7 +21,7 @@ class CreateGroupEmpty extends StatelessWidget {
     subtitle: tr('groups.createGroup.noFriends'),
     action: KalloButton(
       title: tr('groups.createGroup.addFriendCta'),
-      variant: KalloButtonVariant.secondary,
+      variant: KalloButtonVariant.cta,
       onPressed: onAddFriend,
     ),
   );

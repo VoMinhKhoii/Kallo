@@ -15,7 +15,7 @@
   "or": "or",
   "optional": "Optional",
   "notFound": "Page not found",
-  "notFoundBody": "There is no page at this URL. Nothing was moved — this path never existed.",
+  "notFoundBody": "There is no page at this address.",
   "notFoundWhereToLook": "Where to look instead",
   "notFoundHome": "Home",
   "notFoundDocs": "Documentation",

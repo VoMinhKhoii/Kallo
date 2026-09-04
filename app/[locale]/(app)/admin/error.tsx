@@ -22,7 +22,7 @@ export default function AdminError({
     <div className="flex min-h-[40vh] flex-col items-center justify-center">
       <SurfaceState
         action={
-          <Button onClick={() => reset()} size="sm" variant="outline">
+          <Button onClick={() => reset()} size="sm" variant="ink">
             {t('route.retry')}
           </Button>
         }

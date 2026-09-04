@@ -27,6 +27,7 @@ class ProfileEmpty extends StatelessWidget {
       // resumes). go_router resolves via the root navigator from any
       // descendant context, so this crosses tabs correctly.
       action: KalloButton(
+        variant: KalloButtonVariant.cta,
         title: tr('settings.profilePage.startSetup'),
         onPressed: () => goToLogging(context),
       ),
@@ -50,6 +51,7 @@ class ProfileLoadError extends StatelessWidget {
       title: tr('common.error'),
       subtitle: tr('errors.route.body'),
       action: KalloButton(
+        variant: KalloButtonVariant.cta,
         title: tr('common.retry'),
         onPressed: onRetry,
       ),

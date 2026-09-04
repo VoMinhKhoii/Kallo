@@ -8,7 +8,7 @@
   "internal": "Something went wrong. Please try again.",
   "route": {
     "title": "This didn’t load.",
-    "body": "Something went wrong on our side. Give it another try.",
+    "body": "Something went wrong on our side, so give it another try.",
     "retry": "Try again"
   }
 }

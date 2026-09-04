@@ -11,7 +11,7 @@ export function EmptyState() {
   return (
     <SurfaceState
       action={
-        <Button asChild>
+        <Button asChild variant="ink">
           <Link href="/logging">{t('emptyV2.logMeal')}</Link>
         </Button>
       }

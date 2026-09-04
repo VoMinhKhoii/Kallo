@@ -45,7 +45,8 @@ class KalloCard extends StatelessWidget {
 
 /// Button visual variants (native pass, 2026-08-31).
 ///
-/// [cta] — black & white, AUTH/PAYWALL ONLY (sign in, start free trial).
+/// [cta] — black & white: auth and paywall (sign in, start free trial), and
+/// the one action under a `KalloSurfaceState` (retry, log a meal, go home).
 /// [primary] — beige `#F0EAE0` + ink: every in-app primary (save, share…).
 /// [secondary] — quiet: white + hairline.
 /// [danger] / [ghost] — unchanged roles.

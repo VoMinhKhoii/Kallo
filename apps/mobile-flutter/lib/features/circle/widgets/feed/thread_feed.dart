@@ -130,7 +130,7 @@ class ThreadFeed extends ConsumerWidget {
     action: showAddFriend
         ? KalloButton(
             title: tr('groups.page.addFriend'),
-            variant: KalloButtonVariant.secondary,
+            variant: KalloButtonVariant.cta,
             onPressed: onAddFriend,
           )
         : null,

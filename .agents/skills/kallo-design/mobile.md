@@ -449,7 +449,8 @@ Reach for these before writing a local variant:
 
 - **`shared/widgets/feedback/kallo_surface_state.dart`** — the one empty /
   error / 404 anatomy: area illustration → serif title → muted line → one
-  action (`compact` for in-card). It replaced `KalloEmptyState` and the
+  action in the black `KalloButtonVariant.cta` (`compact` for in-card) — the
+  one sanctioned use of the ink pill outside auth and the paywall. It replaced `KalloEmptyState` and the
   `SeedMark`; the paywall lock card uses `.withMark` to keep the anatomy
   with its own glyph.
 - **`shared/widgets/scroll_separator.dart`** — a header hairline that only
