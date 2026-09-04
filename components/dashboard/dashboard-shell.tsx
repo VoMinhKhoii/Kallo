@@ -183,6 +183,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   <HeatmapSkeleton range={renderedHeatmapRange} />
                 ) : heatmapQuery.isError ? (
                   <DashboardSectionState
+                    bare
                     message={t('heatmapLoadError')}
                     actionLabel={t('retry')}
                     onAction={() => void heatmapQuery.refetch()}

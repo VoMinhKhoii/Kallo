@@ -14,7 +14,7 @@ export function renderNotFoundMarkdown(locale: Locale): string {
 
   return `# 404 — Page not found
 
-There is no page at this URL. Nothing was moved; this path never existed.
+There is no page at this address.
 
 ## Where to look instead
 

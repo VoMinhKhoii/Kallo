@@ -91,7 +91,7 @@ another domain module is a smell worth a second look.
 | `actions/` | Server Actions, grouped by the surface they serve |
 | `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
 | `admin/` | the admin plane's logic — see its own section below |
-| `brand/` · `i18n/` | small single-concern modules |
+| `brand/` · `i18n/` | small single-concern modules; `brand/` holds the vector wordmark paths plus `illustrations/` — the generated Koboyo surface-state cast and its `cast.ts` picker |
 | `sidebar/` | the rail's cookie persistence, its vocabulary, and `state-machine.ts` — the pure 3-state FSM `useSidebarState` binds to |
 | `seo/` | metadata and structured data, plus `og/` (the Satori share card's palette, geometry and fonts) |
 
@@ -230,7 +230,7 @@ re-export another folder's module, which is what `card_skeletons.dart` and
 | Folder | Concern | Status |
 |---|---|---|
 | `scripts/_lib/` | helpers shared by the scripts themselves | ok |
-| `scripts/assets/` | brand and PWA asset generation | ok |
+| `scripts/assets/` | brand and PWA asset generation, and the Koboyo illustration generator | ok |
 | `scripts/bench/` | latency harness plus KPI and baseline SQL rollups | ok |
 | `scripts/ci/` | CI gates, including `check-structure/` — the structure gate itself | ok |
 | `scripts/cloud-run/` | Cloud Run deploy and smoke checks | ok |

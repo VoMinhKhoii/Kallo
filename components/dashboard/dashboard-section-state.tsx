@@ -12,18 +12,21 @@ interface DashboardSectionStateProps {
   /** `error` gives the section its hedgehog and the shared error title;
    *  `loading` is the quiet placeholder a section shows while it waits. */
   variant?: 'loading' | 'error';
+  /** Drops the card chrome for a slot that already draws its own card. */
+  bare?: boolean;
 }
 
 /** The canonical card chrome, so a section that failed still occupies the
  *  same box as the card it stands in for. */
 const CARD =
-  'h-full min-h-[180px] rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm';
+  'h-full min-h-[180px] rounded-2xl border border-kallo-border/60 bg-card shadow-kallo-text/[0.03] shadow-sm';
 
 export function DashboardSectionState({
   message,
   actionLabel,
   onAction,
   variant = 'loading',
+  bare = false,
 }: DashboardSectionStateProps) {
   const t = useTranslations('dashboard');
 
@@ -39,7 +42,7 @@ export function DashboardSectionState({
       <SurfaceState
         action={action}
         area="dashboard"
-        className={CARD}
+        className={bare ? undefined : CARD}
         compact
         kind="error"
         subtitle={message}
@@ -51,8 +54,8 @@ export function DashboardSectionState({
   return (
     <div
       className={cn(
-        CARD,
-        'flex flex-col items-center justify-center gap-3 text-center text-kallo-text-muted text-sm'
+        bare ? null : CARD,
+        'flex flex-col items-center justify-center gap-3 p-4 text-center text-kallo-text-muted text-sm'
       )}
     >
       <p className="max-w-sm">{message}</p>
