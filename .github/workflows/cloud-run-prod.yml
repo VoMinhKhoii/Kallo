@@ -78,7 +78,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           # Kept at the version prod has always deployed with — the prod
           # workflow runs only on a real main-merge deploy, so this is never
