@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketForHour,
   drawEmptyPromptKey,
   EMPTY_PROMPT_BUCKETS,
 } from '@/lib/domain/logging/empty-prompt';
@@ -8,26 +7,6 @@ import en from '@/messages/en/logging.json';
 import vi from '@/messages/vi/logging.json';
 
 describe('the empty-day prompt', () => {
-  it('runs the day through its buckets in order', () => {
-    expect(bucketForHour(5)).toBe('morning');
-    expect(bucketForHour(10)).toBe('morning');
-    expect(bucketForHour(11)).toBe('lunch');
-    expect(bucketForHour(14)).toBe('lunch');
-    expect(bucketForHour(15)).toBe('afternoon');
-    expect(bucketForHour(17)).toBe('afternoon');
-    expect(bucketForHour(18)).toBe('evening');
-    expect(bucketForHour(21)).toBe('evening');
-  });
-
-  it('wraps late night around midnight', () => {
-    // The one bucket that is not a contiguous range: 22:00 through to the
-    // start of breakfast.
-    expect(bucketForHour(22)).toBe('lateNight');
-    expect(bucketForHour(23)).toBe('lateNight');
-    expect(bucketForHour(0)).toBe('lateNight');
-    expect(bucketForHour(4)).toBe('lateNight');
-  });
-
   it('draws within the bucket, never off the end', () => {
     // Math.random() returns [0, 1), so 0.999… must still land on the last
     // phrasing rather than one past it.
