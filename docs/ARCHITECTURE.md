@@ -42,7 +42,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `async/` | bounding a slow operation: deadline, timeout, bounded concurrency |
-| `date/` | local-day and timezone math — the only place it may live |
+| `date/` | local-day and timezone math — the only place it may live, including `time-of-day.ts`, the morning→late-night buckets the empty-day prompt and the surface-state illustrations both read |
 | `errors/` | the error taxonomy and its two edges: HTTP response, browser parse |
 | `text/` | string shaping for display and input parsing |
 | `types/` | cross-cutting DTOs |
@@ -91,7 +91,7 @@ another domain module is a smell worth a second look.
 | `actions/` | Server Actions, grouped by the surface they serve |
 | `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
 | `admin/` | the admin plane's logic — see its own section below |
-| `brand/` · `i18n/` | small single-concern modules |
+| `brand/` · `i18n/` | small single-concern modules; `brand/` holds the vector wordmark paths plus `illustrations/` — the generated Koboyo surface-state cast and its `cast.ts` picker |
 | `sidebar/` | the rail's cookie persistence, its vocabulary, and `state-machine.ts` — the pure 3-state FSM `useSidebarState` binds to |
 | `seo/` | metadata and structured data, plus `og/` (the Satori share card's palette, geometry and fonts) |
 
@@ -144,6 +144,7 @@ another domain module is a smell worth a second look.
 | `providers/` | TanStack provider (single file) | split |
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
+| `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
 
 ## `hooks/` — client state
 
@@ -160,7 +161,7 @@ another domain module is a smell worth a second look.
 | `notifications/` | the activity feed, its badge poll and the seen/read mutations | ok |
 | `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |
 | `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
-| `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts) | ok |
+| `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts); `use-is-late-night.ts` is the hydration-safe read of the viewer's clock the surface states pose from | ok |
 
 `hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
 of the same "getting into the product" concern, folded in when `hooks/landing/`
@@ -229,7 +230,7 @@ re-export another folder's module, which is what `card_skeletons.dart` and
 | Folder | Concern | Status |
 |---|---|---|
 | `scripts/_lib/` | helpers shared by the scripts themselves | ok |
-| `scripts/assets/` | brand and PWA asset generation | ok |
+| `scripts/assets/` | brand and PWA asset generation, and the Koboyo illustration generator | ok |
 | `scripts/bench/` | latency harness plus KPI and baseline SQL rollups | ok |
 | `scripts/ci/` | CI gates, including `check-structure/` — the structure gate itself | ok |
 | `scripts/cloud-run/` | Cloud Run deploy and smoke checks | ok |

@@ -9,7 +9,6 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/dashboard_providers.dart';
 import '../../data/logging_day.dart';
@@ -72,7 +71,6 @@ class TodaySection extends ConsumerWidget {
           ),
       error:
           (_, __) => SectionState(
-            icon: LucideIcons.cloudOff300,
             message: tr('dashboard.todayLoadError'),
             actionLabel: tr('dashboard.retry'),
             onAction: () => ref.invalidate(provider),

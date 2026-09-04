@@ -16,7 +16,7 @@
   },
   "empty": {
     "title": "Your circle is quiet",
-    "subtitle": "Share your invite link to connect. Your log stays private until you choose to share it.",
+    "subtitle": "Share your invite link to connect, and your log stays private until you choose to share it.",
     "cta": "Add a friend"
   },
   "wall": {
@@ -137,7 +137,7 @@
     "emptyTitle": "No friends yet",
     "addFriendCta": "Add a friend",
     "noMatches": "No matches",
-    "noFriends": "Add friends first — you can only add people already in your circle.",
+    "noFriends": "You can only add people who are already in your circle.",
     "submit": "Create group",
     "creating": "Creating…",
     "created": "Group created",
@@ -168,16 +168,17 @@
   },
   "circle": {
     "title": "Your circle ({count})",
-    "empty": "No one in your circle yet. Share your link to connect.",
+    "empty": "Share your link to bring someone into your circle.",
     "remove": "Remove",
-    "removeError": "Couldn't remove them. Try again."
+    "removeError": "Couldn't remove them. Try again.",
+    "emptyTitle": "Just you so far"
   },
   "circleLimit": {
     "memberAtLimit": "Someone in your selection has reached the free plan's limit. They'll need Premium to join more."
   },
   "error": {
     "title": "Couldn't load your circle",
-    "body": "Something went wrong. Check your connection and try again.",
+    "body": "Check your connection and try again.",
     "retry": "Try again"
   },
   "connect": {

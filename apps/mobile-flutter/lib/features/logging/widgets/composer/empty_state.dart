@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/logic/time_of_day.dart';
 import '../../../../shared/widgets/brand/kallo_mark.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -25,16 +26,6 @@ const _prompts = <String, int>{
   'lateNight': 3,
 };
 
-/// Which bucket [hour] (0–23) falls in. Late night is the wrap-around case:
-/// everything from 22:00 until breakfast starts.
-String _bucketForHour(int hour) {
-  if (hour >= 5 && hour < 11) return 'morning';
-  if (hour >= 11 && hour < 15) return 'lunch';
-  if (hour >= 15 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 22) return 'evening';
-  return 'lateNight';
-}
-
 /// The empty feed: the Kallo mark, bare — no plate, no tile — over a single
 /// serif question tuned to the time of day, and to the person when we know who
 /// they are. This is the logging tab's one editorial moment; the rest of the
@@ -53,7 +44,7 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
   late final String _key = _drawKey();
 
   static String _drawKey() {
-    final bucket = _bucketForHour(DateTime.now().hour);
+    final bucket = bucketForHour(DateTime.now().hour).name;
     final index = Random().nextInt(_prompts[bucket]!) + 1;
     return 'logging.emptyState.$bucket$index';
   }

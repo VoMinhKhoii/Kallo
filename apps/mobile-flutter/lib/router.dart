@@ -21,6 +21,7 @@ import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'services/auth/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
+import 'shell/route_error_screen.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/kallo_colors.dart';
 import 'theme/kallo_typography.dart';
@@ -65,6 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootKey,
     initialLocation: '/',
     refreshListenable: refresh,
+    // `state.error` is always a GoException here, so the pose turns on what it
+    // says: "no routes for location" is an address with no screen behind it; a
+    // redirect loop or any other GoException is a route that failed. The two
+    // say different things to the user.
+    errorBuilder: (context, state) =>
+        RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
     redirect: (context, state) {
       // While the very first session restore is in flight, hold on `/` (the
       // splash) rather than flashing the sign-in screen — mirrors RN's

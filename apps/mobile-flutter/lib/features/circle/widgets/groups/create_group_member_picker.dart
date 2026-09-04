@@ -6,6 +6,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'create_group_empty.dart';
+import '../states/circle_error.dart';
 import '../states/friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
@@ -38,16 +39,7 @@ class CreateGroupMemberPicker extends StatelessWidget {
     error:
         (_, __) => Flexible(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(tr('groups.friendsLoadError'), style: dashMeta()),
-                TextButton(
-                  onPressed: onRetry,
-                  child: Text(tr('groups.switcher.retry')),
-                ),
-              ],
-            ),
+            child: CircleErrorCard(compact: true, onRetry: onRetry),
           ),
         ),
     data: (members) {

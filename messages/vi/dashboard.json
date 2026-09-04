@@ -18,9 +18,9 @@
   "saving": "Đang lưu…",
   "retry": "Thử lại",
   "todayLoading": "Đang tải bữa ăn hôm nay…",
-  "todayLoadError": "Không tải được bữa ăn hôm nay. Vui lòng thử lại.",
-  "progressLoadError": "Không tải được xu hướng cân nặng. Vui lòng thử lại.",
-  "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
+  "todayLoadError": "Bữa ăn hôm nay chưa tải được, vui lòng thử lại.",
+  "progressLoadError": "Xu hướng cân nặng chưa tải được, vui lòng thử lại.",
+  "heatmapLoadError": "Phần độ đều đặn chưa tải được, vui lòng thử lại.",
   "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
   "now": "Hiện tại",
   "start": "Bắt đầu",
@@ -88,5 +88,6 @@
     "saved": "Đã lưu bữa ăn",
     "undo": "Hoàn tác",
     "dismiss": "Bỏ qua"
-  }
+  },
+  "sectionErrorTitle": "Phần này chưa tải được."
 }

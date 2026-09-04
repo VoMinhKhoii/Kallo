@@ -39,8 +39,9 @@ lib/models/     — data models (ported from web lib/*/types.ts), grouped by dom
                   nutrition/, logging/, social/, profile/
 lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
                   and its slots), nav/ (the floating pill tab bar, its Add sheet
-                  and the goToLogging helpers), plus tab_scaffold.dart and
-                  placeholder_screen.dart — the routed surfaces the shell itself
+                  and the goToLogging helpers), plus tab_scaffold.dart,
+                  placeholder_screen.dart and route_error_screen.dart (the
+                  go_router errorBuilder) — the routed surfaces the shell itself
                   hands the router
 lib/theme/      — colors, typography, spacing tokens — the reference shape
 test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and

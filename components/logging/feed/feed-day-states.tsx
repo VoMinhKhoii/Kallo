@@ -1,8 +1,8 @@
 'use client';
 
-import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/core/ui/cn';
+import { RetryAction } from '@/components/shared/surface-state/retry-action';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
 import {
   FEED_MACRO_CAP,
@@ -94,37 +94,19 @@ export function LoggingDayErrorState({
   const t = useTranslations('logging.feedArea');
 
   return (
-    <div className="flex flex-1 items-center justify-center py-6">
-      <div
-        role="alert"
-        className="w-full max-w-md rounded-2xl border border-kallo-danger/30 bg-kallo-danger/10 p-4 text-kallo-text shadow-sm"
-      >
-        <div className="flex gap-3">
-          <AlertCircle
-            className="mt-0.5 h-5 w-5 shrink-0 text-kallo-danger"
-            aria-hidden="true"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-sm">{t('loadErrorTitle')}</p>
-            <p className="mt-1 text-kallo-text-muted text-sm">
-              {t('loadErrorDescription')}
-            </p>
-            <button
-              type="button"
-              onClick={onRetry}
-              disabled={isRetrying}
-              aria-busy={isRetrying}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-kallo-danger/15 px-3.5 py-2 font-medium text-kallo-danger text-sm transition-colors hover:bg-kallo-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw
-                className={cn('h-4 w-4', isRetrying && 'animate-spin')}
-                aria-hidden="true"
-              />
-              {t('retryDay')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <SurfaceState
+      action={
+        <RetryAction
+          isRetrying={isRetrying}
+          label={t('retryDay')}
+          onRetry={onRetry}
+        />
+      }
+      area="logging"
+      className="flex-1"
+      kind="error"
+      subtitle={t('loadErrorDescription')}
+      title={t('loadErrorTitle')}
+    />
   );
 }

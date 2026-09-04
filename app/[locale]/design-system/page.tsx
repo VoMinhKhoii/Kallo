@@ -5,6 +5,7 @@ import { ButtonsSection } from '@/components/design-system/buttons-section';
 import { ColorsSection } from '@/components/design-system/colors-section';
 import { ElevationSection } from '@/components/design-system/elevation-section';
 import { SpacingSection } from '@/components/design-system/spacing-section';
+import { StatesSection } from '@/components/design-system/states-section';
 import { TypographySection } from '@/components/design-system/typography-section';
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ const TOC = [
   ['#spacing', 'Spacing'],
   ['#elevation', 'Elevation & shape'],
   ['#buttons', 'Buttons'],
+  ['#states', 'Surface states'],
 ] as const;
 
 /**
@@ -73,6 +75,7 @@ export default async function DesignSystemPage({
           <SpacingSection />
           <ElevationSection />
           <ButtonsSection />
+          <StatesSection />
         </div>
 
         <footer className="mt-16 border-kallo-border/60 border-t pt-6">

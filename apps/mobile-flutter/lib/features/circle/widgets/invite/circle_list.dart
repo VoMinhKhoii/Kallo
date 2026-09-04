@@ -23,6 +23,7 @@ class CircleListSection extends ConsumerWidget {
       loading: () => const SizedBox.shrink(),
       error:
           (_, __) => CircleErrorCard(
+            compact: true,
             onRetry: () => ref.invalidate(circleFriendsProvider),
           ),
       data: (members) {

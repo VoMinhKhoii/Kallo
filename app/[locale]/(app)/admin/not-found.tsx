@@ -1,16 +1,23 @@
+import { useTranslations } from 'next-intl';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 
 export default function AdminNotFound() {
+  const t = useTranslations('common');
+
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-      <h2 className="font-semibold text-lg">Not found</h2>
-      <p className="max-w-md text-muted-foreground text-sm">
-        The admin resource you’re looking for doesn’t exist or has been removed.
-      </p>
-      <Button asChild variant="outline" size="sm">
-        <Link href="/admin">Back to admin</Link>
-      </Button>
-    </div>
+    <SurfaceState
+      action={
+        <Button asChild size="sm" variant="ink">
+          <Link href="/admin">{t('back')}</Link>
+        </Button>
+      }
+      area="system"
+      className="min-h-[40vh]"
+      kind="notFound"
+      subtitle={t('notFoundBody')}
+      title={t('notFound')}
+    />
   );
 }

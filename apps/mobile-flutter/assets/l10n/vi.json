@@ -508,7 +508,8 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+      "overviewTitle": "Tổng quan chưa tải được.",
+      "overview": "Hãy làm mới trang hoặc thử lại sau khi ghi thêm một bữa ăn.",
       "overviewToast": "Không tải được tổng quan dinh dưỡng.",
       "retry": "Tải lại tổng quan",
       "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
@@ -976,9 +977,10 @@
     "saving": "Đang lưu…",
     "retry": "Thử lại",
     "todayLoading": "Đang tải bữa ăn hôm nay…",
-    "todayLoadError": "Không tải được bữa ăn hôm nay. Vui lòng thử lại.",
-    "progressLoadError": "Không tải được xu hướng cân nặng. Vui lòng thử lại.",
-    "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
+    "todayLoadError": "Bữa ăn hôm nay chưa tải được, vui lòng thử lại.",
+    "sectionErrorTitle": "Phần này chưa tải được.",
+    "progressLoadError": "Xu hướng cân nặng chưa tải được, vui lòng thử lại.",
+    "heatmapLoadError": "Phần độ đều đặn chưa tải được, vui lòng thử lại.",
     "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
     "now": "Hiện tại",
     "goal": "Mục tiêu",
@@ -1213,7 +1215,7 @@
       "savedMeal": "Đã lưu bữa ăn",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
-      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
+      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được, hãy thử lại trước khi ghi thêm.",
       "retryDay": "Tải lại ngày",
       "partialDayNotice": {
         "title": "Ngày này có thể ghi chưa đủ",
@@ -1490,7 +1492,7 @@
       "emptyTitle": "Chưa có bạn bè",
       "addFriendCta": "Thêm bạn",
       "noMatches": "Không tìm thấy",
-      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "noFriends": "Bạn chỉ có thể thêm người đã có trong vòng kết nối.",
       "submit": "Tạo nhóm",
       "creating": "Đang tạo…",
       "created": "Đã tạo nhóm",
@@ -1604,13 +1606,13 @@
     },
     "circle": {
       "title": "Vòng kết nối ({count})",
-      "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
+      "empty": "Chia sẻ liên kết để mời ai đó vào vòng kết nối.",
       "remove": "Xoá",
       "removeError": "Không thể xoá. Vui lòng thử lại."
     },
     "error": {
       "title": "Không thể tải vòng kết nối",
-      "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",
+      "body": "Kiểm tra kết nối rồi thử lại nhé.",
       "retry": "Thử lại"
     },
     "connect": {
@@ -1773,6 +1775,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "Trang này chưa tải được.",
+      "body": "Có lỗi từ phía chúng tôi, bạn thử lại nhé.",
+      "retry": "Thử lại",
+      "home": "Về trang chính",
+      "notFoundBody": "Không có màn hình nào ở địa chỉ này, hãy quay lại nhé."
+    },
     "notAuthenticated": "Bạn cần đăng nhập để sử dụng tính năng này.",
     "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",

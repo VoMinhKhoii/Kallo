@@ -1,9 +1,8 @@
 'use client';
 
-import { Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef } from 'react';
-import { EmptyState } from '@/components/ui/empty-state';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { useNotificationFeed } from '@/hooks/notifications/use-notification-feed';
 import { useMarkNotificationsSeen } from '@/hooks/notifications/use-notification-state';
 import type {
@@ -92,10 +91,11 @@ export function ActivityPage() {
 
       {!(feed.isPending || feed.isError) &&
         (items.length === 0 ? (
-          <EmptyState
-            icon={Heart}
+          <SurfaceState
+            area="circle"
+            kind="emptyAlt"
+            subtitle={t('empty.description')}
             title={t('empty.title')}
-            description={t('empty.description')}
           />
         ) : (
           <ActivitySections

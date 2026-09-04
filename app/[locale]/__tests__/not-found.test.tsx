@@ -15,8 +15,11 @@ describe('the 404 page', () => {
 
   it('still says what happened', () => {
     render(<NotFound />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('404');
-    expect(screen.getByText('notFound')).toBeTruthy();
+    // The bare "404" numeral is gone: the surface state's own h1 says it in
+    // words, above the seal, with the body line under it.
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'notFound'
+    );
     expect(screen.getByText('notFoundBody')).toBeTruthy();
   });
 

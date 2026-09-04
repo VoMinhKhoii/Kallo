@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { formatTime } from '@/lib/core/date/format-time';
 import type { MealEntry } from '@/lib/core/types/dashboard';
 
@@ -16,14 +17,14 @@ export function MealList({ meals }: MealListProps) {
 
   if (meals.length === 0) {
     return (
-      <div className="flex h-full min-h-[96px] flex-col items-center justify-center gap-1 text-center">
-        <span className="font-medium text-kallo-text text-sm">
-          {t('noMealsToday')}
-        </span>
-        <span className="text-kallo-text-muted text-xs">
-          {t('mealReceiptsHint')}
-        </span>
-      </div>
+      <SurfaceState
+        area="dashboard"
+        className="h-full min-h-[96px]"
+        compact
+        kind="empty"
+        subtitle={t('mealReceiptsHint')}
+        title={t('noMealsToday')}
+      />
     );
   }
 

@@ -9,9 +9,10 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
-/// Black is the CTA variant, reserved for auth and paywall. "Log a meal" is an
-/// ordinary in-app primary and must wear the beige `btnPrimarySoft` + ink wash
-/// like every other one.
+/// The one action under a surface state wears the black `cta` variant — ink
+/// fill, white label — like auth and the paywall. "Log a meal" on the empty
+/// nutrition page is that action, so it must not fall back to the beige
+/// in-app primary.
 Widget _app() => EasyLocalization(
       supportedLocales: const [Locale('en')],
       path: 'assets/l10n',
@@ -39,13 +40,13 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('the "Log a meal" CTA is the beige in-app primary, not black',
+  testWidgets('the "Log a meal" action is the black ink button',
       (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
     final button = tester.widget<KalloButton>(find.byType(KalloButton));
-    expect(button.variant, KalloButtonVariant.primary);
+    expect(button.variant, KalloButtonVariant.cta);
 
     final container = tester.widget<AnimatedContainer>(
       find.descendant(
@@ -54,8 +55,8 @@ void main() {
       ),
     );
     final fill = (container.decoration! as BoxDecoration).color;
-    expect(fill, KalloColors.btnPrimarySoft);
-    expect(fill, isNot(KalloColors.btnPrimary),
-        reason: 'black is reserved for auth/paywall CTAs');
+    expect(fill, KalloColors.btnPrimary);
+    expect(fill, isNot(KalloColors.btnPrimarySoft),
+        reason: 'surface-state actions are ink, not the beige primary');
   });
 }

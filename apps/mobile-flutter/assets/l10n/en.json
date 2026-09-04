@@ -508,7 +508,8 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
+      "overviewTitle": "Your overview didn’t load.",
+      "overview": "Refresh the page or try again after logging another meal.",
       "overviewToast": "Could not load nutrition overview.",
       "retry": "Retry overview",
       "candidatesError": "Couldn't load food ideas right now."
@@ -976,9 +977,10 @@
     "saving": "Saving…",
     "retry": "Try again",
     "todayLoading": "Loading today's meals…",
-    "todayLoadError": "Unable to load today's meals. Please try again.",
-    "progressLoadError": "Unable to load the weight trend. Please try again.",
-    "heatmapLoadError": "Unable to load the consistency section. Please try again.",
+    "todayLoadError": "Today's meals did not load, please try again.",
+    "sectionErrorTitle": "This didn’t load.",
+    "progressLoadError": "The weight trend did not load, please try again.",
+    "heatmapLoadError": "The consistency section did not load, please try again.",
     "loadingWeightTrend": "Loading weight trend…",
     "now": "Now",
     "goal": "Goal",
@@ -1213,7 +1215,7 @@
       "savedMeal": "Meal saved",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
-      "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
+      "loadErrorDescription": "Your saved meals for this date did not load, so try again before logging more.",
       "retryDay": "Retry day",
       "partialDayNotice": {
         "title": "This day may be under-logged",
@@ -1493,7 +1495,7 @@
       "emptyTitle": "No friends yet",
       "addFriendCta": "Add a friend",
       "noMatches": "No matches",
-      "noFriends": "Add friends first — you can only add people already in your circle.",
+      "noFriends": "You can only add people who are already in your circle.",
       "submit": "Create group",
       "creating": "Creating…",
       "created": "Group created",
@@ -1607,13 +1609,13 @@
     },
     "circle": {
       "title": "Your circle ({count})",
-      "empty": "No one in your circle yet. Share your link to connect.",
+      "empty": "Share your link to bring someone into your circle.",
       "remove": "Remove",
       "removeError": "Couldn't remove them. Try again."
     },
     "error": {
       "title": "Couldn't load your circle",
-      "body": "Something went wrong. Check your connection and try again.",
+      "body": "Check your connection and try again.",
       "retry": "Try again"
     },
     "connect": {
@@ -1776,6 +1778,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "This didn’t load.",
+      "body": "Something went wrong on our side, so give it another try.",
+      "retry": "Try again",
+      "home": "Go home",
+      "notFoundBody": "There is no screen at this address, so head back to your meals."
+    },
     "notAuthenticated": "You need to sign in to use this feature.",
     "profileNotFound": "Profile not found. Please sign in again.",
     "pipelineTimeout": "Analysis took too long. Please try again.",

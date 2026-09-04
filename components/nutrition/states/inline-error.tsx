@@ -1,5 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { RetryAction } from '@/components/shared/surface-state/retry-action';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+
 interface InlineErrorProps {
   isRetrying: boolean;
   message: string;
@@ -7,27 +11,30 @@ interface InlineErrorProps {
   retryLabel: string;
 }
 
+/** The nutrition overview's failure, inside the card the overview would have
+ *  filled — so the page keeps its shape when the fetch does not land. */
 export function InlineError({
   isRetrying,
   message,
   onRetry,
   retryLabel,
 }: InlineErrorProps) {
+  const t = useTranslations('nutrition');
+
   return (
-    <div
-      role="alert"
-      className="rounded-2xl border border-kallo-border/60 bg-card p-4 text-kallo-text"
-    >
-      <p>{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        disabled={isRetrying}
-        aria-busy={isRetrying}
-        className="mt-3 inline-flex touch-manipulation items-center rounded-xl border border-kallo-border/60 px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {retryLabel}
-      </button>
-    </div>
+    <SurfaceState
+      action={
+        <RetryAction
+          isRetrying={isRetrying}
+          label={retryLabel}
+          onRetry={onRetry}
+        />
+      }
+      area="nutrition"
+      className="rounded-2xl border border-kallo-border/60 bg-card"
+      kind="error"
+      subtitle={message}
+      title={t('errors.overviewTitle')}
+    />
   );
 }

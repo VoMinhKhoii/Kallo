@@ -85,6 +85,7 @@ class _ProfileSection extends ConsumerWidget {
     return profileAsync.when(
       loading: () => const AddFriendProfileSkeleton(),
       error: (_, __) => CircleErrorCard(
+        compact: true,
         onRetry: () => ref.invalidate(myCircleProfileProvider),
       ),
       data: (profile) => Column(

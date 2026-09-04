@@ -35,14 +35,20 @@ lib/
                        nutrition/ sheet/ surface/ toast/ typography/
                        (`apps/mobile-flutter/AGENTS.md` §3 is the authoritative
                        folder map; keep this line in step with it)
-  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
-  shared/data/         static tables >1 feature reads: countries.dart
+  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart,
+                       time_of_day.dart (the day buckets the composer prompt and
+                       the surface-state night pose share)
+  shared/data/         static tables >1 feature reads: countries.dart,
+                       surface_cast.dart (area × state → assets/illustrations/)
   shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,
-                       placeholder_screen.dart
+                       placeholder_screen.dart, route_error_screen.dart (go_router
+                       errorBuilder: unknown deep link / route failure)
   theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
 
 There is no `lib/data/`: everything it held was infrastructure and merged into `services/`.
+
+There is no offline detection (no connectivity package, no banner): a lost connection surfaces as the ordinary retryable error state. The surface-state cast carries an `offline` pose for parity with the web offline page, unused on mobile until detection exists.
 The tree has no barrels — see `apps/mobile-flutter/AGENTS.md` §3 for the rule and the two
 shapes it covers.
 

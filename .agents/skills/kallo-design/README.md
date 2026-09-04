@@ -57,7 +57,7 @@ The product is bilingual (`en` / `vi`) using `next-intl`. Every string in the ru
 
 **Microcopy quirks.**
 - Loading states are gentle and active: *"Breaking down your meal…"*, *"Matching ingredients…"*, *"Estimating nutrition…"*, *"Putting it all together…"* — never the bare word "Loading".
-- Empty states are full sentences with a soft CTA. *"No meals yet today. What did you eat?"*
+- Empty states are full sentences with a soft CTA, under one hand-drawn illustration from the surface-state cast (see Iconography → Illustrations). *"No meals yet today. What did you eat?"*
 - Errors are first-person from the user's POV: *"Could not load this day"*, *"Failed to save weight"*. They suggest a fix, never blame.
 - The trust line: *"3 logged days · 84% avg confidence · 30 days view"* — em-dot separator (`·`, not `|` or `•`), units never abbreviated to fake precision.
 - Adherence labels are diverging and qualitative: `On target`, `Slightly over`, `Slightly under`, `Over`, `Under`, `Far over`, `Far under` — never a raw percentage on its own.
@@ -129,6 +129,8 @@ Submit buttons inside input bars are a **smaller, slightly square** rounded rect
 ## Iconography
 
 Kallo uses **lucide-react** end-to-end. There is no in-house icon set, no custom SVG sprite, no icon font. Every glyph in the running product — `ArrowRight`, `ArrowUp`, `Sparkles`, `Check`, `ChevronDown`, `Flame`, `LayoutDashboard`, `Activity`, `UtensilsCrossed`, `ShieldCheck`, `Settings`, `PanelLeftOpen`, `PanelLeftClose`, `Square`, `X` — is the corresponding component from `lucide-react`.
+
+**Illustrations.** Surface states — empty, error, 404, offline — are the one place a picture larger than a glyph appears. They use hand-drawn Koboyo illustrations (single-pen line art, free licence) rendered in primary ink via `currentColor`, 120px tall (64px inside a card), never tinted tan, never on a disc. One animal per area of the app — capybara Circle, otter Logging, sloth Nutrition, hedgehog Dashboard, seal for system surfaces (route error, 404, offline, settings) — the pose is the state, and from 22:00 to 05:00 every surface swaps to that animal's sleeping pose. The cast is `lib/brand/illustrations/cast.ts`, drawn only by `components/shared/surface-state/`; adding a pose means editing the generator manifest in `scripts/assets/gen-illustrations.mjs`, never pasting SVG.
 
 **Usage rules:**
 - Default size 16 (`h-4 w-4`) for inline button glyphs.
@@ -211,7 +213,7 @@ When in doubt, **mimic these specific files from the source repo** — they are 
 | **Adherence heatmap** | `components/dashboard/progress/adherence-heatmap.tsx` + `heatmap-colors.ts` | The 5-step diverging warm scale, the ResizeObserver-driven cell sizing, the `font-mono` "85% on track" stat, the gradient-bar legend at the bottom, the staggered fade-in (0.16s with reduced-motion fallback). |
 | **Circle feed** | `components/groups/{feed-entry,thread-feed,share-replies}.tsx` | Threads-anatomy posts, newest-first: 36px `ProfileAvatar` (Google picture, letter-on-`#E8E6DC`-disc fallback) · bold 15px name + 15px muted relative time · 15px content · 11px `P: 26g` macros with bold 13px kcal · quiet 11.5px icon action row. Replies reuse the exact meal anatomy minus numbers/actions. Hairline day separators, hidden scrollbars. |
 | **Invite dialog** | `components/groups/add-friend-dialog.tsx` + `invite/*` | `bg-kallo-surface` panel, `#E8E6DC` border, serif title. Tab track `bg-[#E8E6DC]/60` with the active tab as a white pill (`shadow-sm` + hairline ring). In-place editing (pencil → inline input, bottom hairline darkens on focus, inline Save). Copy buttons get a 2s check + "Copied" success state. |
-| **Empty states** | `components/ui/empty-state.tsx` | Every empty surface composes this: icon on an `#E8E6DC` disc, `#141413` title, `#6E6D66` supporting line, at most one brown CTA. No bare one-line empties. |
+| **Surface states** | `components/shared/surface-state/surface-state.tsx` | Every empty, error, 404 and offline surface composes this: Koboyo illustration in ink → Lora 24 title → 14px muted line → one `ink` button (near-black fill, cream label; the `ink` variant of `components/ui/button.tsx`). Errors get `role="alert"`; `compact` is the in-card size. No bare one-line empties, no icon-on-a-disc. |
 | **Side panes** | `components/groups/info/*` | Reuses the left sidebar's card chrome (`rounded-xl border-kallo-border/60 bg-white`, 12px shell gutter) and its collapse-to-strip behavior. Messenger-style sections: 13px semibold headings with flipping chevrons; destructive rows styled as plain nav rows — danger ink only inside the confirm dialog. |
 
 ---
@@ -306,7 +308,7 @@ When you add a feature that doesn't exist yet (Workouts, Sleep, Mood, Reminders,
 
 6. **Apply the color allowance.** Status: sage and terracotta, that's it. Accents/decoration: tan, taupe, stone. If a feature needs to distinguish more than three categories (muscle groups, food types, mood states), **stop using color** — go to neutral chips with a Lora monogram in a tinted disc (see card 24 / 26 for the muscle-group treatment).
 
-7. **Write the empty state and verdict in the canonical voice.** Lora question + DM Sans subline + three localized suggestion chips for the empty state. Lora-italic accent (tan for highlight, terracotta for attention) for the verdict — one per screen, not six.
+7. **Write the empty state and verdict in the canonical voice.** The area's illustration + Lora question + Be Vietnam Pro subline (+ suggestion chips where the surface has them) for the empty state, composed through `SurfaceState`. Lora-italic accent (tan for highlight, terracotta for attention) for the verdict — one per screen, not six.
 
 8. **Bound your numbers.** Estimated values get a range (`est. 1RM 88–94 kg`). Real measurements get the right precision (`68.5 kg`, `12 reps`, `1h 12m`). Robot dates get rewritten to human form (see card 22).
 

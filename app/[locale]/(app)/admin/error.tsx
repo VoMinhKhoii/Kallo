@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 
 export default function AdminError({
@@ -10,26 +12,28 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     console.error('[admin] route error', error);
   }, [error]);
 
   return (
-    <div
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center"
-      role="alert"
-    >
-      <h2 className="font-semibold text-lg">Something went wrong</h2>
-      <p className="max-w-md text-muted-foreground text-sm">
-        {error.message ||
-          'An unexpected error occurred while loading admin data.'}
-      </p>
+    <div className="flex min-h-[40vh] flex-col items-center justify-center">
+      <SurfaceState
+        action={
+          <Button onClick={() => reset()} size="sm" variant="ink">
+            {t('route.retry')}
+          </Button>
+        }
+        area="system"
+        kind="error"
+        subtitle={error.message || t('route.body')}
+        title={t('route.title')}
+      />
       {error.digest && (
         <p className="text-muted-foreground text-xs">digest: {error.digest}</p>
       )}
-      <Button onClick={() => reset()} variant="outline" size="sm">
-        Try again
-      </Button>
     </div>
   );
 }
