@@ -52,8 +52,9 @@ Query · next-intl · Tailwind v4 · Biome · Vitest.
 
 ## Running it locally
 
-You need [Bun](https://bun.sh), and a Supabase project plus a Gemini API key
-for anything that touches the pipeline.
+You need [Bun](https://bun.sh). Running Vitest also requires Node.js 22.12
+or newer. A Supabase project plus a Gemini API key are required for anything
+that touches the pipeline.
 
 ```bash
 bun install

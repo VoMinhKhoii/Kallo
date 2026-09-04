@@ -266,9 +266,9 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 
 | Command | Description |
 |---------|-------------|
-| `bun test` | Run all tests via Vitest |
-| `bun test:watch` | Run tests in watch mode |
-| `bun --env-file=.env.local vitest run lib/db/__tests__/` | Run DB-level search tests (requires remote DB) |
+| `bun run test` | Run all tests via Vitest |
+| `bun run test:watch` | Run tests in watch mode |
+| `bun --env-file=.env.local run test -- lib/infra/db/__tests__/` | Run DB-level search tests (requires remote DB) |
 
 ### Scripts
 
