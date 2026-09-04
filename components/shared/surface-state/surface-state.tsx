@@ -51,7 +51,7 @@ export function SurfaceState({
       </div>
       <Tag
         className={cn(
-          'font-normal font-serif text-kallo-text',
+          'text-balance font-normal font-serif text-kallo-text',
           compact
             ? 'text-[18px] leading-6 tracking-[-0.2px]'
             : 'text-[24px] leading-[30px] tracking-[-0.36px]'
@@ -62,7 +62,7 @@ export function SurfaceState({
       {subtitle ? (
         <p
           className={cn(
-            'mt-2 max-w-sm font-sans-display text-kallo-text-muted leading-relaxed',
+            'mt-2 max-w-sm text-pretty font-sans-display text-kallo-text-muted leading-relaxed',
             compact ? 'text-[13px]' : 'text-[14px]'
           )}
         >
