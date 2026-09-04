@@ -1,9 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../shared/data/surface_cast.dart';
+import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -25,6 +26,7 @@ class ThreadFeed extends ConsumerWidget {
     this.emptyTitleKey = 'groups.page.friendsEmptyTitle',
     this.emptyDescriptionKey = 'groups.page.friendsNoMealToday',
     this.emptyNamedArgs = const {},
+    this.emptyPose = SurfaceKind.empty,
     this.showAddFriend = true,
     super.key,
   });
@@ -42,6 +44,11 @@ class ThreadFeed extends ConsumerWidget {
   final String emptyTitleKey;
   final String emptyDescriptionKey;
   final Map<String, String> emptyNamedArgs;
+
+  /// Which capybara stands on the empty wall: the friends scope gets the
+  /// telescope (looking for someone), a group the box (nobody home yet).
+  final SurfaceKind emptyPose;
+
   final bool showAddFriend;
 
   @override
@@ -90,15 +97,7 @@ class ThreadFeed extends ConsumerWidget {
 
   Widget _dataList(BuildContext context, SharedMealFeedState state) {
     if (state.entries.isEmpty) {
-      return _list(
-        _EmptyState(
-          onAdd: onAddFriend,
-          titleKey: emptyTitleKey,
-          descriptionKey: emptyDescriptionKey,
-          namedArgs: emptyNamedArgs,
-          showAdd: showAddFriend,
-        ),
-      );
+      return _list(_empty());
     }
     final children = <Widget>[header];
     for (final day in _byDay(state.entries)) {
@@ -120,6 +119,23 @@ class ThreadFeed extends ConsumerWidget {
     return _scroll(children);
   }
 
+  /// Nothing on the wall yet. The one action is quiet on purpose: an empty
+  /// circle is not an error, so "add a friend" wears the secondary tier
+  /// rather than competing with the feed that is about to fill in.
+  Widget _empty() => KalloSurfaceState(
+    area: SurfaceArea.circle,
+    kind: emptyPose,
+    title: tr(emptyTitleKey, namedArgs: emptyNamedArgs),
+    subtitle: tr(emptyDescriptionKey, namedArgs: emptyNamedArgs),
+    action: showAddFriend
+        ? KalloButton(
+            title: tr('groups.page.addFriend'),
+            variant: KalloButtonVariant.secondary,
+            onPressed: onAddFriend,
+          )
+        : null,
+  );
+
   /// Consecutive runs of entries sharing a day key, in feed order. A run, not
   /// a bucket: the feed is already sorted, and grouping by key would silently
   /// reorder a day that arrived split across two pages.
@@ -139,51 +155,4 @@ class ThreadFeed extends ConsumerWidget {
     }
     return days;
   }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.onAdd,
-    required this.titleKey,
-    required this.descriptionKey,
-    required this.namedArgs,
-    required this.showAdd,
-  });
-  final VoidCallback onAdd;
-  final String titleKey;
-  final String descriptionKey;
-  final Map<String, String> namedArgs;
-  final bool showAdd;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
-    child: Column(
-      children: [
-        const Icon(LucideIcons.users300, color: kInkMuted, size: KalloIcons.primary),
-        const SizedBox(height: KalloSpacing.sp3),
-        Text(
-          tr(titleKey, namedArgs: namedArgs),
-          style: dashBody(),
-        ),
-        const SizedBox(height: KalloSpacing.sp1),
-        Text(
-          tr(descriptionKey, namedArgs: namedArgs),
-          textAlign: TextAlign.center,
-          style: dashMeta(),
-        ),
-        if (showAdd) ...[
-          const SizedBox(height: KalloSpacing.sp4),
-          // The one action, in the quiet tier: an empty circle is not an
-          // error, so it gets a white-and-hairline button rather than a
-          // filled one competing with the feed that is about to fill in.
-          KalloButton(
-            title: tr('groups.page.addFriend'),
-            variant: KalloButtonVariant.secondary,
-            onPressed: onAdd,
-          ),
-        ],
-      ],
-    ),
-  );
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/data/surface_cast.dart';
 import '../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
@@ -91,6 +92,10 @@ class CircleScreen extends ConsumerWidget {
                   ? 'groups.page.friendsNoMealToday'
                   : 'groups.page.groupNoActivity',
           emptyNamedArgs: {'name': name},
+          // A group with no posts is a box nobody has climbed out of yet; the
+          // friends wall is the capybara still looking for someone.
+          emptyPose:
+              selected == null ? SurfaceKind.empty : SurfaceKind.emptyAlt,
           showAddFriend: selected == null,
         ),
       ),

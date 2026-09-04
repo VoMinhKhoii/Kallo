@@ -11,36 +11,27 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/logic/display_format.dart';
 import '../../../logging/logic/format.dart';
+import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/logic/macro_composition.dart';
+import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../data/logging_day.dart';
 import '../../logic/dashboard_spacing.dart';
 
-/// Empty state — plain centered text on the card surface (no dashed border).
+/// Nothing logged today — the hedgehog peeking out of its box, in-card.
 class EmptyMeals extends StatelessWidget {
   const EmptyMeals({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 96),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            tr('dashboard.noMealsToday'),
-            textAlign: TextAlign.center,
-            style: kSectionHeader(),
-          ),
-          const SizedBox(height: DashboardSpacing.row),
-          Text(
-            tr('dashboard.mealReceiptsHint'),
-            textAlign: TextAlign.center,
-            style: dashMeta(color: kInkMuted),
-          ),
-        ],
-      ),
+    return KalloSurfaceState(
+      area: SurfaceArea.dashboard,
+      kind: SurfaceKind.empty,
+      compact: true,
+      minHeight: 96,
+      title: tr('dashboard.noMealsToday'),
+      subtitle: tr('dashboard.mealReceiptsHint'),
     );
   }
 }

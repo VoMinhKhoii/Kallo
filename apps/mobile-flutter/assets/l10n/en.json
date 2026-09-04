@@ -508,6 +508,7 @@
       "vitaminH": "Biotin"
     },
     "errors": {
+      "overviewTitle": "Your overview didn’t load.",
       "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
       "overviewToast": "Could not load nutrition overview.",
       "retry": "Retry overview",
@@ -977,6 +978,7 @@
     "retry": "Try again",
     "todayLoading": "Loading today's meals…",
     "todayLoadError": "Unable to load today's meals. Please try again.",
+    "sectionErrorTitle": "This didn’t load.",
     "progressLoadError": "Unable to load the weight trend. Please try again.",
     "heatmapLoadError": "Unable to load the consistency section. Please try again.",
     "loadingWeightTrend": "Loading weight trend…",
@@ -1776,6 +1778,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "This didn’t load.",
+      "body": "Something went wrong on our side. Give it another try.",
+      "retry": "Try again",
+      "home": "Go home",
+      "notFoundBody": "There’s no screen at this address. Head back and carry on."
+    },
     "notAuthenticated": "You need to sign in to use this feature.",
     "profileNotFound": "Profile not found. Please sign in again.",
     "pipelineTimeout": "Analysis took too long. Please try again.",

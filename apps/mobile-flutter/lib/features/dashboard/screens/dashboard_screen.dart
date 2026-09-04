@@ -15,7 +15,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/profile/dashboard.dart';
 import '../../../shared/widgets/brand/kallo_wordmark.dart';
@@ -111,7 +110,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(KalloSpacing.sp6),
                   child: SectionState(
-                    icon: LucideIcons.cloudOff300,
+                    compact: false,
                     message: tr('dashboard.todayLoadError'),
                     actionLabel: tr('dashboard.retry'),
                     onAction:

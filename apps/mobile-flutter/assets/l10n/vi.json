@@ -508,6 +508,7 @@
       "vitaminH": "Biotin"
     },
     "errors": {
+      "overviewTitle": "Tổng quan chưa tải được.",
       "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
       "overviewToast": "Không tải được tổng quan dinh dưỡng.",
       "retry": "Tải lại tổng quan",
@@ -977,6 +978,7 @@
     "retry": "Thử lại",
     "todayLoading": "Đang tải bữa ăn hôm nay…",
     "todayLoadError": "Không tải được bữa ăn hôm nay. Vui lòng thử lại.",
+    "sectionErrorTitle": "Phần này chưa tải được.",
     "progressLoadError": "Không tải được xu hướng cân nặng. Vui lòng thử lại.",
     "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
     "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
@@ -1773,6 +1775,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "Trang này chưa tải được.",
+      "body": "Có lỗi từ phía chúng tôi. Bạn thử lại nhé.",
+      "retry": "Thử lại",
+      "home": "Về trang chính",
+      "notFoundBody": "Không có màn hình nào ở địa chỉ này. Quay lại và tiếp tục nhé."
+    },
     "notAuthenticated": "Bạn cần đăng nhập để sử dụng tính năng này.",
     "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
