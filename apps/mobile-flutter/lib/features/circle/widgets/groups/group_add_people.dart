@@ -8,6 +8,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
+import '../states/circle_error.dart';
 import '../states/friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
@@ -70,15 +71,9 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
           ),
           error:
               (_, __) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(tr('groups.friendsLoadError'), style: dashMeta()),
-                    TextButton(
-                      onPressed: () => ref.invalidate(circleFriendsProvider),
-                      child: Text(tr('groups.switcher.retry')),
-                    ),
-                  ],
+                child: CircleErrorCard(
+                  compact: true,
+                  onRetry: () => ref.invalidate(circleFriendsProvider),
                 ),
               ),
           data:

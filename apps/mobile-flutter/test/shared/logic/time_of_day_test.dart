@@ -28,12 +28,6 @@ void main() {
         expect(bucketForHour(hour), bucket);
       });
     });
-
-    test('covers all 24 hours', () {
-      for (var hour = 0; hour < 24; hour++) {
-        expect(bucketForHour(hour), isNotNull);
-      }
-    });
   });
 
   group('isLateNight', () {

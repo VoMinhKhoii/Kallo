@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../../data/surface_cast.dart';
 import '../brand/surface_illustration.dart';
@@ -78,45 +79,55 @@ class KalloSurfaceState extends StatelessWidget {
         constraints: BoxConstraints(
           minHeight: minHeight ?? (compact ? 140 : 288),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            mark ??
-                SurfaceIllustration(
-                  area: area!,
-                  kind: kind!,
-                  height: compact ? 64 : 120,
-                  now: now,
-                ),
-            SizedBox(height: compact ? 16 : 24),
-            Semantics(
-              header: true,
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: KalloTextStyles.serifMedium(
-                  fontSize: compact ? 18 : 24,
-                ).copyWith(
-                  height: 30 / 24,
-                  letterSpacing: -0.36,
-                  color: KalloColors.text,
-                ),
-              ),
-            ),
-            if (subtitle != null) ...[
-              SizedBox(height: compact ? 8 : 12),
-              Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: dashBody(color: kInkMuted).copyWith(height: 28 / 16),
-              ),
-            ],
-            if (action != null) ...[
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? KalloSpacing.sp4 : KalloSpacing.sp6,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              mark ??
+                  SurfaceIllustration(
+                    area: area!,
+                    kind: kind!,
+                    height: compact ? 64 : 120,
+                    now: now,
+                  ),
               SizedBox(height: compact ? 16 : 24),
-              action!,
+              Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: KalloTextStyles.serifMedium(
+                    fontSize: compact ? 18 : 24,
+                  ).copyWith(
+                    height: compact ? 24 / 18 : 30 / 24,
+                    letterSpacing: compact ? -0.2 : -0.36,
+                    color: KalloColors.text,
+                  ),
+                ),
+              ),
+              if (subtitle != null) ...[
+                SizedBox(height: compact ? 8 : 12),
+                // Vietnamese copy is long; cap the measure so it wraps into a
+                // block rather than running the full width of a phone.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Text(
+                    subtitle!,
+                    textAlign: TextAlign.center,
+                    style: dashBody(color: kInkMuted).copyWith(height: 28 / 16),
+                  ),
+                ),
+              ],
+              if (action != null) ...[
+                SizedBox(height: compact ? 16 : 24),
+                action!,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

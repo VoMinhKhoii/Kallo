@@ -66,10 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootKey,
     initialLocation: '/',
     refreshListenable: refresh,
-    // An unmatched location is a GoException; anything else reaching here is a
-    // route that threw. The two say different things to the user.
+    // `state.error` is always a GoException here, so the pose turns on what it
+    // says: "no routes for location" is an address with no screen behind it; a
+    // redirect loop or any other GoException is a route that failed. The two
+    // say different things to the user.
     errorBuilder: (context, state) =>
-        RouteErrorScreen(notFound: state.error is GoException),
+        RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
     redirect: (context, state) {
       // While the very first session restore is in flight, hold on `/` (the
       // splash) rather than flashing the sign-in screen — mirrors RN's

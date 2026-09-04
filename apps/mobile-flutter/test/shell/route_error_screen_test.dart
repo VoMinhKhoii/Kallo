@@ -47,6 +47,24 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  test('isNotFound reads the unmatched-location GoException', () {
+    expect(
+      RouteErrorScreen.isNotFound(
+        GoException('no routes for location: /nope'),
+      ),
+      isTrue,
+    );
+  });
+
+  test('isNotFound leaves every other GoException the error pose', () {
+    expect(
+      RouteErrorScreen.isNotFound(
+        GoException('redirect loop detected /a => /b => /a'),
+      ),
+      isFalse,
+    );
+  });
+
   testWidgets('a route that threw reads as an error, with one way out',
       (tester) async {
     await tester.pumpWidget(_app(notFound: false));

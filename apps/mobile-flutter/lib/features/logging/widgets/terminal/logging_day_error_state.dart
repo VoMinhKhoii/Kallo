@@ -8,7 +8,8 @@ import '../../../../theme/kallo_theme.dart';
 
 /// The logging feed when a day will not load: the tangled otter, the reason,
 /// and one retry. No red — retrying a fetch is not a destruction, so the
-/// affordance is the ordinary in-app primary rather than an alarm.
+/// affordance is the black `cta` every surface state gives its one action,
+/// the one sanctioned use of that tier outside auth and the paywall.
 class LoggingDayErrorState extends StatelessWidget {
   const LoggingDayErrorState({super.key, required this.onRetry});
   final VoidCallback onRetry;

@@ -119,9 +119,9 @@ class ThreadFeed extends ConsumerWidget {
     return _scroll(children);
   }
 
-  /// Nothing on the wall yet. The one action is quiet on purpose: an empty
-  /// circle is not an error, so "add a friend" wears the secondary tier
-  /// rather than competing with the feed that is about to fill in.
+  /// Nothing on the wall yet. "Add a friend" wears the black `cta` — the tier
+  /// every surface state gives its one action, the one sanctioned use of it
+  /// outside auth and the paywall.
   Widget _empty() => KalloSurfaceState(
     area: SurfaceArea.circle,
     kind: emptyPose,

@@ -11,7 +11,8 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 ///
 /// The shared surface anatomy: the capybara stuck in a jar, the reason, and
 /// one retry. There is no red here — a retry is not a destruction, so the
-/// affordance is the ordinary in-app primary (beige + ink).
+/// affordance is the black `cta` every surface state gives its one action,
+/// the one sanctioned use of that tier outside auth and the paywall.
 class CircleErrorCard extends StatelessWidget {
   const CircleErrorCard({
     required this.onRetry,

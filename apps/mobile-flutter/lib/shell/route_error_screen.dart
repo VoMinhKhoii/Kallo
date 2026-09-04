@@ -23,6 +23,12 @@ class RouteErrorScreen extends StatelessWidget {
   /// Whether the router simply had no match, as opposed to a route failing.
   final bool notFound;
 
+  /// Reads the router's failure. go_router hands the `errorBuilder` a
+  /// `GoException` either way, so only its message separates an address with
+  /// no screen behind it from a redirect loop or another route failure.
+  static bool isNotFound(GoException? error) =>
+      (error?.message ?? '').startsWith('no routes for location');
+
   @override
   Widget build(BuildContext context) {
     return Screen(

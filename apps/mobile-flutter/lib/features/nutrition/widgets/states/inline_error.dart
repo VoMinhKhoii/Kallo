@@ -11,9 +11,10 @@ import '../../../../theme/kallo_theme.dart';
 /// went wrong in muted copy, and the one way out.
 ///
 /// There is no red on this card. A retry is not a destruction, so the
-/// affordance takes the app's in-app primary (beige + ink, fully rounded)
-/// rather than anything alarming. The card itself is the page's own card:
-/// white, radius 22, no border.
+/// affordance takes the black `cta` every surface state gives its one action —
+/// the one sanctioned use of that tier outside auth and the paywall — rather
+/// than anything alarming. The card itself is the page's own card: white,
+/// radius 22, no border.
 class InlineError extends StatelessWidget {
   const InlineError({
     super.key,

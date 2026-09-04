@@ -23,10 +23,10 @@ class EmptyState extends StatelessWidget {
         kind: SurfaceKind.empty,
         title: tr('nutrition.emptyV2.title'),
         subtitle: tr('nutrition.emptyV2.description'),
-        // The in-app primary: beige + ink. The black `cta` variant is
-        // reserved for auth and paywall — "Log a meal" is neither. (The
-        // locked-micronutrients card next door keeps the black pill: it opens
-        // the paywall.)
+        // The black `cta`: the tier every surface state gives its one
+        // action, the one sanctioned use of it outside auth and the paywall.
+        // (The locked-micronutrients card next door wears the same black
+        // pill for its own reason: it opens the paywall.)
         action: KalloButton(
           variant: KalloButtonVariant.cta,
           title: tr('nutrition.emptyV2.logMeal'),
