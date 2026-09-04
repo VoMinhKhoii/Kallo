@@ -43,8 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: ./.github/actions/setup-bun
-      - run: bun vitest run --exclude '**/lib/db/__tests__/**'
+      - run: bun run test -- --exclude '**/lib/infra/db/__tests__/**'
 
   build:
     name: Build
@@ -101,6 +104,9 @@ jobs:
       # rejected with "Tenant or user not found". `pooler-dev` is the CLI's
       # fixed local tenant id (_supavisor.tenants in the `_supabase` database),
       # NOT this project's `project_id`.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: ./.github/actions/setup-bun
       # Prove the function is REACHABLE before vitest gets a chance to have an
       # opinion. A test suite is the wrong place to discover that the gate
@@ -126,7 +132,7 @@ jobs:
       - name: Rate limiter DB test (via transaction pooler)
         env:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
-        run: bun vitest run lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
+        run: bun run test -- lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
       - name: Stop Supabase
         if: always()
         run: supabase stop --no-backup

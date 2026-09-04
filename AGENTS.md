@@ -41,7 +41,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 - Dev: `bun dev` · Build: `bun run build` · Start: `bun start`
 - Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate, all blocking) · `bun run test` / `bun run test:watch` (**`bun test` runs Bun's own runner, not Vitest** — it collects different files and fails)
 - DB: `bun db:generate` (Drizzle migration from schema) · `bun db:migrate` (apply locally) · `bun db:studio` · `bun dbr:status` · `bun dbr:push` / `bun dbr:reset` (**user only**)
-- DB search tests (remote DB): `bun --env-file=.env.local vitest run lib/db/__tests__/`
+- DB search tests (remote DB): `bun --env-file=.env.local run test -- lib/infra/db/__tests__/`
 - **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Kallo**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
 
 ## 4. Architecture
