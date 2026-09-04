@@ -6,8 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:kallo_mobile/features/logging/logic/logging_spacing.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry.dart';
+import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry_card.dart';
+import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry_confirm_button.dart';
 import 'package:kallo_mobile/features/logging/widgets/portion/portion_assumption_line.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
@@ -701,5 +704,23 @@ void main() {
       reason: 'the re-stage must survive a sheet that opened before it',
     );
     expect(find.text('300 kcal'), findsNothing);
+  });
+
+  testWidgets('the save pill clears the card instead of welding to it', (
+    tester,
+  ) async {
+    // The gap was LoggingSpacing.actions (2) — the token for the ICON row,
+    // which is tiny only because a 44pt icon target carries ~11.5 of centring
+    // inset above its glyph. The pill is a filled 50pt block with no inset, so
+    // 2 was the whole gap and the card's white met the pill's beige at a seam.
+    await _pumpCard(tester, width: 390);
+
+    final card = tester.getRect(find.byType(MealEntryCard));
+    final pill = tester.getRect(find.byType(MealEntryConfirmButton));
+    expect(
+      pill.top - card.bottom,
+      LoggingSpacing.turn,
+      reason: 'the pill sits on the house step under the card',
+    );
   });
 }
