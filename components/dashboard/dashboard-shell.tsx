@@ -113,9 +113,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   <DashboardSectionState
                     message={t('todayLoadError')}
                     actionLabel={t('retry')}
-                    onAction={() => {
-                      void dailyMealsQuery.refetch();
-                    }}
+                    onAction={() => void dailyMealsQuery.refetch()}
+                    variant="error"
                   />
                 ) : (
                   <TodayDock
@@ -154,9 +153,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   <DashboardSectionState
                     message={t('progressLoadError')}
                     actionLabel={t('retry')}
-                    onAction={() => {
-                      void weightSummaryQuery.refetch();
-                    }}
+                    onAction={() => void weightSummaryQuery.refetch()}
+                    variant="error"
                   />
                 ) : (
                   <ProgressStory
@@ -187,9 +185,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   <DashboardSectionState
                     message={t('heatmapLoadError')}
                     actionLabel={t('retry')}
-                    onAction={() => {
-                      void heatmapQuery.refetch();
-                    }}
+                    onAction={() => void heatmapQuery.refetch()}
+                    variant="error"
                   />
                 ) : !heatmapData ? (
                   <HeatmapSkeleton range={renderedHeatmapRange} />

@@ -358,7 +358,8 @@
     "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
     "overviewToast": "Could not load nutrition overview.",
     "retry": "Retry overview",
-    "candidatesError": "Couldn't load food ideas right now."
+    "candidatesError": "Couldn't load food ideas right now.",
+    "overviewTitle": "Your overview didn’t load."
   },
   "empty": {
     "title": "No meals in this range",

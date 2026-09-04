@@ -1,11 +1,12 @@
 'use client';
 
-import { Search, Users2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
-import { EmptyState } from '@/components/ui/empty-state';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCreateChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useFriends } from '@/hooks/social/circle/use-friends';
@@ -37,7 +38,11 @@ export function CreateGroupForm({
 
   if (isError) {
     return (
-      <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
+      <CircleError
+        compact
+        isRetrying={isFetching}
+        onRetry={() => void refetch()}
+      />
     );
   }
 
@@ -106,21 +111,20 @@ export function CreateGroupForm({
       </div>
 
       {friends.length === 0 ? (
-        <EmptyState
-          icon={Users2}
+        <SurfaceState
+          action={
+            onAddFriend ? (
+              <Button onClick={onAddFriend} size="sm">
+                {t('addFriendCta')}
+              </Button>
+            ) : undefined
+          }
+          area="circle"
+          compact
+          kind="empty"
+          subtitle={t('noFriends')}
           title={t('emptyTitle')}
-          description={t('noFriends')}
-        >
-          {onAddFriend && (
-            <button
-              type="button"
-              onClick={onAddFriend}
-              className="rounded-xl bg-kallo-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
-            >
-              {t('addFriendCta')}
-            </button>
-          )}
-        </EmptyState>
+        />
       ) : (
         <div className="space-y-3">
           <div className="relative">

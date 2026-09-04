@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import {
   useBlockFriend,
   useFriends,
@@ -23,7 +24,11 @@ export function CircleList() {
 
   if (isError) {
     return (
-      <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
+      <CircleError
+        compact
+        isRetrying={isFetching}
+        onRetry={() => void refetch()}
+      />
     );
   }
 
@@ -31,9 +36,13 @@ export function CircleList() {
 
   if (circle.length === 0) {
     return (
-      <p className="px-1 py-2 font-sans-display text-[#6E6D66] text-[12px]">
-        {t('empty')}
-      </p>
+      <SurfaceState
+        area="circle"
+        compact
+        kind="empty"
+        subtitle={t('empty')}
+        title={t('emptyTitle')}
+      />
     );
   }
 

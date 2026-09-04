@@ -1,28 +1,62 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/core/ui/cn';
+
 interface DashboardSectionStateProps {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** `error` gives the section its hedgehog and the shared error title;
+   *  `loading` is the quiet placeholder a section shows while it waits. */
+  variant?: 'loading' | 'error';
 }
+
+/** The canonical card chrome, so a section that failed still occupies the
+ *  same box as the card it stands in for. */
+const CARD =
+  'h-full min-h-[180px] rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm';
 
 export function DashboardSectionState({
   message,
   actionLabel,
   onAction,
+  variant = 'loading',
 }: DashboardSectionStateProps) {
+  const t = useTranslations('dashboard');
+
+  const action =
+    actionLabel && onAction ? (
+      <Button onClick={onAction} size="sm">
+        {actionLabel}
+      </Button>
+    ) : null;
+
+  if (variant === 'error') {
+    return (
+      <SurfaceState
+        action={action}
+        area="dashboard"
+        className={CARD}
+        compact
+        kind="error"
+        subtitle={message}
+        title={t('sectionErrorTitle')}
+      />
+    );
+  }
+
   return (
-    <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-3 rounded-[1.375rem] border border-kallo-border/60 bg-card p-4 text-center text-kallo-text-muted text-sm shadow-[0_10px_32px_rgba(44,36,22,0.05)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.15)]">
+    <div
+      className={cn(
+        CARD,
+        'flex flex-col items-center justify-center gap-3 text-center text-kallo-text-muted text-sm'
+      )}
+    >
       <p className="max-w-sm">{message}</p>
-      {actionLabel && onAction ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="rounded-full bg-kallo-btn px-4 py-2 font-medium text-white text-xs transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60"
-        >
-          {actionLabel}
-        </button>
-      ) : null}
+      {action}
     </div>
   );
 }

@@ -170,7 +170,8 @@
     "title": "Your circle ({count})",
     "empty": "No one in your circle yet. Share your link to connect.",
     "remove": "Remove",
-    "removeError": "Couldn't remove them. Try again."
+    "removeError": "Couldn't remove them. Try again.",
+    "emptyTitle": "Just you so far"
   },
   "circleLimit": {
     "memberAtLimit": "Someone in your selection has reached the free plan's limit. They'll need Premium to join more."

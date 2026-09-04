@@ -1,10 +1,11 @@
 'use client';
 
-import { UserPlus, Users2 } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
+import { Button } from '@/components/ui/button';
 import { useFriendsThreadFeed } from '@/hooks/social/circle/use-friend-thread-feed';
 
 /** Right-pane detail for the combined Friends feed: every accepted friend's
@@ -37,19 +38,15 @@ export function FriendsFeed() {
   return (
     <ThreadFeed
       entries={items}
-      emptyIcon={Users2}
       emptyTitle={t('friendsEmptyTitle')}
       emptyMessage={t('friendsNoMealToday')}
       emptyAction={
         <AddFriendDialog
           trigger={
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-kallo-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
-            >
+            <Button size="sm">
               <UserPlus className="h-3.5 w-3.5" />
               {t('addFriend')}
-            </button>
+            </Button>
           }
         />
       }

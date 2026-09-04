@@ -4,8 +4,9 @@
 // that file is only the page's logic — the mark-seen watermark and which state
 // is showing — rather than that logic plus two blocks of presentation.
 
-import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { RetryAction } from '@/components/shared/surface-state/retry-action';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 
 const SKELETON_COUNT = 4;
 
@@ -37,37 +38,18 @@ export function ActivityError({
 }) {
   const t = useTranslations('activity');
   return (
-    <div
-      role="alert"
-      className="mt-2 rounded-2xl border border-kallo-danger/30 bg-kallo-danger/[0.06] p-4"
-    >
-      <div className="flex gap-3">
-        <AlertCircle
-          className="mt-0.5 h-5 w-5 shrink-0 text-kallo-danger"
-          aria-hidden="true"
+    <SurfaceState
+      action={
+        <RetryAction
+          isRetrying={isRetrying}
+          label={t('error.retry')}
+          onRetry={onRetry}
         />
-        <div className="min-w-0 flex-1">
-          <p className="font-sans-display font-semibold text-[13px] text-kallo-text">
-            {t('error.title')}
-          </p>
-          <p className="mt-1 font-sans-display text-[13px] text-kallo-text-muted">
-            {t('error.body')}
-          </p>
-          <button
-            type="button"
-            onClick={onRetry}
-            disabled={isRetrying}
-            aria-busy={isRetrying}
-            className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-kallo-danger/10 px-3.5 py-2 font-medium font-sans-display text-[13px] text-kallo-danger transition-colors hover:bg-kallo-danger/15 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`}
-              aria-hidden="true"
-            />
-            {t('error.retry')}
-          </button>
-        </div>
-      </div>
-    </div>
+      }
+      area="circle"
+      kind="error"
+      subtitle={t('error.body')}
+      title={t('error.title')}
+    />
   );
 }

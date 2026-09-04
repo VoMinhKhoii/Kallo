@@ -1,6 +1,5 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, type ReactNode, useEffect, useRef } from 'react';
 import { CircleError } from '@/components/groups/circle-error';
@@ -9,7 +8,7 @@ import {
   threadDayKey,
   threadDayLabel,
 } from '@/components/groups/timeline/thread-day';
-import { EmptyState } from '@/components/ui/empty-state';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 
 export interface ThreadFeedItem {
   id: string;
@@ -22,10 +21,12 @@ interface ThreadFeedProps {
   entries: ThreadFeedItem[];
   composer?: ReactNode;
   /** Shown centered when the feed is empty. `emptyMessage` is the supporting
-   *  line; pass `emptyTitle`/`emptyIcon`/`emptyAction` for the fuller state. */
+   *  line; pass `emptyTitle`/`emptyPose`/`emptyAction` for the fuller state. */
   emptyMessage: string;
   emptyTitle?: string;
-  emptyIcon?: LucideIcon;
+  /** Which capybara stands in for the emptiness — the telescope by default,
+   *  the box for a scope that already has its own first pose on screen. */
+  emptyPose?: 'empty' | 'emptyAlt';
   emptyAction?: ReactNode;
   isPending: boolean;
   isError: boolean;
@@ -47,7 +48,7 @@ export function ThreadFeed({
   composer,
   emptyMessage,
   emptyTitle,
-  emptyIcon,
+  emptyPose = 'empty',
   emptyAction,
   isPending,
   isError,
@@ -140,13 +141,13 @@ export function ThreadFeed({
           </>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <EmptyState
-              icon={emptyIcon}
+            <SurfaceState
+              action={emptyAction}
+              area="circle"
+              kind={emptyPose}
+              subtitle={emptyTitle ? emptyMessage : undefined}
               title={emptyTitle ?? emptyMessage}
-              description={emptyTitle ? emptyMessage : undefined}
-            >
-              {emptyAction}
-            </EmptyState>
+            />
           </div>
         )}
       </div>

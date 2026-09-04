@@ -170,7 +170,8 @@
     "title": "Vòng kết nối ({count})",
     "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
     "remove": "Xoá",
-    "removeError": "Không thể xoá. Vui lòng thử lại."
+    "removeError": "Không thể xoá. Vui lòng thử lại.",
+    "emptyTitle": "Hiện chỉ có bạn"
   },
   "circleLimit": {
     "memberAtLimit": "Một người bạn chọn đã đạt giới hạn của gói miễn phí. Họ cần Premium để tham gia thêm."

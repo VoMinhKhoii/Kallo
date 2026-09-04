@@ -88,5 +88,6 @@
     "saved": "Meal saved",
     "undo": "Undo",
     "dismiss": "Dismiss"
-  }
+  },
+  "sectionErrorTitle": "This didn’t load."
 }

@@ -88,5 +88,6 @@
     "saved": "Đã lưu bữa ăn",
     "undo": "Hoàn tác",
     "dismiss": "Bỏ qua"
-  }
+  },
+  "sectionErrorTitle": "Phần này chưa tải được."
 }

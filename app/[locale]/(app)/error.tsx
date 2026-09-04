@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -16,22 +18,24 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     console.error('[app] route error', error);
   }, [error]);
 
   return (
-    <div
-      className="flex min-h-[60vh] flex-1 flex-col items-center justify-center gap-4 px-6 text-center font-sans-display"
-      role="alert"
-    >
-      <h2 className="font-serif text-kallo-text text-xl">This didn’t load.</h2>
-      <p className="max-w-sm text-[14px] text-kallo-text-muted leading-relaxed">
-        Something went wrong on our side. Give it another try.
-      </p>
-      <Button onClick={() => reset()} variant="default" size="sm">
-        Try again
-      </Button>
-    </div>
+    <SurfaceState
+      action={
+        <Button onClick={() => reset()} size="sm">
+          {t('route.retry')}
+        </Button>
+      }
+      area="system"
+      className="min-h-[60vh] flex-1"
+      kind="error"
+      subtitle={t('route.body')}
+      title={t('route.title')}
+    />
   );
 }
