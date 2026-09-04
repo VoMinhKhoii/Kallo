@@ -135,7 +135,13 @@ class MealEntryCommitRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: LoggingSpacing.actions),
+        // The house step, NOT [LoggingSpacing.actions] like the icon row below.
+        // That token is 2 because an icon button carries (44 − 21) / 2 ≈ 11.5
+        // of centring inset above its glyph, which supplies the rest of the
+        // gap. The pill is a filled 50pt block with no inset at all, so 2 was
+        // the whole gap: the card's white and the pill's beige met with a
+        // 2px seam and read as one welded slab.
+        const SizedBox(height: LoggingSpacing.turn),
         revealing ? FadeInUp(offset: 12, child: button) : button,
         if (actions.isNotEmpty) ...[
           const SizedBox(height: LoggingSpacing.actions),
