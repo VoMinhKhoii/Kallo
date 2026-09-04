@@ -368,7 +368,7 @@ Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, 
 
 ## Verification (every phase)
 
-1. `bun test` — new suites + untouched suites green.
+1. `bun run test` — new suites + untouched suites green.
 2. `bunx @biomejs/biome check .`
 3. `bun check:structure` — watch `components/activity/` and `hooks/notifications/` counts; contracts placed in `lib/domain/notifications/` to avoid the known `lib/api/contracts/` 10-file ceiling.
 4. `bun db:generate` produces only intended DDL; migration application is handed to the user.
