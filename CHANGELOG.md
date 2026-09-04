@@ -1,5 +1,74 @@
 # Changelog
 
+## [1.14.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.13.0...v1.14.0) (2026-09-04)
+
+
+### Features
+
+* **mobile:** cheat-meal intensity row and composer mode pill ([ef9564c](https://github.com/VoMinhKhoii/Kallo/commit/ef9564c66b168a73eae0af1252406f012b3a543b))
+* **mobile:** feedback page follows the settings sub-page design; drop restating subheadings ([5c40459](https://github.com/VoMinhKhoii/Kallo/commit/5c40459ae4da13a295f4646c7f72c44dcc90c27b))
+* **mobile:** heavier active tab glyph, nav hides on scroll, header avatar renders and caches ([aacd09e](https://github.com/VoMinhKhoii/Kallo/commit/aacd09eb055b2861bf2f67959e74abf952ef06c6))
+* **mobile:** home date strip pages back through earlier weeks ([2084120](https://github.com/VoMinhKhoii/Kallo/commit/2084120c85b7a46966d4694436402b7bcfdc67c4))
+* **mobile:** iOS-native baseline — tokens, shared components, pill nav shell ([ddf7fdb](https://github.com/VoMinhKhoii/Kallo/commit/ddf7fdb2fdf50cda26bd911155833b878c21f4b2))
+* **mobile:** iOS-native design pass — canvas, buttons, pill nav, all screens ([bc5459a](https://github.com/VoMinhKhoii/Kallo/commit/bc5459a9929ac67cbab6435ca95f6efd7b5192d9))
+* **mobile:** iOS-native design pass — Threads type ramp, brand wordmark, QA + audit fixes ([335695f](https://github.com/VoMinhKhoii/Kallo/commit/335695f180a14938938208fcef86ce587e6a63a9))
+* **mobile:** iOS-native pass — all bottom sheets ([12c8e70](https://github.com/VoMinhKhoii/Kallo/commit/12c8e7030badeab0e5868411ce8f5366f4cf925b))
+* **mobile:** iOS-native pass — Circle feed and the auth screens ([561a7f6](https://github.com/VoMinhKhoii/Kallo/commit/561a7f65612c00359c78dc71fb36b525f42f4700))
+* **mobile:** iOS-native pass — logging feed + nutrition ([3ae03c7](https://github.com/VoMinhKhoii/Kallo/commit/3ae03c71d1a4c0f61aee17b10accf8b6a8653c0f))
+* **mobile:** lighten the canvas to #F8F7F4 ([5224f73](https://github.com/VoMinhKhoii/Kallo/commit/5224f73e3e170e971666a7d23e7812976b3198a0))
+* **mobile:** metric-compensated type ramp for Be Vietnam Pro ([0c2e55a](https://github.com/VoMinhKhoii/Kallo/commit/0c2e55ae05624cdd5fe262a3834122856671d73c))
+* **mobile:** native confirm dialog with explicit verbs, swipe-through sheet pages, centred attribution ([055b71e](https://github.com/VoMinhKhoii/Kallo/commit/055b71eb59bc7c21845f6893fa0d77e71c59399c))
+* **mobile:** post-fan-out sweep — gauge over-cap, umber retirement, flake fix ([a9b4f5e](https://github.com/VoMinhKhoii/Kallo/commit/a9b4f5eed66254a8f69f30a3d50aa401ad06adfb))
+* **mobile:** restyle the dashboard to the iOS-native pass ([8b10507](https://github.com/VoMinhKhoii/Kallo/commit/8b10507f6cdfa662e3e2dbf4116ffcec5aa7cd69))
+* **mobile:** Settings on the iOS-native grouped-card system ([93e2423](https://github.com/VoMinhKhoii/Kallo/commit/93e24231fc246534c7ac8695547197d5dfd6423b))
+* **mobile:** step Log dial readouts down one tier ([44add4a](https://github.com/VoMinhKhoii/Kallo/commit/44add4abca8149da4b7e9ca42d690af73213327d))
+* **mobile:** Threads-scale type ramp — body 17, meta 15 ([12b8f9b](https://github.com/VoMinhKhoii/Kallo/commit/12b8f9be7a095834aa96c13a472d6b7677b68f57))
+* **rate-limit:** one-statement Postgres limiter engine, reapers, CF-only IP source ([b4969aa](https://github.com/VoMinhKhoii/Kallo/commit/b4969aafaeeeb0fc8380f433fc2d9299b526b5b3))
+* **rate-limit:** one-statement Postgres limiter engine, reapers, CF-only IP source ([5ecb43e](https://github.com/VoMinhKhoii/Kallo/commit/5ecb43e2bcc6586adbf5e74c5fd939e5266656c4))
+* **security:** guard the authenticated abuse surfaces and add the route-inventory gate ([32a9625](https://github.com/VoMinhKhoii/Kallo/commit/32a96254612a42205dc604247cd1f3c9003c83ce))
+* **security:** guard the authenticated abuse surfaces and add the route-inventory gate ([2f5fc82](https://github.com/VoMinhKhoii/Kallo/commit/2f5fc825884a1ef182c09a38b1d5c2831ab2e1dc))
+* **security:** harden the anonymous auth surface — proxy limits, bounded bodies, origin-lock fail-closed, healthz, headers ([6f0e5cb](https://github.com/VoMinhKhoii/Kallo/commit/6f0e5cb0ec11cea24e5592ca6f940d235a185375))
+* **security:** harden the anonymous auth surface — proxy limits, bounded bodies, origin-lock, headers ([e44302f](https://github.com/VoMinhKhoii/Kallo/commit/e44302fb65d2e55561338ebc1d355cfcc0263513))
+
+
+### Bug Fixes
+
+* **gauge:** draw the dial's fill at small values instead of dropping it ([7d8b06d](https://github.com/VoMinhKhoii/Kallo/commit/7d8b06dd4048c209bdaba89ad84770f9d119d075))
+* **logging:** give the save pill room to clear the meal card ([f576fd1](https://github.com/VoMinhKhoii/Kallo/commit/f576fd1afeb803ac36405a98adfbbe07defcc501))
+* **mobile:** address review — shrink oversized label stills, camera lifecycle, DST-safe paging, structure ([57f22fc](https://github.com/VoMinhKhoii/Kallo/commit/57f22fc804c6098735a59d426c4925f5b5be5aa3))
+* **mobile:** async lifecycle guards, stale-date completion, idempotent log entry ([60cc1b2](https://github.com/VoMinhKhoii/Kallo/commit/60cc1b24f8575b0eb61eae066c54a43e115788b1))
+* **mobile:** brand wordmark, unified sheet X, tick-only selection, intensity subpage ([4517108](https://github.com/VoMinhKhoii/Kallo/commit/4517108fcfe2e442323262b610823d66cc7364ae))
+* **mobile:** clean up shrunk label stills, treat restricted camera as unavailable, serialize camera reopen ([47c429f](https://github.com/VoMinhKhoii/Kallo/commit/47c429f181bd36dcd81d0c94965d4e33647225b3))
+* **mobile:** hold 3-digit macro figures inside their columns ([89c2b5b](https://github.com/VoMinhKhoii/Kallo/commit/89c2b5b8d59510ba385422e56eb2adf8b84b2bc2))
+* **mobile:** iOS alert anatomy for confirms; logging composer rides the keyboard ([eb419ba](https://github.com/VoMinhKhoii/Kallo/commit/eb419babf7306a987d59281f14e5687ddb829851))
+* **mobile:** iOS alert anatomy, composer rides the keyboard, unified segmented switch ([8222818](https://github.com/VoMinhKhoii/Kallo/commit/82228185ffe32353135263f5524c13c346a372ab))
+* **mobile:** iOS polish batch — keyboard, scanner, dialogs, dashboard, nav ([fb82607](https://github.com/VoMinhKhoii/Kallo/commit/fb8260733916da11940c1c78ddccfa0f2a11bbeb))
+* **mobile:** keep the keyboard inset out of the empty-feed easing ([196b66a](https://github.com/VoMinhKhoii/Kallo/commit/196b66a44dc637383cb7c3d936b51400888f8667))
+* **mobile:** quick-log sheet rides the iOS keyboard, sends cleanly, offers scan ([ee81176](https://github.com/VoMinhKhoii/Kallo/commit/ee81176481bbbb6bce463d76a48568b7cb3be3da))
+* **mobile:** reset sticky Log UI state when the signed-in user changes ([0e40016](https://github.com/VoMinhKhoii/Kallo/commit/0e4001667c8394fec4ca1368b5718b69fc8ea064))
+* **mobile:** restore date-chip design and tighten meal-card expand timing ([e7ea793](https://github.com/VoMinhKhoii/Kallo/commit/e7ea793e4debc6122abda52691c3654adc92b5fb))
+* **mobile:** restore dial typography and spacing, left weight axis, Kallo wordmark ([c821eac](https://github.com/VoMinhKhoii/Kallo/commit/c821eac2db1e34cd0848b154765981fa7e92d06a))
+* **mobile:** restore shell layout and Log/weight behavior after native-pass regressions ([0fd3e44](https://github.com/VoMinhKhoii/Kallo/commit/0fd3e4458cc3aba1ed9761f978c2437d1dc7624e))
+* **mobile:** scanner opens at 1x, stops re-searching a miss, shares the error card; live label camera ([db7edd7](https://github.com/VoMinhKhoii/Kallo/commit/db7edd75aef97e3d43201d18aa589712031260e1))
+* **mobile:** sheet layering, weight-sheet error path, popover Material + QA polish ([24eb201](https://github.com/VoMinhKhoii/Kallo/commit/24eb201c648ad83821345452df9bf3e99150e80b))
+* **mobile:** steady composer focus ring on dismiss; one segmented switch with iOS-style thumb motion ([ec32039](https://github.com/VoMinhKhoii/Kallo/commit/ec320398df1c815f98a156acc23c4bfb21de54af))
+* **mobile:** tab-preserving log entry, measured nav inset, draft-not-controller, dirty-flag totals ([34cd2c7](https://github.com/VoMinhKhoii/Kallo/commit/34cd2c733c040a6f7d035c1c5996df29c8a8036a))
+* **mobile:** weight log no longer skeletons the home page; single-point chart and heatmap month row fit ([d44abcc](https://github.com/VoMinhKhoii/Kallo/commit/d44abcccf12258ff0e31f0a8fcacf4b92deb96f6))
+* **pipeline:** keep each repeated dish's Call-2 estimate ([310b28b](https://github.com/VoMinhKhoii/Kallo/commit/310b28bb54ef70a742b80c7678bdeaa693af04d1))
+* **rate-limit:** guard query cancel; probe the anon grant boundary without tripping supautils ([38a4196](https://github.com/VoMinhKhoii/Kallo/commit/38a41962bfb298a2dc09057f373147091f2b25fc))
+* **security:** close CodeRabbit findings on the auth surface ([6a8889e](https://github.com/VoMinhKhoii/Kallo/commit/6a8889ea07b7af95332a0e6bf14c174d1c75cdf7))
+
+
+### Performance
+
+* **rate-limit:** batch the events reaper and index its retention predicate ([88b451d](https://github.com/VoMinhKhoii/Kallo/commit/88b451de02c8b29777289894f1516afd08406235))
+
+
+### Documentation
+
+* **mobile:** native-component audit, dialog and header docs ([2edac34](https://github.com/VoMinhKhoii/Kallo/commit/2edac34951016a3462a6b04b723d4a2b53f85fec))
+* record the audit's deferred structural follow-ups (DEV-121) ([58e76a6](https://github.com/VoMinhKhoii/Kallo/commit/58e76a64d580da93db82ae3e654d76ca6874f3a9))
+
 ## [1.13.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.12.0...v1.13.0) (2026-08-30)
 
 
