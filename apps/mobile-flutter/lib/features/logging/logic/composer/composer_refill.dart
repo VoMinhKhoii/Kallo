@@ -42,10 +42,15 @@ Future<void> _refill(
   required MentionTextEditingController composer,
   required MealInputController input,
 }) async {
-  final text = ref.read(composerRefillProvider)?.trim() ?? '';
+  final text = ref.read(composerRefillProvider) ?? '';
   // Emptied before anything else can fail, so a slot can never stay stuck.
   ref.read(composerRefillProvider.notifier).state = null;
-  if (text.isEmpty) return;
+  // Trimmed for the question "is there anything to put in the field?", never
+  // on the way in: the field gets the message as it was sent. The live turn's
+  // footer hands the bubble its raw input untrimmed and Copy puts that same
+  // string on the clipboard, so trimming here would have made the two actions
+  // disagree about where the message ends.
+  if (text.trim().isEmpty) return;
 
   // Captured with its picks: an Undo has to give back the relog references
   // inside the displaced draft, not just its words. (The message coming IN

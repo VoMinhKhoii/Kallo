@@ -113,6 +113,34 @@ void main() {
     expect(container.read(composerRefillProvider), isNull);
   });
 
+  testWidgets('the message is refilled exactly as it was sent', (tester) async {
+    final container = await pumpFeed(tester);
+
+    // The live turn's footer hands the bubble its raw input untrimmed
+    // (`feed_footer.dart`), and Copy puts that same string on the clipboard.
+    // Edit must not quietly disagree with Copy about where the message starts
+    // and ends — the trim belongs to the "is there anything here?" question,
+    // not to what lands in the field.
+    await edit(tester, container, '  phở bò tái nạm\n');
+
+    expect(composerText(tester), '  phở bò tái nạm\n');
+  });
+
+  testWidgets('a message that is only whitespace refills nothing', (
+    tester,
+  ) async {
+    final container = await pumpFeed(tester);
+    await tester.enterText(find.byType(TextField), 'cơm tấm');
+    await tester.pumpAndSettle();
+
+    await edit(tester, container, '   \n  ');
+
+    // Nothing to put in the field, so the draft is left alone rather than
+    // displaced by blanks.
+    expect(composerText(tester), 'cơm tấm');
+    expect(find.text('Draft replaced'), findsNothing);
+  });
+
   testWidgets('an empty composer is filled without a word about it', (
     tester,
   ) async {
