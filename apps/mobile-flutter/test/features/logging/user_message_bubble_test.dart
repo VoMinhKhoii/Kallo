@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/theme/kallo_typography.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
@@ -205,6 +207,55 @@ void main() {
       // the user typed — this is the path back to re-analysing a mis-parsed
       // meal without retyping it.
       expect(written, [sent]);
+    });
+
+    testWidgets('the lifted bubble keeps its own type, not the fallback', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+
+      await holdBubble(tester);
+
+      // The menu re-renders the bubble in the root overlay and its own route,
+      // both of which sit ABOVE every Material in the app. `MaterialApp`
+      // installs Flutter's fallback DefaultTextStyle up there — the one whose
+      // debugLabel reads "consider putting your text in a Material" — and it
+      // carries a yellow double underline. `dashBody` merges onto it
+      // (TextStyle.inherit defaults to true) and overrides colour, size and
+      // family but never `decoration`, so the underline survives and paints
+      // under the lifted message. `TopToastPill` documents the same trap.
+      final lifted = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .where((r) => r.text.toPlainText() == sent);
+      expect(lifted, isNotEmpty);
+      for (final preview in lifted) {
+        final style = preview.text.style!;
+        expect(style.decoration ?? TextDecoration.none, TextDecoration.none);
+        expect(style.fontFamily, KalloTextStyles.sansFamily);
+      }
+    });
+
+    testWidgets('the copy action wears a glyph the app actually ships', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+
+      await holdBubble(tester);
+
+      final icon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byType(CupertinoContextMenuAction),
+          matching: find.byType(Icon),
+        ),
+      );
+      // `cupertino_icons` is not a dependency of this app, so a CupertinoIcons
+      // glyph has no font behind it and paints as a tofu box on device.
+      // Lucide is the one icon font the app bundles, and the only set
+      // AGENTS.md allows — at the 300 (1.5) stroke every other glyph uses.
+      expect(icon.icon?.fontPackage, 'lucide_icons_flutter');
+      expect(icon.icon, LucideIcons.copy300);
     });
 
     testWidgets('dismissing the menu copies nothing', (tester) async {
