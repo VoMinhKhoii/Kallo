@@ -306,6 +306,75 @@ void main() {
       expect(glyphs, [LucideIcons.copy300, LucideIcons.pencil300]);
     });
 
+    /// Every copy of the bubble on screen: the one in the page, the decoy the
+    /// lift floats in the overlay, and the preview inside the menu's route.
+    /// They live in three different subtrees, so they are found by the one
+    /// thing they share — the beige wash nothing else in the app wears.
+    Finder bubbleBoxes() => find.byWidgetPredicate(
+      (w) =>
+          w is Container &&
+          (w.decoration as BoxDecoration?)?.color ==
+              KalloColors.btnPrimarySoft,
+    );
+
+    testWidgets('the lifted bubble keeps the corner that makes it sent', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+
+      await holdBubble(tester);
+
+      // `CupertinoContextMenu`'s default preview wraps the child in a
+      // ClipRSuperellipse at a flat 12. That is squarer than our three round
+      // corners, so it takes nothing from them — but it is ROUNDER than the
+      // tightened 4, so it softens away the one corner that makes the bubble
+      // read as a sent message, for as long as the menu is open.
+      expect(bubbleBoxes(), findsWidgets);
+      expect(
+        find.ancestor(
+          of: bubbleBoxes(),
+          matching: find.byType(ClipRSuperellipse),
+        ),
+        findsNothing,
+      );
+      for (final box in tester.widgetList<Container>(bubbleBoxes())) {
+        final radius = (box.decoration! as BoxDecoration).borderRadius!
+            as BorderRadius;
+        expect(radius.bottomRight.x, 4);
+      }
+    });
+
+    testWidgets('a wrapped message lifts as itself, not as one long line', (
+      tester,
+    ) async {
+      const long =
+          'hai bát phở bò tái nạm gầu, một đĩa rau thơm, một cốc trà đá và '
+          'một bát chè đậu xanh tráng miệng';
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrapLocalized(long));
+      await tester.pumpAndSettle();
+
+      final resting = tester.getRect(bubbleBoxes());
+      final restingShape = resting.width / resting.height;
+
+      await holdBubble(tester);
+
+      // The menu lays its copies out somewhere else entirely: the lift in a
+      // tight box, the opened preview in a loose one as wide as the SCREEN.
+      // A bubble takes its width from the row it sits in, so left to those
+      // constraints this three-line meal re-flowed into a single 760pt line
+      // and was then squeezed back down to fit — the lifted copy was a
+      // different SHAPE from the one the user was looking at.
+      final copies = tester.widgetList<Container>(bubbleBoxes()).length;
+      expect(copies, greaterThan(1));
+      for (var i = 0; i < copies; i++) {
+        final rect = tester.getRect(bubbleBoxes().at(i));
+        expect(rect.width / rect.height, closeTo(restingShape, 0.01));
+      }
+    });
+
     testWidgets('dismissing the menu copies nothing', (tester) async {
       final written = interceptClipboard(tester);
       await tester.pumpWidget(_wrapLocalized(sent));
