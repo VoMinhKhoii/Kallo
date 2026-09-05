@@ -51,15 +51,14 @@ class PaywallTrialCountdown extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.clock300, size: 15, color: KalloColors.accentDark),
+          const Icon(
+            LucideIcons.clock300,
+            size: KalloIcons.tertiary,
+            color: KalloColors.accentDark,
+          ),
           const SizedBox(width: KalloSpacing.sp2),
           Flexible(
-            child: Text(
-              label,
-              style: dashMeta(
-                color: KalloColors.text,
-              ).copyWith(fontWeight: FontWeight.w500),
-            ),
+            child: Text(label, style: dashMeta(color: KalloColors.text)),
           ),
         ],
       ),

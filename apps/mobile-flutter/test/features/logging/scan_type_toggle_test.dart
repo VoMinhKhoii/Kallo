@@ -165,7 +165,7 @@ void main() {
     }
   }
 
-  testWidgets('draws the shared primitive on a rounded-rectangle track', (
+  testWidgets('draws the shared primitive on a pill track', (
     tester,
   ) async {
     await pumpToggle(
@@ -176,8 +176,9 @@ void main() {
     );
 
     expect(find.byType(SegmentedStrip), findsOneWidget);
-    // No pill anywhere: the toggle used to be a capsule, and the shape is the
-    // whole point of routing it through the primitive.
+    // The capsule comes from the primitive's own radius, not a StadiumBorder
+    // of the toggle's own: the shape is the whole point of routing it through
+    // the primitive.
     expect(find.byType(StadiumBorder), findsNothing);
 
     BorderRadius radiusOf(Finder finder) {
@@ -194,9 +195,9 @@ void main() {
           )
           .first,
     );
-    expect(track, BorderRadius.circular(KalloRadii.buttonXl));
-    // 12 is a rounded rectangle; 18 (half the 36pt track) would be the pill.
-    expect(track.topLeft.x, lessThan(SegmentedStrip.height / 2));
+    expect(track, BorderRadius.circular(KalloRadii.pill));
+    // At or past half the 36pt track the corners resolve to a full pill.
+    expect(track.topLeft.x, greaterThanOrEqualTo(SegmentedStrip.height / 2));
 
     final thumb =
         tester
@@ -210,7 +211,7 @@ void main() {
             as BoxDecoration;
     expect(
       thumb.borderRadius,
-      const BorderRadius.all(Radius.circular(KalloRadii.md)),
+      const BorderRadius.all(Radius.circular(KalloRadii.pill)),
     );
   });
 }

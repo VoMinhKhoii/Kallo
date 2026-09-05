@@ -8,6 +8,7 @@ import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
 import 'confirm_email_view.dart';
 import 'email_auth_form.dart';
+import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
 
 /// Which face of the auth surface is showing.
@@ -22,7 +23,13 @@ enum _AuthMode { welcome, email }
 /// successful sign-up cross-fades again to a real "Check your email" state with
 /// a resend-cooldown, instead of a SnackBar that vanishes before it's read.
 class AuthPage extends ConsumerStatefulWidget {
-  const AuthPage({super.key});
+  const AuthPage({super.key, this.compact = false});
+
+  /// Presented under someone else's chrome (`/save-plan`): the welcome face is
+  /// the bare [AuthOptions] stack, bottom-anchored and on a tighter vertical
+  /// inset, so the three options sit under the host's title instead of under a
+  /// second wordmark.
+  final bool compact;
 
   @override
   ConsumerState<AuthPage> createState() => _AuthPageState();
@@ -84,7 +91,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             }),
       );
     } else {
-      face = WelcomeView(
+      // One options stack, two hosts: on its own screen it wears the brand
+      // block, as a guest under someone else's chrome it is the whole face.
+      final options = AuthOptions(
         busy: state.busy,
         googleBusy: state.googleBusy,
         onApple: _controller.signInWithApple,
@@ -95,6 +104,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               _mode = _AuthMode.email;
             }),
       );
+      face = widget.compact ? options : WelcomeView(options: options);
     }
 
     // Each face is a full-screen, opaque page so switching reads as an
@@ -104,15 +114,22 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       key: currentKey,
       color: KalloColors.surface,
       child: SafeArea(
-        child: Center(
+        child: Align(
+          // Compact is a GUEST on someone else's screen (`/save-plan`), whose
+          // title sits above it: centring the options in the leftover space
+          // floats them in the middle of nothing. Anchored to the bottom, the
+          // stack reads as the screen's action, the way the canvas has it.
+          alignment:
+              widget.compact ? Alignment.bottomCenter : Alignment.center,
           child: SingleChildScrollView(
             // 24 side inset — auth's documented exception to the app's 12pt
             // page rhythm (native pass, 2026-08-31). Nothing here is a card on
             // a canvas; it is a single centred column, and 12 let a 50pt pill
             // run almost edge to edge.
-            padding: const EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: kAuthInset,
-              vertical: KalloSpacing.sp8,
+              vertical:
+                  widget.compact ? KalloSpacing.sp3 : KalloSpacing.sp8,
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),

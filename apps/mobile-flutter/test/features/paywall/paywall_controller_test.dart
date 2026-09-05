@@ -158,6 +158,8 @@ void main() {
       await container.pump();
       await container.pump();
       await container.pump();
+      // Four: offerings, then the trial-eligibility call behind them.
+      await container.pump();
 
       expect(
         container.read(paywallControllerProvider).phase,
@@ -207,6 +209,8 @@ void main() {
     addTearDown(subscription.close);
     await container.pump();
     await container.pump();
+    await container.pump();
+    // Four: offerings, then the trial-eligibility call behind them.
     await container.pump();
 
     expect(container.read(paywallControllerProvider).packages, hasLength(1));
