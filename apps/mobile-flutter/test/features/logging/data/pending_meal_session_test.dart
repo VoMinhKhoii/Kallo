@@ -9,7 +9,8 @@ import 'package:kallo_mobile/models/logging/cheat.dart';
 ///
 /// `pendingMealProvider` is written by the dashboard's quick-log sheet and read
 /// by the logging feed a navigation later, so it cannot be `autoDispose` like
-/// every other user-scoped provider. That makes it the one piece of
+/// every other user-scoped provider — and `composerRefillProvider`, the Edit
+/// action's slot, is non-autoDispose alongside it. That makes them the
 /// user-content-bearing state that would otherwise survive a sign-out: a meal
 /// parked but never claimed — which happens when the router bounces the
 /// navigation on an expired session — would be claimed by the NEXT account to
@@ -38,6 +39,26 @@ void main() {
         isNull,
         reason: "user A's typed meal must not be readable after they leave",
       );
+    });
+
+    test('signing out drops a message parked for the composer', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      // Edit parks a sent message on its way back into the composer. It is
+      // normally claimed in the same frame, but it is the same shape of
+      // non-autoDispose, user-written slot as the one above — so it has to
+      // leave with the account for the same reason.
+      container.read(composerRefillProvider.notifier).state =
+          'com tam suon bi, extra rice';
+
+      resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: null,
+      );
+
+      expect(container.read(composerRefillProvider), isNull);
     });
 
     test('switching accounts resets mode and intensity to their defaults', () {

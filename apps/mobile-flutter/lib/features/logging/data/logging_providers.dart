@@ -161,6 +161,22 @@ Future<void> stageCheatRepeat(
 /// it, so a rebuild, a tab switch back or a hot reload cannot re-fire it.
 final pendingMealProvider = StateProvider<String?>((ref) => null);
 
+/// A message the user asked to EDIT, parked on its way back into the composer.
+///
+/// The sibling of [pendingMealProvider], and deliberately a separate slot
+/// because the two mean opposite things by "here is some meal text": parking a
+/// pending meal RUNS it, while parking a refill only puts it in the field for
+/// the user to change and send themselves. Collapsing them would make
+/// long-pressing a message re-analyse it on the spot — the one thing the Edit
+/// action exists to avoid.
+///
+/// Written by [UserMessageBubble]'s long-press menu, which sits arbitrarily
+/// deep in the card list and in the live turn's footer; a slot rather than a
+/// drilled callback for the same reason [pendingMealProvider] is one. Exactly
+/// one consumer: [FeedArea], which empties it the instant it claims it, so a
+/// rebuild cannot overwrite what the user has since typed.
+final composerRefillProvider = StateProvider<String?>((ref) => null);
+
 /// The persistent composer mode — the pill on the input bar.
 ///
 /// Session state rather than a field on [FeedArea] because a meal can now be
@@ -187,7 +203,7 @@ final cheatIntensityProvider = StateProvider<CheatIntensity>(
 
 /// Drops the composer state belonging to an account that is leaving.
 ///
-/// The three providers above are the only user-content-bearing state in the
+/// The four providers above are the only user-content-bearing state in the
 /// app that is NOT `autoDispose` — they have to survive a navigation, because
 /// one surface writes them and another reads them. That also means they
 /// survive a sign-out unless something clears them, which would hand user A's
@@ -207,6 +223,7 @@ bool resetComposerStateForAccountChange(
   // leave a half-typed meal exactly where the user left it.
   if (previousUserId == nextUserId) return false;
   ref.invalidate(pendingMealProvider);
+  ref.invalidate(composerRefillProvider);
   ref.invalidate(mealLogModeProvider);
   ref.invalidate(cheatIntensityProvider);
   return true;
