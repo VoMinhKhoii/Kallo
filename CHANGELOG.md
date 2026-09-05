@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.15.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.14.0...v1.15.0) (2026-09-05)
+
+
+### Features
+
+* **brand:** add the Koboyo surface-state illustration cast ([b9725fb](https://github.com/VoMinhKhoii/Kallo/commit/b9725fb944bcd660bed0305227677154ecc63e6c))
+* **mobile:** add KalloSurfaceState and the illustration assets ([0634263](https://github.com/VoMinhKhoii/Kallo/commit/0634263b9cf061feed9fd793bd16b717e2272687))
+* **mobile:** compose every empty and error surface from KalloSurfaceState ([6103e46](https://github.com/VoMinhKhoii/Kallo/commit/6103e463475a5bb2e7842e8d8a6d80b8faccc509))
+* **mobile:** finish the sent-message long-press menu and add Edit ([3843ead](https://github.com/VoMinhKhoii/Kallo/commit/3843ead20c30a7ff501f47ae08f13987b114babf))
+* **mobile:** put a sent message back in the composer with Edit ([9dae375](https://github.com/VoMinhKhoii/Kallo/commit/9dae37503fc516ce5ad0122dd1d1d5b0461f8b48))
+* **states:** hand-drawn surface states on web and mobile ([4d2f79f](https://github.com/VoMinhKhoii/Kallo/commit/4d2f79f3331e84dc9068260ac6ed96c8b70f421f))
+* **states:** ink action button and one-sentence copy on every surface state ([71a7045](https://github.com/VoMinhKhoii/Kallo/commit/71a70454aec9a039cc98ad16b42b98ae1da13d62))
+* **web:** add the shared SurfaceState component ([532c56d](https://github.com/VoMinhKhoii/Kallo/commit/532c56d07d307ece0bb01ba13af36a7a20b03107))
+* **web:** compose every empty and error surface from SurfaceState ([c70a70a](https://github.com/VoMinhKhoii/Kallo/commit/c70a70a56987edad6c55f0e9e64e9b864c0fa66b))
+* **web:** dogfood the surface states on the design-system page ([4ac9fe7](https://github.com/VoMinhKhoii/Kallo/commit/4ac9fe78c3d45c598dd80218f0f31b9a3652a88a))
+
+
+### Bug Fixes
+
+* **mobile:** lift the message bubble as itself in the long-press menu ([168667e](https://github.com/VoMinhKhoii/Kallo/commit/168667e0b2645f299c3805ec6cca164bb8e5e2d9))
+* **mobile:** make the long-press menu render as a finished iOS menu ([89afe2e](https://github.com/VoMinhKhoii/Kallo/commit/89afe2e67e46188903195d632caf2079d831257c))
+* **mobile:** refill the composer with the message as it was sent ([fcbc772](https://github.com/VoMinhKhoii/Kallo/commit/fcbc77215fe98362902ac8c4d1e2471fb6af76e4))
+* **mobile:** review follow-ups for the surface states ([b6ca094](https://github.com/VoMinhKhoii/Kallo/commit/b6ca0946b8827fdfe819d826e29da37913ecb438))
+* **web:** review follow-ups for the surface states ([6bafc9b](https://github.com/VoMinhKhoii/Kallo/commit/6bafc9b9e20c648fba56d87957e3593053f35217))
+* **web:** route every unknown locale path to the branded 404 ([fa03a58](https://github.com/VoMinhKhoii/Kallo/commit/fa03a585cd0436d4f3d7578836c219b5c6c2392a))
+
+
+### Documentation
+
+* sanction the Koboyo surface-state illustrations ([26d8f26](https://github.com/VoMinhKhoii/Kallo/commit/26d8f2694e2eae37ff8f189e26041fb26990f4fd))
+
 ## [1.14.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.13.0...v1.14.0) (2026-09-04)
 
 
