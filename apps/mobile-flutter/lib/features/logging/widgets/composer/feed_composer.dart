@@ -1,9 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/relog.dart' show RelogCandidate;
 import '../../../../theme/calm_tokens.dart';
+import '../../logic/composer/composer_refill.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
@@ -17,7 +19,12 @@ import '../relog/relog_picker_section.dart';
 
 /// Everything inside the floating dock: the under-logged notice, the inline
 /// confirm error, cheat mode's per-meal controls, and the meal input itself.
-class FeedComposer extends StatelessWidget {
+///
+/// Also where a message sent back by the Edit action lands: the dock holds
+/// both controllers it takes to refill the field, and it is on screen for as
+/// long as the bubbles that can write to it are. [FeedArea] never sees it go
+/// past — see [listenForComposerRefill].
+class FeedComposer extends ConsumerWidget {
   const FeedComposer({
     super.key,
     required this.view,
@@ -90,7 +97,13 @@ class FeedComposer extends StatelessWidget {
   final VoidCallback onDismissRelog;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    listenForComposerRefill(
+      ref,
+      context: context,
+      composer: textController,
+      input: controller,
+    );
     // Nothing here is derived from the controller's own state: a pick lives as
     // text INSIDE the field, so the value, its tint and the send button's arming
     // all rebuild from `MealInput`'s own listener. The dock stays out of the

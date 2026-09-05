@@ -1448,7 +1448,8 @@
     },
     "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
     "copyMessage": "Sao chép",
-    "messageCopied": "Đã sao chép"
+    "messageCopied": "Đã sao chép",
+    "draftReplaced": "Đã thay bản nháp"
   },
   "groups": {
     "page": {

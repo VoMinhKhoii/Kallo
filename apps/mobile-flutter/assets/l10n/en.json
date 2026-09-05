@@ -1451,7 +1451,8 @@
     },
     "pendingDiscarded": "Unsaved meal discarded",
     "copyMessage": "Copy",
-    "messageCopied": "Copied"
+    "messageCopied": "Copied",
+    "draftReplaced": "Draft replaced"
   },
   "groups": {
     "page": {

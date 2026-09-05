@@ -72,6 +72,15 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
   re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
   web's mirror-element overlay.
+  Any sent message can be **held for Copy / Edit** (`widgets/turn/user_message_bubble.dart`,
+  an iOS `CupertinoContextMenu`). Edit is the path back to your own words: it parks the
+  message in `composerRefillProvider` and the dock refills the field from there
+  (`logic/composer/composer_refill.dart`) — deliberately NOT a re-run, so the sentence can
+  be fixed first. A draft it displaces comes back from the toast's Undo. The lifted
+  preview is hand-built (`widgets/turn/sent_bubble.dart`, via
+  `CupertinoContextMenu.builder`): the default one clips the child to a flat 12 radius and
+  re-lays it out against the screen, which cost the bubble its tightened corner and
+  re-flowed a wrapped meal into one long line.
   Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
   resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
   sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
