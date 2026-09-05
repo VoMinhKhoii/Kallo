@@ -10,7 +10,7 @@ import 'onboarding_wizard.dart';
 /// Presents the onboarding wizard as a dismissible modal — the sidebar
 /// "Continue" / resume entry point.
 ///
-/// This is the floating-card presentation: a translucent scrim, an r28 cream
+/// This is the floating-card presentation: a translucent scrim, an r28 canvas
 /// card, and the framer-motion entrance (opacity 0→1, scale 0.95→1, y 10→0)
 /// that used to live in `OnboardingScreen`. The FORCED first-run uses the full
 /// page ([OnboardingScreen]) instead. Finishing routes to the `/welcome` setup
@@ -37,11 +37,11 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          // Material provides the cream surface AND the Material ancestor the
-          // step-2 TextFields need (the full page gets this from its Scaffold;
+          // Material provides the canvas AND the Material ancestor the step-3
+          // TextFields need (the full page gets this from its Scaffold;
           // showGeneralDialog has no Scaffold, so supply one here).
           child: Material(
-            color: KalloColors.cream,
+            color: KalloColors.surface,
             child: OnboardingWizard(
               onComplete: () {
                 Navigator.of(ctx).pop();

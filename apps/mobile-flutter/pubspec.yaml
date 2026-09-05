@@ -74,6 +74,13 @@ flutter:
     # start instead of falling back while fetching. Runtime fetching is disabled
     # in main.dart.
     - assets/google_fonts/
+    # The three bun mascot frames (base / blink / wide), transparent WebP at
+    # 360x332. The guide band on every onboarding step animates between them,
+    # so they are bundled rather than fetched.
+    - assets/mascot/
+    # The Log-screen preview shown on the signed-out start screen (WebP, 390x776).
+    # Bundled so the very first frame of the app has no network dependency.
+    - assets/onboarding/
   # Be Vietnam Pro is the UI sans (replaces DM Sans, whose bundled subset lacked
   # Vietnamese diacritics). Declared as a native family — referenced directly by
   # KalloTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.

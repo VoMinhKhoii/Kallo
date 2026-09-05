@@ -51,6 +51,21 @@ Stream<Session?> buildSessionStream({
   return controller.stream;
 }
 
+/// The gotrue auth-event stream, behind a provider so the router (and its
+/// tests) can reach it without touching [SupabaseService] directly. Production
+/// value is exactly what [sessionProvider] subscribes to.
+final authEventsProvider = Provider<Stream<AuthState>>(
+  (ref) => SupabaseService.client.auth.onAuthStateChange,
+);
+
+/// Reads the AUTHORITATIVE session straight off the client — the value gotrue
+/// updates synchronously, before the auth event fires. The router's redirect
+/// reads this rather than [sessionProvider] (see `router.dart` for why), and
+/// a widget test overrides it to fake a session without a live client.
+final currentSessionReaderProvider = Provider<Session? Function()>(
+  (ref) => () => SupabaseService.client.auth.currentSession,
+);
+
 /// Streams the current Supabase auth session.
 ///
 /// Ported from the RN `SessionProvider` (`lib/session.tsx`): it seeds with the
@@ -59,10 +74,9 @@ Stream<Session?> buildSessionStream({
 /// consumers had — `AsyncLoading` ⇆ `loading`, `AsyncData(session)` ⇆ the
 /// resolved value (which may be `null` when signed out).
 final sessionProvider = StreamProvider<Session?>((ref) {
-  final auth = SupabaseService.client.auth;
   return buildSessionStream(
-    events: auth.onAuthStateChange,
-    currentSession: () => auth.currentSession,
+    events: ref.watch(authEventsProvider),
+    currentSession: ref.watch(currentSessionReaderProvider),
   );
 });
 

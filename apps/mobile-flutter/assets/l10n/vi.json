@@ -617,22 +617,20 @@
     },
     "origin": {
       "title": "Bạn đến từ đâu?",
-      "subtitle": "Quê quán giúp AI hiểu văn hóa ẩm thực bạn gắn bó. Nơi ở hiện tại giúp AI gợi ý nguyên liệu dễ tìm quanh bạn.",
       "countryOfOrigin": "Quê quán",
-      "countryOfOriginHint": "Nơi bạn lớn lên hoặc gắn bó về ẩm thực",
       "countryOfResidence": "Nơi ở hiện tại",
-      "countryOfResidenceHint": "Nơi bạn đang sống — ảnh hưởng đến nguyên liệu có sẵn",
       "selectCountry": "Chọn quốc gia…",
       "searchCountry": "Tìm quốc gia…",
       "noCountries": "Không tìm thấy quốc gia",
-      "fallbackNote": "Bỏ trống nếu muốn. AI sẽ chỉ dựa vào ảnh và mô tả bữa ăn của bạn.",
-      "preferredLanguage": "Ngôn ngữ ưa thích",
-      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng",
-      "commonCountries": "Phổ biến"
+      "stepTitle": "Bạn nấu ăn ở đâu?",
+      "searchHint": "Quốc gia hoặc khu vực",
+      "allCountries": "Tất cả quốc gia",
+      "livingIn": "Đang sống tại {country} · từ điện thoại của bạn",
+      "livingInChanged": "Đang sống tại {country}",
+      "change": "Đổi"
     },
     "bodyMetrics": {
       "title": "Chỉ số cơ thể",
-      "subtitle": "Tất cả đều không bắt buộc — bạn điền càng nhiều, mục tiêu calo và dinh dưỡng hằng ngày càng sát với bạn.",
       "biologicalSex": "Giới tính sinh học",
       "sexPlaceholder": "Chọn…",
       "male": "Nam",
@@ -643,16 +641,15 @@
       "heightUnit": "cm",
       "age": "Tuổi",
       "activityLevel": "Mức hoạt động",
-      "sedentary": "Ít vận động (Công việc văn phòng, ít tập thể dục)",
-      "light": "Hoạt động nhẹ (Tập nhẹ 1-3 ngày/tuần)",
-      "moderate": "Hoạt động vừa (Tập vừa 3-5 ngày/tuần)",
-      "veryActive": "Hoạt động nhiều (Tập nặng 6-7 ngày/tuần)",
+      "sedentary": "Ít vận động",
+      "light": "Hoạt động nhẹ",
+      "moderate": "Hoạt động vừa",
+      "veryActive": "Hoạt động nhiều",
       "goal": "Mục tiêu",
       "cutting": "Giảm cân",
       "maintaining": "Duy trì",
       "bulking": "Tăng cân",
       "aggression": "Mức độ",
-      "aggressionHint": "Tốc độ giảm/tăng cân (kg/tuần)",
       "aggressionLabel": "Nhịp độ",
       "aggressionDeficit": "thâm hụt",
       "aggressionSurplus": "thặng dư",
@@ -665,7 +662,6 @@
       "lowerCarbDescription": "Giàu đạm (40/40/20)",
       "higherCarb": "Nhiều carb",
       "higherCarbDescription": "Cho ngày vận động (30/20/50)",
-      "tdee": "TDEE ước tính",
       "basedOnTdee": "Dựa trên TDEE",
       "perDay": "kcal/ngày",
       "maintenance": "để duy trì",
@@ -673,15 +669,18 @@
       "protein": "Đạm",
       "carbs": "Carb",
       "fat": "Chất béo",
-      "macroSummary": "Mục tiêu hàng ngày",
       "kcal": "kcal",
       "grams": "g",
       "unlockTitle": "Điền thông tin cơ bản để mở khóa mục tiêu.",
-      "unlockHint": "Khi đã điền giới tính, cân nặng, chiều cao, tuổi và mức vận động, đây sẽ thành mục tiêu calo và bảng macro của bạn."
+      "unlockHint": "Khi đã điền giới tính, cân nặng, chiều cao, tuổi và mức vận động, đây sẽ thành mục tiêu calo và bảng macro của bạn.",
+      "sedentaryHint": "Công việc văn phòng, hầu như không tập",
+      "lightHint": "Tập nhẹ 1–3 ngày mỗi tuần",
+      "moderateHint": "Tập vừa 3–5 ngày mỗi tuần",
+      "veryActiveHint": "Tập nặng 6–7 ngày mỗi tuần",
+      "ageUnit": "tuổi"
     },
     "cooking": {
       "title": "Thói quen nấu ăn",
-      "subtitle": "Giúp AI hiểu cách bạn thường nấu để ước tính calo chính xác hơn.",
       "oilUsage": "Lượng dầu mỡ",
       "oilMinimal": "Ít",
       "oilMinimalHint": "Vị khô, thanh. Món ăn trông ráo.",
@@ -689,7 +688,6 @@
       "oilNormalHint": "Có lớp áo mỏng. Món ăn hơi bóng.",
       "oilHeavy": "Nhiều",
       "oilHeavyHint": "Nhìn thấy rõ dầu mỡ. Nước sốt hơi đọng.",
-      "oilHint": "Lượng dầu/mỡ bạn thường dùng khi nấu",
       "ricePortion": "Phần cơm mặc định",
       "riceSmall": "Ít",
       "riceSmallHint": "~1 chén nhỏ",
@@ -697,12 +695,10 @@
       "riceMediumHint": "~1–1,5 chén",
       "riceLarge": "Nhiều",
       "riceLargeHint": "~2 chén trở lên",
-      "riceHint": "Lượng cơm bạn thường ăn mỗi bữa",
       "sugar": "Đường trong món kho",
       "sugarLow": "Ít",
       "sugarMedium": "Vừa",
       "sugarHigh": "Nhiều",
-      "sugarHint": "Lượng đường bạn dùng để kho/rim",
       "proteinPortion": "Phần thịt/cá mặc định",
       "proteinSmall": "Ít",
       "proteinSmallHint": "Nhỏ hơn lòng bàn tay, ví dụ ~2-3 quả trứng",
@@ -710,7 +706,6 @@
       "proteinMediumHint": "Cỡ khoảng lòng bàn tay",
       "proteinLarge": "Nhiều",
       "proteinLargeHint": "Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn",
-      "proteinHint": "Lượng thịt/cá bạn thường ăn mỗi bữa",
       "broth": "Uống nước canh",
       "brothLeave": "Để lại",
       "brothLeaveHint": "Ăn cái, bỏ lại phần lớn nước",
@@ -718,7 +713,52 @@
       "brothSomeHint": "Uống khoảng nửa bát",
       "brothFinish": "Uống hết",
       "brothFinishHint": "Uống hết hoặc gần hết nước",
-      "brothHint": "Lượng nước canh/lẩu bạn thường uống"
+      "stepLabels": {
+        "oil": "Dầu mỡ",
+        "rice": "Cơm, bún hoặc bánh mì mỗi bữa",
+        "sugar": "Đường trong món kho",
+        "protein": "Đạm mỗi bữa",
+        "broth": "Nước canh"
+      }
+    },
+    "continueLabel": "Tiếp tục",
+    "savePlan": "Lưu kế hoạch của tôi",
+    "fromDevice": "Từ điện thoại của bạn",
+    "guide": {
+      "step1": "Xin chào! Hello! Mình nên nói tiếng nào đây?",
+      "step2": "Bạn hay nấu ăn ở đâu? Mình đoán theo điện thoại của bạn; sửa lại nếu mình đoán sai nhé.",
+      "step3": "Vài con số để mình ước lượng ngày của bạn. Tất cả đều không bắt buộc.",
+      "step4": "Mình đang hướng tới điều gì, và nhanh cỡ nào?",
+      "step5": "Bếp nhà bạn nấu thế nào? Điều này quyết định lượng calo.",
+      "step6": "Đây là ngày của bạn. Chọn một tỉ lệ và nó sẽ cập nhật ngay.",
+      "step7": "Đăng nhập để kế hoạch của bạn đi theo bạn trên mọi thiết bị."
+    },
+    "savePlanTitle": "Lưu kế hoạch của bạn",
+    "start": {
+      "title": "Ghi bữa ăn đúng như cách bạn nói",
+      "cta": "Bắt đầu",
+      "haveAccount": "Tôi đã có tài khoản"
+    },
+    "language": {
+      "title": "Chọn ngôn ngữ của bạn",
+      "vietnamese": "Tiếng Việt",
+      "english": "English",
+      "meta": "Có thể đổi bất cứ lúc nào trong Cài đặt."
+    },
+    "aboutYou": {
+      "title": "Về bạn"
+    },
+    "goal": {
+      "title": "Mục tiêu của bạn",
+      "paceLabel": "Tốc độ",
+      "paceReadout": "{pace} kg mỗi tuần · {kcal} kcal {direction}",
+      "paceDeficit": "thâm hụt",
+      "paceSurplus": "dư thừa",
+      "paceLow": "Nhẹ nhàng",
+      "paceHigh": "Quyết liệt"
+    },
+    "target": {
+      "title": "Mục tiêu mỗi ngày"
     }
   },
   "auth": {
@@ -1841,6 +1881,22 @@
     "packageLifetime": "Trọn đời",
     "legal": "Thanh toán được tính ngay vào tài khoản cửa hàng của bạn. Gói tự động gia hạn trừ khi bạn huỷ ít nhất 24 giờ trước khi kỳ hiện tại kết thúc.",
     "terms": "Điều khoản sử dụng",
-    "privacy": "Chính sách riêng tư"
+    "privacy": "Chính sách riêng tư",
+    "proTitle": "Kallo Pro",
+    "proSubtitle": "Mọi thứ của bản Miễn phí, cộng thêm:",
+    "proFeatureWords": "Ghi bữa ăn bằng lời của bạn, tiếng Việt hay tiếng Anh",
+    "proFeatureMicros": "Phân tích vi chất (7 ngày / 30 ngày / 90 ngày)",
+    "proFeatureTools": "Quét nhãn, ghi lại, chế độ bữa xả, chỉnh sửa trực quan",
+    "proFeatureCircle": "Không giới hạn nhóm và bạn bè trong Circle",
+    "stayFree": "Dùng bản Miễn phí",
+    "planYearly": "Hằng năm",
+    "planSublineMonthly": "Huỷ bất cứ lúc nào",
+    "priceAMonth": "{price} mỗi tháng",
+    "perYearLabel": "mỗi năm",
+    "perMonthLabel": "mỗi tháng",
+    "bestValueSave": "Đáng giá nhất · tiết kiệm {percent}%",
+    "startFreeTrial": "Dùng thử miễn phí",
+    "trialLegalAnnual": "Miễn phí {days} ngày, sau đó {price} / năm kể từ {date}. Huỷ bất cứ lúc nào trong Cài đặt.",
+    "trialLegalMonthly": "Miễn phí {days} ngày, sau đó {price} / tháng kể từ {date}. Huỷ bất cứ lúc nào trong Cài đặt."
   }
 }

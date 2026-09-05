@@ -143,8 +143,11 @@ void _syncSession(
     );
   } else {
     if (hadPriorSession) analytics.reset();
-    // Authenticated-only app: never create an anonymous RevenueCat customer
-    // and never log out to one. The next signed-in UUID is switched directly.
+    // Authenticated-only app. Onboarding now runs BEFORE sign-in (Phase C2),
+    // but it creates no identity of any kind: the answers sit in a local draft
+    // on disk until `/save-plan` produces a session and `/welcome` flushes
+    // them. So there is still never an anonymous RevenueCat customer to create
+    // or log out to — the next signed-in UUID is switched in directly.
   }
 
   resetComposerStateForAccountChange(
