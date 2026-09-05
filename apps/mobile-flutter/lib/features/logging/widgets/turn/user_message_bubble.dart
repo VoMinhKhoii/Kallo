@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../data/logging_providers.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -24,10 +27,19 @@ import '../../../../theme/kallo_theme.dart';
 /// cards, and the umber tier is now toggles and progress fills only. Ink on
 /// #F0EAE0 clears AA at 13:1.
 ///
-/// **Press and hold to copy.** What the user typed is the only copy of it — the
-/// composer clears on send — so a mis-parsed meal previously had to be retyped
-/// from scratch to be re-analysed. Long press is the gesture every chat app
-/// uses for this, and on iOS it is what a hard press resolves to.
+/// **Press and hold for Copy and Edit.** What the user typed is the only copy
+/// of it — the composer clears on send — so a mis-parsed meal previously had to
+/// be retyped from scratch to be re-analysed. Long press is the gesture every
+/// chat app uses for this, and on iOS it is what a hard press resolves to.
+///
+/// Edit is the one that actually answers that: it puts the message back in the
+/// composer, focused, for the user to fix and send again. Copy was standing in
+/// for it — the clipboard was the only way back to your own words — and stays
+/// because pasting them somewhere else is a different job. Edit does NOT
+/// re-run the analysis: the whole point is to change the sentence first.
+/// It goes through [composerRefillProvider] rather than a drilled callback
+/// because this bubble renders in three meal cards and the live turn's footer,
+/// none of which can see the composer's controller.
 ///
 /// The menu is [CupertinoContextMenu], not Material's `showMenu`. `showMenu`
 /// dropped a flat card ON TOP of the bubble with no backdrop, no lift and no
@@ -69,10 +81,17 @@ import '../../../../theme/kallo_theme.dart';
 ///    Lucide is the one icon font bundled here and the only set AGENTS.md
 ///    allows: [LucideIcons.copy300], the same copy glyph Circle's entry
 ///    actions and the invite row already use, at the app-wide 300 stroke.
-class UserMessageBubble extends StatelessWidget {
+class UserMessageBubble extends ConsumerWidget {
   const UserMessageBubble({super.key, required this.text});
 
   final String text;
+
+  /// Park the message for the composer to pick up — the composer applies it
+  /// and says what it displaced ([listenForComposerRefill]).
+  void _edit(WidgetRef ref) {
+    HapticFeedback.selectionClick();
+    ref.read(composerRefillProvider.notifier).state = text;
+  }
 
   Future<void> _copy(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: text));
@@ -82,7 +101,7 @@ class UserMessageBubble extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Align(
       alignment: Alignment.centerRight,
       child: FractionallySizedBox(
@@ -91,9 +110,15 @@ class UserMessageBubble extends StatelessWidget {
         child: Align(
           alignment: Alignment.centerRight,
           child: Semantics(
-            // VoiceOver gets the same action without the gesture: a long press
-            // is invisible to anyone who cannot discover it by holding.
+            // VoiceOver gets the same actions without the gesture: a long
+            // press is invisible to anyone who cannot discover it by holding.
+            // Copy has a standard semantic action; Edit does not, so it goes
+            // through the custom-action list the rotor also reads out.
             onCopy: () => _copy(context),
+            customSemanticsActions: {
+              CustomSemanticsAction(label: 'logging.edit'.tr()): () =>
+                  _edit(ref),
+            },
             child: CupertinoContextMenu(
               // The system route fires its own cue as the preview lifts — a
               // beat earlier, and truer to iOS, than one fired on open.
@@ -108,6 +133,14 @@ class UserMessageBubble extends StatelessWidget {
                     await _copy(context);
                   },
                   child: Text('logging.copyMessage'.tr()),
+                ),
+                CupertinoContextMenuAction(
+                  trailingIcon: LucideIcons.pencil300,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _edit(ref);
+                  },
+                  child: Text('logging.edit'.tr()),
                 ),
               ],
               // Transparent, so the bubble looks identical in the page and

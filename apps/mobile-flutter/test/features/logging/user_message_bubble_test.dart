@@ -2,7 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 import 'package:kallo_mobile/theme/kallo_typography.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -11,14 +13,27 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
-Widget _wrap(String text, {double width = 390}) => MaterialApp(
-  home: Scaffold(
-    body: Center(child: SizedBox(width: width, child: UserMessageBubble(text: text))),
+Widget _wrap(String text, {double width = 390}) => ProviderScope(
+  child: MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: SizedBox(width: width, child: UserMessageBubble(text: text)),
+      ),
+    ),
   ),
 );
 
-/// The bubble's copy path needs real strings and a real Overlay for the menu.
-Widget _wrapLocalized(String text) => EasyLocalization(
+/// The bubble's menu needs real strings, a real Overlay, and a container the
+/// test can read `composerRefillProvider` out of — Edit parks the message
+/// there rather than calling anything back.
+Widget _wrapLocalized(String text, {ProviderContainer? container}) {
+  final app = _localized(text);
+  return container == null
+      ? ProviderScope(child: app)
+      : UncontrolledProviderScope(container: container, child: app);
+}
+
+Widget _localized(String text) => EasyLocalization(
   supportedLocales: const [Locale('en')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
@@ -157,7 +172,10 @@ void main() {
 
     testWidgets('a plain tap does nothing', (tester) async {
       final written = interceptClipboard(tester);
-      await tester.pumpWidget(_wrapLocalized(sent));
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_wrapLocalized(sent, container: container));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(UserMessageBubble));
@@ -165,15 +183,41 @@ void main() {
 
       expect(find.text('Copy'), findsNothing);
       expect(written, isEmpty);
+      expect(container.read(composerRefillProvider), isNull);
     });
 
-    testWidgets('holding it offers Copy', (tester) async {
+    testWidgets('holding it offers Copy and Edit', (tester) async {
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
 
       await holdBubble(tester);
 
       expect(find.text('Copy'), findsOneWidget);
+      // Copy was the workaround for having no way back to your own words;
+      // Edit is the thing it was standing in for.
+      expect(find.text('Edit'), findsOneWidget);
+    });
+
+    testWidgets('choosing Edit parks the message for the composer', (
+      tester,
+    ) async {
+      final written = interceptClipboard(tester);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_wrapLocalized(sent, container: container));
+      await tester.pumpAndSettle();
+
+      await holdBubble(tester);
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+
+      // The bubble cannot see the composer's controller from inside a meal
+      // card, so it parks the words and the dock picks them up.
+      expect(container.read(composerRefillProvider), sent);
+      expect(find.text('Edit'), findsNothing);
+      // Edit is NOT copy-and-paste, and it is not a re-run either.
+      expect(written, isEmpty);
     });
 
     testWidgets('the menu arrives with the iOS backdrop, not a flat card', (
@@ -189,7 +233,7 @@ void main() {
       // difference from the `showMenu` card this replaced — a flat panel
       // dropped on top of the bubble with no backdrop at all.
       expect(find.byType(BackdropFilter), findsWidgets);
-      expect(find.byType(CupertinoContextMenuAction), findsOneWidget);
+      expect(find.byType(CupertinoContextMenuAction), findsNWidgets(2));
     });
 
     testWidgets('choosing Copy puts the message on the clipboard', (
@@ -244,18 +288,22 @@ void main() {
 
       await holdBubble(tester);
 
-      final icon = tester.widget<Icon>(
-        find.descendant(
-          of: find.byType(CupertinoContextMenuAction),
-          matching: find.byType(Icon),
-        ),
-      );
+      final glyphs = tester
+          .widgetList<Icon>(
+            find.descendant(
+              of: find.byType(CupertinoContextMenuAction),
+              matching: find.byType(Icon),
+            ),
+          )
+          .map((i) => i.icon)
+          .toList();
       // `cupertino_icons` is not a dependency of this app, so a CupertinoIcons
       // glyph has no font behind it and paints as a tofu box on device.
       // Lucide is the one icon font the app bundles, and the only set
       // AGENTS.md allows — at the 300 (1.5) stroke every other glyph uses.
-      expect(icon.icon?.fontPackage, 'lucide_icons_flutter');
-      expect(icon.icon, LucideIcons.copy300);
+      expect(glyphs, hasLength(2));
+      expect(glyphs.map((g) => g?.fontPackage), everyElement('lucide_icons_flutter'));
+      expect(glyphs, [LucideIcons.copy300, LucideIcons.pencil300]);
     });
 
     testWidgets('dismissing the menu copies nothing', (tester) async {
