@@ -196,6 +196,26 @@ describe('createApnsSender', () => {
     );
   });
 
+  it('drops the cached provider token when APNs rejects it with 403', async () => {
+    const sender = createApnsSender(CONFIG);
+    const start = Date.now();
+    const now = vi.spyOn(Date, 'now');
+
+    now.mockReturnValue(start);
+    replies.push({ status: 403, body: { reason: 'ExpiredProviderToken' } });
+    await sender.send([message()]);
+    // Still inside the 40-minute window: without invalidation the same
+    // rejected JWT would be re-sent for the rest of it.
+    now.mockReturnValue(start + 5 * 1000);
+    await sender.send([message({ token: 'device-token-2' })]);
+
+    const [first, second] = requests.map((r) => r.headers.authorization);
+    expect(second).not.toBe(first);
+    expect(decodeJwt(second).claims.iat).toBe(
+      Math.floor((start + 5 * 1000) / 1000)
+    );
+  });
+
   it('posts to the sandbox host with every APNs header set', async () => {
     await createApnsSender(CONFIG).send([message()]);
 

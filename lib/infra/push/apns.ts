@@ -41,6 +41,13 @@ const REQUEST_TIMEOUT_MS = 10_000;
 /** apns-collapse-id is capped at 64 bytes by Apple; ours are far shorter. */
 const COLLAPSE_ID_MAX_BYTES = 64;
 
+/** 403 reasons that indict the provider token rather than the device token. */
+const PROVIDER_TOKEN_REASONS = new Set([
+  'ExpiredProviderToken',
+  'InvalidProviderToken',
+  'MissingProviderToken',
+]);
+
 let cachedToken: { jwt: string; keyId: string; issuedAt: number } | null = null;
 let cachedSession: { session: ClientHttp2Session; host: string } | null = null;
 
@@ -118,7 +125,7 @@ function getSession(host: string): ClientHttp2Session {
  * APNS_PRODUCTION disagreed with the build. Deleting a live registration is
  * far worse than retrying a dead one — everything else keeps the row.
  */
-export function classifyApnsFailure(status: number, reason: string): boolean {
+function classifyApnsFailure(status: number, reason: string): boolean {
   if (status === 410 || reason === 'Unregistered') return true;
   return status === 400 && reason === 'DeviceTokenNotForTopic';
 }
@@ -146,7 +153,7 @@ function buildHeaders(
 }
 
 /** The native aps dict — the client reads `alert`, the rest is our data map. */
-export function buildApnsPayload(message: PushMessage): string {
+function buildApnsPayload(message: PushMessage): string {
   return JSON.stringify({
     aps: {
       alert: { title: message.title, body: message.body },
@@ -187,6 +194,12 @@ function sendOne(
         reason = (JSON.parse(body) as { reason?: string }).reason ?? '';
       } catch {
         reason = '';
+      }
+      if (status === 403 && PROVIDER_TOKEN_REASONS.has(reason)) {
+        // The JWT itself was refused (revoked/rotated key, wrong team or key
+        // id, clock skew). Left in the cache it would be re-sent for the rest
+        // of the 40-minute window; dropping it makes the next send re-sign.
+        cachedToken = null;
       }
       if (reason === 'BadDeviceToken') {
         console.error(

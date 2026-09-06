@@ -13,18 +13,16 @@ void main() {
     test('group.added opens the tapped group', () {
       expect(
         pushDestinationFor({
-          'data': {
-            'type': 'group.added',
-            'targetType': 'chat_group',
-            'targetId': 'g-1',
-          },
+          'type': 'group.added',
+          'targetType': 'chat_group',
+          'targetId': 'g-1',
         }),
         const PushDestination(path: '/circle', groupId: 'g-1'),
       );
     });
 
     test('chat.message opens the group, flat APNs payload included', () {
-      // APNs delivers the FCM `data` map as siblings of `aps`, not nested.
+      // The server's fields sit beside `aps` at the top level — the only shape.
       expect(
         pushDestinationFor({
           'aps': {'alert': 'hi'},
@@ -46,9 +44,7 @@ void main() {
         'share.logged',
       ]) {
         expect(
-          pushDestinationFor({
-            'data': {'type': type},
-          }),
+          pushDestinationFor({'type': type}),
           const PushDestination(path: '/circle'),
           reason: type,
         );
@@ -57,25 +53,16 @@ void main() {
 
     test('a group event without a target still lands on circle', () {
       expect(
-        pushDestinationFor({
-          'data': {'type': 'group.added'},
-        }),
+        pushDestinationFor({'type': 'group.added'}),
         const PushDestination(path: '/circle'),
       );
     });
 
     test('unknown, reserved and missing types route nowhere', () {
       expect(pushDestinationFor(const {}), isNull);
+      expect(pushDestinationFor({'type': 'coach.nudge'}), isNull);
       expect(
-        pushDestinationFor({
-          'data': {'type': 'coach.nudge'},
-        }),
-        isNull,
-      );
-      expect(
-        pushDestinationFor({
-          'data': {'type': 'not.a.type', 'targetId': 'g-9'},
-        }),
+        pushDestinationFor({'type': 'not.a.type', 'targetId': 'g-9'}),
         isNull,
       );
       expect(pushDestinationFor({'type': 42}), isNull);
@@ -113,9 +100,7 @@ void main() {
       addTearDown(router.dispose);
       final container = containerWith(router);
 
-      routePushTap(container, {
-        'data': {'type': 'chat.message', 'targetId': 'g-7'},
-      });
+      routePushTap(container, {'type': 'chat.message', 'targetId': 'g-7'});
 
       expect(container.read(circleSelectedViewProvider), 'g-7');
       expect(locationOf(router), '/circle');
@@ -126,9 +111,7 @@ void main() {
       addTearDown(router.dispose);
       final container = containerWith(router);
 
-      routePushTap(container, {
-        'data': {'type': 'share.reaction'},
-      });
+      routePushTap(container, {'type': 'share.reaction'});
 
       expect(container.read(circleSelectedViewProvider), isNull);
       expect(locationOf(router), '/circle');
@@ -139,9 +122,7 @@ void main() {
       addTearDown(router.dispose);
       final container = containerWith(router);
 
-      routePushTap(container, {
-        'data': {'type': 'streak.milestone'},
-      });
+      routePushTap(container, {'type': 'streak.milestone'});
 
       expect(locationOf(router), '/dashboard');
     });

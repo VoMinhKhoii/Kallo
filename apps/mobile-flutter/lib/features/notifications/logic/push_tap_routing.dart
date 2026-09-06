@@ -49,11 +49,11 @@ class PushDestination {
 /// Resolve an APNs payload to a destination, or null when there is nothing
 /// sensible to open.
 ///
-/// The `data` map is flat strings. It may arrive nested under `data` (the FCM
-/// message shape) or flattened alongside `aps` (how APNs delivers it), so both
-/// are accepted.
+/// The server spreads its flat string fields (`type`, `targetType`,
+/// `targetId`) alongside `aps` at the top level of the APNs payload — that is
+/// the one contract (see `lib/infra/push/apns.ts`), so `payload` IS the data.
 PushDestination? pushDestinationFor(PushPayload payload) {
-  final data = _dataOf(payload);
+  final data = payload;
   final type = _stringAt(data, 'type');
   if (type == null || !kPushNotificationTypes.contains(type)) return null;
 
@@ -80,14 +80,6 @@ void routePushTap(ProviderContainer container, PushPayload payload) {
     container.read(circleSelectedViewProvider.notifier).state = groupId;
   }
   container.read(routerProvider).go(destination.path);
-}
-
-Map<String, dynamic> _dataOf(PushPayload payload) {
-  final nested = payload['data'];
-  if (nested is Map) {
-    return nested.map((key, value) => MapEntry(key.toString(), value));
-  }
-  return payload;
 }
 
 String? _stringAt(Map<String, dynamic> data, String key) {
