@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import {
   ESTIMATOR_PRICING,
@@ -401,8 +401,7 @@ async function main() {
 
 const isDirectExecution =
   import.meta.url === `file://${process.argv[1]}` ||
-  (process.argv[1] &&
-    import.meta.url === pathToFileURL(process.argv[1]).href);
+  (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href);
 
 if (isDirectExecution) {
   main()
