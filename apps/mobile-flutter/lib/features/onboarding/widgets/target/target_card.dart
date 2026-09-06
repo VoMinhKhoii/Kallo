@@ -13,11 +13,9 @@ import '../../../../theme/kallo_theme.dart';
 import 'target_macro_rows.dart';
 
 /// The reward at the end of the wizard: one white card carrying the day's
-/// calories, its macro split, and the only control left to turn.
-///
-/// The carb split lives INSIDE the card rather than under it because it is the
-/// card's own dial — every number above it moves the moment a row is tapped,
-/// and a picker sitting outside would have read as a separate question.
+/// calories, its macro split, and the only control left to turn. The carb split
+/// lives INSIDE the card because it is the card's own dial — every number above
+/// it moves the moment a row is tapped.
 class TargetCard extends StatelessWidget {
   const TargetCard({
     super.key,
@@ -83,12 +81,10 @@ class TargetCard extends StatelessWidget {
   }
 
   /// The ONE hero number on this screen, with its unit as a meta suffix on the
-  /// same baseline run.
-  ///
-  /// Scaled down rather than wrapped or ellipsized when it does not fit: a
-  /// five-figure target at the 1.3x type ceiling on a 320pt phone runs past the
-  /// card, and both halves of "1,840 kcal/day" have to stay on one line for the
-  /// baseline pairing to read at all.
+  /// same baseline run. Scaled down rather than wrapped or ellipsized: both
+  /// halves of "1,840 kcal/day" have to stay on one line for the baseline
+  /// pairing to read, and a five-figure target at 1.3x on a 320pt phone runs
+  /// past the card.
   Widget _hero(BuildContext context) => FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,

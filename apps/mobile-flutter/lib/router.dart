@@ -69,9 +69,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(profileProvider, (_, __) => refresh.ping());
   ref.listen(onboardingResumeProvider, (_, __) => refresh.ping());
   ref.listen(onboardingForceDismissedProvider, (_, __) => refresh.ping());
-  // The signed-out landing (start / wizard / save-plan) is decided by the local
-  // draft, which arrives from secure storage a beat after the first redirect —
-  // same shape of lateness as the profile above, same fix.
+  // The signed-out landing is decided by the local draft, which arrives from
+  // secure storage a beat late — same shape as the profile above, same fix.
   ref.listen(onboardingDraftProvider, (_, __) => refresh.ping());
 
   return GoRouter(
@@ -226,13 +225,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// tested without a Supabase client or a single pumped screen.
 String? _redirect(Ref ref, String location) {
   final sessionAsync = ref.read(sessionProvider);
-  // Read the AUTHORITATIVE session straight off the client, not the
-  // `sessionProvider` AsyncValue. The refresh listenable and the provider both
-  // subscribe to `onAuthStateChange`; on sign-out the redirect can run (driven
-  // by the listenable) before the provider's stream has propagated the null,
-  // leaving a stale signed-in value and stranding the user in the app.
-  // `auth.currentSession` is updated synchronously before the event fires, so
-  // it's always current here.
+  // The AUTHORITATIVE session, straight off the client: the listenable and the
+  // provider both subscribe to `onAuthStateChange`, so on sign-out the redirect
+  // can run before the provider's stream has propagated the null and strand the
+  // user in the app. `auth.currentSession` is updated synchronously.
   final session = ref.read(currentSessionReaderProvider)();
   final draftAsync = ref.read(onboardingDraftProvider);
   final profileAsync = ref.read(profileProvider);
@@ -252,11 +248,9 @@ String? _redirect(Ref ref, String location) {
   );
 }
 
-/// Whether an async source has an answer the redirect may act on.
-///
-/// A REFRESH is not a wait: a provider re-running with a value still in hand
-/// (every save invalidates the profile) must not send the user back to the
-/// splash, so the hold is `isLoading` AND nothing to show.
+/// Whether an async source has an answer the redirect may act on. A REFRESH is
+/// not a wait — every save invalidates the profile — so the hold is `isLoading`
+/// AND nothing to show.
 bool _settled(AsyncValue<Object?> async) => !async.isLoading || async.hasValue;
 
 /// Whether this looks like the user's very first session — a brand-new account

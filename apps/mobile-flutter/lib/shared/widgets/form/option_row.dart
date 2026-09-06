@@ -12,13 +12,10 @@ import 'option/option_row_shell.dart';
 /// than inside a grouped card.
 ///
 /// **Selection is a border, not a fill.** Selected is a 2px [kInk] border plus
-/// [kCardShadows] (the row lifts); idle is the 1px hairline every other surface
-/// uses. A tinted fill was the obvious alternative and it collided with the
-/// press wash — you could not tell "I am choosing this" from "I am touching
-/// this". Colour marks the press, geometry marks the choice.
+/// [kCardShadows] (the row lifts); idle is the 1px hairline. A tinted fill
+/// collides with the press wash: colour marks the press, geometry the choice.
 ///
-/// Callers stack rows themselves with [KalloSpacing.sp3] gaps; there is no
-/// group widget, because every group so far wants a different header.
+/// Callers stack rows themselves with [KalloSpacing.sp3] gaps.
 class OptionRow extends StatelessWidget {
   const OptionRow({
     super.key,

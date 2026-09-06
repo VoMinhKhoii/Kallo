@@ -1,6 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
+// The six screens are plain views over one mutable [OnboardingAnswers], so
+// each can be pumped on its own — no Riverpod, no sink, no wizard.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/logic/onboarding_answers.dart';
@@ -12,73 +12,32 @@ import 'package:kallo_mobile/features/onboarding/screens/step_target.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/pace_ruler.dart';
 import 'package:kallo_mobile/shared/widgets/form/option_row.dart';
 
-import '../../app_fonts.dart';
-import '../../l10n_test_loader.dart';
+import 'onboarding_test_support.dart';
 
-/// The six screens are plain views over one mutable [OnboardingAnswers], so
-/// each can be pumped on its own — no Riverpod, no sink, no wizard.
-
-OnboardingAnswers _answers({
-  String locale = 'en',
-  String? origin,
-  String? residence,
-  Goal goal = Goal.maintaining,
-  BiologicalSex? sex,
-  double? weight,
-  int? height,
-  int? age,
-  CarbSplit carbSplit = CarbSplit.moderateCarb,
-}) =>
-    OnboardingAnswers(
-      preferredLocale: locale,
-      countryOfOrigin: origin,
-      countryOfResidence: residence,
-      biologicalSex: sex,
-      weightKg: weight,
-      heightCm: height,
-      age: age,
-      activityLevel: ActivityLevel.light,
-      goal: goal,
-      aggression: 0.5,
-      carbSplit: carbSplit,
-      deficitOverride: null,
-      cooking: const CookingHabits(
-        oilUsage: OilUsage.normal,
-        defaultRicePortion: RicePortion.medium,
-        sugarBraised: SugarBraised.medium,
-        defaultProteinPortion: ProteinPortion.medium,
-        brothConsumption: BrothConsumption.some,
-      ),
-    );
-
-/// A localized host that keeps the screen under test rebuilding when its
-/// answers change — the wizard's own `onChanged` contract.
-Widget _host(Widget Function(VoidCallback rebuild) build) => EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      startLocale: const Locale('en'),
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: Scaffold(
-            body: SafeArea(
-              child: StatefulBuilder(
-                builder: (context, setState) => Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: SingleChildScrollView(
-                    child: build(() => setState(() {})),
-                  ),
-                ),
+/// Pumps [build] under the l10n host, rebuilding it whenever its answers
+/// change — the wizard's own `onChanged` contract.
+Future<void> _pump(
+  WidgetTester tester,
+  Widget Function(VoidCallback rebuild) build,
+) async {
+  await tester.pumpWidget(
+    localizedHome(
+      Scaffold(
+        body: SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setState) => Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: build(() => setState(() {})),
               ),
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
+  await tester.pumpAndSettle();
+}
 
 /// The labels of every [OptionRow] on screen, in order.
 List<String> _rowLabels(WidgetTester tester) => tester
@@ -89,33 +48,21 @@ List<String> _rowLabels(WidgetTester tester) => tester
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      // `setValue` has to answer true: `context.setLocale` persists the pick,
-      // and the platform shim null-checks the reply.
-      (call) async => call.method == 'getAll' ? <String, Object>{} : true,
-    );
-    await EasyLocalization.ensureInitialized();
-    await loadAppFonts();
-  });
+  setUpAll(initOnboardingTest);
 
   group('screen 1 — language', () {
     testWidgets('picking a row switches the app locale immediately',
         (tester) async {
-      final answers = _answers(locale: 'en');
-      await tester.pumpWidget(
-        _host(
-          (rebuild) => StepLanguage(
-            answers: answers,
-            deviceLanguage: 'en',
-            localeFromDevice: true,
-            onChanged: rebuild,
-          ),
+      final answers = testAnswers();
+      await _pump(
+        tester,
+        (rebuild) => StepLanguage(
+          answers: answers,
+          deviceLanguage: 'en',
+          localeFromDevice: true,
+          onChanged: rebuild,
         ),
       );
-      await tester.pumpAndSettle();
 
       // The English row opened selected and is the one the phone guessed.
       expect(find.text('From your phone'), findsOneWidget);
@@ -134,23 +81,23 @@ void main() {
 
     testWidgets('a saved locale carries no "from your phone" note',
         (tester) async {
-      await tester.pumpWidget(
-        _host(
-          (rebuild) => StepLanguage(
-            answers: _answers(locale: 'vi'),
-            deviceLanguage: 'vi',
-            localeFromDevice: false,
-            onChanged: rebuild,
-          ),
+      await _pump(
+        tester,
+        (rebuild) => StepLanguage(
+          answers: testAnswers(locale: 'vi'),
+          deviceLanguage: 'vi',
+          localeFromDevice: false,
+          onChanged: rebuild,
         ),
       );
-      await tester.pumpAndSettle();
       expect(find.text('From your phone'), findsNothing);
     });
   });
 
   group('screen 2 — where you cook', () {
-    Widget origin(OnboardingAnswers answers) => _host(
+    Future<void> origin(WidgetTester tester, OnboardingAnswers answers) =>
+        _pump(
+          tester,
           (rebuild) => StepOrigin(
             answers: answers,
             deviceCountry: 'Australia',
@@ -160,8 +107,7 @@ void main() {
 
     testWidgets('suggests the device region, then Việt Nam, then the language',
         (tester) async {
-      await tester.pumpWidget(origin(_answers(origin: 'Australia')));
-      await tester.pumpAndSettle();
+      await origin(tester, testAnswers(origin: 'Australia'));
 
       expect(_rowLabels(tester), [
         'Australia',
@@ -180,14 +126,12 @@ void main() {
         'the phone\'s', (tester) async {
       // A `late final` off the device language froze the English-market rows
       // out for anyone who changed the language one screen earlier.
-      final answers = _answers(locale: 'vi', origin: 'Australia');
-      await tester.pumpWidget(origin(answers));
-      await tester.pumpAndSettle();
+      final answers = testAnswers(locale: 'vi', origin: 'Australia');
+      await origin(tester, answers);
       expect(_rowLabels(tester), ['Australia', 'Vietnam']);
 
       answers.preferredLocale = 'en';
-      await tester.pumpWidget(origin(answers));
-      await tester.pumpAndSettle();
+      await origin(tester, answers);
       expect(_rowLabels(tester), [
         'Australia',
         'Vietnam',
@@ -198,8 +142,7 @@ void main() {
 
     testWidgets('typing filters both blocks, ignoring case and diacritics',
         (tester) async {
-      await tester.pumpWidget(origin(_answers(origin: 'Australia')));
-      await tester.pumpAndSettle();
+      await origin(tester, testAnswers(origin: 'Australia'));
 
       // "viet" has no accents and no capital; the row it must find has both.
       await tester.enterText(find.byType(TextField).first, 'viet');
@@ -215,10 +158,7 @@ void main() {
     });
 
     testWidgets('the residence line names the phone\'s country', (tester) async {
-      await tester.pumpWidget(
-        origin(_answers(origin: 'Australia', residence: 'Australia')),
-      );
-      await tester.pumpAndSettle();
+      await origin(tester, testAnswers(origin: 'Australia', residence: 'Australia'));
       expect(
         find.text('Living in Australia · from your phone'),
         findsOneWidget,
@@ -228,10 +168,7 @@ void main() {
 
     testWidgets('a residence the user corrected no longer credits the phone',
         (tester) async {
-      await tester.pumpWidget(
-        origin(_answers(origin: 'Australia', residence: 'Germany')),
-      );
-      await tester.pumpAndSettle();
+      await origin(tester, testAnswers(origin: 'Australia', residence: 'Germany'));
 
       expect(find.text('Living in Germany'), findsOneWidget);
       expect(
@@ -243,15 +180,13 @@ void main() {
   });
 
   group('screen 4 — goal', () {
-    Widget goal(OnboardingAnswers answers) => _host(
-          (rebuild) => StepGoal(answers: answers, onChanged: rebuild),
-        );
+    Future<void> goal(WidgetTester tester, OnboardingAnswers answers) =>
+        _pump(tester, (rebuild) => StepGoal(answers: answers, onChanged: rebuild));
 
     testWidgets('maintaining hides the pace ruler; a goal brings it back',
         (tester) async {
-      final answers = _answers(goal: Goal.maintaining);
-      await tester.pumpWidget(goal(answers));
-      await tester.pumpAndSettle();
+      final answers = testAnswers();
+      await goal(tester, answers);
       expect(find.byType(PaceRuler), findsNothing);
 
       await tester.tap(find.text('Cutting'));
@@ -266,8 +201,7 @@ void main() {
     });
 
     testWidgets('bulking reads out a surplus, not a deficit', (tester) async {
-      await tester.pumpWidget(goal(_answers(goal: Goal.bulking)));
-      await tester.pumpAndSettle();
+      await goal(tester, testAnswers(goal: Goal.bulking));
       expect(find.text('0.5 kg a week · 550 kcal surplus'), findsOneWidget);
     });
   });
@@ -275,16 +209,11 @@ void main() {
   group('screen 6 — daily target', () {
     testWidgets('every figure recomputes when the carb split changes',
         (tester) async {
-      final answers = _answers(
-        sex: BiologicalSex.male,
-        weight: 70,
-        height: 175,
-        age: 30,
+      final answers = testAnswers();
+      await _pump(
+        tester,
+        (rebuild) => StepTarget(answers: answers, onChanged: rebuild),
       );
-      await tester.pumpWidget(
-        _host((rebuild) => StepTarget(answers: answers, onChanged: rebuild)),
-      );
-      await tester.pumpAndSettle();
 
       final moderate = answers.targets!;
       expect(find.text('${moderate.proteinG.round()} g'), findsOneWidget);
@@ -304,12 +233,11 @@ void main() {
 
     testWidgets('no metrics means the unlock copy, not a fabricated target',
         (tester) async {
-      await tester.pumpWidget(
-        _host(
-          (rebuild) => StepTarget(answers: _answers(), onChanged: rebuild),
-        ),
+      await _pump(
+        tester,
+        (rebuild) =>
+            StepTarget(answers: testAnswers(body: false), onChanged: rebuild),
       );
-      await tester.pumpAndSettle();
       expect(find.text('Fill the basics to unlock targets.'), findsOneWidget);
       expect(find.text('Carb split'), findsNothing);
     });

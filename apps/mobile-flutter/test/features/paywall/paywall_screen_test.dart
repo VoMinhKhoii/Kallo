@@ -21,13 +21,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n_test_loader.dart';
 import 'paywall_test_support.dart';
 
-const _userId = '11111111-1111-1111-1111-111111111111';
-
 Session _session() => Session(
   accessToken: 'token',
   tokenType: 'bearer',
   user: const User(
-    id: _userId,
+    id: '11111111-1111-1111-1111-111111111111',
     appMetadata: {},
     userMetadata: {},
     aud: 'authenticated',
@@ -35,16 +33,20 @@ Session _session() => Session(
   ),
 );
 
-/// Boots the paywall over a two-route router, so the exits have somewhere real
-/// to go. [router] is handed back through [onRouter] for location assertions.
-Widget _host({
-  required ApiClient api,
-  required PurchasesService purchases,
+/// Boots the paywall on a phone-shaped surface (the 800x600 test default leaves
+/// the two tiers nowhere to sit), over a three-route router so the exits have
+/// somewhere real to go. [onRouter] hands the router back for location
+/// assertions.
+Future<void> pumpPaywall(
+  WidgetTester tester, {
+  ApiClient? api,
+  PurchasesService? purchases,
   bool onboarding = false,
+  Size size = const Size(390, 844),
   double textScale = 1,
   DateTime? now,
   void Function(GoRouter)? onRouter,
-}) {
+}) async {
   final router = GoRouter(
     initialLocation: '/paywall',
     routes: [
@@ -57,78 +59,70 @@ Widget _host({
     ],
   );
   onRouter?.call(router);
-  return ProviderScope(
-    overrides: [
-      currentSessionProvider.overrideWith((ref) => _session()),
-      apiClientProvider.overrideWithValue(api),
-      purchasesServiceProvider.overrideWithValue(purchases),
-      activationPendingStoreProvider.overrideWithValue(
-        FakeActivationPendingStore(),
-      ),
-      if (now != null)
-        paywallClockProvider.overrideWithValue(() => now),
-    ],
-    child: EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      startLocale: const Locale('en'),
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp.router(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          routerConfig: router,
-          builder: (context, child) => MediaQuery.withClampedTextScaling(
-            minScaleFactor: textScale,
-            maxScaleFactor: textScale,
-            child: child!,
+  tester.view.physicalSize = size * 3;
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        currentSessionProvider.overrideWith((ref) => _session()),
+        apiClientProvider.overrideWithValue(api ?? PaywallEntitlementsApi()),
+        purchasesServiceProvider.overrideWithValue(
+          purchases ??
+              PaywallPurchasesService(
+                packages: const [annualPackage, monthlyPackage],
+              ),
+        ),
+        activationPendingStoreProvider.overrideWithValue(
+          FakeActivationPendingStore(),
+        ),
+        if (now != null) paywallClockProvider.overrideWithValue(() => now),
+      ],
+      child: EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('vi')],
+        startLocale: const Locale('en'),
+        path: 'assets/l10n',
+        fallbackLocale: const Locale('en'),
+        assetLoader: const FsL10nLoader(),
+        child: Builder(
+          builder: (context) => MaterialApp.router(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            routerConfig: router,
+            builder: (context, child) => MediaQuery.withClampedTextScaling(
+              minScaleFactor: textScale,
+              maxScaleFactor: textScale,
+              child: child!,
+            ),
           ),
         ),
       ),
     ),
   );
+  await tester.pumpAndSettle();
 }
 
 List<PlanRow> _rows(WidgetTester tester) =>
     tester.widgetList<PlanRow>(find.byType(PlanRow)).toList();
 
-void main() {
-  /// Boots the paywall on a phone-shaped surface — the 800x600 test default
-  /// leaves the two tiers nowhere to sit.
-  Future<void> pumpPaywall(
-    WidgetTester tester, {
-    required ApiClient api,
-    required PurchasesService purchases,
-    bool onboarding = false,
-    Size size = const Size(390, 844),
-    double textScale = 1,
-    DateTime? now,
-    void Function(GoRouter)? onRouter,
-  }) async {
-    tester.view.physicalSize = size * 3;
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      _host(
-        api: api,
-        purchases: purchases,
-        onboarding: onboarding,
-        textScale: textScale,
-        now: now,
-        onRouter: onRouter,
-      ),
-    );
-    await tester.pumpAndSettle();
-  }
+String _ctaTitle(WidgetTester tester) =>
+    tester.widget<KalloButton>(find.byType(KalloButton)).title;
 
+/// Picks the monthly row the way a user would — it can start below the fold.
+Future<void> _tapLastRow(WidgetTester tester) async {
+  await tester.ensureVisible(find.byType(PlanRow).last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(PlanRow).last);
+  await tester.pumpAndSettle();
+}
+
+void main() {
   testWidgets('the sheet offers yearly then monthly, and hides lifetime', (
     tester,
   ) async {
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(
         packages: const [monthlyPackage, lifetimePackage, annualPackage],
       ),
@@ -145,13 +139,7 @@ void main() {
   testWidgets('the yearly row strikes the monthly year and chips the saving', (
     tester,
   ) async {
-    await pumpPaywall(
-      tester,
-      api: PaywallEntitlementsApi(),
-      purchases: PaywallPurchasesService(
-        packages: const [annualPackage, monthlyPackage],
-      ),
-    );
+    await pumpPaywall(tester);
 
     final yearly = _rows(tester).first;
     // $9.99 x 12 = $119.88, struck against the $24.99 the yearly plan asks.
@@ -169,16 +157,9 @@ void main() {
       outcomes: const [PurchaseOutcome.userCancelled],
       packages: const [annualPackage, monthlyPackage],
     );
-    await pumpPaywall(
-      tester,
-      api: PaywallEntitlementsApi(),
-      purchases: purchases,
-    );
+    await pumpPaywall(tester, purchases: purchases);
 
-    await tester.ensureVisible(find.byType(PlanRow).last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(PlanRow).last);
-    await tester.pumpAndSettle();
+    await _tapLastRow(tester);
     expect(_rows(tester).last.selected, isTrue);
 
     // The band and the sheet together outrun a 390x844 screen, so the CTA can
@@ -195,28 +176,13 @@ void main() {
   testWidgets('the CTA offers the free trial the yearly plan carries', (
     tester,
   ) async {
-    await pumpPaywall(
-      tester,
-      api: PaywallEntitlementsApi(trialActive: false),
-      purchases: PaywallPurchasesService(
-        packages: const [annualPackage, monthlyPackage],
-      ),
-    );
+    await pumpPaywall(tester, api: PaywallEntitlementsApi(trialActive: false));
 
-    expect(
-      tester.widget<KalloButton>(find.byType(KalloButton)).title,
-      tr('paywall.startFreeTrial'),
-    );
+    expect(_ctaTitle(tester), tr('paywall.startFreeTrial'));
 
     // Monthly carries no introductory offer, so the promise goes away with it.
-    await tester.ensureVisible(find.byType(PlanRow).last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(PlanRow).last);
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<KalloButton>(find.byType(KalloButton)).title,
-      tr('paywall.purchase'),
-    );
+    await _tapLastRow(tester);
+    expect(_ctaTitle(tester), tr('paywall.purchase'));
   });
 
   testWidgets('a customer the store would refuse is not promised a trial', (
@@ -234,10 +200,7 @@ void main() {
       ),
     );
 
-    expect(
-      tester.widget<KalloButton>(find.byType(KalloButton)).title,
-      tr('paywall.purchase'),
-    );
+    expect(_ctaTitle(tester), tr('paywall.purchase'));
     expect(find.text(tr('paywall.legal')), findsOneWidget);
     expect(find.textContaining('days free'), findsNothing);
   });
@@ -253,10 +216,7 @@ void main() {
       ),
     );
 
-    expect(
-      tester.widget<KalloButton>(find.byType(KalloButton)).title,
-      tr('paywall.purchase'),
-    );
+    expect(_ctaTitle(tester), tr('paywall.purchase'));
     expect(find.text(tr('paywall.legal')), findsOneWidget);
   });
 
@@ -284,7 +244,6 @@ void main() {
   ) async {
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(packages: const [monthlyPackage]),
     );
 
@@ -300,13 +259,7 @@ void main() {
   testWidgets('Restore, Terms and Privacy all clear the 44pt hit target', (
     tester,
   ) async {
-    await pumpPaywall(
-      tester,
-      api: PaywallEntitlementsApi(),
-      purchases: PaywallPurchasesService(
-        packages: const [annualPackage, monthlyPackage],
-      ),
-    );
+    await pumpPaywall(tester);
 
     final actions = find.descendant(
       of: find.byType(PaywallSheetActions),
@@ -324,15 +277,7 @@ void main() {
   testWidgets('at 320pt and 1.3x text the page scrolls instead of clipping', (
     tester,
   ) async {
-    await pumpPaywall(
-      tester,
-      api: PaywallEntitlementsApi(),
-      purchases: PaywallPurchasesService(
-        packages: const [annualPackage, monthlyPackage],
-      ),
-      size: const Size(320, 640),
-      textScale: 1.3,
-    );
+    await pumpPaywall(tester, size: const Size(320, 640), textScale: 1.3);
     expect(tester.takeException(), isNull, reason: 'nothing overflows');
 
     // The band alone outgrows this screen, so the sheet has to be reachable by
@@ -350,7 +295,6 @@ void main() {
     late GoRouter router;
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(packages: const [annualPackage]),
       onboarding: true,
       onRouter: (value) => router = value,

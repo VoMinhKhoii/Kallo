@@ -13,12 +13,10 @@ import 'plan_row_gold.dart';
 /// One plan in the Kallo Pro sheet: a radio, the plan name over a subline, and
 /// the store price with its period under it.
 ///
-/// It wears the shared [OptionRowShell] anatomy — a 20pt disc whose RING
-/// carries the state (6px ink ring selected, hairline idle), one tap target
-/// around the row, radio semantics — but not its selection border: [gold] rows keep their own 1px gold edge in both states, because a
-/// 2px ink border over the gradient reads as damage rather than as a choice.
-/// On a gold row the radio IS the selection mark; on the white one the border
-/// thickens the way every other picked row in the app does.
+/// It wears the shared [OptionRowShell] anatomy but not its selection border:
+/// [gold] rows keep their own 1px gold edge in both states, because a 2px ink
+/// border over the gradient reads as damage rather than as a choice. On gold
+/// the radio IS the selection mark.
 class PlanRow extends StatelessWidget {
   const PlanRow({
     super.key,
@@ -35,12 +33,9 @@ class PlanRow extends StatelessWidget {
   });
 
   /// The store's own strings, dressed as a row: the yearly one gold, with the
-  /// derived strike / per-month / save copy read off [monthly]; the monthly one
-  /// plain, with none of it.
-  ///
-  /// No locale is passed to the arithmetic: the derived figures follow the
-  /// DEVICE locale the store priced in, so all three numbers on the row are
-  /// formatted the same way.
+  /// derived strike / per-month / save copy read off [monthly]. No locale is
+  /// passed to the arithmetic — the derived figures follow the DEVICE locale
+  /// the store priced in, so all three numbers are formatted the same way.
   factory PlanRow.forPackage(
     Package plan, {
     required Package? monthly,

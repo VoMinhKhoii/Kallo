@@ -57,6 +57,21 @@ ProviderContainer _container({
   return container;
 }
 
+/// The draft the store reads back out of [raw] on disk.
+Future<OnboardingDraft?> _readRaw(String raw) {
+  final storage = InMemoryKeyValueStore();
+  storage.values[kOnboardingDraftKey] = raw;
+  return OnboardingDraftStore(storage: storage).read();
+}
+
+Future<OnboardingDraft?> _readJson(Map<String, dynamic> json) =>
+    _readRaw(jsonEncode(json));
+
+/// Round-trips [draft] through `toJson`/`fromJson` and real JSON text.
+OnboardingDraft _roundTrip(OnboardingDraft draft) => OnboardingDraft.fromJson(
+      jsonDecode(jsonEncode(draft.toJson())) as Map<String, dynamic>,
+    );
+
 const _step1 = {
   'countryOfOrigin': 'Vietnam',
   'countryOfResidence': 'Australia',
@@ -65,48 +80,40 @@ const _step1 = {
 const _step2 = {'weightKg': 70, 'goal': 'cutting'};
 const _step3 = {'oilUsage': 'normal'};
 
+const _full = OnboardingDraft(
+  step1: _step1,
+  step2: _step2,
+  step3: _step3,
+  screenReached: 6,
+);
+
 void main() {
   group('OnboardingDraft', () {
-    test('round-trips through JSON', () {
-      const draft = OnboardingDraft(
-        step1: _step1,
-        step2: _step2,
-        step3: _step3,
-        screenReached: 6,
-      );
-      final restored = OnboardingDraft.fromJson(
-        jsonDecode(jsonEncode(draft.toJson())) as Map<String, dynamic>,
-      );
-      expect(restored.step1, _step1);
-      expect(restored.step2, _step2);
-      expect(restored.step3, _step3);
-      expect(restored.screenReached, 6);
-    });
-
-    test('absent steps round-trip as null', () {
-      const draft = OnboardingDraft(step1: _step1, screenReached: 2);
-      final restored = OnboardingDraft.fromJson(
-        jsonDecode(jsonEncode(draft.toJson())) as Map<String, dynamic>,
-      );
-      expect(restored.step1, _step1);
-      expect(restored.step2, isNull);
-      expect(restored.step3, isNull);
-      expect(restored.screenReached, 2);
+    test('round-trips through JSON, absent steps and all', () {
+      for (final draft in [
+        _full,
+        const OnboardingDraft(step1: _step1, screenReached: 2),
+      ]) {
+        final restored = _roundTrip(draft);
+        expect(restored.step1, draft.step1);
+        expect(restored.step2, draft.step2);
+        expect(restored.step3, draft.step3);
+        expect(restored.screenReached, draft.screenReached);
+      }
     });
 
     test('screenReached is clamped to the wizard range', () {
-      expect(
-        OnboardingDraft.fromJson({'screenReached': 99}).screenReached,
-        6,
-      );
-      expect(
-        OnboardingDraft.fromJson({'screenReached': -3}).screenReached,
-        0,
-      );
-      expect(
-        OnboardingDraft.fromJson({'screenReached': 'six'}).screenReached,
-        0,
-      );
+      for (final (stored, expected) in const [
+        (99, 6),
+        (-3, 0),
+        ('six', 0),
+      ]) {
+        expect(
+          OnboardingDraft.fromJson({'screenReached': stored}).screenReached,
+          expected,
+          reason: '$stored',
+        );
+      }
     });
 
     test('isComplete needs all three step payloads', () {
@@ -115,11 +122,7 @@ void main() {
         const OnboardingDraft(step1: _step1, step2: _step2).isComplete,
         isFalse,
       );
-      expect(
-        const OnboardingDraft(step1: _step1, step2: _step2, step3: _step3)
-            .isComplete,
-        isTrue,
-      );
+      expect(_full.isComplete, isTrue);
     });
 
     test('isEmpty is false once anything is recorded', () {
@@ -190,18 +193,14 @@ void main() {
 
     test('a step whose enum value this build does not know is dropped, not '
         'thrown', () async {
-      // `carbSplitFromString` THROWS on an unknown value, and the seed calls it
-      // inside the wizard's build — so a draft written by an older build (or
-      // by hand) used to take the whole screen down with it.
-      final storage = InMemoryKeyValueStore();
-      storage.values[kOnboardingDraftKey] = jsonEncode({
+      // `carbSplitFromString` THROWS, and the seed calls it inside the wizard's
+      // build, so an older build's draft used to take the screen down with it.
+      final draft = await _readJson({
         'step1': _step1,
         'step2': {'weightKg': 70, 'goal': 'cutting', 'carbSplit': 'balanced'},
         'step3': _step3,
         'screenReached': 4,
       });
-
-      final draft = await OnboardingDraftStore(storage: storage).read();
       expect(draft, isNotNull);
       expect(draft!.step2, isNull, reason: 'only the offending step goes');
       expect(draft.step1, _step1);
@@ -210,23 +209,14 @@ void main() {
     });
 
     test('every enum-shaped field is checked, in both steps', () async {
-      Future<OnboardingDraft?> readWith(Map<String, dynamic> json) {
-        final storage = InMemoryKeyValueStore();
-        storage.values[kOnboardingDraftKey] = jsonEncode(json);
-        return OnboardingDraftStore(storage: storage).read();
-      }
-
       for (final field in [
         'biologicalSex',
         'goal',
         'activityLevel',
         'carbSplit',
       ]) {
-        final draft = await readWith({
-          'step2': {...
-            _step2,
-            field: 'nonsense',
-          },
+        final draft = await _readJson({
+          'step2': {..._step2, field: 'nonsense'},
         });
         expect(draft!.step2, isNull, reason: field);
       }
@@ -237,41 +227,40 @@ void main() {
         'defaultProteinPortion',
         'brothConsumption',
       ]) {
-        final draft = await readWith({
-          'step3': {...
-            _step3,
-            field: 'nonsense',
-          },
+        final draft = await _readJson({
+          'step3': {..._step3, field: 'nonsense'},
         });
         expect(draft!.step3, isNull, reason: field);
       }
 
       // A field simply absent is unanswered, not invalid.
-      final partial = await readWith({
+      final partial = await _readJson({
         'step2': {'weightKg': 70},
       });
       expect(partial!.step2, {'weightKg': 70});
     });
 
     test('corrupt JSON reads as null instead of throwing', () async {
-      final storage = InMemoryKeyValueStore();
-      storage.values[kOnboardingDraftKey] = '{not json';
-      expect(await OnboardingDraftStore(storage: storage).read(), isNull);
-
-      storage.values[kOnboardingDraftKey] = '[1,2,3]';
-      expect(await OnboardingDraftStore(storage: storage).read(), isNull);
-
-      storage.values[kOnboardingDraftKey] = '';
-      expect(await OnboardingDraftStore(storage: storage).read(), isNull);
+      for (final raw in const ['{not json', '[1,2,3]', '']) {
+        expect(await _readRaw(raw), isNull, reason: raw);
+      }
     });
   });
 
   group('onboardingDraftProvider', () {
-    test('record persists the payload and advances screenReached', () async {
-      final storage = InMemoryKeyValueStore();
+    /// A warmed-up container over [storage], with its notifier.
+    Future<(ProviderContainer, OnboardingDraftNotifier)> warm(
+      KeyValueStore storage,
+    ) async {
       final container = _container(storage: storage, api: _RecordingApi());
       final notifier = container.read(onboardingDraftProvider.notifier);
       await container.read(onboardingDraftProvider.future);
+      return (container, notifier);
+    }
+
+    test('record persists the payload and advances screenReached', () async {
+      final storage = InMemoryKeyValueStore();
+      final (container, notifier) = await warm(storage);
 
       await notifier.record(screen: 2, payload: (step: 1, data: _step1));
       await notifier.record(screen: 5, payload: (step: 3, data: _step3));
@@ -287,12 +276,7 @@ void main() {
     });
 
     test('screenReached never walks backwards', () async {
-      final container = _container(
-        storage: InMemoryKeyValueStore(),
-        api: _RecordingApi(),
-      );
-      final notifier = container.read(onboardingDraftProvider.notifier);
-      await container.read(onboardingDraftProvider.future);
+      final (container, notifier) = await warm(InMemoryKeyValueStore());
 
       await notifier.record(screen: 4);
       await notifier.record(screen: 2, payload: (step: 1, data: _step1));
@@ -303,9 +287,7 @@ void main() {
 
     test('clear empties the state and the store', () async {
       final storage = InMemoryKeyValueStore();
-      final container = _container(storage: storage, api: _RecordingApi());
-      final notifier = container.read(onboardingDraftProvider.notifier);
-      await container.read(onboardingDraftProvider.future);
+      final (container, notifier) = await warm(storage);
 
       await notifier.record(screen: 2, payload: (step: 1, data: _step1));
       await notifier.clear();
@@ -316,56 +298,54 @@ void main() {
   });
 
   group('OnboardingDraftNotifier.flush', () {
-    test('posts the present steps in order, then clears the draft', () async {
+    /// Puts [draft] on disk, then flushes it through [api].
+    Future<InMemoryKeyValueStore> flush(
+      ApiClient api, {
+      OnboardingDraft? draft,
+      bool expectThrow = false,
+    }) async {
       final storage = InMemoryKeyValueStore();
-      final api = _RecordingApi();
-      await OnboardingDraftStore(storage: storage).write(
-        const OnboardingDraft(
-          step1: _step1,
-          step2: _step2,
-          step3: _step3,
-          screenReached: 6,
-        ),
+      if (draft != null) {
+        await OnboardingDraftStore(storage: storage).write(draft);
+      }
+      final notifier =
+          _container(storage: storage, api: api).read(
+        onboardingDraftProvider.notifier,
       );
+      if (expectThrow) {
+        await expectLater(notifier.flush(), throwsA(isA<ApiError>()));
+      } else {
+        await notifier.flush();
+      }
+      return storage;
+    }
 
-      final container = _container(storage: storage, api: api);
-      await container.read(onboardingDraftProvider.notifier).flush();
+    test('posts the present steps in order, then clears the draft', () async {
+      final api = _RecordingApi();
+      final storage = await flush(api, draft: _full);
 
       expect(api.steps, [1, 2, 3]);
       expect(storage.values, isEmpty);
     });
 
     test('skips absent steps', () async {
-      final storage = InMemoryKeyValueStore();
       final api = _RecordingApi();
-      await OnboardingDraftStore(storage: storage).write(
-        const OnboardingDraft(step1: _step1, step3: _step3, screenReached: 5),
+      final storage = await flush(
+        api,
+        draft: const OnboardingDraft(
+          step1: _step1,
+          step3: _step3,
+          screenReached: 5,
+        ),
       );
-
-      final container = _container(storage: storage, api: api);
-      await container.read(onboardingDraftProvider.notifier).flush();
 
       expect(api.steps, [1, 3]);
       expect(storage.values, isEmpty);
     });
 
     test('a failed post keeps the draft and rethrows', () async {
-      final storage = InMemoryKeyValueStore();
       final api = _RecordingApi(failOnCall: 2);
-      await OnboardingDraftStore(storage: storage).write(
-        const OnboardingDraft(
-          step1: _step1,
-          step2: _step2,
-          step3: _step3,
-          screenReached: 6,
-        ),
-      );
-
-      final container = _container(storage: storage, api: api);
-      await expectLater(
-        container.read(onboardingDraftProvider.notifier).flush(),
-        throwsA(isA<ApiError>()),
-      );
+      final storage = await flush(api, draft: _full, expectThrow: true);
 
       // Step 3 was never attempted and the draft survives for the next launch.
       expect(api.steps, [1, 2]);
@@ -376,11 +356,7 @@ void main() {
 
     test('does nothing when there is no draft', () async {
       final api = _RecordingApi();
-      final container = _container(
-        storage: InMemoryKeyValueStore(),
-        api: api,
-      );
-      await container.read(onboardingDraftProvider.notifier).flush();
+      await flush(api);
       expect(api.steps, isEmpty);
     });
   });

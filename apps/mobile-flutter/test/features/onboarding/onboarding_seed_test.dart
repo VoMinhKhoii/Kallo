@@ -1,7 +1,6 @@
 // The wizard's opening answers: profile → draft → device/neutral, resolved
-// once. Everything downstream (the six screens, the three payloads) reads what
-// this builds and nothing else, so a precedence slip here is invisible until a
-// signed-in user's saved country is silently replaced by their phone's.
+// once. A precedence slip here is invisible until a signed-in user's saved
+// country is silently replaced by their phone's.
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
@@ -154,20 +153,15 @@ void main() {
       });
     });
 
-    test('a region Kallo does not list leaves the country blank, not wrong',
-        () {
-      final seed = _seed(region: 'ZZ');
-      expect(seed.device.deviceCountry, isNull);
-      expect(seed.answers.countryOfOrigin, isNull);
-      expect(seed.answers.countryOfResidence, isNull);
-    });
-
-    test('no device region at all leaves the countries unanswered', () {
-      final seed = _seed(region: null);
-      expect(seed.device.deviceCountry, isNull);
-      expect(seed.answers.countryOfOrigin, isNull);
-      expect(seed.answers.countryOfResidence, isNull);
-      expect(seed.answers.preferredLocale, 'en');
+    test('a region Kallo does not list — or none at all — leaves the countries '
+        'unanswered rather than wrong', () {
+      for (final region in [null, 'ZZ']) {
+        final seed = _seed(region: region);
+        expect(seed.device.deviceCountry, isNull, reason: '$region');
+        expect(seed.answers.countryOfOrigin, isNull, reason: '$region');
+        expect(seed.answers.countryOfResidence, isNull, reason: '$region');
+        expect(seed.answers.preferredLocale, 'en', reason: '$region');
+      }
     });
 
     test('the phone fills every blank when there is nothing saved', () {
@@ -190,9 +184,8 @@ void main() {
 
     test('an enum value this build does not know falls through, it does not '
         'throw', () {
-      // The draft validator drops a whole step for one of these; a SERVER row
-      // written by a newer build reaches the seed intact, and the seed is
-      // inside the wizard's `build`.
+      // A SERVER row written by a newer build reaches the seed intact, and the
+      // seed runs inside the wizard's `build`.
       final answers = _answers(
         profile: const ProfileRow({'goal': 'recomping', 'oilUsage': 'none'}),
         draft: _draft,
@@ -212,8 +205,8 @@ void main() {
 
     test('an unparseable profile value falls back rather than poisoning the '
         'ruler', () {
-      // `double.tryParse('fast')` is null, and a NaN here would put the pace
-      // ruler's index at NaN — every graduation, and the readout, gone.
+      // A NaN here would put the pace ruler's index at NaN — every graduation,
+      // and the readout, gone.
       expect(
         _answers(
           profile: const ProfileRow({'aggression': 'fast'}),

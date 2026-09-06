@@ -1,10 +1,7 @@
 // Where a wizard step's answers land, and what "progress with no payload"
-// means on each side of the auth line.
-//
-// Signed out that is a local `screenReached`; signed in the server has no such
-// field, so the SAME call has to advance `onboardingStep` with an empty
-// payload — `saveOnboardingScreen` takes `max(existing, step)` before it looks
-// at the data (`lib/domain/onboarding/actions.ts`).
+// means on each side of the auth line: signed out a local `screenReached`,
+// signed in an empty payload that advances `onboardingStep` — the server takes
+// `max(existing, step)` before it looks at the data.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +12,8 @@ import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+
+import 'onboarding_test_support.dart';
 
 typedef _Post = ({int step, Map<String, dynamic> data});
 
@@ -37,18 +36,6 @@ class _RecordingApi extends ApiClient {
   }
 }
 
-Session _session() => Session(
-      accessToken: 'token',
-      tokenType: 'bearer',
-      user: const User(
-        id: '11111111-1111-1111-1111-111111111111',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '2026-07-28T00:00:00.000Z',
-      ),
-    );
-
 void main() {
   test('signed in, a screen with no payload still advances the SERVER step',
       () async {
@@ -56,7 +43,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         apiClientProvider.overrideWithValue(api),
-        currentSessionProvider.overrideWith((ref) => _session()),
+        currentSessionProvider.overrideWith((ref) => testSession()),
       ],
     );
     addTearDown(container.dispose);
@@ -67,8 +54,8 @@ void main() {
       await sink.record(screen: screen);
     }
 
-    // Screens 1 and 3 each collect HALF a server step, so they complete none
-    // and post nothing. The other four post the step they would have filled.
+    // Screens 1 and 3 collect HALF a step each, so they post nothing; the
+    // other four post the step they would have filled.
     expect(api.posts.map((p) => p.step).toList(), [1, 2, 3, 2]);
     expect(api.posts.every((p) => p.data.isEmpty), isTrue,
         reason: 'an empty payload moves the step without writing a field');
@@ -105,8 +92,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         apiClientProvider.overrideWithValue(api),
-        // The real seam: gotrue's event stream plus the synchronous read of
-        // whatever session the client already holds.
+        // The real seam: gotrue's event stream plus the synchronous read.
         authEventsProvider.overrideWithValue(events.stream),
         currentSessionReaderProvider.overrideWithValue(() => null),
         onboardingDraftStoreProvider
@@ -127,9 +113,8 @@ void main() {
         );
     expect(api.posts, isEmpty);
 
-    events.add(AuthState(AuthChangeEvent.signedIn, _session()));
-    // Two hops: the broadcast stream's delivery, then the provider rebuild it
-    // triggers.
+    events.add(AuthState(AuthChangeEvent.signedIn, testSession()));
+    // Two hops: the stream's delivery, then the provider rebuild.
     await Future<void>.delayed(Duration.zero);
     await container.pump();
 

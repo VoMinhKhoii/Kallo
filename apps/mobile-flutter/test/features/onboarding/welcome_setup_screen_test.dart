@@ -1,16 +1,10 @@
-// The last beat of the first run. It flushes the draft, counts the target up,
-// and then has ONE decision to make: Kallo Pro, or straight into the feed.
-//
-// Selling Pro to someone who already owns it is the failure this pins — a user
-// who restored premium on this device, or bought it on another, must not be
-// asked to buy it again the moment they finish onboarding.
-import 'package:easy_localization/easy_localization.dart';
+// The last beat of the first run: it flushes the draft, counts the target up,
+// and then has ONE decision to make — Kallo Pro, or straight into the feed.
+// Selling Pro to someone who already owns it is the failure this pins.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
@@ -18,9 +12,7 @@ import 'package:kallo_mobile/features/onboarding/screens/welcome_setup_screen.da
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
-import '../../l10n_test_loader.dart';
-
-const _userId = '11111111-1111-1111-1111-111111111111';
+import 'onboarding_test_support.dart';
 
 /// Answers the entitlement endpoint and nothing else: the dashboard warm-up is
 /// deliberately allowed to fail, since the screen must not depend on it.
@@ -57,18 +49,6 @@ Map<String, dynamic> _entitlement({required bool premium}) => {
       },
     };
 
-Session _session() => Session(
-      accessToken: 'token',
-      tokenType: 'bearer',
-      user: const User(
-        id: _userId,
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '2026-07-28T00:00:00.000Z',
-      ),
-    );
-
 Widget _app(ApiClient api, {required void Function(GoRouter) onRouter}) {
   final router = GoRouter(
     initialLocation: '/welcome',
@@ -83,51 +63,28 @@ Widget _app(ApiClient api, {required void Function(GoRouter) onRouter}) {
   return ProviderScope(
     overrides: [
       apiClientProvider.overrideWithValue(api),
-      currentSessionProvider.overrideWith((ref) => _session()),
-      // The wizard ran signed-in in this test, so there is nothing on disk to
-      // replay — and the in-memory store keeps the flush off the secure-storage
-      // platform channel.
+      currentSessionProvider.overrideWith((ref) => testSession()),
+      // Nothing on disk to replay, and the in-memory store keeps the flush
+      // off the secure-storage platform channel.
       onboardingDraftStoreProvider.overrideWithValue(
         OnboardingDraftStore(storage: InMemoryKeyValueStore()),
       ),
     ],
-    child: EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      startLocale: const Locale('en'),
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp.router(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          routerConfig: router,
-        ),
-      ),
-    ),
+    child: localizedRouter(router),
   );
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : true,
-    );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpAll(() => initOnboardingTest(fonts: false));
 
   /// Runs the whole finish — the flush, the warm-up window and the decision —
   /// and reports where it landed.
   Future<String> land(WidgetTester tester, ApiClient api) async {
     late GoRouter router;
     await tester.pumpWidget(_app(api, onRouter: (value) => router = value));
-    // The post-frame callback, then the minimum window and every timeout the
-    // warm-up can spend inside it.
+    // The post-frame callback, then the window and the warm-up's timeouts.
     await tester.pump();
     await tester.pump(const Duration(seconds: 10));
     await tester.pumpAndSettle();

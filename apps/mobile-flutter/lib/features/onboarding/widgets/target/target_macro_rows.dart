@@ -6,13 +6,10 @@ import '../../../../shared/logic/macro_composition.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 
-/// The three lines under the target card's macro bar: glyph, name, grams, share.
-///
-/// The percentage is recomputed from the ROUNDED grams rather than read off the
-/// carb split's own ratio, so the figures agree with each other: a 30/35/35
-/// split lands at 30 / 41 / 29 by calories once the grams are whole, and a row
-/// claiming 35% beside a bar segment drawn at 41% is the kind of mismatch a
-/// user notices and cannot explain.
+/// The three lines under the target card's macro bar: glyph, name, grams,
+/// share. The percentage is recomputed from the ROUNDED grams rather than from
+/// the carb split's ratio, so a 30/35/35 split reads 30 / 41 / 29 — the same
+/// figures the bar segments are drawn at.
 class TargetMacroRows extends StatelessWidget {
   const TargetMacroRows({super.key, required this.macros});
 

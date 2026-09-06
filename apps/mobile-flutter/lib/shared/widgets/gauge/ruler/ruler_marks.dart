@@ -44,13 +44,10 @@ class RulerBand extends StatelessWidget {
 /// The needle's pointer cap: 9 wide, 7 tall.
 const Size rulerNeedleCap = Size(9, 7);
 
-/// The fixed reading mark: a pointer cap over a hairline through the scale.
-///
-/// It is exactly that — cap then bar, drawn from its own top-left. WHERE it
-/// hangs is the host's business, because the two tapes point at different
-/// things: the portion sheet drops it below the silhouette band it measures,
-/// while the pace ruler lifts it by [rulerNeedleCap] so the cap rides ABOVE
-/// the strip's top hairline (which means that host must not clip).
+/// The fixed reading mark: a pointer cap over a hairline through the scale,
+/// drawn from its own top-left. WHERE it hangs is the host's business — the
+/// portion sheet drops it below the band it measures, the pace ruler lifts it
+/// by [rulerNeedleCap] so the cap rides above the strip (and must not clip).
 class RulerNeedle extends StatelessWidget {
   const RulerNeedle({super.key, required this.bar});
 

@@ -11,6 +11,8 @@ import 'package:kallo_mobile/features/auth/widgets/welcome/auth_legal_links.dart
 import 'package:kallo_mobile/features/auth/widgets/welcome/google_button.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/welcome_demo.dart';
 import 'package:kallo_mobile/features/onboarding/screens/save_plan_screen.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
 import 'package:kallo_mobile/shared/widgets/mascot/bun_mascot.dart';
 
 import '../../app_fonts.dart';
@@ -77,7 +79,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
 
-    // The onboarding chrome: the bun says why, the title says what.
+    // The onboarding chrome: the bun says why, the title says what — on the
+    // same gradient backdrop the wizard steps wear. The auth face is opaque,
+    // so it gets a slice of the SAME field rather than a flat canvas fill,
+    // which is why the backdrop is found twice.
+    expect(find.byType(StepBackdrop), findsNWidgets(2));
+    expect(find.byType(BackdropSlice), findsOneWidget);
     expect(find.byType(BunMascot), findsOneWidget);
     expect(
       find.text('Sign in so your plan follows you to every device.'),

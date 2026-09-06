@@ -5,13 +5,10 @@ import 'kallo_wordmark.dart';
 
 /// The 44pt brand row the signed-out surfaces wear: the wordmark centred, an
 /// optional glyph on the leading edge, an optional quiet label on the trailing
-/// one. Onboarding's step header, `/save-plan` and the paywall all show it, so
-/// the mark holds still from the first screen of the flow to the last.
+/// one — so the mark holds still from the first screen of the flow to the last.
 ///
-/// The wordmark is CENTRED by a [Stack], not by a three-slot [Row]: the two
-/// slots are different widths in each language and often absent entirely, and
-/// in a Row the mark drifts off centre with them — which is exactly the thing
-/// the eye tracks between steps.
+/// Centred by a [Stack], not a three-slot [Row]: the two slots differ in width
+/// per language and are often absent, and in a Row the mark drifts with them.
 class WordmarkBar extends StatelessWidget {
   const WordmarkBar({
     super.key,

@@ -11,12 +11,10 @@ import 'mascot_timing.dart';
 
 /// The guide band: the animated bun beside its [GuideBubble].
 ///
-/// ONE [Ticker] drives everything — the [BunFace] state machine (blink
-/// schedule, lid ramp), the idle breath, and the typewriter whose every
-/// grapheme feeds the mouth. The bubble is a pure render of that clock. The
-/// base frame is ALWAYS fully opaque and the other two only ever fade in on
-/// top of it: cross-fading two frames of the same body would dip its alpha and
-/// read as a flicker rather than as a face.
+/// ONE [Ticker] drives everything — the [BunFace] state machine, the idle
+/// breath, and the typewriter whose every grapheme feeds the mouth. The base
+/// frame stays fully opaque and the other two only fade in on top: cross-fading
+/// two frames of the same body dips its alpha and reads as a flicker.
 class BunMascot extends StatefulWidget {
   const BunMascot({super.key, this.size = 84, required this.speech});
 
@@ -39,11 +37,9 @@ class _BunMascotState extends State<BunMascot>
   late final Ticker _ticker = createTicker(_onTick);
   late final BunFace _face = BunFace(random: BunMascot.debugRandom);
 
-  /// The idle breath, OUTSIDE `setState`: at 60fps the old `setState(_breath)`
-  /// rebuilt the mascot, its bubble and the whole guide band sixty times a
-  /// second for a scale that only wraps three images. The notifier repaints
-  /// the [Transform.scale] alone; `setState` is left to the things that
-  /// genuinely change the tree — a blink, a viseme, a character.
+  /// The idle breath, OUTSIDE `setState`: a 60fps rebuild of the mascot, its
+  /// bubble and the band buys nothing for a scale that wraps three images. The
+  /// notifier repaints the [Transform.scale] alone.
   final ValueNotifier<double> _breath = ValueNotifier<double>(1);
 
   List<String> _chars = const [];
@@ -94,10 +90,8 @@ class _BunMascotState extends State<BunMascot>
         // entry is the one the frames actually go looking for.
         ResizeImage(AssetImage(frame), width: _cacheWidth),
         context,
-        // A missing/undecodable frame is a cosmetic failure. Without this the
-        // error is rethrown into `FlutterError.onError`, which fails whatever
-        // test happens to be running and, in release, reports a crash for a
-        // bun that simply did not draw.
+        // A missing frame is cosmetic; unhandled it is rethrown into
+        // `FlutterError.onError` and reported as a crash.
         onError: (error, _) => developer.log(
           'bun frame $frame did not precache: $error',
           name: 'mascot.bun',

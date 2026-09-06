@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/dish_scatter.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 
@@ -75,6 +76,10 @@ void main() {
     expect(find.byType(KalloWordmark), findsOneWidget);
     expect(find.text('Log meals the way you say them'), findsOneWidget);
 
+    // The ten clay dishes ring the device: six behind it, four in front.
+    expect(find.byType(DishScatter), findsNWidgets(2));
+    expect(find.byType(Image), findsNWidgets(1 + 10 * 2));
+
     // The CTA starts the wizard — signed out, before any account exists.
     await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
@@ -89,22 +94,23 @@ void main() {
     expect(router.state.matchedLocation, '/sign-in');
   });
 
-  /// The canvas anatomy: the promise is pinned INTO the preview's dissolve —
-  /// its top 28pt above the card's bottom edge, which the 150pt fade has been
-  /// solid canvas for the last 37.5pt of — with the design's 24pt of air (at
-  /// least) between it and the CTA. The numbers are the design's own, read
+  /// The canvas anatomy: the dissolve is a 130pt band that starts 74pt above
+  /// the card's bottom edge and ends 56pt BELOW it, and the promise's top sits
+  /// on that band's bottom edge — the device's own bottom fades out inside the
+  /// band rather than being hidden before it. Below the title comes the
+  /// design's 24pt of air (at least). The numbers are the design's own, read
   /// back through the scale the screen actually applied to the card.
-  void expectTitlePinnedIntoTheFade(WidgetTester tester) {
+  void expectTitleOnTheBandsEdge(WidgetTester tester) {
     final preview = tester.getRect(find.byKey(StartScreen.previewKey));
-    final double scale = preview.width / 226;
+    final double scale = preview.width / 206;
     final title = tester.getRect(find.text('Log meals the way you say them'));
     final cta = tester.getRect(find.byType(KalloButton));
 
-    expect(scale, lessThanOrEqualTo(1.0));
+    expect(scale, lessThanOrEqualTo(1.35 + 0.001));
     expect(
       title.top,
-      closeTo(preview.bottom - 28 * scale, 0.5),
-      reason: 'the title left the dissolved band',
+      closeTo(preview.bottom + 56 * scale, 0.5),
+      reason: 'the title left the band\'s bottom edge',
     );
     expect(
       cta.top - title.bottom,
@@ -113,8 +119,7 @@ void main() {
     );
   }
 
-  testWidgets('the title sits in the preview\'s fade, not on the device',
-      (tester) async {
+  testWidgets('the title sits on the dissolve\'s bottom edge', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.reset);
@@ -122,7 +127,21 @@ void main() {
     await tester.pumpWidget(_app(_router()));
     await tester.pumpAndSettle();
 
-    expectTitlePinnedIntoTheFade(tester);
+    expectTitleOnTheBandsEdge(tester);
+
+    // The block FILLS the height between the wordmark row and the bottom
+    // block, rather than leaving a hand's width of dead canvas under the
+    // promise — which is the same statement as this: the only gap between the
+    // promise and the CTA is the design's own 24.
+    final title = tester.getRect(find.text('Log meals the way you say them'));
+    final cta = tester.getRect(find.byType(KalloButton));
+    expect(cta.top - title.bottom, closeTo(24, 0.5));
+
+    // The wordmark is the top-centre header: a 44pt row 8pt under the safe
+    // area, the 34pt mark centred in it.
+    final wordmark = tester.getRect(find.byType(KalloWordmark));
+    expect(wordmark.top, closeTo(8 + (44 - 34) / 2, 0.5));
+    expect(wordmark.center.dx, closeTo(390 / 2, 0.5));
   });
 
   testWidgets('holds at 320x568 with 1.3x text', (tester) async {
@@ -145,6 +164,6 @@ void main() {
 
     // …and the shrunken preview still holds the promise in its dissolve: the
     // block that gave up height did not drag the title onto the device.
-    expectTitlePinnedIntoTheFade(tester);
+    expectTitleOnTheBandsEdge(tester);
   });
 }

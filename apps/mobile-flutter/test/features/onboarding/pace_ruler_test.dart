@@ -6,9 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/pace_ruler.dart';
 
 /// The pace ruler is a tape measure, not a slider: the scale travels under a
-/// fixed needle. What that buys — and what these tests pin — is that one
-/// pitch of travel is exactly one step, that the strip lands ON a detent
-/// rather than between two, and that the ends actually stop.
+/// fixed needle. One pitch of travel is one step, the strip lands ON a detent,
+/// and the ends stop.
 
 const double _hostWidth = 320;
 const String _readout = 'half a kilo a week';
@@ -78,8 +77,8 @@ void main() {
   testWidgets('a half-step drag still settles onto a detent', (tester) async {
     await _pump(tester);
 
-    // Two thirds of a pitch — past the midpoint, so the nearest detent is the
-    // NEXT one, and the strip must finish the journey on its own.
+    // Two thirds of a pitch: past the midpoint, so the strip has to finish
+    // the journey onto the NEXT detent on its own.
     await tester.drag(
       find.byType(PaceRuler),
       const Offset(-PaceRuler.pitchPerTenth * 2 / 3, 0),
@@ -87,8 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_value(tester), closeTo(0.4, 1e-9));
-    // The chosen step's graduation sits under the needle at the viewport
-    // centre — the reading and the strip agree.
+    // The chosen step's graduation sits under the needle.
     expect(
       tester.getCenter(find.text('0.4')).dx,
       closeTo(tester.getCenter(find.byType(PaceRuler)).dx, 0.5),
@@ -133,9 +131,9 @@ void main() {
     final handle = tester.ensureSemantics();
     await _pump(tester);
 
+    // Through the FLAG, not the widget type: the slider node is the one
+    // carrying the value and the actions.
     final slider = find.semantics.byFlag(SemanticsFlag.isSlider);
-    // Resolve through the FLAG, not the widget type: the slider node is the
-    // one carrying the value and the actions.
     final data = slider.evaluate().single.getSemanticsData();
     expect(data.hasAction(SemanticsAction.increase), isTrue);
     expect(data.hasAction(SemanticsAction.decrease), isTrue);

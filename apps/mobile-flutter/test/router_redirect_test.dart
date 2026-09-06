@@ -3,11 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/router_redirect.dart';
 
-/// Onboarding runs BEFORE sign-in (Phase C2), so the redirect no longer has a
-/// single answer for "signed out" — the local draft decides between `/start`,
-/// `/onboarding` and `/save-plan`. These are the rules quoted on
-/// [resolveRedirect]; the point of it being a pure function is that they can be
-/// read back here without a Supabase client or a single pumped screen.
+/// Onboarding runs BEFORE sign-in (Phase C2), so "signed out" has no single
+/// answer — the local draft decides between `/start`, `/onboarding` and
+/// `/save-plan`. These are the rules quoted on [resolveRedirect], read back
+/// without a Supabase client or a single pumped screen.
 
 /// The signed-out defaults: no session, no draft, nothing pending.
 String? _at(
@@ -47,9 +46,8 @@ const _finishedDraft = OnboardingDraft(
   screenReached: 6,
 );
 
-/// The same, from a user who left the OPTIONAL body metrics blank: screens 4
-/// and 6 had no `stepTwoValues` to post, so `step2` is absent and `isComplete`
-/// is false — but they answered every screen the wizard has.
+/// The same, from a user who left the OPTIONAL body metrics blank: `step2` is
+/// absent and `isComplete` false, but every screen was answered.
 const _blankMetricsDraft = OnboardingDraft(
   step1: {'countryOfOrigin': 'Vietnam'},
   step3: {'oil': 'normal'},
@@ -79,9 +77,8 @@ void main() {
     });
 
     test('blank body metrics still count as finished', () {
-      // The trap: `isComplete` is false here (no step 2 payload), and gating on
-      // it would bounce this user back into a wizard they have no answers left
-      // to give.
+      // Gating on `isComplete` would bounce this user back into a wizard they
+      // have no answers left to give.
       expect(_blankMetricsDraft.isComplete, isFalse);
       expect(_at('/', draft: _blankMetricsDraft), '/save-plan');
     });

@@ -96,11 +96,9 @@ Country? countryForValue(String value) {
 
 // ── Naming and search ─────────────────────────────────────────────────────
 //
-// A Vietnamese speaker typing on an English keyboard writes "viet nam", and
-// somebody hunting for Đức types "duc" — a plain `contains` on the raw strings
-// matches neither, so a search field looked broken in exactly the language the
-// app is built around. Only Vietnamese marks are folded: every English country
-// `value` in the table above is already ASCII.
+// A Vietnamese speaker on an English keyboard writes "viet nam", and somebody
+// hunting for Đức types "duc" — a plain `contains` matches neither. Only
+// Vietnamese marks are folded: every `value` above is already ASCII.
 
 /// Each key is the set of characters that fold to its value.
 const Map<String, String> _folds = {

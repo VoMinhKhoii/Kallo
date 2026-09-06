@@ -15,12 +15,10 @@ import '../logic/region_defaults.dart';
 import '../widgets/origin/country_sheet.dart';
 import '../widgets/origin/origin_residence_row.dart';
 
-/// Screen 2 — "Where do you cook?".
-///
-/// The step opens ANSWERED: the phone's region is already selected and noted
-/// "From your phone", with Việt Nam and the language's usual destinations under
-/// it, so the common case is one tap on Continue. The full A–Z list is there
-/// underneath for everyone else, and typing filters both blocks at once.
+/// Screen 2 — "Where do you cook?". The step opens ANSWERED: the phone's
+/// region is selected and noted "From your phone", with Việt Nam and the
+/// language's usual destinations under it. The full A–Z list sits underneath,
+/// and typing filters both blocks at once.
 class StepOrigin extends StatefulWidget {
   const StepOrigin({
     super.key,
@@ -71,9 +69,8 @@ class _StepOriginState extends State<StepOrigin> {
   @override
   Widget build(BuildContext context) {
     final language = context.locale.languageCode;
-    // Recomputed every build off the language the user PICKED on screen 1 — a
-    // `late final` off the phone's language froze the English-market rows out
-    // for anyone who switched to English one screen earlier.
+    // Off the language PICKED on screen 1, recomputed every build: a
+    // `late final` off the phone's froze out anyone who switched.
     final suggested = suggestedOriginCountries(
       regionCountryValue: widget.deviceCountry,
       languageCode: widget.answers.preferredLocale,

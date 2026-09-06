@@ -14,9 +14,8 @@ import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// The two packages the free face is about, out of whatever the offering
-/// carries. One walk, one place that knows which types those are: the sheet
-/// needs the pair in order for its rows AND as a pair for their copy (the
-/// yearly row strikes twelve of the monthly price).
+/// carries. The sheet needs the pair in order for its rows AND as a pair for
+/// their copy (the yearly row strikes twelve of the monthly price).
 ({Package? annual, Package? monthly}) splitPlans(List<Package> packages) => (
       annual: _firstOfType(packages, PackageType.annual),
       monthly: _firstOfType(packages, PackageType.monthly),
@@ -29,11 +28,9 @@ Package? _firstOfType(List<Package> packages, PackageType type) {
   return null;
 }
 
-/// The plans the free paywall shows, yearly first.
-///
-/// Lifetime — and any other package the offering happens to carry, a second
-/// annual tier included — is deliberately absent: the sheet is a two-choice
-/// decision, and a third row turns it back into a price list.
+/// The plans the free paywall shows, yearly first. Lifetime — and any other
+/// package the offering carries — is deliberately absent: the sheet is a
+/// two-choice decision, and a third row turns it back into a price list.
 List<Package> visiblePlans(List<Package> packages) {
   final split = splitPlans(packages);
   return [
@@ -68,14 +65,11 @@ int freeTrialDays(Package package) {
   };
 }
 
-/// Whether the sheet may PROMISE a free trial on [plan].
-///
-/// Three things have to hold, and the product alone cannot answer the third:
-/// the account is not already mid-trial, the product declares a free
-/// introductory period, and the STORE says this customer is still eligible for
-/// it. A returning subscriber's product carries `introductoryPrice` exactly
-/// like a new one's — Apple simply refuses the trial at purchase — so copy
-/// driven by the declaration alone promises seven free days it cannot deliver.
+/// Whether the sheet may PROMISE a free trial on [plan]: the account is not
+/// already mid-trial, the product declares a free introductory period, and the
+/// STORE says this customer is still eligible. A returning subscriber's product
+/// carries `introductoryPrice` exactly like a new one's — only the store knows
+/// Apple would refuse the trial at purchase.
 bool offersTrial({
   required Package plan,
   required bool trialActive,
@@ -85,11 +79,9 @@ bool offersTrial({
     freeTrialDays(plan) > 0 &&
     eligibleProductIds.contains(plan.storeProduct.identifier);
 
-/// Whether the sheet may promise a trial on [plan], and how long it would run.
-///
-/// One answer, asked once: the CTA and the legal line under it are two halves
-/// of the same promise, and each deciding for itself is how they come to
-/// disagree.
+/// Whether the sheet may promise a trial on [plan], and how long it would run
+/// — one answer, asked once, because the CTA and the legal line under it are
+/// two halves of the same promise.
 ({bool trial, int days}) trialOffer({
   required Package plan,
   required bool trialActive,
@@ -109,12 +101,9 @@ bool offersTrial({
 final paywallClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
 
 /// The locale the STORE formatted `priceString` in — the DEVICE's, not the
-/// app's.
-///
-/// All three figures on the yearly row share one line: the store's own price
-/// string, the struck twelve months and the per-month. `priceString` comes back
-/// formatted for the device locale, so deriving the other two in the app locale
-/// puts "24,99 US\$" beside "\$41.88" for anyone whose phone and app disagree.
+/// app's. All three figures on the yearly row share one line, so deriving the
+/// derived two in the app locale puts "24,99 US\$" beside "\$41.88" for anyone
+/// whose phone and app disagree.
 String deviceCurrencyLocale() => PlatformDispatcher.instance.locale.toString();
 
 /// What the yearly row says under its name.

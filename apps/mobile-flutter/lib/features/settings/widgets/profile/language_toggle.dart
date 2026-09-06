@@ -6,14 +6,12 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// RN port of `components/onboarding/wizard/language-toggle.tsx`, now the
-/// Region & language editor's own: the onboarding wizard asks for the language
-/// through its step rows, so Settings is the only surface left that shows it.
+/// Region & language editor's own — the wizard asks through its step rows, so
+/// Settings is the only other surface that shows it.
 ///
 /// Web shows GB/VN SVG flags (`country-flag-icons`); emoji are banned in the
 /// brand, so mobile names each language in its own tongue and nothing else.
-/// The `EN` / `VI` monogram disc that used to sit beside the label restated
-/// the word next to it and took the width that was truncating "Tiếng Việt".
-/// Picking a language switches the app locale live (see `ScreenOrigin`).
+/// Picking one switches the app locale live (see `ScreenOrigin`).
 class LanguageToggle extends StatelessWidget {
   const LanguageToggle({
     super.key,

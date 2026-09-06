@@ -15,13 +15,12 @@ const String _kVowels =
     'ỳýỷỹỵ';
 
 /// The bun's face as a plain state machine: when the eyes blink and how open
-/// the mouth is. No widgets, no ticker — the widget owns the clock and hands
-/// it a [tick]; the bubble hands it one grapheme at a time through [speak].
+/// the mouth is. No widgets, no ticker — the widget owns the clock and hands it
+/// a [tick]; the bubble hands it one grapheme at a time through [speak].
 ///
-/// The two are deliberately coupled: a pending or running blink swallows the
-/// viseme and closes the mouth, which is what keeps the [kBunGuard] window
-/// clear. An eyelid landing on the same frame as a mouth swap reads as a
-/// glitch rather than as a face.
+/// The two are coupled on purpose: a pending or running blink swallows the
+/// viseme and closes the mouth, keeping the [kBunGuard] window clear. An eyelid
+/// landing on the same frame as a mouth swap reads as a glitch.
 class BunFace {
   BunFace({math.Random? random}) : _random = random ?? math.Random();
 

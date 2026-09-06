@@ -96,11 +96,9 @@ class OnboardingStepHeader extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
                     widthFactor: fraction,
-                    // `heightFactor` is load-bearing: an Align hands its child
-                    // LOOSE constraints, and a childless ColoredBox under a
-                    // loose height takes the smallest one it is offered — the
-                    // fill painted `fraction` wide and 0 tall, so every step's
-                    // bar looked empty.
+                    // `heightFactor` is load-bearing: Align hands its child
+                    // LOOSE constraints, and a childless ColoredBox then takes
+                    // the smallest height offered — a bar 0pt tall.
                     heightFactor: 1,
                     child: child,
                   ),
