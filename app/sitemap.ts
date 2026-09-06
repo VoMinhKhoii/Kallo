@@ -30,6 +30,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: { languages: alternateLanguages('') },
     });
 
+    // The plans also render as a band on the landing page, but /pricing is
+    // their own crawlable URL — it needs its own entry or it is only ever
+    // reachable as an in-page anchor.
+    entries.push({
+      url: `${SITE_URL}/${locale}/pricing`,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+      alternates: { languages: alternateLanguages('/pricing') },
+    });
+
     for (const slug of DOCS_SLUGS) {
       // Hand-maintained `YYYY-MM-DD` in each MDX file's frontmatter — the same
       // value the page renders as its revision stamp, so the sitemap can never

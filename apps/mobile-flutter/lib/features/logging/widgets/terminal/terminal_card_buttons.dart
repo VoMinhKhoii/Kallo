@@ -52,23 +52,28 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
           onTapCancel:
               widget.busy ? null : () => setState(() => _pressed = false),
           onTap: widget.busy ? null : widget.onTap,
+          // The in-app primary tier: beige fill, ink label, fully rounded,
+          // no shadow. Umber is toggles and progress fills only now.
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _pressed ? KalloColors.btnHover : KalloColors.btn,
-              borderRadius: BorderRadius.circular(KalloRadii.xl),
-              boxShadow: [_pressed ? KalloShadows.md : KalloShadows.sm],
+              color: _pressed
+                  ? Color.alphaBlend(
+                      KalloColors.pressWash,
+                      KalloColors.btnPrimarySoft,
+                    )
+                  : KalloColors.btnPrimarySoft,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(widget.icon, size: 14, color: Colors.white),
+                Icon(widget.icon, size: 16, color: KalloColors.text),
                 const SizedBox(width: 6),
-                Text(
-                  widget.label,
-                  style: dashBody(color: Colors.white, weight: FontWeight.w500),
-                ),
+                Text(widget.label, style: dashBody()),
               ],
             ),
           ),
@@ -110,7 +115,7 @@ class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
           ),
           child: Text(
             'logging.discard'.tr(),
-            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
+            style: dashBody(color: kInkMuted),
           ),
         ),
       ),

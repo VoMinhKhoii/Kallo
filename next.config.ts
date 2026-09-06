@@ -14,6 +14,44 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // Stops a browser from re-deciding what a response is. Without it a
+          // user-supplied file served with the wrong type can be sniffed into
+          // executable HTML.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Full URL to same-origin, origin only cross-origin. Our paths carry
+          // waitlist confirmation tokens and invite slugs; a full Referer would
+          // hand those to every third-party host a page links to.
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // Enforces what the CSP already DECLARES (`frame-ancestors 'none'`),
+          // which is worth having separately because the CSP still ships as
+          // Report-Only — it reports clickjacking rather than preventing it.
+          // Nothing here frames our own pages: we embed Paddle and Google
+          // Identity, never the reverse.
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // `camera=(self)`, not `()`: the OCR label scanner calls
+          // `getUserMedia` from our own page (hooks/meals/entry/
+          // use-ocr-camera.ts). Nothing uses the microphone or geolocation, and
+          // no embedded third party needs any of the three.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(), geolocation=()',
+          },
+          // NO Strict-Transport-Security here on purpose. Cloudflare owns HSTS
+          // for kallo.fit and is the single authority for it: a two-year
+          // `includeSubDomains` policy emitted by the app would be pinned in
+          // every visitor's browser and would outlive any rollback at the edge.
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       // The routed settings tabs were flattened into one anchored page;

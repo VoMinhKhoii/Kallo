@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/rounded_sector_path.dart';
 
 /// The reference dial, read off the rendered source component rather than
 /// re-derived here: centre (268, 96), inner 54, outer 72, cornerRadius 8,
@@ -97,6 +98,79 @@ void main() {
       expect(full.remainder.computeMetrics().isEmpty, isTrue);
     });
 
+    test('draws a fill for a barely-started day', () {
+      // 60 kcal of 1,844 — the day that reported this bug. Its sweep is 7.7°,
+      // far under the ~15.3° the nominal corners need, so the fill used to be
+      // dropped and every dial read as untouched.
+      for (final radius in [104.0, 44.0, 30.0]) {
+        final paths = gaugePaths(
+          center: Offset.zero,
+          outerRadius: radius,
+          progress: 60 / 1844,
+        );
+        expect(
+          paths.filled.computeMetrics().isEmpty,
+          isFalse,
+          reason: 'no fill at 3.25% on a dial of radius $radius',
+        );
+      }
+    });
+
+    test('small values stay proportional rather than snapping to a floor', () {
+      double width(double progress) => _tightBounds(gaugePaths(
+        center: _center,
+        outerRadius: _outerRadius,
+        progress: progress,
+      ).filled).width;
+      // Above the minimum sliver the mark tracks the value; it does not sit at
+      // one size until the old 6.5% threshold lets it go.
+      final widths = [0.03, 0.04, 0.06, 0.10].map(width).toList();
+      for (var i = 1; i < widths.length; i++) {
+        expect(widths[i], greaterThan(widths[i - 1]));
+      }
+    });
+
+    test('a nearly-finished day still shows the track it has left', () {
+      // The mirror of the same guard: above ~93.5% the remainder used to be
+      // dropped, so a 96% day rendered as a completely full dial.
+      final paths = gaugePaths(
+        center: _center,
+        outerRadius: _outerRadius,
+        progress: 0.96,
+      );
+      expect(paths.remainder.computeMetrics().isEmpty, isFalse);
+      expect(paths.filled.computeMetrics().isEmpty, isFalse);
+    });
+
+    test('holds its proportions when scaled at a small value', () {
+      // The fitted corner is derived from the radii, so it has to stay a pure
+      // ratio down where it is doing the fitting.
+      final small = _tightBounds(gaugePaths(
+        center: Offset.zero,
+        outerRadius: 36,
+        progress: 0.03,
+      ).filled);
+      final large = _tightBounds(gaugePaths(
+        center: Offset.zero,
+        outerRadius: 72,
+        progress: 0.03,
+      ).filled);
+      expect(large.width, greaterThan(0));
+      expect(small.width * 2, closeTo(large.width, 0.05));
+      expect(small.height * 2, closeTo(large.height, 0.05));
+    });
+
+    test('a zero target draws nothing rather than a path of NaNs', () {
+      // 0 eaten of 0 target is NaN, which survives clamp in Dart.
+      final paths = gaugePaths(
+        center: _center,
+        outerRadius: _outerRadius,
+        progress: double.nan,
+      );
+      expect(paths.filled.computeMetrics().isEmpty, isTrue);
+      expect(paths.remainder.getBounds().isFinite, isTrue);
+    });
+
     test('clamps past target rather than winding past the sweep', () {
       final over = gaugePaths(
         center: _center,
@@ -126,6 +200,40 @@ void main() {
       ).filled.getBounds();
       expect(small.width * 2, closeTo(large.width, 0.05));
       expect(small.height * 2, closeTo(large.height, 0.05));
+    });
+  });
+
+  group('gaugeOverCapPath', () {
+    Path cap(double progress) => gaugeOverCapPath(
+      center: Offset.zero,
+      outerRadius: 90,
+      progress: progress,
+    );
+
+    test('exists only past the target', () {
+      expect(cap(0.9).getBounds().isEmpty, isTrue);
+      expect(cap(1.0).getBounds().isEmpty, isTrue);
+      expect(cap(1.4).getBounds().isEmpty, isFalse);
+    });
+
+    test('a slight overshoot gets its documented sliver', () {
+      // The 8° floor this function has always applied was under the corner
+      // threshold, so the sliver it promises was dropped before it could draw.
+      expect(cap(1.01).getBounds().isEmpty, isFalse);
+    });
+
+    test('degenerate progress draws nothing', () {
+      // 0 eaten / 0 target is NaN; a 0-target day with meals is infinite.
+      // Neither may poison the paint with non-finite angles.
+      expect(cap(double.nan).getBounds().isEmpty, isTrue);
+      expect(cap(0).getBounds().isEmpty, isTrue);
+      expect(cap(double.infinity).getBounds().isFinite, isTrue);
+    });
+
+    test('grows with the overshoot but never floods the dial', () {
+      final slight = cap(1.05).getBounds().width;
+      final heavy = cap(2.0).getBounds().width;
+      expect(slight, lessThanOrEqualTo(heavy));
     });
   });
 

@@ -428,6 +428,55 @@
       "when": 1785406779165,
       "tag": "20260730101939_add_waitlist_signups",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1787920004329,
+      "tag": "20260829080001_add_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787923195927,
+      "tag": "20260829080004_add_push_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1787940914380,
+      "tag": "20260829080007_notifications_rebadged",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1788030914380,
+      "tag": "20260830090000_fuzzy_symmetric_tiebreak",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1788034514380,
+      "tag": "20260830091000_fct_row_corrections",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1788091243374,
+      "tag": "20260830120043_add_product_telemetry_pipeline_correlation",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788292032527,
+      "tag": "20260901194712_add_rate_limit_tables",
+      "breakpoints": true
     }
   ]
 }

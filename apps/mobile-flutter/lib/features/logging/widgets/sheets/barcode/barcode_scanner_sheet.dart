@@ -2,15 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../data/barcode_providers.dart';
-import '../scan_error_card.dart';
-import 'barcode_camera_view.dart';
+import 'frame/barcode_camera_session.dart';
+import 'frame/barcode_camera_view.dart';
+import 'frame/barcode_frame_status.dart';
 import 'barcode_manual_input.dart';
 import 'barcode_product_step.dart';
-import 'barcode_status_views.dart';
 
 /// The barcode branch of the scan sheet: scan (or type) a product barcode,
 /// pick an amount, and log it as a meal in one shot — no pending-confirmation
@@ -20,6 +19,10 @@ import 'barcode_status_views.dart';
 /// `scan_sheet.dart`, which hosts this alongside the nutrition-label branch;
 /// this widget is only the body. It pops the sheet with `true` once a meal is
 /// saved.
+///
+/// A lookup that finds nothing does NOT replace this body: the camera keeps
+/// the screen and the miss is reported inside the frame, so the sheet holds
+/// its height and the scanner is still live to try the next package.
 ///
 /// [onFallbackToText] is invoked when the user picks "describe it instead" on
 /// a product we couldn't find — the sheet pops itself first.
@@ -55,10 +58,17 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     super.dispose();
   }
 
+  /// Whether the lookup in flight (or the one that just failed) was TYPED.
+  /// The controller lands both on the scanning phase, but a typed code has to
+  /// come back to its keyboard: the user reaching for it has usually already
+  /// told us the camera is no use to them.
+  bool _manualLookup = false;
+
   void _onDetect(BarcodeCapture capture) {
     final raw = _camera.claimDetection(capture);
     if (raw == null) return;
     HapticFeedback.mediumImpact();
+    _manualLookup = false;
     ref.read(barcodeFlowProvider.notifier).search(raw);
   }
 
@@ -66,7 +76,15 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     final text = _manualController.text.trim();
     if (text.isEmpty) return;
     HapticFeedback.lightImpact();
-    await ref.read(barcodeFlowProvider.notifier).search(text);
+    _manualLookup = true;
+    // Forced: typing a code and pressing look up is a deliberate retry, so it
+    // must get through even when that same code's miss is what is on screen.
+    await ref.read(barcodeFlowProvider.notifier).search(text, force: true);
+  }
+
+  void _backToCamera() {
+    _manualLookup = false;
+    ref.read(barcodeFlowProvider.notifier).scanAgain();
   }
 
   Future<void> _confirm(int grams) async {
@@ -80,14 +98,18 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Re-arm on entering the scanning phase, tear down on leaving it. This
-    // listener fires synchronously with the state change — which can originate
-    // inside the scanner's own detection callback — so disposal is deferred a
-    // frame rather than run from within that stream's callstack.
+    // Re-arm whenever we are back to accepting a scan, tear down once the
+    // viewport leaves the screen. This listener fires synchronously with the
+    // state change — which can originate inside the scanner's own detection
+    // callback — so disposal is deferred a frame rather than run from within
+    // that stream's callstack.
     ref.listen(barcodeFlowProvider, (previous, next) {
-      if (_showsCamera(next)) {
+      if (next.phase == BarcodeFlowPhase.scanning) {
+        // Including after a miss: the frame keeps scanning, which is what
+        // makes the explicit "Scan again" button unnecessary.
         _camera.arm();
-      } else if (_camera.isRunning) {
+      }
+      if (!_showsCamera(next) && _camera.isRunning) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return; // dispose() already released it
           if (!_showsCamera(ref.read(barcodeFlowProvider))) _camera.release();
@@ -98,66 +120,49 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     return _buildBody(ref.watch(barcodeFlowProvider));
   }
 
-  /// The live viewport is on screen only while scanning and unblocked.
-  static bool _showsCamera(BarcodeFlowState state) =>
-      state.phase == BarcodeFlowPhase.scanning && state.errorKey == null;
+  /// The live viewport holds the screen from the first frame through the
+  /// lookup — the search runs over the picture, not in place of it. A typed
+  /// lookup is the exception: it never leaves the keyboard, so the camera has
+  /// no reason to be running behind it.
+  bool _showsCamera(BarcodeFlowState state) =>
+      !_manualLookup &&
+      (state.phase == BarcodeFlowPhase.scanning ||
+          state.phase == BarcodeFlowPhase.searching);
+
+  /// The typing surface, whether the user is still on it or is waiting on the
+  /// code they typed.
+  Widget _manualInput(BarcodeFlowState state) => BarcodeManualInput(
+    controller: _manualController,
+    onSubmit: _submitManual,
+    errorText: state.errorKey?.tr(),
+    searching: state.phase == BarcodeFlowPhase.searching,
+    onBackToCamera: _backToCamera,
+  );
 
   Widget _buildBody(BarcodeFlowState state) {
-    if (state.errorKey != null &&
-        state.phase != BarcodeFlowPhase.product &&
-        state.phase != BarcodeFlowPhase.saving) {
-      return ScanErrorCard(
-        icon: LucideIcons.scanBarcode300,
-        message: state.errorKey!.tr(),
-        detail: state.lastBarcode,
-        primary: ScanErrorAction(
-          label: 'logging.barcode.scanAgain'.tr(),
-          onTap: () => ref.read(barcodeFlowProvider.notifier).scanAgain(),
-        ),
-        secondary: [
-          // A product Open Food Facts doesn't know still has its nutrition
-          // table printed on the box — offer to read that instead.
-          if (state.isNotFound)
-            ScanErrorAction(
-              icon: LucideIcons.scanText300,
-              label: 'logging.scan.tryLabelInstead'.tr(),
-              onTap: widget.onScanLabelInstead,
-            ),
-          if (state.isNotFound && widget.onFallbackToText != null)
-            ScanErrorAction(
-              icon: LucideIcons.pencilLine300,
-              label: 'logging.barcode.logByText'.tr(),
-              onTap: () {
-                Navigator.of(context).pop(false);
-                widget.onFallbackToText?.call();
-              },
-            ),
-        ],
-        quiet: ScanErrorAction(
-          icon: LucideIcons.keyboard300,
-          label: 'logging.barcode.manualEntry'.tr(),
-          onTap: () => ref.read(barcodeFlowProvider.notifier).enterManualMode(),
-        ),
-      );
-    }
-
     switch (state.phase) {
       case BarcodeFlowPhase.scanning:
+      case BarcodeFlowPhase.searching:
+        if (_manualLookup) return _manualInput(state);
         return BarcodeCameraView(
           controller: _camera.ensure(),
           onDetect: _onDetect,
           onEnterManually:
               () => ref.read(barcodeFlowProvider.notifier).enterManualMode(),
+          notice: barcodeFrameNoticeFor(
+            state,
+            onScanLabelInstead: widget.onScanLabelInstead,
+            onLogByText:
+                widget.onFallbackToText == null
+                    ? null
+                    : () {
+                      Navigator.of(context).pop(false);
+                      widget.onFallbackToText?.call();
+                    },
+          ),
         );
       case BarcodeFlowPhase.manualEntry:
-        return BarcodeManualInput(
-          controller: _manualController,
-          onSubmit: _submitManual,
-          onBackToCamera:
-              () => ref.read(barcodeFlowProvider.notifier).scanAgain(),
-        );
-      case BarcodeFlowPhase.searching:
-        return const BarcodeSearchingView();
+        return _manualInput(state);
       case BarcodeFlowPhase.product:
       case BarcodeFlowPhase.saving:
         final product = state.product;
@@ -168,7 +173,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           product: product,
           saving: state.phase == BarcodeFlowPhase.saving,
           errorText: state.errorKey?.tr(),
-          onBack: () => ref.read(barcodeFlowProvider.notifier).scanAgain(),
+          onBack: _backToCamera,
           onConfirm: _confirm,
         );
     }

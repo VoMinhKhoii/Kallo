@@ -9,15 +9,15 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/dashboard_providers.dart';
 import '../../data/logging_day.dart';
 import '../../../../shared/logic/display_format.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../logic/dashboard_spacing.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../chrome/section_header.dart';
 import '../states/card_skeletons.dart';
+import '../states/section_state.dart';
 import 'dock_targets.dart';
 import 'fade_in_down.dart';
 import '../../../../shared/widgets/gauge/calorie_dial.dart';
@@ -60,6 +60,10 @@ class TodaySection extends ConsumerWidget {
         isToday ? loggingDayProvider(args) : dashboardDayProvider(args);
     final async = ref.watch(provider);
     return async.when(
+      // A weigh-in invalidates the bundle, so loggingDayProvider goes
+      // isReloading and .when would flash the whole Today card back to its
+      // skeleton — skipLoadingOnReload only defaults true on refresh.
+      skipLoadingOnReload: true,
       loading:
           () => const Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,7 +71,6 @@ class TodaySection extends ConsumerWidget {
           ),
       error:
           (_, __) => SectionState(
-            icon: LucideIcons.cloudOff300,
             message: tr('dashboard.todayLoadError'),
             actionLabel: tr('dashboard.retry'),
             onAction: () => ref.invalidate(provider),
@@ -109,13 +112,16 @@ class _Dock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Which day this is showing. The calorie eyebrow that used to sit
-          // beside it is gone — the dial's own readout now names its figure —
-          // but the date stays: the dock pages to other days, and nothing else
-          // inside it says which one you are looking at.
+          // Which day this is showing. On the SECTION tier (17/600 ink), not
+          // the quieter group-label one it used to wear: it is the first
+          // section header on the page, and at 15/500 muted it announced
+          // itself in a smaller voice than "Recent meals" directly below and
+          // "Progress" below that. Same widget, same inset, same rhythm as its
+          // siblings — the dock pages to other days and this is the only line
+          // that says which one.
           Padding(
-            padding: const EdgeInsets.only(bottom: DashboardSpacing.label),
-            child: Text(dateLabel.toUpperCase(), style: dashMeta()),
+            padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
+            child: SectionHeaderRow(title: dateLabel),
           ),
 
           // (a) The calorie dial, straight on the canvas. No card: the arc
@@ -143,39 +149,27 @@ class _Dock extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: DashboardSpacing.majorBreak),
+          const SizedBox(height: DashboardSpacing.sectionBreak),
 
           // (c) The meals behind those numbers — the one place on the section
           // that still takes a card, because a list needs an edge to sit on.
           Padding(
-            padding: const EdgeInsets.only(bottom: DashboardSpacing.label),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  tr('dashboard.recentMeals').toUpperCase(),
-                  style: dashMeta(),
-                ),
-                Text(
-                  tr(
-                    'dashboard.mealsLogged',
-                    namedArgs: {'count': '${meals.length}'},
-                  ),
-                  style: dashMeta(),
-                ),
-              ],
+            padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
+            child: SectionHeaderRow(
+              title: tr('dashboard.recentMeals'),
+              meta: tr(
+                'dashboard.mealsLogged',
+                namedArgs: {'count': '${meals.length}'},
+              ),
             ),
           ),
-          Container(
+          KalloCard(
+            // A list card insets only its sides — each row pays its own
+            // vertical padding, so the separators land between rows.
             padding:
                 meals.isEmpty
                     ? DashboardSpacing.card
                     : DashboardSpacing.rowCard,
-            decoration: BoxDecoration(
-              color: kCardSurface,
-              borderRadius: BorderRadius.circular(kCardRadius),
-              boxShadow: kCardShadows,
-            ),
             child: meals.isEmpty ? const EmptyMeals() : MealList(meals: meals),
           ),
         ],

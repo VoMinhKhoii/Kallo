@@ -75,4 +75,58 @@ describe('SignUpForm', () => {
     expect(closeDialogMock).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
   });
+
+  // "Could not create account" for a throttle sends the user straight back to
+  // the button that is being throttled.
+  it.each([
+    ['the GoTrue error code', { code: 'over_request_rate_limit', status: 429 }],
+    ['a bare 429 with no code', { status: 429 }],
+  ])('shows the rate-limited line for %s', async (_name, error) => {
+    signUpMock.mockResolvedValue({
+      data: null,
+      error: { message: 'Email rate limit exceeded', ...error },
+    });
+
+    render(<SignUpForm />);
+
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByPlaceholderText('emailPlaceholder'),
+      'new@example.com'
+    );
+    await user.type(
+      screen.getByPlaceholderText('passwordPlaceholder'),
+      'hunter22'
+    );
+    await user.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('errors.rateLimited')).toBeInTheDocument();
+    });
+    expect(showCheckEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('still shows the generic line for any other failure', async () => {
+    signUpMock.mockResolvedValue({
+      data: null,
+      error: { message: 'Signups not allowed', status: 422 },
+    });
+
+    render(<SignUpForm />);
+
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByPlaceholderText('emailPlaceholder'),
+      'new@example.com'
+    );
+    await user.type(
+      screen.getByPlaceholderText('passwordPlaceholder'),
+      'hunter22'
+    );
+    await user.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('error')).toBeInTheDocument();
+    });
+  });
 });

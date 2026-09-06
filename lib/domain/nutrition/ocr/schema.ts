@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export type OcrErrorCode =
+  | 'feature_locked'
   | 'invalid_image'
   | 'no_label_detected'
   | 'rate_limited'

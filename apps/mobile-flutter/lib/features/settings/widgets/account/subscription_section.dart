@@ -11,7 +11,7 @@ import '../../../../services/auth/session_provider.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../paywall/logic/store_subscriptions.dart';
 import '../list/settings_group.dart';
-import '../list/settings_row.dart';
+import '../../../../shared/widgets/list/list_row.dart';
 
 /// Current plan state, store-management access, and purchase restoration.
 ///
@@ -39,7 +39,7 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
     final isPremium = entitlement?.isPremium ?? false;
 
     final rows = <Widget>[
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.sparkles300,
         label: tr('settings.subscription.row'),
         subline: _statusSubline(context, entitlementAsync),
@@ -52,7 +52,7 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
         entitlement?.hasActiveSubscription == true &&
         entitlement?.managementUrl != null) {
       rows.add(
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.externalLink300,
           label: tr('settings.subscription.manage'),
           onTap:
@@ -63,11 +63,10 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
     }
 
     rows.add(
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.refreshCw300,
         label: tr('settings.subscription.restore'),
         busy: _restoring,
-        enabled: !_restoring,
         onTap: _restore,
       ),
     );

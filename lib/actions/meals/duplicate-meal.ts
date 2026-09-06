@@ -5,6 +5,7 @@ import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import { duplicateMealSchema } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
@@ -36,7 +37,13 @@ export async function duplicateMealAction(input: {
   timezoneOffset: number;
 }): Promise<ConfirmMealResponse> {
   const parsed = duplicateMealSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium: "log again" is a Premium-card feature. Gated BEFORE the
+  // transaction — no entitlement read may happen inside an open tx (pool max 2).
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'relog'
+  );
 
   return await db.transaction(async (tx) => {
     const [source] = await tx

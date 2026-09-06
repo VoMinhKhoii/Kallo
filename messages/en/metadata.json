@@ -3,6 +3,10 @@
     "title": "Kallo — AI Nutrition Tracker: Describe, Don't Search",
     "description": "Describe what you ate in your own words — Kallo derives the full nutrition breakdown from trusted data."
   },
+  "pricing": {
+    "title": "Pricing — Kallo",
+    "description": "Kallo plans and prices. Start free, upgrade to Premium for AI logging, label scanning, micronutrients and unlimited circles."
+  },
   "dashboard": {
     "title": "Dashboard — Kallo"
   },
@@ -11,5 +15,8 @@
   },
   "groups": {
     "title": "Groups — Kallo"
+  },
+  "activity": {
+    "title": "Activity — Kallo"
   }
 }

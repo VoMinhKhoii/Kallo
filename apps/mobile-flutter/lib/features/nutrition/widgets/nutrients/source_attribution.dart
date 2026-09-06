@@ -15,28 +15,45 @@ class SourceAttribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A tappable line still owes the finger 44pt, even where its glyphs are 13
+    // because they sit inside a text run.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _showCitations(context),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            LucideIcons.shieldCheck300,
-            size: 13,
-            color: kInkMuted,
-          ),
-          const SizedBox(width: KalloSpacing.sp1_5),
-          Flexible(
-            child: Text(
-              tr('nutrition.sources.caption'),
-              textAlign: TextAlign.center,
-              style: dashMeta(color: kInkMuted),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
+        // The two icons are INLINE SPANS, not Row children. As a Row the
+        // caption was the only flexible cell, so once the Vietnamese string
+        // wrapped, the shield and the info glyph pinned to the two outer edges
+        // and the second line floated between them. Inside the paragraph they
+        // are just two more things on the line: they wrap where the words wrap
+        // and every line stays centred.
+        child: Center(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(
+                    LucideIcons.shieldCheck300,
+                    size: 13,
+                    color: kInkMuted,
+                  ),
+                ),
+                const WidgetSpan(child: SizedBox(width: KalloSpacing.sp1_5)),
+                TextSpan(text: tr('nutrition.sources.caption')),
+                const WidgetSpan(child: SizedBox(width: KalloSpacing.sp1)),
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(LucideIcons.info300, size: 13, color: kInkMuted),
+                ),
+              ],
             ),
+            textAlign: TextAlign.center,
+            style: dashMeta(color: kInkMuted),
           ),
-          const SizedBox(width: KalloSpacing.sp1),
-          const Icon(LucideIcons.info300, size: 13, color: kInkMuted),
-        ],
+        ),
       ),
     );
   }
@@ -99,7 +116,7 @@ class _Citation extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: dashBody(weight: FontWeight.w600)),
+          Text(label, style: kSectionHeader()),
           const SizedBox(height: 2),
           Text(detail, style: dashMeta(color: kInkMuted)),
         ],

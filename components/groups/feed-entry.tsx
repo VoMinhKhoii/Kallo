@@ -2,6 +2,8 @@
 
 import { Copy, Heart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ShareReplies } from '@/components/groups/share-replies';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
@@ -28,7 +30,11 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const locale = useLocale();
   const toggleReaction = useToggleReaction();
   const logSharedMeal = useLogSharedMeal();
+  const { requirePremium, locked } = usePremiumGuard();
   const { friend, meal } = entry;
+  // Pulling a copy off someone else's post is an INITIATED copy — the billable
+  // side of copy/split. Responding to a directed invite stays free.
+  const copyLocked = locked('copy_split');
 
   const label = entry.isSelf ? tWall('you') : labelFor(friend);
   // Spelled once: the bar and the figures under it read the same record.
@@ -111,21 +117,23 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             />
             <span>{entry.reactions.count}</span>
           </button>
-          {/* Split half is deferred — it needs a confirmation step before it
-           *  writes a scaled copy. Only "Log this too" (verbatim) ships for
-           *  now, and only on others' meals. */}
+          {/* Split half is still deferred — it needs a confirmation step. */}
           {!entry.isSelf && (
-            <button
-              type="button"
-              disabled={logSharedMeal.isPending}
-              onClick={() =>
-                logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 })
-              }
-              className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
-            >
-              <Copy className="size-[15px]" />
-              <span>{t('logCopy')}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                disabled={logSharedMeal.isPending}
+                onClick={() => {
+                  if (!requirePremium('copy_split')) return;
+                  logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
+                }}
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
+              >
+                <Copy className="size-[15px]" />
+                <span>{t('logCopy')}</span>
+              </button>
+              {copyLocked && <PremiumChip className="px-1.5 py-0" />}
+            </>
           )}
         </div>
         <ShareReplies

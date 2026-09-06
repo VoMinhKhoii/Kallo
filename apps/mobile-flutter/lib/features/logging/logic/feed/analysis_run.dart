@@ -138,6 +138,13 @@ class FeedAnalysisRun {
   /// attemptId semantics (use-feed-submit / use-confirm-handlers).
   String? _attemptId;
 
+  /// The day the run in flight was submitted ON, frozen at send. This object
+  /// is not keyed by date (see the library note), so paging moves the day under
+  /// it while an analysis is still out — and the completion used to take
+  /// whatever day was on screen, riding Tuesday's feed to its tail for
+  /// Monday's answer.
+  String? _runDate;
+
   /// The raw text of the just-revealed answer — shown as the morph card's Lora
   /// quote so the confirmable card carries the user's own words, not a derived
   /// meal name (the streaming→reveal→persisted object stays continuous).
@@ -244,19 +251,25 @@ class FeedAnalysisRun {
   /// No rebuild is asked for — the stream provider the feed watches has already
   /// changed, which is what brought us here.
   void reveal(WidgetRef ref, {required String userId, required String date}) {
+    // The run's OWN day, not the one the user happens to be looking at now.
+    final runDate = _runDate ?? date;
     _revealRawInput = inFlightLabel;
     _inFlightText = null;
     _inFlightPicks = const [];
     // A combined submit reached a confirmable card, so its picks are logged —
     // the composer was already cleared, and the snapshot is now spent.
     _relogSnapshot = null;
-    HapticFeedback.lightImpact();
-    onScrollToAnswer();
     // Pull the staged row into the day cache NOW, not at confirm. Until this
     // lands the card exists only in stream state, and a hot reload (which makes
     // Riverpod re-run Notifier.build) or a relaunch wiped it off the screen
     // even though the server still had it staged.
-    refreshStagedAnalysisDay(ref, userId: userId, fallbackDate: date);
+    refreshStagedAnalysisDay(ref, userId: userId, fallbackDate: runDate);
+    // The answer's day is no longer on screen. The reveal is KEPT (paging back
+    // finds it), but the haptic and the ride to the tail would be addressed to
+    // a feed with nothing new on it, so they are dropped.
+    if (runDate != date) return;
+    HapticFeedback.lightImpact();
+    onScrollToAnswer();
   }
 
   void fail(
@@ -320,12 +333,14 @@ class FeedAnalysisRun {
   /// for a vague input, so the clarify is a fresh analyze of the same occasion
   /// text — but a double-fired clarify WOULD stage twice, and sharing the id
   /// collapses that to one row.
-  ({String text, String attemptId})? retakeReveal() {
+  ({String text, String attemptId})? retakeReveal({required String date}) {
     final text = _revealRawInput;
     if (text == null || text.isEmpty) return null;
     final attemptId = _attemptId ??= _uuid.v4();
     _revealRawInput = null;
     _inFlightText = text;
+    // Bypasses [_analyze], but is still a run in flight — see [_runDate].
+    _runDate = date;
     // A retake is a fresh analysis, so it gets a fresh loader and a fresh
     // timestamp — this path bypasses [_analyze] and would otherwise reuse the
     // previous run's.
@@ -351,6 +366,7 @@ class FeedAnalysisRun {
     String? label,
   }) {
     refreshStagedAnalysisDay(ref, userId: userId, fallbackDate: date);
+    _runDate = date;
     _failedText = null;
     // Kept in lockstep with _failedText (only read while _failedText != null);
     // reset it explicitly so the invariant holds without relying on the error

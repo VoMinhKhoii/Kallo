@@ -1,11 +1,20 @@
 import { NextRequest } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+const assertRateLimit = vi.fn();
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({ assertRateLimit }));
+
 const { handleVerify } = await import('@/app/auth/verify/route');
+const { Errors } = await import('@/lib/core/errors/catalog');
+
+beforeEach(() => {
+  assertRateLimit.mockReset();
+  assertRateLimit.mockResolvedValue(undefined);
+});
 
 function mockSupabase(error?: { message: string } | null) {
   return {
@@ -121,6 +130,59 @@ describe('handleVerify', () => {
     const location = res.headers.get('location') ?? '';
     expect(location).toBe('http://localhost:3000/en/logging');
     expect(new URL(location).origin).toBe('http://localhost:3000');
+  });
+
+  it('throttles per source IP before calling GoTrue', async () => {
+    // Anonymous, and it verifies the token upstream for whoever opened the URL,
+    // so an unbounded flood of guessed token_hash values spends the app's
+    // SHARED per-IP token_verifications budget at Supabase.
+    const supabase = mockSupabase();
+    const res = await handleVerify(
+      makeRequest(
+        { token_hash: 'hash123', type: 'email' },
+        { headers: { 'x-forwarded-for': '203.0.113.5' } }
+      ),
+      { supabase }
+    );
+
+    expect(assertRateLimit).toHaveBeenCalledWith('authLinkIp', {
+      kind: 'ip',
+      value: '203.0.113.5',
+    });
+    expect(supabase.auth.verifyOtp).toHaveBeenCalled();
+    expect(res.status).toBe(307);
+  });
+
+  it('answers a throttled link with the redirect, never a JSON 429', async () => {
+    assertRateLimit.mockRejectedValueOnce(Errors.rateLimited(undefined, 30));
+    const supabase = mockSupabase();
+
+    const res = await handleVerify(
+      makeRequest(
+        { token_hash: 'hash123', type: 'email' },
+        { headers: { 'x-forwarded-for': '203.0.113.5' } }
+      ),
+      { supabase }
+    );
+
+    // A browser navigation cannot render an error envelope; it gets the same
+    // "that link did not work" screen a failed verify produces.
+    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(res.headers.get('location')).toBe(
+      'http://localhost:3000/en/?error=verify_failed'
+    );
+  });
+
+  it('admits when no IP key is available rather than refusing the link', async () => {
+    const supabase = mockSupabase();
+    await handleVerify(makeRequest({ token_hash: 'hash123', type: 'email' }), {
+      supabase,
+    });
+
+    // `getRequestIp` returns null when the request did not arrive through the
+    // edge. A policy applied with no key counts nothing, so it is not called.
+    expect(assertRateLimit).not.toHaveBeenCalled();
+    expect(supabase.auth.verifyOtp).toHaveBeenCalled();
   });
 
   it('uses x-forwarded-host + proto behind a reverse proxy', async () => {

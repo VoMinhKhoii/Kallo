@@ -1,14 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import 'composer_card_surface.dart';
-import 'meal_input_controls.dart';
+import 'composer_action_row.dart';
 import '../relog/mention_text_controller.dart';
 
 /// Imperative handle for [MealInput] — the RN `MealInputHandle`
@@ -35,6 +35,7 @@ class MealInput extends StatefulWidget {
     this.onModePressed,
     this.onBarcodePressed,
     this.modeLabel,
+    this.modeDetail,
     this.modeIcon,
     this.hintText,
     this.notice,
@@ -64,6 +65,10 @@ class MealInput extends StatefulWidget {
   /// Label + icon of the currently selected mode, shown on the mode control.
   final String? modeLabel;
   final IconData? modeIcon;
+
+  /// The muted qualifier trailing [modeLabel] — cheat's intensity. Null for
+  /// modes that carry none, which then render as the bare mode name.
+  final String? modeDetail;
 
   /// Placeholder override — cheat mode swaps in the occasion-flavored hint.
   final String? hintText;
@@ -95,8 +100,12 @@ class MealInput extends StatefulWidget {
 
 class _MealInputState extends State<MealInput>
     with SingleTickerProviderStateMixin {
-  static const double _maxHeight = 200;
-  static const double _minHeight = 24;
+  /// One line, growing to about eight before the field scrolls itself.
+  static const _fieldBox = BoxConstraints(minHeight: 24, maxHeight: 200);
+
+  /// Body — a sentence typed under a keyboard reads at the same size it will
+  /// be read back at in the feed.
+  static final _fieldText = dashBody();
 
   /// Owned only when the caller didn't supply one — a controller belongs to
   /// whoever created it, and disposing a borrowed one would break the feed the
@@ -117,10 +126,11 @@ class _MealInputState extends State<MealInput>
 
   final FocusNode _focusNode = FocusNode();
 
-  // Border + shadow crossfade on focus over 300ms.
+  // Border + shadow crossfade on focus — `emphasis` is the token for exactly
+  // this ("a control changing shape: a field taking focus").
   late final AnimationController _focus = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
+    duration: KalloMotion.emphasis,
   );
 
   @override
@@ -235,17 +245,14 @@ class _MealInputState extends State<MealInput>
               children: [
                 // Line 1 — the composer field, full width.
                 ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: _minHeight,
-                    maxHeight: _maxHeight,
-                  ),
+                  constraints: _fieldBox,
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
                     textInputAction: TextInputAction.newline,
-                    style: dashBody(),
+                    style: _fieldText,
                     cursorColor: KalloColors.accent,
                     decoration: InputDecoration(
                       isCollapsed: true,
@@ -253,46 +260,25 @@ class _MealInputState extends State<MealInput>
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       disabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                      contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
                       hintText:
                           widget.hintText ?? 'logging.composerPlaceholder'.tr(),
-                      hintStyle: dashBody(color: kInkMuted),
+                      hintStyle: _fieldText.copyWith(color: kInkMuted),
                     ),
                   ),
                 ),
-                const SizedBox(height: KalloSpacing.sp2),
-                // Line 2 — mode selector on the left, send/stop on the right.
-                Row(
-                  children: [
-                    if (widget.onModePressed != null && !widget.analyzing)
-                      ComposerModeButton(
-                        icon: widget.modeIcon ?? LucideIcons.zap300,
-                        label:
-                            widget.modeLabel ??
-                            'logging.modeSelector.button'.tr(),
-                        onTap: widget.onModePressed!,
-                      ),
-                    if (widget.onBarcodePressed != null && !widget.analyzing)
-                      ComposerBarcodeButton(onTap: widget.onBarcodePressed!),
-                    const Spacer(),
-                    if (!_canSubmit &&
-                        widget.analyzing &&
-                        widget.onCancel != null)
-                      ComposerActionButton(
-                        icon: LucideIcons.square300, // lucide Square (filled)
-                        iconSize: LoggingIcons.size,
-                        label: 'common.cancel'.tr(),
-                        onTap: widget.onCancel,
-                      )
-                    else
-                      ComposerActionButton(
-                        icon: LucideIcons.arrowUp300, // lucide ArrowUp
-                        iconSize: LoggingIcons.size,
-                        label: 'logging.submit'.tr(),
-                        enabled: _canSubmit,
-                        onTap: _canSubmit ? _submit : null,
-                      ),
-                  ],
+                const SizedBox(height: KalloSpacing.sp0_5),
+                // Line 2 — mode, scan, send.
+                ComposerActionRow(
+                  analyzing: widget.analyzing,
+                  canSubmit: _canSubmit,
+                  modeIcon: widget.modeIcon,
+                  modeLabel: widget.modeLabel,
+                  modeDetail: widget.modeDetail,
+                  onModePressed: widget.onModePressed,
+                  onBarcodePressed: widget.onBarcodePressed,
+                  onCancel: widget.onCancel,
+                  onSubmit: _submit,
                 ),
               ],
             ),

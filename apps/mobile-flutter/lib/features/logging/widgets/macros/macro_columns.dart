@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import 'macro_split.dart';
 
 /// The fixed columns every macro readout on the logging tab is laid out in.
 ///
@@ -12,18 +12,31 @@ import '../../../../theme/kallo_theme.dart';
 /// each row's text decide them, is what makes the column true down the card and
 /// across the card's item rows, its totals line, and the `/` picker's options.
 abstract final class MacroColumns {
-  /// The `P:` box. Fits the widest label (`C:` at 12.7 in Be Vietnam Pro at
-  /// Meta 12) and nothing else, so the label sits tight against its own figure
-  /// instead of being flung to the far side of the cell.
-  static const double label = 14;
+  /// The `P:` box. Fits the widest label (`C:` at 13.8 in Be Vietnam Pro at
+  /// Caption 13) and nothing else, so the label sits tight against its own
+  /// figure instead of being flung to the far side of the cell.
+  ///
+  /// The cluster sits on Caption (12 since the metric-compensated ramp,
+  /// 2026-09-02; 13 before) rather than Meta — see [MacroSplit] for why. `C:`
+  /// measures ~12.7 at 12; at the old 14 the colon clipped outright, and the
+  /// column keeps that slack rather than chasing the type down.
+  static const double label = 15;
 
-  /// Sized for the widest figure a meal actually reaches — `277g` at 29.2 —
-  /// not for the widest one arithmetic allows (`999g` at 32.2, which scales to
-  /// 0.94 and does not occur in a meal). The difference is 3pt of dead air per
-  /// cell, times three cells, in a row that has none to spare.
+  /// Sized so the block, its gutters and the kcal column leave the dish name
+  /// the ~79pt its longest word needs ("Top blade", ~78 at Body 16; it was
+  /// 83.0 at the old 17) — the real floor on a 390pt phone, where the row
+  /// gets 334.
+  ///
+  /// 33 → 32 when [cellGap] grew to a structural 8 (device QA, 2026-09-01).
+  /// The block gives up 3pt so the gutters can be real, which leaves the name
+  /// 87 — now ~9pt over its floor. Three digits are taken in by the cell's
+  /// own `FittedBox`: at Caption 12 `490g` (~32.5) renders at ~0.98, `1047g`
+  /// (~35) at ~0.91.
+  /// Scaling the FIGURE is the right thing to spend here; the alternative is
+  /// letting it run into the next label, which is the defect this fixed.
   ///
   /// The font ignores the `tnum` feature this style asks for, so digits are
-  /// genuinely variable-width: `188g` is 27.6 and `277g` is 29.2. There is no
+  /// genuinely variable-width: `188g` is 29.8 and `277g` is 31.6. There is no
   /// single "three digits" width to size to, which is the other reason the
   /// figures are pinned left rather than right — a right-aligned column of
   /// non-tabular digits is ragged on both edges.
@@ -38,13 +51,18 @@ abstract final class MacroColumns {
   /// the same numbers just as well, but it strands each label 17pt from its own
   /// one-digit figure — `P:` and `0g` at opposite ends of the cell with a hole
   /// between them.
-  static const double value = 30;
+  static const double value = 32;
 
   /// One macro's full cell.
   static const double cell = label + value;
 
-  /// Sized for `999 kcal` at Value 17 (72.9) — every three-digit total at full
-  /// size, and every item row's Body 14 figure with room to spare.
+  /// Sized for `999 kcal` at the old Value 17 (73.9) and kept there when the
+  /// figure stepped to 16 (~69.5, metric-compensated ramp 2026-09-02): a
+  /// three-digit total now has ~4.5pt of slack at 1.0x and is taken in by the
+  /// [MacroKcal] `FittedBox` (~0.82) at the 1.3x Dynamic Type ceiling. Never
+  /// clipped — that is the guarantee this column exists to make. Narrowing it
+  /// to the new figure is not free: this width is what sets where the P/C/F
+  /// block stops, and every point pushes the macros toward the calories.
   ///
   /// This column is SHARED with the totals line by necessity: both readouts end
   /// at the card's right edge, so its width is what sets where the P/C/F block
@@ -53,49 +71,31 @@ abstract final class MacroColumns {
   /// clears 1000 kcal scales its total to 0.94 instead — the rarer case pays.
   static const double kcal = 74;
 
-  /// Between the P/C/F block and the kcal column, and between one macro cell
-  /// and the next. Both are small because each cell already carries its own
-  /// trailing slack — the air after a short figure separates the macros on its
-  /// own, and an explicit gap on top of it reads as a gulf.
+  /// Between the P/C/F block and the kcal column.
+  ///
+  /// Small because the cell before it carries its own trailing slack — the air
+  /// after a short figure separates the block from the calories on its own,
+  /// and an explicit gap on top of it reads as a gulf.
   static const double gap = KalloSpacing.sp1;
-  static const double cellGap = KalloSpacing.sp0_5;
+
+  /// Between one macro cell and the next — a STRUCTURAL gutter the figures
+  /// cannot enter, not incidental trailing air.
+  ///
+  /// 2 → 8 after device QA (2026-09-01) caught the Total row rendering
+  /// `C:490gF: 184g`. The old 2 leaned on each cell's leftover space to part
+  /// the columns, which works at `49g` and vanishes at `490g` — the figure
+  /// fills its cell exactly and the next label starts 2pt later, so the two
+  /// runs touch. A day's totals reach three digits routinely, so this is the
+  /// common case on that row, not an edge one.
+  ///
+  /// The 12pt this costs comes out of [value], not the dish-name column: the
+  /// figures give way before the reading text does.
+  static const double cellGap = KalloSpacing.sp2; // 8
 
   /// The whole P/C/F block: three cells plus the two gaps inside it.
   static const double split = cell * 3 + cellGap * 2;
 }
 
-/// `P: 65g  C: 0g  F: 2g` in the shared cells: labels at one fixed x, figures
-/// at another a label-width over.
-///
-/// [dashMeta] still asks for tabular figures. Be Vietnam Pro ignores `tnum`, so
-/// it buys nothing here — but the request costs nothing and holds if the family
-/// ever ships the feature.
-class MacroSplit extends StatelessWidget {
-  const MacroSplit({
-    super.key,
-    required this.protein,
-    required this.carbs,
-    required this.fat,
-  });
-
-  final double? protein;
-  final double? carbs;
-  final double? fat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _Cell(label: 'P:', grams: protein),
-        const SizedBox(width: MacroColumns.cellGap),
-        _Cell(label: 'C:', grams: carbs),
-        const SizedBox(width: MacroColumns.cellGap),
-        _Cell(label: 'F:', grams: fat),
-      ],
-    );
-  }
-}
 
 /// The kcal column: fixed width, pinned to the row's right edge, and scaling
 /// [child] down rather than clipping or ellipsizing it.
@@ -126,42 +126,3 @@ class MacroKcal extends StatelessWidget {
   }
 }
 
-/// `P:` in a box of its own, then `49g` starting at that box's edge.
-///
-/// Both runs are pinned LEFT, so the labels form a column and the figures form
-/// a column one label-width over — with only the slack inside the label box
-/// (1.3pt at `C:`, 2.8pt at `P:`) between a label and its own number. The unit
-/// rides along with the digit it belongs to and lands wherever that leaves it;
-/// the trailing air stays inside the cell, so the next macro still starts at a
-/// fixed x.
-class _Cell extends StatelessWidget {
-  const _Cell({required this.label, required this.grams});
-
-  final String label;
-  final double? grams;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = dashMeta(tabular: true);
-    final value = grams == null ? 'N/A' : '${grams!.round()}g';
-
-    Widget fit(String text) => Align(
-      alignment: Alignment.centerLeft,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(text, maxLines: 1, softWrap: false, style: style),
-      ),
-    );
-
-    return SizedBox(
-      width: MacroColumns.cell,
-      child: Row(
-        children: [
-          SizedBox(width: MacroColumns.label, child: fit(label)),
-          Expanded(child: fit(value)),
-        ],
-      ),
-    );
-  }
-}

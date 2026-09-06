@@ -7,10 +7,14 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
+import { shareReactionKey } from '@/lib/domain/notifications/group-keys';
+import { retractActor } from '@/lib/domain/notifications/notify';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealShareReactions, mealShares } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 const toggleShareReactionSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),
@@ -27,7 +31,12 @@ export async function toggleShareReactionAction(input: {
   const parsed = toggleShareReactionSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return db.transaction(async (tx) => {
+  // Per-actor cap before the toggle — bounds the write and any push fan-out.
+  await assertRateLimit('shareReaction', { kind: 'user', value: user.id });
+
+  // Only a reaction turning ON notifies; un-reacting is silent by design, so
+  // the else branch below queues no push at all.
+  return withNotifications(db, async (tx, notify) => {
     // Serialize concurrent toggles on this share. Without the row lock two
     // taps from "off" both see no deletion and both insert (onConflictDoNothing
     // then leaves it "on" instead of cancelling); locking forces the second
@@ -71,6 +80,25 @@ export async function toggleShareReactionAction(input: {
           target: [mealShareReactions.shareId, mealShareReactions.userId],
         })
         .returning({ id: mealShareReactions.id });
+      // Aggregates per share: ten hearts are one row, "X and 9 others".
+      await notify([
+        {
+          recipientId: lockedShares[0].actorId,
+          type: 'share.reaction',
+          actorId: user.id,
+          objectType: 'share',
+          objectId: parsed.shareId,
+          groupKey: shareReactionKey(parsed.shareId),
+        },
+      ]);
+    } else {
+      // Un-reacting withdraws this actor from the still-open aggregate (and
+      // deletes the row at zero); a read row is history and stays untouched.
+      await retractActor(tx, {
+        recipientId: lockedShares[0].actorId,
+        groupKey: shareReactionKey(parsed.shareId),
+        actorId: user.id,
+      });
     }
 
     const [summary] = await tx

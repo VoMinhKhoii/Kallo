@@ -1,5 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
+import { Errors } from '@/lib/core/errors/catalog';
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -40,6 +76,17 @@ vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
 });
 
 vi.mock('@/lib/infra/db/schema', async () => await import('./schema-doubles'));
+
+// Premium circle gates: pass-through unless a test arms one, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertActor, mockAssertCapacity } = vi.hoisted(() => ({
+  mockAssertActor: vi.fn(async (..._args: unknown[]) => undefined),
+  mockAssertCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertUnlimitedCircleActor: mockAssertActor,
+  assertGroupCapacity: mockAssertCapacity,
+}));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -126,6 +173,86 @@ describe('createChatGroup', () => {
       userId: USER_B,
       role: 'member',
     });
+    expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
+    expect(mockAssertCapacity.mock.lastCall?.[1]).toEqual([USER_B, USER_C]);
+  });
+
+  it('notifies every added member and never the creator', async () => {
+    acceptedFriendsQuery([USER_B, USER_C]);
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: GROUP_ID }]),
+      }),
+    }));
+
+    await createChatGroup(USER_A, {
+      name: 'Trip',
+      memberUserIds: [USER_B, USER_C],
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as {
+      recipientId: string;
+      type: string;
+      actorId: string;
+      targetId: string;
+      data: unknown;
+    }[];
+    expect(inputs.map((input) => input.recipientId)).toEqual([USER_B, USER_C]);
+    expect(inputs.every((input) => input.type === 'group.added')).toBe(true);
+    expect(inputs.every((input) => input.actorId === USER_A)).toBe(true);
+    expect(inputs[0]).toMatchObject({
+      targetId: GROUP_ID,
+      data: { groupName: 'Trip' },
+    });
+  });
+
+  it('schedules the group-added push after the transaction commits', async () => {
+    acceptedFriendsQuery([USER_B, USER_C]);
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: GROUP_ID }]),
+      }),
+    }));
+    mockNotify.mockResolvedValueOnce([USER_B, USER_C]);
+
+    await createChatGroup(USER_A, {
+      name: 'Trip',
+      memberUserIds: [USER_B, USER_C],
+    });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([USER_B, USER_C], {
+      type: 'group.added',
+      actor: { id: USER_A },
+      data: { groupName: 'Trip' },
+      targetType: 'chat_group',
+      targetId: GROUP_ID,
+      groupKey: `group.added:${GROUP_ID}`,
+    });
+  });
+
+  it('propagates the actor 402 without opening the transaction', async () => {
+    acceptedFriendsQuery([USER_B]);
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(
+      createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ status: 402, code: 'feature_locked' });
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
+  it('propagates a 409 when an invited member is at their group cap', async () => {
+    acceptedFriendsQuery([USER_B]);
+    mockAssertCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 2 nhóm.')
+    );
+
+    await expect(
+      createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ status: 409, code: 'CIRCLE_LIMIT_REACHED' });
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 });
 

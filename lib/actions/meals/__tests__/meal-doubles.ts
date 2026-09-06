@@ -18,6 +18,8 @@ export const MOCK_PROFILE = {
   goal: 'cutting',
   aggression: '0.5',
   autoShareToCircle: true,
+  // The premium gates key their trial window off the profile's creation date.
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
 };
 
 // Valid v4 UUIDs (Zod v4 validates version+variant bits)
@@ -42,6 +44,7 @@ export const schema = {
   pendingAnalyses: {
     id: 'pendingAnalyses.id',
     userId: 'pendingAnalyses.userId',
+    entryMode: 'pendingAnalyses.entryMode',
     expiresAt: 'pendingAnalyses.expiresAt',
     loggedAt: 'pendingAnalyses.loggedAt',
   },

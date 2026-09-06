@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/dashboard_spacing.dart';
@@ -71,10 +72,11 @@ List<Widget> weightCardSkeletonChildren() => const [
       SkeletonBar(height: 96, radius: 10),
     ];
 
-/// The out-of-card section eyebrow placeholder. Unlike the shared
+/// The out-of-card section-header placeholder. Unlike the shared
 /// [SkeletonHeader] it is spaced at [DashboardSpacing.block] and sized to the
-/// Meta-12 label, matching the real `SectionHeader` (which carries no margin of
-/// its own — the parent stack owns the gap), so loading→data doesn't jump.
+/// 17/600 title beside its 12 muted meta, matching [SectionHeaderRow] (which
+/// carries no margin of its own — the parent stack owns the gap), so
+/// loading→data doesn't jump.
 class DashSkeletonHeader extends StatelessWidget {
   const DashSkeletonHeader({super.key});
   @override
@@ -84,7 +86,7 @@ class DashSkeletonHeader extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SkeletonBar(width: 120, height: 12, radius: 4),
+              SkeletonBar(width: 120, height: 18, radius: 4),
               SkeletonBar(width: 52, height: 12, radius: 4),
             ],
           ),
@@ -109,47 +111,58 @@ class WeightCardSkeleton extends StatelessWidget {
 }
 
 /// The full-page loading skeleton — a week-strip row, the Today card, and the
-/// two lower section cards, all under one shimmer sweep. Mirrors [_Content]'s
-/// padding so the swap to real data doesn't jump.
+/// two lower section cards, all under one shimmer sweep. Mirrors the loaded
+/// page's scroll and padding so the swap to real data doesn't jump.
 class DashboardSkeleton extends StatelessWidget {
-  const DashboardSkeleton({super.key});
+  const DashboardSkeleton({super.key, required this.onRefresh});
+
+  /// The same refetch the loaded page pulls. A first load that hangs is the
+  /// state where a pull is most wanted, and it was the one state that had no
+  /// refresh control (and no bouncing physics) at all.
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
     // The pulse comes from the caller (one outer SkeletonPulse); every card /
     // header / bar below inherits it and fades in phase.
-    return ListView(
-      padding: EdgeInsets.only(
-        left: KalloSpacing.sp3,
-        right: KalloSpacing.sp3,
-        top: DashboardSpacing.block,
-        bottom: bottomInset + 76,
-      ),
-      children: const [
-        // Week-strip row — four day pills (the strip's own height, then the
-        // one block gap it carries under itself).
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-          ],
+    return KalloRefreshableScroll(
+      onRefresh: onRefresh,
+      slivers: (bottomInset) => [
+        SliverPadding(
+          padding: EdgeInsets.only(
+            left: KalloSpacing.sp3,
+            right: KalloSpacing.sp3,
+            top: KalloSpacing.sp2,
+            bottom: bottomInset,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(const [
+              // Week-strip row — four day pills (the strip's own height, then
+              // the one block gap it carries under itself).
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SkeletonBar(width: 64, height: 72, radius: 16),
+                  SkeletonBar(width: 64, height: 72, radius: 16),
+                  SkeletonBar(width: 64, height: 72, radius: 16),
+                  SkeletonBar(width: 64, height: 72, radius: 16),
+                ],
+              ),
+              SizedBox(height: DashboardSpacing.block),
+              // Section 1 — Today.
+              DashSkeletonHeader(),
+              TodayCardSkeleton(),
+              SizedBox(height: DashboardSpacing.block),
+              // Section 2 — Progress.
+              DashSkeletonHeader(),
+              WeightCardSkeleton(),
+              SizedBox(height: DashboardSpacing.block),
+              // Section 3 — Consistency.
+              DashSkeletonHeader(),
+              SkeletonCard(children: [SkeletonBar(height: 120, radius: 10)]),
+            ]),
+          ),
         ),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 1 — Today.
-        DashSkeletonHeader(),
-        TodayCardSkeleton(),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 2 — Progress.
-        DashSkeletonHeader(),
-        WeightCardSkeleton(),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 3 — Consistency.
-        DashSkeletonHeader(),
-        SkeletonCard(children: [SkeletonBar(height: 120, radius: 10)]),
       ],
     );
   }

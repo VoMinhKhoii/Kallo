@@ -1,16 +1,36 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
+import '../../../../features/logging/logic/format.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/logic/macro_composition.dart';
-import '../../../../shared/widgets/nutrition/composition_bar.dart';
-import '../../../../shared/widgets/nutrition/macro_scale.dart';
+import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/calm_tokens.dart';
-import 'feed_rhythm.dart';
 
+/// The meal itself: its text, the calorie-share bar, and the macro legend.
+///
+/// Draws the shared [MealBlock] (native pass, 2026-08-31) rather than its own
+/// stack — a friend's meal and one of your own are the same object, so they
+/// have to read identically whether you are looking at the Circle feed or at
+/// Recent meals. Circle's one documented difference is kcal placement: the
+/// figure LEADS the legend row here, where an own meal puts it at the title's
+/// right (a post's title line is already spoken for by the author and time).
+///
+/// The bar splits by CALORIE share, so a low-gram/high-energy fat slice reads
+/// at its true weight.
 class FeedNutrition extends StatelessWidget {
   const FeedNutrition({required this.meal, super.key});
 
   final CircleFeedMeal meal;
+
+  static String _grams(double? value) =>
+      value == null ? '—' : '${value.round()}g';
+
+  static const Map<String, String> _prefixes = {
+    'protein': 'P',
+    'carbohydrate': 'C',
+    'fat': 'F',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -22,39 +42,34 @@ class FeedNutrition extends StatelessWidget {
     );
     final composition = compositionFromGrams(macros);
     final kcal = meal.caloriesKcal;
-    // Nothing measured at all — draw nothing rather than a row of dashes over
-    // an empty bar.
+    final grams = <String, double?>{
+      'protein': macros.protein,
+      'carbohydrate': macros.carbohydrate,
+      'fat': macros.fat,
+    };
+
+    // Nothing measured at all — the meal text alone, rather than a row of
+    // dashes over an empty bar.
     if (kcal == null && composition.totalKcal <= 0) {
-      return const SizedBox.shrink();
+      return Text(meal.rawInput, style: dashBody());
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text.rich(
-          TextSpan(
-            // Unit stays at Meta so the figure carries the mass, not the word.
-            style: dashMeta(),
-            children: [
-              TextSpan(
-                text: kcal == null ? '—' : '${kcal.round()}',
-                // Body, not Value: at 17 the figure outweighed the meal name
-                // above it, which put the post's focus back on the number this
-                // redesign had just taken it off. Medium weight and ink still
-                // mark it as the figure.
-                style: dashBody(weight: FontWeight.w500, tabular: true),
-              ),
-              const TextSpan(text: ' kcal'),
-            ],
-          ),
-        ),
-        if (composition.totalKcal > 0) ...[
-          const SizedBox(height: kFeedTight),
-          CompositionBar.compact(segments: composition.segments),
-          const SizedBox(height: kFeedTight),
-        ],
-        MacroScale(macros: macros),
-      ],
+    return MealBlock(
+      title: meal.rawInput,
+      segments: composition.segments,
+      gramLabels: {
+        for (final key in kCompositionKeys)
+          key: '${_prefixes[key]} ${_grams(grams[key])}',
+      },
+      kcalLabel:
+          kcal == null
+              ? '— kcal'
+              : fmtKcal(kcal, locale: localeOf(context)),
+      kcalPlacement: MealBlockKcal.legendLeading,
+      // Four lines, not the block's default two: a Circle post carries text
+      // somebody TYPED, in their own words, while Recent meals shows a name
+      // this app generated. Clipping a friend's sentence loses the post.
+      titleMaxLines: 4,
     );
   }
 }

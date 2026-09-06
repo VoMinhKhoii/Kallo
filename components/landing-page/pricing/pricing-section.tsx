@@ -11,15 +11,13 @@ import { PLAN_IDS } from './plans';
  *
  * One word and two cards — Lifetime is held back, see `PLAN_IDS`.
  *
- * There is no monthly/yearly switch: Premium quotes the monthly price and its
- * fine print carries the annual one and what that works out to per month. That
- * puts every number on screen at once, where a toggle showed one and hid the
- * other behind an interaction — and it keeps the section static, with no state
- * at all.
- *
- * For the same reason there is no "save N%" badge. The annual discount is 32%
- * in đồng and 40% in dollars, so a single number would be wrong in one of the
- * two locales; the fine print carries the real terms in each.
+ * The monthly/yearly switch and the "save N%" badge beside the price both live
+ * in `premium-price.tsx`, which owns the period state — the section itself
+ * holds none. Both periods quote a per-month rate so the switch compares like
+ * with like, and the badge's percentage is computed per locale from the
+ * `amountMonthly`/`amountYearly` messages rather than authored: the annual
+ * discount is 32% in đồng and 40% in dollars, so a single hardcoded number
+ * would be wrong in one of the two locales.
  */
 export function PricingSection() {
   const t = useTranslations('landing.pricing');

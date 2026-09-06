@@ -22,7 +22,15 @@
     "increase": "Tăng",
     "decrease": "Giảm",
     "country": "Quốc gia",
-    "remove": "Xoá"
+    "remove": "Xoá",
+    "actions": {
+      "discard": "Bỏ",
+      "disconnect": "Ngắt kết nối",
+      "keep": "Giữ lại",
+      "remove": "Xoá",
+      "stay": "Ở lại",
+      "staySignedIn": "Ở lại"
+    }
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -99,6 +107,20 @@
       "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "account": "Tài khoản",
       "expandOnHover": "Mở rộng khi di chuột"
+    },
+    "nav": {
+      "today": "Hôm nay",
+      "log": "Nhật ký",
+      "nutrition": "Dinh dưỡng",
+      "circle": "Vòng tròn",
+      "add": "Thêm"
+    },
+    "addSheet": {
+      "title": "Thêm",
+      "logMeal": "Ghi bữa ăn",
+      "logMealHint": "Mô tả, quét mã, hoặc chọn nguyên liệu",
+      "logWeight": "Ghi cân nặng",
+      "logWeightHint": "Cân nặng hôm nay"
     }
   },
   "nutrition": {
@@ -486,10 +508,16 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+      "overviewTitle": "Tổng quan chưa tải được.",
+      "overview": "Hãy làm mới trang hoặc thử lại sau khi ghi thêm một bữa ăn.",
       "overviewToast": "Không tải được tổng quan dinh dưỡng.",
       "retry": "Tải lại tổng quan",
       "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
+    },
+    "locked": {
+      "title": "Vi chất là tính năng Premium",
+      "description": "Calo và macro vẫn miễn phí. Nâng cấp Premium để theo dõi vitamin, khoáng chất và chất xơ so với mục tiêu của bạn.",
+      "cta": "Xem Premium"
     },
     "empty": {
       "title": "Chưa có bữa ăn trong khoảng này",
@@ -524,8 +552,10 @@
       "calories": "kcal",
       "loggedDays": "Tất cả",
       "completeDays": "Ngày đủ bữa",
+      "completeDaysHint": "Chỉ tính những ngày ghi được từ 85% mục tiêu calo - những ngày còn lại được tính trong “{allLabel}”.",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
+      "avgValue": "TB {value}",
       "days": "ngày",
       "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
@@ -776,7 +806,9 @@
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
       "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
-    }
+    },
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "landing": {
     "localeSwitcher": {
@@ -922,12 +954,6 @@
   },
   "dashboard": {
     "title": "Tổng quan",
-    "greeting": {
-      "morning": "Chào buổi sáng",
-      "afternoon": "Chào buổi chiều",
-      "evening": "Chào buổi tối",
-      "night": "Chào buổi tối"
-    },
     "today": "Hôm nay",
     "thisWeek": "Tuần này",
     "caloriesConsumed": "Calo đã nạp",
@@ -951,9 +977,10 @@
     "saving": "Đang lưu…",
     "retry": "Thử lại",
     "todayLoading": "Đang tải bữa ăn hôm nay…",
-    "todayLoadError": "Không tải được bữa ăn hôm nay. Vui lòng thử lại.",
-    "progressLoadError": "Không tải được xu hướng cân nặng. Vui lòng thử lại.",
-    "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
+    "todayLoadError": "Bữa ăn hôm nay chưa tải được, vui lòng thử lại.",
+    "sectionErrorTitle": "Phần này chưa tải được.",
+    "progressLoadError": "Xu hướng cân nặng chưa tải được, vui lòng thử lại.",
+    "heatmapLoadError": "Phần độ đều đặn chưa tải được, vui lòng thử lại.",
     "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
     "now": "Hiện tại",
     "goal": "Mục tiêu",
@@ -989,6 +1016,7 @@
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
       "saveFailed": "Không thể lưu cân nặng",
+      "loadFailed": "Không mở được mục ghi cân nặng. Vui lòng thử lại.",
       "netChange": "Thay đổi",
       "steady": "Ổn định"
     },
@@ -1055,8 +1083,9 @@
       "title": "Ghi nhận bữa ăn"
     },
     "cheatIntensity": {
+      "title": "Mức độ",
       "label": "Bạn đã ăn nhiều cỡ nào?",
-      "helper": "Điều chỉnh mức ước tính",
+      "helper": "Điều chỉnh mức ước tính theo lượng bạn đã ăn.",
       "light": "Nhẹ",
       "medium": "Vừa",
       "heavy": "Nhiều"
@@ -1109,11 +1138,15 @@
       "back": "Quay lại",
       "scanAgain": "Quét lại",
       "logByText": "Mô tả bằng lời",
+      "frameHint": "Đưa mã vạch vào giữa khung",
+      "manualTitle": "Nhập mã vạch",
+      "lookUp": "Tra cứu",
       "savedMeal": "Đã thêm bữa ăn",
       "error": {
         "invalidInput": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
         "notFound": "Không tìm thấy sản phẩm với mã vạch này.",
         "notCached": "Sản phẩm không còn khả dụng. Vui lòng quét lại.",
+        "featureLocked": "Đây là tính năng Premium. Nâng cấp Premium để tiếp tục quét.",
         "serverError": "Đã xảy ra lỗi. Vui lòng thử lại."
       }
     },
@@ -1182,7 +1215,7 @@
       "savedMeal": "Đã lưu bữa ăn",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
-      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
+      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được, hãy thử lại trước khi ghi thêm.",
       "retryDay": "Tải lại ngày",
       "partialDayNotice": {
         "title": "Ngày này có thể ghi chưa đủ",
@@ -1294,6 +1327,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Xoá món",
       "save": "Lưu bữa ăn",
+      "saveWithKcal": "Lưu · {kcal} kcal",
+      "sheetTitle": "Thêm nguyên liệu",
+      "added": "Đã thêm",
+      "resultsFor": "Kết quả cho \"{query}\" · gần nhất ở dưới",
+      "addFood": "Thêm {name}",
+      "editGrams": "Khối lượng theo gam",
+      "clearSearch": "Xoá tìm kiếm",
       "relatedMatch": "liên quan"
     },
     "relog": {
@@ -1309,8 +1349,9 @@
       "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
     },
     "scan": {
+      "title": "Quét",
       "barcodeTab": "Mã vạch",
-      "labelTab": "Bảng dinh dưỡng",
+      "labelTab": "Dinh dưỡng",
       "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
       "tryBarcodeInstead": "Quét mã vạch thay vì bảng dinh dưỡng",
       "savedMeal": "Đã thêm bữa ăn"
@@ -1395,6 +1436,7 @@
         "noLabelDetected": "Ảnh này không giống bảng dinh dưỡng in trên bao bì; có thể bạn chụp mặt logo, thực đơn hoặc chữ viết tay. Hãy chọn đúng mặt có bảng dinh dưỡng hoặc nhập tay.",
         "rateLimited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
         "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
+        "featureLocked": "Quét bảng dinh dưỡng là tính năng Premium. Nâng cấp Premium để dùng.",
         "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
         "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
       }
@@ -1406,7 +1448,8 @@
     },
     "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
     "copyMessage": "Sao chép",
-    "messageCopied": "Đã sao chép"
+    "messageCopied": "Đã sao chép",
+    "draftReplaced": "Đã thay bản nháp"
   },
   "groups": {
     "page": {
@@ -1450,7 +1493,7 @@
       "emptyTitle": "Chưa có bạn bè",
       "addFriendCta": "Thêm bạn",
       "noMatches": "Không tìm thấy",
-      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "noFriends": "Bạn chỉ có thể thêm người đã có trong vòng kết nối.",
       "submit": "Tạo nhóm",
       "creating": "Đang tạo…",
       "created": "Đã tạo nhóm",
@@ -1559,17 +1602,18 @@
       "appearEdit": "Sửa tên hiển thị",
       "appearSaved": "Đã cập nhật tên hiển thị",
       "appearError": "Không thể cập nhật tên của bạn",
-      "appearFallback": "Đặt tên hiển thị"
+      "appearFallback": "Đặt tên hiển thị",
+      "shareLink": "Chia sẻ liên kết"
     },
     "circle": {
       "title": "Vòng kết nối ({count})",
-      "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
+      "empty": "Chia sẻ liên kết để mời ai đó vào vòng kết nối.",
       "remove": "Xoá",
       "removeError": "Không thể xoá. Vui lòng thử lại."
     },
     "error": {
       "title": "Không thể tải vòng kết nối",
-      "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",
+      "body": "Kiểm tra kết nối rồi thử lại nhé.",
       "retry": "Thử lại"
     },
     "connect": {
@@ -1732,6 +1776,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "Trang này chưa tải được.",
+      "body": "Có lỗi từ phía chúng tôi, bạn thử lại nhé.",
+      "retry": "Thử lại",
+      "home": "Về trang chính",
+      "notFoundBody": "Không có màn hình nào ở địa chỉ này, hãy quay lại nhé."
+    },
     "notAuthenticated": "Bạn cần đăng nhập để sử dụng tính năng này.",
     "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",

@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { barcodeSchema } from '@/lib/api/contracts/barcode';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
@@ -17,6 +18,7 @@ import type {
   ParsedBarcodeProduct,
 } from '@/lib/domain/barcode/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 export type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
 
@@ -34,10 +36,34 @@ const stageBarcodeMealSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/** The failure arm of both actions' result union. */
+type BarcodeActionFailure = {
+  success: false;
+  code: BarcodeErrorCode;
+  /**
+   * How long to wait, when the failure was a limiter block. A Server Action
+   * has no response headers, so `Retry-After` has nowhere to go — without this
+   * field the dialog knows to say "slow down" but not for how long, and a
+   * client that guesses low walks straight back into the same wall.
+   */
+  retryAfterSeconds?: number;
+};
+
 /** Fold a thrown value into the action result union's stable error code. */
 function getErrorCode(error: unknown): BarcodeErrorCode {
   if (error instanceof BarcodeServiceError) return error.code;
+  // A limiter block reaches the web caller as a return value, not an HTTP 429
+  // (this is a Server Action). Surfacing it as its own code lets the dialog
+  // show the "slow down" copy instead of a generic "server error".
+  if (error instanceof RateLimitedError) return 'rate_limited';
   return error instanceof z.ZodError ? 'invalid_input' : 'server_error';
+}
+
+function toFailure(error: unknown): BarcodeActionFailure {
+  const code = getErrorCode(error);
+  return error instanceof RateLimitedError && error.retryAfterSeconds != null
+    ? { success: false, code, retryAfterSeconds: error.retryAfterSeconds }
+    : { success: false, code };
 }
 
 /**
@@ -50,17 +76,19 @@ function getErrorCode(error: unknown): BarcodeErrorCode {
 export async function searchBarcodeAction(input: {
   barcode: string;
 }): Promise<
-  | { success: true; data: ParsedBarcodeProduct }
-  | { success: false; code: BarcodeErrorCode }
+  { success: true; data: ParsedBarcodeProduct } | BarcodeActionFailure
 > {
   try {
     const parsed = searchBarcodeSchema.parse(input);
-    await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
+    // Per-user cap before the Open Food Facts fan-out. `RateLimitedError`
+    // surfaces below as the `rate_limited` code.
+    await assertRateLimit('barcodeSearch', { kind: 'user', value: user.id });
     const data = await searchBarcodeProduct(parsed.barcode);
     return { success: true, data };
   } catch (error) {
     console.error('Error in searchBarcodeAction:', error);
-    return { success: false, code: getErrorCode(error) };
+    return toFailure(error);
   }
 }
 
@@ -75,10 +103,7 @@ export async function stageBarcodeMealAction(input: {
   grams: number;
   loggedDate: string;
   timezoneOffset: number;
-}): Promise<
-  | { success: true; analysisId: string }
-  | { success: false; code: BarcodeErrorCode }
-> {
+}): Promise<{ success: true; analysisId: string } | BarcodeActionFailure> {
   try {
     const parsed = stageBarcodeMealSchema.parse(input);
     const { user } = await requireAuthAndProfile();
@@ -86,6 +111,6 @@ export async function stageBarcodeMealAction(input: {
     return { success: true, analysisId };
   } catch (error) {
     console.error('Error in stageBarcodeMealAction:', error);
-    return { success: false, code: getErrorCode(error) };
+    return toFailure(error);
   }
 }

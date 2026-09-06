@@ -37,6 +37,9 @@ const buttonVariants = cva(
           'rounded-xl bg-kallo-ink text-kallo-surface shadow-lg hover:-translate-y-0.5 hover:bg-kallo-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
         'hero-outline':
           'rounded-xl border border-kallo-border text-kallo-text-soft hover:-translate-y-0.5 hover:bg-kallo-border/20 !font-medium tracking-wide text-base',
+        // The surface-state action (empty / error / 404 / offline): ink fill,
+        // cream label, the app's ordinary radius. One per surface.
+        ink: 'bg-kallo-ink text-kallo-surface hover:bg-kallo-ink-hover',
         'header-cta':
           'rounded-lg bg-kallo-accent text-white hover:bg-kallo-accent-hover !font-medium text-sm',
       },

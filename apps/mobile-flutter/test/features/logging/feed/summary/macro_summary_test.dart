@@ -54,6 +54,7 @@ FeedViewState _viewState({
   bool isLoading = false,
   bool hasUnknownDailyMacros = false,
 }) => FeedViewState(
+  date: '2026-01-01',
   persistedMeals: const [],
   pendingConfirmations: const [],
   entries: const [],

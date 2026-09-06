@@ -2,12 +2,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/feedback/skeleton.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 
-/// Single-column loading skeleton mirroring the mobile editorial stack.
-/// Port of web `components/nutrition/nutrition-skeleton.tsx`.
+/// The nutrition page's silhouette while the overview loads: the calorie card
+/// with its chart, the macro rows, and one group of nutrient rows.
+///
+/// It mirrors the page it stands in for and nothing else. The old skeleton
+/// still drew an editorial stack — a pull-quote, a background toggle, a
+/// hairline-ruled header — from a layout the screen had already left behind, so
+/// the load state promised a page that never arrived.
 class NutritionSkeleton extends StatelessWidget {
   const NutritionSkeleton({super.key});
+
+  static const double _gap = KalloSpacing.sp3;
 
   @override
   Widget build(BuildContext context) {
@@ -17,138 +25,109 @@ class NutritionSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Editorial header.
-            Container(
-              padding: const EdgeInsets.only(bottom: 20),
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: KalloColors.borderHalf),
-                ),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SkeletonBar(width: 128, height: 12, radius: 9999),
-                  SizedBox(height: 8),
-                  SkeletonBar(width: 176, height: 12, radius: 9999),
-                ],
-              ),
+            // Section header + its meta.
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SkeletonBar(width: 88, height: 17, radius: 9999),
+                SkeletonBar(width: 140, height: 12, radius: 9999),
+              ],
             ),
-            const SizedBox(height: 48),
-
-            // Daily rhythm card.
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: KalloColors.borderSoft),
-              ),
+            const SizedBox(height: _gap),
+            // Calorie card: hero + scope switch, date span, chart.
+            const _Card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SkeletonBar(width: 128, height: 40, radius: 9999),
-                      SkeletonBar(width: 120, height: 8, radius: 9999),
+                      SkeletonBar(width: 72, height: 12, radius: 9999),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  for (var i = 0; i < 4; i++) ...[
-                    if (i > 0) const SizedBox(height: 12),
-                    const Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SkeletonBar(width: 64, height: 12, radius: 9999),
-                        SizedBox(width: 12),
-                        Expanded(child: SkeletonBar(height: 4, radius: 9999)),
-                        SizedBox(width: 12),
-                        SkeletonBar(width: 44, height: 12, radius: 9999),
-                      ],
-                    ),
-                  ],
+                  SizedBox(height: 8),
+                  SkeletonBar(width: 112, height: 12, radius: 9999),
+                  SizedBox(height: _gap),
+                  SkeletonBar(height: 140, radius: 12),
                 ],
               ),
             ),
-            const SizedBox(height: 48),
-
-            // Steady list.
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: KalloColors.borderHalf),
-                ),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < 5; i++)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: KalloColors.borderFaint),
-                          ),
-                        ),
-                        child: const Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SkeletonCircle(size: 6),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: SkeletonBar(height: 12, radius: 9999),
-                            ),
-                            SizedBox(width: 12),
-                            SkeletonBar(width: 44, height: 12, radius: 9999),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // Background toggle.
+            const SizedBox(height: _gap),
+            // Macro rows.
+            _Card(child: _rows(3, leadingGlyph: true)),
+            const SizedBox(height: _gap),
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SkeletonBar(width: 128, height: 12, radius: 9999),
-                SkeletonBar(width: 80, height: 12, radius: 9999),
+                SkeletonBar(width: 96, height: 17, radius: 9999),
+                SkeletonBar(width: 76, height: 12, radius: 9999),
               ],
             ),
-            const SizedBox(height: 48),
-
-            // Pull-quote.
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(width: 3, color: KalloColors.accent30),
-                  const SizedBox(width: 20),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SkeletonBar(width: 96, height: 12, radius: 9999),
-                        SizedBox(height: 8),
-                        SkeletonBar(height: 12, radius: 9999),
-                        SizedBox(height: 8),
-                        SkeletonBar(widthFactor: 0.8, height: 12, radius: 9999),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: _gap),
+            _Card(child: _rows(4, leadingGlyph: false)),
           ],
         ),
       ),
+    );
+  }
+
+  /// A card of 56pt data rows: name + figure on one line, bar under them.
+  Widget _rows(int count, {required bool leadingGlyph}) {
+    return Column(
+      children: [
+        for (var i = 0; i < count; i++)
+          SizedBox(
+            height: 56,
+            child: Row(
+              children: [
+                if (leadingGlyph) ...[
+                  const SkeletonCircle(size: KalloIcons.size),
+                  const SizedBox(width: _gap),
+                ],
+                const Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          SkeletonBar(width: 64, height: 14, radius: 9999),
+                          Spacer(),
+                          SkeletonBar(width: 88, height: 12, radius: 9999),
+                        ],
+                      ),
+                      SizedBox(height: KalloSpacing.sp1_5),
+                      SkeletonBar(height: 3, radius: 9999),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The page's card shell — white, radius 22, no border and no shadow.
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp3,
+      ),
+      decoration: BoxDecoration(
+        color: kCardSurface,
+        borderRadius: BorderRadius.circular(kCardRadius),
+      ),
+      child: child,
     );
   }
 }

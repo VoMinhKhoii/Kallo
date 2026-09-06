@@ -22,7 +22,15 @@
     "increase": "Increase",
     "decrease": "Decrease",
     "country": "Country",
-    "remove": "Remove"
+    "remove": "Remove",
+    "actions": {
+      "discard": "Discard",
+      "disconnect": "Disconnect",
+      "keep": "Keep",
+      "remove": "Remove",
+      "stay": "Stay",
+      "staySignedIn": "Stay signed in"
+    }
   },
   "nav": {
     "logging": "Logging",
@@ -99,6 +107,20 @@
       "signOutError": "Could not sign out. Please try again.",
       "account": "Account",
       "expandOnHover": "Expand on hover"
+    },
+    "nav": {
+      "today": "Today",
+      "log": "Log",
+      "nutrition": "Nutrition",
+      "circle": "Circle",
+      "add": "Add"
+    },
+    "addSheet": {
+      "title": "Add",
+      "logMeal": "Log a meal",
+      "logMealHint": "Describe it, scan, or pick ingredients",
+      "logWeight": "Log weight",
+      "logWeightHint": "Today's weigh-in"
     }
   },
   "nutrition": {
@@ -486,10 +508,16 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
+      "overviewTitle": "Your overview didn’t load.",
+      "overview": "Refresh the page or try again after logging another meal.",
       "overviewToast": "Could not load nutrition overview.",
       "retry": "Retry overview",
       "candidatesError": "Couldn't load food ideas right now."
+    },
+    "locked": {
+      "title": "Micronutrients are a Premium view",
+      "description": "Calories and macros stay free. Go Premium to see vitamins, minerals and fiber tracked against your targets.",
+      "cta": "See Premium"
     },
     "empty": {
       "title": "No meals in this range",
@@ -524,8 +552,10 @@
       "calories": "kcal",
       "loggedDays": "All",
       "completeDays": "Complete days",
+      "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in “{allLabel}”.",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
+      "avgValue": "{value} avg",
       "days": "days",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
@@ -776,7 +806,9 @@
       "rateLimited": "Too many attempts — give it a moment, then try again.",
       "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
       "generic": "Something went wrong — please try again."
-    }
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "landing": {
     "localeSwitcher": {
@@ -922,12 +954,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "greeting": {
-      "morning": "Good morning",
-      "afternoon": "Good afternoon",
-      "evening": "Good evening",
-      "night": "Good evening"
-    },
     "today": "Today",
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",
@@ -951,9 +977,10 @@
     "saving": "Saving…",
     "retry": "Try again",
     "todayLoading": "Loading today's meals…",
-    "todayLoadError": "Unable to load today's meals. Please try again.",
-    "progressLoadError": "Unable to load the weight trend. Please try again.",
-    "heatmapLoadError": "Unable to load the consistency section. Please try again.",
+    "todayLoadError": "Today's meals did not load, please try again.",
+    "sectionErrorTitle": "This didn’t load.",
+    "progressLoadError": "The weight trend did not load, please try again.",
+    "heatmapLoadError": "The consistency section did not load, please try again.",
     "loadingWeightTrend": "Loading weight trend…",
     "now": "Now",
     "goal": "Goal",
@@ -989,6 +1016,7 @@
       "update": "Update",
       "editHint": "Editing today's entry — saves overwrite the previous value.",
       "saveFailed": "Failed to save weight",
+      "loadFailed": "Couldn't open the weight logger. Please try again.",
       "netChange": "Net change",
       "steady": "Steady"
     },
@@ -1055,8 +1083,9 @@
       "title": "Log a meal"
     },
     "cheatIntensity": {
+      "title": "Intensity",
       "label": "How much did you eat?",
-      "helper": "Scales the estimate",
+      "helper": "Scales the estimate to how big the treat was.",
       "light": "Light",
       "medium": "Medium",
       "heavy": "Heavy"
@@ -1109,11 +1138,15 @@
       "back": "Back",
       "scanAgain": "Scan again",
       "logByText": "Describe it instead",
+      "frameHint": "Center the barcode in the frame",
+      "manualTitle": "Enter barcode",
+      "lookUp": "Look up",
       "savedMeal": "Meal added",
       "error": {
         "invalidInput": "That barcode doesn't look right. Enter digits only.",
         "notFound": "No product found for this barcode.",
         "notCached": "This product is no longer available. Please scan it again.",
+        "featureLocked": "This is a Premium feature. Go Premium to keep scanning.",
         "serverError": "Something went wrong. Please try again."
       }
     },
@@ -1182,7 +1215,7 @@
       "savedMeal": "Meal saved",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
-      "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
+      "loadErrorDescription": "Your saved meals for this date did not load, so try again before logging more.",
       "retryDay": "Retry day",
       "partialDayNotice": {
         "title": "This day may be under-logged",
@@ -1297,6 +1330,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Remove food",
       "save": "Save meal",
+      "saveWithKcal": "Save · {kcal} kcal",
+      "sheetTitle": "Add ingredients",
+      "added": "Added",
+      "resultsFor": "Results for \"{query}\" · closest first",
+      "addFood": "Add {name}",
+      "editGrams": "Amount in grams",
+      "clearSearch": "Clear search",
       "relatedMatch": "related"
     },
     "relog": {
@@ -1312,8 +1352,9 @@
       "stagedFull": "You can stage up to {max} at a time."
     },
     "scan": {
+      "title": "Scan",
       "barcodeTab": "Barcode",
-      "labelTab": "Nutrition label",
+      "labelTab": "Nutrition",
       "tryLabelInstead": "Scan the nutrition label instead",
       "tryBarcodeInstead": "Scan the barcode instead",
       "savedMeal": "Meal added"
@@ -1398,6 +1439,7 @@
         "noLabelDetected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
         "rateLimited": "The OCR service is busy. Please try again in a moment.",
         "serverError": "Could not scan label. Please try again.",
+        "featureLocked": "Label scanning is a Premium feature. Go Premium to scan nutrition tables.",
         "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
         "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
       }
@@ -1409,7 +1451,8 @@
     },
     "pendingDiscarded": "Unsaved meal discarded",
     "copyMessage": "Copy",
-    "messageCopied": "Copied"
+    "messageCopied": "Copied",
+    "draftReplaced": "Draft replaced"
   },
   "groups": {
     "page": {
@@ -1453,7 +1496,7 @@
       "emptyTitle": "No friends yet",
       "addFriendCta": "Add a friend",
       "noMatches": "No matches",
-      "noFriends": "Add friends first — you can only add people already in your circle.",
+      "noFriends": "You can only add people who are already in your circle.",
       "submit": "Create group",
       "creating": "Creating…",
       "created": "Group created",
@@ -1562,17 +1605,18 @@
       "appearEdit": "Edit display name",
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
-      "appearFallback": "Set a display name"
+      "appearFallback": "Set a display name",
+      "shareLink": "Share link"
     },
     "circle": {
       "title": "Your circle ({count})",
-      "empty": "No one in your circle yet. Share your link to connect.",
+      "empty": "Share your link to bring someone into your circle.",
       "remove": "Remove",
       "removeError": "Couldn't remove them. Try again."
     },
     "error": {
       "title": "Couldn't load your circle",
-      "body": "Something went wrong. Check your connection and try again.",
+      "body": "Check your connection and try again.",
       "retry": "Try again"
     },
     "connect": {
@@ -1625,7 +1669,7 @@
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",
-    "goals": "Goals & Targets",
+    "goals": "Targets",
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",
@@ -1735,6 +1779,13 @@
     }
   },
   "errors": {
+    "route": {
+      "title": "This didn’t load.",
+      "body": "Something went wrong on our side, so give it another try.",
+      "retry": "Try again",
+      "home": "Go home",
+      "notFoundBody": "There is no screen at this address, so head back to your meals."
+    },
     "notAuthenticated": "You need to sign in to use this feature.",
     "profileNotFound": "Profile not found. Please sign in again.",
     "pipelineTimeout": "Analysis took too long. Please try again.",

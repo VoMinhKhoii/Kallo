@@ -28,6 +28,12 @@ const { mockTxInsert, mockTxSelect, mockTx } = vi.hoisted(() => {
   };
 });
 
+// Relog gate. Mocked (rather than left to the kill-switch default) so the
+// locked case is reachable without an entitlements fixture; the default is a
+// no-op resolve, which is exactly what an unenforced build does.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
 vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
   return {
@@ -58,8 +64,10 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
   LOGGED_AT,
+  MOCK_PROFILE,
   mockInsertRouting,
   MOCK_USER as mockUser,
   UUID_1,
@@ -217,6 +225,30 @@ describe('duplicateMealAction', () => {
       shareId: 'share-1',
       visibility: 'circle',
     });
+  });
+
+  it('refuses a locked user before opening the transaction', async () => {
+    assertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('relog', 'not_entitled', 'locked')
+    );
+    const inserts: unknown[] = [];
+    captureInserts(inserts);
+
+    await expect(
+      duplicateMealAction({
+        mealId: UUID_MEAL,
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: mockUser.id, profileCreatedAt: MOCK_PROFILE.createdAt },
+      'relog'
+    );
+    // Nothing read, nothing written — the refusal happens ahead of the tx.
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid mealId', async () => {

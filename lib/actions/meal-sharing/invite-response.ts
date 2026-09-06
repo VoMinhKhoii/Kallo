@@ -19,6 +19,12 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
+import {
+  shareInviteAcceptedKey,
+  shareInviteKey,
+} from '@/lib/domain/notifications/group-keys';
+import { closeAggregates } from '@/lib/domain/notifications/notify';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -40,8 +46,10 @@ export async function acceptMealShareInviteAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = acceptMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-
-  return await db.transaction(async (tx) => {
+  // No premium gate here on purpose: the INITIATOR pays. By the time an invite
+  // exists a split has already halved the sender's meal, so refusing the
+  // recipient would strand that half against an offer they can never take.
+  return withNotifications(db, async (tx, notify) => {
     // Discover the actor-scoped pending invite before touching cross-user data.
     // The source meal is then locked BEFORE the invite is claimed, matching the
     // split path's meal -> invite lock order and avoiding an accept/split
@@ -99,6 +107,16 @@ export async function acceptMealShareInviteAction(input: {
       throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
     }
 
+    // Close my own invite notification here, in the tx that resolved the offer,
+    // so EVERY resolution path closes the aggregate — this card, the Circle
+    // page, another device, or the sender's split auto-dismiss. A fresh
+    // re-offer then INSERTs new history instead of rewriting this row. The
+    // Activity card's markRead is a harmless second close (read_at IS NULL).
+    await closeAggregates(tx, {
+      recipientIds: [user.id],
+      groupKey: shareInviteKey(invite.sourceMealId),
+    });
+
     // The offer was created under an accepted friendship — re-check it still
     // holds (the sender may have been unfriended or blocked since). Rolls back.
     const [friend] = await tx
@@ -153,6 +171,19 @@ export async function acceptMealShareInviteAction(input: {
       .set({ acceptedMealId: mealId })
       .where(eq(mealShareInvites.id, parsed.inviteId));
 
+    // Tell the sender their offer landed. A dismiss deliberately stays silent
+    // (LinkedIn norm: no rejection signal).
+    await notify([
+      {
+        recipientId: invite.fromUserId,
+        type: 'share.invite_accepted',
+        actorId: user.id,
+        objectType: 'invite',
+        objectId: parsed.inviteId,
+        groupKey: shareInviteAcceptedKey(parsed.inviteId),
+      },
+    ]);
+
     return { mealId, meal };
   });
 }
@@ -166,20 +197,41 @@ export async function dismissMealShareInviteAction(input: {
 }): Promise<{ success: true }> {
   const parsed = dismissMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-
-  const [updated] = await db
-    .update(mealShareInvites)
-    .set({ status: 'dismissed', respondedAt: new Date() })
-    .where(
-      and(
-        eq(mealShareInvites.id, parsed.inviteId),
-        eq(mealShareInvites.toUserId, user.id),
-        eq(mealShareInvites.status, 'pending')
+  // Ungated for the same reason as accept: responding to someone else's offer
+  // is never the billable action.
+  //
+  // Transactional so the guarded dismiss and the notification close land
+  // together: a dismiss that committed while the close failed would leave an
+  // open aggregate for an offer that no longer exists, and a later re-offer
+  // would rewrite that row instead of opening fresh history.
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(mealShareInvites)
+      .set({ status: 'dismissed', respondedAt: new Date() })
+      .where(
+        and(
+          eq(mealShareInvites.id, parsed.inviteId),
+          eq(mealShareInvites.toUserId, user.id),
+          eq(mealShareInvites.status, 'pending')
+        )
       )
-    )
-    .returning({ id: mealShareInvites.id });
-  if (!updated) {
-    throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-  }
-  return { success: true };
+      .returning({
+        id: mealShareInvites.id,
+        // The notification aggregates on the SOURCE meal, not the invite.
+        sourceMealId: mealShareInvites.sourceMealId,
+      });
+    if (!updated) {
+      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
+    }
+
+    // Same close as accept: a dismiss from Circle or another device resolves
+    // the offer just as finally as one from the Activity card, so the card is
+    // not the only thing that can read this row.
+    await closeAggregates(tx, {
+      recipientIds: [user.id],
+      groupKey: shareInviteKey(updated.sourceMealId),
+    });
+
+    return { success: true };
+  });
 }

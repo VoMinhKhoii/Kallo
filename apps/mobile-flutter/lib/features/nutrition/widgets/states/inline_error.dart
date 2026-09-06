@@ -1,11 +1,21 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/typography/kallo_text.dart';
+import '../../../../shared/data/surface_cast.dart';
+import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
-/// Port of web `components/nutrition/states/inline-error.tsx`.
-class InlineError extends StatefulWidget {
+/// The nutrition page when the overview will not load: the tangled sloth, what
+/// went wrong in muted copy, and the one way out.
+///
+/// There is no red on this card. A retry is not a destruction, so the
+/// affordance takes the black `cta` every surface state gives its one action —
+/// the one sanctioned use of that tier outside auth and the paywall — rather
+/// than anything alarming. The card itself is the page's own card: white,
+/// radius 22, no border.
+class InlineError extends StatelessWidget {
   const InlineError({
     super.key,
     required this.isRetrying,
@@ -20,75 +30,27 @@ class InlineError extends StatefulWidget {
   final String retryLabel;
 
   @override
-  State<InlineError> createState() => _InlineErrorState();
-}
-
-class _InlineErrorState extends State<InlineError> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: KalloColors.borderSoft),
-        color: KalloColors.elev,
+      padding: const EdgeInsets.symmetric(
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp3,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          KalloText(widget.message, variant: KalloTextVariant.body),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Semantics(
-              button: true,
-              enabled: !widget.isRetrying,
-              excludeSemantics: true,
-              label: widget.retryLabel,
-              onTap: widget.isRetrying ? null : widget.onRetry,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown:
-                    widget.isRetrying
-                        ? null
-                        : (_) => setState(() => _pressed = true),
-                onTapUp:
-                    widget.isRetrying
-                        ? null
-                        : (_) => setState(() => _pressed = false),
-                onTapCancel:
-                    widget.isRetrying
-                        ? null
-                        : () => setState(() => _pressed = false),
-                onTap: widget.isRetrying ? null : widget.onRetry,
-                child: Opacity(
-                  opacity: widget.isRetrying ? 0.5 : 1,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: KalloColors.borderSoft),
-                      color:
-                          (_pressed && !widget.isRetrying)
-                              ? KalloColors.hover
-                              : null,
-                    ),
-                    child: KalloText(
-                      widget.retryLabel,
-                      variant: KalloTextVariant.small,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(kCardRadius),
+        color: kCardSurface,
+      ),
+      child: KalloSurfaceState(
+        area: SurfaceArea.nutrition,
+        kind: SurfaceKind.error,
+        title: tr('nutrition.errors.overviewTitle'),
+        subtitle: message,
+        action: KalloButton(
+          variant: KalloButtonVariant.cta,
+          title: retryLabel,
+          loading: isRetrying,
+          onPressed: onRetry,
+        ),
       ),
     );
   }

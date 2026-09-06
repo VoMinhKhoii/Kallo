@@ -1,113 +1,49 @@
-import { sql } from 'drizzle-orm';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-import { db } from '@/lib/infra/db/client';
+import { probeSharedDatabaseHealth } from '@/app/api/healthz/_lib/shared-db-health';
+import { handleRouteError } from '@/lib/api/respond';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
+import { getRequestIp } from '@/lib/infra/security/request-ip';
 
 export const runtime = 'nodejs';
 
-interface SharedDatabaseHealthRow extends Record<string, unknown> {
-  has_user_profiles: number;
-  has_food_table: number;
-  has_food_source_id: number;
-  has_new_user_trigger: number;
-  seeded_food_rows: number;
-  orphaned_auth_users: number;
-}
-
-async function getSharedDatabaseHealth() {
-  const rows = await db.execute<SharedDatabaseHealthRow>(sql`
-    WITH checks AS (
-      SELECT
-        (to_regclass('public.user_profiles') IS NOT NULL)::int AS has_user_profiles,
-        (to_regclass('public.vietnamese_food_composition') IS NOT NULL)::int AS has_food_table,
-        EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'public'
-            AND table_name = 'vietnamese_food_composition'
-            AND column_name = 'source_id'
-        )::int AS has_food_source_id,
-        EXISTS (
-          SELECT 1
-          FROM pg_trigger AS trigger
-          JOIN pg_class AS relation ON relation.oid = trigger.tgrelid
-          JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
-          WHERE namespace.nspname = 'auth'
-            AND relation.relname = 'users'
-            AND trigger.tgname = 'on_auth_user_created'
-            AND NOT trigger.tgisinternal
-        )::int AS has_new_user_trigger
-    ),
-    food AS (
-      SELECT
-        CASE
-          WHEN (
-            SELECT has_food_table = 1 AND has_food_source_id = 1
-            FROM checks
-          )
-          THEN (
-            SELECT COUNT(*)::int
-            FROM public.vietnamese_food_composition
-            WHERE source_id = 1
-          )
-          ELSE 0
-        END AS seeded_food_rows
-    ),
-    orphans AS (
-      SELECT
-        CASE
-          WHEN (SELECT has_user_profiles = 1 FROM checks)
-          THEN (
-            SELECT COUNT(*)::int
-            FROM auth.users AS auth_user
-            LEFT JOIN public.user_profiles AS profile
-              ON profile.user_id = auth_user.id
-            WHERE profile.user_id IS NULL
-          )
-          ELSE (
-            SELECT COUNT(*)::int
-            FROM auth.users
-          )
-        END AS orphaned_auth_users
-    )
-    SELECT
-      has_user_profiles,
-      has_food_table,
-      has_food_source_id,
-      has_new_user_trigger,
-      seeded_food_rows,
-      orphaned_auth_users
-    FROM checks, food, orphans;
-  `);
-  const [row] = rows;
-
-  if (!row) {
-    throw new Error('Shared database health query returned no rows.');
+/**
+ * Liveness probe. `{ ok, service }` and nothing else.
+ *
+ * The invariants behind `ok` are named in the server log, not in the body: the
+ * old response told anonymous callers which tables exist, whether a trigger is
+ * installed, how many food rows are seeded and how many auth users have no
+ * profile. That is a schema map and a rough user count handed to anyone who
+ * asks, in exchange for information no client of this endpoint reads — the
+ * deploy gate greps `"ok":true`, the Flutter warm-up ping ignores the body
+ * entirely, and an operator debugging a red deploy has the logs.
+ *
+ * `healthzIp` is a `memory` policy on purpose: this route must answer even
+ * when the database is the thing that is broken, so its limiter cannot be
+ * allowed to need one.
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const ip = getRequestIp(request);
+    if (ip) await assertRateLimit('healthzIp', { kind: 'ip', value: ip });
+  } catch (error) {
+    // A 429 answers in the standard error envelope, NOT as health JSON: a
+    // throttled probe has learned nothing about the service, and reporting
+    // `ok:false` would read as an outage.
+    return handleRouteError(error);
   }
 
-  return {
-    hasUserProfiles: row.has_user_profiles === 1,
-    hasFoodTable: row.has_food_table === 1,
-    hasFoodSourceId: row.has_food_source_id === 1,
-    hasNewUserTrigger: row.has_new_user_trigger === 1,
-    seededFoodRows: row.seeded_food_rows,
-    orphanedAuthUsers: row.orphaned_auth_users,
-  };
-}
-
-export async function GET() {
   try {
-    const checks = await getSharedDatabaseHealth();
-    const ok =
-      checks.hasUserProfiles &&
-      checks.hasFoodTable &&
-      checks.hasFoodSourceId &&
-      checks.hasNewUserTrigger &&
-      checks.seededFoodRows > 0 &&
-      checks.orphanedAuthUsers === 0;
+    const { ok, checks } = await probeSharedDatabaseHealth();
+
+    if (ok) {
+      console.info('[healthz] shared database invariants hold', checks);
+    } else {
+      console.error('[healthz] shared database invariants FAILED', checks);
+    }
 
     return NextResponse.json(
-      { ok, service: 'kallo', checks },
+      { ok, service: 'kallo' },
       { status: ok ? 200 : 503 }
     );
   } catch (error) {

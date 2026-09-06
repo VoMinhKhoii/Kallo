@@ -57,14 +57,14 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
 
   Future<void> _leave() async {
     final sheetContext = context;
-    // This one KEEPS its verb: "Rời nhóm" above "Huỷ" is two different words
-    // for two different things, so there is nothing to disambiguate. Only the
-    // confirms whose affirmative collides with the cancel go to "Đồng ý".
+    // "Rời nhóm" against "Ở lại" — the two things that can happen to your
+    // membership, one per button.
     final yes = await showKalloConfirm(
       sheetContext,
       title: tr('groups.feed.leaveTitle'),
       description: tr('groups.feed.leaveDescription'),
       confirmLabel: tr('groups.feed.leaveConfirm'),
+      cancelLabel: tr('common.actions.stay'),
       destructive: true,
     );
     if (!yes || !sheetContext.mounted) return;
@@ -85,7 +85,13 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   @override
   Widget build(BuildContext context) => KalloSheetSurface(
     constraints: BoxConstraints(
-      maxHeight: MediaQuery.sizeOf(context).height * .9,
+      // Off the height the keyboard LEAVES. This sheet had no keyboard
+      // handling at all, so the pad covered both the inline rename field and
+      // the member search; `KalloSheetSurface` now lifts it clear.
+      maxHeight:
+          (MediaQuery.sizeOf(context).height -
+              MediaQuery.viewInsetsOf(context).bottom) *
+          .9,
     ),
     child: ref
         .watch(chatGroupDetailProvider(widget.groupId))
@@ -135,9 +141,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: dashValue().copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: kSectionHeader(),
                                 ),
                               ),
                               if (group.myRole == 'owner')
@@ -149,7 +153,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                   },
                                   icon: const Icon(
                                     LucideIcons.pencil300,
-                                    size: 16,
+                                    size: KalloIcons.tertiary,
                                   ),
                                 ),
                             ],
@@ -180,7 +184,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                         const Divider(height: KalloSpacing.sp6, color: kHairline),
                         TextButton.icon(
                           onPressed: _leave,
-                          icon: const Icon(LucideIcons.logOut300, size: 16),
+                          icon: const Icon(LucideIcons.logOut300, size: KalloIcons.tertiary),
                           label: Text(tr('groups.feed.leave')),
                         ),
                       ],

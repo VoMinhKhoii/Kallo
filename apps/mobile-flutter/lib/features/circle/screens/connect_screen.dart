@@ -9,9 +9,9 @@ import '../../../services/http/api_client.dart';
 import '../../../models/social/circle.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import '../widgets/states/connect_skeleton.dart';
 
@@ -239,11 +239,7 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
                       namedArgs: {'name': widget.inviter.label}),
               key: ValueKey(_connected),
               textAlign: TextAlign.center,
-              style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
-                  .copyWith(
-                color: KalloColors.text,
-                letterSpacing: KalloTracking.tight,
-              ),
+              style: dashHeadline(),
             ),
           ),
           const SizedBox(height: KalloSpacing.sp2),
@@ -252,10 +248,7 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
                 ? tr('groups.connect.connectedBody')
                 : tr('groups.connect.connectBody'),
             textAlign: TextAlign.center,
-            style: KalloTextStyles.sansRegular(
-              fontSize: KalloFontSize.sm,
-              height: KalloLeading.relaxed,
-            ).copyWith(color: KalloColors.textMuted),
+            style: dashBody(color: kInkMuted),
           ),
           const SizedBox(height: KalloSpacing.sp5),
           if (_connected)
@@ -308,8 +301,7 @@ class _Disc extends StatelessWidget {
       ),
       child: Text(
         initial,
-        style: KalloTextStyles.sansBold(fontSize: KalloFontSize.h4)
-            .copyWith(color: KalloColors.btn),
+        style: dashValue(),
       ),
     );
   }
@@ -343,20 +335,13 @@ class _Shell extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
-                .copyWith(
-              color: KalloColors.text,
-              letterSpacing: KalloTracking.tight,
-            ),
+            style: dashHeadline(),
           ),
           const SizedBox(height: KalloSpacing.sp2),
           Text(
             body,
             textAlign: TextAlign.center,
-            style: KalloTextStyles.sansRegular(
-              fontSize: KalloFontSize.sm,
-              height: KalloLeading.relaxed,
-            ).copyWith(color: KalloColors.textMuted),
+            style: dashBody(color: kInkMuted),
           ),
           if (children.isNotEmpty) ...[
             const SizedBox(height: KalloSpacing.sp5),

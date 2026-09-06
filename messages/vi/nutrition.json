@@ -55,6 +55,7 @@
     "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
     "vitamins": "Vitamin",
     "minerals": "Khoáng chất",
+    "other": "Khác",
     "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
   },
   "more": {
@@ -354,10 +355,11 @@
     "vitaminH": "Biotin"
   },
   "errors": {
-    "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+    "overview": "Hãy làm mới trang hoặc thử lại sau khi ghi thêm một bữa ăn.",
     "overviewToast": "Không tải được tổng quan dinh dưỡng.",
     "retry": "Tải lại tổng quan",
-    "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
+    "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này.",
+    "overviewTitle": "Tổng quan chưa tải được."
   },
   "empty": {
     "title": "Chưa có bữa ăn trong khoảng này",

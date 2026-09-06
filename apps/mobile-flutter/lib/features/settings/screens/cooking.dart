@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../models/profile/onboarding.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../shared/widgets/form/option_strip.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../widgets/profile/profile_form_controller.dart';
 
 /// RN port of web `components/settings/profile/cooking.tsx`. A stack of cards,
-/// each with a bold label + an [OptionStrip].
+/// each with a section label + an [OptionStrip].
 class Cooking extends StatelessWidget {
   const Cooking({super.key});
 
@@ -80,7 +80,9 @@ class Cooking extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < fields.length; i++) ...[
-          if (i > 0) const SizedBox(height: KalloSpacing.sp6),
+          // One 12px step between cards — the app's single rhythm; the 24 this
+          // replaced was compensating for borders the cards no longer have.
+          if (i > 0) const SizedBox(height: KalloSpacing.sp3),
           _CookingCard(field: fields[i]),
         ],
       ],
@@ -107,19 +109,14 @@ class _CookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return KalloCard(
       padding: const EdgeInsets.all(KalloSpacing.sp4),
-      decoration: BoxDecoration(
-        color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        border: Border.all(color: KalloColors.inputBorder),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             field.label,
-            style: dashBody(weight: FontWeight.w500),
+            style: dashBody(),
           ),
           const SizedBox(height: KalloSpacing.sp3),
           OptionStrip.settings(

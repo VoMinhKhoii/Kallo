@@ -6,48 +6,41 @@ import '../../../theme/kallo_theme.dart';
 /// keeps the design system's 12px default between stacked components
 /// (`.agents/skills/kallo-design/mobile.md`, "Spacing — one 12px rhythm").
 ///
-/// Rows are flat and unbordered, so **whitespace is the only grouping device**
-/// on the screen: a group's label sits [label] above its first row, and one
-/// group clears the next by [group] — double the default step, because rows
-/// inside a group touch each other and a 12px gap between groups would read as
-/// just another row gap.
+/// Since the native pass (2026-08-31) the rows live inside white grouped
+/// cards, so the CARD is the grouping device and whitespace no longer has to
+/// carry it: the whole root list is one uniform 12px stack — label, card,
+/// label, card — exactly as the Settings artboard draws it. The old 24px
+/// between-group step went with the flat rows it was compensating for.
 abstract final class SettingsSpacing {
-  /// A group's label ↔ its first row.
-  static const double label = KalloSpacing.sp2; // 8
+  /// A group's label ↔ its card.
+  static const double label = KalloSpacing.sp3; // 12
 
-  /// One group ↔ the next — the only thing separating them.
-  static const double group = KalloSpacing.sp6; // 24
+  /// One group ↔ the next.
+  static const double group = KalloSpacing.sp3; // 12
 
   /// The scroll padding of a settings page whose content sits directly on the
-  /// page (the sub-page editors). Horizontal 12 matches the app-wide root inset
-  /// (dashboard, logging, circle, the drawer) so settings doesn't sit narrower
-  /// than every other tab; the tall bottom inset lets the last item clear the
-  /// home indicator.
-  static const EdgeInsets page = EdgeInsets.fromLTRB(
+  /// page (the sub-page editors). Horizontal 12 matches the app-wide root
+  /// inset so settings doesn't sit narrower than every other screen.
+  static EdgeInsets page(BuildContext context) => EdgeInsets.fromLTRB(
     KalloSpacing.sp3, // 12
-    KalloSpacing.sp2, // 8 — the first group starts right under the header
+    KalloSpacing.sp2, // 8 — the first item starts right under the header
     KalloSpacing.sp3,
-    KalloSpacing.sp8, // 32
+    KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom, // 32 + inset
   );
 
-  /// The scroll padding of the root list of rows.
+  /// The scroll padding of the root list of grouped cards.
   ///
-  /// A row is not a card: its label column has to land where a dashboard
-  /// card's EDGE lands — 12 from the screen edge — not 12 plus the row's own
-  /// padding. A row still needs interior padding for its press fill, so the 12
-  /// is split: 4 here + [rowPadH] (8) inside the row. Net content inset is the
-  /// same 12 as everywhere else, and the pressed fill floats 4px inside the
-  /// screen edge instead of bleeding off it.
-  static const EdgeInsets rowList = EdgeInsets.fromLTRB(
-    _rowListPad, // 4
-    KalloSpacing.sp2, // 8 — the first group starts right under the header
-    _rowListPad,
-    KalloSpacing.sp8, // 32
+  /// A card's EDGE lands on the app-wide 12 inset, so unlike the flat rows
+  /// this replaced there is nothing to split: the full 12 is here, and the
+  /// card's own 16 steps its rows in from it.
+  ///
+  /// Settings is PUSHED (no pill nav), so the bottom only has to clear the
+  /// home indicator — content still scrolls under it rather than stopping
+  /// short, which is why [Screen] keeps `bottom: false`.
+  static EdgeInsets rowList(BuildContext context) => EdgeInsets.fromLTRB(
+    KalloSpacing.sp3, // 12
+    KalloSpacing.sp2, // 8 — with the header's own 4, the artboard's 12 gap
+    KalloSpacing.sp3,
+    KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom, // 32 + inset
   );
-
-  static const double _rowListPad = KalloSpacing.sp1; // 4
-
-  /// A row's own horizontal padding — the second half of the 12 above. Group
-  /// labels use it too, so they align with the row icon gutter.
-  static const double rowPadH = KalloSpacing.sp2; // 8
 }

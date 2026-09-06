@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -24,9 +26,9 @@ export const metadata: Metadata = {
 export default function NotFound() {
   const t = useTranslations('common');
 
-  // Locale-relative — `Link` from i18n/navigation prefixes them.
+  // Locale-relative — `Link` from i18n/navigation prefixes them. Home is not
+  // in here: it is the surface state's own action, one line above.
   const pages = [
-    { href: '/', label: t('notFoundHome') },
     { href: '/docs/overview', label: t('notFoundDocs') },
     { href: '/docs/company/contact', label: t('notFoundContact') },
   ];
@@ -41,11 +43,18 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
       <div className="w-full max-w-md text-center">
-        <h1 className="font-bold text-4xl">404</h1>
-        <p className="mt-2 text-muted-foreground">{t('notFound')}</p>
-        <p className="mt-4 text-muted-foreground text-sm">
-          {t('notFoundBody')}
-        </p>
+        <SurfaceState
+          action={
+            <Button asChild size="sm" variant="ink">
+              <Link href="/">{t('notFoundHome')}</Link>
+            </Button>
+          }
+          area="system"
+          as="h1"
+          kind="notFound"
+          subtitle={t('notFoundBody')}
+          title={t('notFound')}
+        />
 
         <h2 className="mt-10 font-medium text-sm">
           {t('notFoundWhereToLook')}

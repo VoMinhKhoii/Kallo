@@ -2,17 +2,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../states/friend_list_skeleton.dart';
 import '../groups/friend_pick_row.dart';
 import 'share_meal_mode_selector.dart';
 import 'share_meal_submit_button.dart';
+import '../../../../theme/calm_tokens.dart';
 
 /// Opens the "share this meal" sheet: pick a mode (full copy or even split) and
 /// the friends who ate with you. Mirrors the web `ShareMealDialog`.
@@ -64,9 +64,13 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                 : 'groups.shareMeal.copySuccess')
             .plural(count, namedArgs: {'count': '$count'}),
       );
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
+      // Copy/split is gated on the INITIATOR: a 402 means "not entitled", not
+      // a failed share. Server enforcement stays the only gate — this is
+      // purely how the refusal is presented.
+      if (handledFeatureLock(context, error)) return;
       showTopToast(
         context,
         tr('groups.shareMeal.error'),
@@ -77,8 +81,10 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // `KalloSheetSurface` lifts the sheet clear of the keyboard, so the cap
+    // comes off the height the keyboard leaves.
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.85;
     final friendsAsync = ref.watch(circleFriendsProvider);
     final count = _selected.length;
     final portion = count > 0 ? '1/${count + 1}' : '—';
@@ -91,21 +97,18 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
           KalloSheetHeader(title: tr('groups.shareMeal.title')),
           Flexible(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 KalloSpacing.sp4,
                 0,
                 KalloSpacing.sp4,
-                viewInsets + KalloSpacing.sp5,
+                KalloSpacing.sp5,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     tr('groups.shareMeal.description'),
-                    style: KalloTextStyles.sansRegular(
-                      fontSize: KalloFontSize.detail,
-                      height: KalloLeading.relaxed,
-                    ).copyWith(color: KalloColors.textMuted),
+                    style: dashMeta(),
                   ),
                   const SizedBox(height: KalloSpacing.sp4),
                   ShareMealModeSelector(
@@ -120,9 +123,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                         'groups.shareMeal.splitPreview',
                         namedArgs: {'portion': portion},
                       ),
-                      style: KalloTextStyles.sansMedium(
-                        fontSize: KalloFontSize.xs,
-                      ).copyWith(color: KalloColors.text),
+                      style: dashMeta(color: kInk),
                     ),
                   ],
                   const SizedBox(height: KalloSpacing.sp4),
@@ -133,9 +134,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                     error:
                         (_, __) => Text(
                           tr('groups.shareMeal.error'),
-                          style: KalloTextStyles.sansRegular(
-                            fontSize: KalloFontSize.detail,
-                          ).copyWith(color: KalloColors.textMuted),
+                          style: dashMeta(),
                         ),
                     data: (members) {
                       final friends =
@@ -143,9 +142,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                       if (friends.isEmpty) {
                         return Text(
                           tr('groups.shareMeal.noFriends'),
-                          style: KalloTextStyles.sansRegular(
-                            fontSize: KalloFontSize.detail,
-                          ).copyWith(color: KalloColors.textMuted),
+                          style: dashMeta(),
                         );
                       }
                       return Column(

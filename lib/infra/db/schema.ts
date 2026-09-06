@@ -11,6 +11,7 @@ import {
   numeric,
   pgSchema,
   pgTable,
+  primaryKey,
   real,
   serial,
   smallint,
@@ -236,6 +237,12 @@ export const meals = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     rawInput: text('raw_input').notNull(),
+    // Nullable for legacy, manual, barcode, OCR, and relog rows. AI confirms
+    // copy the originating pipeline request id for request-to-meal joins.
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
     mealSlot: text('meal_slot'),
     slotOverride: boolean('slot_override').default(false),
     confidenceOverall: text('confidence_overall'),
@@ -676,6 +683,11 @@ export const pendingAnalyses = pgTable(
     // paths (barcode, cheat-repeat) have none, and PG treats NULLs as distinct
     // in the unique index below, so they never collide.
     attemptId: uuid('attempt_id'),
+    // Only the AI stream sets this; non-AI staging paths leave it NULL.
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
     // Mirrors meals.entry_mode so confirmAndSaveMealAction can branch without
     // unpacking the JSONB. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
@@ -704,6 +716,74 @@ export const pendingAnalyses = pgTable(
     uniqueIndex('pending_analyses_user_attempt_key').on(
       table.userId,
       table.attemptId
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// First-party product telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * Client events accepted by POST /api/v1/telemetry. The API contract is the
+ * primary shape guard; these checks protect the table from future writers that
+ * bypass that route. No raw meal text, email, IP, or user-agent is stored.
+ */
+export const productTelemetryEvents = pgTable(
+  'product_telemetry_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    eventId: uuid('event_id').notNull(),
+    schemaVersion: smallint('schema_version').notNull(),
+    eventName: text('event_name').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    platform: text('platform').notNull(),
+    appVersion: text('app_version'),
+    anonymousId: text('anonymous_id'),
+    sessionId: text('session_id'),
+    consent: boolean('consent').notNull(),
+    locale: text('locale'),
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    // Properties are already constrained by lib/api/contracts/telemetry/events.ts.
+    properties: jsonb('properties')
+      .$type<Record<string, boolean | number | string>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    receivedAt: timestamp('received_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('product_telemetry_events_event_id_key').on(table.eventId),
+    check(
+      'product_telemetry_events_identity_check',
+      sql`${table.userId} IS NOT NULL OR (${table.anonymousId} IS NOT NULL AND ${table.consent} = true)`
+    ),
+    check(
+      'product_telemetry_events_schema_version_check',
+      sql`${table.schemaVersion} = 1`
+    ),
+    check(
+      'product_telemetry_events_name_check',
+      sql`${table.eventName} IN ('app_opened', 'screen_viewed', 'signup_started', 'signup_completed', 'meal_analysis_started', 'meal_analysis_completed', 'meal_analysis_failed', 'meal_saved', 'meal_discarded', 'meal_edited', 'onboarding_step_viewed', 'onboarding_step_completed', 'onboarding_completed', 'feature_viewed', 'feature_used', 'feature_adopted', 'feedback_submitted', 'api_request_failed', 'app_crashed', 'performance_measured', 'health_check_failed')`
+    ),
+    check(
+      'product_telemetry_events_platform_check',
+      sql`${table.platform} IN ('web', 'ios', 'android')`
+    ),
+    index('product_telemetry_events_occurred_at_idx').on(table.occurredAt),
+    index('product_telemetry_events_name_occurred_at_idx').on(
+      table.eventName,
+      table.occurredAt
     ),
   ]
 );
@@ -1710,6 +1790,218 @@ export const waitlistSignups = pgTable(
     check(
       'waitlist_signups_locale_check',
       sql`${table.locale} IN ('en', 'vi')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Notifications — per-recipient activity rows
+// ---------------------------------------------------------------------------
+// The per-recipient layer that circle_events (actor-scoped spine) deliberately
+// is not: one row per (person who should be told, thing that happened), written
+// fan-out-on-write inside the producing transaction. Read and mutated only by
+// server actions on the Drizzle owner connection (RLS enabled, no policies —
+// see the companion RLS migration), so recipient_id in every WHERE is the
+// primary authorization control.
+//
+// Tri-state read model (Instagram): seen_at drives the badge (count where
+// NULL), read_at only dims the row, dismissed_at hides it. The partial unique
+// index on (recipient_id, group_key) WHERE the row is still open is the
+// aggregation target: ten people reacting to one meal upsert into ONE row
+// ("X and 2 others"), and once a row is read the index no longer matches it, so
+// later activity starts a fresh row instead of rewriting history.
+//
+// The type CHECK is pre-widened with the reserved coach/streak/recap types so
+// future producers need no ALTER, matching circle_events.
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    recipientId: uuid('recipient_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    // The aggregate's FULL membership, newest actor first — audiences are
+    // bounded (≤10 friends, ≤50 group members), so nobody ages out to be
+    // re-counted as new or to become unretractable. The UI renders the first
+    // two faces; actor_count (= cardinality of this array) carries the rest.
+    actorIds: uuid('actor_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    actorCount: integer('actor_count').notNull().default(1),
+    // What happened (the invite / friendship row), versus where tapping goes
+    // (the chat group). Both are free-form + nullable: a notification never
+    // owns domain state, it points at it and the reader joins live.
+    objectType: text('object_type'),
+    objectId: uuid('object_id'),
+    targetType: text('target_type'),
+    targetId: uuid('target_id'),
+    // '<type>:<id>' — the aggregation identity (see lib/domain/notifications).
+    groupKey: text('group_key').notNull(),
+    data: jsonb('data'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    seenAt: timestamp('seen_at', { withTimezone: true }),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+    // Transient per-upsert classification, meaningful ONLY in the statement's
+    // own RETURNING: the aggregation upsert sets it from the OLD row's seen_at
+    // inside the ON CONFLICT branch, so notify() can tell a seen→unseen
+    // re-badge (push) from a refresh of a still-unseen row (silent) without a
+    // second statement. Nothing reads it between statements; it is stored only
+    // because RETURNING can only return columns.
+    rebadged: boolean('rebadged').notNull().default(false),
+  },
+  (table) => [
+    // The feed page: one recipient's visible rows, newest first, tuple cursor.
+    index('notifications_recipient_created_idx')
+      .on(
+        table.recipientId,
+        sql`${table.createdAt} DESC`,
+        sql`${table.id} DESC`
+      )
+      .where(sql`dismissed_at IS NULL`),
+    // The 30s badge poll: count of unseen rows.
+    index('notifications_recipient_unseen_idx')
+      .on(table.recipientId)
+      .where(sql`seen_at IS NULL AND dismissed_at IS NULL`),
+    // One OPEN aggregate per (recipient, groupKey) — the upsert conflict
+    // target. Read/dismissed rows fall out of the index by design.
+    uniqueIndex('notifications_open_aggregate_idx')
+      .on(table.recipientId, table.groupKey)
+      .where(sql`read_at IS NULL AND dismissed_at IS NULL`),
+    check(
+      'notifications_type_check',
+      sql`${table.type} IN ('friend.joined', 'group.added', 'share.invite', 'share.invite_accepted', 'share.reaction', 'share.reply', 'share.logged', 'chat.message', 'coach.nudge', 'streak.milestone', 'recap.ready')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Push tokens — device registrations for native (FCM/APNs) delivery
+// ---------------------------------------------------------------------------
+// One row per device, keyed by the FCM registration token. The token — not
+// (user, device) — is unique because a token is reassigned by the OS/Firebase
+// when a different account signs in on the same handset: the POST upsert moves
+// it to the new owner rather than fanning one device's push to two people.
+//
+// last_seen_at is refreshed on every registration ping; the retention cron
+// reaps rows idle past 270 days so an uninstalled app stops costing sends.
+// Dead tokens are also pruned inline whenever FCM answers UNREGISTERED.
+
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    platform: text('platform').notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // The send path's only lookup: every token for a set of recipients.
+    index('push_tokens_user_idx').on(table.userId),
+    check(
+      'push_tokens_platform_check',
+      sql`${table.platform} IN ('ios', 'android', 'web')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Generic rate limiter (lib/infra/rate-limit/limiter/)
+//
+// `rate_limit_counters` holds ONE row per (key_kind, key_hash, route) carrying
+// all three windows, so a consume is a single INSERT … ON CONFLICT statement
+// instead of the three-row upsert the analysis guard uses. The row is soft
+// state: a later Domain B migration sets the table UNLOGGED and the rows are
+// pruned nightly, so nothing here is a durable record.
+//
+// Deliberately no secondary index: the only reader is the primary key, and an
+// index on `updated_at` would be written on every consume just to serve one
+// nightly batched reaper.
+// ---------------------------------------------------------------------------
+
+export const rateLimitCounters = pgTable(
+  'rate_limit_counters',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    minuteStart: timestamp('minute_start', { withTimezone: true }).notNull(),
+    minuteCount: integer('minute_count').notNull().default(0),
+    hourStart: timestamp('hour_start', { withTimezone: true }).notNull(),
+    hourCount: integer('hour_count').notNull().default(0),
+    dayStart: timestamp('day_start', { withTimezone: true }).notNull(),
+    dayCount: integer('day_count').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Named explicitly because `rate_limit_consume` targets the arbiter by name
+    // (`ON CONFLICT ON CONSTRAINT`) rather than by column list.
+    primaryKey({
+      name: 'rate_limit_counters_pkey',
+      columns: [table.keyKind, table.keyHash, table.route],
+    }),
+    check(
+      'rate_limit_counters_key_kind_check',
+      sql`${table.keyKind} IN ('user', 'ip', 'account', 'recipient', 'global')`
+    ),
+    check(
+      'rate_limit_counters_minute_count_check',
+      sql`${table.minuteCount} >= 0`
+    ),
+    check('rate_limit_counters_hour_count_check', sql`${table.hourCount} >= 0`),
+    check('rate_limit_counters_day_count_check', sql`${table.dayCount} >= 0`),
+  ]
+);
+
+// Audit trail for every block (and every limiter outage). LOGGED on purpose —
+// unlike the counters this is the attack-visibility signal, so it has to
+// survive a crash. Hashed keys only; never a raw IP or email.
+//
+// One row is an AGGREGATE, not a single block: the writer coalesces identical
+// (route, key, reason, source) tuples in memory and writes `hits` with the
+// first/last timestamps, so a flood costs one row per five seconds instead of
+// one write per blocked request on the same 2-connection pool the limiter is
+// protecting. Read counts as `sum(hits)`, never `count(*)`.
+export const rateLimitEvents = pgTable(
+  'rate_limit_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** When the FIRST block in this aggregate happened. */
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    route: text('route').notNull(),
+    reason: text('reason').notNull(),
+    source: text('source').notNull(),
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    retryAfterSeconds: integer('retry_after_seconds'),
+    /** Blocks folded into this row. */
+    hits: integer('hits').notNull().default(1),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Triage reads are always "what happened on this route lately".
+    index('rate_limit_events_route_created_idx').on(
+      table.route,
+      table.createdAt
     ),
   ]
 );

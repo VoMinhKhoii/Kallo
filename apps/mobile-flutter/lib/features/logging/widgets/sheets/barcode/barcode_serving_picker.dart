@@ -6,11 +6,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/barcode_amount.dart';
 import 'barcode_amount_controls.dart';
+import '../../../../../theme/calm_tokens.dart';
 
 class BarcodeServingPicker extends StatelessWidget {
   const BarcodeServingPicker({
@@ -42,10 +42,7 @@ class BarcodeServingPicker extends StatelessWidget {
             ),
             Expanded(
               child: Center(
-                child: KalloText(
-                  '$servings',
-                  variant: KalloTextVariant.macroValue,
-                ),
+                child: Text('$servings', style: dashValue()),
               ),
             ),
             BarcodeStepperButton(
@@ -59,10 +56,9 @@ class BarcodeServingPicker extends StatelessWidget {
           ],
         ),
         const SizedBox(height: KalloSpacing.sp1),
-        KalloText(
+        Text(
           '${'logging.barcode.perServing'.tr(namedArgs: {'grams': '${servingSizeG.round()}'})} · ${'logging.barcode.totalGrams'.tr(namedArgs: {'grams': '$totalGrams'})}',
-          variant: KalloTextVariant.numCaption,
-          style: const TextStyle(color: KalloColors.textMuted),
+          style: dashMeta(tabular: true),
         ),
       ],
     );
@@ -87,17 +83,16 @@ class BarcodePackageCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          KalloText(
+          Text(
             'logging.barcode.wholePackage'.tr(),
-            variant: KalloTextVariant.itemName,
+            style: dashBody(),
           ),
           const SizedBox(height: 2),
-          KalloText(
+          Text(
             'logging.barcode.totalGrams'.tr(
               namedArgs: {'grams': '${packageSizeG.round()}'},
             ),
-            variant: KalloTextVariant.numCaption,
-            style: const TextStyle(color: KalloColors.textMuted),
+            style: dashMeta(tabular: true),
           ),
         ],
       ),

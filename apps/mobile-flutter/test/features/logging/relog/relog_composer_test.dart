@@ -56,6 +56,7 @@ const _candidatesJson = {
 };
 
 const _view = FeedViewState(
+  date: '2026-01-01',
   persistedMeals: [],
   pendingConfirmations: [],
   entries: [],
@@ -135,7 +136,6 @@ FeedComposer _composerFor({
   errorText: null,
   mode: mode,
   cheatIntensity: CheatIntensity.medium,
-  onCheatIntensityChange: (_) {},
   userId: 'user-1',
   stagingRepeat: false,
   onRepeatCheat: (_) {},

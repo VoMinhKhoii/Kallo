@@ -50,6 +50,8 @@ function resolutionFor(status: number, retryable: boolean): string {
       return 'Verify the path and resource identifier against /openapi.json.';
     case 409:
       return 'Read the latest resource state, reconcile the conflict, then retry.';
+    case 413:
+      return 'Send a smaller request body; retrying the same bytes will fail again.';
     case 422:
       return 'Change the supplied content as described by the error message.';
     case 429:
@@ -75,6 +77,53 @@ export class RateLimitedError extends AppError {
     this.name = 'RateLimitedError';
   }
 }
+
+/**
+ * A request body exceeded the cap its reader was given.
+ *
+ * 413, and NOT retryable: the same bytes will be refused again, so a client
+ * that backs off and retries is only wasting both sides' time. A distinct
+ * class rather than a bare `AppError` because a handler that speaks someone
+ * else's error envelope (the Supabase auth proxy) has to recognise this one
+ * case to translate it, and `code === 'PAYLOAD_TOO_LARGE'` string-matching is
+ * a worse way to say the same thing.
+ */
+export class PayloadTooLargeError extends AppError {
+  constructor(userMessage: string) {
+    super('PAYLOAD_TOO_LARGE', 413, false, userMessage);
+    this.name = 'PayloadTooLargeError';
+  }
+}
+
+/**
+ * The rate limiter itself could not reach a verdict (its database round trip
+ * errored or blew its deadline) on a policy whose `failMode` is `'closed'`.
+ *
+ * 503, not 429: nothing about the caller is over quota — the guard in front of
+ * a spend route is down, and admitting the request would mean spending money
+ * with no ceiling. Retryable with a fixed `Retry-After`, because the outage is
+ * expected to be brief and the client should not treat it as a quota denial.
+ */
+export class RateLimitUnavailableError extends AppError {
+  constructor(
+    userMessage: string,
+    public readonly retryAfterSeconds: number,
+    /**
+     * WHY the limiter could not answer. `timeout` means the DB deadline fired
+     * — the pool is saturated and we are shedding load; `error` means the
+     * round trip failed outright — the database is unreachable or the function
+     * is wrong. Same 503 to the client, but the two demand opposite operator
+     * responses, so telemetry keeps them apart.
+     */
+    public readonly kind: RateLimitUnavailableKind = 'error',
+    cause?: unknown
+  ) {
+    super('RATE_LIMITER_UNAVAILABLE', 503, true, userMessage, cause);
+    this.name = 'RateLimitUnavailableError';
+  }
+}
+
+export type RateLimitUnavailableKind = 'timeout' | 'error';
 
 // Reasons a gated feature is locked, mirrored from the entitlement service.
 export type FeatureLockedReason = 'trial_expired' | 'not_entitled';

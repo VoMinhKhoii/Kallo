@@ -1,5 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
+import { Errors } from '@/lib/core/errors/catalog';
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -49,6 +85,15 @@ vi.mock(
   '@/lib/infra/db/schema',
   async () => (await import('./circle-doubles')).schema
 );
+
+// The free-tier friend cap: pass-through unless a test arms it, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertFriendCapacity } = vi.hoisted(() => ({
+  mockAssertFriendCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertFriendCapacity: mockAssertFriendCapacity,
+}));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -228,6 +273,73 @@ describe('acceptInvite', () => {
     });
   });
 
+  it('tells the inviter their link landed on the promote path', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([{ id: FRIENDSHIP_ID, status: 'pending' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    mockTxUpdate.mockReturnValue({
+      set: vi
+        .fn()
+        .mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    });
+    captureInserts();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockNotify.mock.lastCall?.[1]).toEqual([
+      {
+        recipientId: INVITER,
+        type: 'friend.joined',
+        actorId: ACTOR,
+        objectType: 'friendship',
+        objectId: FRIENDSHIP_ID,
+        groupKey: `friend.joined:${FRIENDSHIP_ID}`,
+      },
+    ]);
+  });
+
+  // Push is scheduled AFTER the transaction resolves — never from inside it,
+  // where a later rollback would leave a phone buzzing about a friendship
+  // that does not exist.
+  it('schedules the inviter push once the edge is committed', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([{ id: FRIENDSHIP_ID, status: 'pending' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    mockTxUpdate.mockReturnValue({
+      set: vi
+        .fn()
+        .mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    });
+    captureInserts();
+    mockNotify.mockResolvedValueOnce([INVITER]);
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([INVITER], {
+      type: 'friend.joined',
+      actor: { id: ACTOR },
+      groupKey: `friend.joined:${FRIENDSHIP_ID}`,
+    });
+  });
+
+  // The writer that won the insert already notified — a second signal here
+  // would double-badge the inviter for one join.
+  it('stays silent on the race-reconcile path', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([]))
+      .mockReturnValueOnce(txSelect([{ status: 'accepted' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    insertConflicted();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockNotify).not.toHaveBeenCalled();
+  });
+
   it('is a no-op when already connected', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxSelect.mockReturnValueOnce(
@@ -238,6 +350,63 @@ describe('acceptInvite', () => {
 
     expect(result.status).toBe('accepted');
     expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('checks both parties against the friend cap on a NEW edge', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    captureInserts();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAssertFriendCapacity).toHaveBeenCalledWith(expect.anything(), {
+      accepterId: ACTOR,
+      inviterId: INVITER,
+      inviterName: 'Phở Fan',
+    });
+  });
+
+  it('does NOT check the friend cap when the edge is already accepted', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(
+      txSelect([{ id: FRIENDSHIP_ID, status: 'accepted' }])
+    );
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAssertFriendCapacity).not.toHaveBeenCalled();
+  });
+
+  it('propagates the accepter 402 without writing the edge', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(txSelect([]));
+    captureInserts();
+    mockAssertFriendCapacity.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      status: 402,
+      code: 'feature_locked',
+    });
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('propagates a 409 when the inviter is at their friend cap', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(txSelect([]));
+    captureInserts();
+    mockAssertFriendCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 10 bạn bè.')
+    );
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      status: 409,
+      code: 'CIRCLE_LIMIT_REACHED',
+    });
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 

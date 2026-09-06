@@ -12,7 +12,8 @@
  *   - A version bump in CACHE_NAME drops every old cache on activate.
  */
 
-const CACHE_NAME = 'kallo-shell-v1';
+// v2: offline.html now carries the seal illustration and the neutral palette.
+const CACHE_NAME = 'kallo-shell-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Minimal, build-stable precache: the offline page and the brand icons. We do

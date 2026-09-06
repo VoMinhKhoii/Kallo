@@ -7,7 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../services/auth/session_provider.dart';
 import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../list/settings_row.dart';
+import '../../../../shared/widgets/list/list_row.dart';
 
 /// Sign out — the bottom-most action on the settings screen, in danger red.
 ///
@@ -32,12 +32,12 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
   bool _signingOut = false;
 
   Future<void> _confirm() async {
-    // "Đăng xuất" beside "Huỷ" is unambiguous, so it keeps its verb; the
-    // open cue now lives inside showKalloConfirm.
+    // Both sides name an outcome: leaving the session, or staying in it.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('settings.account.signOutConfirmTitle'),
       confirmLabel: tr('settings.account.signOut'),
+      cancelLabel: tr('common.actions.staySignedIn'),
       destructive: true,
     );
     if (!confirmed || _signingOut || !mounted) return;
@@ -59,12 +59,11 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsRow(
+    return ListRow(
       icon: LucideIcons.logOut300,
       label: tr('settings.account.signOut'),
       danger: true,
       busy: _signingOut,
-      enabled: !_signingOut,
       onTap: _confirm,
     );
   }

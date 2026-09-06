@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shell/header/app_header.dart';
+import '../../../../shell/header/app_header_back_button.dart';
 import '../../../../theme/kallo_motion.dart';
+import '../../logic/logging_spacing.dart';
 import 'timeline_chip.dart';
 import 'timeline_strip.dart';
 
@@ -112,7 +113,7 @@ class _DateMorphState extends State<DateMorph>
     // Fixed height = the expanded strip's height, so morphing never pushes the
     // feed; the collapsed chip just centers in it.
     return SizedBox(
-      height: 56,
+      height: LoggingSpacing.stripFor(context),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -128,7 +129,11 @@ class _DateMorphState extends State<DateMorph>
                   scale: _chipScale,
                   child: Row(
                     children: [
-                      const AppMenuButton(),
+                      // Log is pushed full-screen over the shell now — the
+                      // leading slot is a back chevron, not the hamburger.
+                      AppHeaderBackButton(
+                        onBack: () => Navigator.of(context).maybePop(),
+                      ),
                       Expanded(
                         child: Center(
                           child: TimelineChip(

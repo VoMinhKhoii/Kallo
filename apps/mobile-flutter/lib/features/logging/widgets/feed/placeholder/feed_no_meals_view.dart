@@ -16,6 +16,7 @@ class FeedNoMealsView extends StatelessWidget {
     super.key,
     required this.view,
     required this.dockHeight,
+    this.keyboardInset = 0,
   });
 
   final FeedViewState view;
@@ -23,6 +24,14 @@ class FeedNoMealsView extends StatelessWidget {
   /// The floating composer dock's measured height, reserved as bottom padding
   /// so the last card can always clear it.
   final double dockHeight;
+
+  /// `viewInsets.bottom` — the keyboard's height THIS frame. `/logging` has no
+  /// `Scaffold`, so the viewport is not resized by the keyboard; the composer
+  /// dock lifts itself by this inset and the feed owes the same room. Applied
+  /// UN-animated, unlike [dockHeight]: the platform already ramps the inset
+  /// frame by frame, and easing it a second time over 250ms would leave the
+  /// empty state trailing the composer as the keyboard rises.
+  final double keyboardInset;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +55,7 @@ class FeedNoMealsView extends StatelessWidget {
           KalloSpacing.sp3,
           0,
           KalloSpacing.sp3,
-          dockHeight,
+          dockHeight + keyboardInset,
         ),
         child: body,
       );
@@ -70,19 +79,23 @@ class FeedNoMealsView extends StatelessWidget {
               // Animated because the reserved height ARRIVES LATE and in steps: the
               // dock measures itself post-frame, so opening the `/` picker or
               // growing the field to a second line lands as one discrete jump that
-              // would teleport the mark. The keyboard's own shift rides the
-              // platform's animated inset — the viewport shrinks frame by frame, so
-              // the block glides up with it rather than snapping.
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-                padding: EdgeInsets.fromLTRB(
-                  0,
-                  KalloSpacing.sp6,
-                  0,
-                  KalloSpacing.sp6 + dockHeight,
+              // would teleport the mark. The keyboard's own shift is NOT in
+              // here: [keyboardInset] is already a per-frame ramp from the
+              // platform, so it sits in the plain padding outside, moving on
+              // the same frame as the dock.
+              child: Padding(
+                padding: EdgeInsets.only(bottom: keyboardInset),
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  padding: EdgeInsets.fromLTRB(
+                    0,
+                    KalloSpacing.sp6,
+                    0,
+                    KalloSpacing.sp6 + dockHeight,
+                  ),
+                  child: Center(child: body),
                 ),
-                child: Center(child: body),
               ),
             ),
           ),

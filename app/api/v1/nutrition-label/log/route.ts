@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { logNutritionLabelMealSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapNutritionLabelError } from '../_errors';
@@ -23,8 +24,15 @@ export const runtime = 'nodejs';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { user } = await requireAuthAndProfile();
+    const { user, profile } = await requireAuthAndProfile();
     const body = logNutritionLabelMealSchema.parse(await req.json());
+
+    // Label scanning is premium: the throw is a 402 envelope via
+    // `mapNutritionLabelError`'s pass-through default → `handleRouteError`.
+    await assertFeatureAccess(
+      { userId: user.id, profileCreatedAt: profile.createdAt },
+      'label_scan'
+    );
 
     const { analysisId } = await stageOcrMeal(user.id, body);
     const result = await confirmAndSaveMealAction({

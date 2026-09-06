@@ -3,17 +3,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/logic/legal_links.dart';
+import '../../../shared/widgets/list/list_row.dart';
 import '../../feedback/screens/feedback_screen.dart';
 import '../widgets/list/settings_group.dart';
-import '../widgets/list/settings_row.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).
-const String _appVersion = '1.0.1';
+///
+/// It is NOT a row: the settings root prints it centred under the last card,
+/// where a build number belongs. As a row it spent a full 56pt and an icon on
+/// a value nobody navigates to.
+const String kAppVersion = '1.0.1';
 
-/// The About group on the settings root: feedback, version, and the legal
-/// pages. Extracted from `settings_screen.dart` to keep that file within its
-/// size baseline.
+/// The About group on the settings root: feedback and the legal pages.
+/// Extracted from `settings_screen.dart` to keep that file within its size
+/// baseline.
 ///
 /// Feedback lives here rather than under a header of its own. A single-row
 /// group spent a whole section label and two 24px gaps on one row, and section
@@ -35,24 +39,19 @@ class AboutSection extends StatelessWidget {
     return SettingsGroup(
       label: tr('settings.about.title'),
       children: [
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.messageSquare300,
           label: tr('settings.feedback.rowLabel'),
           showChevron: true,
           onTap: () => _openFeedback(context),
         ),
-        SettingsRow(
-          icon: LucideIcons.info300,
-          label: tr('settings.about.version'),
-          value: _appVersion,
-        ),
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.shieldCheck300,
           label: tr('settings.about.privacy'),
           showChevron: true,
           onTap: () => openLegalPage(context, privacyUrlFor(languageCode)),
         ),
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.fileText300,
           label: tr('settings.about.terms'),
           showChevron: true,

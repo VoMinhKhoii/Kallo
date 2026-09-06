@@ -91,16 +91,24 @@ export function scoreCase(
   if (fixture.expect.expectVessel !== undefined) {
     const expected = fixture.expect.expectVessel;
     const actual = observed.vessels;
+    // Compare against the VESSELLED items only: deep decomposition may split
+    // one plate into several meal items (base + components), and only the
+    // base carries the vessel. Pinning total item count would fail a correct
+    // vessel whenever granularity improves; extra vessel-BEARING items still
+    // fail (non-null count mismatch).
+    const vesselled = actual.filter(
+      (vessel): vessel is NonNullable<typeof vessel> => vessel !== null
+    );
     checks.push({
       name: 'vessel',
       pass:
         expected === null
-          ? actual.every((vessel) => vessel === null)
-          : expected.length === actual.length &&
+          ? vesselled.length === 0
+          : expected.length === vesselled.length &&
             expected.every(
               (vessel, index) =>
-                vessel.family === actual[index]?.family &&
-                vessel.tier === actual[index]?.tier
+                vessel.family === vesselled[index]?.family &&
+                vessel.tier === vesselled[index]?.tier
             ),
       expected,
       actual,

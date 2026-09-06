@@ -1,3 +1,4 @@
+import { and, eq } from 'drizzle-orm';
 import {
   buildPersistedMeal,
   inferMealSlot,
@@ -7,14 +8,59 @@ import type {
   CheatSliderSpec,
   CheatSlidersPersisted,
 } from '@/lib/core/types/cheat';
+import { getBillingConfig } from '@/lib/domain/billing/billing';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
-import type { AppDb } from '@/lib/infra/db/client';
-import { meals, type pendingAnalyses } from '@/lib/infra/db/schema';
+import { type AppDb, db } from '@/lib/infra/db/client';
+import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';
 import { EMPTY_NUTRITION } from './shared';
 import type { ConfirmMealResponse } from './types';
 
 type DbTransaction = Parameters<Parameters<AppDb['transaction']>[0]>[0];
+
+/**
+ * Premium gate for the CONFIRM half of the cheat flow.
+ *
+ * Confirm is one action for both entry modes, and which branch it takes is
+ * decided by a `pending_analyses` row the caller only names by id — so the gate
+ * cannot be a plain `assertFeatureAccess` at the top of `confirmAndSaveMealAction`
+ * without locking precise meals too. This resolves the mode first, then gates
+ * only the cheat branch.
+ *
+ * Called BEFORE the confirm transaction opens: `DB_POOL_MAX` defaults to 2, so
+ * an entitlement read inside an open transaction can deadlock the pool.
+ *
+ * Two deliberate non-throws:
+ *  - kill-switch off ⇒ returns immediately, issuing NO query at all, so an
+ *    unenforced build behaves byte-for-byte as before this gate existed;
+ *  - unknown / missing / foreign pending row ⇒ returns quietly. The confirm
+ *    action deletes-and-checks that same row moments later and raises its own
+ *    "analysis không tồn tại" error; duplicating it here would only change
+ *    which message a stale card gets.
+ */
+export async function assertCheatConfirmAllowed(
+  userId: string,
+  profileCreatedAt: Date,
+  analysisId: string
+): Promise<void> {
+  if (!getBillingConfig().enforcementEnabled) return;
+
+  const [pending] = await db
+    .select({ entryMode: pendingAnalyses.entryMode })
+    .from(pendingAnalyses)
+    .where(
+      and(
+        eq(pendingAnalyses.id, analysisId),
+        eq(pendingAnalyses.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (pending?.entryMode !== 'cheat') return;
+
+  await assertFeatureAccess({ userId, profileCreatedAt }, 'cheat_meal');
+}
 
 /**
  * Cheat-meal confirm branch: recompute nutrition from the staged slider spec

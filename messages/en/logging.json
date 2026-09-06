@@ -40,6 +40,7 @@
     "not_found": "No product found for this barcode.",
     "not_cached": "This product is no longer available. Please scan it again.",
     "stage_failed": "Couldn't add this meal. Please try again.",
+    "rate_limited": "The barcode scanner is busy. Please try again in a moment.",
     "server_error": "Something went wrong. Please try again."
   },
   "ocrTab": "Scan Label",
@@ -130,6 +131,7 @@
     "vitaminH": "Vitamin H"
   },
   "ocrError": {
+    "feature_locked": "Label scanning is a Premium feature. Upgrade to scan nutrition labels.",
     "invalid_image": "Please upload a clear image of a nutrition facts table.",
     "no_label_detected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
     "rate_limited": "The OCR service is busy. Please try again in a moment.",
@@ -202,7 +204,7 @@
     "repeatError": "Could not reopen that occasion.",
     "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
     "loadErrorTitle": "Could not load this day",
-    "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
+    "loadErrorDescription": "Your saved meals for this date did not load, so try again before logging more.",
     "retryDay": "Retry day",
     "partialDayNotice": {
       "title": "This day may be under-logged",

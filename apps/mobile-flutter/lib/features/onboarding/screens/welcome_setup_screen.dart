@@ -12,6 +12,7 @@ import '../../dashboard/data/dashboard_providers.dart';
 import '../../../shared/logic/display_format.dart';
 import '../../logging/data/logging_providers.dart';
 import '../providers/onboarding_providers.dart';
+import '../../../shell/nav/nav_actions.dart';
 
 /// The celebratory finish shown after the wizard completes, before landing on
 /// `/logging`.
@@ -103,7 +104,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
       context.go('/circle/invite/$pendingInvite');
       return;
     }
-    context.go('/logging');
+    goToLogging(context);
   }
 
   @override

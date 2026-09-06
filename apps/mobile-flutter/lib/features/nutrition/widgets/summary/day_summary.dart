@@ -4,17 +4,19 @@ import 'package:flutter/material.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../models/nutrition/nutrition.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../logic/helpers.dart';
 import '../../../../shared/widgets/nutrition/composition_bar.dart';
 import '../../logic/rhythm_logic.dart';
 import 'calorie_scope_stats.dart';
 import '../charts/macro_trend_chart.dart';
 
-/// Compact calorie + macro summary at the top of the nutrition view. The hero
-/// calorie figure is the average over the active day scope; the other scope's
-/// average sits beneath it as a subtle, tappable secondary. Tapping swaps the
-/// two (with the whole card re-scoping underneath). A P/C/F bar chart + gram
-/// legend sits below.
+/// The calorie card at the top of the nutrition view: the hero average over
+/// the active day scope, a switch naming the OTHER scope, the dates the figure
+/// covers, and the stacked macro-calorie chart under them.
+///
+/// The gram legend that used to close the card now lives in the macro rows
+/// below it (`MacroRowsCard`) — the chart's own pigments are the colour key,
+/// and each macro reads better as a row with its target than as a third
+/// wrapped item repeating the same three names.
 class DaySummary extends StatelessWidget {
   const DaySummary({
     super.key,
@@ -71,11 +73,16 @@ class DaySummary extends StatelessWidget {
     final showTrend = resolvedRange != '1d' && bucketCount >= 2;
 
     return Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp5),
+      // 16 horizontal / 12 vertical — the app-wide card inset where the card
+      // opens and closes on text. No shadow: on the native canvas a white card
+      // separates by surface alone.
+      padding: const EdgeInsets.symmetric(
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp3,
+      ),
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: kCardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,36 +125,26 @@ class DaySummary extends StatelessWidget {
               )
             else
               CompositionBar(segments: composition.segments),
+          ],
+          // The complete-day rule, said once where the filtered figure lives.
+          // Ported from the web card (`components/nutrition/sections/
+          // day-summary.tsx`), which shows it on the COMPLETE scope only and
+          // hides it — rather than swapping the copy — everywhere else: on All
+          // nothing is being set aside, so the note would explain a rule the
+          // card is not applying, and with a column selected the figure is one
+          // bucket rather than an average over a scope at all.
+          if (scope == NutritionDayScope.complete &&
+              selectedIndex == null &&
+              !isEmpty) ...[
+            const SizedBox(height: KalloSpacing.sp4),
+            const Divider(height: 1, thickness: 1, color: kHairline),
             const SizedBox(height: KalloSpacing.sp3),
-            // Colour key: which band is which macro (+ avg grams).
-            //
-            // `spaceEvenly` with a small MINIMUM gap, rather than centring on a
-            // fixed one. The three items are different widths in both locales
-            // and much wider in Vietnamese ("Chất béo" against "Fat"), so a
-            // fixed gap either wraps the last one onto its own line or leaves
-            // the row lopsided. Distributing the slack keeps the gaps equal at
-            // any label width, and Wrap still breaks rather than overflowing if
-            // the text scale is turned up.
-            SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: KalloSpacing.sp2,
-                runSpacing: KalloSpacing.sp1,
-                children: [
-                  for (final key in kCompositionKeys)
-                    _MacroLegend(
-                      // The legend's own short names, not `macros.<key>`: these
-                      // sit beside a number in a tight row, so they are clipped
-                      // harder than the full names the nutrient grid uses.
-                      label: tr('nutrition.macrosShort.$key'),
-                      grams: macros.where((m) => m.key == key).firstOrNull,
-                      color: kCompositionColors[key]!,
-                      icon: kMacroIcons[key]!,
-                      locale: locale,
-                    ),
-                ],
+            Text(
+              tr(
+                'nutrition.rhythm.completeDaysHint',
+                namedArgs: {'allLabel': tr('nutrition.rhythm.loggedDays')},
               ),
+              style: dashMeta(),
             ),
           ],
         ],
@@ -155,43 +152,3 @@ class DaySummary extends StatelessWidget {
     );
   }
 }
-
-/// 8px rounded P/C/F kcal-share bar (static — the cells fill on the grid below).
-class _MacroLegend extends StatelessWidget {
-  const _MacroLegend({
-    required this.label,
-    required this.grams,
-    required this.color,
-    required this.icon,
-    required this.locale,
-  });
-
-  final String label;
-  final MacroPattern? grams;
-  final Color color;
-  final IconData icon;
-  final String locale;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = grams;
-    final value =
-        m == null ? '—' : '${formatLocalizedNumber(m.averagePerDay, locale)}g';
-
-    // No ±% against target here. Three of them pushed the row onto two lines
-    // with the last item stranded and centred, and the nutrient grid below
-    // already reports every macro against its target properly.
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // The icon carries the band's colour, so it is the colour key as well
-        // as the name — no swatch to decode beside it.
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: KalloSpacing.sp1_5),
-        Text('$label $value', style: dashMeta(tabular: true)),
-      ],
-    );
-  }
-}
-
-/// Top-right calorie-goal chip: an over/under arrow + the target calories.

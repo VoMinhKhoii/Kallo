@@ -1,5 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
   vi.hoisted(() => {
     const mockTxSelect = vi.fn(() => ({
@@ -22,10 +56,17 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
     };
   });
 
+// copy_split gate. Stubbed so the locked case is reachable without an
+// entitlements fixture; the default no-op resolve mirrors an unenforced build.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
+const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
+
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
-    profile: {},
+    profile: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
   }),
 }));
 vi.mock('@/lib/infra/db/client', () => ({
@@ -40,6 +81,7 @@ vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
 }));
 
 import { logSharedMealAction } from '@/lib/actions/meal-sharing/log-shared';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 
 const SHARE_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -186,6 +228,23 @@ describe('logSharedMealAction', () => {
     expect(result.meal.portionFactor).toBe(0.5);
   });
 
+  it('schedules the owner push once the copy commits', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    queueSource([{ ...sourceMeal(), shareActorId: OWNER }]);
+    queueItems([sourceItem()]);
+    captureCopies();
+    mockNotify.mockResolvedValueOnce([OWNER]);
+
+    await log(1);
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([OWNER], {
+      type: 'share.logged',
+      actor: { id: mockUser.id },
+      groupKey: `share.logged:${SHARE_ID}`,
+    });
+  });
+
   it('halves nutrition and multiplies the source portion factor', async () => {
     queueSource([sourceMeal()]);
     queueItems([sourceItem()]);
@@ -228,6 +287,36 @@ describe('logSharedMealAction', () => {
     queueItems([]);
 
     await expect(log(1)).rejects.toThrow('không có món để thêm');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('logSharedMealAction — premium (copy_split)', () => {
+  // Copying a friend's meal off the wall is the same Premium-card feature as
+  // the directed share, so it is gated on the same key — and, like the share,
+  // ahead of the transaction rather than inside it.
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a locked user before reading the share', async () => {
+    assertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('copy_split', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      logSharedMealAction({
+        shareId: SHARE_ID,
+        factor: 1,
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      'copy_split'
+    );
+    expect(mockCanViewShare).not.toHaveBeenCalled();
+    expect(mockTxSelect).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 });

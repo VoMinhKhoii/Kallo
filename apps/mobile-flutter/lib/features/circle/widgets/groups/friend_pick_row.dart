@@ -6,7 +6,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 class FriendPickRow extends StatelessWidget {
   const FriendPickRow({
@@ -49,13 +49,11 @@ class FriendPickRow extends StatelessWidget {
                   profile.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: KalloTextStyles.sansRegular(
-                    fontSize: KalloFontSize.sm,
-                  ).copyWith(color: KalloColors.text),
+                  style: dashBody(),
                 ),
               ),
               if (selected)
-                const Icon(LucideIcons.check300, size: 16, color: KalloColors.btn),
+                const Icon(LucideIcons.check300, size: KalloIcons.tertiary, color: KalloColors.btn),
             ],
           ),
         ),

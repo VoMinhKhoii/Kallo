@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../logic/logging_spacing.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
-import '../../../../theme/calm_tokens.dart';
+import '../../../../shared/logic/macro_composition.dart';
+import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
@@ -14,14 +15,18 @@ class PersistedMealCardContent extends StatelessWidget {
   const PersistedMealCardContent({
     super.key,
     required this.meal,
-    required this.expand,
     required this.curvedExpand,
     required this.onToggle,
     this.editorBody,
+    this.borderRadius = const BorderRadius.all(Radius.circular(KalloRadii.card)),
   });
 
   final PersistedMeal meal;
-  final Animation<double> expand;
+
+  /// The disclosure's single eased progress 0→1. EVERYTHING that moves when
+  /// the card opens rides this one animation — the chevron's rotation, the
+  /// details' height and fade, and the bar + legend the details push down —
+  /// so no part of the card can lag another.
   final Animation<double> curvedExpand;
   final VoidCallback onToggle;
 
@@ -30,91 +35,77 @@ class PersistedMealCardContent extends StatelessWidget {
   /// enter/exit animation overlaps the swap, mirroring the web's amount editor.
   final Widget? editorBody;
 
+  /// The card's shape. Squared on the trailing side mid-swipe, so the card and
+  /// the removal panel behind it meet on a straight seam — see [SwipeToRemove].
+  final BorderRadius borderRadius;
+
   @override
   Widget build(BuildContext context) {
     final n = meal.nutrition;
+    final composition = compositionFromGrams((
+      protein: n.proteinG,
+      carbohydrate: n.carbohydrateG,
+      fat: n.fatG,
+    ));
 
     return Container(
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        border: Border.all(color: KalloColors.borderSoft),
-        boxShadow: const [KalloShadows.sm],
+        borderRadius: borderRadius,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header — the whole row is the toggle target (not just the
-          // ~24px chevron), so the comfortable tap area spans the quote.
+          // The SHARED meal-block anatomy (native pass): meal text 14 regular
+          // with the collapse chevron on its line, the 6px calorie-share bar,
+          // then the P/C/F legend with the kcal total at its right. The Lora
+          // quote is gone — the dashboard greeting is the app's one serif
+          // moment again — and the bar and legend stay put while the card
+          // opens: they are the card's identity, not a collapsed summary of
+          // what is inside it.
+          //
+          // The whole block is the toggle target, not just the chevron.
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onToggle,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: KalloText(
-                    meal.rawInput,
-                    variant: KalloTextVariant.mealQuote,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      height: 28 / 17, // leading-7 (28px)
-                    ),
-                  ),
-                ),
-                const SizedBox(width: KalloSpacing.sp3), // gap-3
-                PersistedMealChevronToggle(expand: expand, onTap: onToggle),
-              ],
+            child: MealBlock(
+              title: meal.rawInput,
+              titleMaxLines: 4,
+              segments: composition.segments,
+              gramLabels: {
+                if (n.proteinG != null) 'protein': 'P ${fmtG(n.proteinG)}',
+                if (n.carbohydrateG != null)
+                  'carbohydrate': 'C ${fmtG(n.carbohydrateG)}',
+                if (n.fatG != null) 'fat': 'F ${fmtG(n.fatG)}',
+              },
+              kcalLabel: fmtKcal(
+                n.caloriesKcal,
+                locale: localeOf(context),
+              ),
+              kcalPlacement: MealBlockKcal.legendTrailing,
+              titleTrailing: PersistedMealChevronToggle(
+                expand: curvedExpand,
+                onTap: onToggle,
+              ),
+              // The breakdown opens BETWEEN the title and the bar+legend, so
+              // the bar and its total always close the card. The details grow
+              // in place and push the bar down with them — no jump-cut.
+              middle: editorBody == null
+                  ? SizeTransition(
+                      sizeFactor: curvedExpand,
+                      alignment: Alignment.topCenter,
+                      child: FadeTransition(
+                        opacity: curvedExpand,
+                        child: PersistedMealExpandedDetails(meal: meal),
+                      ),
+                    )
+                  : null,
             ),
           ),
 
           // Edit mode swaps the read-only body for the amount editor in place.
           if (editorBody != null) editorBody!,
-
-          // Collapsed summary — fades + collapses height as it expands.
-          if (editorBody == null)
-            AnimatedBuilder(
-            animation: curvedExpand,
-            builder: (context, child) {
-              final t = curvedExpand.value;
-              // Summary cross-fade runs at 150ms (faster than the
-              // 200ms height) — fade out within the first 0.75 of the
-              // open progress.
-              final fade = (1 - (t / 0.75)).clamp(0.0, 1.0);
-              return ClipRect(
-                child: Align(
-                  heightFactor: (1 - t),
-                  child: Opacity(opacity: fade, child: child),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: KalloSpacing.sp2), // mt-2
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}', style: dashMeta(tabular: true),),
-                  Text(
-                    fmtKcal(n.caloriesKcal),
-                    style: dashValue(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Expanded details — animate height open (easeInOut).
-          if (editorBody == null)
-            SizeTransition(
-              sizeFactor: curvedExpand,
-              alignment: Alignment.topCenter,
-              child: FadeTransition(
-                opacity: curvedExpand,
-                child: PersistedMealExpandedDetails(meal: meal),
-              ),
-            ),
         ],
       ),
     );

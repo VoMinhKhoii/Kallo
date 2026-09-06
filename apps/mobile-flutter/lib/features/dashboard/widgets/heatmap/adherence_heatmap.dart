@@ -4,8 +4,8 @@
 /// grid of rounded cells, tinted via the vendored heatmap colors. Fixed at the
 /// 90-day window. No hover tooltip: tapping a logged/partial cell shows its
 /// label in a small bubble above the cell. The cell grid is a [CustomPaint]
-/// ([HeatmapGridPainter]); the legend is a diverging gradient bar. Month-strip
-/// positioning lives in `logic/heatmap_month_labels.dart`.
+/// ([HeatmapGridPainter]); the legend is a diverging gradient bar. The month
+/// headers are [HeatmapMonthStrip], which also owns the strip's height.
 library;
 
 import 'dart:ui' as ui;
@@ -19,9 +19,10 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
+import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
-import '../../logic/heatmap_month_labels.dart';
 import 'heatmap_grid_painter.dart';
+import 'heatmap_month_strip.dart';
 import '../../../../theme/calm_tokens.dart';
 
 /// Monday-first narrow weekday initials for [locale] (en → M T W T F S S; vi →
@@ -43,7 +44,6 @@ const double _gap90d = 2; // GAP['90d']
 const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
 const double _dayLabelGutter = KalloSpacing.sp1; // gap-1 (4px)
-const double _monthStripHeight = 16; // h-4
 const double _bubbleHalfW = 60;
 const double _legendBarHeight = 6;
 
@@ -57,39 +57,38 @@ class AdherenceHeatmap extends ConsumerWidget {
     final async = ref.watch(heatmapProvider(args));
 
     return async.when(
+      // A weigh-in invalidates the bundle, so heatmapProvider goes isReloading
+      // and .when would drop the drawn grid back to its loading body —
+      // skipLoadingOnReload only defaults true on refresh.
+      skipLoadingOnReload: true,
       loading: () => const _HeatmapBody(data: null),
       // Empty/loaded both render the grid; the server always returns a full
       // grid for the range (unlogged days are the "not logged" track).
       data: (data) => _HeatmapBody(data: data),
       error:
-          (_, __) => Container(
-            constraints: const BoxConstraints(minHeight: 180),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(KalloSpacing.sp4),
-            decoration: BoxDecoration(
-              color: kCardSurface,
-              borderRadius: BorderRadius.circular(kCardRadius),
-              boxShadow: kCardShadows,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: Text(
-                    tr('dashboard.heatmapLoadError'),
-                    textAlign: TextAlign.center,
-                    style: dashMeta(color: kInkMuted),
+          (_, __) => KalloCard(
+            padding: DashboardSpacing.card,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 180),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    child: Text(
+                      tr('dashboard.heatmapLoadError'),
+                      textAlign: TextAlign.center,
+                      style: dashMeta(color: kInkMuted),
+                    ),
                   ),
-                ),
-                const SizedBox(height: KalloSpacing.sp3),
-                KalloButton(
-                  title: tr('dashboard.retry'),
-                  variant: KalloButtonVariant.ghost,
-                  onPressed:
-                      () => ref.invalidate(dashboardBundleProvider(args)),
-                ),
-              ],
+                  const SizedBox(height: DashboardSpacing.section),
+                  KalloButton(
+                    title: tr('dashboard.retry'),
+                    onPressed:
+                        () => ref.invalidate(dashboardBundleProvider(args)),
+                  ),
+                ],
+              ),
             ),
           ),
     );
@@ -171,15 +170,21 @@ class _HeatmapBodyState extends State<_HeatmapBody>
   }
 
   /// The widest weekday label in the active locale, plus its inset.
-  double _dayLabelWidth(List<String> labels, TextStyle style) {
+  double _dayLabelWidth(
+    List<String> labels,
+    TextStyle style,
+    TextScaler scaler,
+  ) {
     var widest = 0.0;
     for (final label in labels) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
         textDirection: ui.TextDirection.ltr,
+        textScaler: scaler,
         maxLines: 1,
       )..layout();
       if (painter.width > widest) widest = painter.width;
+      painter.dispose();
     }
     final needed = widest + _dayLabelPadRight;
     return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
@@ -203,15 +208,16 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final dayLabels = _weekdayInitials(context.locale.toString());
     final monthLabelStyle = dashMeta(color: kInkMuted);
     final dayLabelStyle = dashMeta(color: kInkMuted);
-    final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle);
+    // One scaler for the whole card: the gutter has to be measured at the same
+    // text scale it will paint at (it was measured at 1.0 and wrapped `T2`…`CN`
+    // once the user scaled up), and the month strip's height is derived from it.
+    final scaler = MediaQuery.textScalerOf(context);
+    final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle, scaler);
+    final monthStripHeight =
+        HeatmapMonthStrip.heightFor(monthLabelStyle, scaler);
 
-    return Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp4),
-      decoration: BoxDecoration(
-        color: kCardSurface, // solid white
-        borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: kCardShadows, // shadow only, no border
-      ),
+    return KalloCard(
+      padding: DashboardSpacing.card,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
@@ -258,7 +264,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             margin: EdgeInsets.only(
                               top:
                                   i == 0
-                                      ? _monthStripHeight + KalloSpacing.sp1
+                                      ? monthStripHeight + KalloSpacing.sp1
                                       : _gap90d,
                             ),
                             padding: const EdgeInsets.only(
@@ -281,41 +287,15 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Month headers strip. Positions come from
-                      // `layoutMonthLabels`, which shifts colliding headers
-                      // and drops the ones too narrow to label — two months
-                      // can otherwise share a startColumn and paint on top of
-                      // each other.
-                      SizedBox(
-                        height: _monthStripHeight,
-                        width: gridWidth,
-                        child: Stack(
-                          children: [
-                            for (final box in layoutMonthLabels(
-                              headers:
-                                  data?.monthHeaders ??
-                                  const <HeatmapMonthHeader>[],
-                              cellSize: sq,
-                              gap: _gap90d,
-                              gridWidth: gridWidth,
-                              style: monthLabelStyle,
-                              locale: context.locale.toString(),
-                              textScaler: MediaQuery.textScalerOf(context),
-                            ))
-                              Positioned(
-                                top: 0,
-                                left: box.left,
-                                width: box.width,
-                                child: Text(
-                                  box.month,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.clip,
-                                  style: monthLabelStyle,
-                                ),
-                              ),
-                          ],
-                        ),
+                      HeatmapMonthStrip(
+                        headers:
+                            data?.monthHeaders ??
+                            const <HeatmapMonthHeader>[],
+                        cellSize: sq,
+                        gap: _gap90d,
+                        gridWidth: gridWidth,
+                        style: monthLabelStyle,
+                        height: monthStripHeight,
                       ),
                       const SizedBox(height: KalloSpacing.sp1),
                       // Cell grid.
@@ -389,47 +369,52 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 ],
               ),
 
-              // Legend.
+              // Legend: the full-width scale with its two ends named UNDER it.
+              // Flanking the bar cost it ~120pt of width, which at five equal
+              // segments left each tier too narrow to read as a step.
               Padding(
-                padding: const EdgeInsets.only(top: KalloSpacing.sp2),
-                child: Row(
+                padding: const EdgeInsets.only(top: DashboardSpacing.section),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      tr('dashboard.adherenceHeatmap.offTarget'),
-                      style: dashMeta(color: kInkMuted),
-                    ),
-                    const SizedBox(width: KalloSpacing.sp2),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          _legendBarHeight / 2,
-                        ),
-                        child: Container(
-                          height: _legendBarHeight,
-                          decoration: const BoxDecoration(
-                            // Five equal discrete segments, one per tier — the
-                            // same five flat colours the cells use, each
-                            // repeated so its slice has hard edges.
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                HeatmapColors.far, HeatmapColors.far,
-                                HeatmapColors.moderate, HeatmapColors.moderate,
-                                HeatmapColors.slight, HeatmapColors.slight,
-                                HeatmapColors.close, HeatmapColors.close,
-                                HeatmapColors.onTarget, HeatmapColors.onTarget,
-                              ],
-                              stops: HeatmapBands.legendStops,
-                            ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        _legendBarHeight / 2,
+                      ),
+                      child: Container(
+                        height: _legendBarHeight,
+                        decoration: const BoxDecoration(
+                          // Five equal discrete segments, one per tier — the
+                          // same five flat colours the cells use, each
+                          // repeated so its slice has hard edges.
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              HeatmapColors.far, HeatmapColors.far,
+                              HeatmapColors.moderate, HeatmapColors.moderate,
+                              HeatmapColors.slight, HeatmapColors.slight,
+                              HeatmapColors.close, HeatmapColors.close,
+                              HeatmapColors.onTarget, HeatmapColors.onTarget,
+                            ],
+                            stops: HeatmapBands.legendStops,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: KalloSpacing.sp2),
-                    Text(
-                      tr('dashboard.adherenceHeatmap.onTarget'),
-                      style: dashMeta(color: kInkMuted),
+                    const SizedBox(height: DashboardSpacing.row),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          tr('dashboard.adherenceHeatmap.offTarget'),
+                          style: dashMeta(color: kInkMuted),
+                        ),
+                        Text(
+                          tr('dashboard.adherenceHeatmap.onTarget'),
+                          style: dashMeta(color: kInkMuted),
+                        ),
+                      ],
                     ),
                   ],
                 ),

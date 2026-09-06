@@ -9,7 +9,13 @@ import {
   blockFriendSchema,
   removeFriendSchema,
 } from '@/lib/core/validation/social';
+import { friendJoinedKey } from '@/lib/domain/notifications/group-keys';
+import {
+  type ScopedNotify,
+  withNotifications,
+} from '@/lib/domain/notifications/with-notifications';
 import { orderedPair } from '@/lib/domain/social/friendship';
+import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { circleEvents, friendships } from '@/lib/infra/db/schema';
 
@@ -50,7 +56,9 @@ export async function acceptInvite(
 
   const { userLow, userHigh } = orderedPair(actorId, inviter.userId);
 
-  return db.transaction(async (tx) => {
+  // The wrapper drains the queued push only after the transaction commits, so
+  // it can never fire for a friendship that rolled back.
+  return withNotifications(db, async (tx, notify) => {
     // Lock the canonical edge row for the duration of the transaction so a
     // concurrent blockFriend/acceptInvite can't interleave between this read
     // and the promote below (which would let an accept land on top of a block).
@@ -66,13 +74,24 @@ export async function acceptInvite(
       .limit(1)
       .for('update');
 
+    if (existing[0]?.status === 'blocked') {
+      throw Errors.conflict('Không thể kết nối.');
+    }
+    if (existing[0]?.status === 'accepted') {
+      return { status: 'accepted' as const, inviter };
+    }
+
+    // Only a NEW accepted edge consumes free-tier friend quota — the
+    // already-accepted return above is the grandfather path and never gets
+    // here. Both parties are checked (see circle-quota: accepter → 402,
+    // inviter → 409).
+    await assertFriendCapacity(tx, {
+      accepterId: actorId,
+      inviterId: inviter.userId,
+      inviterName: inviter.displayName?.trim() || inviter.handle,
+    });
+
     if (existing[0]) {
-      if (existing[0].status === 'blocked') {
-        throw Errors.conflict('Không thể kết nối.');
-      }
-      if (existing[0].status === 'accepted') {
-        return { status: 'accepted' as const, inviter };
-      }
       // Promote a pending edge (either direction) to accepted. The row is
       // locked above; the status guard is defence-in-depth.
       await tx
@@ -89,6 +108,12 @@ export async function acceptInvite(
         type: 'friend_accepted',
         refId: existing[0].id,
       });
+      await notifyInviterOfJoin(
+        notify,
+        actorId,
+        inviter.userId,
+        existing[0].id
+      );
     } else {
       // No edge yet. The locked read can't lock a row that doesn't exist, so
       // a racing accept/block may insert first; swallow the unique violation
@@ -113,6 +138,12 @@ export async function acceptInvite(
           type: 'friend_accepted',
           refId: inserted[0].id,
         });
+        await notifyInviterOfJoin(
+          notify,
+          actorId,
+          inviter.userId,
+          inserted[0].id
+        );
       } else {
         // A concurrent writer won the insert — re-read and honour a block.
         const reconciled = await tx
@@ -138,6 +169,29 @@ export async function acceptInvite(
 
     return { status: 'accepted' as const, inviter };
   });
+}
+
+// Tell the inviter their link landed — the one signal the Locket-style
+// instant-connect flow would otherwise swallow. Called only on the two paths
+// that actually establish the accepted edge; the race-reconcile path stays
+// silent because the concurrent writer that won the insert already notified —
+// and, having queued nothing, it pushes nothing.
+function notifyInviterOfJoin(
+  notify: ScopedNotify,
+  actorId: string,
+  inviterId: string,
+  friendshipId: string
+): Promise<void> {
+  return notify([
+    {
+      recipientId: inviterId,
+      type: 'friend.joined',
+      actorId,
+      objectType: 'friendship',
+      objectId: friendshipId,
+      groupKey: friendJoinedKey(friendshipId),
+    },
+  ]);
 }
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'services/auth/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
+import 'shell/route_error_screen.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/kallo_colors.dart';
 import 'theme/kallo_typography.dart';
@@ -30,14 +31,16 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 /// The app's [GoRouter], wired to Riverpod for the auth redirect.
 ///
-/// Routing model (per the port contract):
-///   • A [StatefulShellRoute] hosts the primary destinations behind the bottom
-///     tab bar (`/dashboard`, `/nutrition`, `/logging`) plus the off-bar
-///     `/circle` and `/admin`. Each is its own branch so state/scroll persist
-///     across tab switches.
+/// Routing model (native pass, 2026-08-31):
+///   • A [StatefulShellRoute] hosts the pill-nav destinations (`/dashboard`,
+///     `/nutrition`, `/circle`) plus the off-bar `/admin`. Each is its own
+///     branch so state/scroll persist across tab switches.
+///   • `/logging` is a ROOT route pushed full-screen over the shell (the
+///     pill nav's Log item; Cupertino swipe-back returns to the tab the user
+///     came from — feed state lives in providers, so nothing is lost).
 ///   • `/sign-in`, `/sign-up`, `/onboarding`, `/welcome`, and `/settings` are
 ///     standalone root routes (`/settings` pushes over the shell from the
-///     header avatar with Cupertino swipe-back).
+///     dashboard avatar with Cupertino swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
 /// The redirect is the mobile counterpart of the web auth gate in
@@ -63,6 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootKey,
     initialLocation: '/',
     refreshListenable: refresh,
+    // `state.error` is always a GoException here, so the pose turns on what it
+    // says: "no routes for location" is an address with no screen behind it; a
+    // redirect loop or any other GoException is a route that failed. The two
+    // say different things to the user.
+    errorBuilder: (context, state) =>
+        RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
     redirect: (context, state) {
       // While the very first session restore is in flight, hold on `/` (the
       // splash) rather than flashing the sign-in screen — mirrors RN's
@@ -187,10 +196,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             (context, state) =>
                 const CupertinoPage<void>(child: PaywallScreen()),
       ),
+      // The logging feed — FULL-SCREEN over the shell (the pill nav's Log
+      // item, and every "take me to logging" call site via goToLogging). The
+      // composer owns this screen's bottom edge, which is why it is not a
+      // shell branch under the floating bar.
+      GoRoute(
+        path: '/logging',
+        parentNavigatorKey: _rootKey,
+        pageBuilder:
+            (context, state) =>
+                const CupertinoPage<void>(child: LoggingScreen()),
+      ),
 
-      // The primary destinations — each its own branch so state/scroll persist
-      // across tab switches. Order: dashboard, nutrition, logging, groups,
-      // admin (the last two are off-bar — reachable by route, not the tab bar).
+      // The pill-nav destinations — each its own branch so state/scroll
+      // persist across tab switches. Order matches the bar: dashboard,
+      // nutrition, circle; admin stays off-bar (reachable by route only).
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: _rootKey,
         builder:
@@ -211,14 +231,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/nutrition',
                 builder: (context, state) => const NutritionScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/logging',
-                builder: (context, state) => const LoggingScreen(),
               ),
             ],
           ),

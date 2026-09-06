@@ -56,15 +56,11 @@ class FeedCheatActions {
     input.focus();
   }
 
-  void setIntensity(CheatIntensity intensity) {
-    ref.read(cheatIntensityProvider.notifier).state = intensity;
-  }
-
   /// Vague-input fallback: the estimator could not read the occasion, so re-run
   /// it on the same text with the answer the user picked attached (mirrors web
   /// `handleCheatClarify`).
   void clarify(String answer) {
-    final retake = run.retakeReveal();
+    final retake = run.retakeReveal(date: date);
     if (retake == null) return;
     startMealAnalysis(
       ref,

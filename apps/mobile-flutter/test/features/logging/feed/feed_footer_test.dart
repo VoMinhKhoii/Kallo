@@ -33,6 +33,7 @@ FeedViewState _view({
   bool streaming = false,
   bool revealing = false,
 }) => FeedViewState(
+  date: '2026-01-01',
   persistedMeals: const [],
   pendingConfirmations: const [],
   entries: const [],

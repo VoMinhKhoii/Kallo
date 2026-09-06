@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { localeFromNext, publicUrl } from '@/lib/infra/auth/redirects';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
+import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
@@ -66,6 +69,28 @@ export async function handleVerify(
     );
   }
   const { token_hash, type } = params.data;
+
+  // Anonymous, and it calls GoTrue for us: an unbounded flood of guessed
+  // `token_hash` values spends the app's SHARED per-IP `token_verifications`
+  // budget upstream (every proxied user reaches Supabase through one Cloud Run
+  // egress address). Charged only for links that would really reach GoTrue, and
+  // only when an IP key exists — `getRequestIp` returns null in production
+  // whenever the request did not come through Cloudflare, and a policy applied
+  // with no key counts nothing.
+  const ip = getRequestIp(request);
+  if (ip) {
+    try {
+      await assertRateLimit('authLinkIp', { kind: 'ip', value: ip });
+    } catch (error) {
+      if (!(error instanceof RateLimitedError)) throw error;
+      // This is a browser navigation, not an API call. A 429 JSON envelope
+      // would render as raw text in the address bar; the user gets the same
+      // "that link did not work" screen a failed verify already produces.
+      return NextResponse.redirect(
+        publicUrl(request, `/${locale}/?error=verify_failed`, url.origin)
+      );
+    }
+  }
 
   const supabase = deps?.supabase ?? (await createClient());
   const { error } = await supabase.auth.verifyOtp({ type, token_hash });

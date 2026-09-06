@@ -189,6 +189,82 @@ void main() {
       final e = EntitlementState.fromJson(premiumJson(expiresAt: ''));
       expect(e.expiresAt, isNull);
     });
+
+    test('parses the whole feature map, not just ai_analysis', () {
+      final e = EntitlementState.fromJson({
+        ...freeJson(),
+        'enforcementEnabled': true,
+        'features': {
+          'ai_analysis': {'allowed': false, 'reason': 'trial_expired'},
+          'label_scan': {'allowed': false, 'reason': 'not_entitled'},
+          'micronutrients': {'allowed': true, 'reason': 'trial'},
+          'relog': {'allowed': false, 'reason': 'not_entitled'},
+          'cheat_meal': {'allowed': false, 'reason': 'not_entitled'},
+          'copy_split': {'allowed': false, 'reason': 'not_entitled'},
+          'unlimited_circle': {'allowed': false, 'reason': 'not_entitled'},
+        },
+      });
+      expect(e.features.length, 7);
+      expect(e.aiAnalysis.reason, FeatureReason.trialExpired);
+      expect(e.featureAccess(PremiumFeature.labelScan).allowed, isFalse);
+      expect(e.featureAccess(PremiumFeature.micronutrients).allowed, isTrue);
+      expect(
+        e.featureAccess(PremiumFeature.micronutrients).reason,
+        FeatureReason.trial,
+      );
+      // Unknown names read denied rather than throwing or over-granting.
+      expect(e.featureAccess('not_a_feature').allowed, isFalse);
+    });
+
+    test('malformed feature entries are dropped, not fabricated', () {
+      final e = EntitlementState.fromJson({
+        ...freeJson(),
+        'features': {
+          'relog': 'nope',
+          'label_scan': {'allowed': true, 'reason': 'entitled'},
+        },
+      });
+      expect(e.features.keys, ['label_scan']);
+      expect(e.featureAccess(PremiumFeature.relog).allowed, isFalse);
+    });
+
+    test('a payload without enforcementEnabled defaults it off', () {
+      // Backwards compatibility: an old server never sent the flag, and a
+      // missing flag must not paint locks over a working app.
+      final e = EntitlementState.fromJson(freeJson());
+      expect(e.enforcementEnabled, isFalse);
+      expect(e.showsLockFor(PremiumFeature.labelScan), isFalse);
+    });
+
+    test('showsLockFor is suppressed while enforcement is off', () {
+      final locked = {
+        ...freeJson(),
+        'features': {
+          'label_scan': {'allowed': false, 'reason': 'not_entitled'},
+        },
+      };
+      expect(
+        EntitlementState.fromJson(locked).showsLockFor(
+          PremiumFeature.labelScan,
+        ),
+        isFalse,
+      );
+      expect(
+        EntitlementState.fromJson({
+          ...locked,
+          'enforcementEnabled': true,
+        }).showsLockFor(PremiumFeature.labelScan),
+        isTrue,
+      );
+    });
+
+    test('the conservative fallback locks every feature', () {
+      const e = EntitlementState.free;
+      expect(e.features, isEmpty);
+      expect(e.enforcementEnabled, isFalse);
+      expect(e.aiAnalysis.allowed, isFalse);
+      expect(e.featureAccess(PremiumFeature.unlimitedCircle).allowed, isFalse);
+    });
   });
 
   group('EntitlementsController.pollUntilPremium', () {
@@ -221,7 +297,9 @@ void main() {
             .read(entitlementsProvider(userA).notifier)
             .pollUntilPremium(
               interval: const Duration(milliseconds: 1),
-              timeout: const Duration(milliseconds: 50),
+              // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+              // isolate contention a tight wall-clock window flakes (seen at 50ms).
+              timeout: const Duration(seconds: 2),
             );
 
         expect(premium, isTrue);
@@ -387,8 +465,11 @@ void main() {
       final premium = await c
           .read(entitlementsProvider(userA).notifier)
           .pollUntilPremium(
-            interval: const Duration(milliseconds: 5),
-            timeout: const Duration(milliseconds: 30),
+            // Wide enough that the mid-window reconcile reliably lands even
+            // under full-suite isolate contention (at 30ms this flaked —
+            // a stalled isolate could miss or double the mid-window post).
+            interval: const Duration(milliseconds: 10),
+            timeout: const Duration(milliseconds: 300),
           );
 
       expect(premium, isFalse);
@@ -415,7 +496,9 @@ void main() {
           .read(entitlementsProvider(userA).notifier)
           .pollUntilPremium(
             interval: const Duration(milliseconds: 5),
-            timeout: const Duration(milliseconds: 30),
+            // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+            // isolate contention a tight wall-clock window flakes (seen at 50ms).
+            timeout: const Duration(seconds: 2),
           );
 
       expect(premium, isTrue);
@@ -476,7 +559,9 @@ void main() {
             .read(entitlementsProvider(userA).notifier)
             .pollUntilPremium(
               interval: const Duration(milliseconds: 1),
-              timeout: const Duration(milliseconds: 50),
+              // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+              // isolate contention a tight wall-clock window flakes (seen at 50ms).
+              timeout: const Duration(seconds: 2),
             );
         await c.pump();
         reconcileResponse.complete(premiumJson());

@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/billing/entitlements_provider.dart';
@@ -12,6 +11,7 @@ import '../data/paywall_controller.dart';
 import '../widgets/paywall_premium_body.dart';
 import '../widgets/paywall_purchase_body.dart';
 import '../widgets/paywall_status.dart';
+import '../../../shell/nav/nav_actions.dart';
 
 /// AI-analysis-focused paywall. Free users see an upsell or trial-expired
 /// variant, while premium users see their active plan and store-management CTA.
@@ -70,14 +70,7 @@ class PaywallScreen extends ConsumerWidget {
     );
   }
 
-  void _dismiss(BuildContext context) {
-    final router = GoRouter.of(context);
-    if (router.canPop()) {
-      router.pop();
-    } else {
-      context.go('/logging');
-    }
-  }
+  void _dismiss(BuildContext context) => popOrOpenLogging(context);
 }
 
 class _CloseHeader extends StatelessWidget {

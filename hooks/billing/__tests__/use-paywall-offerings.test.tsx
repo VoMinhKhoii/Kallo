@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FEATURES } from '@/lib/domain/billing/entitlement/features';
 import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-client';
 import type { Package } from '@/lib/domain/billing/web-purchases';
 
@@ -37,6 +38,7 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
   return {
     userId: 'user-a',
     purchasesEnabled: true,
+    enforcementEnabled: false,
     tier,
     reconciliationRequired: false,
     isLifetime: false,
@@ -48,13 +50,21 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
     managementStore: null,
     hasActiveSubscription: false,
     trial: { active: false, endsAt: null, daysRemaining: 0 },
-    features: {
-      ai_analysis: {
-        allowed: tier === 'premium',
-        reason: tier === 'premium' ? 'entitled' : 'not_entitled',
-      },
-    },
+    features: entitlementFeatures(tier === 'premium'),
   };
+}
+
+// Every gated feature answers the same way in these tests; derive them from
+// the catalog so adding a feature never breaks this fixture.
+function entitlementFeatures(
+  allowed: boolean
+): EntitlementsResponse['features'] {
+  return Object.fromEntries(
+    Object.keys(FEATURES).map((key) => [
+      key,
+      { allowed, reason: allowed ? 'entitled' : 'not_entitled' },
+    ])
+  ) as EntitlementsResponse['features'];
 }
 
 function pkg(identifier: string): Package {

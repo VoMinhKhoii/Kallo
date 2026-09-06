@@ -1,5 +1,49 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor, mockCloseAggregates } = vi.hoisted(
+  () => ({
+    mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+    mockRetractActor: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+    mockCloseAggregates: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+  })
+);
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+  closeAggregates: mockCloseAggregates,
+}));
+
+// Same split as notify: the helper's own predicates live in
+// lib/domain/notifications/__tests__/close-aggregates.test.ts; this suite only
+// asserts WHOSE aggregates the split closes.
+
 // ---------------------------------------------------------------------------
 // Mocks — db.* is the singleton; tx.* is the transaction handle. Both are
 // distinct mocks (mirrors meals.test.ts) so lookups never collide.
@@ -30,10 +74,17 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
   };
 });
 
+// copy_split gate. Stubbed so the locked case is reachable without an
+// entitlements fixture; the default no-op resolve mirrors an unenforced build.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,
-    profile: {},
+    profile: {
+      createdAt: (await import('./share-doubles')).PROFILE_CREATED_AT,
+    },
   }),
 }));
 
@@ -55,9 +106,11 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing/share-with-friends';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
   friendEdge,
   MOCK_USER as mockUser,
+  PROFILE_CREATED_AT,
   routeInserts,
   sourceItem,
   sourceMeal,
@@ -166,6 +219,52 @@ describe('shareMealWithFriendsAction', () => {
     expect(invites[0]?.fromUserId).toBe(mockUser.id);
   });
 
+  it('notifies exactly the recipients whose invite row was written', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockNotify.mock.lastCall?.[1]).toEqual([
+      {
+        recipientId: UUID_FRIEND,
+        type: 'share.invite',
+        actorId: mockUser.id,
+        objectType: 'invite',
+        objectId: 'invite-0',
+        groupKey: `share.invite:${UUID_MEAL}`,
+        data: { mode: 'copy', portionFactor: 1, mealName: 'Trà sữa' },
+      },
+    ]);
+  });
+
+  it('schedules the invite push after the offer commits', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+    mockNotify.mockResolvedValueOnce([UUID_FRIEND]);
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
+      type: 'share.invite',
+      actor: { id: mockUser.id },
+      groupKey: `share.invite:${UUID_MEAL}`,
+    });
+  });
+
   it('split mode: halves the meal for two participants and stores factor 0.5', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);
@@ -243,6 +342,50 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
+  // The third party never acts on the offer — it vanishes under them — so
+  // nothing on their side could ever read the row. The split closes it for
+  // them, in the same tx that dismissed the invite; a later re-offer of this
+  // meal then opens fresh history instead of rewriting the stale card.
+  it('split mode: closes the notification of every auto-dismissed third party', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]); // no already-accepted invite among the recipients
+    queueWhereSelect([friendEdge]);
+    queueLimitSelect([]); // no existing share row (scaleOwnMealInPlace)
+    // The only `.returning()` in this transaction is the auto-dismiss sweep.
+    installUpdate({ returning: [{ toUserId: UUID_FRIEND_2 }] });
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'split',
+    });
+
+    // ONE statement for the whole set of auto-dismissed third parties, not a
+    // close per person.
+    expect(mockCloseAggregates).toHaveBeenCalledTimes(1);
+    expect(mockCloseAggregates).toHaveBeenCalledWith(mockTx, {
+      recipientIds: [UUID_FRIEND_2],
+      groupKey: `share.invite:${UUID_MEAL}`,
+    });
+  });
+
+  it('copy mode: dismisses nothing, so no notification is closed', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockCloseAggregates).not.toHaveBeenCalled();
+  });
+
   it('rejects an invalid mealId', async () => {
     await expect(
       shareMealWithFriendsAction({
@@ -251,5 +394,34 @@ describe('shareMealWithFriendsAction', () => {
         mode: 'copy',
       })
     ).rejects.toThrow();
+  });
+});
+
+describe('shareMealWithFriendsAction — premium (copy_split)', () => {
+  // Sending is the gated half. Accept stays free on purpose: a split has
+  // already halved the SENDER's meal by the time the invite lands, so refusing
+  // a free recipient's accept would strand a paying user's portion.
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a locked sender before the transaction opens', async () => {
+    assertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('copy_split', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      'copy_split'
+    );
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
   });
 });

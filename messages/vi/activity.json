@@ -1,0 +1,64 @@
+{
+  "title": "Hoạt động",
+  "someone": "Một người bạn",
+  "loading": "Đang tải hoạt động",
+  "loadingMore": "Đang tải hoạt động cũ hơn",
+  "mobileButton": "Hoạt động",
+  "sections": {
+    "new": "Mới",
+    "recent": "30 ngày qua",
+    "older": "Cũ hơn"
+  },
+  "error": {
+    "title": "Không tải được hoạt động",
+    "body": "Kết nối bị gián đoạn trước khi hoạt động của bạn tải xong.",
+    "retry": "Thử lại"
+  },
+  "empty": {
+    "title": "Chưa có gì mới",
+    "description": "Lượt thích, phản hồi và bữa ăn vòng kết nối gửi cho bạn sẽ hiện ở đây."
+  },
+  "row": {
+    "friend": {
+      "joined": {
+        "one": "<b>{name}</b> đã tham gia vòng kết nối của bạn"
+      }
+    },
+    "group": {
+      "added": {
+        "one": "<b>{name}</b> đã thêm bạn vào {group}"
+      }
+    },
+    "share": {
+      "invite": {
+        "one": "<b>{name}</b> đã gửi cho bạn một bữa ăn"
+      },
+      "invite_accepted": {
+        "one": "<b>{name}</b> đã thêm bữa ăn của bạn vào nhật ký"
+      },
+      "reaction": {
+        "one": "<b>{name}</b> đã thích bữa ăn của bạn",
+        "other": "<b>{name}</b> và {count} người khác đã thích bữa ăn của bạn"
+      },
+      "reply": {
+        "one": "<b>{name}</b> đã phản hồi bữa ăn của bạn",
+        "other": "<b>{name}</b> và {count} người khác đã phản hồi bữa ăn của bạn"
+      },
+      "logged": {
+        "one": "<b>{name}</b> đã ghi lại bữa ăn của bạn",
+        "other": "<b>{name}</b> và {count} người khác đã ghi lại bữa ăn của bạn"
+      }
+    }
+  },
+  "invite": {
+    "accept": "Nhận",
+    "dismiss": "Bỏ qua",
+    "modeCopy": "Nguyên phần",
+    "modeSplit": "Chia phần",
+    "error": "Chưa thực hiện được. Hãy thử lại.",
+    "status": {
+      "accepted": "Đã thêm",
+      "unavailable": "Không còn hiệu lực"
+    }
+  }
+}

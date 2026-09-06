@@ -8,15 +8,19 @@ import '../../../../models/social/circle.dart';
 import '../../../../services/env/env.dart';
 import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../../logic/handle_validation.dart';
 import 'invite_controls.dart';
 
-/// The read-only invite link with Copy + inline slug editing. The edit mode
-/// validates inline (red issue line, disabled save) like the web
+/// Builds the shareable invite URL for [handle] in the current locale.
+String inviteLinkFor(BuildContext context, String handle) =>
+    '${Env.webBaseUrl}/${context.locale.languageCode}/invite/$handle';
+
+/// The invite link as one 64pt row — pencil to edit its end, copy to take it.
+/// The editor validates inline (red issue line, disabled save) like the web
 /// `InviteLinkSection`.
 class InviteLinkRow extends ConsumerStatefulWidget {
   const InviteLinkRow({super.key, required this.profile});
@@ -33,9 +37,6 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
   )..addListener(_onDraftChanged);
   bool _editing = false;
   bool _saving = false;
-
-  String _inviteLink(String handle) =>
-      '${Env.webBaseUrl}/${context.locale.languageCode}/invite/$handle';
 
   String get _normalized => normalizeHandle(_controller.text);
 
@@ -57,9 +58,10 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
 
   Future<void> _copy() async {
     await Clipboard.setData(
-      ClipboardData(text: _inviteLink(widget.profile.handle)),
+      ClipboardData(text: inviteLinkFor(context, widget.profile.handle)),
     );
     if (!mounted) return;
+    HapticFeedback.lightImpact(); // the link leaves the app
     showTopToast(context, tr('groups.invite.linkCopied'));
   }
 
@@ -76,11 +78,13 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
     } catch (error) {
       if (!mounted) return;
       final code = error is ApiError ? error.code : null;
-      final msg =
-          code == 'CONFLICT'
-              ? tr('groups.invite.endTaken')
-              : tr('groups.invite.endError');
-      showTopToast(context, msg, variant: TopToastVariant.error);
+      showTopToast(
+        context,
+        code == 'CONFLICT'
+            ? tr('groups.invite.endTaken')
+            : tr('groups.invite.endError'),
+        variant: TopToastVariant.error,
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -89,43 +93,22 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
   @override
   Widget build(BuildContext context) {
     if (_editing) return _buildEditor();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InviteFieldLabel(
-          icon: LucideIcons.link2300,
-          label: tr('groups.invite.yourLink'),
+    return InviteValueRow(
+      label: tr('groups.invite.yourLink'),
+      value: inviteLinkFor(context, widget.profile.handle),
+      actions: [
+        InviteGlyphAction(
+          icon: LucideIcons.pencil300,
+          semanticsLabel: tr('groups.invite.editTitle'),
+          onTap: () {
+            _controller.text = widget.profile.handle;
+            setState(() => _editing = true);
+          },
         ),
-        const SizedBox(height: KalloSpacing.sp1_5),
-        Row(
-          children: [
-            Expanded(
-              child: InviteValuePill(
-                text: _inviteLink(widget.profile.handle),
-                fontSize: KalloFontSize.xs,
-                color: KalloColors.textMuted,
-              ),
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            InviteIconAction(
-              icon: LucideIcons.pencil300,
-              semanticsLabel: tr('groups.invite.editTitle'),
-              onTap: () {
-                _controller.text = widget.profile.handle;
-                setState(() => _editing = true);
-              },
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            InviteCopyButton(onTap: _copy),
-          ],
-        ),
-        const SizedBox(height: KalloSpacing.sp1_5),
-        Text(
-          tr('groups.invite.hint'),
-          style: KalloTextStyles.sansRegular(
-            fontSize: KalloFontSize.xxs,
-          ).copyWith(color: KalloColors.textMuted60),
+        InviteGlyphAction(
+          icon: LucideIcons.copy300,
+          semanticsLabel: tr('groups.invite.copy'),
+          onTap: _copy,
         ),
       ],
     );
@@ -133,65 +116,61 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
 
   Widget _buildEditor() {
     final showIssue = showsHandleIssue(_normalized);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InviteFieldLabel(
-          icon: LucideIcons.pencil300,
-          label: tr('groups.invite.editTitle'),
-        ),
-        const SizedBox(height: KalloSpacing.sp1_5),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                autofocus: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                textCapitalization: TextCapitalization.none,
-                maxLength: kHandleMaxLength,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _save(),
-                decoration: const InputDecoration(
-                  prefixText: '…/invite/',
-                  isDense: true,
-                  counterText: '',
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InviteEditorLabel(label: tr('groups.invite.editTitle')),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.none,
+                  maxLength: kHandleMaxLength,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _save(),
+                  style: dashBody(),
+                  decoration: const InputDecoration(
+                    prefixText: '…/invite/',
+                    isDense: true,
+                    counterText: '',
+                  ),
                 ),
-                style: KalloTextStyles.sansRegular(
-                  fontSize: KalloFontSize.sm,
-                ).copyWith(color: KalloColors.text),
               ),
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            InviteIconAction(
-              icon: LucideIcons.check300,
-              semanticsLabel: tr('groups.invite.save'),
-              loading: _saving,
-              disabled: !_canSave,
-              onTap: _save,
-              filled: true,
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            InviteIconAction(
-              icon: LucideIcons.x300,
-              semanticsLabel: tr('groups.invite.cancel'),
-              onTap: () => setState(() => _editing = false),
-            ),
-          ],
-        ),
-        const SizedBox(height: KalloSpacing.sp1_5),
-        Text(
-          showIssue
-              ? tr('groups.invite.endInvalid')
-              : tr('groups.invite.editHint'),
-          style: KalloTextStyles.sansRegular(
-            fontSize: KalloFontSize.xxs,
-          ).copyWith(
-            color: showIssue ? KalloColors.danger : KalloColors.textMuted,
+              const SizedBox(width: KalloSpacing.sp2),
+              InviteGlyphAction(
+                icon: LucideIcons.check300,
+                semanticsLabel: tr('groups.invite.save'),
+                loading: _saving,
+                disabled: !_canSave,
+                emphasis: true,
+                onTap: _save,
+              ),
+              InviteGlyphAction(
+                icon: LucideIcons.x300,
+                semanticsLabel: tr('groups.invite.cancel'),
+                onTap: () => setState(() => _editing = false),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: KalloSpacing.sp1),
+          // Red on the affordance, not the copy: the issue line is the one
+          // place the rule allows red text, because it IS the affordance.
+          Text(
+            showIssue
+                ? tr('groups.invite.endInvalid')
+                : tr('groups.invite.editHint'),
+            style: dashMeta(
+              color: showIssue ? KalloColors.danger : kInkMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

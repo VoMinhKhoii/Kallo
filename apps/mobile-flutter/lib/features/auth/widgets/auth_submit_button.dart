@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import 'auth_controls.dart' show kAuthButtonHeight;
 
-/// The email submit button.
+/// The email submit button — the auth CTA tier (native pass, 2026-08-31):
+/// ink fill, white 14/600, 50pt, fully rounded. Same two-tier rule as the
+/// paywall's "Start free trial": black and white is reserved for the moment
+/// someone commits to an account or a purchase, and every in-app primary is
+/// beige-and-ink instead.
 ///
-/// Matches web `components/auth/sign-in-form.tsx:82`:
-/// `flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416]
-/// px-4 py-3 font-medium text-sm text-white tracking-tight transition-all
-/// duration-200 hover:bg-[#3D3425] disabled:opacity-60`. While loading a
-/// Loader2 spinner (h-4 w-4, white) sits beside the still-visible label.
-/// rounded-xl → 12, px-4 → 16, py-3 → 12, gap-2 → 8.
+/// Not [KalloButton] itself only because this one keeps its label visible
+/// BESIDE the spinner: a sign-in that swapped its label for a spinner reads
+/// as a button that lost its purpose mid-tap.
 class AuthSubmitButton extends StatefulWidget {
   const AuthSubmitButton({
     super.key,
@@ -39,50 +41,56 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
 
   @override
   Widget build(BuildContext context) {
-    // hover:bg-[#3D3425] → on press lerp the espresso fill toward the hover
-    // shade, 200ms.
-    final fill = _pressed ? KalloColors.btnDarkHover2 : KalloColors.text;
+    // Press = a background colour-shift toward the CTA's hover shade, not an
+    // opacity dim — the app-wide press affordance.
+    final fill = _pressed ? KalloColors.btnDarkHover : KalloColors.btnPrimary;
 
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
-      child: GestureDetector(
-        onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
-        onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
-        onTapCancel:
-            widget.busy ? null : () => setState(() => _pressed = false),
-        onTap: widget.busy ? null : widget.onPressed,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp3,
-          ),
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-          ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.loading) ...[
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: KalloColors.elev,
+      child: Semantics(
+        button: true,
+        enabled: !widget.busy,
+        label: widget.label,
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTapDown:
+              widget.busy ? null : (_) => setState(() => _pressed = true),
+          onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
+          onTapCancel:
+              widget.busy ? null : () => setState(() => _pressed = false),
+          onTap: widget.busy ? null : widget.onPressed,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            constraints: const BoxConstraints(minHeight: kAuthButtonHeight),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.loading) ...[
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: KalloColors.elev,
+                    ),
                   ),
+                  const SizedBox(width: KalloSpacing.sp2),
+                ],
+                Text(
+                  widget.label,
+                  style: dashBody(
+                    weight: FontWeight.w600,
+                  ).copyWith(color: KalloColors.elev, letterSpacing: -0.2),
                 ),
-                const SizedBox(width: 8), // gap-2
               ],
-              Text(
-                widget.label,
-                style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: KalloColors.elev, letterSpacing: -0.2),
-              ),
-            ],
+            ),
           ),
         ),
       ),

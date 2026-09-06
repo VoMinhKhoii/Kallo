@@ -14,10 +14,10 @@ import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/brand/apple_logo.dart';
 import '../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../shared/widgets/brand/google_logo.dart';
+import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../theme/kallo_theme.dart';
 import '../widgets/list/settings_group.dart';
-import '../widgets/list/settings_row.dart';
-import '../widgets/list/settings_row_leading.dart';
 import 'account_delete_screen.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`
@@ -142,13 +142,15 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   Future<void> _disconnect(UserIdentity identity) async {
     if ((_identities?.length ?? 0) <= 1 || _busyProvider != null) return;
-    // The sharpest case for the neutral affirmative in the app: this action is
-    // called "Huỷ liên kết", so keeping the verb put "Huỷ liên kết" directly
-    // above "Huỷ" — the destructive button literally opening with the cancel
-    // word. It defers to "Đồng ý"; the title already says what is being undone.
+    // This site is why the neutral pair had to go rather than be tuned: its
+    // action is called "Huỷ liên kết", so a verb affirmative once sat directly
+    // above "Huỷ" — the destructive button opening with the cancel word. Naming
+    // the safe side "Giữ lại" removes the collision without removing the verb.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('settings.account.disconnectConfirmTitle'),
+      confirmLabel: tr('common.actions.disconnect'),
+      cancelLabel: tr('common.actions.keep'),
       destructive: true,
     );
     if (!confirmed) return;
@@ -179,7 +181,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     final key = provider.name;
     final total = _identities?.length ?? 0;
     if (_isLinked(key)) {
-      return SettingsRow(
+      return ListRow(
         leading: leading,
         label: connectedLabel,
         busy: _busyProvider == key,
@@ -190,7 +192,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
                 _disconnect(_identities!.firstWhere((i) => i.provider == key)),
       );
     }
-    return SettingsRow(
+    return ListRow(
       leading: leading,
       label: connectLabel,
       busy: _busyProvider == key,
@@ -225,8 +227,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   @override
   Widget build(BuildContext context) {
-    final busy = _exporting;
-
     final rows = <Widget>[];
 
     // Linked sign-in methods — or a single retry row if the initial fetch
@@ -234,11 +234,10 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     // user's linked methods).
     if (_identities == null && _loadFailed) {
       rows.add(
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.refreshCw300,
           label: tr('settings.account.loadError'),
           busy: _retrying,
-          enabled: !_retrying,
           onTap: _load,
         ),
       );
@@ -246,7 +245,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       rows.add(
         _providerRow(
           OAuthProvider.google,
-          const GoogleLogo(size: kSettingsRowIcon),
+          const GoogleLogo(size: KalloIcons.size),
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -256,7 +255,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         rows.add(
           _providerRow(
             OAuthProvider.apple,
-            const AppleLogo(size: kSettingsRowIcon),
+            const AppleLogo(size: KalloIcons.size),
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),
@@ -265,20 +264,21 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     }
 
     rows.add(
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.download300,
         label: tr('settings.account.exportTitle'),
         busy: _exporting,
-        enabled: !busy,
         onTap: _export,
       ),
     );
     rows.add(
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.trash2300,
         label: tr('settings.account.delete'),
         danger: true,
-        enabled: !busy,
+        // Not this row's own action: deleting the account while an export is
+        // still writing out is what this guards.
+        enabled: !_exporting,
         onTap: _openDelete,
       ),
     );

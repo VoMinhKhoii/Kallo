@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -259,13 +260,13 @@ void main() {
     );
     await tester.tap(find.byTooltip('Remove Mai'));
     await tester.pumpAndSettle();
-    // The affirmative is the neutral "Agree"/"Đồng ý", not the verb: beside
-    // the cancel, "Remove"/"Xoá" read as the same choice. Scoped to the dialog
-    // so this can only pass by tapping what the user taps.
+    // Both options are verbs now (2026-09-03): "Remove" against "Keep", on a
+    // native alert surface. Scoped to the dialog so this can only pass by
+    // tapping what the user taps.
     await tester.tap(
       find.descendant(
-        of: find.byType(Dialog),
-        matching: find.text('Agree'),
+        of: find.byType(CupertinoPopupSurface),
+        matching: find.text('Remove'),
       ),
     );
     await tester.pumpAndSettle();
@@ -295,11 +296,11 @@ void main() {
     );
     await tester.tap(find.widgetWithText(TextButton, 'Leave group'));
     await tester.pumpAndSettle();
-    // This confirm keeps its verb — "Leave group" beside "Cancel" is not
-    // ambiguous — so the dialog repeats the row's label; scope to the dialog.
+    // The dialog repeats the row's label ("Leave group", against "Stay"), so
+    // scope to the alert or this finds the row behind the barrier.
     await tester.tap(
       find.descendant(
-        of: find.byType(Dialog),
+        of: find.byType(CupertinoPopupSurface),
         matching: find.text('Leave group'),
       ),
     );
@@ -319,6 +320,7 @@ void main() {
           SharedMealFeedState(entries: [], nextCursor: null),
         ),
         header: const SizedBox.shrink(),
+        onRefresh: () async {},
         onRetry: () {},
         onAddFriend: () {},
         emptyTitleKey: 'groups.page.groupNoActivity',

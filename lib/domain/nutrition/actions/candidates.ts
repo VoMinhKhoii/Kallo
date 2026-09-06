@@ -1,9 +1,11 @@
 'use server';
 
 import { and, desc, notIlike, notInArray, sql } from 'drizzle-orm';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { vietnameseFoodComposition } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { NUTRIENT_META } from '../catalog/nutrients';
 import { foodSourceCandidatesInputSchema } from '../schemas';
 
@@ -46,7 +48,21 @@ const POOL_SIZE = 18;
 /// curated list). Returns a pool the client pages through.
 export async function getFoodSourceCandidates(input: unknown) {
   const { nutrient } = foodSourceCandidatesInputSchema.parse(input);
-  await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Food sources answer a micronutrient question, so they follow that gate.
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'micronutrients'
+  );
+  // The query below is an unindexed sequential scan of the whole composition
+  // table (a `> 0` on an arbitrary nutrient column, three `NOT ILIKE` patterns,
+  // an `ORDER BY` on that same column) against a two-connection pool. Guarded
+  // in the action rather than at the route because the web calls this directly
+  // as a Server Action, so a route-only guard would leave that path open.
+  await assertRateLimit('nutritionCandidates', {
+    kind: 'user',
+    value: user.id,
+  });
 
   const column = vietnameseFoodComposition[nutrient];
   const unit = NUTRIENT_META[nutrient].unit;

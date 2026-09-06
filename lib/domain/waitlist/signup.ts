@@ -1,6 +1,7 @@
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { Errors } from '@/lib/core/errors/catalog';
+import { normaliseEmail } from '@/lib/core/text/email';
 import { hashIp, issueConfirmationToken } from '@/lib/domain/waitlist/token';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';
@@ -41,18 +42,6 @@ export interface WaitlistSignupDeps {
 export interface WaitlistSignupContext {
   /** Raw client IP; hashed before it touches the database. */
   ip?: string | null;
-}
-
-/**
- * Normalise an address for storage and comparison.
- *
- * Lowercased and NFC-normalised so `Nguyen@Example.com` and a decomposed
- * Unicode variant collapse onto one row. The local part is technically
- * case-sensitive per RFC 5321, but no mail provider anyone uses treats it that
- * way, and one row per human is what the unique index is for.
- */
-export function normaliseEmail(email: string): string {
-  return email.trim().normalize('NFC').toLowerCase();
 }
 
 /** Build the link that confirms a signup. */

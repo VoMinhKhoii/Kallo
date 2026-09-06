@@ -83,8 +83,12 @@ export function findGroundedFor(
   // duplicate slot when Call 2 emits fewer occurrences than decomposition.
   if (consumed >= mealOccurrences.length) return null;
   const ingredients = mealOccurrences[consumed];
-  // Find the first un-consumed ingredient with the matching name (case-insensitive).
-  const ingQueueKey = `${mealKey}::${ingKeyNorm}`;
+  // Find the first un-consumed ingredient with the matching name
+  // (case-insensitive). The occurrence index belongs in the key: each
+  // occurrence of a repeated dish walks its OWN ingredient list, so sharing one
+  // counter across them exhausted the second occurrence's single-entry list and
+  // returned null — "1 chén cơm … 1 chén cơm" lost the second bowl's estimate.
+  const ingQueueKey = `${mealKey}#${consumed}::${ingKeyNorm}`;
   const ingConsumed = ingredientQueueConsumed.get(ingQueueKey) ?? 0;
   const candidates = ingredients.filter(
     (i) => nameKey(i.ingredientName) === ingKeyNorm

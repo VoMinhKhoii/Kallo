@@ -177,18 +177,23 @@ void main() {
   });
 
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
-    // `app.dart` clamps scaling at 1.3, where `240 kcal` grows to 78.5 against
-    // a 74pt column. It is taken in a little — NOT clipped, which is the
-    // guarantee that matters and the one the reported bug broke.
+    // `app.dart` clamps scaling at 1.3, where `240 kcal` grows to 95.4 against
+    // a 74pt column. It is taken in — NOT clipped, which is the guarantee that
+    // matters and the one the reported bug broke.
     //
     // The column used to be 80, which absorbed 1.3x outright. It was narrowed
     // deliberately: its width is what sets where the P/C/F block stops, and at
-    // 80 the macros sat a visible hole away from the calories on every row. A
-    // 4% reduction at the largest accessibility scale is the price.
+    // 80 the macros sat a visible hole away from the calories on every row.
+    //
+    // The bound was 0.9 while the row figure was Body 14 (73.4 → 78.5 at
+    // 1.3x). At Value 16 (metric-compensated ramp, 2026-09-02) "999 kcal"
+    // measures ~69.5 in the 74pt column, so 1.3x (~90) costs ~18%. The user
+    // still gains from scaling — 16 × 1.3 × 0.82 ≈ 17pt is larger than the
+    // 16pt they started at — and the figure is still whole, which is the claim.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
     expect(find.text('240 kcal'), findsOneWidget);
     final scale = _paintedScale(tester, find.text('240 kcal'));
-    expect(scale, greaterThan(0.9), reason: 'taken in further than intended');
+    expect(scale, greaterThan(0.75), reason: 'taken in further than intended');
     expect(scale, lessThanOrEqualTo(1.0));
   });
 
@@ -196,14 +201,22 @@ void main() {
     tester,
   ) async {
     // Past what the column can absorb, the value is taken in — never clipped.
-    // A clipped `1794 kcal` renders as `1794`, which reads as a different unit.
+    // A clipped `1,794 kcal` renders as `1,794`, a different unit. Grouped
+    // since 2026-09-01, so the card and the dial above it say a four-figure
+    // calorie count the same way.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 1794, textScale: 1.3));
-    expect(find.text('1794 kcal'), findsOneWidget);
-    final scale = _paintedScale(tester, find.text('1794 kcal'));
+    expect(find.text('1,794 kcal'), findsOneWidget);
+    final scale = _paintedScale(tester, find.text('1,794 kcal'));
     expect(scale, lessThan(1.0), reason: 'it had to be taken in');
+    // 0.66, down from 0.70 with the grouping separator (2026-09-01): the comma
+    // widens the string ~4% inside a column whose width is deliberately fixed
+    // (see MacroColumns.kcal — widening it would push the macros away from the
+    // calories on EVERY row to serve the rare four-digit one). At 1.3 scale
+    // 0.68 still paints ~15pt, the app's secondary tier, and this row is the
+    // only place in the app a kcal figure is taken in at all.
     expect(
       scale,
-      greaterThan(0.7),
+      greaterThan(0.66),
       reason: 'but not to the point of illegible',
     );
   });
@@ -334,7 +347,7 @@ void main() {
         isNull,
         reason: 'totals overflowed at text scale $scale',
       );
-      expect(find.text('1794 kcal'), findsOneWidget);
+      expect(find.text('1,794 kcal'), findsOneWidget);
     }
   });
 
@@ -389,5 +402,51 @@ void main() {
       tester.getTopRight(find.text('526 kcal')).dx.roundToDouble(),
       tester.getTopRight(find.text('776 kcal')).dx.roundToDouble(),
     }, hasLength(1));
+  });
+
+  testWidgets('three-digit macros keep a real gutter between the columns', (
+    tester,
+  ) async {
+    // Reported from a device: a day's totals reach three digits routinely, and
+    // the Total row rendered `C:490gF: 184g` — the carb figure filled its cell
+    // exactly and the next label started 2pt later, so the two runs touched.
+    // The columns used to be parted by whatever air a short figure happened to
+    // leave over, which is nothing once every figure is three digits.
+    await tester.pumpWidget(_row('Bún bò', 153, 490, 184, 1794));
+
+    // Each figure ends before the next LABEL begins, by a gutter that is
+    // actually reserved rather than left over.
+    for (final pair in [('153g', 'C:'), ('490g', 'F:')]) {
+      final figureRight = tester.getRect(find.text(pair.$1)).right;
+      final nextLabelLeft = tester.getRect(find.text(pair.$2)).left;
+      expect(
+        nextLabelLeft - figureRight,
+        greaterThanOrEqualTo(8.0),
+        reason:
+            '${pair.$1} runs into ${pair.$2} — the gutter collapsed to '
+            '${(nextLabelLeft - figureRight).toStringAsFixed(1)}pt',
+      );
+    }
+
+    // The figures are taken in to pay for it, never clipped to a different
+    // number: a clipped `490g` reads as `49g`.
+    for (final figure in ['153g', '490g', '184g']) {
+      expect(find.text(figure), findsOneWidget);
+      expect(_paintedScale(tester, find.text(figure)), greaterThan(0.8));
+    }
+  });
+
+  testWidgets('the dish name still clears its longest word', (tester) async {
+    // The gutter above is paid for out of the figure columns, not this one.
+    // "Top blade" alone measures ~78 at Body 16 (83.0 at the old 17), so
+    // anything under ~79 sends the name back to the ellipsis the second line
+    // exists to prevent. The floor stays at the old 84: the column has grown
+    // wider than the word, and the bound should not loosen just because the
+    // type shrank.
+    await tester.pumpWidget(_row('Top blade áp chảo', 37, 0, 14, 268));
+    expect(
+      tester.getSize(find.text('Top blade áp chảo')).width,
+      greaterThanOrEqualTo(84.0),
+    );
   });
 }

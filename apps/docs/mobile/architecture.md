@@ -31,16 +31,24 @@ lib/
   models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
   shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
-                       calorie_ring/ feedback/ form/ motion/ sheet/ surface/
-                       toast/ typography/
-  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
-  shared/data/         static tables >1 feature reads: countries.dart
-  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart,
-                       placeholder_screen.dart
+                       chrome/ dialog/ feedback/ form/ gauge/ list/ motion/
+                       nutrition/ sheet/ surface/ toast/ typography/
+                       (`apps/mobile-flutter/AGENTS.md` §3 is the authoritative
+                       folder map; keep this line in step with it)
+  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart,
+                       time_of_day.dart (the day buckets the composer prompt and
+                       the surface-state night pose share)
+  shared/data/         static tables >1 feature reads: countries.dart,
+                       surface_cast.dart (area × state → assets/illustrations/)
+  shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,
+                       placeholder_screen.dart, route_error_screen.dart (go_router
+                       errorBuilder: unknown deep link / route failure)
   theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
 
 There is no `lib/data/`: everything it held was infrastructure and merged into `services/`.
+
+There is no offline detection (no connectivity package, no banner): a lost connection surfaces as the ordinary retryable error state. The surface-state cast carries an `offline` pose for parity with the web offline page, unused on mobile until detection exists.
 The tree has no barrels — see `apps/mobile-flutter/AGENTS.md` §3 for the rule and the two
 shapes it covers.
 
@@ -64,6 +72,15 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
   re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
   web's mirror-element overlay.
+  Any sent message can be **held for Copy / Edit** (`widgets/turn/user_message_bubble.dart`,
+  an iOS `CupertinoContextMenu`). Edit is the path back to your own words: it parks the
+  message in `composerRefillProvider` and the dock refills the field from there
+  (`logic/composer/composer_refill.dart`) — deliberately NOT a re-run, so the sentence can
+  be fixed first. A draft it displaces comes back from the toast's Undo. The lifted
+  preview is hand-built (`widgets/turn/sent_bubble.dart`, via
+  `CupertinoContextMenu.builder`): the default one clips the child to a flat 12 radius and
+  re-lays it out against the screen, which cost the bubble its tightened corner and
+  re-flowed a wrapped meal into one long line.
   Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
   resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
   sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
@@ -92,20 +109,23 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 
 - **State:** Riverpod providers per feature (`*_providers.dart`); the Supabase session drives
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
-- **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
-  (hamburger), not a bottom tab bar — matching the web mobile nav. Its chrome is
-  `shell/sidebar/nav_drawer.dart` (`tab_scaffold.dart` owns only the controller and the
-  edge-swipe zone). Its **timing deliberately diverges** from the web sheet it was ported
-  from — 280/220 rather than 500/300 — see the Motion section of `kallo-design/mobile.md`.
+- **Navigation:** `go_router` with a `StatefulShellRoute` behind a **floating pill
+  tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
+  the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
+  admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
+  full-screen** over the shell as a root `CupertinoPage` (the composer owns its
+  bottom edge; swipe-back returns to the previous tab), like `/settings`, which now
+  pushes from the dashboard avatar.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`
   (`showKalloConfirm`) — a centred title, a centred muted line, and the two buttons
   **stacked**, affirmative above cancel. It replaced three separate chromes (bare Material
-  `AlertDialog`, `CupertinoActionSheet`, and a hand-rolled one). Vietnamese affirmatives
-  default to `common.agree` ("Đồng ý") because "huỷ" means both *cancel* and *destroy*, so a
-  verb like "Xoá" beside "Huỷ" reads as the same choice twice; a confirm whose verb does not
-  collide (e.g. "Rời nhóm") passes its own `confirmLabel`.
+  `AlertDialog`, `CupertinoActionSheet`, and a hand-rolled one). It renders through
+  `showCupertinoDialog` on a 270pt `CupertinoPopupSurface`, both buttons full-width pills with
+  the destructive one filled `KalloColors.danger`. There is no default affirmative: every call
+  passes explicit `confirmLabel`/`cancelLabel` verbs — Remove/Keep, Discard/Keep, Sign out/Stay
+  signed in, Leave group/Stay — so both options name what they do (user decision 2026-09-03).
 - **Sheets:** `showNhamSheet` (`shared/widgets/sheet/kallo_sheet.dart`) + `KalloSheetSurface` +
   `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
@@ -125,6 +145,9 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 `apps/mobile-flutter/FIDELITY_AUDIT.md` tracks web↔Flutter divergences per surface
 (**298 catalogued, 141 applied** at last audit) with `web ↔ Flutter` file:line refs. It's the
 source of truth for "does this match the web view." `flutter analyze` is kept clean (0 errors).
+
+For the opposite direction — hand-built widgets that should become native Cupertino ones —
+see [native-components-audit.md](./native-components-audit.md).
 
 ## History: the RN app
 

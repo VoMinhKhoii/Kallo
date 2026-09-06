@@ -109,12 +109,14 @@ describe('useBarcodeScannerDialogState lifecycle', () => {
   it('stops the scanner and clears transient state on close', () => {
     const { result, onOpenChange } = renderDialogState();
 
+    let closed: boolean | undefined;
     act(() => {
       result.current.setBarcode('8930000000000');
       result.current.setSearchError('old failure');
-      result.current.handleClose();
+      closed = result.current.handleClose();
     });
 
+    expect(closed).toBe(true);
     expect(mocks.stopScanner).toHaveBeenCalledOnce();
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(result.current.barcode).toBe('');
@@ -163,7 +165,13 @@ describe('useBarcodeScannerDialogState lifecycle', () => {
     });
     expect(result.current.isStaging).toBe(true);
 
-    act(() => result.current.handleClose());
+    // The refusal has to be reported, not just performed: callers that swap
+    // this sheet for the paywall must not open one over a sheet still up.
+    let closed: boolean | undefined;
+    act(() => {
+      closed = result.current.handleClose();
+    });
+    expect(closed).toBe(false);
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(mocks.stopScanner).not.toHaveBeenCalled();
 

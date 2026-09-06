@@ -1,46 +1,43 @@
 /// WeightChart — the dashboard's weight-trend card.
 ///
-/// 2026 redesign (Apple Health style): the card is a clean data surface — the
-/// current weight as the bold hero number with a small net-change badge beside
-/// it, and a full-width line chart ([WeightChartCanvas]). Logging lives in a
-/// focused bottom sheet opened by a "Log" button (no resident form).
+/// Apple-Health style: a clean data surface — the current weight as the hero
+/// number with a net-change figure beside it, and a full-width line chart
+/// ([WeightChartCanvas]). The card carries NO log affordance: weigh-ins go
+/// through the tab bar's "+" Add sheet (native pass, 2026-08-31), which opens
+/// the same `showWeightLogSheet` form.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/profile/weight.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
-import 'compact_weight_log.dart';
+import '../../logic/dashboard_spacing.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../states/card_skeletons.dart';
 import 'weight_chart_canvas.dart';
 
 class WeightChart extends ConsumerWidget {
-  const WeightChart({super.key, required this.todayDate, required this.args});
+  const WeightChart({super.key, required this.args});
 
-  final String todayDate;
   final DashboardArgs args;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(weightSummaryProvider(args));
 
-    return Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp4),
-      decoration: BoxDecoration(
-        color: kCardSurface, // solid white
-        borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: kCardShadows, // shadow only, no border
-      ),
+    return KalloCard(
+      padding: DashboardSpacing.card,
       child: async.when(
+        // A weigh-in invalidates the bundle, so weightSummaryProvider goes
+        // isReloading and .when would flash the skeleton back over a card that
+        // already has data — skipLoadingOnReload only defaults true on refresh.
+        skipLoadingOnReload: true,
         // Skeleton of the card body (no spinner) — the card is already drawn,
         // so only its inner rows shimmer.
         loading: () => SkeletonPulse(
@@ -69,26 +66,39 @@ class WeightChart extends ConsumerWidget {
             ],
           ),
         ),
-        data: (data) => _Body(data: data, todayDate: todayDate, args: args),
+        data: (data) => _Body(data: data),
       ),
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({
-    required this.data,
-    required this.todayDate,
-    required this.args,
-  });
+  const _Body({required this.data});
 
   final WeightSummaryData data;
-  final String todayDate;
-  final DashboardArgs args;
 
   @override
   Widget build(BuildContext context) {
     final kg = tr('dashboard.units.kg');
+
+    // Nothing LOGGED yet: the empty state and nothing else.
+    //
+    // `currentWeight` is non-null from the onboarding profile even when the
+    // user has never weighed in, so the card used to headline "65.9 kg" over
+    // the words "Log your first weight to start tracking your trend" — a
+    // number and a denial that there is one, on the same card. The profile
+    // weight still prefills the log sheet; it just isn't a reading.
+    if (data.weights.isEmpty) {
+      return Container(
+        constraints: const BoxConstraints(minHeight: 200),
+        alignment: Alignment.center,
+        child: Text(
+          tr('dashboard.noWeightData'),
+          textAlign: TextAlign.center,
+          style: dashMeta(color: kInkMuted),
+        ),
+      );
+    }
 
     // Net change over the window (current − period start), shown as a small
     // badge right beside the hero number.
@@ -98,32 +108,19 @@ class _Body extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Hero — current weight + a small net-change badge, and a "Log weight"
-        // button. The card stays a clean data surface; logging lives in a
-        // focused sheet (Apple Health style), not a resident form.
+        // Hero — current weight, its unit and the net change, all on one
+        // baseline. No log affordance: the tab bar's "+" owns that now.
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(data.currentWeight.toStringAsFixed(1),
-                      style: dashHero()),
-                  const SizedBox(width: 6),
-                  Text(kg, style: dashBody(color: kInkMuted)),
-                  if (hasTrend) ...[
-                    const SizedBox(width: KalloSpacing.sp2),
-                    _TrendBadge(delta: delta),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            _LogButton(
-              onTap: () => _openLogSheet(context, data, todayDate, args),
-            ),
+            Text(data.currentWeight.toStringAsFixed(1), style: dashHero()),
+            const SizedBox(width: 6),
+            Text(kg, style: dashBody(color: kInkMuted)),
+            if (hasTrend) ...[
+              const SizedBox(width: KalloSpacing.sp2),
+              _TrendBadge(delta: delta),
+            ],
           ],
         ),
         const SizedBox(height: KalloSpacing.sp4),
@@ -140,9 +137,10 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// A small net-change badge shown beside the hero weight, e.g. "↑ 3.0". Uses a
-/// text arrow (not an icon) so it sits on the hero number's baseline. Only
-/// rendered when there's a real trend (the caller guards on it).
+/// The net change beside the hero weight, e.g. "↓ 1.2". A text arrow, not an
+/// icon, so it sits on the hero number's baseline; 14/500 muted — a figure that
+/// qualifies the hero rather than competing with it. Only rendered when there's
+/// a real trend (the caller guards on it).
 class _TrendBadge extends StatelessWidget {
   const _TrendBadge({required this.delta});
 
@@ -155,128 +153,8 @@ class _TrendBadge extends StatelessWidget {
       '$arrow ${delta.abs().toStringAsFixed(1)}',
       style: dashBody(
         color: kInkMuted,
-        weight: FontWeight.w600,
         tabular: true,
       ),
     );
   }
-}
-
-/// The card's log affordance — a filled accent "Log weight" pill (icon + label)
-/// so the action is unmistakable. 44pt tall (iOS HIG) with a soft shadow and an
-/// accessibility label.
-class _LogButton extends StatelessWidget {
-  const _LogButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(KalloRadii.xl);
-    return Semantics(
-      button: true,
-      label: tr('dashboard.weightCard.logWeight'),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          boxShadow: [
-            BoxShadow(
-              color: KalloColors.accent.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Material(
-          color: KalloColors.accent,
-          borderRadius: radius,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 40),
-              padding: const EdgeInsets.symmetric(
-                horizontal: KalloSpacing.sp3,
-                vertical: KalloSpacing.sp2,
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(LucideIcons.plus300, size: 16, color: Colors.white),
-                  const SizedBox(width: 5),
-                  Text(
-                    tr('dashboard.weightCard.logWeight'),
-                    style:
-                        dashBody(color: Colors.white, weight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Opens the focused "log today's weight" bottom sheet — a keypad-first form
-/// where a prominent field + Save button is the right call (unlike in the card).
-void _openLogSheet(
-  BuildContext context,
-  WeightSummaryData data,
-  String todayDate,
-  DashboardArgs args,
-) {
-  HapticFeedback.lightImpact(); // open cue, matching the meal trigger
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: kCardSurface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(kCardRadius)),
-    ),
-    builder: (sheetContext) {
-      final mq = MediaQuery.of(sheetContext);
-      // Keypad-first sheet: it wraps its content (handle + field + Save) instead
-      // of claiming a fixed slice of the screen, and the viewInsets padding lifts
-      // that compact stack to ride right above the keyboard — so there's no empty
-      // band above the field. SingleChildScrollView + MainAxisSize.min keep it
-      // scroll-safe when the height is tight (landscape, split-screen).
-      return Padding(
-        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              KalloSheetHeader(
-                title: tr('dashboard.weightCard.todaysWeight'),
-              ),
-              const SizedBox(height: KalloSpacing.sp3),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KalloSpacing.sp5,
-                ),
-                child: CompactWeightLog(
-                  currentWeight: data.currentWeight,
-                  todayWeight: data.todayWeight,
-                  todayDate: todayDate,
-                  args: args,
-                  autofocus: true,
-                  onSaved: () => Navigator.of(sheetContext).pop(),
-                ),
-              ),
-              // Breathing gap above the keypad. viewPadding.bottom is NOT reduced
-              // by the keyboard, so only add the home-indicator inset while the
-              // keypad is dismissed — otherwise the gap above the keys balloons.
-              SizedBox(
-                height: KalloSpacing.sp4 +
-                    (mq.viewInsets.bottom > 0 ? 0 : mq.viewPadding.bottom),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }

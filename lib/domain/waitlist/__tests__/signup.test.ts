@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import {
   confirmationUrl,
-  normaliseEmail,
   signUpForWaitlist,
 } from '@/lib/domain/waitlist/signup';
 import { createFakeDb, type FakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
@@ -30,14 +29,6 @@ function queueFreshAddress() {
   fake.queueSelect([{ count: 0 }]); // IP quota
   fake.queueSelect([]); // existing row lookup
 }
-
-describe('normaliseEmail', () => {
-  it('lowercases, trims, and NFC-normalises', () => {
-    expect(normaliseEmail('  Nguyen@Example.COM ')).toBe('nguyen@example.com');
-    // Decomposed "ề" must collapse onto the composed form.
-    expect(normaliseEmail('hòâng@x.vn')).toBe('hòâng@x.vn'.normalize('NFC'));
-  });
-});
 
 describe('confirmationUrl', () => {
   it('points at the confirm route on the canonical origin', () => {

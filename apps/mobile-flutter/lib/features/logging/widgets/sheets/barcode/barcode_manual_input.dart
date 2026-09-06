@@ -3,76 +3,90 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
+import '../../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import '../../../../../theme/kallo_typography.dart';
 
 /// Type the barcode by hand when the camera cannot read it (or does not
-/// exist). Port of the web's `barcode-manual-input.tsx`.
+/// exist) — its own surface inside the scan sheet, under an "Enter barcode"
+/// title (native pass, 2026-08-31; artboard `BarcodeEntry`).
+///
+/// A 52pt full-round field over the beige "Look up" primary, and the SYSTEM
+/// number pad: `keyboardType` is the whole implementation. A hand-built keypad
+/// would lose paste, the delete-repeat, and every accessibility affordance iOS
+/// puts on its own.
 class BarcodeManualInput extends StatelessWidget {
   const BarcodeManualInput({
     super.key,
     required this.controller,
     required this.onSubmit,
     required this.onBackToCamera,
+    this.errorText,
+    this.searching = false,
   });
 
   final TextEditingController controller;
   final VoidCallback onSubmit;
   final VoidCallback onBackToCamera;
 
+  /// Inline, under the field — the quantity step's idiom. A typed code keeps
+  /// its keyboard when the lookup comes back empty, so this is where that miss
+  /// is reported.
+  final String? errorText;
+
+  /// The typed code is being looked up: the primary spins in place. Someone
+  /// who told us the camera isn't working must not be shown a viewport (or a
+  /// standalone spinner panel) mid-lookup.
+  final bool searching;
+
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         KalloSpacing.sp4,
         KalloSpacing.sp2,
         KalloSpacing.sp4,
-        bottomInset + KalloSpacing.sp3,
+        bottomInset + KalloSpacing.sp2,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          KalloTextField(
             controller: controller,
             autofocus: true,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.search,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onSubmitted: (_) => onSubmit(),
-            style: KalloTextStyles.sansRegular(
-              fontSize: KalloFontSize.sm,
-            ).copyWith(color: KalloColors.text),
-            cursorColor: KalloColors.accent,
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: const Icon(
+            hintText: 'logging.barcode.placeholder'.tr(),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 18, right: 10),
+              child: Icon(
                 LucideIcons.scanBarcode300,
-                size: 18,
-                color: KalloColors.textMuted,
+                size: KalloIcons.tertiary,
+                color: kInkMuted,
               ),
-              hintText: 'logging.barcode.placeholder'.tr(),
-              hintStyle: KalloTextStyles.sansRegular(
-                fontSize: KalloFontSize.sm,
-              ).copyWith(color: KalloColors.placeholderMuted40),
-              filled: true,
-              fillColor: KalloColors.elev,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: KalloSpacing.sp3,
-                vertical: KalloSpacing.sp2,
-              ),
-              border: _border(KalloColors.inputBorder),
-              enabledBorder: _border(KalloColors.inputBorder),
-              focusedBorder: _border(KalloColors.borderAccent40),
             ),
           ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: KalloSpacing.sp2),
+              child: Text(
+                errorText!,
+                style: dashMeta(color: KalloColors.danger),
+              ),
+            ),
           const SizedBox(height: KalloSpacing.sp3),
-          SheetPrimaryButton(
-            label: 'logging.barcode.search'.tr(),
-            onTap: onSubmit,
+          KalloButton(
+            title: 'logging.barcode.lookUp'.tr(),
+            loading: searching,
+            onPressed: onSubmit,
           ),
-          const SizedBox(height: KalloSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp1),
           Center(
             child: QuietIconButton(
               icon: LucideIcons.camera300,
@@ -84,9 +98,4 @@ class BarcodeManualInput extends StatelessWidget {
       ),
     );
   }
-
-  OutlineInputBorder _border(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(KalloRadii.lg),
-    borderSide: BorderSide(color: color),
-  );
 }

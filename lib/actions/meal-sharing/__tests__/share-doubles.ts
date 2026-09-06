@@ -8,6 +8,9 @@ import { vi } from 'vitest';
 
 export const MOCK_USER = { id: 'user-123', email: 'me@example.com' };
 
+/** The premium gates key their trial window off the profile's creation date. */
+export const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
+
 export const UUID_MEAL = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 export const UUID_FRIEND = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 export const UUID_FRIEND_2 = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -154,7 +157,17 @@ export function routeInserts(captured: Record<string, { vals: unknown }>) {
       return {
         values: vi.fn().mockImplementation((vals: unknown) => {
           captured.invites = { vals };
-          return { onConflictDoUpdate: vi.fn().mockResolvedValue(undefined) };
+          // RETURNING yields the rows the upsert actually wrote — the set the
+          // producer notifies. Accepted invites are filtered out by setWhere
+          // in Postgres, so a test models that by omitting them here.
+          const written = (vals as { toUserId: string }[]).map(
+            (row, index) => ({ id: `invite-${index}`, toUserId: row.toUserId })
+          );
+          return {
+            onConflictDoUpdate: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue(written),
+            }),
+          };
         }),
       };
     }

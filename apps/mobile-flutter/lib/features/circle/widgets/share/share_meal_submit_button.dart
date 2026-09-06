@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 class SubmitButton extends StatelessWidget {
   const SubmitButton({
@@ -28,10 +28,13 @@ class SubmitButton extends StatelessWidget {
         child: Container(
           width: double.infinity,
           alignment: Alignment.center,
+          constraints: const BoxConstraints(minHeight: 50),
           padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
+          // In-app primary: beige wash + ink, fully rounded (the umber fill
+          // predated the button retirement — missed on the first native pass).
           decoration: BoxDecoration(
-            color: KalloColors.btn,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            color: KalloColors.btnPrimarySoft,
+            borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -42,17 +45,19 @@ class SubmitButton extends StatelessWidget {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: KalloColors.text,
                   ),
                 )
               else
-                const Icon(LucideIcons.users300, size: 16, color: Colors.white),
+                const Icon(
+                  LucideIcons.users300,
+                  size: 16,
+                  color: KalloColors.text,
+                ),
               const SizedBox(width: KalloSpacing.sp2),
               Text(
                 label,
-                style: KalloTextStyles.sansMedium(
-                  fontSize: KalloFontSize.sm,
-                ).copyWith(color: Colors.white),
+                style: dashBody(),
               ),
             ],
           ),

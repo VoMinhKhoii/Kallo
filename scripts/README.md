@@ -5,7 +5,7 @@ One concern per folder. Nothing lives at this top level except this file.
 | Folder | Concern |
 | --- | --- |
 | `_lib/` | shared helpers for the scripts themselves (`runtime.ts`) |
-| `assets/` | brand/PWA asset generation (splash mark, icons) |
+| `assets/` | brand/PWA asset generation (splash mark, icons, and the Koboyo surface-state illustration cast via `gen-illustrations.mjs`) |
 | `bench/` | latency harness and the KPI/baseline SQL rollups |
 | `ci/` | gates run by GitHub Actions (migrations, structure, security report) |
 | `cloud-run/` | Cloud Run deploy plumbing, smoke checks, staging lease |

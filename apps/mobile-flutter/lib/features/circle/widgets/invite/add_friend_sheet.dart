@@ -1,12 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../states/add_friend_skeleton.dart';
 import '../states/circle_error.dart';
@@ -16,7 +19,7 @@ import 'invite_link_row.dart';
 
 /// Opens the invite surface: your shareable link (with an editable end), your
 /// display name, and your circle. No username search, no requests — people
-/// connect by opening your link and tapping Accept. Mirrors `AddFriendDialog`.
+/// connect by opening your link and tapping Accept.
 Future<void> showAddFriendSheet(BuildContext context) {
   return showNhamSheet<void>(
     context,
@@ -25,13 +28,20 @@ Future<void> showAddFriendSheet(BuildContext context) {
   );
 }
 
+/// Unified sheet chrome over two 64pt identity rows, the explainer, and the
+/// beige "Share link" primary (native pass, 2026-08-31). Copy stays on the
+/// link row's own glyph — Share hands the link to the OS sheet, which is how
+/// an invite actually reaches someone.
 class _AddFriendSheet extends ConsumerWidget {
   const _AddFriendSheet();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    // `KalloSheetSurface` lifts the sheet clear of the keyboard, so the cap
+    // comes off the height the keyboard leaves.
+    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.85;
 
     return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -45,22 +55,16 @@ class _AddFriendSheet extends ConsumerWidget {
                 KalloSpacing.sp4,
                 0,
                 KalloSpacing.sp4,
-                viewInsets + KalloSpacing.sp5,
+                viewInsets > 0
+                    ? KalloSpacing.sp3
+                    : math.max(bottomInset, KalloSpacing.sp4),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    tr('groups.invite.description'),
-                    style: KalloTextStyles.sansRegular(
-                      fontSize: KalloFontSize.detail,
-                      height: KalloLeading.relaxed,
-                    ).copyWith(color: KalloColors.textMuted),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp4),
-                  const _ProfileSection(),
-                  const SizedBox(height: KalloSpacing.sp5),
-                  const CircleListSection(),
+                  _ProfileSection(),
+                  SizedBox(height: KalloSpacing.sp4),
+                  CircleListSection(),
                 ],
               ),
             ),
@@ -71,7 +75,7 @@ class _AddFriendSheet extends ConsumerWidget {
   }
 }
 
-/// Your own identity: how you appear, and the link you hand out.
+/// Your own identity: how you appear, the link you hand out, and Share.
 class _ProfileSection extends ConsumerWidget {
   const _ProfileSection();
 
@@ -80,19 +84,33 @@ class _ProfileSection extends ConsumerWidget {
     final profileAsync = ref.watch(myCircleProfileProvider);
     return profileAsync.when(
       loading: () => const AddFriendProfileSkeleton(),
-      error:
-          (_, __) => CircleErrorCard(
-            onRetry: () => ref.invalidate(myCircleProfileProvider),
+      error: (_, __) => CircleErrorCard(
+        compact: true,
+        onRetry: () => ref.invalidate(myCircleProfileProvider),
+      ),
+      data: (profile) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DisplayNameRow(profile: profile),
+          const _RowSeparator(),
+          InviteLinkRow(profile: profile),
+          const SizedBox(height: KalloSpacing.sp2),
+          Text(tr('groups.invite.description'), style: dashMeta()),
+          const SizedBox(height: KalloSpacing.sp3),
+          KalloButton(
+            title: tr('groups.invite.shareLink'),
+            onPressed: () => Share.share(inviteLinkFor(context, profile.handle)),
           ),
-      data:
-          (profile) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DisplayNameRow(profile: profile),
-              const SizedBox(height: KalloSpacing.sp4),
-              InviteLinkRow(profile: profile),
-            ],
-          ),
+        ],
+      ),
     );
   }
+}
+
+class _RowSeparator extends StatelessWidget {
+  const _RowSeparator();
+
+  @override
+  Widget build(BuildContext context) =>
+      const ColoredBox(color: kHairline, child: SizedBox(height: 1));
 }

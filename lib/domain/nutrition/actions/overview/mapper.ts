@@ -274,5 +274,7 @@ export function mapOverviewRowsToDto({
         bodyKey: 'nutrition.education.vitaminD.body',
       },
     ],
+    // The gate runs above this mapper: see `stripMicronutrients`.
+    micronutrientsLocked: false,
   };
 }

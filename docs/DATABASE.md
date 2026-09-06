@@ -104,6 +104,17 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260728123331_add_billing_reconciliation.sql` | A + deny boundary | RevenueCat grants, CustomerInfo + deterministic ownership watermarks, webhook replay state, indexes, constraints, and same-transaction RLS/revokes |
 | `20260728123400_harden_billing_trial_anchor.sql` | B (Manual) | Preserve the server-created trial anchor when profiles are updated |
 | `20260801120000_curate_broth_search_names.sql` | B (Manual) | Curated Vietnamese broth names/variants; queues targeted embedding regeneration |
+| `20260829080001_add_notifications.sql` | A (Drizzle) | `notifications` table — per-recipient activity rows, feed/badge indexes and the open-aggregate partial unique index |
+| `20260829080002_rls_notifications.sql` | B (Manual) | RLS enabled, no policies — notifications are server-only |
+| `20260829080003_notifications_retention.sql` | B (Manual) | `reap_old_notifications()` (90 days) on the guarded pg_cron schedule |
+| `20260829080004_add_push_tokens.sql` | A (Drizzle) | `push_tokens` table — device registrations (token unique so a re-signed-in handset is reassigned), platform CHECK, user index |
+| `20260829080005_rls_push_tokens.sql` | B (Manual) | RLS enabled, no policies — a registration token is a send capability |
+| `20260829080006_push_tokens_retention.sql` | B (Manual) | `reap_stale_push_tokens()` (270 days idle) on the guarded pg_cron schedule |
+| `20260829080007_notifications_rebadged.sql` | A (Drizzle) | `notifications.rebadged` bool — transient per-upsert push classification, read only from the aggregation statement's own `RETURNING` |
+| `20260901194712_add_rate_limit_tables.sql` | A + deny boundary | `rate_limit_counters` (composite PK, no secondary index) + `rate_limit_events`; RLS/REVOKE/GRANT appended in the same file under the failure-boundary exception |
+| `20260901194713_rate_limit_counters_storage.sql` | B (Manual) | `rate_limit_counters` set `UNLOGGED` + `fillfactor = 70` — counters are soft state, events stay LOGGED |
+| `20260901194714_rate_limit_consume_function.sql` | B (Manual) | `rate_limit_consume()` — one-statement minute/hour/day consume, UTC-pinned, blocked requests write nothing |
+| `20260901194715_rate_limit_retention.sql` | B (Manual) | Four reapers (limiter counters/events + the two legacy analysis-guard tables) on the guarded pg_cron schedule, fail-loud |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -255,9 +266,9 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 
 | Command | Description |
 |---------|-------------|
-| `bun test` | Run all tests via Vitest |
-| `bun test:watch` | Run tests in watch mode |
-| `bun --env-file=.env.local vitest run lib/db/__tests__/` | Run DB-level search tests (requires remote DB) |
+| `bun run test` | Run all tests via Vitest |
+| `bun run test:watch` | Run tests in watch mode |
+| `bun --env-file=.env.local run test -- lib/infra/db/__tests__/` | Run DB-level search tests (requires remote DB) |
 
 ### Scripts
 
@@ -327,6 +338,67 @@ be invoked from a daily worker.
 
 `pipeline_runs` (this spec, §0.4) is the analytics source — it stores
 `user_id_hash` only, never raw input.
+
+## Rate limiter tables
+
+Full design and ops runbook: `docs/RATE_LIMITING.md`. What matters at the
+database level:
+
+- **`rate_limit_counters`** — one row per `(key_kind, key_hash, route)` holding
+  all three windows (`minute_start`/`minute_count`, `hour_*`, `day_*`). Composite
+  primary key `rate_limit_counters_pkey`, which `rate_limit_consume()` targets by
+  name via `ON CONFLICT ON CONSTRAINT`. **No secondary index by design**: the
+  only reader is the primary key, so an `updated_at` index would be written on
+  every guarded request purely to serve one nightly reaper.
+- **`UNLOGGED` + `fillfactor = 70`** (`20260901194713`). The table is soft
+  state: no WAL, so it is truncated on crash recovery, not replicated, and
+  absent from PITR. Acceptable — losing it costs one window of quota, and it is
+  written on every guarded request including unauthenticated traffic. The low
+  fillfactor keeps the consume upsert's updates HOT (there is no secondary
+  index, so HOT applies to essentially every update).
+- **`rate_limit_events`** — the audit trail, ordinary LOGGED storage, indexed on
+  `(route, created_at)`. Hashed keys only. Rows are **aggregates**: the writer
+  coalesces identical `(route, key_kind, key_hash, reason, source)` tuples in
+  memory and flushes batched inserts, so a row carries `hits` plus
+  `created_at` (first seen) and `last_seen_at`. Read volumes with `sum(hits)`,
+  never `count(*)` — one write per blocked request would have turned a flood
+  into database write amplification on the same 2-connection pool the limiter
+  protects.
+- Both tables are server-only: RLS enabled with **no policies**, `REVOKE ALL`
+  from `anon`/`authenticated`, DML granted to `service_role`. That block is
+  appended to the Drizzle-generated create-table migration under the documented
+  failure-boundary exception, so the tables can never exist client-accessible.
+
+**`public.rate_limit_consume(...)`** is a `SECURITY DEFINER` plpgsql function
+with `SET search_path = pg_catalog, pg_temp`, EXECUTE revoked from
+PUBLIC/anon/authenticated and granted to `service_role`. It performs one
+`INSERT … ON CONFLICT DO UPDATE … WHERE <headroom>`: Postgres takes the row lock
+before evaluating the `WHERE`, so concurrent callers serialize and a blocked
+request writes nothing. Windows use the **three-argument**
+`date_trunc(field, source, 'UTC')` — the two-argument form would truncate in the
+session `TimeZone`, which under a transaction pooler is not a session we own.
+
+**Reapers** (`20260901194715`, all on the fail-loud pg_cron schedule):
+`reap_rate_limit_counters()` (2 days, deleted in 50k `ctid` batches),
+`reap_rate_limit_events()` (30 days), plus retention for the two *legacy*
+analysis-guard tables that shipped without any:
+`reap_analysis_rate_limit_windows()` (2 days) and
+`reap_analysis_in_flight_limits()` (1 day, **including rows with `count > 0`** —
+those are crash-abandoned concurrency leases; the live path is covered by the
+90-second stale reset in `analysis-guard-counters.ts`).
+
+If the legacy tables are large on first deploy, run
+`SELECT public.reap_analysis_rate_limit_windows();` once by hand rather than
+waiting for the nightly job.
+
+### Local pooler
+
+`supabase/config.toml` enables `[db.pooler]` in transaction mode on port 54329,
+so local and CI connect the way production does. The username is
+**tenant-qualified**: `postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres`.
+A plain `postgres` user is rejected with `Tenant or user not found` —
+`pooler-dev` is the CLI's fixed local Supavisor tenant id, not `project_id`.
+CI's `migrations` job runs `rate-limit-consume.db.test.ts` through that port.
 
 ## Task 1.6 audit: SQL match function state projection
 

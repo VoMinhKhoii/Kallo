@@ -6,40 +6,26 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/http/api_client.dart';
-import '../widgets/feedback_fields.dart';
+import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
-import '../../../shared/widgets/form/quiet_action_button.dart';
-import '../../../shell/header/app_header.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
+import '../widgets/feedback_form.dart';
+import '../widgets/feedback_success.dart';
 
 /// Marketing version — kept in sync with `pubspec.yaml` (no `package_info_plus`
 /// dependency), mirroring the `_appVersion` constant in the settings screen.
 const String _appVersion = '1.0.1';
 
-const int _maxMessageLength = 4000;
 const int _maxScreenshotBytes = 5 * 1024 * 1024;
-
-const _feedbackTypes = <FeedbackType>[
-  FeedbackType('bug', LucideIcons.bug300),
-  FeedbackType('ingredient', LucideIcons.sprout300),
-  FeedbackType('idea', LucideIcons.lightbulb300),
-];
-
-class FeedbackType {
-  const FeedbackType(this.value, this.icon);
-  final String value;
-  final IconData icon;
-}
 
 /// In-app feedback (bug report / ingredient request / idea). Pushed from the
 /// settings list; posts to `/api/v1/feedback` with an optional screenshot and
 /// auto-captured context (platform, app version, locale, current route).
+///
+/// Chrome-wise it is a settings sub-page like any other: [PageHeader] carries
+/// the title beside the back chevron and the body never repeats it.
 class FeedbackScreen extends ConsumerStatefulWidget {
   const FeedbackScreen({super.key});
 
@@ -60,9 +46,22 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   String? _uploadedForImagePath;
 
   @override
+  void initState() {
+    super.initState();
+    // The character counter and the submit button's enabled state both read
+    // the controller, so every keystroke has to rebuild the form.
+    _message.addListener(_onMessageChanged);
+  }
+
+  @override
   void dispose() {
+    _message.removeListener(_onMessageChanged);
     _message.dispose();
     super.dispose();
+  }
+
+  void _onMessageChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _pickImage() async {
@@ -205,171 +204,34 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: AppHeader(onBack: () => Navigator.of(context).pop()),
+        // Flush to the screen edge, exactly as every settings sub-page mounts
+        // it: the 44pt back slot reclaims the page's own 12pt inset so the
+        // chevron is optically flush.
+        header: PageHeader(
+          title: tr('settings.feedback.title'),
+          onBack: () => Navigator.of(context).pop(),
         ),
-        child: _sent ? _buildSent() : _buildForm(),
-      ),
-    );
-  }
-
-  Widget _buildSent() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleCheck300, size: 40, color: kInk),
-            const SizedBox(height: KalloSpacing.sp4),
-            Text(
-              tr('settings.feedback.successTitle'),
-              textAlign: TextAlign.center,
-              style: dashHeadline(),
-            ),
-            const SizedBox(height: KalloSpacing.sp2),
-            Text(
-              tr('settings.feedback.successBody'),
-              textAlign: TextAlign.center,
-              style: dashBody(color: kInkMuted),
-            ),
-            const SizedBox(height: KalloSpacing.sp5),
-            KalloButton(
-              title: tr('settings.feedback.done'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            const SizedBox(height: KalloSpacing.sp2),
-            KalloButton(
-              title: tr('settings.feedback.sendAnother'),
-              variant: KalloButtonVariant.ghost,
-              onPressed: _reset,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildForm() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        KalloSpacing.sp3,
-        KalloSpacing.sp2,
-        KalloSpacing.sp3,
-        KalloSpacing.sp6,
-      ),
-      children: [
-        Text(tr('settings.feedback.title'), style: dashHeadline()),
-        const SizedBox(height: 4),
-        Text(tr('settings.feedback.description'), style: dashMeta()),
-        const SizedBox(height: KalloSpacing.sp4),
-
-        // Type selector.
-        Text(tr('settings.feedback.typeLabel'), style: dashMeta()),
-        const SizedBox(height: KalloSpacing.sp2),
-        Row(
-          children: [
-            for (var i = 0; i < _feedbackTypes.length; i++) ...[
-              if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-              Expanded(
-                child: FeedbackTypeChip(
-                  type: _feedbackTypes[i],
-                  selected: _type == _feedbackTypes[i].value,
-                  onTap: () => setState(() => _type = _feedbackTypes[i].value),
-                ),
+        child: _sent
+            ? FeedbackSuccess(
+                onDone: () => Navigator.of(context).pop(),
+                onSendAnother: _reset,
+              )
+            : FeedbackForm(
+                type: _type,
+                onTypeChanged: (v) => setState(() => _type = v),
+                message: _message,
+                image: _image,
+                busy: _busy,
+                error: _error,
+                onPickImage: _pickImage,
+                onRemoveImage: () => setState(() {
+                  _image = null;
+                  _uploadedPath = null;
+                  _uploadedForImagePath = null;
+                }),
+                onSubmit: _submit,
               ),
-            ],
-          ],
-        ),
-        const SizedBox(height: KalloSpacing.sp4),
-
-        // Message.
-        Text(tr('settings.feedback.messageLabel'), style: dashMeta()),
-        const SizedBox(height: KalloSpacing.sp2),
-        Container(
-          decoration: BoxDecoration(
-            color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-            border: Border.all(color: KalloColors.borderSoft),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp3,
-          ),
-          child: TextField(
-            controller: _message,
-            enabled: !_busy,
-            maxLines: 6,
-            maxLength: _maxMessageLength,
-            // Rebuild so the submit button + counter track what's typed.
-            onChanged: (_) => setState(() {}),
-            cursorColor: kInk,
-            style: dashBody(),
-            decoration: InputDecoration(
-              isDense: true,
-              counterText: '',
-              // All four, plus filled:false. The app theme sets `filled: true`
-              // and an OutlineInputBorder on `enabledBorder`, so clearing only
-              // `border` left the field painting its own box INSIDE this
-              // container — the nested-card look.
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              hintText: tr('settings.feedback.placeholder.$_type'),
-              hintStyle: dashBody(color: kInkMuted),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '${_message.text.characters.length} / $_maxMessageLength',
-            style: dashMeta(tabular: true),
-          ),
-        ),
-        const SizedBox(height: KalloSpacing.sp2),
-
-        // Screenshot.
-        FeedbackScreenshotField(
-          file: _image,
-          onAdd: _busy ? null : _pickImage,
-          onRemove:
-              _busy
-                  ? null
-                  : () => setState(() {
-                    _image = null;
-                    _uploadedPath = null;
-                    _uploadedForImagePath = null;
-                  }),
-        ),
-
-        if (_error != null) ...[
-          const SizedBox(height: KalloSpacing.sp3),
-          Text(_error!, style: dashMeta(color: KalloColors.danger)),
-        ],
-
-        const SizedBox(height: KalloSpacing.sp5),
-        // The quiet confirm the logging card's Save uses, parked at the end of
-        // its row — not a full-width umber CTA. The umber is spent on one
-        // primary action per surface, and a feedback form's submit isn't it.
-        Align(
-          alignment: Alignment.centerRight,
-          child: QuietActionButton(
-            label: tr('settings.feedback.submit'),
-            busy: _busy,
-            enabled: _message.text.trim().isNotEmpty && !_busy,
-            onTap:
-                (_busy || _message.text.trim().isEmpty)
-                    ? null
-                    : () => _submit(),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -142,14 +143,17 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'logging.persistedMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
+                'logging.persistedMealCard.total'.tr(), style: dashBody(tabular: true),),
               Row(
                 children: [
                   Text(
                     'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}', style: dashMeta(tabular: true),),
                   const SizedBox(width: KalloSpacing.sp4), // gap-4
                   Text(
-                    fmtKcal(totals.caloriesKcal), style: dashValue(),),
+                    fmtKcal(
+                      totals.caloriesKcal,
+                      locale: localeOf(context),
+                    ), style: dashValue(),),
                 ],
               ),
             ],

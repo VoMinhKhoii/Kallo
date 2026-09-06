@@ -129,7 +129,7 @@ class _SegmentState extends State<OptionStripSegment> {
                   child: Text(
                     item.label,
                     textAlign: TextAlign.center,
-                    style: dashBody(color: color, weight: FontWeight.w500),
+                    style: dashBody(color: color),
                   ),
                 ),
               ],

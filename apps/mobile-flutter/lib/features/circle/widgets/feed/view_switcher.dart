@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
@@ -97,6 +96,14 @@ class ViewSwitcher extends ConsumerWidget {
   }
 }
 
+/// Threads-style filter chip (native pass, 2026-08-31): a 36pt visual pill
+/// centred in a 44pt tap target, 14pt label.
+///
+/// Selection is a FILL, not a tint: [kTrack] for the chosen chip, white +
+/// hairline for the rest. The old accent@10 wash put the tan accent on a text
+/// control, which the button system now reserves for rings and chart strokes;
+/// the track surface says "this one is the group you are reading" using the
+/// same recessed neutral the app uses for every other selected segment.
 class _Pill extends StatelessWidget {
   const _Pill({
     required this.label,
@@ -109,46 +116,51 @@ class _Pill extends StatelessWidget {
   final bool unread;
   final VoidCallback onTap;
 
+  /// Visual pill height; the target around it is 44 (iOS minimum).
+  static const double _visual = 36;
+
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     selected: selected,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(999),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp4,
-          vertical: KalloSpacing.sp2,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? KalloColors.accent10 : Colors.white,
-          border: selected ? null : Border.all(color: kHairline),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (unread) ...[
-              const ExcludeSemantics(
-                child: DecoratedBox(
-                  key: Key('circle-unread-dot'),
-                  decoration: BoxDecoration(
-                    color: kInk,
-                    shape: BoxShape.circle,
-                  ),
-                  child: SizedBox.square(dimension: 7),
-                ),
-              ),
-              const SizedBox(width: 7),
-            ],
-            Text(
-              label,
-              style: dashMeta(color: selected ? kInk : kInkMuted).copyWith(
-                fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-              ),
+      child: SizedBox(
+        height: KalloIcons.hit,
+        child: Center(
+          child: Container(
+            height: _visual,
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+            decoration: BoxDecoration(
+              color: selected ? kTrack : kCardSurface,
+              border: selected ? null : Border.all(color: kHairline),
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (unread) ...[
+                  const ExcludeSemantics(
+                    child: DecoratedBox(
+                      key: Key('circle-unread-dot'),
+                      decoration: BoxDecoration(
+                        color: kInk,
+                        shape: BoxShape.circle,
+                      ),
+                      child: SizedBox.square(dimension: 7),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                ],
+                Text(
+                  label,
+                  style: dashBody(
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     ),

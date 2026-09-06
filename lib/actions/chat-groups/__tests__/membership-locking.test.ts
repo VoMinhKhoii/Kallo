@@ -1,6 +1,53 @@
 import { describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
+import { Errors } from '@/lib/core/errors/catalog';
+
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
+
+// Premium circle gates: pass-through unless a test arms one, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertActor, mockAssertCapacity } = vi.hoisted(() => ({
+  mockAssertActor: vi.fn(async (..._args: unknown[]) => undefined),
+  mockAssertCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertUnlimitedCircleActor: mockAssertActor,
+  assertGroupCapacity: mockAssertCapacity,
+}));
 
 import { renameChatGroup } from '@/lib/actions/chat-groups/details';
 import {
@@ -196,6 +243,50 @@ describe('chat-group membership locking', () => {
     expect(state.members.get(MEMBER_ID)).toBe('member');
   });
 
+  // The push carries the group's name and its deep link, and is scheduled only
+  // after the locked transaction has resolved.
+  it('schedules the group-added push once the add commits', async () => {
+    mockAfter.mockClear();
+    mockSendNotificationPush.mockClear();
+    const state = atomicMembershipDb();
+    mockNotify.mockResolvedValueOnce([MEMBER_ID]);
+
+    await addChatGroupMembers(
+      OWNER_ID,
+      { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+      state.db as never
+    );
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([MEMBER_ID], {
+      type: 'group.added',
+      actor: { id: OWNER_ID },
+      // The locked group row is the copy source; this double carries no name,
+      // and a nameless group contributes no `data` at all — push.ts then falls
+      // back to the locale's "a group".
+      targetType: 'chat_group',
+      targetId: GROUP_ID,
+      groupKey: `group.added:${GROUP_ID}`,
+    });
+  });
+
+  it('does not schedule a push when the add is rejected', async () => {
+    mockSendNotificationPush.mockClear();
+    const state = atomicMembershipDb();
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(
+      addChatGroupMembers(
+        OWNER_ID,
+        { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ status: 402 });
+    expect(mockSendNotificationPush).not.toHaveBeenCalled();
+  });
+
   it('enforces the 50-member cap inside the locked transaction', async () => {
     const existingIds = [
       OWNER_ID,
@@ -210,6 +301,39 @@ describe('chat-group membership locking', () => {
         state.db as never
       )
     ).rejects.toThrow('Nhóm tối đa 50 thành viên.');
+    expect(state.members.has(MEMBER_ID)).toBe(false);
+  });
+
+  it('propagates the actor 402 without inserting the member', async () => {
+    const state = atomicMembershipDb();
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(
+      addChatGroupMembers(
+        OWNER_ID,
+        { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ status: 402, code: 'feature_locked' });
+    expect(state.members.has(MEMBER_ID)).toBe(false);
+  });
+
+  it('propagates a 409 when an added member is at their group cap', async () => {
+    const state = atomicMembershipDb();
+    mockAssertCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 2 nhóm.')
+    );
+
+    await expect(
+      addChatGroupMembers(
+        OWNER_ID,
+        { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ status: 409, code: 'CIRCLE_LIMIT_REACHED' });
+    expect(mockAssertCapacity.mock.lastCall?.[1]).toEqual([MEMBER_ID]);
     expect(state.members.has(MEMBER_ID)).toBe(false);
   });
 

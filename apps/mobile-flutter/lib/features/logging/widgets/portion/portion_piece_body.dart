@@ -89,7 +89,6 @@ class PortionPieceBody extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: dashMeta(
-            weight: claimedName != null ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
       ],

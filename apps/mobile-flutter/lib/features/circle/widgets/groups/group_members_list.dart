@@ -9,6 +9,7 @@ import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../data/chat_group_providers.dart';
+import '../../../../theme/kallo_theme.dart';
 
 class GroupMembersList extends ConsumerWidget {
   const GroupMembersList({required this.group, super.key});
@@ -41,7 +42,7 @@ class GroupMembersList extends ConsumerWidget {
                   'groups.info.removeLabel',
                   namedArgs: {'name': member.label},
                 ),
-                icon: const Icon(LucideIcons.x300, size: 16),
+                icon: const Icon(LucideIcons.x300, size: KalloIcons.tertiary),
                 onPressed: () => _confirmRemove(context, ref, member),
               ),
           ],
@@ -53,12 +54,13 @@ class GroupMembersList extends ConsumerWidget {
     WidgetRef ref,
     ChatGroupMember member,
   ) async {
-    // "Xoá {name}?" — the affirmative is the neutral "Đồng ý", not the verb
-    // "Xoá", which beside "Huỷ" reads as the same choice twice.
+    // "Xoá {name}?" — "Xoá" against "Giữ lại": the member goes, or stays.
     final confirmed = await showKalloConfirm(
       context,
       title: tr('groups.info.removeTitle', namedArgs: {'name': member.label}),
       description: tr('groups.info.removeDescription'),
+      confirmLabel: tr('common.actions.remove'),
+      cancelLabel: tr('common.actions.keep'),
       destructive: true,
     );
     if (!confirmed || !context.mounted) return;

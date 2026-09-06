@@ -97,7 +97,7 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
 
   Widget _productName(LabelReviewState review) => LabelField(
     controller: _fields.name,
-    textStyle: dashBody(weight: FontWeight.w500),
+    textStyle: dashBody(),
     numeric: false,
     hasError: !review.productIsValid,
     errorText: 'logging.labelScan.invalidProductName'.tr(),

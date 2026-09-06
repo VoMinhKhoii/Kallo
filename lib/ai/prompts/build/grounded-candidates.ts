@@ -25,6 +25,9 @@ export interface MatchCandidate {
   id: string;
   similarity: number;
   dbName: string;
+  /** The row's English name (`name_en`), rendered only for the global prompt
+   *  locale so the verdict can read qualifiers the VN name obscures. */
+  dbNameEn?: string | null;
   dbState: 'raw' | 'cooked' | 'unknown';
   source: 'fao' | 'usda';
   per100gKcal: number | null;
@@ -55,7 +58,10 @@ export interface MealItemWithCandidates {
   vesselEnvelope?: VesselEnvelope | null;
 }
 
-function renderIngredient(ing: IngredientWithCandidates): string {
+function renderIngredient(
+  ing: IngredientWithCandidates,
+  includeNameEn: boolean
+): string {
   const inputIng = ing.ingredient;
   const cookingMethod = inputIng.cookingMethod;
   const stateHint = inputIng.stateHint;
@@ -121,6 +127,10 @@ function renderIngredient(ing: IngredientWithCandidates): string {
       `db_state="${escapeXmlAttribute(c.dbState)}"`,
       `source="${escapeXmlAttribute(c.source)}"`,
     ];
+    if (includeNameEn && c.dbNameEn && c.dbNameEn !== c.dbName) {
+      // Insert right after db_name so the two names read as a pair.
+      cAttrs.splice(3, 0, `db_name_en="${escapeXmlAttribute(c.dbNameEn)}"`);
+    }
     if (c.per100gKcal !== null) {
       cAttrs.push(`db_per_100g_kcal="${c.per100gKcal.toFixed(1)}"`);
     }
@@ -143,8 +153,10 @@ function renderIngredient(ing: IngredientWithCandidates): string {
 }
 
 export function buildIngredientDataBlock(
-  mealItems: MealItemWithCandidates[]
+  mealItems: MealItemWithCandidates[],
+  options?: { includeNameEn?: boolean }
 ): string {
+  const includeNameEn = options?.includeNameEn ?? false;
   // Sort meal items + ingredients for deterministic prompt order (helps the
   // dynamic suffix benefit from caching across similar inputs from same user).
   const sortedMealItems = [...mealItems]
@@ -189,7 +201,7 @@ export function buildIngredientDataBlock(
     }
     out += `  <meal_item ${attrs.join(' ')}>\n`;
     for (const ing of mi.ingredients) {
-      out += renderIngredient(ing);
+      out += renderIngredient(ing, includeNameEn);
     }
     out += `  </meal_item>\n`;
   }

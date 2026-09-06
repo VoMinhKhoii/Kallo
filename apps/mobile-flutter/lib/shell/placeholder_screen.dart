@@ -6,6 +6,7 @@ import '../shared/widgets/surface/kallo_screen.dart';
 import '../theme/calm_tokens.dart';
 import '../theme/kallo_theme.dart';
 import 'header/app_header.dart';
+import 'nav/nav_actions.dart';
 
 /// Stand-in surface for nav destinations whose feature screens don't exist in
 /// the Flutter app yet (Groups, Admin). It keeps the drawer nav model honest —
@@ -31,14 +32,14 @@ class PlaceholderScreen extends StatelessWidget {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/logging');
+                  goToLogging(context);
                 }
               },
             ),
           ),
           Expanded(
             child: Center(
-              child: Text(tr(titleKey), style: dashPageTitle()),
+              child: Text(tr(titleKey), style: kSectionHeader()),
             ),
           ),
         ],

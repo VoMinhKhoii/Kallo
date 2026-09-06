@@ -16,6 +16,20 @@ FeatureReason _parseReason(Object? raw) => switch (raw) {
   _ => FeatureReason.notEntitled,
 };
 
+/// The gated feature names the server keys `features` by. Mirrors
+/// `PREMIUM_FEATURES` on the server; used only to name lock affordances.
+class PremiumFeature {
+  const PremiumFeature._();
+
+  static const aiAnalysis = 'ai_analysis';
+  static const labelScan = 'label_scan';
+  static const micronutrients = 'micronutrients';
+  static const relog = 'relog';
+  static const cheatMeal = 'cheat_meal';
+  static const copySplit = 'copy_split';
+  static const unlimitedCircle = 'unlimited_circle';
+}
+
 /// Access decision for a single gated feature (`features.<name>`).
 class FeatureAccess {
   const FeatureAccess({required this.allowed, required this.reason});
@@ -71,7 +85,8 @@ class EntitlementState {
     required this.managementStore,
     required this.hasActiveSubscription,
     required this.trial,
-    required this.aiAnalysis,
+    required this.features,
+    required this.enforcementEnabled,
   });
 
   final EntitlementTier tier;
@@ -87,9 +102,31 @@ class EntitlementState {
   final bool hasActiveSubscription;
   final TrialState trial;
 
-  /// Access decision for the `ai_analysis` feature — the one gated capability
-  /// this phase wires (the paywall is AI-analysis focused).
-  final FeatureAccess aiAnalysis;
+  /// Every gated feature the server reported, keyed by [PremiumFeature] name.
+  ///
+  /// UX-ONLY. This map exists so the client can show a lock or an upsell
+  /// BEFORE the user spends a round trip — never to decide whether an action
+  /// may proceed. Enforcement is the server's HTTP 402, always.
+  final Map<String, FeatureAccess> features;
+
+  /// Whether the server is currently ENFORCING the gates. While false the
+  /// server 402s nothing, so lock affordances must stay hidden even for a
+  /// feature reported as not allowed. It may only ever suppress lock UI — it
+  /// must never be read as permission to do something.
+  final bool enforcementEnabled;
+
+  /// Access decision for one feature; unknown/absent names read denied.
+  FeatureAccess featureAccess(String feature) =>
+      features[feature] ?? FeatureAccess.denied;
+
+  /// Whether a lock/upsell affordance should be shown for [feature]. False
+  /// while enforcement is off — nothing is actually gated then.
+  bool showsLockFor(String feature) =>
+      enforcementEnabled && !featureAccess(feature).allowed;
+
+  /// Access decision for the `ai_analysis` feature (the paywall's headline
+  /// capability). Kept as a named accessor for the existing call sites.
+  FeatureAccess get aiAnalysis => featureAccess(PremiumFeature.aiAnalysis);
 
   bool get isPremium => tier == EntitlementTier.premium;
 
@@ -116,14 +153,15 @@ class EntitlementState {
       managementStore: json['managementStore'] as String?,
       hasActiveSubscription: json['hasActiveSubscription'] == true,
       trial: TrialState.fromJson(json['trial'] as Map<String, dynamic>?),
-      aiAnalysis: FeatureAccess.fromJson(
-        features?['ai_analysis'] as Map<String, dynamic>?,
-      ),
+      features: _parseFeatures(features),
+      // Absent on a server that predates the rollout flag: default OFF, so an
+      // old payload shows no locks rather than locking everything.
+      enforcementEnabled: json['enforcementEnabled'] == true,
     );
   }
 
   /// Conservative fallback used before the first fetch resolves / on a hard
-  /// error: free, no trial, AI locked. Never over-grants.
+  /// error: free, no trial, every feature locked. Never over-grants.
   static const free = EntitlementState(
     tier: EntitlementTier.free,
     purchasesEnabled: false,
@@ -137,8 +175,20 @@ class EntitlementState {
     managementStore: null,
     hasActiveSubscription: false,
     trial: TrialState.none,
-    aiAnalysis: FeatureAccess.denied,
+    features: {},
+    enforcementEnabled: false,
   );
+}
+
+/// Decode the `features` object. Anything that isn't a well-formed entry is
+/// dropped rather than fabricated — a missing key already reads denied.
+Map<String, FeatureAccess> _parseFeatures(Map<String, dynamic>? raw) {
+  if (raw == null) return const {};
+  return {
+    for (final entry in raw.entries)
+      if (entry.value is Map<String, dynamic>)
+        entry.key: FeatureAccess.fromJson(entry.value as Map<String, dynamic>),
+  };
 }
 
 DateTime? _parseDate(Object? raw) {

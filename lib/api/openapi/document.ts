@@ -2,6 +2,7 @@ import type { PathItem } from '@/lib/api/openapi/components';
 import { ACCOUNT_PATHS } from '@/lib/api/openapi/paths/account';
 import { LOGGING_PATHS } from '@/lib/api/openapi/paths/logging';
 import { MEAL_PATHS } from '@/lib/api/openapi/paths/meals';
+import { NOTIFICATION_PATHS } from '@/lib/api/openapi/paths/notifications';
 import { NUTRITION_PATHS } from '@/lib/api/openapi/paths/nutrition';
 import { ONBOARDING_PATHS } from '@/lib/api/openapi/paths/onboarding';
 import { PUBLIC_PATHS } from '@/lib/api/openapi/paths/public';
@@ -39,6 +40,7 @@ const PATHS: Record<string, PathItem> = {
   ...GROUP_PATHS,
   ...FRIEND_PATHS,
   ...SHARE_PATHS,
+  ...NOTIFICATION_PATHS,
   ...ACCOUNT_PATHS,
   ...ONBOARDING_PATHS,
   ...SUPPORT_PATHS,
@@ -94,6 +96,10 @@ export function openApiDocument() {
       },
       { name: 'Tracking', description: 'Dashboard and weight.' },
       { name: 'Circle', description: 'Friends, groups and shared meals.' },
+      {
+        name: 'Activity',
+        description: 'The per-person activity feed and its seen/read state.',
+      },
       { name: 'Account', description: 'Profile, export, deletion.' },
       {
         name: 'Billing',

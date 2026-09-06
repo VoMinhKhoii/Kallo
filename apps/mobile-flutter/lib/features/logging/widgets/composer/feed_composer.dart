@@ -1,13 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/relog.dart' show RelogCandidate;
 import '../../../../theme/calm_tokens.dart';
+import '../../logic/composer/composer_refill.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat/cheat_intensity_row.dart';
+import '../cheat/cheat_intensity_group.dart';
 import '../cheat/cheat_occasion_chips.dart';
 import 'composer_dock.dart';
 import 'meal_input.dart';
@@ -17,7 +19,12 @@ import '../relog/relog_picker_section.dart';
 
 /// Everything inside the floating dock: the under-logged notice, the inline
 /// confirm error, cheat mode's per-meal controls, and the meal input itself.
-class FeedComposer extends StatelessWidget {
+///
+/// Also where a message sent back by the Edit action lands: the dock holds
+/// both controllers it takes to refill the field, and it is on screen for as
+/// long as the bubbles that can write to it are. [FeedArea] never sees it go
+/// past — see [listenForComposerRefill].
+class FeedComposer extends ConsumerWidget {
   const FeedComposer({
     super.key,
     required this.view,
@@ -25,7 +32,6 @@ class FeedComposer extends StatelessWidget {
     required this.errorText,
     required this.mode,
     required this.cheatIntensity,
-    required this.onCheatIntensityChange,
     required this.userId,
     required this.stagingRepeat,
     required this.onRepeatCheat,
@@ -52,8 +58,10 @@ class FeedComposer extends StatelessWidget {
   /// which surface as the failed-attempt card.
   final String? errorText;
   final MealLogMode mode;
+
+  /// Read-only here: the mode sheet owns the writing. It rides the mode pill so
+  /// the magnitude the next send will use is legible without opening anything.
   final CheatIntensity cheatIntensity;
-  final ValueChanged<CheatIntensity> onCheatIntensityChange;
   final String userId;
 
   /// True while a "log it again" occasion is being re-staged server-side.
@@ -89,7 +97,13 @@ class FeedComposer extends StatelessWidget {
   final VoidCallback onDismissRelog;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    listenForComposerRefill(
+      ref,
+      context: context,
+      composer: textController,
+      input: controller,
+    );
     // Nothing here is derived from the controller's own state: a pick lives as
     // text INSIDE the field, so the value, its tint and the send button's arming
     // all rebuild from `MealInput`'s own listener. The dock stays out of the
@@ -114,18 +128,14 @@ class FeedComposer extends StatelessWidget {
               style: dashMeta(),
             ),
           ),
-        // Cheat mode's per-meal controls sit above the composer: the
-        // light/medium/heavy intensity strip and the "log it again" chips
-        // (the web keeps both above the input too).
+        // Cheat mode's "log it again" chips sit above the composer, as on the
+        // web. The intensity moved OUT of here: it now hangs off the mode sheet
+        // that sets the mode, and reads back on the composer's mode pill.
         if (mode == MealLogMode.cheat) ...[
           CheatOccasionChips(
             userId: userId,
             disabled: stagingRepeat || analyzing,
             onSelect: onRepeatCheat,
-          ),
-          CheatIntensityRow(
-            value: cheatIntensity,
-            onChange: onCheatIntensityChange,
           ),
           const SizedBox(height: LoggingSpacing.block),
         ],
@@ -157,6 +167,11 @@ class FeedComposer extends StatelessWidget {
                   )
                   : null,
           modeLabel: mealModeLabel(mode),
+          // Only cheat carries a qualifier; every other mode is its name alone.
+          modeDetail:
+              mode == MealLogMode.cheat
+                  ? cheatIntensityLabel(cheatIntensity)
+                  : null,
           modeIcon: mealModeIcon(mode),
           hintText:
               mode == MealLogMode.cheat

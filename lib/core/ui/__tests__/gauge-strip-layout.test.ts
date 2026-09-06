@@ -172,12 +172,22 @@ describe('the dial reads the same however wide the rail is', () => {
     }
   });
 
-  it('drops to the short wording only where it genuinely will not fit', () => {
-    // The logging header caps its marks small, and a phone-width card has
-    // wrapped the strip; neither has room for the sentence.
+  it('says the same thing on the feed header as in the dock', () => {
+    // Same question, same sentence, whichever page you are on. The feed caps
+    // its marks far smaller than the dock does — that is the whole point of a
+    // fixed header — so this is the constraint `FEED_MACRO_CAP` is chosen
+    // against, not a coincidence to be discovered later by looking.
     expect(
       gaugeFitsLongUnit(gaugeStripSizes(COMPOSER, FEED_MACRO_CAP).calorieRadius)
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      gaugeFitsLongUnit(gaugeStripSizes(COMPOSER, DOCK_MACRO_CAP).calorieRadius)
+    ).toBe(true);
+  });
+
+  it('drops to the short wording only where it genuinely will not fit', () => {
+    // A phone-width card has wrapped the strip and its calorie mark is down at
+    // the floor; there is no room for the sentence at any font size.
     expect(gaugeFitsLongUnit(48)).toBe(false);
   });
 });

@@ -66,7 +66,12 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
         !_creating && _name.text.trim().isNotEmpty && _selected.isNotEmpty;
     return KalloSheetSurface(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .88,
+        // Off the height the keyboard LEAVES: the surface lifts itself clear
+        // of `viewInsets`, and this column does not scroll.
+        maxHeight:
+            (MediaQuery.sizeOf(context).height -
+                MediaQuery.viewInsetsOf(context).bottom) *
+            .88,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -77,12 +82,7 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
           ),
           Flexible(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                0,
-                20,
-                MediaQuery.viewInsetsOf(context).bottom + 20,
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

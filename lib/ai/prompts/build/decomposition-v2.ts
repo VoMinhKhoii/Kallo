@@ -1,3 +1,4 @@
+import { resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
 import {
   decompositionV2PromptText,
@@ -54,5 +55,9 @@ function buildCountryContextLines(
 export function buildDecompositionV2Prompt(
   userContext: PromptPersonalizationContext
 ): string {
-  return decompositionV2PromptText(buildCountryContextLines(userContext));
+  return decompositionV2PromptText(
+    buildCountryContextLines(userContext),
+    resolvePromptLocale(userContext),
+    userContext.outputLanguage
+  );
 }

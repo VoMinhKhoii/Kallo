@@ -19,10 +19,10 @@ AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
     sideTitles: SideTitles(
       showTitles: true,
       interval: step,
-      // Four digits at 10pt plus the 6pt gap. Sized generously on purpose: at
+      // Four digits at 12pt plus the 6pt gap. Sized generously on purpose: at
       // 28 "3000" wrapped to two lines, which is far uglier than a slightly
       // wide gutter.
-      reservedSize: 34,
+      reservedSize: 38,
       getTitlesWidget: (value, meta) {
         if (value <= 0 || value > maxLabel) return const SizedBox.shrink();
         return Padding(
@@ -34,7 +34,9 @@ AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.visible,
-            style: dashMeta(color: kInkMuted).copyWith(fontSize: 10),
+            // Meta 12, like every other caption on the page — 10 was below
+            // the ramp's floor and the axis read as fine print.
+            style: dashMeta(),
           ),
         );
       },
@@ -66,9 +68,8 @@ AxisTitles bucketAxisTitles({
           padding: const EdgeInsets.only(top: 6),
           child: Text(
             label,
-            style: dashEyebrow(color: emphasised ? kInk : kInkMuted).copyWith(
-              letterSpacing: 0.4,
-              fontWeight: emphasised ? FontWeight.w500 : FontWeight.w400,
+            style: dashMeta(
+              color: emphasised ? kInk : kInkMuted,
             ),
           ),
         );

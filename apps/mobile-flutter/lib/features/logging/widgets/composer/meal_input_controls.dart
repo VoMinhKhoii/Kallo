@@ -1,7 +1,8 @@
-/// The three controls on the composer's second line: the mode chooser, the
-/// one-tap barcode trigger, and the send/stop button.
+/// The two icon buttons on the composer's second line: the one-tap scan
+/// trigger and the send/stop button.
 ///
-/// Split out of meal_input.dart so that file stays about the field itself.
+/// The row that arranges them, and the mode pill beside them, live in
+/// composer_action_row.dart.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -9,69 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
-import '../../logic/logging_spacing.dart';
-
-/// The mode control on the input bar's second line — a minimal icon + label
-/// (no border, no chevron), like the Claude composer's "Auto". Tapping opens the
-/// mode chooser. 44pt tap target, scales 0.96 on press.
-class ComposerModeButton extends StatefulWidget {
-  const ComposerModeButton({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<ComposerModeButton> createState() => _ComposerModeButtonState();
-}
-
-class _ComposerModeButtonState extends State<ComposerModeButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: SizedBox(
-          height: 44, // HIG tap target
-          child: Center(
-            child: AnimatedScale(
-              scale: _pressed ? 0.96 : 1,
-              duration: const Duration(milliseconds: 200),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(widget.icon,
-                        size: LoggingIcons.size, color: KalloColors.btn),
-                    const SizedBox(width: 6),
-                    // Regular weight, same as the field's own text.
-                    Text(widget.label, style: dashBody(color: kInkMuted)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Icon-only barcode trigger beside the mode control — same quiet styling,
 /// 44pt tap target.
@@ -109,8 +48,8 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
               duration: const Duration(milliseconds: 200),
               child: const Icon(
                 LucideIcons.scanBarcode300,
-                size: LoggingIcons.size,
-                color: KalloColors.btn,
+                size: 20,
+                color: KalloColors.textMuted,
               ),
             ),
           ),
@@ -120,20 +59,21 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
   }
 }
 
-/// The 32x32, rounded-md, btn-umber submit/stop button. Pressed → scale 0.95 +
-/// btn-hover bg (RN `active:bg-kallo-btn-hover active:scale-95`). Disabled → 0.3.
+/// The send / stop button: a 32pt circle in a 44pt tap target (Log artboard).
+/// Armed it wears the beige in-app primary wash with an ink glyph, like the
+/// sent bubble and the confirm circle; unarmed it drops to the track grey
+/// rather than to a dimmed copy of itself — "nothing to send yet" is a resting
+/// state, not a failure.
 class ComposerActionButton extends StatefulWidget {
   const ComposerActionButton({
     super.key,
     required this.icon,
-    required this.iconSize,
     required this.label,
     this.onTap,
     this.enabled = true,
   });
 
   final IconData icon;
-  final double iconSize;
   final String label;
   final VoidCallback? onTap;
   final bool enabled;
@@ -148,6 +88,7 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
   @override
   Widget build(BuildContext context) {
     final tappable = widget.onTap != null;
+    final armed = widget.enabled && tappable;
     return Semantics(
       button: true,
       enabled: tappable,
@@ -167,24 +108,20 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
               duration: const Duration(
                 milliseconds: 200,
               ), // transition-all duration-200
-              child: Opacity(
-                opacity: widget.enabled ? 1 : 0.3,
-                child: Container(
-                  // Sized off the glyph, not a magic number: the pill has to
-                  // keep visible padding around the icon, and the icon is now
-                  // the app-wide 24 rather than 16.
-                  width: widget.iconSize + KalloSpacing.sp3,
-                  height: widget.iconSize + KalloSpacing.sp3,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _pressed ? KalloColors.btnHover : KalloColors.btn,
-                    borderRadius: BorderRadius.circular(KalloRadii.md),
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    size: widget.iconSize,
-                    color: Colors.white,
-                  ),
+              child: Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  // The press is carried by the scale above, not by a second
+                  // fill: beige has nowhere lighter to go on white.
+                  color: armed ? KalloColors.btnPrimarySoft : KalloColors.track,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 18,
+                  color: armed ? KalloColors.text : KalloColors.textMuted,
                 ),
               ),
             ),

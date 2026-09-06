@@ -46,6 +46,7 @@ export const namespaces = [
   'dashboard',
   'logging',
   'groups',
+  'activity',
   'settings',
   'errors',
   'validation',

@@ -1,39 +1,54 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../models/social/circle.dart';
+import '../../../../shared/data/surface_cast.dart';
+import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
-import 'day_separator.dart';
 import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
-import 'feed_entry.dart';
+import 'feed_day_group.dart';
 
 class ThreadFeed extends ConsumerWidget {
   const ThreadFeed({
     required this.feed,
     required this.header,
+    required this.onRefresh,
     required this.onRetry,
     required this.onAddFriend,
     this.scope,
     this.emptyTitleKey = 'groups.page.friendsEmptyTitle',
     this.emptyDescriptionKey = 'groups.page.friendsNoMealToday',
     this.emptyNamedArgs = const {},
+    this.emptyPose = SurfaceKind.empty,
     this.showAddFriend = true,
     super.key,
   });
 
   final AsyncValue<SharedMealFeedState> feed;
   final Widget header;
+
+  /// The pull-to-refresh refetch. It lives HERE rather than around this widget
+  /// because the scroll view it must hold open is built in this file — the
+  /// iOS control is a sliver, not a wrapper.
+  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
   final VoidCallback onAddFriend;
   final String? scope;
   final String emptyTitleKey;
   final String emptyDescriptionKey;
   final Map<String, String> emptyNamedArgs;
+
+  /// Which capybara stands on the empty wall: the friends scope gets the
+  /// telescope (looking for someone), a group the box (nobody home yet).
+  final SurfaceKind emptyPose;
+
   final bool showAddFriend;
 
   @override
@@ -58,65 +73,36 @@ class ThreadFeed extends ConsumerWidget {
     );
   }
 
-  Widget _list(Widget body) => ListView(
-    physics: const AlwaysScrollableScrollPhysics(),
-    padding: const EdgeInsets.fromLTRB(
-      KalloSpacing.sp3,
-      KalloSpacing.sp2,
-      KalloSpacing.sp3,
-      KalloSpacing.sp8,
-    ),
-    children: [header, const SizedBox(height: KalloSpacing.sp3), body],
+  Widget _list(Widget body) =>
+      _scroll([header, const SizedBox(height: KalloSpacing.sp3), body]);
+
+  /// The page's one scroll view: the refresh control, then the content. The
+  /// bottom inset clears the floating pill nav — without it the last post's
+  /// action row sits under the bar — and it is the bar's measured height,
+  /// which the shell reports as the body's bottom padding.
+  Widget _scroll(List<Widget> children) => KalloRefreshableScroll(
+    onRefresh: onRefresh,
+    slivers: (bottomInset) => [
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(
+          KalloSpacing.sp3,
+          KalloSpacing.sp2,
+          KalloSpacing.sp3,
+          bottomInset,
+        ),
+        sliver: SliverList(delegate: SliverChildListDelegate(children)),
+      ),
+    ],
   );
 
   Widget _dataList(BuildContext context, SharedMealFeedState state) {
     if (state.entries.isEmpty) {
-      return _list(
-        _EmptyState(
-          onAdd: onAddFriend,
-          titleKey: emptyTitleKey,
-          descriptionKey: emptyDescriptionKey,
-          namedArgs: emptyNamedArgs,
-          showAdd: showAddFriend,
-        ),
-      );
+      return _list(_empty());
     }
-    // No spacer after the header here: the first thing in the list is always a
-    // day separator, and it pays its own top gap. Stacking both left ~36pt of
-    // dead air under the filter chips.
     final children = <Widget>[header];
-    String? previousDay;
-    for (final entry in state.entries) {
-      final date = DateTime.parse(entry.meal.sharedAt);
-      final day = threadDayKey(date);
-      // A rule goes BEFORE each post rather than after it, so a day boundary
-      // and the end of the list get the day separator (or nothing) instead of
-      // a stray hairline stacked a few points above one.
-      if (day != previousDay) {
-        children.add(DaySeparator(date: date));
-      } else {
-        children.add(
-          const Padding(
-            // Indented to the content rail so the rule reinforces the
-            // avatar/content structure instead of cutting the row in half.
-            padding: EdgeInsets.only(left: kContentRail),
-            child: Divider(height: 1, thickness: 1, color: kHairline),
-          ),
-        );
-      }
-      children.add(
-        Padding(
-          key: ValueKey(entry.meal.shareId),
-          // Bottom is 0 by design: the post's last row is either the action
-          // row, whose 44pt tap target already carries ~14pt of slack under its
-          // glyphs, or ShareReplies, which pays its own bottom gap. Adding
-          // padding here would stack on top of one of them and leave the post
-          // visibly bottom-heavy. See the rhythm note in `feed_entry.dart`.
-          padding: const EdgeInsets.only(top: KalloSpacing.sp3),
-          child: FeedEntry(entry: entry),
-        ),
-      );
-      previousDay = day;
+    for (final day in _byDay(state.entries)) {
+      children.add(const SizedBox(height: KalloSpacing.sp3));
+      children.add(FeedDayGroup(date: day.date, entries: day.entries));
     }
     if (state.isLoadingMore) {
       children.add(
@@ -130,59 +116,43 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        KalloSpacing.sp3,
-        KalloSpacing.sp2,
-        KalloSpacing.sp3,
-        KalloSpacing.sp8,
-      ),
-      children: children,
-    );
+    return _scroll(children);
   }
-}
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.onAdd,
-    required this.titleKey,
-    required this.descriptionKey,
-    required this.namedArgs,
-    required this.showAdd,
-  });
-  final VoidCallback onAdd;
-  final String titleKey;
-  final String descriptionKey;
-  final Map<String, String> namedArgs;
-  final bool showAdd;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
-    child: Column(
-      children: [
-        const Icon(LucideIcons.users300, color: kInkMuted, size: 24),
-        const SizedBox(height: KalloSpacing.sp3),
-        Text(
-          tr(titleKey, namedArgs: namedArgs),
-          style: dashBody(weight: FontWeight.w500),
-        ),
-        const SizedBox(height: KalloSpacing.sp1),
-        Text(
-          tr(descriptionKey, namedArgs: namedArgs),
-          textAlign: TextAlign.center,
-          style: dashMeta(),
-        ),
-        if (showAdd) ...[
-          const SizedBox(height: KalloSpacing.sp3),
-          TextButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(LucideIcons.userPlus300, size: 16),
-            label: Text(tr('groups.page.addFriend')),
-          ),
-        ],
-      ],
-    ),
+  /// Nothing on the wall yet. "Add a friend" wears the black `cta` — the tier
+  /// every surface state gives its one action, the one sanctioned use of it
+  /// outside auth and the paywall.
+  Widget _empty() => KalloSurfaceState(
+    area: SurfaceArea.circle,
+    kind: emptyPose,
+    title: tr(emptyTitleKey, namedArgs: emptyNamedArgs),
+    subtitle: tr(emptyDescriptionKey, namedArgs: emptyNamedArgs),
+    action: showAddFriend
+        ? KalloButton(
+            title: tr('groups.page.addFriend'),
+            variant: KalloButtonVariant.cta,
+            onPressed: onAddFriend,
+          )
+        : null,
   );
+
+  /// Consecutive runs of entries sharing a day key, in feed order. A run, not
+  /// a bucket: the feed is already sorted, and grouping by key would silently
+  /// reorder a day that arrived split across two pages.
+  static List<({DateTime date, List<CircleFeedEntry> entries})> _byDay(
+    List<CircleFeedEntry> entries,
+  ) {
+    final days = <({DateTime date, List<CircleFeedEntry> entries})>[];
+    String? previous;
+    for (final entry in entries) {
+      final date = DateTime.parse(entry.meal.sharedAt);
+      final key = threadDayKey(date);
+      if (key != previous) {
+        days.add((date: date, entries: <CircleFeedEntry>[]));
+        previous = key;
+      }
+      days.last.entries.add(entry);
+    }
+    return days;
+  }
 }

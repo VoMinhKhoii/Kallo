@@ -7,8 +7,10 @@ import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
+import 'package:kallo_mobile/features/circle/widgets/invite/circle_add_menu.dart';
 import 'package:kallo_mobile/models/social/chat_group.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -103,6 +105,77 @@ void main() {
       marker: DateTime.utc(2026, 7, 19),
     );
     expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
+  });
+
+  // The header's add control is an ANCHORED POPOVER (native pass,
+  // 2026-08-31), not the Cupertino action sheet it replaced: the card hangs
+  // off the button that opened it, so the eye never leaves the corner it
+  // touched. Housed in this file rather than its own so the suite gains no
+  // extra parallel isolate — `test/services/billing/entitlements_test.dart`
+  // polls against 20-50ms of REAL time and misses its window under one more
+  // concurrent test file. That fragility is its own to fix.
+  Future<void> pumpMenu(WidgetTester tester) async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/l10n',
+        fallbackLocale: const Locale('en'),
+        assetLoader: const FsL10nLoader(),
+        child: Builder(
+          builder: (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: const Scaffold(
+              body: Align(
+                alignment: Alignment.topRight,
+                child: CircleAddMenu(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('the add popover opens under the button with two grouped rows', (
+    tester,
+  ) async {
+    await pumpMenu(tester);
+    expect(find.byType(ListRow), findsNothing);
+
+    final button = tester.getRect(find.byType(CircleAddMenu));
+    await tester.tap(find.byType(CircleAddMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add friend'), findsOneWidget);
+    expect(find.text('Create group'), findsOneWidget);
+
+    // 240pt wide, hanging BELOW the button and aligned to its right edge —
+    // the whole point of an anchored menu over a bottom sheet.
+    final row = tester.getRect(find.byType(ListRow).first);
+    expect(row.width, 240 - 32); // less the card's 16pt side padding
+    expect(row.top, greaterThan(button.bottom));
+    expect(row.right, lessThanOrEqualTo(button.right));
+
+    // Grouped-card metrics: 52pt rows, the whole row tappable.
+    expect(row.height, greaterThanOrEqualTo(52));
+    for (final widget in tester.widgetList<ListRow>(find.byType(ListRow))) {
+      expect(widget.onTap, isNotNull);
+    }
+  });
+
+  testWidgets('tapping the scrim dismisses the add popover', (tester) async {
+    await pumpMenu(tester);
+    await tester.tap(find.byType(CircleAddMenu));
+    await tester.pumpAndSettle();
+    expect(find.byType(ListRow), findsNWidgets(2));
+
+    // Bottom-left is scrim, well clear of the card in the top-right corner.
+    await tester.tapAt(const Offset(20, 500));
+    await tester.pumpAndSettle();
+    expect(find.byType(ListRow), findsNothing);
   });
 }
 

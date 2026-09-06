@@ -103,8 +103,11 @@ class MacroTrendChart extends StatelessWidget {
     final axis = buildMacroTrendAxis(data.maxY);
     final step = axis.step;
 
+    // 140 of plot plus the bucket axis under it — the chart was 248, which on
+    // a 390x844 phone pushed the vitamins below the fold and the page's last
+    // card under the floating pill nav.
     return SizedBox(
-      height: 248,
+      height: 170,
       // `spaceBetween` puts the last column flush against the right edge, so a
       // centred axis label under it ran off the card. The y-axis gutter had the
       // slack to pay for it — its widest label is four digits at 10pt.

@@ -2,11 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../models/nutrition/barcode_product.dart';
-import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import '../../../../../theme/kallo_typography.dart';
 import '../../../logic/barcode_amount.dart';
+import '../../../../../theme/calm_tokens.dart';
 
 /// What the chosen amount comes to: calories in the hero figure, then the
 /// three macros scaled off the per-100g panel.
@@ -51,30 +50,23 @@ class BarcodeNutritionPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          KalloText(
+          Text(
             'logging.barcode.nutritionForAmount'.tr(
               namedArgs: {'grams': '$grams'},
             ),
-            variant: KalloTextVariant.eyebrow,
+            style: kGroupLabel(),
           ),
           const SizedBox(height: KalloSpacing.sp2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              KalloText(
+              Text(
                 calories == null ? '—' : '${calories.round()}',
-                variant: KalloTextVariant.h3,
-                style: KalloTextStyles.serifRegular(
-                  fontSize: KalloFontSize.h2,
-                ).copyWith(color: KalloColors.text),
+                style: dashHero(),
               ),
               const SizedBox(width: 4),
-              KalloText(
-                'logging.manualLogging.kcal'.tr(),
-                variant: KalloTextVariant.small,
-                style: const TextStyle(color: KalloColors.textMuted),
-              ),
+              Text('logging.manualLogging.kcal'.tr(), style: dashMeta()),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp2),
@@ -85,15 +77,11 @@ class BarcodeNutritionPreview extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      KalloText(
-                        macro.label,
-                        variant: KalloTextVariant.small,
-                        style: const TextStyle(color: KalloColors.textMuted),
-                      ),
+                      Text(macro.label, style: dashMeta()),
                       const SizedBox(height: 2),
-                      KalloText(
+                      Text(
                         macro.value == null ? '—' : '${_fmt(macro.value)}g',
-                        variant: KalloTextVariant.macroValue,
+                        style: dashValue(),
                       ),
                     ],
                   ),

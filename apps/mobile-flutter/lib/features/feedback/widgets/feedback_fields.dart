@@ -2,15 +2,38 @@ import 'dart:io' show File;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
-import '../screens/feedback_screen.dart' show FeedbackType;
 
-class FeedbackTypeChip extends StatelessWidget {
+/// One answer to "What's this about?" — the value posted to the API and the
+/// Lucide 300 glyph that stands for it.
+class FeedbackType {
+  const FeedbackType(this.value, this.icon);
+  final String value;
+  final IconData icon;
+}
+
+const kFeedbackTypes = <FeedbackType>[
+  FeedbackType('bug', LucideIcons.bug300),
+  FeedbackType('ingredient', LucideIcons.sprout300),
+  FeedbackType('idea', LucideIcons.lightbulb300),
+];
+
+/// One segment of the type selector.
+///
+/// NOT [OptionStrip.segmented]: that skin draws labels only — [SegmentedStrip]
+/// never reads `OptionStripItem.icon` — and the three feedback kinds are told
+/// apart by their glyph as much as by their word. So it stays a chip, cut to
+/// the app's chip idiom: the [KalloColors.hover] wash marks the selection, a
+/// deeper wash marks the press, colour carries the state and the label keeps
+/// its regular weight throughout.
+class FeedbackTypeChip extends StatefulWidget {
   const FeedbackTypeChip({
     super.key,
     required this.type,
@@ -23,41 +46,48 @@ class FeedbackTypeChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<FeedbackTypeChip> createState() => _FeedbackTypeChipState();
+}
+
+class _FeedbackTypeChipState extends State<FeedbackTypeChip> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final label = tr('settings.feedback.types.${widget.type.value}');
+    final on = widget.selected;
     return Semantics(
       button: true,
-      selected: selected,
-      label: tr('settings.feedback.types.${type.value}'),
+      selected: on,
+      label: label,
       excludeSemantics: true,
-      onTap: onTap,
+      onTap: widget.onTap,
       child: GestureDetector(
-        onTap: onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onTap();
+        },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: KalloMotion.press,
+          curve: KalloEase.press,
           padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
           decoration: BoxDecoration(
-            color: selected
+            color: on
                 ? KalloColors.hover
-                : KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+                : (_pressed ? KalloColors.hover40 : KalloColors.elev),
+            borderRadius: BorderRadius.circular(KalloRadii.xxxl),
             border: Border.all(
-              color: selected ? kInk.withValues(alpha: 0.3) : KalloColors.borderSoft,
+              color: on ? KalloColors.accent60 : KalloColors.borderSoft,
             ),
           ),
           child: Column(
             children: [
-              Icon(
-                type.icon,
-                size: 18,
-                color: selected ? kInk : kInkMuted,
-              ),
+              Icon(widget.type.icon, size: 18, color: on ? kInk : kInkMuted),
               const SizedBox(height: 6),
-              Text(
-                tr('settings.feedback.types.${type.value}'),
-                style: dashMeta(
-                  color: selected ? kInk : kInkMuted,
-                ),
-              ),
+              Text(label, style: dashMeta(color: on ? kInk : kInkMuted)),
             ],
           ),
         ),
@@ -121,11 +151,7 @@ class FeedbackScreenshotField extends StatelessWidget {
                 onTap: onRemove,
                 child: const Padding(
                   padding: EdgeInsets.all(4),
-                  child: Icon(
-                    LucideIcons.x300,
-                    size: 16,
-                    color: kInkMuted,
-                  ),
+                  child: Icon(LucideIcons.x300, size: 16, color: kInkMuted),
                 ),
               ),
             ),

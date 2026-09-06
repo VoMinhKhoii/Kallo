@@ -84,11 +84,7 @@ class LoggingDaySkeleton extends StatelessWidget {
             padding: const EdgeInsets.all(KalloSpacing.sp4), // p-5→16
             decoration: BoxDecoration(
               color: const Color(0x33F0EAE0), // bg-kallo-hover/20
-              borderRadius: BorderRadius.circular(
-                KalloRadii.containerLg,
-              ), // 2xl
-              border: Border.all(color: KalloColors.borderSoft), // /60
-              boxShadow: const [KalloShadows.sm],
+              borderRadius: BorderRadius.circular(KalloRadii.card),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,10 +1,10 @@
 /// WeightChartCanvas — the weight card's trend chart.
 ///
-/// A clean, uniform line chart: round-number weight values in a left gutter with
-/// a subtle gridline at each step, the plot filling from the gutter to the right
-/// edge; short localized date ticks (…"Jun 9", "Now"), a short dotted forecast
-/// tail, a faint "today" marker, and a dot at every logged point with the most
-/// recent emphasized.
+/// Native pass (2026-08-31): an unframed plot the inner width of the card
+/// (334 on a 390pt phone), dashed hairline gridlines, the Y domain's two
+/// bounds in a narrow LEFT gutter (2026-09-01, back from the right), date
+/// ticks below ("2/8" … "Now"), a short dotted forecast tail, a faint "today"
+/// marker, and a dot at every logged point with the most recent emphasized.
 ///
 /// The forecast (`projectedEndWeight` / `canProject`) is computed once
 /// server-side and passed in as data — the chart only positions and draws it.
@@ -21,11 +21,13 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../logic/weight_chart_axis.dart';
+import 'weight_chart_titles.dart';
 import 'weight_chart_dot_painter.dart';
 
-const double _chartAspect = 1.95; // canvas width : height (framed chart)
+/// Canvas width : height — 334 × ~139 on a 390pt phone, of which the date row
+/// takes the measured date-row height and the plot keeps the artboard's ~120.
+const double _chartAspect = 2.4;
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days
-const double _leftGutter = 34; // reservedSize of the Y-label gutter
 
 class WeightChartCanvas extends StatelessWidget {
   const WeightChartCanvas({
@@ -83,7 +85,12 @@ class WeightChartCanvas extends StatelessWidget {
     final axis =
         niceYAxis([...weights, if (showForecast) projectedEndWeight]);
     final yStep = axis.step;
-    final maxX = isSinglePoint ? 1.0 : forecastDay;
+    // One point: centre it. The lone spot sits at x = 0, so a 0…1 domain
+    // pinned it (and its tick label) against the plot's left edge with the
+    // label's own width hanging outside; a symmetric −0.5…0.5 puts both in the
+    // middle. The "today" VerticalLine at lastIndex (= 0) stays inside it.
+    final minX = isSinglePoint ? -0.5 : 0.0;
+    final maxX = isSinglePoint ? 0.5 : forecastDay;
 
     final actualSpots = <FlSpot>[
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
@@ -93,97 +100,58 @@ class WeightChartCanvas extends StatelessWidget {
     // and drops ticks until they fit, so the axis adapts instead of needing
     // its own size.
     final axisLabel = dashMeta(color: kInkMuted);
-    final gridLine = FlLine(
-      color: KalloColors.border.withValues(alpha: 0.5),
+    // Dashed, at full hairline weight: the plot carries no frame any more, so
+    // the gridlines are the only structure and a 50%-alpha solid rule read as
+    // a smudge rather than a scale.
+    const gridLine = FlLine(
+      color: kHairline,
       strokeWidth: 1,
+      dashArray: [3, 4],
     );
+
+    final maxLabel = weightBoundLabel(axis.max, yStep);
+    final minLabel = weightBoundLabel(axis.min, yStep);
 
     return AspectRatio(
       aspectRatio: _chartAspect,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final scaler = MediaQuery.textScalerOf(context);
+          // Measured, not assumed — see [weightDateAxisHeight].
+          final dateAxisHeight = weightDateAxisHeight(axisLabel, scaler);
+          final gutter = weightYAxisGutter(maxLabel, minLabel, axisLabel, scaler);
+          final plotWidth = math.max(constraints.maxWidth - gutter, 1.0);
           final xLabels = weightXTickLabels(
             pointCount: weights.length,
             dates: weightDates,
             locale: context.locale.toString(),
-            plotWidth: math.max(constraints.maxWidth - _leftGutter, 1),
+            plotWidth: plotWidth,
             style: axisLabel,
-            textScaler: MediaQuery.textScalerOf(context),
+            textScaler: scaler,
           );
-          return LineChart(
+          final chart = LineChart(
             LineChartData(
-              minX: 0,
+              minX: minX,
               maxX: maxX,
               minY: axis.min,
               maxY: axis.max,
               clipData: const FlClipData.all(),
               backgroundColor: Colors.transparent,
-              // Uniform gridline at every round-number Y step (spans the plot,
-              // which fills from the label gutter to the right edge).
+              // Uniform gridline at every round-number Y step, spanning the
+              // plot — which now starts just inside the axis gutter.
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
                 horizontalInterval: yStep,
                 getDrawingHorizontalLine: (_) => gridLine,
               ),
-              // Left + bottom axis lines only — the card already carries a
-              // shadow, and a full box around the plot reads heavy.
-              borderData: FlBorderData(
-                show: true,
-                border: Border(
-                  left: BorderSide(
-                    color: KalloColors.border.withValues(alpha: 0.5),
-                  ),
-                  bottom: BorderSide(
-                    color: KalloColors.border.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              titlesData: FlTitlesData(
-                show: true,
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                // Round-number weight values in a left gutter — outside the plot,
-                // so they never sit on top of the line.
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: _leftGutter,
-                    interval: yStep,
-                    getTitlesWidget: (value, meta) => SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        yStep >= 1
-                            ? value.toStringAsFixed(0)
-                            : value.toStringAsFixed(1),
-                        style: axisLabel,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                      ),
-                    ),
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 18,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final i = value.round();
-                      final label = xLabels[i];
-                      if (label == null || (value - i).abs() > 0.01) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(label, style: axisLabel),
-                      );
-                    },
-                  ),
-                ),
+              // No frame: the dashed gridlines carry the scale, and an axis box
+              // around a card-width plot reads as a second card edge.
+              borderData: FlBorderData(show: false),
+              titlesData: weightChartTitles(
+                labels: xLabels,
+                style: axisLabel,
+                dateAxisHeight: dateAxisHeight,
               ),
               // "Today" marker at the most recent logged weight.
               extraLinesData: ExtraLinesData(
@@ -265,6 +233,20 @@ class WeightChartCanvas extends StatelessWidget {
             ),
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeInOut,
+          );
+
+          // The bounds sit in the gutter, level with the plot's top and
+          // bottom; plot, gridlines and date row share one left edge.
+          return Stack(
+            children: [
+              Positioned.fill(left: gutter, child: chart),
+              Positioned(top: 0, left: 0, child: Text(maxLabel, style: axisLabel)),
+              Positioned(
+                bottom: dateAxisHeight,
+                left: 0,
+                child: Text(minLabel, style: axisLabel),
+              ),
+            ],
           );
         },
       ),

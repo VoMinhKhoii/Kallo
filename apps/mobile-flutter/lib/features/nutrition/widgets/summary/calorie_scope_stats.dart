@@ -158,14 +158,18 @@ class _CalorieDelta extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          over ? LucideIcons.arrowUp300 : LucideIcons.arrowDown300,
+          over ? LucideIcons.arrowUp400 : LucideIcons.arrowDown400,
           size: 15,
           color: kInkMuted,
         ),
         const SizedBox(width: 2),
         Text(
           formatLocalizedNumber(diff.abs(), locale),
-          style: dashMeta(color: kInkMuted, tabular: true),
+          // Tabular: the delta is a figure qualifying the hero, not a caption.
+          style: dashMeta(
+            color: kInkMuted,
+            tabular: true,
+          ),
         ),
       ],
       ),

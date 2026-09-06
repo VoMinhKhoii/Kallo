@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../shared/widgets/form/kallo_switch.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/sharing_providers.dart';
-import '../list/settings_row.dart';
+import '../../../../shared/widgets/list/list_row.dart';
 
 class AutoShareToCircleToggle extends ConsumerStatefulWidget {
   const AutoShareToCircleToggle({super.key, required this.value});
@@ -63,7 +63,7 @@ class _AutoShareToCircleToggleState
     // No subline: the label says what the toggle does, and the hint it used to
     // carry was prose in a single-line ellipsised slot — it read as a truncated
     // fragment rather than an explanation.
-    return SettingsRow(
+    return ListRow(
       icon: LucideIcons.users300,
       label: tr('settings.sharing.autoShareLabel'),
       // The static row provides no toggle semantics of its own — name the

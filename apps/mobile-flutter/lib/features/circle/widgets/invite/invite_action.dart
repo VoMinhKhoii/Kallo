@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 class InviteAction extends StatelessWidget {
   const InviteAction({
@@ -59,12 +58,9 @@ class InviteAction extends StatelessWidget {
               else
                 Icon(icon, size: 13, color: fg),
               const SizedBox(width: KalloSpacing.sp1_5),
-              KalloText(
+              Text(
                 label,
-                variant: KalloTextVariant.chipText,
-                style: KalloTextStyles.sansMedium(
-                  fontSize: KalloFontSize.xs,
-                ).copyWith(color: fg),
+                style: dashMeta(color: fg),
               ),
             ],
           ),

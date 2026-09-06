@@ -1,5 +1,6 @@
 import {
   Activity,
+  Heart,
   LayoutDashboard,
   type LucideIcon,
   NotebookPen,
@@ -7,8 +8,18 @@ import {
   Users2,
 } from 'lucide-react';
 
+/** The closed set of nav destinations. Naming them as a union lets the badge
+ *  hook be keyed by real ids instead of any string. */
+export type NavItemId =
+  | 'dashboard'
+  | 'nutrition'
+  | 'logging'
+  | 'groups'
+  | 'activity'
+  | 'admin';
+
 export interface NavItemConfig {
-  id: string;
+  id: NavItemId;
   href: string;
   labelKey: string;
   icon: LucideIcon;
@@ -39,6 +50,13 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     href: '/circle',
     labelKey: 'groups',
     icon: Users2,
+  },
+  {
+    // Heart, not Lucide's `Activity` — that glyph is the nutrition rail item.
+    id: 'activity',
+    href: '/activity',
+    labelKey: 'activity',
+    icon: Heart,
   },
   {
     id: 'admin',

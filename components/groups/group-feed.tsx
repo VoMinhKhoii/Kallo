@@ -1,6 +1,5 @@
 'use client';
 
-import { MessagesSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { GroupInfo } from '@/components/groups/info/group-info';
@@ -43,7 +42,7 @@ export function GroupFeed({ groupId }: { groupId: string }) {
       <GroupInfo group={group} />
       <ThreadFeed
         entries={items}
-        emptyIcon={MessagesSquare}
+        emptyPose="emptyAlt"
         emptyMessage={t('groupNoActivity', { name: groupName })}
         isPending={isPending}
         isError={isError}

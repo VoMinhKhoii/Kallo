@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { formatTime } from '@/lib/core/date/format-time';
 import type { MealEntry } from '@/lib/core/types/dashboard';
 
@@ -16,21 +17,21 @@ export function MealList({ meals }: MealListProps) {
 
   if (meals.length === 0) {
     return (
-      <div className="flex h-full min-h-[96px] flex-col items-center justify-center gap-1 text-center">
-        <span className="font-medium text-kallo-text text-sm">
-          {t('noMealsToday')}
-        </span>
-        <span className="text-kallo-text-muted text-xs">
-          {t('mealReceiptsHint')}
-        </span>
-      </div>
+      <SurfaceState
+        area="dashboard"
+        className="h-full min-h-[96px]"
+        compact
+        kind="empty"
+        subtitle={t('mealReceiptsHint')}
+        title={t('noMealsToday')}
+      />
     );
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
+        <span className="font-medium text-[11px] text-kallo-text-muted uppercase tracking-[0.3px]">
           {t('recentMeals')}
         </span>
         <span className="text-kallo-text-muted text-xs tabular-nums">
@@ -46,7 +47,10 @@ export function MealList({ meals }: MealListProps) {
           the replies — social affordances with nothing to say on your own
           dashboard. The meal name takes the bold-ink identity slot the
           author's name held there. */}
-      <div className="flex min-h-0 flex-col divide-y divide-kallo-border/50 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        className="flex min-h-0 flex-1 flex-col divide-y divide-kallo-border/50 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-testid="meal-list-scroll"
+      >
         {meals.map((meal) => (
           <MealRow key={meal.id} meal={meal} />
         ))}
@@ -68,7 +72,7 @@ function MealRow({ meal }: { meal: MealEntry }) {
   return (
     <div className="flex flex-col gap-1 py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="line-clamp-2 min-w-0 font-medium text-kallo-text text-sm leading-snug">
+        <span className="line-clamp-2 min-w-0 font-medium text-[15px] text-kallo-text leading-[1.45]">
           {meal.label}
         </span>
         <time
@@ -81,7 +85,7 @@ function MealRow({ meal }: { meal: MealEntry }) {
 
       {/* The figure carries the mass, not the word. */}
       <span className="text-kallo-text-muted text-xs">
-        <span className="font-medium font-sans-display text-kallo-text text-sm tabular-nums">
+        <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
           {meal.calories.toLocaleString(locale)}
         </span>{' '}
         kcal

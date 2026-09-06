@@ -2,9 +2,11 @@ name: Cloud Run Prod
 
 # Production deploy for kallo-prod (the kallo.fit service). Applies migrations
 # behind a GCS lease so concurrent prod deploys serialize, against prod-only
-# secrets. Triggered post-merge on a successful main CI run. This is the only
-# Cloud Run deploy pipeline — a merge to main both applies schema and ships the
-# app in one pass.
+# secrets. MANUAL: dispatched from the Actions tab (or `gh workflow run
+# cloud-run-prod.yml`) — merging to main no longer auto-deploys. A deploy both
+# applies pending schema and ships the app in one pass; the deployed commit
+# must have a green CI run (CI builds and pushes the image tag this workflow
+# pulls).
 #
 # Transitional note: until the non-prod DB is split off (see
 # docs/SHARED_STAGING_CICD.md), kallo-prod-database-url and
@@ -12,9 +14,14 @@ name: Cloud Run Prod
 # effectively idempotent (each applies only what is pending), so re-running this
 # workflow is safe.
 on:
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: >-
+          Commit SHA on main to deploy (must have a green CI run so its image
+          exists). Leave empty to deploy the tip of the dispatched ref.
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -22,11 +29,9 @@ permissions:
 
 jobs:
   deploy-prod:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_repository.full_name == github.repository &&
-      github.event.workflow_run.head_branch == 'main'
+    # Manual-only, and only from main — dispatching the workflow on a feature
+    # ref is refused so prod cannot ship unreviewed code.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Gates the one pipeline that migrates + ships prod. Configure required
     # reviewers on the `production` environment in repo Settings to add a human
@@ -43,7 +48,11 @@ jobs:
       # IMAGE_TAG stays on vars.GCP_REGION: the image is built + pushed to the
       # Bangkok Artifact Registry by CI. Cloud Run in Singapore pulls it
       # cross-region (a minor cold-start cost only).
-      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event.workflow_run.head_sha }}
+      # The commit being deployed: the dispatcher's explicit sha input, or the
+      # tip of the dispatched ref (main). Referenced everywhere the old
+      # workflow_run trigger supplied head_sha.
+      DEPLOY_SHA: ${{ inputs.sha != '' && inputs.sha || github.sha }}
+      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ inputs.sha != '' && inputs.sha || github.sha }}
       # staging-lease.sh is env-parameterized (LEASE_BUCKET/LEASE_OBJECT); its
       # "staging" naming is legacy-generic. Prod uses its own bucket so prod and
       # staging deploys can never block each other.
@@ -61,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ env.DEPLOY_SHA }}
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -87,9 +96,9 @@ jobs:
       - name: Acquire prod lease
         env:
           STAGING_REF: main
-          STAGING_REASON: Auto-deploy prod from main (commit ${{ github.event.workflow_run.head_sha }})
+          STAGING_REASON: Manual prod deploy (commit ${{ env.DEPLOY_SHA }})
           STAGING_FORCE_TAKEOVER: 'false'
-          STAGING_TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+          STAGING_TARGET_SHA: ${{ env.DEPLOY_SHA }}
         run: ./scripts/cloud-run/staging-lease.sh acquire
       - name: Pre-deploy validation
         run: |
@@ -206,6 +215,18 @@ jobs:
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      # The origin lock is the app's only trust boundary, and middleware.ts now
+      # fails CLOSED when it is missing (503 on every request of a Cloud Run
+      # revision with no ORIGIN_SHARED_SECRET). That in-process check is
+      # per-isolate and only fires once traffic arrives; THIS is the
+      # once-per-deployment guard. `secrets describe` above proves the secret
+      # RESOURCE exists — a secret with zero enabled versions passes it and
+      # then fails the deploy at mount time, so assert a readable version.
+      # Output is discarded: the value must never reach the log.
+      - name: Assert the origin-lock secret has a readable version
+        run: |
+          gcloud secrets versions access latest \
+            --secret=kallo-prod-origin-shared-secret > /dev/null
       - id: svc
         name: Check if service already exists
         # --no-traffic + --tag are only valid once a first revision exists. On the
@@ -226,7 +247,7 @@ jobs:
           region: ${{ env.PROD_REGION }}
           skip_default_labels: true
           labels: |-
-            commit-sha=${{ github.event.workflow_run.head_sha }}
+            commit-sha=${{ env.DEPLOY_SHA }}
             deployment-target=prod
             github-run-id=${{ github.run_id }}
           # ingress=all because Cloudflare reaches the run.app origin over the
@@ -331,11 +352,11 @@ jobs:
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
-          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
+          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ env.DEPLOY_SHA }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: prod-deployment-record-${{ github.event.workflow_run.head_sha }}
+          name: prod-deployment-record-${{ env.DEPLOY_SHA }}
           path: deployment-record.json
       # No rollback step: with --no-traffic the candidate never received live
       # traffic, so a failed smoke leaves the current revision serving unchanged.

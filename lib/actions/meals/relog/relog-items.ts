@@ -16,6 +16,7 @@ import {
   relogItemsSchema,
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import {
   buildRelogRawInput,
   weakestConfidence,
@@ -59,7 +60,13 @@ export async function relogMealItemsAction(
   input: RelogItemsInput
 ): Promise<ConfirmMealResponse> {
   const parsed = relogItemsSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium gate BEFORE the rate guard and the transaction: a locked user must
+  // not spend relog write budget (or a pool connection) on a doomed call.
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'relog'
+  );
 
   // Throttled HERE, not at the route: the web composer calls this action
   // directly, so a route-level guard left that caller unlimited on a path that

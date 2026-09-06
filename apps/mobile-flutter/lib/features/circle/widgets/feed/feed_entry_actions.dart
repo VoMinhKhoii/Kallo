@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../data/feed_mutations.dart';
+import 'feed_action_button.dart';
 
 class FeedEntryActions extends ConsumerStatefulWidget {
   const FeedEntryActions({
@@ -55,8 +55,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     try {
       await logSharedMeal(ref, widget.entry.meal.shareId);
       if (mounted) showTopToast(context, tr('groups.feed.logSuccess'));
-    } catch (_) {
-      if (mounted) {
+    } catch (error) {
+      // Pulling a copy off a friend's meal is the initiator side of copy/split
+      // and is gated: send a 402 to the paywall rather than reporting it as a
+      // failed log.
+      if (mounted && !handledFeatureLock(context, error)) {
         showTopToast(
           context,
           tr('groups.feed.logError'),
@@ -71,92 +74,36 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
   @override
   Widget build(BuildContext context) {
     final reactions = widget.entry.reactions;
+    // No leading inset on the first action: its 44pt box starts at the content
+    // column and the glyph sits flush with the meal text above, which is what
+    // the canvas' -12 left margin buys. The box still extends its full width
+    // to the right, so nothing is taken off the target to get there.
     return Row(
       children: [
         Semantics(
           label: tr('groups.feed.heart'),
           button: true,
           toggled: reactions.mine,
-          child: _Action(
+          child: FeedActionButton(
             onTap: _toggling ? null : _toggle,
             icon: LucideIcons.heart300,
             fill: reactions.mine ? 1 : 0,
             label: '${reactions.count}',
+            alignment: Alignment.centerLeft,
           ),
         ),
-        const SizedBox(width: _gap),
-        _Action(
+        FeedActionButton(
           onTap: widget.onReply,
           icon: LucideIcons.messageCircle300,
-          label: tr('groups.feed.reply'),
+          semanticLabel: tr('groups.feed.reply'),
         ),
-        if (!widget.entry.isSelf) ...[
-          const SizedBox(width: _gap),
-          _Action(
+        if (!widget.entry.isSelf)
+          FeedActionButton(
             onTap: _logging ? null : _log,
             icon: LucideIcons.copy300,
             label: tr('groups.feed.logCopy'),
           ),
-        ],
       ],
     );
   }
-}
-
-/// Horizontal gap between actions. The rows' 44pt hit boxes do not overlap, so
-/// this is pure visual spacing.
-const double _gap = 18;
-
-/// Glyph size, and the minimum square the tap target must fill. The glyph sits
-/// at the in-text-run size (a chip/meta-row exception to the app-wide 24), but
-/// the touch box still has to clear 44.
-const double _glyph = 16;
-const double _hit = 44;
-
-/// Actions sit one step darker than the calm secondary.
-///
-/// `calm_tokens.dart` holds the app to two text colours, and this is a
-/// deliberate exception to it: at [kInkMuted] a 1.5-stroke glyph on the bright
-/// canvas read as an affordance that had been switched off — and this row
-/// already dims to 50% to mean exactly that, so the enabled and disabled states
-/// were separated by very little. Data stays on the two-colour rule; controls
-/// need to look pressable.
-const Color _actionInk = KalloColors.textSoft;
-
-class _Action extends StatelessWidget {
-  const _Action({
-    this.onTap,
-    required this.icon,
-    required this.label,
-    this.fill,
-  });
-
-  final VoidCallback? onTap;
-  final IconData icon;
-  final String label;
-  final double? fill;
-
-  @override
-  Widget build(BuildContext context) => Opacity(
-    opacity: onTap == null ? 0.5 : 1,
-    child: InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: _hit),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: _glyph,
-              color: fill == 1 ? kInk : _actionInk,
-              fill: fill,
-            ),
-            const SizedBox(width: 6),
-            Text(label, style: dashMeta(color: _actionInk)),
-          ],
-        ),
-      ),
-    ),
-  );
 }

@@ -10,6 +10,7 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { isRateLimitedAuthError } from '@/lib/infra/auth/rate-limited';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { createClient } from '@/lib/infra/supabase/client';
 
@@ -52,7 +53,11 @@ export function SignUpForm() {
     });
 
     if (error) {
-      setFormError(t('error'));
+      // A throttled signup is not a failed signup: "Could not create account"
+      // sends the user straight back to the button that is being throttled.
+      setFormError(
+        isRateLimitedAuthError(error) ? t('errors.rateLimited') : t('error')
+      );
       setLoading(false);
       return;
     }

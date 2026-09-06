@@ -6,6 +6,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
@@ -57,6 +58,10 @@ class BarcodeFlowState {
 String _errorKeyFor(Object error) {
   if (error is ApiError) {
     switch (error.code) {
+      // Mirrored from the label controller — kept in sync with it. Lowercase:
+      // the gate's code comes from the shared app-error catalog.
+      case kFeatureLockedCode:
+        return 'logging.barcode.error.featureLocked';
       case 'BARCODE_NOT_FOUND':
         return 'logging.barcode.error.notFound';
       case 'BARCODE_NOT_CACHED':
@@ -78,7 +83,16 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   /// Look up a scanned or typed barcode. Non-digits are stripped client-side
   /// (EAN/UPC decoders and keyboards both occasionally sneak separators in);
   /// an empty result surfaces as invalid input without a round trip.
-  Future<void> search(String rawBarcode) async {
+  ///
+  /// A code whose failure is still on screen is dropped: it is
+  /// [BarcodeFlowState.lastBarcode] with an [BarcodeFlowState.errorKey] still
+  /// set, so a re-scan of it is the SAME miss, not a new one.
+  /// `DetectionSpeed.noDuplicates` is a no-op on iOS and the sheet re-arms its
+  /// own decode guard every time the phase returns to `scanning` — which the
+  /// catch block below does on every failure — so pointing at one unknown
+  /// package would otherwise search it forever. [force] is the deliberate
+  /// retry: the user typed (or re-typed) this code and pressed look up.
+  Future<void> search(String rawBarcode, {bool force = false}) async {
     if (state.phase == BarcodeFlowPhase.searching ||
         state.phase == BarcodeFlowPhase.saving) {
       return;
@@ -89,6 +103,12 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       state = state.copyWith(
         errorKey: () => 'logging.barcode.error.invalidInput',
       );
+      return;
+    }
+
+    // The camera is still pointed at the package we just failed on. Re-running
+    // the same lookup would only redraw the same miss.
+    if (!force && code == state.lastBarcode && state.errorKey != null) {
       return;
     }
 
@@ -110,8 +130,10 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
         product: () => product,
       );
     } catch (error) {
-      // Back to the scanner phase, but with errorKey set the sheet shows the
-      // error card instead of the live camera — resumable via scanAgain().
+      // Back to the scanner phase with the miss reported inside the frame.
+      // The error key left standing on this code is what blocks the live
+      // camera from re-searching it on the very next frame — resumable via
+      // scanAgain() or a forced manual submit.
       state = state.copyWith(
         phase: BarcodeFlowPhase.scanning,
         errorKey: () => _errorKeyFor(error),

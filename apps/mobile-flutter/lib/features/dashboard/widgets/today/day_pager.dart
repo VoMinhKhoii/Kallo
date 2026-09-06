@@ -9,11 +9,17 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../../../theme/kallo_motion.dart';
+import '../../logic/day_window.dart';
 import 'dock_targets.dart';
 import 'today_section.dart';
 
 /// The paged day-viewer: a PageView of [TodaySection]s, one per browsable day,
 /// synced to the week strip. Swiping or tapping a strip day moves the page.
+///
+/// The window is unbounded into the past and clamped at today, so pages are
+/// mapped to dates by [dateForDayPage] off [todayDate] rather than indexed
+/// into a list — see `logic/day_window.dart`.
 ///
 /// A PageView needs a bounded height, but each day's card differs in height
 /// (different meal counts). Each page reports its measured height; the pager
@@ -23,8 +29,7 @@ class DayPager extends StatefulWidget {
   const DayPager({
     super.key,
     required this.controller,
-    required this.days,
-    required this.todayPage,
+    required this.todayDate,
     required this.userId,
     required this.targets,
     required this.onPageChanged,
@@ -32,8 +37,10 @@ class DayPager extends StatefulWidget {
   });
 
   final PageController controller;
-  final List<String> days;
-  final int todayPage;
+
+  /// The YYYY-MM-DD date at [kDayPageBase], the last page. Every lower page is
+  /// one day earlier.
+  final String todayDate;
   final String userId;
   final DockTargets targets;
   final ValueChanged<int> onPageChanged;
@@ -44,8 +51,10 @@ class DayPager extends StatefulWidget {
 }
 
 class DayPagerState extends State<DayPager> {
-  late final List<double?> _heights = List.filled(widget.days.length, null);
-  late int _active = widget.todayPage;
+  // Sparse by page index: the pager has thousands of pages and at most a
+  // handful are ever laid out, so a filled list would be all nulls.
+  final Map<int, double> _heights = {};
+  int _active = kDayPageBase;
 
   void _report(int index, double height) {
     if (_heights[index] == height) return;
@@ -60,7 +69,7 @@ class DayPagerState extends State<DayPager> {
   Widget build(BuildContext context) {
     // While a page is unmeasured, fall back to the tallest known height (or a
     // sensible minimum) so the first frame isn't zero-height.
-    final known = _heights.whereType<double>();
+    final known = _heights.values;
     final fallback =
         known.isEmpty ? 280.0 : known.reduce((a, b) => a > b ? a : b);
     final height = _heights[_active] ?? fallback;
@@ -72,8 +81,8 @@ class DayPagerState extends State<DayPager> {
     // while its neighbours floated. Nothing on this path needs to clip: the
     // ListView viewport still bounds the scroll.
     return AnimatedSize(
-      duration: const Duration(milliseconds: 220),
-      curve: const Cubic(0.16, 1, 0.3, 1),
+      duration: KalloMotion.quick,
+      curve: KalloEase.decelerate,
       alignment: Alignment.topCenter,
       clipBehavior: Clip.none,
       child: SizedBox(
@@ -81,20 +90,20 @@ class DayPagerState extends State<DayPager> {
         child: PageView.builder(
           clipBehavior: Clip.none,
           controller: widget.controller,
-          itemCount: widget.days.length,
+          itemCount: kDayPageBase + 1,
           onPageChanged: (p) {
             setState(() => _active = p);
             widget.onPageChanged(p);
           },
           itemBuilder: (context, index) {
-            final date = widget.days[index];
+            final date = dateForDayPage(widget.todayDate, index);
             return _MeasuredPage(
               onHeight: (h) => _report(index, h),
               child: TodaySection(
                 args: (userId: widget.userId, date: date),
                 targets: widget.targets,
                 dateLabel: widget.dateLabel(date),
-                isToday: index == widget.todayPage,
+                isToday: index == kDayPageBase,
               ),
             );
           },

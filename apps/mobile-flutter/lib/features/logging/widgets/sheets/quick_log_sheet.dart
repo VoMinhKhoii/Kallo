@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../services/auth/session_provider.dart';
-import '../../../../models/logging/cheat.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -13,22 +12,22 @@ import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat/cheat_intensity_row.dart';
+import '../cheat/cheat_intensity_group.dart';
 import '../composer/composer_actions.dart';
 import '../composer/meal_input.dart';
-import 'manual_log_sheet.dart';
+import 'manual/manual_log_sheet.dart';
+import '../../../../shell/nav/nav_actions.dart';
 
 /// Opens the quick-log sheet — the dashboard FAB's composer.
 ///
-/// A modal sheet rather than a bar hanging off the FAB: it puts the keyboard up
-/// over a stable surface instead of over a control the user can drag, and it
-/// has the room to host the REAL [MealInput] the logging feed composes with.
+/// A modal sheet rather than a bar hanging off the FAB: the keyboard comes up
+/// over a stable surface instead of over a control the user can drag, and
+/// there is room for the REAL [MealInput] the logging feed composes with.
 ///
-/// It resolves to a ONE-SHOT mode when the user picks Manual or Barcode from
-/// the mode selector inside it: the sheet pops ITSELF and hands the launch back
-/// here, so the one-shot opens from the dashboard underneath rather than
-/// stacking on a sheet that is on its way out. Normal / Cheat are persistent
-/// modes — they never resolve the sheet, they only change what Send will do.
+/// It resolves to a ONE-SHOT mode when the user picks Manual or Barcode inside
+/// it: the sheet pops ITSELF and hands the launch back here, so the one-shot
+/// opens from the dashboard rather than stacking on a sheet on its way out.
+/// Normal / Cheat are persistent — they only change what Send does.
 Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
   final oneShot = await showNhamSheet<MealLogMode>(
     context,
@@ -39,8 +38,7 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
 
   final userId = ref.read(currentSessionProvider)?.user.id;
   if (userId == null) return;
-  // A meal logged from the dashboard is a meal eaten now — today, the day the
-  // dashboard is showing, is the only sensible target.
+  // A meal logged from the dashboard is eaten now: today is the only target.
   final date = todayDateString();
 
   switch (oneShot) {
@@ -51,8 +49,7 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
         context,
         userId: userId,
         date: date,
-        // Neither scan got us there → the AI composer is the better tool. From
-        // here that means re-opening the sheet the user came from, caret in field.
+        // Neither scan got us there → re-open the sheet, caret in the field.
         onFallbackToText: () {
           if (context.mounted) showQuickLogSheet(context, ref);
         },
@@ -65,15 +62,11 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
 
 /// Type a meal here, land on the logging feed with it already being analyzed.
 ///
-/// The sheet does not run the analysis itself: it parks the text in
-/// [pendingMealProvider] and navigates to `/logging`, where the feed claims it
-/// and pushes it through the same submit path as anything typed into the
-/// composer. So one analysis pipeline, one set of failure/retry semantics.
+/// It parks the text in [pendingMealProvider] and navigates to `/logging`,
+/// where the feed claims it and submits it — one pipeline, one retry story.
 ///
 /// The mode selector is the feed composer's, unforked: it reads and writes
-/// [mealLogModeProvider], which is what the feed's analyze call reads too — so
-/// picking "Cheat meal" here really does run the cheat estimator over there,
-/// with no mode payload riding along with the parked text.
+/// [mealLogModeProvider], so "Cheat meal" here runs the cheat estimator there.
 class QuickLogSheet extends ConsumerStatefulWidget {
   const QuickLogSheet({super.key});
 
@@ -84,29 +77,60 @@ class QuickLogSheet extends ConsumerStatefulWidget {
 class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
   final MealInputController _controller = MealInputController();
 
+  /// This sheet's own route; [_entry] is its entrance while listened to.
+  ModalRoute<dynamic>? _route;
+  Animation<double>? _entry;
+  bool _entryHandled = false;
+  bool _submitted = false;
+
   @override
-  void initState() {
-    super.initState();
-    // The sheet exists to be typed into — open with the caret already in it.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.focus();
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    if (_entryHandled) return;
+    _entryHandled = true;
+    // Focusing on the FIRST post-frame climbs the keyboard against a moving
+    // sheet (the route is still sliding up): wait for the entrance instead.
+    final entry = _route?.animation;
+    if (entry == null || entry.isCompleted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.focus();
+      });
+      return;
+    }
+    _entry = entry..addStatusListener(_onEntryStatus);
+  }
+
+  void _onEntryStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _entry?.removeStatusListener(_onEntryStatus);
+    if (mounted) _controller.focus();
+  }
+
+  @override
+  void dispose() {
+    _entry?.removeStatusListener(_onEntryStatus);
+    super.dispose();
   }
 
   void _submit(String text) {
     final meal = text.trim();
     if (meal.isEmpty) return;
-    // Same guard the manual/barcode branch already applies. Parking text for a
-    // session that is already gone leaves it for whoever signs in next; the
-    // router would bounce the navigation below anyway.
+    // Same guard the manual/barcode branch applies: parking text for a session
+    // that is already gone leaves it for whoever signs in next.
     if (ref.read(currentSessionProvider) == null) return;
+    if (_submitted) return; // a double-tap on Send must not push /logging twice
+    _submitted = true;
     HapticFeedback.mediumImpact(); // commit cue
     ref.read(pendingMealProvider.notifier).state = meal;
-    // Resolve the router BEFORE popping: after the pop this sheet's context is
-    // defunct and `context.go` would look up a dead element.
-    final router = GoRouter.of(context);
-    Navigator.of(context).pop();
-    router.go('/logging');
+    // Push FIRST, retire the sheet after: popping first raced three animations
+    // on one frame (keyboard, slide-down, push). `/logging` slides in OVER the
+    // sheet, which is removed silently under it.
+    final route = _route;
+    openLogging(GoRouter.of(context));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route != null && route.isActive) route.navigator?.removeRoute(route);
+    });
   }
 
   /// The same chooser the feed composer opens — one menu, one dispatch.
@@ -121,72 +145,55 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     onBarcode: () => _handOffOneShot(MealLogMode.barcode),
   );
 
-  /// A one-shot sheet must not open on top of this one: pop with the picked
-  /// mode and let [showQuickLogSheet] launch it from the dashboard.
+  /// [showQuickLogSheet] opens the one-shot after this sheet pops with it.
   void _handOffOneShot(MealLogMode mode) {
     if (mounted) Navigator.of(context).pop(mode);
-  }
-
-  void _setCheatIntensity(CheatIntensity intensity) {
-    ref.read(cheatIntensityProvider.notifier).state = intensity;
   }
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final keyboardInset = media.viewInsets.bottom;
-    final bottomInset = media.padding.bottom;
     final mode = ref.watch(mealLogModeProvider);
     final isCheat = mode == MealLogMode.cheat;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: KalloSheetSurface(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            KalloSheetHeader(
-              title: 'logging.quickLog.title'.tr(),
-            ),
-            Padding(
-              // The keyboard's inset already clears the home indicator when it
-              // is up; only pay the safe-area bottom when it is down.
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                KalloSpacing.sp2,
-                KalloSpacing.sp3,
-                (keyboardInset > 0 ? 0 : bottomInset) + KalloSpacing.sp4,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cheat magnitude sits above the field as it does on the
-                  // feed: it silently scales the estimate, so it must be
-                  // visible and changeable wherever cheat was chosen.
-                  if (isCheat) ...[
-                    CheatIntensityRow(
-                      value: ref.watch(cheatIntensityProvider),
-                      onChange: _setCheatIntensity,
-                    ),
-                    const SizedBox(height: LoggingSpacing.block),
-                  ],
-                  // No "log it again" chips here: they re-stage server-side and
-                  // their only feedback is the seeded slider card on the FEED,
-                  // so from the dashboard a tap would look like nothing.
-                  MealInput(
-                    controller: _controller,
-                    onSubmit: _submit,
-                    modeLabel: mealModeLabel(mode),
-                    modeIcon: mealModeIcon(mode),
-                    hintText: isCheat ? 'logging.cheatPlaceholder'.tr() : null,
-                    onModePressed: _openModeSheet,
-                  ),
-                ],
+    // `KalloSheetSurface` lifts itself clear of the keyboard; the insets are
+    // read here only to size the bottom gap. Stretch: the composer fills it.
+    return KalloSheetSurface(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          KalloSheetHeader(title: 'logging.quickLog.title'.tr()),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp4,
+              KalloSpacing.sp2,
+              KalloSpacing.sp4,
+              // ONE continuous ramp, never a branch — see the helper's doc.
+              LoggingSpacing.quickLogGap(
+                bottomInset: media.viewPadding.bottom,
+                keyboardInset: media.viewInsets.bottom,
               ),
             ),
-          ],
-        ),
+            // No "log it again" chips here: they re-stage server-side and their
+            // only feedback is a card on the FEED, so a tap would look inert.
+            child: MealInput(
+              controller: _controller,
+              onSubmit: _submit,
+              modeLabel: mealModeLabel(mode),
+              modeDetail: isCheat
+                  ? cheatIntensityLabel(ref.watch(cheatIntensityProvider))
+                  : null,
+              modeIcon: mealModeIcon(mode),
+              hintText: isCheat ? 'logging.cheatPlaceholder'.tr() : null,
+              onModePressed: _openModeSheet,
+              // The same one-shot hand-off the mode sheet's Barcode row takes.
+              onBarcodePressed: isBarcodeLoggingSupported
+                  ? () => _handOffOneShot(MealLogMode.barcode)
+                  : null,
+            ),
+          ),
+        ],
       ),
     );
   }

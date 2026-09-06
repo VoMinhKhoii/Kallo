@@ -2,9 +2,12 @@
  * The empty logging day's one editorial line: a question tuned to the time of
  * day, and to the person when we know who they are.
  *
- * Kept in step with the Flutter app's `empty_state.dart`, which draws from the
- * same buckets and the same phrasings.
+ * The buckets themselves live in `@/lib/core/date/time-of-day`; this file only
+ * counts the phrasings each one carries. Kept in step with the Flutter app's
+ * `empty_state.dart`, which draws from the same buckets and the same phrasings.
  */
+
+import { bucketForHour } from '@/lib/core/date/time-of-day';
 
 /**
  * The prompt buckets, in the order the day runs through them, with how many
@@ -23,20 +26,6 @@ export const EMPTY_PROMPT_BUCKETS = {
   evening: 3,
   lateNight: 3,
 } as const;
-
-export type EmptyPromptBucket = keyof typeof EMPTY_PROMPT_BUCKETS;
-
-/**
- * Which bucket `hour` (0–23) falls in. Late night is the wrap-around case:
- * everything from 22:00 until breakfast starts.
- */
-export function bucketForHour(hour: number): EmptyPromptBucket {
-  if (hour >= 5 && hour < 11) return 'morning';
-  if (hour >= 11 && hour < 15) return 'lunch';
-  if (hour >= 15 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 22) return 'evening';
-  return 'lateNight';
-}
 
 /**
  * A message key for the current hour, e.g. `lunch2`. Append `Named` for the

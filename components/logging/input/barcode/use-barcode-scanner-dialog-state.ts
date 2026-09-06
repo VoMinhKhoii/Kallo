@@ -126,9 +126,15 @@ export function useBarcodeScannerDialogState({
     setIsStaging(false);
   }, [onOpenChange, stopScanner]);
 
-  const handleClose = useCallback(() => {
-    if (isStagingRef.current) return;
+  /**
+   * Close the sheet unless a save is in flight. Returns whether it actually
+   * closed, so callers that must replace this sheet with something else (the
+   * paywall) can tell a refusal from a close instead of stacking on top of it.
+   */
+  const handleClose = useCallback((): boolean => {
+    if (isStagingRef.current) return false;
     closeDialog();
+    return true;
   }, [closeDialog]);
 
   const handleScanTypeChange = useCallback((next: 'barcode' | 'ocr') => {
