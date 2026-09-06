@@ -10,11 +10,11 @@ import 'option_strip.dart' show OptionStripItem;
 /// The one mode-switch primitive — every segmented control draws through it,
 /// via [OptionStrip.segmented] or directly.
 ///
-/// **A rounded RECTANGLE, not a pill**: the beige [KalloColors.hover] track at
-/// radius 12 under a white radius-8 thumb — the barcode amount switch's look,
-/// promoted. The capsule the scan toggle used read as a second, unrelated
-/// control on the same sheet. 36pt visual inside a 44pt tap target, two
-/// layers, because a 44pt track makes a three-way picker button-tall.
+/// **A pill on a pill** (onboarding canvas, 2026-09-05): the [KalloColors.track]
+/// track, fully rounded, under a white fully-rounded thumb — the stadium the
+/// 52pt fields and full-width buttons already use, so the three primitives
+/// share one shape. 36pt visual inside a 44pt tap target, two layers,
+/// because a 44pt track makes a three-way picker button-tall.
 ///
 /// **The thumb pops, then travels.** One controller runs the gesture: scale
 /// 1.0 → 1.04 over [KalloMotion.press] on [KalloEase.press], then the slide
@@ -137,8 +137,8 @@ class _SegmentedStripState extends State<SegmentedStrip>
   Widget _track() => Container(
     padding: const EdgeInsets.all(SegmentedStrip.inset),
     decoration: BoxDecoration(
-      color: KalloColors.hover,
-      borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+      color: KalloColors.track,
+      borderRadius: BorderRadius.circular(KalloRadii.pill),
     ),
     child: Stack(
       children: [
@@ -169,7 +169,7 @@ class _SegmentedStripState extends State<SegmentedStrip>
         child: const DecoratedBox(
           decoration: BoxDecoration(
             color: kCardSurface,
-            borderRadius: BorderRadius.all(Radius.circular(KalloRadii.md)),
+            borderRadius: BorderRadius.all(Radius.circular(KalloRadii.pill)),
             boxShadow: [KalloShadows.sm],
           ),
         ),

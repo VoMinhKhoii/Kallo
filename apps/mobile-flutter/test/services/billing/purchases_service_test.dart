@@ -37,6 +37,27 @@ class FakePurchasesGateway implements PurchasesGateway {
   Future<PurchaseResult> purchase(PurchaseParams params) =>
       throw UnimplementedError();
 
+  /// Product ids the store was asked about, and what it answers. Unset ids
+  /// come back `unknown`, the way Android and an undecidable product do.
+  final List<String> eligibilityAsked = [];
+  Map<String, IntroEligibilityStatus> eligibility = const {};
+
+  @override
+  Future<Map<String, IntroEligibility>> checkTrialOrIntroductoryPriceEligibility(
+    List<String> productIdentifiers,
+  ) async {
+    eligibilityAsked.addAll(productIdentifiers);
+    return {
+      for (final id in productIdentifiers)
+        id: IntroEligibility.fromJson({
+          'status': (eligibility[id] ??
+                  IntroEligibilityStatus.introEligibilityStatusUnknown)
+              .index,
+          'description': '',
+        }),
+    };
+  }
+
   @override
   Future<CustomerInfo> restorePurchases() {
     restoreCalls += 1;
@@ -242,5 +263,59 @@ void main() {
       expect(attempt.outcome, RestoreOutcome.accountConflict);
       expect(attempt.needsReconcile, isFalse);
     }
+  });
+
+  group('trial eligibility', () {
+    test('only ELIGIBLE counts — unknown means show the normal price', () async {
+      final gateway = FakePurchasesGateway()
+        ..eligibility = {
+          'kallo_premium_annual':
+              IntroEligibilityStatus.introEligibilityStatusEligible,
+          'kallo_premium_monthly':
+              IntroEligibilityStatus.introEligibilityStatusIneligible,
+          // Android reports this for everything, and RevenueCat's own guidance
+          // is to fall back to the non-introductory price on it.
+          'kallo_premium_lifetime':
+              IntroEligibilityStatus.introEligibilityStatusUnknown,
+        };
+      final service = PurchasesService(
+        gateway: gateway,
+        apiKey: 'test_sandbox',
+      );
+
+      final eligible = await service.trialEligibleProductIds([
+        'kallo_premium_annual',
+        'kallo_premium_monthly',
+        'kallo_premium_lifetime',
+      ]);
+
+      expect(eligible, {'kallo_premium_annual'});
+      expect(gateway.eligibilityAsked, hasLength(3));
+    });
+
+    test('an empty ask never reaches the store', () async {
+      final gateway = FakePurchasesGateway();
+      final service = PurchasesService(
+        gateway: gateway,
+        apiKey: 'test_sandbox',
+      );
+
+      expect(await service.trialEligibleProductIds(const []), isEmpty);
+      expect(gateway.eligibilityAsked, isEmpty);
+    });
+
+    test('no configured key means no promise, and no throw', () async {
+      // The paywall renders either way; an unavailable store simply cannot
+      // vouch for a trial.
+      final service = PurchasesService(
+        gateway: FakePurchasesGateway(),
+        apiKey: '',
+      );
+
+      expect(
+        await service.trialEligibleProductIds(const ['kallo_premium_annual']),
+        isEmpty,
+      );
+    });
   });
 }

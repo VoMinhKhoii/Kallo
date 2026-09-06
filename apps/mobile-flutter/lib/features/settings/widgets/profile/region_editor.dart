@@ -2,13 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../onboarding/widgets/language_toggle.dart';
 import '../../data/profile_providers.dart';
 import '../../screens/regional.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'instant_commit_editor.dart';
+import 'language_toggle.dart';
 import 'profile_form_controller.dart';
 
 /// The "Region & language" focused editor. Wraps the [Regional] country panel

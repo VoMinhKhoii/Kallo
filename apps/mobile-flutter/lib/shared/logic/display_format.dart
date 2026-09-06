@@ -20,6 +20,15 @@ int round0(num? n) => n == null ? 0 : n.round();
 String formatCount(int n, String locale) =>
     NumberFormat.decimalPattern(locale).format(n);
 
+/// Exactly one fraction digit, locale-aware (en "0.5", vi "0,5").
+/// `toStringAsFixed(1)` hardcodes the decimal POINT, which is wrong in every
+/// comma-decimal locale — Vietnamese included.
+String formatOneDecimal(num n, String locale) =>
+    (NumberFormat.decimalPattern(locale)
+          ..minimumFractionDigits = 1
+          ..maximumFractionDigits = 1)
+        .format(n);
+
 /// The locale to format figures for, from whatever scope is mounted.
 ///
 /// `Localizations.maybeLocaleOf`, not easy_localization's `context.locale`:

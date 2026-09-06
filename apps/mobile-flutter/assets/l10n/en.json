@@ -617,22 +617,20 @@
     },
     "origin": {
       "title": "Where are you from?",
-      "subtitle": "Origin helps the AI lean toward the food culture you identify with. Current residence helps it bias toward ingredients that are easier to find around you.",
       "countryOfOrigin": "Country of origin",
-      "countryOfOriginHint": "Where you grew up or identify with culinarily",
       "countryOfResidence": "Country of residence",
-      "countryOfResidenceHint": "Where you currently live — affects available ingredients",
       "selectCountry": "Select a country…",
       "searchCountry": "Search country…",
       "noCountries": "No countries found",
-      "fallbackNote": "Leave one or both empty if you want. The AI will fall back to your photo and meal text only.",
-      "preferredLanguage": "Preferred language",
-      "preferredLanguageHint": "Choose your language for the app interface",
-      "commonCountries": "Common"
+      "stepTitle": "Where do you cook?",
+      "searchHint": "Country or region",
+      "allCountries": "All countries",
+      "livingIn": "Living in {country} · from your phone",
+      "livingInChanged": "Living in {country}",
+      "change": "Change"
     },
     "bodyMetrics": {
       "title": "Your body metrics",
-      "subtitle": "All optional — the more you fill in, the more tailored your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
       "sexPlaceholder": "Select…",
       "male": "Male",
@@ -643,16 +641,15 @@
       "heightUnit": "cm",
       "age": "Age",
       "activityLevel": "Activity level",
-      "sedentary": "Sedentary (Office job, little to no exercise)",
-      "light": "Lightly active (Light exercise 1-3 days/week)",
-      "moderate": "Moderately active (Moderate exercise 3-5 days/week)",
-      "veryActive": "Very active (Heavy exercise 6-7 days/week)",
+      "sedentary": "Sedentary",
+      "light": "Lightly active",
+      "moderate": "Moderately active",
+      "veryActive": "Very active",
       "goal": "Goal",
       "cutting": "Cutting",
       "maintaining": "Maintaining",
       "bulking": "Bulking",
       "aggression": "Aggression",
-      "aggressionHint": "How aggressively to cut/bulk (kg/week)",
       "aggressionLabel": "Pace",
       "aggressionDeficit": "deficit",
       "aggressionSurplus": "surplus",
@@ -665,7 +662,6 @@
       "lowerCarbDescription": "High protein (40/40/20)",
       "higherCarb": "Higher carb",
       "higherCarbDescription": "Active (30/20/50)",
-      "tdee": "Estimated TDEE",
       "basedOnTdee": "Based on TDEE",
       "perDay": "kcal/day",
       "maintenance": "at maintenance",
@@ -673,15 +669,18 @@
       "protein": "Protein",
       "carbs": "Carbs",
       "fat": "Fat",
-      "macroSummary": "Daily targets",
       "kcal": "kcal",
       "grams": "g",
       "unlockTitle": "Fill the basics to unlock targets.",
-      "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
+      "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner.",
+      "sedentaryHint": "Office job, little to no exercise",
+      "lightHint": "Light exercise 1–3 days a week",
+      "moderateHint": "Moderate exercise 3–5 days a week",
+      "veryActiveHint": "Heavy exercise 6–7 days a week",
+      "ageUnit": "yr"
     },
     "cooking": {
       "title": "Your cooking habits",
-      "subtitle": "Help the AI understand how you typically cook so it can give more accurate calorie estimates.",
       "oilUsage": "Oil usage",
       "oilMinimal": "Minimal",
       "oilMinimalHint": "Dry, clean taste. Dish looks matte.",
@@ -689,7 +688,6 @@
       "oilNormalHint": "Light coating. Slight sheen on food.",
       "oilHeavy": "Heavy",
       "oilHeavyHint": "Visibly oily. Sauce pools slightly.",
-      "oilHint": "How much oil/fat you typically use when cooking",
       "ricePortion": "Default rice portion",
       "riceSmall": "Small",
       "riceSmallHint": "~1 small bowl",
@@ -697,12 +695,10 @@
       "riceMediumHint": "~1–1.5 bowls",
       "riceLarge": "Large",
       "riceLargeHint": "~2+ bowls",
-      "riceHint": "Your typical serving of rice per meal",
       "sugar": "Sugar in braised dishes",
       "sugarLow": "Low",
       "sugarMedium": "Medium",
       "sugarHigh": "High",
-      "sugarHint": "How much sugar you use for caramelizing/braising",
       "proteinPortion": "Default protein portion",
       "proteinSmall": "Small",
       "proteinSmallHint": "Smaller than your palm, e.g. ~2-3 eggs",
@@ -710,7 +706,6 @@
       "proteinMediumHint": "About palm-sized",
       "proteinLarge": "Large",
       "proteinLargeHint": "Bigger than your palm, e.g. a chicken thigh or more",
-      "proteinHint": "Typical amount of meat/fish per meal",
       "broth": "Broth consumption",
       "brothLeave": "Leave it",
       "brothLeaveHint": "Eat the solids, skip most broth",
@@ -718,7 +713,52 @@
       "brothSomeHint": "Drink about half the bowl",
       "brothFinish": "Finish it",
       "brothFinishHint": "Drink all or most of the broth",
-      "brothHint": "How much broth you typically drink from soups/stews"
+      "stepLabels": {
+        "oil": "Oil",
+        "rice": "Rice, noodles or bread per meal",
+        "sugar": "Sugar in braises",
+        "protein": "Protein per meal",
+        "broth": "Broth"
+      }
+    },
+    "continueLabel": "Continue",
+    "savePlan": "Save my plan",
+    "fromDevice": "From your phone",
+    "guide": {
+      "step1": "Xin chào! Hello! Which language should I speak?",
+      "step2": "Where do you cook most days? I guessed from your phone; change it if I got it wrong.",
+      "step3": "A few numbers so I can size your day. All optional.",
+      "step4": "What are we aiming for, and how fast?",
+      "step5": "How does your kitchen cook? This sizes the calories.",
+      "step6": "Here is your day. Pick a split and it updates.",
+      "step7": "Sign in so your plan follows you to every device."
+    },
+    "savePlanTitle": "Save your plan",
+    "start": {
+      "title": "Log meals the way you say them",
+      "cta": "Get started",
+      "haveAccount": "I already have an account"
+    },
+    "language": {
+      "title": "Choose your language",
+      "vietnamese": "Tiếng Việt",
+      "english": "English",
+      "meta": "Change anytime in Settings."
+    },
+    "aboutYou": {
+      "title": "About you"
+    },
+    "goal": {
+      "title": "Your goal",
+      "paceLabel": "Pace",
+      "paceReadout": "{pace} kg a week · {kcal} kcal {direction}",
+      "paceDeficit": "deficit",
+      "paceSurplus": "surplus",
+      "paceLow": "Gentle",
+      "paceHigh": "Aggressive"
+    },
+    "target": {
+      "title": "Your daily target"
     }
   },
   "auth": {
@@ -1844,6 +1884,22 @@
     "packageLifetime": "Lifetime",
     "legal": "Payment is charged now to your store account. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends.",
     "terms": "Terms of use",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "proTitle": "Kallo Pro",
+    "proSubtitle": "Everything in Free, plus:",
+    "proFeatureWords": "Log meals in your own words, Vietnamese or English",
+    "proFeatureMicros": "Micros breakdown (7d / 30d / 90d)",
+    "proFeatureTools": "Label scan, relog, cheat meal mode, visual edit",
+    "proFeatureCircle": "Unlimited groups and friends in Circle",
+    "stayFree": "Stay on Free",
+    "planYearly": "Yearly",
+    "planSublineMonthly": "Cancel anytime",
+    "priceAMonth": "{price} a month",
+    "perYearLabel": "per year",
+    "perMonthLabel": "per month",
+    "bestValueSave": "Best value · save {percent}%",
+    "startFreeTrial": "Start free trial",
+    "trialLegalAnnual": "{days} days free, then {price} / year starting {date}. Cancel anytime in Settings.",
+    "trialLegalMonthly": "{days} days free, then {price} / month starting {date}. Cancel anytime in Settings."
   }
 }

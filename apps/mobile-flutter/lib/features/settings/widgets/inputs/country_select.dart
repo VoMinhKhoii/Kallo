@@ -208,14 +208,11 @@ class _CountryDropdownState extends State<_CountryDropdown> {
 
   @override
   Widget build(BuildContext context) {
+    // Through the shared matcher, so "duc" finds Đức here exactly as it does
+    // in onboarding's country sheet — one folding rule, not two.
     final filtered =
-        _query.isEmpty
-            ? kCountries
-            : kCountries.where((c) {
-              final q = _query.toLowerCase();
-              return c.value.toLowerCase().contains(q) ||
-                  c.vi.toLowerCase().contains(q);
-            }).toList();
+        kCountries.where((c) => countryMatches(c, _query)).toList();
+    final language = context.locale.languageCode;
 
     return Stack(
       children: [
@@ -315,8 +312,8 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                                   itemBuilder: (_, i) {
                                     final c = filtered[i];
                                     return _CountryRow(
-                                      label: c.value,
-                                      vi: c.vi,
+                                      label: countryLabel(c, language),
+                                      vi: countryAlias(c, language),
                                       selected: widget.selectedValue == c.value,
                                       onTap: () => widget.onPick(c.value),
                                     );

@@ -8,6 +8,7 @@ import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
 import 'confirm_email_view.dart';
 import 'email_auth_form.dart';
+import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
 
 /// Which face of the auth surface is showing.
@@ -22,7 +23,17 @@ enum _AuthMode { welcome, email }
 /// successful sign-up cross-fades again to a real "Check your email" state with
 /// a resend-cooldown, instead of a SnackBar that vanishes before it's read.
 class AuthPage extends ConsumerStatefulWidget {
-  const AuthPage({super.key});
+  const AuthPage({super.key, this.compact = false, this.background});
+
+  /// Presented under someone else's chrome (`/save-plan`): the bare
+  /// [AuthOptions] stack, bottom-anchored on a tighter inset, so the options
+  /// sit under the host's title instead of a second wordmark.
+  final bool compact;
+
+  /// Painted behind the face instead of the flat canvas fill. MUST be opaque —
+  /// the switcher slides one face over another and leans on it to cover the
+  /// outgoing one. `/save-plan` passes a slice of its gradient backdrop.
+  final Widget? background;
 
   @override
   ConsumerState<AuthPage> createState() => _AuthPageState();
@@ -84,7 +95,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             }),
       );
     } else {
-      face = WelcomeView(
+      // One options stack, two hosts: on its own screen it wears the brand
+      // block, as a guest under someone else's chrome it is the whole face.
+      final options = AuthOptions(
         busy: state.busy,
         googleBusy: state.googleBusy,
         onApple: _controller.signInWithApple,
@@ -95,32 +108,42 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               _mode = _AuthMode.email;
             }),
       );
+      face = widget.compact ? options : WelcomeView(options: options);
     }
 
     // Each face is a full-screen, opaque page so switching reads as an
     // iOS-style full-page push (not a content cross-fade). The opaque fill lets
     // the incoming page cover the outgoing one as it slides across.
-    final Widget page = ColoredBox(
-      key: currentKey,
-      color: KalloColors.surface,
-      child: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            // 24 side inset — auth's documented exception to the app's 12pt
-            // page rhythm (native pass, 2026-08-31). Nothing here is a card on
-            // a canvas; it is a single centred column, and 12 let a 50pt pill
-            // run almost edge to edge.
-            padding: const EdgeInsets.symmetric(
-              horizontal: kAuthInset,
-              vertical: KalloSpacing.sp8,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: face,
-            ),
+    final Widget content = SafeArea(
+      child: Align(
+        // Compact is a GUEST on someone else's screen, whose title sits above
+        // it: centred in the leftover space the options float in the middle of
+        // nothing, so the stack anchors to the bottom instead.
+        alignment: widget.compact ? Alignment.bottomCenter : Alignment.center,
+        child: SingleChildScrollView(
+          // 24 side inset — auth's documented exception to the 12pt page
+          // rhythm (native pass, 2026-08-31): a single centred column, where
+          // 12 let a 50pt pill run almost edge to edge.
+          padding: EdgeInsets.symmetric(
+            horizontal: kAuthInset,
+            vertical: widget.compact ? KalloSpacing.sp3 : KalloSpacing.sp8,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: face,
           ),
         ),
       ),
+    );
+
+    final Widget page = Stack(
+      key: currentKey,
+      children: [
+        Positioned.fill(
+          child: widget.background ?? const ColoredBox(color: KalloColors.surface),
+        ),
+        content,
+      ],
     );
 
     // Native Google/Apple sheets are in-process, so the surface is just the

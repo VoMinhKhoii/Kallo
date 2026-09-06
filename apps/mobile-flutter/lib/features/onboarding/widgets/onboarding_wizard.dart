@@ -1,45 +1,39 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/profile/onboarding.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
-import '../data/constants.dart';
-import '../data/profile_row.dart';
-import '../logic/step_one_defaults.dart';
-import '../providers/onboarding_providers.dart';
-import '../screens/screen_body_metrics.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
-import '../screens/screen_cooking.dart';
-import '../screens/screen_origin.dart';
-import 'step_indicator.dart';
+import '../../../theme/calm_tokens.dart';
+import '../data/constants.dart';
+import '../data/onboarding_draft.dart';
+import '../data/profile_row.dart';
+import '../logic/onboarding_answers.dart';
+import '../logic/onboarding_seed.dart';
+import '../logic/region_defaults.dart';
+import '../providers/onboarding_draft_providers.dart';
+import '../providers/onboarding_providers.dart';
+import '../screens/step_about_you.dart';
+import '../screens/step_cooking.dart';
+import '../screens/step_goal.dart';
+import '../screens/step_language.dart';
+import '../screens/step_origin.dart';
+import '../screens/step_target.dart';
+import 'onboarding_step_scaffold.dart';
 
-const int _totalSteps = kOnboardingTotalSteps;
-
-double? _parseAggression(String? raw, double fallback) {
-  if (raw == null || raw.isEmpty) return fallback;
-  final n = double.tryParse(raw);
-  return n ?? fallback;
-}
-
-/// The onboarding wizard body — presentation-agnostic.
+/// The six-screen onboarding wizard — presentation-agnostic; the caller wraps
+/// it ([OnboardingScreen] full page, [showOnboardingDialog] modal).
 ///
-/// Ported from `components/onboarding/wizard/wizard-modal.tsx`: a step indicator
-/// + (optional) close in the header, a scrollable per-step body, and a
-/// back / skip / next footer. It owns ALL wizard state (current step, collected
-/// screen data, pending, slide direction) but imposes no surface chrome — the
-/// caller wraps it. [onComplete] fires when the last step is saved/skipped;
-/// [onClose] (nullable — when null the close button is hidden) fires on the X.
+/// It owns ALL the answers ([OnboardingAnswers]) and which screen is showing;
+/// the screens themselves are stateless views that mutate that one object and
+/// call back. [onComplete] fires once the last screen saves; [onClose] backs
+/// out of screen 1 (null hides the back chevron there — mandatory mode).
 ///
-/// The modal entrance animation (scale/opacity/y) is intentionally NOT here: it
-/// belongs to the dialog presentation ([showOnboardingDialog]), not the wizard.
-///
-/// Icons are Lucide one-for-one: `X`→[LucideIcons.x300],
-/// `ArrowLeft`→[LucideIcons.arrowLeft300], `ArrowRight`→[LucideIcons.arrowRight300],
-/// `SkipForward`→[LucideIcons.skipForward300].
+/// **Screens are not server steps.** The server keeps three; the wizard shows
+/// six, and only four of them post on the way out — screen 2 (step 1), 4 and 6
+/// (step 2, twice, so a user who leaves after the goal still has a target), and
+/// 5 (step 3). Screens 1 and 3 collect half a step each and only move the
+/// draft's progress marker. See `logic/resume_screen.dart` for the way back.
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({
     super.key,
@@ -47,645 +41,195 @@ class OnboardingWizard extends ConsumerStatefulWidget {
     required this.onClose,
   });
 
-  /// Fired once the final step is saved (or skipped). The caller decides where
-  /// to go next (the full page and the dialog route to `/welcome`).
   final VoidCallback onComplete;
-
-  /// Fired on the header X. Null hides the close button (mandatory mode).
   final VoidCallback? onClose;
 
   @override
   ConsumerState<OnboardingWizard> createState() => _OnboardingWizardState();
 }
 
+const Map<int, String> _titles = {
+  1: 'onboarding.language.title',
+  2: 'onboarding.origin.stepTitle',
+  3: 'onboarding.aboutYou.title',
+  4: 'onboarding.goal.title',
+  5: 'onboarding.cooking.title',
+  6: 'onboarding.target.title',
+};
+
 class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
-  int? _currentStep;
-  bool _isPending = false;
-  // Which control triggered the in-flight save — drives WHICH button spins.
-  bool _pendingIsSkip = false;
+  int? _screen;
+  OnboardingAnswers? _answers;
+  OnboardingDeviceHints? _device;
+  bool _busy = false;
+  bool _reportedSeedError = false;
 
-  // Direction of the last step change: +1 next/skip, -1 back. Drives the
-  // horizontal slide of the AnimatedSwitcher (web AnimatePresence direction).
-  int _direction = 1;
-
-  final ScrollController _scrollController = ScrollController();
-  bool _showScrollGradient = false;
-
-  // Per-step collected data (keyed by 1-based step), mirroring RN `screenData`.
-  final Map<int, Map<String, dynamic>> _screenData = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_updateScrollGradient);
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _updateScrollGradient());
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _updateScrollGradient() {
-    if (!_scrollController.hasClients) return;
-    final pos = _scrollController.position;
-    final hasMore = pos.maxScrollExtent > 0 &&
-        pos.pixels < pos.maxScrollExtent - 10;
-    if (hasMore != _showScrollGradient) {
-      setState(() => _showScrollGradient = hasMore);
-    }
-  }
-
-  void _onScreenChange(int step, Map<String, dynamic> data) {
-    setState(() => _screenData[step] = data);
-  }
-
-  void _advance() {
-    final step = _currentStep!;
-    if (step >= _totalSteps) {
-      widget.onComplete();
-    } else {
-      _direction = 1;
-      setState(() => _currentStep = step + 1);
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _updateScrollGradient());
-    }
-  }
-
-  Future<void> _save(Map<String, dynamic> data) async {
-    setState(() => _isPending = true);
-    try {
-      await ref
-          .read(saveScreenControllerProvider)
-          .save(step: _currentStep!, data: data);
-      if (!mounted) return;
-      _advance();
-    } catch (_) {
-      // Web surfaces the mutation error as a toast; do the same so a failed
-      // save isn't silent. Stay on the step.
-      if (mounted) _showSaveError();
-    } finally {
-      if (mounted) setState(() => _isPending = false);
-    }
-  }
-
-  void _showSaveError() {
-    showTopToast(
-      context,
-      tr('onboarding.saveError'),
-      variant: TopToastVariant.error,
+  /// Resolved ONCE, the first time every source has settled: every save
+  /// invalidates `profileProvider`, so a re-read would overwrite answers the
+  /// user is in the middle of giving.
+  void _resolveStart(ProfileRow? profile, OnboardingDraft? draft) {
+    final seeded = buildOnboardingAnswers(
+      profile: profile,
+      draft: draft,
+      deviceRegion: deviceRegionCode(),
+      deviceLanguage: deviceLanguageCode(),
     );
+    _answers = seeded.answers;
+    _device = seeded.device;
+    _screen = ref.read(onboardingResumeScreenProvider);
   }
 
-  void _handleNext() {
-    final data = _screenData[_currentStep!];
-    if (data == null) return;
-    _pendingIsSkip = false;
-    _save(data);
-  }
-
-  void _handleSkip() {
-    _direction = 1;
-    _pendingIsSkip = true;
-    _save(const {});
-  }
-
-  void _handleBack() {
-    _direction = -1;
-    setState(() => _currentStep = (_currentStep! - 1).clamp(1, _totalSteps));
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _updateScrollGradient());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final profile = ref.watch(profileProvider).valueOrNull;
-    // Resolve the resume step once (the gate computed it from the profile).
-    _currentStep ??= ref.read(onboardingResumeStepProvider);
-    final step = _currentStep!;
-
-    final hasData = _screenData[step] != null;
-    final isNextDisabled = _isPending || !hasData;
-    final isFirstStep = step <= 1;
-
-    return Column(
-      children: [
-        _Header(currentStep: step, onClose: widget.onClose),
-        Expanded(
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(KalloSpacing.sp5),
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                child: _StepTransition(
-                  direction: _direction,
-                  child: _StepBody(
-                    key: ValueKey(step),
-                    step: step,
-                    profile: profile,
-                    screenData: _screenData,
-                    onChange: _onScreenChange,
-                  ),
-                ),
-              ),
-              // Bottom fade gradient — hints more content below.
-              if (_showScrollGradient)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 48, // h-12
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            KalloColors.cream, // from-[#FDFCF8]
-                            Color(0x00FDFCF8), // to-transparent
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        _Footer(
-          isFirstStep: isFirstStep,
-          isPending: _isPending,
-          pendingSkip: _isPending && _pendingIsSkip,
-          pendingNext: _isPending && !_pendingIsSkip,
-          isNextDisabled: isNextDisabled,
-          isLastStep: step >= _totalSteps,
-          onBack: _handleBack,
-          onSkip: _isPending ? null : _handleSkip,
-          onNext: isNextDisabled ? null : _handleNext,
-        ),
-      ],
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.currentStep, required this.onClose});
-
-  final int currentStep;
-  final VoidCallback? onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KalloSpacing.sp5,
-        vertical: KalloSpacing.sp4,
-      ),
-      decoration: const BoxDecoration(
-        // border @60%
-        border: Border(bottom: BorderSide(color: KalloColors.borderSoft)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          StepIndicator(currentStep: currentStep, totalSteps: _totalSteps),
-          // RN: padding space[2] + marginRight -space[2] (hugs the edge). The
-          // header's own paddingHorizontal sp5 keeps it off the true edge.
-          if (onClose != null)
-            Transform.translate(
-              offset: const Offset(KalloSpacing.sp2, 0),
-              child: _CloseButton(onTap: onClose!),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Close X: rounded-full p-2 text-[#8B8682] hover:bg-[#EAE7E0]/50
-/// hover:text-[#2C2416]. Touch highlight = filled circle + icon darken.
-class _CloseButton extends StatefulWidget {
-  const _CloseButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_CloseButton> createState() => _CloseButtonState();
-}
-
-class _CloseButtonState extends State<_CloseButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Container(
-        padding: const EdgeInsets.all((KalloIcons.hit - KalloIcons.size) / 2),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _pressed ? KalloColors.borderHalf : Colors.transparent,
-        ),
-        child: Icon(
-          LucideIcons.x300,
-          size: KalloIcons.size,
-          color: _pressed ? KalloColors.text : KalloColors.textHelp,
-        ),
-      ),
-    );
-  }
-}
-
-class _StepBody extends StatelessWidget {
-  const _StepBody({
-    super.key,
-    required this.step,
-    required this.profile,
-    required this.screenData,
-    required this.onChange,
-  });
-
-  final int step;
-  final ProfileRow? profile;
-  final Map<int, Map<String, dynamic>> screenData;
-  final void Function(int, Map<String, dynamic>) onChange;
-
-  @override
-  Widget build(BuildContext context) => _buildStep(context);
-
-  Widget _buildStep(BuildContext context) {
-    final locale = context.locale.languageCode;
-    switch (step) {
-      case 1:
-        final saved = screenData[1];
-        final defaults = saved != null
-            ? StepOneData(
-                countryOfOrigin: saved['countryOfOrigin'] as String?,
-                countryOfResidence: saved['countryOfResidence'] as String?,
-                preferredLocale:
-                    (saved['preferredLocale'] as String?) ?? locale,
-              )
-            : buildStepOneDefaults(
-                activeLocale: locale,
-                countryOfOrigin: profile?.countryOfOrigin,
-                countryOfResidence: profile?.countryOfResidence,
-                profilePreferredLocale: profile?.preferredLocale,
-              );
-        return ScreenOrigin(
-          defaultValues: defaults,
-          onChange: (d) => onChange(1, d),
-        );
+  /// The server step this screen posts on its way out, or null when it posts
+  /// nothing (a half-step screen, or a step-2 screen with no metrics yet).
+  OnboardingStepPayload? _payload(int screen) {
+    final answers = _answers!;
+    switch (screen) {
       case 2:
-        final base = _buildScreenTwoDefaults(profile);
-        final saved = screenData[2];
-        final defaults = saved == null
-            ? base
-            : ScreenTwoDefaults(
-                biologicalSex:
-                    (saved['biologicalSex'] as String?) ?? base.biologicalSex,
-                weightKg: (saved['weightKg'] as num?)?.toDouble() ??
-                    base.weightKg,
-                heightCm: (saved['heightCm'] as num?)?.toInt() ?? base.heightCm,
-                age: (saved['age'] as num?)?.toInt() ?? base.age,
-                activityLevel:
-                    (saved['activityLevel'] as String?) ?? base.activityLevel,
-                goal: (saved['goal'] as String?) ?? base.goal,
-                aggression: saved.containsKey('aggression')
-                    ? (saved['aggression'] as num?)?.toDouble()
-                    : base.aggression,
-                carbSplit: (saved['carbSplit'] as String?) ?? base.carbSplit,
-                deficitOverride:
-                    (saved['deficitOverride'] as num?)?.toDouble() ??
-                        base.deficitOverride,
-              );
-        return ScreenBodyMetrics(
-          defaultValues: defaults,
-          onChange: (v) => onChange(2, v.toJson()),
-        );
+        return (step: 1, data: answers.stepOnePayload);
+      case 4:
+      case 6:
+        final values = answers.stepTwoValues;
+        return values == null ? null : (step: 2, data: values.toJson());
+      case 5:
+        return (step: 3, data: answers.stepThreePayload);
       default:
-        final saved = screenData[3];
-        final defaults = saved != null
-            ? ScreenThreeDefaults(
-                oilUsage: saved['oilUsage'] as String?,
-                defaultRicePortion: saved['defaultRicePortion'] as String?,
-                sugarBraised: saved['sugarBraised'] as String?,
-                defaultProteinPortion: saved['defaultProteinPortion'] as String?,
-                brothConsumption: saved['brothConsumption'] as String?,
-              )
-            : _buildScreenThreeDefaults(profile);
-        return ScreenCooking(
-          defaultValues: defaults,
-          onChange: (d) => onChange(3, d),
-        );
+        return null;
     }
   }
 
-  ScreenTwoDefaults _buildScreenTwoDefaults(ProfileRow? p) {
-    return ScreenTwoDefaults(
-      biologicalSex: p?.biologicalSex,
-      weightKg: p?.weightKg,
-      heightCm: p?.heightCm,
-      age: p?.age,
-      activityLevel: p?.activityLevel ??
-          activityLevelToString(WizardDefaults.activityLevel),
-      goal: p?.goal ?? WizardDefaults.goal.name,
-      aggression: _parseAggression(p?.aggression, WizardDefaults.aggression),
-      carbSplit: p?.carbSplit ?? 'moderate_carb',
-      deficitOverride: WizardDefaults.deficitOverride,
-    );
+  Future<void> _leave(int screen, {required bool skip}) async {
+    final sink = ref.read(onboardingSinkProvider);
+    setState(() => _busy = true);
+    try {
+      await sink.record(
+        screen: screen,
+        payload: skip ? null : _payload(screen),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showTopToast(
+        context,
+        tr('onboarding.saveError'),
+        variant: TopToastVariant.error,
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (screen < kOnboardingScreenCount) _screen = screen + 1;
+    });
+    if (screen >= kOnboardingScreenCount) widget.onComplete();
   }
 
-  ScreenThreeDefaults _buildScreenThreeDefaults(ProfileRow? p) {
-    return ScreenThreeDefaults(
-      oilUsage: p?.oilUsage,
-      defaultRicePortion: p?.defaultRicePortion,
-      sugarBraised: p?.sugarBraised,
-      defaultProteinPortion: p?.defaultProteinPortion,
-      brothConsumption: p?.brothConsumption,
-    );
+  void _back(int screen) {
+    if (screen <= 1) return widget.onClose?.call();
+    setState(() => _screen = screen - 1);
   }
-}
 
-/// Replicates the web AnimatePresence(mode='wait') horizontal slide+fade on
-/// step change: incoming slides from x: direction*20px → 0 while fading in;
-/// outgoing slides to x: direction*-20px while fading out. The spring
-/// (stiffness 400, damping 40) is approximated by easeOutCubic over ~250ms.
-class _StepTransition extends StatelessWidget {
-  const _StepTransition({required this.direction, required this.child});
+  /// Whether every source the seed reads has ANSWERED. The seed resolves once,
+  /// so seeding off a source that has not landed yet sticks for the session.
+  ///
+  /// The SESSION counts even though the seed never reads it: `profileProvider`
+  /// answers `AsyncData(null)` immediately while signed out, and is asked
+  /// before Supabase restores the session. For a signed-in user the profile
+  /// must have LANDED — a value, and not an error, since Riverpod hands an
+  /// error that same stale `null` alongside it. Either slip seeds a signed-in
+  /// user from the device, and screen 2 then posts the phone's country over the
+  /// one they had saved.
+  bool _settled({
+    required bool signedIn,
+    required AsyncValue<Object?> session,
+    required AsyncValue<Object?> profile,
+    required AsyncValue<Object?> draft,
+  }) {
+    if (session.isLoading || draft.isLoading || profile.isLoading) return false;
+    return !signedIn || (profile.hasValue && !profile.hasError);
+  }
 
-  final int direction;
-  final Widget child;
+  /// A profile that will not load is a dead end for the seed, so say so once
+  /// and offer the only move that helps: ask for it again.
+  void _reportSeedError() {
+    if (_reportedSeedError) return;
+    _reportedSeedError = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showTopToast(
+        context,
+        tr('onboarding.saveError'),
+        variant: TopToastVariant.error,
+        actionLabel: tr('common.retry'),
+        onAction: () {
+          _reportedSeedError = false;
+          ref.invalidate(profileProvider);
+        },
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 320),
-      switchInCurve: Curves.easeInOutCubic,
-      switchOutCurve: Curves.easeInOutCubic,
-      transitionBuilder: (child, animation) {
-        final incoming = child.key == this.child.key;
-        // A clean page sweep: incoming slides in from one side, outgoing slides
-        // out the other (the outgoing child's `animation` runs 1→0). Fractional
-        // offset (~22% of width) reads as a deliberate sweep, not a nudge.
-        final begin = incoming
-            ? Offset(direction * 0.22, 0)
-            : Offset(-direction * 0.22, 0);
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position:
-                Tween<Offset>(begin: begin, end: Offset.zero).animate(animation),
-            child: child,
-          ),
-        );
-      },
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          ...previousChildren,
-          if (currentChild != null) currentChild,
-        ],
-      ),
-      child: child,
+    final session = ref.watch(sessionProvider);
+    final profile = ref.watch(profileProvider);
+    final draft = ref.watch(onboardingDraftProvider);
+
+    if (_answers == null) {
+      final signedIn = ref.watch(currentSessionProvider) != null;
+      if (!_settled(
+        signedIn: signedIn,
+        session: session,
+        profile: profile,
+        draft: draft,
+      )) {
+        if (signedIn && profile.hasError) _reportSeedError();
+        return const ColoredBox(color: kPage);
+      }
+      _resolveStart(profile.valueOrNull, draft.valueOrNull);
+    }
+
+    final screen = _screen!;
+    final last = screen >= kOnboardingScreenCount;
+    final blocked = _busy || (screen == 3 && !_answers!.metricsValid);
+
+    return OnboardingStepScaffold(
+      // Keyed by screen: each one gets a fresh scroll position and fresh field
+      // controllers instead of inheriting the last screen's.
+      key: ValueKey(screen),
+      screen: screen,
+      title: tr(_titles[screen]!),
+      ctaLabel: tr(last ? 'onboarding.savePlan' : 'onboarding.continueLabel'),
+      busy: _busy,
+      onContinue: blocked ? null : () => _leave(screen, skip: false),
+      onBack:
+          screen == 1 && widget.onClose == null
+              ? null
+              : (_busy ? null : () => _back(screen)),
+      onSkip: screen == 1 || _busy ? null : () => _leave(screen, skip: true),
+      child: _body(screen),
     );
   }
-}
 
-class _Footer extends StatelessWidget {
-  const _Footer({
-    required this.isFirstStep,
-    required this.isPending,
-    required this.pendingSkip,
-    required this.pendingNext,
-    required this.isNextDisabled,
-    required this.isLastStep,
-    required this.onBack,
-    required this.onSkip,
-    required this.onNext,
-  });
-
-  final bool isFirstStep;
-  final bool isPending;
-  final bool pendingSkip;
-  final bool pendingNext;
-  final bool isNextDisabled;
-  final bool isLastStep;
-  final VoidCallback onBack;
-  final VoidCallback? onSkip;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KalloSpacing.sp5,
-        vertical: KalloSpacing.sp4,
+  Widget _body(int screen) {
+    final answers = _answers!;
+    final device = _device!;
+    void changed() => setState(() {});
+    return switch (screen) {
+      1 => StepLanguage(
+        answers: answers,
+        deviceLanguage: device.deviceLanguage,
+        localeFromDevice: device.localeFromDevice,
+        onChanged: changed,
       ),
-      decoration: const BoxDecoration(
-        color: KalloColors.track50,
-        border: Border(top: BorderSide(color: KalloColors.borderSoft)), // /60
+      2 => StepOrigin(
+        answers: answers,
+        deviceCountry: device.deviceCountry,
+        onChanged: changed,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Back — opacity 0 (still occupies space) on the first step.
-          Opacity(
-            opacity: isFirstStep ? 0 : 1,
-            child: IgnorePointer(
-              ignoring: isFirstStep || isPending,
-              child: _BackButton(onTap: onBack),
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _SkipButton(onTap: onSkip, pending: pendingSkip),
-              const SizedBox(width: KalloSpacing.sp3),
-              _NextButton(
-                pending: pendingNext,
-                isLastStep: isLastStep,
-                onTap: onNext,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Back: gap-2 ArrowLeft(16) + text-[14px]; hover:text-[#2C2416] darken.
-class _BackButton extends StatefulWidget {
-  const _BackButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_BackButton> createState() => _BackButtonState();
-}
-
-class _BackButtonState extends State<_BackButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _pressed ? KalloColors.text : KalloColors.textHelp;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(LucideIcons.arrowLeft300, size: 16, color: color),
-          const SizedBox(width: KalloSpacing.sp2),
-          Text(
-            tr('common.back'),
-            style: dashBody(color: color, weight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SkipButton extends StatefulWidget {
-  const _SkipButton({required this.onTap, required this.pending});
-  final VoidCallback? onTap;
-  final bool pending;
-
-  @override
-  State<_SkipButton> createState() => _SkipButtonState();
-}
-
-class _SkipButtonState extends State<_SkipButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // hover:bg-[#EAE7E0]/50 + hover:text-[#2C2416]
-    final textColor = _pressed ? KalloColors.text : KalloColors.textHelp;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown:
-          widget.onTap == null ? null : (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp4,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: _pressed ? KalloColors.borderHalf : Colors.transparent,
-          borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              tr('common.skip'),
-              style: dashBody(color: textColor, weight: FontWeight.w500),
-            ),
-            const SizedBox(width: 6),
-            // Skipping spins HERE (replacing the skip glyph), not on Next.
-            if (widget.pending)
-              SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                ),
-              )
-            else
-              Icon(LucideIcons.skipForward300, size: 14, color: textColor),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NextButton extends StatefulWidget {
-  const _NextButton({
-    required this.pending,
-    required this.isLastStep,
-    required this.onTap,
-  });
-
-  final bool pending;
-  final bool isLastStep;
-  final VoidCallback? onTap;
-
-  @override
-  State<_NextButton> createState() => _NextButtonState();
-}
-
-class _NextButtonState extends State<_NextButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final pending = widget.pending;
-    final isLastStep = widget.isLastStep;
-    final onTap = widget.onTap;
-    final disabled = onTap == null;
-    return Opacity(
-      opacity: disabled ? 0.5 : 1,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: disabled ? null : (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp5,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            // hover:bg-[#1C1917] darken on press
-            color: _pressed ? KalloColors.btnDarkHover : KalloColors.text,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
-            boxShadow: const [KalloShadows.sm], // shadow-sm
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Label stays put; the trailing arrow is what becomes the spinner.
-              Text(
-                isLastStep ? tr('common.finish') : tr('common.next'),
-                style: dashBody(color: KalloColors.cream, weight: FontWeight.w500),
-              ),
-              const SizedBox(width: KalloSpacing.sp2),
-              if (pending)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(KalloColors.cream),
-                  ),
-                )
-              else
-                const Icon(LucideIcons.arrowRight300,
-                    size: 16, color: KalloColors.cream),
-            ],
-          ),
-        ),
-      ),
-    );
+      3 => StepAboutYou(answers: answers, onChanged: changed),
+      4 => StepGoal(answers: answers, onChanged: changed),
+      5 => StepCooking(answers: answers, onChanged: changed),
+      _ => StepTarget(answers: answers, onChanged: changed),
+    };
   }
 }

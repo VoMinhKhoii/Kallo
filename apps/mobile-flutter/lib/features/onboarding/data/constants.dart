@@ -12,6 +12,12 @@ import '../../../models/profile/onboarding.dart';
 /// and onboarding no longer keep separate copies.
 const int kOnboardingTotalSteps = 3;
 
+/// The number of SCREENS the wizard walks the user through. The server still
+/// thinks in three steps ([kOnboardingTotalSteps]); the header, the progress
+/// bar and the draft's `screenReached` count to this instead, and
+/// `logic/resume_screen.dart` maps between the two.
+const int kOnboardingScreenCount = 6;
+
 const CookingHabits kNeutralCookingDefaults = CookingHabits(
   oilUsage: OilUsage.normal,
   defaultRicePortion: RicePortion.medium,

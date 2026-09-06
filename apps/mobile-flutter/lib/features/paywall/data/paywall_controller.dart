@@ -44,11 +44,17 @@ class PaywallState {
   const PaywallState({
     this.phase = PaywallPhase.loading,
     this.packages = const [],
+    this.trialEligibleProductIds = const {},
     this.busyPackageId,
   });
 
   final PaywallPhase phase;
   final List<Package> packages;
+
+  /// The product ids the STORE says this customer can still start a trial on —
+  /// what the sheet's trial copy is allowed to promise. Empty until the
+  /// offerings load, and empty wherever eligibility is unknown (Android).
+  final Set<String> trialEligibleProductIds;
 
   /// The package whose card should show a spinner (the one being purchased).
   final String? busyPackageId;
@@ -56,11 +62,14 @@ class PaywallState {
   PaywallState copyWith({
     PaywallPhase? phase,
     List<Package>? packages,
+    Set<String>? trialEligibleProductIds,
     String? busyPackageId,
     bool clearBusy = false,
   }) => PaywallState(
     phase: phase ?? this.phase,
     packages: packages ?? this.packages,
+    trialEligibleProductIds:
+        trialEligibleProductIds ?? this.trialEligibleProductIds,
     busyPackageId: clearBusy ? null : (busyPackageId ?? this.busyPackageId),
   );
 }
@@ -172,7 +181,19 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       }
       final packages = await _purchases.getPackages(userId);
       if (!_isCurrentUser(userId)) return;
-      _set(state.copyWith(phase: PaywallPhase.ready, packages: packages));
+      // Asked once, with the offerings: the answer is a property of the store
+      // account, so it cannot change while this sheet is open.
+      final eligible = await _purchases.trialEligibleProductIds([
+        for (final package in packages) package.storeProduct.identifier,
+      ]);
+      if (!_isCurrentUser(userId)) return;
+      _set(
+        state.copyWith(
+          phase: PaywallPhase.ready,
+          packages: packages,
+          trialEligibleProductIds: eligible,
+        ),
+      );
     } catch (_) {
       if (_isCurrentUser(userId)) {
         _set(state.copyWith(phase: PaywallPhase.loadError));
