@@ -287,7 +287,7 @@ describe('sendNotificationPush', () => {
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const sender: PushSender = {
-      send: vi.fn().mockRejectedValue(new Error('FCM is down')),
+      send: vi.fn().mockRejectedValue(new Error('APNs is down')),
     };
 
     await expect(
@@ -302,15 +302,18 @@ describe('sendNotificationPush', () => {
   });
 
   // The sender is resolved inside the try, not as a default argument: default
-  // arguments evaluate BEFORE the body, so a JSON.parse of a malformed service
-  // account would reject the after() task instead of being swallowed here.
-  it('survives a malformed FCM service account with no sender passed', async () => {
+  // arguments evaluate BEFORE the body, so parsing a malformed .p8 would reject
+  // the after() task instead of being swallowed here.
+  it('survives a malformed APNs signing key with no sender passed', async () => {
     queueSelects(
       [{ userId: OWNER, token: 'owner-phone' }],
       [{ userId: OWNER, preferredLocale: 'en' }]
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubEnv('FCM_SERVICE_ACCOUNT_JSON', '{ not json');
+    vi.stubEnv('APNS_KEY_ID', 'ABC123DEFG');
+    vi.stubEnv('APNS_TEAM_ID', 'ZNG57U88R5');
+    vi.stubEnv('APNS_BUNDLE_ID', 'com.khoivo.nham');
+    vi.stubEnv('APNS_KEY_P8', '-----BEGIN PRIVATE KEY-----\nnot-a-key\n');
 
     await expect(
       sendNotificationPush([OWNER], {

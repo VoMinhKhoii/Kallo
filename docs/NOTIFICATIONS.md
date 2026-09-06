@@ -13,7 +13,7 @@ Goal: a **Threads/Instagram-style Activity page** (web, mobile-responsive) backe
 1. **Group adds** stay instant; the added member gets a `group.added` notification deep-linking to the group (leave stays in group info). Locket model: notify, don't gate.
 2. **Friend connect** stays instant-on-link; NEW `friend.joined` notification to the inviter. Research (Locket/Instagram/BeReal/Snapchat/Discord/LinkedIn/Venmo) showed: a personally shared private link counts as consent; request/approve exists to guard *discovery* surfaces (search/contact sync), which Kallo doesn't have. The schema's unused `friend_request` slot stays reserved for a future discovery path. Link expiry/revocation = separate follow-up.
 3. **Entry points**: desktop sidebar "Activity" item + heart button with unread badge in the mobile header (both → `/activity`); mobile drawer row also gets the badge.
-4. **Channels v1**: web = in-app only via TanStack polling (Supabase Realtime is deliberately deferred repo-wide; data plane locked by `20260825120000_lock_postgrest_data_plane.sql`). Flutter iOS = native push via FCM/APNs — this repo ships the token API + send pipeline; Flutter client work is contract-only here (separate branch later).
+4. **Channels v1**: web = in-app only via TanStack polling (Supabase Realtime is deliberately deferred repo-wide; data plane locked by `20260825120000_lock_postgrest_data_plane.sql`). Flutter iOS = native push straight to **APNs** (no Firebase anywhere) — this repo ships the token API + send pipeline; Flutter client work is contract-only here (separate branch later).
 
 ## Design principles (from big-tech research)
 
@@ -69,7 +69,7 @@ flowchart LR
         B["Badge poll 30s<br/>count(seenAt IS NULL)<br/>+ max(updatedAt) watermark<br/>(watermark moves → refetch feed)<br/>desktop sidebar · mobile heart · drawer"]
         F["/activity page<br/>New / Last 30 days / Older<br/>open → bulk markSeen<br/>tap row → markRead + deep link"]
         AC["Actionable invite card<br/>LIVE status join → Accept/Dismiss<br/>or 'Added' / neutral 'No longer<br/>available' chip<br/>(reuses existing invite mutations)"]
-        PUSH["GATE 5, after the tx COMMITS:<br/>after() → FCM HTTP v1<br/>iOS native push (Flutter)<br/>collapse-key per groupKey/group<br/>prune dead tokens"]
+        PUSH["GATE 5, after the tx COMMITS:<br/>after() → APNs HTTP/2<br/>iOS native push (Flutter)<br/>apns-collapse-id per groupKey/group<br/>prune 410 / wrong-topic tokens"]
     end
 
     A1 & A2 & A3 & A4 & A6 & A7 & A8 --> G1
@@ -203,13 +203,13 @@ flowchart TD
     U -.-> X4[No push — the device already\nknocked for this aggregate\nand the user has not looked yet]
     I --> G5{Gate 5 — Channel routing\nAFTER the tx commits.\nPush set = RETURNING rows where\ninserted OR rebadged}
     RB --> G5
-    G5 --> C2{Push eligible?\ntoken registered\n+ FCM configured}
+    G5 --> C2{Push eligible?\ntoken registered\n+ APNS_* configured}
     P --> C2
-    C2 -- yes --> S[after&#40;&#41; fire-and-forget\nFCM send, collapse-key\nper groupKey / chat group]
+    C2 -- yes --> S[after&#40;&#41; fire-and-forget\nAPNs send, apns-collapse-id\nper groupKey / chat group]
     C2 -- no --> X3[In-app only]
 ```
 
-**Gate 5 fires on the same edges the badge does.** `notify()` reports back the recipients whose row Postgres actually inserted (`RETURNING (xmax = 0)`) **plus** those whose event landed on an already-SEEN open row, and `withNotifications` queues exactly that list for the single post-commit `after(() => sendNotificationPush(...))`. An event that aggregated into a row the recipient has not looked at yet updates the feed silently — otherwise the eighth reaction on a meal you have not opened would be the eighth push — but once the visit has ended that cycle, the next event knocks again rather than re-badging into a device that stays quiet. `chat.message` never enters the row branch at all: it is push-only by design, writes nothing, and joins the flow at the FCM eligibility check.
+**Gate 5 fires on the same edges the badge does.** `notify()` reports back the recipients whose row Postgres actually inserted (`RETURNING (xmax = 0)`) **plus** those whose event landed on an already-SEEN open row, and `withNotifications` queues exactly that list for the single post-commit `after(() => sendNotificationPush(...))`. An event that aggregated into a row the recipient has not looked at yet updates the feed silently — otherwise the eighth reaction on a meal you have not opened would be the eighth push — but once the visit has ended that cycle, the next event knocks again rather than re-badging into a device that stays quiet. `chat.message` never enters the row branch at all: it is push-only by design, writes nothing, and joins the flow at the APNs eligibility check.
 
 **How the two are told apart — one statement, no pre-select.** The upsert classifies *itself*. The `ON CONFLICT DO UPDATE` SET clause writes a `rebadged` boolean column from the OLD row — `rebadged = (notifications.seen_at IS NOT NULL)` — in the same expression evaluation that sets `seen_at = NULL`, and the INSERT branch stamps `rebadged = false` because a row that did not exist was never seen. `RETURNING (xmax = 0) AS inserted, rebadged` then hands both bits back, and the push set is `inserted OR rebadged`. There is no pre-select, no `FOR UPDATE`, and no row lock beyond the ones the upsert takes for itself.
 
@@ -297,7 +297,7 @@ Tests: `lib/domain/notifications/__tests__/` (input shaping, conflict-key spread
 
 ## Phase 2 — API + hooks
 
-- **Contracts**: `lib/domain/notifications/contracts.ts` (isomorphic Zod — placed here, NOT `lib/api/contracts/`, which already has 10 direct files and would trip the ≤10-files structure rule): list query `{before?, limit≤50}`, markSeen `{before: datetime}`, markRead `{ids: uuid[]≤50}`, pushToken `{token, platform: ios|android|web}`. Response item: id, type, actors (hydrated `PublicIdentity[]`), actorCount, object/target refs, data, timestamps, and for `share.invite` a live-joined `invite: {status}`.
+- **Contracts**: `lib/domain/notifications/contracts.ts` (isomorphic Zod — placed here, NOT `lib/api/contracts/`, which already has 10 direct files and would trip the ≤10-files structure rule): list query `{before?, limit≤50}`, markSeen `{before: datetime}`, markRead `{ids: uuid[]≤50}`, pushToken `{token, platform: 'ios'}` (iOS-only — APNs is the sole transport). Response item: id, type, actors (hydrated `PublicIdentity[]`), actorCount, object/target refs, data, timestamps, and for `share.invite` a live-joined `invite: {status}`.
 - **Actions**: `lib/actions/notifications/list.ts` (recipient-scoped, tuple cursor reusing `lib/domain/social/feed/cursor.ts` helpers, actor hydration via `lib/domain/social/identity/public-identity.ts`, left-join `meal_share_invites` for invite rows); `state.ts` (`readBadgeState` — one aggregate query returning `{unseen, latestActivityAt}`, bulk `markSeen(userId, before)`, `markRead(userId, ids)` — every query carries `recipientId`: the Drizzle handle **bypasses RLS**).
 - **Routes** (v1 REST so Flutter shares them, `requireUserId` + `handleRouteError` pattern): `GET /api/v1/notifications` (returns `{items, nextCursor, unseenCount}`), `GET /api/v1/notifications/badge` (returns `{unseen, latestActivityAt}`), `POST .../seen`, `POST .../read`.
 - **Client**: `lib/domain/notifications/client.ts` (via `lib/api/client-fetch`); `lib/domain/notifications/query-keys.ts` (`notificationKeys.feed/badge`).
@@ -330,37 +330,50 @@ Status: implemented.
 **Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit**, for the recipient ids returned by `notify()` — freshly INSERTED aggregates plus seen→unseen re-badges, so an aggregate absorbing another actor while the recipient still has not looked at it updates the feed without re-buzzing the device — behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
 
 - `lib/infra/push/types.ts` — `PushMessage {token, title, body, data, collapseKey?, badge?}`, `PushSendResult {token, ok, shouldPrune}`, `PushSender`.
-- `lib/infra/push/fcm.ts` — FCM HTTP v1 **without new deps**: service-account JWT via `node:crypto` RSA-SHA256 → oauth2 token (module-level cache, 55 min) → `messages:send`, ten per `Promise.allSettled` wave; env `FCM_SERVICE_ACCOUNT_JSON` (whole service-account JSON in one var, documented in `.env.example`). The `apns`/`android` blocks are built conditionally — FCM 400s on unknown or null fields. Prune classification: HTTP 404 or `UNREGISTERED`, and 400 `INVALID_ARGUMENT`; 401/403/429/5xx keep the row. (`firebase-admin` is the drop-in alternative behind the same interface if preferred later.)
-- `lib/infra/push/sender.ts` — `getPushSender()`: the FCM sender when `FCM_SERVICE_ACCOUNT_JSON` is set, otherwise a no-op sender, so dev/CI/tests never need Firebase config. (No separate `noop.ts`; the no-op is three lines beside the resolver.) **It never throws**: a *malformed* service account is caught, logged once per process, and degrades to the same no-op as an unset one — misconfiguration must not turn into an unhandled rejection on a request that already succeeded.
+- `lib/infra/push/apns.ts` — APNs **without new deps and without Firebase**: a provider JWT (`{alg:'ES256',kid}` / `{iss:teamId,iat}`) signed with the `.p8` via `node:crypto`, and one module-level `node:http2` session reused across sends.
+  - **`dsaEncoding: 'ieee-p1363'` is mandatory** on `crypto.sign` — Node's default DER encoding produces a signature APNs rejects with no useful diagnostic. The key is loaded with `createPrivateKey(keyP8.replace(/\\n/g,'\n'))` so a single-line env var works.
+  - The token is cached for **40 minutes**: Apple rejects refreshes more often than every 20 minutes and tokens older than 60.
+  - The session is `unref()`d (an idle push connection must never hold the process open) and dropped from the cache on `close`/`error`/`goaway`, so the next send reconnects; each stream carries a 10s timeout so one hung request cannot stall the batch.
+  - **Prune classification — deliberate**: only HTTP **410 `Unregistered`** and **400 `DeviceTokenNotForTopic`** delete the row. **`BadDeviceToken` never prunes**: Apple returns it just as readily for a valid token sent to the wrong host (sandbox vs production) as for a garbage one, so pruning on it would wipe every live registration the first time `APNS_PRODUCTION` disagreed with the build. It logs a `console.error` naming that mismatch instead. 403/429/5xx/network keep the row too.
+  - Every message is sent through one `Promise.allSettled`, and the sender always returns **exactly one `PushSendResult` per input message** — a rejected settle becomes `{ok:false, shouldPrune:false}`.
+- `lib/infra/push/sender.ts` — `getPushSender()`: the APNs sender when `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID` and `APNS_BUNDLE_ID` are all set (`production` from `APNS_PRODUCTION === 'true'`), otherwise a no-op sender, so dev/CI/tests never need Apple credentials. (No separate `noop.ts`; the no-op is three lines beside the resolver.) **It never throws**: a malformed `.p8` is caught, logged once per process, and degrades to the same no-op as an unset one — misconfiguration must not turn into an unhandled rejection on a request that already succeeded.
 - `lib/domain/notifications/push-copy.ts` — server-side push copy (`pushCopy(type, locale, values)`), rendered from the SAME `messages/{en,vi}/activity.json` rows the in-app feed uses: a `createTranslator` per locale formats `row.<type>.one` and renders the `<b>` markup away, so a wording fix lands on the lock screen and in the Activity list together. The device has no next-intl bundle, hence server-side. A push always uses the SINGULAR row — the aggregate count lives on the in-app row. `title` is `Kallo` for activity events and the SENDER's name for `chat.message`, which alone has no catalogue row.
 - `lib/domain/notifications/push.ts` — `sendNotificationPush(recipientIds, payload, sender?)`: load tokens (one `IN` query), load `user_profiles.preferredLocale` per recipient, resolve the actor's display name from `public_profiles` when the producer did not already hold it, build one message per device, send, delete every token whose result says `shouldPrune`. **Never throws** — every path is caught and `console.error`'d, because it runs in `after()` on a request that already succeeded. The `sender` parameter is therefore *optional*, not a defaulted one, and is resolved (`sender ?? getPushSender()`) **inside** the `try`: a default argument evaluates before the function body, which would put a malformed-config `JSON.parse` outside the very boundary this promises. `sendChatMessagePush({groupId, senderId, senderName?, preview, recipientIds})` pushes to the audience the producer captured at write time (sender already excluded — see the event catalog note), with collapse key `chat:<groupId>` and a ≤140-char preview.
-- `push_tokens` table (Drizzle `20260829080004_add_push_tokens`, + `..._rls_push_tokens.sql` enabling RLS with no policies): userId, token (unique — POST reassigns the owner, since the OS hands one token to whoever signs in next), platform CHECK, lastSeenAt, createdAt, index on userId. Idle reap lives in its own append-only migration `..._push_tokens_retention.sql` (`reap_stale_push_tokens()`, >270 days, same guarded pg_cron `DO` block) — the Phase 1 retention migration is not edited.
+- `push_tokens` table (Drizzle `20260829080004_add_push_tokens`, + `..._rls_push_tokens.sql` enabling RLS with no policies): userId, token (unique — POST reassigns the owner, since the OS hands one token to whoever signs in next), platform CHECK, lastSeenAt, createdAt, index on userId. The DB CHECK still permits `android`/`web`; the **API contract is narrowed to `ios`** (`pushTokenBodySchema`) so we never store a token we cannot deliver to — narrowing at the edge needs no migration. Idle reap lives in its own append-only migration `..._push_tokens_retention.sql` (`reap_stale_push_tokens()`, >270 days, same guarded pg_cron `DO` block) — the Phase 1 retention migration is not edited.
 - `app/api/v1/notifications/push-tokens/route.ts` — POST upsert (`onConflictDoUpdate` on the token, reassigning userId/platform and refreshing lastSeenAt) / DELETE (scoped `userId AND token`). Both documented in `lib/api/openapi/paths/notifications.ts`.
 - The post-commit `after(() => sendNotificationPush(...))` lives once inside `withNotifications`, which all 8 row-writing producers run their transaction through; `lib/actions/chat-groups/messages.ts` keeps its own `after(() => sendChatMessagePush(...))` (no notification row, so no wrapper). Every producer is reached from a route handler, so plain `after()` is always in request scope.
 
-Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, conditional apns/android blocks, prune classification), `lib/infra/push/__tests__/sender.test.ts` (unset and malformed config both degrade to the no-op sender without throwing), `lib/domain/notifications/__tests__/push.test.ts` (token load, per-recipient locale, data payload, prune, never-throws incl. malformed config with no sender passed, chat fan-out over the passed audience and truncation), `app/api/v1/notifications/push-tokens/__tests__/route.test.ts` (upsert reassignment, delete scoping, 400/401), and a scheduled-push assertion added to each producer suite.
+Tests: `lib/infra/push/__tests__/apns.test.ts` (a real P-256 keypair is generated per run so the JWT signature is **verified** with `dsaEncoding:'ieee-p1363'` — the test that catches a DER regression; plus header/claim contents, token cache reuse and refresh, `:path` and every header incl. collapse-id truncation, aps body with and without badge, the full prune taxonomy incl. BadDeviceToken-does-not-prune, and a partial-batch failure still returning a result per token), `lib/infra/push/__tests__/sender.test.ts` (unset and malformed config both degrade to the no-op sender without throwing), `lib/domain/notifications/__tests__/push.test.ts` (token load, per-recipient locale, data payload, prune, never-throws, chat fan-out over the passed audience and truncation), `app/api/v1/notifications/push-tokens/__tests__/route.test.ts` (upsert reassignment, delete scoping, 400/401), and a scheduled-push assertion added to each producer suite.
 
 ## Phase 5 — Flutter (contract only; separate branch)
 
-**Token lifecycle**: `POST /api/v1/notifications/push-tokens` with `{token, platform: 'ios'|'android'|'web'}` on login and on every FCM token refresh (idempotent, reassigns the token to the caller); `DELETE` the same path with `{token}` on logout. Bearer auth, same as every other `/api/v1/*` route.
+**No Firebase.** The app registers with APNs directly (`UNUserNotificationCenter` + `registerForRemoteNotifications`) and posts the **raw APNs device token as lowercase hex** — the 32 bytes of `didRegisterForRemoteNotificationsWithDeviceToken`, not a Firebase registration id.
 
-**Payload contract** — title and body arrive **pre-localized** in the recipient's `preferred_locale`; the `data` map is flat strings:
+**Token lifecycle**: `POST /api/v1/notifications/push-tokens` with `{token, platform: 'ios'}` on login and on every token re-issue (idempotent, reassigns the token to the caller); `DELETE` the same path with `{token}` on logout. Bearer auth, same as every other `/api/v1/*` route. `platform` is a one-value contract — anything but `'ios'` is a 400.
+
+**Sandbox vs production**: the token a build receives is only valid on the matching host. Debug/Xcode/`ad-hoc` builds mint **sandbox** tokens (server needs `APNS_PRODUCTION=false`); App Store and TestFlight-from-App-Store-Connect builds mint **production** tokens (`APNS_PRODUCTION=true`). A mismatch answers `400 BadDeviceToken` on every send — which the server deliberately does **not** treat as a dead token, so a misconfigured environment loses pushes but never deletes registrations.
+
+**Payload contract** — this is the native APNs body. Title and body arrive **pre-localized** in the recipient's `preferred_locale`; our data keys sit at the top level alongside `aps`, flat strings only:
 
 ```jsonc
 {
-  "notification": { "title": "Kallo", "body": "Mai added you to Trip" },
-  "data": {
-    "type": "group.added",          // always present
-    "targetType": "chat_group",     // present when the tap has a destination
-    "targetId": "<uuid>",           // present with targetType
-    "notificationId": "<uuid>"      // RESERVED — not emitted by v1 producers
-  }
+  "aps": {
+    "alert": { "title": "Kallo", "body": "Mai added you to Trip" },
+    "sound": "default"
+    // "badge": 3 — supported by PushMessage.badge, not populated by v1
+  },
+  "type": "group.added",          // always present
+  "targetType": "chat_group",     // present when the tap has a destination
+  "targetId": "<uuid>",           // present with targetType
+  "notificationId": "<uuid>"      // RESERVED — not emitted by v1 producers
 }
 ```
 
+Request headers, for reference: `:method POST`, `:path /3/device/<hex token>`, `authorization: bearer <provider JWT>`, `apns-topic: com.khoivo.nham`, `apns-push-type: alert`, `apns-priority: 10`, `apns-expiration: 0`, and `apns-collapse-id` when the event has a group key.
+
 `type` is one of the catalog types plus `chat.message`. `targetType`/`targetId` are emitted today only by `group.added` and `chat.message` (`chat_group` + the group id); the share/friend events carry neither, so their tap falls through to the default destination. `notificationId` is part of the contract and the sender supports it, but no v1 producer populates it (`notify()` returns recipient ids, not row ids) — the client must treat it as optional and must not key behaviour on its presence.
 
-**Collapse keys**: the notification's `groupKey` (`share.reaction:<shareId>`, `group.added:<groupId>`, …) for activity events, `chat:<groupId>` for messages — sent as `apns-collapse-id` and Android `collapse_key`, so a burst on one object supersedes itself rather than stacking.
+**Collapse keys**: the notification's `groupKey` (`share.reaction:<shareId>`, `group.added:<groupId>`, …) for activity events, `chat:<groupId>` for messages — sent as `apns-collapse-id` (truncated to Apple's 64-byte limit), so a burst on one object supersedes itself in the shade rather than stacking.
 
 **Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
 
@@ -372,7 +385,7 @@ Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, 
 2. `bunx @biomejs/biome check .`
 3. `bun check:structure` — watch `components/activity/` and `hooks/notifications/` counts; contracts placed in `lib/domain/notifications/` to avoid the known `lib/api/contracts/` 10-file ceiling.
 4. `bun db:generate` produces only intended DDL; migration application is handed to the user.
-5. Manual two-account flows (Phase 3 list); Phase 4: send a real FCM message to a sandbox token via a scratch script before wiring producers.
+5. Manual two-account flows (Phase 3 list); Phase 4: send a real APNs message to a sandbox token via a scratch script before wiring producers (watch for `BadDeviceToken` — it means the host and the build disagree, not that the token is dead).
 
 ## Audience visibility rule
 
@@ -393,4 +406,5 @@ The rule governs **new fan-out**, at write time: a notification (and its `data` 
 - `share.invite` re-offer after the old notification was read creates a fresh row — correct; the live join keys on `objectId` (inviteId, stable per meal+recipient).
 - Producers return `withNotifications(db, …)` in place of `db.transaction(...)`; carrying recipient ids out to `after()` is the wrapper's job, not each producer's.
 - Cursor helper (`decodeSharedMealCursor`) carries a feed-specific error message — wrap or accept (cosmetic).
-- Flutter has no FCM dependency today; iOS push also needs APNs key/Firebase project setup (user-side infra, outside the repo).
+- Flutter needs no push SDK — the OS hands it the APNs token directly — but the `.p8` key, key id, team id and bundle id are user-side Apple Developer infra, outside the repo.
+- `APNS_PRODUCTION` must track the build tokens come from. Getting it wrong makes every send fail with `BadDeviceToken`, which is precisely why that reason never prunes.

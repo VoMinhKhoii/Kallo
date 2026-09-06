@@ -1881,16 +1881,18 @@ export const notifications = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// Push tokens — device registrations for native (FCM/APNs) delivery
+// Push tokens — device registrations for native (APNs) delivery
 // ---------------------------------------------------------------------------
-// One row per device, keyed by the FCM registration token. The token — not
-// (user, device) — is unique because a token is reassigned by the OS/Firebase
+// One row per device, keyed by the APNs device token. The token — not
+// (user, device) — is unique because a token is reassigned by the OS
 // when a different account signs in on the same handset: the POST upsert moves
 // it to the new owner rather than fanning one device's push to two people.
 //
 // last_seen_at is refreshed on every registration ping; the retention cron
 // reaps rows idle past 270 days so an uninstalled app stops costing sends.
-// Dead tokens are also pruned inline whenever FCM answers UNREGISTERED.
+// Dead tokens are also pruned inline whenever APNs answers 410 Unregistered.
+// The platform CHECK stays wider than the API contract (iOS-only) on purpose:
+// narrowing an accepted value is an edge concern, not a migration.
 
 export const pushTokens = pgTable(
   'push_tokens',

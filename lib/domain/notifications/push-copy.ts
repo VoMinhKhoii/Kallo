@@ -64,7 +64,7 @@ function createActivityTranslator(locale: PushLocale) {
 }
 
 /** One translator per locale, built on first use and kept — `markup` (not
- *  `rich`) because the result must be a plain string for FCM, not a React tree.
+ *  `rich`) because the result must be a plain string for APNs, not a React tree.
  *  Lazy rather than module-scope so importing this module costs nothing: most
  *  of what reaches for `push.ts` never renders a line of copy. */
 function translatorFor(locale: PushLocale) {
