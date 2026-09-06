@@ -94,7 +94,7 @@ export async function withNotifications<T>(
 
   // Committed. Sending in parallel is safe: each entry is an independent
   // fan-out, and sendNotificationPush swallows its own failures, so one dead
-  // FCM call can never reject the after() task.
+  // APNs call can never reject the after() task.
   after(() =>
     Promise.all(
       queued.map((entry) =>

@@ -27,7 +27,7 @@ import { DELETE, POST } from '@/app/api/v1/notifications/push-tokens/route';
 import { Errors } from '@/lib/core/errors/catalog';
 
 const USER = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-const TOKEN = 'fcm-registration-token';
+const TOKEN = 'apns-device-token';
 
 /** Captures the values row and the onConflictDoUpdate spec. */
 function capturingInsert() {
