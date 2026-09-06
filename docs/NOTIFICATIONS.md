@@ -351,6 +351,8 @@ Tests: `lib/infra/push/__tests__/apns.test.ts` (a real P-256 keypair is generate
 
 **Token lifecycle**: `POST /api/v1/notifications/push-tokens` with `{token, platform: 'ios'}` on login and on every token re-issue (idempotent, reassigns the token to the caller); `DELETE` the same path with `{token}` on logout. Bearer auth, same as every other `/api/v1/*` route. `platform` is a one-value contract — anything but `'ios'` is a 400.
 
+**Signing**: `ios/Runner/Runner.entitlements` sets `aps-environment` to `$(APS_ENVIRONMENT)`, pinned per Runner build configuration (`development` for Debug/Profile, `production` for Release). The lane uses manual signing, so Xcode performs no substitution at export — a hardcoded value breaks App Store builds. The App ID capability and the regenerated match profile are one-time human steps; see `apps/docs/mobile/releasing.md` → "Push notifications (APNs)". `test/ios/push_entitlement_test.dart` guards the wiring.
+
 **Sandbox vs production**: the token a build receives is only valid on the matching host. Debug/Xcode/`ad-hoc` builds mint **sandbox** tokens (server needs `APNS_PRODUCTION=false`); App Store and TestFlight-from-App-Store-Connect builds mint **production** tokens (`APNS_PRODUCTION=true`). A mismatch answers `400 BadDeviceToken` on every send — which the server deliberately does **not** treat as a dead token, so a misconfigured environment loses pushes but never deletes registrations.
 
 **Payload contract** — this is the native APNs body. Title and body arrive **pre-localized** in the recipient's `preferred_locale`; our data keys sit at the top level alongside `aps`, flat strings only:
