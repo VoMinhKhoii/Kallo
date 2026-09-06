@@ -2,6 +2,7 @@ import {
   createGeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
+import { preprocessNutritionLabelBuffer } from '@/lib/domain/nutrition/ocr/image-preprocessing';
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
 import { normalizeNutritionLabelOcr } from './normalization';
 import { rawNutritionLabelOcrSchema } from './raw-schema';
@@ -90,25 +91,90 @@ export async function scanNutritionLabelWithGemini(
 ): Promise<ParsedNutritionLabel> {
   const providerConfig = resolveGeminiProvider();
   const gemini = createGeminiClient(providerConfig);
-  const model = options.model ?? 'gemini-3.1-flash-lite';
+  const primaryModel = options.model ?? 'gemini-3.1-flash-lite';
   const deadline = createDeadlineController(options);
+  const startTime = performance.now();
 
   try {
+    let payloadBase64 = options.imageBase64;
+    let payloadMime = options.mimeType;
+
+    // Apply CV pre-processing (orientation, downscaling, normalization, sharpening)
+    if (
+      options.mimeType === 'image/jpeg' ||
+      options.mimeType === 'image/png' ||
+      options.mimeType === 'image/webp'
+    ) {
+      try {
+        const processed = await preprocessNutritionLabelBuffer({
+          buffer: Buffer.from(options.imageBase64, 'base64'),
+          mimeType: options.mimeType,
+        });
+        payloadBase64 = processed.base64;
+        payloadMime = processed.mimeType;
+      } catch (err) {
+        console.warn('[label-ocr] Pre-processing skipped due to error:', err);
+      }
+    }
+
     const raw = await gemini.generateStructuredOutput({
       schema: rawNutritionLabelOcrSchema,
       systemPrompt: NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
       userMessage:
         'Extract all nutrition table facts accurately according to the JSON schema.',
       image: {
-        mimeType: options.mimeType,
-        base64Data: options.imageBase64,
+        mimeType: payloadMime,
+        base64Data: payloadBase64,
       },
-      model,
+      model: primaryModel,
       temperature: 0.1,
       abortSignal: deadline.signal,
     });
 
-    return normalizeNutritionLabelOcr(raw);
+    const parsed = normalizeNutritionLabelOcr(raw);
+
+    // Fallback to gemini-2.5-flash if label undetected and caller did not specify explicit model
+    const remainingMs =
+      (options.deadlineMs ?? NUTRITION_LABEL_OCR_DEADLINE_MS) -
+      (performance.now() - startTime);
+
+    if (
+      !parsed.labelDetected &&
+      !options.model &&
+      remainingMs > 5000 &&
+      !deadline.signal.aborted
+    ) {
+      console.info(
+        '[label-ocr] Primary scan undetected label; attempting gemini-2.0-flash fallback...'
+      );
+      try {
+        const fallbackRaw = await gemini.generateStructuredOutput({
+          schema: rawNutritionLabelOcrSchema,
+          systemPrompt: NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
+          userMessage:
+            'Extract all nutrition table facts accurately according to the JSON schema.',
+          image: {
+            mimeType: payloadMime,
+            base64Data: payloadBase64,
+          },
+          model: 'gemini-2.0-flash',
+          temperature: 0.1,
+          abortSignal: deadline.signal,
+        });
+
+        const fallbackParsed = normalizeNutritionLabelOcr(fallbackRaw);
+        if (fallbackParsed.labelDetected) {
+          return fallbackParsed;
+        }
+      } catch (fallbackError) {
+        console.warn(
+          '[label-ocr] Fallback scan failed or timed out:',
+          fallbackError
+        );
+      }
+    }
+
+    return parsed;
   } finally {
     deadline.dispose();
   }

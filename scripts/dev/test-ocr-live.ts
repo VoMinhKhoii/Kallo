@@ -1,4 +1,12 @@
-import '@/lib/__test-utils__/server-only-shim';
+try {
+  require.cache[require.resolve('server-only')] = {
+    id: require.resolve('server-only'),
+    filename: require.resolve('server-only'),
+    loaded: true,
+    exports: {},
+  } as any;
+} catch {}
+
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 
 const SAMPLE_URLS = [
@@ -48,16 +56,33 @@ async function runTest() {
       }
 
       const arrayBuffer = await res.arrayBuffer();
-      const base64Data = Buffer.from(arrayBuffer).toString('base64');
+      const rawBuffer = Buffer.from(arrayBuffer);
+      const base64Data = rawBuffer.toString('base64');
       const mimeType = contentType.split(';')[0] || 'image/jpeg';
 
+      const { assessNutritionLabelQuality, preprocessNutritionLabelBuffer } = await import(
+        '@/lib/domain/nutrition/ocr/image-preprocessing'
+      );
+
+      const quality = await assessNutritionLabelQuality(rawBuffer);
+      console.log(`Image Quality Assessment: scannable=${quality.isScannable}${quality.reason ? ` (${quality.reason})` : ''}`);
+
+      const preStart = performance.now();
+      const preprocessed = await preprocessNutritionLabelBuffer({
+        buffer: rawBuffer,
+        mimeType: mimeType as any,
+      });
+      console.log(`CV Pre-processing completed in ${preprocessed.processedMs}ms (${preprocessed.width}x${preprocessed.height})`);
+
+      const scanStart = performance.now();
       console.log(`Running Gemini OCR for ${item.name}...`);
       const result = await scanNutritionLabelWithGemini({
         imageBase64: base64Data,
         mimeType,
       });
+      const totalMs = Math.round(performance.now() - scanStart);
 
-      console.log(`\n✅ Result for ${item.name}:`);
+      console.log(`\n✅ Result for ${item.name} (Total OCR time: ${totalMs}ms):`);
       console.log(JSON.stringify(result, null, 2));
     } catch (err) {
       console.error(`❌ Error testing ${item.name}:`, err);

@@ -77,3 +77,24 @@ export async function validateNutritionLabelImage(input: {
     );
   }
 }
+
+export {
+  assessNutritionLabelQuality,
+  type ImageQualityAssessment,
+  type PreprocessedImageResult,
+  preprocessNutritionLabelBuffer,
+} from './image-preprocessing';
+
+export async function preprocessNutritionLabelBase64(input: {
+  imageBase64: string;
+  mimeType: OcrImageMimeType;
+}) {
+  const buffer = Buffer.from(input.imageBase64, 'base64');
+  const { preprocessNutritionLabelBuffer } = await import(
+    './image-preprocessing'
+  );
+  return preprocessNutritionLabelBuffer({
+    buffer,
+    mimeType: input.mimeType,
+  });
+}
