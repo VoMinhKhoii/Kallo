@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -19,36 +17,7 @@ import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 
-import '../../app_fonts.dart';
-import '../../l10n_test_loader.dart';
-
-/// One recorded call on the wizard's sink.
-typedef _Save = ({int step, Map<String, dynamic> data, int screenReached});
-
-/// Stands in for whichever sink the auth state would have chosen, so the flow
-/// test asserts the SCREEN → SERVER STEP mapping without a session or a socket.
-class _FakeSink implements OnboardingSink {
-  final List<_Save> saves = [];
-  final List<int> reached = [];
-  bool fail = false;
-
-  @override
-  Future<void> record({
-    required int screen,
-    OnboardingStepPayload? payload,
-  }) async {
-    if (fail) throw StateError('save failed');
-    if (payload == null) {
-      reached.add(screen);
-      return;
-    }
-    saves.add((
-      step: payload.step,
-      data: payload.data,
-      screenReached: screen,
-    ));
-  }
-}
+import 'onboarding_test_support.dart';
 
 /// A profile with every body metric filled, so screens 4 and 6 have a step-2
 /// payload to post.
@@ -67,24 +36,11 @@ const _profile = ProfileRow({
   'preferredLocale': 'en',
 });
 
-Session _session() => Session(
-      accessToken: 'token',
-      tokenType: 'bearer',
-      user: const User(
-        id: '11111111-1111-1111-1111-111111111111',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '2026-07-28T00:00:00.000Z',
-      ),
-    );
-
-/// [sessions] opts the host into the REAL auth wiring: the session arrives on a
-/// stream the test drives, the profile answers `null` until it has (exactly as
-/// `profileProvider` does while signed out), and the resume screen is computed
-/// rather than handed over.
+/// [sessions] opts the host into the REAL auth wiring: the session arrives on
+/// a stream the test drives, the profile answers `null` until it has, and the
+/// resume screen is computed rather than handed over.
 Widget _app(
-  _FakeSink sink, {
+  FakeOnboardingSink sink, {
   int resumeScreen = 1,
   ProfileRow? profile,
   Stream<Session?>? sessions,
@@ -96,57 +52,44 @@ Widget _app(
   // and let the retry succeed.
   var failuresLeft = profileFailures;
   return ProviderScope(
-      overrides: [
-        onboardingSinkProvider.overrideWithValue(sink),
-        if (sessions == null)
-          onboardingResumeScreenProvider.overrideWithValue(resumeScreen),
-        if (sessions != null) sessionProvider.overrideWith((ref) => sessions),
-        profileProvider.overrideWith((ref) async {
-          if (sessions == null) return profile;
-          if (ref.watch(currentSessionProvider) == null) return null;
-          if (failuresLeft > 0) {
-            failuresLeft--;
-            throw StateError('profile unreachable');
-          }
-          return profile;
-        }),
-        // Keeps the draft notifier off the secure-storage platform channel.
-        onboardingDraftStoreProvider.overrideWithValue(
-          OnboardingDraftStore(storage: InMemoryKeyValueStore()),
-        ),
-      ],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('vi')],
-        startLocale: const Locale('en'),
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Builder(
-              builder: (inner) => MediaQuery(
-                // The bun breathes on an endless Ticker, so `pumpAndSettle`
-                // would never return; reduced motion also drops the typewriter
-                // so the guide line is on screen from the first frame.
-                data: MediaQuery.of(inner).copyWith(disableAnimations: true),
-                child: Scaffold(
-                  backgroundColor: kPage,
-                  body: SafeArea(
-                    child: OnboardingWizard(
-                      onComplete: onComplete ?? () {},
-                      onClose: onClose,
-                    ),
-                  ),
-                ),
+    overrides: [
+      onboardingSinkProvider.overrideWithValue(sink),
+      if (sessions == null)
+        onboardingResumeScreenProvider.overrideWithValue(resumeScreen),
+      if (sessions != null) sessionProvider.overrideWith((ref) => sessions),
+      profileProvider.overrideWith((ref) async {
+        if (sessions == null) return profile;
+        if (ref.watch(currentSessionProvider) == null) return null;
+        if (failuresLeft > 0) {
+          failuresLeft--;
+          throw StateError('profile unreachable');
+        }
+        return profile;
+      }),
+      // Keeps the draft notifier off the secure-storage platform channel.
+      onboardingDraftStoreProvider.overrideWithValue(
+        OnboardingDraftStore(storage: InMemoryKeyValueStore()),
+      ),
+    ],
+    child: localizedHome(
+      Builder(
+        builder: (inner) => MediaQuery(
+          // The bun breathes on an endless Ticker (`pumpAndSettle` would hang);
+          // reduced motion also drops the typewriter.
+          data: MediaQuery.of(inner).copyWith(disableAnimations: true),
+          child: Scaffold(
+            backgroundColor: kPage,
+            body: SafeArea(
+              child: OnboardingWizard(
+                onComplete: onComplete ?? () {},
+                onClose: onClose,
               ),
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
 }
 
 /// Pumps a fixed number of frames — never `pumpAndSettle`, which the mascot's
@@ -170,6 +113,14 @@ Future<void> _tap(WidgetTester tester, String label) async {
   await _frames(tester);
 }
 
+/// Continue through screens 1–5, then Save my plan on 6.
+Future<void> _walkToEnd(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await _tap(tester, 'Continue');
+  }
+  await _tap(tester, 'Save my plan');
+}
+
 /// Whether the [OptionRow] carrying [label] is the chosen one.
 bool _selected(WidgetTester tester, String label) => tester
     .widgetList<OptionRow>(find.byType(OptionRow))
@@ -182,21 +133,11 @@ bool _ctaDisabled(WidgetTester tester) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : true,
-    );
-    await EasyLocalization.ensureInitialized();
-    // Screen 6's hero and screen 3's three pills are width-sensitive; the
-    // placeholder font's ~1em advance invents overflows that are not there.
-    await loadAppFonts();
-  });
+  setUpAll(initOnboardingTest);
 
-  testWidgets('walks six screens and posts the three server steps at the four '
-      'screens that own them', (tester) async {
-    final sink = _FakeSink();
+  testWidgets('walks six screens, posting the three server steps at the four '
+      'screens that own them with the payloads they own', (tester) async {
+    final sink = FakeOnboardingSink();
     var completed = 0;
     await _boot(
       tester,
@@ -227,17 +168,8 @@ void main() {
     );
     expect(completed, 1);
     semantics.dispose();
-  });
 
-  testWidgets('each post carries the payload its server step expects',
-      (tester) async {
-    final sink = _FakeSink();
-    await _boot(tester, _app(sink, profile: _profile));
-    for (var i = 0; i < 5; i++) {
-      await _tap(tester, 'Continue');
-    }
-    await _tap(tester, 'Save my plan');
-
+    // …and each post carries the payload its server step expects.
     final step1 = sink.saves.firstWhere((s) => s.step == 1).data;
     expect(step1.keys.toSet(), {
       'countryOfOrigin',
@@ -267,12 +199,9 @@ void main() {
 
   testWidgets('with no metrics the step-2 screens advance without posting',
       (tester) async {
-    final sink = _FakeSink();
+    final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink));
-    for (var i = 0; i < 5; i++) {
-      await _tap(tester, 'Continue');
-    }
-    await _tap(tester, 'Save my plan');
+    await _walkToEnd(tester);
 
     expect(sink.saves.map((s) => s.step).toList(), [1, 3]);
     // The screens still happened, so the resume marker still moved.
@@ -282,7 +211,7 @@ void main() {
 
   testWidgets('Skip advances without posting but still records the screen',
       (tester) async {
-    final sink = _FakeSink();
+    final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink, resumeScreen: 2, profile: _profile));
 
     expect(find.text('Where do you cook?'), findsOneWidget);
@@ -293,16 +222,9 @@ void main() {
     expect(sink.reached, [2]);
   });
 
-  testWidgets('screen 1 offers no Skip — a language has to be chosen',
-      (tester) async {
-    await _boot(tester, _app(_FakeSink()));
-    expect(find.text('Choose your language'), findsOneWidget);
-    expect(find.text('Skip'), findsNothing);
-  });
-
   testWidgets('a failed save keeps the user on the screen and says so',
       (tester) async {
-    final sink = _FakeSink()..fail = true;
+    final sink = FakeOnboardingSink()..fail = true;
     await _boot(tester, _app(sink, resumeScreen: 2, profile: _profile));
 
     await _tap(tester, 'Continue');
@@ -316,7 +238,7 @@ void main() {
   });
 
   testWidgets('resume opens on the screen the mapping names', (tester) async {
-    await _boot(tester, _app(_FakeSink(), resumeScreen: 5));
+    await _boot(tester, _app(FakeOnboardingSink(), resumeScreen: 5));
     expect(find.text('Your cooking habits'), findsOneWidget);
     // Back walks the screens, not the server steps.
     await _tap(tester, 'Skip');
@@ -325,7 +247,7 @@ void main() {
 
   testWidgets('About you holds Continue on an out-of-range metric',
       (tester) async {
-    final sink = _FakeSink();
+    final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink, resumeScreen: 3, profile: _profile));
     expect(_ctaDisabled(tester), isFalse);
 
@@ -350,7 +272,7 @@ void main() {
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
-        child: _app(_FakeSink(), profile: _profile),
+        child: _app(FakeOnboardingSink(), profile: _profile),
       ),
     );
     await _frames(tester);
@@ -368,9 +290,8 @@ void main() {
       'seeding — so a signed-in user keeps the answers they saved',
       (tester) async {
     // profileProvider answers `AsyncData(null)` the instant it is asked while
-    // signed out, and Supabase restores the session a beat later. Seeding on
-    // that first answer gave a signed-in user the device's guesses — and screen
-    // 2 then posted the phone's country over the one they had actually saved.
+    // signed out, and Supabase restores the session a beat later; seeding on
+    // that answer gives a signed-in user the device's guesses.
     const saved = ProfileRow({
       'onboardingStep': 1,
       'countryOfOrigin': 'Japan',
@@ -379,20 +300,19 @@ void main() {
     });
     final sessions = StreamController<Session?>();
     addTearDown(sessions.close);
-    final sink = _FakeSink();
+    final sink = FakeOnboardingSink();
 
     await _boot(
       tester,
-      // The first signed-in fetch FAILS. An errored profile is neither loading
-      // nor loaded, so a `!isLoading` hold let it through and seeded the same
-      // signed-in user from the device.
+      // The first signed-in fetch FAILS — neither loading nor loaded, so a
+      // `!isLoading` hold let it through and seeded from the device.
       _app(sink, profile: saved, sessions: sessions.stream, profileFailures: 1),
     );
     // Nothing is drawn yet: there is no answer to seed from.
     expect(find.text('Choose your language'), findsNothing);
     expect(find.text('About you'), findsNothing);
 
-    sessions.add(_session());
+    sessions.add(testSession());
     await _frames(tester);
 
     // Still nothing — and the wizard says so, with the one move that helps.
@@ -441,7 +361,7 @@ void main() {
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    final sink = _FakeSink();
+    final sink = FakeOnboardingSink();
     await tester.pumpWidget(_app(sink, profile: _profile));
     await _frames(tester);
 
@@ -484,10 +404,13 @@ void main() {
         'Australia');
   });
 
-  testWidgets('back on screen 1 closes the wizard rather than popping a screen',
-      (tester) async {
+  testWidgets('screen 1 offers no Skip, and back there closes the wizard '
+      'rather than popping a screen', (tester) async {
     var closed = 0;
-    await _boot(tester, _app(_FakeSink(), onClose: () => closed++));
+    await _boot(tester, _app(FakeOnboardingSink(), onClose: () => closed++));
+
+    expect(find.text('Choose your language'), findsOneWidget);
+    expect(find.text('Skip'), findsNothing, reason: 'a language has to be chosen');
 
     await tester.tap(
       find.byIcon(LucideIcons.chevronLeft300),

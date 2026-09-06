@@ -1,15 +1,11 @@
-/// The bun mascot's frames and its one set of timing constants.
-///
-/// Ported from the motion study (`motion2/bun-motion.html`). Tune these
-/// **together**: the gesture rhythm lives in the ratios, not in any single
-/// number — a longer lid close with the same hold reads as a slow eye, a
-/// shorter viseme hold with the same char rate reads as a stutter.
+/// The bun mascot's frames and its one set of timing constants, ported from
+/// the motion study (`motion2/bun-motion.html`). Tune these **together**: the
+/// gesture rhythm lives in the ratios, not in any single number.
 library;
 
 // ── Frames ────────────────────────────────────────────────────────────────
-// Three 360x332 transparent WebPs of the SAME body. Only the face differs, so
-// the base frame stays fully opaque and the other two are composited on top —
-// cross-fading two frames would dip the body's alpha and read as a flicker.
+// Three 360x332 transparent WebPs of the SAME body: only the face differs, so
+// the base stays opaque and the other two composite on top of it.
 const String kBunBaseFrame = 'assets/mascot/bun_base.webp'; // eyes open, smile
 const String kBunBlinkFrame = 'assets/mascot/bun_blink.webp'; // eyes closed
 const String kBunWideFrame = 'assets/mascot/bun_wide.webp'; // mouth open, "ah"

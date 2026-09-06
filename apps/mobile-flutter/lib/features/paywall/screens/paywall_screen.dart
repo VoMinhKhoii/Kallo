@@ -16,11 +16,9 @@ import '../widgets/paywall_status.dart';
 
 /// Kallo Pro. Free and trial-expired users get the two-tier face — the pitch
 /// on the warm band, the plans on a white sheet pinned to the bottom edge —
-/// while premium users get their plan and the store-management CTA.
-///
-/// The page paints [KalloColors.hover] edge to edge (rather than sitting in
-/// `Screen`, which paints the canvas): the band has to run under the status
-/// bar, and a canvas-coloured strip above a warm band is a visible seam.
+/// while premium users get their plan and the store-management CTA. The page
+/// paints [KalloColors.hover] edge to edge rather than sitting in `Screen`, so
+/// the band runs under the status bar with no canvas-coloured seam above it.
 class PaywallScreen extends ConsumerWidget {
   const PaywallScreen({super.key, this.onboarding = false});
 
@@ -73,11 +71,9 @@ class PaywallScreen extends ConsumerWidget {
     );
   }
 
-  /// Band above, sheet below. The sheet is pinned to the bottom edge by
-  /// [SliverFillRemaining] rather than by a [Column]: at 320pt with large text
-  /// the two together are taller than the screen, and a Column has nowhere to
-  /// put the excess but off the bottom. As a sliver pair the page simply
-  /// scrolls, and the sheet still sits on the bottom edge whenever it fits.
+  /// Band above, sheet below — pinned by [SliverFillRemaining], not a
+  /// [Column]: at 320pt with large text the two are taller than the screen, and
+  /// a Column can only push the excess off the bottom edge.
   Widget _purchase(
     BuildContext context,
     EntitlementState entitlement,

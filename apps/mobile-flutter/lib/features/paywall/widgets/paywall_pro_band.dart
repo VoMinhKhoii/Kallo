@@ -9,11 +9,9 @@ import '../../../theme/kallo_theme.dart';
 import 'paywall_features.dart';
 
 /// The pitch above the plan sheet: the title, the trial countdown while one is
-/// running, and the four things Pro adds to Free.
-///
-/// It sits on the warm [KalloColors.hover] band the screen paints, so it
-/// carries no surface of its own — the white sheet below is the only object on
-/// this screen.
+/// running, and the four things Pro adds to Free. It sits on the warm
+/// [KalloColors.hover] band the screen paints and carries no surface of its
+/// own — the white sheet below is the only object on this screen.
 class PaywallProBand extends StatelessWidget {
   const PaywallProBand({required this.entitlement, super.key});
 

@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../theme/kallo_colors.dart';
 
 /// Paints the ruler face for a scrolling strip: a top edge with graduations
-/// hanging from it, tall at each anchor and short between them.
-///
-/// The strip scrolls under a fixed needle, so unlike the old slider-track
-/// version there is no thumb position to tint against — the needle is always at
-/// the viewport centre and the scale moves. Graduations are therefore drawn in
-/// one weight; "how much" is read from the needle, not from a filled bar.
+/// hanging from it, tall at each anchor and short between them. The strip
+/// scrolls under a fixed needle, so there is no thumb position to tint against
+/// — graduations are one weight, and "how much" is read from the needle.
 class RulerPainter extends CustomPainter {
   const RulerPainter({required this.majors, required this.graduations});
 

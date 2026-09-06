@@ -10,11 +10,9 @@ import '../data/constants.dart';
 import '../logic/onboarding_answers.dart';
 import '../widgets/pace_ruler.dart';
 
-/// Screen 4 — "Your goal", and how fast.
-///
-/// Maintaining hides the ruler outright rather than disabling it: there is no
-/// pace to set when the target IS the TDEE, and a greyed control on the page
-/// only invites a tap that does nothing.
+/// Screen 4 — "Your goal", and how fast. Maintaining hides the ruler outright
+/// rather than disabling it: there is no pace to set when the target IS the
+/// TDEE.
 class StepGoal extends StatelessWidget {
   const StepGoal({
     super.key,
@@ -35,8 +33,7 @@ class StepGoal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // OptionRow already ticks the haptic on a CHANGE (never on a re-tap), so
-    // the goal rows get the selection feedback the spec asks for for free.
+    // OptionRow ticks the haptic on a CHANGE (never on a re-tap).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

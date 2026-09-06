@@ -13,12 +13,8 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// Opens the full A–Z country list as a modal sheet and returns the pick
-/// (`null` when dismissed).
-///
-/// Screen 2 asks the ORIGIN question inline, on the page, because that is the
-/// question the step exists for. Residence is a correction to a guess, so it
-/// gets the sheet instead: the same list, but reached from one word rather than
-/// occupying a second half of the screen.
+/// (`null` when dismissed). Screen 2 asks the ORIGIN question inline; residence
+/// is only a correction to a guess, so it gets the sheet instead.
 Future<String?> pickCountry(
   BuildContext context, {
   required String? selectedValue,

@@ -12,11 +12,8 @@ import '../data/paywall_controller.dart';
 import '../logic/paywall_result.dart';
 
 /// "Restore purchases · Terms · Privacy" — the three obligations, on one quiet
-/// meta line under the CTA.
-///
-/// The legal pages open through `shared/logic/legal_links.dart` (the same two
-/// the Settings About group links to), so they land in the app's own language
-/// instead of re-detecting the locale from the bare redirect path.
+/// meta line under the CTA. The legal pages open through
+/// `shared/logic/legal_links.dart`, so they land in the app's own language.
 class PaywallSheetActions extends ConsumerWidget {
   const PaywallSheetActions({required this.state, super.key});
 
@@ -28,11 +25,9 @@ class PaywallSheetActions extends ConsumerWidget {
     final busy =
         state.phase == PaywallPhase.purchasing ||
         state.phase == PaywallPhase.verifying;
-    // `Flexible` would divide the line into three EQUAL shares, so the longest
-    // label ("Restore purchases") lost its tail to an ellipsis while the two
-    // shorter ones sat on spare room they had no use for. The three sit at
-    // their intrinsic widths instead, and the line as a whole scales down only
-    // when it genuinely cannot fit (a narrow phone, or large text).
+    // Intrinsic widths, not `Flexible`: equal shares ellipsized "Restore
+    // purchases" while the two shorter labels sat on room they had no use for.
+    // The line as a whole scales down only when it cannot fit.
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(

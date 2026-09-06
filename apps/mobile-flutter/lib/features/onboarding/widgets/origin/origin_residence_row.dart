@@ -6,12 +6,9 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// The quiet consequence of picking an origin: where the phone thinks you
-/// actually LIVE, with one word to correct it.
-///
-/// Deliberately not a second picker on the page. Residence changes the
+/// actually LIVE, with one word to correct it. Residence changes the
 /// ingredients the AI reaches for, not the cuisine, so it is a footnote to the
-/// origin question rather than a peer of it — one 48pt line, muted, with the
-/// full country list only a tap away behind "Change".
+/// origin question rather than a second picker — one 48pt muted line.
 class OriginResidenceRow extends StatelessWidget {
   const OriginResidenceRow({
     super.key,

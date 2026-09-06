@@ -7,11 +7,8 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// One of screen 3's three metrics: a muted label over a 52pt pill holding the
-/// figure and its unit.
-///
-/// The unit lives INSIDE the field, muted, rather than in the label above it —
-/// "62 kg" is how the answer reads back, and a field labelled "Weight (kg)"
-/// spends a whole line saying what a two-letter suffix says beside the number.
+/// figure and its unit. The unit lives INSIDE the field, muted — "62 kg" is how
+/// the answer reads back.
 ///
 /// The decoration is spelled out in full rather than inherited: the app's
 /// [InputDecorationTheme] sets `filled` and an outline border, and clearing
@@ -87,9 +84,8 @@ class _UnitFieldState extends State<UnitField> {
               color: widget.hasError ? KalloColors.danger : KalloColors.border,
             ),
           ),
-          // The figure right-aligns against its unit rather than centring in
-          // the pill: the pair then reads as one token ("62 kg") at every digit
-          // count, where a centred number drifts away from its unit as it grows.
+          // Right-aligned against its unit, not centred in the pill: the pair
+          // reads as one token ("62 kg") at every digit count.
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: Row(
             children: [

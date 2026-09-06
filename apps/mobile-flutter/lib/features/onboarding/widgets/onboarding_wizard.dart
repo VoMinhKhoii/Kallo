@@ -64,10 +64,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   bool _busy = false;
   bool _reportedSeedError = false;
 
-  /// Resolved ONCE, the first time every source has settled, and never again:
-  /// a later re-read would overwrite answers the user is in the middle of
-  /// giving (every save invalidates `profileProvider`, so there IS a later
-  /// read).
+  /// Resolved ONCE, the first time every source has settled: every save
+  /// invalidates `profileProvider`, so a re-read would overwrite answers the
+  /// user is in the middle of giving.
   void _resolveStart(ProfileRow? profile, OnboardingDraft? draft) {
     final seeded = buildOnboardingAnswers(
       profile: profile,
@@ -129,25 +128,16 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     setState(() => _screen = screen - 1);
   }
 
-  /// Whether every source the seed reads has ANSWERED.
+  /// Whether every source the seed reads has ANSWERED. The seed resolves once,
+  /// so seeding off a source that has not landed yet sticks for the session.
   ///
-  /// Seeding off a source that has not landed yet would open the wizard blank
-  /// for a signed-out user whose draft is still coming off disk — and the seed
-  /// is resolved once, so "blank" would stick for the whole session.
-  ///
-  /// The SESSION is one of those sources even though the seed never reads it.
-  /// `profileProvider` answers `AsyncData(null)` immediately while signed out,
-  /// and it is asked before Supabase's restored session arrives — so without
-  /// this a signed-in user seeded off "no profile", and screen 2 then posted
-  /// the phone's country guess over the country they had actually saved.
-  ///
-  /// For a signed-in user the profile must have LANDED — a value, and not an
-  /// error. An ERRORED fetch is not loading, and Riverpod hands the error the
-  /// PREVIOUS value alongside it: that previous value is the `null` the
-  /// provider answered with while the session was still unrestored, so waiting
-  /// on `!isLoading` (or on `hasValue`) alone let a failed fetch seed a
-  /// signed-in user from the device exactly as an unrestored session did — and
-  /// screen 2 then posted the phone's country over their saved one.
+  /// The SESSION counts even though the seed never reads it: `profileProvider`
+  /// answers `AsyncData(null)` immediately while signed out, and is asked
+  /// before Supabase restores the session. For a signed-in user the profile
+  /// must have LANDED — a value, and not an error, since Riverpod hands an
+  /// error that same stale `null` alongside it. Either slip seeds a signed-in
+  /// user from the device, and screen 2 then posts the phone's country over the
+  /// one they had saved.
   bool _settled({
     required bool signedIn,
     required AsyncValue<Object?> session,
@@ -208,13 +198,13 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       key: ValueKey(screen),
       screen: screen,
       title: tr(_titles[screen]!),
-      ctaLabel:
-          tr(last ? 'onboarding.savePlan' : 'onboarding.continueLabel'),
+      ctaLabel: tr(last ? 'onboarding.savePlan' : 'onboarding.continueLabel'),
       busy: _busy,
       onContinue: blocked ? null : () => _leave(screen, skip: false),
-      onBack: screen == 1 && widget.onClose == null
-          ? null
-          : (_busy ? null : () => _back(screen)),
+      onBack:
+          screen == 1 && widget.onClose == null
+              ? null
+              : (_busy ? null : () => _back(screen)),
       onSkip: screen == 1 || _busy ? null : () => _leave(screen, skip: true),
       child: _body(screen),
     );
@@ -226,16 +216,16 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     void changed() => setState(() {});
     return switch (screen) {
       1 => StepLanguage(
-          answers: answers,
-          deviceLanguage: device.deviceLanguage,
-          localeFromDevice: device.localeFromDevice,
-          onChanged: changed,
-        ),
+        answers: answers,
+        deviceLanguage: device.deviceLanguage,
+        localeFromDevice: device.localeFromDevice,
+        onChanged: changed,
+      ),
       2 => StepOrigin(
-          answers: answers,
-          deviceCountry: device.deviceCountry,
-          onChanged: changed,
-        ),
+        answers: answers,
+        deviceCountry: device.deviceCountry,
+        onChanged: changed,
+      ),
       3 => StepAboutYou(answers: answers, onChanged: changed),
       4 => StepGoal(answers: answers, onChanged: changed),
       5 => StepCooking(answers: answers, onChanged: changed),

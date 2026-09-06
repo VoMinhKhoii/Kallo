@@ -67,8 +67,7 @@ void main() {
       );
 
       var sawLid = false;
-      // The settling blink lands ~300ms in, deferred by the mouth guard; the
-      // whole lid cycle is done inside a second.
+      // The settling blink lands ~300ms in; the lid cycle ends inside 1s.
       for (var i = 0; i < 64; i++) {
         await tester.pump(const Duration(milliseconds: 16));
         expect(_frameOpacity(tester, 'base'), 1);
@@ -93,8 +92,7 @@ void main() {
     });
 
     testWidgets('a punctuation mark rests the type loop', (tester) async {
-      // Two lines of the same length; the first spends a comma's worth of
-      // extra time, so it MUST be behind the second at the same instant.
+      // Same length, but the first spends a comma's worth of extra time.
       const paused = 'aaaa,aaaaaaaaaaaaaaaaaaaa';
       const plain = 'aaaaaaaaaaaaaaaaaaaaaaaaa';
       final typed = <int>[];

@@ -55,12 +55,10 @@ String brothConsumptionToString(BrothConsumption b) => switch (b) {
 // ── Tolerant parsers ─────────────────────────────────────────────────────
 //
 // The `…FromString` parsers above THROW, which is right for a payload the app
-// itself just built. A value read BACK — off the onboarding draft on disk, or
-// off a server row written by an older build — is not that: it can name an
-// enum member this build has never heard of, and a throw there took the whole
-// wizard screen down. These answer `null` instead and let the caller decide
-// what a stale value costs (the draft drops that step; the seed falls through
-// to the next source).
+// just built. A value read BACK — off the draft on disk, or off a server row
+// written by an older build — can name an enum member this build has never
+// heard of, and a throw there takes the wizard screen down. These answer
+// `null` and let the caller decide what a stale value costs.
 
 T? _byNameOrNull<T extends Enum>(List<T> values, String? name) {
   if (name == null) return null;

@@ -1,13 +1,9 @@
-/// Device-region defaults for the "Where you cook" step.
-///
-/// No web counterpart: the web wizard opens the country list alphabetically and
-/// asks the user to find themselves. On mobile the platform locale already
-/// knows the region and the language, so the step opens pre-answered with a
-/// "From your phone" note and the user only has to correct it.
+/// Device-region defaults for the "Where you cook" step. No web counterpart:
+/// the platform locale already knows the region and the language, so the step
+/// opens pre-answered with a "From your phone" note.
 ///
 /// Everything here is pure except [deviceRegionCode]/[deviceLanguageCode],
-/// which read the platform locale once; the rest takes its inputs as arguments
-/// so the wizard's defaults are testable without a binding.
+/// which read the platform locale once.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -18,9 +14,8 @@ const List<String> _supportedLocales = ['en', 'vi'];
 /// Kallo ships.
 const String kDefaultLocale = 'en';
 
-/// Vietnam is always offered, wherever the phone thinks it is: it is the one
-/// region Kallo is built around, and a Vietnamese cook abroad still cooks
-/// Vietnamese.
+/// Always offered, wherever the phone thinks it is — a Vietnamese cook abroad
+/// still cooks Vietnamese.
 const String kPinnedOriginCountry = 'Vietnam';
 
 /// Extra suggestions per app language, in the order they should appear under

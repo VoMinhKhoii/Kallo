@@ -18,9 +18,9 @@ class PaywallHeader extends StatelessWidget {
     super.key,
   });
 
-  /// The band's own gutter. The row insets by LESS than it: a 44pt target
-  /// around a 24pt glyph carries 10pt of slack, and paying that out of the
-  /// gutter is what puts the glyph's edge on the same line as the title below.
+  /// The band's own gutter. The row insets by LESS: the 10pt of slack in a
+  /// 44pt target around a 24pt glyph is paid out of it, which puts the glyph's
+  /// edge on the title's line.
   final double gutter;
 
   final VoidCallback onClose;

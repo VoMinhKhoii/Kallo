@@ -7,12 +7,9 @@ import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../widgets/target/target_card.dart';
 
-/// Screen 6 — "Your daily target".
-///
-/// The one screen that gives something back rather than asking for it, so the
-/// whole page is the card. A user who left the metrics blank gets the unlock
-/// copy in the same slot instead: the screen still exists, it just has nothing
-/// to show yet, and saying so is better than skipping a step of the six.
+/// Screen 6 — "Your daily target": the one screen that gives something back
+/// rather than asking for it, so the whole page is the card. A user who left
+/// the metrics blank gets the unlock copy in the same slot.
 class StepTarget extends StatelessWidget {
   const StepTarget({
     super.key,
@@ -27,9 +24,8 @@ class StepTarget extends StatelessWidget {
   Widget build(BuildContext context) {
     final macros = answers.targets;
     if (macros == null) return const _UnlockCard();
-    // [TargetCard] is a shared-shaped widget that still speaks the server's
-    // strings, so the enum is spelled out on the way in and parsed on the way
-    // back — the only place in the wizard that still converts.
+    // [TargetCard] still speaks the server's strings, so the enum converts on
+    // the way in and back — the only place in the wizard that does.
     return TargetCard(
       macros: macros,
       carbSplit: carbSplitToString(answers.carbSplit),

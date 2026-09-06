@@ -16,17 +16,10 @@ typedef OptionRowSurface =
 /// and the paywall's `PlanRow` under its gold.
 ///
 /// The border width is paid for out of the padding (`sp4 - border`), so the
-/// content sits at exactly 16 from the outer edge in both states. Without
-/// that, picking a row nudged its own text 1pt left.
-///
-/// It sits in a subfolder of its own rather than beside `option_row.dart`
-/// only because `form/` is at the structure gate's 10-entry cap; the rest of
-/// the option row's parts belong here as they are split out.
-///
-/// The surface is the one thing the two rows do NOT share — white and washing
-/// under a finger on one, a gradient with a chip hanging off it on the other —
-/// so the shell hands its padded body to [surface] and never paints anything
-/// itself.
+/// content sits at exactly 16 from the outer edge in both states; without that,
+/// picking a row nudged its own text 1pt left. The surface is the one thing the
+/// two rows do NOT share, so the shell hands its padded body to [surface] and
+/// never paints anything itself.
 class OptionRowShell extends StatefulWidget {
   const OptionRowShell({
     super.key,

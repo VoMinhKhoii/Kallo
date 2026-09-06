@@ -1,12 +1,10 @@
 /// The signed-out onboarding draft.
 ///
-/// No web counterpart: the web wizard only runs behind auth, so every answer
-/// goes straight to `POST /api/v1/onboarding/screen`. Mobile lets a signed-out
-/// user finish the whole wizard first and sign in at the end, so the three
-/// server step payloads are held locally until there is a session to post them
-/// with (see `OnboardingDraftNotifier.flush`).
-///
-/// Stored as JSON in `flutter_secure_storage` — same construction/options as
+/// No web counterpart: the web wizard only runs behind auth. Mobile lets a
+/// signed-out user finish the whole wizard first and sign in at the end, so the
+/// three server step payloads are held locally until there is a session to post
+/// them with (see `OnboardingDraftNotifier.flush`). Stored as JSON in
+/// `flutter_secure_storage` — same construction/options as
 /// `services/billing/activation_pending.dart` — because the payloads carry body
 /// metrics.
 library;
@@ -23,10 +21,8 @@ import '../../../models/profile/onboarding.dart';
 /// payload change can be dropped rather than migrated.
 const String kOnboardingDraftKey = 'onboarding.draft.v1';
 
-/// The number of wizard screens (`kOnboardingTotalSteps` stays 3 — that is the
-/// SERVER's step count). `screenReached` is 0 before the wizard starts.
-/// Private so the wizard's own screen-count constant stays the one the UI
-/// imports; this is only the clamp for a value read back off disk.
+/// The number of wizard screens — the clamp for a `screenReached` read back off
+/// disk. (`kOnboardingTotalSteps` stays 3: that is the SERVER's step count.)
 const int _screenCount = 6;
 
 /// The three server step payloads plus how far the user got. Immutable; every
@@ -59,72 +55,61 @@ class OnboardingDraft {
   ///
   /// NOT [isComplete]: screen 3's body metrics are optional, and with them
   /// blank `stepTwoValues` is null, so screens 4 and 6 post nothing and the
-  /// draft never gets a `step2`. Such a user finished every screen the wizard
-  /// has; gating `/save-plan` on [isComplete] would loop them back into the
-  /// wizard forever. [isComplete] stays what it says on the tin (which steps
-  /// have a payload) for the flush, which skips the absent ones.
+  /// draft never gets a `step2`. Gating `/save-plan` on [isComplete] would loop
+  /// such a user back into the wizard forever.
   bool get hasFinishedScreens => screenReached >= _screenCount;
 
   /// Nothing worth restoring: no payloads and the wizard never advanced.
-  bool get isEmpty => step1 == null &&
-      step2 == null &&
-      step3 == null &&
-      screenReached == 0;
+  bool get isEmpty =>
+      step1 == null && step2 == null && step3 == null && screenReached == 0;
 
   OnboardingDraft copyWith({
     Map<String, dynamic>? step1,
     Map<String, dynamic>? step2,
     Map<String, dynamic>? step3,
     int? screenReached,
-  }) {
-    return OnboardingDraft(
-      step1: step1 ?? this.step1,
-      step2: step2 ?? this.step2,
-      step3: step3 ?? this.step3,
-      screenReached: screenReached ?? this.screenReached,
-    );
-  }
+  }) => OnboardingDraft(
+    step1: step1 ?? this.step1,
+    step2: step2 ?? this.step2,
+    step3: step3 ?? this.step3,
+    screenReached: screenReached ?? this.screenReached,
+  );
 
   /// The payload for a server step (1–3), or `null` when that step is unsaved.
   Map<String, dynamic>? stepPayload(int step) => switch (step) {
-        1 => step1,
-        2 => step2,
-        3 => step3,
-        _ => null,
-      };
+    1 => step1,
+    2 => step2,
+    3 => step3,
+    _ => null,
+  };
 
-  OnboardingDraft withStep(int step, Map<String, dynamic> data) {
-    return switch (step) {
-      1 => copyWith(step1: data),
-      2 => copyWith(step2: data),
-      3 => copyWith(step3: data),
-      _ => this,
-    };
-  }
+  OnboardingDraft withStep(int step, Map<String, dynamic> data) =>
+      switch (step) {
+        1 => copyWith(step1: data),
+        2 => copyWith(step2: data),
+        3 => copyWith(step3: data),
+        _ => this,
+      };
 
   Map<String, dynamic> toJson() => {
-        if (step1 != null) 'step1': step1,
-        if (step2 != null) 'step2': step2,
-        if (step3 != null) 'step3': step3,
-        'screenReached': screenReached,
-      };
+    if (step1 != null) 'step1': step1,
+    if (step2 != null) 'step2': step2,
+    if (step3 != null) 'step3': step3,
+    'screenReached': screenReached,
+  };
 
-  /// One step's map, or `null` when it is missing OR carries an enum value
-  /// this build no longer understands.
+  /// One step's map, or `null` when it is missing OR carries an enum value this
+  /// build no longer understands.
   ///
-  /// Validated by PARSING each enum-shaped field into its model, with the same
-  /// tolerant parsers the seed reads it back through. A draft written by an
-  /// older build (or hand-edited) therefore costs the user that step's answers
-  /// once — where the throwing parsers used to cost them the app, since the
-  /// seed runs inside the wizard's `build` and a red error box there survives
-  /// any relaunch.
-  static Map<String, dynamic>? _step(
-    Object? value,
-    Map<String, Object? Function(String?)> enums,
-  ) {
+  /// Validated by PARSING each enum-shaped field with the same tolerant parsers
+  /// the seed reads it back through. A draft written by an older build (or
+  /// hand-edited) therefore costs the user that step's answers once — where the
+  /// throwing parsers used to cost them the app, since the seed runs inside the
+  /// wizard's `build` and a red error box there survives any relaunch.
+  static Map<String, dynamic>? _step(Object? value) {
     if (value is! Map) return null;
     final step = Map<String, dynamic>.from(value);
-    for (final field in enums.entries) {
+    for (final field in _enumFields.entries) {
       final stored = step[field.key];
       if (stored == null) continue; // unanswered, not invalid
       if (stored is String && field.value(stored) != null) continue;
@@ -141,27 +126,23 @@ class OnboardingDraft {
   factory OnboardingDraft.fromJson(Map<String, dynamic> json) {
     final reached = json['screenReached'];
     return OnboardingDraft(
-      step1: _step(json['step1'], const {}),
-      step2: _step(json['step2'], _step2Enums),
-      step3: _step(json['step3'], _step3Enums),
-      screenReached: reached is int
-          ? reached.clamp(0, _screenCount)
-          : 0,
+      step1: _step(json['step1']),
+      step2: _step(json['step2']),
+      step3: _step(json['step3']),
+      screenReached: reached is int ? reached.clamp(0, _screenCount) : 0,
     );
   }
 }
 
-/// The enum-shaped fields of each step, each paired with the model parser that
+/// Every enum-shaped field a step can carry, paired with the model parser that
 /// says whether a stored string is still a value this build knows — the same
-/// parsers `onboarding_seed.dart` reads the step back through.
-const Map<String, Object? Function(String?)> _step2Enums = {
+/// parsers `onboarding_seed.dart` reads the step back through. Step 1 carries
+/// none of them, so it is validated by absence.
+const Map<String, Object? Function(String?)> _enumFields = {
   'biologicalSex': tryParseBiologicalSex,
   'goal': tryParseGoal,
   'activityLevel': tryParseActivityLevel,
   'carbSplit': tryParseCarbSplit,
-};
-
-const Map<String, Object? Function(String?)> _step3Enums = {
   'oilUsage': tryParseOilUsage,
   'defaultRicePortion': tryParseRicePortion,
   'sugarBraised': tryParseSugarBraised,
@@ -197,8 +178,8 @@ class SecureKeyValueStore implements KeyValueStore {
   Future<void> delete(String key) => _storage.delete(key: key);
 }
 
-/// Test double for [KeyValueStore]: the draft's behaviour is exercised against
-/// this, since a platform channel has no binding under `flutter test`.
+/// Test double for [KeyValueStore]: a platform channel has no binding under
+/// `flutter test`.
 class InMemoryKeyValueStore implements KeyValueStore {
   final Map<String, String> values = {};
 
@@ -229,27 +210,22 @@ class OnboardingDraftStore {
   /// How long the read waits for the storage channel before giving up.
   ///
   /// A platform channel can simply never answer (a wedged keychain, a
-  /// first-launch race), and the router holds the splash on this future — so a
-  /// signed-out cold start would sit on the splash forever. Three seconds is
-  /// well past a real keychain read and well inside a launch the user reads as
-  /// working.
+  /// first-launch race), and the router holds the splash on this future. Three
+  /// seconds is well past a real keychain read and well inside a launch the
+  /// user reads as working.
   static const Duration readTimeout = Duration(seconds: 3);
+
+  void _log(String message) => developer.log(message, name: 'onboarding.draft');
 
   Future<OnboardingDraft?> read() async {
     String? raw;
     try {
       raw = await _storage.read(kOnboardingDraftKey).timeout(readTimeout);
     } on TimeoutException {
-      developer.log(
-        'onboarding draft read timed out after $readTimeout',
-        name: 'onboarding.draft',
-      );
+      _log('onboarding draft read timed out after $readTimeout');
       return null;
     } catch (e) {
-      developer.log(
-        'onboarding draft unreadable: $e',
-        name: 'onboarding.draft',
-      );
+      _log('onboarding draft unreadable: $e');
       return null;
     }
     if (raw == null || raw.isEmpty) return null;
@@ -258,10 +234,7 @@ class OnboardingDraftStore {
       if (decoded is! Map) return null;
       return OnboardingDraft.fromJson(Map<String, dynamic>.from(decoded));
     } catch (e) {
-      developer.log(
-        'onboarding draft corrupt, discarding: $e',
-        name: 'onboarding.draft',
-      );
+      _log('onboarding draft corrupt, discarding: $e');
       return null;
     }
   }
@@ -270,10 +243,7 @@ class OnboardingDraftStore {
     try {
       await _storage.write(kOnboardingDraftKey, jsonEncode(draft.toJson()));
     } catch (e) {
-      developer.log(
-        'onboarding draft unwritable: $e',
-        name: 'onboarding.draft',
-      );
+      _log('onboarding draft unwritable: $e');
     }
   }
 
@@ -281,10 +251,7 @@ class OnboardingDraftStore {
     try {
       await _storage.delete(kOnboardingDraftKey);
     } catch (e) {
-      developer.log(
-        'onboarding draft not cleared: $e',
-        name: 'onboarding.draft',
-      );
+      _log('onboarding draft not cleared: $e');
     }
   }
 }

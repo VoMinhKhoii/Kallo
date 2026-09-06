@@ -1,18 +1,10 @@
 /// The wizard's live answers and the three server payloads built from them.
 ///
 /// Mutable on purpose: six screens edit one object and the wizard re-renders,
-/// rather than each screen owning a slice and reporting it upward the way the
-/// three-step wizard did. That old shape is what forced the "screens 3, 4 and 6
-/// each rebuild the whole step-2 map" problem into the wizard; here the map has
-/// exactly one author.
-///
-/// Every enum-shaped answer is held as its ENUM, not as the string the server
-/// spells it with. The strings used to live here, which meant the enum schema
-/// was written out again in the draft validator, in the seed's cooking table
-/// and in each screen's option list — four places to keep in step, and a typo
-/// in any of them surfaced as a thrown parse deep inside `build`. Parsing
-/// happens once, at the seed boundary ([buildOnboardingAnswers]); serialising
-/// happens once, in the payloads below.
+/// so the step-2 map has exactly one author. Every enum-shaped answer is held
+/// as its ENUM, not as the string the server spells it with — parsing happens
+/// once at the seed boundary ([buildOnboardingAnswers]), serialising once in
+/// the payloads below, so the schema is not written out in four places.
 library;
 
 import '../../../models/profile/onboarding.dart';
@@ -24,12 +16,11 @@ const ({num min, num max}) kWeightRange = (min: 30, max: 300);
 const ({num min, num max}) kHeightRange = (min: 100, max: 250);
 const ({num min, num max}) kAgeRange = (min: 13, max: 100);
 
-/// The lowest daily target that may be shown or stored.
-///
-/// Mirrors `settings/logic/profile_payload.dart` and the server, which clamps
-/// `calorieTarget = max(., 500)`. Without it an IN-RANGE 30 kg / 100 cm /
-/// 100 yr sedentary cut computes a NEGATIVE target — and the server clamps only
-/// the calories, so the negative macro grams would have been stored as sent.
+/// The lowest daily target that may be shown or stored. Mirrors
+/// `settings/logic/profile_payload.dart` and the server's
+/// `calorieTarget = max(., 500)`; without it an IN-RANGE 30 kg / 100 cm /
+/// 100 yr sedentary cut computes a NEGATIVE target, and the server clamps only
+/// the calories, so the negative macro grams would be stored as sent.
 const double kCalorieFloor = 500;
 
 class OnboardingAnswers {
@@ -65,10 +56,8 @@ class OnboardingAnswers {
   CookingHabits cooking;
 
   // ── Validation ──────────────────────────────────────────────────────────
-  // A BLANK field is not an error: the copy calls the metrics optional, and a
-  // user who leaves them blank simply gets the "unlock your target" card on
-  // screen 6 instead of a number. Only a value OUT OF RANGE blocks Continue,
-  // because that one cannot be stored at all.
+  // A BLANK field is not an error — screen 6 offers the unlock card instead of
+  // a number. Only a value OUT OF RANGE blocks Continue: it cannot be stored.
 
   bool _outOfRange(num? value, ({num min, num max}) range) =>
       value != null && (value < range.min || value > range.max);
@@ -101,9 +90,8 @@ class OnboardingAnswers {
     return calcTDEE(bmr, activityLevel);
   }
 
-  /// The card's figures AND the payload's, from one computation: the floor is
-  /// applied HERE rather than on the way out, so the target card can never show
-  /// a number the save would have clamped.
+  /// The card's figures AND the payload's, from one computation, so the card
+  /// can never show a number the save would have clamped.
   MacroTargets? get targets {
     final tdee = tdeeKcal;
     if (tdee == null) return null;
@@ -115,28 +103,30 @@ class OnboardingAnswers {
       deficitOverride,
     );
     if (raw.calories >= kCalorieFloor) return raw;
-    // Clamp then RE-DERIVE the grams: clamping the calories alone would leave
-    // three macro figures that do not add up to the number above them.
+    // Clamp then RE-DERIVE the grams, or the three macro figures no longer
+    // add up to the number above them.
     return calcMacroGrams(kCalorieFloor, carbSplit);
   }
 
   /// kcal added or removed per day at the current goal + pace — the number the
   /// pace ruler reads out. Zero while maintaining.
-  int get paceKcal => goal == Goal.maintaining
-      ? 0
-      : (deficitOverride ?? (aggression ?? 0) * kAggressionKcalPerKg).round();
+  int get paceKcal =>
+      goal == Goal.maintaining
+          ? 0
+          : (deficitOverride ?? (aggression ?? 0) * kAggressionKcalPerKg)
+              .round();
 
   // ── Server payloads ─────────────────────────────────────────────────────
 
   /// Server step 1 — screens 1 and 2.
   Map<String, dynamic> get stepOnePayload => {
-        'countryOfOrigin': countryOfOrigin,
-        'countryOfResidence': countryOfResidence,
-        'preferredLocale': preferredLocale,
-      };
+    'countryOfOrigin': countryOfOrigin,
+    'countryOfResidence': countryOfResidence,
+    'preferredLocale': preferredLocale,
+  };
 
-  /// Server step 2 — screens 3, 4 and 6. `null` until the metrics are complete:
-  /// the payload's targets are non-nullable, so there is nothing to post.
+  /// Server step 2 — screens 3, 4 and 6. `null` until the metrics are
+  /// complete: the payload's targets are non-nullable.
   ScreenTwoValues? get stepTwoValues {
     final tdee = tdeeKcal;
     final macros = targets;

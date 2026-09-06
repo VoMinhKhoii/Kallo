@@ -6,12 +6,9 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 
-/// Screen 1 — "Choose your language".
-///
-/// Picking a row does two things at once: it records `preferredLocale` for the
-/// server AND live-switches the app with `context.setLocale`, so the rest of
-/// the wizard is already in the chosen language by the next frame. Waiting for
-/// the save would leave the user reading the wrong language for five screens.
+/// Screen 1 — "Choose your language". Picking a row records `preferredLocale`
+/// for the server AND live-switches the app with `context.setLocale`, so the
+/// rest of the wizard is already in the chosen language by the next frame.
 class StepLanguage extends StatelessWidget {
   const StepLanguage({
     super.key,
@@ -37,13 +34,10 @@ class StepLanguage extends StatelessWidget {
     (code: 'en', key: 'onboarding.language.english'),
   ];
 
-  /// [EasyLocalization.setLocale] is asynchronous — it has to read the new
-  /// locale's JSON before `tr()` answers in it. Rebuilding on the same frame
-  /// therefore repainted the wizard with the OLD translations still loaded, and
-  /// only the widgets the locale change itself rebuilt (this screen) came back
-  /// in the new language: the page title and the CTA, which the wizard passes
-  /// down as plain strings, stayed English. Awaiting the load first means one
-  /// rebuild, in one language.
+  /// AWAIT the load before rebuilding: [EasyLocalization.setLocale] has to
+  /// read the new locale's JSON before `tr()` answers in it, so an eager
+  /// rebuild left the wizard's title and CTA (passed down as plain strings)
+  /// in the old language.
   Future<void> _pick(BuildContext context, String code) async {
     if (answers.preferredLocale == code) return;
     answers.preferredLocale = code;

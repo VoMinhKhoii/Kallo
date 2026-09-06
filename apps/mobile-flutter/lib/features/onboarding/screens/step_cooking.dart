@@ -9,11 +9,9 @@ import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 
 /// One cooking question: its group label, its options' l10n keys, and the two
-/// accessors that read and write the answer on [CookingHabits].
-///
-/// The options come off the ENUM rather than being spelled out again — this
-/// list used to carry its own copy of all five value sets, which is exactly the
-/// copy that could drift from the payload the server accepts.
+/// accessors that read and write the answer on [CookingHabits]. The options
+/// come off the ENUM rather than being spelled out again, so no second copy of
+/// the value sets can drift from the payload the server accepts.
 typedef CookingHabit = ({
   String label,
   List<Enum> values,
@@ -22,11 +20,8 @@ typedef CookingHabit = ({
   CookingHabits Function(CookingHabits, Enum) write,
 });
 
-/// Screen 5 — "Your cooking habits".
-///
-/// Five strips, every one of them opening on its middle answer. That is the
-/// point of the screen: it is a calibration, not an interview, and a user who
-/// recognises their kitchen in the defaults should be able to tap Continue.
+/// Screen 5 — "Your cooking habits": five strips, every one opening on its
+/// middle answer. It is a calibration, not an interview.
 class StepCooking extends StatelessWidget {
   const StepCooking({
     super.key,

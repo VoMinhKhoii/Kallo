@@ -9,6 +9,8 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../auth/widgets/auth_page.dart';
+import '../widgets/backdrop/backdrop_slice.dart';
+import '../widgets/backdrop/step_backdrop.dart';
 
 /// The last signed-out screen (`/save-plan`): the auth surface wearing the
 /// onboarding chrome.
@@ -26,6 +28,12 @@ import '../../auth/widgets/auth_page.dart';
 /// The three options come from [AuthPage] itself (`compact: true` drops its
 /// brand block) rather than being restated here — one auth stack, one set of
 /// error and busy states, one legal footnote.
+///
+/// It wears the wizard's [StepBackdrop] too, which is what keeps it inside the
+/// onboarding instead of reading as the sign-in screen with a new title. The
+/// auth face is opaque by design (its switcher slides one face over another),
+/// so it is handed a [BackdropSlice] as its fill: the same blobs, aligned to
+/// the same box, rather than a flat canvas that would end them mid-screen.
 class SavePlanScreen extends StatelessWidget {
   const SavePlanScreen({super.key});
 
@@ -34,45 +42,53 @@ class SavePlanScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: KalloColors.surface,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              // The chrome keeps the 24pt onboarding gutter; the auth stack
-              // below brings its own (`kAuthInset`), so it must not be nested
-              // inside this one.
-              padding: const EdgeInsets.symmetric(
-                horizontal: KalloSpacing.sp6,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: LayoutBuilder(
+          builder:
+              (context, box) => Stack(
                 children: [
-                  // The step header minus the progress bar and the Skip: the
-                  // back chevron returns to the wizard.
-                  WordmarkBar(leading: _back(context)),
-                  const SizedBox(height: KalloSpacing.sp3),
-                  BunMascot(speech: tr('onboarding.guide.step7')),
-                  const SizedBox(height: KalloSpacing.sp3),
-                  Text(
-                    tr('onboarding.savePlanTitle'),
-                    style: kPageTitle(),
-                  ),
+                  const Positioned.fill(child: StepBackdrop()),
+                  _content(context, box.biggest),
                 ],
               ),
-            ),
-            const Expanded(child: AuthPage(compact: true)),
-          ],
         ),
       ),
     );
   }
 
+  Widget _content(BuildContext context, Size field) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        // The chrome keeps the 24pt onboarding gutter; the auth stack
+        // below brings its own (`kAuthInset`), so it must not be nested
+        // inside this one.
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The step header minus the progress bar and the Skip: the
+            // back chevron returns to the wizard.
+            WordmarkBar(leading: _back(context)),
+            const SizedBox(height: KalloSpacing.sp3),
+            BunMascot(speech: tr('onboarding.guide.step7')),
+            const SizedBox(height: KalloSpacing.sp3),
+            Text(tr('onboarding.savePlanTitle'), style: kPageTitle()),
+          ],
+        ),
+      ),
+      Expanded(
+        child: AuthPage(compact: true, background: BackdropSlice(field: field)),
+      ),
+    ],
+  );
+
   Widget _back(BuildContext context) => Semantics(
     button: true,
-    label: Localizations.of<MaterialLocalizations>(
-      context,
-      MaterialLocalizations,
-    )?.backButtonTooltip,
+    label:
+        Localizations.of<MaterialLocalizations>(
+          context,
+          MaterialLocalizations,
+        )?.backButtonTooltip,
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => context.go('/onboarding'),

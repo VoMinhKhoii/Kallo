@@ -1,8 +1,6 @@
 /// The server's step-2 payload, byte-compatible with the RN/web
-/// `POST /api/v1/onboarding/screen` body (mirrors RN `ScreenOneData`).
-///
-/// Three wizard screens feed it — About you (3), Goal (4) and Daily target (6)
-/// — so it outlived the single screen that used to own it and moved here.
+/// `POST /api/v1/onboarding/screen` body (mirrors RN `ScreenOneData`). Three
+/// wizard screens feed it: About you (3), Goal (4) and Daily target (6).
 library;
 
 class ScreenTwoValues {

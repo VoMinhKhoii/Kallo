@@ -38,10 +38,8 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
   /// The shortest the interstitial may be on screen, so it never flashes.
   static const Duration minimumWindow = Duration(milliseconds: 1600);
 
-  // Drives the count-up from 0 → target. Built in initState, not lazily: the
-  // count-up only ever runs when a target arrives, so a lazy field would first
-  // be touched by `dispose` — and `createTicker` on a deactivated element
-  // throws.
+  // Built in initState, not lazily: with no target the field would first be
+  // touched by `dispose`, and `createTicker` on a deactivated element throws.
   late final AnimationController _count;
 
   int? _target;

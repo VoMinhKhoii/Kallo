@@ -290,12 +290,9 @@ class PurchasesService {
   }
 
   /// The product ids this customer can still START a free trial (or other
-  /// introductory offer) on.
-  ///
-  /// The paywall's trial copy hangs off this rather than off the product's
-  /// declared `introductoryPrice`, which every customer sees whether or not the
-  /// store would honour it. iOS only: Android — and anything RevenueCat cannot
-  /// decide — reports `unknown`, and RC's own guidance is to show the
+  /// introductory offer) on — the paywall's trial copy hangs off this, not off
+  /// the declared `introductoryPrice` every customer sees. iOS only: anything
+  /// RevenueCat cannot decide reports `unknown`, and RC's guidance is to show
   /// non-introductory pricing then, so unknown counts as NOT eligible. Never
   /// throws; the paywall has to render either way.
   Future<Set<String>> trialEligibleProductIds(List<String> productIds) async {

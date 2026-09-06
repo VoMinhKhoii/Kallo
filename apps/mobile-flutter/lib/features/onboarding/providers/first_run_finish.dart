@@ -1,14 +1,7 @@
 /// Everything the `/welcome` interstitial has to DO, with none of what it has
-/// to draw.
-///
-/// The screen used to run this from inside its `State`: the draft flush, three
-/// cache invalidations, the dashboard warm-up and its timeout, the entitlement
-/// read with its `listenManual` keep-alive, the session-scoped dismissed flag,
-/// the pending-invite branch and the paywall branch — which meant a widget file
-/// importing four other features to answer one question. It is a controller
-/// question, so it lives here, in the same `Ref`-held shape as
-/// [SaveScreenController]; the screen keeps the count-up and the minimum
-/// window, which are the two things that are genuinely about what is on screen.
+/// to draw: the draft flush, the cache invalidations, the two network reads and
+/// the routing decision. Held in the same `Ref`-shape as [SaveScreenController]
+/// so the screen keeps only the count-up and the minimum window.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,18 +54,16 @@ class FirstRunFinishController {
     final resolved = await target;
     final showPaywall = await offerPro;
 
-    // They've been through the wizard — stop the router force-routing this
-    // session (covers the skip-all-to-finish case, where the profile is still
-    // "incomplete" but they shouldn't be bounced back into onboarding).
+    // Stop the router force-routing this session — covers skip-all-to-finish,
+    // where the profile is "incomplete" but there is nothing left to ask.
     _ref.read(onboardingForceDismissedProvider.notifier).state = true;
 
     return (target: resolved, next: _next(showPaywall));
   }
 
-  /// A pending circle invite (the link that brought this brand-new user here)
-  /// outranks the default landing — finish the connect they came for. Otherwise
-  /// the last beat of the first run is Kallo Pro, whose two exits both continue
-  /// into the logging feed; a user who already has it goes straight there.
+  /// A pending circle invite outranks the default landing — finish the connect
+  /// they came for. Otherwise the first run ends on Kallo Pro, whose two exits
+  /// both continue into the logging feed.
   String _next(bool showPaywall) {
     final pendingInvite = _ref.read(pendingInviteSlugProvider);
     if (pendingInvite != null) return '/circle/invite/$pendingInvite';
@@ -86,8 +77,12 @@ class FirstRunFinishController {
     if (userId == null) return null;
     try {
       final bundle = await _ref
-          .read(dashboardBundleProvider((userId: userId, date: todayDateString()))
-              .future)
+          .read(
+            dashboardBundleProvider((
+              userId: userId,
+              date: todayDateString(),
+            )).future,
+          )
           .timeout(kFirstRunReadTimeout);
       return bundle.profile?.calorieTarget.round();
     } catch (_) {
@@ -95,13 +90,10 @@ class FirstRunFinishController {
     }
   }
 
-  /// Whether to end the first run on Kallo Pro.
-  ///
-  /// Only for someone who could actually buy it: a user who restored premium on
-  /// this device (or bought it on another) has nothing to be sold. An
-  /// UNREADABLE snapshot answers the same way — failing to reach the endpoint
-  /// is not evidence that a paying customer is on free, and the paywall is one
-  /// tap away from Settings either way.
+  /// Whether to end the first run on Kallo Pro — only for someone who could
+  /// actually buy it. An UNREADABLE snapshot answers `false` too: failing to
+  /// reach the endpoint is not evidence that a paying customer is on free, and
+  /// the paywall is one tap away from Settings either way.
   Future<bool> _shouldOfferPro(String? userId) async {
     if (userId == null) return false;
     // Holds the auto-dispose family member open for the length of the read: a

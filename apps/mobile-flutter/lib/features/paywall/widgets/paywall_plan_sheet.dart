@@ -17,13 +17,11 @@ import 'plan_row.dart';
 /// The white sheet the Kallo Pro band sits above: the two plans, the legal
 /// line, the single CTA, and the restore/terms/privacy row.
 ///
-/// **The selection lives here, not in [PaywallState].** The choice is a
-/// property of this sheet's session, never of the purchase state machine — the
-/// controller's job is offerings and the store round trip, and adding a
-/// selected id to it would put a piece of UI memory inside a machine that
-/// rebuilds on every account change. The default is resolved at build time
-/// from the packages on hand ([defaultPlan]), so a plan arriving late (or the
-/// offering changing under us) never leaves the sheet pointing at nothing.
+/// **The selection lives here, not in [PaywallState].** The choice belongs to
+/// this sheet's session, not to a purchase machine that rebuilds on every
+/// account change. The default is resolved at build time from the packages on
+/// hand ([defaultPlan]), so a plan arriving late never leaves it pointing at
+/// nothing.
 class PaywallPlanSheet extends ConsumerStatefulWidget {
   const PaywallPlanSheet({
     required this.entitlement,
@@ -62,9 +60,8 @@ class _PaywallPlanSheetState extends ConsumerState<PaywallPlanSheet> {
         KalloSpacing.sp5,
         KalloSpacing.sp6,
         KalloSpacing.sp5,
-        // sp8 of sheet padding PLUS the home indicator: the sheet owns the
-        // bottom edge, so the inset is the device's, not a number that happened
-        // to clear one phone's.
+        // sp8 PLUS the home indicator: the sheet owns the bottom edge, so the
+        // inset is the device's.
         KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom,
       ),
       child: _body(plans),
@@ -117,9 +114,8 @@ class _PaywallPlanSheetState extends ConsumerState<PaywallPlanSheet> {
     );
     final purchasing = widget.state.phase == PaywallPhase.purchasing;
     return Column(
-      // The sheet is pinned to the bottom edge by the Align above it, which
-      // hands down LOOSE constraints — a `max` column would eat every one of
-      // them and leave the plans stranded at the top of a half-empty sheet.
+      // The Align above hands down LOOSE constraints — a `max` column would
+      // eat them and strand the plans at the top of a half-empty sheet.
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

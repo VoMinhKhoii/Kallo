@@ -102,41 +102,23 @@ void main() {
   });
 
   test('the trial promise needs the store\'s blessing, not just the offer', () {
-    // Same product, two customers: only the eligible one is promised days.
-    expect(
-      offersTrial(
-        plan: annualPackage,
-        trialActive: false,
-        eligibleProductIds: const {'kallo_premium_annual'},
-      ),
-      isTrue,
-    );
-    expect(
-      offersTrial(
-        plan: annualPackage,
-        trialActive: false,
-        eligibleProductIds: const {},
-      ),
-      isFalse,
-    );
-    // An account already mid-trial has nothing to start, eligible or not.
-    expect(
-      offersTrial(
-        plan: annualPackage,
-        trialActive: true,
-        eligibleProductIds: const {'kallo_premium_annual'},
-      ),
-      isFalse,
-    );
-    // And a product with no introductory period never promises one.
-    expect(
-      offersTrial(
-        plan: monthlyPackage,
-        trialActive: false,
-        eligibleProductIds: const {'kallo_premium_monthly'},
-      ),
-      isFalse,
-    );
+    // Same product, four customers — only the first is promised days.
+    for (final (why, plan, active, eligible, promised) in [
+      ('eligible', annualPackage, false, {'kallo_premium_annual'}, true),
+      ('the store refuses them', annualPackage, false, <String>{}, false),
+      ('already mid-trial', annualPackage, true, {'kallo_premium_annual'}, false),
+      ('no introductory period', monthlyPackage, false, {'kallo_premium_monthly'}, false),
+    ]) {
+      expect(
+        offersTrial(
+          plan: plan,
+          trialActive: active,
+          eligibleProductIds: eligible,
+        ),
+        promised,
+        reason: why,
+      );
+    }
   });
 
   test('the saving rounds to the nearest 5 and hides when there is none', () {

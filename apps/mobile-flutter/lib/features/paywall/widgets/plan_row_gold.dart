@@ -4,16 +4,11 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 
 /// The gold treatment the yearly plan row wears — the ONE loud surface in the
-/// app, and the only place these hexes are allowed to exist.
-///
-/// It is deliberately outside [KalloColors]: the palette is a neutral canvas /
-/// ink / hairline system, and promoting a metallic gradient into it would make
-/// it look like a sanctioned surface colour for anything else. This is a
-/// single-purpose skin for a single row on a single screen.
+/// app, and the only place these hexes are allowed to exist. Deliberately
+/// outside [KalloColors], which is a neutral canvas / ink / hairline system.
 ///
 /// Muted copy on gold is [kGoldMuted], never `kInkMuted` — the neutral grey
-/// reads dirty over a warm saturated fill and drops under 3:1 against the
-/// lightest stop.
+/// reads dirty over a warm fill and drops under 3:1 against the lightest stop.
 const Color kGoldMuted = Color(0xFF8B7A3A);
 const Color kGoldBorder = Color(0xFFE2A81C);
 const Color kGoldChipText = Color(0xFFF9D447);
@@ -44,11 +39,29 @@ class GoldPlanSurface extends StatelessWidget {
       decoration: _decoration(radius),
       child: Stack(
         children: [
+          // Glitter under a diagonal shimmer. Purely decorative.
           Positioned.fill(
             child: IgnorePointer(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
-                child: const _Sparkle(),
+                child: const CustomPaint(
+                  painter: _GlitterPainter(),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0x00FFFFFF),
+                          Color(0x73FFFFFF), // white @ 45%
+                          Color(0x00FFFFFF),
+                        ],
+                        stops: [0.35, 0.485, 0.62],
+                      ),
+                    ),
+                    child: SizedBox.expand(),
+                  ),
+                ),
               ),
             ),
           ),
@@ -61,10 +74,21 @@ class GoldPlanSurface extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         surface,
+        // The ink pill overlapping the row's top-right edge.
         Positioned(
           top: -chipOverlap,
           right: KalloSpacing.sp3,
-          child: _Chip(label: chipLabel!),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: KalloSpacing.sp2,
+              vertical: KalloSpacing.sp1,
+            ),
+            decoration: BoxDecoration(
+              color: kInk,
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
+            ),
+            child: Text(chipLabel!, style: dashCaption(color: kGoldChipText)),
+          ),
         ),
       ],
     );
@@ -90,31 +114,6 @@ BoxDecoration _decoration(double radius) => BoxDecoration(
         ),
       ],
     );
-
-/// Glitter + a diagonal shimmer over the gradient. Purely decorative, so it is
-/// wrapped in [IgnorePointer] by the caller's [Positioned.fill].
-class _Sparkle extends StatelessWidget {
-  const _Sparkle();
-
-  @override
-  Widget build(BuildContext context) => CustomPaint(
-        painter: const _GlitterPainter(),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0x00FFFFFF),
-                Color(0x73FFFFFF), // white @ 45%
-                Color(0x00FFFFFF),
-              ],
-              stops: [0.35, 0.485, 0.62],
-            ),
-          ),
-        ),
-      );
-}
 
 /// Two layers of specks at co-prime-ish pitches so the eye reads scatter
 /// rather than a grid. The jitter is a deterministic LCG — the same row
@@ -152,24 +151,4 @@ class _GlitterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GlitterPainter oldDelegate) => false;
-}
-
-/// The ink pill that overlaps the yearly row's top-right edge.
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp2,
-          vertical: KalloSpacing.sp1,
-        ),
-        decoration: BoxDecoration(
-          color: kInk,
-          borderRadius: BorderRadius.circular(KalloRadii.pill),
-        ),
-        child: Text(label, style: dashCaption(color: kGoldChipText)),
-      );
 }

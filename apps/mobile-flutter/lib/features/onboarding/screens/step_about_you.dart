@@ -12,12 +12,9 @@ import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../widgets/fields/unit_field.dart';
 
-/// Screen 3 — "About you": sex, the three metrics, activity level.
-///
-/// Everything here is optional in the copy and that is honoured literally: a
-/// blank field advances (screen 6 then offers the unlock card instead of a
-/// target). Only a value that is out of range holds Continue, because that one
-/// cannot be stored at all — and it says so in red under the row.
+/// Screen 3 — "About you": sex, the three metrics, activity level. Every field
+/// is optional and that is honoured literally — a blank one advances. Only an
+/// out-of-range value holds Continue, and says so in red under the row.
 class StepAboutYou extends StatelessWidget {
   const StepAboutYou({
     super.key,
@@ -151,9 +148,8 @@ class StepAboutYou extends StatelessWidget {
         ],
       );
 
-  /// Errors sit under the whole ROW, not under their own field: at a third of
-  /// the width "Weight must be at least 30 kg." wraps to three lines and shunts
-  /// its two neighbours' pills out of alignment.
+  /// Errors sit under the whole ROW: at a third of the width "Weight must be
+  /// at least 30 kg." wraps to three lines and shunts its neighbours.
   List<Widget> _errors() {
     String? bound(bool over, num? value, ({num min, num max}) range,
         String minKey, String maxKey) {

@@ -21,10 +21,8 @@ String formatCount(int n, String locale) =>
     NumberFormat.decimalPattern(locale).format(n);
 
 /// Exactly one fraction digit, locale-aware (en "0.5", vi "0,5").
-///
 /// `toStringAsFixed(1)` hardcodes the decimal POINT, which is wrong in every
-/// comma-decimal locale — Vietnamese included. The pace ruler's graduations and
-/// the sentence that reads them both print kg-a-week figures and must agree.
+/// comma-decimal locale — Vietnamese included.
 String formatOneDecimal(num n, String locale) =>
     (NumberFormat.decimalPattern(locale)
           ..minimumFractionDigits = 1

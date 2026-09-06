@@ -55,38 +55,31 @@ class _HostState extends State<_Host> {
 }
 
 void main() {
-  testWidgets('selected wears a 2px ink border, the card shadow and a filled '
-      'radio', (tester) async {
-    await tester.pumpWidget(
-      _wrap(OptionRow(label: 'English', selected: true, onTap: () {})),
-    );
+  // Selected is a 2px ink border plus the card shadow over a filled radio;
+  // idle is the flat hairline with a hollow one and NO shadow — an unselected
+  // row separates from the canvas by surface alone.
+  for (final (name, selected, border, ring, color, shadow) in [
+    ('selected', true, OptionRow.selectedBorder, OptionRow.selectedRing, kInk,
+        kCardShadows),
+    ('idle', false, OptionRow.idleBorder, OptionRow.idleRing,
+        KalloColors.border, null),
+  ]) {
+    testWidgets('$name wears its own border, shadow and radio', (tester) async {
+      await tester.pumpWidget(
+        _wrap(OptionRow(label: 'English', selected: selected, onTap: () {})),
+      );
 
-    final row = _box(tester, radio: false);
-    expect(_side(row).width, OptionRow.selectedBorder);
-    expect(_side(row).color, kInk);
-    expect(row.boxShadow, kCardShadows);
+      final row = _box(tester, radio: false);
+      expect(_side(row).width, border);
+      expect(_side(row).color, color);
+      expect(row.boxShadow, shadow);
 
-    final radio = _box(tester, radio: true);
-    expect(radio.shape, BoxShape.circle);
-    expect(_side(radio).width, OptionRow.selectedRing);
-    expect(_side(radio).color, kInk);
-  });
-
-  testWidgets('idle is a flat hairline row with a hollow radio', (tester) async {
-    await tester.pumpWidget(
-      _wrap(OptionRow(label: 'English', selected: false, onTap: () {})),
-    );
-
-    final row = _box(tester, radio: false);
-    expect(_side(row).width, OptionRow.idleBorder);
-    expect(_side(row).color, KalloColors.border);
-    // No shadow: an unselected row separates from the canvas by surface alone.
-    expect(row.boxShadow, isNull);
-
-    final radio = _box(tester, radio: true);
-    expect(_side(radio).width, OptionRow.idleRing);
-    expect(_side(radio).color, KalloColors.border);
-  });
+      final radio = _box(tester, radio: true);
+      expect(radio.shape, BoxShape.circle);
+      expect(_side(radio).width, ring);
+      expect(_side(radio).color, color);
+    });
+  }
 
   testWidgets('the thicker border is paid for out of the padding, so picking '
       'a row does not nudge its own label', (tester) async {
@@ -138,8 +131,8 @@ void main() {
     expect(taps, 0);
   });
 
-  testWidgets('it reaches assistive technology as a selected radio',
-      (tester) async {
+  testWidgets('it reaches assistive technology as a radio whose name carries '
+      'the subline and the note', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       _wrap(
@@ -152,25 +145,19 @@ void main() {
       ),
     );
 
-    final data =
-        tester.getSemantics(find.byType(OptionRow)).getSemanticsData();
+    final data = tester.getSemantics(find.byType(OptionRow)).getSemanticsData();
     expect(data.flagsCollection.isInMutuallyExclusiveGroup, isTrue,
         reason: 'a one-of-many pick must announce as a radio');
     // Tristate, not bool: "selected" also carries whether the row HAS a
     // selected state at all, which is what makes it a radio and not a label.
     expect(data.flagsCollection.isSelected, Tristate.isTrue);
     expect(data.hasAction(SemanticsAction.tap), isTrue);
-    // The subline is part of the name — "English" alone does not say the row
-    // was filled in from the phone.
+    // "English" alone does not say the row was filled in from the phone.
     expect(data.label, 'English, From your phone');
-    handle.dispose();
-  });
 
-  testWidgets('the trailing note is part of the name too', (tester) async {
-    // The ratio on a carb-split row is the whole difference between the three
-    // choices; a screen reader that never reads it announces three identical
-    // rows. PlanRow already folds its chip in the same way.
-    final handle = tester.ensureSemantics();
+    // The trailing note too: the ratio is the whole difference between the
+    // three carb-split rows, and a reader that skips it announces three
+    // identical ones.
     await tester.pumpWidget(
       _wrap(
         OptionRow(
@@ -181,7 +168,6 @@ void main() {
         ),
       ),
     );
-
     expect(
       tester.getSemantics(find.byType(OptionRow)).getSemanticsData().label,
       'Moderate carb, 30 / 35 / 35',

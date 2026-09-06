@@ -15,12 +15,10 @@ import 'google_button.dart';
 /// its two links under them.
 ///
 /// The stack, not the screen: `/sign-in` shows it under the brand block
-/// ([WelcomeView]), `/save-plan` shows it under the onboarding chrome. Both
-/// get the same options, in the same order, with ONE legal footnote — which is
-/// the whole reason it is a widget and not two copies.
-///
-/// Every button is a 50pt full-round pill ([kAuthButtonHeight]) — ink for
-/// Apple, quiet white-and-hairline for the other two.
+/// ([WelcomeView]), `/save-plan` under the onboarding chrome, both with the
+/// same options in the same order and ONE legal footnote. Every button is a
+/// 50pt full-round pill ([kAuthButtonHeight]) — ink for Apple, quiet
+/// white-and-hairline for the other two.
 class AuthOptions extends StatelessWidget {
   const AuthOptions({
     super.key,

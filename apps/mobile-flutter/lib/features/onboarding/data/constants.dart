@@ -13,10 +13,9 @@ import '../../../models/profile/onboarding.dart';
 const int kOnboardingTotalSteps = 3;
 
 /// The number of SCREENS the wizard walks the user through. The server still
-/// thinks in three steps ([kOnboardingTotalSteps]); the redesign splits those
-/// across six pages (language, origin, about you, goal, cooking, target), so
-/// the header, the progress bar and the draft's `screenReached` all count to
-/// this instead. `logic/resume_screen.dart` maps between the two.
+/// thinks in three steps ([kOnboardingTotalSteps]); the header, the progress
+/// bar and the draft's `screenReached` count to this instead, and
+/// `logic/resume_screen.dart` maps between the two.
 const int kOnboardingScreenCount = 6;
 
 const CookingHabits kNeutralCookingDefaults = CookingHabits(
