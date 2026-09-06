@@ -57,6 +57,20 @@ describe('resolveGeminiProvider', () => {
     expect(() => resolveGeminiProvider({})).toThrow(/GEMINI_API_KEY/);
   });
 
+  it('returns litellm config when AI_PROVIDER=litellm', () => {
+    expect(
+      resolveGeminiProvider({
+        AI_PROVIDER: 'litellm',
+        LITELLM_BASE_URL: 'http://localhost:4000',
+        LITELLM_MASTER_KEY: 'sk-custom-key',
+      })
+    ).toEqual({
+      provider: 'litellm',
+      baseUrl: 'http://localhost:4000/gemini',
+      apiKey: 'sk-custom-key',
+    });
+  });
+
   it('throws on an unknown AI_PROVIDER value', () => {
     expect(() =>
       resolveGeminiProvider({
