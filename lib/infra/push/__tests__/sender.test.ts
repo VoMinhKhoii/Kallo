@@ -50,6 +50,28 @@ describe('getPushSender', () => {
     expect(errors).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ['RSA', () => generateKeyPairSync('rsa', { modulusLength: 2048 })],
+    ['Ed25519', () => generateKeyPairSync('ed25519')],
+    ['EC P-384', () => generateKeyPairSync('ec', { namedCurve: 'P-384' })],
+  ])('degrades to the no-op for a valid PKCS#8 key APNs cannot use (%s)', async (_, make) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // The unconfigured resolver hands back the shared no-op; a key of the
+    // wrong algorithm must land on that very same object, never a real sender.
+    vi.stubEnv('APNS_KEY_P8', '');
+    const noop = getPushSender();
+    stubIdentity();
+    vi.stubEnv(
+      'APNS_KEY_P8',
+      make().privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+    );
+
+    const sender = getPushSender();
+
+    expect(sender.send).toBe(noop.send);
+    await expect(sender.send([MESSAGE])).resolves.toEqual([]);
+  });
+
   it('builds the real sender when the identity and a valid key are set', () => {
     vi.stubEnv('APNS_KEY_P8', '');
     const noop = getPushSender();

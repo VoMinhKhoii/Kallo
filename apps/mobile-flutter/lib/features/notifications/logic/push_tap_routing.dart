@@ -75,10 +75,10 @@ PushDestination? pushDestinationFor(PushPayload payload) {
 void routePushTap(ProviderContainer container, PushPayload payload) {
   final destination = pushDestinationFor(payload);
   if (destination == null) return;
-  final groupId = destination.groupId;
-  if (groupId != null) {
-    container.read(circleSelectedViewProvider.notifier).state = groupId;
-  }
+  // Always assign: null means the combined feed, so a share or friend tap
+  // after a group tap must not stay scoped to that earlier group.
+  container.read(circleSelectedViewProvider.notifier).state =
+      destination.groupId;
   container.read(routerProvider).go(destination.path);
 }
 

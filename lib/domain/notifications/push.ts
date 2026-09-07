@@ -13,7 +13,7 @@
 // for the row-less chat push, from the producer's own membership read at write
 // time; this module only ever reads tokens/locales FOR those ids.
 
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -90,10 +90,18 @@ async function buildMessages(
   recipientIds: string[],
   payload: NotificationPushPayload
 ): Promise<PushMessage[]> {
+  // APNs is the only transport; the column CHECK still admits other
+  // platforms, so filter here rather than let a stray row spend fan-out budget
+  // on a token Apple would reject.
   const tokens = await db
     .select({ userId: pushTokens.userId, token: pushTokens.token })
     .from(pushTokens)
-    .where(inArray(pushTokens.userId, recipientIds));
+    .where(
+      and(
+        inArray(pushTokens.userId, recipientIds),
+        eq(pushTokens.platform, 'ios')
+      )
+    );
   if (tokens.length === 0) return [];
 
   const profiles = await db

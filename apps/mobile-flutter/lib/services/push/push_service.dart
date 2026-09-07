@@ -33,6 +33,15 @@ class PushService {
 
   String? _token;
   bool _listening = false;
+
+  /// Registration is only allowed between sign-in and sign-out. iOS can hand
+  /// over a token at any moment, so a POST must be refused (not just delayed)
+  /// once sign-out has begun.
+  bool _active = false;
+
+  /// The registration currently on the wire, if any — sign-out awaits it so a
+  /// slow POST cannot land after the DELETE and resurrect the token.
+  Future<void>? _inflight;
   PushPayload? _bufferedTap;
   void Function(PushPayload payload)? _onTap;
 
@@ -53,6 +62,7 @@ class PushService {
 
   /// Ask iOS for notification authorization and register with APNs.
   Future<void> registerForPush() async {
+    _active = true;
     try {
       if (!_listening) {
         _channel.listen(
@@ -74,7 +84,14 @@ class PushService {
   }
 
   /// Release the device token for the CURRENT session. Never throws.
+  ///
+  /// Order matters: stop accepting registrations, let the one already on the
+  /// wire finish, and only then DELETE — the route is an upsert, so a POST
+  /// completing after the DELETE would re-register the signed-out account.
   Future<void> unregister() async {
+    _active = false;
+    final pending = _inflight;
+    if (pending != null) await pending;
     final token = _token;
     if (token == null) return;
     try {
@@ -113,13 +130,18 @@ class PushService {
   }
 
   Future<void> _postToken(String token) async {
+    if (!_active) return;
+    final request = _api
+        .post<dynamic>(kPushTokensPath, {'token': token, 'platform': 'ios'})
+        .then<void>((_) {})
+        .catchError((Object error) {
+          debugPrint('[push] token registration failed: $error');
+        });
+    _inflight = request;
     try {
-      await _api.post<dynamic>(kPushTokensPath, {
-        'token': token,
-        'platform': 'ios',
-      });
-    } catch (error) {
-      debugPrint('[push] token registration failed: $error');
+      await request;
+    } finally {
+      if (identical(_inflight, request)) _inflight = null;
     }
   }
 }

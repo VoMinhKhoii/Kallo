@@ -122,10 +122,11 @@ Push is direct-to-APNs (no Firebase). Three facts about the signing shape above 
 
 Server side, the backend needs an **APNs auth key** (Apple Developer → Keys → enable APNs;
 download the `.p8` once) as `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, and
-`APNS_PRODUCTION`. Dev/Xcode/ad-hoc builds only work against the **sandbox** host and TestFlight /
-App Store builds only against **production**; since dev builds point at the dev backend, set
-`APNS_PRODUCTION` per backend environment. The Simulator can hand out a token but never receives
-a real push — verify on a physical device.
+`APNS_PRODUCTION`. Development-signed Xcode builds use the **sandbox** host; Ad Hoc, TestFlight and
+App Store builds (distribution signing) use **production**; since dev builds point at the dev backend, set
+`APNS_PRODUCTION` per backend environment. The Simulator can receive **sandbox** pushes on supported
+hosts (Xcode 14+, iOS 16+, Apple silicon or T2, macOS 13+); verify production delivery and
+device-specific behavior on a physical device.
 
 ## Export compliance
 

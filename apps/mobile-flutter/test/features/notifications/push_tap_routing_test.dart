@@ -117,6 +117,18 @@ void main() {
       expect(locationOf(router), '/circle');
     });
 
+    test('a share tap after a group tap returns to the combined feed', () {
+      final router = testRouter();
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+
+      routePushTap(container, {'type': 'group.added', 'targetId': 'g-1'});
+      expect(container.read(circleSelectedViewProvider), 'g-1');
+
+      routePushTap(container, {'type': 'share.reply'});
+      expect(container.read(circleSelectedViewProvider), isNull);
+    });
+
     test('an unroutable payload is a no-op', () {
       final router = testRouter();
       addTearDown(router.dispose);

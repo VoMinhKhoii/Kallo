@@ -16,7 +16,13 @@ class FakeApiClient extends ApiClient {
   final List<Request> requests = [];
   bool fail;
 
+  /// When set, every POST waits on it before completing — models a slow
+  /// registration racing a sign-out. Requests are recorded on completion so
+  /// their order reflects what the server actually saw.
+  Completer<void>? holdPost;
+
   Future<T> _record<T>(String method, String path, Object? body) async {
+    if (method == 'POST' && holdPost != null) await holdPost!.future;
     requests.add((method: method, path: path, body: body));
     if (fail) throw ApiError('BOOM', 500, true, 'nope');
     return null as T;
@@ -132,6 +138,43 @@ void main() {
     expect(api.requests.single.method, 'DELETE');
     expect(api.requests.single.path, '/api/v1/notifications/push-tokens');
     expect(api.requests.single.body, {'token': 'feed'});
+  });
+
+  test(
+    'sign-out waits for an in-flight registration, then deletes last',
+    () async {
+      final api = FakeApiClient();
+      final service = PushService(api);
+      await service.registerForPush();
+
+      api.holdPost = Completer<void>();
+      await fromNative('onToken', 'feed');
+      // The POST is now in flight; sign-out must not let it land after DELETE
+      // and resurrect the token for the signed-out account.
+      final signOut = service.unregister();
+      await pumpEventQueue();
+      expect(api.requests, isEmpty);
+
+      api.holdPost!.complete();
+      await signOut;
+
+      expect(api.requests.map((r) => r.method).toList(), ['POST', 'DELETE']);
+    },
+  );
+
+  test('a token that arrives after sign-out is not registered', () async {
+    final api = FakeApiClient();
+    final service = PushService(api);
+    await service.registerForPush();
+    await fromNative('onToken', 'feed');
+    await pumpEventQueue();
+    await service.unregister();
+    api.requests.clear();
+
+    await fromNative('onToken', 'rotated-after-signout');
+    await pumpEventQueue();
+
+    expect(api.requests, isEmpty);
   });
 
   test('a failing token API never throws at the caller', () async {

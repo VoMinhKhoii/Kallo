@@ -47,17 +47,40 @@ const GROUP = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 
 /** Every select in this module is `.select().from().where()`, except the actor
  *  name lookup which adds `.limit()`; one queue serves both. */
+/** Every WHERE clause handed to a queued select, in call order. */
+const selectWheres: unknown[] = [];
+
 function queueSelects(...rowSets: unknown[][]) {
   const queue = [...rowSets];
+  selectWheres.length = 0;
   mockSelect.mockImplementation(() => {
     const rows = queue.shift() ?? [];
     const query = {
       from: vi.fn(() => query),
-      where: vi.fn(() => Object.assign(Promise.resolve(rows), query)),
+      where: vi.fn((clause: unknown) => {
+        selectWheres.push(clause);
+        return Object.assign(Promise.resolve(rows), query);
+      }),
       limit: vi.fn(() => Promise.resolve(rows)),
     };
     return query;
   });
+}
+
+/** Column names and bound values reachable inside a Drizzle SQL clause. */
+function clauseAtoms(clause: unknown, out: string[] = []): string[] {
+  if (!clause || typeof clause !== 'object') return out;
+  const node = clause as {
+    queryChunks?: unknown[];
+    name?: string;
+    value?: unknown;
+  };
+  if (typeof node.name === 'string') out.push(`col:${node.name}`);
+  if ('value' in node && typeof node.value === 'string') {
+    out.push(`val:${node.value}`);
+  }
+  for (const chunk of node.queryChunks ?? []) clauseAtoms(chunk, out);
+  return out;
 }
 
 function capturingDelete() {
@@ -324,6 +347,23 @@ describe('sendNotificationPush', () => {
 
     vi.unstubAllEnvs();
     errors.mockRestore();
+  });
+
+  it('loads only iOS registrations — the DB CHECK still admits other platforms', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reaction', actor: { id: FRIEND } },
+      { send: async () => [] }
+    );
+
+    const atoms = clauseAtoms(selectWheres[0]);
+    expect(atoms).toContain('col:platform');
+    expect(atoms).toContain('val:ios');
   });
 
   it('skips the fan-out when the global push budget is exhausted', async () => {

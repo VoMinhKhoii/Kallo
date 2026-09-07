@@ -42,7 +42,13 @@ export const markReadBodySchema = z.object({
 export const pushTokenBodySchema = z.object({
   /** APNs device token (hex). Long and opaque; 4096 is well past today's 64
    *  chars and keeps a malformed body from reaching the database. */
-  token: z.string().min(1).max(4096),
+  // APNs addresses the device by the token's hex bytes in the request path,
+  // so anything that is not whole hex byte pairs could never be delivered to.
+  token: z
+    .string()
+    .min(1)
+    .max(4096)
+    .regex(/^(?:[0-9a-f]{2})+$/i, 'expected an APNs device token in hex'),
   /** iOS only — APNs is the sole transport we ship, so accepting an Android or
    *  web registration would store a token we could never deliver to. The DB
    *  CHECK stays wider on purpose; narrowing happens at the edge. */

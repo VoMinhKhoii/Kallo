@@ -224,6 +224,17 @@ export function createApnsSender(config: ApnsConfig): PushSender {
   // getPushSender() catches it and degrades to the no-op — not on every send.
   // Literal \n survive single-line env vars; PEM parsing needs real newlines.
   const key = createPrivateKey(config.keyP8.replace(/\\n/g, '\n'));
+  // Any valid PKCS#8 parses; only a P-256 EC key can produce the ES256
+  // signature APNs accepts. Refusing here keeps an RSA or Ed25519 key from
+  // building a sender that fails on every send instead of degrading once.
+  if (
+    key.asymmetricKeyType !== 'ec' ||
+    key.asymmetricKeyDetails?.namedCurve !== 'prime256v1'
+  ) {
+    throw new Error(
+      `APNS_KEY_P8 must be an EC P-256 (prime256v1) key; got ${key.asymmetricKeyType}${key.asymmetricKeyDetails?.namedCurve ? `/${key.asymmetricKeyDetails.namedCurve}` : ''}`
+    );
+  }
   return {
     async send(messages: PushMessage[]): Promise<PushSendResult[]> {
       if (messages.length === 0) return [];
