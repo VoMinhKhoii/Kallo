@@ -162,6 +162,34 @@ void main() {
     },
   );
 
+  test(
+    'sign-out waits for EVERY queued registration, not just the last',
+    () async {
+      final api = FakeApiClient();
+      final service = PushService(api);
+      await service.registerForPush();
+
+      api.holdPost = Completer<void>();
+      // iOS rotates the token twice before either POST reaches the server.
+      await fromNative('onToken', 'first');
+      await fromNative('onToken', 'second');
+      final signOut = service.unregister();
+      await pumpEventQueue();
+      expect(api.requests, isEmpty, reason: 'both POSTs are still held');
+
+      api.holdPost!.complete();
+      await signOut;
+
+      // The queued second POST starts after sign-out, so it is refused; the
+      // first must still land before the DELETE that releases the token.
+      expect(api.requests.map((r) => r.method).toList(), ['POST', 'DELETE']);
+      expect(api.requests.first.body, {'token': 'first', 'platform': 'ios'});
+      // 'second' never reached the server, so deleting it would match no row
+      // and leave 'first' registered for the signed-out account.
+      expect(api.requests.last.body, {'token': 'first'});
+    },
+  );
+
   test('a token that arrives after sign-out is not registered', () async {
     final api = FakeApiClient();
     final service = PushService(api);
@@ -185,6 +213,10 @@ void main() {
     await fromNative('onToken', 'beef');
     await pumpEventQueue();
     await expectLater(service.unregister(), completes);
+
+    // The POST never landed, so there is no row to release — deleting anyway
+    // would be a guess at what the server holds.
+    expect(api.requests.where((r) => r.method == 'DELETE'), isEmpty);
   });
 
   test('denied authorization is survivable and posts nothing', () async {

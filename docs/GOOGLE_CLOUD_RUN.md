@@ -472,6 +472,7 @@ That means:
   - `REVENUECAT_CUSTOMER_DELETE_API_KEY`
   - `REVENUECAT_REST_API_KEY`
   - `REVENUECAT_WEBHOOK_SECRET`
+  - `APNS_KEY_P8`
 - Plain runtime env includes the production billing boundary, RevenueCat app
   allowlist/project/public web key, and the explicit dark-launch controls.
 

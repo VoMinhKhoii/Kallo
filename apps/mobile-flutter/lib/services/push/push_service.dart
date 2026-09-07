@@ -42,6 +42,11 @@ class PushService {
   /// The registration currently on the wire, if any — sign-out awaits it so a
   /// slow POST cannot land after the DELETE and resurrect the token.
   Future<void>? _inflight;
+
+  /// The last token the server actually accepted. The DELETE matches on the
+  /// stored row, so releasing [_token] — which may be a rotation that never
+  /// got posted — would match nothing and strand the real registration.
+  String? _registered;
   PushPayload? _bufferedTap;
   void Function(PushPayload payload)? _onTap;
 
@@ -92,8 +97,9 @@ class PushService {
     _active = false;
     final pending = _inflight;
     if (pending != null) await pending;
-    final token = _token;
+    final token = _registered;
     if (token == null) return;
+    _registered = null;
     try {
       await _api.delete<dynamic>(kPushTokensPath, {'token': token});
     } catch (error) {
@@ -129,19 +135,33 @@ class PushService {
     handler(payload);
   }
 
+  /// Queue a registration behind the one already on the wire, so [_inflight] is
+  /// always the tail of the chain and awaiting it covers every earlier POST.
   Future<void> _postToken(String token) async {
-    if (!_active) return;
-    final request = _api
-        .post<dynamic>(kPushTokensPath, {'token': token, 'platform': 'ios'})
-        .then<void>((_) {})
-        .catchError((Object error) {
-          debugPrint('[push] token registration failed: $error');
-        });
+    final request = (_inflight ?? Future<void>.value()).then(
+      (_) => _sendToken(token),
+    );
     _inflight = request;
     try {
       await request;
     } finally {
       if (identical(_inflight, request)) _inflight = null;
+    }
+  }
+
+  /// Registration is refused when it *starts*, not when it is queued — a POST
+  /// stuck behind a slow one must not land for an account that signed out
+  /// while it waited.
+  Future<void> _sendToken(String token) async {
+    if (!_active) return;
+    try {
+      await _api.post<dynamic>(kPushTokensPath, {
+        'token': token,
+        'platform': 'ios',
+      });
+      _registered = token;
+    } catch (error) {
+      debugPrint('[push] token registration failed: $error');
     }
   }
 }
