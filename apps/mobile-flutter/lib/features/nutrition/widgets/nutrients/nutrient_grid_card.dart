@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/nutrition/nutrition.dart';
 import '../../../../shared/logic/display_format.dart';
@@ -55,8 +56,13 @@ class NutrientGridCard extends StatelessWidget {
     );
     final goal = nutrientGoalText(card, localeOf(context));
 
+    // The state the grid exists to show is carried by the fill and by the
+    // check glyph, neither of which a screen reader can see. Said last, so the
+    // reading stays label → figure → goal for every card alike.
+    final met = adequate ? ', ${tr('nutrition.steady.met')}' : '';
+
     return Semantics(
-      label: '$label, $figure, $goal',
+      label: '$label, $figure, $goal$met',
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.all(KalloSpacing.sp3),
@@ -78,13 +84,21 @@ class NutrientGridCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
+                // A fixed 3:2 split rather than "the label takes what is
+                // left". The figure is not always a percentage: `noTarget` is
+                // a phrase (vi "chưa có mục tiêu" ≈ 106pt of a cell's ~153),
+                // and as a bare Text it took its intrinsic width first and
+                // left the name ~39pt — "Panto…". Giving the figure a flex
+                // ceiling makes the long status string ellipse instead, so the
+                // nutrient being described always survives.
                 Expanded(
+                  flex: 3,
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     // Caption, and justified here as the tier requires: a cell
-                    // is half the screen less its gutters (~147pt of text on a
+                    // is half the screen less its gutters (~153pt of text on a
                     // 390pt phone), and "Pantothenic acid" beside its figure
                     // measures past that at Meta — the label ellipsed away the
                     // part that identifies it.
@@ -92,17 +106,44 @@ class NutrientGridCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: KalloSpacing.sp2),
-                Text(
-                  figure,
-                  style: dashCaption(
-                    color: exceeded
-                        ? KalloColors.danger
-                        : (limited || pct == null)
-                        ? kInkMuted
-                        : adequate
-                        ? KalloColors.successDark
-                        : kInk,
-                    tabular: true,
+                Flexible(
+                  flex: 2,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // A second channel for "met". The mint fill is 1.03:1
+                      // against the page canvas — nothing at all to a
+                      // deuteranope — and successDark on it is 4.21:1 at 12pt,
+                      // under AA for normal text. The glyph says it without
+                      // touching either colour.
+                      if (adequate) ...[
+                        const Icon(
+                          LucideIcons.check300,
+                          size: 14,
+                          color: KalloColors.successDark,
+                        ),
+                        const SizedBox(width: KalloSpacing.sp1),
+                      ],
+                      Flexible(
+                        child: Text(
+                          figure,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: dashCaption(
+                            color: exceeded
+                                ? KalloColors.danger
+                                : (limited || pct == null)
+                                ? kInkMuted
+                                : adequate
+                                ? KalloColors.successDark
+                                : kInk,
+                            tabular: true,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -114,6 +155,10 @@ class NutrientGridCard extends StatelessWidget {
               delay: barDelay,
             ),
             const SizedBox(height: KalloSpacing.sp2),
+            // Caption, not Meta, and it is not a width argument: "78.5 / 70 mg"
+            // measures ~92pt of the cell's ~153 and would fit at Meta 14. It
+            // sits directly under a 12pt headline figure, and at 14 it would
+            // out-weigh the figure it explains — hierarchy inversion.
             Text(
               goal,
               maxLines: 1,

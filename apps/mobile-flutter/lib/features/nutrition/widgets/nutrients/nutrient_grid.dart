@@ -12,9 +12,7 @@ import 'nutrient_grid_card.dart';
 ///
 /// A `Wrap` rather than a `GridView`: the grid lives inside the nutrition
 /// page's single scroll view, and a nested scrollable would have to be told to
-/// shrink-wrap and never scroll — a `GridView` pretending to be a layout. Wrap
-/// also lets a card be as tall as its own content instead of forcing every
-/// cell in a row to the tallest one's height.
+/// shrink-wrap and never scroll — a `GridView` pretending to be a layout.
 class NutrientGrid extends StatelessWidget {
   const NutrientGrid({super.key, required this.cards});
 
@@ -40,7 +38,10 @@ class NutrientGrid extends StatelessWidget {
                 width: cellWidth,
                 child: NutrientGridCard(
                   card: card,
-                  barDelay: Duration(milliseconds: 60 * index),
+                  // Stagger by ROW, not by cell: NutrientBar spends the delay
+                  // inside one 1s interval clamped at 0.5, so at 60ms per cell
+                  // everything from the ninth on shared a single start.
+                  barDelay: Duration(milliseconds: 60 * (index ~/ 2)),
                 ),
               ),
           ],

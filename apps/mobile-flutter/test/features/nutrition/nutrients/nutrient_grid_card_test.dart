@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/nutrition/widgets/nutrients/nutrient_grid_card.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
@@ -10,10 +11,11 @@ import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 import '../../../l10n_test_loader.dart';
 
-Widget _wrap(Widget child) => EasyLocalization(
+Widget _wrap(Widget child, {Locale? locale}) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
+  startLocale: locale,
   assetLoader: const FsL10nLoader(),
   child: Builder(
     builder:
@@ -30,10 +32,11 @@ NutrientCardData _sodiumCard({
   required double? averagePerDay,
   double? percentOfTarget,
   ConfidenceDisplayState displayState = ConfidenceDisplayState.normal,
+  String labelKey = 'nutrition.nutrients.sodium',
 }) =>
     NutrientCardData(
       nutrient: NutritionNutrientKey.sodiumMg,
-      labelKey: 'nutrition.nutrients.sodium',
+      labelKey: labelKey,
       group: NutrientGroup.mineral,
       averagePerDay: averagePerDay,
       target: 2000,
@@ -170,5 +173,88 @@ void main() {
 
     expect(find.text('+30%'), findsOneWidget);
     expect(_fill(tester), kCardSurface);
+  });
+
+  testWidgets('a phrase-length figure ellipses before the name does', (
+    tester,
+  ) async {
+    // The figure is not always a percentage. In Vietnamese "no target" is
+    // "chưa có mục tiêu" — ~106pt of a cell's ~153 — and as a bare Text it
+    // took its intrinsic width first, leaving the label ~39pt: "Beta-…".
+    // The name is what identifies the cell, so it is the one that must hold.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        // The width a card is actually handed on a 390pt phone: the page's
+        // sp3 insets, then half of what is left less the grid's sp3 gutter.
+        SizedBox(
+          width: (390 - 24 - 12) / 2,
+          child: NutrientGridCard(
+            // A reading with no target: the figure becomes a phrase.
+            card: _sodiumCard(
+              averagePerDay: 1500,
+              labelKey: 'nutrition.nutrients.betaCarotene',
+            ),
+          ),
+        ),
+        locale: const Locale('vi'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('chưa có mục tiêu'), findsOneWidget);
+    expect(tester.getSize(find.text('Beta-carotene')).width, greaterThan(70));
+  });
+
+  testWidgets('a met nutrient marks itself with more than colour', (
+    tester,
+  ) async {
+    // successFaint is 1.03:1 against the page canvas, so to a deuteranope the
+    // green card and the ordinary card are the same card. The check is the
+    // second channel.
+    await tester.pumpWidget(
+      _wrap(
+        NutrientGridCard(
+          card: _sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(LucideIcons.check300), findsOneWidget);
+  });
+
+  testWidgets('a nutrient short of its target carries no check', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        NutrientGridCard(
+          card: _sodiumCard(averagePerDay: 800, percentOfTarget: 40),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(LucideIcons.check300), findsNothing);
+  });
+
+  testWidgets('a met nutrient says so to a screen reader', (tester) async {
+    // Fill and glyph are both invisible to a screen reader; without this the
+    // one thing the grid exists to show is the one thing it never says.
+    await tester.pumpWidget(
+      _wrap(
+        NutrientGridCard(
+          card: _sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final node = tester.getSemantics(find.byType(NutrientGridCard));
+    expect(node.label, endsWith(', target met'));
   });
 }
