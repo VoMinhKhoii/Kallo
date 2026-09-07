@@ -125,27 +125,6 @@ void main() {
     expect(find.byType(BackdropFilter), findsNothing);
   });
 
-  testWidgets('holding an action washes it, and fires nothing on release', (
-    tester,
-  ) async {
-    // A hold used to commit: the row carried tap handlers only, so pressing
-    // "Xoá" for five seconds still deleted on release. It is a way OUT of a
-    // tap now.
-    bool? answer;
-    await _open(tester, _host(onResult: (value) => answer = value));
-
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.text('Xoá')),
-    );
-    await tester.pump(const Duration(seconds: 2));
-    await gesture.up();
-    await tester.pumpAndSettle();
-
-    expect(answer, isNull, reason: 'a long hold must not confirm');
-    // And the dialog is still open, so the hold changed nothing at all.
-    expect(find.byKey(kKalloConfirmSurface), findsOneWidget);
-  });
-
   testWidgets('both options are the verbs the caller named', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
     expect(find.text('Xoá'), findsOneWidget);

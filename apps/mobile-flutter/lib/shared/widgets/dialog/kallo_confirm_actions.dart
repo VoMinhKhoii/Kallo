@@ -89,20 +89,32 @@ class KalloAlertHairline extends StatelessWidget {
 /// on press. No fill, no radius — the row IS the button, which is why the
 /// hairlines above and below it are what separate it from its neighbours.
 ///
-/// **The press (2026-09-07).** Two things read as broken under a hard press
-/// and hold. The wash was [KalloColors.hover] (`#F0EAE0`), an opaque warm
-/// cream — that is the SELECTED token, not the pressed one, and holding a row
-/// turned it into a solid cream slab. It is [KalloColors.pressWash] now (ink
-/// at 6%), the app's documented press token, already what
-/// `shared/widgets/form/sheet_confirm_button.dart` paints; it darkens the row
-/// instead of repainting it.
+/// **The press (2026-09-07).** The wash was [KalloColors.hover] (`#F0EAE0`),
+/// an opaque warm cream — that is the SELECTED token, not the pressed one, and
+/// holding a row turned it into a solid cream slab. It is
+/// [KalloColors.pressWash] now (ink at 6%), the app's documented press token,
+/// already what `shared/widgets/form/sheet_confirm_button.dart` paints; it
+/// darkens the row instead of repainting it.
 ///
-/// And a hold had no end. The row carried tap handlers only, so pressing
-/// "Delete" for five seconds still fired on release with nothing to say the
-/// press had been noticed for longer than an instant. It now claims the long
-/// press too: the row stays washed for as long as it is held and fires
-/// NOTHING on release, so a hold is a way out of a tap rather than a slow
-/// commit to it.
+/// **The hold (2026-09-07, reversing a same-day revision).** The row behaves
+/// exactly as the platform's own alert action does: the wash lasts the ENTIRE
+/// hold, however long the finger stays down, and the action FIRES on release.
+/// A revision earlier that day claimed the long press so that a hold washed
+/// the row and then committed NOTHING — "a way out of a tap". That was a
+/// divergence from `.agents/skills/kallo-design/mobile.md`, *Platform —
+/// Cupertino wherever it exists*, boundary 2: the design system wins on look,
+/// **the platform wins on behaviour**, and an iOS alert action does not
+/// swallow a slow tap. It also did not deliver the wash it promised — the
+/// long-press recognizer winning the arena at ~500ms rejected the tap
+/// recognizer, whose `onTapCancel` cleared `_pressed` and dropped the wash
+/// mid-hold, with the finger still down.
+///
+/// Both are fixed by taking the press state OUT of the gesture arena: a
+/// [Listener] paints the wash straight off the raw pointer stream, where no
+/// arena resolution can cancel it, and the [GestureDetector] keeps nothing but
+/// `onTap`. A drag-off still behaves: `onPointerUp` fires wherever the finger
+/// lifts, so the wash always clears, while `onTap` does not fire when the
+/// pointer leaves the row — release outside, nothing happens.
 class KalloAlertAction extends StatefulWidget {
   const KalloAlertAction({
     super.key,
@@ -124,10 +136,6 @@ class KalloAlertAction extends StatefulWidget {
 class _KalloAlertActionState extends State<KalloAlertAction> {
   bool _pressed = false;
 
-  /// Set once the long-press recognizer wins, so the tap that follows on
-  /// release is dropped. A hold is a change of mind, not a slower tap.
-  bool _held = false;
-
   void _release() {
     if (!mounted) return;
     setState(() => _pressed = false);
@@ -138,40 +146,32 @@ class _KalloAlertActionState extends State<KalloAlertAction> {
     return Semantics(
       button: true,
       label: widget.label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() {
-          _pressed = true;
-          _held = false;
-        }),
-        onTapUp: (_) => _release(),
-        onTapCancel: _release,
-        onTap: () {
-          if (_held) return;
-          widget.onTap();
-        },
-        // Claiming the long press is the point: without a handler here the
-        // gesture arena hands a five-second hold to the tap recognizer and it
-        // fires on release like any other tap.
-        onLongPress: () => setState(() => _held = true),
-        onLongPressEnd: (_) => _release(),
-        onLongPressCancel: _release,
-        // Animated, not a bare Container: every other quiet button in the app
-        // crossfades its wash rather than snapping it on.
-        child: AnimatedContainer(
-          duration: KalloMotion.press,
-          curve: KalloEase.press,
-          alignment: Alignment.center,
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp2,
-          ),
-          color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
-          child: Text(
-            widget.label,
-            textAlign: TextAlign.center,
-            style: dashBody(color: widget.color, weight: widget.weight),
+      // Outside the arena on purpose: the wash follows the finger, not the
+      // recognizer that happens to win.
+      child: Listener(
+        onPointerDown: (_) => setState(() => _pressed = true),
+        onPointerUp: (_) => _release(),
+        onPointerCancel: (_) => _release(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          // Animated, not a bare Container: every other quiet button in the app
+          // crossfades its wash rather than snapping it on.
+          child: AnimatedContainer(
+            duration: KalloMotion.press,
+            curve: KalloEase.press,
+            alignment: Alignment.center,
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KalloSpacing.sp4,
+              vertical: KalloSpacing.sp2,
+            ),
+            color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
+            child: Text(
+              widget.label,
+              textAlign: TextAlign.center,
+              style: dashBody(color: widget.color, weight: widget.weight),
+            ),
           ),
         ),
       ),
