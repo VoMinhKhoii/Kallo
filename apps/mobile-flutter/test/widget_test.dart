@@ -38,6 +38,14 @@ void main() {
           const MethodChannel('plugins.flutter.io/shared_preferences'),
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
+    // The onboarding draft is read off secure storage on the very first
+    // redirect now (it decides where a signed-out user lands), so the channel
+    // has to answer or the app never leaves the splash.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+          (call) async => null,
+        );
     assetLoader = _MemoryAssetLoader({
       for (final lang in ['en', 'vi'])
         lang:
@@ -51,7 +59,9 @@ void main() {
     );
   });
 
-  testWidgets('branded auth welcome renders', (WidgetTester tester) async {
+  testWidgets('a cold signed-out start lands on /start', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('vi')],
@@ -63,12 +73,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Onboarding now runs BEFORE sign-in (Phase C2), so the first frame of a
+    // fresh install is the start screen, not the auth welcome.
     // The brand is the vector wordmark widget now, not a Text node.
     expect(find.byType(KalloWordmark), findsOneWidget);
-    expect(
-      find.text('Track Vietnamese meals without the guesswork'),
-      findsOneWidget,
-    );
+    expect(find.text('Log meals the way you say them'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   test('localized user-facing copy uses the Kallo brand', () {

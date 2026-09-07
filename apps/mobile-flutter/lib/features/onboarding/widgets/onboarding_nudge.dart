@@ -2,7 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/onboarding_providers.dart';
+import '../data/constants.dart';
+import '../providers/onboarding_draft_providers.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -29,11 +30,13 @@ class OnboardingNudge extends ConsumerWidget {
 
   final VoidCallback onResume;
 
-  static const int _total = 3;
+  /// The counter names WIZARD screens, not server steps: the card is a link
+  /// into the wizard, so "Step 3 of 6" has to match the header the tap opens.
+  static const int _total = kOnboardingScreenCount;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rawStep = ref.watch(onboardingResumeStepProvider);
+    final rawStep = ref.watch(onboardingResumeScreenProvider);
     final safeStep = rawStep.clamp(1, _total);
     final completed = (safeStep - 1).clamp(0, _total);
     final progressPct = completed / _total;

@@ -8,13 +8,9 @@ enum BiologicalSex { male, female }
 
 enum ActivityLevel { sedentary, light, moderate, veryActive }
 
-ActivityLevel activityLevelFromString(String s) => switch (s) {
-      'sedentary' => ActivityLevel.sedentary,
-      'light' => ActivityLevel.light,
-      'moderate' => ActivityLevel.moderate,
-      'very_active' => ActivityLevel.veryActive,
-      _ => throw ArgumentError('Unknown ActivityLevel: $s'),
-    };
+ActivityLevel activityLevelFromString(String s) =>
+    tryParseActivityLevel(s) ??
+    (throw ArgumentError('Unknown ActivityLevel: $s'));
 
 String activityLevelToString(ActivityLevel a) => switch (a) {
       ActivityLevel.sedentary => 'sedentary',
@@ -27,12 +23,8 @@ enum Goal { cutting, bulking, maintaining }
 
 enum CarbSplit { moderateCarb, lowerCarb, higherCarb }
 
-CarbSplit carbSplitFromString(String s) => switch (s) {
-      'moderate_carb' => CarbSplit.moderateCarb,
-      'lower_carb' => CarbSplit.lowerCarb,
-      'higher_carb' => CarbSplit.higherCarb,
-      _ => throw ArgumentError('Unknown CarbSplit: $s'),
-    };
+CarbSplit carbSplitFromString(String s) =>
+    tryParseCarbSplit(s) ?? (throw ArgumentError('Unknown CarbSplit: $s'));
 
 String carbSplitToString(CarbSplit c) => switch (c) {
       CarbSplit.moderateCarb => 'moderate_carb',
@@ -50,17 +42,70 @@ enum ProteinPortion { small, medium, large }
 
 enum BrothConsumption { leaveIt, some, finishIt }
 
-BrothConsumption brothConsumptionFromString(String s) => switch (s) {
-      'leave_it' => BrothConsumption.leaveIt,
-      'some' => BrothConsumption.some,
-      'finish_it' => BrothConsumption.finishIt,
-      _ => throw ArgumentError('Unknown BrothConsumption: $s'),
-    };
+BrothConsumption brothConsumptionFromString(String s) =>
+    tryParseBrothConsumption(s) ??
+    (throw ArgumentError('Unknown BrothConsumption: $s'));
 
 String brothConsumptionToString(BrothConsumption b) => switch (b) {
       BrothConsumption.leaveIt => 'leave_it',
       BrothConsumption.some => 'some',
       BrothConsumption.finishIt => 'finish_it',
+    };
+
+// ── Tolerant parsers ─────────────────────────────────────────────────────
+//
+// The `…FromString` parsers above THROW, which is right for a payload the app
+// just built. A value read BACK — off the draft on disk, or off a server row
+// written by an older build — can name an enum member this build has never
+// heard of, and a throw there takes the wizard screen down. These answer
+// `null` and let the caller decide what a stale value costs.
+
+T? _byNameOrNull<T extends Enum>(List<T> values, String? name) {
+  if (name == null) return null;
+  for (final value in values) {
+    if (value.name == name) return value;
+  }
+  return null;
+}
+
+BiologicalSex? tryParseBiologicalSex(String? s) =>
+    _byNameOrNull(BiologicalSex.values, s);
+
+Goal? tryParseGoal(String? s) => _byNameOrNull(Goal.values, s);
+
+OilUsage? tryParseOilUsage(String? s) => _byNameOrNull(OilUsage.values, s);
+
+RicePortion? tryParseRicePortion(String? s) =>
+    _byNameOrNull(RicePortion.values, s);
+
+SugarBraised? tryParseSugarBraised(String? s) =>
+    _byNameOrNull(SugarBraised.values, s);
+
+ProteinPortion? tryParseProteinPortion(String? s) =>
+    _byNameOrNull(ProteinPortion.values, s);
+
+/// The three enums whose wire spelling is snake_case rather than the Dart
+/// member name, so `byName` would not find them.
+ActivityLevel? tryParseActivityLevel(String? s) => switch (s) {
+      'sedentary' => ActivityLevel.sedentary,
+      'light' => ActivityLevel.light,
+      'moderate' => ActivityLevel.moderate,
+      'very_active' => ActivityLevel.veryActive,
+      _ => null,
+    };
+
+CarbSplit? tryParseCarbSplit(String? s) => switch (s) {
+      'moderate_carb' => CarbSplit.moderateCarb,
+      'lower_carb' => CarbSplit.lowerCarb,
+      'higher_carb' => CarbSplit.higherCarb,
+      _ => null,
+    };
+
+BrothConsumption? tryParseBrothConsumption(String? s) => switch (s) {
+      'leave_it' => BrothConsumption.leaveIt,
+      'some' => BrothConsumption.some,
+      'finish_it' => BrothConsumption.finishIt,
+      _ => null,
     };
 
 class BodyMetrics {

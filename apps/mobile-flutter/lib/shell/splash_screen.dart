@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../shared/widgets/brand/kallo_wordmark.dart';
 import '../theme/kallo_colors.dart';
-import '../theme/kallo_typography.dart';
 
 /// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the Lora "Kallo" wordmark breathing gently on the cream
+/// first frame of brand: the [KalloWordmark] breathing gently on the cream
 /// surface, instead of a generic Material spinner. The cream background matches
 /// the native LaunchScreen so the native→Flutter handoff is seamless.
 class SplashScreen extends StatefulWidget {
@@ -55,12 +55,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final wordmark = Text(
-      'Kallo',
-      style: KalloTextStyles.serifRegular(
-        fontSize: 32,
-      ).copyWith(color: KalloColors.text),
-    );
+    // The drawn mark, not a serif setting of the word — the wordmark IS the
+    // brand's one typographic voice and Lora no longer speaks for it.
+    const wordmark = KalloWordmark(height: 26);
     return ColoredBox(
       color: KalloColors.surface,
       child: Center(child: FadeTransition(opacity: _opacity, child: wordmark)),

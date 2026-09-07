@@ -9,7 +9,6 @@ import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
 
@@ -115,9 +114,7 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
         Text(
           tr('auth.confirm.title'),
           textAlign: TextAlign.center,
-          style: KalloTextStyles.serifRegular(
-            fontSize: kAuthHeading,
-          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
+          style: kPageTitle(),
         ),
         const SizedBox(height: KalloSpacing.sp2),
         Text(
