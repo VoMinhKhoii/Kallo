@@ -68,8 +68,10 @@ describe('pushTokenBodySchema', () => {
   it('rejects anything APNs could not address', () => {
     // Not hex — the FCM-era opaque string shape.
     expect(
-      pushTokenBodySchema.safeParse({ token: 'apns-device-token', platform: 'ios' })
-        .success
+      pushTokenBodySchema.safeParse({
+        token: 'apns-device-token',
+        platform: 'ios',
+      }).success
     ).toBe(false);
     // Odd length: not whole bytes.
     expect(
