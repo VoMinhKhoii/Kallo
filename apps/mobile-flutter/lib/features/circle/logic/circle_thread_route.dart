@@ -11,12 +11,22 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-/// `/circle/thread/<shareId>[?scope=<groupId>]`.
-String circleThreadLocation({required String shareId, String? scope}) {
+/// `/circle/thread/<shareId>[?scope=<groupId>][&compose=1]`.
+///
+/// `compose=1` asks the page to open its composer focused. It rides in the URL
+/// rather than in a push argument so that the intent survives a deep link and
+/// a restored route, exactly like [scope].
+String circleThreadLocation({
+  required String shareId,
+  String? scope,
+  bool compose = false,
+}) {
   final path = '/circle/thread/${Uri.encodeComponent(shareId)}';
-  return scope == null
-      ? path
-      : '$path?scope=${Uri.encodeQueryComponent(scope)}';
+  final query = <String>[
+    if (scope != null) 'scope=${Uri.encodeQueryComponent(scope)}',
+    if (compose) 'compose=1',
+  ];
+  return query.isEmpty ? path : '$path?${query.join('&')}';
 }
 
 /// Pushes the thread over the tab shell — `push`, never `go`.
@@ -28,6 +38,7 @@ void openCircleThread(
   BuildContext context, {
   required String shareId,
   String? scope,
+  bool compose = false,
 }) => GoRouter.of(
   context,
-).push(circleThreadLocation(shareId: shareId, scope: scope));
+).push(circleThreadLocation(shareId: shareId, scope: scope, compose: compose));

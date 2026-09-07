@@ -22,14 +22,15 @@ GoRouter _router() => GoRouter(
     GoRoute(
       path: '/circle/thread/:shareId',
       parentNavigatorKey: _rootKey,
-      pageBuilder: (context, state) => CupertinoPage<void>(
-        child: Scaffold(
-          body: Text(
-            'thread ${state.pathParameters['shareId']} '
-            'scope=${state.uri.queryParameters['scope']}',
+      pageBuilder:
+          (context, state) => CupertinoPage<void>(
+            child: Scaffold(
+              body: Text(
+                'thread ${state.pathParameters['shareId']} '
+                'scope=${state.uri.queryParameters['scope']}',
+              ),
+            ),
           ),
-        ),
-      ),
     ),
     StatefulShellRoute.indexedStack(
       parentNavigatorKey: _rootKey,
@@ -39,16 +40,19 @@ GoRouter _router() => GoRouter(
           routes: [
             GoRoute(
               path: '/circle',
-              builder: (_, _) => Builder(
-                builder: (context) => TextButton(
-                  onPressed: () => openCircleThread(
-                    context,
-                    shareId: 's1',
-                    scope: 'group 1/+ü',
+              builder:
+                  (_, _) => Builder(
+                    builder:
+                        (context) => TextButton(
+                          onPressed:
+                              () => openCircleThread(
+                                context,
+                                shareId: 's1',
+                                scope: 'group 1/+ü',
+                              ),
+                          child: const Text('circle'),
+                        ),
                   ),
-                  child: const Text('circle'),
-                ),
-              ),
             ),
           ],
         ),
@@ -86,6 +90,24 @@ void main() {
     expect(
       circleThreadLocation(shareId: 's 1', scope: 'g/1'),
       '/circle/thread/s%201?scope=g%2F1',
+    );
+  });
+
+  test('compose rides in the URL, alone or beside the scope', () {
+    // The reply glyph asks for a focused composer; the "View all" link does
+    // not. It has to be a query param rather than a push argument so a deep
+    // link and a restored route mean the same thing.
+    expect(
+      circleThreadLocation(shareId: 's1', compose: true),
+      '/circle/thread/s1?compose=1',
+    );
+    expect(
+      circleThreadLocation(shareId: 's1', scope: 'g/1', compose: true),
+      '/circle/thread/s1?scope=g%2F1&compose=1',
+    );
+    expect(
+      circleThreadLocation(shareId: 's1', scope: 'g/1'),
+      '/circle/thread/s1?scope=g%2F1',
     );
   });
 }

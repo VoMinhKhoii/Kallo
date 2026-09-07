@@ -589,7 +589,8 @@
       "row": {
         "expand": "Mở rộng {nutrient}",
         "collapse": "Thu gọn {nutrient}"
-      }
+      },
+      "met": "đạt mục tiêu"
     },
     "background": {
       "eyebrow": "Trong nền",
@@ -1472,7 +1473,9 @@
       "reply": "Trả lời",
       "replyPlaceholder": "Trả lời…",
       "replyError": "Không thể gửi trả lời. Hãy thử lại.",
-      "earlierReplies": "{count} trả lời trước đó",
+      "earlierReplies": {
+        "other": "{count} trả lời trước đó"
+      },
       "threadTitle": "Trả lời",
       "viewAllReplies": "Xem tất cả {count} trả lời",
       "noReplies": "Chưa có trả lời nào",

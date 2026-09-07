@@ -26,10 +26,14 @@ import 'feed_rhythm.dart';
 /// a pure function of the message, which is the only reason to draw a pill:
 /// a one-word reply stays a one-word pill.
 ///
-/// The fill is [kTrack] and the radius [KalloRadii.xxl] — the app's existing
-/// bubble language (`features/logging/widgets/turn/sent_bubble.dart`), so the
-/// app ends up with ONE bubble rather than two. It reads on both grounds this
-/// row appears on: white inside a feed card, cream on the thread page.
+/// **The fill is NEUTRAL, the geometry is shared.** Padding and the radius
+/// TOKEN come from the app's existing bubble
+/// (`features/logging/widgets/turn/sent_bubble.dart`), so the two read as one
+/// family — but that bubble is the user's own turn: it fills with
+/// [KalloColors.btnPrimarySoft] and tightens one corner by 4 to point at its
+/// sender. A reply is not "mine", so it takes neither: a flat [kTrack] fill on
+/// all four equal corners. It reads on both grounds this row appears on: white
+/// inside a feed card, cream on the thread page.
 class ReplyRow extends StatelessWidget {
   const ReplyRow({required this.reply, required this.locale, super.key});
 

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +22,13 @@ import 'reply_row.dart';
 ///   all of them, so one chatty post could own a whole day card. With a page
 ///   to send people to, the card shows [_kPreviewCount] and links out.
 const int _kPreviewCount = 2;
+
+/// The "View all" line is a 17.5pt line of [dashMeta] inside a [KalloIcons.hit]
+/// tap box, so it carries (44 − 17.5) / 2 ≈ 13pt of slack UNDER its ink. That
+/// slack is paid out of this widget's own bottom gap — the same netting
+/// `feed_day_group.dart` does with `_actionSlack` — so a full tap target does
+/// not open a visible hole under the last reply: max(sp3 − 13, 0) = 0.
+const double _kLinkSlack = 13;
 
 class ReplyPreview extends StatelessWidget {
   const ReplyPreview({
@@ -44,11 +53,17 @@ class ReplyPreview extends StatelessWidget {
         ? replies
         : replies.sublist(replies.length - _kPreviewCount);
     final total = entry.repliesTotal;
+    final showsLink = total > shown.length;
 
     // Top gap comes from the action row's tap slack above; this widget owns
-    // the post's bottom gap whenever it renders anything.
+    // the post's bottom gap whenever it renders anything — less whatever the
+    // "View all" box already carries (see [_kLinkSlack]).
     return Padding(
-      padding: const EdgeInsets.only(bottom: KalloSpacing.sp3),
+      padding: EdgeInsets.only(
+        bottom: showsLink
+            ? math.max(KalloSpacing.sp3 - _kLinkSlack, 0)
+            : KalloSpacing.sp3,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -56,7 +71,7 @@ class ReplyPreview extends StatelessWidget {
             ReplyRow(reply: reply, locale: locale),
             const SizedBox(height: KalloSpacing.sp3),
           ],
-          if (total > shown.length)
+          if (showsLink)
             Semantics(
               button: true,
               child: GestureDetector(
@@ -66,19 +81,20 @@ class ReplyPreview extends StatelessWidget {
                   shareId: entry.meal.shareId,
                   scope: scope,
                 ),
-                child: Padding(
-                  // Vertical slack rather than a 44pt box: this line sits
-                  // inside a post's stack and a full tap target would open a
-                  // visible gap under the last reply.
-                  padding: const EdgeInsets.symmetric(
-                    vertical: KalloSpacing.sp1,
-                  ),
-                  child: Text(
-                    tr(
-                      'groups.feed.viewAllReplies',
-                      namedArgs: {'count': '$total'},
+                // A real 44pt target, not vertical slack: this is the one
+                // affordance in the card that leaves the page. The gap it
+                // would open under the last reply is paid back above.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      tr(
+                        'groups.feed.viewAllReplies',
+                        namedArgs: {'count': '$total'},
+                      ),
+                      style: dashMeta(),
                     ),
-                    style: dashMeta(),
                   ),
                 ),
               ),

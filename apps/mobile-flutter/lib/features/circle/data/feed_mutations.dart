@@ -25,12 +25,23 @@ class _ReactionSnapshot {
   final int count;
 }
 
-List<String?> _aliveFeedScopes(WidgetRef ref) {
+/// Every feed that is currently mounted and therefore owes a splice.
+///
+/// [extra] is the CALLER's own scope: the candidate set is built from what the
+/// Circle tab has selected, which says nothing about where the mutation was
+/// fired from. A reply sent from the thread page of a group post, with the tab
+/// still on the friends feed — a cold deep link, or any entry point that is
+/// not the tab — would otherwise splice into no feed at all, and the reply the
+/// user just wrote would vanish.
+List<String?> _aliveFeedScopes(
+  WidgetRef ref, [
+  Iterable<String?> extra = const [],
+]) {
   final selected = ref.read(circleSelectedViewProvider);
   final groupIds =
       ref.read(chatGroupsProvider).valueOrNull?.map((group) => group.id) ??
       const <String>[];
-  final candidates = <String?>{null, selected, ...groupIds};
+  final candidates = <String?>{null, selected, ...groupIds, ...extra};
   return candidates
       .where((scope) => ref.exists(sharedMealFeedProvider(scope)))
       .toList(growable: false);
@@ -58,8 +69,12 @@ _ReactionSnapshot? _reactionSnapshot(WidgetRef ref, String? scope, String id) {
   return null;
 }
 
-Future<void> toggleShareReaction(WidgetRef ref, String shareId) async {
-  final scopes = _aliveFeedScopes(ref);
+Future<void> toggleShareReaction(
+  WidgetRef ref,
+  String shareId, {
+  String? scope,
+}) async {
+  final scopes = _aliveFeedScopes(ref, [scope]);
   final snapshots = <String?, _ReactionSnapshot?>{
     for (final scope in scopes) scope: _reactionSnapshot(ref, scope, shareId),
   };
@@ -98,8 +113,9 @@ Future<void> createShareReply(
   WidgetRef ref, {
   required String shareId,
   required String body,
+  String? scope,
 }) async {
-  final scopes = _aliveFeedScopes(ref);
+  final scopes = _aliveFeedScopes(ref, [scope]);
   final replyId = const Uuid().v4();
   final json = await ref
       .read(apiClientProvider)

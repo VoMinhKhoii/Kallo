@@ -14,11 +14,13 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/data/surface_cast.dart';
 import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/feedback/kallo_surface_state.dart';
-import '../../../shared/widgets/surface/kallo_screen.dart';
+// Re-exports `kallo_screen.dart`, so `Screen` still arrives with it.
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
@@ -29,18 +31,24 @@ import '../widgets/states/circle_skeleton.dart';
 import '../widgets/thread/thread_body.dart';
 import '../widgets/thread/thread_composer.dart';
 
-/// What the docked composer covers at rest — one line of [dashBody] in its
-/// 44pt row plus the dock's own padding. The body reserves this much tail so
-/// the last reply can be scrolled clear of it.
-const double _kDockHeight = 76;
-
 class CircleThreadScreen extends ConsumerStatefulWidget {
-  const CircleThreadScreen({required this.shareId, this.scope, super.key});
+  const CircleThreadScreen({
+    required this.shareId,
+    this.scope,
+    this.autofocusComposer = false,
+    super.key,
+  });
 
   final String shareId;
 
   /// Which feed the post was read from — null is the combined friends feed.
   final String? scope;
+
+  /// Opens the keyboard on arrival. Set by `?compose=1`, which the post's
+  /// reply glyph appends: tapping it used to raise the inline composer, and a
+  /// page that arrives with the field cold loses that gesture. Reading it out
+  /// of the URL rather than out of a callback keeps a deep link honest too.
+  final bool autofocusComposer;
 
   @override
   ConsumerState<CircleThreadScreen> createState() => _CircleThreadScreenState();
@@ -49,6 +57,27 @@ class CircleThreadScreen extends ConsumerStatefulWidget {
 class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   final _focus = FocusNode();
   final _scroll = ScrollController();
+
+  /// What the dock currently covers, measured rather than assumed: the field
+  /// grows to four lines with the draft, and a constant would leave the last
+  /// reply behind it with no way to scroll it clear.
+  double _dockHeight = 0;
+  bool _autofocused = false;
+
+  void _dockHeightChanged(double height) {
+    if (!mounted || height == _dockHeight) return;
+    setState(() => _dockHeight = height);
+  }
+
+  /// Once, on the first frame the thread is actually readable — focusing a
+  /// composer that is still behind a skeleton raises a keyboard over nothing.
+  void _autofocusOnce() {
+    if (_autofocused) return;
+    _autofocused = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
@@ -74,6 +103,10 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     final view = ref.watch(
       threadEntryProvider((scope: widget.scope, shareId: widget.shareId)),
     );
+    if (widget.autofocusComposer && view.status == ThreadStatus.ready) {
+      _autofocusOnce();
+    }
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
 
     return Screen(
       // The dock pays the home indicator itself, so the page must not also
@@ -88,40 +121,70 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
         // depth-0 Scrollable, and a composer inside the body would drive the
         // header's hairline as the user typed with the page still at the top.
         // ScrollSeparator documents this exact trap.
-        overlay: view.status == ThreadStatus.ready
-            ? Align(
-                alignment: Alignment.bottomCenter,
-                child: ThreadComposer(
-                  shareId: widget.shareId,
-                  focusNode: _focus,
-                  onPosted: _scrollToEnd,
-                ),
-              )
-            : null,
+        overlay:
+            view.status == ThreadStatus.ready
+                ? Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ThreadComposer(
+                    shareId: widget.shareId,
+                    scope: widget.scope,
+                    focusNode: _focus,
+                    onHeightChanged: _dockHeightChanged,
+                    onPosted: _scrollToEnd,
+                  ),
+                )
+                : null,
         child: switch (view.status) {
-          ThreadStatus.loading => const SingleChildScrollView(
-            padding: EdgeInsets.all(KalloSpacing.sp3),
-            child: CircleWallSkeleton(),
+          // No dock in these states, so the page owes the home indicator
+          // itself — `Screen(bottom: false)` above hands it to the composer.
+          ThreadStatus.loading => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3 + safeBottom,
+            ),
+            child: const CircleWallSkeleton(),
           ),
           ThreadStatus.failed => SingleChildScrollView(
-            padding: const EdgeInsets.all(KalloSpacing.sp3),
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3 + safeBottom,
+            ),
             child: CircleErrorCard(
-              onRetry: () =>
-                  ref.invalidate(sharedMealFeedProvider(widget.scope)),
+              onRetry:
+                  () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
             ),
           ),
           // Never auto-pop: a screen that closes itself under the user's thumb
           // reads as a crash. Say what happened and offer the way back.
-          ThreadStatus.missing => KalloSurfaceState(
-            area: SurfaceArea.circle,
-            kind: SurfaceKind.empty,
-            title: tr('groups.feed.threadGone'),
-            subtitle: tr('groups.feed.threadGoneBody'),
+          ThreadStatus.missing => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3,
+              KalloSpacing.sp3 + safeBottom,
+            ),
+            child: KalloSurfaceState(
+              area: SurfaceArea.circle,
+              kind: SurfaceKind.empty,
+              title: tr('groups.feed.threadGone'),
+              subtitle: tr('groups.feed.threadGoneBody'),
+              // The way back, said once: without it this state is a dead end
+              // on a small screen, where the header can scroll out of reach.
+              action: KalloButton(
+                title: tr('common.back'),
+                variant: KalloButtonVariant.cta,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+            ),
           ),
           ThreadStatus.ready => ThreadBody(
             entry: view.entry!,
             controller: _scroll,
-            dockHeight: _kDockHeight,
+            dockHeight: _dockHeight,
             onReply: _focus.requestFocus,
           ),
         },
@@ -134,6 +197,15 @@ class _ThreadHeader extends StatelessWidget {
   const _ThreadHeader();
 
   @override
-  Widget build(BuildContext context) =>
-      PageHeader(title: tr('groups.feed.threadTitle'));
+  Widget build(BuildContext context) => PageHeader(
+    title: tr('groups.feed.threadTitle'),
+    // A cold entry (deep link, notification) has no shell beneath this page,
+    // so `maybePop` is a no-op and the chevron does nothing. Fall back to the
+    // tab this thread belongs to rather than leaving the user stuck.
+    onBack:
+        () =>
+            Navigator.of(context).canPop()
+                ? Navigator.of(context).pop()
+                : GoRouter.of(context).go('/circle'),
+  );
 }

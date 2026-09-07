@@ -589,7 +589,8 @@
       "row": {
         "expand": "Expand {nutrient}",
         "collapse": "Collapse {nutrient}"
-      }
+      },
+      "met": "target met"
     },
     "background": {
       "eyebrow": "In the background",
@@ -1475,7 +1476,10 @@
       "reply": "Reply",
       "replyPlaceholder": "Reply…",
       "replyError": "Couldn't post your reply. Try again.",
-      "earlierReplies": "{count} earlier replies",
+      "earlierReplies": {
+        "one": "{count} earlier reply",
+        "other": "{count} earlier replies"
+      },
       "threadTitle": "Replies",
       "viewAllReplies": "View all {count} replies",
       "noReplies": "No replies yet",

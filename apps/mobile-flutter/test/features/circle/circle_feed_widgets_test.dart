@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/shared/logic/display_format.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/feed_action_button.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_day_group.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/reply_preview.dart';
@@ -37,11 +38,7 @@ void main() {
     bool isSelf = false,
   }) => ShareReply(
     id: id,
-    author: const CircleProfile(
-      userId: 'u3',
-      handle: 'linh',
-      avatarUrl: null,
-    ),
+    author: const CircleProfile(userId: 'u3', handle: 'linh', avatarUrl: null),
     isSelf: isSelf,
     body: body,
     createdAt: DateTime.now(),
@@ -220,7 +217,10 @@ void main() {
     ];
     await pump(
       tester,
-      ReplyPreview(entry: entry(replies: replies, repliesTotal: 9), scope: null),
+      ReplyPreview(
+        entry: entry(replies: replies, repliesTotal: 9),
+        scope: null,
+      ),
     );
     expect(find.text('Reply 1'), findsNothing);
     expect(find.text('Reply 2'), findsOneWidget);
@@ -250,7 +250,9 @@ void main() {
       ),
     );
     final bubble = tester.getSize(
-      find.ancestor(of: find.text('Ngon'), matching: find.byType(Container)).first,
+      find
+          .ancestor(of: find.text('Ngon'), matching: find.byType(Container))
+          .first,
     );
     final preview = tester.getSize(find.byType(ReplyPreview));
     expect(bubble.width, lessThan(preview.width));
@@ -287,16 +289,39 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Log this too'), findsOneWidget);
-    for (final icon in [
-      LucideIcons.heart300,
-      LucideIcons.messageCircle300,
-      LucideIcons.copy300,
-    ]) {
-      final box = find
-          .ancestor(of: find.byIcon(icon), matching: find.byType(InkWell))
-          .first;
-      expect(tester.getSize(box).height, greaterThanOrEqualTo(44));
+    // Measured on the button itself, not on whatever it uses for its press
+    // feedback: the target is the contract, the ink is an implementation
+    // detail that has already changed once.
+    final buttons = find.byType(FeedActionButton);
+    expect(buttons, findsNWidgets(3));
+    for (var i = 0; i < 3; i++) {
+      expect(tester.getSize(buttons.at(i)).height, greaterThanOrEqualTo(44));
     }
+  });
+
+  testWidgets('a long unbroken word stays inside the reply pill', (
+    tester,
+  ) async {
+    // A URL or a mashed-together word has no break opportunity, so nothing
+    // wraps it for free: the pill must still be bounded by the column it sits
+    // in rather than running out past the card edge.
+    const long = 'aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffff';
+    expect(long.length, 60);
+    await pump(
+      tester,
+      ReplyPreview(
+        entry: entry(replies: [reply(body: long)], repliesTotal: 1),
+        scope: null,
+      ),
+    );
+    final pill = tester.getRect(
+      find
+          .ancestor(of: find.text(long), matching: find.byType(Container))
+          .first,
+    );
+    final preview = tester.getRect(find.byType(ReplyPreview));
+    expect(pill.width, lessThanOrEqualTo(preview.width));
+    expect(pill.right, lessThanOrEqualTo(preview.right));
   });
 
   testWidgets('a post with no replies draws no reply block at all', (
@@ -433,10 +458,11 @@ class _FeedHost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
-      data: (value) => FeedEntry(
-        entry: value.entries.single,
-        footer: ReplyPreview(entry: value.entries.single, scope: null),
-      ),
+      data:
+          (value) => FeedEntry(
+            entry: value.entries.single,
+            footer: ReplyPreview(entry: value.entries.single, scope: null),
+          ),
       error: (_, __) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

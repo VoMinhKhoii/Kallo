@@ -220,6 +220,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: CircleThreadScreen(
             shareId: state.pathParameters['shareId'] ?? '',
             scope: state.uri.queryParameters['scope'],
+            autofocusComposer: state.uri.queryParameters['compose'] == '1',
           ),
         ),
       ),

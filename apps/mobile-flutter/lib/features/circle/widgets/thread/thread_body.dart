@@ -43,19 +43,13 @@ class ThreadBody extends StatelessWidget {
     // what keeps that from being invisible — there is no endpoint to page the
     // rest back in.
     final hidden = entry.repliesTotal - entry.replies.length;
-    // Read HERE, not passed down: the keyboard inset and the dock's own lift
-    // move on the same frame, and reading it in this subtree keeps the two in
-    // step without rebuilding the screen.
-    final reserve = dockHeight + MediaQuery.viewInsetsOf(context).bottom;
 
-    return SingleChildScrollView(
+    // Built ONCE here, then handed to [_TailReserve] as a child: the keyboard
+    // inset that sets the tail is read down there, so the 250ms ramp rebuilds
+    // a padding rather than the post, every reply and all of their text.
+    return _TailReserve(
       controller: controller,
-      padding: EdgeInsets.fromLTRB(
-        KalloSpacing.sp3,
-        KalloSpacing.sp2,
-        KalloSpacing.sp3,
-        reserve + KalloSpacing.sp4,
-      ),
+      dockHeight: dockHeight,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -63,27 +57,34 @@ class ThreadBody extends StatelessWidget {
             showSeparators: false,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: KalloSpacing.sp3,
-                ),
+                // No bottom pad: the action row's 44pt boxes already carry
+                // ~13pt of slack under the glyph ink, exactly as the feed's
+                // day card nets out in `feed_day_group.dart` (`_actionSlack`).
+                padding: const EdgeInsets.only(top: KalloSpacing.sp3),
                 child: FeedEntry(entry: entry, onReply: onReply),
               ),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp4),
           if (entry.replies.isEmpty)
-            KalloSurfaceState(
-              area: SurfaceArea.circle,
-              kind: SurfaceKind.empty,
-              compact: true,
-              title: tr('groups.feed.noReplies'),
-              subtitle: tr('groups.feed.noRepliesBody'),
+            // Full width, or the surface's centred cast and copy would sit
+            // hard against the left edge under this start-aligned column.
+            SizedBox(
+              width: double.infinity,
+              child: KalloSurfaceState(
+                area: SurfaceArea.circle,
+                kind: SurfaceKind.empty,
+                compact: true,
+                title: tr('groups.feed.noReplies'),
+                subtitle: tr('groups.feed.noRepliesBody'),
+              ),
             )
           else ...[
             if (hidden > 0) ...[
               Text(
-                tr(
+                plural(
                   'groups.feed.earlierReplies',
+                  hidden,
                   namedArgs: {'count': '$hidden'},
                 ),
                 style: dashMeta(),
@@ -97,6 +98,38 @@ class ThreadBody extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// The scroll view and the room the last reply needs to clear the dock.
+///
+/// Its own widget so the keyboard's ramp rebuilds THIS and nothing else: the
+/// dock lifts itself by `viewInsets` and reports only its own height, so the
+/// body owes both — read here, so the two still move on the same frame.
+class _TailReserve extends StatelessWidget {
+  const _TailReserve({
+    required this.controller,
+    required this.dockHeight,
+    required this.child,
+  });
+
+  final ScrollController controller;
+  final double dockHeight;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reserve = dockHeight + MediaQuery.viewInsetsOf(context).bottom;
+    return SingleChildScrollView(
+      controller: controller,
+      padding: EdgeInsets.fromLTRB(
+        KalloSpacing.sp3,
+        KalloSpacing.sp2,
+        KalloSpacing.sp3,
+        reserve + KalloSpacing.sp4,
+      ),
+      child: child,
     );
   }
 }

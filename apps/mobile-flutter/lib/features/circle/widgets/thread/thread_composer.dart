@@ -6,6 +6,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
+import 'thread_send_button.dart';
 
 /// The thread page's docked reply composer.
 ///
@@ -15,20 +16,35 @@ import '../../data/feed_mutations.dart';
 /// is where every other composer in the app lives.
 ///
 /// Docked, not in the scroll view: the replies scroll under it and the field
-/// stays reachable at any scroll offset.
+/// stays reachable at any scroll offset. Because the body scrolls UNDER it,
+/// the dock reports its own laid-out height through [onHeightChanged] — it
+/// grows to four lines with the draft, and a constant would leave the last
+/// reply stuck behind it (same contract as
+/// `features/logging/widgets/composer/composer_dock.dart`).
 class ThreadComposer extends ConsumerStatefulWidget {
   const ThreadComposer({
     required this.shareId,
     required this.focusNode,
+    required this.onHeightChanged,
+    this.scope,
     this.onPosted,
     super.key,
   });
 
   final String shareId;
 
+  /// The feed the post was read from — passed to the mutation so the reply
+  /// lands in THIS feed's cache even when the Circle tab has another one
+  /// selected (a cold deep link selects nothing at all).
+  final String? scope;
+
   /// Owned by the screen, so the post's own reply glyph can focus this field
   /// instead of pushing a second copy of the thread it is already inside.
   final FocusNode focusNode;
+
+  /// Fired (post-frame) whenever the dock's laid-out height changes, so the
+  /// body can reserve exactly that much tail.
+  final ValueChanged<double> onHeightChanged;
 
   /// Fired after a reply lands, so the page can scroll it into view.
   final VoidCallback? onPosted;
@@ -39,16 +55,9 @@ class ThreadComposer extends ConsumerStatefulWidget {
 
 class _ThreadComposerState extends ConsumerState<ThreadComposer> {
   final _controller = TextEditingController();
+  final GlobalKey _dockKey = GlobalKey();
+  double _reportedHeight = 0;
   bool _submitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Redraws the send affordance as the field crosses empty/non-empty.
-    _controller.addListener(_changed);
-  }
-
-  void _changed() => setState(() {});
 
   @override
   void dispose() {
@@ -56,12 +65,27 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
     super.dispose();
   }
 
+  void _reportHeight() {
+    if (!mounted) return;
+    final size = _dockKey.currentContext?.size;
+    if (size == null) return;
+    // Sub-pixel churn would ping-pong the screen's setState forever.
+    if ((size.height - _reportedHeight).abs() < 0.5) return;
+    _reportedHeight = size.height;
+    widget.onHeightChanged(size.height);
+  }
+
   Future<void> _submit() async {
     final body = _controller.text.trim();
     if (body.isEmpty || _submitting) return;
     setState(() => _submitting = true);
     try {
-      await createShareReply(ref, shareId: widget.shareId, body: body);
+      await createShareReply(
+        ref,
+        shareId: widget.shareId,
+        body: body,
+        scope: widget.scope,
+      );
       if (!mounted) return;
       _controller.clear();
       widget.onPosted?.call();
@@ -80,7 +104,7 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final hasDraft = _controller.text.trim().isNotEmpty;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     // A plain Padding, never an AnimatedPadding: iOS ramps `viewInsets` itself
     // over the keyboard's own curve, and animating on top of that lands the
     // dock a frame behind the keyboard the whole way up (see
@@ -92,64 +116,66 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: ColoredBox(
-        // Opaque: the replies scroll UNDER this dock, and a translucent bar
-        // would show them sliding through the field.
-        color: kPage,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            KalloSpacing.sp3,
-            KalloSpacing.sp2,
-            KalloSpacing.sp3,
-            bottomInset + KalloSpacing.sp2,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Semantics(
-                  label: tr('groups.feed.replyPlaceholder'),
-                  textField: true,
-                  child: TextField(
-                    key: const Key('reply-composer'),
-                    controller: _controller,
-                    focusNode: widget.focusNode,
-                    enabled: !_submitting,
-                    style: dashBody(),
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: tr('groups.feed.replyPlaceholder'),
-                      hintStyle: dashBody(color: kInkMuted),
-                    ),
-                  ),
-                ),
+      // The field grows a line under the user's thumb without re-running this
+      // build (the draft only rebuilds the send affordance below), so the size
+      // notification — not the build — is what keeps the reported height true.
+      child: NotificationListener<SizeChangedLayoutNotification>(
+        onNotification: (_) {
+          // Fired during layout — defer the screen's setState past this frame.
+          WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
+          return false;
+        },
+        child: SizeChangedLayoutNotifier(
+          child: ColoredBox(
+            // Keyed INSIDE the keyboard lift, so the height reported up is the
+            // dock's OWN: the body adds the same inset itself, in the same
+            // frame, rather than receiving it a frame late through here.
+            key: _dockKey,
+            // Opaque: the replies scroll UNDER this dock, and a translucent bar
+            // would show them sliding through the field.
+            color: kPage,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                KalloSpacing.sp3,
+                KalloSpacing.sp2,
+                KalloSpacing.sp3,
+                bottomInset + KalloSpacing.sp2,
               ),
-              if (hasDraft) ...[
-                const SizedBox(width: KalloSpacing.sp2),
-                Semantics(
-                  button: true,
-                  enabled: !_submitting,
-                  label: tr('groups.feed.reply'),
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _submitting ? null : _submit,
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minHeight: KalloIcons.hit,
-                        minWidth: KalloIcons.hit,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('reply-composer'),
+                      controller: _controller,
+                      focusNode: widget.focusNode,
+                      // `readOnly`, not `enabled: false`: disabling the field
+                      // drops its focus, which collapses the keyboard on every
+                      // send and makes a second reply a two-tap affair.
+                      readOnly: _submitting,
+                      style: dashBody(),
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _submit(),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: tr('groups.feed.replyPlaceholder'),
+                        hintStyle: dashBody(color: kInkMuted),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(tr('groups.feed.reply'), style: dashBody()),
                     ),
                   ),
-                ),
-              ],
-            ],
+                  // Only the send affordance listens to the draft: a
+                  // controller listener would rebuild the whole dock — field
+                  // included — on every keystroke.
+                  ThreadSendButton(
+                    controller: _controller,
+                    submitting: _submitting,
+                    onSubmit: _submit,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

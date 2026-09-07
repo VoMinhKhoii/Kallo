@@ -134,12 +134,16 @@ class FeedEntry extends StatelessWidget {
               // No gap: the action row's own tap slack supplies it.
               FeedEntryActions(
                 entry: entry,
+                scope: scope,
                 onReply:
                     onReply ??
+                    // `compose: true`: the glyph used to open a composer, so
+                    // the page it pushes now arrives with the field focused.
                     () => openCircleThread(
                       context,
                       shareId: meal.shareId,
                       scope: scope,
+                      compose: true,
                     ),
               ),
               if (footer != null) footer!,
