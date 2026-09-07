@@ -19,7 +19,7 @@ import '../widgets/summary/day_summary.dart';
 import '../widgets/states/empty_state.dart';
 import '../widgets/states/inline_error.dart';
 import '../widgets/nutrients/macro_rows_card.dart';
-import '../widgets/nutrients/nutrient_rows_card.dart';
+import '../widgets/nutrients/nutrient_grid.dart';
 import '../widgets/states/micronutrients_locked_card.dart';
 import '../widgets/states/nutrition_skeleton.dart';
 import '../widgets/scope/range_selector.dart';
@@ -332,11 +332,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     );
   }
 
-  /// One nutrient group: its header, and its rows as a grouped card.
+  /// One nutrient group: its header, and its nutrients as a 2-column grid of
+  /// cards (2026-09-07 — see [NutrientGridCard] for why the grid came back).
   ///
   /// The header's meta says "Limited data" when anything in the group is too
   /// thinly covered to trust — said once for the group rather than repeated as
-  /// a caveat on every row it applies to.
+  /// a caveat on every cell it applies to.
   List<Widget> _group(String title, List<NutrientCardData> cards) {
     if (cards.isEmpty) return const [];
     return [
@@ -352,7 +353,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 : null,
       ),
       const SizedBox(height: _gap),
-      NutrientRowsCard(cards: cards),
+      NutrientGrid(cards: cards),
     ];
   }
 }

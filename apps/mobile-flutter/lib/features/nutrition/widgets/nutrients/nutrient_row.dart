@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import 'nutrient_bar.dart';
 
 /// One data row inside a nutrition [GroupedListCard] — the Settings row
 /// anatomy, in its display-only form (native pass, 2026-08-31): an optional
@@ -86,7 +87,7 @@ class NutrientRow extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: KalloSpacing.sp1_5),
-                  _Bar(
+                  NutrientBar(
                     percentOfTarget: percentOfTarget,
                     color: fillColor,
                     delay: barDelay,
@@ -95,49 +96,6 @@ class NutrientRow extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The 3px track + fill. Fills once on arrival and then follows its value.
-class _Bar extends StatelessWidget {
-  const _Bar({
-    required this.percentOfTarget,
-    required this.color,
-    required this.delay,
-  });
-
-  final double? percentOfTarget;
-  final Color color;
-  final Duration delay;
-
-  @override
-  Widget build(BuildContext context) {
-    final pct = (percentOfTarget ?? 0).clamp(0, 100).toDouble();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(2),
-      child: Container(
-        height: 3,
-        color: kTrack,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: pct),
-          duration: const Duration(milliseconds: 700),
-          curve: Interval(
-            // The stagger is spent inside one animation rather than on a
-            // delayed controller per row: a card of six rows would otherwise
-            // hold six timers open for the sake of 300ms of choreography.
-            (delay.inMilliseconds / 1000).clamp(0.0, 0.5),
-            1,
-            curve: Curves.easeOutCubic,
-          ),
-          builder:
-              (context, value, _) => FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: value / 100,
-                child: ColoredBox(color: color),
-              ),
         ),
       ),
     );
