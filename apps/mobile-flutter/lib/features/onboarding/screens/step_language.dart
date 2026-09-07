@@ -5,6 +5,7 @@ import '../../../shared/widgets/form/option_row.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
+import '../logic/onboarding_step_spec.dart';
 
 /// Screen 1 — "Choose your language". Picking a row records `preferredLocale`
 /// for the server AND live-switches the app with `context.setLocale`, so the
@@ -72,3 +73,22 @@ class StepLanguage extends StatelessWidget {
     );
   }
 }
+
+/// Screen 1's contract: a language is mandatory, so there is no Skip and the
+/// CTA is never held — the step opens on the phone's guess.
+OnboardingStepSpec stepLanguageSpec({
+  required OnboardingAnswers answers,
+  required String deviceLanguage,
+  required bool localeFromDevice,
+  required VoidCallback onChanged,
+}) => (
+      title: tr('onboarding.language.title'),
+      body: StepLanguage(
+        answers: answers,
+        deviceLanguage: deviceLanguage,
+        localeFromDevice: localeFromDevice,
+        onChanged: onChanged,
+      ),
+      ctaLabel: tr('onboarding.continueLabel'),
+      ctaEnabled: true,
+    );

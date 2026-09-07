@@ -8,7 +8,6 @@ import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../widgets/auth_controls.dart';
 
 import '../widgets/auth_submit_button.dart';
@@ -102,9 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.title'),
           textAlign: TextAlign.center,
-          style: KalloTextStyles.serifRegular(
-            fontSize: kAuthHeading,
-          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
+          style: kPageTitle(),
         ),
         const SizedBox(height: KalloSpacing.sp2),
         Text(
@@ -161,9 +158,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.sentTitle'),
           textAlign: TextAlign.center,
-          style: KalloTextStyles.serifRegular(
-            fontSize: kAuthHeading,
-          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
+          style: kPageTitle(),
         ),
         const SizedBox(height: KalloSpacing.sp2),
         Text(

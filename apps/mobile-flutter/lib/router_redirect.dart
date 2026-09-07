@@ -6,18 +6,20 @@ library;
 import 'features/onboarding/data/onboarding_draft.dart';
 
 /// The routes a signed-OUT user may sit on: the pre-auth flow (start → wizard →
-/// save your plan) plus the two auth screens. `/circle/invite/*` is reachable
-/// too but is a pattern, not a member — the connect screen renders the "sign in
-/// to connect" state itself.
+/// save your plan) plus the auth screens and the email path pushed off each of
+/// them. `/circle/invite/*` is reachable too but is a pattern, not a member —
+/// the connect screen renders the "sign in to connect" state itself.
 ///
 /// The same set is what a signed-IN user is bounced OFF: the pre-auth flow is
 /// not a place an account can sit.
 const Set<String> _preAuthRoutes = {
   '/sign-in',
+  '/sign-in/email',
   '/sign-up',
   '/start',
   '/onboarding',
   '/save-plan',
+  '/save-plan/email',
 };
 
 /// Where the router should send a user standing at [location], or `null` to

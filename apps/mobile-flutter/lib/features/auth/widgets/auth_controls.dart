@@ -9,18 +9,13 @@ import '../../../theme/kallo_theme.dart';
 
 // ── Auth metrics (native pass, 2026-08-31) ────────────────────────────────
 // The pre-auth screens are the app's one documented exception to its page
-// rhythm and to the calm type scale, so the four numbers that make them that
+// rhythm and to the calm type scale, so the numbers that make them that
 // exception live together here rather than being spelled at each screen.
 
 /// Auth's side inset — the one surface that does NOT run the app's 12pt page
 /// rhythm. Pre-auth is a single centred column with no cards to align to, and
 /// at 12 a 50pt pill ran almost edge to edge.
 const double kAuthInset = KalloSpacing.sp6;
-
-/// Lora 26 — the heading on a pushed auth screen. One step under the welcome
-/// wordmark's 40 and above the 22 the in-app greeting uses, so the three
-/// serif moments never read as the same one.
-const double kAuthHeading = 26;
 
 /// The auth footer size — Terms/Privacy links, "New here?". One step under the
 /// 14 body so the legal line recedes without dropping to the 12 that carries

@@ -7,8 +7,9 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// One of screen 3's three metrics: a muted label over a 52pt pill holding the
-/// figure and its unit. The unit lives INSIDE the field, muted — "62 kg" is how
-/// the answer reads back.
+/// figure and its unit. The unit lives INSIDE the field, muted, and the two
+/// travel as ONE CENTRED GROUP — "62 kg" is a token, not a number pushed
+/// against a suffix, so the pill reads the same at one digit and at three.
 ///
 /// The decoration is spelled out in full rather than inherited: the app's
 /// [InputDecorationTheme] sets `filled` and an outline border, and clearing
@@ -38,6 +39,9 @@ class UnitField extends StatefulWidget {
   final bool hasError;
 
   static const double height = 52;
+
+  /// The narrowest the digits' box gets, so an empty field still takes a tap.
+  static const double minInputWidth = 20;
 
   @override
   State<UnitField> createState() => _UnitFieldState();
@@ -84,12 +88,23 @@ class _UnitFieldState extends State<UnitField> {
               color: widget.hasError ? KalloColors.danger : KalloColors.border,
             ),
           ),
-          // Right-aligned against its unit, not centred in the pill: the pair
-          // reads as one token ("62 kg") at every digit count.
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(child: _input()),
+              // Sized to the DIGITS so the pair centres as one group. The
+              // floor keeps an empty field tappable — a zero-width TextField
+              // takes no hits, and blank is a valid answer here.
+              Flexible(
+                child: IntrinsicWidth(
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(minWidth: UnitField.minInputWidth),
+                    child: _input(),
+                  ),
+                ),
+              ),
               const SizedBox(width: KalloSpacing.sp1),
               Text(widget.unit, maxLines: 1, style: dashMeta()),
             ],
@@ -101,7 +116,7 @@ class _UnitFieldState extends State<UnitField> {
 
   Widget _input() => TextField(
         controller: _controller,
-        textAlign: TextAlign.end,
+        textAlign: TextAlign.center,
         keyboardType: TextInputType.numberWithOptions(decimal: !widget.integer),
         inputFormatters: [
           FilteringTextInputFormatter.allow(

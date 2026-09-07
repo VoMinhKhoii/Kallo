@@ -34,3 +34,11 @@ abstract final class WizardDefaults {
   static const CarbSplit carbSplit = CarbSplit.moderateCarb;
   static const double? deficitOverride = null;
 }
+
+/// Typical Việt Nam adult figures, filled into screen 3's EMPTY metrics once a
+/// sex is picked so screen 6 has a target to show from the first answer.
+const Map<BiologicalSex, ({double weightKg, int heightCm, int age})>
+    kSexMetricDefaults = {
+  BiologicalSex.male: (weightKg: 65, heightCm: 168, age: 28),
+  BiologicalSex.female: (weightKg: 55, heightCm: 157, age: 28),
+};

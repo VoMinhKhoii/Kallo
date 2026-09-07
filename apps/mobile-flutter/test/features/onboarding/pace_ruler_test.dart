@@ -10,7 +10,8 @@ import 'package:kallo_mobile/features/onboarding/widgets/pace_ruler.dart';
 /// and the ends stop.
 
 const double _hostWidth = 320;
-const String _readout = 'half a kilo a week';
+const String _hero = 'half a kilo a week';
+const String _note = '550 kcal deficit';
 
 class _Host extends StatefulWidget {
   const _Host({this.initial = 0.3, this.locale = const Locale('en')});
@@ -38,7 +39,8 @@ class _HostState extends State<_Host> {
                 value: value,
                 onChanged: (v) => setState(() => value = v),
                 label: 'Pace',
-                readout: _readout,
+                hero: _hero,
+                note: _note,
                 lowLabel: 'Gentle',
                 highLabel: 'Aggressive',
               ),
@@ -47,6 +49,11 @@ class _HostState extends State<_Host> {
         ),
       );
 }
+
+double _offset(WidgetTester tester) => tester
+    .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+    .controller!
+    .offset;
 
 double _value(WidgetTester tester) =>
     tester.state<_HostState>(find.byType(_Host)).value;
@@ -86,11 +93,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_value(tester), closeTo(0.4, 1e-9));
-    // The chosen step's graduation sits under the needle.
-    expect(
-      tester.getCenter(find.text('0.4')).dx,
-      closeTo(tester.getCenter(find.byType(PaceRuler)).dx, 0.5),
-    );
+    // …and the strip finished ON the detent: the ticks are bare now, so the
+    // landing is read off the offset rather than off a number under the
+    // needle. Step 0.4 is three pitches from the 0.1 end.
+    expect(_offset(tester), closeTo(3 * PaceRuler.pitchPerTenth, 0.5));
   });
 
   testWidgets('the ends stop', (tester) async {
@@ -105,25 +111,37 @@ void main() {
     expect(_value(tester), closeTo(0.1, 1e-9));
   });
 
-  testWidgets('the readout line, the end labels and every step are on screen',
-      (tester) async {
+  testWidgets('the hero value leads, the consequence follows, and the strip '
+      'carries no numbers of its own', (tester) async {
     await _pump(tester);
 
-    expect(find.text('Pace'), findsOneWidget);
-    expect(find.text(_readout), findsOneWidget);
+    expect(find.text(_hero), findsOneWidget);
+    expect(find.text(_note), findsOneWidget);
     expect(find.text('Gentle'), findsOneWidget);
     expect(find.text('Aggressive'), findsOneWidget);
+    // The hero sits ABOVE the strip and the consequence below it.
+    final strip = tester.getRect(find.byType(SingleChildScrollView));
+    expect(tester.getRect(find.text(_hero)).bottom, lessThan(strip.top));
+    expect(tester.getRect(find.text(_note)).top, greaterThan(strip.top));
+    // Bare ticks: no step is spelled out under the graduations any more.
     for (final step in ['0.1', '0.4', '0.8']) {
-      expect(find.text(step), findsOneWidget, reason: '$step lost its label');
+      expect(find.text(step), findsNothing, reason: 'the numbers are back');
     }
   });
 
-  testWidgets('the graduations follow the locale\'s decimal mark', (tester) async {
+  testWidgets("the announced steps follow the locale's decimal mark",
+      (tester) async {
     // `toStringAsFixed(1)` hardcodes the POINT; Vietnamese writes 0,5.
-    await _pump(tester, locale: const Locale('vi'));
+    final handle = tester.ensureSemantics();
+    await _pump(tester, initial: 0.4, locale: const Locale('vi'));
 
-    expect(find.text('0,5'), findsOneWidget);
-    expect(find.text('0.5'), findsNothing);
+    final data = find.semantics
+        .byFlag(SemanticsFlag.isSlider)
+        .evaluate()
+        .single
+        .getSemanticsData();
+    expect(data.increasedValue, '0,5');
+    handle.dispose();
   });
 
   testWidgets('assistive technology can raise and lower the pace',
@@ -138,7 +156,7 @@ void main() {
     expect(data.hasAction(SemanticsAction.increase), isTrue);
     expect(data.hasAction(SemanticsAction.decrease), isTrue);
     // The value reads as the sentence, not as a raw fraction.
-    expect(data.value, _readout);
+    expect(data.value, _hero);
     expect(data.label, 'Pace');
 
     tester.semantics.increase(slider);

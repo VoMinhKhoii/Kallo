@@ -137,7 +137,6 @@ class PaywallScreen extends ConsumerWidget {
 
   Widget _header(BuildContext context, {required bool stayFree}) =>
       PaywallHeader(
-        gutter: gutter,
         onClose: () => _dismiss(context),
         onStayFree: stayFree ? () => _dismiss(context) : null,
       );

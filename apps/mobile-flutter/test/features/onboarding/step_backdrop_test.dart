@@ -4,16 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/start_aurora.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_scaffold.dart';
 
 import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
 
-/// The four soft blobs the canvas paints behind every wizard step (and behind
-/// `/save-plan`, asserted in its own test). Two things matter and neither is a
-/// pixel: that FOUR gradients get painted, and that the layer is actually in
-/// the step scaffold's tree rather than only in the widget that defines it.
+/// The canvas behind every wizard step (and behind `/save-plan`, asserted in
+/// its own test): the start screen's top sweep at [AuroraSpec.step], then four
+/// soft blobs over it. Two things matter and neither is a pixel: that all SEVEN
+/// gradients get painted, and that the layer is actually in the step scaffold's
+/// tree rather than only in the widget that defines it.
 Widget _host(Widget child) => EasyLocalization(
   supportedLocales: const [Locale('en')],
   path: 'assets/l10n',
@@ -49,22 +51,45 @@ void main() {
     await loadAppFonts();
   });
 
-  testWidgets('paints four radial blobs and nothing else', (tester) async {
+  testWidgets('paints the sweep, then four radial blobs, and nothing else', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: SizedBox(width: 390, height: 844, child: StepBackdrop())),
+      const MaterialApp(
+        home: SizedBox(width: 390, height: 844, child: StepBackdrop()),
+      ),
     );
 
-    // One `drawRect` per blob, each carrying the gradient shader that makes it
-    // a blob rather than a rectangle.
+    // Seven `drawRect`s, each carrying the gradient shader that makes it a
+    // wash rather than a rectangle: the sweep's vertical gradient and its two
+    // glows first, then one per blob OVER them.
     expect(
       find.byType(StepBackdrop),
       paints
         ..rect(hasMaskFilter: false)
         ..rect(hasMaskFilter: false)
         ..rect(hasMaskFilter: false)
+        ..rect(hasMaskFilter: false)
+        ..rect(hasMaskFilter: false)
+        ..rect(hasMaskFilter: false)
         ..rect(hasMaskFilter: false),
     );
-    expect(find.byType(StepBackdrop), paintsExactlyCountTimes(#drawRect, 4));
+    expect(find.byType(StepBackdrop), paintsExactlyCountTimes(#drawRect, 7));
+  });
+
+  testWidgets('carries the start screen sweep, dialled down', (tester) async {
+    // The step canvas must not invent its own sweep: it hands the SAME widget
+    // `/start` uses the weaker spec, so the two can never drift apart.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(width: 390, height: 844, child: StepBackdrop()),
+      ),
+    );
+
+    final aurora = tester.widget<StartAurora>(find.byType(StartAurora));
+    expect(aurora.spec, same(AuroraSpec.step));
+    expect(AuroraSpec.step.strength, lessThan(AuroraSpec.start.strength));
+    expect(AuroraSpec.step.reach, lessThan(AuroraSpec.start.reach));
   });
 
   testWidgets('sits behind the step scaffold, band included', (tester) async {
@@ -76,9 +101,13 @@ void main() {
       _host(
         const OnboardingStepScaffold(
           screen: 2,
-          title: 'Where are you from?',
-          ctaLabel: 'Continue',
-          child: SizedBox(height: 2000),
+          direction: 1,
+          spec: (
+            title: 'Where are you from?',
+            body: SizedBox(height: 2000),
+            ctaLabel: 'Continue',
+            ctaEnabled: true,
+          ),
         ),
       ),
     );

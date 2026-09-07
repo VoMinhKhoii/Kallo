@@ -1,38 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
-import 'confirm_email_view.dart';
-import 'email_auth_form.dart';
 import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
 
-/// Which face of the auth surface is showing.
-enum _AuthMode { welcome, email }
-
-/// The auth surface as a full-bleed page on the cream surface.
+/// The pre-auth WELCOME face on the cream surface: the wordmark, a typing demo
+/// resolving into a point result, then the three ways in.
 ///
-/// Replaces the old "login wall titled Welcome back". It now lands on a real
-/// pre-auth **welcome screen**: the Lora wordmark, a typing demo resolving into
-/// a point result, then three stacked social/email options. "Continue with
-/// email" cross-fades to a single email path (no sign-in/sign-up tab split). A
-/// successful sign-up cross-fades again to a real "Check your email" state with
-/// a resend-cooldown, instead of a SnackBar that vanishes before it's read.
+/// "Continue with email" pushes `/sign-in/email` (or `/save-plan/email` under
+/// the onboarding chrome) rather than swapping a face in place — the email path
+/// is a route now, so the system back gesture returns here instead of leaving
+/// the auth surface, and the two entry points can open in different modes.
 class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key, this.compact = false, this.background});
 
   /// Presented under someone else's chrome (`/save-plan`): the bare
   /// [AuthOptions] stack, bottom-anchored on a tighter inset, so the options
   /// sit under the host's title instead of a second wordmark.
+  ///
+  /// It is also what says WHERE the email route is pushed from — `/save-plan`
+  /// is the only compact host, and its email screen must pop back to it.
   final bool compact;
 
-  /// Painted behind the face instead of the flat canvas fill. MUST be opaque —
-  /// the switcher slides one face over another and leans on it to cover the
-  /// outgoing one. `/save-plan` passes a slice of its gradient backdrop.
+  /// Painted behind the face instead of the flat canvas fill. MUST be opaque.
+  /// `/save-plan` passes a slice of its gradient backdrop.
   final Widget? background;
 
   @override
@@ -40,13 +37,7 @@ class AuthPage extends ConsumerStatefulWidget {
 }
 
 class _AuthPageState extends ConsumerState<AuthPage> {
-  _AuthMode _mode = _AuthMode.welcome;
-
-  /// Drives the face-switch slide direction: true = advancing (welcome → email),
-  /// false = going back. Lets the transition read as forward/back navigation.
-  bool _forward = true;
-
-  // The welcome + email surfaces share one controller (single path).
+  // The welcome face and the email route share one controller (single path).
   static final _provider = signInControllerProvider;
 
   AuthFormController get _controller => ref.read(_provider.notifier);
@@ -55,65 +46,38 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     showTopToast(context, message, variant: TopToastVariant.error);
   }
 
+  void _openEmail() {
+    context.push(widget.compact ? '/save-plan/email' : '/sign-in/email');
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(_provider);
-    final showConfirm = state.pendingEmail != null;
 
-    // Errors raised while the email form is on screen render inline there.
-    // Anything else (OAuth on the welcome face, a failed resend on the
-    // confirm face) would otherwise be invisible — toast those.
+    // OAuth failures raised on THIS face would otherwise be invisible — toast
+    // them. Errors raised on the pushed email route render inline there, and
+    // this page is still mounted underneath it, so only toast while it is the
+    // route on top.
     ref.listen<AuthFormState>(_provider, (prev, next) {
       final err = next.error;
-      final emailFormShowing =
-          _mode == _AuthMode.email && next.pendingEmail == null;
-      if (err != null && err != prev?.error && !emailFormShowing) {
+      final isCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+      if (err != null && err != prev?.error && isCurrent) {
         _toast(err);
         _controller.clearMessages();
       }
     });
 
-    // Which face: confirm-email > email form > welcome. The key also tells the
-    // switcher's transitionBuilder which child is incoming vs outgoing.
-    final Key currentKey =
-        showConfirm
-            ? const ValueKey('confirm')
-            : _mode == _AuthMode.email
-            ? const ValueKey('email')
-            : const ValueKey('welcome');
+    // One options stack, two hosts: on its own screen it wears the brand
+    // block, as a guest under someone else's chrome it is the whole face.
+    final options = AuthOptions(
+      busy: state.busy,
+      googleBusy: state.googleBusy,
+      onApple: _controller.signInWithApple,
+      onGoogle: _controller.signInWithGoogle,
+      onEmail: _openEmail,
+    );
+    final Widget face = widget.compact ? options : WelcomeView(options: options);
 
-    final Widget face;
-    if (showConfirm) {
-      face = ConfirmEmailView(provider: _provider, onNotice: _toast);
-    } else if (_mode == _AuthMode.email) {
-      face = EmailAuthForm(
-        provider: _provider,
-        onBack:
-            () => setState(() {
-              _forward = false;
-              _mode = _AuthMode.welcome;
-            }),
-      );
-    } else {
-      // One options stack, two hosts: on its own screen it wears the brand
-      // block, as a guest under someone else's chrome it is the whole face.
-      final options = AuthOptions(
-        busy: state.busy,
-        googleBusy: state.googleBusy,
-        onApple: _controller.signInWithApple,
-        onGoogle: _controller.signInWithGoogle,
-        onEmail:
-            () => setState(() {
-              _forward = true;
-              _mode = _AuthMode.email;
-            }),
-      );
-      face = widget.compact ? options : WelcomeView(options: options);
-    }
-
-    // Each face is a full-screen, opaque page so switching reads as an
-    // iOS-style full-page push (not a content cross-fade). The opaque fill lets
-    // the incoming page cover the outgoing one as it slides across.
     final Widget content = SafeArea(
       child: Align(
         // Compact is a GUEST on someone else's screen, whose title sits above
@@ -136,49 +100,13 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       ),
     );
 
-    final Widget page = Stack(
-      key: currentKey,
+    return Stack(
       children: [
         Positioned.fill(
           child: widget.background ?? const ColoredBox(color: KalloColors.surface),
         ),
         content,
       ],
-    );
-
-    // Native Google/Apple sheets are in-process, so the surface is just the
-    // face switcher — no "Finishing sign-in…" overlay (that only covered the
-    // old OAuth Safari app-switch); the button's own spinner holds the brief
-    // native token exchange.
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 340),
-      transitionBuilder: (child, animation) {
-        // Incoming slides a full width in from the lead side; outgoing
-        // parallax-slides a little the opposite way, beneath it. Direction
-        // flips on "back" via [_forward].
-        final incoming = child.key == currentKey;
-        final dir = _forward ? 1.0 : -1.0;
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        );
-        final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: begin,
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        );
-      },
-      layoutBuilder:
-          (currentChild, previousChildren) => Stack(
-            children: [
-              ...previousChildren,
-              if (currentChild != null) currentChild,
-            ],
-          ),
-      child: page,
     );
   }
 }

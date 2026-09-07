@@ -120,4 +120,60 @@ void main() {
     expect(answers.targets, isNull);
     expect(answers.stepTwoValues, isNull);
   });
+
+  group('the goal the body implies', () {
+    // 1.75 m: 55 kg is BMI 18.0, 70 kg is 22.9, 72 kg is 23.5, 80 kg is 26.1.
+    OnboardingAnswers body(double weight, {String? origin}) =>
+        testAnswers(weight: weight, height: 175, origin: origin)
+          ..goalChosenByUser = false
+          ..goal = Goal.maintaining;
+
+    void expectGoal(OnboardingAnswers answers, Goal expected) {
+      answers.applyDefaultGoal();
+      expect(answers.goal, expected);
+    }
+
+    test('underweight opens on bulking, healthy on maintaining', () {
+      expectGoal(body(55), Goal.bulking);
+      expectGoal(body(70), Goal.maintaining);
+      expectGoal(body(80), Goal.cutting);
+    });
+
+    test('an Asian origin moves the overweight action point to 23', () {
+      // WHO 2004: the same 23.5 that is healthy for the general cutoff is
+      // already the action point for the population the cutoff was written
+      // for — and it is read off the ORIGIN, not the country of residence.
+      expectGoal(body(72), Goal.maintaining);
+      expectGoal(body(72, origin: 'Vietnam'), Goal.cutting);
+      expectGoal(body(72, origin: 'Germany'), Goal.maintaining);
+    });
+
+    test('an incomplete or out-of-range body leaves the goal alone', () {
+      final blank = testAnswers(body: false)..goal = Goal.maintaining;
+      expectGoal(blank, Goal.maintaining);
+      final absurd = body(5000);
+      expectGoal(absurd, Goal.maintaining);
+    });
+
+    test('once the user picks, the default stops tracking the body', () {
+      final answers = body(80)..goalChosenByUser = true;
+      expectGoal(answers, Goal.maintaining);
+    });
+  });
+
+  group('what screen 6 is still waiting on', () {
+    test('names the absent inputs, and nothing when they are all there', () {
+      expect(testAnswers().missingTargetInputs, isEmpty);
+      expect(
+        testAnswers(body: false).missingTargetInputs,
+        {
+          TargetInput.biologicalSex,
+          TargetInput.weightKg,
+          TargetInput.heightCm,
+          TargetInput.age,
+        },
+      );
+      expect(testAnswers(age: null).missingTargetInputs, {TargetInput.age});
+    });
+  });
 }
