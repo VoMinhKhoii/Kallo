@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/shared/widgets/menu/kallo_menu_card.dart';
 import 'package:kallo_mobile/theme/kallo_typography.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
@@ -26,14 +26,18 @@ Widget _wrap(String text, {double width = 390}) => ProviderScope(
 /// The bubble's menu needs real strings, a real Overlay, and a container the
 /// test can read `composerRefillProvider` out of — Edit parks the message
 /// there rather than calling anything back.
-Widget _wrapLocalized(String text, {ProviderContainer? container}) {
-  final app = _localized(text);
+Widget _wrapLocalized(
+  String text, {
+  ProviderContainer? container,
+  String? sentAt,
+}) {
+  final app = _localized(text, sentAt: sentAt);
   return container == null
       ? ProviderScope(child: app)
       : UncontrolledProviderScope(container: container, child: app);
 }
 
-Widget _localized(String text) => EasyLocalization(
+Widget _localized(String text, {String? sentAt}) => EasyLocalization(
   supportedLocales: const [Locale('en')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
@@ -45,7 +49,10 @@ Widget _localized(String text) => EasyLocalization(
       locale: context.locale,
       home: Scaffold(
         body: Center(
-          child: SizedBox(width: 390, child: UserMessageBubble(text: text)),
+          child: SizedBox(
+            width: 390,
+            child: UserMessageBubble(text: text, sentAt: sentAt),
+          ),
         ),
       ),
     ),
@@ -134,20 +141,15 @@ void main() {
       await EasyLocalization.ensureInitialized();
     });
 
-    /// Hold the bubble until the iOS context menu opens.
+    /// Hold the bubble until the menu opens.
     ///
-    /// `tester.longPress` is Material's 500ms, which is short of
-    /// `CupertinoContextMenu`'s own 800ms preview timeout — the route only
-    /// pushes once that lift animation completes, so the press has to outlast
-    /// it before the menu exists to be found.
+    /// A plain `tester.longPress`: the menu is the app's own
+    /// ([showKalloAnchoredMenu]) and opens on Material's 500ms `onLongPress`.
+    /// It used to be a hand-rolled gesture that outlasted
+    /// `CupertinoContextMenu`'s 800ms preview timeout, which is the one thing
+    /// that route made the user wait for.
     Future<void> holdBubble(WidgetTester tester) async {
-      final press = await tester.startGesture(
-        tester.getCenter(find.byType(UserMessageBubble)),
-      );
-      // Settling under the finger is what drives the lift: the tap deadline,
-      // then the 800ms preview animation whose completion pushes the route.
-      await tester.pumpAndSettle();
-      await press.up();
+      await tester.longPress(find.byType(UserMessageBubble));
       await tester.pumpAndSettle();
     }
 
@@ -169,6 +171,17 @@ void main() {
       );
       return written;
     }
+
+    /// Every copy of the bubble on screen: the one in the page, and the still
+    /// copy the open menu pins over its own blur. They live in different
+    /// subtrees, so they are found by the one thing they share — the beige
+    /// wash nothing else in the app wears.
+    Finder bubbleBoxes() => find.byWidgetPredicate(
+      (w) =>
+          w is Container &&
+          (w.decoration as BoxDecoration?)?.color ==
+              KalloColors.btnPrimarySoft,
+    );
 
     testWidgets('a plain tap does nothing', (tester) async {
       final written = interceptClipboard(tester);
@@ -220,7 +233,7 @@ void main() {
       expect(written, isEmpty);
     });
 
-    testWidgets('the menu arrives with the iOS backdrop, not a flat card', (
+    testWidgets('the menu arrives over a blurred page, not as a flat card', (
       tester,
     ) async {
       await tester.pumpWidget(_wrapLocalized(sent));
@@ -229,11 +242,70 @@ void main() {
 
       await holdBubble(tester);
 
-      // The blurred, dimmed page behind the lifted bubble is the entire
-      // difference from the `showMenu` card this replaced — a flat panel
-      // dropped on top of the bubble with no backdrop at all.
+      // The blurred, dimmed page behind the card is what separates this from
+      // the `showMenu` panel the bubble started with — a flat card dropped on
+      // top of the message with no backdrop at all. It survived the move off
+      // `CupertinoContextMenu` (2026-09-08); the framework's own blur went
+      // with it, so the menu paints its own.
       expect(find.byType(BackdropFilter), findsWidgets);
-      expect(find.byType(CupertinoContextMenuAction), findsNWidgets(2));
+      expect(find.byType(KalloMenuActionRow), findsNWidgets(2));
+    });
+
+    testWidgets('the bubble stays exactly where it was', (tester) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      final resting = tester.getRect(bubbleBoxes());
+
+      await holdBubble(tester);
+
+      // The entire reason the app owns this menu. `CupertinoContextMenu`
+      // relocated the bubble into a preview slot of its own and scaled it
+      // 1.15x, so the message the user was pressing slid out from under their
+      // finger. Here the page's own bubble never moves and the menu pins a
+      // still copy at exactly its rect.
+      final copies = tester.widgetList<Container>(bubbleBoxes()).length;
+      expect(copies, 2, reason: 'the page bubble and the menu pinned copy');
+      for (var i = 0; i < copies; i++) {
+        final rect = tester.getRect(bubbleBoxes().at(i));
+        expect(rect.left, closeTo(resting.left, 0.5));
+        expect(rect.top, closeTo(resting.top, 0.5));
+        expect(rect.right, closeTo(resting.right, 0.5));
+        expect(rect.bottom, closeTo(resting.bottom, 0.5));
+      }
+    });
+
+    testWidgets("the menu hangs off the bubble's trailing edge", (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      final bubble = tester.getRect(bubbleBoxes());
+
+      await holdBubble(tester);
+
+      // Right edges flush: the card reads as an extension of the message it
+      // hangs off, the way ChatGPT's does, rather than as a panel centred on
+      // nothing in particular.
+      final card = tester.getRect(find.byType(KalloMenuCard));
+      expect(card.right, closeTo(bubble.right, 0.5));
+      expect(card.top, greaterThan(bubble.bottom));
+    });
+
+    testWidgets('a time header names when it was sent', (tester) async {
+      await tester.pumpWidget(_wrapLocalized(sent, sentAt: '1:04 AM'));
+      await tester.pumpAndSettle();
+
+      await holdBubble(tester);
+
+      // The divider above the bubble already prints this; the menu repeats it
+      // so the open card says WHICH message it is acting on.
+      expect(
+        find.descendant(
+          of: find.byType(KalloMenuCard),
+          matching: find.text('1:04 AM'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('choosing Copy puts the message on the clipboard', (
@@ -261,14 +333,14 @@ void main() {
 
       await holdBubble(tester);
 
-      // The menu re-renders the bubble in the root overlay and its own route,
-      // both of which sit ABOVE every Material in the app. `MaterialApp`
-      // installs Flutter's fallback DefaultTextStyle up there — the one whose
-      // debugLabel reads "consider putting your text in a Material" — and it
-      // carries a yellow double underline. `dashBody` merges onto it
-      // (TextStyle.inherit defaults to true) and overrides colour, size and
-      // family but never `decoration`, so the underline survives and paints
-      // under the lifted message. `TopToastPill` documents the same trap.
+      // The menu re-renders the bubble in the root overlay's route, which sits
+      // ABOVE every Material in the app. `MaterialApp` installs Flutter's
+      // fallback DefaultTextStyle up there — the one whose debugLabel reads
+      // "consider putting your text in a Material" — and it carries a yellow
+      // double underline. `dashBody` merges onto it (TextStyle.inherit
+      // defaults to true) and overrides colour, size and family but never
+      // `decoration`, so the underline survives and paints under the pinned
+      // message. `TopToastPill` documents the same trap.
       final lifted = tester
           .widgetList<RichText>(find.byType(RichText))
           .where((r) => r.text.toPlainText() == sent);
@@ -291,7 +363,7 @@ void main() {
       final glyphs = tester
           .widgetList<Icon>(
             find.descendant(
-              of: find.byType(CupertinoContextMenuAction),
+              of: find.byType(KalloMenuActionRow),
               matching: find.byType(Icon),
             ),
           )
@@ -302,22 +374,14 @@ void main() {
       // Lucide is the one icon font the app bundles, and the only set
       // AGENTS.md allows — at the 300 (1.5) stroke every other glyph uses.
       expect(glyphs, hasLength(2));
-      expect(glyphs.map((g) => g?.fontPackage), everyElement('lucide_icons_flutter'));
+      expect(
+        glyphs.map((g) => g?.fontPackage),
+        everyElement('lucide_icons_flutter'),
+      );
       expect(glyphs, [LucideIcons.copy300, LucideIcons.pencil300]);
     });
 
-    /// Every copy of the bubble on screen: the one in the page, the decoy the
-    /// lift floats in the overlay, and the preview inside the menu's route.
-    /// They live in three different subtrees, so they are found by the one
-    /// thing they share — the beige wash nothing else in the app wears.
-    Finder bubbleBoxes() => find.byWidgetPredicate(
-      (w) =>
-          w is Container &&
-          (w.decoration as BoxDecoration?)?.color ==
-              KalloColors.btnPrimarySoft,
-    );
-
-    testWidgets('the lifted bubble keeps the corner that makes it sent', (
+    testWidgets('the pinned bubble keeps the corner that makes it sent', (
       tester,
     ) async {
       await tester.pumpWidget(_wrapLocalized(sent));
@@ -325,19 +389,12 @@ void main() {
 
       await holdBubble(tester);
 
-      // `CupertinoContextMenu`'s default preview wraps the child in a
-      // ClipRSuperellipse at a flat 12. That is squarer than our three round
-      // corners, so it takes nothing from them — but it is ROUNDER than the
-      // tightened 4, so it softens away the one corner that makes the bubble
-      // read as a sent message, for as long as the menu is open.
-      expect(bubbleBoxes(), findsWidgets);
-      expect(
-        find.ancestor(
-          of: bubbleBoxes(),
-          matching: find.byType(ClipRSuperellipse),
-        ),
-        findsNothing,
-      );
+      // `CupertinoContextMenu`'s default preview wrapped the child in a
+      // ClipRSuperellipse at a flat 12 — rounder than the tightened 4, so it
+      // softened away the one corner that makes the bubble read as a sent
+      // message for as long as the menu was open. The pinned copy is the
+      // bubble itself, uncropped and unscaled.
+      expect(bubbleBoxes(), findsNWidgets(2));
       for (final box in tester.widgetList<Container>(bubbleBoxes())) {
         final radius = (box.decoration! as BoxDecoration).borderRadius!
             as BorderRadius;
@@ -345,7 +402,7 @@ void main() {
       }
     });
 
-    testWidgets('a wrapped message lifts as itself, not as one long line', (
+    testWidgets('a wrapped message keeps its shape while the menu is open', (
       tester,
     ) async {
       const long =
@@ -361,12 +418,11 @@ void main() {
 
       await holdBubble(tester);
 
-      // The menu lays its copies out somewhere else entirely: the lift in a
-      // tight box, the opened preview in a loose one as wide as the SCREEN.
-      // A bubble takes its width from the row it sits in, so left to those
-      // constraints this three-line meal re-flowed into a single 760pt line
-      // and was then squeezed back down to fit — the lifted copy was a
-      // different SHAPE from the one the user was looking at.
+      // `CupertinoContextMenu` laid its copies out somewhere else entirely —
+      // the lift in a tight box, the opened preview in a loose one as wide as
+      // the SCREEN — so this three-line meal re-flowed into a single 760pt
+      // line and was squeezed back down to fit. The pinned copy is drawn at
+      // the page bubble's own rect, so there is nothing left to re-flow.
       final copies = tester.widgetList<Container>(bubbleBoxes()).length;
       expect(copies, greaterThan(1));
       for (var i = 0; i < copies; i++) {
@@ -383,7 +439,7 @@ void main() {
       await holdBubble(tester);
       expect(find.text('Copy'), findsOneWidget);
 
-      // The dimming barrier, not the page underneath it.
+      // The dismiss barrier, not the page underneath it.
       await tester.tapAt(const Offset(8, 8));
       await tester.pumpAndSettle();
 

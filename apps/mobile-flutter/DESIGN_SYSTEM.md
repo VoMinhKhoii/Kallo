@@ -85,8 +85,9 @@ transition are the three things that make an app read as "a Flutter app"; this
 one is iOS-first, and none of them is a per-surface taste call.
 
 The rule mostly describes what the app already did — `CupertinoPage` routes,
-`CupertinoSliverRefreshControl`, a Cupertino confirm alert,
-`CupertinoContextMenu`, `Switch.adaptive` — but it had never been written down,
+`CupertinoSliverRefreshControl`, a Cupertino confirm alert, `Switch.adaptive`,
+and a long-press menu the app owns outright, `KalloAnchoredMenu` (exception
+recorded 2026-09-08) — but it had never been written down,
 so each surface re-decided and 17 Material spinners piled up under a Cupertino
 navigation stack.
 

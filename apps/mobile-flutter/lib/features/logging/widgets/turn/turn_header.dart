@@ -29,7 +29,8 @@ class TurnHeader extends StatelessWidget {
         MealTimeDivider(time: time),
         const SizedBox(height: LoggingSpacing.turn),
         if (text != null && text.isNotEmpty) ...[
-          UserMessageBubble(text: text),
+          // The divider's time doubles as the bubble menu's header.
+          UserMessageBubble(text: text, sentAt: time),
           const SizedBox(height: LoggingSpacing.turn),
         ],
       ],

@@ -412,10 +412,11 @@ call the design system gets to make differently per surface.
 
 This rule mostly *describes* what the app already does: routes push
 `CupertinoPage`, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
-is a Cupertino alert, the long-press menu is `CupertinoContextMenu`, the switch
-is `Switch.adaptive`. It had never been written down, so every new surface
-re-decided from scratch — which is how 17 Material spinners accumulated under a
-Cupertino navigation stack.
+is a Cupertino alert, the switch is `Switch.adaptive`. The long-press menu was
+on that list until 2026-09-08 and is now the rule's one documented exception —
+the app owns it (boundary 3, below). It had never been written down, so every
+new surface re-decided from scratch — which is how 17 Material spinners
+accumulated under a Cupertino navigation stack.
 
 | Instead of | Use | State |
 |------------|-----|-------|
@@ -426,7 +427,7 @@ Cupertino navigation stack.
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
 | `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
 | `Switch` | `Switch.adaptive`, via `KalloSwitch` | ✅ done |
-| long-press menu | `CupertinoContextMenu` | ✅ done |
+| long-press menu | `KalloAnchoredMenu` (`shared/widgets/menu/kallo_anchored_menu.dart`) | exception, 2026-09-08 — see boundary 3 |
 | `Slider` | `CupertinoSlider` | 3 sites — but see *the design system wins*, below |
 | `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
 | a date/time picker | `CupertinoDatePicker` | none in the app yet; use it when one is needed |
@@ -461,6 +462,17 @@ boundaries, each of which has already cost a bug when crossed:
    `CupertinoActionSheet` alike; `KalloConfirmActions` over
    `CupertinoAlertDialog`'s side-by-side buttons. Reach for Cupertino when the
    app has no answer of its own — never to replace one it has already made.
+
+   The long-press menu is the newest entry and the one that cost the most to
+   learn (2026-09-08). `CupertinoContextMenu` RELOCATES the pressed widget into
+   a preview slot of its own and SCALES it 1.15x, so a sent message slid out
+   from under the finger holding it; it also dresses the action rows in system
+   chrome rather than Be Vietnam Pro, and stretches the hold to iOS's 800ms
+   preview timeout. `KalloAnchoredMenu` keeps the message exactly where it is —
+   a still copy pinned at its own rect above the blur — anchors the card to the
+   message's trailing edge, prints the sent time as a header, and wears the
+   app's type. It is the app's ONE popup menu: the Circle header's "+" popover
+   had hand-rolled the same route and is now its other consumer.
 
 ## Reference implementation (source of truth)
 
