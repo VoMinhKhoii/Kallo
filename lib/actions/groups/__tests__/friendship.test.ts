@@ -321,6 +321,8 @@ describe('acceptInvite', () => {
     expect(mockSendNotificationPush).toHaveBeenCalledWith([INVITER], {
       type: 'friend.joined',
       actor: { id: ACTOR },
+      objectType: 'friendship',
+      objectId: FRIENDSHIP_ID,
       groupKey: `friend.joined:${FRIENDSHIP_ID}`,
     });
   });

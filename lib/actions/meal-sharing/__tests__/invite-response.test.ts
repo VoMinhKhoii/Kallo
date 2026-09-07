@@ -214,6 +214,8 @@ describe('acceptMealShareInviteAction', () => {
     expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
       type: 'share.invite_accepted',
       actor: { id: mockUser.id },
+      objectType: 'invite',
+      objectId: UUID_INVITE,
       groupKey: `share.invite_accepted:${UUID_INVITE}`,
     });
   });
