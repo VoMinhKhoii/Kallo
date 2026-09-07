@@ -250,6 +250,9 @@ describe('resolveMicronutrientTargets', () => {
 
       for (const targets of [m, f]) {
         for (const [key, target] of Object.entries(targets)) {
+          // Fiber is the one scored key VN MoH 2016 does not publish, so a VN
+          // context legitimately resolves it from NASEM (see NASEM_DRI.fiberG).
+          if (key === 'fiberG') continue;
           if (
             target.applicability === 'scored' &&
             target.source !== 'vietnam_rda'
@@ -326,6 +329,46 @@ describe('resolveMicronutrientTargets', () => {
       });
       expect(mid.vitaminDMcg).toMatchObject({ value: 10, source: 'who_fao' });
       expect(old.vitaminDMcg).toMatchObject({ value: 15, source: 'who_fao' });
+    });
+
+    it('gives fiber a NASEM AI in every context, banded at 51', () => {
+      // Neither VN MoH 2016 nor WHO/FAO 2004 publish a fiber figure, so both
+      // contexts resolve it from NASEM_DRI — VN users included.
+      const vnMale = resolveMicronutrientTargets(vnMaleAdult);
+      const vnFemale = resolveMicronutrientTargets(vnFemaleAdult);
+      const usMaleOlder = resolveMicronutrientTargets({
+        ...usMaleAdult,
+        age: 55,
+      });
+      const usFemaleOlder = resolveMicronutrientTargets({
+        ...usFemaleAdult,
+        age: 55,
+      });
+      const sexUnknown = resolveMicronutrientTargets({
+        ...baseProfile,
+        biologicalSex: null,
+      });
+
+      expect(vnMale.fiberG).toMatchObject({
+        value: 38,
+        unit: 'g',
+        source: 'nasem',
+        applicability: 'scored',
+        nutrientType: 'floor',
+      });
+      expect(vnFemale.fiberG).toMatchObject({ value: 25, source: 'nasem' });
+      expect(usMaleOlder.fiberG).toMatchObject({ value: 30, source: 'nasem' });
+      expect(usFemaleOlder.fiberG).toMatchObject({
+        value: 21,
+        source: 'nasem',
+      });
+      // Sex unknown → mean of the <51 band: (38 + 25) / 2 = 31.5, rounded to
+      // a whole number by roundTarget at this scale.
+      expect(sexUnknown.fiberG).toMatchObject({
+        value: 32,
+        unit: 'g',
+        source: 'nasem',
+      });
     });
 
     it('applies B6 age split at 50 (1.3 → 1.7 M / 1.5 F)', () => {

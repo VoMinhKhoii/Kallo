@@ -49,7 +49,7 @@ export type TargetRow = Record<
   BiologicalSex,
   {
     value: number;
-    unit: 'mg' | 'mcg';
+    unit: 'g' | 'mg' | 'mcg';
   }
 >;
 
@@ -328,6 +328,27 @@ export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
 // where WHO/FAO 2004 does not publish a value (copper, manganese, sodium,
 // potassium, phosphorus). Adults 19–50 y unless noted.
 export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
+  // NASEM 2005 Macronutrients DRI — total fiber, Adequate Intake by sex and
+  // age (the 14 g / 1,000 kcal basis tabulated). Neither VN MoH 2016 nor
+  // WHO/FAO 2004 publish a fiber figure, so every context resolves it here.
+  fiberG: {
+    ageBands: [
+      {
+        minAge: 51,
+        row: {
+          male: { value: 30, unit: 'g' },
+          female: { value: 21, unit: 'g' },
+        },
+      },
+      {
+        minAge: 0,
+        row: {
+          male: { value: 38, unit: 'g' },
+          female: { value: 25, unit: 'g' },
+        },
+      },
+    ],
+  },
   copperMcg: {
     // IOM 2001 RDA, adults.
     male: { value: 900, unit: 'mcg' },
@@ -382,6 +403,9 @@ export const TARGET_KEYS: NutritionNutrientKey[] = [
   // Promoted from educational pull-quote — pull-quote stays in
   // educationCards, but the row also gets a real scored target.
   'vitaminDMcg',
+  // Fiber scores off the NASEM AI in every context — it is the one target key
+  // absent from both VIETNAM_RDA and WHO_FAO (see NASEM_DRI.fiberG).
+  'fiberG',
   // Hidden bookkeeping nutrient.
   'vitaminHMcg',
 ];

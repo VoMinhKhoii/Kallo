@@ -26,7 +26,7 @@ interface NutritionProfileForTargets {
 export interface MicronutrientTarget {
   key: NutritionNutrientKey;
   value: number | null;
-  unit: 'mg' | 'mcg';
+  unit: 'g' | 'mg' | 'mcg';
   source: TargetSource;
   sourceLabelKey: string;
   applicability: 'scored' | 'educational' | 'hidden' | 'unsupported';
@@ -101,8 +101,11 @@ function roundTarget(value: number): number {
   return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
 }
 
-function getDefaultUnit(key: NutritionNutrientKey): 'mg' | 'mcg' {
-  return NUTRIENT_META[key].unit === 'mcg' ? 'mcg' : 'mg';
+function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
+  // Mirror the catalog unit when it is one a target can be expressed in
+  // (fiber's card unit is 'g'); 'kcal' has no target unit, so fall back to mg.
+  const unit = NUTRIENT_META[key].unit;
+  return unit === 'g' || unit === 'mcg' ? unit : 'mg';
 }
 
 function createUnsupportedTarget(
@@ -145,12 +148,16 @@ export function resolveMicronutrientTargets(
       continue;
     }
 
-    // Resolve the source map + entry. VN context uses VIETNAM_RDA only;
-    // non-VN context tries WHO/FAO first then falls back to NASEM/IOM
-    // for the nutrients WHO does not publish (Cu, Mn, Na, K, P).
+    // Resolve the source map + entry. VN context prefers VIETNAM_RDA; every
+    // other context tries WHO/FAO first, then falls back to NASEM/IOM for the
+    // nutrients WHO does not publish (Cu, Mn, Na, K, P).
+    // A VN key missing from VIETNAM_RDA falls through the same chain: today
+    // only fiber takes that VN → NASEM path (every other target key is in
+    // VIETNAM_RDA), so Vietnamese users get a NASEM-sourced fiber target
+    // rather than none.
     let source: Exclude<TargetSource, 'unsupported'>;
     let entry: TargetEntry | undefined;
-    if (vietnameseContext) {
+    if (vietnameseContext && VIETNAM_RDA[key]) {
       entry = VIETNAM_RDA[key];
       source = 'vietnam_rda';
     } else if (WHO_FAO[key]) {
