@@ -74,7 +74,7 @@ export function ShareReplies({
                       {formatElapsed(reply.createdAt, locale)}
                     </span>
                   </div>
-                  <p className="max-w-full rounded-[18px] bg-[#EDECE7] px-3.5 py-2.5 font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
+                  <p className="max-w-full break-words rounded-[18px] bg-kallo-border/50 px-3.5 py-2.5 font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
                     {reply.body}
                   </p>
                 </div>

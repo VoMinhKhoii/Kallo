@@ -110,14 +110,17 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
               entry.reactions.mine && 'text-[#141413]'
             )}
           >
-            {/* The swipe-to-delete red, the palette's one red — matching the
-                Flutter app, whose --kallo-danger is a different (terracotta)
-                value here. A hearted post has to look hearted from across the
-                row; at ink it was the same near-black as the glyph beside it. */}
+            {/* A hearted post has to look hearted from across the row; at
+                ink it was the same near-black as the glyph beside it. The
+                request was "red filled", and each platform satisfies it out of
+                its OWN palette — mobile's `danger` (#D11A1A), web's
+                `--kallo-danger` (terracotta). Web bans pure red outright, so a
+                literal #D11A1A here was mobile's token smuggled onto the web
+                canvas, not a shared value. */}
             <Heart
               className={cn(
                 'size-[15px]',
-                entry.reactions.mine && 'fill-[#D11A1A] text-[#D11A1A]'
+                entry.reactions.mine && 'fill-kallo-danger text-kallo-danger'
               )}
             />
             <span>{entry.reactions.count}</span>

@@ -104,6 +104,30 @@ Three boundaries, spelled out with the full table in `mobile.md`:
   `KalloConfirmActions` are not up for replacement by their Cupertino
   equivalents. Reach for Cupertino where the app has no answer of its own.
 
+## Grid cells are not cards (2026-09-07)
+
+The micronutrient grid on Nutrition is the **one bordered surface on the
+canvas**, and it is a deliberate exception to the fourth canvas decision
+("cards on `kPage` carry no border and no shadow").
+
+A card is a single wide slab: white against `#F8F7F4` at 1.07:1 is a weak edge,
+but the slab's own width and the 12px gaps around it do the separating, so the
+border adds nothing. A 2-column grid has neither — the cells are small, they
+abut each other across a narrow gutter, and at 1.07:1 the run reads as one pale
+field rather than as the *individual cells* the surface is asking for. The edge
+is doing work here that surface contrast cannot do.
+
+So the grid cells take `kHairline` + `KalloRadii.containerLg` (**16**), not the
+card radius (a *met* cell swaps the pair for `successBorder` on
+`successFaint` — same edge, coloured by state; see
+`nutrition/widgets/nutrients/nutrient_grid_card.dart`). The tighter radius is part of the signal: a 16 corner on a
+bordered small cell is visibly not the 22 a card wears, so the exception can
+never be mistaken for the rule.
+
+**This is a grid-cell rule, not a card rule.** Cards stay borderless at radius
+22 everywhere, including on the same screen. Do not carry the hairline over to
+anything that is not a multi-column grid of small cells.
+
 The reference implementation is
 `lib/theme/calm_tokens.dart` (`dashHero` / `dashValue`
 / `dashBody` / `dashName` / `dashMeta` / `dashCaption` / `dashHeadline`, the

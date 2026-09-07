@@ -20,13 +20,23 @@ import 'package:intl/intl.dart';
 /// `shared/widgets/nutrition/meal_block.dart`), never on the model — the raw
 /// input has to survive intact for editing and re-logging.
 ///
+/// A name whose FIRST WORD already carries an upper-case letter is left alone:
+/// barcode and OCR products arrive with the brand's own casing ("belVita
+/// cookies (30g)", "iPro shake"), and upper-casing the first grapheme rewrites
+/// a brand name the user never typed. Only an all-lower-case first word is
+/// something the composer plausibly produced.
+///
 /// Grapheme-based, not `s[0]`: Vietnamese diacritics can be composed from two
 /// code units, and indexing would split one. Mirrors web `capitalizeFirst`
-/// (`lib/core/text/capitalize.ts`). A name starting with a digit or an emoji
-/// comes back untouched, which is what upper-casing a non-letter does.
-String capitalizeFirst(String s) => s.isEmpty
-    ? s
-    : s.characters.first.toUpperCase() + s.characters.skip(1).toString();
+/// (`lib/core/text/capitalize.ts`), brand rule included. A name starting with
+/// a digit or an emoji comes back untouched, which is what upper-casing a
+/// non-letter does.
+String capitalizeFirst(String s) {
+  if (s.isEmpty) return s;
+  final String first = s.split(' ').first;
+  if (first != first.toLowerCase()) return s;
+  return s.characters.first.toUpperCase() + s.characters.skip(1).toString();
+}
 
 /// Rounds to a whole number, mapping null to 0. Mirrors web `round0`.
 int round0(num? n) => n == null ? 0 : n.round();
