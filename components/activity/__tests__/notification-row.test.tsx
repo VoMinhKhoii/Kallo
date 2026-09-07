@@ -93,11 +93,39 @@ describe('NotificationRow', () => {
     expect(values.group).toBe('Bún chả club');
   });
 
-  it('links share activity to the circle and group adds to the group', () => {
+  it('links each share notification to that share own page', () => {
+    // The row names one post; landing on the feed would make the reader hunt
+    // for it. objectId IS the share id the /circle/<shareId> page reads.
     const { rerender } = render(
       <NotificationRow item={item()} isNew={false} />
     );
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/s1');
+
+    for (const type of ['share.reply', 'share.logged'] as const) {
+      rerender(<NotificationRow item={item({ type })} isNew={false} />);
+      expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/s1');
+    }
+  });
+
+  it('falls back to the Circle when the row names no share', () => {
+    const { rerender } = render(
+      <NotificationRow
+        item={item({ objectType: null, objectId: null })}
+        isNew={false}
+      />
+    );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
+
+    rerender(
+      <NotificationRow item={item({ type: 'friend.joined' })} isNew={false} />
+    );
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
+  });
+
+  it('links a group add to the group', () => {
+    const { rerender } = render(
+      <NotificationRow item={item({ type: 'friend.joined' })} isNew={false} />
+    );
 
     rerender(
       <NotificationRow

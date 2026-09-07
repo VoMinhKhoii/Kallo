@@ -12,6 +12,7 @@ import {
   chatGroupsKeys,
   circleFeedKeys,
   friendsThreadFeedKeys,
+  shareThreadKeys,
 } from '@/lib/domain/social/query-keys';
 
 /** Invalidate every mounted Circle feed. A saved meal is shared to the circle
@@ -30,13 +31,16 @@ export function isFeedQuery(queryKey: readonly unknown[]): boolean {
   return (
     queryKey[0] === circleFeedKeys.all[0] ||
     queryKey[0] === friendsThreadFeedKeys.all[0] ||
+    queryKey[0] === shareThreadKeys.all[0] ||
     (queryKey[0] === chatGroupsKeys.all[0] && queryKey[2] === 'feed')
   );
 }
 
 /** Map `mapEntry` over every entry of a cached feed, whether it's stored as a
- * flat array or an infinite-query `{ pages: [{ entries: [] }] }` bag. Non-feed
- * values pass through untouched. */
+ * flat array (circle-feed), an infinite-query `{ pages: [{ entries: [] }] }`
+ * bag, or the single `{ entry }` a share's own page holds. Non-feed values —
+ * including the `null` that page caches for a share that is gone — pass
+ * through untouched. */
 export function mapFeedEntries(
   value: unknown,
   mapEntry: (entry: unknown) => unknown
@@ -44,6 +48,11 @@ export function mapFeedEntries(
   if (Array.isArray(value)) return value.map(mapEntry);
   if (!value || typeof value !== 'object') return value;
   const record = value as Record<string, unknown>;
+  // One post's page: a reaction or reply landing here must reach the single
+  // entry, or the thread page would show a stale count next to the feed's.
+  if (record.entry && typeof record.entry === 'object') {
+    return { ...record, entry: mapEntry(record.entry) };
+  }
   if (!Array.isArray(record.pages)) return value;
   return {
     ...record,

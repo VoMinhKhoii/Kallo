@@ -357,5 +357,6 @@ export const RESPONSE_SCHEMAS: Record<string, JsonSchema> = {
   Entitlements: entitlements,
   ChatGroup: { oneOf: [chatGroupIdentity, chatGroupDetail] },
   Feed: object({ entries: array(sharedMealEntry), nextCursor: nullableString }),
+  SharedMealEntry: sharedMealEntry,
   Acknowledgement: acknowledgement,
 };

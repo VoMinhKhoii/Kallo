@@ -40,11 +40,20 @@ export function messageValues(
   };
 }
 
-/** Where tapping the row goes. Only group adds have a destination of their
- *  own; everything else in the v1 catalogue lives on the Circle surface. */
+/** Where tapping the row goes. A group add opens the group; anything about one
+ *  share opens THAT share's page, so a reply notification lands on the reply
+ *  and not on a feed the user then has to search. The rest of the v1 catalogue
+ *  has no destination finer than the Circle surface itself. */
 export function notificationHref(item: NotificationItem): string {
   if (item.type === 'group.added' && item.targetId) {
     return `/circle/g/${item.targetId}`;
+  }
+  if (
+    AGGREGATED.has(item.type) &&
+    item.objectType === 'share' &&
+    item.objectId
+  ) {
+    return `/circle/${item.objectId}`;
   }
   return '/circle';
 }

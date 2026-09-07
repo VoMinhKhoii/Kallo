@@ -15,6 +15,8 @@ import type {
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { postJson, request } from '@/lib/api/client-fetch';
+import { ApiError } from '@/lib/core/errors/client';
+import type { SharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
 export function fetchCircleFeed(
@@ -34,6 +36,22 @@ export function fetchFriendsThreadFeed(
 ): Promise<FriendsThreadFeedPage> {
   const query = before ? `?before=${encodeURIComponent(before)}` : '';
   return request<FriendsThreadFeedPage>(`/api/v1/groups/friends/feed${query}`);
+}
+
+/** One share as its own page. A share that is gone — deleted, or never the
+ * viewer's to see — is a legitimate answer, not a failure, so the 404 becomes
+ * `null` here instead of an error state on the thread page. */
+export async function fetchShareThread(
+  shareId: string
+): Promise<{ entry: SharedMealEntry } | null> {
+  try {
+    return await request<{ entry: SharedMealEntry }>(
+      `/api/v1/groups/shares/${encodeURIComponent(shareId)}`
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 /** The actor's "last checked the combined Friends feed" marker. */

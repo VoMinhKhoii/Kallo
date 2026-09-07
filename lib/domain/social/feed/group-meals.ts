@@ -1,8 +1,10 @@
 import { and, desc, eq, gte, lt, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { SharedMealCursor } from '@/lib/domain/social/feed/cursor';
-import type { SharedMealRow } from '@/lib/domain/social/feed/meal-feed';
-import { publicProfileColumns } from '@/lib/domain/social/identity/public-identity';
+import {
+  type SharedMealRow,
+  sharedMealColumns,
+} from '@/lib/domain/social/feed/meal-feed';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -33,19 +35,7 @@ export async function sharedGroupMealsBefore(
   const viewerMembership = alias(chatGroupMembers, 'meal_viewer_membership');
   const rows: GroupSharedMealRow[] = await db
     .select({
-      friendUserId: mealShares.actorId,
-      mealId: meals.id,
-      shareId: mealShares.id,
-      rawInput: meals.rawInput,
-      caloriesKcal: meals.caloriesKcal,
-      proteinG: meals.proteinG,
-      carbohydrateG: meals.carbohydrateG,
-      fatG: meals.fatG,
-      portionFactor: meals.portionFactor,
-      sharedAt: mealShares.sharedAt,
-      loggedAt: meals.loggedAt,
-      sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
-      ...publicProfileColumns,
+      ...sharedMealColumns,
       ownerJoinedAt: ownerMembership.joinedAt,
       visibilitySharedAt: mealShares.sharedAt,
     })
