@@ -16,6 +16,10 @@ class FakeApiClient extends ApiClient {
   final List<Request> requests = [];
   bool fail;
 
+  /// Fails only the release, so a test can register successfully and then
+  /// watch sign-out lose the DELETE to the network.
+  bool failDelete = false;
+
   /// When set, every POST waits on it before completing — models a slow
   /// registration racing a sign-out. Requests are recorded on completion so
   /// their order reflects what the server actually saw.
@@ -24,7 +28,9 @@ class FakeApiClient extends ApiClient {
   Future<T> _record<T>(String method, String path, Object? body) async {
     if (method == 'POST' && holdPost != null) await holdPost!.future;
     requests.add((method: method, path: path, body: body));
-    if (fail) throw ApiError('BOOM', 500, true, 'nope');
+    if (fail || (failDelete && method == 'DELETE')) {
+      throw ApiError('BOOM', 500, true, 'nope');
+    }
     return null as T;
   }
 
@@ -189,6 +195,31 @@ void main() {
       expect(api.requests.last.body, {'token': 'first'});
     },
   );
+
+  test('a lost DELETE is retried by the next sign-out', () async {
+    final api = FakeApiClient();
+    final service = PushService(api);
+    await service.registerForPush();
+    await fromNative('onToken', 'feed');
+    await pumpEventQueue();
+
+    api.failDelete = true;
+    await service.unregister();
+    expect(api.requests.last.method, 'DELETE');
+    api.requests.clear();
+
+    // The device is still registered server-side, so the token has to survive
+    // for the next attempt rather than being dropped optimistically.
+    api.failDelete = false;
+    await service.unregister();
+    expect(api.requests.single.method, 'DELETE');
+    expect(api.requests.single.body, {'token': 'feed'});
+
+    // Once it lands, there is nothing left to release.
+    api.requests.clear();
+    await service.unregister();
+    expect(api.requests, isEmpty);
+  });
 
   test('a token that arrives after sign-out is not registered', () async {
     final api = FakeApiClient();

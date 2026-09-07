@@ -99,10 +99,14 @@ class PushService {
     if (pending != null) await pending;
     final token = _registered;
     if (token == null) return;
-    _registered = null;
     try {
       await _api.delete<dynamic>(kPushTokensPath, {'token': token});
+      // Only what this DELETE released — a re-registration mid-flight may have
+      // already claimed a newer token that is still live on the server.
+      if (_registered == token) _registered = null;
     } catch (error) {
+      // Left in place so the next sign-out retries it; a lost DELETE otherwise
+      // leaves the signed-out device receiving pushes forever.
       debugPrint('[push] token release failed: $error');
     }
   }
