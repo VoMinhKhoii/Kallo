@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/surface/measured_height.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -55,24 +56,12 @@ class ThreadComposer extends ConsumerStatefulWidget {
 
 class _ThreadComposerState extends ConsumerState<ThreadComposer> {
   final _controller = TextEditingController();
-  final GlobalKey _dockKey = GlobalKey();
-  double _reportedHeight = 0;
   bool _submitting = false;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  void _reportHeight() {
-    if (!mounted) return;
-    final size = _dockKey.currentContext?.size;
-    if (size == null) return;
-    // Sub-pixel churn would ping-pong the screen's setState forever.
-    if ((size.height - _reportedHeight).abs() < 0.5) return;
-    _reportedHeight = size.height;
-    widget.onHeightChanged(size.height);
   }
 
   Future<void> _submit() async {
@@ -104,7 +93,6 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     // A plain Padding, never an AnimatedPadding: iOS ramps `viewInsets` itself
     // over the keyboard's own curve, and animating on top of that lands the
     // dock a frame behind the keyboard the whole way up (see
@@ -116,65 +104,57 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
+      // Measured INSIDE the keyboard lift, so the height reported up is the
+      // dock's OWN; the body adds the same inset itself, in the same frame.
       // The field grows a line under the user's thumb without re-running this
-      // build (the draft only rebuilds the send affordance below), so the size
-      // notification — not the build — is what keeps the reported height true.
-      child: NotificationListener<SizeChangedLayoutNotification>(
-        onNotification: (_) {
-          // Fired during layout — defer the screen's setState past this frame.
-          WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
-          return false;
-        },
-        child: SizeChangedLayoutNotifier(
-          child: ColoredBox(
-            // Keyed INSIDE the keyboard lift, so the height reported up is the
-            // dock's OWN: the body adds the same inset itself, in the same
-            // frame, rather than receiving it a frame late through here.
-            key: _dockKey,
-            // Opaque: the replies scroll UNDER this dock, and a translucent bar
-            // would show them sliding through the field.
-            color: kPage,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                KalloSpacing.sp2,
-                KalloSpacing.sp3,
-                bottomInset + KalloSpacing.sp2,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('reply-composer'),
-                      controller: _controller,
-                      focusNode: widget.focusNode,
-                      // `readOnly`, not `enabled: false`: disabling the field
-                      // drops its focus, which collapses the keyboard on every
-                      // send and makes a second reply a two-tap affair.
-                      readOnly: _submitting,
-                      style: dashBody(),
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: tr('groups.feed.replyPlaceholder'),
-                        hintStyle: dashBody(color: kInkMuted),
-                      ),
+      // build (the draft only rebuilds the send affordance below) — the
+      // measurement catches that on its own.
+      child: MeasuredHeight(
+        onChanged: widget.onHeightChanged,
+        child: ColoredBox(
+          // Opaque: the replies scroll UNDER this dock, and a translucent bar
+          // would show them sliding through the field.
+          color: kPage,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp3,
+              KalloSpacing.sp2,
+              KalloSpacing.sp3,
+              bottomInset + KalloSpacing.sp2,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('reply-composer'),
+                    controller: _controller,
+                    focusNode: widget.focusNode,
+                    // `readOnly`, not `enabled: false`: disabling the field
+                    // drops its focus, which collapses the keyboard on every
+                    // send and makes a second reply a two-tap affair.
+                    readOnly: _submitting,
+                    style: dashBody(),
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _submit(),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: tr('groups.feed.replyPlaceholder'),
+                      hintStyle: dashBody(color: kInkMuted),
                     ),
                   ),
-                  // Only the send affordance listens to the draft: a
-                  // controller listener would rebuild the whole dock — field
-                  // included — on every keystroke.
-                  ThreadSendButton(
-                    controller: _controller,
-                    submitting: _submitting,
-                    onSubmit: _submit,
-                  ),
-                ],
-              ),
+                ),
+                // Only the send affordance listens to the draft: a
+                // controller listener would rebuild the whole dock — field
+                // included — on every keystroke.
+                ThreadSendButton(
+                  controller: _controller,
+                  submitting: _submitting,
+                  onSubmit: _submit,
+                ),
+              ],
             ),
           ),
         ),

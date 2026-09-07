@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/surface/measured_height.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
@@ -20,7 +21,7 @@ import '../../logic/logging_spacing.dart';
 /// The dock reports its own height through [onHeightChanged] so the feed can
 /// reserve exactly that much scroll padding; nothing is ever permanently
 /// hidden behind it.
-class ComposerDock extends StatefulWidget {
+class ComposerDock extends StatelessWidget {
   const ComposerDock({
     super.key,
     required this.child,
@@ -39,27 +40,7 @@ class ComposerDock extends StatefulWidget {
   static const double scrimHeight = KalloSpacing.sp8; // 32
 
   @override
-  State<ComposerDock> createState() => _ComposerDockState();
-}
-
-class _ComposerDockState extends State<ComposerDock> {
-  final GlobalKey _dockKey = GlobalKey();
-  double _reportedHeight = 0;
-
-  void _reportHeight() {
-    if (!mounted) return;
-    final box = _dockKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final height = box.size.height;
-    // Sub-pixel churn would ping-pong the parent's setState forever.
-    if ((height - _reportedHeight).abs() < 0.5) return;
-    _reportedHeight = height;
-    widget.onHeightChanged(height);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     // The dock rides the keyboard, and this is the ONE place that says so:
     // `/logging` is a root route with no `Scaffold`, so no
     // `resizeToAvoidBottomInset` lifts anything here — without this the dock
@@ -79,71 +60,62 @@ class _ComposerDockState extends State<ComposerDock> {
 
     // Rebuilding the dock is NOT the only way it changes height: the composer
     // grows a line under the user's thumb via its own setState, which never
-    // re-runs this build. Without the notifier the reserved padding would go
-    // stale mid-type and the last meal card would slide under the dock.
-    return NotificationListener<SizeChangedLayoutNotification>(
-      onNotification: (_) {
-        // Fired during layout — defer the parent's setState past this frame.
-        WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
-        return false;
-      },
-      child: SizeChangedLayoutNotifier(
-        child: Padding(
-          padding: EdgeInsets.only(bottom: keyboardInset),
-          // Keyed INSIDE the lift, so the height reported up is the dock's own
-          // and does NOT move with the keyboard. The feed adds the same inset
-          // to its reserve itself, in the same frame — routing the lift through
-          // this measurement instead would report it a frame late (the report
-          // is post-frame) and rebuild the whole feed on every frame of the
-          // 250ms ramp.
-          child: Column(
-            key: _dockKey,
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // The fade band. Full-bleed (no horizontal inset) so the wall the
-              // feed used to hit disappears across the whole width. It replaces
-              // the dock's old top padding, so the composer keeps its breathing
-              // room and the measured height stays comparable.
-              const SizedBox(
-                height: ComposerDock.scrimHeight,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      // KalloColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
-                      // not linear: a straight alpha ramp still reads as a
-                      // visible seam where it meets transparency. All four stops
-                      // come from the token — the first three used to restate
-                      // the hex, so moving the canvas left the ramp fading
-                      // toward the *old* colour, i.e. the seam it exists to
-                      // remove.
-                      colors: [
-                        KalloColors.surface0,
-                        KalloColors.surface35,
-                        KalloColors.surface85,
-                        KalloColors.surface,
-                      ],
-                      stops: [0, 0.45, 0.8, 1],
-                    ),
+    // re-runs this build. [MeasuredHeight] catches that on its own; without
+    // it the reserved padding would go stale mid-type and the last meal card
+    // would slide under the dock.
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      // Measured INSIDE the lift, so the height reported up is the dock's own
+      // and does NOT move with the keyboard. The feed adds the same inset to
+      // its reserve itself, in the same frame.
+      child: MeasuredHeight(
+        onChanged: onHeightChanged,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The fade band. Full-bleed (no horizontal inset) so the wall the
+            // feed used to hit disappears across the whole width. It replaces
+            // the dock's old top padding, so the composer keeps its breathing
+            // room and the measured height stays comparable.
+            const SizedBox(
+              height: ComposerDock.scrimHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    // KalloColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
+                    // not linear: a straight alpha ramp still reads as a
+                    // visible seam where it meets transparency. All four stops
+                    // come from the token — the first three used to restate
+                    // the hex, so moving the canvas left the ramp fading
+                    // toward the *old* colour, i.e. the seam it exists to
+                    // remove.
+                    colors: [
+                      KalloColors.surface0,
+                      KalloColors.surface35,
+                      KalloColors.surface85,
+                      KalloColors.surface,
+                    ],
+                    stops: [0, 0.45, 0.8, 1],
                   ),
                 ),
               ),
-              // The opaque base — everything from the composer card down is a
-              // solid surface, including the home-indicator inset.
-              Container(
-                color: KalloColors.surface,
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  0,
-                  KalloSpacing.sp3,
-                  bottomInset + LoggingSpacing.block,
-                ),
-                child: widget.child,
+            ),
+            // The opaque base — everything from the composer card down is a
+            // solid surface, including the home-indicator inset.
+            Container(
+              color: KalloColors.surface,
+              padding: EdgeInsets.fromLTRB(
+                KalloSpacing.sp3,
+                0,
+                KalloSpacing.sp3,
+                bottomInset + LoggingSpacing.block,
               ),
-            ],
-          ),
+              child: child,
+            ),
+          ],
         ),
       ),
     );
