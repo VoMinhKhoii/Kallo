@@ -1,10 +1,16 @@
-/// How a nutrient reads on a card — the figure, the "green it" test, and the
-/// bar's colour.
+/// How a nutrient reads on a card — the figure, the ONE "met" test, the bar's
+/// colour, and whether it earns food-suggestion chips.
 ///
 /// Vendored from web `components/nutrition/rows/nutrient-grid-card.tsx` (keep
 /// in sync). It lives in `logic/` rather than inside the widget because the
-/// green tier is a rule about nutrition, not about layout, and because the
-/// widget that used to own the figure/colour pair was deleted with the rows.
+/// green tier is a rule about nutrition, not about layout.
+///
+/// One definition of "met" (2026-09-07): a five-bucket status enum used to
+/// live beside this file with provably identical thresholds, consumed only by
+/// [nutrientFillColor] while [nutrientIsAdequate] read [isOnTarget] — two
+/// spellings of one rule in one file. The enum and its colour map had no
+/// other consumer and are gone; the chip gate that shared their file lives
+/// here now.
 library;
 
 import 'dart:ui';
@@ -12,7 +18,6 @@ import 'dart:ui';
 import '../../../models/nutrition/nutrition.dart';
 import '../../../theme/kallo_colors.dart';
 import 'helpers.dart';
-import 'status.dart';
 
 /// Whether a nutrient reads as "on target" for the GREEN-CARD tier.
 ///
@@ -88,8 +93,15 @@ Color nutrientFillColor(NutrientCardData card) {
     return KalloColors.stone50;
   }
   if (shouldShowExceed(card.nutrientType, pct)) return KalloColors.offTarget;
-  if (statusKeyFor(card) == StatusKey.onTarget) {
-    return KalloColors.successAccent;
-  }
+  if (isOnTarget(card)) return KalloColors.successAccent;
   return KalloColors.text;
+}
+
+/// Whether to surface food-source chips for a nutrient: decent confidence and
+/// meaningfully below target (<90%). Every card nutrient has DB-derived
+/// suggestions, so there's no per-nutrient support gate.
+bool showChips(NutrientCardData card) {
+  return card.confidence >= 40 &&
+      card.percentOfTarget != null &&
+      card.percentOfTarget! < 90;
 }
