@@ -18,7 +18,8 @@ class PaceRuler extends StatefulWidget {
     required this.value,
     required this.onChanged,
     required this.label,
-    required this.readout,
+    required this.hero,
+    required this.note,
     required this.lowLabel,
     required this.highLabel,
     this.min = 0.1,
@@ -29,9 +30,17 @@ class PaceRuler extends StatefulWidget {
   final double value;
   final ValueChanged<double> onChanged;
 
-  /// The quiet left half of the readout line ("Pace") and the ink right half
-  /// ("0.5 kg a week · 500 kcal deficit") — both formatted by the caller.
-  final String label, readout;
+  /// The semantics name for the whole control ("Pace"). Not drawn: the hero
+  /// line below already says what this is a picker for.
+  final String label;
+
+  /// The chosen pace as the user reads it back — "0.5 kg a week". It sits ON
+  /// TOP, big, because it is the answer; the strip underneath is only how the
+  /// answer is changed.
+  final String hero;
+
+  /// The consequence, under the strip: "550 kcal deficit".
+  final String note;
   final String lowLabel, highLabel;
   final double min, max, step;
 
@@ -122,7 +131,7 @@ class _PaceRulerState extends State<PaceRuler> {
         slider: true,
         label: widget.label,
         // Neighbours announce the bare step the graduation shows.
-        value: widget.readout,
+        value: widget.hero,
         increasedValue: _stepLabel(_index + 1),
         decreasedValue: _stepLabel(_index - 1),
         onIncrease: () => _nudge(1),
@@ -133,11 +142,14 @@ class _PaceRulerState extends State<PaceRuler> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _line(widget.label, Text(widget.readout,
-                  textAlign: TextAlign.end, style: dashBody(tabular: true))),
+              Text(widget.hero,
+                  textAlign: TextAlign.center, style: kSectionHeader()),
               const SizedBox(height: KalloSpacing.sp2),
               _strip(),
-              const SizedBox(height: KalloSpacing.sp1),
+              const SizedBox(height: KalloSpacing.sp2),
+              Text(widget.note,
+                  textAlign: TextAlign.center, style: dashMeta()),
+              const SizedBox(height: KalloSpacing.sp2),
               _line(widget.lowLabel, Text(widget.highLabel, style: dashMeta())),
             ],
           ),
@@ -175,26 +187,14 @@ class _PaceRulerState extends State<PaceRuler> {
         ),
       );
 
-  Widget _face(BuildContext context) => Column(
-        children: [
-          CustomPaint(
-            size: Size(_contentWidth, PaceRuler.stripHeight),
-            // Minors halfway between the steps.
-            painter: RulerPainter(
-                majors: _majors, graduations: 2 * (_count - 1)),
-          ),
-          const SizedBox(height: KalloSpacing.sp1),
-          SizedBox(
-            // Scaled: a flat height clips the digits at the 1.3x type ceiling.
-            height: MediaQuery.textScalerOf(context).scale(18),
-            child: RulerBand(
-              majors: _majors,
-              width: _contentWidth,
-              slotWidth: _pitch,
-              child: (i) => Text(_stepLabel(i),
-                  maxLines: 1, style: dashMeta(tabular: true)),
-            ),
-          ),
-        ],
+  /// BARE ticks — no number under each graduation. The figures repeated the
+  /// hero line one decimal at a time and turned a calm strip into a chart
+  /// axis; the value is already stated above it, and the two end labels say
+  /// which way is which.
+  Widget _face(BuildContext context) => CustomPaint(
+        size: Size(_contentWidth, PaceRuler.stripHeight),
+        // Minors halfway between the steps.
+        painter:
+            RulerPainter(majors: _majors, graduations: 2 * (_count - 1)),
       );
 }

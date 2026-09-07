@@ -106,10 +106,11 @@ class _WelcomeDemoState extends State<WelcomeDemo>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // The user's words, in Lora — the loudest thing on the screen.
+          // The user's words — the loudest thing on the screen. Sans, at the
+          // same 18/snug: the serif is the wordmark's voice on this surface.
           Text(
             _full.substring(0, _typed),
-            style: KalloTextStyles.serifRegular(
+            style: KalloTextStyles.sansRegular(
               fontSize: KalloFontSize.lg,
               height: KalloLeading.snug,
             ).copyWith(color: KalloColors.text),

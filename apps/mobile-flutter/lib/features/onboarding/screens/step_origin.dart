@@ -11,6 +11,7 @@ import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
+import '../logic/onboarding_step_spec.dart';
 import '../logic/region_defaults.dart';
 import '../widgets/origin/country_sheet.dart';
 import '../widgets/origin/origin_residence_row.dart';
@@ -151,3 +152,20 @@ class _StepOriginState extends State<StepOrigin> {
     );
   }
 }
+
+/// Screen 2's contract. It opens ANSWERED off the phone's region, so nothing
+/// holds the CTA.
+OnboardingStepSpec stepOriginSpec({
+  required OnboardingAnswers answers,
+  required String? deviceCountry,
+  required VoidCallback onChanged,
+}) => (
+      title: tr('onboarding.origin.stepTitle'),
+      body: StepOrigin(
+        answers: answers,
+        deviceCountry: deviceCountry,
+        onChanged: onChanged,
+      ),
+      ctaLabel: tr('onboarding.continueLabel'),
+      ctaEnabled: true,
+    );

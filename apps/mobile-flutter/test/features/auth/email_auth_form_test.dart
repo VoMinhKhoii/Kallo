@@ -32,7 +32,7 @@ Widget _app() => ProviderScope(
             locale: context.locale,
             home: Scaffold(
               body: SingleChildScrollView(
-                child: EmailAuthForm(provider: _provider, onBack: () {}),
+                child: EmailAuthForm(provider: _provider),
               ),
             ),
           ),

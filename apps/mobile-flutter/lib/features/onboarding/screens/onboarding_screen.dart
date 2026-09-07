@@ -31,18 +31,19 @@ class OnboardingScreen extends ConsumerWidget {
     final signedIn = ref.watch(currentSessionProvider) != null;
     return Scaffold(
       backgroundColor: KalloColors.surface,
-      body: SafeArea(
-        child: OnboardingWizard(
-          onComplete: () => context.go(signedIn ? '/welcome' : '/save-plan'),
-          onClose: () {
-            if (!signedIn) {
-              context.go('/start');
-              return;
-            }
-            ref.read(onboardingForceDismissedProvider.notifier).state = true;
-            context.go('/dashboard');
-          },
-        ),
+      // No SafeArea here: the wizard's canvas has to start at y=0, behind the
+      // status bar, or its top sweep begins on a hard flat band. The wizard
+      // insets its own chrome instead (see [OnboardingStepScaffold]).
+      body: OnboardingWizard(
+        onComplete: () => context.go(signedIn ? '/welcome' : '/save-plan'),
+        onClose: () {
+          if (!signedIn) {
+            context.go('/start');
+            return;
+          }
+          ref.read(onboardingForceDismissedProvider.notifier).state = true;
+          context.go('/dashboard');
+        },
       ),
     );
   }

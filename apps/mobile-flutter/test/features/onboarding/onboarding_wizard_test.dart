@@ -10,6 +10,9 @@ import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_header.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_wizard.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shared/widgets/form/option_row.dart';
@@ -47,6 +50,7 @@ Widget _app(
   int profileFailures = 0,
   VoidCallback? onComplete,
   VoidCallback? onClose,
+  EdgeInsets insets = EdgeInsets.zero,
 }) {
   // Counted across invalidations, so a test can fail the first signed-in fetch
   // and let the retry succeed.
@@ -76,14 +80,18 @@ Widget _app(
         builder: (inner) => MediaQuery(
           // The bun breathes on an endless Ticker (`pumpAndSettle` would hang);
           // reduced motion also drops the typewriter.
-          data: MediaQuery.of(inner).copyWith(disableAnimations: true),
+          data: MediaQuery.of(inner).copyWith(
+            disableAnimations: true,
+            padding: insets,
+            viewPadding: insets,
+          ),
+          // No SafeArea, exactly like `OnboardingScreen`: the wizard is a
+          // full-bleed page that insets its own chrome.
           child: Scaffold(
             backgroundColor: kPage,
-            body: SafeArea(
-              child: OnboardingWizard(
-                onComplete: onComplete ?? () {},
-                onClose: onClose,
-              ),
+            body: OnboardingWizard(
+              onComplete: onComplete ?? () {},
+              onClose: onClose,
             ),
           ),
         ),
@@ -209,6 +217,28 @@ void main() {
     expect(find.text('Fill the basics to unlock targets.'), findsOneWidget);
   });
 
+  testWidgets('the unlock card offers the way back to the screen that would '
+      'fill it, and screen 6 stops offering it once it can', (tester) async {
+    final sink = FakeOnboardingSink();
+    await _boot(tester, _app(sink, resumeScreen: 6));
+
+    expect(find.text('Fill the basics to unlock targets.'), findsOneWidget);
+    await _tap(tester, 'Add my measurements');
+
+    // Screen 3 is where all four missing inputs live.
+    expect(find.text('About you'), findsOneWidget);
+    await _tap(tester, 'Male');
+    await _tap(tester, 'Continue'); // 3 → 4
+    await _tap(tester, 'Continue'); // 4 → 5
+    await _tap(tester, 'Continue'); // 5 → 6
+
+    // The defaults screen 3 filled make the target computable, so the dead
+    // end — and its way out — are gone.
+    expect(find.text('Fill the basics to unlock targets.'), findsNothing);
+    expect(find.text('Add my measurements'), findsNothing);
+    expect(find.text('Save my plan'), findsOneWidget);
+  });
+
   testWidgets('Skip advances without posting but still records the screen',
       (tester) async {
     final sink = FakeOnboardingSink();
@@ -284,6 +314,38 @@ void main() {
     }
     expect(find.text('Your daily target'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wears the wizard canvas, edge to edge behind the status bar', (
+    tester,
+  ) async {
+    // The page drops its SafeArea and the scaffold insets its own chrome, so
+    // the top sweep starts at y=0 instead of on a flat band under the status
+    // bar — and the CTA band still ends on the physical bottom edge, which is
+    // the only place its copy of the backdrop lines up with the page's.
+    const insets = EdgeInsets.only(top: 62, bottom: 34);
+    await _boot(
+      tester,
+      _app(FakeOnboardingSink(), profile: _profile, insets: insets),
+    );
+
+    // The whole page, insets included — NOT the wizard's own box, which an
+    // outer SafeArea would have shrunk without the backdrop ever noticing.
+    final screen = tester.getRect(find.byType(Scaffold));
+    // Two layers: the page's own (first in the tree) and the band's copy.
+    expect(tester.getRect(find.byType(StepBackdrop).first), screen);
+    expect(tester.getRect(find.byType(BackdropSlice)).bottom, screen.bottom);
+
+    // The chrome, though, is inset on both ends: the header clears the status
+    // bar and the CTA holds itself above the home indicator.
+    expect(
+      tester.getRect(find.byType(OnboardingStepHeader)).top,
+      greaterThanOrEqualTo(screen.top + insets.top),
+    );
+    expect(
+      tester.getRect(find.byType(KalloButton)).bottom,
+      lessThanOrEqualTo(screen.bottom - insets.bottom),
+    );
   });
 
   testWidgets('waits for the SESSION, and for a PROFILE that loads, before '

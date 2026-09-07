@@ -12,16 +12,10 @@ import '../../../theme/kallo_theme.dart';
 /// screen of the flow does not change shape under the mark.
 class PaywallHeader extends StatelessWidget {
   const PaywallHeader({
-    required this.gutter,
     required this.onClose,
     this.onStayFree,
     super.key,
   });
-
-  /// The band's own gutter. The row insets by LESS: the 10pt of slack in a
-  /// 44pt target around a 24pt glyph is paid out of it, which puts the glyph's
-  /// edge on the title's line.
-  final double gutter;
 
   final VoidCallback onClose;
 
@@ -30,7 +24,9 @@ class PaywallHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => WordmarkBar(
-    gutterInset: gutter - (KalloIcons.hit - KalloIcons.primary) / 2,
+    // The same inset the onboarding header uses, so the glyph does not move
+    // between the last wizard screen and this one.
+    gutterInset: WordmarkBar.rowInset,
     leading: _close(context),
     trailing: onStayFree == null
         ? null

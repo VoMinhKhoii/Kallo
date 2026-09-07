@@ -70,6 +70,11 @@ buildOnboardingAnswers({
   final savedLocale =
       profile?.preferredLocale ?? _str(step1, 'preferredLocale');
 
+  // A goal the user already answered OWNS the field; only an unanswered one
+  // keeps tracking the body's BMI (`OnboardingAnswers.applyDefaultGoal`).
+  final savedGoal =
+      tryParseGoal(profile?.goal) ?? tryParseGoal(_str(step2, 'goal'));
+
   final answers = OnboardingAnswers(
     // A saved locale always wins: the phone's guess is only ever the FIRST
     // answer, never a correction of one the user already gave.
@@ -95,10 +100,7 @@ buildOnboardingAnswers({
         tryParseActivityLevel(profile?.activityLevel) ??
         tryParseActivityLevel(_str(step2, 'activityLevel')) ??
         WizardDefaults.activityLevel,
-    goal:
-        tryParseGoal(profile?.goal) ??
-        tryParseGoal(_str(step2, 'goal')) ??
-        WizardDefaults.goal,
+    goal: savedGoal ?? WizardDefaults.goal,
     // The profile stores aggression as a numeric STRING; a NaN there falls back
     // to the wizard default rather than poisoning the pace ruler.
     aggression:
@@ -140,6 +142,9 @@ buildOnboardingAnswers({
           kNeutralCookingDefaults.brothConsumption,
     ),
   );
+
+  answers.goalChosenByUser = savedGoal != null;
+  answers.applyDefaultGoal();
 
   return (
     answers: answers,

@@ -86,10 +86,15 @@ void main() {
     test('the pre-auth routes are all reachable', () {
       for (final loc in const [
         '/sign-in',
+        // The email path is a route of its own now, pushed off each of the two
+        // surfaces that offer it — and a signed-out user is exactly who stands
+        // on it, so it must be allowed as explicitly as its parent.
+        '/sign-in/email',
         '/sign-up',
         '/start',
         '/onboarding',
         '/save-plan',
+        '/save-plan/email',
         '/circle/invite/abc',
       ]) {
         expect(_at(loc, draft: _finishedDraft), isNull, reason: loc);

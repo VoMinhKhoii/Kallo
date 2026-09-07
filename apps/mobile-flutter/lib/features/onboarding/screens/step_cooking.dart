@@ -7,6 +7,7 @@ import '../../../shared/widgets/form/segmented_strip.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
+import '../logic/onboarding_step_spec.dart';
 
 /// One cooking question: its group label, its options' l10n keys, and the two
 /// accessors that read and write the answer on [CookingHabits]. The options
@@ -121,3 +122,14 @@ class StepCooking extends StatelessWidget {
     );
   }
 }
+
+/// Screen 5's contract.
+OnboardingStepSpec stepCookingSpec({
+  required OnboardingAnswers answers,
+  required VoidCallback onChanged,
+}) => (
+      title: tr('onboarding.cooking.title'),
+      body: StepCooking(answers: answers, onChanged: onChanged),
+      ctaLabel: tr('onboarding.continueLabel'),
+      ctaEnabled: true,
+    );

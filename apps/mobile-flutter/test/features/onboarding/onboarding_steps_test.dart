@@ -5,12 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/logic/onboarding_answers.dart';
 import 'package:kallo_mobile/models/profile/onboarding.dart';
+import 'package:kallo_mobile/features/onboarding/screens/step_about_you.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_goal.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_language.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_origin.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_target.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/pace_ruler.dart';
 import 'package:kallo_mobile/shared/widgets/form/option_row.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import 'onboarding_test_support.dart';
 
@@ -183,26 +185,52 @@ void main() {
     Future<void> goal(WidgetTester tester, OnboardingAnswers answers) =>
         _pump(tester, (rebuild) => StepGoal(answers: answers, onChanged: rebuild));
 
-    testWidgets('maintaining hides the pace ruler; a goal brings it back',
-        (tester) async {
+    double paceOpacity(WidgetTester tester) => tester
+        .widget<Opacity>(
+          find.ancestor(
+            of: find.byType(PaceRuler),
+            matching: find.byType(Opacity),
+          ).first,
+        )
+        .opacity;
+
+    testWidgets('maintaining DIMS the pace block rather than removing it — '
+        'the page must not collapse under the finger', (tester) async {
       final answers = testAnswers();
       await goal(tester, answers);
-      expect(find.byType(PaceRuler), findsNothing);
+
+      // Still laid out, still the same height, just receded and inert.
+      expect(find.byType(PaceRuler), findsOneWidget);
+      expect(paceOpacity(tester), lessThan(0.5));
+      expect(
+        tester
+            .widget<IgnorePointer>(
+              find.ancestor(
+                of: find.byType(PaceRuler),
+                matching: find.byType(IgnorePointer),
+              ).first,
+            )
+            .ignoring,
+        isTrue,
+      );
+      final dimmed = tester.getRect(find.byType(PaceRuler));
 
       await tester.tap(find.text('Cutting'));
       await tester.pumpAndSettle();
 
       expect(answers.goal, Goal.cutting);
-      expect(find.byType(PaceRuler), findsOneWidget);
-      expect(find.text('Pace'), findsOneWidget);
-      expect(find.text('0.5 kg a week · 550 kcal deficit'), findsOneWidget);
+      expect(paceOpacity(tester), 1);
+      expect(tester.getRect(find.byType(PaceRuler)), dimmed);
+      // The hero value leads; the consequence sits under the strip.
+      expect(find.text('0.5 kg a week'), findsOneWidget);
+      expect(find.text('550 kcal deficit'), findsOneWidget);
       expect(find.text('Gentle'), findsOneWidget);
       expect(find.text('Aggressive'), findsOneWidget);
     });
 
     testWidgets('bulking reads out a surplus, not a deficit', (tester) async {
       await goal(tester, testAnswers(goal: Goal.bulking));
-      expect(find.text('0.5 kg a week · 550 kcal surplus'), findsOneWidget);
+      expect(find.text('550 kcal surplus'), findsOneWidget);
     });
   });
 
@@ -212,7 +240,11 @@ void main() {
       final answers = testAnswers();
       await _pump(
         tester,
-        (rebuild) => StepTarget(answers: answers, onChanged: rebuild),
+        (rebuild) => StepTarget(
+          answers: answers,
+          onChanged: rebuild,
+          onFillMissing: () {},
+        ),
       );
 
       final moderate = answers.targets!;
@@ -235,11 +267,90 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        (rebuild) =>
-            StepTarget(answers: testAnswers(body: false), onChanged: rebuild),
+        (rebuild) => StepTarget(
+          answers: testAnswers(body: false),
+          onChanged: rebuild,
+          onFillMissing: () {},
+        ),
       );
       expect(find.text('Fill the basics to unlock targets.'), findsOneWidget);
       expect(find.text('Carb split'), findsNothing);
+    });
+  });
+
+  group('screen 3 — about you', () {
+    Future<void> about(WidgetTester tester, OnboardingAnswers answers) => _pump(
+          tester,
+          (rebuild) => StepAboutYou(answers: answers, onChanged: rebuild),
+        );
+
+    String textAt(WidgetTester tester, int i) =>
+        tester.widgetList<TextField>(find.byType(TextField)).elementAt(i)
+            .controller!
+            .text;
+
+    testWidgets('picking a sex fills the EMPTY metrics with its defaults so '
+        'screen 6 has something to show', (tester) async {
+      final answers = testAnswers(body: false);
+      await about(tester, answers);
+      expect(answers.hasTargets, isFalse);
+
+      await tester.tap(find.text('Male'));
+      await tester.pumpAndSettle();
+
+      expect(answers.weightKg, 65);
+      expect(answers.heightCm, 168);
+      expect(answers.age, 28);
+      // …and the fields show it, not just the model.
+      expect(textAt(tester, 0), '65');
+      expect(textAt(tester, 1), '168');
+      expect(answers.hasTargets, isTrue);
+    });
+
+    testWidgets('a typed value is the user\'s: only the fields this screen '
+        'filled are re-filled by the other sex', (tester) async {
+      final answers = testAnswers(body: false);
+      await about(tester, answers);
+
+      await tester.tap(find.text('Male'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '70');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Female'));
+      await tester.pumpAndSettle();
+
+      expect(answers.weightKg, 70, reason: 'the typed weight was overwritten');
+      expect(answers.heightCm, 157);
+      expect(answers.age, 28);
+    });
+
+    testWidgets('a value seeded from the saved profile is never overwritten',
+        (tester) async {
+      final answers = testAnswers(sex: null, weight: 82, height: null, age: null);
+      await about(tester, answers);
+
+      await tester.tap(find.text('Female'));
+      await tester.pumpAndSettle();
+
+      expect(answers.weightKg, 82);
+      expect(answers.heightCm, 157);
+    });
+
+    testWidgets('the activity rows wear the same anatomy as the other picks',
+        (tester) async {
+      await about(tester, testAnswers());
+      final rows = tester
+          .widgetList<OptionRow>(find.byType(OptionRow))
+          .where((r) => r.subline != null);
+      expect(rows, isNotEmpty);
+      // OptionRow's own default: 64pt, the language and country rows' height.
+      expect(rows.every((r) => r.height == 64), isTrue);
+      expect(
+        tester.getRect(find.byType(OptionRow).at(1)).top -
+            tester.getRect(find.byType(OptionRow).at(0)).bottom,
+        KalloSpacing.sp3,
+      );
     });
   });
 }

@@ -28,6 +28,12 @@ class WordmarkBar extends StatelessWidget {
   /// back is what puts the glyph's edge on the same line as the content below.
   final double gutterInset;
 
+  /// The inset a host should hand this row when its own content sits on a
+  /// 24pt gutter. A 44pt target around a 24pt glyph carries 10pt of slack per
+  /// side, so 4 here lands the glyph's edge at 14 — optically the gutter,
+  /// where insetting the row by the full 24 puts it at 34.
+  static const double rowInset = 4;
+
   static const double rowHeight = KalloIcons.hit;
   static const double wordmarkHeight = 22;
 

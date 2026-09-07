@@ -13,6 +13,7 @@ import 'package:kallo_mobile/features/auth/widgets/welcome/welcome_demo.dart';
 import 'package:kallo_mobile/features/onboarding/screens/save_plan_screen.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
+import 'package:kallo_mobile/shared/widgets/brand/wordmark_bar.dart';
 import 'package:kallo_mobile/shared/widgets/mascot/bun_mascot.dart';
 
 import '../../app_fonts.dart';
@@ -25,7 +26,7 @@ const _phone = Size(390, 844);
 /// `/save-plan` is the wizard's seventh beat, not a login wall: the same three
 /// options as `/sign-in`, under the onboarding chrome, with no way past them —
 /// the app is authenticated-only and the plan is sitting in a local draft.
-Widget _app() => ProviderScope(
+Widget _app({EdgeInsets insets = EdgeInsets.zero}) => ProviderScope(
       child: EasyLocalization(
         supportedLocales: const [Locale('en')],
         path: 'assets/l10n',
@@ -41,7 +42,11 @@ Widget _app() => ProviderScope(
                 // The bun breathes on an endless Ticker, so `pumpAndSettle`
                 // would never return; reduced motion also drops the typewriter
                 // so the guide line is on screen from the first frame.
-                data: MediaQuery.of(inner).copyWith(disableAnimations: true),
+                data: MediaQuery.of(inner).copyWith(
+                  disableAnimations: true,
+                  padding: insets,
+                  viewPadding: insets,
+                ),
                 child: const SavePlanScreen(),
               ),
             ),
@@ -119,5 +124,37 @@ void main() {
     expect(legal.bottom, greaterThan(_phone.height - 20));
 
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('the canvas runs edge to edge — behind the status bar, under '
+      'the home indicator', (tester) async {
+    // The screen wears no SafeArea: the sweep starts at y=0, and the auth
+    // face's slice is aligned to that same full-screen box, so it has to
+    // reach the bottom edge for the two to line up. Only the chrome is inset.
+    const insets = EdgeInsets.only(top: 62, bottom: 34);
+    tester.view.physicalSize = _phone;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(insets: insets));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    final screen = tester.getRect(find.byType(SavePlanScreen));
+    // Two layers: the page's own (first in the tree) and the face's slice.
+    expect(tester.getRect(find.byType(StepBackdrop).first), screen);
+    expect(tester.getRect(find.byType(BackdropSlice)).bottom, screen.bottom);
+
+    // The chrome is inset on both ends: the wordmark row clears the status
+    // bar, and [AuthPage]'s own SafeArea keeps the legal block above the
+    // home indicator.
+    expect(
+      tester.getRect(find.byType(WordmarkBar)).top,
+      greaterThanOrEqualTo(screen.top + insets.top),
+    );
+    expect(
+      tester.getRect(find.byType(AuthLegalLinks)).bottom,
+      lessThanOrEqualTo(screen.bottom - insets.bottom),
+    );
   });
 }

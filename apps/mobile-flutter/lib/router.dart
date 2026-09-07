@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'services/auth/session_provider.dart';
+import 'features/auth/screens/email_auth_screen.dart';
 import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
@@ -25,9 +26,9 @@ import 'features/settings/screens/settings_screen.dart';
 import 'router_redirect.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/route_error_screen.dart';
+import 'shared/widgets/brand/kallo_wordmark.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/kallo_colors.dart';
-import 'theme/kallo_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -41,7 +42,8 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///   • `/logging` is a ROOT route pushed full-screen over the shell (the
 ///     pill nav's Log item; Cupertino swipe-back returns to the tab the user
 ///     came from — feed state lives in providers, so nothing is lost).
-///   • `/start`, `/sign-in`, `/sign-up`, `/onboarding`, `/save-plan`,
+///   • `/start`, `/sign-in` (+ `/sign-in/email`), `/sign-up`, `/onboarding`,
+///     `/save-plan` (+ `/save-plan/email`),
 ///     `/welcome` and `/settings` are standalone root routes (`/settings`
 ///     pushes over the shell from the dashboard avatar with Cupertino
 ///     swipe-back).
@@ -100,6 +102,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/sign-in',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const SignInScreen(),
+        routes: [
+          // The email path, pushed from the welcome face's "Continue with
+          // email". A child route so Back pops to the options that opened it.
+          GoRoute(
+            path: 'email',
+            parentNavigatorKey: _rootKey,
+            builder: (context, state) =>
+                const EmailAuthScreen(createAccount: false),
+          ),
+        ],
       ),
       GoRoute(
         path: '/sign-up',
@@ -117,6 +129,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/save-plan',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const SavePlanScreen(),
+        routes: [
+          // Same screen, opened on sign-UP: whoever just built a plan here has
+          // no account yet. Back pops to `/save-plan`.
+          GoRoute(
+            path: 'email',
+            parentNavigatorKey: _rootKey,
+            builder: (context, state) =>
+                const EmailAuthScreen(createAccount: true),
+          ),
+        ],
       ),
       GoRoute(
         path: '/welcome',
@@ -300,7 +322,7 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
 }
 
 /// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the Lora "Kallo" wordmark breathing gently on the cream
+/// first frame of brand: the [KalloWordmark] breathing gently on the cream
 /// surface, instead of a generic Material spinner. The cream background matches
 /// the native LaunchScreen so the native→Flutter handoff is seamless.
 class _SplashScreen extends StatefulWidget {
@@ -340,12 +362,9 @@ class _SplashScreenState extends State<_SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final wordmark = Text(
-      'Kallo',
-      style: KalloTextStyles.serifRegular(
-        fontSize: 32,
-      ).copyWith(color: KalloColors.text),
-    );
+    // The drawn mark, not a serif setting of the word — the wordmark IS the
+    // brand's one typographic voice and Lora no longer speaks for it.
+    const wordmark = KalloWordmark(height: 26);
     return ColoredBox(
       color: KalloColors.surface,
       child: Center(

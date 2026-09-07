@@ -10,6 +10,10 @@ import '../../../theme/kallo_theme.dart';
 
 /// The chrome every onboarding step wears: the app's [WordmarkBar] — back
 /// chevron left, the wordmark centred, "Skip" right — over a 4px progress bar.
+///
+/// It renders EDGE TO EDGE and insets itself: the wordmark row sits at
+/// [WordmarkBar.rowInset], which puts the chevron's GLYPH on the content
+/// gutter rather than 10pt inboard of it; the bar keeps that gutter.
 class OnboardingStepHeader extends StatelessWidget {
   const OnboardingStepHeader({
     super.key,
@@ -19,6 +23,7 @@ class OnboardingStepHeader extends StatelessWidget {
     this.onBack,
     this.onSkip,
     this.skipLabel,
+    this.gutter = KalloSpacing.sp6,
   });
 
   /// 1-based; the bar fills `step / total`.
@@ -35,6 +40,12 @@ class OnboardingStepHeader extends StatelessWidget {
   final VoidCallback? onSkip;
   final String? skipLabel;
 
+  /// The CONTENT gutter the progress bar lines up with. The wordmark row does
+  /// not use it — it sits at [WordmarkBar.rowInset] and pays the slack back
+  /// out of its own inset, which is what puts the chevron GLYPH on the line
+  /// the title below it starts on.
+  final double gutter;
+
   static const double barHeight = 4;
   static const double wordmarkHeight = WordmarkBar.wordmarkHeight;
 
@@ -43,19 +54,26 @@ class OnboardingStepHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           WordmarkBar(
+            gutterInset: WordmarkBar.rowInset,
             leading: onBack == null ? null : _back(context),
             trailing: onSkip == null || skipLabel == null
                 ? null
-                // The slack is on the LEFT of the label: it buys the skip
-                // target room without moving the label off the gutter.
+                // Slack on both sides of the label: the left buys the skip
+                // target room, the right stands the label off the screen edge
+                // at 16 (4 of inset + 12 of padding).
                 : MetaAction(
                     label: skipLabel!,
                     onTap: onSkip,
-                    padding: const EdgeInsets.only(left: KalloSpacing.sp3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: KalloSpacing.sp3,
+                    ),
                   ),
           ),
           const SizedBox(height: KalloSpacing.sp3),
-          _bar(),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: gutter),
+            child: _bar(),
+          ),
         ],
       );
 

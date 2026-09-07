@@ -27,7 +27,8 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
     barrierColor: const Color(0x33141413), // ink @20% scrim
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (ctx, _, __) {
-      final insets = MediaQuery.paddingOf(ctx);
+      final media = MediaQuery.of(ctx);
+      final insets = media.padding;
       return Padding(
         padding: EdgeInsets.only(
           top: insets.top + KalloSpacing.sp3,
@@ -42,15 +43,24 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
           // showGeneralDialog has no Scaffold, so supply one here).
           child: Material(
             color: KalloColors.surface,
-            child: OnboardingWizard(
-              onComplete: () {
-                Navigator.of(ctx).pop();
-                router.go('/welcome');
-              },
-              onClose: () {
-                Navigator.of(ctx).pop();
-                ref.invalidate(profileProvider); // refresh the resume nudge
-              },
+            // The card is ALREADY inside the insets, and the wizard insets
+            // itself (it is a full-bleed page on `/onboarding`): zero them
+            // here, or its chrome would clear a status bar that is not there.
+            child: MediaQuery(
+              data: media.copyWith(
+                padding: EdgeInsets.zero,
+                viewPadding: EdgeInsets.zero,
+              ),
+              child: OnboardingWizard(
+                onComplete: () {
+                  Navigator.of(ctx).pop();
+                  router.go('/welcome');
+                },
+                onClose: () {
+                  Navigator.of(ctx).pop();
+                  ref.invalidate(profileProvider); // refresh the resume nudge
+                },
+              ),
             ),
           ),
         ),

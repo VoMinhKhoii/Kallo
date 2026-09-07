@@ -12,7 +12,21 @@ class Country {
   final String code;
 
   const Country(this.value, this.vi, this.code);
+
+  /// Whether this country's population is one the WHO's Asian BMI action
+  /// point (23, not 25) was written for — see `shared/logic/bmi.dart`.
+  ///
+  /// The set is South, East and Southeast Asia: those are the populations the
+  /// 2004 consultation studied. The table's West Asian entries (Israel, Saudi
+  /// Arabia, Türkiye, the UAE) are deliberately NOT in it, so the name reads
+  /// "Asian" the way the cutoff means it rather than the way a map does.
+  bool get isAsian => _kAsianBmiCodes.contains(code);
 }
+
+const Set<String> _kAsianBmiCodes = {
+  'AF', 'BD', 'CN', 'HK', 'ID', 'IN', 'JP', 'KH', 'KR', 'LA',
+  'LK', 'MM', 'MY', 'NP', 'PH', 'PK', 'SG', 'TH', 'TW', 'VN',
+};
 
 const List<Country> kCountries = [
   Country('Afghanistan', 'Afghanistan', 'AF'),

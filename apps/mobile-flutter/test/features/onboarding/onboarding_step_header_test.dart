@@ -4,14 +4,19 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_header.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
+import 'package:kallo_mobile/shared/widgets/brand/wordmark_bar.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 /// The header is the only thing that persists across all six steps, so the
 /// wordmark must not move and the bar must actually say where you are.
 
+/// The header runs EDGE TO EDGE now and insets itself, so the host hands it a
+/// phone's full width rather than a pre-gutter'd box.
+const double _screenWidth = 390;
+
 Widget _wrap(Widget child) => MaterialApp(
       home: Scaffold(
-        body: Center(child: SizedBox(width: 358, child: child)),
+        body: Center(child: SizedBox(width: _screenWidth, child: child)),
       ),
     );
 
@@ -101,7 +106,10 @@ void main() {
     // that reads as empty on every step.
     expect(
       tester.getSize(find.byType(FractionallySizedBox)),
-      const Size(179, OnboardingStepHeader.barHeight),
+      const Size(
+        (_screenWidth - 2 * KalloSpacing.sp6) / 2,
+        OnboardingStepHeader.barHeight,
+      ),
     );
 
     await tester.pumpWidget(_wrap(_header(step: 6)));
@@ -121,5 +129,26 @@ void main() {
 
     expect(find.bySemanticsLabel('Step 2 of 6'), findsOneWidget);
     handle.dispose();
+  });
+
+  testWidgets('the chevron GLYPH sits on the content gutter and Skip stands '
+      'off the trailing edge', (tester) async {
+    await tester.pumpWidget(
+      _wrap(_header(onBack: () {}, onSkip: () {}, skipLabel: 'Skip')),
+    );
+    await tester.pumpAndSettle();
+
+    final row = tester.getRect(find.byType(OnboardingStepHeader));
+    final target = tester.getRect(find.byIcon(LucideIcons.chevronLeft300));
+    expect(target.left - row.left, WordmarkBar.rowInset);
+    // The 44pt target carries 10pt of slack around its 24pt glyph, so the ink
+    // starts at 14 — optically the 24pt gutter the bar and the title use,
+    // where insetting the ROW by 24 would have put it at 34.
+    expect(
+      target.left - row.left + (KalloIcons.hit - KalloIcons.primary) / 2,
+      WordmarkBar.rowInset + 10,
+    );
+    // Skip's label stands 16 off the edge; the slack it stands on is tappable.
+    expect(row.right - tester.getRect(find.text('Skip')).right, 16);
   });
 }

@@ -751,14 +751,17 @@
     "goal": {
       "title": "Your goal",
       "paceLabel": "Pace",
-      "paceReadout": "{pace} kg a week · {kcal} kcal {direction}",
+      "paceHero": "{pace} kg a week",
+      "paceNote": "{kcal} kcal {direction}",
+      "paceMaintaining": "No pace to set while maintaining",
       "paceDeficit": "deficit",
       "paceSurplus": "surplus",
       "paceLow": "Gentle",
       "paceHigh": "Aggressive"
     },
     "target": {
-      "title": "Your daily target"
+      "title": "Your daily target",
+      "fillMissing": "Add my measurements"
     }
   },
   "auth": {
@@ -802,6 +805,9 @@
       "continueWithGoogle": "Continue with Google",
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again."
+    },
+    "email": {
+      "or": "or"
     },
     "forgot": {
       "title": "Reset your password",

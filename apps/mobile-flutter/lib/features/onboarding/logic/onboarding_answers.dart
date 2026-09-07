@@ -8,6 +8,8 @@
 library;
 
 import '../../../models/profile/onboarding.dart';
+import '../../../shared/data/countries.dart';
+import '../../../shared/logic/bmi.dart';
 import '../../../shared/logic/tdee.dart';
 import '../data/screen_two_values.dart';
 
@@ -22,6 +24,11 @@ const ({num min, num max}) kAgeRange = (min: 13, max: 100);
 /// 100 yr sedentary cut computes a NEGATIVE target, and the server clamps only
 /// the calories, so the negative macro grams would be stored as sent.
 const double kCalorieFloor = 500;
+
+/// One of the four inputs the TDEE maths needs before screen 6 can show a
+/// number. Named rather than counted so the screen that collects a missing one
+/// is looked UP instead of hard-coded — see `screenForMissingTargetInputs`.
+enum TargetInput { biologicalSex, weightKg, heightCm, age }
 
 class OnboardingAnswers {
   OnboardingAnswers({
@@ -55,6 +62,34 @@ class OnboardingAnswers {
   double? deficitOverride;
   CookingHabits cooking;
 
+  /// True once the user has TAPPED a goal on screen 4. NOT persisted and not
+  /// posted: it only says whether [goal] is still ours to move.
+  bool goalChosenByUser = false;
+
+  // ── Default goal ────────────────────────────────────────────────────────
+
+  /// Re-derives [goal] from the body's BMI while the user has not picked one
+  /// themselves. Called on every answer change, so a weight typed on screen 3
+  /// is already reflected in the preselection on screen 4.
+  ///
+  /// Incomplete or out-of-range metrics leave [goal] where it is — the wizard
+  /// default (maintaining) unless a saved answer seeded it.
+  void applyDefaultGoal() {
+    if (goalChosenByUser) return;
+    if (!metricsValid) return;
+    final value = bmi(weightKg: weightKg, heightCm: heightCm);
+    if (value == null) return;
+    goal = defaultGoalForBmi(value, asianOrigin: _asianOrigin);
+  }
+
+  /// Read off the country of ORIGIN, not residence: the action point tracks
+  /// the body, and a Vietnamese cook in Berlin still has a Vietnamese one.
+  bool get _asianOrigin {
+    final origin = countryOfOrigin;
+    if (origin == null) return false;
+    return countryForValue(origin)?.isAsian ?? false;
+  }
+
   // ── Validation ──────────────────────────────────────────────────────────
   // A BLANK field is not an error — screen 6 offers the unlock card instead of
   // a number. Only a value OUT OF RANGE blocks Continue: it cannot be stored.
@@ -68,6 +103,15 @@ class OnboardingAnswers {
 
   bool get metricsValid =>
       !weightOutOfRange && !heightOutOfRange && !ageOutOfRange;
+
+  /// Which of [TargetInput] screen 6 is still waiting on. Empty ⇒ every input
+  /// is there (though one may still be out of range — see [metricsValid]).
+  Set<TargetInput> get missingTargetInputs => {
+    if (biologicalSex == null) TargetInput.biologicalSex,
+    if (weightKg == null) TargetInput.weightKg,
+    if (heightCm == null) TargetInput.heightCm,
+    if (age == null) TargetInput.age,
+  };
 
   /// Every field the TDEE maths needs is present AND in range.
   bool get hasTargets =>

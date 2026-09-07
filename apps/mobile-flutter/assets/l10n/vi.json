@@ -751,14 +751,17 @@
     "goal": {
       "title": "Mục tiêu của bạn",
       "paceLabel": "Tốc độ",
-      "paceReadout": "{pace} kg mỗi tuần · {kcal} kcal {direction}",
+      "paceHero": "{pace} kg mỗi tuần",
+      "paceNote": "{kcal} kcal {direction}",
+      "paceMaintaining": "Giữ cân thì không cần tốc độ",
       "paceDeficit": "thâm hụt",
       "paceSurplus": "dư thừa",
       "paceLow": "Nhẹ nhàng",
       "paceHigh": "Quyết liệt"
     },
     "target": {
-      "title": "Mục tiêu mỗi ngày"
+      "title": "Mục tiêu mỗi ngày",
+      "fillMissing": "Thêm số đo của tôi"
     }
   },
   "auth": {
@@ -802,6 +805,9 @@
       "continueWithGoogle": "Tiếp tục với Google",
       "orContinueWithEmail": "hoặc tiếp tục với email",
       "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại."
+    },
+    "email": {
+      "or": "hoặc"
     },
     "forgot": {
       "title": "Đặt lại mật khẩu",

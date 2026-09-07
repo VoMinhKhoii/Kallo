@@ -4,6 +4,7 @@
 library;
 
 import '../data/constants.dart';
+import 'onboarding_answers.dart';
 
 /// The first WIZARD screen of a server step: 1 → 1, 2 → 3, 3 → 5.
 ///
@@ -32,3 +33,23 @@ int? onboardingServerStepForScreen(int screen) => switch (screen) {
 /// screen reached, clamped into the wizard.
 int onboardingScreenForDraft(int screenReached) =>
     (screenReached + 1).clamp(1, kOnboardingScreenCount);
+
+/// The screen that collects a given [TargetInput] — where screen 6's "Add my
+/// measurements" jumps back to. All four live on screen 3 today; the mapping
+/// is written out so moving one to another screen moves the button with it.
+int onboardingScreenForTargetInput(TargetInput input) => switch (input) {
+  TargetInput.biologicalSex ||
+  TargetInput.weightKg ||
+  TargetInput.heightCm ||
+  TargetInput.age => 3,
+};
+
+/// The EARLIEST screen that would fill anything screen 6 is missing. Falls
+/// back to screen 3 when nothing is missing (the button is not shown then).
+int screenForMissingTargetInputs(OnboardingAnswers answers) {
+  final screens = answers.missingTargetInputs
+      .map(onboardingScreenForTargetInput)
+      .toList()
+    ..sort();
+  return screens.isEmpty ? 3 : screens.first;
+}

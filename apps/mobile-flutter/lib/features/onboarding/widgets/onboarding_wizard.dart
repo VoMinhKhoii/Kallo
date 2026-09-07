@@ -10,7 +10,9 @@ import '../data/onboarding_draft.dart';
 import '../data/profile_row.dart';
 import '../logic/onboarding_answers.dart';
 import '../logic/onboarding_seed.dart';
+import '../logic/onboarding_step_spec.dart';
 import '../logic/region_defaults.dart';
+import '../logic/resume_screen.dart';
 import '../providers/onboarding_draft_providers.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/step_about_you.dart';
@@ -48,17 +50,14 @@ class OnboardingWizard extends ConsumerStatefulWidget {
   ConsumerState<OnboardingWizard> createState() => _OnboardingWizardState();
 }
 
-const Map<int, String> _titles = {
-  1: 'onboarding.language.title',
-  2: 'onboarding.origin.stepTitle',
-  3: 'onboarding.aboutYou.title',
-  4: 'onboarding.goal.title',
-  5: 'onboarding.cooking.title',
-  6: 'onboarding.target.title',
-};
-
 class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   int? _screen;
+
+  /// Which way the content region sweeps: +1 forward, -1 on a Back. Held
+  /// across the frame the screen changes on, since the outgoing content has to
+  /// leave the way the incoming one arrives.
+  int _direction = 1;
+
   OnboardingAnswers? _answers;
   OnboardingDeviceHints? _device;
   bool _busy = false;
@@ -118,15 +117,25 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      if (screen < kOnboardingScreenCount) _screen = screen + 1;
+      if (screen < kOnboardingScreenCount) {
+        _direction = 1;
+        _screen = screen + 1;
+      }
     });
     if (screen >= kOnboardingScreenCount) widget.onComplete();
   }
 
   void _back(int screen) {
     if (screen <= 1) return widget.onClose?.call();
-    setState(() => _screen = screen - 1);
+    _goBackTo(screen - 1);
   }
+
+  /// Jumps BACKWARD to an earlier screen — the Back sweep, whether the user
+  /// used the chevron or screen 6's "Add my measurements".
+  void _goBackTo(int screen) => setState(() {
+        _direction = -1;
+        _screen = screen;
+      });
 
   /// Whether every source the seed reads has ANSWERED. The seed resolves once,
   /// so seeding off a source that has not landed yet sticks for the session.
@@ -189,16 +198,13 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     }
 
     final screen = _screen!;
-    final last = screen >= kOnboardingScreenCount;
-    final blocked = _busy || (screen == 3 && !_answers!.metricsValid);
+    final spec = _spec(screen);
+    final blocked = _busy || !spec.ctaEnabled;
 
     return OnboardingStepScaffold(
-      // Keyed by screen: each one gets a fresh scroll position and fresh field
-      // controllers instead of inheriting the last screen's.
-      key: ValueKey(screen),
       screen: screen,
-      title: tr(_titles[screen]!),
-      ctaLabel: tr(last ? 'onboarding.savePlan' : 'onboarding.continueLabel'),
+      spec: spec,
+      direction: _direction,
       busy: _busy,
       onContinue: blocked ? null : () => _leave(screen, skip: false),
       onBack:
@@ -206,30 +212,37 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
               ? null
               : (_busy ? null : () => _back(screen)),
       onSkip: screen == 1 || _busy ? null : () => _leave(screen, skip: true),
-      child: _body(screen),
     );
   }
 
-  Widget _body(int screen) {
+  /// Each screen owns its own title, body and CTA contract; the scaffold owns
+  /// everything around them.
+  OnboardingStepSpec _spec(int screen) {
     final answers = _answers!;
     final device = _device!;
-    void changed() => setState(() {});
+    // One place re-derives the default goal, so a metric typed on screen 3 is
+    // already reflected in screen 4's preselection.
+    void changed() => setState(answers.applyDefaultGoal);
     return switch (screen) {
-      1 => StepLanguage(
+      1 => stepLanguageSpec(
         answers: answers,
         deviceLanguage: device.deviceLanguage,
         localeFromDevice: device.localeFromDevice,
         onChanged: changed,
       ),
-      2 => StepOrigin(
+      2 => stepOriginSpec(
         answers: answers,
         deviceCountry: device.deviceCountry,
         onChanged: changed,
       ),
-      3 => StepAboutYou(answers: answers, onChanged: changed),
-      4 => StepGoal(answers: answers, onChanged: changed),
-      5 => StepCooking(answers: answers, onChanged: changed),
-      _ => StepTarget(answers: answers, onChanged: changed),
+      3 => stepAboutYouSpec(answers: answers, onChanged: changed),
+      4 => stepGoalSpec(answers: answers, onChanged: changed),
+      5 => stepCookingSpec(answers: answers, onChanged: changed),
+      _ => stepTargetSpec(
+        answers: answers,
+        onChanged: changed,
+        onFillMissing: () => _goBackTo(screenForMissingTargetInputs(answers)),
+      ),
     };
   }
 }
