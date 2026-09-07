@@ -38,6 +38,24 @@ The workflows in `.github/workflows/` assume:
   `NEXT_PUBLIC_SUPABASE_URL` and
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
+## Apple push notifications
+
+Production uses a topic-specific APNs key for `com.khoivo.nham` under team
+`ZNG57U88R5`. The private `.p8` is stored in Secret Manager as
+`kallo-prod-apns-key-p8`; the non-secret key ID is the GitHub repository variable
+`APNS_KEY_ID`. Never commit the private key or put it in a client build.
+
+The production workflow validates both settings and injects `APNS_KEY_P8`,
+`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, and `APNS_PRODUCTION=true`.
+Create the secret with an enabled version accessible to the runtime service
+account before deploying this workflow. When rotating the key, update the secret
+version and repository variable together, then deploy.
+
+TestFlight and App Store builds use production APNs. Local Debug builds require
+an independently configured sandbox key and `APNS_PRODUCTION=false`; do not use
+the production-only key for local sandbox delivery. Apple capability and signing
+profile requirements are in [mobile releasing](../apps/docs/mobile/releasing.md#push-notifications-apns--what-ci-cannot-do-for-you).
+
 ## Preview database modes (Disabled by default)
 
 Automatic PR previews are currently disabled, but the preview workflow still
@@ -81,6 +99,7 @@ Create or confirm these resources:
   - `kallo-prod-revenuecat-webhook-secret`
   - `kallo-prod-resend-api-key`
   - `kallo-prod-send-email-hook-secret`
+  - `kallo-prod-apns-key-p8`
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
