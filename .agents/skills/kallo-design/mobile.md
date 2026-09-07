@@ -402,6 +402,66 @@ destroyed the whole `TimelineStrip` — `PageController`, paged-to week and all 
 inside an animation frame. Keep both layers mounted, key them, and gate
 hit-testing with `IgnorePointer`.
 
+## Platform — Cupertino wherever it exists
+
+**Where Flutter ships a Cupertino widget or behaviour for the thing you are
+building, use it.** Kallo is an iOS-first product, and Material's three tells —
+the ink ripple, the spinning arc, the bottom-up page transition — are what make
+an app read as "a Flutter app" rather than as an app. None of them is a taste
+call the design system gets to make differently per surface.
+
+This rule mostly *describes* what the app already does: routes push
+`CupertinoPage`, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
+is a Cupertino alert, the long-press menu is `CupertinoContextMenu`, the switch
+is `Switch.adaptive`. It had never been written down, so every new surface
+re-decided from scratch — which is how 17 Material spinners accumulated under a
+Cupertino navigation stack.
+
+| Instead of | Use | State |
+|------------|-----|-------|
+| `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
+| `MaterialPageRoute` | `CupertinoPageRoute` / `CupertinoPage` | 1 site left (`auth/widgets/email_auth_form.dart`) |
+| `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
+| `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
+| `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
+| `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
+| `Switch` | `Switch.adaptive`, via `KalloSwitch` | ✅ done |
+| long-press menu | `CupertinoContextMenu` | ✅ done |
+| `Slider` | `CupertinoSlider` | 3 sites — but see *the design system wins*, below |
+| `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
+| a date/time picker | `CupertinoDatePicker` | none in the app yet; use it when one is needed |
+
+### Where Cupertino stops
+
+The rule is "prefer Cupertino to Material", not "be a Cupertino app". Three
+boundaries, each of which has already cost a bug when crossed:
+
+1. **The app stays on `MaterialApp`.** Every token this document defines hangs
+   off `ThemeData` — the text theme, `InputDecorationTheme`, `dialogTheme`,
+   `popupMenuTheme` — and `TextField` / `InkWell` descendants need a `Material`
+   ancestor to resolve at all (`kallo_screen.dart` mounts a transparent one for
+   exactly this). `CupertinoApp` would throw all of that away to gain nothing
+   the widget-level choice does not already give. Cupertino is used at the
+   **widget** level.
+
+2. **The design system wins on look; the platform wins on behaviour.** Take
+   Cupertino's anatomy, gestures and timing — then override anything that
+   carries SF Pro, system blue, or a frosted surface. The type is always Be
+   Vietnam Pro and the palette is always this document's. `kallo_confirm.dart`
+   is the worked example: a 270pt iOS alert with stacked full-width actions and
+   0.5pt hairlines, wearing the app's type, the app's scrim, and — since
+   2026-09-07 — a **solid** card in place of `CupertinoPopupSurface`'s
+   translucent one, because "solid surfaces, no stacked translucency" is a
+   system rule that outranks the platform default. The same reasoning is why
+   the three `Slider`s are a *maybe*: `CupertinoSlider` has no themable track,
+   so adopting it would trade a themed control for a system-blue one.
+
+3. **A widget the app already owns beats both.** `TopToast` over `SnackBar`
+   *and* over anything Cupertino; `KalloSheet` over `showModalBottomSheet` and
+   `CupertinoActionSheet` alike; `KalloConfirmActions` over
+   `CupertinoAlertDialog`'s side-by-side buttons. Reach for Cupertino when the
+   app has no answer of its own — never to replace one it has already made.
+
 ## Reference implementation (source of truth)
 
 `apps/mobile-flutter/lib/theme/calm_tokens.dart` —
@@ -422,13 +482,27 @@ mobile UI — no longer provisional.
 | **Feedback** | ✅ | uses the 12px default | |
 | **Shell / pill nav** | ✅ | `KalloSpacing` + `kNav*` tokens | drawer/hamburger retired 2026-08-31; Log pushes full-screen |
 | **Circle** | ✅ (2026-09-02) | 12px root inset | feed, invite, share and group widgets all on `dash*` |
-| **Nutrition** | ✅ (2026-09-02) | 12px root inset | |
+| **Nutrition** | ✅ (2026-09-02) | 12px root inset | micronutrients are a bordered 2-col grid (see `DESIGN_SYSTEM.md`, *Grid cells*) |
 | **Logging `sheets/`** | ✅ (2026-09-02) | — | barcode + manual sheets ported; no `KalloText` left |
 | **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
 
 `kallo_text.dart` / `KalloTextVariant` and `KalloTextStyles` sizes now survive
 only on the light-touch narrative surfaces (auth, onboarding, paywall) and in
 a few shared form internals; do not add new call sites.
+
+### Cupertino migration (open, 2026-09-07)
+
+The platform rule above was written down after the fact, so it starts with a
+backlog. None of it is blocking — every item renders correctly today, it just
+renders as Material.
+
+| Item | Sites | Notes |
+|------|-------|-------|
+| `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
+| `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold |
+| arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
+| `MaterialPageRoute` → `CupertinoPageRoute` | 1 | `auth/widgets/email_auth_form.dart` — the only route in the app that does not slide |
+| `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
 
 ### Two app-wide changes worth remembering
 

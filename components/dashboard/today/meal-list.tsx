@@ -6,12 +6,14 @@ import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { formatTime } from '@/lib/core/date/format-time';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { MealEntry } from '@/lib/core/types/dashboard';
 
 interface MealListProps {
   meals: MealEntry[];
 }
 
+/** Today's logged meals, newest first, or the empty surface when none. */
 export function MealList({ meals }: MealListProps) {
   const t = useTranslations('dashboard');
 
@@ -59,6 +61,7 @@ export function MealList({ meals }: MealListProps) {
   );
 }
 
+/** One meal: capitalised label, time, composition bar and macro figures. */
 function MealRow({ meal }: { meal: MealEntry }) {
   const locale = useLocale();
   // Spelled once: the bar and the figures under it read the same record.
@@ -72,8 +75,11 @@ function MealRow({ meal }: { meal: MealEntry }) {
   return (
     <div className="flex flex-col gap-1 py-3">
       <div className="flex items-baseline justify-between gap-3">
+        {/* Capitalised at the render site, as the Flutter MealBlock does: the
+            label is the user's raw composer input, and it has to stay raw for
+            editing and re-logging. */}
         <span className="line-clamp-2 min-w-0 font-medium text-[15px] text-kallo-text leading-[1.45]">
-          {meal.label}
+          {capitalizeFirst(meal.label)}
         </span>
         <time
           className="shrink-0 text-kallo-text-muted text-xs tabular-nums"

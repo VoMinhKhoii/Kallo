@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 
 /// The logging feed's ONE vertical rhythm. Every gap on the tab resolves to one
@@ -46,18 +47,22 @@ abstract final class LoggingSpacing {
   /// layer and its expanded day row share this height, or the morph pushes the
   /// feed as it runs. ONE number, because the two layers must agree exactly.
   ///
-  /// Sized to the content at 1.0x: a day cell stacks weekday (Meta 14 →
-  /// 17.5), day number (Body 16 → 20.8), the meal dot (6) and two 2pt gaps
-  /// inside 4pt of vertical padding — 56.3 in total. 58 leaves 1.7 of slack on
-  /// the 2px grid (60 → 58 with the metric-compensated ramp, 2026-09-02; 56
-  /// would overflow by 0.3 and throw). Re-derive this sum whenever Body or
-  /// Meta moves, and prefer [stripFor] in layout: only the two text lines
-  /// grow with Dynamic Type, and at the 1.3x cap they overflowed this constant
-  /// by 10pt.
-  static const double strip = 58;
+  /// Sized to the content at 1.0x: a day cell stacks weekday (Meta), day
+  /// number (Body), the meal dot (6) and two 2pt gaps inside 4pt of vertical
+  /// padding, rounded up to the 2px grid. DERIVED from the type tokens, not
+  /// copied: this number was re-derived by hand three times (60 → 58 → 60)
+  /// and each move was found by a 1px overflow rather than by a reader. Now a
+  /// leading change moves the strip in the same edit that moves the type.
+  /// Prefer [stripFor] in layout: only the two text lines grow with Dynamic
+  /// Type, and at the 1.3x cap they overflowed the constant by 10pt.
+  static final double strip =
+      ((_stripText + _stripChrome) / 2).ceilToDouble() * 2;
+
+  /// Everything in the cell that is NOT text: 4+4 padding, 2+2 gaps, the dot.
+  static const double _stripChrome = 18;
 
   /// The text lines inside [strip] — the only part Dynamic Type scales.
-  static const double _stripText = 17.5 + 20.8;
+  static const double _stripText = kDashMetaLine + kDashBodyLine;
 
   /// [strip] at the ambient text scale: the fixed chrome (padding, gaps, dot,
   /// slack) plus the two text lines scaled. Equals [strip] at 1.0x.
@@ -88,9 +93,10 @@ abstract final class LoggingSpacing {
   /// Measured down from the card's top edge: 0 + the field's own 8pt
   /// `contentPadding.top` = 8 to the text. Measured up from the bottom edge: 4
   /// + the (44 − 32) / 2 = 6 the send target carries under its circle = 10. The
-  /// 2pt of difference is the half-leading `dashBody` (16 × 1.3) hangs above
-  /// its glyphs, so 8 and 10 land optically level; bottom 6 (→ 12) sat visibly
-  /// low.
+  /// 2pt of difference is covered by the half-leading `dashBody` hangs above
+  /// its glyphs — (16 × 1.45 − 16) / 2 ≈ 3.6 since the leading moved on
+  /// 2026-09-07, 2.4 before it — so 8 and 10 land optically level; bottom 6
+  /// (→ 12) sat visibly low.
   ///
   /// Count every inset in the stack before setting the outermost one; a
   /// control-dense card needs less than a text-only one to land in the same

@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
@@ -13,14 +14,20 @@ class FeedEntryActions extends ConsumerStatefulWidget {
   const FeedEntryActions({
     required this.entry,
     required this.onReply,
+    this.scope,
     super.key,
   });
 
   final CircleFeedEntry entry;
 
+  /// The feed this post was read from, passed to the reaction mutation so the
+  /// heart lands in THIS feed's cache even when the Circle tab has another
+  /// one selected.
+  final String? scope;
+
   /// Opens the reply composer. Reply lives in this row rather than under the
   /// replies list so that all three affordances read as one interaction
-  /// system; [ShareReplies] owns the composer itself.
+  /// system; the thread page's `ThreadComposer` owns the composer itself.
   final VoidCallback onReply;
 
   @override
@@ -35,7 +42,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     if (_toggling) return;
     setState(() => _toggling = true);
     try {
-      await toggleShareReaction(ref, widget.entry.meal.shareId);
+      await toggleShareReaction(
+        ref,
+        widget.entry.meal.shareId,
+        scope: widget.scope,
+      );
     } catch (_) {
       if (mounted) {
         showTopToast(
@@ -78,7 +89,14 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     // column and the glyph sits flush with the meal text above, which is what
     // the canvas' -12 left margin buys. The box still extends its full width
     // to the right, so nothing is taken off the target to get there.
-    return Row(
+    //
+    // A [Wrap], not a [Row]: the three targets are fixed-width boxes around
+    // text ("Log this too", the heart's count), so at a large text scale on a
+    // narrow screen they add up past the content column and a Row CLIPS the
+    // third one — content that cannot be seen. Wrapping drops it to a second
+    // line instead. At every normal width this lays out identically.
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Semantics(
           label: tr('groups.feed.heart'),
@@ -88,6 +106,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
             onTap: _toggling ? null : _toggle,
             icon: LucideIcons.heart300,
             fill: reactions.mine ? 1 : 0,
+            // The swipe-to-delete red, reused rather than minted: it is the
+            // palette's one red, and a hearted post has to look hearted from
+            // across the row. The count beside it stays on the action ink, so
+            // the row keeps a single voice.
+            activeColor: KalloColors.danger,
             label: '${reactions.count}',
             alignment: Alignment.centerLeft,
           ),

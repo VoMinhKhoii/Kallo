@@ -589,7 +589,8 @@
       "row": {
         "expand": "Expand {nutrient}",
         "collapse": "Collapse {nutrient}"
-      }
+      },
+      "met": "target met"
     },
     "background": {
       "eyebrow": "In the background",
@@ -1521,7 +1522,16 @@
       "reply": "Reply",
       "replyPlaceholder": "Reply…",
       "replyError": "Couldn't post your reply. Try again.",
-      "earlierReplies": "{count} earlier replies",
+      "earlierReplies": {
+        "one": "{count} earlier reply not shown",
+        "other": "{count} earlier replies not shown"
+      },
+      "threadTitle": "Replies",
+      "viewThread": "View thread · {count} replies",
+      "noReplies": "No replies yet",
+      "noRepliesBody": "Be the first to say something.",
+      "threadGone": "This post isn't here any more",
+      "threadGoneBody": "It may have been removed, or it's older than the meals loaded here.",
       "portion": "{portion} portion",
       "logCopy": "Log this too",
       "logSuccess": "Added to today's diary",

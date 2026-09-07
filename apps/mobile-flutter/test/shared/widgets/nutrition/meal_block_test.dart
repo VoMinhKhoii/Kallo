@@ -42,12 +42,12 @@ void main() {
       ),
     );
 
-    expect(find.text('phở bò tái'), findsOneWidget);
+    expect(find.text('Phở bò tái'), findsOneWidget);
     for (final label in ['P 30g', 'C 50g', 'F 12g']) {
       expect(find.text(label), findsOneWidget);
     }
     final kcal = tester.getRect(find.text('480 kcal'));
-    final title = tester.getRect(find.text('phở bò tái'));
+    final title = tester.getRect(find.text('Phở bò tái'));
     expect(kcal.center.dy, closeTo(title.center.dy, title.height),
         reason: 'titleRight placement keeps kcal on the title line');
   });
@@ -91,7 +91,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('mystery meal'), findsOneWidget);
+    expect(find.text('Mystery meal'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -182,7 +182,7 @@ void main() {
     );
 
     final detail = tester.getRect(find.text('per-dish detail'));
-    final title = tester.getRect(find.text('expanded card'));
+    final title = tester.getRect(find.text('Expanded card'));
     final legend = tester.getRect(find.text('P 30g'));
 
     expect(detail.top, greaterThan(title.top),

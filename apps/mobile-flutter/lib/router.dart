@@ -11,6 +11,7 @@ import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
 import 'features/circle/screens/circle_screen.dart';
+import 'features/circle/screens/circle_thread_screen.dart';
 import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
@@ -26,9 +27,8 @@ import 'features/settings/screens/settings_screen.dart';
 import 'router_redirect.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/route_error_screen.dart';
-import 'shared/widgets/brand/kallo_wordmark.dart';
+import 'shell/splash_screen.dart';
 import 'shell/tab_scaffold.dart';
-import 'theme/kallo_colors.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -89,7 +89,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Index — pure redirect target (resolved above). A bare splash so there's
       // a frame to render while the redirect computes.
-      GoRoute(path: '/', builder: (context, state) => const _SplashScreen()),
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
 
       // The signed-out entry: brand, a preview of the Log screen, and the two
       // ways in (start the wizard, or sign in to an existing account).
@@ -187,6 +187,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder:
             (context, state) =>
                 const CupertinoPage<void>(child: LoggingScreen()),
+      ),
+
+      // One Circle post and its replies, pushed over the shell from the feed's
+      // reply glyph. `scope` names the feed the post was read from (absent =
+      // the combined friends feed): the page reads its entry out of that
+      // feed's live cache, since no endpoint fetches a single share.
+      GoRoute(
+        path: '/circle/thread/:shareId',
+        parentNavigatorKey: _rootKey,
+        pageBuilder:
+            (context, state) => CupertinoPage<void>(
+              child: CircleThreadScreen(
+                shareId: state.pathParameters['shareId'] ?? '',
+                scope: state.uri.queryParameters['scope'],
+                autofocusComposer: state.uri.queryParameters['compose'] == '1',
+              ),
+            ),
       ),
 
       // The pill-nav destinations — each its own branch so state/scroll
@@ -318,63 +335,5 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
   void dispose() {
     _sub.cancel();
     super.dispose();
-  }
-}
-
-/// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the [KalloWordmark] breathing gently on the cream
-/// surface, instead of a generic Material spinner. The cream background matches
-/// the native LaunchScreen so the native→Flutter handoff is seamless.
-class _SplashScreen extends StatefulWidget {
-  const _SplashScreen();
-
-  @override
-  State<_SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<_SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    // Gentle breathing pulse, paused under reduced-motion.
-    if (!WidgetsBinding
-        .instance
-        .platformDispatcher
-        .accessibilityFeatures
-        .disableAnimations) {
-      _controller.repeat(reverse: true);
-    } else {
-      _controller.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // The drawn mark, not a serif setting of the word — the wordmark IS the
-    // brand's one typographic voice and Lora no longer speaks for it.
-    const wordmark = KalloWordmark(height: 26);
-    return ColoredBox(
-      color: KalloColors.surface,
-      child: Center(
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
-          child: wordmark,
-        ),
-      ),
-    );
   }
 }

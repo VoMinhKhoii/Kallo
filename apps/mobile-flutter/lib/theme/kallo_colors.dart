@@ -161,6 +161,11 @@ abstract final class KalloColors {
   /// system. Warm washes stay warm where they cover something lighter.
   static const Color pressWash = Color(0x0F141413); // ink @ 6%
 
+  /// The app's one modal scrim — black at 50%, behind dialogs and the nav
+  /// drawer, and what the web dialog paints. Named because it was written
+  /// twice (the theme and the alert surface) and could have drifted.
+  static const Color scrim = Color(0x80000000);
+
   /// Press wash for controls sitting on an INK surface — the muted-grey band
   /// ([bandSurface]) the relog picker and the under-logged notice paint.
   ///

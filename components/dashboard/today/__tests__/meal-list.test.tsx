@@ -65,7 +65,12 @@ describe('MealList', () => {
     // The row used to squeeze to one line at xl, which clipped the tail off a
     // dish name. With the gauge column bounded there is room for the Circle
     // feed's own rhythm, at one density.
-    const name = screen.getByText(label);
+    // The row capitalises what it prints. A literal, not the helper applied to
+    // the fixture: computing the expectation with the function under test
+    // would let a regression in it pass here unseen.
+    const name = screen.getByText(
+      'Cơm tấm + 1 đùi góc tư nướng bỏ da + mắm + đồ chua'
+    );
     expect(name).toHaveClass('line-clamp-2');
     expect(name.className).not.toContain('xl:');
     expect(screen.getByTestId('meal-list-scroll')).toHaveClass(

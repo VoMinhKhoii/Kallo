@@ -21,7 +21,7 @@ describe('ShareReplies', () => {
 
     expect(screen.getByText('17 earlier replies')).toHaveClass(
       'text-[12px]',
-      'text-[#6E6D66]'
+      'text-kallo-text-muted'
     );
   });
 

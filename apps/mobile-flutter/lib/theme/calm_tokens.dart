@@ -111,12 +111,33 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
       fontFeatures: _tnum,
     );
 
+/// The Body and Meta tiers' size and leading, published as constants so a
+/// layout that must reserve a line of either derives the box from the token
+/// instead of copying its product. Every hand-copied line box in the app's
+/// history (the week strip, the gram field) rotted the next time one of these
+/// moved — three times, each found by a 1px overflow rather than by reading
+/// a doc that said "re-derive this".
+const double kDashBodySize = 16;
+const double kDashBodyLeading = 1.45;
+const double kDashBodyLine = kDashBodySize * kDashBodyLeading; // 23.2
+const double kDashMetaSize = 14;
+const double kDashMetaLeading = 1.25;
+const double kDashMetaLine = kDashMetaSize * kDashMetaLeading; // 17.5
+
 /// 16 / 400·500 — the app's reading size: meal names, post bodies, list-row
 /// labels, composer input, button labels.
 ///
 /// Metric-compensated (2026-09-02): SF 17 → BVP 16 by cap height, with −0.2
-/// tracking against the wider advance. Leading 1.3 (~21pt) keeps the Threads
-/// relationship — enough air for a two-line wrap without a paragraph feel.
+/// tracking against the wider advance.
+///
+/// Leading 1.45 (~23pt), up from 1.3 (2026-09-07). 1.3 was set against a
+/// one-line reading of this tier, and every surface that actually wraps —
+/// a two-line meal name in Recent meals, a Circle post body, a reply — came
+/// out cramped, the descenders of one line sitting on the caps of the next.
+/// 1.45 is also what web already sets on the same three surfaces
+/// (`components/dashboard/today/meal-list.tsx`,
+/// `components/groups/feed-entry.tsx`), so the two platforms now agree on
+/// what the reading tier looks like. Still short of a paragraph's 1.6.
 /// Regular. [weight] exists for the API; in practice nothing on the reading
 /// surfaces passes it any more (2026-09-02): BVP Medium reads semibold, and
 /// weight is reserved for titles and names ([kPageTitle], [kSectionHeader],
@@ -128,9 +149,9 @@ TextStyle dashBody({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 16,
+      fontSize: kDashBodySize,
       fontWeight: weight,
-      height: 1.3,
+      height: kDashBodyLeading,
       letterSpacing: -0.2,
       color: color,
       fontFeatures: tabular ? _tnum : null,
@@ -171,9 +192,9 @@ TextStyle dashMeta({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 14,
+      fontSize: kDashMetaSize,
       fontWeight: weight,
-      height: 1.25,
+      height: kDashMetaLeading,
       letterSpacing: -0.1,
       color: color,
       fontFeatures: tabular ? _tnum : null,

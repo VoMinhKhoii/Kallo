@@ -14,8 +14,10 @@ import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import { cn } from '@/lib/core/ui/cn';
 
+/** A portion factor as the glyph people read (½, ⅓, ¼), else a percentage. */
 function fractionLabel(factor: number): string {
   if (Math.abs(factor - 0.5) < 0.001) return '½';
   if (Math.abs(factor - 1 / 3) < 0.001) return '⅓';
@@ -53,26 +55,26 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
       <ProfileAvatar avatarUrl={friend.avatarUrl} label={label} />
       <div className="min-w-0 flex-1">
         <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
-          <b className="font-bold font-sans-display text-[#141413] text-[15px]">
+          <b className="font-bold font-sans-display text-[15px] text-kallo-text">
             {label}
           </b>
           {/* A backfilled meal (logged for a past date) is shared "now", so its
               elapsed time would misleadingly read "just now" — hide it. */}
           {!meal.isBackfilled && (
-            <span className="font-sans-display text-[#6E6D66] text-[15px]">
+            <span className="font-sans-display text-kallo-text-muted text-[15px]">
               {formatElapsed(meal.sharedAt, locale)}
             </span>
           )}
           {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-[#E8E6DC]/60 px-2 py-px font-medium font-sans-display text-[#6E6D66] text-[10px]">
+            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-kallo-text-muted text-[10px]">
               {t('portion', {
                 portion: fractionLabel(meal.portionFactor),
               })}
             </span>
           )}
         </div>
-        <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
-          {meal.rawInput}
+        <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
+          {capitalizeFirst(meal.rawInput)}
         </p>
         {hasNutrition && (
           <div className="mt-2.5 flex flex-col gap-1">
@@ -80,8 +82,8 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 word. Body weight, not the meal name's: at a larger size the
                 figure outweighed the dish above it, which puts the post's
                 focus back on the number this vocabulary took it off. */}
-            <span className="font-sans-display text-[#6E6D66] text-[11px]">
-              <span className="font-medium text-[#141413] text-[13px] tabular-nums">
+            <span className="font-sans-display text-kallo-text-muted text-[11px]">
+              <span className="font-medium text-[13px] text-kallo-text tabular-nums">
                 {meal.caloriesKcal == null
                   ? '—'
                   : Math.round(meal.caloriesKcal)}
@@ -97,7 +99,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             <MacroScale grams={grams} />
           </div>
         )}
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">
+        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-kallo-text-muted text-[11.5px] tabular-nums">
           <button
             type="button"
             aria-label={t('heart')}
@@ -106,13 +108,20 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             onClick={() => toggleReaction.mutate(meal.shareId)}
             className={cn(
               'inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
-              entry.reactions.mine && 'text-[#141413]'
+              entry.reactions.mine && 'text-kallo-text'
             )}
           >
+            {/* A hearted post has to look hearted from across the row; at
+                ink it was the same near-black as the glyph beside it. The
+                request was "red filled", and each platform satisfies it out of
+                its OWN palette — mobile's `danger` (#D11A1A), web's
+                `--kallo-danger` (terracotta). Web bans pure red outright, so a
+                literal #D11A1A here was mobile's token smuggled onto the web
+                canvas, not a shared value. */}
             <Heart
               className={cn(
                 'size-[15px]',
-                entry.reactions.mine && 'fill-[#141413]'
+                entry.reactions.mine && 'fill-kallo-danger text-kallo-danger'
               )}
             />
             <span>{entry.reactions.count}</span>
@@ -127,7 +136,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                   if (!requirePremium('copy_split')) return;
                   logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
                 }}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text disabled:opacity-50"
               >
                 <Copy className="size-[15px]" />
                 <span>{t('logCopy')}</span>

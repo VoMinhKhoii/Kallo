@@ -1,10 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+
+import '../../l10n_test_loader.dart';
 
 typedef Request = ({String method, String path, Object? body});
 typedef RequestHandler = FutureOr<Object?> Function(Request request);
@@ -139,6 +142,44 @@ Future<SharedMealFeedState> mountFeed(
   final provider = sharedMealFeedProvider(scope);
   holdProvider(container, provider);
   return container.read(provider.future);
+}
+
+/// The friends feed invalidates the read marker on every load, so a handler
+/// that only knows the feed path makes that request retry three times and
+/// pollute the request log. Answer it and move on.
+Object? readMarker(Request request) =>
+    request.path == '/api/v1/groups/friends/read-marker'
+        ? {'lastReadAt': '2026-07-18T00:00:00.000Z'}
+        : unexpectedRequest(request);
+
+/// Mounts [child] as a screen under the app's l10n and a [ProviderScope]
+/// answering with [api], and settles it.
+Future<void> pumpCircleScreen(
+  WidgetTester tester,
+  Widget child, {
+  required FakeApiClient api,
+}) async {
+  await tester.pumpWidget(
+    EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/l10n',
+      fallbackLocale: const Locale('en'),
+      assetLoader: const FsL10nLoader(),
+      child: ProviderScope(
+        overrides: [apiClientProvider.overrideWithValue(api)],
+        child: Builder(
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: child,
+              ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 ProviderContainer makeContainer(FakeApiClient api) {

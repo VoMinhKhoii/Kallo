@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/staged_meal_card.dart';
@@ -142,7 +142,7 @@ void main() {
     // native alert surface the confirm moved to on 2026-09-03.
     await tester.tap(
       find.descendant(
-        of: find.byType(CupertinoPopupSurface),
+        of: find.byKey(kKalloConfirmSurface),
         matching: find.text('Discard'),
       ),
     );
@@ -172,7 +172,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Discard'), warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    expect(find.byType(CupertinoPopupSurface), findsNothing);
+    expect(find.byKey(kKalloConfirmSurface), findsNothing);
     expect(discarded, 0);
   });
 

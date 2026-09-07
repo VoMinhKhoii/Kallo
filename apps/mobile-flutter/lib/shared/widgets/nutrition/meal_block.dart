@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
+import '../../logic/display_format.dart';
 import '../../logic/macro_composition.dart';
 import 'composition_bar.dart';
 
@@ -30,6 +31,11 @@ class MealBlock extends StatelessWidget {
 
   /// The meal text — Body regular ink (no serif; the greeting is the app's
   /// only serif moment).
+  ///
+  /// Rendered with its first letter capitalised. It is the user's raw
+  /// composer input, which arrives lower-case as often as not; since every
+  /// meal card in the app is this widget, doing it here is what makes "every
+  /// meal card" one edit rather than four.
   final String title;
 
   /// Calorie-share segments for the 6px compact bar (sum to 1).
@@ -71,7 +77,7 @@ class MealBlock extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                title,
+                capitalizeFirst(title),
                 maxLines: titleMaxLines,
                 overflow: TextOverflow.ellipsis,
                 style: dashBody(),

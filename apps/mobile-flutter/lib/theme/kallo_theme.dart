@@ -48,16 +48,20 @@ abstract final class KalloIcons {
   /// leading icons, header icons. The glyph that carries a row or a screen.
   static const double primary = 24;
 
-  /// 21 — an action ON a card: the Log meal-card action row, the Circle
-  /// heart / comment / Eat-this row, discard, the confirm-circle check. At 24
-  /// these clusters out-weighed the meal they belong to; at 21 they still read
-  /// as controls rather than furniture.
+  /// 21 — an action ON a card: the Log meal-card action row, discard, the
+  /// confirm-circle check. At 24 these clusters out-weighed the meal they
+  /// belong to; at 21 they still read as controls rather than furniture.
+  ///
+  /// The Circle heart / comment / Eat-this row left this tier for [tertiary]
+  /// on 2026-09-07 — it sits at the very bottom of a post and reads as that
+  /// post's footnotes rather than as the controls that carry it.
   static const double action = 21;
 
   /// 18 — tertiary inline affordances: the collapse chevron, copy/remove
-  /// minis, quiet suffix actions, and plain disclosure chevrons (which moved
-  /// 16 → 18 so the tier has ONE size rather than two neighbouring ones —
-  /// 16 read as a speck beside the new 17pt row label).
+  /// minis, quiet suffix actions, the Circle post's heart / comment /
+  /// Eat-this row, and plain disclosure chevrons (which moved 16 → 18 so the
+  /// tier has ONE size rather than two neighbouring ones — 16 read as a speck
+  /// beside the new 17pt row label).
   static const double tertiary = 18;
 
   /// Square tap target around the glyph. The pressed wash hugs the glyph, so
@@ -157,8 +161,12 @@ abstract final class KalloTheme {
         headlineSmall: KalloTextStyles.heading3().copyWith(
           color: KalloColors.text,
         ),
-        titleLarge: KalloTextStyles.heading4().copyWith(color: KalloColors.text),
-        bodyLarge: KalloTextStyles.bodyLarge().copyWith(color: KalloColors.text),
+        titleLarge: KalloTextStyles.heading4().copyWith(
+          color: KalloColors.text,
+        ),
+        bodyLarge: KalloTextStyles.bodyLarge().copyWith(
+          color: KalloColors.text,
+        ),
         bodyMedium: KalloTextStyles.body().copyWith(color: KalloColors.text),
         bodySmall: KalloTextStyles.bodySmall().copyWith(
           color: KalloColors.textMuted,
@@ -213,7 +221,7 @@ abstract final class KalloTheme {
           vertical: KalloSpacing.sp6,
         ),
         // The same black/50 scrim the nav drawer and the web dialog use.
-        barrierColor: const Color(0x80000000),
+        barrierColor: KalloColors.scrim,
       ),
       // In-app primary: beige + ink, fully rounded (auth/paywall CTAs use
       // [KalloColors.btnPrimary] black-and-white explicitly at call sites).
