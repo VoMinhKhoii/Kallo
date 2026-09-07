@@ -27,7 +27,7 @@ import { DELETE, POST } from '@/app/api/v1/notifications/push-tokens/route';
 import { Errors } from '@/lib/core/errors/catalog';
 
 const USER = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-const TOKEN = 'fcm-registration-token';
+const TOKEN = 'a1b2c3d4'.repeat(8);
 
 /** Captures the values row and the onConflictDoUpdate spec. */
 function capturingInsert() {
@@ -132,7 +132,7 @@ describe('DELETE /api/v1/notifications/push-tokens', () => {
   });
 
   it('is a no-op for a token that is not the caller’s', async () => {
-    mockReadJsonBody.mockResolvedValue({ token: 'someone-elses-token' });
+    mockReadJsonBody.mockResolvedValue({ token: 'ff'.repeat(32) });
     capturingDelete([]);
 
     const response = await DELETE({} as never);

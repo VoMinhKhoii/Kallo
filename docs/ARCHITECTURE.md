@@ -57,7 +57,7 @@ another domain module is a smell worth a second look.
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
 | `platform/` | runtime environment detection from the user agent |
-| `push/` | the native-push transport: the `PushSender` seam, the dependency-free FCM HTTP v1 sender, and the no-op used when `FCM_SERVICE_ACCOUNT_JSON` is unset |
+| `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
 | `security/` | webhook signatures, CSP, request IP |
 | `supabase/` | client factories (browser, server, admin, middleware) |

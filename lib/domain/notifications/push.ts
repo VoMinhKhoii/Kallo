@@ -4,8 +4,8 @@
 // Producers schedule this with next/server's `after()` once their transaction
 // has committed, handing over the recipient ids `notify()` returned. That
 // ordering is the whole design: the in-app row is the durable record, push is
-// a best-effort nudge on top of it. Nothing here may throw — a dead Firebase
-// project must never turn a successful meal share into a 500 — so every path
+// a best-effort nudge on top of it. Nothing here may throw — an APNs outage
+// must never turn a successful meal share into a 500 — so every path
 // is wrapped and reported to the log instead.
 //
 // SECURITY: the Drizzle handle bypasses RLS. Recipient ids arrive from
@@ -13,7 +13,7 @@
 // for the row-less chat push, from the producer's own membership read at write
 // time; this module only ever reads tokens/locales FOR those ids.
 
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -43,7 +43,7 @@ export interface NotificationPushPayload {
   /** Presentation extras the copy interpolates. Same bag `pushCopy` reads,
    *  minus the actor name, which has its own field above. */
   data?: Omit<PushCopyValues, 'actorName'>;
-  /** Where the tap lands, mirrored into the FCM data payload as strings. */
+  /** Where the tap lands, mirrored into the APNs data payload as strings. */
   targetType?: string;
   targetId?: string;
   /** The row this push announces, so the app can mark it read on open. */
@@ -90,10 +90,18 @@ async function buildMessages(
   recipientIds: string[],
   payload: NotificationPushPayload
 ): Promise<PushMessage[]> {
+  // APNs is the only transport; the column CHECK still admits other
+  // platforms, so filter here rather than let a stray row spend fan-out budget
+  // on a token Apple would reject.
   const tokens = await db
     .select({ userId: pushTokens.userId, token: pushTokens.token })
     .from(pushTokens)
-    .where(inArray(pushTokens.userId, recipientIds));
+    .where(
+      and(
+        inArray(pushTokens.userId, recipientIds),
+        eq(pushTokens.platform, 'ios')
+      )
+    );
   if (tokens.length === 0) return [];
 
   const profiles = await db
@@ -134,7 +142,7 @@ async function buildMessages(
 let lastPushBudgetLogAt = 0;
 
 /**
- * The app-wide FCM fan-out budget (`pushGlobalHourly`). Charged once per
+ * The app-wide APNs fan-out budget (`pushGlobalHourly`). Charged once per
  * fan-out, immediately before `send` and only when there are messages to send,
  * INSIDE the send path: a block means skip sending and return, never
  * throw. The producer's message/notification row is already committed, so a
@@ -168,7 +176,7 @@ async function pushGlobalBudgetExhausted(): Promise<boolean> {
   }
 }
 
-/** Drop registrations FCM has told us are permanently dead. */
+/** Drop registrations APNs has told us are permanently dead. */
 async function pruneTokens(dead: string[]): Promise<void> {
   if (dead.length === 0) return;
   await db.delete(pushTokens).where(inArray(pushTokens.token, dead));
@@ -177,7 +185,7 @@ async function pruneTokens(dead: string[]): Promise<void> {
 /**
  * Deliver one notification to every device of every recipient. Safe to call
  * with an empty recipient list (the common case — most events notify nobody
- * with a phone), and safe to call with no FCM configured (the no-op sender).
+ * with a phone), and safe to call with no APNs configured (the no-op sender).
  */
 export async function sendNotificationPush(
   recipientIds: string[],
@@ -189,7 +197,7 @@ export async function sendNotificationPush(
     if (unique.length === 0) return;
     const messages = await buildMessages(unique, payload);
     // Most events notify nobody with a registered device. Returning here BEFORE
-    // charging the budget is the point: the counter is an FCM fan-out budget,
+    // charging the budget is the point: the counter is an APNs fan-out budget,
     // and every recipient-with-no-token used to spend one unit of it, so the
     // hourly ceiling was reached by traffic that never sent a push. On a block
     // the send is skipped — the row/message is already committed.
@@ -197,7 +205,7 @@ export async function sendNotificationPush(
     if (await pushGlobalBudgetExhausted()) return;
     // Resolved INSIDE the try, never as a default argument: default arguments
     // evaluate before the function body, so a malformed
-    // FCM_SERVICE_ACCOUNT_JSON would throw past this boundary and reject the
+    // APNS_KEY_P8 would throw past this boundary and reject the
     // after() task on an already-successful request.
     const resolved = sender ?? getPushSender();
     const results = await resolved.send(messages);

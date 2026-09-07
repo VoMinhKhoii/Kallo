@@ -36,14 +36,23 @@ export const markReadBodySchema = z.object({
 });
 
 /** POST/DELETE /api/v1/notifications/push-tokens — device registration.
- *  The token is the identity: FCM hands the same string to whoever is signed
+ *  The token is the identity: iOS hands the same string to whoever is signed
  *  in on that handset, so POST reassigns it and DELETE is scoped to the caller
  *  so one account can never unregister another's device. */
 export const pushTokenBodySchema = z.object({
-  /** FCM registration token. Long and opaque; 4096 is well past today's ~200
+  /** APNs device token (hex). Long and opaque; 4096 is well past today's 64
    *  chars and keeps a malformed body from reaching the database. */
-  token: z.string().min(1).max(4096),
-  platform: z.enum(['ios', 'android', 'web']),
+  // APNs addresses the device by the token's hex bytes in the request path,
+  // so anything that is not whole hex byte pairs could never be delivered to.
+  token: z
+    .string()
+    .min(1)
+    .max(4096)
+    .regex(/^(?:[0-9a-f]{2})+$/i, 'expected an APNs device token in hex'),
+  /** iOS only — APNs is the sole transport we ship, so accepting an Android or
+   *  web registration would store a token we could never deliver to. The DB
+   *  CHECK stays wider on purpose; narrowing happens at the edge. */
+  platform: z.literal('ios'),
 });
 
 /** DELETE only needs the token — the owner comes from the session. */

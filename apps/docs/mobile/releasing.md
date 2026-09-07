@@ -101,6 +101,33 @@ Two hard-won reasons it's not simpler:
 
 Also: the archive **builds from a `/tmp` mirror** for the same [iCloud codesign reason](./development.md#the-icloud-codesign-caveat) as dev.
 
+### Push notifications (APNs) — what CI cannot do for you
+
+Push is direct-to-APNs (no Firebase). Three facts about the signing shape above matter:
+
+- `ios/Runner/Runner.entitlements` sets `aps-environment` to **`$(APS_ENVIRONMENT)`**, and the
+  Runner target's build settings pin it per configuration: `development` for Debug/Profile,
+  `production` for Release. Under **manual** signing the literal is embedded and checked against
+  the profile, so a hardcoded `development` fails every App Store export — never hardcode it.
+  `test/ios/push_entitlement_test.dart` guards this.
+- **The capability must be enabled on the App ID by a human**: Apple Developer → Identifiers →
+  `com.khoivo.nham` → Push Notifications. Nothing in the lane or the workflow touches
+  capabilities.
+- **Then regenerate the match profile locally** — CI fetches match **read-only** and can never
+  mint or update a profile, so the stored `match AppStore com.khoivo.nham` predates the
+  entitlement until you run, from `apps/mobile-flutter/ios` with `MATCH_GIT_URL` /
+  `MATCH_PASSWORD` exported: `bundle exec fastlane match appstore --force`. A profile without
+  `aps-environment` fails codesign with *"Provisioning profile doesn't include the
+  aps-environment entitlement."*
+
+Server side, the backend needs an **APNs auth key** (Apple Developer → Keys → enable APNs;
+download the `.p8` once) as `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, and
+`APNS_PRODUCTION`. Development-signed Xcode builds use the **sandbox** host; Ad Hoc, TestFlight and
+App Store builds (distribution signing) use **production**; since dev builds point at the dev backend, set
+`APNS_PRODUCTION` per backend environment. The Simulator can receive **sandbox** pushes on supported
+hosts (Xcode 14+, iOS 16+, Apple silicon or T2, macOS 13+); verify production delivery and
+device-specific behavior on a physical device.
+
 ## Export compliance
 
 `ios/Runner/Info.plist` sets `ITSAppUsesNonExemptEncryption = false` — Kallo uses only standard

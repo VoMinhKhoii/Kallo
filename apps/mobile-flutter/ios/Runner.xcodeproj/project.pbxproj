@@ -496,6 +496,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				APS_ENVIRONMENT = development;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_BUNDLE_IDENTIFIER = com.khoivo.nham;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -679,6 +680,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				APS_ENVIRONMENT = development;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_BUNDLE_IDENTIFIER = com.khoivo.nham;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -702,6 +704,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				APS_ENVIRONMENT = production;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_BUNDLE_IDENTIFIER = com.khoivo.nham;
 				PRODUCT_NAME = "$(TARGET_NAME)";
