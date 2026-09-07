@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/nutrients/nutrient_grid_card.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 import '../../../l10n_test_loader.dart';
@@ -189,31 +190,41 @@ void main() {
     expect(tester.getSize(find.text('Beta-carotene')).width, greaterThan(70));
   });
 
-  testWidgets('a met nutrient marks itself with more than colour', (
+  testWidgets("the figure sits flush with the card's right edge", (
     tester,
   ) async {
-    // successFaint is 1.03:1 against the page canvas, so to a deuteranope the
-    // green card and the ordinary card are the same card. The check is the
-    // second channel.
+    // The figure used to hang in a shrink-wrapped Row inside its Flexible
+    // slot, so it sat at the START of that slot — on a phone "80%" landed
+    // ~90px shy of the card's own padding edge, reading as a stray middle
+    // column rather than the right-hand figure of a two-column head.
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+          card: sodiumCard(averagePerDay: 1500, percentOfTarget: 75),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(LucideIcons.check300), findsOneWidget);
+    // The card's one hairline is drawn outside its sp3 padding, so the
+    // content edge is a border-width further in than the card's own edge.
+    const hairline = 1.0;
+    expect(
+      tester.getTopRight(find.text('75%')).dx,
+      tester.getTopRight(find.byType(NutrientGridCard)).dx -
+          KalloSpacing.sp3 -
+          hairline,
+    );
+    expect(tester.widget<Text>(find.text('75%')).textAlign, TextAlign.end);
   });
 
-  testWidgets('a nutrient short of its target carries no check', (
-    tester,
-  ) async {
+  testWidgets('a met nutrient draws no check glyph', (tester) async {
+    // The fill IS the signal now: a met card is a green card, and a tick
+    // repeating that inside it only crowded the figure it sat beside.
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: sodiumCard(averagePerDay: 800, percentOfTarget: 40),
+          card: sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
         ),
       ),
     );
