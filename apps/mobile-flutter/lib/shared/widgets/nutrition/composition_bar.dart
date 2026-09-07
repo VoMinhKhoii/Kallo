@@ -6,11 +6,23 @@ import '../../logic/macro_composition.dart';
 /// The stacked macro bar: one segment per macro, each sized by its share of the
 /// meal's (or the day's) calories. Drawn in [kCompositionColors].
 ///
-/// The defaults are the nutrition page's: 8pt, segments meeting flush, full
-/// pigment. That surface draws ONE bar per screen, large, where saturation
-/// costs nothing. A surface repeating the bar down a list pays for it on every
-/// row, so [height], [gap] and [opacity] exist to take the weight back out —
-/// see the Circle feed, which draws it half as tall and softened.
+/// The defaults are the nutrition page's: 8pt, 2pt gutters, full pigment. That
+/// surface draws ONE bar per screen, large, where saturation costs nothing. A
+/// surface repeating the bar down a list pays for it on every row, so [height],
+/// [gap] and [opacity] exist to take the weight back out — see the Circle feed,
+/// which draws it half as tall and softened.
+///
+/// EVERY segment is its own pill, not just the bar. Rounding only the outer
+/// clip rounds only the two OUTER ends, so the middle segment reads as a slab
+/// wedged between two lozenges — the mark looks like one shape that got cut up
+/// rather than three shapes sitting together. The outer clip stays anyway: it
+/// is what holds the silhouette when a segment runs to the very edge.
+///
+/// Pills meeting flush would touch at their curves and leave hairline wedges of
+/// the surface showing through, so the gutter is not decoration here — it is
+/// what makes rounded segments legible, which is why the full-size variant
+/// carries it too. The web's full variant gets the same 2px gap; the two
+/// surfaces are one mark.
 ///
 /// Zero-width segments are dropped rather than rendered at 0, so a meal with no
 /// fat gives two segments meeting cleanly instead of a hairline seam.
@@ -18,7 +30,7 @@ class CompositionBar extends StatelessWidget {
   const CompositionBar({
     required this.segments,
     this.height = 8,
-    this.gap = 0,
+    this.gap = 2,
     this.opacity = 1,
     super.key,
   });
@@ -26,7 +38,7 @@ class CompositionBar extends StatelessWidget {
   /// The variant for a surface that repeats the bar down a LIST — the Circle
   /// feed, the dashboard's meal rows — rather than drawing one per screen.
   ///
-  /// Shorter, gapped and softened, because the same mark at full weight read as
+  /// Shorter and softened, because the same mark at full weight read as
   /// candy stripes once it appeared on every row. Height is a trade in both
   /// directions: at 4 the bar is 80:1 and reads as a decorative rule under the
   /// calorie figure rather than as a composition; 6 keeps it quiet while still
@@ -70,9 +82,12 @@ class CompositionBar extends StatelessWidget {
               if (i > 0 && gap > 0) SizedBox(width: gap),
               Expanded(
                 flex: (visible[i].pct * 1000).round(),
-                child: ColoredBox(
-                  color: kCompositionColors[visible[i].key]!.withValues(
-                    alpha: opacity,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(KalloRadii.pill),
+                  child: ColoredBox(
+                    color: kCompositionColors[visible[i].key]!.withValues(
+                      alpha: opacity,
+                    ),
                   ),
                 ),
               ),
