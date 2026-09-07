@@ -67,14 +67,14 @@ export function ShareReplies({
                     the message, which is the only reason to draw a pill. */}
                 <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <b className="font-bold font-sans-display text-[#141413] text-[15px]">
+                    <b className="font-bold font-sans-display text-[15px] text-kallo-text">
                       {name}
                     </b>
                     <span className="font-sans-display text-[#6E6D66] text-[15px]">
                       {formatElapsed(reply.createdAt, locale)}
                     </span>
                   </div>
-                  <p className="max-w-full break-words rounded-[18px] bg-kallo-border/50 px-3.5 py-2.5 font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
+                  <p className="max-w-full break-words rounded-[18px] bg-kallo-border/50 px-3.5 py-2.5 font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
                     {reply.body}
                   </p>
                 </div>
@@ -98,13 +98,13 @@ export function ShareReplies({
             onChange={(event) => setBody(event.target.value)}
             onBlur={() => body.trim().length === 0 && setOpen(false)}
             placeholder={t('replyPlaceholder')}
-            className="min-w-0 flex-1 border-[#E8E6DC] border-b bg-transparent pb-1 font-sans-display text-[#141413] text-[15px] placeholder:text-[#6E6D66] focus:border-[#141413] focus:outline-none"
+            className="min-w-0 flex-1 border-[#E8E6DC] border-b bg-transparent pb-1 font-sans-display text-[15px] text-kallo-text placeholder:text-[#6E6D66] focus:border-[#141413] focus:outline-none"
           />
           {body.trim().length > 0 && (
             <button
               type="submit"
               disabled={createReply.isPending}
-              className="shrink-0 font-medium font-sans-display text-[#141413] text-[13px] disabled:opacity-50"
+              className="shrink-0 font-medium font-sans-display text-[13px] text-kallo-text disabled:opacity-50"
             >
               {t('reply')}
             </button>
@@ -114,7 +114,7 @@ export function ShareReplies({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:text-[#141413]"
+          className="font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:text-kallo-text"
         >
           {t('reply')}
         </button>

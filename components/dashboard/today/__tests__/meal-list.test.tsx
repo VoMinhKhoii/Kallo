@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { MealEntry } from '@/lib/core/types/dashboard';
 import { MealList } from '../meal-list';
 
@@ -66,9 +65,12 @@ describe('MealList', () => {
     // The row used to squeeze to one line at xl, which clipped the tail off a
     // dish name. With the gauge column bounded there is room for the Circle
     // feed's own rhythm, at one density.
-    // The row capitalises what it prints, so ask for what it renders — the
-    // fixture stays as the user would have typed it.
-    const name = screen.getByText(capitalizeFirst(label));
+    // The row capitalises what it prints. A literal, not the helper applied to
+    // the fixture: computing the expectation with the function under test
+    // would let a regression in it pass here unseen.
+    const name = screen.getByText(
+      'Cơm tấm + 1 đùi góc tư nướng bỏ da + mắm + đồ chua'
+    );
     expect(name).toHaveClass('line-clamp-2');
     expect(name.className).not.toContain('xl:');
     expect(screen.getByTestId('meal-list-scroll')).toHaveClass(

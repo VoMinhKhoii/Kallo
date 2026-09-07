@@ -54,7 +54,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
       <ProfileAvatar avatarUrl={friend.avatarUrl} label={label} />
       <div className="min-w-0 flex-1">
         <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
-          <b className="font-bold font-sans-display text-[#141413] text-[15px]">
+          <b className="font-bold font-sans-display text-[15px] text-kallo-text">
             {label}
           </b>
           {/* A backfilled meal (logged for a past date) is shared "now", so its
@@ -72,7 +72,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             </span>
           )}
         </div>
-        <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
+        <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
           {capitalizeFirst(meal.rawInput)}
         </p>
         {hasNutrition && (
@@ -82,7 +82,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 figure outweighed the dish above it, which puts the post's
                 focus back on the number this vocabulary took it off. */}
             <span className="font-sans-display text-[#6E6D66] text-[11px]">
-              <span className="font-medium text-[#141413] text-[13px] tabular-nums">
+              <span className="font-medium text-[13px] text-kallo-text tabular-nums">
                 {meal.caloriesKcal == null
                   ? '—'
                   : Math.round(meal.caloriesKcal)}
@@ -107,7 +107,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             onClick={() => toggleReaction.mutate(meal.shareId)}
             className={cn(
               'inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
-              entry.reactions.mine && 'text-[#141413]'
+              entry.reactions.mine && 'text-kallo-text'
             )}
           >
             {/* A hearted post has to look hearted from across the row; at
@@ -135,7 +135,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                   if (!requirePremium('copy_split')) return;
                   logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
                 }}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text disabled:opacity-50"
               >
                 <Copy className="size-[15px]" />
                 <span>{t('logCopy')}</span>
