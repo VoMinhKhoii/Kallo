@@ -421,7 +421,7 @@ Cupertino navigation stack.
 |------------|-----|-------|
 | `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
 | `MaterialPageRoute` | `CupertinoPageRoute` / `CupertinoPage` | 1 site left (`auth/widgets/email_auth_form.dart`) |
-| `InkWell` / `InkResponse` ripple | a press wash — `GestureDetector` + `AnimatedContainer` over `KalloColors.pressWash` | **3 sites to migrate** |
+| `InkWell` / `InkResponse` ripple | a press wash — `GestureDetector` + `AnimatedContainer` over `KalloColors.pressWash` | **2 sites to migrate** (`feed_action_button.dart` migrated 2026-09-07 — it is the worked example) |
 | `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
 | `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
@@ -482,7 +482,7 @@ mobile UI — no longer provisional.
 | **Feedback** | ✅ | uses the 12px default | |
 | **Shell / pill nav** | ✅ | `KalloSpacing` + `kNav*` tokens | drawer/hamburger retired 2026-08-31; Log pushes full-screen |
 | **Circle** | ✅ (2026-09-02) | 12px root inset | feed, invite, share and group widgets all on `dash*` |
-| **Nutrition** | ✅ (2026-09-02) | 12px root inset | |
+| **Nutrition** | ✅ (2026-09-02) | 12px root inset | micronutrients are a bordered 2-col grid (see `DESIGN_SYSTEM.md`, *Grid cells*) |
 | **Logging `sheets/`** | ✅ (2026-09-02) | — | barcode + manual sheets ported; no `KalloText` left |
 | **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
 
@@ -499,7 +499,7 @@ renders as Material.
 | Item | Sites | Notes |
 |------|-------|-------|
 | `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
-| `InkWell`/`InkResponse` ripple → press wash | 3 | `feed_action_button.dart`, `quiet_action_button.dart`, `meal_action_icon_button.dart`. The ripple is unbounded on the first — it spreads over the full 44pt box and persists for a hold |
+| `InkWell`/`InkResponse` ripple → press wash | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` migrated 2026-09-07 and is the pattern to copy: `Listener` (pointer down/up/cancel) → `GestureDetector(behavior: opaque)` → `AnimatedContainer` washing to `KalloColors.pressWash` over `KalloMotion.press`. Its ripple had been unbounded — it spread over the full 44pt box and persisted for a hold |
 | `MaterialPageRoute` → `CupertinoPageRoute` | 1 | `auth/widgets/email_auth_form.dart` — the only route in the app that does not slide |
 | `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
 
