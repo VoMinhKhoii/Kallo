@@ -11,6 +11,7 @@ import 'services/billing/purchases_service.dart';
 import 'services/auth/session_provider.dart';
 import 'features/circle/logic/circle_deep_links.dart';
 import 'features/logging/data/logging_providers.dart';
+import 'features/notifications/logic/push_registration.dart';
 import 'router.dart';
 import 'theme/kallo_theme.dart';
 
@@ -28,7 +29,8 @@ class KalloApp extends ConsumerStatefulWidget {
   ConsumerState<KalloApp> createState() => _NhamAppState();
 }
 
-class _NhamAppState extends ConsumerState<KalloApp> with WidgetsBindingObserver {
+class _NhamAppState extends ConsumerState<KalloApp>
+    with WidgetsBindingObserver {
   bool _didSyncInitialSession = false;
 
   @override
@@ -94,25 +96,28 @@ class _NhamAppState extends ConsumerState<KalloApp> with WidgetsBindingObserver 
 
     // Wraps the app so a single invite-deep-link listener lives for the whole
     // session, routing `nham://invite/<slug>` (and https invite links) to the
-    // in-app connect screen.
-    return CircleDeepLinkListener(
-      child: MaterialApp.router(
-        title: 'Kallo',
-        debugShowCheckedModeBanner: false,
-        theme: KalloTheme.light(),
-        routerConfig: router,
-        // Dynamic Type is respected, but capped: the feed's fixed-width
-        // columns overflow past ~1.3x.
-        builder:
-            (context, child) => MediaQuery.withClampedTextScaling(
-              maxScaleFactor: 1.3,
-              child: child!,
-            ),
-        // easy_localization wiring (locale source of truth lives on the
-        // EasyLocalization wrapper in main()).
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
+    // in-app connect screen. [PushRegistrationListener] sits alongside it with
+    // the same one-per-process contract, for APNs tokens and notification taps.
+    return PushRegistrationListener(
+      child: CircleDeepLinkListener(
+        child: MaterialApp.router(
+          title: 'Kallo',
+          debugShowCheckedModeBanner: false,
+          theme: KalloTheme.light(),
+          routerConfig: router,
+          // Dynamic Type is respected, but capped: the feed's fixed-width
+          // columns overflow past ~1.3x.
+          builder:
+              (context, child) => MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.3,
+                child: child!,
+              ),
+          // easy_localization wiring (locale source of truth lives on the
+          // EasyLocalization wrapper in main()).
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+        ),
       ),
     );
   }

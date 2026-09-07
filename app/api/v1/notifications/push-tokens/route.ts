@@ -12,7 +12,7 @@ import { pushTokens } from '@/lib/infra/db/schema';
 export const runtime = 'nodejs';
 
 /**
- * Register (or refresh) this device. The FCM token is unique across the
+ * Register (or refresh) this device. The APNs token is unique across the
  * table because the OS hands the same string to whoever signs in on that
  * handset next: the conflict update REASSIGNS the row to the caller rather
  * than leaving a stale owner receiving the new user's notifications.
