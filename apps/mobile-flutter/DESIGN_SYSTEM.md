@@ -64,8 +64,14 @@ it is gone, absorbed by this token.
 | Token | Size | Role |
 |-------|------|------|
 | `KalloIcons.primary` | 24 | navigation / primary utility (pill nav, settings row leading, header) |
-| `KalloIcons.action` | 21 | an action ON a card (Log action row, Circle heart/comment/Eat-this, discard, confirm check) |
-| `KalloIcons.tertiary` | 18 | tertiary inline affordances (collapse chevron, copy/remove minis, disclosure chevrons — moved from 16) |
+| `KalloIcons.action` | 21 | an action ON a card (Log action row, discard, confirm check) |
+| `KalloIcons.tertiary` | 18 | tertiary inline affordances (collapse chevron, copy/remove minis, disclosure chevrons — moved from 16; **Circle heart/comment/Eat-this**, moved from `action` 2026-09-07) |
+
+The Circle post row moved down a tier on 2026-09-07. `action` is sized for a
+control that carries its card; the heart / comment / Eat-this cluster sits
+under a meal name at the very bottom of a post and reads as its footnotes. At
+21 it out-weighed the meal it belongs to. All three moved together — two
+glyphs at 18 beside a third at 21 reads as a misaligned row, not a quieter one.
 
 `KalloIcons.hit` stays **44** at every tier — only the glyph shrinks, so tap
 targets are unchanged. Stroke stays 1.5 (the Lucide `300` constants). Non-action

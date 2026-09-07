@@ -11,7 +11,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_day_group.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/reply_preview.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
@@ -30,6 +30,22 @@ void main() {
         );
     await EasyLocalization.ensureInitialized();
   });
+
+  ShareReply reply({
+    String id = 'r1',
+    String body = 'Ngon quá!',
+    bool isSelf = false,
+  }) => ShareReply(
+    id: id,
+    author: const CircleProfile(
+      userId: 'u3',
+      handle: 'linh',
+      avatarUrl: null,
+    ),
+    isSelf: isSelf,
+    body: body,
+    createdAt: DateTime.now(),
+  );
 
   CircleFeedEntry entry({
     String mealId = 'm1',
@@ -192,30 +208,68 @@ void main() {
     expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 0);
   });
 
-  testWidgets('earlier replies line obeys the hidden reply count', (
+  testWidgets('the card teases the newest replies and links out for the rest', (
     tester,
   ) async {
-    final reply = ShareReply(
-      id: 'r1',
-      author: const CircleProfile(
-        userId: 'u3',
-        handle: 'linh',
-        avatarUrl: null,
+    // The card is a teaser now that replies have their own page: it shows the
+    // newest two and sends you to the thread for the count. The "N earlier
+    // replies" line moved to the thread, where it is honest — the API only
+    // ever ships 12 per share.
+    final replies = [
+      for (var i = 1; i <= 3; i++) reply(id: 'r$i', body: 'Reply $i'),
+    ];
+    await pump(
+      tester,
+      ReplyPreview(entry: entry(replies: replies, repliesTotal: 9), scope: null),
+    );
+    expect(find.text('Reply 1'), findsNothing);
+    expect(find.text('Reply 2'), findsOneWidget);
+    expect(find.text('Reply 3'), findsOneWidget);
+    expect(find.text('View all 9 replies'), findsOneWidget);
+
+    // Nothing hidden: no link, because there is nowhere further to go.
+    await pump(
+      tester,
+      ReplyPreview(
+        entry: entry(replies: [replies.first], repliesTotal: 1),
+        scope: null,
       ),
-      isSelf: false,
-      body: 'Ngon quá!',
-      createdAt: DateTime.now(),
     );
+    expect(find.textContaining('View all'), findsNothing);
+  });
+
+  testWidgets('a reply sits in a pill that hugs its own text', (tester) async {
+    // The bubble is shrink-wrapped by an Align, so a short reply must be
+    // narrower than the column it sits in. A regression to a full-bleed block
+    // shows up as equal widths, not as a missing widget.
     await pump(
       tester,
-      FeedEntry(entry: entry(replies: [reply], repliesTotal: 3)),
+      ReplyPreview(
+        entry: entry(replies: [reply(body: 'Ngon')], repliesTotal: 1),
+        scope: null,
+      ),
     );
-    expect(find.text('2 earlier replies'), findsOneWidget);
-    await pump(
-      tester,
-      FeedEntry(entry: entry(replies: [reply], repliesTotal: 1)),
+    final bubble = tester.getSize(
+      find.ancestor(of: find.text('Ngon'), matching: find.byType(Container)).first,
     );
-    expect(find.textContaining('earlier replies'), findsNothing);
+    final preview = tester.getSize(find.byType(ReplyPreview));
+    expect(bubble.width, lessThan(preview.width));
+    // The author stays OUTSIDE the pill — identity above, body inside.
+    expect(
+      tester.getBottomRight(find.textContaining('linh')).dy,
+      lessThanOrEqualTo(
+        tester
+            .getTopLeft(
+              find
+                  .ancestor(
+                    of: find.text('Ngon'),
+                    matching: find.byType(Container),
+                  )
+                  .first,
+            )
+            .dy,
+      ),
+    );
   });
 
   testWidgets('the three actions share one row and clear a 44pt target', (
@@ -248,10 +302,10 @@ void main() {
   testWidgets('a post with no replies draws no reply block at all', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry()));
+    await pump(tester, ReplyPreview(entry: entry(), scope: null));
     // Otherwise the post carries an empty padded box under its action row and
     // reads bottom-heavy against the next hairline.
-    expect(tester.getSize(find.byType(ShareReplies)).height, 0);
+    expect(tester.getSize(find.byType(ReplyPreview)).height, 0);
   });
 
   testWidgets('the composition bar renders for a meal with macros', (
@@ -264,18 +318,6 @@ void main() {
     // weight knobs in `feed_entry.dart`.
     expect(size.height, 6);
     expect(size.width, greaterThan(100));
-  });
-
-  testWidgets('reply opens composer and empty blur closes it', (tester) async {
-    await pump(tester, FeedEntry(entry: entry()));
-    await tester.tap(find.byIcon(LucideIcons.messageCircle300));
-    await tester.pump();
-    expect(find.byKey(const Key('reply-composer')), findsOneWidget);
-    // The send affordance only appears once something is typed.
-    expect(find.text('Reply'), findsNothing);
-    FocusManager.instance.primaryFocus?.unfocus();
-    await tester.pump();
-    expect(find.byKey(const Key('reply-composer')), findsNothing);
   });
 
   testWidgets('the composition bar fills the content column, not 0pt', (
@@ -362,26 +404,26 @@ void main() {
     expect(find.text('Add friend'), findsOneWidget);
   });
 
-  testWidgets('reply draft does not migrate when its feed entry is removed', (
+  testWidgets('a post that leaves the feed takes its replies with it', (
     tester,
   ) async {
-    final entryA = entry(rawInput: 'Meal A');
+    // What the deleted "reply draft does not migrate" test was really
+    // defending: state belonging to one post must never surface under
+    // another. FeedEntry owns no state at all now, so the claim is just that
+    // the removed post and its preview are gone.
+    final entryA = entry(rawInput: 'Meal A', replies: [reply(body: 'On A')]);
     final entryB = entry(mealId: 'm2', shareId: 's2', rawInput: 'Meal B');
     final entries = ValueNotifier<List<CircleFeedEntry>>([entryA, entryB]);
     addTearDown(entries.dispose);
     await pump(tester, _MutableThread(entries: entries));
-
-    await tester.tap(find.byIcon(LucideIcons.messageCircle300).first);
-    await tester.pump();
-    await tester.enterText(find.byKey(const Key('reply-composer')), 'Draft A');
+    expect(find.text('On A'), findsOneWidget);
 
     entries.value = [entryB];
     await tester.pump();
 
     expect(find.text('Meal A'), findsNothing);
     expect(find.text('Meal B'), findsOneWidget);
-    expect(find.byKey(const Key('reply-composer')), findsNothing);
-    expect(find.text('Draft A'), findsNothing);
+    expect(find.text('On A'), findsNothing);
   });
 }
 
@@ -391,7 +433,10 @@ class _FeedHost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
-      data: (value) => FeedEntry(entry: value.entries.single),
+      data: (value) => FeedEntry(
+        entry: value.entries.single,
+        footer: ReplyPreview(entry: value.entries.single, scope: null),
+      ),
       error: (_, __) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

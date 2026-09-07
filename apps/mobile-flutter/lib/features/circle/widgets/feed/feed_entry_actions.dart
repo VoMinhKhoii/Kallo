@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
@@ -88,6 +89,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
             onTap: _toggling ? null : _toggle,
             icon: LucideIcons.heart300,
             fill: reactions.mine ? 1 : 0,
+            // The swipe-to-delete red, reused rather than minted: it is the
+            // palette's one red, and a hearted post has to look hearted from
+            // across the row. The count beside it stays on the action ink, so
+            // the row keeps a single voice.
+            activeColor: KalloColors.danger,
             label: '${reactions.count}',
             alignment: Alignment.centerLeft,
           ),

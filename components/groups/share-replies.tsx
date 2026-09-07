@@ -59,8 +59,14 @@ export function ShareReplies({
                   avatarUrl={reply.author.avatarUrl}
                   label={name}
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
+                {/* Avatar left, the reply itself in a pill on the right —
+                    the same anatomy the Flutter ReplyRow draws, so a reply
+                    looks like a reply on either platform. The name stays
+                    OUTSIDE the pill: two type tiers inside one fill read as a
+                    wall, and a body-only bubble keeps its height a function of
+                    the message, which is the only reason to draw a pill. */}
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                  <div className="flex flex-wrap items-baseline gap-2">
                     <b className="font-bold font-sans-display text-[#141413] text-[15px]">
                       {name}
                     </b>
@@ -68,7 +74,7 @@ export function ShareReplies({
                       {formatElapsed(reply.createdAt, locale)}
                     </span>
                   </div>
-                  <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
+                  <p className="max-w-full rounded-[18px] bg-[#EDECE7] px-3.5 py-2.5 font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
                     {reply.body}
                   </p>
                 </div>

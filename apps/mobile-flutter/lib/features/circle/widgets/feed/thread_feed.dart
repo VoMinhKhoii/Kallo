@@ -102,7 +102,9 @@ class ThreadFeed extends ConsumerWidget {
     final children = <Widget>[header];
     for (final day in _byDay(state.entries)) {
       children.add(const SizedBox(height: KalloSpacing.sp3));
-      children.add(FeedDayGroup(date: day.date, entries: day.entries));
+      children.add(
+        FeedDayGroup(date: day.date, entries: day.entries, scope: scope),
+      );
     }
     if (state.isLoadingMore) {
       children.add(

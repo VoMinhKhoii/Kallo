@@ -14,6 +14,7 @@ import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import { cn } from '@/lib/core/ui/cn';
 
 function fractionLabel(factor: number): string {
@@ -72,7 +73,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
           )}
         </div>
         <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
-          {meal.rawInput}
+          {capitalizeFirst(meal.rawInput)}
         </p>
         {hasNutrition && (
           <div className="mt-2.5 flex flex-col gap-1">
@@ -109,10 +110,14 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
               entry.reactions.mine && 'text-[#141413]'
             )}
           >
+            {/* The swipe-to-delete red, the palette's one red — matching the
+                Flutter app, whose --kallo-danger is a different (terracotta)
+                value here. A hearted post has to look hearted from across the
+                row; at ink it was the same near-black as the glyph beside it. */}
             <Heart
               className={cn(
                 'size-[15px]',
-                entry.reactions.mine && 'fill-[#141413]'
+                entry.reactions.mine && 'fill-[#D11A1A] text-[#D11A1A]'
               )}
             />
             <span>{entry.reactions.count}</span>

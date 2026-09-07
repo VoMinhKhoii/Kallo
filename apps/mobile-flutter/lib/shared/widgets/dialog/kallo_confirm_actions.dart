@@ -88,6 +88,21 @@ class KalloAlertHairline extends StatelessWidget {
 /// One alert action: a full-width, centred, 44pt-minimum text row that washes
 /// on press. No fill, no radius — the row IS the button, which is why the
 /// hairlines above and below it are what separate it from its neighbours.
+///
+/// **The press (2026-09-07).** Two things read as broken under a hard press
+/// and hold. The wash was [KalloColors.hover] (`#F0EAE0`), an opaque warm
+/// cream — that is the SELECTED token, not the pressed one, and holding a row
+/// turned it into a solid cream slab. It is [KalloColors.pressWash] now (ink
+/// at 6%), the app's documented press token, already what
+/// `shared/widgets/form/sheet_confirm_button.dart` paints; it darkens the row
+/// instead of repainting it.
+///
+/// And a hold had no end. The row carried tap handlers only, so pressing
+/// "Delete" for five seconds still fired on release with nothing to say the
+/// press had been noticed for longer than an instant. It now claims the long
+/// press too: the row stays washed for as long as it is held and fires
+/// NOTHING on release, so a hold is a way out of a tap rather than a slow
+/// commit to it.
 class KalloAlertAction extends StatefulWidget {
   const KalloAlertAction({
     super.key,
@@ -109,6 +124,15 @@ class KalloAlertAction extends StatefulWidget {
 class _KalloAlertActionState extends State<KalloAlertAction> {
   bool _pressed = false;
 
+  /// Set once the long-press recognizer wins, so the tap that follows on
+  /// release is dropped. A hold is a change of mind, not a slower tap.
+  bool _held = false;
+
+  void _release() {
+    if (!mounted) return;
+    setState(() => _pressed = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -116,10 +140,22 @@ class _KalloAlertActionState extends State<KalloAlertAction> {
       label: widget.label,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
+        onTapDown: (_) => setState(() {
+          _pressed = true;
+          _held = false;
+        }),
+        onTapUp: (_) => _release(),
+        onTapCancel: _release,
+        onTap: () {
+          if (_held) return;
+          widget.onTap();
+        },
+        // Claiming the long press is the point: without a handler here the
+        // gesture arena hands a five-second hold to the tap recognizer and it
+        // fires on release like any other tap.
+        onLongPress: () => setState(() => _held = true),
+        onLongPressEnd: (_) => _release(),
+        onLongPressCancel: _release,
         // Animated, not a bare Container: every other quiet button in the app
         // crossfades its wash rather than snapping it on.
         child: AnimatedContainer(
@@ -131,7 +167,7 @@ class _KalloAlertActionState extends State<KalloAlertAction> {
             horizontal: KalloSpacing.sp4,
             vertical: KalloSpacing.sp2,
           ),
-          color: _pressed ? KalloColors.hover : const Color(0x00000000),
+          color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
           child: Text(
             widget.label,
             textAlign: TextAlign.center,

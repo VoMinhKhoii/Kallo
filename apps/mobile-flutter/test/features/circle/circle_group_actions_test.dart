@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
@@ -265,7 +265,7 @@ void main() {
     // tapping what the user taps.
     await tester.tap(
       find.descendant(
-        of: find.byType(CupertinoPopupSurface),
+        of: find.byKey(kKalloConfirmSurface),
         matching: find.text('Remove'),
       ),
     );
@@ -300,7 +300,7 @@ void main() {
     // scope to the alert or this finds the row behind the barrier.
     await tester.tap(
       find.descendant(
-        of: find.byType(CupertinoPopupSurface),
+        of: find.byKey(kKalloConfirmSurface),
         matching: find.text('Leave group'),
       ),
     );

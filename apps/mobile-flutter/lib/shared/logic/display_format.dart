@@ -12,6 +12,22 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+/// First letter upper-cased, the rest left exactly as typed.
+///
+/// Meal names are whatever the user wrote into the composer, so they arrive
+/// lower-case as often as not; a card that prints "phở bò" reads as a fragment
+/// rather than as the meal's name. Applied at the RENDER site (see
+/// `shared/widgets/nutrition/meal_block.dart`), never on the model — the raw
+/// input has to survive intact for editing and re-logging.
+///
+/// Grapheme-based, not `s[0]`: Vietnamese diacritics can be composed from two
+/// code units, and indexing would split one. Mirrors web `capitalizeFirst`
+/// (`lib/core/text/capitalize.ts`). A name starting with a digit or an emoji
+/// comes back untouched, which is what upper-casing a non-letter does.
+String capitalizeFirst(String s) => s.isEmpty
+    ? s
+    : s.characters.first.toUpperCase() + s.characters.skip(1).toString();
+
 /// Rounds to a whole number, mapping null to 0. Mirrors web `round0`.
 int round0(num? n) => n == null ? 0 : n.round();
 

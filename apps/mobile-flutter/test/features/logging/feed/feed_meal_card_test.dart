@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_chevron_toggle.dart';
@@ -15,6 +16,12 @@ import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
 
 const _raw = 'phở bò tái nạm';
+
+/// What the CARD prints for [_raw]. A meal card capitalises its title at the
+/// render site (`MealBlock`), while the user's own message bubble quotes what
+/// they actually typed — so the two now differ by one letter and a test that
+/// wants the card must say so.
+final _cardRaw = capitalizeFirst(_raw);
 
 const _meal = PersistedMeal(
   id: 'm1',
@@ -160,7 +167,7 @@ void main() {
     expect(find.text('Beef slices').hitTestable(), findsNothing);
 
     // The whole meal block is the toggle target.
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
     expect(find.text('Beef slices').hitTestable(), findsOneWidget);
 
@@ -181,9 +188,10 @@ void main() {
     // moment the meal was stored — the conversation turned into a list.
     expect(find.byType(UserMessageBubble), findsOneWidget);
     expect(find.byType(MealTimeDivider), findsOneWidget);
-    // Twice: the bubble, and the card's own quote (which is also its
-    // expand/collapse tap target).
-    expect(find.text(_raw), findsNWidgets(2));
+    // Both survive: the bubble quotes the user verbatim, the card prints the
+    // meal's name capitalised. Two renderings of one meal, not one.
+    expect(find.text(_raw), findsOneWidget);
+    expect(find.text(_cardRaw), findsOneWidget);
   });
 
   testWidgets('the bubble sits between the divider and the card', (
@@ -241,7 +249,7 @@ void main() {
     await tester.pumpWidget(_wrap(_longTitled));
     await tester.pumpAndSettle();
 
-    final title = tester.getRect(find.text(_longRaw).last);
+    final title = tester.getRect(find.text(capitalizeFirst(_longRaw)).last);
     final chevron = tester.getRect(find.byType(PersistedMealChevronToggle));
 
     expect(title.height, greaterThan(30),
@@ -259,7 +267,7 @@ void main() {
     await tester.pumpWidget(_wrap(_grouped));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
 
     final detail = tester.getRect(find.text('Beef slices'));
@@ -277,7 +285,7 @@ void main() {
     await tester.pumpWidget(_wrap(_longGrouped));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
 
     final name = tester.getRect(find.text(_longDish));

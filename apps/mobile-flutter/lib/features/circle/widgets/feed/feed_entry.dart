@@ -6,26 +6,44 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/logic/display_format.dart';
+import '../../logic/circle_thread_route.dart';
 import 'feed_entry_actions.dart';
 import 'feed_nutrition.dart';
 import 'feed_rhythm.dart';
-import 'share_replies.dart';
 
 /// One shared meal: who and when, the meal itself, its calories and macro
 /// composition, then the action row.
-class FeedEntry extends StatefulWidget {
-  const FeedEntry({required this.entry, super.key});
+///
+/// Stateless since 2026-09-07. It used to own a `_replyOpen` flag for the
+/// inline composer that opened underneath it; replying is its own page now
+/// (`screens/circle_thread_screen.dart`), so the widget owns no UI state and
+/// the feed and the thread can both draw a post with the same code.
+class FeedEntry extends StatelessWidget {
+  const FeedEntry({
+    required this.entry,
+    this.scope,
+    this.onReply,
+    this.footer,
+    super.key,
+  });
 
   final CircleFeedEntry entry;
 
-  @override
-  State<FeedEntry> createState() => _FeedEntryState();
-}
+  /// The feed this post was read from — carried so the default [onReply] can
+  /// name it in the thread URL. The thread page reads its entry out of that
+  /// same cache; there is no endpoint that fetches one share.
+  final String? scope;
 
-class _FeedEntryState extends State<FeedEntry> {
-  /// Owned here rather than in [ShareReplies] because the trigger lives in the
-  /// action row: the two are siblings, so their common parent holds the state.
-  bool _replyOpen = false;
+  /// What the reply glyph does. Defaults to pushing the thread page.
+  ///
+  /// The thread page overrides it to focus its OWN composer, so a post can
+  /// never push a second copy of the thread it is already inside — which is
+  /// why this is a parameter rather than a hardcoded push.
+  final VoidCallback? onReply;
+
+  /// What renders under the action row. The feed passes [ReplyPreview]; the
+  /// thread page passes nothing, because there the replies ARE the page.
+  final Widget? footer;
 
   String _fraction(double factor) {
     if ((factor - 0.5).abs() < 0.001) return '½';
@@ -36,7 +54,6 @@ class _FeedEntryState extends State<FeedEntry> {
 
   @override
   Widget build(BuildContext context) {
-    final entry = widget.entry;
     final meal = entry.meal;
     final name = entry.isSelf ? tr('groups.wall.you') : entry.friend.label;
     final sharedAt = DateTime.parse(meal.sharedAt);
@@ -117,17 +134,15 @@ class _FeedEntryState extends State<FeedEntry> {
               // No gap: the action row's own tap slack supplies it.
               FeedEntryActions(
                 entry: entry,
-                onReply: () => setState(() => _replyOpen = true),
+                onReply:
+                    onReply ??
+                    () => openCircleThread(
+                      context,
+                      shareId: meal.shareId,
+                      scope: scope,
+                    ),
               ),
-              ShareReplies(
-                shareId: meal.shareId,
-                replies: entry.replies,
-                repliesTotal: entry.repliesTotal,
-                open: _replyOpen,
-                onClose: () {
-                  if (mounted) setState(() => _replyOpen = false);
-                },
-              ),
+              if (footer != null) footer!,
             ],
           ),
         ),

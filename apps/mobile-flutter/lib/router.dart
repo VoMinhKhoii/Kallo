@@ -10,6 +10,7 @@ import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
 import 'features/circle/screens/circle_screen.dart';
+import 'features/circle/screens/circle_thread_screen.dart';
 import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
@@ -206,6 +207,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder:
             (context, state) =>
                 const CupertinoPage<void>(child: LoggingScreen()),
+      ),
+
+      // One Circle post and its replies, pushed over the shell from the feed's
+      // reply glyph. `scope` names the feed the post was read from (absent =
+      // the combined friends feed): the page reads its entry out of that
+      // feed's live cache, since no endpoint fetches a single share.
+      GoRoute(
+        path: '/circle/thread/:shareId',
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => CupertinoPage<void>(
+          child: CircleThreadScreen(
+            shareId: state.pathParameters['shareId'] ?? '',
+            scope: state.uri.queryParameters['scope'],
+          ),
+        ),
       ),
 
       // The pill-nav destinations — each its own branch so state/scroll

@@ -14,10 +14,16 @@ import '../../../../theme/kallo_theme.dart';
 /// as well as off the layout — the pull is paid by the day card's post padding
 /// instead (see `feed_day_group.dart`), which moves the same pixels with all
 /// 44pt intact.
-// Heart / comment / Eat-this are actions ON a post, so they take the
-// card-action tier (21) rather than the navigation 24 (Threads icon tiers,
-// 2026-09-01). The 44pt target is untouched.
-const double _glyph = KalloIcons.action;
+// Heart / comment / Eat-this take the TERTIARY tier (18), one step under the
+// card-action 21 they wore from the Threads icon pass (2026-09-01).
+//
+// The action tier is sized for a control that carries its card — the Log
+// action row, a confirm check. These three sit under a meal name at the very
+// bottom of a post and read as its footnotes, not as the post's controls; at
+// 21 the cluster out-weighed the meal it belongs to. All THREE move together:
+// two glyphs at 18 beside a third at 21 is a row that looks misaligned rather
+// than one that looks quieter. The 44pt target is untouched at either size.
+const double _glyph = KalloIcons.tertiary;
 const double _hit = KalloIcons.hit;
 
 /// Actions sit one step darker than the calm secondary.
@@ -41,6 +47,7 @@ class FeedActionButton extends StatelessWidget {
     this.label,
     this.semanticLabel,
     this.fill,
+    this.activeColor = kInk,
     this.alignment = Alignment.center,
   });
 
@@ -56,6 +63,15 @@ class FeedActionButton extends StatelessWidget {
 
   /// Icon fill, for the hearted state.
   final double? fill;
+
+  /// Glyph colour once [fill] is 1 — the "on" state's own colour.
+  ///
+  /// Defaults to [kInk], which is what an activated action wore before the
+  /// heart needed its own. The heart passes [KalloColors.danger]: at ink a
+  /// filled heart was the same near-black as the two glyphs beside it, so
+  /// reacting read as "slightly bolder" rather than as liked. It is the red
+  /// the swipe-to-delete action already paints, so the palette gains nothing.
+  final Color activeColor;
 
   /// Where the glyph sits in its box — `centerLeft` for a row's FIRST action,
   /// so its glyph lands on the content column rather than 10pt in. That is
@@ -84,7 +100,7 @@ class FeedActionButton extends StatelessWidget {
               Icon(
                 icon,
                 size: _glyph,
-                color: fill == 1 ? kInk : _actionInk,
+                color: fill == 1 ? activeColor : _actionInk,
                 fill: fill,
               ),
               if (label != null) ...[

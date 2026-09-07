@@ -115,8 +115,16 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
 /// labels, composer input, button labels.
 ///
 /// Metric-compensated (2026-09-02): SF 17 → BVP 16 by cap height, with −0.2
-/// tracking against the wider advance. Leading 1.3 (~21pt) keeps the Threads
-/// relationship — enough air for a two-line wrap without a paragraph feel.
+/// tracking against the wider advance.
+///
+/// Leading 1.45 (~23pt), up from 1.3 (2026-09-07). 1.3 was set against a
+/// one-line reading of this tier, and every surface that actually wraps —
+/// a two-line meal name in Recent meals, a Circle post body, a reply — came
+/// out cramped, the descenders of one line sitting on the caps of the next.
+/// 1.45 is also what web already sets on the same three surfaces
+/// (`components/dashboard/today/meal-list.tsx`,
+/// `components/groups/feed-entry.tsx`), so the two platforms now agree on
+/// what the reading tier looks like. Still short of a paragraph's 1.6.
 /// Regular. [weight] exists for the API; in practice nothing on the reading
 /// surfaces passes it any more (2026-09-02): BVP Medium reads semibold, and
 /// weight is reserved for titles and names ([kPageTitle], [kSectionHeader],
@@ -130,7 +138,7 @@ TextStyle dashBody({
       fontFamily: KalloTextStyles.sansFamily,
       fontSize: 16,
       fontWeight: weight,
-      height: 1.3,
+      height: 1.45,
       letterSpacing: -0.2,
       color: color,
       fontFeatures: tabular ? _tnum : null,

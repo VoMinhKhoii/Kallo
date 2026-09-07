@@ -89,8 +89,9 @@ class _ManualGramFieldState extends State<ManualGramField> {
           hintStyle: dashBody(color: kInkMuted),
           suffixText: ' ${'logging.manualLogging.gramsUnit'.tr()}',
           suffixStyle: dashMeta(),
-          // Vertical 12 over a 16/1.3 line (20.8) lands the box on ~45pt —
-          // the 44pt minimum, paid symmetrically so the value is centred in it.
+          // Vertical 12 over a 16/1.45 line (23.2) lands the box on ~47pt —
+          // clear of the 44pt minimum, paid symmetrically so the value is
+          // centred in it. It was ~45 at the old 1.3 leading (2026-09-07).
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 10,
             vertical: 12,
