@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
+import type { ReactNode } from 'react';
 import {
   COMPOSITION_COLORS,
   COMPOSITION_ICONS,
@@ -41,14 +42,28 @@ interface MacroScaleProps {
    * than a confident zero.
    */
   grams: MacroGramsInput;
+  /**
+   * A figure that leads the row — the meal's kcal, on the surfaces that put it
+   * there. Four items no longer divide the row into equal cells the way three
+   * do, so the row switches to end-to-end distribution, which is what mobile's
+   * `MealBlock` legend does with the same four (`spaceBetween`).
+   */
+  leading?: ReactNode;
   className?: string;
 }
 
-export function MacroScale({ grams, className }: MacroScaleProps) {
+export function MacroScale({ grams, leading, className }: MacroScaleProps) {
   const locale = useLocale();
 
   return (
-    <div className={cn('flex items-center justify-evenly gap-2', className)}>
+    <div
+      className={cn(
+        'flex items-center gap-2',
+        leading ? 'justify-between' : 'justify-evenly',
+        className
+      )}
+    >
+      {leading}
       {COMPOSITION_KEYS.map((key) => {
         const Icon = COMPOSITION_ICONS[key];
         const value = grams[key] ?? null;

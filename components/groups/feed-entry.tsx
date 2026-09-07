@@ -1,17 +1,17 @@
 'use client';
 
-import { Copy, Heart } from 'lucide-react';
+import { Copy, Heart, MessageCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ShareReplies } from '@/components/groups/share-replies';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
+import { Link } from '@/i18n/navigation';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
@@ -49,6 +49,10 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
+  const kcalLabel =
+    meal.caloriesKcal == null
+      ? '— kcal'
+      : `${Math.round(meal.caloriesKcal)} kcal`;
 
   return (
     <div className="flex gap-3">
@@ -78,25 +82,24 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
         </p>
         {hasNutrition && (
           <div className="mt-2.5 flex flex-col gap-1">
-            {/* The unit stays quiet so the figure carries the mass, not the
-                word. Body weight, not the meal name's: at a larger size the
-                figure outweighed the dish above it, which puts the post's
-                focus back on the number this vocabulary took it off. */}
-            <span className="font-sans-display text-kallo-text-muted text-[11px]">
-              <span className="font-medium text-[13px] text-kallo-text tabular-nums">
-                {meal.caloriesKcal == null
-                  ? '—'
-                  : Math.round(meal.caloriesKcal)}
-              </span>{' '}
-              kcal
-            </span>
             {composition.totalKcal > 0 && (
               <CompositionBar
                 segments={composition.segments}
                 variant="compact"
               />
             )}
-            <MacroScale grams={grams} />
+            {/* Meal-text size, under the bar, leading the legend — the same
+                anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
+                head of a spaceBetween row. Figure and unit are ONE string
+                (mobile's `fmtKcal`), so the two can never wrap apart. */}
+            <MacroScale
+              grams={grams}
+              leading={
+                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                  {kcalLabel}
+                </span>
+              }
+            />
           </div>
         )}
         <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-kallo-text-muted text-[11.5px] tabular-nums">
@@ -126,6 +129,17 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             />
             <span>{entry.reactions.count}</span>
           </button>
+          {/* The thread lives on the post's own page, not under the card: a
+              feed row that carries its replies stops being one glanceable post.
+              A count on the glyph is what says there is anything to open. */}
+          <Link
+            href={`/circle/${meal.shareId}`}
+            aria-label={t('reply')}
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text"
+          >
+            <MessageCircle className="size-[15px]" />
+            {entry.repliesTotal > 0 && <span>{entry.repliesTotal}</span>}
+          </Link>
           {/* Split half is still deferred — it needs a confirmation step. */}
           {!entry.isSelf && (
             <>
@@ -145,11 +159,6 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             </>
           )}
         </div>
-        <ShareReplies
-          shareId={meal.shareId}
-          replies={entry.replies}
-          repliesTotal={entry.repliesTotal}
-        />
       </div>
     </div>
   );
