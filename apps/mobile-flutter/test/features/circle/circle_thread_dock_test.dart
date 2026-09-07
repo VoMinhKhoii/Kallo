@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/reply_row.dart';
+import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 

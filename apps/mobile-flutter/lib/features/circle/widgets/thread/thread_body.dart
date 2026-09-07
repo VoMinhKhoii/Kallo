@@ -8,7 +8,7 @@ import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../feed/feed_entry.dart';
-import '../feed/reply_row.dart';
+import '../replies/reply_row.dart';
 
 /// The thread page's scrolling content: the post, then its replies.
 ///

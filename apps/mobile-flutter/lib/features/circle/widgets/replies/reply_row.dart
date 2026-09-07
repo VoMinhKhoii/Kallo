@@ -6,7 +6,7 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
-import 'feed_rhythm.dart';
+import '../feed/feed_rhythm.dart';
 
 /// One reply: the avatar on the left, the reply itself in a pill on the right.
 ///

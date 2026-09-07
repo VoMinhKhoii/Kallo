@@ -9,7 +9,6 @@
 /// card behind it, with no second cache to keep honest.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/circle.dart';
@@ -18,36 +17,47 @@ import 'feed_providers.dart';
 /// Which post, in which feed. `scope` null is the combined friends feed.
 typedef ThreadRef = ({String? scope, String shareId});
 
-enum ThreadStatus {
-  /// The feed has never resolved — first paint, or a cold deep link.
-  loading,
-
-  /// [ThreadView.entry] is non-null.
-  ready,
-
-  /// The feed settled without this share: deleted, or older than the pages
-  /// loaded so far.
-  missing,
-
-  /// The feed failed and has no cached value to fall back on.
-  failed,
+/// One post out of a live feed, or why it is not there.
+///
+/// Sealed rather than an enum-plus-nullable-entry: the switch in the screen is
+/// exhaustive by construction, and "ready implies an entry" is a type rather
+/// than a force-unwrap at the consumer.
+sealed class ThreadView {
+  const ThreadView();
 }
 
-@immutable
-class ThreadView {
-  const ThreadView(this.status, [this.entry]);
+/// The post is on screen.
+///
+/// [entry] compares by IDENTITY: `_mapShare` returns the SAME instance for
+/// entries it did not touch, so a heart tapped on another post yields a view
+/// equal to its predecessor and `select` never rebuilds this page.
+class ThreadReady extends ThreadView {
+  const ThreadReady(this.entry);
 
-  final ThreadStatus status;
-  final CircleFeedEntry? entry;
+  final CircleFeedEntry entry;
 
   @override
   bool operator ==(Object other) =>
-      other is ThreadView &&
-      other.status == status &&
-      identical(other.entry, entry);
+      other is ThreadReady && identical(other.entry, entry);
 
   @override
-  int get hashCode => Object.hash(status, identityHashCode(entry));
+  int get hashCode => identityHashCode(entry);
+}
+
+/// The feed has never resolved — first paint, or a cold deep link.
+class ThreadLoading extends ThreadView {
+  const ThreadLoading();
+}
+
+/// The feed settled without this share: deleted, or older than the pages
+/// loaded so far.
+class ThreadMissing extends ThreadView {
+  const ThreadMissing();
+}
+
+/// The feed failed and has no cached value to fall back on.
+class ThreadFailed extends ThreadView {
+  const ThreadFailed();
 }
 
 /// One post out of the live feed [ThreadRef.scope], by share id.
@@ -67,10 +77,10 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
       // refresh keeps that value beside an error — in both the post is still
       // on screen and has to stay there. Reporting `missing` during a refresh
       // window would flash the gone state at someone mid-read.
-      if (entry != null) return ThreadView(ThreadStatus.ready, entry);
-      if (feed.isLoading) return const ThreadView(ThreadStatus.loading);
-      if (feed.hasError) return const ThreadView(ThreadStatus.failed);
-      return const ThreadView(ThreadStatus.missing);
+      if (entry != null) return ThreadReady(entry);
+      if (feed.isLoading) return const ThreadLoading();
+      if (feed.hasError) return const ThreadFailed();
+      return const ThreadMissing();
     }),
   );
 });

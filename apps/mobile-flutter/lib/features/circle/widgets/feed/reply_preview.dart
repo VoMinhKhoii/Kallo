@@ -7,7 +7,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/circle_thread_route.dart';
-import 'reply_row.dart';
+import '../replies/reply_row.dart';
 
 /// The newest replies under a post in the feed, as a read-only teaser.
 ///

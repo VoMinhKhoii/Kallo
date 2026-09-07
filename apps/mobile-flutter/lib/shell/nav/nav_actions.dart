@@ -3,7 +3,12 @@ import 'package:go_router/go_router.dart';
 
 /// The shell's branch roots — the locations that HAVE a tab to come back to.
 /// Kept in step with the [StatefulShellRoute] branches in `router.dart`.
-const Set<String> _shellRoots = {'/dashboard', '/nutrition', '/circle', '/admin'};
+const Set<String> _shellRoots = {
+  '/dashboard',
+  '/nutrition',
+  '/circle',
+  '/admin',
+};
 
 /// Opens the logging feed FULL-SCREEN over whatever the user is looking at
 /// (native pass, 2026-08-31): Log is a pill-nav item but not a shell branch —
@@ -38,14 +43,20 @@ void openLogging(GoRouter router) {
 void goToLogging(BuildContext context) => openLogging(GoRouter.of(context));
 
 /// Leaves a screen that may or may not have been pushed: pop when there is
-/// something under it, otherwise land in the logging feed. Both paywall exits
-/// (dismiss and unlock) need exactly this, and the paywall is reachable both
-/// as a push and as a cold-start destination.
-void popOrOpenLogging(BuildContext context) {
+/// something under it, otherwise hand the router to [fallback]. Every route
+/// pushed over the shell with `parentNavigatorKey` can be entered cold — a
+/// deep link, a notification — with no shell beneath it, where `maybePop` is
+/// a no-op and a back chevron does nothing.
+void popOr(BuildContext context, void Function(GoRouter router) fallback) {
   final router = GoRouter.of(context);
   if (router.canPop()) {
     router.pop();
   } else {
-    openLogging(router);
+    fallback(router);
   }
 }
+
+/// [popOr] landing in the logging feed. Both paywall exits (dismiss and
+/// unlock) need exactly this, and the paywall is reachable both as a push and
+/// as a cold-start destination.
+void popOrOpenLogging(BuildContext context) => popOr(context, openLogging);

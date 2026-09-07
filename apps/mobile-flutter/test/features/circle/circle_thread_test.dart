@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/logic/circle_thread_route.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/reply_row.dart';
+import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
 import 'circle_feed_test_support.dart';
@@ -283,18 +283,12 @@ void main() {
 
       const key = (scope: null, shareId: 's1');
       holdProvider(container, threadEntryProvider(key));
-      expect(
-        container.read(threadEntryProvider(key)).status,
-        ThreadStatus.ready,
-      );
+      expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
 
       // A share the feed never carried settles as missing, not as loading.
       const gone = (scope: null, shareId: 's-gone');
       holdProvider(container, threadEntryProvider(gone));
-      expect(
-        container.read(threadEntryProvider(gone)).status,
-        ThreadStatus.missing,
-      );
+      expect(container.read(threadEntryProvider(gone)), isA<ThreadMissing>());
     });
   });
 }

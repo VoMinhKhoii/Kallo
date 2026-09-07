@@ -14,11 +14,9 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../shared/data/surface_cast.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../shared/widgets/chrome/page_header.dart';
-import '../../../shared/widgets/feedback/kallo_surface_state.dart';
 // Re-exports `kallo_screen.dart`, so `Screen` still arrives with it.
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
@@ -26,10 +24,9 @@ import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/feed_providers.dart';
 import '../data/thread_providers.dart';
-import '../widgets/states/circle_error.dart';
-import '../widgets/states/circle_skeleton.dart';
 import '../widgets/thread/thread_body.dart';
 import '../widgets/thread/thread_composer.dart';
+import '../widgets/thread/thread_states.dart';
 
 class CircleThreadScreen extends ConsumerStatefulWidget {
   const CircleThreadScreen({
@@ -103,26 +100,28 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     final view = ref.watch(
       threadEntryProvider((scope: widget.scope, shareId: widget.shareId)),
     );
-    if (widget.autofocusComposer && view.status == ThreadStatus.ready) {
-      _autofocusOnce();
-    }
-    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    if (widget.autofocusComposer && view is ThreadReady) _autofocusOnce();
 
     return Screen(
       // The dock pays the home indicator itself, so the page must not also
       // reserve it — that would float the composer above the edge.
       bottom: false,
       child: ScrollSeparator(
-        header: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: _ThreadHeader(),
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+          child: PageHeader(
+            title: tr('groups.feed.threadTitle'),
+            // A cold entry (deep link, notification) has no shell beneath this
+            // page; fall back to the tab the thread belongs to.
+            onBack: () => popOr(context, (router) => router.go('/circle')),
+          ),
         ),
         // `overlay`, not part of `child`: a multiline TextField builds a real
         // depth-0 Scrollable, and a composer inside the body would drive the
         // header's hairline as the user typed with the page still at the top.
         // ScrollSeparator documents this exact trap.
         overlay:
-            view.status == ThreadStatus.ready
+            view is ThreadReady
                 ? Align(
                   alignment: Alignment.bottomCenter,
                   child: ThreadComposer(
@@ -134,78 +133,21 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
                   ),
                 )
                 : null,
-        child: switch (view.status) {
-          // No dock in these states, so the page owes the home indicator
-          // itself — `Screen(bottom: false)` above hands it to the composer.
-          ThreadStatus.loading => SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3 + safeBottom,
-            ),
-            child: const CircleWallSkeleton(),
-          ),
-          ThreadStatus.failed => SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3 + safeBottom,
-            ),
-            child: CircleErrorCard(
-              onRetry:
-                  () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
-            ),
-          ),
-          // Never auto-pop: a screen that closes itself under the user's thumb
-          // reads as a crash. Say what happened and offer the way back.
-          ThreadStatus.missing => SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3,
-              KalloSpacing.sp3 + safeBottom,
-            ),
-            child: KalloSurfaceState(
-              area: SurfaceArea.circle,
-              kind: SurfaceKind.empty,
-              title: tr('groups.feed.threadGone'),
-              subtitle: tr('groups.feed.threadGoneBody'),
-              // The way back, said once: without it this state is a dead end
-              // on a small screen, where the header can scroll out of reach.
-              action: KalloButton(
-                title: tr('common.back'),
-                variant: KalloButtonVariant.cta,
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-            ),
-          ),
-          ThreadStatus.ready => ThreadBody(
-            entry: view.entry!,
+        child: switch (view) {
+          ThreadReady(:final entry) => ThreadBody(
+            entry: entry,
             controller: _scroll,
             dockHeight: _dockHeight,
             onReply: _focus.requestFocus,
+          ),
+          // No dock in these states, so they owe the home indicator
+          // themselves — `Screen(bottom: false)` above hands it to the dock.
+          ThreadLoading() || ThreadFailed() || ThreadMissing() => ThreadStates(
+            view: view,
+            onRetry: () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
           ),
         },
       ),
     );
   }
-}
-
-class _ThreadHeader extends StatelessWidget {
-  const _ThreadHeader();
-
-  @override
-  Widget build(BuildContext context) => PageHeader(
-    title: tr('groups.feed.threadTitle'),
-    // A cold entry (deep link, notification) has no shell beneath this page,
-    // so `maybePop` is a no-op and the chevron does nothing. Fall back to the
-    // tab this thread belongs to rather than leaving the user stuck.
-    onBack:
-        () =>
-            Navigator.of(context).canPop()
-                ? Navigator.of(context).pop()
-                : GoRouter.of(context).go('/circle'),
-  );
 }
