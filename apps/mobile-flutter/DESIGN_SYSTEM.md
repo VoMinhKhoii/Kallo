@@ -77,6 +77,33 @@ glyphs at 18 beside a third at 21 reads as a misaligned row, not a quieter one.
 targets are unchanged. Stroke stays 1.5 (the Lucide `300` constants). Non-action
 DATA glyphs (the 14pt macro-legend food icons) are outside the tiers.
 
+## Platform — Cupertino wherever it exists (2026-09-07)
+
+Where Flutter ships a Cupertino widget or behaviour for the thing you are
+building, **use it**. Material's ink ripple, spinning arc and bottom-up page
+transition are the three things that make an app read as "a Flutter app"; this
+one is iOS-first, and none of them is a per-surface taste call.
+
+The rule mostly describes what the app already did — `CupertinoPage` routes,
+`CupertinoSliverRefreshControl`, a Cupertino confirm alert,
+`CupertinoContextMenu`, `Switch.adaptive` — but it had never been written down,
+so each surface re-decided and 17 Material spinners piled up under a Cupertino
+navigation stack.
+
+Three boundaries, spelled out with the full table in `mobile.md`:
+
+- **The app stays on `MaterialApp`.** Every token hangs off `ThemeData`, and
+  `TextField`/`InkWell` need a `Material` ancestor. Cupertino is a **widget**
+  level choice, not an app-level one.
+- **The design system wins on look; the platform wins on behaviour.** Take the
+  anatomy, gestures and timing; override SF Pro, system blue and frosted
+  surfaces. `kallo_confirm.dart` is the worked example — an iOS alert wearing
+  Be Vietnam Pro on a solid card, because "solid surfaces, no stacked
+  translucency" outranks `CupertinoPopupSurface`'s default.
+- **A widget the app already owns beats both.** `TopToast`, `KalloSheet` and
+  `KalloConfirmActions` are not up for replacement by their Cupertino
+  equivalents. Reach for Cupertino where the app has no answer of its own.
+
 The reference implementation is
 `lib/theme/calm_tokens.dart` (`dashHero` / `dashValue`
 / `dashBody` / `dashName` / `dashMeta` / `dashCaption` / `dashHeadline`, the
