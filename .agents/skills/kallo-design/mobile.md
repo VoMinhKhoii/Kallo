@@ -421,7 +421,7 @@ Cupertino navigation stack.
 |------------|-----|-------|
 | `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
 | `MaterialPageRoute` | `CupertinoPageRoute` / `CupertinoPage` | 1 site left (`auth/widgets/email_auth_form.dart`) |
-| `InkWell` / `InkResponse` ripple | a press wash — `GestureDetector` + `AnimatedContainer` over `KalloColors.pressWash` | **2 sites to migrate** (`feed_action_button.dart` migrated 2026-09-07 — it is the worked example) |
+| `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
 | `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
 | `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
@@ -499,7 +499,8 @@ renders as Material.
 | Item | Sites | Notes |
 |------|-------|-------|
 | `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
-| `InkWell`/`InkResponse` ripple → press wash | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` migrated 2026-09-07 and is the pattern to copy: `Listener` (pointer down/up/cancel) → `GestureDetector(behavior: opaque)` → `AnimatedContainer` washing to `KalloColors.pressWash` over `KalloMotion.press`. Its ripple had been unbounded — it spread over the full 44pt box and persisted for a hold |
+| `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold |
+| arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
 | `MaterialPageRoute` → `CupertinoPageRoute` | 1 | `auth/widgets/email_auth_form.dart` — the only route in the app that does not slide |
 | `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
 

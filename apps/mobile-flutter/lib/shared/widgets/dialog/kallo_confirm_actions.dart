@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
+import '../surface/kallo_pressable.dart';
 
 /// The confirm dialog's actions: full-width 44pt TEXT rows, stacked, each one
 /// separated from the content above it by a 0.5pt hairline.
@@ -96,26 +96,17 @@ class KalloAlertHairline extends StatelessWidget {
 /// already what `shared/widgets/form/sheet_confirm_button.dart` paints; it
 /// darkens the row instead of repainting it.
 ///
-/// **The hold (2026-09-07, reversing a same-day revision).** The row behaves
-/// exactly as the platform's own alert action does: the wash lasts the ENTIRE
-/// hold, however long the finger stays down, and the action FIRES on release.
-/// A revision earlier that day claimed the long press so that a hold washed
-/// the row and then committed NOTHING — "a way out of a tap". That was a
-/// divergence from `.agents/skills/kallo-design/mobile.md`, *Platform —
-/// Cupertino wherever it exists*, boundary 2: the design system wins on look,
-/// **the platform wins on behaviour**, and an iOS alert action does not
-/// swallow a slow tap. It also did not deliver the wash it promised — the
-/// long-press recognizer winning the arena at ~500ms rejected the tap
-/// recognizer, whose `onTapCancel` cleared `_pressed` and dropped the wash
-/// mid-hold, with the finger still down.
+/// **The hold (2026-09-07).** The row behaves exactly as the platform's own
+/// alert action does: the wash lasts the ENTIRE hold and the action FIRES on
+/// release (`mobile.md`, *Platform — Cupertino wherever it exists*, boundary
+/// 2: the platform wins on behaviour). An arena-driven wash cannot deliver
+/// that — a long press winning the arena at ~500ms rejects the tap and its
+/// `onTapCancel` drops the wash with the finger still down.
 ///
-/// Both are fixed by taking the press state OUT of the gesture arena: a
-/// [Listener] paints the wash straight off the raw pointer stream, where no
-/// arena resolution can cancel it, and the [GestureDetector] keeps nothing but
-/// `onTap`. A drag-off still behaves: `onPointerUp` fires wherever the finger
-/// lifts, so the wash always clears, while `onTap` does not fire when the
-/// pointer leaves the row — release outside, nothing happens.
-class KalloAlertAction extends StatefulWidget {
+/// Both are fixed by [KalloPressable], which takes the press state OUT of the
+/// gesture arena so no arena resolution can cancel the wash, and fires on
+/// release like the platform's own action. This row was its first consumer.
+class KalloAlertAction extends StatelessWidget {
   const KalloAlertAction({
     super.key,
     required this.label,
@@ -130,49 +121,22 @@ class KalloAlertAction extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<KalloAlertAction> createState() => _KalloAlertActionState();
-}
-
-class _KalloAlertActionState extends State<KalloAlertAction> {
-  bool _pressed = false;
-
-  void _release() {
-    if (!mounted) return;
-    setState(() => _pressed = false);
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: widget.label,
-      // Outside the arena on purpose: the wash follows the finger, not the
-      // recognizer that happens to win.
-      child: Listener(
-        onPointerDown: (_) => setState(() => _pressed = true),
-        onPointerUp: (_) => _release(),
-        onPointerCancel: (_) => _release(),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          // Animated, not a bare Container: every other quiet button in the app
-          // crossfades its wash rather than snapping it on.
-          child: AnimatedContainer(
-            duration: KalloMotion.press,
-            curve: KalloEase.press,
-            alignment: Alignment.center,
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(
-              horizontal: KalloSpacing.sp4,
-              vertical: KalloSpacing.sp2,
-            ),
-            color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
-            child: Text(
-              widget.label,
-              textAlign: TextAlign.center,
-              style: dashBody(color: widget.color, weight: widget.weight),
-            ),
-          ),
+      label: label,
+      child: KalloPressable(
+        onTap: onTap,
+        alignment: Alignment.center,
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(
+          horizontal: KalloSpacing.sp4,
+          vertical: KalloSpacing.sp2,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: dashBody(color: color, weight: weight),
         ),
       ),
     );

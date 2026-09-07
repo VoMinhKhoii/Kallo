@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_motion.dart';
+import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// Glyph size, and the minimum square the tap target must fill. Both are the
@@ -40,7 +40,7 @@ const Color _actionInk = KalloColors.textSoft;
 /// One Circle-post action: an 18pt glyph centred in a 44pt square, with an
 /// optional label riding alongside it INSIDE the same target — so a labelled
 /// action grows sideways rather than growing a second hit box.
-class FeedActionButton extends StatefulWidget {
+class FeedActionButton extends StatelessWidget {
   const FeedActionButton({
     super.key,
     this.onTap,
@@ -81,74 +81,44 @@ class FeedActionButton extends StatefulWidget {
   final Alignment alignment;
 
   @override
-  State<FeedActionButton> createState() => _FeedActionButtonState();
-}
-
-/// The press feedback is a WASH, not a ripple: `Listener` for the raw pointer
-/// (a `GestureDetector`'s tap callbacks fire too late to paint a down state)
-/// wrapping a `GestureDetector` for the tap itself. Material's `InkWell` here
-/// was unbounded — the ripple spread over the whole 44pt box and persisted for
-/// a hold — and it is one of the three tells the platform rule names (see
-/// `mobile.md`, "Platform — Cupertino wherever it exists").
-class _FeedActionButtonState extends State<FeedActionButton> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (_pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final VoidCallback? onTap = widget.onTap;
-    final String? label = widget.label;
-    final Alignment alignment = widget.alignment;
+    // A wash, not a ripple (see `mobile.md`, "Platform — Cupertino wherever
+    // it exists"): Material's InkWell here was unbounded, spreading over the
+    // whole 44pt box and persisting for a hold. Tight height on purpose — a
+    // Container with an alignment and no height is an Align that takes all
+    // the height it is offered, which is how the thread composer once
+    // ballooned over its own reply list.
     final Widget button = Opacity(
       opacity: onTap == null ? 0.5 : 1,
-      child: Listener(
-        onPointerDown: (_) => _setPressed(true),
-        onPointerUp: (_) => _setPressed(false),
-        onPointerCancel: (_) => _setPressed(false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: KalloMotion.press,
-            curve: KalloEase.press,
-            color:
-                _pressed && onTap != null
-                    ? KalloColors.pressWash
-                    : const Color(0x00000000),
-            height: _hit,
-            constraints: const BoxConstraints(minWidth: _hit),
-            padding: EdgeInsets.only(
-              left:
-                  alignment == Alignment.centerLeft
-                      ? 0
-                      : (label == null ? 0 : KalloSpacing.sp2_5),
-              right: label == null ? 0 : KalloSpacing.sp2_5,
+      child: KalloPressable(
+        onTap: onTap,
+        height: _hit,
+        constraints: const BoxConstraints(minWidth: _hit),
+        padding: EdgeInsets.only(
+          left:
+              alignment == Alignment.centerLeft
+                  ? 0
+                  : (label == null ? 0 : KalloSpacing.sp2_5),
+          right: label == null ? 0 : KalloSpacing.sp2_5,
+        ),
+        alignment: alignment,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: _glyph,
+              color: fill == 1 ? activeColor : _actionInk,
+              fill: fill,
             ),
-            alignment: alignment,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  widget.icon,
-                  size: _glyph,
-                  color: widget.fill == 1 ? widget.activeColor : _actionInk,
-                  fill: widget.fill,
-                ),
-                if (label != null) ...[
-                  const SizedBox(width: KalloSpacing.sp1_5),
-                  Text(label, style: dashMeta(color: _actionInk)),
-                ],
-              ],
-            ),
-          ),
+            if (label != null) ...[
+              const SizedBox(width: KalloSpacing.sp1_5),
+              Text(label!, style: dashMeta(color: _actionInk)),
+            ],
+          ],
         ),
       ),
     );
-    final String? semanticLabel = widget.semanticLabel;
     if (semanticLabel == null) return button;
     return Semantics(button: true, label: semanticLabel, child: button);
   }
