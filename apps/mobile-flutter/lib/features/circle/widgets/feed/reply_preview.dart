@@ -61,6 +61,11 @@ class ReplyPreview extends StatelessWidget {
           if (showsLink)
             Semantics(
               button: true,
+              // "View thread · N replies", not "View all N": the thread page
+              // shows the newest 12 the API ships and there is no endpoint
+              // to page the rest, so the count is a fact about the thread,
+              // never a promise about what the page will list.
+              //
               // A real 44pt target, not vertical slack: this is the one
               // affordance in the card that leaves the page. The gap it
               // would open under the last reply is paid back above.
@@ -75,7 +80,7 @@ class ReplyPreview extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   tr(
-                    'groups.feed.viewAllReplies',
+                    'groups.feed.viewThread',
                     namedArgs: {'count': '$total'},
                   ),
                   style: dashMeta(),

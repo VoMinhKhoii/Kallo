@@ -13,6 +13,7 @@ interface MealListProps {
   meals: MealEntry[];
 }
 
+/** Today's logged meals, newest first, or the empty surface when none. */
 export function MealList({ meals }: MealListProps) {
   const t = useTranslations('dashboard');
 
@@ -60,6 +61,7 @@ export function MealList({ meals }: MealListProps) {
   );
 }
 
+/** One meal: capitalised label, time, composition bar and macro figures. */
 function MealRow({ meal }: { meal: MealEntry }) {
   const locale = useLocale();
   // Spelled once: the bar and the figures under it read the same record.

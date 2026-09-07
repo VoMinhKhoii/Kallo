@@ -94,7 +94,7 @@ void main() {
   });
 
   test('compose rides in the URL, alone or beside the scope', () {
-    // The reply glyph asks for a focused composer; the "View all" link does
+    // The reply glyph asks for a focused composer; the "View thread" link does
     // not. It has to be a query param rather than a push argument so a deep
     // link and a restored route mean the same thing.
     expect(

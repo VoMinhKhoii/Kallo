@@ -17,6 +17,7 @@ import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import { cn } from '@/lib/core/ui/cn';
 
+/** A portion factor as the glyph people read (½, ⅓, ¼), else a percentage. */
 function fractionLabel(factor: number): string {
   if (Math.abs(factor - 0.5) < 0.001) return '½';
   if (Math.abs(factor - 1 / 3) < 0.001) return '⅓';

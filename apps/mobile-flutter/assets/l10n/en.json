@@ -1523,11 +1523,11 @@
       "replyPlaceholder": "Reply…",
       "replyError": "Couldn't post your reply. Try again.",
       "earlierReplies": {
-        "one": "{count} earlier reply",
-        "other": "{count} earlier replies"
+        "one": "{count} earlier reply not shown",
+        "other": "{count} earlier replies not shown"
       },
       "threadTitle": "Replies",
-      "viewAllReplies": "View all {count} replies",
+      "viewThread": "View thread · {count} replies",
       "noReplies": "No replies yet",
       "noRepliesBody": "Be the first to say something.",
       "threadGone": "This post isn't here any more",

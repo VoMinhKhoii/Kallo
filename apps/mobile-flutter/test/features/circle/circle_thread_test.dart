@@ -136,10 +136,10 @@ void main() {
 
     // 9 total, 2 shipped: the page owns this line because the thread is where
     // the missing 7 would otherwise be silently absent.
-    expect(find.text('7 earlier replies'), findsOneWidget);
+    expect(find.text('7 earlier replies not shown'), findsOneWidget);
   });
 
-  testWidgets('one withheld reply reads as one, not as "1 earlier replies"', (
+  testWidgets('one withheld reply reads as one, not as "1 replies"', (
     tester,
   ) async {
     final api = FakeApiClient(
@@ -158,7 +158,7 @@ void main() {
 
     // The key is a plural map, so the line has to go through `plural` — `tr`
     // would print the map's own shape.
-    expect(find.text('1 earlier reply'), findsOneWidget);
+    expect(find.text('1 earlier reply not shown'), findsOneWidget);
   });
 
   group('the composer opens focused only when the URL asks', () {

@@ -229,7 +229,9 @@ void main() {
     expect(find.text('Reply 1'), findsNothing);
     expect(find.text('Reply 2'), findsOneWidget);
     expect(find.text('Reply 3'), findsOneWidget);
-    expect(find.text('View all 9 replies'), findsOneWidget);
+    // The count is the thread's, not a promise of what the page lists — the
+    // page shows the newest 12 and says how many it withholds.
+    expect(find.text('View thread · 9 replies'), findsOneWidget);
 
     // Nothing hidden: no link, because there is nowhere further to go.
     await pump(
@@ -239,7 +241,7 @@ void main() {
         scope: null,
       ),
     );
-    expect(find.textContaining('View all'), findsNothing);
+    expect(find.textContaining('View thread'), findsNothing);
   });
 
   testWidgets('a reply sits in a pill that hugs its own text', (tester) async {
