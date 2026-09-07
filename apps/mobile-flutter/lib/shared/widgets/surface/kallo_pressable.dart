@@ -27,6 +27,20 @@ import '../../../theme/kallo_motion.dart';
 /// token and every consumer so far is a rectangular row or square. It is
 /// painted by an [AnimatedContainer] so it crossfades over [KalloMotion.press]
 /// like every other quiet control, rather than snapping.
+///
+/// **Sizing (2026-09-08).** The target SHRINK-WRAPS in both axes: it is as
+/// wide and as tall as its child (plus [padding], within [constraints] and
+/// [height]). A parent that wants the target wider hands it tight
+/// constraints — a [Column] with [CrossAxisAlignment.stretch], a
+/// [SizedBox.expand] — which is how [KalloAlertAction] is full-bleed.
+///
+/// That is why [alignment] is applied by an explicit [Align] with BOTH size
+/// factors rather than by the container's own `alignment`: Container's is an
+/// [Align] WITHOUT factors, which grows to any FINITE max width it is
+/// offered. A [Row] offers its children unbounded width, so this shrink-wrapped
+/// by accident; a [Wrap] offers the COLUMN width, so every [FeedActionButton]
+/// in the Circle post action row became column-wide and each of the three
+/// landed on its own line.
 class KalloPressable extends StatefulWidget {
   const KalloPressable({
     required this.onTap,
@@ -34,7 +48,7 @@ class KalloPressable extends StatefulWidget {
     this.height,
     this.constraints,
     this.padding,
-    this.alignment,
+    this.alignment = Alignment.center,
     super.key,
   });
 
@@ -47,7 +61,10 @@ class KalloPressable extends StatefulWidget {
   final double? height;
   final BoxConstraints? constraints;
   final EdgeInsetsGeometry? padding;
-  final AlignmentGeometry? alignment;
+
+  /// Where the child sits in the target. Applied by an [Align] with both size
+  /// factors, so aligning never widens the box (see *Sizing* above).
+  final AlignmentGeometry alignment;
 
   @override
   State<KalloPressable> createState() => _KalloPressableState();
@@ -77,9 +94,13 @@ class _KalloPressableState extends State<KalloPressable> {
           height: widget.height,
           constraints: widget.constraints,
           padding: widget.padding,
-          alignment: widget.alignment,
           color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
-          child: widget.child,
+          child: Align(
+            alignment: widget.alignment,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: widget.child,
+          ),
         ),
       ),
     );

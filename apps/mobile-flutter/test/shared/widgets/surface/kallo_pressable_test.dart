@@ -81,4 +81,56 @@ void main() {
     expect(washOf(tester), const Color(0x00000000));
     await gesture.up();
   });
+
+  // Sizing. The target shrink-wraps its child in both axes; a parent that
+  // wants it wider hands it tight constraints. Container's own `alignment`
+  // is an Align WITHOUT size factors, which grows to any finite max width —
+  // inside a Wrap (which offers the column width) that made every
+  // FeedActionButton column-wide, one action per line (2026-09-08).
+  // `Center` because pumpWidget hands its root a TIGHT 800x600: a bare
+  // SizedBox under tight constraints cannot shrink to 300.
+  Widget sized(Widget parent) => Directionality(
+    textDirection: TextDirection.ltr,
+    child: Center(child: SizedBox(width: 300, child: parent)),
+  );
+
+  // `alignment` explicitly, because that is what puts the Align in the tree —
+  // and every real consumer passes one (FeedActionButton, KalloAlertAction).
+  Widget target() => KalloPressable(
+    onTap: () {},
+    height: 44,
+    alignment: Alignment.center,
+    constraints: const BoxConstraints(minWidth: 44),
+    child: const SizedBox(width: 60, height: 10),
+  );
+
+  testWidgets('inside a Wrap it shrink-wraps to its child', (tester) async {
+    await tester.pumpWidget(sized(Wrap(children: [target()])));
+
+    expect(
+      tester.getSize(find.byType(KalloPressable)).width,
+      60,
+      reason: 'a column-wide target puts one action per line in the feed row',
+    );
+  });
+
+  testWidgets('a stretching Column still gets a full-width target', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      sized(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [target()],
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byType(KalloPressable)).width,
+      300,
+      reason:
+          'the alert action is full-bleed from the Column that stretches it',
+    );
+  });
 }

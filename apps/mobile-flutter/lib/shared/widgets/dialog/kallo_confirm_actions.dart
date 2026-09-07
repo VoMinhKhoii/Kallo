@@ -89,6 +89,10 @@ class KalloAlertHairline extends StatelessWidget {
 /// on press. No fill, no radius — the row IS the button, which is why the
 /// hairlines above and below it are what separate it from its neighbours.
 ///
+/// The full width comes from the stacking [Column]'s
+/// [CrossAxisAlignment.stretch] above, which hands this row a TIGHT width —
+/// not from [KalloPressable], which shrink-wraps its child.
+///
 /// **The press (2026-09-07).** The wash was [KalloColors.hover] (`#F0EAE0`),
 /// an opaque warm cream — that is the SELECTED token, not the pressed one, and
 /// holding a row turned it into a solid cream slab. It is
