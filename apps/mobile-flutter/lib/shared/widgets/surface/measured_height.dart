@@ -49,8 +49,15 @@ class _MeasuredHeightState extends State<MeasuredHeight> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    // The first read, once. Every later change arrives as a notification
+    // below, so build has nothing to schedule.
     WidgetsBinding.instance.addPostFrameCallback((_) => _report());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return NotificationListener<SizeChangedLayoutNotification>(
       onNotification: (_) {
         // Fired during layout — defer the consumer's setState past this frame.

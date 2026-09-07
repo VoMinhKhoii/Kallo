@@ -47,13 +47,17 @@ class NutrientGridCard extends StatelessWidget {
     final exceeded = shouldShowExceed(card.nutrientType, pct);
     final adequate = nutrientIsAdequate(card);
 
-    final figure = nutrientFigure(
-      card,
-      limitedLabel: tr('nutrition.steady.limited'),
-      noTargetLabel: tr('nutrition.steady.noTarget'),
-      percentLabel: (value) =>
-          tr('nutrition.steady.percent', namedArgs: {'value': '$value'}),
-    );
+    String percent(int value) =>
+        tr('nutrition.steady.percent', namedArgs: {'value': '$value'});
+    final figure = switch (nutrientFigure(card)) {
+      FigureUnmeasured() => '—',
+      FigureLimited() => tr('nutrition.steady.limited'),
+      FigureNoTarget() => tr('nutrition.steady.noTarget'),
+      // Through the same key as the ordinary reading, so a locale that moves
+      // the percent sign moves it here too.
+      FigureExceeded(:final overBy) => '+${percent(overBy)}',
+      FigurePercent(:final value) => percent(value),
+    };
     final goal = nutrientGoalText(card, localeOf(context));
 
     // The state the grid exists to show is carried by the fill and by the
@@ -71,7 +75,9 @@ class NutrientGridCard extends StatelessWidget {
           // filled card, readable without reading. Everything else keeps the
           // app's ordinary card surface and its one hairline.
           color: adequate ? KalloColors.successFaint : kCardSurface,
-          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(KalloRadii.containerLg),
+          ),
           border: Border.all(
             color: adequate ? KalloColors.successBorder : kHairline,
           ),
@@ -132,13 +138,14 @@ class NutrientGridCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.end,
                           style: dashCaption(
-                            color: exceeded
-                                ? KalloColors.danger
-                                : (limited || pct == null)
-                                ? kInkMuted
-                                : adequate
-                                ? KalloColors.successDark
-                                : kInk,
+                            color:
+                                exceeded
+                                    ? KalloColors.danger
+                                    : (limited || pct == null)
+                                    ? kInkMuted
+                                    : adequate
+                                    ? KalloColors.successDark
+                                    : kInk,
                             tabular: true,
                           ),
                         ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../shell/nav/nav_actions.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/thread_providers.dart';
 import '../states/circle_error.dart';
@@ -44,7 +45,9 @@ class ThreadStates extends StatelessWidget {
           action: KalloButton(
             title: tr('common.back'),
             variant: KalloButtonVariant.cta,
-            onPressed: () => Navigator.of(context).maybePop(),
+            // Same exit as the header's chevron: a cold entry has no shell
+            // beneath this page, and `maybePop` there would do nothing.
+            onPressed: () => popOr(context, (router) => router.go('/circle')),
           ),
         ),
         ThreadReady() => const SizedBox.shrink(),

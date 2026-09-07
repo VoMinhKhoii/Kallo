@@ -32,42 +32,66 @@ bool isOnTarget(NutrientCardData card) {
     NutrientType.floor => pct >= 90,
     NutrientType.ceiling => pct >= 90 && pct <= 100,
     // range: within ±10% of target.
-    _ => (pct - 100).abs() <= 10,
+    NutrientType.range => (pct - 100).abs() <= 10,
   };
 }
 
-/// Whether the whole card goes green: on target, measured well enough to say
-/// so, and not over a ceiling.
+/// Whether the whole card goes green: on target, and measured well enough to
+/// say so. (Web also checks "not exceeded"; [isOnTarget] already implies it —
+/// a ceiling is on target only inside 90..100 and exceeds only above.)
 bool nutrientIsAdequate(NutrientCardData card) =>
-    card.percentOfTarget != null &&
-    !isLowConfidence(card.displayState) &&
-    !shouldShowExceed(card.nutrientType, card.percentOfTarget) &&
-    isOnTarget(card);
+    !isLowConfidence(card.displayState) && isOnTarget(card);
 
 /// The card's headline figure — a PERCENTAGE, because the grid's job is
 /// "how am I doing", answered at a glance across twenty cells. The absolute
 /// avg/target reading sits underneath it ([nutrientGoalText]).
 ///
-/// [limitedLabel] and [noTargetLabel] are passed in so this stays free of the
-/// localisation scope.
-String nutrientFigure(
-  NutrientCardData card, {
-  required String limitedLabel,
-  required String noTargetLabel,
-  required String Function(int) percentLabel,
-}) {
+/// A value, not a string: the logic layer decides WHICH figure this is and
+/// the widget spells every one of them, including the dash and the "+N%",
+/// through the localisation scope. The previous shape took three label
+/// callbacks and still hand-assembled two of five outputs as literals.
+sealed class NutrientFigure {
+  const NutrientFigure();
+}
+
+/// Nothing measured at all — an empty range, or a bucket with no reading. A
+/// dash, not "limited": there is no thin reading to caveat, there is none.
+class FigureUnmeasured extends NutrientFigure {
+  const FigureUnmeasured();
+}
+
+class FigureLimited extends NutrientFigure {
+  const FigureLimited();
+}
+
+class FigureNoTarget extends NutrientFigure {
+  const FigureNoTarget();
+}
+
+/// Past a ceiling by [overBy] percent.
+class FigureExceeded extends NutrientFigure {
+  const FigureExceeded(this.overBy);
+  final int overBy;
+}
+
+class FigurePercent extends NutrientFigure {
+  const FigurePercent(this.value);
+  final int value;
+}
+
+NutrientFigure nutrientFigure(NutrientCardData card) {
   final pct = card.percentOfTarget;
-  // Nothing measured at all — an empty range, or a bucket with no reading. A
-  // dash, not "Limited": there is no thin reading to caveat, there is none.
-  if (card.averagePerDay == null && pct == null) return '—';
+  if (card.averagePerDay == null && pct == null) {
+    return const FigureUnmeasured();
+  }
   if (card.displayState == ConfidenceDisplayState.insufficientData) {
-    return limitedLabel;
+    return const FigureLimited();
   }
-  if (pct == null) return noTargetLabel;
+  if (pct == null) return const FigureNoTarget();
   if (shouldShowExceed(card.nutrientType, pct) && pct > 100) {
-    return '+${(pct - 100).round()}%';
+    return FigureExceeded((pct - 100).round());
   }
-  return percentLabel(pct.round());
+  return FigurePercent(pct.round());
 }
 
 /// The absolute reading under the bar — "78.5 / 70 mg".

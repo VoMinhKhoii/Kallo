@@ -8,16 +8,20 @@ library;
 import 'package:flutter/widgets.dart';
 
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A system alert is 270pt wide on every iPhone. Matching it is most of what
 /// makes a custom card read as the platform's own.
 const double kKalloAlertWidth = 270;
 
 /// The corner `CupertinoPopupSurface` drew, kept when its material was not.
-const double kKalloAlertRadius = 14;
+/// It happens to equal [KalloRadii.xl]; named for what it means, not its size.
+const double kKalloAlertRadius = KalloRadii.xl;
 
-/// The app's one scrim — `dialogTheme.barrierColor` in `kallo_theme.dart`.
-const Color kKalloAlertBarrier = Color(0x80000000);
+/// `showCupertinoDialog` ignores `dialogTheme.barrierColor`, so the alert
+/// passes the app's scrim explicitly. Same token the theme uses.
+const Color kKalloAlertBarrier = KalloColors.scrim;
 
 /// Finds the alert card in a widget test, and marks it in the tree.
 ///

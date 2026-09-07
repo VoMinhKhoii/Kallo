@@ -21,7 +21,6 @@ import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/kallo_motion.dart';
-import '../../../theme/kallo_theme.dart';
 import '../data/feed_providers.dart';
 import '../data/thread_providers.dart';
 import '../widgets/thread/thread_body.dart';
@@ -57,29 +56,16 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
 
   /// What the dock currently covers, measured rather than assumed: the field
   /// grows to four lines with the draft, and a constant would leave the last
-  /// reply behind it with no way to scroll it clear.
-  double _dockHeight = 0;
-  bool _autofocused = false;
-
-  void _dockHeightChanged(double height) {
-    if (!mounted || height == _dockHeight) return;
-    setState(() => _dockHeight = height);
-  }
-
-  /// Once, on the first frame the thread is actually readable — focusing a
-  /// composer that is still behind a skeleton raises a keyboard over nothing.
-  void _autofocusOnce() {
-    if (_autofocused) return;
-    _autofocused = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focus.requestFocus();
-    });
-  }
+  /// reply behind it with no way to scroll it clear. A notifier, not state on
+  /// this screen: only the body's tail reserve listens, so a grown dock
+  /// rebuilds one padding rather than the page.
+  final _dockHeight = ValueNotifier<double>(0);
 
   @override
   void dispose() {
     _focus.dispose();
     _scroll.dispose();
+    _dockHeight.dispose();
     super.dispose();
   }
 
@@ -100,21 +86,16 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     final view = ref.watch(
       threadEntryProvider((scope: widget.scope, shareId: widget.shareId)),
     );
-    if (widget.autofocusComposer && view is ThreadReady) _autofocusOnce();
-
     return Screen(
       // The dock pays the home indicator itself, so the page must not also
       // reserve it — that would float the composer above the edge.
       bottom: false,
       child: ScrollSeparator(
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: PageHeader(
-            title: tr('groups.feed.threadTitle'),
-            // A cold entry (deep link, notification) has no shell beneath this
-            // page; fall back to the tab the thread belongs to.
-            onBack: () => popOr(context, (router) => router.go('/circle')),
-          ),
+        header: PageHeader(
+          title: tr('groups.feed.threadTitle'),
+          // A cold entry (deep link, notification) has no shell beneath this
+          // page; fall back to the tab the thread belongs to.
+          onBack: () => popOr(context, (router) => router.go('/circle')),
         ),
         // `overlay`, not part of `child`: a multiline TextField builds a real
         // depth-0 Scrollable, and a composer inside the body would drive the
@@ -128,7 +109,12 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
                     shareId: widget.shareId,
                     scope: widget.scope,
                     focusNode: _focus,
-                    onHeightChanged: _dockHeightChanged,
+                    // Mounted only once the thread is readable, so the
+                    // composer's own first frame is the right one to focus
+                    // on — a keyboard over a skeleton would be a keyboard
+                    // over nothing.
+                    autofocus: widget.autofocusComposer,
+                    onHeightChanged: (height) => _dockHeight.value = height,
                     onPosted: _scrollToEnd,
                   ),
                 )
@@ -136,6 +122,7 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
         child: switch (view) {
           ThreadReady(:final entry) => ThreadBody(
             entry: entry,
+            scope: widget.scope,
             controller: _scroll,
             dockHeight: _dockHeight,
             onReply: _focus.requestFocus,

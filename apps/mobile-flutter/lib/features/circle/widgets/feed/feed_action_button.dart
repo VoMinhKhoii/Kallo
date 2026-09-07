@@ -88,6 +88,10 @@ class FeedActionButton extends StatelessWidget {
     // Container with an alignment and no height is an Align that takes all
     // the height it is offered, which is how the thread composer once
     // ballooned over its own reply list.
+    // A labelled action breathes sideways inside its target; a glyph-only one
+    // is the bare 44pt square. A row's first action drops the leading pad so
+    // its glyph lands on the content column.
+    final sidePad = label == null ? 0.0 : KalloSpacing.sp2_5;
     final Widget button = Opacity(
       opacity: onTap == null ? 0.5 : 1,
       child: KalloPressable(
@@ -95,11 +99,8 @@ class FeedActionButton extends StatelessWidget {
         height: _hit,
         constraints: const BoxConstraints(minWidth: _hit),
         padding: EdgeInsets.only(
-          left:
-              alignment == Alignment.centerLeft
-                  ? 0
-                  : (label == null ? 0 : KalloSpacing.sp2_5),
-          right: label == null ? 0 : KalloSpacing.sp2_5,
+          left: alignment == Alignment.centerLeft ? 0 : sidePad,
+          right: sidePad,
         ),
         alignment: alignment,
         child: Row(

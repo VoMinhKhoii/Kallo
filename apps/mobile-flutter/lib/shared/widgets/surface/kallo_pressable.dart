@@ -23,14 +23,14 @@ import '../../../theme/kallo_motion.dart';
 /// disables the target: no wash, no tap. Dimming a disabled target is the
 /// caller's, since it owns the colours.
 ///
-/// The wash is painted by an [AnimatedContainer] — every quiet control in the
-/// app crossfades its wash over [KalloMotion.press] rather than snapping it.
+/// The wash is [KalloColors.pressWash], full-bleed — the app has one press
+/// token and every consumer so far is a rectangular row or square. It is
+/// painted by an [AnimatedContainer] so it crossfades over [KalloMotion.press]
+/// like every other quiet control, rather than snapping.
 class KalloPressable extends StatefulWidget {
   const KalloPressable({
     required this.onTap,
     required this.child,
-    this.washColor = KalloColors.pressWash,
-    this.borderRadius,
     this.height,
     this.constraints,
     this.padding,
@@ -41,12 +41,6 @@ class KalloPressable extends StatefulWidget {
   /// Null disables the target.
   final VoidCallback? onTap;
   final Widget child;
-
-  /// What paints while pressed. Ink at 6% by default — the app's press token.
-  final Color washColor;
-
-  /// Rounds the wash; leave null for a full-bleed row (the alert action).
-  final BorderRadius? borderRadius;
 
   // Box geometry, passed straight to the container so a consumer sizes its
   // tap target here and nowhere else.
@@ -84,10 +78,7 @@ class _KalloPressableState extends State<KalloPressable> {
           constraints: widget.constraints,
           padding: widget.padding,
           alignment: widget.alignment,
-          decoration: BoxDecoration(
-            color: _pressed ? widget.washColor : const Color(0x00000000),
-            borderRadius: widget.borderRadius,
-          ),
+          color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
           child: widget.child,
         ),
       ),

@@ -20,6 +20,10 @@ import 'package:kallo_mobile/models/social/circle.dart';
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
 
+/// The reply bubble around [body]: the nearest Container up from the text.
+Finder pill(String body) =>
+    find.ancestor(of: find.text(body), matching: find.byType(Container)).first;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -249,28 +253,13 @@ void main() {
         scope: null,
       ),
     );
-    final bubble = tester.getSize(
-      find
-          .ancestor(of: find.text('Ngon'), matching: find.byType(Container))
-          .first,
-    );
+    final bubble = tester.getSize(pill('Ngon'));
     final preview = tester.getSize(find.byType(ReplyPreview));
     expect(bubble.width, lessThan(preview.width));
     // The author stays OUTSIDE the pill — identity above, body inside.
     expect(
       tester.getBottomRight(find.textContaining('linh')).dy,
-      lessThanOrEqualTo(
-        tester
-            .getTopLeft(
-              find
-                  .ancestor(
-                    of: find.text('Ngon'),
-                    matching: find.byType(Container),
-                  )
-                  .first,
-            )
-            .dy,
-      ),
+      lessThanOrEqualTo(tester.getTopLeft(pill('Ngon')).dy),
     );
   });
 
@@ -314,14 +303,10 @@ void main() {
         scope: null,
       ),
     );
-    final pill = tester.getRect(
-      find
-          .ancestor(of: find.text(long), matching: find.byType(Container))
-          .first,
-    );
+    final bubble = tester.getRect(pill(long));
     final preview = tester.getRect(find.byType(ReplyPreview));
-    expect(pill.width, lessThanOrEqualTo(preview.width));
-    expect(pill.right, lessThanOrEqualTo(preview.right));
+    expect(bubble.width, lessThanOrEqualTo(preview.width));
+    expect(bubble.right, lessThanOrEqualTo(preview.right));
   });
 
   testWidgets('a post with no replies draws no reply block at all', (

@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
@@ -20,6 +21,7 @@ import '../replies/reply_row.dart';
 class ThreadBody extends StatelessWidget {
   const ThreadBody({
     required this.entry,
+    required this.scope,
     required this.controller,
     required this.onReply,
     required this.dockHeight,
@@ -27,13 +29,18 @@ class ThreadBody extends StatelessWidget {
   });
 
   final CircleFeedEntry entry;
+
+  /// The feed the post was read from, so a heart tapped here lands in THAT
+  /// feed's cache even when the Circle tab has another one selected.
+  final String? scope;
+
   final ScrollController controller;
 
   /// Focuses the page's composer.
   final VoidCallback onReply;
 
   /// How much the docked composer covers, so the last reply can clear it.
-  final double dockHeight;
+  final ValueListenable<double> dockHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +65,10 @@ class ThreadBody extends StatelessWidget {
             children: [
               Padding(
                 // No bottom pad: the action row's 44pt boxes already carry
-                // ~13pt of slack under the glyph ink, exactly as the feed's
+                // 13pt of slack under the glyph ink, exactly as the feed's
                 // day card nets out in `feed_day_group.dart` (`_actionSlack`).
                 padding: const EdgeInsets.only(top: KalloSpacing.sp3),
-                child: FeedEntry(entry: entry, onReply: onReply),
+                child: FeedEntry(entry: entry, scope: scope, onReply: onReply),
               ),
             ],
           ),
@@ -104,9 +111,10 @@ class ThreadBody extends StatelessWidget {
 
 /// The scroll view and the room the last reply needs to clear the dock.
 ///
-/// Its own widget so the keyboard's ramp rebuilds THIS and nothing else: the
-/// dock lifts itself by `viewInsets` and reports only its own height, so the
-/// body owes both — read here, so the two still move on the same frame.
+/// Its own widget so the keyboard's ramp and a grown dock rebuild THIS and
+/// nothing else: the dock pays the keyboard and home-indicator insets itself
+/// and reports only its own height, so the body owes all three — read here,
+/// so they still move on the same frame.
 class _TailReserve extends StatelessWidget {
   const _TailReserve({
     required this.controller,
@@ -115,21 +123,28 @@ class _TailReserve extends StatelessWidget {
   });
 
   final ScrollController controller;
-  final double dockHeight;
+  final ValueListenable<double> dockHeight;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final reserve = dockHeight + MediaQuery.viewInsetsOf(context).bottom;
-    return SingleChildScrollView(
-      controller: controller,
-      padding: EdgeInsets.fromLTRB(
-        KalloSpacing.sp3,
-        KalloSpacing.sp2,
-        KalloSpacing.sp3,
-        reserve + KalloSpacing.sp4,
-      ),
+    final insets =
+        MediaQuery.viewInsetsOf(context).bottom +
+        MediaQuery.paddingOf(context).bottom;
+    return ValueListenableBuilder<double>(
+      valueListenable: dockHeight,
       child: child,
+      builder:
+          (context, dock, child) => SingleChildScrollView(
+            controller: controller,
+            padding: EdgeInsets.fromLTRB(
+              KalloSpacing.sp3,
+              KalloSpacing.sp2,
+              KalloSpacing.sp3,
+              dock + insets + KalloSpacing.sp4,
+            ),
+            child: child,
+          ),
     );
   }
 }

@@ -28,6 +28,7 @@ class ThreadComposer extends ConsumerStatefulWidget {
     required this.focusNode,
     required this.onHeightChanged,
     this.scope,
+    this.autofocus = false,
     this.onPosted,
     super.key,
   });
@@ -47,6 +48,11 @@ class ThreadComposer extends ConsumerStatefulWidget {
   /// body can reserve exactly that much tail.
   final ValueChanged<double> onHeightChanged;
 
+  /// Focuses [focusNode] on this widget's first frame. The screen mounts the
+  /// composer only once the thread is readable, so "first frame" already
+  /// means "not over a skeleton".
+  final bool autofocus;
+
   /// Fired after a reply lands, so the page can scroll it into view.
   final VoidCallback? onPosted;
 
@@ -57,6 +63,16 @@ class ThreadComposer extends ConsumerStatefulWidget {
 class _ThreadComposerState extends ConsumerState<ThreadComposer> {
   final _controller = TextEditingController();
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.focusNode.requestFocus();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -93,34 +109,26 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
   @override
   Widget build(BuildContext context) {
-    // A plain Padding, never an AnimatedPadding: iOS ramps `viewInsets` itself
-    // over the keyboard's own curve, and animating on top of that lands the
-    // dock a frame behind the keyboard the whole way up (see
-    // `features/logging/widgets/composer/composer_dock.dart`).
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    // Already netted against the keyboard by the framework, so paying both is
-    // correct rather than double-counting.
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      // Measured INSIDE the keyboard lift, so the height reported up is the
-      // dock's OWN; the body adds the same inset itself, in the same frame.
-      // The field grows a line under the user's thumb without re-running this
-      // build (the draft only rebuilds the send affordance below) — the
-      // measurement catches that on its own.
-      child: MeasuredHeight(
-        onChanged: widget.onHeightChanged,
-        child: ColoredBox(
-          // Opaque: the replies scroll UNDER this dock, and a translucent bar
-          // would show them sliding through the field.
-          color: kPage,
+    // Built once. The insets the dock owes are read in [_DockInsets] below,
+    // so the keyboard's ~250ms ramp rebuilds one padding and not the field,
+    // its decoration and the send affordance on every frame of it.
+    return ColoredBox(
+      // Opaque: the replies scroll UNDER this dock, and a translucent bar
+      // would show them sliding through the field. Outside the insets, so it
+      // also fills the home-indicator strip beneath the field.
+      color: kPage,
+      child: _DockInsets(
+        // Measured INSIDE the insets, so the height reported up is the dock's
+        // OWN; the body adds the same insets itself, in the same frame. The
+        // field grows a line under the user's thumb without re-running this
+        // build (the draft only rebuilds the send affordance below) — the
+        // measurement catches that on its own.
+        child: MeasuredHeight(
+          onChanged: widget.onHeightChanged,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp3,
-              KalloSpacing.sp2,
-              KalloSpacing.sp3,
-              bottomInset + KalloSpacing.sp2,
+            padding: const EdgeInsets.symmetric(
+              horizontal: KalloSpacing.sp3,
+              vertical: KalloSpacing.sp2,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -159,6 +167,33 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The two insets the dock owes — the keyboard's and the home indicator's —
+/// read in one leaf so their ramp rebuilds one padding.
+///
+/// A plain Padding, never an AnimatedPadding: iOS ramps `viewInsets` itself
+/// over the keyboard's own curve, and animating on top of that lands the dock
+/// a frame behind the keyboard the whole way up (see
+/// `features/logging/widgets/composer/composer_dock.dart`). The home
+/// indicator is already netted against the keyboard by the framework, so
+/// paying both is correct rather than double-counting.
+class _DockInsets extends StatelessWidget {
+  const _DockInsets({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom:
+            MediaQuery.viewInsetsOf(context).bottom +
+            MediaQuery.paddingOf(context).bottom,
+      ),
+      child: child,
     );
   }
 }

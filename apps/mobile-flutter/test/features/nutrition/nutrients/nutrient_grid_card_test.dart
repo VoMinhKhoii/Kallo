@@ -10,6 +10,7 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 import '../../../l10n_test_loader.dart';
+import '../nutrient_test_fixtures.dart';
 
 Widget _wrap(Widget child, {Locale? locale}) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
@@ -27,27 +28,6 @@ Widget _wrap(Widget child, {Locale? locale}) => EasyLocalization(
         ),
   ),
 );
-
-NutrientCardData _sodiumCard({
-  required double? averagePerDay,
-  double? percentOfTarget,
-  ConfidenceDisplayState displayState = ConfidenceDisplayState.normal,
-  String labelKey = 'nutrition.nutrients.sodium',
-}) =>
-    NutrientCardData(
-      nutrient: NutritionNutrientKey.sodiumMg,
-      labelKey: labelKey,
-      group: NutrientGroup.mineral,
-      averagePerDay: averagePerDay,
-      target: 2000,
-      targetSource: TargetSource.nasem,
-      targetSourceLabelKey: 'nutrition.targetSources.nasem',
-      unit: 'mg',
-      percentOfTarget: percentOfTarget,
-      confidence: 100,
-      displayState: displayState,
-      nutrientType: NutrientType.ceiling,
-    );
 
 /// The card's own fill — the grid's whole signal.
 Color _fill(WidgetTester tester) {
@@ -78,7 +58,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _wrap(NutrientGridCard(card: _sodiumCard(averagePerDay: null))),
+      _wrap(NutrientGridCard(card: sodiumCard(averagePerDay: null))),
     );
     await tester.pumpAndSettle();
 
@@ -96,7 +76,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 1500, percentOfTarget: 75),
+          card: sodiumCard(averagePerDay: 1500, percentOfTarget: 75),
         ),
       ),
     );
@@ -112,7 +92,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+          card: sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
         ),
       ),
     );
@@ -127,7 +107,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 800, percentOfTarget: 40),
+          card: sodiumCard(averagePerDay: 800, percentOfTarget: 40),
         ),
       ),
     );
@@ -145,7 +125,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(
+          card: sodiumCard(
             averagePerDay: 1900,
             percentOfTarget: 95,
             displayState: ConfidenceDisplayState.insufficientData,
@@ -165,7 +145,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 2600, percentOfTarget: 130),
+          card: sodiumCard(averagePerDay: 2600, percentOfTarget: 130),
         ),
       ),
     );
@@ -194,7 +174,7 @@ void main() {
           width: (390 - 24 - 12) / 2,
           child: NutrientGridCard(
             // A reading with no target: the figure becomes a phrase.
-            card: _sodiumCard(
+            card: sodiumCard(
               averagePerDay: 1500,
               labelKey: 'nutrition.nutrients.betaCarotene',
             ),
@@ -218,7 +198,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+          card: sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
         ),
       ),
     );
@@ -233,7 +213,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 800, percentOfTarget: 40),
+          card: sodiumCard(averagePerDay: 800, percentOfTarget: 40),
         ),
       ),
     );
@@ -248,7 +228,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         NutrientGridCard(
-          card: _sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
+          card: sodiumCard(averagePerDay: 1900, percentOfTarget: 95),
         ),
       ),
     );

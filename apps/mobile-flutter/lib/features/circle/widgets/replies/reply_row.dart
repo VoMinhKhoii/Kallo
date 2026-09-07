@@ -77,11 +77,13 @@ class ReplyRow extends StatelessWidget {
                     horizontal: KalloSpacing.sp3_5, // 14
                     vertical: KalloSpacing.sp2_5, // 10
                   ),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: kTrack,
                     // 18, not the card's 22: a reply is not a card, and 18 is
                     // what the app's other bubble already draws.
-                    borderRadius: BorderRadius.circular(KalloRadii.xxl),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(KalloRadii.xxl),
+                    ),
                   ),
                   child: Text(reply.body, style: dashBody()),
                 ),

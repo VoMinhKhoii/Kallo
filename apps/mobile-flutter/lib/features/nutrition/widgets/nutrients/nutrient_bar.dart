@@ -26,7 +26,7 @@ class NutrientBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final pct = (percentOfTarget ?? 0).clamp(0, 100).toDouble();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(2),
+      borderRadius: const BorderRadius.all(Radius.circular(2)),
       child: Container(
         height: 3,
         color: kTrack,

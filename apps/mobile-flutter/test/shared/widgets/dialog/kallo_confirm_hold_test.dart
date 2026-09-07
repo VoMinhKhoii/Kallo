@@ -18,9 +18,11 @@ import '../../../l10n_test_loader.dart';
 /// Two regressions live here. The wash used to vanish mid-hold: the row
 /// registered a long press, so at ~500ms that recognizer won the arena, the tap
 /// recognizer was REJECTED, and its `onTapCancel` cleared `_pressed` with the
-/// finger still down — the 300ms and 1500ms assertions below are the guard.
-/// And the same long press swallowed the tap, so a hold committed nothing;
-/// the release assertions are the guard for that.
+/// finger still down — the 1500ms assertion below is the guard, in the one
+/// place a competing long-press recognizer actually exists (the primitive's
+/// own test, `surface/kallo_pressable_test.dart`, covers the rest of the
+/// press contract). And the same long press swallowed the tap, so a hold
+/// committed nothing; the release assertions are the guard for that.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -91,13 +93,8 @@ void main() {
     final gesture = await tester.startGesture(
       tester.getCenter(find.text('Xoá')),
     );
-    // Past the press animation, before the long-press threshold: washed.
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(washOf(tester, 'Xoá'), KalloColors.pressWash,
-        reason: 'a fresh press must wash');
-
     // Well past the 500ms long-press threshold, finger still down.
-    await tester.pump(const Duration(milliseconds: 1200));
+    await tester.pump(const Duration(milliseconds: 1500));
     expect(
       washOf(tester, 'Xoá'),
       KalloColors.pressWash,

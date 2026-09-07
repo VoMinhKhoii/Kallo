@@ -20,6 +20,16 @@ class _SplashScreenState extends State<SplashScreen>
     vsync: this,
     duration: const Duration(milliseconds: 1400),
   );
+  // Built once with the controller, not in build: a CurvedAnimation is a
+  // listener on its parent and owes a dispose of its own.
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeInOut,
+  );
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.5,
+    end: 1,
+  ).animate(_curve);
 
   @override
   void initState() {
@@ -38,6 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _curve.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -52,14 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
     return ColoredBox(
       color: KalloColors.surface,
-      child: Center(
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
-          child: wordmark,
-        ),
-      ),
+      child: Center(child: FadeTransition(opacity: _opacity, child: wordmark)),
     );
   }
 }

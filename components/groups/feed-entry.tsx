@@ -60,12 +60,12 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
           {/* A backfilled meal (logged for a past date) is shared "now", so its
               elapsed time would misleadingly read "just now" — hide it. */}
           {!meal.isBackfilled && (
-            <span className="font-sans-display text-[#6E6D66] text-[15px]">
+            <span className="font-sans-display text-kallo-text-muted text-[15px]">
               {formatElapsed(meal.sharedAt, locale)}
             </span>
           )}
           {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-[#E8E6DC]/60 px-2 py-px font-medium font-sans-display text-[#6E6D66] text-[10px]">
+            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-kallo-text-muted text-[10px]">
               {t('portion', {
                 portion: fractionLabel(meal.portionFactor),
               })}
@@ -81,7 +81,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 word. Body weight, not the meal name's: at a larger size the
                 figure outweighed the dish above it, which puts the post's
                 focus back on the number this vocabulary took it off. */}
-            <span className="font-sans-display text-[#6E6D66] text-[11px]">
+            <span className="font-sans-display text-kallo-text-muted text-[11px]">
               <span className="font-medium text-[13px] text-kallo-text tabular-nums">
                 {meal.caloriesKcal == null
                   ? '—'
@@ -98,7 +98,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             <MacroScale grams={grams} />
           </div>
         )}
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">
+        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-kallo-text-muted text-[11.5px] tabular-nums">
           <button
             type="button"
             aria-label={t('heart')}

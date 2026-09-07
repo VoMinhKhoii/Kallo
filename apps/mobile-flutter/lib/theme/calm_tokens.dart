@@ -111,6 +111,19 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
       fontFeatures: _tnum,
     );
 
+/// The Body and Meta tiers' size and leading, published as constants so a
+/// layout that must reserve a line of either derives the box from the token
+/// instead of copying its product. Every hand-copied line box in the app's
+/// history (the week strip, the gram field) rotted the next time one of these
+/// moved — three times, each found by a 1px overflow rather than by reading
+/// a doc that said "re-derive this".
+const double kDashBodySize = 16;
+const double kDashBodyLeading = 1.45;
+const double kDashBodyLine = kDashBodySize * kDashBodyLeading; // 23.2
+const double kDashMetaSize = 14;
+const double kDashMetaLeading = 1.25;
+const double kDashMetaLine = kDashMetaSize * kDashMetaLeading; // 17.5
+
 /// 16 / 400·500 — the app's reading size: meal names, post bodies, list-row
 /// labels, composer input, button labels.
 ///
@@ -136,9 +149,9 @@ TextStyle dashBody({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 16,
+      fontSize: kDashBodySize,
       fontWeight: weight,
-      height: 1.45,
+      height: kDashBodyLeading,
       letterSpacing: -0.2,
       color: color,
       fontFeatures: tabular ? _tnum : null,
@@ -179,9 +192,9 @@ TextStyle dashMeta({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 14,
+      fontSize: kDashMetaSize,
       fontWeight: weight,
-      height: 1.25,
+      height: kDashMetaLeading,
       letterSpacing: -0.1,
       color: color,
       fontFeatures: tabular ? _tnum : null,

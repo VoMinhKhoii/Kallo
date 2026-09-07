@@ -27,21 +27,18 @@ class _ReactionSnapshot {
 
 /// Every feed that is currently mounted and therefore owes a splice.
 ///
-/// [extra] is the CALLER's own scope: the candidate set is built from what the
-/// Circle tab has selected, which says nothing about where the mutation was
-/// fired from. A reply sent from the thread page of a group post, with the tab
-/// still on the friends feed — a cold deep link, or any entry point that is
-/// not the tab — would otherwise splice into no feed at all, and the reply the
-/// user just wrote would vanish.
-List<String?> _aliveFeedScopes(
-  WidgetRef ref, [
-  Iterable<String?> extra = const [],
-]) {
+/// [from] is the CALLER's own scope, required by the signature because the
+/// candidate set is otherwise built from what the Circle tab has selected —
+/// which says nothing about where the mutation was fired from. A reply or a
+/// heart from the thread page of a group post, with the tab still on the
+/// friends feed (a cold deep link, any entry point that is not the tab), would
+/// splice into no feed at all and the reply the user just wrote would vanish.
+List<String?> _aliveFeedScopes(WidgetRef ref, {required String? from}) {
   final selected = ref.read(circleSelectedViewProvider);
   final groupIds =
       ref.read(chatGroupsProvider).valueOrNull?.map((group) => group.id) ??
       const <String>[];
-  final candidates = <String?>{null, selected, ...groupIds, ...extra};
+  final candidates = <String?>{null, selected, from, ...groupIds};
   return candidates
       .where((scope) => ref.exists(sharedMealFeedProvider(scope)))
       .toList(growable: false);
@@ -49,7 +46,7 @@ List<String?> _aliveFeedScopes(
 
 Set<String?> _scopeUnion(WidgetRef ref, Iterable<String?> originalScopes) => {
   ...originalScopes,
-  ..._aliveFeedScopes(ref),
+  ..._aliveFeedScopes(ref, from: null),
 };
 
 SharedMealFeedNotifier _notifier(WidgetRef ref, String? scope) =>
@@ -74,7 +71,7 @@ Future<void> toggleShareReaction(
   String shareId, {
   String? scope,
 }) async {
-  final scopes = _aliveFeedScopes(ref, [scope]);
+  final scopes = _aliveFeedScopes(ref, from: scope);
   final snapshots = <String?, _ReactionSnapshot?>{
     for (final scope in scopes) scope: _reactionSnapshot(ref, scope, shareId),
   };
@@ -115,7 +112,7 @@ Future<void> createShareReply(
   required String body,
   String? scope,
 }) async {
-  final scopes = _aliveFeedScopes(ref, [scope]);
+  final scopes = _aliveFeedScopes(ref, from: scope);
   final replyId = const Uuid().v4();
   final json = await ref
       .read(apiClientProvider)

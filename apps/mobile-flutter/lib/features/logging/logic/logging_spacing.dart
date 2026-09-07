@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 
 /// The logging feed's ONE vertical rhythm. Every gap on the tab resolves to one
@@ -46,23 +47,22 @@ abstract final class LoggingSpacing {
   /// layer and its expanded day row share this height, or the morph pushes the
   /// feed as it runs. ONE number, because the two layers must agree exactly.
   ///
-  /// Sized to the content at 1.0x: a day cell stacks weekday (Meta 14 →
-  /// 17.5), day number (Body 16 → 23.2), the meal dot (6) and two 2pt gaps
-  /// inside 4pt of vertical padding — 58.7 in total. 60 leaves 1.3 of slack on
-  /// the 2px grid. Re-derive this sum whenever Body or Meta moves, and prefer
-  /// [stripFor] in layout: only the two text lines grow with Dynamic Type, and
-  /// at the 1.3x cap they overflowed this constant by 10pt.
-  ///
-  /// History, because this constant has now been re-derived three times and
-  /// each move was found by a 1px overflow rather than by reading the doc:
-  /// 60 → 58 when the ramp was metric-compensated (Body 17 → 16, 2026-09-02),
-  /// and 58 → 60 when Body's leading went 1.3 → 1.45 (2026-09-07). 58 with
-  /// the current ramp overflows by 0.7 and throws.
-  static const double strip = 60;
+  /// Sized to the content at 1.0x: a day cell stacks weekday (Meta), day
+  /// number (Body), the meal dot (6) and two 2pt gaps inside 4pt of vertical
+  /// padding, rounded up to the 2px grid. DERIVED from the type tokens, not
+  /// copied: this number was re-derived by hand three times (60 → 58 → 60)
+  /// and each move was found by a 1px overflow rather than by a reader. Now a
+  /// leading change moves the strip in the same edit that moves the type.
+  /// Prefer [stripFor] in layout: only the two text lines grow with Dynamic
+  /// Type, and at the 1.3x cap they overflowed the constant by 10pt.
+  static final double strip =
+      ((_stripText + _stripChrome) / 2).ceilToDouble() * 2;
+
+  /// Everything in the cell that is NOT text: 4+4 padding, 2+2 gaps, the dot.
+  static const double _stripChrome = 18;
 
   /// The text lines inside [strip] — the only part Dynamic Type scales.
-  /// Meta 14 × 1.25, then Body 16 × 1.45.
-  static const double _stripText = 17.5 + 23.2;
+  static const double _stripText = kDashMetaLine + kDashBodyLine;
 
   /// [strip] at the ambient text scale: the fixed chrome (padding, gaps, dot,
   /// slack) plus the two text lines scaled. Equals [strip] at 1.0x.

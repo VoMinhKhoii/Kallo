@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_chevron_toggle.dart';
@@ -20,8 +19,9 @@ const _raw = 'phở bò tái nạm';
 /// What the CARD prints for [_raw]. A meal card capitalises its title at the
 /// render site (`MealBlock`), while the user's own message bubble quotes what
 /// they actually typed — so the two now differ by one letter and a test that
-/// wants the card must say so.
-final _cardRaw = capitalizeFirst(_raw);
+/// wants the card must say so. A literal, not the helper: a test that
+/// computes its expectation with the code under test cannot fail.
+const _cardRaw = 'Phở bò tái nạm';
 
 const _meal = PersistedMeal(
   id: 'm1',
@@ -67,6 +67,11 @@ const _grouped = PersistedMeal(
 /// A meal text long enough to wrap — the case the chevron used to drift on.
 const _longRaw =
     'phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại, '
+    'thêm một chén nước béo và bánh phở tươi đặc biệt của quán';
+
+/// What the card prints for [_longRaw] — a literal, as [_cardRaw] is.
+const _longCard =
+    'Phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại, '
     'thêm một chén nước béo và bánh phở tươi đặc biệt của quán';
 
 const _longTitled = PersistedMeal(
@@ -249,7 +254,7 @@ void main() {
     await tester.pumpWidget(_wrap(_longTitled));
     await tester.pumpAndSettle();
 
-    final title = tester.getRect(find.text(capitalizeFirst(_longRaw)).last);
+    final title = tester.getRect(find.text(_longCard).last);
     final chevron = tester.getRect(find.byType(PersistedMealChevronToggle));
 
     expect(title.height, greaterThan(30),

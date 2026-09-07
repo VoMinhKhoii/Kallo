@@ -31,9 +31,13 @@ import 'package:intl/intl.dart';
 /// (`lib/core/text/capitalize.ts`), brand rule included. A name starting with
 /// a digit or an emoji comes back untouched, which is what upper-casing a
 /// non-letter does.
+///
+/// The first-word check stands in for provenance the meal model does not
+/// carry — typed, scanned, or OCR'd. A `source` on the meal would replace it.
 String capitalizeFirst(String s) {
   if (s.isEmpty) return s;
-  final String first = s.split(' ').first;
+  final int space = s.indexOf(' ');
+  final String first = space == -1 ? s : s.substring(0, space);
   if (first != first.toLowerCase()) return s;
   return s.characters.first.toUpperCase() + s.characters.skip(1).toString();
 }

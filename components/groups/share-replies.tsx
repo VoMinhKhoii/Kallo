@@ -45,7 +45,7 @@ export function ShareReplies({
   return (
     <div className="mt-3 space-y-3">
       {repliesTotal > replies.length && (
-        <p className="font-sans-display text-[#6E6D66] text-[12px]">
+        <p className="font-sans-display text-kallo-text-muted text-[12px]">
           {t('earlierReplies', { count: repliesTotal - replies.length })}
         </p>
       )}
@@ -70,11 +70,11 @@ export function ShareReplies({
                     <b className="font-bold font-sans-display text-[15px] text-kallo-text">
                       {name}
                     </b>
-                    <span className="font-sans-display text-[#6E6D66] text-[15px]">
+                    <span className="font-sans-display text-kallo-text-muted text-[15px]">
                       {formatElapsed(reply.createdAt, locale)}
                     </span>
                   </div>
-                  <p className="max-w-full break-words rounded-[18px] bg-kallo-border/50 px-3.5 py-2.5 font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
+                  <p className="max-w-full break-words rounded-[18px] bg-kallo-track px-3.5 py-2.5 font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
                     {reply.body}
                   </p>
                 </div>
@@ -98,7 +98,7 @@ export function ShareReplies({
             onChange={(event) => setBody(event.target.value)}
             onBlur={() => body.trim().length === 0 && setOpen(false)}
             placeholder={t('replyPlaceholder')}
-            className="min-w-0 flex-1 border-[#E8E6DC] border-b bg-transparent pb-1 font-sans-display text-[15px] text-kallo-text placeholder:text-[#6E6D66] focus:border-[#141413] focus:outline-none"
+            className="min-w-0 flex-1 border-kallo-border border-b bg-transparent pb-1 font-sans-display text-[15px] text-kallo-text placeholder:text-kallo-text-muted focus:border-kallo-text focus:outline-none"
           />
           {body.trim().length > 0 && (
             <button
@@ -114,7 +114,7 @@ export function ShareReplies({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:text-kallo-text"
+          className="font-sans-display text-kallo-text-muted text-[12px] transition-colors hover:text-kallo-text"
         >
           {t('reply')}
         </button>

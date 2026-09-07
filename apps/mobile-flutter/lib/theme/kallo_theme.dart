@@ -161,8 +161,12 @@ abstract final class KalloTheme {
         headlineSmall: KalloTextStyles.heading3().copyWith(
           color: KalloColors.text,
         ),
-        titleLarge: KalloTextStyles.heading4().copyWith(color: KalloColors.text),
-        bodyLarge: KalloTextStyles.bodyLarge().copyWith(color: KalloColors.text),
+        titleLarge: KalloTextStyles.heading4().copyWith(
+          color: KalloColors.text,
+        ),
+        bodyLarge: KalloTextStyles.bodyLarge().copyWith(
+          color: KalloColors.text,
+        ),
         bodyMedium: KalloTextStyles.body().copyWith(color: KalloColors.text),
         bodySmall: KalloTextStyles.bodySmall().copyWith(
           color: KalloColors.textMuted,
@@ -217,7 +221,7 @@ abstract final class KalloTheme {
           vertical: KalloSpacing.sp6,
         ),
         // The same black/50 scrim the nav drawer and the web dialog use.
-        barrierColor: const Color(0x80000000),
+        barrierColor: KalloColors.scrim,
       ),
       // In-app primary: beige + ink, fully rounded (auth/paywall CTAs use
       // [KalloColors.btnPrimary] black-and-white explicitly at call sites).

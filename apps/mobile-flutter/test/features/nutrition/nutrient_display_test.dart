@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/nutrition/logic/nutrient_display.dart';
 import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
+import 'nutrient_test_fixtures.dart';
+
 /// The ONE definition of "met" — pinned per nutrient type, because a second
 /// copy with identical thresholds once lived beside it and the two were used
 /// interchangeably in the same file.
@@ -10,19 +12,11 @@ NutrientCardData _card({
   required NutrientType type,
   required double? pct,
   double confidence = 100,
-}) => NutrientCardData(
-  nutrient: NutritionNutrientKey.sodiumMg,
-  labelKey: 'nutrition.nutrients.sodium',
-  group: NutrientGroup.mineral,
+}) => sodiumCard(
+  nutrientType: type,
   averagePerDay: pct == null ? null : pct * 20,
-  target: 2000.0,
-  targetSource: TargetSource.nasem,
-  targetSourceLabelKey: 'nutrition.targetSources.nasem',
-  unit: 'mg',
   percentOfTarget: pct,
   confidence: confidence,
-  displayState: ConfidenceDisplayState.normal,
-  nutrientType: type,
 );
 
 void main() {

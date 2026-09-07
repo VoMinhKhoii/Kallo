@@ -128,7 +128,7 @@ class KalloAlertAction extends StatelessWidget {
       child: KalloPressable(
         onTap: onTap,
         alignment: Alignment.center,
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: KalloIcons.hit),
         padding: const EdgeInsets.symmetric(
           horizontal: KalloSpacing.sp4,
           vertical: KalloSpacing.sp2,
