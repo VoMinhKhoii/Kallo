@@ -10,7 +10,7 @@ import 'onboarding_wizard.dart';
 /// Presents the onboarding wizard as a dismissible modal — the sidebar
 /// "Continue" / resume entry point.
 ///
-/// This is the floating-card presentation: a translucent scrim, an r28 cream
+/// This is the floating-card presentation: a translucent scrim, an r28 canvas
 /// card, and the framer-motion entrance (opacity 0→1, scale 0.95→1, y 10→0)
 /// that used to live in `OnboardingScreen`. The FORCED first-run uses the full
 /// page ([OnboardingScreen]) instead. Finishing routes to the `/welcome` setup
@@ -27,7 +27,8 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
     barrierColor: const Color(0x33141413), // ink @20% scrim
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (ctx, _, __) {
-      final insets = MediaQuery.paddingOf(ctx);
+      final media = MediaQuery.of(ctx);
+      final insets = media.padding;
       return Padding(
         padding: EdgeInsets.only(
           top: insets.top + KalloSpacing.sp3,
@@ -37,20 +38,29 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          // Material provides the cream surface AND the Material ancestor the
-          // step-2 TextFields need (the full page gets this from its Scaffold;
+          // Material provides the canvas AND the Material ancestor the step-3
+          // TextFields need (the full page gets this from its Scaffold;
           // showGeneralDialog has no Scaffold, so supply one here).
           child: Material(
-            color: KalloColors.cream,
-            child: OnboardingWizard(
-              onComplete: () {
-                Navigator.of(ctx).pop();
-                router.go('/welcome');
-              },
-              onClose: () {
-                Navigator.of(ctx).pop();
-                ref.invalidate(profileProvider); // refresh the resume nudge
-              },
+            color: KalloColors.surface,
+            // The card is ALREADY inside the insets, and the wizard insets
+            // itself (it is a full-bleed page on `/onboarding`): zero them
+            // here, or its chrome would clear a status bar that is not there.
+            child: MediaQuery(
+              data: media.copyWith(
+                padding: EdgeInsets.zero,
+                viewPadding: EdgeInsets.zero,
+              ),
+              child: OnboardingWizard(
+                onComplete: () {
+                  Navigator.of(ctx).pop();
+                  router.go('/welcome');
+                },
+                onClose: () {
+                  Navigator.of(ctx).pop();
+                  ref.invalidate(profileProvider); // refresh the resume nudge
+                },
+              ),
             ),
           ),
         ),

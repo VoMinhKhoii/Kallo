@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import '../screens/forgot_password_screen.dart';
 import 'auth_controls.dart';
@@ -18,16 +17,29 @@ import 'auth_text_field.dart';
 /// email". One form, no top tabs: a primary action signs the user in, and a
 /// quiet toggle below flips it to account-creation in place — collapsing the
 /// old sign-in/sign-up split into one screen.
+///
+/// The form only — its chrome (the wordmark row with the back chevron, the
+/// page title, the social options under it) belongs to [EmailAuthScreen], the
+/// route that hosts it. The title tracks the mode the toggle sets, which is
+/// why the flip is announced back out through [onModeChanged].
 class EmailAuthForm extends ConsumerStatefulWidget {
   const EmailAuthForm({
     super.key,
     required this.provider,
-    required this.onBack,
+    this.initialCreateMode = false,
+    this.onModeChanged,
   });
 
   final AutoDisposeStateNotifierProvider<AuthFormController, AuthFormState>
   provider;
-  final VoidCallback onBack;
+
+  /// Which mode the form opens in: account-creation when reached from the
+  /// post-onboarding "Save your plan" step, sign-in from `/sign-in`.
+  final bool initialCreateMode;
+
+  /// Fires with the new mode whenever the quiet toggle flips the form, so the
+  /// host can retitle the page.
+  final ValueChanged<bool>? onModeChanged;
 
   @override
   ConsumerState<EmailAuthForm> createState() => _EmailAuthFormState();
@@ -38,7 +50,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
   final _password = TextEditingController();
   String? _emailError;
   String? _passwordError;
-  bool _createMode = false;
+  late bool _createMode = widget.initialCreateMode;
 
   @override
   void dispose() {
@@ -74,6 +86,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
       _passwordError = null;
       _createMode = !_createMode;
     });
+    widget.onModeChanged?.call(_createMode);
   }
 
   void _submit() {
@@ -93,30 +106,6 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Back to the welcome screen — the app's 24-on-44 chevron, aligned to
-        // the leading edge like every other pushed screen's back control.
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AuthBackButton(onBack: busy ? null : widget.onBack),
-        ),
-        const SizedBox(height: KalloSpacing.sp3),
-        // The screen's one serif moment, at the canvas' 26.
-        Text(
-          _createMode
-              ? tr('auth.dialog.signUpTitle')
-              : tr('auth.dialog.signInTitle'),
-          style: KalloTextStyles.serifRegular(
-            fontSize: kAuthHeading,
-          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
-        ),
-        const SizedBox(height: KalloSpacing.sp3),
-        Text(
-          _createMode
-              ? tr('auth.dialog.signUpSubtitle')
-              : tr('auth.dialog.signInSubtitle'),
-          style: dashBody(color: kInkMuted),
-        ),
-        const SizedBox(height: KalloSpacing.sp5),
         AuthTextField(
           controller: _email,
           label: tr('auth.signIn.email'),

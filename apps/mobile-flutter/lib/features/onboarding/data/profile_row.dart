@@ -29,6 +29,15 @@ class ProfileRow {
     return null;
   }
 
+  /// The DB hands numeric/decimal columns back as strings; RN does
+  /// `Number(profile.x)`. Returns null when absent or unparseable.
+  double? _double(String key) {
+    final v = raw[key];
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
+
   // ── Onboarding progress ────────────────────────────────────────────────
   int get onboardingStep => _int('onboardingStep') ?? 0;
 
@@ -40,15 +49,7 @@ class ProfileRow {
   // ── Body metrics ───────────────────────────────────────────────────────
   String? get biologicalSex => _string('biologicalSex');
 
-  /// `weightKg` is stored as a numeric/decimal string by the DB; RN does
-  /// `Number(profile.weightKg)`. Returns null when absent.
-  double? get weightKg {
-    final v = raw['weightKg'];
-    if (v == null) return null;
-    if (v is num) return v.toDouble();
-    if (v is String) return double.tryParse(v);
-    return null;
-  }
+  double? get weightKg => _double('weightKg');
 
   int? get heightCm => _int('heightCm');
   int? get age => _int('age');
@@ -60,6 +61,11 @@ class ProfileRow {
   String? get aggression => _string('aggression');
 
   String? get carbSplit => _string('carbSplit');
+
+  /// Transient on the web, persisted by this server — and it CHANGES the
+  /// computed target, so the wizard has to seed it rather than only post it
+  /// back.
+  double? get deficitOverride => _double('deficitOverride');
 
   // ── Cooking habits ─────────────────────────────────────────────────────
   String? get oilUsage => _string('oilUsage');
