@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -86,7 +88,11 @@ void main() {
 
   /// The feed at `/`, the thread page at `/circle/:shareId` — the two real
   /// routes `router.dart` declares, reduced to what a tap can be seen to hit.
-  Future<GoRouter> pumpFeed(WidgetTester tester, Widget post) async {
+  Future<GoRouter> pumpFeed(
+    WidgetTester tester,
+    Widget post, {
+    FakeApiClient? api,
+  }) async {
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -128,7 +134,9 @@ void main() {
         child: Builder(
           builder:
               (context) => ProviderScope(
-                overrides: [apiClientProvider.overrideWithValue(quietApi())],
+                overrides: [
+                  apiClientProvider.overrideWithValue(api ?? quietApi()),
+                ],
                 child: MaterialApp.router(
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -178,6 +186,38 @@ void main() {
 
     expect(locationOf(router), '/');
     expect(find.text('4'), findsOneWidget);
+  });
+
+  testWidgets('a heart mid-request does not open the thread', (tester) async {
+    // The heart drops its `onTap` while its reaction is in flight, and it
+    // sits inside the post's own tap target. A disabled glyph that let the
+    // press through would hand the SECOND of two quick heart taps to the post
+    // — the thread opening from a double tap on the heart (2026-09-08).
+    final pending = Completer<Map<String, dynamic>>();
+    final api = FakeApiClient((request) {
+      if (request.path == '/api/v1/groups/shares/reaction') {
+        return pending.future;
+      }
+      if (request.path.startsWith('/api/v1/chat-groups')) {
+        return <String, dynamic>{'groups': <dynamic>[]};
+      }
+      return readMarker(request);
+    });
+    final router = await pumpFeed(tester, FeedEntry(entry: entry()), api: api);
+
+    final heart = find.byIcon(LucideIcons.heart300);
+    await tester.tap(heart);
+    await tester.pump();
+    // The request is still open, so the glyph is disabled — and takes the
+    // next tap itself rather than passing it up.
+    await tester.tap(heart);
+    await tester.pump();
+
+    expect(locationOf(router), '/');
+
+    pending.complete(<String, dynamic>{'reacted': true, 'count': 4});
+    await tester.pumpAndSettle();
+    expect(locationOf(router), '/');
   });
 
   testWidgets('the reply glyph opens the thread WITH the composer', (

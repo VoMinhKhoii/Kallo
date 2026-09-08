@@ -153,6 +153,101 @@ void main() {
     expect(washAt(inner), const Color(0x00000000));
   });
 
+  // A control that is disabled MID-INTERACTION is still a control. The Circle
+  // heart drops its `onTap` while its reaction is in flight, and it sits
+  // inside the post's own tap target: if the disabled glyph let the press
+  // through, a double tap on the heart would open the thread (2026-09-08).
+  testWidgets('a disabled nested target absorbs the tap', (tester) async {
+    Color washAt(int index) {
+      final box = tester.widget<AnimatedContainer>(
+        find.byType(AnimatedContainer).at(index),
+      );
+      return (box.decoration! as BoxDecoration).color!;
+    }
+
+    var outerTaps = 0;
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: KalloPressable(
+            onTap: () => outerTaps++,
+            alignment: Alignment.topLeft,
+            child: const SizedBox(
+              width: 300,
+              height: 200,
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: KalloPressable(
+                  onTap: null,
+                  height: 44,
+                  constraints: BoxConstraints(minWidth: 60),
+                  child: Text('inner'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    const outer = 0;
+    const inner = 1;
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('inner')),
+    );
+    await tester.pump(KalloMotion.press);
+    expect(washAt(inner), const Color(0x00000000));
+    expect(
+      washAt(outer),
+      const Color(0x00000000),
+      reason: 'a press on a disabled glyph must not wash the post behind it',
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(
+      outerTaps,
+      0,
+      reason: 'the disabled glyph owns the press; the post never sees it',
+    );
+    expect(washAt(outer), const Color(0x00000000));
+  });
+
+  // Multi-touch. The wash belongs to the finger that started it, so a second
+  // finger landing and lifting elsewhere on the same target leaves it alone.
+  testWidgets(
+    "a second finger lifting does not clear the first finger's wash",
+    (tester) async {
+      await pump(tester, onTap: () {});
+      final centre = tester.getCenter(find.text('go'));
+
+      final first = await tester.startGesture(
+        centre - const Offset(30, 0),
+        pointer: 1,
+      );
+      await tester.pump(KalloMotion.press);
+      expect(washOf(tester), KalloColors.pressWash);
+
+      final second = await tester.startGesture(
+        centre + const Offset(30, 0),
+        pointer: 2,
+      );
+      await tester.pump(KalloMotion.press);
+      await second.up();
+      await tester.pumpAndSettle();
+      expect(
+        washOf(tester),
+        KalloColors.pressWash,
+        reason: 'the first finger is still down, so the wash is still its own',
+      );
+
+      await first.up();
+      await tester.pumpAndSettle();
+      expect(washOf(tester), const Color(0x00000000));
+    },
+  );
+
   // Sizing. The target shrink-wraps its child in both axes; a parent that
   // wants it wider hands it tight constraints. Container's own `alignment`
   // is an Align WITHOUT size factors, which grows to any finite max width —

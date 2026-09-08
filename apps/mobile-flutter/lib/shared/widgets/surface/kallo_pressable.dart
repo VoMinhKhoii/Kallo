@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_motion.dart';
+import 'press_scope.dart';
 
 /// A tap target that washes while the finger is down and fires on release —
 /// the platform's own press, and the one the design system prescribes in
@@ -20,8 +21,10 @@ import '../../../theme/kallo_motion.dart';
 ///
 /// Behaviour: a drag-off releases the wash (the pointer lifts somewhere) and
 /// fires nothing (the tap recognizer sees the pointer leave). A null [onTap]
-/// disables the target: no wash, no tap. Dimming a disabled target is the
-/// caller's, since it owns the colours.
+/// disables the target: no wash, no tap — and the tap goes nowhere else: a
+/// disabled glyph inside a tappable post absorbs the press rather than handing
+/// it to the post. Dimming a disabled target is the caller's, since it owns
+/// the colours.
 ///
 /// The wash is [KalloColors.pressWash], full-bleed — the app has one press
 /// token and every consumer so far is a rectangular row or square. It is
@@ -43,25 +46,15 @@ import '../../../theme/kallo_motion.dart';
 /// landed on its own line.
 ///
 /// **Nesting (2026-09-08).** A pressable inside another pressable washes
-/// ALONE: the innermost one under the finger takes the wash and every ancestor
-/// stays clear. A Circle post is the tap target for its own thread (Threads
-/// anatomy) while its heart, reply and copy glyphs are targets of their own, so
-/// without this rule a tap on the heart flashed the whole post behind it.
-///
-/// Tap DISPATCH needs nothing here: both [GestureDetector]s enter the arena and
-/// the innermost is first in the hit-test path, so it wins the sweep. Only the
-/// wash needed teaching, because it is read off the raw pointer stream, which
-/// has no arena and hands the event to every [Listener] on that path.
-///
-/// The mechanism is a [_PressScope] [InheritedWidget]: on pointer-down the
-/// inner target CLAIMS its pointer up the chain of scopes before washing, and a
-/// target whose own pointer is already claimed skips its wash. That ordering
-/// works because Flutter dispatches a pointer to the hit-test path INNERMOST
-/// FIRST — `RenderBox.hitTest` adds its children to the path before itself, and
-/// `GestureBinding.dispatchEvent` walks that path in order. Verified by test
-/// ("a nested pressable washes alone"), which would fail the other way round:
-/// on a parent-first delivery the outer would have washed before the claim
-/// arrived, and the claim would have had to un-press it instead.
+/// ALONE, and a DISABLED one still owns its pointer: it enters the arena with
+/// an inert tap callback and claims its pointer up the chain, so nothing above
+/// it washes or fires. A disabled control is still a control — iOS never lets
+/// a dimmed button's tap fall through to what is behind it. The Circle heart
+/// is the case: [FeedEntryActions] passes `onTap: null` while its reaction
+/// request is in flight, inside a post that opens the thread, so with the
+/// press falling through a double tap on the heart navigated away
+/// mid-reaction. [PressScope] and [PressClaims] hold the protocol and the
+/// reasoning behind it.
 ///
 /// Known limit: the wash stays on while a SCROLL begins on a pressed post —
 /// the pointer never lifts, so nothing clears it until the gesture ends.
@@ -95,59 +88,34 @@ class KalloPressable extends StatefulWidget {
   State<KalloPressable> createState() => _KalloPressableState();
 }
 
-/// How a nested [KalloPressable] tells the ones above it that a pointer is
-/// already spoken for. Exposed by every pressable over its own subtree, so a
-/// claim walks the whole chain rather than only one level (see *Nesting*).
-class _PressScope extends InheritedWidget {
-  const _PressScope({required this.claim, required super.child});
-
-  /// "This pointer belongs to a target below you — do not wash for it."
-  final void Function(int pointer) claim;
-
-  static _PressScope? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_PressScope>();
-
-  @override
-  bool updateShouldNotify(_PressScope oldWidget) => oldWidget.claim != claim;
-}
-
 class _KalloPressableState extends State<KalloPressable> {
   bool _pressed = false;
 
-  /// The scope of the nearest pressable ABOVE this one — the widget's own
-  /// scope is a descendant, so this never resolves to itself.
-  _PressScope? _parent;
-
-  /// Pointers a target below this one has claimed, and which this one must
-  /// therefore ignore. A Set rather than a single id because a second finger
-  /// may land elsewhere in the same subtree.
-  final Set<int> _claimed = <int>{};
+  /// This target's side of the nesting protocol — who has claimed what, and
+  /// which finger the wash belongs to. It decides; this widget paints.
+  final PressClaims _claims = PressClaims();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _parent = _PressScope.maybeOf(context);
-  }
-
-  void _claim(int pointer) {
-    _claimed.add(pointer);
-    // Forward, so an ancestor two levels up stays clear as well.
-    _parent?.claim(pointer);
-  }
-
-  void _release(int pointer) {
-    _claimed.remove(pointer);
-    _setPressed(false);
+    _claims.parent = PressScope.maybeOf(context);
   }
 
   void _down(PointerDownEvent event) {
-    // Claim BEFORE washing: this callback runs before every ancestor's (the
-    // hit-test path is innermost-first), so the ancestors read the claim when
-    // their own turn comes.
-    _parent?.claim(event.pointer);
-    if (_claimed.contains(event.pointer)) return;
-    _setPressed(true);
+    if (_claims.press(event.pointer, enabled: widget.onTap != null)) {
+      _setPressed(true);
+    }
   }
+
+  void _release(int pointer) {
+    if (_claims.release(pointer)) _setPressed(false);
+  }
+
+  /// The tap callback a DISABLED target wears. Non-null on purpose: a
+  /// [GestureDetector] whose callbacks are all null registers no recognizer at
+  /// all, so the target never enters the arena and the tap falls through to
+  /// whatever is underneath it.
+  static void _inert() {}
 
   void _setPressed(bool value) {
     if (!mounted || _pressed == value) return;
@@ -156,18 +124,21 @@ class _KalloPressableState extends State<KalloPressable> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onTap != null;
-    return _PressScope(
-      claim: _claim,
+    return PressScope(
+      claim: _claims.claim,
       child: Listener(
-        // A disabled target neither washes nor claims: it is not a target, so
-        // the post underneath it is still allowed to take the press.
-        onPointerDown: enabled ? _down : null,
+        // Always wired, disabled or not: a disabled control is still a
+        // control, so it takes its pointer out of circulation (claiming up the
+        // chain) instead of leaving it to the target underneath. [_down]
+        // decides for itself whether to wash.
+        onPointerDown: _down,
         onPointerUp: (event) => _release(event.pointer),
         onPointerCancel: (event) => _release(event.pointer),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
+          // [_inert] rather than null, so a disabled target still enters the
+          // arena and swallows the tap it is sitting on.
+          onTap: widget.onTap ?? _inert,
           child: AnimatedContainer(
             duration: KalloMotion.press,
             curve: KalloEase.press,
