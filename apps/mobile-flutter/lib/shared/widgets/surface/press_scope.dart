@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 /// `KalloPressable`'s nesting protocol — not a widget anyone else builds.
@@ -60,6 +61,11 @@ class PressClaims {
   /// pointer up (2026-09-08).
   int? _pressing;
 
+  /// Where [_pressing] went down, so a move can be measured against it. Held
+  /// here rather than in the widget because the slop is part of "is this
+  /// still a press?", which is this class' whole question.
+  Offset? _origin;
+
   /// A descendant's claim, forwarded on so an ancestor two levels up stays
   /// clear as well.
   void claim(int pointer) {
@@ -67,19 +73,38 @@ class PressClaims {
     parent?.claim(pointer);
   }
 
-  /// A pointer went down on the owner. Claims it up the chain — disabled or
+  /// A pointer went down on the owner at [position] (global — the same frame
+  /// [moved] reads, so the two compare). Claims it up the chain — disabled or
   /// not, because a disabled control is still a control and the target
   /// underneath it may not have the press — and answers whether the owner
   /// should now wash.
   ///
   /// Claiming happens FIRST: this runs before every ancestor's, so they read
   /// the claim when their own turn comes.
-  bool press(int pointer, {required bool enabled}) {
+  bool press(int pointer, Offset position, {required bool enabled}) {
     parent?.claim(pointer);
     if (!enabled || _claimed.contains(pointer)) return false;
     // A finger is already washing this target; the wash stays that finger's.
     if (_pressing != null) return false;
     _pressing = pointer;
+    _origin = position;
+    return true;
+  }
+
+  /// The pressing finger moved. Answers whether the wash is over: past
+  /// [kTouchSlop] from where it landed the finger is SCROLLING, not pressing,
+  /// and nothing else would clear the wash — the pointer does not lift until
+  /// the drag ends, so a flick down the feed left the post it started on grey
+  /// for the whole gesture (2026-09-08).
+  ///
+  /// The claim is deliberately NOT dropped: the pointer still belongs to this
+  /// target, so no ancestor may light up in its place. Only the wash ends.
+  bool moved(int pointer, Offset position) {
+    final origin = _origin;
+    if (pointer != _pressing || origin == null) return false;
+    if ((position - origin).distance <= kTouchSlop) return false;
+    _pressing = null;
+    _origin = null;
     return true;
   }
 
@@ -89,6 +114,7 @@ class PressClaims {
     _claimed.remove(pointer);
     if (pointer != _pressing) return false;
     _pressing = null;
+    _origin = null;
     return true;
   }
 }

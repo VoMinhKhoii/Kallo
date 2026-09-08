@@ -56,9 +56,14 @@ import 'press_scope.dart';
 /// mid-reaction. [PressScope] and [PressClaims] hold the protocol and the
 /// reasoning behind it.
 ///
-/// Known limit: the wash stays on while a SCROLL begins on a pressed post —
-/// the pointer never lifts, so nothing clears it until the gesture ends.
-/// Clearing on an `onPointerMove` past `kTouchSlop` is the follow-up.
+/// **Scrolling (2026-09-08).** A pointer that travels more than `kTouchSlop`
+/// from where it landed ends the wash, finger still down: past that distance
+/// it is a scroll, not a press. Nothing else would clear it — the pointer
+/// does not lift until the drag is over — so a flick down the Circle feed
+/// left the post it started on grey for the whole gesture ("the feed flashes
+/// grey when you scroll"). The pointer keeps its CLAIM, so no ancestor lights
+/// up in its place, and the tap fires nothing: the recognizer loses the arena
+/// to the scrollable at the same slop.
 class KalloPressable extends StatefulWidget {
   const KalloPressable({
     required this.onTap,
@@ -102,9 +107,17 @@ class _KalloPressableState extends State<KalloPressable> {
   }
 
   void _down(PointerDownEvent event) {
-    if (_claims.press(event.pointer, enabled: widget.onTap != null)) {
+    if (_claims.press(
+      event.pointer,
+      event.position,
+      enabled: widget.onTap != null,
+    )) {
       _setPressed(true);
     }
+  }
+
+  void _move(PointerMoveEvent event) {
+    if (_claims.moved(event.pointer, event.position)) _setPressed(false);
   }
 
   void _release(int pointer) {
@@ -132,6 +145,9 @@ class _KalloPressableState extends State<KalloPressable> {
         // chain) instead of leaving it to the target underneath. [_down]
         // decides for itself whether to wash.
         onPointerDown: _down,
+        // The scroll release (see *Scrolling* above): a pointer up never
+        // arrives while the finger is dragging the feed.
+        onPointerMove: _move,
         onPointerUp: (event) => _release(event.pointer),
         onPointerCancel: (event) => _release(event.pointer),
         child: GestureDetector(

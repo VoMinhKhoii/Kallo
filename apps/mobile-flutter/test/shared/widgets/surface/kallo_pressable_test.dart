@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,6 +72,53 @@ void main() {
 
     expect(washOf(tester), const Color(0x00000000));
     expect(fired, 0);
+  });
+
+  // A SCROLL that begins on a pressed target. The pointer never lifts, so
+  // nothing used to clear the wash and a flick down the Circle feed left the
+  // post it started on grey for the whole drag. Past kTouchSlop the finger is
+  // scrolling, not pressing.
+  testWidgets('a scroll past the slop releases the wash and fires nothing', (
+    tester,
+  ) async {
+    var fired = 0;
+    await pump(tester, onTap: () => fired++);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('go')),
+    );
+    await tester.pump(KalloMotion.press);
+    expect(washOf(tester), KalloColors.pressWash);
+
+    await gesture.moveBy(const Offset(0, kTouchSlop + 1));
+    await tester.pump(KalloMotion.press);
+    expect(
+      washOf(tester),
+      const Color(0x00000000),
+      reason: 'the feed must not stay grey under a scrolling finger',
+    );
+
+    // Still no tap: the recognizer lost the pointer at the same slop.
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(fired, 0);
+  });
+
+  testWidgets('a move within the slop keeps the wash', (tester) async {
+    // A finger never holds perfectly still; a press is not over until it
+    // travels far enough to be a drag.
+    await pump(tester, onTap: () {});
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('go')),
+    );
+    await tester.pump(KalloMotion.press);
+    await gesture.moveBy(const Offset(0, kTouchSlop / 2));
+    await tester.pump(KalloMotion.press);
+
+    expect(washOf(tester), KalloColors.pressWash);
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('disabled never washes', (tester) async {

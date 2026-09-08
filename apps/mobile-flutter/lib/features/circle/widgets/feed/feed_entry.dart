@@ -154,6 +154,11 @@ class FeedEntry extends StatelessWidget {
     );
 
     if (!openThread) return row;
+    // ONE callback behind both the annotation and the target: the node a
+    // screen reader announces has to be the node that navigates.
+    void open() =>
+        openCircleThread(context, shareId: meal.shareId, scope: scope);
+
     // The WHOLE post opens its thread (Threads), not a "View thread" link:
     // the three glyphs are the post's only other targets and each wins the
     // arena over this one, so nothing inside it is shadowed. The wash is the
@@ -162,18 +167,24 @@ class FeedEntry extends StatelessWidget {
     // `topLeft` and no padding: the pressable shrink-wraps, and the Row's
     // Expanded child already fills the column's finite width, so the target is
     // exactly the post's own box.
+    //
+    // The action goes on the ANNOTATED node. Without it the button trait and
+    // the name sat here while the tap lived on the [KalloPressable]'s node
+    // underneath: VoiceOver announced "Open thread, button" over a node it
+    // could not activate, and read the node that DOES navigate out as raw
+    // post text (2026-09-08).
+    //
+    // It also does what `explicitChildNodes` used to do here — two conflicting
+    // tap actions cannot merge into one node, so the post's texts stay nodes
+    // of their own rather than being absorbed into this label (dumped both
+    // ways: identical trees). The exact-label finds in
+    // `circle_feed_open_thread_test.dart` go red if that stops holding.
     return Semantics(
       button: true,
-      // Without this the post's own texts — author, meal, kcal, every macro —
-      // are absorbed into THIS node's label and stop being nodes of their own,
-      // so a screen reader can no longer walk the post it just landed on. The
-      // annotation keeps its own name; the content keeps its structure.
-      explicitChildNodes: true,
       label: tr('groups.feed.openThread'),
+      onTap: open,
       child: KalloPressable(
-        onTap:
-            () =>
-                openCircleThread(context, shareId: meal.shareId, scope: scope),
+        onTap: open,
         alignment: Alignment.topLeft,
         child: row,
       ),

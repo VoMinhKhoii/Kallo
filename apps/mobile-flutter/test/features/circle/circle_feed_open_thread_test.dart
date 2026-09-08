@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -255,6 +256,47 @@ void main() {
     await pumpFeed(tester, FeedEntry(entry: entry(), openThread: false));
     expect(find.bySemanticsLabel('Open thread'), findsNothing);
 
+    handle.dispose();
+  });
+
+  testWidgets('the announced post node is the one that opens the thread', (
+    tester,
+  ) async {
+    // A screen reader activates the node it just announced. The annotation
+    // used to carry the button trait and the name while the tap sat on the
+    // [KalloPressable]'s own node UNDER it, so "Open thread, button" did
+    // nothing and the node that did navigate was read out as raw post text.
+    final handle = tester.ensureSemantics();
+    final router = await pumpFeed(tester, FeedEntry(entry: entry()));
+
+    // Over the SEMANTICS tree, not the widget tree: what a screen reader can
+    // reach is a property of the nodes, and the widget finders would keep
+    // passing on an annotation that names a node it cannot activate.
+    final post = find.semantics.byLabel('Open thread');
+    expect(post, findsOne);
+    expect(
+      post.evaluate().single,
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+
+    // The glyphs are still nodes of their own inside the post — the heart
+    // keeps its name AND its count, so the annotation has not swallowed the
+    // action row on its way to owning the tap.
+    final heart = find.semantics.byLabel(RegExp('^Heart'));
+    expect(heart, findsOne);
+    expect(
+      heart.evaluate().single,
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+    expect(heart.evaluate().single.label, contains('2'));
+
+    // Activation as VoiceOver performs it — the action dispatched to the
+    // announced node's own id. `tester.tap` lands on the pressable under it
+    // and would pass either way.
+    tester.semantics.performAction(post, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+
+    expect(locationOf(router), '/circle/s1');
     handle.dispose();
   });
 }
