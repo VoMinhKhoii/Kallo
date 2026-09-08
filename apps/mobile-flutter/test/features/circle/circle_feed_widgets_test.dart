@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -27,14 +25,7 @@ import '../../l10n_test_loader.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
   ShareReply reply({
     String id = 'r1',
@@ -89,29 +80,7 @@ void main() {
     WidgetTester tester,
     Widget child, {
     List<Override> overrides = const [],
-  }) async {
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => ProviderScope(
-                overrides: overrides,
-                child: MaterialApp(
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                  locale: context.locale,
-                  home: Scaffold(body: child),
-                ),
-              ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-  }
+  }) => pumpCircleScreen(tester, Scaffold(body: child), overrides: overrides);
 
   /// A post as the FEED composes it: navigation lives in `feed_day_group.dart`
   /// now, so a bare [FeedEntry] takes both actions as callbacks. Both are

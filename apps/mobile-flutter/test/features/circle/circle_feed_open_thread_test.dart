@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +11,6 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/logic/circle_thread_route.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_pressable.dart';
 
 import 'circle_feed_test_support.dart';
@@ -30,14 +27,7 @@ import '../../l10n_test_loader.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
   CircleFeedEntry entry({String shareId = 's1'}) => CircleFeedEntry(
     friend: const CircleProfile(
@@ -145,29 +135,7 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => ProviderScope(
-                overrides: [
-                  apiClientProvider.overrideWithValue(api ?? quietApi()),
-                ],
-                child: MaterialApp.router(
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                  locale: context.locale,
-                  routerConfig: router,
-                ),
-              ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpCircleRouter(tester, router, api: api ?? quietApi());
     return router;
   }
 

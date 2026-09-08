@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 
@@ -170,35 +171,104 @@ Object? readMarker(Request request) => switch (request.path) {
   _ => unexpectedRequest(request),
 };
 
-/// Mounts [child] as a screen under the app's l10n and a [ProviderScope]
-/// answering with [api], and settles it.
-Future<void> pumpCircleScreen(
-  WidgetTester tester,
-  Widget child, {
-  required FakeApiClient api,
+/// The one app tree these tests mount: the l10n the strings come from, and a
+/// [ProviderScope] over it. [app] builds the [MaterialApp] under a [Builder],
+/// because the localization delegates are read off the context.
+///
+/// [size] fixes the test view (at devicePixelRatio 1) for a layout assertion
+/// and resets it afterwards; [decodeAssets] spends real time so the
+/// illustrations, which decode off the main isolate, reach their true height
+/// before anything is measured; [settle] is off for a surface that animates
+/// forever (a shimmer) and would time out `pumpAndSettle`.
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  required Widget Function(BuildContext context) app,
+  Size? size,
+  bool settle = true,
+  bool decodeAssets = false,
 }) async {
+  if (size != null) {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.reset);
+  }
   await tester.pumpWidget(
     EasyLocalization(
       supportedLocales: const [Locale('en')],
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
       assetLoader: const FsL10nLoader(),
-      child: ProviderScope(
-        overrides: [apiClientProvider.overrideWithValue(api)],
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: child,
-              ),
-        ),
-      ),
+      child: ProviderScope(overrides: overrides, child: Builder(builder: app)),
     ),
   );
-  await tester.pumpAndSettle();
+  if (decodeAssets) {
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+  }
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }
+
+/// Mounts [child] as a screen under the app's l10n and a [ProviderScope]
+/// answering with [api] (plus any extra [overrides]), and settles it.
+///
+/// [expand] hands [child] the TIGHT, page-sized box the real page gives it (a
+/// `Scaffold` body under a `SizedBox.expand`); a bare `home` is loose, and a
+/// state measured there would shrink-wrap and hide the layout under test. See
+/// [_pumpApp] for [size], [settle] and [decodeAssets].
+Future<void> pumpCircleScreen(
+  WidgetTester tester,
+  Widget child, {
+  FakeApiClient? api,
+  List<Override> overrides = const [],
+  Size? size,
+  bool expand = false,
+  bool settle = true,
+  bool decodeAssets = false,
+}) => _pumpApp(
+  tester,
+  overrides: [
+    if (api != null) apiClientProvider.overrideWithValue(api),
+    ...overrides,
+  ],
+  size: size,
+  settle: settle,
+  decodeAssets: decodeAssets,
+  app:
+      (context) => MaterialApp(
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        home: expand ? Scaffold(body: SizedBox.expand(child: child)) : child,
+      ),
+);
+
+/// The same tree driven by a real [router] instead of a `home` — for a test
+/// whose subject is where a tap LANDS, which only a router can answer.
+Future<void> pumpCircleRouter(
+  WidgetTester tester,
+  GoRouter router, {
+  FakeApiClient? api,
+  List<Override> overrides = const [],
+}) => _pumpApp(
+  tester,
+  overrides: [
+    if (api != null) apiClientProvider.overrideWithValue(api),
+    ...overrides,
+  ],
+  app:
+      (context) => MaterialApp.router(
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        routerConfig: router,
+      ),
+);
 
 ProviderContainer makeContainer(FakeApiClient api) {
   final container = ProviderContainer(

@@ -1,6 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
@@ -12,6 +10,7 @@ import 'package:kallo_mobile/shared/widgets/brand/surface_illustration.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
+import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
 
 /// Where the thread's not-ready surfaces sit on the page.
@@ -25,64 +24,27 @@ void main() {
 
   const viewport = Size(390, 700);
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
   /// [settle] is off for the skeleton: its shimmer never stops, so
-  /// `pumpAndSettle` would time out on it.
+  /// `pumpAndSettle` would time out on it. `expand`, because the page these
+  /// states land on hands them a TIGHT height (ScrollSeparator's `Expanded`):
+  /// a loose box would let a scroll view shrink-wrap to its content, hiding
+  /// exactly the layout under test.
   Future<void> pumpStates(
     WidgetTester tester,
     ThreadNotReady view, {
     bool settle = true,
     Size size = viewport,
     TextScaler textScaler = TextScaler.noScaling,
-  }) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = size;
-    addTearDown(tester.view.reset);
-
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                // `SizedBox.expand`, because the page these states land on hands
-                // them a TIGHT height (ScrollSeparator's `Expanded`). A bare
-                // Scaffold body is loose, and a scroll view would shrink-wrap to
-                // its content — hiding exactly the layout under test.
-                home: Scaffold(
-                  body: SizedBox.expand(
-                    child: ThreadStates(view: view, onRetry: () {}),
-                  ),
-                ),
-              ),
-        ),
-      ),
-    );
-    // The illustrations decode off the main isolate: the surface only takes
-    // its real height once actual async work has run.
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    });
-    if (settle) {
-      await tester.pumpAndSettle();
-    } else {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-  }
+  }) => pumpCircleScreen(
+    tester,
+    ThreadStates(view: view, onRetry: () {}),
+    size: size,
+    expand: true,
+    settle: settle,
+    decodeAssets: true,
+  );
 
   /// The state's own content — illustration through action — against the
   /// middle of the page it owns, and the state's BOX against the same middle.

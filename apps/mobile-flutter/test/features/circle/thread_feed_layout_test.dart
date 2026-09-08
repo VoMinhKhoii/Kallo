@@ -1,6 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,6 +10,7 @@ import 'package:kallo_mobile/shared/widgets/brand/surface_illustration.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
+import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
 
 /// Where the wall's empty and failed surfaces sit.
@@ -26,61 +25,25 @@ void main() {
   const headerKey = Key('feed-header');
   const headerHeight = 60.0;
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
+  // `expand`: a tight height, like the `Expanded` the real page hands it.
   Future<void> pumpFeed(
     WidgetTester tester,
     AsyncValue<SharedMealFeedState> feed,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = viewport;
-    addTearDown(tester.view.reset);
-
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => ProviderScope(
-                child: MaterialApp(
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                  locale: context.locale,
-                  // Tight height, like the `Expanded` the real page hands it.
-                  home: Scaffold(
-                    body: SizedBox.expand(
-                      child: ThreadFeed(
-                        feed: feed,
-                        header: const SizedBox(
-                          key: headerKey,
-                          height: headerHeight,
-                        ),
-                        onRefresh: () async {},
-                        onRetry: () {},
-                        onAddFriend: () {},
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-        ),
-      ),
-    );
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    });
-    await tester.pumpAndSettle();
-  }
+  ) => pumpCircleScreen(
+    tester,
+    ThreadFeed(
+      feed: feed,
+      header: const SizedBox(key: headerKey, height: headerHeight),
+      onRefresh: () async {},
+      onRetry: () {},
+      onAddFriend: () {},
+    ),
+    size: viewport,
+    expand: true,
+    decodeAssets: true,
+  );
 
   /// The state's own content — illustration through action — against the
   /// middle of the space under the header, and the state's BOX against the

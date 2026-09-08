@@ -1,10 +1,9 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 
 import 'circle_feed_test_support.dart';
+import '../../l10n_test_loader.dart';
 
 /// Whose conversation the reply composer says you are writing into.
 ///
@@ -15,14 +14,7 @@ import 'circle_feed_test_support.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
   /// The feed the thread page reads its post out of, holding one post that is
   /// either a friend's or the viewer's own.

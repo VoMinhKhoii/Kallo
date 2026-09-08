@@ -1,6 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/data/share_entry_provider.dart';
@@ -11,6 +9,7 @@ import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
 import 'circle_feed_test_support.dart';
+import '../../l10n_test_loader.dart';
 
 /// The thread page's SECOND source: `GET /api/v1/groups/shares/<id>`.
 ///
@@ -27,14 +26,7 @@ import 'circle_feed_test_support.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-  });
+  setUpL10nBinding();
 
   /// A single-share payload whose meal text is its OWN, so a test can tell the
   /// post that came from the fallback apart from the ones in the feed page.
