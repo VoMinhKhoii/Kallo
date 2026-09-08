@@ -10,7 +10,7 @@ import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/circle_add_menu.dart';
 import 'package:kallo_mobile/models/social/chat_group.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
-import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
+import 'package:kallo_mobile/shared/widgets/menu/kallo_menu_card.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -143,7 +143,7 @@ void main() {
     tester,
   ) async {
     await pumpMenu(tester);
-    expect(find.byType(ListRow), findsNothing);
+    expect(find.byType(KalloMenuActionRow), findsNothing);
 
     final button = tester.getRect(find.byType(CircleAddMenu));
     await tester.tap(find.byType(CircleAddMenu));
@@ -152,16 +152,20 @@ void main() {
     expect(find.text('Add friend'), findsOneWidget);
     expect(find.text('Create group'), findsOneWidget);
 
-    // 240pt wide, hanging BELOW the button and aligned to its right edge —
-    // the whole point of an anchored menu over a bottom sheet.
-    final row = tester.getRect(find.byType(ListRow).first);
-    expect(row.width, 240 - 32); // less the card's 16pt side padding
+    // Hanging BELOW the button and aligned to its right edge — the whole
+    // point of an anchored menu over a bottom sheet.
+    final row = tester.getRect(find.byType(KalloMenuActionRow).first);
     expect(row.top, greaterThan(button.bottom));
     expect(row.right, lessThanOrEqualTo(button.right));
 
-    // Grouped-card metrics: 52pt rows, the whole row tappable.
-    expect(row.height, greaterThanOrEqualTo(52));
-    for (final widget in tester.widgetList<ListRow>(find.byType(ListRow))) {
+    // One menu anatomy, app-wide: 44pt full-bleed rows on the 240 card — no
+    // side padding of their own, so the press wash runs edge to edge.
+    expect(row.width, closeTo(kKalloMenuWidth, 0.5));
+    expect(row.height, closeTo(kKalloMenuRowHeight, 0.5));
+    // The whole row is tappable, not just its label.
+    for (final widget in tester.widgetList<KalloMenuActionRow>(
+      find.byType(KalloMenuActionRow),
+    )) {
       expect(widget.onTap, isNotNull);
     }
   });
@@ -170,12 +174,12 @@ void main() {
     await pumpMenu(tester);
     await tester.tap(find.byType(CircleAddMenu));
     await tester.pumpAndSettle();
-    expect(find.byType(ListRow), findsNWidgets(2));
+    expect(find.byType(KalloMenuActionRow), findsNWidgets(2));
 
     // Bottom-left is scrim, well clear of the card in the top-right corner.
     await tester.tapAt(const Offset(20, 500));
     await tester.pumpAndSettle();
-    expect(find.byType(ListRow), findsNothing);
+    expect(find.byType(KalloMenuActionRow), findsNothing);
   });
 }
 
