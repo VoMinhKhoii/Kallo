@@ -3,6 +3,12 @@ import {
   DEFAULT_NUTRIENTS,
   NUTRIENT_META,
 } from '@/lib/domain/nutrition/catalog/nutrients';
+import {
+  type AgeBand,
+  NASEM_DRI,
+  VIETNAM_RDA,
+  WHO_FAO,
+} from '@/lib/domain/nutrition/catalog/reference-target-tables';
 import { resolveMicronutrientTargets } from '@/lib/domain/nutrition/catalog/reference-targets';
 
 const baseProfile = {
@@ -389,14 +395,32 @@ describe('resolveMicronutrientTargets', () => {
     });
 
     it('keeps the age-unknown fiber default on the adult band', () => {
-      // The child bands must not steal the catch-all: `resolveAgeBand` reads
-      // the LAST band when age is null, and that band is still 19–50.
+      // Said out loud now rather than falling out of band ordering: an unknown
+      // age scores as a 19-year-old, so it reads the 19–50 row — and the
+      // toddler band at the bottom of the table cannot steal it.
       const unknownAge = resolveMicronutrientTargets({
         ...usMaleAdult,
         age: null,
       });
+      const unknownAgeFemale = resolveMicronutrientTargets({
+        ...usFemaleAdult,
+        age: null,
+      });
 
       expect(unknownAge.fiberG).toMatchObject({ value: 38, source: 'nasem' });
+      expect(unknownAgeFemale.fiberG).toMatchObject({
+        value: 25,
+        source: 'nasem',
+      });
+    });
+
+    it('gives the youngest fiber band its real floor (1–3 y)', () => {
+      // The bottom of the table is the 1–3 y AI, not a second copy of the
+      // adult row. NASEM publishes nothing below 1 y, so it also serves as the
+      // catch-all.
+      const toddler = resolveMicronutrientTargets({ ...usMaleAdult, age: 2 });
+
+      expect(toddler.fiberG).toMatchObject({ value: 19, source: 'nasem' });
     });
 
     it('applies B6 age split at 50 (1.3 → 1.7 M / 1.5 F)', () => {
@@ -419,5 +443,68 @@ describe('resolveMicronutrientTargets', () => {
       expect(older.vitaminB6Mg).toMatchObject({ value: 1.5 });
       expect(olderMale.vitaminB6Mg).toMatchObject({ value: 1.7 });
     });
+  });
+});
+
+describe('age-banded entries', () => {
+  /** Every banded entry in every published table, named by source and key. */
+  const banded: Array<[string, string, AgeBand[]]> = (
+    [
+      ['VIETNAM_RDA', VIETNAM_RDA],
+      ['WHO_FAO', WHO_FAO],
+      ['NASEM_DRI', NASEM_DRI],
+    ] as const
+  ).flatMap(([source, table]) =>
+    Object.entries(table)
+      .filter(([, entry]) => entry && 'ageBands' in entry)
+      .map(
+        ([key, entry]) =>
+          [source, key, (entry as { ageBands: AgeBand[] }).ageBands] as [
+            string,
+            string,
+            AgeBand[],
+          ]
+      )
+  );
+
+  const contexts = [
+    { countryOfOrigin: 'Vietnam', countryOfResidence: 'Vietnam' },
+    { countryOfOrigin: 'US', countryOfResidence: 'US' },
+  ];
+  const sexes = ['male', 'female', null];
+
+  it('has banded entries to check in the first place', () => {
+    // Guards the loops below from silently passing on an empty list.
+    expect(banded.length).toBeGreaterThan(0);
+  });
+
+  it('resolves an unknown age exactly as a 19-year-old, in every context', () => {
+    // The contract the resolver now states outright. Whole target maps, so it
+    // covers every banded key at once — including the ones added later.
+    for (const context of contexts) {
+      for (const biologicalSex of sexes) {
+        const profile = { ...context, biologicalSex };
+        expect(resolveMicronutrientTargets({ ...profile, age: null })).toEqual(
+          resolveMicronutrientTargets({ ...profile, age: 19 })
+        );
+      }
+    }
+  });
+
+  it('leaves every table but fiber on the band it always resolved to', () => {
+    // The old rule was "unknown age takes the LAST band". For a table whose
+    // only split is at 50/51 that band IS the young-adult row, so the explicit
+    // 19 lands in exactly the same place and nothing about those targets
+    // changes. Fiber is the one table that published bands below 19, which is
+    // why it needed a duplicate adult row before and does not now.
+    for (const [source, key, bands] of banded) {
+      const where = `${source}.${key}`;
+      expect(bands.at(-1)?.minAge, `${where} needs a catch-all`).toBe(0);
+      if (key === 'fiberG') continue;
+      // No band between the catch-all and 19: age 19 falls through to the same
+      // last band the old null-age branch returned.
+      const above = bands.slice(0, -1).map((band) => band.minAge);
+      expect(Math.min(...above), `${where} bands below 19`).toBeGreaterThan(19);
+    }
   });
 });

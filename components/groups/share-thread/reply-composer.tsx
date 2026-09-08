@@ -19,8 +19,9 @@ export function ReplyComposer({
   authorName,
 }: {
   shareId: string;
-  /** The post author. Absent on your own post: "Reply to <your handle>…"
-   * addresses the reader to themselves, so the placeholder drops the name. */
+  /** The post author, and the one home of this rule: callers omit it on your
+   * OWN post, because "Reply to <your handle>…" addresses the reader to
+   * themselves. Absent, the placeholder falls back to the plain "Reply…". */
   authorName?: string;
 }) {
   const t = useTranslations('groups.feed');

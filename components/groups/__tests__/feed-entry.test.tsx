@@ -28,45 +28,22 @@ vi.mock('motion/react', () => ({
 }));
 
 import { FeedEntry } from '@/components/groups/feed-entry';
+import {
+  SHARE_ID,
+  sharedMealEntryFixture,
+  shareReplyFixture,
+} from './fixtures';
 
-const FRIEND = {
-  userId: 'user-2',
-  handle: 'mai',
-  displayName: 'Mai',
-  avatarSeed: null,
-  avatarUrl: null,
-  hasCustomAvatar: false,
-};
-
+/** An answered, hearted post: this suite is about the figures the glyph row
+ * carries, so the shared fixture's quiet defaults are the wrong starting
+ * point here. */
 function entryFixture(overrides: Partial<CircleFeedEntry> = {}) {
-  return {
-    friend: FRIEND,
-    isSelf: false,
-    meal: {
-      mealId: 'meal-1',
-      shareId: 'share-1',
-      rawInput: 'bún bò huế',
-      caloriesKcal: 420,
-      proteinG: 38,
-      carbohydrateG: 64,
-      fatG: 12,
-      portionFactor: 1,
-      sharedAt: new Date().toISOString(),
-      isBackfilled: false,
-    },
+  return sharedMealEntryFixture({
     reactions: { count: 2, mine: false },
-    replies: [
-      {
-        id: 'reply-1',
-        author: FRIEND,
-        isSelf: false,
-        body: 'That looks unreasonably good',
-        createdAt: new Date().toISOString(),
-      },
-    ],
+    replies: [shareReplyFixture({ body: 'That looks unreasonably good' })],
     repliesTotal: 3,
     ...overrides,
-  } satisfies CircleFeedEntry;
+  });
 }
 
 describe('FeedEntry', () => {
@@ -129,7 +106,7 @@ describe('FeedEntry', () => {
     const link = screen.getByRole('link', { name: 'reply 3' });
     expect(link).toHaveAttribute(
       'href',
-      expect.stringContaining('/circle/share-1')
+      expect.stringContaining(`/circle/${SHARE_ID}`)
     );
     expect(link).toHaveTextContent('3');
   });

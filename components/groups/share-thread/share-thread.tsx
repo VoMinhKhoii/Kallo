@@ -6,7 +6,8 @@ import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ShareReplies } from '@/components/groups/thread/share-replies';
+import { ReplyComposer } from '@/components/groups/share-thread/reply-composer';
+import { ShareReplies } from '@/components/groups/share-thread/share-replies';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { useShareThread } from '@/hooks/social/circle/use-share-thread';
 import { Link } from '@/i18n/navigation';
@@ -46,16 +47,17 @@ export function ShareThread({ shareId }: { shareId: string }) {
         ) : data ? (
           <div className="p-4">
             <FeedEntry entry={data.entry} />
-            <ShareReplies
-              // Your own post addresses nobody: "Reply to <your handle>…"
-              // reads as talking to yourself, so the composer falls back to
-              // the plain "Reply…".
-              authorName={
-                data.entry.isSelf ? undefined : labelFor(data.entry.friend)
-              }
-              replies={data.entry.replies}
-              shareId={shareId}
-            />
+            {/* The conversation and the field you answer it in are siblings,
+                so the spacing between them lives on this one container. */}
+            <div className="mt-3 space-y-3">
+              <ShareReplies replies={data.entry.replies} />
+              <ReplyComposer
+                authorName={
+                  data.entry.isSelf ? undefined : labelFor(data.entry.friend)
+                }
+                shareId={shareId}
+              />
+            </div>
           </div>
         ) : (
           <SurfaceState

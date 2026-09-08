@@ -117,7 +117,10 @@ describe('NotificationRow', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
 
     rerender(
-      <NotificationRow item={item({ type: 'friend.joined' })} isNew={false} />
+      <NotificationRow
+        item={item({ type: 'friend.joined', objectType: 'friendship' })}
+        isNew={false}
+      />
     );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
   });
@@ -140,16 +143,22 @@ describe('NotificationRow', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/g/g7');
   });
 
-  it('routes on the share-object set, not on the plural-copy set', () => {
-    // The two sets happen to hold the same three types today, but they answer
-    // different questions ("does this row aggregate?" vs "is its object a
-    // share?"). A type outside the share set never opens a post page, even
-    // when a share id is sitting on the row.
-    expect(notificationHref(item({ type: 'share.invite_accepted' }))).toBe(
-      '/circle'
-    );
-    expect(notificationHref(item({ type: 'friend.joined' }))).toBe('/circle');
-    // And a share type with no share object falls back to the Circle too.
+  it('routes on the object the payload names, not on the type', () => {
+    // "Is this row's object a share?" is answered by the row itself:
+    // `objectType` is written by the three share producers and by nobody else.
+    // An invite row carries `'invite'` and stays on the Circle even though its
+    // type starts with `share.`.
+    expect(
+      notificationHref(
+        item({ type: 'share.invite_accepted', objectType: 'invite' })
+      )
+    ).toBe('/circle');
+    expect(
+      notificationHref(
+        item({ type: 'friend.joined', objectType: 'friendship' })
+      )
+    ).toBe('/circle');
+    // A share type with no share object falls back to the Circle too.
     expect(
       notificationHref(
         item({ type: 'share.reply', objectType: null, objectId: null })

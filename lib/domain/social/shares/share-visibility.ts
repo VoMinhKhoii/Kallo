@@ -56,7 +56,14 @@ function relationshipAccessSql(
   `;
 }
 
-function shareAccessSql(
+/**
+ * The whole access contract as one composable boolean: owner, else non-private
+ * AND a live relationship. Exported so a caller that is already reading the
+ * share row can fold admission into that row's `WHERE` instead of asking first
+ * and reading second — one statement cannot have its answer change between the
+ * two halves. `canViewShare` remains the form for callers holding only an id.
+ */
+export function shareAccessSql(
   viewerId: string,
   ownerId: SQLWrapper | string,
   sharedAt: SQLWrapper | Date,

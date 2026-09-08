@@ -5,51 +5,31 @@ import type { SharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 const { useShareThread } = vi.hoisted(() => ({ useShareThread: vi.fn() }));
 
 vi.mock('@/hooks/social/circle/use-share-thread', () => ({ useShareThread }));
-// The post and the thread are covered by their own suites; here they stand in
-// so this one is about the page's three states and its way back.
+// The post, the thread and the composer are covered by their own suites; here
+// they stand in so this one is about the page's three states, its way back,
+// and who the composer is addressed to.
 vi.mock('@/components/groups/feed-entry', () => ({
   FeedEntry: ({ entry }: { entry: SharedMealEntry }) => (
     <div data-testid="feed-entry">{entry.meal.rawInput}</div>
   ),
 }));
-vi.mock('@/components/groups/thread/share-replies', () => ({
-  ShareReplies: ({ authorName }: { authorName?: string }) => (
-    <div data-testid="share-replies">{authorName ?? 'no-author-name'}</div>
+vi.mock('@/components/groups/share-thread/share-replies', () => ({
+  ShareReplies: ({ replies }: { replies: SharedMealEntry['replies'] }) => (
+    <div data-testid="share-replies">{replies.length}</div>
+  ),
+}));
+vi.mock('@/components/groups/share-thread/reply-composer', () => ({
+  ReplyComposer: ({ authorName }: { authorName?: string }) => (
+    <div data-testid="reply-composer">{authorName ?? 'no-author-name'}</div>
   ),
 }));
 
-import { ShareThread } from '@/components/groups/thread/share-thread';
-
-const SHARE_ID = '3f1d2c4b-5a6e-4f70-8b91-0c2d3e4f5a6b';
-
-function entry(): SharedMealEntry {
-  return {
-    friend: {
-      userId: 'u2',
-      handle: 'phofan',
-      displayName: 'Phở Fan',
-      avatarSeed: null,
-      avatarUrl: null,
-      hasCustomAvatar: false,
-    },
-    isSelf: false,
-    meal: {
-      mealId: 'm1',
-      shareId: SHARE_ID,
-      rawInput: 'bún chả',
-      caloriesKcal: 640,
-      proteinG: 30,
-      carbohydrateG: 70,
-      fatG: 20,
-      portionFactor: 1,
-      sharedAt: '2026-05-03T08:00:00.000Z',
-      isBackfilled: false,
-    },
-    reactions: { count: 0, mine: false },
-    replies: [],
-    repliesTotal: 0,
-  };
-}
+import {
+  SHARE_ID,
+  sharedMealEntryFixture,
+  shareReplyFixture,
+} from '@/components/groups/__tests__/fixtures';
+import { ShareThread } from '@/components/groups/share-thread/share-thread';
 
 function state(overrides: Record<string, unknown>) {
   useShareThread.mockReturnValue({
@@ -86,20 +66,38 @@ describe('ShareThread', () => {
   });
 
   it('renders the post and its thread, addressed to the author', () => {
-    state({ data: { entry: entry() } });
+    state({
+      data: {
+        entry: sharedMealEntryFixture({ replies: [shareReplyFixture()] }),
+      },
+    });
 
     render(<ShareThread shareId={SHARE_ID} />);
 
     expect(screen.getByTestId('feed-entry')).toHaveTextContent('bún chả');
-    expect(screen.getByTestId('share-replies')).toHaveTextContent('Phở Fan');
+    expect(screen.getByTestId('share-replies')).toHaveTextContent('1');
+    expect(screen.getByTestId('reply-composer')).toHaveTextContent('Phở Fan');
+  });
+
+  it('keeps the thread and the composer in one spaced column', () => {
+    // The list and the field are siblings, so the gap between them and the
+    // post above belongs to their container — not to either component.
+    state({ data: { entry: sharedMealEntryFixture() } });
+
+    const { container } = render(<ShareThread shareId={SHARE_ID} />);
+
+    const column = container.querySelector('.mt-3.space-y-3');
+    expect(column).not.toBeNull();
+    expect(column).toContainElement(screen.getByTestId('share-replies'));
+    expect(column).toContainElement(screen.getByTestId('reply-composer'));
   });
 
   it('names nobody on your own post — the composer must not address you', () => {
-    state({ data: { entry: { ...entry(), isSelf: true } } });
+    state({ data: { entry: sharedMealEntryFixture({ isSelf: true }) } });
 
     render(<ShareThread shareId={SHARE_ID} />);
 
-    expect(screen.getByTestId('share-replies')).toHaveTextContent(
+    expect(screen.getByTestId('reply-composer')).toHaveTextContent(
       'no-author-name'
     );
   });

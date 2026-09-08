@@ -1,5 +1,7 @@
+import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import {
+  findEntryInFeeds,
   isFeedQuery,
   mapFeedEntries,
 } from '@/lib/domain/social/feed/feed-cache';
@@ -76,5 +78,78 @@ describe('mapFeedEntries', () => {
   it('passes a gone share (null data) straight through', () => {
     expect(mapFeedEntries(null, bump)).toBeNull();
     expect(mapFeedEntries(undefined, bump)).toBeUndefined();
+  });
+});
+
+describe('findEntryInFeeds', () => {
+  const seed = (queryKey: readonly unknown[], data: unknown) => {
+    const client = new QueryClient();
+    client.setQueryData(queryKey, data);
+    return client;
+  };
+
+  it('finds the post in a flat circle feed', () => {
+    const client = seed(
+      [...circleFeedKeys.all, -420],
+      [entry('s0', 0), entry('s1', 1)]
+    );
+
+    expect(findEntryInFeeds(client, 's1')?.entry).toMatchObject({
+      meal: { shareId: 's1' },
+    });
+  });
+
+  it('finds the post inside an infinite-query page bag', () => {
+    const client = seed(friendsThreadFeedKeys.all, {
+      pages: [{ entries: [entry('s0', 0)] }, { entries: [entry('s1', 1)] }],
+      pageParams: [undefined, 'c1'],
+    });
+
+    expect(findEntryInFeeds(client, 's1')?.entry).toMatchObject({
+      meal: { shareId: 's1' },
+    });
+  });
+
+  it('finds the post in another share page envelope', () => {
+    const client = seed(shareThreadKeys.detail('s1'), {
+      entry: entry('s1', 1),
+    });
+
+    expect(findEntryInFeeds(client, 's1')?.entry).toMatchObject({
+      meal: { shareId: 's1' },
+    });
+  });
+
+  it('carries the source feed freshness, not now', () => {
+    // The seed must be judged as old as the feed it came from, or a thread
+    // opened off a stale feed would look fresh and never refetch.
+    const client = seed(friendsThreadFeedKeys.all, {
+      pages: [{ entries: [entry('s1', 1)] }],
+      pageParams: [undefined],
+    });
+    const feed = client
+      .getQueryCache()
+      .find({ queryKey: friendsThreadFeedKeys.all });
+
+    expect(findEntryInFeeds(client, 's1')?.dataUpdatedAt).toBe(
+      feed?.state.dataUpdatedAt
+    );
+  });
+
+  it('answers undefined for a post no feed holds', () => {
+    const client = seed([...circleFeedKeys.all, -420], [entry('s0', 0)]);
+
+    expect(findEntryInFeeds(client, 's1')).toBeUndefined();
+    expect(findEntryInFeeds(new QueryClient(), 's1')).toBeUndefined();
+  });
+
+  it('ignores caches that are not feeds', () => {
+    // A profile or group-detail cache can hold anything; the finder must not
+    // go fishing for a `meal.shareId` outside the feed net.
+    const client = seed(chatGroupsKeys.detail('g1'), {
+      entry: entry('s1', 1),
+    });
+
+    expect(findEntryInFeeds(client, 's1')).toBeUndefined();
   });
 });

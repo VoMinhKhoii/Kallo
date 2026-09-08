@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks — the thread read runs entirely on the `db` singleton (owner role).
-// The REAL schema, the REAL share-lookup and the REAL canViewShare gate are
-// used, so the authorization this action leans on is the one under test, not a
-// stand-in. The gate renders through `db.execute`; the row projection through
-// `db.select`.
+// The REAL schema, the REAL share-lookup and the REAL `shareAccessSql`
+// predicate are used, so the authorization this action leans on is the one
+// under test, not a stand-in. Admission and row projection are ONE `db.select`
+// statement: what the gate refuses simply does not come back.
 // ---------------------------------------------------------------------------
 
 const { mockDbSelect, mockDbExecute, mockDbInsert, mockDbUpdate } = vi.hoisted(
@@ -45,17 +45,9 @@ import { ACTOR, INVITER } from './circle-doubles';
 
 const SHARE_ID = '3f1d2c4b-5a6e-4f70-8b91-0c2d3e4f5a6b';
 
-/** The visibility gate: `db.execute` answering one `{ visible }` row. Nothing
- * is read until it says yes, so every row-returning case has to set it. */
-function gate(visible: boolean, capture?: { statements: unknown[] }) {
-  mockDbExecute.mockImplementation((statement: unknown) => {
-    capture?.statements.push(statement);
-    return Promise.resolve([{ visible }]);
-  });
-}
-
-/** The share lookup's row read: select().from().innerJoin().innerJoin()
- * .where().limit(). */
+/** The share lookup's one statement: select().from().innerJoin().innerJoin()
+ * .where().limit(). Its WHERE carries the visibility predicate, so a refusal
+ * is arranged the way Postgres expresses one — no rows. */
 function shareQuery(rows: unknown[], capture?: { wheres: unknown[] }) {
   const query = {
     from: vi.fn(),
@@ -108,7 +100,6 @@ describe('getSharedMealEntry', () => {
 
   it('returns the visible share in the feed entry shape, enriched', async () => {
     const sharedAt = new Date('2026-05-03T08:00:00Z');
-    gate(true);
     shareQuery([sharedMealRow(sharedAt)]);
 
     const entry = await getSharedMealEntry(ACTOR, SHARE_ID);
@@ -124,55 +115,41 @@ describe('getSharedMealEntry', () => {
     expect(entry?.repliesTotal).toBe(0);
   });
 
-  it('returns null when the share is not the actor to see', async () => {
-    // The gate refuses, and the action must translate that to "gone", not to
-    // an error — and the meal must never be read in the first place.
-    gate(false);
-    shareQuery([sharedMealRow(new Date('2026-05-03T08:00:00Z'))]);
-
-    await expect(getSharedMealEntry(ACTOR, SHARE_ID)).resolves.toBeNull();
-    expect(mockDbSelect).not.toHaveBeenCalled();
-  });
-
-  it('returns null for an id that matches no share', async () => {
-    gate(true);
+  it('returns null when nothing comes back — refused and gone read alike', async () => {
+    // A share the actor may not see and a share that never existed are the
+    // same empty result, and the action must translate either to "gone"
+    // rather than to an error.
     shareQuery([]);
 
+    await expect(getSharedMealEntry(ACTOR, SHARE_ID)).resolves.toBeNull();
     await expect(
       getSharedMealEntry(ACTOR, '00000000-0000-4000-8000-000000000000')
     ).resolves.toBeNull();
   });
 
-  it('asks the one gate about this actor and this share', async () => {
-    const capture = { statements: [] as unknown[] };
-    gate(true, capture);
-    shareQuery([]);
-
-    await getSharedMealEntry(ACTOR, SHARE_ID);
-
-    const asked = compile(capture.statements.at(-1));
-    expect(asked.params).toContain(SHARE_ID);
-    expect(asked.params).toContain(ACTOR);
-    // The gate's own predicates, not a copy of them here: a shared group only
-    // admits when it is a NAMED group, so the direct-chat member rows that
-    // removeFriend / blockFriend leave behind grant nothing.
-    expect(asked.sql).toContain('"chat_groups"."kind"');
-  });
-
-  it('scopes the row read to this share, non-private only', async () => {
+  it('asks and reads in one statement, carrying the whole gate', async () => {
     const capture = { wheres: [] as unknown[] };
-    gate(true);
     shareQuery([], capture);
 
     await getSharedMealEntry(ACTOR, SHARE_ID);
 
-    const outer = compile(capture.wheres.at(-1));
-    expect(outer.params).toContain(SHARE_ID);
-    expect(outer.sql).toContain("<> 'private'");
+    // No separate gate round trip: admission cannot go stale between two
+    // statements if there is only one.
+    expect(mockDbExecute).not.toHaveBeenCalled();
+    expect(mockDbSelect).toHaveBeenCalledTimes(1);
+
+    const where = compile(capture.wheres.at(-1));
+    expect(where.params).toContain(SHARE_ID);
+    expect(where.params).toContain(ACTOR);
+    // The shared predicate, not a copy of it here: a shared group only admits
+    // when it is a NAMED group, so the direct-chat member rows that
+    // removeFriend / blockFriend leave behind grant nothing.
+    expect(where.sql).toContain('"chat_groups"."kind"');
+    // And the page stays in step with the feeds, which render no private share.
+    expect(where.sql).toContain("<> 'private'");
   });
 
   it('treats a malformed share id as gone, without touching the database', async () => {
-    gate(true);
     shareQuery([]);
 
     await expect(getSharedMealEntry(ACTOR, 'not-a-uuid')).resolves.toBeNull();
@@ -181,7 +158,6 @@ describe('getSharedMealEntry', () => {
   });
 
   it('never advances a read marker — one post is not the whole feed', async () => {
-    gate(true);
     shareQuery([sharedMealRow(new Date('2026-05-03T08:00:00Z'))]);
 
     await getSharedMealEntry(ACTOR, SHARE_ID);

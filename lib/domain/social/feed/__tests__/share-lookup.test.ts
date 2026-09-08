@@ -4,9 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // The single-share read must not carry its own copy of the visibility rules —
-// it must ask the one gate every cross-user share read goes through. These
-// tests pin the delegation, not a second transcription of the predicates (the
-// SQL itself is pinned in shares/__tests__/share-visibility.test.ts).
+// it must carry the one predicate every cross-user share read goes through, in
+// its own WHERE. These tests pin that composition (admission and read are one
+// statement), not a second transcription of the predicates: the SQL of the
+// predicate itself is pinned in shares/__tests__/share-visibility.test.ts.
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
@@ -40,77 +41,98 @@ const row = {
 };
 
 /**
- * One double for both halves of the read: `execute` answers the visibility
- * gate (which renders through `db.execute`), `select().from().innerJoin()
- * .innerJoin().where().limit()` answers the row projection. The row is always
- * present in this fake database — whether it comes back is the gate's call.
+ * One statement, one double: `select().from().innerJoin().innerJoin().where()
+ * .limit()`. What Postgres would decide is the WHERE this fake captures, so
+ * "the gate refused" is arranged the way the database expresses it — an empty
+ * result — rather than by a separate boolean.
  */
-function fakeDb(visible: boolean) {
-  const captured: { statement?: SQL } = {};
-  const execute = vi.fn((statement: SQL) => {
-    captured.statement = statement;
-    return Promise.resolve([{ visible }]);
-  });
-
+function fakeDb(rows: unknown[]) {
+  const captured: { where?: SQL } = {};
   const query = {
     from: vi.fn(),
     innerJoin: vi.fn(),
     where: vi.fn(),
-    limit: vi.fn().mockResolvedValue([row]),
+    limit: vi.fn().mockResolvedValue(rows),
   };
   query.from.mockReturnValue(query);
   query.innerJoin.mockReturnValue(query);
-  query.where.mockReturnValue(query);
+  query.where.mockImplementation((predicate: SQL) => {
+    captured.where = predicate;
+    return query;
+  });
   const select = vi.fn().mockReturnValue(query);
+  const execute = vi.fn();
 
   return { select, execute, captured, query };
 }
 
+const compile = (predicate: SQL | undefined) =>
+  new PgDialect().sqlToQuery(predicate as SQL);
+
 describe('sharedMealVisibleToActor', () => {
-  it('returns the row the gate admits', async () => {
-    const db = fakeDb(true);
+  it('returns the row the predicate admits', async () => {
+    const db = fakeDb([row]);
 
     await expect(
       sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never)
     ).resolves.toEqual(row);
-    expect(db.execute).toHaveBeenCalledTimes(1);
   });
 
-  it('returns null without reading the row when the gate refuses', async () => {
-    const db = fakeDb(false);
+  it('returns null when the predicate refuses the row', async () => {
+    // Not "filtered out after the fact": the predicate is part of the read, so
+    // an inadmissible meal never leaves the database.
+    const db = fakeDb([]);
 
     await expect(
       sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never)
     ).resolves.toBeNull();
-    // Not "filtered out after the fact": the meal never leaves the database.
-    expect(db.select).not.toHaveBeenCalled();
   });
 
-  it('refuses a share whose only tie is a stale direct-chat membership', async () => {
-    // The hole this delegation closes. removeFriend / blockFriend leave the
-    // pair's `chat_group_members` rows behind, so a blocked viewer still shares
-    // a `kind: 'direct'` group with the owner, both joined before the share.
-    // The gate answers false for exactly that shape because its membership
-    // EXISTS is restricted to named groups — a predicate restated here would
-    // have to remember to, and the old one did not.
-    const db = fakeDb(false);
-
-    await expect(
-      sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never)
-    ).resolves.toBeNull();
-
-    const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    expect(sql).toContain('"chat_groups"."kind"');
-    expect(sql).toContain("'group'");
-  });
-
-  it('asks the gate about this actor and this share', async () => {
-    const db = fakeDb(true);
+  it('decides admission and reads the row in one statement', async () => {
+    const db = fakeDb([row]);
 
     await sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never);
 
-    const { params } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    expect(params).toContain(ACTOR);
-    expect(params).toContain(SHARE_ID);
+    // Exactly one query, and no separate gate round trip before it.
+    expect(db.select).toHaveBeenCalledTimes(1);
+    expect(db.execute).not.toHaveBeenCalled();
+    expect(db.query.limit).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries the whole visibility contract in that statement WHERE', async () => {
+    const db = fakeDb([row]);
+
+    await sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never);
+
+    const where = compile(db.captured.where);
+    // The friendship half of the gate, verbatim from share-visibility.
+    expect(where.sql).toContain('EXISTS');
+    expect(where.sql).toContain('"friendships"."status"');
+    // The hole this composition closes: a shared group only admits when it is
+    // a NAMED group, so the direct-chat member rows that removeFriend /
+    // blockFriend leave behind grant nothing.
+    expect(where.sql).toContain('"chat_groups"."kind"');
+    expect(where.sql).toContain("'group'");
+    // And the page stays in step with the feeds, which render no private share.
+    expect(where.sql).toContain("<> 'private'");
+    // Scoped to this share, asked on behalf of this actor.
+    expect(where.params).toContain(SHARE_ID);
+    expect(where.params).toContain(ACTOR);
+  });
+
+  it('qualifies every column it names — no bare "group_id"', async () => {
+    // The `isSingleTable` hazard share-visibility.ts documents: Drizzle drops
+    // the table prefix off SELECT-list columns in a join-free query, which
+    // turned the membership self-join into `ON "group_id" = "group_id"`. A
+    // WHERE predicate is rendered verbatim, and this query has two joins
+    // besides — so the self-join stays qualified on both sides.
+    const db = fakeDb([row]);
+
+    await sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never);
+
+    const where = compile(db.captured.where);
+    expect(where.sql).toContain(
+      '"share_owner_membership"."group_id" = "share_viewer_membership"."group_id"'
+    );
   });
 });

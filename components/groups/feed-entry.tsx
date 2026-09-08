@@ -27,6 +27,13 @@ function fractionLabel(factor: number): string {
   return `${Math.round(factor * 100)}%`;
 }
 
+/** A glyph's label carries its figure only when there is one. The count lives
+ * IN the label because the figure beside the glyph is drawn for the eye alone:
+ * a screen reader must hear "Reply 3", not a bare "Reply". */
+function withCount(label: string, count: number): string {
+  return count > 0 ? `${label} ${count}` : label;
+}
+
 /** One flat Threads-style meal post with portion and share-scoped actions. */
 export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const tWall = useTranslations('groups.wall');
@@ -57,13 +64,9 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
     meal.caloriesKcal == null
       ? '— kcal'
       : `${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
-  // A count only ever reaches the eye when there is one; the label carries it
-  // for the reader who cannot see the figure beside the glyph.
   const reactionCount = entry.reactions.count;
-  const heartLabel =
-    reactionCount > 0 ? `${t('heart')} ${reactionCount}` : t('heart');
-  const replyLabel =
-    entry.repliesTotal > 0 ? `${t('reply')} ${entry.repliesTotal}` : t('reply');
+  const heartLabel = withCount(t('heart'), reactionCount);
+  const replyLabel = withCount(t('reply'), entry.repliesTotal);
 
   return (
     <div className="flex gap-3">

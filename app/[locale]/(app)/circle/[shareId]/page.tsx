@@ -1,4 +1,4 @@
-import { ShareThread } from '@/components/groups/thread/share-thread';
+import { ShareThread } from '@/components/groups/share-thread/share-thread';
 
 /** One shared meal's own page. The static `g` and `friends` segments take
  * precedence over this dynamic one, so a share id can never shadow them. */

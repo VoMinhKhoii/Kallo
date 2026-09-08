@@ -55,9 +55,13 @@ export type TargetRow = Record<
 
 // An age-banded entry resolves the right TargetRow based on profile.age.
 // Bands are evaluated in order; the first whose `minAge` is <= age wins.
-// Always include a band with `minAge: 0` as the catch-all default (so missing
-// ages still resolve to the youngest-adult band rather than dropping to
-// `unsupported`). Bands must be listed in DESCENDING `minAge` order.
+// Always include a band with `minAge: 0` as the catch-all, so an age below
+// everything the source publishes still resolves rather than dropping to
+// `unsupported`. It is the LOWEST published band that carries that floor — an
+// unknown age no longer lands here at all: `resolveAgeBand` scores it as a
+// young adult explicitly (ASSUMED_ADULT_AGE), so no table needs a duplicate
+// adult row at the bottom to be read correctly.
+// Bands must be listed in DESCENDING `minAge` order.
 export interface AgeBand {
   minAge: number;
   row: TargetRow;
@@ -373,21 +377,17 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
         },
       },
       {
-        minAge: 1,
+        // The 1–3 y AI, doubling as this file's `minAge: 0` catch-all. NASEM
+        // publishes nothing below 1 y (infants have an AI for total fat, not
+        // fiber), so the youngest published band is the honest floor — there
+        // is no separate infant row to lose. An age-unknown profile does NOT
+        // land here: it resolves as a 19-year-old (see resolveAgeBand), which
+        // is why the duplicate adult row that used to sit at the bottom of
+        // this table is gone.
+        minAge: 0,
         row: {
           male: { value: 19, unit: 'g' },
           female: { value: 19, unit: 'g' },
-        },
-      },
-      {
-        // The `minAge: 0` catch-all this file requires, and the band an
-        // age-unknown profile resolves to (`resolveAgeBand` takes the last
-        // one) — so it repeats the 19–50 adult row rather than the toddler AI.
-        // It is NOT an infant figure: NASEM publishes none below 1 y.
-        minAge: 0,
-        row: {
-          male: { value: 38, unit: 'g' },
-          female: { value: 25, unit: 'g' },
         },
       },
     ],

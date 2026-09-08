@@ -14,15 +14,6 @@ const AGGREGATED: ReadonlySet<NotificationType> = new Set<NotificationType>([
   'share.logged',
 ]);
 
-/** The types whose object IS a share, so the row can open that post's page.
- *  Today it holds the same three members as AGGREGATED, but for an unrelated
- *  reason — one is a plural-copy policy, this is a fact about the payload —
- *  so the two must not be read off each other. Mirrors mobile's
- *  `kPushShareTypes`
- *  (`apps/mobile-flutter/lib/features/notifications/logic/push_tap_routing.dart`). */
-const SHARE_OBJECT_TYPES: ReadonlySet<NotificationType> =
-  new Set<NotificationType>(['share.reply', 'share.reaction', 'share.logged']);
-
 /** How a person is labelled in a row: display name, else their handle. */
 export function actorLabel(item: NotificationItem, fallback: string): string {
   const actor = item.actors[0];
@@ -56,16 +47,20 @@ export function messageValues(
 /** Where tapping the row goes. A group add opens the group; anything about one
  *  share opens THAT share's page, so a reply notification lands on the reply
  *  and not on a feed the user then has to search. The rest of the v1 catalogue
- *  has no destination finer than the Circle surface itself. */
+ *  has no destination finer than the Circle surface itself.
+ *
+ *  The routing question is "is this row's object a share?", and the payload
+ *  already answers it: `objectType: 'share'` is written by exactly the three
+ *  share producers (`lib/actions/meal-sharing/{reactions,replies,log-shared}`),
+ *  while `share.invite_accepted` records an `'invite'`. A parallel set of types
+ *  would be a second, driftable copy of that discriminant — the plural-copy
+ *  policy above is a separate question and stays a separate set. Mobile routes
+ *  the same way (`push_tap_routing.dart`). */
 export function notificationHref(item: NotificationItem): string {
   if (item.type === 'group.added' && item.targetId) {
     return circleGroupHref(item.targetId);
   }
-  if (
-    SHARE_OBJECT_TYPES.has(item.type) &&
-    item.objectType === 'share' &&
-    item.objectId
-  ) {
+  if (item.objectType === 'share' && item.objectId) {
     return circleThreadHref(item.objectId);
   }
   return '/circle';
