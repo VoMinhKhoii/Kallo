@@ -7,6 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
+import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
+import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
+import 'package:kallo_mobile/shared/widgets/feedback/skeleton.dart';
+import 'package:kallo_mobile/shared/widgets/icons/filled_heart.dart';
+import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import 'circle_feed_test_support.dart';
 
@@ -113,18 +121,12 @@ void main() {
     expect(find.byType(CircleThreadScreen), findsOneWidget);
   });
 
-  testWidgets('the earlier-replies line states what the API withheld', (
-    tester,
-  ) async {
+  testWidgets('replies start on the post\'s content rail', (tester) async {
     final api = FakeApiClient(
       (request) =>
           request.path == '/api/v1/groups/friends/feed'
               ? pageJson([
-                entryJson(
-                  's1',
-                  replies: [replyJson('r1'), replyJson('r2')],
-                  repliesTotal: 9,
-                ),
+                entryJson('s1', replies: [replyJson('r1')]),
               ], null)
               : readMarker(request),
     );
@@ -134,19 +136,55 @@ void main() {
       api: api,
     );
 
-    // 9 total, 2 shipped: the page owns this line because the thread is where
-    // the missing 7 would otherwise be silently absent.
-    expect(find.text('7 earlier replies not shown'), findsOneWidget);
+    // A reply's avatar sits directly under the post's first glyph: both start
+    // on the card's content rail, so the thread reads as one column rather
+    // than as a post with a second, wider column of answers beneath it.
+    expect(
+      tester.getTopLeft(find.byType(ReplyRow).first).dx,
+      tester.getTopLeft(find.byIcon(LucideIcons.heart300)).dx,
+    );
   });
 
-  testWidgets('one withheld reply reads as one, not as "1 replies"', (
+  testWidgets('no replies reads as one quiet line under the post', (
     tester,
   ) async {
     final api = FakeApiClient(
       (request) =>
           request.path == '/api/v1/groups/friends/feed'
+              ? pageJson([entryJson('s1')], null)
+              : readMarker(request),
+    );
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's1'),
+      api: api,
+    );
+
+    // A line, not an illustrated surface: an empty thread is the ordinary
+    // case here, and a cast plus a headline over one post is a page telling
+    // the user that nothing is wrong at the volume of something being wrong.
+    final line = find.text('No replies yet');
+    expect(line, findsOneWidget);
+    expect(find.byType(KalloSurfaceState), findsNothing);
+    expect(
+      tester.getTopLeft(line).dy -
+          tester.getBottomLeft(find.byType(GroupedListCard)).dy,
+      closeTo(KalloSpacing.sp3, 1),
+    );
+    // And it sits where a reply would have: on the same rail.
+    expect(
+      tester.getTopLeft(line).dx,
+      tester.getTopLeft(find.byIcon(LucideIcons.heart300)).dx,
+    );
+  });
+
+  testWidgets('the composer leads with the viewer\'s own avatar, on the '
+      'replies\' rail', (tester) async {
+    final api = FakeApiClient(
+      (request) =>
+          request.path == '/api/v1/groups/friends/feed'
               ? pageJson([
-                entryJson('s1', replies: [replyJson('r1')], repliesTotal: 2),
+                entryJson('s1', replies: [replyJson('r1')]),
               ], null)
               : readMarker(request),
     );
@@ -156,9 +194,71 @@ void main() {
       api: api,
     );
 
-    // The key is a plural map, so the line has to go through `plural` — `tr`
-    // would print the map's own shape.
-    expect(find.text('1 earlier reply not shown'), findsOneWidget);
+    final disc = find.descendant(
+      of: find.byType(ThreadComposer),
+      matching: find.byType(ProfileAvatarDisc),
+    );
+    expect(disc, findsOneWidget);
+    // The reply rows' disc, at the reply rows' left edge: the field reads as
+    // the next reply in the thread rather than as a bar bolted under it.
+    expect(tester.widget<ProfileAvatarDisc>(disc).size, 28);
+    expect(
+      tester.getTopLeft(disc).dx,
+      tester.getTopLeft(
+        find.descendant(
+          of: find.byType(ReplyRow),
+          matching: find.byType(ProfileAvatarDisc),
+        ),
+      ).dx,
+    );
+  });
+
+  testWidgets('a profile that fails to load leaves a placeholder disc', (
+    tester,
+  ) async {
+    final api = FakeApiClient((request) {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], null);
+      }
+      if (request.path == '/api/v1/groups/profile') {
+        throw ApiError('PROFILE', 500, false, 'no profile');
+      }
+      return readMarker(request);
+    });
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's1'),
+      api: api,
+    );
+
+    // The dock keeps its shape when the viewer's face cannot be read: a
+    // static disc holds the slot, and the field still works.
+    expect(
+      find.descendant(
+        of: find.byType(ThreadComposer),
+        matching: find.byType(SkeletonCircle),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('reply-composer')), findsOneWidget);
+  });
+
+  testWidgets('the field asks to reply to the author by name', (tester) async {
+    final api = FakeApiClient(
+      (request) =>
+          request.path == '/api/v1/groups/friends/feed'
+              ? pageJson([entryJson('s1')], null)
+              : readMarker(request),
+    );
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's1'),
+      api: api,
+    );
+
+    // Naming the author is what tells the user which conversation the field
+    // belongs to on a page they arrived at from a notification.
+    expect(find.text('Reply to Hà…'), findsOneWidget);
   });
 
   group('the composer opens focused only when the URL asks', () {
@@ -263,7 +363,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('3'), findsOneWidget);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 1);
+    expect(find.byType(FilledHeart), findsOneWidget);
   });
 
   group('threadEntryProvider', () {

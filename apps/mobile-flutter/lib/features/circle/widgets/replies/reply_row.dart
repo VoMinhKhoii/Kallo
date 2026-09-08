@@ -8,32 +8,22 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
 import '../feed/feed_rhythm.dart';
 
-/// One reply: the avatar on the left, the reply itself in a pill on the right.
+/// One reply: the avatar on the left, the author line and the reply body in
+/// the content column beside it.
 ///
-/// **The bubble (2026-09-07, user reference: Facebook / Threads comment
-/// threads).** A reply used to be a bare paragraph indented under an avatar,
-/// which is the same anatomy as the post above it — so a thread read as one
-/// long column of posts rather than as a conversation. A fill that hugs its
-/// own text says "somebody said this" at a glance, and says it in the shape
-/// the two apps the user pointed at use.
+/// **A reply reuses the post's anatomy (2026-09-08).** Name row, then the body
+/// at [dashBody] under a [kFeedTight] gap — exactly how [FeedEntry] sets its
+/// meal text under its own author line. Same tiers, same gap, same left edge,
+/// so a thread reads as one column of writing where the post and the replies
+/// to it are the same kind of thing, told apart by the avatar and the indent
+/// rather than by a change of surface.
 ///
-/// **The name stays OUTSIDE the pill.** [dashName]'s own doc names this exact
-/// case — "the Circle post author over the post text, a reply author over the
-/// reply… this tier is for identity ONLY" — and the post at the top of a
-/// thread sets its name on its own line the same way. Two type tiers inside
-/// one container would also restate, one notch down, the wall that stepping
-/// the name out of the body was introduced to fix. It keeps the pill's height
-/// a pure function of the message, which is the only reason to draw a pill:
-/// a one-word reply stays a one-word pill.
-///
-/// **The fill is NEUTRAL, the geometry is shared.** Padding and the radius
-/// TOKEN come from the app's existing bubble
-/// (`features/logging/widgets/turn/sent_bubble.dart`), so the two read as one
-/// family — but that bubble is the user's own turn: it fills with
-/// [KalloColors.btnPrimarySoft] and tightens one corner by 4 to point at its
-/// sender. A reply is not "mine", so it takes neither: a flat [kTrack] fill on
-/// all four equal corners. It reads on both grounds this row appears on: white
-/// inside a feed card, cream on the thread page.
+/// It wore a [kTrack] pill for one day (2026-09-07, chasing Facebook/Threads
+/// comment bubbles). The user asked for it back as plain text: those apps put
+/// a bubble around a comment because the comment is ALL there is, while here
+/// the reply sits under a meal card that is already a surface — a fill inside
+/// a fill, on the cream thread page a third one. The name/body relationship
+/// the pill was drawn to carry is carried by the type on its own.
 class ReplyRow extends StatelessWidget {
   const ReplyRow({required this.reply, required this.locale, super.key});
 
@@ -68,26 +58,7 @@ class ReplyRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: kFeedTight),
-              // Shrink-wrapped: the pill takes its text's width and wraps at
-              // the column, so it never runs full-bleed behind a short reply.
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: KalloSpacing.sp3_5, // 14
-                    vertical: KalloSpacing.sp2_5, // 10
-                  ),
-                  decoration: const BoxDecoration(
-                    color: kTrack,
-                    // 18, not the card's 22: a reply is not a card, and 18 is
-                    // what the app's other bubble already draws.
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(KalloRadii.xxl),
-                    ),
-                  ),
-                  child: Text(reply.body, style: dashBody()),
-                ),
-              ),
+              Text(reply.body, style: dashBody()),
             ],
           ),
         ),

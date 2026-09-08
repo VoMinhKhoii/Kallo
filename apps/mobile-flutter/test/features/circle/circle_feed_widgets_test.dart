@@ -12,17 +12,16 @@ import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_action_button.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_day_group.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/reply_preview.dart';
+import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
+import 'package:kallo_mobile/shared/widgets/icons/filled_heart.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/feed_rhythm.dart';
 
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
-
-/// The reply bubble around [body]: the nearest Container up from the text.
-Finder pill(String body) =>
-    find.ancestor(of: find.text(body), matching: find.byType(Container)).first;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -183,7 +182,11 @@ void main() {
     await tester.tap(find.byIcon(LucideIcons.heart300));
     await tester.pump();
     expect(find.text('3'), findsOneWidget);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 1);
+    // The hearted state is a whole different WIDGET, not a fill on the same
+    // Icon: Lucide is a font here and carries no FILL axis, so the old
+    // `Icon.fill == 1` assertion passed while the phone drew an outline.
+    expect(find.byType(FilledHeart), findsOneWidget);
+    expect(find.byIcon(LucideIcons.heart300), findsNothing);
     response.complete({'reacted': true, 'count': 4});
     await tester.pumpAndSettle();
     expect(find.text('4'), findsOneWidget);
@@ -206,63 +209,43 @@ void main() {
     response.completeError(ApiError('NOPE', 500, false, 'failed'));
     await tester.pumpAndSettle();
     expect(find.text('2'), findsOneWidget);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 0);
+    // Back to the outline glyph, with no filled heart left behind.
+    expect(find.byIcon(LucideIcons.heart300), findsOneWidget);
+    expect(find.byType(FilledHeart), findsNothing);
   });
 
-  testWidgets('the card teases the newest replies and links out for the rest', (
-    tester,
-  ) async {
-    // The card is a teaser now that replies have their own page: it shows the
-    // newest two and sends you to the thread for the count. The "N earlier
-    // replies" line moved to the thread, where it is honest — the API only
-    // ever ships 12 per share.
-    final replies = [
-      for (var i = 1; i <= 3; i++) reply(id: 'r$i', body: 'Reply $i'),
-    ];
+  testWidgets('a hearted post draws the filled heart, an unhearted one the '
+      'outline', (tester) async {
     await pump(
       tester,
-      ReplyPreview(
-        entry: entry(replies: replies, repliesTotal: 9),
-        scope: null,
+      FeedEntry(
+        entry: entry(reactions: const ShareReactions(mine: true, count: 3)),
       ),
     );
-    expect(find.text('Reply 1'), findsNothing);
-    expect(find.text('Reply 2'), findsOneWidget);
-    expect(find.text('Reply 3'), findsOneWidget);
-    // The count is the thread's, not a promise of what the page lists — the
-    // page shows the newest 12 and says how many it withholds.
-    expect(find.text('View thread · 9 replies'), findsOneWidget);
+    expect(find.byType(FilledHeart), findsOneWidget);
+    expect(find.byIcon(LucideIcons.heart300), findsNothing);
 
-    // Nothing hidden: no link, because there is nowhere further to go.
     await pump(
       tester,
-      ReplyPreview(
-        entry: entry(replies: [replies.first], repliesTotal: 1),
-        scope: null,
-      ),
+      FeedEntry(entry: entry(reactions: const ShareReactions(count: 3))),
     );
-    expect(find.textContaining('View thread'), findsNothing);
+    expect(find.byIcon(LucideIcons.heart300), findsOneWidget);
+    expect(find.byType(FilledHeart), findsNothing);
   });
 
-  testWidgets('a reply sits in a pill that hugs its own text', (tester) async {
-    // The bubble is shrink-wrapped by an Align, so a short reply must be
-    // narrower than the column it sits in. A regression to a full-bleed block
-    // shows up as equal widths, not as a missing widget.
-    await pump(
-      tester,
-      ReplyPreview(
-        entry: entry(replies: [reply(body: 'Ngon')], repliesTotal: 1),
-        scope: null,
-      ),
-    );
-    final bubble = tester.getSize(pill('Ngon'));
-    final preview = tester.getSize(find.byType(ReplyPreview));
-    expect(bubble.width, lessThan(preview.width));
-    // The author stays OUTSIDE the pill — identity above, body inside.
-    expect(
-      tester.getBottomRight(find.textContaining('linh')).dy,
-      lessThanOrEqualTo(tester.getTopLeft(pill('Ngon')).dy),
-    );
+  testWidgets('the reply glyph carries the reply count', (tester) async {
+    // The count moved onto the glyph when the card stopped drawing replies
+    // under the post: it is the only thing left saying a thread exists.
+    await pump(tester, FeedEntry(entry: entry(repliesTotal: 3)));
+    expect(find.text('3'), findsOneWidget);
+    final glyph = tester.getRect(find.byIcon(LucideIcons.messageCircle300));
+    final count = tester.getRect(find.text('3'));
+    expect(count.left, greaterThan(glyph.right));
+    expect(count.center.dy, closeTo(glyph.center.dy, 2));
+
+    // Zero prints nothing: only the heart's own 0 count remains.
+    await pump(tester, FeedEntry(entry: entry(repliesTotal: 0)));
+    expect(find.text('0'), findsOneWidget);
   });
 
   testWidgets('the three actions share one row and clear a 44pt target', (
@@ -288,36 +271,83 @@ void main() {
     for (var i = 0; i < 3; i++) {
       expect(tester.getSize(buttons.at(i)).height, greaterThanOrEqualTo(44));
     }
+    // ONE row: same top edge, left to right. The Wrap stacked all three one
+    // per line while KalloPressable still grew to the width it was offered
+    // (fixed 2026-09-08), which a height-only assertion could not see.
+    final tops = [for (var i = 0; i < 3; i++) tester.getTopLeft(buttons.at(i))];
+    expect(tops[1].dy, tops[0].dy);
+    expect(tops[2].dy, tops[0].dy);
+    expect(tops[1].dx, greaterThan(tops[0].dx));
+    expect(tops[2].dx, greaterThan(tops[1].dx));
   });
 
-  testWidgets('a long unbroken word stays inside the reply pill', (
-    tester,
-  ) async {
+  testWidgets('a post in the feed shows no replies under it', (tester) async {
+    // Threads anatomy: the post plus ONE action row. Replies live on the
+    // thread page, and the count on the reply glyph is what says so — the
+    // card used to tease the newest two under the action row.
+    await pump(
+      tester,
+      _StaticThread(
+        state: SharedMealFeedState(
+          entries: [
+            entry(replies: [reply(body: 'Ngon quá!')], repliesTotal: 4),
+          ],
+          nextCursor: null,
+        ),
+      ),
+    );
+    expect(find.byType(FeedEntry), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(FeedEntry), matching: find.byType(ReplyRow)),
+      findsNothing,
+    );
+    expect(find.text('Ngon quá!'), findsNothing);
+    expect(find.text('4'), findsOneWidget);
+  });
+
+  testWidgets('a reply is plain text under its author', (tester) async {
+    // The pill is gone (user reference, 2026-09-08): a reply body is set like
+    // the post's meal text — same tier, same gap, same left edge — because the
+    // card it sits on is already the surface.
+    await pump(tester, ReplyRow(reply: reply(body: 'Ngon'), locale: 'en'));
+    // No painted box AROUND THE BODY. Scoped to the body's own ancestry
+    // rather than to the whole row, because the avatar disc beside it is
+    // itself a Container with a gradient — "no decoration anywhere in
+    // ReplyRow" would fail on the disc no matter how the body is drawn.
+    expect(
+      find.ancestor(
+        of: find.text('Ngon'),
+        matching: find.byWidgetPredicate(
+          (w) => w is Container && w.decoration != null,
+        ),
+      ),
+      findsNothing,
+    );
+    expect(tester.widget<Text>(find.text('Ngon')).style, dashBody());
+
+    final name = tester.getRect(find.textContaining('linh'));
+    final body = tester.getRect(find.text('Ngon'));
+    expect(body.top - name.bottom, closeTo(kFeedTight, 0.5));
+    expect(body.left, name.left);
+  });
+
+  testWidgets('a long unbroken word wraps inside the column', (tester) async {
     // A URL or a mashed-together word has no break opportunity, so nothing
-    // wraps it for free: the pill must still be bounded by the column it sits
-    // in rather than running out past the card edge.
+    // wraps it for free: the body must stay inside the content column rather
+    // than running out past the card edge.
     const long = 'aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffff';
     expect(long.length, 60);
     await pump(
       tester,
-      ReplyPreview(
-        entry: entry(replies: [reply(body: long)], repliesTotal: 1),
-        scope: null,
+      SizedBox(
+        width: 300,
+        child: ReplyRow(reply: reply(body: long), locale: 'en'),
       ),
     );
-    final bubble = tester.getRect(pill(long));
-    final preview = tester.getRect(find.byType(ReplyPreview));
-    expect(bubble.width, lessThanOrEqualTo(preview.width));
-    expect(bubble.right, lessThanOrEqualTo(preview.right));
-  });
-
-  testWidgets('a post with no replies draws no reply block at all', (
-    tester,
-  ) async {
-    await pump(tester, ReplyPreview(entry: entry(), scope: null));
-    // Otherwise the post carries an empty padded box under its action row and
-    // reads bottom-heavy against the next hairline.
-    expect(tester.getSize(find.byType(ReplyPreview)).height, 0);
+    final text = tester.getSize(find.text(long));
+    expect(text.width, lessThanOrEqualTo(300));
+    // Wrapped, not clipped or overflowing: more than one line of body copy.
+    expect(text.height, greaterThan(dashBody().fontSize! * 1.5));
   });
 
   testWidgets('the composition bar renders for a meal with macros', (
@@ -422,20 +452,24 @@ void main() {
     // What the deleted "reply draft does not migrate" test was really
     // defending: state belonging to one post must never surface under
     // another. FeedEntry owns no state at all now, so the claim is just that
-    // the removed post and its preview are gone.
-    final entryA = entry(rawInput: 'Meal A', replies: [reply(body: 'On A')]);
+    // the removed post — and the reply count that was its own — is gone.
+    final entryA = entry(
+      rawInput: 'Meal A',
+      replies: [reply(body: 'On A')],
+      repliesTotal: 7,
+    );
     final entryB = entry(mealId: 'm2', shareId: 's2', rawInput: 'Meal B');
     final entries = ValueNotifier<List<CircleFeedEntry>>([entryA, entryB]);
     addTearDown(entries.dispose);
     await pump(tester, _MutableThread(entries: entries));
-    expect(find.text('On A'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
 
     entries.value = [entryB];
     await tester.pump();
 
     expect(find.text('Meal A'), findsNothing);
     expect(find.text('Meal B'), findsOneWidget);
-    expect(find.text('On A'), findsNothing);
+    expect(find.text('7'), findsNothing);
   });
 }
 
@@ -446,10 +480,7 @@ class _FeedHost extends ConsumerWidget {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
       data:
-          (value) => FeedEntry(
-            entry: value.entries.single,
-            footer: ReplyPreview(entry: value.entries.single, scope: null),
-          ),
+          (value) => FeedEntry(entry: value.entries.single),
       error: (_, __) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

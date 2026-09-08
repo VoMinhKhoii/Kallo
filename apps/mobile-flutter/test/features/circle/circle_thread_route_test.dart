@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:kallo_mobile/features/circle/logic/circle_thread_route.dart';
 
-/// Does `/circle/thread/:shareId` — a ROOT route — actually win when pushed
-/// from the `/circle` shell branch, and does the scope survive the URL?
+/// Does `/circle/:shareId` — a ROOT route — actually win when pushed from the
+/// `/circle` shell branch, and does the scope survive the URL?
 ///
 /// The real `routerProvider` is Supabase-bound, so this mirrors its shape the
 /// way `test/shell/nav_actions_test.dart` does: a StatefulShellRoute with a
@@ -20,7 +20,7 @@ GoRouter _router() => GoRouter(
   initialLocation: '/circle',
   routes: [
     GoRoute(
-      path: '/circle/thread/:shareId',
+      path: '/circle/:shareId',
       parentNavigatorKey: _rootKey,
       pageBuilder:
           (context, state) => CupertinoPage<void>(
@@ -86,10 +86,10 @@ void main() {
   });
 
   test('the thread URL omits the scope for the friends feed', () {
-    expect(circleThreadLocation(shareId: 's1'), '/circle/thread/s1');
+    expect(circleThreadLocation(shareId: 's1'), '/circle/s1');
     expect(
       circleThreadLocation(shareId: 's 1', scope: 'g/1'),
-      '/circle/thread/s%201?scope=g%2F1',
+      '/circle/s%201?scope=g%2F1',
     );
   });
 
@@ -99,15 +99,15 @@ void main() {
     // link and a restored route mean the same thing.
     expect(
       circleThreadLocation(shareId: 's1', compose: true),
-      '/circle/thread/s1?compose=1',
+      '/circle/s1?compose=1',
     );
     expect(
       circleThreadLocation(shareId: 's1', scope: 'g/1', compose: true),
-      '/circle/thread/s1?scope=g%2F1&compose=1',
+      '/circle/s1?scope=g%2F1&compose=1',
     );
     expect(
       circleThreadLocation(shareId: 's1', scope: 'g/1'),
-      '/circle/thread/s1?scope=g%2F1',
+      '/circle/s1?scope=g%2F1',
     );
   });
 }

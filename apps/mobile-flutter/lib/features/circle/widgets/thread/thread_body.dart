@@ -3,13 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/data/surface_cast.dart';
-import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../feed/feed_day_group.dart' show kContentRail;
 import '../feed/feed_entry.dart';
 import '../replies/reply_row.dart';
+
+/// Card pad (16) + the avatar rail (44): where the post's own content column
+/// starts, and therefore where its heart glyph starts. Indenting the replies
+/// by it puts a reply's avatar directly under that glyph, so the thread reads
+/// as one column instead of a post with a wider column of answers beneath it.
+const double _replyIndent = KalloSpacing.sp4 + kContentRail;
 
 /// The thread page's scrolling content: the post, then its replies.
 ///
@@ -45,11 +50,6 @@ class ThreadBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
-    // The API ships the newest 12 replies per share and `appendReply` re-trims
-    // to 12, so a long thread silently loses its oldest. Saying so here is
-    // what keeps that from being invisible — there is no endpoint to page the
-    // rest back in.
-    final hidden = entry.repliesTotal - entry.replies.length;
 
     // Built ONCE here, then handed to [_TailReserve] as a child: the keyboard
     // inset that sets the tail is read down there, so the 250ms ramp rebuilds
@@ -72,36 +72,32 @@ class ThreadBody extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: KalloSpacing.sp4),
-          if (entry.replies.isEmpty)
-            // Full width, or the surface's centred cast and copy would sit
-            // hard against the left edge under this start-aligned column.
-            SizedBox(
-              width: double.infinity,
-              child: KalloSurfaceState(
-                area: SurfaceArea.circle,
-                kind: SurfaceKind.empty,
-                compact: true,
-                title: tr('groups.feed.noReplies'),
-                subtitle: tr('groups.feed.noRepliesBody'),
+          if (entry.replies.isEmpty) ...[
+            // One quiet line on the replies' own rail, not an illustrated
+            // empty state: an empty thread is the ordinary case here, and a
+            // cast with a headline under a single post says at the volume of
+            // a problem that there is simply nothing here yet. It sits closer
+            // to the post than the replies do — it belongs to that post
+            // rather than standing in for a list.
+            const SizedBox(height: KalloSpacing.sp3),
+            Padding(
+              padding: const EdgeInsets.only(left: _replyIndent),
+              child: Text(tr('groups.feed.noReplies'), style: dashMeta()),
+            ),
+          ] else ...[
+            const SizedBox(height: KalloSpacing.sp4),
+            Padding(
+              padding: const EdgeInsets.only(left: _replyIndent),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final reply in entry.replies) ...[
+                    ReplyRow(reply: reply, locale: locale),
+                    const SizedBox(height: KalloSpacing.sp3),
+                  ],
+                ],
               ),
-            )
-          else ...[
-            if (hidden > 0) ...[
-              Text(
-                plural(
-                  'groups.feed.earlierReplies',
-                  hidden,
-                  namedArgs: {'count': '$hidden'},
-                ),
-                style: dashMeta(),
-              ),
-              const SizedBox(height: KalloSpacing.sp3),
-            ],
-            for (final reply in entry.replies) ...[
-              ReplyRow(reply: reply, locale: locale),
-              const SizedBox(height: KalloSpacing.sp3),
-            ],
+            ),
           ],
         ],
       ),

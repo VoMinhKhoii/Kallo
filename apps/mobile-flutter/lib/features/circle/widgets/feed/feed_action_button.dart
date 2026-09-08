@@ -47,7 +47,8 @@ class FeedActionButton extends StatelessWidget {
     required this.icon,
     this.label,
     this.semanticLabel,
-    this.fill,
+    this.active = false,
+    this.activeGlyph,
     this.activeColor = kInk,
     this.alignment = Alignment.center,
   });
@@ -62,10 +63,21 @@ class FeedActionButton extends StatelessWidget {
   /// Spoken name for a glyph-only action.
   final String? semanticLabel;
 
-  /// Icon fill, for the hearted state.
-  final double? fill;
+  /// Whether the action reads as "on" — hearted, and nothing else so far.
+  final bool active;
 
-  /// Glyph colour once [fill] is 1 — the "on" state's own colour.
+  /// What to draw INSTEAD of [icon] while [active], for an action whose on
+  /// state is a different shape rather than a different colour.
+  ///
+  /// A widget rather than a `fill` axis because Lucide ships here as an icon
+  /// FONT, and that font carries no FILL axis: `Icon(fill: 1)` compiles,
+  /// changes nothing on the device, and still reads as 1 back in a test — so
+  /// the hearted state passed its own test while never filling on a phone.
+  /// The heart passes [FilledHeart], the same 24-grid path drawn as an inline
+  /// SVG. With no glyph the active state is [activeColor] alone.
+  final Widget? activeGlyph;
+
+  /// Glyph colour once [active] — the "on" state's own colour.
   ///
   /// Defaults to [kInk], which is what an activated action wore before the
   /// heart needed its own. The heart passes [KalloColors.danger]: at ink a
@@ -106,12 +118,13 @@ class FeedActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: _glyph,
-              color: fill == 1 ? activeColor : _actionInk,
-              fill: fill,
-            ),
+            active && activeGlyph != null
+                ? activeGlyph!
+                : Icon(
+                  icon,
+                  size: _glyph,
+                  color: active ? activeColor : _actionInk,
+                ),
             if (label != null) ...[
               const SizedBox(width: KalloSpacing.sp1_5),
               Text(label!, style: dashMeta(color: _actionInk)),

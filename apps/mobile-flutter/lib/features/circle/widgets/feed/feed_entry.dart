@@ -23,7 +23,6 @@ class FeedEntry extends StatelessWidget {
     required this.entry,
     this.scope,
     this.onReply,
-    this.footer,
     super.key,
   });
 
@@ -40,10 +39,6 @@ class FeedEntry extends StatelessWidget {
   /// never push a second copy of the thread it is already inside — which is
   /// why this is a parameter rather than a hardcoded push.
   final VoidCallback? onReply;
-
-  /// What renders under the action row. The feed passes [ReplyPreview]; the
-  /// thread page passes nothing, because there the replies ARE the page.
-  final Widget? footer;
 
   String _fraction(double factor) {
     if ((factor - 0.5).abs() < 0.001) return '½';
@@ -146,7 +141,6 @@ class FeedEntry extends StatelessWidget {
                       compose: true,
                     ),
               ),
-              if (footer != null) footer!,
             ],
           ),
         ),

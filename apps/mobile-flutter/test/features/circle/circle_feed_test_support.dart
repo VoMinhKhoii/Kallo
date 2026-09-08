@@ -144,13 +144,19 @@ Future<SharedMealFeedState> mountFeed(
   return container.read(provider.future);
 }
 
-/// The friends feed invalidates the read marker on every load, so a handler
-/// that only knows the feed path makes that request retry three times and
-/// pollute the request log. Answer it and move on.
-Object? readMarker(Request request) =>
-    request.path == '/api/v1/groups/friends/read-marker'
-        ? {'lastReadAt': '2026-07-18T00:00:00.000Z'}
-        : unexpectedRequest(request);
+/// The two reads every Circle screen makes on the side: the friends feed
+/// invalidates the read marker on every load, and the thread's composer reads
+/// the viewer's own profile for its avatar. A handler that only knows the feed
+/// path makes both retry and pollute the request log. Answer them and move on.
+Object? readMarker(Request request) => switch (request.path) {
+  '/api/v1/groups/friends/read-marker' => {
+    'lastReadAt': '2026-07-18T00:00:00.000Z',
+  },
+  '/api/v1/groups/profile' => {
+    'profile': {'userId': 'me', 'handle': 'khoa', 'displayName': 'Khoa'},
+  },
+  _ => unexpectedRequest(request),
+};
 
 /// Mounts [child] as a screen under the app's l10n and a [ProviderScope]
 /// answering with [api], and settles it.

@@ -11,7 +11,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-/// `/circle/thread/<shareId>[?scope=<groupId>][&compose=1]`.
+/// `/circle/<shareId>[?scope=<groupId>][&compose=1]`.
 ///
 /// `compose=1` asks the page to open its composer focused. It rides in the URL
 /// rather than in a push argument so that the intent survives a deep link and
@@ -21,7 +21,7 @@ String circleThreadLocation({
   String? scope,
   bool compose = false,
 }) {
-  final path = '/circle/thread/${Uri.encodeComponent(shareId)}';
+  final path = '/circle/${Uri.encodeComponent(shareId)}';
   final query = <String>[
     if (scope != null) 'scope=${Uri.encodeQueryComponent(scope)}',
     if (compose) 'compose=1',

@@ -1518,14 +1518,10 @@
       "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
       "reply": "Trả lời",
       "replyPlaceholder": "Trả lời…",
+      "replyTo": "Trả lời {name}…",
       "replyError": "Không thể gửi trả lời. Hãy thử lại.",
-      "earlierReplies": {
-        "other": "{count} trả lời trước đó không hiển thị"
-      },
       "threadTitle": "Trả lời",
-      "viewThread": "Xem chủ đề · {count} trả lời",
       "noReplies": "Chưa có trả lời nào",
-      "noRepliesBody": "Hãy là người đầu tiên lên tiếng.",
       "threadGone": "Bài đăng này không còn ở đây",
       "threadGoneBody": "Có thể bài đăng đã bị xoá, hoặc đã cũ hơn những bữa ăn đang được tải.",
       "portion": "{portion} phần",

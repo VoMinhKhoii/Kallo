@@ -107,6 +107,11 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
                   alignment: Alignment.bottomCenter,
                   child: ThreadComposer(
                     shareId: widget.shareId,
+                    // `label`, not `displayName`: the field is nullable and a
+                    // person with no name set still has a handle to be
+                    // addressed by — the same fallback every other identity
+                    // line in Circle uses.
+                    authorName: view.entry.friend.label,
                     scope: widget.scope,
                     focusNode: _focus,
                     // Mounted only once the thread is readable, so the

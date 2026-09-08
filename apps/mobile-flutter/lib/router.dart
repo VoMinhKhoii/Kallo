@@ -194,7 +194,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // the combined friends feed): the page reads its entry out of that
       // feed's live cache, since no endpoint fetches a single share.
       GoRoute(
-        path: '/circle/thread/:shareId',
+        path: '/circle/:shareId',
         parentNavigatorKey: _rootKey,
         pageBuilder:
             (context, state) => CupertinoPage<void>(

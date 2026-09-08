@@ -7,7 +7,6 @@ import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
 import 'feed_entry.dart';
-import 'reply_preview.dart';
 
 /// Avatar (32) + its gap (12): where the content column starts, and therefore
 /// where a separator between two posts begins.
@@ -80,11 +79,7 @@ class FeedDayGroup extends StatelessWidget {
                       (i == entries.length - 1 ? _edgePad : _innerPad) -
                       _actionSlack,
                 ),
-                child: FeedEntry(
-                  entry: entries[i],
-                  scope: scope,
-                  footer: ReplyPreview(entry: entries[i], scope: scope),
-                ),
+                child: FeedEntry(entry: entries[i], scope: scope),
               ),
           ],
         ),
