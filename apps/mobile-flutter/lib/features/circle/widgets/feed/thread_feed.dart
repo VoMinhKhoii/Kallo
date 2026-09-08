@@ -9,6 +9,7 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../../shared/widgets/feedback/sliver_centered_state.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
 import '../states/circle_error.dart';
@@ -63,10 +64,16 @@ class ThreadFeed extends ConsumerWidget {
         return false;
       },
       child: feed.when(
+        // The skeleton is top-anchored on purpose: it previews where the
+        // first post's card lands, so it sits exactly where that card will.
         loading: () => _list(const CircleWallSkeleton()),
         error:
-            (_, __) => _list(
-              CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
+            (_, __) => _scroll(
+              [header],
+              centred: CircleErrorCard(
+                onRetry: onRetry,
+                isRetrying: feed.isLoading,
+              ),
             ),
         data: (state) => _dataList(context, state),
       ),
@@ -80,24 +87,42 @@ class ThreadFeed extends ConsumerWidget {
   /// bottom inset clears the floating pill nav — without it the last post's
   /// action row sits under the bar — and it is the bar's measured height,
   /// which the shell reports as the body's bottom padding.
-  Widget _scroll(List<Widget> children) => KalloRefreshableScroll(
-    onRefresh: onRefresh,
-    slivers: (bottomInset) => [
-      SliverPadding(
-        padding: EdgeInsets.fromLTRB(
-          KalloSpacing.sp3,
-          KalloSpacing.sp2,
-          KalloSpacing.sp3,
-          bottomInset,
-        ),
-        sliver: SliverList(delegate: SliverChildListDelegate(children)),
-      ),
-    ],
-  );
+  ///
+  /// [centred] is a surface state rather than feed content: it takes the whole
+  /// page under the header and sits at the middle of it, because a state
+  /// pinned under the header with the page blank beneath reads as content
+  /// still loading. Its bottom inset is paid INSIDE that fill sliver — a
+  /// trailing spacer would land below the fold and push nothing.
+  Widget _scroll(List<Widget> children, {Widget? centred}) =>
+      KalloRefreshableScroll(
+        onRefresh: onRefresh,
+        slivers:
+            (bottomInset) => [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  KalloSpacing.sp2,
+                  KalloSpacing.sp3,
+                  centred == null ? bottomInset : 0,
+                ),
+                sliver: SliverList(delegate: SliverChildListDelegate(children)),
+              ),
+              if (centred != null)
+                SliverCenteredState(
+                  padding: EdgeInsets.fromLTRB(
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp3,
+                    bottomInset,
+                  ),
+                  child: centred,
+                ),
+            ],
+      );
 
   Widget _dataList(BuildContext context, SharedMealFeedState state) {
     if (state.entries.isEmpty) {
-      return _list(_empty());
+      return _scroll([header], centred: _empty());
     }
     final children = <Widget>[header];
     for (final day in _byDay(state.entries)) {

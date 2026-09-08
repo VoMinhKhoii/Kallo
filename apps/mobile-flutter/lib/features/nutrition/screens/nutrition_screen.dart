@@ -166,47 +166,78 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     ref
                         .read(nutritionOverviewProvider(_arg).notifier)
                         .refetch(),
-            slivers: (bottomInset) => [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  0,
-                  KalloSpacing.sp3,
-                  0,
+            slivers: (bottomInset) {
+              final body = _buildBody(async, isFetching);
+              // The failed page has nothing on it but the state card, so the
+              // card sits at the MIDDLE of it rather than under the title with
+              // the rest blank — and the source line still holds the bottom
+              // edge. One fill sliver does both: two would fight, since the
+              // first `hasScrollBody: false` takes everything that is left.
+              if (body is InlineError) return [_statePage(body, bottomInset)];
+              return [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    KalloSpacing.sp3,
+                    0,
+                    KalloSpacing.sp3,
+                    0,
+                  ),
+                  sliver: SliverToBoxAdapter(child: body),
                 ),
-                sliver: SliverToBoxAdapter(
-                  child: _buildBody(async, isFetching),
-                ),
-              ),
-              // The source line belongs to the PAGE, not to the section above
-              // it. `hasScrollBody: false` hands this sliver whatever height
-              // is left over, so the line sits on the bottom edge on a short
-              // page and simply follows the content on a long one.
-              SliverPadding(
-                // The tail clears the floating pill nav — this is a tab, and
-                // the bar hovers over the last thing on the page. The inset
-                // belongs INSIDE this padding: a trailing spacer sliver would
-                // push the fill-remaining tail off the viewport.
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  KalloSpacing.sp5,
-                  KalloSpacing.sp3,
-                  bottomInset,
-                ),
-                sliver: const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: SourceAttribution(),
+                // The source line belongs to the PAGE, not to the section
+                // above it. `hasScrollBody: false` hands this sliver whatever
+                // height is left over, so the line sits on the bottom edge on
+                // a short page and simply follows the content on a long one.
+                SliverPadding(
+                  // The tail clears the floating pill nav — this is a tab, and
+                  // the bar hovers over the last thing on the page. The inset
+                  // belongs INSIDE this padding: a trailing spacer sliver
+                  // would push the fill-remaining tail off the viewport.
+                  padding: EdgeInsets.fromLTRB(
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp5,
+                    KalloSpacing.sp3,
+                    bottomInset,
+                  ),
+                  sliver: const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SourceAttribution(),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ];
+            },
           ),
         ),
       ),
     );
   }
+
+  /// The whole page when [state] is all there is on it: the card centred in
+  /// what is left under the title, the source line still on the bottom edge.
+  ///
+  /// The bottom inset is paid inside this sliver — a trailing spacer would sit
+  /// below the fold and push nothing.
+  Widget _statePage(Widget state, double bottomInset) => SliverPadding(
+    padding: EdgeInsets.fromLTRB(
+      KalloSpacing.sp3,
+      0,
+      KalloSpacing.sp3,
+      bottomInset,
+    ),
+    sliver: SliverFillRemaining(
+      hasScrollBody: false,
+      child: Column(
+        children: [
+          Expanded(child: Center(child: state)),
+          const SizedBox(height: KalloSpacing.sp5),
+          const SourceAttribution(),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildBody(AsyncValue<NutritionOverview> async, bool isFetching) {
     if (async.isLoading && !async.hasValue) {

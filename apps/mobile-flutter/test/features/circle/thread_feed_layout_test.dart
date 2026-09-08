@@ -1,0 +1,139 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
+import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
+import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
+import 'package:kallo_mobile/shared/widgets/brand/surface_illustration.dart';
+import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
+
+import '../../l10n_test_loader.dart';
+
+/// Where the wall's empty and failed surfaces sit.
+///
+/// The header (view switcher, group title) stays at the top of the page; the
+/// state itself owns everything under it and sits at the middle of that, not
+/// pinned to the header's underside with the rest of the page empty.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const viewport = Size(390, 700);
+  const headerKey = Key('feed-header');
+  const headerHeight = 60.0;
+
+  setUpAll(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
+    await EasyLocalization.ensureInitialized();
+  });
+
+  Future<void> pumpFeed(
+    WidgetTester tester,
+    AsyncValue<SharedMealFeedState> feed,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = viewport;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/l10n',
+        fallbackLocale: const Locale('en'),
+        assetLoader: const FsL10nLoader(),
+        child: Builder(
+          builder:
+              (context) => ProviderScope(
+                child: MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  // Tight height, like the `Expanded` the real page hands it.
+                  home: Scaffold(
+                    body: SizedBox.expand(
+                      child: ThreadFeed(
+                        feed: feed,
+                        header: const SizedBox(
+                          key: headerKey,
+                          height: headerHeight,
+                        ),
+                        onRefresh: () async {},
+                        onRetry: () {},
+                        onAddFriend: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+  }
+
+  /// The state's own content — illustration through action — against the
+  /// middle of the space under the header, and the state's BOX against the
+  /// same middle.
+  ///
+  /// Both, because they are two different claims: the content extremes say the
+  /// state reads as centred, and the box says [KalloSurfaceState] hugs its
+  /// content under the fill sliver's `Center` instead of filling the region.
+  void expectCentredUnderHeader(WidgetTester tester) {
+    final headerBottom = tester.getRect(find.byKey(headerKey)).bottom;
+    // The gap between header and state is paid at the top of the state's own
+    // region, so the midpoint is measured from below it.
+    final top = headerBottom + KalloSpacing.sp3;
+    final contentTop = tester.getRect(find.byType(SurfaceIllustration)).top;
+    final contentBottom = tester.getRect(find.byType(KalloButton)).bottom;
+    expect(
+      (contentTop + contentBottom) / 2,
+      moreOrLessEquals(top + (viewport.height - top) / 2, epsilon: 1),
+    );
+    expect(
+      contentTop - top,
+      greaterThan(KalloSpacing.sp3),
+      reason: 'the state must not hug the header with the page empty below',
+    );
+    // The box itself, not just what it holds.
+    final box = tester.getRect(find.byType(KalloSurfaceState));
+    expect(
+      box.center.dy,
+      moreOrLessEquals(top + (viewport.height - top) / 2, epsilon: 1),
+    );
+    expect(
+      box.height,
+      lessThan(viewport.height - top - 50),
+      reason: 'the state must hug its content, not fill the region',
+    );
+  }
+
+  testWidgets('the empty wall sits in the middle under its header', (
+    tester,
+  ) async {
+    await pumpFeed(
+      tester,
+      const AsyncData(SharedMealFeedState(entries: [], nextCursor: null)),
+    );
+    expect(find.text('No shared meals yet'), findsOneWidget);
+    expectCentredUnderHeader(tester);
+  });
+
+  testWidgets('the failed wall sits in the middle under its header', (
+    tester,
+  ) async {
+    await pumpFeed(tester, AsyncError(Exception('offline'), StackTrace.empty));
+    expect(find.byType(CircleErrorCard), findsOneWidget);
+    expectCentredUnderHeader(tester);
+  });
+}
