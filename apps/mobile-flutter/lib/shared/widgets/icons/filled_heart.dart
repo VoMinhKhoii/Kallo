@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import 'tinted_svg.dart';
 
 /// The Lucide `heart` glyph, filled — for the hearted state. Lucide is an icon
 /// FONT here, so `Icon(fill:)` cannot fill it (the font carries no FILL axis
 /// and the parameter is silently a no-op); this is the same 24-grid path drawn
 /// as an inline SVG with a fill, which is what the web's lucide-react
 /// `<Heart fill>` does. Stroke 1.5 matches the 300 weight of the outline glyph
-/// beside it. Pattern: `brand/kallo_mark.dart`.
+/// beside it. Drawn by [TintedSvg], like every other one-colour glyph.
 class FilledHeart extends StatelessWidget {
   const FilledHeart({
     this.size = KalloIcons.tertiary,
@@ -21,11 +21,12 @@ class FilledHeart extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => SvgPicture.string(
-    _svg,
-    width: size,
-    height: size,
-    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+  Widget build(BuildContext context) => TintedSvg(
+    svg: _svg,
+    size: size,
+    color: color,
+    // The outline heart beside it carries the label; this is the same glyph
+    // in its other state, not a second thing to announce.
     excludeFromSemantics: true,
   );
 }

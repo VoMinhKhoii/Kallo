@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/kallo_colors.dart';
+import '../icons/tinted_svg.dart';
 
 /// The Apple brand mark, rendered in a single ink tint (never a fixed brand
 /// colour — Apple's glyph inherits `currentColor`).
@@ -9,7 +9,7 @@ import '../../../theme/kallo_colors.dart';
 /// Matches the web `AppleLogo` (`components/shared/brand-logos.tsx`) rendered at
 /// `size-4` = 16x16 in `text-kallo-text`, with the same `currentColor` path.
 ///
-/// Uses `flutter_svg` to render the verbatim SVG rather than a hand-rolled path
+/// Drawn by [TintedSvg] — the verbatim SVG rather than a hand-rolled path
 /// parser (the source path uses cubic-Bézier commands).
 class AppleLogo extends StatelessWidget {
   const AppleLogo({super.key, this.size = 16, this.color});
@@ -20,17 +20,8 @@ class AppleLogo extends StatelessWidget {
   final Color? color;
 
   @override
-  Widget build(BuildContext context) {
-    return SvgPicture.string(
-      _svg,
-      width: size,
-      height: size,
-      colorFilter: ColorFilter.mode(
-        color ?? KalloColors.text,
-        BlendMode.srcIn,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      TintedSvg(svg: _svg, size: size, color: color ?? KalloColors.text);
 }
 
 const _svg = '''

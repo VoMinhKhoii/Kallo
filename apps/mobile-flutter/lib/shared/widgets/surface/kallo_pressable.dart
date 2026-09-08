@@ -11,13 +11,8 @@ import 'press_scope.dart';
 ///
 /// The pressed state is read off the raw pointer stream through a [Listener],
 /// OUTSIDE the gesture arena, so no arena resolution can cancel the wash
-/// mid-hold. That is the whole reason this exists as a primitive: the app's
-/// older press implementations drive `_pressed` from `onTapDown`/`onTapUp`/
-/// `onTapCancel`, and a tap recognizer that loses the arena — to a long press
-/// at ~500ms, to a scroll — fires `onTapCancel` and drops the wash with the
-/// finger still down. The confirm dialog shipped exactly that bug
-/// (2026-09-07). Two sites needed the corrected shape at once, which made it a
-/// shared widget rather than a second copy.
+/// mid-hold — a tap recognizer that loses the arena, to a long press at ~500ms
+/// or to a scroll, would drop it with the finger still down.
 ///
 /// Behaviour: a drag-off releases the wash (the pointer lifts somewhere) and
 /// fires nothing (the tap recognizer sees the pointer leave). A null [onTap]
@@ -36,14 +31,6 @@ import 'press_scope.dart';
 /// [height]). A parent that wants the target wider hands it tight
 /// constraints — a [Column] with [CrossAxisAlignment.stretch], a
 /// [SizedBox.expand] — which is how [KalloAlertAction] is full-bleed.
-///
-/// That is why [alignment] is applied by an explicit [Align] with BOTH size
-/// factors rather than by the container's own `alignment`: Container's is an
-/// [Align] WITHOUT factors, which grows to any FINITE max width it is
-/// offered. A [Row] offers its children unbounded width, so this shrink-wrapped
-/// by accident; a [Wrap] offers the COLUMN width, so every [FeedActionButton]
-/// in the Circle post action row became column-wide and each of the three
-/// landed on its own line.
 ///
 /// **Nesting (2026-09-08).** A pressable inside another pressable washes
 /// ALONE, and a DISABLED one still owns its pointer: it enters the arena with

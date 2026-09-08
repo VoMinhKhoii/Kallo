@@ -47,7 +47,11 @@ const double _menuBlur = 8; // how far the page recedes behind the card
 /// The open menu. [anchor] is a GLOBAL rect in the root overlay's coordinates
 /// and [overlaySize] is that overlay's own size — both measured by the caller,
 /// because nothing here may reach into the tree the menu was opened from.
-class AnchoredMenuLayer extends StatelessWidget {
+///
+/// Stateful for ONE reason: the [CurvedAnimation]. The route rebuilds this
+/// widget on every frame of its transition, so a curve built in `build` meant a
+/// status listener per frame on the route's animation, none ever disposed.
+class AnchoredMenuLayer extends StatefulWidget {
   const AnchoredMenuLayer({
     required this.anchor,
     required this.overlaySize,
@@ -68,15 +72,41 @@ class AnchoredMenuLayer extends StatelessWidget {
   final Widget? pinned;
 
   @override
+  State<AnchoredMenuLayer> createState() => _AnchoredMenuLayerState();
+}
+
+class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
+  late CurvedAnimation _curved = _curve();
+
+  @override
+  void didUpdateWidget(AnchoredMenuLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animation != oldWidget.animation) {
+      _curved.dispose();
+      _curved = _curve();
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    super.dispose();
+  }
+
+  CurvedAnimation _curve() => CurvedAnimation(
+    parent: widget.animation,
+    curve: KalloEase.enter,
+    reverseCurve: KalloEase.exit,
+  );
+
+  @override
   Widget build(BuildContext context) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: KalloEase.enter,
-      reverseCurve: KalloEase.exit,
-    );
+    final anchor = widget.anchor;
+    final overlaySize = widget.overlaySize;
+    final pinned = widget.pinned;
     final height = kalloMenuCardHeight(
-      rows: rows.length,
-      header: header != null,
+      rows: widget.rows.length,
+      header: widget.header != null,
     );
     // Below the anchor unless the card would run off the bottom — then above
     // it, same gap, same edge. The safe inset counts: a card ending under the
@@ -107,7 +137,7 @@ class AnchoredMenuLayer extends StatelessWidget {
         ? ceiling
         : wantedTop.clamp(ceiling, floor - height);
 
-    final leadingEdge = edge == KalloMenuEdge.leading;
+    final leadingEdge = widget.edge == KalloMenuEdge.leading;
     final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
     final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
     final left = maxLeft <= KalloSpacing.sp3
@@ -121,7 +151,8 @@ class AnchoredMenuLayer extends StatelessWidget {
         Positioned.fill(
           child: IgnorePointer(
             child: FadeTransition(
-              opacity: curved,
+              opacity: _curved,
+              // The blur is the transition's `child`: a tick repaints it.
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: _menuBlur, sigmaY: _menuBlur),
                 child: const ColoredBox(color: _menuScrim),
@@ -132,29 +163,31 @@ class AnchoredMenuLayer extends StatelessWidget {
         if (pinned != null)
           Positioned.fromRect(
             rect: anchor,
-            child: IgnorePointer(child: pinned!),
+            child: IgnorePointer(child: pinned),
           ),
         Positioned(
           left: left,
           top: top,
           width: kKalloMenuWidth,
           child: FadeTransition(
-            opacity: curved,
+            opacity: _curved,
             child: ScaleTransition(
-              scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+              scale: Tween<double>(begin: 0.92, end: 1).animate(_curved),
               alignment: flipped
                   ? (leadingEdge
                         ? Alignment.bottomLeft
                         : Alignment.bottomRight)
                   : (leadingEdge ? Alignment.topLeft : Alignment.topRight),
-              // The overlay sits above every Material in the app, and nothing
-              // below here introduces one — without this the row labels fall
-              // back to the framework's debug style (red monospace on a double
-              // YELLOW underline). Transparent restores the inherited text
-              // style without painting over the card's surface or shadow.
+              // The card is the transitions' `child`, so a tick never rebuilds
+              // it. The overlay sits above every Material in the app, and
+              // nothing below here introduces one — without this the row
+              // labels fall back to the framework's debug style (red monospace
+              // on a double YELLOW underline). Transparent restores the
+              // inherited text style without painting over the card's surface
+              // or shadow.
               child: Material(
                 type: MaterialType.transparency,
-                child: KalloMenuCard(rows: rows, header: header),
+                child: KalloMenuCard(rows: widget.rows, header: widget.header),
               ),
             ),
           ),

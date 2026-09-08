@@ -93,4 +93,38 @@ void main() {
       ),
     );
   });
+
+  // No state at all: the page's tail, there only to hold its footer on the
+  // bottom edge — the shape the nutrition content page closes on.
+  testWidgets('footer-only: the footer holds the bottom edge', (tester) async {
+    const footerHeight = 40.0;
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = viewport;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: headerExtent)),
+              SliverCenteredState(
+                padding: EdgeInsets.only(bottom: bottomInset),
+                footer: SizedBox(
+                  key: Key('footer'),
+                  width: 100,
+                  height: footerHeight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getRect(find.byKey(const Key('footer'))).bottom,
+      moreOrLessEquals(viewport.height - bottomInset, epsilon: 1),
+    );
+  });
 }

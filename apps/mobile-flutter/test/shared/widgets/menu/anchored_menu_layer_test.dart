@@ -25,13 +25,14 @@ Widget _layer({
   required MediaQueryData media,
   String? header,
   KalloMenuEdge edge = KalloMenuEdge.trailing,
+  Animation<double> animation = const AlwaysStoppedAnimation<double>(1),
 }) => MaterialApp(
   home: MediaQuery(
     data: media,
     child: AnchoredMenuLayer(
       anchor: anchor,
       overlaySize: overlaySize,
-      animation: const AlwaysStoppedAnimation<double>(1),
+      animation: animation,
       edge: edge,
       header: header,
       rows: _rows(),
@@ -39,15 +40,15 @@ Widget _layer({
   ),
 );
 
-/// Puts the window on a 390x844 phone, so the layer laid out at that size fills
-/// it exactly.
+const _phone = Size(390, 844);
+
+/// Puts the window on [_phone], so the layer laid out at that size fills it
+/// exactly.
 void _usePhone(WidgetTester tester) {
-  tester.view.physicalSize = const Size(390, 844);
+  tester.view.physicalSize = _phone;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 }
-
-const _phone = Size(390, 844);
 
 void main() {
   testWidgets('hangs under the anchor, right edges flush', (tester) async {
@@ -145,6 +146,45 @@ void main() {
       card.bottom,
       lessThanOrEqualTo(_phone.height - media.padding.bottom + 0.5),
     );
+  });
+
+  // The route rebuilds the layer on every frame of its transition. The curve
+  // is the layer's, made once and released with it — a curve per frame would
+  // leave a status listener per frame on the route's animation.
+  testWidgets('the curve is disposed with the layer', (tester) async {
+    _usePhone(tester);
+    final controller = AnimationController(
+      vsync: const TestVSync(),
+      duration: const Duration(milliseconds: 200),
+    )..value = 1;
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _layer(
+        anchor: const Rect.fromLTWH(100, 100, 240, 40),
+        overlaySize: _phone,
+        media: const MediaQueryData(size: _phone),
+        animation: controller,
+      ),
+    );
+    // The layer's own fade — the nearest one above the card, not the page
+    // route's.
+    final curved =
+        tester
+                .widget<FadeTransition>(
+                  find
+                      .ancestor(
+                        of: find.byType(KalloMenuCard),
+                        matching: find.byType(FadeTransition),
+                      )
+                      .first,
+                )
+                .opacity
+            as CurvedAnimation;
+    expect(curved.isDisposed, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(curved.isDisposed, isTrue);
   });
 
   testWidgets('the leading edge shares the anchor left edge', (tester) async {

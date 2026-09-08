@@ -14,9 +14,9 @@ import '../brand/surface_illustration.dart';
 ///
 /// The box is its content, at least [minHeight]: under a loose finite height
 /// (a `Center` in a fill sliver) it hugs rather than fills, which is what lets
-/// a card around it stay a card. Tight constraints (an `Expanded`, a
-/// `SizedBox.expand`) still stretch it, and `mainAxisAlignment: center` keeps
-/// the content mid-box there.
+/// a card around it stay a card. The column is [MainAxisSize.min], so
+/// `mainAxisAlignment: center` matters only under TIGHT constraints (an
+/// `Expanded`, a `SizedBox.expand`), where it keeps the content mid-box.
 ///
 /// Twin of the web `components/shared/surface-state/` (keep in sync).
 class KalloSurfaceState extends StatelessWidget {

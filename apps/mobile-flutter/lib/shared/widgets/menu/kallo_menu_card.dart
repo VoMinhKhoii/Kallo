@@ -20,7 +20,7 @@ const double kKalloMenuRowHeight = 44;
 /// the same frame it opens (see `kallo_anchored_menu.dart`).
 const double kKalloMenuHeaderHeight = 40;
 
-/// The 1px [KalloColors.border] rule between rows, and under the header.
+/// The 1px [kHairline] rule between rows, and under the header.
 const double kKalloMenuHairline = 1;
 
 /// The height [KalloMenuCard] will take for [rows] rows, with or without a
@@ -126,6 +126,6 @@ class _Hairline extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const SizedBox(
     height: kKalloMenuHairline,
-    child: ColoredBox(color: KalloColors.border),
+    child: ColoredBox(color: kHairline),
   );
 }

@@ -7,9 +7,7 @@ import 'package:flutter/material.dart';
 /// against the keyboard by the framework, so paying the pair is correct rather
 /// than double-counting. Two callers owe exactly this sum and must move on the
 /// same frame — [ThreadDockInsets] pads the dock by it, and the body's tail
-/// reserve adds it under the dock's own reported height — which is why it is
-/// one function instead of the same expression written twice with prose either
-/// side saying the other pays the same.
+/// reserve adds it under the dock's own reported height.
 ///
 /// Read it in the smallest widget that can: it rebuilds whatever reads it on
 /// every frame of the keyboard's ~250ms ramp.

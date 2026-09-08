@@ -79,9 +79,10 @@ class FeedFooter extends StatelessWidget {
         bubbleText.trim().isNotEmpty;
     // Formatted once: the divider prints it, and the bubble's long-press menu
     // wears the same string as its header.
+    final sentAt = this.sentAt;
     final sentLabel = sentAt == null
         ? null
-        : DateFormat.jm(context.locale.toString()).format(sentAt!);
+        : DateFormat.jm(context.locale.toString()).format(sentAt);
     // The footer's cards carry no margins of their own, so the stack spaces
     // them at the same block gap the card list uses above.
     return Column(

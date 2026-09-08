@@ -21,16 +21,25 @@ import '../../../theme/kallo_theme.dart';
 /// still centres — in the space above the footer — and the footer holds the
 /// bottom edge (the nutrition page's FAO/WHO source line is the case this
 /// exists for).
+///
+/// With [child] omitted it is that tail alone: the page's LAST sliver, holding
+/// [footer] on the bottom edge of a short page and letting it follow the
+/// content on a long one, [footerGap] below whatever came before. The nutrition
+/// page's content and failed layouts both close on this widget, so the
+/// fill-remaining rule lives in one place and the gap above the source line has
+/// one name.
 class SliverCenteredState extends StatelessWidget {
   const SliverCenteredState({
-    required this.child,
+    this.child,
     this.padding = EdgeInsets.zero,
     this.footer,
     this.footerGap = KalloSpacing.sp5,
     super.key,
   });
 
-  final Widget child;
+  /// The state itself, centred. Null when the sliver is only there to pin
+  /// [footer] to the bottom edge.
+  final Widget? child;
 
   /// The page insets, paid inside the fill — see the note above.
   final EdgeInsetsGeometry padding;
@@ -39,24 +48,30 @@ class SliverCenteredState extends StatelessWidget {
   /// all there is. It sits below [child], never scrolls out from under it.
   final Widget? footer;
 
-  /// The gap between the centred state and [footer].
+  /// The gap between the centred state and [footer] — and, with no [child],
+  /// the minimum break between [footer] and the sliver above this one.
   final double footerGap;
 
   @override
-  Widget build(BuildContext context) => SliverFillRemaining(
-    hasScrollBody: false,
-    child: Padding(
-      padding: padding,
-      child:
-          footer == null
-              ? Center(child: child)
-              : Column(
-                children: [
-                  Expanded(child: Center(child: child)),
-                  SizedBox(height: footerGap),
-                  footer!,
-                ],
-              ),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final footer = this.footer;
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Padding(
+        padding: padding,
+        // `Center` with no child is the footer-only form: the column still
+        // holds the footer down, and the space above it is simply empty.
+        child:
+            footer == null
+                ? Center(child: child)
+                : Column(
+                  children: [
+                    Expanded(child: Center(child: child)),
+                    SizedBox(height: footerGap),
+                    footer,
+                  ],
+                ),
+      ),
+    );
+  }
 }

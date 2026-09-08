@@ -65,9 +65,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   /// that a bigger gap used to.
   static const double _gap = KalloSpacing.sp3;
 
-  /// The page's horizontal margin, and the break above the source line.
+  /// The page's horizontal margin.
   static const double _side = KalloSpacing.sp3;
-  static const double _tail = KalloSpacing.sp5;
 
   void _clearSelection() {
     if (_selectedIndex != null) setState(() => _selectedIndex = null);
@@ -215,23 +214,15 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       padding: const EdgeInsets.fromLTRB(_side, 0, _side, 0),
       sliver: SliverToBoxAdapter(child: body),
     ),
-    // The source line belongs to the PAGE, not to the section above it.
-    // `hasScrollBody: false` hands this sliver whatever height is left over,
-    // so the line sits on the bottom edge on a short page and simply follows
-    // the content on a long one.
-    SliverPadding(
-      // The tail clears the floating pill nav — this is a tab, and the bar
-      // hovers over the last thing on the page. The inset belongs INSIDE this
-      // padding: a trailing spacer sliver would push the fill-remaining tail
-      // off the viewport.
-      padding: EdgeInsets.fromLTRB(_side, _tail, _side, bottomInset),
-      sliver: const SliverFillRemaining(
-        hasScrollBody: false,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: SourceAttribution(),
-        ),
-      ),
+    // The source line belongs to the PAGE, not to the section above it — the
+    // footer-only tail, so this page and the failed one below pin it the same
+    // way and the break above it has one name (`footerGap`).
+    SliverCenteredState(
+      // The inset clears the floating pill nav — this is a tab, and the bar
+      // hovers over the last thing on the page. It is paid INSIDE the fill: a
+      // trailing spacer sliver would push the tail off the viewport.
+      padding: EdgeInsets.fromLTRB(_side, 0, _side, bottomInset),
+      footer: const SourceAttribution(),
     ),
   ];
 

@@ -9,20 +9,13 @@ import 'package:flutter/widgets.dart';
 /// and copy glyphs are targets of their own, so without this rule a tap on the
 /// heart flashed the whole post behind it.
 ///
-/// Tap DISPATCH needs nothing here: both `GestureDetector`s enter the arena and
-/// the innermost is first in the hit-test path, so it wins the sweep. Only the
-/// wash needed teaching, because it is read off the raw pointer stream, which
-/// has no arena and hands the event to every `Listener` on that path.
-///
 /// The mechanism: on pointer-down the inner target CLAIMS its pointer up the
 /// chain of scopes before washing, and a target whose own pointer is already
 /// claimed skips its wash. That ordering works because Flutter dispatches a
 /// pointer to the hit-test path INNERMOST FIRST — `RenderBox.hitTest` adds its
 /// children to the path before itself, and `GestureBinding.dispatchEvent`
 /// walks that path in order. Verified by test ("a nested pressable washes
-/// alone"), which would fail the other way round: on a parent-first delivery
-/// the outer would have washed before the claim arrived, and the claim would
-/// have had to un-press it instead.
+/// alone").
 ///
 /// Exposed by every pressable over its own subtree, so a claim walks the whole
 /// chain rather than only one level.
@@ -55,16 +48,13 @@ class PressClaims {
   /// may land elsewhere in the same subtree.
   final Set<int> _claimed = <int>{};
 
-  /// The pointer the wash belongs to — the finger that turned it on. Without
-  /// it a SECOND finger landing and lifting elsewhere on the same target
-  /// cleared the first finger's wash, because the release cleared on any
-  /// pointer up (2026-09-08).
-  int? _pressing;
-
-  /// Where [_pressing] went down, so a move can be measured against it. Held
-  /// here rather than in the widget because the slop is part of "is this
-  /// still a press?", which is this class' whole question.
-  Offset? _origin;
+  /// The finger the wash belongs to, and where it went down so a move can be
+  /// measured against it — ONE value, since the two are set and cleared
+  /// together and neither means anything without the other. The slop is part
+  /// of "is this still a press?", which is this class' whole question, and the
+  /// pointer id is what keeps a SECOND finger landing and lifting elsewhere on
+  /// the same target from clearing the first finger's wash (2026-09-08).
+  ({int pointer, Offset origin})? _press;
 
   /// A descendant's claim, forwarded on so an ancestor two levels up stays
   /// clear as well.
@@ -85,9 +75,8 @@ class PressClaims {
     parent?.claim(pointer);
     if (!enabled || _claimed.contains(pointer)) return false;
     // A finger is already washing this target; the wash stays that finger's.
-    if (_pressing != null) return false;
-    _pressing = pointer;
-    _origin = position;
+    if (_press != null) return false;
+    _press = (pointer: pointer, origin: position);
     return true;
   }
 
@@ -100,11 +89,10 @@ class PressClaims {
   /// The claim is deliberately NOT dropped: the pointer still belongs to this
   /// target, so no ancestor may light up in its place. Only the wash ends.
   bool moved(int pointer, Offset position) {
-    final origin = _origin;
-    if (pointer != _pressing || origin == null) return false;
-    if ((position - origin).distance <= kTouchSlop) return false;
-    _pressing = null;
-    _origin = null;
+    final press = _press;
+    if (press == null || pointer != press.pointer) return false;
+    if ((position - press.origin).distance <= kTouchSlop) return false;
+    _press = null;
     return true;
   }
 
@@ -112,9 +100,8 @@ class PressClaims {
   /// is, and answers whether the wash it owned is over.
   bool release(int pointer) {
     _claimed.remove(pointer);
-    if (pointer != _pressing) return false;
-    _pressing = null;
-    _origin = null;
+    if (pointer != _press?.pointer) return false;
+    _press = null;
     return true;
   }
 }

@@ -39,12 +39,8 @@ class ThreadComposer extends ConsumerStatefulWidget {
 
   final String shareId;
 
-  /// Who wrote the post being replied to — it names the field's placeholder,
-  /// so a page arrived at from a notification says which conversation the
-  /// draft is going into.
-  ///
-  /// Null on your OWN post, where naming the author addressed the user by
-  /// their own handle; the placeholder falls back to the bare "Reply…".
+  /// Who wrote the post being replied to — it names the field's placeholder.
+  /// Null on your own post, where the placeholder falls back to "Reply…".
   final String? authorName;
 
   /// The feed the post was read from — passed to the mutation so the reply
