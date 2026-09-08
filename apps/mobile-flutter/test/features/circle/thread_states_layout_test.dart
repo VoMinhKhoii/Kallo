@@ -38,7 +38,7 @@ void main() {
   /// `pumpAndSettle` would time out on it.
   Future<void> pumpStates(
     WidgetTester tester,
-    ThreadView view, {
+    ThreadNotReady view, {
     bool settle = true,
     Size size = viewport,
     TextScaler textScaler = TextScaler.noScaling,

@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../models/social/circle.dart';
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
@@ -135,7 +134,7 @@ class ThreadFeed extends ConsumerWidget {
       return _stateScroll(_empty());
     }
     final children = <Widget>[header];
-    for (final day in _byDay(state.entries)) {
+    for (final day in groupEntriesByDay(state.entries)) {
       children.add(const SizedBox(height: KalloSpacing.sp3));
       children.add(
         FeedDayGroup(date: day.date, entries: day.entries, scope: scope),
@@ -173,24 +172,4 @@ class ThreadFeed extends ConsumerWidget {
             )
             : null,
   );
-
-  /// Consecutive runs of entries sharing a day key, in feed order. A run, not
-  /// a bucket: the feed is already sorted, and grouping by key would silently
-  /// reorder a day that arrived split across two pages.
-  static List<({DateTime date, List<CircleFeedEntry> entries})> _byDay(
-    List<CircleFeedEntry> entries,
-  ) {
-    final days = <({DateTime date, List<CircleFeedEntry> entries})>[];
-    String? previous;
-    for (final entry in entries) {
-      final date = DateTime.parse(entry.meal.sharedAt);
-      final key = threadDayKey(date);
-      if (key != previous) {
-        days.add((date: date, entries: <CircleFeedEntry>[]));
-        previous = key;
-      }
-      days.last.entries.add(entry);
-    }
-    return days;
-  }
 }

@@ -21,6 +21,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
+import '../logic/find_share_entry.dart';
 import 'chat_group_providers.dart';
 import 'feed_providers.dart';
 import 'share_entry_provider.dart';
@@ -63,16 +64,12 @@ SharedMealFeedNotifier _notifier(WidgetRef ref, String? scope) =>
 
 _ReactionSnapshot? _reactionSnapshot(WidgetRef ref, String? scope, String id) {
   final entries = ref.read(sharedMealFeedProvider(scope)).valueOrNull?.entries;
-  if (entries == null) return null;
-  for (final entry in entries) {
-    if (entry.meal.shareId == id) {
-      return _ReactionSnapshot(
-        mine: entry.reactions.mine,
-        count: entry.reactions.count,
-      );
-    }
-  }
-  return null;
+  final entry = findShareEntry(entries, id);
+  if (entry == null) return null;
+  return _ReactionSnapshot(
+    mine: entry.reactions.mine,
+    count: entry.reactions.count,
+  );
 }
 
 Future<void> toggleShareReaction(
@@ -165,9 +162,4 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
   // keep the pre-log total.
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
-  // The entry carries no per-viewer "logged" flag today, so this changes
-  // nothing on screen yet; it is here so the fetched copy is healed by the
-  // same rule as the feed caches — whatever the server decides to say about a
-  // share after it is logged arrives without a second place to remember.
-  ref.invalidate(sharedMealEntryProvider(shareId));
 }

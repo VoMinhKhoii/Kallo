@@ -18,8 +18,9 @@ import '../states/circle_skeleton.dart';
 class ThreadStates extends StatelessWidget {
   const ThreadStates({required this.view, required this.onRetry, super.key});
 
-  /// Never [ThreadReady] — that state is the body, not a placeholder.
-  final ThreadView view;
+  /// Typed [ThreadNotReady]: the ready state is the body, not a placeholder,
+  /// and the switch below is exhaustive over exactly what can arrive here.
+  final ThreadNotReady view;
   final VoidCallback onRetry;
 
   @override
@@ -68,7 +69,6 @@ class ThreadStates extends StatelessWidget {
               ),
             ),
           ),
-          ThreadReady() => const SliverToBoxAdapter(child: SizedBox.shrink()),
         },
       ],
     );

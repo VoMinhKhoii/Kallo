@@ -26,6 +26,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/circle.dart';
+import '../logic/find_share_entry.dart';
 import 'feed_providers.dart';
 import 'share_entry_provider.dart';
 
@@ -59,36 +60,41 @@ class ThreadReady extends ThreadView {
   int get hashCode => identityHashCode(entry);
 }
 
+/// No post to show yet, for any of three reasons.
+///
+/// The three share a supertype because every consumer treats them alike: the
+/// screen has one arm for all of them and hands them to one widget, which is
+/// then exhaustive over exactly the states it can be given — no dead
+/// [ThreadReady] arm to write and no unreachable state to explain.
+sealed class ThreadNotReady extends ThreadView {
+  const ThreadNotReady();
+}
+
 /// The feed has never resolved — first paint, or a cold deep link.
-class ThreadLoading extends ThreadView {
+class ThreadLoading extends ThreadNotReady {
   const ThreadLoading();
 }
 
 /// The feed settled without this share: deleted, or older than the pages
 /// loaded so far.
-class ThreadMissing extends ThreadView {
+class ThreadMissing extends ThreadNotReady {
   const ThreadMissing();
 }
 
 /// The feed failed and has no cached value to fall back on.
-class ThreadFailed extends ThreadView {
+class ThreadFailed extends ThreadNotReady {
   const ThreadFailed();
 }
 
-/// One post for the thread page: out of the live feed [ThreadRef.scope] if it
-/// is there, otherwise fetched by id.
-///
-/// The feed is SELECTED rather than watched whole: `_mapShare` returns the
-/// SAME instance for entries it did not touch, so a heart tapped on another
-/// post yields a [ThreadView] equal to its predecessor and this page never
-/// rebuilds for it.
+/// One post for the thread page, out of the two sources this library's doc
+/// explains — the feed first, the fetch by id only if it settles without it.
 final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   ref,
   key,
 ) {
   final fromFeed = ref.watch(
     sharedMealFeedProvider(key.scope).select((feed) {
-      final entry = _find(feed.valueOrNull?.entries, key.shareId);
+      final entry = findShareEntry(feed.valueOrNull?.entries, key.shareId);
       // The entry FIRST, then the async flags. A pull-to-refresh puts the feed
       // into AsyncLoading while it keeps its previous value, and a failed
       // refresh keeps that value beside an error — in both the post is still
@@ -121,12 +127,3 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   }
   return fetched.isLoading ? const ThreadLoading() : const ThreadFailed();
 });
-
-/// A plain loop, not `firstWhereOrNull` — `collection` is not a dependency of
-/// this app (same reason `feed_mutations.dart` hand-rolls its lookups).
-CircleFeedEntry? _find(List<CircleFeedEntry>? entries, String shareId) {
-  for (final entry in entries ?? const <CircleFeedEntry>[]) {
-    if (entry.meal.shareId == shareId) return entry;
-  }
-  return null;
-}

@@ -9,18 +9,15 @@ import '../../../services/http/query.dart';
 
 const Duration _shareRequestTimeout = Duration(seconds: 15);
 
-/// One shared meal, fetched by share id — the thread page's FALLBACK source.
+/// One shared meal, fetched by share id — the thread page's FALLBACK source
+/// (`thread_providers.dart` explains when it is reached).
 ///
-/// The feed cache stays the primary one (`threadEntryProvider` looks there
-/// first) because it is what the optimistic writes in `feed_mutations.dart`
-/// patch: a heart or a reply reaches the thread page on the same frame it
-/// reaches the card behind it, with no second cache to keep honest. But that
-/// cache only ever holds the pages the app has actually loaded, of the feed
-/// the app happens to be looking at. A post older than page 1, or one shared
-/// only into a chat group by someone the viewer is not friends with, is
-/// simply not in it — and a share notification opens `/circle/<shareId>` with
-/// no scope at all. Without this read those taps landed on "This post isn't
-/// here any more" about a post that exists.
+/// Not patched optimistically. A heart or reply on a post read through this
+/// provider waits for its POST and this provider's refetch (two round trips)
+/// because the optimistic writes in `feed_mutations.dart` only reach feed
+/// caches. If that lag has to go, lift the per-entry transforms out of
+/// `SharedMealFeedNotifier` into pure functions and apply them here too — do
+/// not add a second patch site.
 ///
 /// Backed by `GET /api/v1/groups/shares/<shareId>` → `{ entry }`, the same
 /// entry shape the feeds return (`app/api/v1/groups/shares/[shareId]/route.ts`).
