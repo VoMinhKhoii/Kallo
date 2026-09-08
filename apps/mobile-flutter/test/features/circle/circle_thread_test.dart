@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
@@ -20,9 +19,11 @@ import 'circle_feed_test_support.dart';
 
 /// The Circle thread page — one post and its replies on their own route.
 ///
-/// Its defining property is that it does NOT fetch: there is no single-share
-/// endpoint, so it reads its post out of the feed it was opened from. Most of
-/// what is worth pinning here follows from that.
+/// Its defining property is that it reads its post out of the feed it was
+/// opened from rather than fetching it: that cache is what the optimistic
+/// mutations patch. Most of what is worth pinning here follows from that.
+/// The fallback for a post no loaded feed holds — the single-share endpoint —
+/// has its own file, `circle_thread_fallback_test.dart`.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -57,8 +58,9 @@ void main() {
 
     expect(find.text('Bún chả Hà Nội'), findsOneWidget);
     expect(find.byType(ReplyRow), findsOneWidget);
-    // One feed fetch, and nothing that names a share: no endpoint exists to
-    // fetch one, and the page must not invent a call that would 404.
+    // One feed fetch, and nothing that names a share: the single-share
+    // endpoint exists, but a post the feed already carries must not cost a
+    // second round trip — or race the optimistic writes into that cache.
     expect(feedFetches(api), hasLength(1));
     expect(api.requests.where((r) => r.path.contains('s1')), isEmpty);
   });
@@ -99,18 +101,23 @@ void main() {
     expect(feedFetches(api), hasLength(1));
   });
 
-  testWidgets('a post that is not in the feed shows the gone state', (
+  testWidgets('a post that is in neither the feed nor the server is gone', (
     tester,
   ) async {
-    final api = FakeApiClient(
-      (request) =>
-          request.path == '/api/v1/groups/friends/feed'
-              ? pageJson([entryJson('s1')], null)
-              : readMarker(request),
-    );
+    final api = FakeApiClient((request) {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], null);
+      }
+      // Absent from the feed page, the thread asks the server for it by id;
+      // 404 is the answer for a deleted share and for one this viewer may not
+      // see (`circle_thread_fallback_test.dart` holds that story).
+      if (request.path == sharePath('s-missing')) {
+        throw ApiError('NOT_FOUND', 404, false, 'không tìm thấy');
+      }
+      return readMarker(request);
+    });
     await pumpCircleScreen(
       tester,
-      // A share the feed page does not carry — deleted, or older than page 1.
       const CircleThreadScreen(shareId: 's-missing'),
       api: api,
     );
@@ -364,27 +371,5 @@ void main() {
 
     expect(find.text('3'), findsOneWidget);
     expect(find.byType(FilledHeart), findsOneWidget);
-  });
-
-  group('threadEntryProvider', () {
-    test('keeps a post on screen while its feed refreshes', () async {
-      final api = FakeApiClient(
-        (request) =>
-            request.path == '/api/v1/groups/friends/feed'
-                ? pageJson([entryJson('s1')], null)
-                : unexpectedRequest(request),
-      );
-      final container = makeContainer(api);
-      await mountFeed(container, null);
-
-      const key = (scope: null, shareId: 's1');
-      holdProvider(container, threadEntryProvider(key));
-      expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
-
-      // A share the feed never carried settles as missing, not as loading.
-      const gone = (scope: null, shareId: 's-gone');
-      holdProvider(container, threadEntryProvider(gone));
-      expect(container.read(threadEntryProvider(gone)), isA<ThreadMissing>());
-    });
   });
 }

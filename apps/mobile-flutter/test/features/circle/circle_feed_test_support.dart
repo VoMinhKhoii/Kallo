@@ -114,6 +114,18 @@ Map<String, dynamic> replyJson(String id) => {
   'createdAt': '2026-07-18T04:05:06.000Z',
 };
 
+/// `GET /api/v1/groups/shares/<id>` — the single-share read the thread page
+/// falls back to when its feed cache does not hold the post
+/// (`data/share_entry_provider.dart`). A helper rather than a literal so a
+/// test asserting that NO fallback fetch happened cannot drift from the
+/// provider, and so it can never be confused with the `/shares/reply` and
+/// `/shares/reaction` mutations that share its prefix.
+String sharePath(String shareId) =>
+    '/api/v1/groups/shares/${Uri.encodeComponent(shareId)}';
+
+/// The single-share response envelope: `{ entry }`, one [entryJson].
+Map<String, dynamic> shareJson(Map<String, dynamic> entry) => {'entry': entry};
+
 Map<String, dynamic> pageJson(
   List<Map<String, dynamic>> entries,
   String? cursor,
