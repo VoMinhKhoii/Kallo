@@ -6,9 +6,10 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../feed/feed_day_group.dart' show kContentRail;
+import '../../logic/circle_spacing.dart';
 import '../feed/feed_entry.dart';
 import '../replies/reply_row.dart';
+import 'thread_dock_insets.dart';
 
 /// Card pad (16) + the avatar rail (44): where the post's own content column
 /// starts, and therefore where its heart glyph starts. Indenting the replies
@@ -115,7 +116,8 @@ class ThreadBody extends StatelessWidget {
 /// Its own widget so the keyboard's ramp and a grown dock rebuild THIS and
 /// nothing else: the dock pays the keyboard and home-indicator insets itself
 /// and reports only its own height, so the body owes all three — read here,
-/// so they still move on the same frame.
+/// through the dock's own [threadDockInsets], so the two stay the same number
+/// and still move on the same frame.
 class _TailReserve extends StatelessWidget {
   const _TailReserve({
     required this.controller,
@@ -129,9 +131,7 @@ class _TailReserve extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final insets =
-        MediaQuery.viewInsetsOf(context).bottom +
-        MediaQuery.paddingOf(context).bottom;
+    final insets = threadDockInsets(context);
     return ValueListenableBuilder<double>(
       valueListenable: dockHeight,
       child: child,

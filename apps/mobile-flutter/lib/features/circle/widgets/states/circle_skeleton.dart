@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../feed/feed_day_group.dart';
+import '../../logic/circle_spacing.dart';
 
 /// Loading state for one day of the feed: the group label, then the white day
 /// card with placeholder posts inside it — the same shell the real feed lands

@@ -6,11 +6,8 @@ import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
+import '../../logic/circle_spacing.dart';
 import 'feed_entry.dart';
-
-/// Avatar (32) + its gap (12): where the content column starts, and therefore
-/// where a separator between two posts begins.
-const double kContentRail = 44;
 
 /// Vertical padding between a post and the card edge (12) versus between a
 /// post and the separator under it (16) — the canvas' two card metrics.

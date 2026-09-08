@@ -208,6 +208,49 @@ void main() {
     expect(find.text('Phở bò tái'), findsOneWidget);
   });
 
+  testWidgets('Try again refetches the share, not just the feed', (
+    tester,
+  ) async {
+    // What "Try again" owes on this page: the SHARE is asked for again, not
+    // only the feed. The page shows one error card for both sources, and the
+    // fallback is the one that failed here — it is the only source a post the
+    // feed never carried has.
+    //
+    // This pins the contract, not the wiring: it holds both with and without
+    // the screen's explicit `sharedMealEntryProvider` invalidation, because
+    // the feed's own rebuild drops the page to [ThreadLoading], unwatches the
+    // autoDispose fetch and re-runs it coming back. The point is that the
+    // button must still work the day that teardown stops happening.
+    var failing = true;
+    final api = FakeApiClient((request) {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], null);
+      }
+      if (request.path == sharePath('s9')) {
+        if (failing) throw Exception('connection closed');
+        return shareJson(fallbackEntry('s9'));
+      }
+      return readMarker(request);
+    });
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's9'),
+      api: api,
+    );
+    expect(find.byType(CircleErrorCard), findsOneWidget);
+
+    // Counted rather than asserted at a fixed number: a transport failure is
+    // retried inside the provider before it ever reaches the card.
+    final before = shareFetches(api, 's9').length;
+    failing = false;
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+
+    expect(shareFetches(api, 's9').length, greaterThan(before));
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(find.byType(CircleErrorCard), findsNothing);
+  });
+
   group('threadEntryProvider', () {
     test('answers out of the feed when it can, by id when it cannot', () async {
       final api = FakeApiClient((request) {

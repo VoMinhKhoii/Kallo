@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// Glyph size, and the minimum square the tap target must fill. Both are the
@@ -56,11 +56,14 @@ class FeedActionButton extends StatelessWidget {
   final VoidCallback? onTap;
   final IconData icon;
 
-  /// Visible label beside the glyph — the heart's count, "Log this too". A
-  /// glyph-only action passes [semanticLabel] instead.
+  /// Visible label beside the glyph — the heart's count, "Log this too". It
+  /// is also what a labelled action is ANNOUNCED as: the text merges into this
+  /// button's own semantics node, so it needs no [semanticLabel] beside it.
+  /// Null prints nothing, which is how a zero count disappears.
   final String? label;
 
-  /// Spoken name for a glyph-only action.
+  /// Spoken name for an action whose [label] does not name it — a glyph-only
+  /// action ("Reply"), or one whose visible text is a bare count.
   final String? semanticLabel;
 
   /// Whether the action reads as "on" — hearted, and nothing else so far.
@@ -133,7 +136,19 @@ class FeedActionButton extends StatelessWidget {
         ),
       ),
     );
-    if (semanticLabel == null) return button;
+    // ALWAYS a button. Wrapping only when [semanticLabel] was given left "Log
+    // this too" as a bare tappable label — VoiceOver read the words and never
+    // said "button", so the one action with a visible name was the one that
+    // did not announce as a control.
+    //
+    // The NAME is `semanticLabel ?? label`, but only [semanticLabel] is passed
+    // here: [label] is already inside this node as text and merges into it, so
+    // passing it again reads the action twice ("Log this too, Log this too").
+    // The heart's own count is the same merge — the row wraps it in a
+    // Semantics carrying "Heart" and `toggled`, and the three fragments land
+    // as one node reading "Heart, 2, button". That wrapper must NOT also set
+    // `button: true`: two nodes both claiming the flag cannot merge, and the
+    // heart split into "Heart" with a nested "2".
     return Semantics(button: true, label: semanticLabel, child: button);
   }
 }

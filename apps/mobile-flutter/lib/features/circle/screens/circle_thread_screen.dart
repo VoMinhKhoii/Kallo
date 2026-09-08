@@ -6,12 +6,14 @@
 /// `router.dart`), so it arrives with the iOS slide and swipes back onto the
 /// feed's untouched scroll position.
 ///
-/// It does not fetch: the page reads its post out of the feed cache it was
-/// opened from (`threadEntryProvider`). The web has had a single-share
-/// endpoint since 2026-09-08 (`app/api/v1/groups/shares/[shareId]/route.ts`);
-/// wiring it up as a fallback for a post outside the loaded feed pages, or a
-/// group-only post opened from a notification, is a follow-up — see
-/// `data/thread_providers.dart`.
+/// It reads from two sources in order, both behind `threadEntryProvider`:
+/// FIRST the feed cache it was opened from — the cache the optimistic writes
+/// patch — and only once that feed settles WITHOUT the post does it fall back
+/// to `GET /api/v1/groups/shares/{id}`
+/// (`app/api/v1/groups/shares/[shareId]/route.ts`). The fallback is what makes
+/// a post outside the loaded feed pages, or a group-only post opened from a
+/// notification, arrive at all; see `data/thread_providers.dart` for why the
+/// feed stays primary.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -25,6 +27,7 @@ import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/kallo_motion.dart';
 import '../data/feed_providers.dart';
+import '../data/share_entry_provider.dart';
 import '../data/thread_providers.dart';
 import '../widgets/thread/thread_body.dart';
 import '../widgets/thread/thread_composer.dart';
@@ -114,7 +117,12 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
                     // person with no name set still has a handle to be
                     // addressed by — the same fallback every other identity
                     // line in Circle uses.
-                    authorName: view.entry.friend.label,
+                    //
+                    // Nobody on your OWN post: `friend` is you there, so
+                    // naming it read "Reply to <your own handle>…". Null falls
+                    // the composer back to the bare "Reply…".
+                    authorName:
+                        view.entry.isSelf ? null : view.entry.friend.label,
                     scope: widget.scope,
                     focusNode: _focus,
                     // Mounted only once the thread is readable, so the
@@ -139,7 +147,21 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
           // themselves — `Screen(bottom: false)` above hands it to the dock.
           ThreadLoading() || ThreadFailed() || ThreadMissing() => ThreadStates(
             view: view,
-            onRetry: () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
+            // BOTH sources, because either can be the one that failed and the
+            // page shows the same card for both.
+            //
+            // Naming the share fetch is deliberate even though the retry
+            // recovers without it today: invalidating the feed drops this page
+            // back to [ThreadLoading], which stops watching the autoDispose
+            // fetch and so re-runs it on the way back. That is a teardown
+            // having the right side effect, not a retry — the day this page
+            // keeps its fallback alive through the feed's loading window (to
+            // stop the skeleton flashing, say), the button would quietly stop
+            // working. The cost is one discarded in-flight GET per tap.
+            onRetry: () {
+              ref.invalidate(sharedMealFeedProvider(widget.scope));
+              ref.invalidate(sharedMealEntryProvider(widget.shareId));
+            },
           ),
         },
       ),

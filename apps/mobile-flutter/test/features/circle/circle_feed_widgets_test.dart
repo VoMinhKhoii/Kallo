@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_action_button.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_day_group.dart';
+import 'package:kallo_mobile/features/circle/logic/circle_spacing.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/shared/widgets/icons/filled_heart.dart';
@@ -243,9 +244,65 @@ void main() {
     expect(count.left, greaterThan(glyph.right));
     expect(count.center.dy, closeTo(glyph.center.dy, 2));
 
-    // Zero prints nothing: only the heart's own 0 count remains.
+    // Zero prints nothing — and since 2026-09-08 the heart's own zero does
+    // not either, so a post with neither shows no digits at all.
     await pump(tester, FeedEntry(entry: entry(repliesTotal: 0)));
-    expect(find.text('0'), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('the heart carries its count only above zero', (tester) async {
+    // A fresh post read "0" beside the heart — a count of nothing, printed as
+    // loudly as a real one, and the first thing on a brand-new post. It
+    // follows the reply glyph's rule now. The name is still SPOKEN either
+    // way (see the semantics test below), so nothing is lost by hiding it.
+    await pump(
+      tester,
+      FeedEntry(entry: entry(reactions: const ShareReactions())),
+    );
+    expect(find.text('0'), findsNothing);
+    expect(find.byIcon(LucideIcons.heart300), findsOneWidget);
+
+    await pump(
+      tester,
+      FeedEntry(entry: entry(reactions: const ShareReactions(count: 2))),
+    );
+    expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('every action announces as a button, and says its name once', (
+    tester,
+  ) async {
+    // "Log this too" was the one action with a VISIBLE name, and the only one
+    // that never announced as a control: [FeedActionButton] wrapped itself in
+    // `Semantics(button: true)` only when it had been handed a semanticLabel,
+    // so the labelled action fell through as plain tappable text.
+    final handle = tester.ensureSemantics();
+    await pump(
+      tester,
+      FeedEntry(entry: entry(reactions: const ShareReactions(count: 2))),
+    );
+
+    // An EXACT label match, so a node reading "Log this too\nLog this too"
+    // fails: the visible text merges into this button's own node, and naming
+    // it again in the Semantics would read the action twice.
+    expect(
+      find.semantics.byLabel('Log this too'),
+      isSemantics(label: 'Log this too', isButton: true),
+    );
+    // The heart stays ONE node carrying its name, its count and its state —
+    // splitting it into "Heart" with a nested "2" is what happens if the row's
+    // own Semantics claims `button: true` as well.
+    expect(
+      find.semantics.byLabel('Heart\n2'),
+      isSemantics(label: 'Heart\n2', isButton: true, hasToggledState: true),
+    );
+    expect(
+      find.semantics.byLabel('Reply'),
+      isSemantics(label: 'Reply', isButton: true),
+    );
+    // Disposed here rather than in a tearDown: the framework checks for live
+    // handles BEFORE tear-downs run.
+    handle.dispose();
   });
 
   testWidgets('the three actions share one row and clear a 44pt target', (
@@ -298,7 +355,10 @@ void main() {
     );
     expect(find.byType(FeedEntry), findsOneWidget);
     expect(
-      find.descendant(of: find.byType(FeedEntry), matching: find.byType(ReplyRow)),
+      find.descendant(
+        of: find.byType(FeedEntry),
+        matching: find.byType(ReplyRow),
+      ),
       findsNothing,
     );
     expect(find.text('Ngon quá!'), findsNothing);
@@ -479,8 +539,7 @@ class _FeedHost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
-      data:
-          (value) => FeedEntry(entry: value.entries.single),
+      data: (value) => FeedEntry(entry: value.entries.single),
       error: (_, __) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

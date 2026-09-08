@@ -5,9 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
 
@@ -107,9 +107,12 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        // Names the heart and carries its on/off state; the button flag comes
+        // from [FeedActionButton] itself, and setting it here too would stop
+        // the two nodes merging and split the heart into "Heart" with a
+        // nested "2" (see that file's semantics note).
         Semantics(
           label: tr('groups.feed.heart'),
-          button: true,
           toggled: reactions.mine,
           child: FeedActionButton(
             onTap: _toggling ? null : _toggle,
@@ -123,7 +126,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
             // across the row. The count beside it stays on the action ink, so
             // the row keeps a single voice.
             activeColor: KalloColors.danger,
-            label: '${reactions.count}',
+            // Zero prints nothing, exactly as the reply glyph's count does:
+            // an unhearted post carried a literal "0" beside the outline, so
+            // a fresh post opened reading "0" and "no replies" as its two
+            // loudest characters. The spoken name above still says "Heart".
+            label: reactions.count > 0 ? '${reactions.count}' : null,
             alignment: Alignment.centerLeft,
           ),
         ),
