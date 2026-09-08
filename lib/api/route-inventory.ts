@@ -127,6 +127,7 @@ export const routeInventory = {
   'api/v1/groups/profile/avatar/route.ts': ['session', true, 'avatarUpload'],
   'api/v1/groups/profile/name/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/profile/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/groups/shares/[shareId]/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/shares/log/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/shares/reaction/route.ts': [
     'session',
