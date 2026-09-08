@@ -6,6 +6,7 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/logic/display_format.dart';
+import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../logic/circle_thread_route.dart';
 import 'feed_entry_actions.dart';
 import 'feed_nutrition.dart';
@@ -23,6 +24,7 @@ class FeedEntry extends StatelessWidget {
     required this.entry,
     this.scope,
     this.onReply,
+    this.openThread = true,
     super.key,
   });
 
@@ -40,6 +42,10 @@ class FeedEntry extends StatelessWidget {
   /// why this is a parameter rather than a hardcoded push.
   final VoidCallback? onReply;
 
+  /// The feed makes the whole post the thread's tap target (Threads); the
+  /// thread page passes false — it is already the thread.
+  final bool openThread;
+
   String _fraction(double factor) {
     if ((factor - 0.5).abs() < 0.001) return '½';
     if ((factor - 1 / 3).abs() < 0.001) return '⅓';
@@ -53,7 +59,7 @@ class FeedEntry extends StatelessWidget {
     final name = entry.isSelf ? tr('groups.wall.you') : entry.friend.label;
     final sharedAt = DateTime.parse(meal.sharedAt);
 
-    return Row(
+    final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 32, TOP-aligned (native pass, 2026-08-31): inside the day card the
@@ -145,6 +151,32 @@ class FeedEntry extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (!openThread) return row;
+    // The WHOLE post opens its thread (Threads), not a "View thread" link:
+    // the three glyphs are the post's only other targets and each wins the
+    // arena over this one, so nothing inside it is shadowed. The wash is the
+    // glyph's alone — [KalloPressable] keeps a nested press off its ancestors.
+    //
+    // `topLeft` and no padding: the pressable shrink-wraps, and the Row's
+    // Expanded child already fills the column's finite width, so the target is
+    // exactly the post's own box.
+    return Semantics(
+      button: true,
+      // Without this the post's own texts — author, meal, kcal, every macro —
+      // are absorbed into THIS node's label and stop being nodes of their own,
+      // so a screen reader can no longer walk the post it just landed on. The
+      // annotation keeps its own name; the content keeps its structure.
+      explicitChildNodes: true,
+      label: tr('groups.feed.openThread'),
+      child: KalloPressable(
+        onTap:
+            () =>
+                openCircleThread(context, shareId: meal.shareId, scope: scope),
+        alignment: Alignment.topLeft,
+        child: row,
+      ),
     );
   }
 }

@@ -68,7 +68,12 @@ class ThreadBody extends StatelessWidget {
                 // 13pt of slack under the glyph ink, exactly as the feed's
                 // day card nets out in `feed_day_group.dart` (`_actionSlack`).
                 padding: const EdgeInsets.only(top: KalloSpacing.sp3),
-                child: FeedEntry(entry: entry, scope: scope, onReply: onReply),
+                child: FeedEntry(
+                  entry: entry,
+                  scope: scope,
+                  onReply: onReply,
+                  openThread: false,
+                ),
               ),
             ],
           ),

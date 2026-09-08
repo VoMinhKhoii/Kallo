@@ -1523,6 +1523,7 @@
       "replyPlaceholder": "Reply…",
       "replyTo": "Reply to {name}…",
       "replyError": "Couldn't post your reply. Try again.",
+      "openThread": "Open thread",
       "threadTitle": "Replies",
       "noReplies": "No replies yet",
       "threadGone": "This post isn't here any more",
