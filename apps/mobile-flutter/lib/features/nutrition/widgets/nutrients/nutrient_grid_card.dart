@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/nutrition/nutrition.dart';
 import '../../../../shared/logic/display_format.dart';
@@ -60,9 +59,9 @@ class NutrientGridCard extends StatelessWidget {
     };
     final goal = nutrientGoalText(card, localeOf(context));
 
-    // The state the grid exists to show is carried by the fill and by the
-    // check glyph, neither of which a screen reader can see. Said last, so the
-    // reading stays label → figure → goal for every card alike.
+    // The state the grid exists to show is carried by the fill alone, which a
+    // screen reader cannot see — so it is said here, in words. Said last, so
+    // the reading stays label → figure → goal for every card alike.
     final met = adequate ? ', ${tr('nutrition.steady.met')}' : '';
 
     return Semantics(
@@ -112,45 +111,24 @@ class NutrientGridCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: KalloSpacing.sp2),
-                Flexible(
+                Expanded(
                   flex: 2,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // A second channel for "met". The mint fill is 1.03:1
-                      // against the page canvas — nothing at all to a
-                      // deuteranope — and successDark on it is 4.21:1 at 12pt,
-                      // under AA for normal text. The glyph says it without
-                      // touching either colour.
-                      if (adequate) ...[
-                        const Icon(
-                          LucideIcons.check300,
-                          size: 14,
-                          color: KalloColors.successDark,
-                        ),
-                        const SizedBox(width: KalloSpacing.sp1),
-                      ],
-                      Flexible(
-                        child: Text(
-                          figure,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
-                          style: dashCaption(
-                            color:
-                                exceeded
-                                    ? KalloColors.danger
-                                    : (limited || pct == null)
-                                    ? kInkMuted
-                                    : adequate
-                                    ? KalloColors.successDark
-                                    : kInk,
-                            tabular: true,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    figure,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: dashCaption(
+                      color:
+                          exceeded
+                              ? KalloColors.danger
+                              : (limited || pct == null)
+                              ? kInkMuted
+                              : adequate
+                              ? KalloColors.successDark
+                              : kInk,
+                      tabular: true,
+                    ),
                   ),
                 ),
               ],

@@ -6,9 +6,8 @@
 /// `router.dart`), so it arrives with the iOS slide and swipes back onto the
 /// feed's untouched scroll position.
 ///
-/// It does not fetch. There is no single-share endpoint, so the page reads its
-/// post out of the feed it was opened from — see `data/thread_providers.dart`
-/// for why that is the better half of the trade.
+/// The post arrives behind `threadEntryProvider`, which reads two sources in
+/// order — see `data/thread_providers.dart`.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -101,24 +100,31 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
         // depth-0 Scrollable, and a composer inside the body would drive the
         // header's hairline as the user typed with the page still at the top.
         // ScrollSeparator documents this exact trap.
-        overlay:
-            view is ThreadReady
-                ? Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ThreadComposer(
-                    shareId: widget.shareId,
-                    scope: widget.scope,
-                    focusNode: _focus,
-                    // Mounted only once the thread is readable, so the
-                    // composer's own first frame is the right one to focus
-                    // on — a keyboard over a skeleton would be a keyboard
-                    // over nothing.
-                    autofocus: widget.autofocusComposer,
-                    onHeightChanged: (height) => _dockHeight.value = height,
-                    onPosted: _scrollToEnd,
-                  ),
-                )
-                : null,
+        overlay: switch (view) {
+          ThreadReady(:final entry) => Align(
+            alignment: Alignment.bottomCenter,
+            child: ThreadComposer(
+              shareId: widget.shareId,
+              // `label`, not `displayName`: the field is nullable and a person
+              // with no name set still has a handle to be addressed by — the
+              // same fallback every other identity line in Circle uses.
+              //
+              // Nobody on your OWN post: `friend` is you there, so naming it
+              // read "Reply to <your own handle>…". Null falls the composer
+              // back to the bare "Reply…".
+              authorName: entry.isSelf ? null : entry.friend.label,
+              scope: widget.scope,
+              focusNode: _focus,
+              // Mounted only once the thread is readable, so the composer's
+              // own first frame is the right one to focus on — a keyboard over
+              // a skeleton would be a keyboard over nothing.
+              autofocus: widget.autofocusComposer,
+              onHeightChanged: (height) => _dockHeight.value = height,
+              onPosted: _scrollToEnd,
+            ),
+          ),
+          ThreadNotReady() => null,
+        },
         child: switch (view) {
           ThreadReady(:final entry) => ThreadBody(
             entry: entry,
@@ -129,8 +135,11 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
           ),
           // No dock in these states, so they owe the home indicator
           // themselves — `Screen(bottom: false)` above hands it to the dock.
-          ThreadLoading() || ThreadFailed() || ThreadMissing() => ThreadStates(
-            view: view,
+          final ThreadNotReady notReady => ThreadStates(
+            view: notReady,
+            // The feed invalidate is enough: the page drops to loading, which
+            // releases the autoDispose fallback, and it refetches when the
+            // page comes back (pinned by the fallback test).
             onRetry: () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
           ),
         },

@@ -11,12 +11,16 @@ import { cn } from '@/lib/core/ui/cn';
  * The stacked macro bar: one segment per macro, each sized by its share of the
  * meal's (or the day's) calories.
  *
- * The default is the nutrition page's: 8px, segments meeting flush, full
- * pigment. That surface draws ONE bar per screen, large, where saturation costs
- * nothing. A surface repeating the bar down a LIST pays for it on every row, so
- * `compact` takes the weight back out — shorter, gapped and softened, because
- * the same mark at full weight read as candy stripes once it appeared on every
- * row.
+ * The default is the nutrition page's: 8px and full pigment. That surface draws
+ * ONE bar per screen, large, where saturation costs nothing. A surface
+ * repeating the bar down a LIST pays for it on every row, so `compact` takes
+ * the weight back out — shorter and softened, because the same mark at full
+ * weight read as candy stripes once it appeared on every row.
+ *
+ * Both variants gap their segments and round every one of them. A flush stack
+ * asks the reader to find three quantities inside one continuous shape; the
+ * separated pills say "three" before the colours do, and the track showing
+ * through the gaps is the same track the full bar already sits on.
  *
  * Zero-width segments are dropped rather than rendered at 0, so a meal with no
  * fat gives two segments meeting cleanly instead of a hairline seam.
@@ -51,14 +55,15 @@ export function CompositionBar({
       {...a11y}
       className={cn(
         'flex w-full overflow-hidden rounded-full',
-        compact ? 'h-1.5 gap-0.5' : 'h-2 bg-kallo-track',
+        'gap-0.5',
+        compact ? 'h-1.5' : 'h-2 bg-kallo-track',
         className
       )}
     >
       {visible.map((segment) => (
         <motion.span
           animate={{ scaleX: 1 }}
-          className={cn('h-full', compact && 'rounded-full')}
+          className="h-full rounded-full"
           initial={{ scaleX: 0 }}
           key={segment.key}
           style={{

@@ -1,17 +1,18 @@
 /// The one place that knows the Circle thread page's URL shape.
 ///
 /// The route carries the feed SCOPE alongside the share id because the page
-/// reads its post out of that feed's live cache — there is no endpoint that
-/// fetches a single share (`lib/domain/social/shares/replies.ts` ships replies
-/// only as part of a feed page). Absent scope means the combined friends feed;
-/// otherwise it is a chat-group id, exactly as `sharedMealFeedProvider` keys
-/// itself.
+/// reads its post out of that feed's live cache first, fetching the single
+/// share only when no loaded feed holds it (both sources are documented in
+/// `features/circle/data/thread_providers.dart`) — so the scope stays in the
+/// URL because the feed is the primary read. Absent scope means the combined
+/// friends feed; otherwise it is a chat-group id, exactly as
+/// `sharedMealFeedProvider` keys itself.
 library;
 
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-/// `/circle/thread/<shareId>[?scope=<groupId>][&compose=1]`.
+/// `/circle/<shareId>[?scope=<groupId>][&compose=1]`.
 ///
 /// `compose=1` asks the page to open its composer focused. It rides in the URL
 /// rather than in a push argument so that the intent survives a deep link and
@@ -21,7 +22,7 @@ String circleThreadLocation({
   String? scope,
   bool compose = false,
 }) {
-  final path = '/circle/thread/${Uri.encodeComponent(shareId)}';
+  final path = '/circle/${Uri.encodeComponent(shareId)}';
   final query = <String>[
     if (scope != null) 'scope=${Uri.encodeQueryComponent(scope)}',
     if (compose) 'compose=1',

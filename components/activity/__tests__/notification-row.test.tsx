@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import type { PublicIdentity } from '@/lib/domain/social/identity/public-identity';
-import { messageValues } from '../notification-copy';
+import { messageValues, notificationHref } from '../notification-copy';
 import { NotificationRow } from '../notification-row';
 
 const { markReadMock } = vi.hoisted(() => ({ markReadMock: vi.fn() }));
@@ -93,11 +93,42 @@ describe('NotificationRow', () => {
     expect(values.group).toBe('Bún chả club');
   });
 
-  it('links share activity to the circle and group adds to the group', () => {
+  it('links each share notification to that share own page', () => {
+    // The row names one post; landing on the feed would make the reader hunt
+    // for it. objectId IS the share id the /circle/<shareId> page reads.
     const { rerender } = render(
       <NotificationRow item={item()} isNew={false} />
     );
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/s1');
+
+    for (const type of ['share.reply', 'share.logged'] as const) {
+      rerender(<NotificationRow item={item({ type })} isNew={false} />);
+      expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/s1');
+    }
+  });
+
+  it('falls back to the Circle when the row names no share', () => {
+    const { rerender } = render(
+      <NotificationRow
+        item={item({ objectType: null, objectId: null })}
+        isNew={false}
+      />
+    );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
+
+    rerender(
+      <NotificationRow
+        item={item({ type: 'friend.joined', objectType: 'friendship' })}
+        isNew={false}
+      />
+    );
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/circle');
+  });
+
+  it('links a group add to the group', () => {
+    const { rerender } = render(
+      <NotificationRow item={item({ type: 'friend.joined' })} isNew={false} />
+    );
 
     rerender(
       <NotificationRow
@@ -110,6 +141,30 @@ describe('NotificationRow', () => {
       />
     );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/g/g7');
+  });
+
+  it('routes on the object the payload names, not on the type', () => {
+    // "Is this row's object a share?" is answered by the row itself:
+    // `objectType` is written by the three share producers and by nobody else.
+    // An invite row carries `'invite'` and stays on the Circle even though its
+    // type starts with `share.`.
+    expect(
+      notificationHref(
+        item({ type: 'share.invite_accepted', objectType: 'invite' })
+      )
+    ).toBe('/circle');
+    expect(
+      notificationHref(
+        item({ type: 'friend.joined', objectType: 'friendship' })
+      )
+    ).toBe('/circle');
+    // A share type with no share object falls back to the Circle too.
+    expect(
+      notificationHref(
+        item({ type: 'share.reply', objectType: null, objectId: null })
+      )
+    ).toBe('/circle');
+    expect(notificationHref(item({ type: 'share.reply' }))).toBe('/circle/s1');
   });
 
   it('marks the row read on tap, once, and never for an already-read row', async () => {

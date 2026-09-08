@@ -365,6 +365,8 @@ Tests: `lib/infra/push/__tests__/apns.test.ts` (a real P-256 keypair is generate
     // "badge": 3 — supported by PushMessage.badge, not populated by v1
   },
   "type": "group.added",          // always present
+  "objectType": "share",          // present when the event has an object
+  "objectId": "<uuid>",           // present with objectType
   "targetType": "chat_group",     // present when the tap has a destination
   "targetId": "<uuid>",           // present with targetType
   "notificationId": "<uuid>"      // RESERVED — not emitted by v1 producers
@@ -373,11 +375,11 @@ Tests: `lib/infra/push/__tests__/apns.test.ts` (a real P-256 keypair is generate
 
 Request headers, for reference: `:method POST`, `:path /3/device/<hex token>`, `authorization: bearer <provider JWT>`, `apns-topic: com.khoivo.nham`, `apns-push-type: alert`, `apns-priority: 10`, `apns-expiration: 0`, and `apns-collapse-id` when the event has a group key.
 
-`type` is one of the catalog types plus `chat.message`. `targetType`/`targetId` are emitted today only by `group.added` and `chat.message` (`chat_group` + the group id); the share/friend events carry neither, so their tap falls through to the default destination. `notificationId` is part of the contract and the sender supports it, but no v1 producer populates it (`notify()` returns recipient ids, not row ids) — the client must treat it as optional and must not key behaviour on its presence.
+`type` is one of the catalog types plus `chat.message`. `objectType`/`objectId` carry the thing the event is about and are on the wire whenever the row has them — `share` plus the share id for `share.reply` / `share.reaction` / `share.logged` — so a tap on one of those opens `/circle/<shareId>` instead of falling through to the feed. `targetType`/`targetId` are emitted only by `group.added` and `chat.message` (`chat_group` + the group id); `friend.joined` has neither pair and still lands on the default destination. `notificationId` is part of the contract and the sender supports it, but no v1 producer populates it (`notify()` returns recipient ids, not row ids) — the client must treat it as optional and must not key behaviour on its presence.
 
 **Collapse keys**: the notification's `groupKey` (`share.reaction:<shareId>`, `group.added:<groupId>`, …) for activity events, `chat:<groupId>` for messages — sent as `apns-collapse-id` (truncated to Apple's 64-byte limit), so a burst on one object supersedes itself in the shade rather than stacking.
 
-**Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
+**Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), the share events → that share (`/circle/<objectId>`), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
 
 ---
 
@@ -398,7 +400,6 @@ The rule governs **new fan-out**, at write time: a notification (and its `data` 
 ## Deferred decisions (deliberate in v1, named so they are not rediscovered as bugs)
 
 - **No mute / preferences for `chat.message` push.** A group member with a registered device is pushed for every message in every group; there is no per-group mute, no quiet hours, no channel toggle. V1 ships to a handful of small groups, and the dot-namespaced type taxonomy exists precisely so a `notification_prefs(user_id, category, channel)` table can bolt onto **gate 5** later as a filter — no data migration, no change to gates 1–4, no producer edits.
-- **Reaction and reply notifications deep-link to `/circle`, not to the meal.** There is no per-share anchor route today (the wall is a single feed), so `share.reaction` / `share.reply` / `share.logged` all land on the circle feed and leave the reader to spot the meal (`friend.joined` → `/circle` is already the right destination; `group.added` deep-links properly via `targetId`). When a `/circle/s/[shareId]`-style route exists, `notificationHref()` is the single place to change — those rows already store the share id in `objectId`.
 - **Auto-dismissed invites render a neutral chip.** A sender splitting a meal with someone else auto-dismisses other pending invites, and the client cannot distinguish that from a self-dismiss, so every non-accepted terminal state (dismissed here, dismissed elsewhere, auto-dismissed, or gone) collapses to one "No longer available" / "Không còn hiệu lực" chip. Naming the act ("Dismissed") would tell a third party they did something they never did.
 
 ## Known risks

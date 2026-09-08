@@ -8,12 +8,13 @@ import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition/nutrition.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../shared/widgets/feedback/sliver_centered_state.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../dashboard/logic/dashboard_spacing.dart';
-import '../logic/bucket_detail.dart';
 import '../logic/helpers.dart';
+import '../logic/overview_selection.dart';
 import '../providers/nutrition_overview_provider.dart';
 import '../widgets/summary/day_summary.dart';
 import '../widgets/states/empty_state.dart';
@@ -64,6 +65,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   /// that a bigger gap used to.
   static const double _gap = KalloSpacing.sp3;
 
+  /// The page's horizontal margin.
+  static const double _side = KalloSpacing.sp3;
+
   void _clearSelection() {
     if (_selectedIndex != null) setState(() => _selectedIndex = null);
   }
@@ -112,12 +116,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       bottom: false,
       child: ScrollSeparator(
         header: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            KalloSpacing.sp3,
-            0,
-            KalloSpacing.sp3,
-            KalloSpacing.sp3,
-          ),
+          padding: const EdgeInsets.fromLTRB(_side, 0, _side, _side),
           child: Row(
             children: [
               // Shrink-to-fit, never ellipsis: the title row gives the 216pt
@@ -166,106 +165,80 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     ref
                         .read(nutritionOverviewProvider(_arg).notifier)
                         .refetch(),
-            slivers: (bottomInset) => [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  0,
-                  KalloSpacing.sp3,
-                  0,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: _buildBody(async, isFetching),
-                ),
-              ),
-              // The source line belongs to the PAGE, not to the section above
-              // it. `hasScrollBody: false` hands this sliver whatever height
-              // is left over, so the line sits on the bottom edge on a short
-              // page and simply follows the content on a long one.
-              SliverPadding(
-                // The tail clears the floating pill nav — this is a tab, and
-                // the bar hovers over the last thing on the page. The inset
-                // belongs INSIDE this padding: a trailing spacer sliver would
-                // push the fill-remaining tail off the viewport.
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  KalloSpacing.sp5,
-                  KalloSpacing.sp3,
-                  bottomInset,
-                ),
-                sliver: const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: SourceAttribution(),
-                  ),
-                ),
-              ),
-            ],
+            slivers: (bottomInset) => _page(async, isFetching, bottomInset),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBody(AsyncValue<NutritionOverview> async, bool isFetching) {
-    if (async.isLoading && !async.hasValue) {
-      return const NutritionSkeleton();
-    }
-
+  /// The page, chosen from the async state BEFORE anything is built: skeleton
+  /// while the first overview is in flight, the centred failed state when it
+  /// never arrived, the content once it has. Deciding here rather than on the
+  /// runtime type of a built widget keeps the three pages independent — the
+  /// failed one is a different LAYOUT, not the content one with a card in it.
+  List<Widget> _page(
+    AsyncValue<NutritionOverview> async,
+    bool isFetching,
+    double bottomInset,
+  ) {
     final overview = async.valueOrNull;
-    if (overview == null) {
-      return InlineError(
-        isRetrying: isFetching,
-        message: tr('nutrition.errors.overview'),
-        retryLabel: tr('nutrition.errors.retry'),
-        onRetry: () {
-          ref.read(nutritionOverviewProvider(_arg).notifier).refetch();
-        },
-      );
+    if (overview != null) return _scrollPage(_buildBody(overview), bottomInset);
+    if (async.isLoading) {
+      return _scrollPage(const NutritionSkeleton(), bottomInset);
     }
+    // The failed page has nothing on it but the state card, so the card sits
+    // at the MIDDLE of it rather than under the title with the rest blank —
+    // and the source line still holds the bottom edge. One fill sliver does
+    // both: two would fight, since the first `hasScrollBody: false` takes
+    // everything that is left.
+    return [
+      SliverCenteredState(
+        padding: EdgeInsets.fromLTRB(_side, 0, _side, bottomInset),
+        footer: const SourceAttribution(),
+        child: InlineError(
+          isRetrying: isFetching,
+          message: tr('nutrition.errors.overview'),
+          retryLabel: tr('nutrition.errors.retry'),
+          onRetry: () {
+            ref.read(nutritionOverviewProvider(_arg).notifier).refetch();
+          },
+        ),
+      ),
+    ];
+  }
 
-    // `active`, not `_selectedIndex`: tapping a column with nothing logged in
-    // it resolves to no detail, and the page stays on the range rather than
-    // greying every other column around an empty one.
-    final detail =
-        _selectedIndex == null
-            ? null
-            : buildBucketDetail(overview.daySeries, _selectedIndex!);
-    final active = detail == null ? null : _selectedIndex;
-    final macros =
-        detail == null
-            ? overview.macros
-            : scopeMacrosToBucket(overview.macros, detail);
-    final all =
-        detail == null
-            ? [...overview.micronutrients, ...overview.moreNutrients]
-            : scopeCardsToBucket([
-              ...overview.micronutrients,
-              ...overview.moreNutrients,
-            ], detail);
-    final vitamins =
-        all.where((c) => c.group == NutrientGroup.vitamin).toList();
-    final minerals =
-        all.where((c) => c.group != NutrientGroup.vitamin).toList();
+  /// The scrolling page: [body] under the title, then the source line.
+  List<Widget> _scrollPage(Widget body, double bottomInset) => [
+    SliverPadding(
+      padding: const EdgeInsets.fromLTRB(_side, 0, _side, 0),
+      sliver: SliverToBoxAdapter(child: body),
+    ),
+    // The source line belongs to the PAGE, not to the section above it — the
+    // footer-only tail, so this page and the failed one below pin it the same
+    // way and the break above it has one name (`footerGap`).
+    SliverCenteredState(
+      // The inset clears the floating pill nav — this is a tab, and the bar
+      // hovers over the last thing on the page. It is paid INSIDE the fill: a
+      // trailing spacer sliver would push the tail off the viewport.
+      padding: EdgeInsets.fromLTRB(_side, 0, _side, bottomInset),
+      footer: const SourceAttribution(),
+    ),
+  ];
+
+  /// The content page's body. Every figure on it is resolved first — one pass
+  /// over the overview and the tapped column — so what follows is layout.
+  Widget _buildBody(NutritionOverview overview) {
+    final view = OverviewSelection.resolve(
+      overview,
+      selectedIndex: _selectedIndex,
+      locale: context.locale.toString(),
+    );
     // The CTA is off, so its input is not worth computing on every build.
     final foodNutrients =
         kShowSuggestedFoods
             ? suggestedFoodNutrients(overview)
             : const <NutrientCardData>[];
-    final buckets =
-        overview.daySeries.series.isEmpty
-            ? const <DaySeriesBucket>[]
-            : overview.daySeries.series.first.buckets;
-    final locale = context.locale.toString();
-    final dateSpan =
-        detail == null
-            ? formatDateSpan(
-              overview.period.startDate,
-              overview.period.endDate,
-              locale,
-            )
-            : formatDateSpan(detail.startDate, detail.endDate, locale);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -278,23 +251,23 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         SectionHeaderRow(
           title: tr('nutrition.macros.calories'),
           meta:
-              active != null
+              view.active != null
                   ? tr('nutrition.cardTitle')
                   : '${tr('nutrition.cardTitle')} · '
                       '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
         ),
         const SizedBox(height: _gap),
         DaySummary(
-          macros: macros,
+          macros: view.macros,
           resolvedRange: overview.resolvedRange,
           daySeries: overview.daySeries,
           calorieAverages: overview.calorieAverages,
           previousCalorieAverages: overview.previousCalorieAverages,
           scope: _dayScope,
           onScopeChange: (scope) => setState(() => _dayScope = scope),
-          dateSpan: dateSpan,
-          todayIndex: findTodayIndex(buckets, localIsoDate()),
-          selectedIndex: active,
+          dateSpan: view.dateSpan,
+          todayIndex: view.todayIndex,
+          selectedIndex: view.active,
           onSelect:
               (index) => setState(
                 () => _selectedIndex = _selectedIndex == index ? null : index,
@@ -304,7 +277,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         // The three macros belong to the calorie section — same average, same
         // scope, broken out — so they carry no header of their own.
         const SizedBox(height: _gap),
-        MacroRowsCard(macros: macros),
+        MacroRowsCard(macros: view.macros),
         // Nothing logged yet: the page keeps its shape at zero, and the prompt
         // sits under the card rather than replacing everything — so the layout
         // someone will use every day is the first thing they see.
@@ -326,8 +299,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
         ],
         if (overview.micronutrientsLocked) const MicronutrientsLockedCard(),
-        ..._group(tr('nutrition.nutrientGroups.vitamins'), vitamins),
-        ..._group(tr('nutrition.nutrientGroups.minerals'), minerals),
+        ..._group(tr('nutrition.nutrientGroups.vitamins'), view.vitamins),
+        ..._group(tr('nutrition.nutrientGroups.minerals'), view.minerals),
       ],
     );
   }

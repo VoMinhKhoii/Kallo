@@ -26,7 +26,7 @@ interface NutritionProfileForTargets {
 export interface MicronutrientTarget {
   key: NutritionNutrientKey;
   value: number | null;
-  unit: 'mg' | 'mcg';
+  unit: 'g' | 'mg' | 'mcg';
   source: TargetSource;
   sourceLabelKey: string;
   applicability: 'scored' | 'educational' | 'hidden' | 'unsupported';
@@ -37,16 +37,22 @@ function isAgeBanded(entry: TargetEntry): entry is { ageBands: AgeBand[] } {
   return 'ageBands' in entry;
 }
 
+/** The age an unknown age scores as. We only require a known age when crossing
+ * a threshold materially changes the recommendation, so a profile without one
+ * is read as a young adult — the population every published table centres on. */
+const ASSUMED_ADULT_AGE = 19;
+
 function resolveAgeBand(
   entry: { ageBands: AgeBand[] },
   age: number | null
 ): TargetRow {
-  // When age is unknown, default to the youngest adult band (last in list,
-  // since bands are sorted DESC). This matches existing behavior for iron:
-  // we only require a known age when crossing thresholds materially changes
-  // the recommendation. Callers that need stricter handling can short-circuit.
+  // An unknown age resolves the SAME way a 19-year-old does, said out loud.
+  // This used to be "take the last band", which was only ever young-adult by
+  // coincidence: it holds for a two-band [50+, 0] table, where the catch-all IS
+  // the adult row, and breaks the moment a table publishes child bands below it
+  // — fiber had to carry a duplicate adult row at `minAge: 0` to survive it.
   if (age === null || !Number.isFinite(age)) {
-    return entry.ageBands[entry.ageBands.length - 1].row;
+    return resolveAgeBand(entry, ASSUMED_ADULT_AGE);
   }
   for (const band of entry.ageBands) {
     if (age >= band.minAge) return band.row;
@@ -101,8 +107,11 @@ function roundTarget(value: number): number {
   return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
 }
 
-function getDefaultUnit(key: NutritionNutrientKey): 'mg' | 'mcg' {
-  return NUTRIENT_META[key].unit === 'mcg' ? 'mcg' : 'mg';
+function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
+  // Mirror the catalog unit when it is one a target can be expressed in
+  // (fiber's card unit is 'g'); 'kcal' has no target unit, so fall back to mg.
+  const unit = NUTRIENT_META[key].unit;
+  return unit === 'g' || unit === 'mcg' ? unit : 'mg';
 }
 
 function createUnsupportedTarget(
@@ -145,12 +154,16 @@ export function resolveMicronutrientTargets(
       continue;
     }
 
-    // Resolve the source map + entry. VN context uses VIETNAM_RDA only;
-    // non-VN context tries WHO/FAO first then falls back to NASEM/IOM
-    // for the nutrients WHO does not publish (Cu, Mn, Na, K, P).
+    // Resolve the source map + entry. VN context prefers VIETNAM_RDA; every
+    // other context tries WHO/FAO first, then falls back to NASEM/IOM for the
+    // nutrients WHO does not publish (Cu, Mn, Na, K, P).
+    // A VN key missing from VIETNAM_RDA falls through the same chain: today
+    // only fiber takes that VN → NASEM path (every other target key is in
+    // VIETNAM_RDA), so Vietnamese users get a NASEM-sourced fiber target
+    // rather than none.
     let source: Exclude<TargetSource, 'unsupported'>;
     let entry: TargetEntry | undefined;
-    if (vietnameseContext) {
+    if (vietnameseContext && VIETNAM_RDA[key]) {
       entry = VIETNAM_RDA[key];
       source = 'vietnam_rda';
     } else if (WHO_FAO[key]) {

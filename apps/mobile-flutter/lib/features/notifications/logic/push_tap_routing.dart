@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../router.dart';
 import '../../../services/push/push_channel.dart';
 import '../../circle/data/feed_providers.dart';
+import '../../circle/logic/circle_thread_route.dart';
 
 /// Notification types the server emits (`docs/NOTIFICATIONS.md`, event catalog
 /// v1). A payload carrying anything else — a reserved type, a future type this
@@ -49,13 +50,28 @@ class PushDestination {
 /// Resolve an APNs payload to a destination, or null when there is nothing
 /// sensible to open.
 ///
-/// The server spreads its flat string fields (`type`, `targetType`,
-/// `targetId`) alongside `aps` at the top level of the APNs payload — that is
-/// the one contract (see `lib/infra/push/apns.ts`), so `payload` IS the data.
+/// The server spreads its flat string fields (`type`, `objectType`,
+/// `objectId`, `targetType`, `targetId`) alongside `aps` at the top level of
+/// the APNs payload — that is the one contract (see `lib/infra/push/apns.ts`),
+/// so `payload` IS the data.
 PushDestination? pushDestinationFor(PushPayload payload) {
   final data = payload;
   final type = _stringAt(data, 'type');
   if (type == null || !kPushNotificationTypes.contains(type)) return null;
+
+  // A thread opens off the payload's OWN discriminant rather than a second
+  // copy of which types carry one: the producers set `objectType: 'share'`
+  // with the share id in `objectId` for exactly the reaction/reply/logged
+  // events (`docs/NOTIFICATIONS.md`), and `share.invite` — the one share-
+  // prefixed type without a thread — names an invite instead. A payload whose
+  // object is missing or is not a share falls through to the feed.
+  final objectId = _stringAt(data, 'objectId');
+  if (_stringAt(data, 'objectType') == 'share' && objectId != null) {
+    // groupId stays null: the thread page reads its post out of the combined
+    // friends feed, so a tap must reset any group scope left by an earlier
+    // one.
+    return PushDestination(path: circleThreadLocation(shareId: objectId));
+  }
 
   if (kPushGroupTypes.contains(type)) {
     final targetType = _stringAt(data, 'targetType');
@@ -79,6 +95,9 @@ void routePushTap(ProviderContainer container, PushPayload payload) {
   // after a group tap must not stay scoped to that earlier group.
   container.read(circleSelectedViewProvider.notifier).state =
       destination.groupId;
+  // `go`, not `push`: a tap can arrive cold with no shell beneath it, and the
+  // thread page's back action is `popOr` (`shell/nav/nav_actions.dart`), which
+  // already falls back to `/circle` when there is nothing to pop.
   container.read(routerProvider).go(destination.path);
 }
 

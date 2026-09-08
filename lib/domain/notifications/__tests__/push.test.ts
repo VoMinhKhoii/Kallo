@@ -260,6 +260,50 @@ describe('sendNotificationPush', () => {
     });
   });
 
+  // The share id is what a tap opens: `/circle/<objectId>`. It rides the same
+  // flat all-strings map, so it must survive as a string next to `type`.
+  it('carries the share id through as objectType/objectId', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      {
+        type: 'share.reply',
+        actor: { id: FRIEND, name: 'Mai' },
+        objectType: 'share',
+        objectId: 'share-1',
+        groupKey: 'share.reply:share-1',
+      },
+      sender
+    );
+
+    expect(sent[0][0].data).toEqual({
+      type: 'share.reply',
+      objectType: 'share',
+      objectId: 'share-1',
+    });
+  });
+
+  it('emits no object keys for an event that has no object', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'friend.joined', actor: { id: FRIEND, name: 'Mai' } },
+      sender
+    );
+
+    expect(sent[0][0].data).toEqual({ type: 'friend.joined' });
+  });
+
   it('deletes exactly the registrations the sender says are dead', async () => {
     queueSelects(
       [

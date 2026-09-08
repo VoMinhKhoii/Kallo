@@ -6,12 +6,9 @@ import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
+import '../../logic/circle_spacing.dart';
+import '../../logic/circle_thread_route.dart';
 import 'feed_entry.dart';
-import 'reply_preview.dart';
-
-/// Avatar (32) + its gap (12): where the content column starts, and therefore
-/// where a separator between two posts begins.
-const double kContentRail = 44;
 
 /// Vertical padding between a post and the card edge (12) versus between a
 /// post and the separator under it (16) — the canvas' two card metrics.
@@ -80,15 +77,35 @@ class FeedDayGroup extends StatelessWidget {
                       (i == entries.length - 1 ? _edgePad : _innerPad) -
                       _actionSlack,
                 ),
-                child: FeedEntry(
-                  entry: entries[i],
-                  scope: scope,
-                  footer: ReplyPreview(entry: entries[i], scope: scope),
-                ),
+                child: _post(context, entries[i]),
               ),
           ],
         ),
       ],
     );
   }
+
+  /// The FEED composes the post's navigation, not [FeedEntry]: the widget
+  /// draws a post and takes what its tap and its reply glyph do as callbacks,
+  /// which is what lets the thread page draw the same post with no tap target
+  /// and a composer focus of its own (`thread/thread_body.dart`).
+  Widget _post(BuildContext context, CircleFeedEntry entry) => FeedEntry(
+    entry: entry,
+    scope: scope,
+    onOpen:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+        ),
+    // `compose: true`: the glyph used to open a composer under the post, so
+    // the page it pushes now arrives with the field focused.
+    onReply:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+          compose: true,
+        ),
+  );
 }

@@ -2,6 +2,7 @@ import {
   authed,
   type JsonSchema,
   type PathItem,
+  pathParam,
   ref,
 } from '@/lib/api/openapi/components';
 import { fileUploadBody } from '@/lib/api/openapi/paths/support';
@@ -51,6 +52,21 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+    }),
+  },
+
+  '/api/v1/groups/shares/{shareId}': {
+    get: authed({
+      operationId: 'getSharedMeal',
+      summary: 'One shared meal and its replies',
+      description:
+        'The post behind a notification or a `/circle/<shareId>` link, in the same entry shape the feeds return. Answers 404 both when the share is gone and when it was never yours to see — reading one post never marks a feed read.',
+      tags: TAGS,
+      parameters: [pathParam('shareId', 'The shared meal to read.')],
+      ok: {
+        type: 'object',
+        properties: { entry: ref('SharedMealEntry') },
+      },
     }),
   },
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// Glyph size, and the minimum square the tap target must fill. Both are the
@@ -15,15 +15,6 @@ import '../../../../theme/kallo_theme.dart';
 /// as well as off the layout — the pull is paid by the day card's post padding
 /// instead (see `feed_day_group.dart`), which moves the same pixels with all
 /// 44pt intact.
-// Heart / comment / Eat-this take the TERTIARY tier (18), one step under the
-// card-action 21 they wore from the Threads icon pass (2026-09-01).
-//
-// The action tier is sized for a control that carries its card — the Log
-// action row, a confirm check. These three sit under a meal name at the very
-// bottom of a post and read as its footnotes, not as the post's controls; at
-// 21 the cluster out-weighed the meal it belongs to. All THREE move together:
-// two glyphs at 18 beside a third at 21 is a row that looks misaligned rather
-// than one that looks quieter. The 44pt target is untouched at either size.
 const double _glyph = KalloIcons.tertiary;
 const double _hit = KalloIcons.hit;
 
@@ -47,32 +38,41 @@ class FeedActionButton extends StatelessWidget {
     required this.icon,
     this.label,
     this.semanticLabel,
-    this.fill,
-    this.activeColor = kInk,
+    this.activeGlyph,
+    this.toggled,
     this.alignment = Alignment.center,
   });
 
   final VoidCallback? onTap;
   final IconData icon;
 
-  /// Visible label beside the glyph — the heart's count, "Log this too". A
-  /// glyph-only action passes [semanticLabel] instead.
+  /// Visible label beside the glyph — the heart's count, "Log this too". It
+  /// is also what a labelled action is ANNOUNCED as: the text merges into this
+  /// button's own semantics node, so it needs no [semanticLabel] beside it.
+  /// Null prints nothing, which is how a zero count disappears.
   final String? label;
 
-  /// Spoken name for a glyph-only action.
+  /// Spoken name for an action whose [label] does not name it — a glyph-only
+  /// action ("Reply"), or one whose visible text is a bare count.
   final String? semanticLabel;
 
-  /// Icon fill, for the hearted state.
-  final double? fill;
-
-  /// Glyph colour once [fill] is 1 — the "on" state's own colour.
+  /// Non-null means this action reads as ON, and this is the glyph it wears
+  /// instead of [icon] — one field for one state, so the two can never
+  /// disagree about whether the action is lit.
   ///
-  /// Defaults to [kInk], which is what an activated action wore before the
-  /// heart needed its own. The heart passes [KalloColors.danger]: at ink a
-  /// filled heart was the same near-black as the two glyphs beside it, so
-  /// reacting read as "slightly bolder" rather than as liked. It is the red
-  /// the swipe-to-delete action already paints, so the palette gains nothing.
-  final Color activeColor;
+  /// A widget rather than a `fill` axis because Lucide ships here as an icon
+  /// FONT, and that font carries no FILL axis: `Icon(fill: 1)` compiles,
+  /// changes nothing on the device, and still reads as 1 back in a test — so
+  /// the hearted state passed its own test while never filling on a phone.
+  /// The heart passes [FilledHeart], the same 24-grid path drawn as an inline
+  /// SVG, which carries its own red — the swipe-to-delete red, so a hearted
+  /// post looks hearted from across the row.
+  final Widget? activeGlyph;
+
+  /// The on/off state a screen reader announces, for an action that HAS one.
+  /// Null is an action that is simply pressed (reply, "Log this too") rather
+  /// than one that stays on.
+  final bool? toggled;
 
   /// Where the glyph sits in its box — `centerLeft` for a row's FIRST action,
   /// so its glyph lands on the content column rather than 10pt in. That is
@@ -106,12 +106,7 @@ class FeedActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: _glyph,
-              color: fill == 1 ? activeColor : _actionInk,
-              fill: fill,
-            ),
+            activeGlyph ?? Icon(icon, size: _glyph, color: _actionInk),
             if (label != null) ...[
               const SizedBox(width: KalloSpacing.sp1_5),
               Text(label!, style: dashMeta(color: _actionInk)),
@@ -120,7 +115,21 @@ class FeedActionButton extends StatelessWidget {
         ),
       ),
     );
-    if (semanticLabel == null) return button;
-    return Semantics(button: true, label: semanticLabel, child: button);
+    // ALWAYS a button. Wrapping only when [semanticLabel] was given left "Log
+    // this too" as a bare tappable label — VoiceOver read the words and never
+    // said "button", so the one action with a visible name was the one that
+    // did not announce as a control.
+    //
+    // Only [semanticLabel] is passed as the name: [label] is already inside
+    // this node as text and merges into it, so naming it again reads the
+    // action twice ("Log this too, Log this too"). The heart is that merge —
+    // "Heart" here, its count as the text inside — and lands as one node
+    // reading "Heart, 2, button".
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      toggled: toggled,
+      child: button,
+    );
   }
 }

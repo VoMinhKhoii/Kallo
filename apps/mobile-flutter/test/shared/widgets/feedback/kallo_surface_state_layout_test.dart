@@ -120,6 +120,51 @@ void main() {
     _expectFits(tester);
   });
 
+  /// The box under a LOOSE FINITE height — a `Center` inside a fill sliver,
+  /// which is how every centred page state is now placed. The state must HUG
+  /// its content there rather than fill the region: a host that paints a card
+  /// around it (nutrition's `InlineError`) would otherwise paint a white slab
+  /// as tall as the page instead of a card.
+  testWidgets('under a Center in a finite region the box hugs its content',
+      (tester) async {
+    const window = Size(390, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = window;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: KalloSurfaceState(
+              area: SurfaceArea.system,
+              kind: SurfaceKind.error,
+              title: _title,
+              subtitle: _subtitle,
+              action: KalloButton(
+                variant: KalloButtonVariant.cta,
+                title: 'Thử lại',
+                onPressed: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+
+    final box = tester.getRect(find.byType(KalloSurfaceState));
+    // Its content, at least the 288 minimum — and nowhere near the 700 the
+    // region offers.
+    expect(box.height, greaterThanOrEqualTo(288));
+    expect(box.height, lessThan(window.height - 50));
+    // Still centred: the Center places the hugged box at the middle.
+    expect(box.center.dy, moreOrLessEquals(window.height / 2, epsilon: 1));
+  });
+
   /// The compact block itself: 64 art + 16 + a title line + 8 + two subtitle
   /// lines + 16 + the action. At 320 × 1.3 that is over 200pt — so a card that
   /// FIXES its height to 200 clips it. This is the contract, recorded as a

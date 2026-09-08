@@ -261,6 +261,8 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
       type: 'share.invite',
       actor: { id: mockUser.id },
+      objectType: 'invite',
+      objectId: 'invite-0',
       groupKey: `share.invite:${UUID_MEAL}`,
     });
   });

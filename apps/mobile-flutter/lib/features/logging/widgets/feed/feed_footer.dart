@@ -77,6 +77,12 @@ class FeedFooter extends StatelessWidget {
         (view.isStreaming || view.isRevealing || view.isCheatRevealing) &&
         bubbleText != null &&
         bubbleText.trim().isNotEmpty;
+    // Formatted once: the divider prints it, and the bubble's long-press menu
+    // wears the same string as its header.
+    final sentAt = this.sentAt;
+    final sentLabel = sentAt == null
+        ? null
+        : DateFormat.jm(context.locale.toString()).format(sentAt);
     // The footer's cards carry no margins of their own, so the stack spaces
     // them at the same block gap the card list uses above.
     return Column(
@@ -87,10 +93,10 @@ class FeedFooter extends StatelessWidget {
         // content. The whole footer sits below every card the day already
         // holds, so a meal sent while an older one is unconfirmed reads down
         // in the order things happened.
-        if (showBubble && sentAt != null)
+        if (showBubble && sentLabel != null)
           MealTimeDivider(
             key: const ValueKey('turn-divider'),
-            time: DateFormat.jm(context.locale.toString()).format(sentAt!),
+            time: sentLabel,
           ),
         if (showBubble)
           // A constant key: the bubble must NOT remount when the sibling below
@@ -98,7 +104,7 @@ class FeedFooter extends StatelessWidget {
           // also survives the index shifting as pending cards come and go.
           _MaybeEntrance(
             key: const ValueKey('user-bubble'),
-            child: UserMessageBubble(text: bubbleText),
+            child: UserMessageBubble(text: bubbleText, sentAt: sentLabel),
           ),
         if (view.isStreaming)
           StreamingEntry(stream: stream, loaderIndex: loaderIndex),

@@ -191,10 +191,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // One Circle post and its replies, pushed over the shell from the feed's
       // reply glyph. `scope` names the feed the post was read from (absent =
-      // the combined friends feed): the page reads its entry out of that
-      // feed's live cache, since no endpoint fetches a single share.
+      // the combined friends feed): the page prefers that feed's live cache
+      // and falls back to fetching the single share, the two sources documented
+      // in `features/circle/data/thread_providers.dart`. The scope stays in
+      // the URL because the feed is the primary read.
+      //
+      // `:shareId` SHADOWS any literal `/circle/<word>` segment — go_router
+      // takes the first match — so a future one must be declared BEFORE this
+      // route, exactly as `/circle/invite/:slug` already is above.
       GoRoute(
-        path: '/circle/thread/:shareId',
+        path: '/circle/:shareId',
         parentNavigatorKey: _rootKey,
         pageBuilder:
             (context, state) => CupertinoPage<void>(

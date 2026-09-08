@@ -30,6 +30,12 @@
     "blocked": "Đã chặn",
     "actionError": "Chưa được — hãy thử lại."
   },
+  "thread": {
+    "title": "Trả lời",
+    "back": "Về Vòng kết nối",
+    "gone": "Bài đăng này không còn ở đây",
+    "goneBody": "Có thể đã bị xoá, hoặc được chia sẻ trong một nhóm bạn không tham gia."
+  },
   "feed": {
     "you": "Bạn",
     "heart": "Thả tim",
@@ -37,7 +43,8 @@
     "reply": "Trả lời",
     "replyPlaceholder": "Trả lời…",
     "replyError": "Không thể gửi trả lời. Hãy thử lại.",
-    "earlierReplies": "{count} trả lời trước đó",
+    "replyTo": "Trả lời {name}…",
+    "noReplies": "Chưa có trả lời nào",
     "portion": "{portion} phần",
     "logCopy": "Ăn theo",
     "logHalf": "Chia đôi",

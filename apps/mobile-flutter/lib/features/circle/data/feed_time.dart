@@ -3,6 +3,8 @@ library;
 
 import 'package:intl/intl.dart';
 
+import '../../../models/social/circle.dart';
+
 enum ThreadDayLabelKind { today, yesterday, date }
 
 class ThreadDayLabel {
@@ -83,4 +85,24 @@ ThreadDayLabel threadDayLabel(
           ? DateFormat.MMMMd(locale)
           : DateFormat.yMMMMd(locale);
   return ThreadDayLabel.date(formatter.format(localValue));
+}
+
+/// Consecutive runs of entries sharing a day key, in feed order. A run, not
+/// a bucket: the feed is already sorted, and grouping by key would silently
+/// reorder a day that arrived split across two pages.
+List<({DateTime date, List<CircleFeedEntry> entries})> groupEntriesByDay(
+  List<CircleFeedEntry> entries,
+) {
+  final days = <({DateTime date, List<CircleFeedEntry> entries})>[];
+  String? previous;
+  for (final entry in entries) {
+    final date = DateTime.parse(entry.meal.sharedAt);
+    final key = threadDayKey(date);
+    if (key != previous) {
+      days.add((date: date, entries: <CircleFeedEntry>[]));
+      previous = key;
+    }
+    days.last.entries.add(entry);
+  }
+  return days;
 }

@@ -7,6 +7,9 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
+import '../../logic/circle_spacing.dart';
+import 'thread_composer_avatar.dart';
+import 'thread_dock_insets.dart';
 import 'thread_send_button.dart';
 
 /// The thread page's docked reply composer.
@@ -25,6 +28,7 @@ import 'thread_send_button.dart';
 class ThreadComposer extends ConsumerStatefulWidget {
   const ThreadComposer({
     required this.shareId,
+    required this.authorName,
     required this.focusNode,
     required this.onHeightChanged,
     this.scope,
@@ -34,6 +38,10 @@ class ThreadComposer extends ConsumerStatefulWidget {
   });
 
   final String shareId;
+
+  /// Who wrote the post being replied to — it names the field's placeholder.
+  /// Null on your own post, where the placeholder falls back to "Reply…".
+  final String? authorName;
 
   /// The feed the post was read from — passed to the mutation so the reply
   /// lands in THIS feed's cache even when the Circle tab has another one
@@ -109,7 +117,12 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
 
   @override
   Widget build(BuildContext context) {
-    // Built once. The insets the dock owes are read in [_DockInsets] below,
+    final author = widget.authorName;
+    final hint =
+        author == null
+            ? tr('groups.feed.replyPlaceholder')
+            : tr('groups.feed.replyTo', namedArgs: {'name': author});
+    // Built once. The insets the dock owes are read in [ThreadDockInsets],
     // so the keyboard's ~250ms ramp rebuilds one padding and not the field,
     // its decoration and the send affordance on every frame of it.
     return ColoredBox(
@@ -117,12 +130,11 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
       // would show them sliding through the field. Outside the insets, so it
       // also fills the home-indicator strip beneath the field.
       color: kPage,
-      child: _DockInsets(
+      child: ThreadDockInsets(
         // Measured INSIDE the insets, so the height reported up is the dock's
-        // OWN; the body adds the same insets itself, in the same frame. The
-        // field grows a line under the user's thumb without re-running this
-        // build (the draft only rebuilds the send affordance below) — the
-        // measurement catches that on its own.
+        // OWN; the body adds the same [threadDockInsets] itself, on the same
+        // frame. The field grows a line under the thumb without re-running
+        // this build — the measurement catches that on its own.
         child: MeasuredHeight(
           onChanged: widget.onHeightChanged,
           child: Padding(
@@ -133,6 +145,19 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // Card pad (16) + the avatar rail (44) = 60, landing the
+                // disc's left edge at 72: the rail the replies stand on. The
+                // body's own 12 of scroll padding is NOT owed on top — this
+                // dock pays the same 12 — so the two cancel at the card inset.
+                const SizedBox(width: KalloSpacing.sp4 + kContentRail),
+                // Pinned to the field's bottom line by the row's `end`
+                // alignment, in a box its minimum height, so the disc sits ON
+                // the first line rather than under a grown draft.
+                const SizedBox(
+                  height: KalloIcons.hit,
+                  child: Center(child: ThreadComposerAvatar()),
+                ),
+                const SizedBox(width: KalloSpacing.sp2),
                 Expanded(
                   child: TextField(
                     key: const Key('reply-composer'),
@@ -149,14 +174,13 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
                     onSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: tr('groups.feed.replyPlaceholder'),
+                      hintText: hint,
                       hintStyle: dashBody(color: kInkMuted),
                     ),
                   ),
                 ),
-                // Only the send affordance listens to the draft: a
-                // controller listener would rebuild the whole dock — field
-                // included — on every keystroke.
+                // Only the send affordance listens to the draft: a controller
+                // listener would rebuild the whole dock on every keystroke.
                 ThreadSendButton(
                   controller: _controller,
                   submitting: _submitting,
@@ -167,33 +191,6 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// The two insets the dock owes — the keyboard's and the home indicator's —
-/// read in one leaf so their ramp rebuilds one padding.
-///
-/// A plain Padding, never an AnimatedPadding: iOS ramps `viewInsets` itself
-/// over the keyboard's own curve, and animating on top of that lands the dock
-/// a frame behind the keyboard the whole way up (see
-/// `features/logging/widgets/composer/composer_dock.dart`). The home
-/// indicator is already netted against the keyboard by the framework, so
-/// paying both is correct rather than double-counting.
-class _DockInsets extends StatelessWidget {
-  const _DockInsets({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom:
-            MediaQuery.viewInsetsOf(context).bottom +
-            MediaQuery.paddingOf(context).bottom,
-      ),
-      child: child,
     );
   }
 }

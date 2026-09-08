@@ -215,6 +215,8 @@ describe('toggleShareReactionAction', () => {
     expect(mockSendNotificationPush).toHaveBeenCalledWith([OWNER], {
       type: 'share.reaction',
       actor: { id: mockUser.id },
+      objectType: 'share',
+      objectId: SHARE_ID,
       groupKey: `share.reaction:${SHARE_ID}`,
     });
 

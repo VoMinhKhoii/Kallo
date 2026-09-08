@@ -6,7 +6,7 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/logic/display_format.dart';
-import '../../logic/circle_thread_route.dart';
+import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import 'feed_entry_actions.dart';
 import 'feed_nutrition.dart';
 import 'feed_rhythm.dart';
@@ -21,29 +21,33 @@ import 'feed_rhythm.dart';
 class FeedEntry extends StatelessWidget {
   const FeedEntry({
     required this.entry,
+    required this.onReply,
     this.scope,
-    this.onReply,
-    this.footer,
+    this.onOpen,
     super.key,
   });
 
   final CircleFeedEntry entry;
 
-  /// The feed this post was read from — carried so the default [onReply] can
-  /// name it in the thread URL. The thread page reads its entry out of that
-  /// same cache; there is no endpoint that fetches one share.
+  /// What the reply glyph does — pushing the thread with its composer focused
+  /// in the feed, focusing the composer already on screen on the thread page.
+  ///
+  /// Required, and a callback rather than a hardcoded push: this widget draws
+  /// a post and nothing else, so a post can never push a second copy of the
+  /// thread it is already inside.
+  final VoidCallback onReply;
+
+  /// The feed this post was read from — carried into the reaction mutation so
+  /// a heart lands in THAT feed's cache, and named by the caller in the thread
+  /// URL it builds. The thread page prefers the same cache and falls back to
+  /// the single-share endpoint for a post no loaded feed holds (see
+  /// `data/thread_providers.dart`).
   final String? scope;
 
-  /// What the reply glyph does. Defaults to pushing the thread page.
-  ///
-  /// The thread page overrides it to focus its OWN composer, so a post can
-  /// never push a second copy of the thread it is already inside — which is
-  /// why this is a parameter rather than a hardcoded push.
-  final VoidCallback? onReply;
-
-  /// What renders under the action row. The feed passes [ReplyPreview]; the
-  /// thread page passes nothing, because there the replies ARE the page.
-  final Widget? footer;
+  /// Opens this post's thread — the whole post is that target in the feed
+  /// (Threads). Null means the post is not a tap target at all: the thread
+  /// page's own copy of it, which is already the thread.
+  final VoidCallback? onOpen;
 
   String _fraction(double factor) {
     if ((factor - 0.5).abs() < 0.001) return '½';
@@ -58,7 +62,7 @@ class FeedEntry extends StatelessWidget {
     final name = entry.isSelf ? tr('groups.wall.you') : entry.friend.label;
     final sharedAt = DateTime.parse(meal.sharedAt);
 
-    return Row(
+    final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 32, TOP-aligned (native pass, 2026-08-31): inside the day card the
@@ -132,32 +136,48 @@ class FeedEntry extends StatelessWidget {
               // meals and the logging card.
               FeedNutrition(meal: meal),
               // No gap: the action row's own tap slack supplies it.
-              FeedEntryActions(
-                entry: entry,
-                scope: scope,
-                onReply:
-                    onReply ??
-                    // `compose: true`: the glyph used to open a composer, so
-                    // the page it pushes now arrives with the field focused.
-                    () => openCircleThread(
-                      context,
-                      shareId: meal.shareId,
-                      scope: scope,
-                      compose: true,
-                    ),
-              ),
-              if (footer != null) footer!,
+              FeedEntryActions(entry: entry, scope: scope, onReply: onReply),
             ],
           ),
         ),
       ],
     );
+
+    final open = onOpen;
+    if (open == null) return row;
+
+    // The WHOLE post opens its thread (Threads), not a "View thread" link:
+    // the three glyphs are the post's only other targets and each wins the
+    // arena over this one, so nothing inside it is shadowed. The wash is the
+    // glyph's alone — [KalloPressable] keeps a nested press off its ancestors.
+    //
+    // `topLeft` and no padding: the pressable shrink-wraps, and the Row's
+    // Expanded child already fills the column's finite width, so the target is
+    // exactly the post's own box.
+    //
+    // ONE callback behind both the annotation and the target: the node a
+    // screen reader announces has to be the node that navigates.
+    //
+    // The action goes on the ANNOTATED node. Without it the button trait and
+    // the name sat here while the tap lived on the [KalloPressable]'s node
+    // underneath: VoiceOver announced "Open thread, button" over a node it
+    // could not activate, and read the node that DOES navigate out as raw
+    // post text (2026-09-08).
+    //
+    // It also does what `explicitChildNodes` used to do here — two conflicting
+    // tap actions cannot merge into one node, so the post's texts stay nodes
+    // of their own rather than being absorbed into this label (dumped both
+    // ways: identical trees). The exact-label finds in
+    // `circle_feed_open_thread_test.dart` go red if that stops holding.
+    return Semantics(
+      button: true,
+      label: tr('groups.feed.openThread'),
+      onTap: open,
+      child: KalloPressable(
+        onTap: open,
+        alignment: Alignment.topLeft,
+        child: row,
+      ),
+    );
   }
 }
-
-/// Calories and macros on one line, over the stacked composition bar.
-///
-/// The calorie figure sits at Body in medium ink; its unit and the macro grams
-/// stay at Meta, so the number carries the mass rather than the word without
-/// outweighing the meal name above it. The bar splits by CALORIE share, so a
-/// low-gram/high-energy fat slice reads at its true weight.

@@ -43,7 +43,11 @@ export interface NotificationPushPayload {
   /** Presentation extras the copy interpolates. Same bag `pushCopy` reads,
    *  minus the actor name, which has its own field above. */
   data?: Omit<PushCopyValues, 'actorName'>;
-  /** Where the tap lands, mirrored into the APNs data payload as strings. */
+  /** What happened — the share/invite row the event is about. Mirrored to the
+   *  device because it is what a tap opens: `share` + id → `/circle/<id>`. */
+  objectType?: string;
+  objectId?: string;
+  /** Where the tap lands when that is NOT the object (e.g. the chat group). */
   targetType?: string;
   targetId?: string;
   /** The row this push announces, so the app can mark it read on open. */
@@ -58,6 +62,8 @@ function toDataPayload(
   payload: NotificationPushPayload
 ): Record<string, string> {
   const data: Record<string, string> = { type: payload.type };
+  if (payload.objectType) data.objectType = payload.objectType;
+  if (payload.objectId) data.objectId = payload.objectId;
   if (payload.targetType) data.targetType = payload.targetType;
   if (payload.targetId) data.targetId = payload.targetId;
   if (payload.notificationId) data.notificationId = payload.notificationId;

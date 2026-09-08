@@ -412,21 +412,22 @@ call the design system gets to make differently per surface.
 
 This rule mostly *describes* what the app already does: routes push
 `CupertinoPage`, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
-is a Cupertino alert, the long-press menu is `CupertinoContextMenu`, the switch
-is `Switch.adaptive`. It had never been written down, so every new surface
-re-decided from scratch — which is how 17 Material spinners accumulated under a
-Cupertino navigation stack.
+is a Cupertino alert, the switch is `Switch.adaptive`. The long-press menu was
+on that list until 2026-09-08 and is now the rule's one documented exception —
+the app owns it (boundary 3, below). It had never been written down, so every
+new surface re-decided from scratch — which is how 17 Material spinners
+accumulated under a Cupertino navigation stack.
 
 | Instead of | Use | State |
 |------------|-----|-------|
 | `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
 | `MaterialPageRoute` | `CupertinoPageRoute` / `CupertinoPage` | 1 site left (`auth/widgets/email_auth_form.dart`) |
-| `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
+| `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release, SHRINK-WRAPS its child in both axes (a parent that wants it wider hands it tight constraints), and owns its pointer even when disabled, so a nested target never lights the row behind it | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
 | `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
 | `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
 | `Switch` | `Switch.adaptive`, via `KalloSwitch` | ✅ done |
-| long-press menu | `CupertinoContextMenu` | ✅ done |
+| long-press menu | `showKalloAnchoredMenu` (`shared/widgets/menu/kallo_anchored_menu.dart`, with `AnchoredMenuLayer` and `KalloMenuCard` behind it) | exception, 2026-09-08 — see boundary 3 |
 | `Slider` | `CupertinoSlider` | 3 sites — but see *the design system wins*, below |
 | `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
 | a date/time picker | `CupertinoDatePicker` | none in the app yet; use it when one is needed |
@@ -461,6 +462,17 @@ boundaries, each of which has already cost a bug when crossed:
    `CupertinoActionSheet` alike; `KalloConfirmActions` over
    `CupertinoAlertDialog`'s side-by-side buttons. Reach for Cupertino when the
    app has no answer of its own — never to replace one it has already made.
+
+   The long-press menu is the newest entry and the one that cost the most to
+   learn (2026-09-08). `CupertinoContextMenu` RELOCATES the pressed widget into
+   a preview slot of its own and SCALES it 1.15x, so a sent message slid out
+   from under the finger holding it; it also dresses the action rows in system
+   chrome rather than Be Vietnam Pro, and stretches the hold to iOS's 800ms
+   preview timeout. `showKalloAnchoredMenu` keeps the message exactly where it
+   is — a still copy pinned at its own rect above the blur — anchors the card
+   to the message's trailing edge, prints the sent time as a header, and wears
+   the app's type. It is the app's ONE popup menu: the Circle header's "+"
+   popover had hand-rolled the same route and is now its other consumer.
 
 ## Reference implementation (source of truth)
 
@@ -499,7 +511,7 @@ renders as Material.
 | Item | Sites | Notes |
 |------|-------|-------|
 | `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
-| `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold |
+| `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold. `KalloMenuActionRow` (`shared/widgets/menu/kallo_menu_card.dart`) was built on it from the start — the long-press menu's rows never wore a ripple |
 | arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
 | `MaterialPageRoute` → `CupertinoPageRoute` | 1 | `auth/widgets/email_auth_form.dart` — the only route in the app that does not slide |
 | `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
@@ -567,6 +579,31 @@ beats the variant's size. It also upper-cases `eyebrow` and `macroLabel`
 call site to plain `Text` drops the transform silently — check the rendered
 word, not just the size. A widget whose `style` defaults to a variant is the
 same trap latent: make `style` required.
+
+**A `Container` `alignment` is not a shrink-wrap.** It is an `Align` with NO
+size factors, so it grows to any FINITE max width it is offered. `KalloPressable`
+sized its box that way, and inside a `Row` — which offers children unbounded
+width — it shrink-wrapped by accident. Move the same child into a `Wrap` and the
+Wrap offers the COLUMN's width: every `FeedActionButton` in the Circle action
+row became column-wide and the three actions stacked one per line, which is how
+"a Wrap lays out identically to a Row" turned out to be false. Fixed 2026-09-08
+with an explicit `Align(widthFactor: 1, heightFactor: 1)`
+(`shared/widgets/surface/kallo_pressable.dart`, *Sizing*). A height-only
+assertion cannot see this — assert the three tops are EQUAL and the lefts
+increase (`test/features/circle/circle_feed_widgets_test.dart`).
+
+**A nested tap target must claim its pointer — disabled included.** A pressable
+inside another pressable washes ALONE: the innermost claims the pointer up a
+`PressScope` chain, so a tap on the heart does not also grey the post it sits
+on. The half that is easy to get wrong is the DISABLED one — a `GestureDetector`
+with only null callbacks registers no recognizer at all, so the target never
+enters the arena and the tap falls through to whatever is behind it. The Circle
+heart is `onTap: null` while its reaction request is in flight, inside a post
+that opens the thread, so a double tap on the heart navigated away
+mid-reaction. A disabled control is still a control; iOS never lets a dimmed
+button's tap reach what is under it. Fixed 2026-09-08 — an inert non-null
+callback keeps the arena entry (`shared/widgets/surface/kallo_pressable.dart`,
+*Nesting*; the protocol is in `shared/widgets/surface/press_scope.dart`).
 
 **`InputDecorationTheme` wins.** The app theme sets `filled: true` and an
 `OutlineInputBorder` on `enabledBorder`. Clearing only `border` leaves the
