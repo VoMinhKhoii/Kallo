@@ -69,12 +69,10 @@ class ThreadBody extends StatelessWidget {
                 // 13pt of slack under the glyph ink, exactly as the feed's
                 // day card nets out in `feed_day_group.dart` (`_actionSlack`).
                 padding: const EdgeInsets.only(top: KalloSpacing.sp3),
-                child: FeedEntry(
-                  entry: entry,
-                  scope: scope,
-                  onReply: onReply,
-                  openThread: false,
-                ),
+                // No `onOpen`: this page IS the thread, so the post is not
+                // a tap target here — and its reply glyph is re-pointed at
+                // this page's own composer.
+                child: FeedEntry(entry: entry, scope: scope, onReply: onReply),
               ),
             ],
           ),

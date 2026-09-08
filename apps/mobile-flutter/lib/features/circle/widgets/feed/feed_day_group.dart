@@ -7,6 +7,7 @@ import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
 import '../../logic/circle_spacing.dart';
+import '../../logic/circle_thread_route.dart';
 import 'feed_entry.dart';
 
 /// Vertical padding between a post and the card edge (12) versus between a
@@ -76,11 +77,35 @@ class FeedDayGroup extends StatelessWidget {
                       (i == entries.length - 1 ? _edgePad : _innerPad) -
                       _actionSlack,
                 ),
-                child: FeedEntry(entry: entries[i], scope: scope),
+                child: _post(context, entries[i]),
               ),
           ],
         ),
       ],
     );
   }
+
+  /// The FEED composes the post's navigation, not [FeedEntry]: the widget
+  /// draws a post and takes what its tap and its reply glyph do as callbacks,
+  /// which is what lets the thread page draw the same post with no tap target
+  /// and a composer focus of its own (`thread/thread_body.dart`).
+  Widget _post(BuildContext context, CircleFeedEntry entry) => FeedEntry(
+    entry: entry,
+    scope: scope,
+    onOpen:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+        ),
+    // `compose: true`: the glyph used to open a composer under the post, so
+    // the page it pushes now arrives with the field focused.
+    onReply:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+          compose: true,
+        ),
+  );
 }

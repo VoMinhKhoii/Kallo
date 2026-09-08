@@ -1527,7 +1527,7 @@
       "threadTitle": "Replies",
       "noReplies": "No replies yet",
       "threadGone": "This post isn't here any more",
-      "threadGoneBody": "It may have been removed, or it's older than the meals loaded here.",
+      "threadGoneBody": "It may have been deleted, or shared with a group you're not in.",
       "portion": "{portion} portion",
       "logCopy": "Log this too",
       "logSuccess": "Added to today's diary",

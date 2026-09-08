@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/logic/circle_thread_route.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
@@ -74,6 +75,24 @@ void main() {
     }
     return readMarker(request);
   });
+
+  /// A post wired the way the FEED wires it (`feed_day_group.dart`): the post
+  /// opens its thread, the reply glyph opens it with `compose=1`. Navigation
+  /// left [FeedEntry] on 2026-09-08 — it takes both as callbacks now — so the
+  /// composition under test lives here rather than inside the widget.
+  Widget feedPost(CircleFeedEntry data) => Builder(
+    builder:
+        (context) => FeedEntry(
+          entry: data,
+          onOpen: () => openCircleThread(context, shareId: data.meal.shareId),
+          onReply:
+              () => openCircleThread(
+                context,
+                shareId: data.meal.shareId,
+                compose: true,
+              ),
+        ),
+  );
 
   /// Where the router actually is. A PUSH leaves the delegate's own
   /// `currentConfiguration.uri` on the page it was pushed FROM and records the
@@ -155,7 +174,7 @@ void main() {
   testWidgets('tapping the post opens its thread with no composer', (
     tester,
   ) async {
-    final router = await pumpFeed(tester, FeedEntry(entry: entry()));
+    final router = await pumpFeed(tester, feedPost(entry()));
     expect(locationOf(router), '/');
 
     await tester.tap(find.text('Bún chả Hà Nội'));
@@ -171,7 +190,7 @@ void main() {
     // The pressable shrink-wraps (see its *Sizing* doc), so a target that
     // hugged the text would leave most of the post dead to a tap. The Row's
     // Expanded child is what keeps it column-wide.
-    await pumpFeed(tester, FeedEntry(entry: entry()));
+    await pumpFeed(tester, feedPost(entry()));
     expect(tester.getSize(find.byType(KalloPressable).first).width, 500);
   });
 
@@ -204,7 +223,7 @@ void main() {
       }
       return readMarker(request);
     });
-    final router = await pumpFeed(tester, FeedEntry(entry: entry()), api: api);
+    final router = await pumpFeed(tester, feedPost(entry()), api: api);
 
     final heart = find.byIcon(LucideIcons.heart300);
     await tester.tap(heart);
@@ -224,7 +243,7 @@ void main() {
   testWidgets('the reply glyph opens the thread WITH the composer', (
     tester,
   ) async {
-    final router = await pumpFeed(tester, FeedEntry(entry: entry()));
+    final router = await pumpFeed(tester, feedPost(entry()));
 
     await tester.tap(find.byIcon(LucideIcons.messageCircle300));
     await tester.pumpAndSettle();
@@ -234,9 +253,12 @@ void main() {
   });
 
   testWidgets('the thread page copy of the post opens nothing', (tester) async {
+    // No `onOpen` at all — how `thread/thread_body.dart` draws the post it is
+    // already the thread for. Its reply glyph focuses that page's own
+    // composer, which navigates nowhere either.
     final router = await pumpFeed(
       tester,
-      FeedEntry(entry: entry(), openThread: false),
+      FeedEntry(entry: entry(), onReply: () {}),
     );
 
     await tester.tap(find.text('Bún chả Hà Nội'));
@@ -250,10 +272,10 @@ void main() {
   ) async {
     final handle = tester.ensureSemantics();
 
-    await pumpFeed(tester, FeedEntry(entry: entry()));
+    await pumpFeed(tester, feedPost(entry()));
     expect(find.bySemanticsLabel('Open thread'), findsOneWidget);
 
-    await pumpFeed(tester, FeedEntry(entry: entry(), openThread: false));
+    await pumpFeed(tester, FeedEntry(entry: entry(), onReply: () {}));
     expect(find.bySemanticsLabel('Open thread'), findsNothing);
 
     handle.dispose();
@@ -267,7 +289,7 @@ void main() {
     // [KalloPressable]'s own node UNDER it, so "Open thread, button" did
     // nothing and the node that did navigate was read out as raw post text.
     final handle = tester.ensureSemantics();
-    final router = await pumpFeed(tester, FeedEntry(entry: entry()));
+    final router = await pumpFeed(tester, feedPost(entry()));
 
     // Over the SEMANTICS tree, not the widget tree: what a screen reader can
     // reach is a property of the nodes, and the widget finders would keep
@@ -310,7 +332,16 @@ class _LiveFeedPost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
-      data: (value) => FeedEntry(entry: value.entries.single),
+      data:
+          (value) => FeedEntry(
+            entry: value.entries.single,
+            onOpen:
+                () => openCircleThread(
+                  context,
+                  shareId: value.entries.single.meal.shareId,
+                ),
+            onReply: () {},
+          ),
       error: (_, _) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

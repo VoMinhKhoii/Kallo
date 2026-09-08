@@ -7,7 +7,6 @@ import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
 
@@ -107,32 +106,25 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        // Names the heart and carries its on/off state; the button flag comes
-        // from [FeedActionButton] itself, and setting it here too would stop
-        // the two nodes merging and split the heart into "Heart" with a
-        // nested "2" (see that file's semantics note).
-        Semantics(
-          label: tr('groups.feed.heart'),
+        FeedActionButton(
+          onTap: _toggling ? null : _toggle,
+          icon: LucideIcons.heart300,
+          // Lucide is a FONT here, so `Icon(fill:)` never filled the heart on
+          // the phone: the hearted state is its own SVG glyph, painted in the
+          // swipe-to-delete red so a hearted post looks hearted from across
+          // the row.
+          activeGlyph: reactions.mine ? const FilledHeart() : null,
+          // The name is SPOKEN — the visible text beside the glyph is a bare
+          // count — and the state rides the same node, so the heart announces
+          // as one "Heart, 2, button" that is on or off.
+          semanticLabel: tr('groups.feed.heart'),
           toggled: reactions.mine,
-          child: FeedActionButton(
-            onTap: _toggling ? null : _toggle,
-            icon: LucideIcons.heart300,
-            active: reactions.mine,
-            // Lucide is a FONT here, so `Icon(fill:)` never filled the heart
-            // on the phone: the hearted state is its own SVG glyph.
-            activeGlyph: const FilledHeart(),
-            // The swipe-to-delete red, reused rather than minted: it is the
-            // palette's one red, and a hearted post has to look hearted from
-            // across the row. The count beside it stays on the action ink, so
-            // the row keeps a single voice.
-            activeColor: KalloColors.danger,
-            // Zero prints nothing, exactly as the reply glyph's count does:
-            // an unhearted post carried a literal "0" beside the outline, so
-            // a fresh post opened reading "0" and "no replies" as its two
-            // loudest characters. The spoken name above still says "Heart".
-            label: reactions.count > 0 ? '${reactions.count}' : null,
-            alignment: Alignment.centerLeft,
-          ),
+          // Zero prints nothing, exactly as the reply glyph's count does: an
+          // unhearted post carried a literal "0" beside the outline, so a
+          // fresh post opened reading "0" and "no replies" as its two loudest
+          // characters. The spoken name still says "Heart".
+          label: reactions.count > 0 ? '${reactions.count}' : null,
+          alignment: Alignment.centerLeft,
         ),
         FeedActionButton(
           onTap: widget.onReply,

@@ -23,16 +23,6 @@ const Set<String> kPushNotificationTypes = {
 /// circle surface, which is where the shares/friend events live.
 const Set<String> kPushGroupTypes = {'group.added', 'chat.message'};
 
-/// Types whose tap opens one post's own thread page. The server ships these
-/// with `objectType: 'share'` and the share id in `objectId` (see
-/// `docs/NOTIFICATIONS.md`), so the reader lands on the meal that was reacted
-/// to or replied to rather than hunting for it in the feed.
-const Set<String> kPushShareTypes = {
-  'share.reaction',
-  'share.reply',
-  'share.logged',
-};
-
 /// Where a tapped notification should land.
 ///
 /// [groupId] non-null means "circle, scoped to that group" — the Flutter circle
@@ -69,16 +59,18 @@ PushDestination? pushDestinationFor(PushPayload payload) {
   final type = _stringAt(data, 'type');
   if (type == null || !kPushNotificationTypes.contains(type)) return null;
 
-  if (kPushShareTypes.contains(type)) {
-    final objectId = _stringAt(data, 'objectId');
-    // A share event whose object is missing or is not a share (an older
-    // server, a future object kind) has no thread to open — fall through.
-    if (objectId != null && _stringAt(data, 'objectType') == 'share') {
-      // groupId stays null: the thread page reads its post out of the combined
-      // friends feed, so a tap must reset any group scope left by an earlier
-      // one.
-      return PushDestination(path: circleThreadLocation(shareId: objectId));
-    }
+  // A thread opens off the payload's OWN discriminant rather than a second
+  // copy of which types carry one: the producers set `objectType: 'share'`
+  // with the share id in `objectId` for exactly the reaction/reply/logged
+  // events (`docs/NOTIFICATIONS.md`), and `share.invite` — the one share-
+  // prefixed type without a thread — names an invite instead. A payload whose
+  // object is missing or is not a share falls through to the feed.
+  final objectId = _stringAt(data, 'objectId');
+  if (_stringAt(data, 'objectType') == 'share' && objectId != null) {
+    // groupId stays null: the thread page reads its post out of the combined
+    // friends feed, so a tap must reset any group scope left by an earlier
+    // one.
+    return PushDestination(path: circleThreadLocation(shareId: objectId));
   }
 
   if (kPushGroupTypes.contains(type)) {

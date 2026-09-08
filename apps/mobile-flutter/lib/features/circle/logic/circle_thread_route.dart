@@ -1,14 +1,12 @@
 /// The one place that knows the Circle thread page's URL shape.
 ///
 /// The route carries the feed SCOPE alongside the share id because the page
-/// reads its post out of that feed's live cache (`threadEntryProvider`) rather
-/// than fetching it. The web grew a single-share endpoint on 2026-09-08
-/// (`app/api/v1/groups/shares/[shareId]/route.ts`); adopting it as a mobile
-/// fallback — a post outside the loaded feed pages, or a group-only post
-/// opened from a notification — is a follow-up, and the scope stays either
-/// way. Absent scope means the combined friends feed;
-/// otherwise it is a chat-group id, exactly as `sharedMealFeedProvider` keys
-/// itself.
+/// reads its post out of that feed's live cache first, fetching the single
+/// share only when no loaded feed holds it (both sources are documented in
+/// `features/circle/data/thread_providers.dart`) — so the scope stays in the
+/// URL because the feed is the primary read. Absent scope means the combined
+/// friends feed; otherwise it is a chat-group id, exactly as
+/// `sharedMealFeedProvider` keys itself.
 library;
 
 import 'package:flutter/widgets.dart';

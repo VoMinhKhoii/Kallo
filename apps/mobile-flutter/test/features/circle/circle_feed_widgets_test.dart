@@ -113,10 +113,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// A post as the FEED composes it: navigation lives in `feed_day_group.dart`
+  /// now, so a bare [FeedEntry] takes both actions as callbacks. Both are
+  /// no-ops here — nothing in this file taps the post — but [onOpen] stays
+  /// non-null so the post keeps the button node the semantics tests read.
+  Widget post(CircleFeedEntry data) =>
+      FeedEntry(entry: data, onOpen: () {}, onReply: () {});
+
   testWidgets(
     'entry preserves diacritics and renders macros, kcal, and a missing macro',
     (tester) async {
-      await pump(tester, FeedEntry(entry: entry()));
+      await pump(tester, post(entry()));
       expect(find.textContaining('Mai'), findsOneWidget);
       expect(find.text('Bún chả Hà Nội'), findsOneWidget);
       expect(find.text('P 38g'), findsOneWidget);
@@ -124,7 +131,7 @@ void main() {
 
       // A missing macro reads as an em dash, not the long "no data" string:
       // three of those in one row wraps the line and buries the known figures.
-      await pump(tester, FeedEntry(entry: entry(protein: null)));
+      await pump(tester, post(entry(protein: null)));
       expect(find.text('P —'), findsOneWidget);
     },
   );
@@ -132,9 +139,9 @@ void main() {
   testWidgets('portion badge only appears below a full portion', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry(portion: 0.5)));
+    await pump(tester, post(entry(portion: 0.5)));
     expect(find.text('½ portion'), findsOneWidget);
-    await pump(tester, FeedEntry(entry: entry()));
+    await pump(tester, post(entry()));
     expect(find.textContaining('portion'), findsNothing);
   });
 
@@ -146,24 +153,21 @@ void main() {
     final loggedAt = DateTime(2026, 8, 13, 15, 2);
     final shown = formatLoggedTime(loggedAt, locale: 'en');
 
-    await pump(tester, FeedEntry(entry: entry(sharedAt: loggedAt)));
+    await pump(tester, post(entry(sharedAt: loggedAt)));
     expect(find.textContaining(shown), findsOneWidget);
 
     // A backfilled share carries a sharedAt of "now", so its clock time would
     // describe when the meal was typed up rather than when it was eaten.
-    await pump(
-      tester,
-      FeedEntry(entry: entry(sharedAt: loggedAt, isBackfilled: true)),
-    );
+    await pump(tester, post(entry(sharedAt: loggedAt, isBackfilled: true)));
     expect(find.textContaining(shown), findsNothing);
   });
 
   testWidgets('Log this too is hidden for self and shown for others', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry(self: true)));
+    await pump(tester, post(entry(self: true)));
     expect(find.text('Log this too'), findsNothing);
-    await pump(tester, FeedEntry(entry: entry()));
+    await pump(tester, post(entry()));
     expect(find.text('Log this too'), findsOneWidget);
   });
 
@@ -219,17 +223,12 @@ void main() {
       'outline', (tester) async {
     await pump(
       tester,
-      FeedEntry(
-        entry: entry(reactions: const ShareReactions(mine: true, count: 3)),
-      ),
+      post(entry(reactions: const ShareReactions(mine: true, count: 3))),
     );
     expect(find.byType(FilledHeart), findsOneWidget);
     expect(find.byIcon(LucideIcons.heart300), findsNothing);
 
-    await pump(
-      tester,
-      FeedEntry(entry: entry(reactions: const ShareReactions(count: 3))),
-    );
+    await pump(tester, post(entry(reactions: const ShareReactions(count: 3))));
     expect(find.byIcon(LucideIcons.heart300), findsOneWidget);
     expect(find.byType(FilledHeart), findsNothing);
   });
@@ -237,7 +236,7 @@ void main() {
   testWidgets('the reply glyph carries the reply count', (tester) async {
     // The count moved onto the glyph when the card stopped drawing replies
     // under the post: it is the only thing left saying a thread exists.
-    await pump(tester, FeedEntry(entry: entry(repliesTotal: 3)));
+    await pump(tester, post(entry(repliesTotal: 3)));
     expect(find.text('3'), findsOneWidget);
     final glyph = tester.getRect(find.byIcon(LucideIcons.messageCircle300));
     final count = tester.getRect(find.text('3'));
@@ -246,7 +245,7 @@ void main() {
 
     // Zero prints nothing — and since 2026-09-08 the heart's own zero does
     // not either, so a post with neither shows no digits at all.
-    await pump(tester, FeedEntry(entry: entry(repliesTotal: 0)));
+    await pump(tester, post(entry(repliesTotal: 0)));
     expect(find.text('0'), findsNothing);
   });
 
@@ -255,17 +254,11 @@ void main() {
     // loudly as a real one, and the first thing on a brand-new post. It
     // follows the reply glyph's rule now. The name is still SPOKEN either
     // way (see the semantics test below), so nothing is lost by hiding it.
-    await pump(
-      tester,
-      FeedEntry(entry: entry(reactions: const ShareReactions())),
-    );
+    await pump(tester, post(entry(reactions: const ShareReactions())));
     expect(find.text('0'), findsNothing);
     expect(find.byIcon(LucideIcons.heart300), findsOneWidget);
 
-    await pump(
-      tester,
-      FeedEntry(entry: entry(reactions: const ShareReactions(count: 2))),
-    );
+    await pump(tester, post(entry(reactions: const ShareReactions(count: 2))));
     expect(find.text('2'), findsOneWidget);
   });
 
@@ -277,10 +270,7 @@ void main() {
     // `Semantics(button: true)` only when it had been handed a semanticLabel,
     // so the labelled action fell through as plain tappable text.
     final handle = tester.ensureSemantics();
-    await pump(
-      tester,
-      FeedEntry(entry: entry(reactions: const ShareReactions(count: 2))),
-    );
+    await pump(tester, post(entry(reactions: const ShareReactions(count: 2))));
 
     // An EXACT label match, so a node reading "Log this too\nLog this too"
     // fails: the visible text merges into this button's own node, and naming
@@ -308,7 +298,7 @@ void main() {
   testWidgets('the three actions share one row and clear a 44pt target', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry()));
+    await pump(tester, post(entry()));
     // Reply lives beside the heart now, not under the replies list: one row,
     // one interaction system. Its glyph carries no visible label (native pass,
     // 2026-08-31) — a bubble is unambiguous and the row reads as controls
@@ -413,7 +403,7 @@ void main() {
   testWidgets('the composition bar renders for a meal with macros', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry()));
+    await pump(tester, post(entry()));
     expect(find.byType(CompositionBar), findsOneWidget);
     final size = tester.getSize(find.byType(CompositionBar));
     // The feed draws the bar at half the nutrition page's height; see the
@@ -539,7 +529,7 @@ class _FeedHost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(sharedMealFeedProvider(null));
     return feed.when(
-      data: (value) => FeedEntry(entry: value.entries.single),
+      data: (value) => FeedEntry(entry: value.entries.single, onReply: () {}),
       error: (_, __) => const Text('error'),
       loading: () => const CircularProgressIndicator(),
     );

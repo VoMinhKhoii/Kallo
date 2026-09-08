@@ -1524,7 +1524,7 @@
       "threadTitle": "Trả lời",
       "noReplies": "Chưa có trả lời nào",
       "threadGone": "Bài đăng này không còn ở đây",
-      "threadGoneBody": "Có thể bài đăng đã bị xoá, hoặc đã cũ hơn những bữa ăn đang được tải.",
+      "threadGoneBody": "Có thể đã bị xoá, hoặc được chia sẻ trong một nhóm bạn không tham gia.",
       "portion": "{portion} phần",
       "logCopy": "Ăn theo",
       "logSuccess": "Đã thêm vào nhật ký hôm nay",

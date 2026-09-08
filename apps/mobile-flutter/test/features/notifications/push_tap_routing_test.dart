@@ -35,6 +35,9 @@ void main() {
     });
 
     test('a share event opens the thread for that share', () {
+      // The three thread-bearing types, routed by the `objectType` the
+      // producers stamp on them rather than by a copy of this list in the app
+      // (`lib/actions/meal-sharing/{reactions,replies,log-shared}.ts`).
       for (final type in const [
         'share.reaction',
         'share.reply',
@@ -79,8 +82,7 @@ void main() {
     });
 
     test('every other catalog type lands on circle', () {
-      // Only the three thread-bearing share types carry an object to open;
-      // these name nothing, so the feed itself is the destination.
+      // These carry no share to open, so the feed itself is the destination.
       for (final type in const [
         'friend.joined',
         'share.invite',
@@ -92,6 +94,21 @@ void main() {
           reason: type,
         );
       }
+    });
+
+    test('a share.invite carries an invite, not a thread', () {
+      // The one `share.`-prefixed type with no thread behind it: the producer
+      // stamps `objectType: 'invite'` (`lib/actions/meal-sharing/
+      // share-with-friends.ts`), and routing on that discriminant is what
+      // keeps this tap on the feed rather than on `/circle/<invite id>`.
+      expect(
+        pushDestinationFor({
+          'type': 'share.invite',
+          'objectType': 'invite',
+          'objectId': 'inv-1',
+        }),
+        const PushDestination(path: '/circle'),
+      );
     });
 
     test('a group event without a target still lands on circle', () {
