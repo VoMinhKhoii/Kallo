@@ -6,7 +6,7 @@ import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ShareReplies } from '@/components/groups/share-replies';
+import { ShareReplies } from '@/components/groups/thread/share-replies';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { useShareThread } from '@/hooks/social/circle/use-share-thread';
 import { Link } from '@/i18n/navigation';
@@ -47,7 +47,12 @@ export function ShareThread({ shareId }: { shareId: string }) {
           <div className="p-4">
             <FeedEntry entry={data.entry} />
             <ShareReplies
-              authorName={labelFor(data.entry.friend)}
+              // Your own post addresses nobody: "Reply to <your handle>…"
+              // reads as talking to yourself, so the composer falls back to
+              // the plain "Reply…".
+              authorName={
+                data.entry.isSelf ? undefined : labelFor(data.entry.friend)
+              }
               replies={data.entry.replies}
               shareId={shareId}
             />

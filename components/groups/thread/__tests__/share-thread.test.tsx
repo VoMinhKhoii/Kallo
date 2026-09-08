@@ -12,9 +12,9 @@ vi.mock('@/components/groups/feed-entry', () => ({
     <div data-testid="feed-entry">{entry.meal.rawInput}</div>
   ),
 }));
-vi.mock('@/components/groups/share-replies', () => ({
-  ShareReplies: ({ authorName }: { authorName: string }) => (
-    <div data-testid="share-replies">{authorName}</div>
+vi.mock('@/components/groups/thread/share-replies', () => ({
+  ShareReplies: ({ authorName }: { authorName?: string }) => (
+    <div data-testid="share-replies">{authorName ?? 'no-author-name'}</div>
   ),
 }));
 
@@ -92,6 +92,16 @@ describe('ShareThread', () => {
 
     expect(screen.getByTestId('feed-entry')).toHaveTextContent('bún chả');
     expect(screen.getByTestId('share-replies')).toHaveTextContent('Phở Fan');
+  });
+
+  it('names nobody on your own post — the composer must not address you', () => {
+    state({ data: { entry: { ...entry(), isSelf: true } } });
+
+    render(<ShareThread shareId={SHARE_ID} />);
+
+    expect(screen.getByTestId('share-replies')).toHaveTextContent(
+      'no-author-name'
+    );
   });
 
   it('states plainly that a share which is gone is gone', () => {

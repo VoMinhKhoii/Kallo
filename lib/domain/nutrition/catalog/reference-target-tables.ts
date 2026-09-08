@@ -331,6 +331,10 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
   // NASEM 2005 Macronutrients DRI — total fiber, Adequate Intake by sex and
   // age (the 14 g / 1,000 kcal basis tabulated). Neither VN MoH 2016 nor
   // WHO/FAO 2004 publish a fiber figure, so every context resolves it here.
+  // Onboarding accepts ages from 13 up (`bodyMetricsSchema` in
+  // `lib/domain/onboarding/schemas.ts`), so a profile CAN be a minor and the
+  // adult AI would over-target them; the child bands below are the rest of the
+  // published table, kept whole rather than truncated at 13.
   fiberG: {
     ageBands: [
       {
@@ -341,6 +345,45 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
         },
       },
       {
+        minAge: 19,
+        row: {
+          male: { value: 38, unit: 'g' },
+          female: { value: 25, unit: 'g' },
+        },
+      },
+      {
+        minAge: 14,
+        row: {
+          male: { value: 38, unit: 'g' },
+          female: { value: 26, unit: 'g' },
+        },
+      },
+      {
+        minAge: 9,
+        row: {
+          male: { value: 31, unit: 'g' },
+          female: { value: 26, unit: 'g' },
+        },
+      },
+      {
+        minAge: 4,
+        row: {
+          male: { value: 25, unit: 'g' },
+          female: { value: 25, unit: 'g' },
+        },
+      },
+      {
+        minAge: 1,
+        row: {
+          male: { value: 19, unit: 'g' },
+          female: { value: 19, unit: 'g' },
+        },
+      },
+      {
+        // The `minAge: 0` catch-all this file requires, and the band an
+        // age-unknown profile resolves to (`resolveAgeBand` takes the last
+        // one) — so it repeats the 19–50 adult row rather than the toddler AI.
+        // It is NOT an infant figure: NASEM publishes none below 1 y.
         minAge: 0,
         row: {
           male: { value: 38, unit: 'g' },

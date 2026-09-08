@@ -106,10 +106,27 @@ describe('FeedEntry', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
+  it('localises the kcal figure the way the grams beside it are', () => {
+    // The legend is one row of figures; a raw `1234` next to a formatted
+    // `1.234 g` would be two number systems in one line.
+    render(
+      <FeedEntry
+        entry={entryFixture({
+          meal: { ...entryFixture().meal, caloriesKcal: 1234 },
+        })}
+      />
+    );
+
+    expect(screen.getByText('1,234 kcal')).toBeInTheDocument();
+    expect(screen.queryByText('1234 kcal')).not.toBeInTheDocument();
+  });
+
   it('sends the reply glyph to the post, carrying its count', () => {
     render(<FeedEntry entry={entryFixture()} />);
 
-    const link = screen.getByRole('link', { name: 'reply' });
+    // The count is IN the label: a screen reader hears "Reply 3", not a bare
+    // "Reply" with the figure stranded in a sighted-only span.
+    const link = screen.getByRole('link', { name: 'reply 3' });
     expect(link).toHaveAttribute(
       'href',
       expect.stringContaining('/circle/share-1')
@@ -122,8 +139,27 @@ describe('FeedEntry', () => {
       <FeedEntry entry={entryFixture({ replies: [], repliesTotal: 0 })} />
     );
 
+    // Nothing to count — the label says just "Reply", and no 0 is drawn.
     expect(screen.getByRole('link', { name: 'reply' })).not.toHaveTextContent(
       /\d/
     );
+  });
+
+  it('carries the reaction count in the heart label', () => {
+    render(<FeedEntry entry={entryFixture()} />);
+
+    const heart = screen.getByRole('button', { name: 'heart 2' });
+    expect(heart).toHaveTextContent('2');
+  });
+
+  it('hides the heart count on an unreacted post, like the reply glyph', () => {
+    render(
+      <FeedEntry
+        entry={entryFixture({ reactions: { count: 0, mine: false } })}
+      />
+    );
+
+    const heart = screen.getByRole('button', { name: 'heart' });
+    expect(heart).not.toHaveTextContent(/\d/);
   });
 });

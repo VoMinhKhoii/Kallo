@@ -371,6 +371,34 @@ describe('resolveMicronutrientTargets', () => {
       });
     });
 
+    it('bands fiber below 19 too — onboarding accepts ages from 13', () => {
+      // `bodyMetricsSchema` (lib/domain/onboarding/schemas.ts) takes 13–100,
+      // so a teenager is a real profile and must not be scored against the
+      // adult AI. Values are the NASEM 2005 Macronutrients DRI table.
+      const boy12 = resolveMicronutrientTargets({
+        ...usMaleAdult,
+        age: 12,
+      });
+      const girl16 = resolveMicronutrientTargets({
+        ...usFemaleAdult,
+        age: 16,
+      });
+
+      expect(boy12.fiberG).toMatchObject({ value: 31, source: 'nasem' });
+      expect(girl16.fiberG).toMatchObject({ value: 26, source: 'nasem' });
+    });
+
+    it('keeps the age-unknown fiber default on the adult band', () => {
+      // The child bands must not steal the catch-all: `resolveAgeBand` reads
+      // the LAST band when age is null, and that band is still 19–50.
+      const unknownAge = resolveMicronutrientTargets({
+        ...usMaleAdult,
+        age: null,
+      });
+
+      expect(unknownAge.fiberG).toMatchObject({ value: 38, source: 'nasem' });
+    });
+
     it('applies B6 age split at 50 (1.3 → 1.7 M / 1.5 F)', () => {
       const young = resolveMicronutrientTargets({
         ...baseProfile,

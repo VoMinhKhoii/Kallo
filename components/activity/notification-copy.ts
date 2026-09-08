@@ -1,5 +1,9 @@
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import type { NotificationType } from '@/lib/domain/notifications/types';
+import {
+  circleGroupHref,
+  circleThreadHref,
+} from '@/lib/domain/social/circle-routes';
 
 /** The three types that collapse into "X and N others…" per object. The rest
  *  are always one distinct human action toward you (docs/NOTIFICATIONS.md —
@@ -9,6 +13,15 @@ const AGGREGATED: ReadonlySet<NotificationType> = new Set<NotificationType>([
   'share.reply',
   'share.logged',
 ]);
+
+/** The types whose object IS a share, so the row can open that post's page.
+ *  Today it holds the same three members as AGGREGATED, but for an unrelated
+ *  reason — one is a plural-copy policy, this is a fact about the payload —
+ *  so the two must not be read off each other. Mirrors mobile's
+ *  `kPushShareTypes`
+ *  (`apps/mobile-flutter/lib/features/notifications/logic/push_tap_routing.dart`). */
+const SHARE_OBJECT_TYPES: ReadonlySet<NotificationType> =
+  new Set<NotificationType>(['share.reply', 'share.reaction', 'share.logged']);
 
 /** How a person is labelled in a row: display name, else their handle. */
 export function actorLabel(item: NotificationItem, fallback: string): string {
@@ -46,14 +59,14 @@ export function messageValues(
  *  has no destination finer than the Circle surface itself. */
 export function notificationHref(item: NotificationItem): string {
   if (item.type === 'group.added' && item.targetId) {
-    return `/circle/g/${item.targetId}`;
+    return circleGroupHref(item.targetId);
   }
   if (
-    AGGREGATED.has(item.type) &&
+    SHARE_OBJECT_TYPES.has(item.type) &&
     item.objectType === 'share' &&
     item.objectId
   ) {
-    return `/circle/${item.objectId}`;
+    return circleThreadHref(item.objectId);
   }
   return '/circle';
 }

@@ -16,8 +16,10 @@ export function ShareReplies({
   replies,
 }: {
   shareId: string;
-  /** The post author, for the composer's "Reply to <name>…" placeholder. */
-  authorName: string;
+  /** The post author, for the composer's "Reply to <name>…" placeholder.
+   * Omitted on your OWN post, where naming yourself would read as talking to
+   * yourself — the composer falls back to the plain "Reply…". */
+  authorName?: string;
   replies: ShareReply[];
 }) {
   const t = useTranslations('groups.feed');

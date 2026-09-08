@@ -15,7 +15,9 @@ import { Link } from '@/i18n/navigation';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
+import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import { cn } from '@/lib/core/ui/cn';
+import { circleThreadHref } from '@/lib/domain/social/circle-routes';
 
 /** A portion factor as the glyph people read (½, ⅓, ¼), else a percentage. */
 function fractionLabel(factor: number): string {
@@ -49,10 +51,19 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
+  // Same formatter the grams beside it use (MacroScale), so one legend row
+  // never mixes a raw `1234` with a localised `1.234`.
   const kcalLabel =
     meal.caloriesKcal == null
       ? '— kcal'
-      : `${Math.round(meal.caloriesKcal)} kcal`;
+      : `${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
+  // A count only ever reaches the eye when there is one; the label carries it
+  // for the reader who cannot see the figure beside the glyph.
+  const reactionCount = entry.reactions.count;
+  const heartLabel =
+    reactionCount > 0 ? `${t('heart')} ${reactionCount}` : t('heart');
+  const replyLabel =
+    entry.repliesTotal > 0 ? `${t('reply')} ${entry.repliesTotal}` : t('reply');
 
   return (
     <div className="flex gap-3">
@@ -65,12 +76,12 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
           {/* A backfilled meal (logged for a past date) is shared "now", so its
               elapsed time would misleadingly read "just now" — hide it. */}
           {!meal.isBackfilled && (
-            <span className="font-sans-display text-kallo-text-muted text-[15px]">
+            <span className="font-sans-display text-[15px] text-kallo-text-muted">
               {formatElapsed(meal.sharedAt, locale)}
             </span>
           )}
           {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-kallo-text-muted text-[10px]">
+            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-[10px] text-kallo-text-muted">
               {t('portion', {
                 portion: fractionLabel(meal.portionFactor),
               })}
@@ -102,10 +113,10 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             />
           </div>
         )}
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-kallo-text-muted text-[11.5px] tabular-nums">
+        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-kallo-text-muted tabular-nums">
           <button
             type="button"
-            aria-label={t('heart')}
+            aria-label={heartLabel}
             aria-pressed={entry.reactions.mine}
             disabled={toggleReaction.isPending}
             onClick={() => toggleReaction.mutate(meal.shareId)}
@@ -127,14 +138,18 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 entry.reactions.mine && 'fill-kallo-danger text-kallo-danger'
               )}
             />
-            <span>{entry.reactions.count}</span>
+            {/* Zero reads as a scoreboard on a post nobody has answered —
+                Threads shows the glyph alone until there is a figure. The
+                reply glyph beside it already hid its own 0; the heart was the
+                one holdout. */}
+            {reactionCount > 0 && <span>{reactionCount}</span>}
           </button>
           {/* The thread lives on the post's own page, not under the card: a
               feed row that carries its replies stops being one glanceable post.
               A count on the glyph is what says there is anything to open. */}
           <Link
-            href={`/circle/${meal.shareId}`}
-            aria-label={t('reply')}
+            href={circleThreadHref(meal.shareId)}
+            aria-label={replyLabel}
             className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text"
           >
             <MessageCircle className="size-[15px]" />

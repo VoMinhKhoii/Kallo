@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import type { PublicIdentity } from '@/lib/domain/social/identity/public-identity';
-import { messageValues } from '../notification-copy';
+import { messageValues, notificationHref } from '../notification-copy';
 import { NotificationRow } from '../notification-row';
 
 const { markReadMock } = vi.hoisted(() => ({ markReadMock: vi.fn() }));
@@ -138,6 +138,24 @@ describe('NotificationRow', () => {
       />
     );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/circle/g/g7');
+  });
+
+  it('routes on the share-object set, not on the plural-copy set', () => {
+    // The two sets happen to hold the same three types today, but they answer
+    // different questions ("does this row aggregate?" vs "is its object a
+    // share?"). A type outside the share set never opens a post page, even
+    // when a share id is sitting on the row.
+    expect(notificationHref(item({ type: 'share.invite_accepted' }))).toBe(
+      '/circle'
+    );
+    expect(notificationHref(item({ type: 'friend.joined' }))).toBe('/circle');
+    // And a share type with no share object falls back to the Circle too.
+    expect(
+      notificationHref(
+        item({ type: 'share.reply', objectType: null, objectId: null })
+      )
+    ).toBe('/circle');
+    expect(notificationHref(item({ type: 'share.reply' }))).toBe('/circle/s1');
   });
 
   it('marks the row read on tap, once, and never for an already-read row', async () => {

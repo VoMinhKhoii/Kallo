@@ -3,11 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
 // Local next-intl double: the placeholder's whole point is the interpolated
-// author name, which the global key-echoing mock would hide.
+// author name — and its absence — which the global key-echoing mock would hide.
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string, values?: { name?: string }) =>
-    key === 'replyTo' ? `Reply to ${values?.name}…` : key,
+  useTranslations: () => (key: string, values?: { name?: string }) => {
+    if (key === 'replyTo') return `Reply to ${values?.name}…`;
+    if (key === 'replyPlaceholder') return 'Reply…';
+    return key;
+  },
 }));
 vi.mock('@/components/shared/profile-avatar', () => ({
   ProfileAvatar: () => null,
@@ -19,7 +22,7 @@ vi.mock('@/hooks/profile/use-profile', () => ({
   useMyProfile: () => ({ data: null }),
 }));
 
-import { ShareReplies } from '@/components/groups/share-replies';
+import { ShareReplies } from '@/components/groups/thread/share-replies';
 
 function reply(overrides: Partial<ShareReply> = {}): ShareReply {
   return {
@@ -70,5 +73,15 @@ describe('ShareReplies', () => {
     // first, and the interpolated name says whose post you are answering.
     expect(screen.getByPlaceholderText('Reply to Minh…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'reply' })).toBeNull();
+  });
+
+  it('drops the name on your own post — you are not replying to yourself', () => {
+    // No author name is the caller's way of saying "this post is yours"; the
+    // placeholder falls back to the plain "Reply…" rather than addressing the
+    // reader by their own handle.
+    render(<ShareReplies replies={[]} shareId="share-id" />);
+
+    expect(screen.getByPlaceholderText('Reply…')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Reply to/)).toBeNull();
   });
 });

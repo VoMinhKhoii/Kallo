@@ -19,7 +19,9 @@ export function ReplyComposer({
   authorName,
 }: {
   shareId: string;
-  authorName: string;
+  /** The post author. Absent on your own post: "Reply to <your handle>…"
+   * addresses the reader to themselves, so the placeholder drops the name. */
+  authorName?: string;
 }) {
   const t = useTranslations('groups.feed');
   const { data: profile } = useMyProfile();
@@ -51,7 +53,11 @@ export function ReplyComposer({
       <input
         value={body}
         onChange={(event) => setBody(event.target.value)}
-        placeholder={t('replyTo', { name: authorName })}
+        placeholder={
+          authorName
+            ? t('replyTo', { name: authorName })
+            : t('replyPlaceholder')
+        }
         className="min-w-0 flex-1 rounded-full border border-kallo-border bg-kallo-surface px-3.5 py-2.5 font-sans-display text-[15px] text-kallo-text placeholder:text-kallo-text-muted focus:border-kallo-text focus:outline-none"
       />
       {body.trim().length > 0 && (
