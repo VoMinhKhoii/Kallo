@@ -31,7 +31,7 @@
     "actionError": "That didn't work — try again."
   },
   "thread": {
-    "title": "Thread",
+    "title": "Replies",
     "back": "Back to Circle",
     "gone": "This post isn't here any more",
     "goneBody": "It may have been deleted, or shared with a group you're not in."

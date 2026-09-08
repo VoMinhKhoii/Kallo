@@ -1,6 +1,6 @@
 // The per-post thread page's read. SECURITY: the Drizzle db handle bypasses
-// RLS — the actor predicate lives inside sharedMealVisibleToActor (see
-// ./types.ts), which carries the same admission rules the feed queries do.
+// RLS — admission lives inside sharedMealVisibleToActor, which delegates to
+// canViewShare, the one gate every cross-user share read goes through.
 
 import { shareThreadSchema } from '@/lib/core/validation/social';
 import {
@@ -31,9 +31,12 @@ export async function getSharedMealEntry(
   shareId: string,
   db: Db = defaultDb
 ): Promise<SharedMealEntry | null> {
-  const parsed = shareThreadSchema.parse({ shareId });
+  // A malformed id is a share that does not exist; the page owes the reader the
+  // gone state, not a retry.
+  const parsed = shareThreadSchema.safeParse({ shareId });
+  if (!parsed.success) return null;
 
-  const row = await sharedMealVisibleToActor(actorId, parsed.shareId, db);
+  const row = await sharedMealVisibleToActor(actorId, parsed.data.shareId, db);
   if (!row) return null;
 
   const [reactions, replies] = await Promise.all([

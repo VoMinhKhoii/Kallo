@@ -67,19 +67,17 @@ describe('GET /api/v1/groups/shares/[shareId]', () => {
     expect(getSharedMealEntry).not.toHaveBeenCalled();
   });
 
-  it('turns the action validation error into a structured 400', async () => {
-    const { z } = await import('zod');
-    getSharedMealEntry.mockRejectedValue(
-      new z.ZodError([
-        { code: 'custom', message: 'Phải là UUID hợp lệ.', path: ['shareId'] },
-      ])
-    );
+  it('answers 404 for a malformed share id, not a retryable 400', async () => {
+    // A share id that cannot exist is a share that does not exist. The action
+    // answers null for it, so the route gives the reader the same gone state —
+    // a 400 would put a "try again" in front of a link that will never work.
+    getSharedMealEntry.mockResolvedValue(null);
 
     const response = await call('not-a-uuid');
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     await expect(response.json()).resolves.toMatchObject({
-      error: { code: 'VALIDATION_FAILED', status: 400 },
+      error: { code: 'NOT_FOUND', status: 404, retryable: false },
     });
   });
 });
