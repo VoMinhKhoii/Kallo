@@ -34,14 +34,57 @@ void main() {
       );
     });
 
+    test('a share event opens the thread for that share', () {
+      for (final type in const [
+        'share.reaction',
+        'share.reply',
+        'share.logged',
+      ]) {
+        expect(
+          pushDestinationFor({
+            'type': type,
+            'objectType': 'share',
+            'objectId': 's1',
+          }),
+          const PushDestination(path: '/circle/s1'),
+          reason: type,
+        );
+      }
+    });
+
+    test('the share id is URL-encoded into the thread path', () {
+      expect(
+        pushDestinationFor({
+          'type': 'share.reply',
+          'objectType': 'share',
+          'objectId': 'a b/c',
+        }),
+        const PushDestination(path: '/circle/a%20b%2Fc'),
+      );
+    });
+
+    test('a share event with no usable share id still lands on circle', () {
+      expect(
+        pushDestinationFor({'type': 'share.reply', 'objectType': 'share'}),
+        const PushDestination(path: '/circle'),
+      );
+      expect(
+        pushDestinationFor({
+          'type': 'share.reply',
+          'objectType': 'meal',
+          'objectId': 'm-1',
+        }),
+        const PushDestination(path: '/circle'),
+      );
+    });
+
     test('every other catalog type lands on circle', () {
+      // Only the three thread-bearing share types carry an object to open;
+      // these name nothing, so the feed itself is the destination.
       for (final type in const [
         'friend.joined',
         'share.invite',
         'share.invite_accepted',
-        'share.reaction',
-        'share.reply',
-        'share.logged',
       ]) {
         expect(
           pushDestinationFor({'type': type}),
@@ -86,6 +129,10 @@ void main() {
           builder: (_, __) => const SizedBox.shrink(),
         ),
         GoRoute(path: '/circle', builder: (_, __) => const SizedBox.shrink()),
+        GoRoute(
+          path: '/circle/:shareId',
+          builder: (_, __) => const SizedBox.shrink(),
+        ),
       ],
     );
 
@@ -127,6 +174,26 @@ void main() {
 
       routePushTap(container, {'type': 'share.reply'});
       expect(container.read(circleSelectedViewProvider), isNull);
+    });
+
+    test('a share tap opens the thread page', () {
+      final router = testRouter();
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+
+      routePushTap(container, {'type': 'group.added', 'targetId': 'g-1'});
+      expect(container.read(circleSelectedViewProvider), 'g-1');
+
+      routePushTap(container, {
+        'type': 'share.reply',
+        'objectType': 'share',
+        'objectId': 's1',
+      });
+
+      // The thread reads its post out of the combined feed, so the earlier
+      // group scope has to be cleared along with the navigation.
+      expect(container.read(circleSelectedViewProvider), isNull);
+      expect(locationOf(router), '/circle/s1');
     });
 
     test('an unroutable payload is a no-op', () {
