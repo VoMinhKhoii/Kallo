@@ -1,9 +1,13 @@
 /// Reading ONE Circle post out of a feed the app already has.
 ///
-/// There is no `GET /shares/:id` — the server ships a share's replies only as
-/// part of a feed page (`lib/domain/social/shares/replies.ts`, the newest 12
-/// per share plus a total). So the thread page does not fetch: it watches the
-/// feed it was opened from and picks its entry out by share id. The upside is
+/// The thread page does not fetch: it watches the feed it was opened from and
+/// picks its entry out by share id ([threadEntryProvider]). That is where a
+/// share's replies arrive anyway (`lib/domain/social/shares/replies.ts`, the
+/// newest 12 per share plus a total). A single-share endpoint DOES exist on
+/// the web since 2026-09-08 (`app/api/v1/groups/shares/[shareId]/route.ts`);
+/// adopting it here as a FALLBACK — for a post outside the feed pages the app
+/// has loaded, or a group-only post opened straight from a notification — is a
+/// follow-up. The upside is
 /// that `appendReply` / `applyReaction` optimistic writes
 /// (`feed_mutations.dart`) reach the page on the same frame they reach the
 /// card behind it, with no second cache to keep honest.

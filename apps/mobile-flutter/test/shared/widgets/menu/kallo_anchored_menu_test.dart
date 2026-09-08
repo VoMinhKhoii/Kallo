@@ -9,9 +9,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../l10n_test_loader.dart';
 
-/// The app's one popup menu, tested at the geometry it promises: it hangs off
-/// a rect the CALLER measured, in the root overlay's coordinates, and it never
-/// runs off the bottom of the screen.
+/// The route half of the app's one popup menu: it opens over the page it was
+/// called from, resolves with what was picked (or null), and hands the layer
+/// the anchor and the edge the caller asked for. The geometry that layer then
+/// decides — the flip and the two clamps — is in
+/// `anchored_menu_layer_test.dart`.
 const _actions = [
   KalloMenuAction(
     label: 'Copy',
@@ -31,7 +33,7 @@ Widget _app({
   required Rect anchor,
   required List<String?> picked,
   String? header,
-  Alignment align = Alignment.topRight,
+  KalloMenuEdge edge = KalloMenuEdge.trailing,
 }) => EasyLocalization(
   supportedLocales: const [Locale('en')],
   path: 'assets/l10n',
@@ -52,7 +54,7 @@ Widget _app({
                   anchor: anchor,
                   actions: _actions,
                   header: header,
-                  align: align,
+                  edge: edge,
                 ),
               ),
               child: const Text('open'),
@@ -81,7 +83,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('hangs under the anchor, right edges flush', (tester) async {
+  testWidgets('opens at the rect the caller measured', (tester) async {
     const anchor = Rect.fromLTWH(400, 100, 60, 40);
     await tester.pumpWidget(_app(anchor: anchor, picked: <String?>[]));
     await tester.pumpAndSettle();
@@ -91,37 +93,12 @@ void main() {
     final card = tester.getRect(find.byType(KalloMenuCard));
     expect(card.top, closeTo(anchor.bottom + KalloSpacing.sp2, 0.5));
     expect(card.right, closeTo(anchor.right, 0.5));
-    expect(card.width, closeTo(kKalloMenuWidth, 0.5));
-    // Two 44pt rows and the hairline between them — the height the menu
-    // computed BEFORE layout in order to decide it had room below.
-    expect(
-      card.height,
-      closeTo(kalloMenuCardHeight(rows: 2, header: false), 0.5),
-    );
   });
 
-  testWidgets('flips above the anchor when it would run off the bottom', (
-    tester,
-  ) async {
-    // 600 tall by default: a card hung under this one would end at ~677.
-    const anchor = Rect.fromLTWH(400, 540, 60, 40);
-    await tester.pumpWidget(_app(anchor: anchor, picked: <String?>[]));
-    await tester.pumpAndSettle();
-
-    await _open(tester);
-
-    final card = tester.getRect(find.byType(KalloMenuCard));
-    expect(card.bottom, closeTo(anchor.top - KalloSpacing.sp2, 0.5));
-    // Same edge, same gap — only the direction changed.
-    expect(card.right, closeTo(anchor.right, 0.5));
-  });
-
-  testWidgets('the leading alignment shares the anchor left edge', (
-    tester,
-  ) async {
+  testWidgets('the leading edge reaches the layer', (tester) async {
     const anchor = Rect.fromLTWH(100, 100, 60, 40);
     await tester.pumpWidget(
-      _app(anchor: anchor, picked: <String?>[], align: Alignment.topLeft),
+      _app(anchor: anchor, picked: <String?>[], edge: KalloMenuEdge.leading),
     );
     await tester.pumpAndSettle();
 

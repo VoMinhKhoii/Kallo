@@ -6,9 +6,12 @@
 /// `router.dart`), so it arrives with the iOS slide and swipes back onto the
 /// feed's untouched scroll position.
 ///
-/// It does not fetch. There is no single-share endpoint, so the page reads its
-/// post out of the feed it was opened from — see `data/thread_providers.dart`
-/// for why that is the better half of the trade.
+/// It does not fetch: the page reads its post out of the feed cache it was
+/// opened from (`threadEntryProvider`). The web has had a single-share
+/// endpoint since 2026-09-08 (`app/api/v1/groups/shares/[shareId]/route.ts`);
+/// wiring it up as a fallback for a post outside the loaded feed pages, or a
+/// group-only post opened from a notification, is a follow-up — see
+/// `data/thread_providers.dart`.
 library;
 
 import 'package:easy_localization/easy_localization.dart';

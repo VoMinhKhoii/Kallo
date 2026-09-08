@@ -68,7 +68,7 @@ class CircleAddMenu extends StatelessWidget {
       context,
       anchor: anchor,
       // Right edges flush with the button, which sits in the trailing slot.
-      align: Alignment.topRight,
+      edge: KalloMenuEdge.trailing,
       actions: [
         KalloMenuAction(
           label: tr('groups.page.addFriend'),
