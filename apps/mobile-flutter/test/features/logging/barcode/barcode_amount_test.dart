@@ -154,6 +154,36 @@ void main() {
     });
   });
 
+  group('barcodePickLabel', () {
+    test('leads with the brand, so the sentence names the package', () {
+      expect(barcodePickLabel(fullProduct, 75), 'Acecook Hảo Hảo (75g)');
+    });
+
+    test('falls back to the bare name when there is no brand', () {
+      expect(barcodePickLabel(bareProduct, 100), 'Mystery snack (100g)');
+    });
+
+    // Two packages, one name: without the brand both picks read as the same
+    // words, so the sentence cannot say which was scanned — and neither can
+    // `reconcileMentions`, which locates a pick BY those words.
+    test('tells two same-named products from different brands apart', () {
+      const th = BarcodeProduct(
+        barcode: '8935001',
+        name: 'Sữa tươi',
+        brand: 'TH true milk',
+      );
+      const vinamilk = BarcodeProduct(
+        barcode: '8934673',
+        name: 'Sữa tươi',
+        brand: 'Vinamilk',
+      );
+      expect(
+        barcodePickLabel(th, 180),
+        isNot(barcodePickLabel(vinamilk, 180)),
+      );
+    });
+  });
+
   group('BarcodeProduct.fromJson', () {
     test('tolerates missing and integer-typed fields', () {
       final product = BarcodeProduct.fromJson(const {

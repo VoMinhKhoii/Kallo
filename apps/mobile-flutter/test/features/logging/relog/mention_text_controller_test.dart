@@ -94,6 +94,78 @@ void main() {
       );
     });
 
+    // The caret was trusted verbatim, so a caret parked mid-label spliced the
+    // product INTO it: `/Phở bò` at offset 3 became `/Ph Sữa TH (180g) ở bò`,
+    // a run `reconcileMentions` can no longer find — the relog reference was
+    // destroyed by adding an unrelated one.
+    test('a caret inside a committed label splices AFTER it, keeping both', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'stage-1');
+      c.value = c.value.copyWith(
+        selection: const TextSelection.collapsed(offset: 3),
+      );
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-2'), isTrue);
+
+      expect(c.text, '/Phở bò Sữa TH (180g) ');
+      expect(c.entries.map((e) => e.label), ['/Phở bò', 'Sữa TH (180g)']);
+      expect(c.entries.map((e) => e.ref), [
+        const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
+        milk,
+      ]);
+    });
+
+    // Same hazard with prose in front of the pick, and there the separator
+    // space made it worse: the newcomer started one PAST the cut, so the
+    // ordered walk claimed nothing at the label's old offset, dropped the
+    // relog reference, and left `/Ph Sữa TH (180g) ở bò` in the sentence.
+    test('… and keeps both when the label does not start the sentence', () {
+      _type(c, 'cafe /pho');
+      _pick(c, _dish('Phở bò'), 'stage-1');
+      c.value = c.value.copyWith(
+        selection: const TextSelection.collapsed(offset: 7),
+      );
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-2'), isTrue);
+
+      expect(c.text, 'cafe /Phở bò Sữa TH (180g) ');
+      expect(c.entries.map((e) => e.label), ['/Phở bò', 'Sữa TH (180g)']);
+    });
+
+    test('replaces a selection RANGE, as typing a character would', () {
+      _type(c, '2 shot cafe + sua');
+      c.value = c.value.copyWith(
+        selection: const TextSelection(baseOffset: 14, extentOffset: 17),
+      );
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-1'), isTrue);
+
+      expect(c.text, '2 shot cafe + Sữa TH (180g) ');
+      expect(c.entries.single.ref, milk);
+    });
+
+    test('gets no leading space when it starts a fresh line', () {
+      _type(c, 'cafe\n');
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-1'), isTrue);
+
+      expect(c.text, 'cafe\nSữa TH (180g) ');
+      expect(c.entries.single.ref, milk);
+    });
+
+    // The mention is located by its label, and the user had already typed that
+    // exact string as prose — so the reference bound to the FIRST occurrence,
+    // tinting words that carry no reference and leaving the real pick untinted
+    // (and, on the next keystroke, unfindable).
+    test('binds where it was spliced, not to identical prose typed earlier', () {
+      _type(c, 'Sữa TH (180g) roi ');
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-1'), isTrue);
+
+      expect(c.text, 'Sữa TH (180g) roi Sữa TH (180g) ');
+      expect(c.mentions.single.start, 18);
+    });
+
     test('stands beside a relog pick in one sentence', () {
       _type(c, '/');
       _pick(c, _dish('Phở bò'), 'stage-1');

@@ -191,7 +191,7 @@ class FeedAnalysisRun {
       text: freeText,
       refs: refs,
       pickNames: pickNames,
-      label: unmarkPicks(composer.text, composer.entries),
+      label: capDisplayText(unmarkPicks(composer.text, composer.entries)),
     );
   }
 

@@ -59,39 +59,31 @@ class MentionTextEditingController extends TextEditingController {
     notifyListeners();
   }
 
-  /// Write [next] with the caret at its end — every mutation that rewrites the
+  /// Write [next] with the caret at [caret] — every mutation that rewrites the
   /// whole value goes through here.
-  void _setValueAtEnd(String next) {
+  void _write(String next, int caret) {
     value = TextEditingValue(
       text: next,
-      selection: TextSelection.collapsed(offset: next.length),
+      selection: TextSelection.collapsed(offset: caret),
     );
   }
 
   /// Insert a pick at [token], staging its reference and writing the label into
   /// the text. Returns false when the staged cap is already reached, so the
   /// caller can say so rather than silently dropping the tap.
-  ///
-  /// Every offset is re-derived from the NEW text rather than trusting the
-  /// insertion point alone — mentions after it have all shifted right.
   bool addMention(RelogCandidate candidate, SlashToken token, String stageId) {
     if (isFull) return false;
     // The pick KEEPS its slash — it reads as `/Phở bò`, the same shape you
-    // typed to summon it. The slash has to live INSIDE the mention's label,
-    // not beside it: the label is what `reconcileMentions` matches on, so a
-    // slash outside the run would fall out of the tint and survive
-    // `stripMentions` as a stray character in what the AI sees.
+    // typed to summon it, and the slash lives INSIDE the label: that is what
+    // `reconcileMentions` matches on, so a slash outside the run would fall
+    // out of the tint and reach the AI as a stray character.
     final display = '$mentionPrefix${candidate.name}';
-    final inserted = insertMention(text, token, display);
-    _commit(
-      inserted,
-      RelogMention(
-        stageId: stageId,
-        ref: candidate.ref,
-        label: display,
-        start: inserted.start,
-      ),
+    final entry = RelogStagedEntry(
+      stageId: stageId,
+      ref: candidate.ref,
+      label: display,
     );
+    _commit(insertMention(text, token, display), entry, at: token.start);
     return true;
   }
 
@@ -103,32 +95,40 @@ class MentionTextEditingController extends TextEditingController {
   bool insertPick(String label, ComposerPickRef ref, String stageId) {
     if (isFull) return false;
     final selection = value.selection;
-    final caret = selection.isValid && selection.isCollapsed
-        ? selection.baseOffset
-        : text.length;
-    final inserted = insertMentionAt(text, caret, label);
+    // [resolvePickSplice] owns both hazards a raw caret carries: one resting
+    // inside a committed label, and a selection RANGE the pick replaces.
+    final splice = resolvePickSplice(
+      text,
+      _mentions,
+      start: selection.isValid ? selection.start : text.length,
+      end: selection.isValid ? selection.end : text.length,
+    );
+    final entry = RelogStagedEntry(stageId: stageId, ref: ref, label: label);
     _commit(
-      inserted,
-      RelogMention(
-        stageId: stageId,
-        ref: ref,
-        label: label,
-        start: inserted.start,
-      ),
+      insertMentionAt(splice.text, splice.at, label),
+      entry,
+      at: splice.at,
     );
     return true;
   }
 
-  /// Re-locate the mentions around a freshly spliced one and write the value.
-  /// The newcomer goes FIRST: `reconcileMentions` sorts by offset and it ties
-  /// with anything that started where the splice landed — the tie must break
-  /// its way, because the splice is what pushed the other one right.
-  void _commit(({String value, int caret, int start}) inserted, RelogMention m) {
-    _mentions = reconcileMentions(inserted.value, [m, ..._mentions]);
-    value = TextEditingValue(
-      text: inserted.value,
-      selection: TextSelection.collapsed(offset: inserted.caret),
-    );
+  /// Stage [entry] where the splice landed and write the new value.
+  ///
+  /// [at] is the splice index: every mention from there on arrives already
+  /// carrying its new offset, so the reconcile sorts on real positions and
+  /// nothing depends on the newcomer being listed first — the assumption a
+  /// caret anywhere but the end of the sentence quietly broke.
+  void _commit(
+    ({String value, int caret, int start}) inserted,
+    RelogStagedEntry entry, {
+    required int at,
+  }) {
+    final delta = inserted.value.length - text.length;
+    _mentions = reconcileMentions(inserted.value, [
+      RelogMention.at(entry, inserted.start),
+      ...shiftMentions(_mentions, at: at, delta: delta),
+    ]);
+    _write(inserted.value, inserted.caret);
     notifyListeners();
   }
 
@@ -148,7 +148,7 @@ class MentionTextEditingController extends TextEditingController {
       next,
       _mentions.where((m) => !stageIds.contains(m.stageId)).toList(),
     );
-    _setValueAtEnd(next);
+    _write(next, next.length);
     notifyListeners();
   }
 
@@ -160,14 +160,14 @@ class MentionTextEditingController extends TextEditingController {
   /// Put a snapshot back. Mentions are RE-LOCATED against the restored text
   /// rather than trusted, so a stale offset can never resurrect a reference.
   void restore(MentionSnapshot snap) {
-    _setValueAtEnd(snap.text);
+    _write(snap.text, snap.text.length);
     _mentions = reconcileMentions(snap.text, snap.mentions);
     notifyListeners();
   }
 
   /// Replace the whole value, then re-locate the mentions in it.
   void setTextAndSync(String next) {
-    _setValueAtEnd(next);
+    _write(next, next.length);
     _mentions = reconcileMentions(next, _mentions);
     notifyListeners();
   }

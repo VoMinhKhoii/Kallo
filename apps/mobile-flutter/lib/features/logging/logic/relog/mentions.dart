@@ -91,13 +91,47 @@ List<RelogMention> reconcileMentions(
   var cursor = 0;
   for (final (_, mention) in indexed) {
     if (mention.label.isEmpty) continue;
-    final index = value.indexOf(mention.label, cursor);
+    // A mention whose label still sits EXACTLY where it was left claims that
+    // spot, ahead of an earlier copy of the same string. This is what binds a
+    // freshly spliced pick to the offset it was spliced AT: typing the product
+    // name as prose first — "Sữa TH (180g) roi " — and then scanning that same
+    // product must tint the run that was just inserted, not the words the user
+    // typed a moment ago, which carry no reference and would take the tint
+    // (and, on the next keystroke, the reference) with them.
+    final index = _sitsAt(value, mention) && mention.start >= cursor
+        ? mention.start
+        : value.indexOf(mention.label, cursor);
     if (index == -1) continue;
     surviving.add(mention.movedTo(index));
     cursor = index + mention.label.length;
   }
   return surviving;
 }
+
+/// Whether [mention]'s label is still exactly at the offset it claims. Guarded
+/// on length because a stale offset can point past the end of the text, which
+/// `startsWith` treats as an error rather than a miss.
+bool _sitsAt(String value, RelogMention mention) =>
+    mention.start >= 0 &&
+    mention.start <= value.length &&
+    value.startsWith(mention.label, mention.start);
+
+/// Move every mention at or after [at] by [delta] — the arithmetic of a splice.
+///
+/// Applied BEFORE [reconcileMentions] so each mention arrives carrying its
+/// post-splice offset. That is what makes the reconcile order-proof: the walk
+/// sorts on real positions instead of depending on the caller listing the
+/// newcomer first and the tie breaking its way. A caret sitting anywhere but
+/// the end of the sentence produced exactly that dependency, and it broke as
+/// soon as a separator space pushed the newcomer one past the splice index.
+List<RelogMention> shiftMentions(
+  List<RelogMention> mentions, {
+  required int at,
+  required int delta,
+}) => [
+  for (final mention in mentions)
+    mention.start >= at ? mention.movedTo(mention.start + delta) : mention,
+];
 
 /// Replace the `/`-token with the picked label.
 ///
@@ -120,11 +154,45 @@ List<RelogMention> reconcileMentions(
   );
 }
 
+final RegExp _endsBlank = RegExp(r'\s$');
+final RegExp _startsBlank = RegExp(r'^\s');
+
+/// Where a spliced pick actually lands, and the text it lands in.
+///
+/// Two things sit between "the user's selection" and "an index to splice at":
+///
+///  - A caret resting INSIDE a committed label would cut that label in half —
+///    `/Phở bò` with the caret at 3 became `/Ph <product> ở bò`, which no
+///    longer matches the label [reconcileMentions] looks for, so the relog
+///    reference was destroyed by inserting an unrelated one. The caret moves
+///    to the END of the mention it sits in: a pick never splits a pick.
+///  - A selection RANGE has no insertion point at all. The pick REPLACES it,
+///    the same thing typing a character would do, so the range is removed here
+///    and the splice happens where it began.
+({String text, int at}) resolvePickSplice(
+  String text,
+  List<RelogMention> mentions, {
+  required int start,
+  required int end,
+}) {
+  final from = start.clamp(0, text.length);
+  final to = end.clamp(from, text.length);
+  if (to > from) return (text: text.replaceRange(from, to, ''), at: from);
+  for (final mention in mentions) {
+    if (from >= mention.start && from < mention.end) {
+      return (text: text, at: mention.end);
+    }
+  }
+  return (text: text, at: from);
+}
+
 /// Splice [label] in at [caret], consuming nothing — how a scanned product
 /// enters a sentence, since nothing was typed to summon it.
 ///
 /// A space is added on each side only where one is missing, so the result reads
 /// as prose whether the caret sat mid-sentence, after a space, or at the end.
+/// ANY whitespace counts as that separator, newlines included: a pick spliced
+/// at the start of a fresh line must not be indented by a space of our own.
 ({String value, int caret, int start}) insertMentionAt(
   String value,
   int caret,
@@ -133,8 +201,8 @@ List<RelogMention> reconcileMentions(
   final at = caret.clamp(0, value.length);
   final before = value.substring(0, at);
   final after = value.substring(at);
-  final lead = before.isEmpty || before.endsWith(' ') ? '' : ' ';
-  final trail = after.startsWith(' ') ? '' : ' ';
+  final lead = before.isEmpty || _endsBlank.hasMatch(before) ? '' : ' ';
+  final trail = _startsBlank.hasMatch(after) ? '' : ' ';
   final start = before.length + lead.length;
   return (
     value: '$before$lead$label$trail$after',

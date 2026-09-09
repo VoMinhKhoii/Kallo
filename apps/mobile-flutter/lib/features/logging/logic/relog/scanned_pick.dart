@@ -17,18 +17,21 @@ import '../../widgets/relog/mention_text_controller.dart';
 
 const _uuid = Uuid();
 
-/// Splice [picked] in at the caret, or say why not.
+/// Splice [picked] in at the caret, or say why not. True when it landed — the
+/// caller follows a staged pick by handing the keyboard back, and must not do
+/// that over a toast explaining the pick was refused.
 ///
 /// The staged cap is shared with the `/` picks — they ride the same submit and
 /// the same server-side limit — so a refusal has to be told, not swallowed.
-void stageScannedPick(
+bool stageScannedPick(
   BuildContext context,
   MentionTextEditingController composer,
   ScanPicked picked,
 ) {
-  if (composer.insertPick(picked.label, picked.ref, _uuid.v4())) return;
+  if (composer.insertPick(picked.label, picked.ref, _uuid.v4())) return true;
   showTopToast(
     context,
     'logging.relog.stagedFull'.tr(namedArgs: {'max': '$kRelogMaxStaged'}),
   );
+  return false;
 }

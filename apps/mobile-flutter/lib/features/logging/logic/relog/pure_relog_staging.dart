@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../models/logging/relog.dart';
 import '../../../../services/billing/feature_lock.dart';
+import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/relog_providers.dart';
 import '../../widgets/relog/mention_text_controller.dart';
@@ -99,9 +100,21 @@ Future<void> stagePureRelog(
     // error toast would misreport. Server enforcement stays the only gate —
     // this is purely how the refusal is presented.
     if (context.mounted && !handledFeatureLock(context, error)) {
-      showTopToast(context, 'errors.internal'.tr());
+      showTopToast(context, _stageErrorKey(error).tr());
     }
   } finally {
     if (context.mounted) onStagingChange(false);
   }
 }
+
+/// The copy a failed stage deserves.
+///
+/// A scanned pick is a barcode the server re-resolves out of its cache, and a
+/// purged row comes back from the stage endpoint as `BARCODE_NOT_CACHED` (404)
+/// — the same envelope the barcode routes return. That is not an internal
+/// error and "something went wrong" leaves the user with nowhere to go, while
+/// "scan it again" is exactly the repair. Everything else stays generic.
+String _stageErrorKey(Object error) =>
+    error is ApiError && error.code == 'BARCODE_NOT_CACHED'
+        ? 'logging.barcode.error.notCached'
+        : 'errors.internal';

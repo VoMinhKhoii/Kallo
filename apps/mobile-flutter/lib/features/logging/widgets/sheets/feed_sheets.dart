@@ -20,7 +20,7 @@ class FeedSheets {
     required this.date,
     required this.mode,
     required this.onPersistentMode,
-    required this.onFallbackToText,
+    required this.focusComposer,
     required this.composer,
     required this.onLogged,
   });
@@ -35,8 +35,11 @@ class FeedSheets {
   /// Normal / Cheat — the chooser's two persistent outcomes.
   final ValueChanged<MealLogMode> onPersistentMode;
 
-  /// Barcode gave up (product not found): hand the user the keyboard instead.
-  final VoidCallback onFallbackToText;
+  /// Put the caret back in the composer. Two callers: a scan that gave up on
+  /// the product hands the user the keyboard instead, and a scan that DID come
+  /// back as a pick hands it back too — the sentence is half-typed and the
+  /// sheet took the keyboard away to open the camera.
+  final VoidCallback focusComposer;
 
   /// Where a scanned product lands when the COMPOSER asked for the scan.
   final MentionTextEditingController composer;
@@ -62,25 +65,39 @@ class FeedSheets {
       context,
       userId: userId,
       date: date,
-      onFallbackToText: onFallbackToText,
+      onFallbackToText: focusComposer,
     );
     if (outcome is ScanSaved) onLogged();
   }
 
-  /// The composer's scan icon: the product joins the sentence being typed.
+  /// The composer's scan icon. Normal mode splices the product into the
+  /// sentence as a pick; every other mode logs it on the spot.
+  ///
+  /// A pick cannot ride a cheat submit: `planComposerSubmit` only carries refs
+  /// on the normal path, so in cheat mode the reference would be dropped while
+  /// its label survived as prose — the user would watch the scanned product
+  /// turn back into words and be estimated. One shot, saved on the spot, is
+  /// what this icon did in every mode before picks existed; cheat keeps it.
+  Future<void> openBarcodeFromComposer() =>
+      mode == MealLogMode.normal ? openBarcodePick() : openBarcode();
+
+  /// The pick branch itself: the product joins the sentence being typed.
   Future<void> openBarcodePick() async {
     final outcome = await openScanPickSheet(
       context,
       userId: userId,
       date: date,
-      onFallbackToText: onFallbackToText,
+      onFallbackToText: focusComposer,
     );
     // The nutrition-LABEL branch inside the same sheet still writes a meal —
     // there is no reference to hand back for a photographed table — so that
     // one lands in the feed and wants carrying into view.
     if (outcome is ScanSaved) return onLogged();
     if (outcome is ScanPicked && context.mounted) {
-      stageScannedPick(context, composer, outcome);
+      // The keyboard left with the camera. A pick lands mid-sentence, so the
+      // caret has to come back with it or the user taps the field to carry on
+      // typing the half-written meal they were already writing.
+      if (stageScannedPick(context, composer, outcome)) focusComposer();
     }
   }
 }

@@ -39,3 +39,23 @@ String unmarkPicks(String text, List<RelogStagedEntry> staged) {
   }
   return out;
 }
+
+/// The server's cap on `displayText` (`DISPLAY_TEXT_MAX_LENGTH`). Roomier than
+/// a meal description because the composer sentence is that description with
+/// up to 20 pick labels still IN it.
+const int kMaxDisplayTextChars = 2000;
+
+/// Cut [text] to the cap the server enforces.
+///
+/// Past it the submit is REJECTED, not shortened: a sentence one character too
+/// long would lose the whole meal rather than its tail. The server truncates
+/// what it stores to 500 anyway, so nothing a user can read is lost here.
+String capDisplayText(String text) {
+  if (text.length <= kMaxDisplayTextChars) return text;
+  final cut = text.substring(0, kMaxDisplayTextChars);
+  // Never end on half a character: cutting between a surrogate pair leaves a
+  // lone code unit, which is not valid text to send anywhere.
+  final last = cut.codeUnitAt(cut.length - 1);
+  final orphaned = last >= 0xD800 && last <= 0xDBFF;
+  return orphaned ? cut.substring(0, cut.length - 1) : cut;
+}

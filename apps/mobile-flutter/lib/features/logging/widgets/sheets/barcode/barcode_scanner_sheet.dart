@@ -23,9 +23,8 @@ import 'barcode_product_step.dart';
 /// `scan_sheet.dart`, which hosts this alongside the nutrition-label branch;
 /// this widget is only the body. It pops with a [ScanOutcome].
 ///
-/// A lookup that finds nothing does NOT replace this body: the camera keeps
-/// the screen and the miss is reported inside the frame, so the sheet holds
-/// its height and the scanner is still live to try the next package.
+/// A lookup that finds nothing does NOT replace this body: the miss is reported
+/// inside the frame, so the sheet holds its height and the scanner stays live.
 ///
 /// [onFallbackToText] fires when the user picks "describe it instead" on a
 /// product we couldn't find — the sheet pops itself first.
@@ -92,17 +91,20 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     ref.read(barcodeFlowProvider.notifier).scanAgain();
   }
 
+  /// Latched at the first pick: the pop IS the action here, so a second tap
+  /// landing before the route is gone would pop the sheet under us as well.
+  bool _picked = false;
+
   Future<void> _confirm(int grams) async {
     // Opened FROM the composer: nothing is written. The product goes back as a
-    // reference the sentence can hold, and the SEND is what logs it — which is
-    // what lets a scan sit inside "2 shot cafe + sữa".
+    // reference the SEND logs — what lets a scan sit in "2 shot cafe + sữa".
     final product = ref.read(barcodeFlowProvider).product;
     if (widget.asPick) {
-      if (product == null) return;
-      HapticFeedback.lightImpact();
+      if (product == null || _picked) return;
+      _picked = true;
       Navigator.of(context).pop(
         ScanPicked(
-          label: barcodePickLabel(product.name, grams),
+          label: barcodePickLabel(product, grams),
           ref: BarcodeRef(barcode: product.barcode, grams: grams.toDouble()),
         ),
       );
@@ -121,8 +123,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     // Re-arm whenever we are back to accepting a scan, tear down once the
     // viewport leaves the screen. This listener fires synchronously with the
     // state change — which can originate inside the scanner's own detection
-    // callback — so disposal is deferred a frame rather than run from within
-    // that stream's callstack.
+    // callback — so disposal is deferred a frame, not run from that callstack.
     ref.listen(barcodeFlowProvider, (previous, next) {
       if (next.phase == BarcodeFlowPhase.scanning) {
         // Including after a miss: the frame keeps scanning, which is what
@@ -140,9 +141,8 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     return _buildBody(ref.watch(barcodeFlowProvider));
   }
 
-  /// The live viewport holds the screen from the first frame through the lookup
-  /// — the search runs over the picture, not in place of it. A typed lookup
-  /// never leaves the keyboard, so no camera runs behind it.
+  /// The live viewport holds the screen through the lookup — the search runs
+  /// over the picture, not in place of it. A typed lookup keeps its keyboard.
   bool _showsCamera(BarcodeFlowState state) =>
       !_manualLookup &&
       (state.phase == BarcodeFlowPhase.scanning ||

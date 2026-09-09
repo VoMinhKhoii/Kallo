@@ -183,9 +183,6 @@ class RelogCandidatesResponse {
   bool get isEmpty => dishes.isEmpty && meals.isEmpty;
 }
 
-/// What the client posts back on submit. Deliberately carries NO nutrition,
-/// grams or names — only a pointer the server re-resolves under
-/// `WHERE user_id = …`. The client is never the source of truth for numbers.
 /// Anything the composer can stage beside its free text.
 ///
 /// Every one of them is a REFERENCE and nothing more: no nutrition, no grams
@@ -200,6 +197,10 @@ sealed class ComposerPickRef {
 }
 
 /// A pick that points at something the user has logged before.
+///
+/// What the client posts back for one carries NO nutrition, grams or names —
+/// only a pointer the server re-resolves under `WHERE user_id = …`, which is
+/// what keeps the client from ever being the source of truth for the numbers.
 sealed class RelogRef extends ComposerPickRef {
   final String sourceMealId;
   const RelogRef({required this.sourceMealId});

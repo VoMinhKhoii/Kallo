@@ -78,7 +78,7 @@ class ComposerSubmitter {
             date: date,
             refs: refs,
             stageIds: stageIds,
-            displayText: unmarkPicks(text, composer.entries),
+            displayText: capDisplayText(unmarkPicks(text, composer.entries)),
             onStaged: onStaged,
             onStagingChange: (staging) {
               _staging = staging;

@@ -249,7 +249,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       date: widget.date,
       mode: mode,
       onPersistentMode: cheatActions.setMode,
-      onFallbackToText: _inputController.focus,
+      focusComposer: _inputController.focus,
       composer: _textController,
       onLogged: () => _pin.pinToBottom(widget.date),
     );
@@ -300,7 +300,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
           analyzing: stream.isAnalyzing,
           onModePressed: sheets.openMode,
-          onBarcodePressed: sheets.openBarcodePick,
+          onBarcodePressed: sheets.openBarcodeFromComposer,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
               () => _rebuild(() => _noticeDismissedFor = widget.date),
