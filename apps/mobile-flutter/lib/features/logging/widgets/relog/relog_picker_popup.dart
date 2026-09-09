@@ -10,12 +10,10 @@ import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../logic/logging_spacing.dart';
 import 'relog_picker_group.dart';
 
-/// The `/` picker: past dishes and past meals in two labelled groups. It sits
-/// INLINE above the composer, in the slot cheat mode's controls occupy, rather
-/// than in an [Overlay]. The dock measures itself and reports its height so the
-/// feed reserves matching scroll padding — an overlay would float over the last
-/// meal card instead, and the picker is tall. Group headers are presentational:
-/// selection is by tap, so there is no keyboard cursor that could land on one.
+/// The `/` picker: past dishes and past meals in two labelled groups. INLINE
+/// above the composer, in the slot cheat mode's controls occupy, rather than in
+/// an [Overlay]: the dock measures itself so the feed can reserve matching
+/// scroll padding, where an overlay would float over the last meal card.
 class RelogPickerPopup extends StatelessWidget {
   const RelogPickerPopup({
     super.key,
@@ -34,37 +32,34 @@ class RelogPickerPopup extends StatelessWidget {
   final ValueChanged<RelogCandidate> onSelect;
   final VoidCallback onDismiss;
 
-  /// The search itself failed. Distinct from "no results": telling someone with
-  /// a year of meals they have never logged anything is worse than saying
-  /// nothing, and retyping does not fix it.
+  /// The search itself FAILED — never "no results", which retyping can fix.
   final bool hasError;
   final VoidCallback? onRetry;
 
-  /// Web's `max-h-72`. Tall enough for ~4 rows; past that the list scrolls
-  /// rather than pushing the composer off the keyboard. A CEILING, not a height:
-  /// the dock is bounded, so a short screen hands the picker less and it gives
-  /// up the difference before the field does.
+  /// Web's `max-h-72`: ~4 rows, then the list scrolls rather than pushing the
+  /// composer off the keyboard. A CEILING — the picker yields room before this.
   static const double _maxHeight = 288;
 
   /// Below this the picker cannot show a single row: its close affordance (44)
   /// and the bottom gap (12) are a rigid 56pt floor, and the rest is a strip too
-  /// short to pick from — worse than no picker. It hands the room back to the
-  /// field instead; the `/` is still dismissed by editing it away. An UNBOUNDED
-  /// height is `infinity`, never below this, so the quick-log sheet is spared.
+  /// short to pick from. It hands the room back to the field AND closes itself
+  /// ([_CollapsedPicker]). UNBOUNDED is `infinity`, so the sheet is spared.
   static const double _minUsableHeight = 120;
+
+  /// Copy ON the band, so the band's own foreground token rather than ink.
+  static final _bandCopy = dashMeta(color: KalloColors.bandForeground);
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (_, box) => box.maxHeight < _minUsableHeight
-        ? const SizedBox.shrink()
+        ? _CollapsedPicker(onDismiss: onDismiss)
         : _panel(),
   );
 
   Widget _panel() {
     final isEmpty = candidates.isEmpty;
-    // Three different nothings, and they are not interchangeable: the search
-    // failed, nothing matched what you typed, or you have no history at all.
-    // Only the middle one is fixed by retyping.
+    // Three different nothings, not interchangeable: the search failed, nothing
+    // matched what you typed, or you have no history. Only the middle retypes.
     final showError = hasError && isEmpty && !isLoading;
     final emptyMessage = isLoading
         ? 'logging.relog.searching'.tr()
@@ -78,14 +73,9 @@ class RelogPickerPopup extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
       child: Container(
         decoration: BoxDecoration(
-          // The same band the composer's inline under-logged notice paints
-          // (`PartialDayNotice`): white copy on muted grey. The picker sits in
-          // that same card, and what it COMMITS — the tinted mention inside the
-          // field — already renders in this exact pairing, so the picker and
-          // its own output finally read as one thing. No border, like the
-          // notice: a solid band does not need one. The shadows stay, unlike
-          // the notice, because that sits inside the card while this floats
-          // over the feed and has to lift off it.
+          // The band the under-logged notice paints (`PartialDayNotice`): white
+          // copy on muted grey, the pairing the tinted mention this COMMITS
+          // already renders in. Shadows, no border: it floats over the feed.
           color: KalloColors.bandSurface,
           borderRadius: BorderRadius.circular(KalloRadii.containerLg),
           boxShadow: const [KalloShadows.md, KalloShadows.xs],
@@ -98,27 +88,18 @@ class RelogPickerPopup extends StatelessWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: _maxHeight),
-                child:
-                    isEmpty
+                child: isEmpty
                         ? Padding(
-                          padding: const EdgeInsets.fromLTRB(
+                          // The close row above already pays the top inset.
+                          padding: const EdgeInsets.all(
                             KalloSpacing.sp3,
-                            0,
-                            KalloSpacing.sp3,
-                            KalloSpacing.sp3,
-                          ),
+                          ).copyWith(top: 0),
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  emptyMessage,
-                                  style: dashMeta(
-                                    color: KalloColors.bandForeground,
-                                  ),
-                                ),
+                                child: Text(emptyMessage, style: _bandCopy),
                               ),
-                              // Retry only on failure — there is nothing to
-                              // retry when the history is genuinely empty.
+                              // Nothing to retry on a genuinely empty history.
                               if (showError && onRetry != null)
                                 QuietActionButton(
                                   label: 'common.retry'.tr(),
@@ -129,23 +110,19 @@ class RelogPickerPopup extends StatelessWidget {
                         )
                         : ListView(
                           shrinkWrap: true,
-                          padding: const EdgeInsets.fromLTRB(
+                          padding: const EdgeInsets.all(
                             KalloSpacing.sp2,
-                            0,
-                            KalloSpacing.sp2,
-                            KalloSpacing.sp2,
-                          ),
+                          ).copyWith(top: 0),
                           children: [
-                            RelogPickerGroup(
-                              label: 'logging.relog.groupDishes'.tr(),
-                              candidates: candidates.dishes,
-                              onSelect: onSelect,
-                            ),
-                            RelogPickerGroup(
-                              label: 'logging.relog.groupMeals'.tr(),
-                              candidates: candidates.meals,
-                              onSelect: onSelect,
-                            ),
+                            for (final group in [
+                              ('logging.relog.groupDishes', candidates.dishes),
+                              ('logging.relog.groupMeals', candidates.meals),
+                            ])
+                              RelogPickerGroup(
+                                label: group.$1.tr(),
+                                candidates: group.$2,
+                                onSelect: onSelect,
+                              ),
                           ],
                         ),
               ),
@@ -157,15 +134,11 @@ class RelogPickerPopup extends StatelessWidget {
   }
 }
 
-/// The close affordance, alone on its row. The popup carries no title: the `/`
-/// you just typed is the label, and the two group headers below already say
-/// what is in the list. The button is NOT optional chrome. A phone keyboard has
-/// no Escape, and the picker is an inline sibling in the dock rather than an
-/// overlay — no barrier, no `PopScope`, nothing closes on a tap outside.
-/// Without this the only ways out are picking something or editing your
-/// sentence until the `/` breaks, while a 288px panel holds the composer up. It
-/// is also the sole caller of [SlashPickerState.dismiss], so removing it would
-/// strand that suppression logic entirely.
+/// The close affordance, alone on its row; the `/` you just typed is the title.
+/// NOT optional chrome — a phone keyboard has no Escape, and the picker is an
+/// inline sibling in the dock, not an overlay: no barrier, no `PopScope`,
+/// nothing closes on a tap outside. The one other caller of
+/// `SlashPickerState.dismiss` is [_CollapsedPicker], which nobody can tap.
 class _CloseRow extends StatelessWidget {
   const _CloseRow({required this.onDismiss});
 
@@ -184,9 +157,8 @@ class _CloseRow extends StatelessWidget {
           child: const SizedBox(
             width: LoggingIcons.hit,
             height: LoggingIcons.hit,
-            // White @ 70% — the notice's own dismiss glyph. The only element on
-            // the band allowed to be translucent: it carries no text, so it is
-            // not held to the 4.5:1 the copy is.
+            // White @ 70% — the notice's own dismiss glyph. Translucent only
+            // because it carries no text: not held to the copy's 4.5:1.
             child: Icon(
               LucideIcons.x300,
               size: LoggingIcons.size,
@@ -197,4 +169,32 @@ class _CloseRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The collapse branch, a StatefulWidget because it has a SIDE EFFECT.
+/// Rendering nothing is not closing: the query stayed live, so every keystroke
+/// still ran a search whose rows could never be seen. It dismisses instead —
+/// ONCE, from [initState] (a StatelessWidget's build may run several times in a
+/// frame) and post-frame, because this runs during layout. `dismiss` remembers
+/// the token, so typing on stays closed and a fresh `/` re-opens.
+class _CollapsedPicker extends StatefulWidget {
+  const _CollapsedPicker({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  State<_CollapsedPicker> createState() => _CollapsedPickerState();
+}
+
+class _CollapsedPickerState extends State<_CollapsedPicker> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onDismiss();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

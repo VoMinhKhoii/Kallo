@@ -132,6 +132,23 @@ void main() {
       expect(c.entries.map((e) => e.label), ['/Phở bò', 'Sữa TH (180g)']);
     });
 
+    // The boundary the "caret inside a label" rule must NOT swallow: a caret
+    // resting exactly ON a pick's first character is in front of it, not in it.
+    // Treating it as inside jumped the newcomer to the far side of the pick,
+    // dropping it where the user was not looking.
+    test('a caret at a pick\'s first character splices BEFORE it', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'stage-1');
+      c.value = c.value.copyWith(
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+
+      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-2'), isTrue);
+
+      expect(c.text, 'Sữa TH (180g) /Phở bò ');
+      expect(c.entries.map((e) => e.label), ['Sữa TH (180g)', '/Phở bò']);
+    });
+
     test('replaces a selection RANGE, as typing a character would', () {
       _type(c, '2 shot cafe + sua');
       c.value = c.value.copyWith(
@@ -164,6 +181,30 @@ void main() {
 
       expect(c.text, 'Sữa TH (180g) roi Sữa TH (180g) ');
       expect(c.mentions.single.start, 18);
+    });
+
+    // The exact-offset preference above only held while the offset was
+    // BYTE-EXACT. One character typed anywhere before the pick and it fell back
+    // to `indexOf` from the start of the string, rebinding to the prose copy:
+    // `stripMentions` then cut the words the user typed and left the pick's own
+    // label standing, so the product went out TWICE — once as prose for the AI
+    // to estimate, once by reference.
+    test('… and stays bound when a character is typed in front of it', () {
+      _type(c, 'Sữa TH (180g) roi ');
+      c.insertPick('Sữa TH (180g)', milk, 'stage-1');
+
+      _type(c, 'x${c.text}');
+
+      expect(
+        c.mentions.single.start,
+        19,
+        reason: 'the pick moved one right; it did not jump to the prose copy',
+      );
+      expect(
+        c.freeText,
+        contains('Sữa TH (180g) roi'),
+        reason: 'the words the user typed are theirs and must survive',
+      );
     });
 
     test('stands beside a relog pick in one sentence', () {

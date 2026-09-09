@@ -157,6 +157,24 @@ void main() {
       expect(out.map((m) => m.start), [0, 7]);
     });
 
+    // Two picks of the same dish that both claim the SAME offset — a shape
+    // `shiftMentions` normally rules out, since the splice that put one there
+    // pushed the other right. The nearest-occurrence walk cannot keep both: the
+    // first-listed one is nearest to the occurrence at 2 (distance 0, against 2
+    // for the one at 0), takes it, and leaves the cursor past the end of the
+    // string. Keeping both would need the earlier-listed mention to accept a
+    // WORSE match so the later one could have its own, i.e. matching the whole
+    // set at once rather than one at a time — the same single survivor the
+    // exact-offset preference produced, and no reference is invented for a
+    // pick the text cannot place.
+    test('two mentions claiming one offset leave a single survivor', () {
+      final out = reconcileMentions('A A', [
+        _mention('A', 2, stageId: 'a'),
+        _mention('A', 2, stageId: 'b'),
+      ]);
+      expect(out.map((m) => (m.stageId, m.start)), [('a', 2)]);
+    });
+
     // A pick spliced in exactly where another one started: the splice is what
     // pushed the old one right, so the newcomer — listed first — takes the slot.
     test('breaks an offset tie in favour of the earlier-listed mention', () {

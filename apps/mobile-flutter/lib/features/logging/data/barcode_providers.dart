@@ -142,8 +142,9 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   }
 
   /// Stage + confirm the current product at [grams] in one call. Returns true
-  /// on success (the sheet pops and toasts); on failure the quantity step
-  /// stays put with an inline error so the chosen amount isn't lost.
+  /// on success (the sheet pops and toasts). A failure keeps the quantity step
+  /// and its chosen amount, with the error inline — except `not_cached`, which
+  /// only a fresh search can repair and so routes back to the scanner.
   Future<bool> logMeal({
     required String userId,
     required String date,
@@ -165,26 +166,6 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      // The meal COMMITTED the moment the POST returned. A refetch that fails
-      // afterwards (flaky network) must not surface as a failed save: the sheet
-      // would hold the quantity step, the user would log the product a second
-      // time, and the day would carry it twice. Fall back to invalidation, as
-      // `stageRelogAnalysis` does for the same reason.
-      //
-      // AWAITED, and before the sheet pops: popping fires `onLogged`, which
-      // pins the feed to the tail. A bare invalidate lands the refetch after
-      // the pin has released, so the feed rides to the PREVIOUS last card and
-      // opens a screen of empty room under it.
-      final day = LoggingDayArgs(userId, date);
-      try {
-        await ref.read(loggingDayProvider(day).notifier).refresh();
-      } catch (_) {
-        ref.invalidate(loggingDayProvider(day));
-      }
-      // The day is refreshed above; re-invalidating it here would throw that
-      // result away and put the refetch back after the pin.
-      invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
-      return true;
     } catch (error) {
       final key = _errorKeyFor(error);
       // A purged cache row (not_cached) can only be repaired by re-searching;
@@ -200,6 +181,32 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       );
       return false;
     }
+    // The meal COMMITTED the moment the POST returned, so NOTHING below may
+    // turn a saved meal into a failed save — this block sits outside the try
+    // that owns the return value, and swallows whatever it throws. A refetch
+    // that fails (flaky network) falls back to invalidation, as
+    // `stageRelogAnalysis` does; an invalidate that throws in turn (the sheet's
+    // own scope gone while the POST was in flight) is swallowed with it. Report
+    // failure here and the user logs the product a SECOND time.
+    //
+    // AWAITED, and before the sheet pops: popping fires `onLogged`, which pins
+    // the feed to the tail. A bare invalidate lands the refetch after the pin
+    // has released, so the feed rides to the PREVIOUS last card and opens a
+    // screen of empty room under it.
+    final day = LoggingDayArgs(userId, date);
+    try {
+      try {
+        await ref.read(loggingDayProvider(day).notifier).refresh();
+      } catch (_) {
+        ref.invalidate(loggingDayProvider(day));
+      }
+      // The day is refreshed above; re-invalidating it here would throw that
+      // result away and put the refetch back after the pin.
+      invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
+    } catch (_) {
+      // The save stands. Nothing left to refresh means nothing left to do.
+    }
+    return true;
   }
 
   /// Resume scanning after an error or from the quantity step's back link.

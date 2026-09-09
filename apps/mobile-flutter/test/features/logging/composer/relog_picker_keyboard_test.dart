@@ -115,6 +115,7 @@ FeedComposer _composer({
   required MentionTextEditingController textController,
   required MealInputController inputController,
   String? relogQuery,
+  VoidCallback? onDismissRelog,
 }) => FeedComposer(
   view: _view,
   calorieTarget: 2000,
@@ -137,7 +138,7 @@ FeedComposer _composer({
   onSync: () {},
   relogQuery: relogQuery,
   onSelectRelog: (_) {},
-  onDismissRelog: () {},
+  onDismissRelog: onDismissRelog ?? () {},
 );
 
 /// Hosts one composer whose picker can be opened without rebuilding anything
@@ -256,9 +257,12 @@ void main() {
   });
 
   testWidgets('gives its room back when a row would not fit', (tester) async {
-    // 500 − 300 leaves the picker ~23pt once the card has what it needs: the
-    // close row (44) and the bottom gap (12) alone do not fit in it, so a
-    // rendered picker would be a useless strip that shortens the field.
+    // 500 - 300 leaves a 200pt dock. The card needs all of it for an eight-line
+    // message, so the close row (44) and the bottom gap (12) alone do not fit
+    // in what is left: a rendered picker would be a useless strip that shortens
+    // the field. Two loose Flexibles split the dock in half up front instead
+    // and left the field 26pt.
+    textController.text = '${'a\n' * 7}a';
     await tester.pumpWidget(
       _wrap(
         _composer(
@@ -276,6 +280,79 @@ void main() {
       tester.getRect(find.byType(RelogPickerPopup)).height,
       0,
       reason: 'below _minUsableHeight the popup collapses to nothing',
+    );
+    expect(
+      tester.getRect(find.byType(TextField)).height,
+      greaterThanOrEqualTo(100),
+      reason: 'the room the picker gave up must reach the FIELD',
+    );
+  });
+
+  testWidgets('a collapsed picker dismisses itself, exactly once', (
+    tester,
+  ) async {
+    // Rendering nothing is not closing: `relogQuery` stayed live, so every
+    // keystroke still ran a search whose results could never be seen, and the
+    // slot stayed allocated.
+    var dismissals = 0;
+    textController.text = '${'a\n' * 7}a';
+    await tester.pumpWidget(
+      _wrap(
+        _composer(
+          textController: textController,
+          inputController: inputController,
+          relogQuery: 'ph',
+          onDismissRelog: () => dismissals++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(dismissals, 1, reason: 'the collapsed picker hands the token back');
+
+    // A build can run several times per frame, and the popup rebuilds on every
+    // keystroke — the dismissal must not repeat itself.
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(dismissals, 1);
+  });
+
+  testWidgets('a bounded dock feeds the card first, then the picker', (
+    tester,
+  ) async {
+    // 720 - 300 is a 420pt dock: room for the card (250 with an eight-line
+    // message) AND a usable picker in what is left. Two loose Flexibles handed
+    // each of them HALF of it up front, so the card was cut to 210 and its
+    // field to 136 while the picker sat on room it did not need.
+    //
+    // The default test surface is 800x600, which would clip the dock before it
+    // ever saw the 720.
+    await tester.binding.setSurfaceSize(const Size(400, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    textController.text = '${'a\n' * 7}a';
+    await tester.pumpWidget(
+      _wrap(
+        _composer(
+          textController: textController,
+          inputController: inputController,
+          relogQuery: 'ph',
+        ),
+        height: 720,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getRect(find.byType(TextField)).height,
+      greaterThanOrEqualTo(190),
+      reason: 'the card is laid out before the flex is divided, so it takes '
+          'the height it needs',
+    );
+    expect(
+      tester.getRect(find.byType(RelogPickerPopup)).height,
+      greaterThan(0),
+      reason: 'and there is plenty left over for the picker',
     );
   });
 

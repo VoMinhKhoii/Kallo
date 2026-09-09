@@ -228,6 +228,43 @@ void main() {
     );
   });
 
+  testWidgets('the settle window covers the travel it queued', (tester) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10),
+    );
+
+    handle.pinToBottom('2026-01-01');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100)); // mid-travel
+
+    // A request arriving mid-travel is queued for a SECOND travel, so the
+    // window has to run from where that one lands. Armed bare, the release
+    // fired ~50ms before it did, and the queued travel's own `finally` then
+    // found a released pin and armed nothing at all — the corrections that
+    // follow a send were gone from the moment a send arrived mid-travel.
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 20),
+    );
+    handle.pinToBottom('2026-01-01');
+    await tester.pumpAndSettle();
+
+    // The streaming card growing a frame after the queued travel landed.
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 30),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.position.pixels,
+      controller.position.maxScrollExtent,
+      reason: 'the pin let go before the travel it queued had even landed',
+    );
+  });
+
   testWidgets('opening the keyboard long after a send moves nothing', (
     tester,
   ) async {

@@ -190,26 +190,26 @@ class _MealInputState extends State<MealInput>
 
   @override
   Widget build(BuildContext context) {
-    // The slot is ALWAYS here, empty when the picker is closed: dropping it
-    // changes this subtree's root type, so `Widget.canUpdate` fails and the
-    // card is re-inflated, closing the field's platform input connection and
-    // leaving it waiting on a focus CHANGE that never comes because the
-    // FocusNode kept focus. That was `/` killing the keyboard. Both children
-    // are loose Flexibles so a BOUNDED dock shrinks them: the picker yields
-    // first, then the card, which alone outruns the dock's budget on a long
-    // message (133pt at one line, +23 a line) and inflexible overflowed DOWN
-    // past the keyboard, taking mode/scan/send out of reach. Loose fit in a
-    // `min` column is the one flex shape `RenderFlex` does not assert on when
-    // unbounded, which is how the quick-log sheet still lays this out.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        widget.popupSlot == null
-            ? const SizedBox.shrink()
-            : Flexible(child: widget.popupSlot!),
-        Flexible(child: _buildCard(context)),
-      ],
+    // The child COUNT is stable — the slot is an empty box when the picker is
+    // closed (`feed_composer.dart` passes null): dropping a child changes this
+    // subtree's root type, `Widget.canUpdate` fails, and the re-inflated field
+    // closes its input connection while the FocusNode still holds focus — that
+    // was `/` killing the keyboard. The picker yields first, then the card: a
+    // NON-flex child is laid out BEFORE the flex is divided, so the card takes
+    // what it needs, capped at the dock it alone outruns on a long message (it
+    // spilled DOWN past the keyboard). Unbounded that cap is infinity: a no-op.
+    return LayoutBuilder(
+      builder: (context, box) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(child: widget.popupSlot ?? const SizedBox.shrink()),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: box.maxHeight),
+            child: _buildCard(context),
+          ),
+        ],
+      ),
     );
   }
 

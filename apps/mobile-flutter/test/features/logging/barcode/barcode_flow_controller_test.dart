@@ -23,7 +23,8 @@ class FakeApiClient extends ApiClient {
   @override
   Future<T> post<T>(String path, [Object? body]) async {
     requests.add(('POST', path, body));
-    return handler!('POST', path, body) as T;
+    final answer = handler!('POST', path, body);
+    return (answer is Future ? await answer : answer) as T;
   }
 }
 
@@ -191,6 +192,58 @@ void main() {
 
       dayGate.complete(<String, dynamic>{});
       expect(await logging, isTrue);
+    });
+
+    test('a day refetch that fails does not un-save the meal', () async {
+      await landOnProduct();
+      api.handler = (method, path, body) {
+        if (path == '/api/v1/barcode/log') {
+          return <String, dynamic>{'mealId': 'meal-1'};
+        }
+        // The network drops between the POST and the refetch it triggers.
+        throw ApiError('INTERNAL', 500, true, 'x');
+      };
+
+      final ok = await notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        grams: 150,
+      );
+
+      expect(ok, isTrue, reason: 'the POST returned — the meal is saved');
+      expect(
+        state().errorKey,
+        isNull,
+        reason: 'an inline error here invites a second log of the same product',
+      );
+    });
+
+    test('a scope that dies mid-POST still reports the save', () async {
+      await landOnProduct();
+      final logGate = Completer<Map<String, dynamic>>();
+      api.handler = (method, path, body) {
+        if (path == '/api/v1/barcode/log') return logGate.future;
+        return <String, dynamic>{};
+      };
+
+      final logging = notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        grams: 150,
+      );
+      await Future<void>.delayed(Duration.zero);
+      // The sheet's own scope goes away while the POST is in flight, so the
+      // refresh — and the invalidations after it — run on a container that is
+      // already gone and throw. The meal COMMITTED when the POST returned:
+      // reporting failure for it is what has the user log the product twice.
+      container.dispose();
+      logGate.complete(<String, dynamic>{});
+
+      expect(
+        await logging,
+        isTrue,
+        reason: 'a saved meal must never be reported as a failed save',
+      );
     });
 
     test('failure keeps the quantity step and the product', () async {

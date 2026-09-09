@@ -55,8 +55,8 @@ bool isInsideMention(int offset, List<RelogMention> mentions) =>
 
 /// Re-locate every mention after the text changed.
 ///
-/// Walks the mentions in order, claiming the next occurrence of each label at
-/// or after the previous one ended. A mention whose label no longer appears has
+/// Walks the mentions in order, claiming the occurrence of each label nearest
+/// to where it last sat, at or after the previous one ended. A mention whose label no longer appears has
 /// been edited or deleted by the user, so it is DROPPED — and with it the
 /// reference, which is what stops a half-deleted name from still logging a
 /// dish.
@@ -91,16 +91,16 @@ List<RelogMention> reconcileMentions(
   var cursor = 0;
   for (final (_, mention) in indexed) {
     if (mention.label.isEmpty) continue;
-    // A mention whose label still sits EXACTLY where it was left claims that
-    // spot, ahead of an earlier copy of the same string. This is what binds a
-    // freshly spliced pick to the offset it was spliced AT: typing the product
-    // name as prose first — "Sữa TH (180g) roi " — and then scanning that same
-    // product must tint the run that was just inserted, not the words the user
-    // typed a moment ago, which carry no reference and would take the tint
-    // (and, on the next keystroke, the reference) with them.
-    final index = _sitsAt(value, mention) && mention.start >= cursor
-        ? mention.start
-        : value.indexOf(mention.label, cursor);
+    // A mention claims the occurrence NEAREST to where it last sat, not the
+    // first one after the cursor. This is what binds a freshly spliced pick to
+    // the offset it was spliced AT: typing the product name as prose first —
+    // "Sữa TH (180g) roi " — and then scanning that same product must tint the
+    // run just inserted, not the words typed a moment ago, which carry no
+    // reference and would take the tint (and, next keystroke, the reference)
+    // with them. Nearest rather than EXACT because an offset only stays exact
+    // until the next character is typed in front of it, and one keystroke is
+    // not an edit to the pick: it moves, it does not jump to the prose copy.
+    final index = _claim(value, mention, cursor);
     if (index == -1) continue;
     surviving.add(mention.movedTo(index));
     cursor = index + mention.label.length;
@@ -108,13 +108,25 @@ List<RelogMention> reconcileMentions(
   return surviving;
 }
 
-/// Whether [mention]'s label is still exactly at the offset it claims. Guarded
-/// on length because a stale offset can point past the end of the text, which
-/// `startsWith` treats as an error rather than a miss.
-bool _sitsAt(String value, RelogMention mention) =>
-    mention.start >= 0 &&
-    mention.start <= value.length &&
-    value.startsWith(mention.label, mention.start);
+/// The occurrence of [m]'s label at or after [cursor] that sits closest to the
+/// offset [m] claims, or -1 when the label no longer appears there at all.
+///
+/// Monotone from [cursor], so the walk still keeps duplicate picks distinct —
+/// each one searches from where the previous one ended. The scan stops at the
+/// first occurrence PAST the claimed offset: occurrences only run left to
+/// right, so from there the distance can only grow.
+int _claim(String value, RelogMention m, int cursor) {
+  var best = -1;
+  for (
+    var i = value.indexOf(m.label, cursor);
+    i != -1;
+    i = value.indexOf(m.label, i + 1)
+  ) {
+    if (best == -1 || (i - m.start).abs() < (best - m.start).abs()) best = i;
+    if (i > m.start) break;
+  }
+  return best;
+}
 
 /// Move every mention at or after [at] by [delta] — the arithmetic of a splice.
 ///
@@ -179,7 +191,10 @@ final RegExp _startsBlank = RegExp(r'^\s');
   final to = end.clamp(from, text.length);
   if (to > from) return (text: text.replaceRange(from, to, ''), at: from);
   for (final mention in mentions) {
-    if (from >= mention.start && from < mention.end) {
+    // `>` not `>=`: a caret resting on the label's FIRST character is in front
+    // of the pick, not inside it, so the newcomer goes there rather than being
+    // thrown to the far side of a pick the user was typing ahead of.
+    if (from > mention.start && from < mention.end) {
       return (text: text, at: mention.end);
     }
   }

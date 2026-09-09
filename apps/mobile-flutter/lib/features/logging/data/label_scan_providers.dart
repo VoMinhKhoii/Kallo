@@ -279,17 +279,27 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      // The meal COMMITTED the moment the POST returned. A refetch that fails
-      // afterwards (flaky network) must not surface as a failed save: the sheet
-      // would hold the quantity step, the user would log the product a second
-      // time, and the day would carry it twice. Fall back to invalidation, as
-      // `stageRelogAnalysis` does for the same reason.
-      //
-      // AWAITED, and before the sheet pops: popping fires `onLogged`, which
-      // pins the feed to the tail. A bare invalidate lands the refetch after
-      // the pin has released, so the feed rides to the PREVIOUS last card and
-      // opens a screen of empty room under it.
-      final day = LoggingDayArgs(userId, date);
+    } catch (error) {
+      state = state.copyWith(
+        phase: LabelScanPhase.review,
+        errorKey: () => _errorKeyFor(error),
+      );
+      return false;
+    }
+    // The meal COMMITTED the moment the POST returned, so NOTHING below may
+    // turn a saved meal into a failed save — this block sits outside the try
+    // that owns the return value, and swallows whatever it throws. A refetch
+    // that fails (flaky network) falls back to invalidation, as
+    // `stageRelogAnalysis` does; an invalidate that throws in turn (the sheet's
+    // own scope gone while the POST was in flight) is swallowed with it. Report
+    // failure here and the user logs the product a SECOND time.
+    //
+    // AWAITED, and before the sheet pops: popping fires `onLogged`, which pins
+    // the feed to the tail. A bare invalidate lands the refetch after the pin
+    // has released, so the feed rides to the PREVIOUS last card and opens a
+    // screen of empty room under it.
+    final day = LoggingDayArgs(userId, date);
+    try {
       try {
         await ref.read(loggingDayProvider(day).notifier).refresh();
       } catch (_) {
@@ -298,14 +308,10 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       // The day is refreshed above; re-invalidating it here would throw that
       // result away and put the refetch back after the pin.
       invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
-      return true;
-    } catch (error) {
-      state = state.copyWith(
-        phase: LabelScanPhase.review,
-        errorKey: () => _errorKeyFor(error),
-      );
-      return false;
+    } catch (_) {
+      // The save stands. Nothing left to refresh means nothing left to do.
     }
+    return true;
   }
 
   /// Discard the current photo and shoot another.
