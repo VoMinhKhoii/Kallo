@@ -10,9 +10,10 @@ import {
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import type { ParsedMeal } from '@/lib/core/types/meal';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import { buildPickPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+import { buildPickPipelineResult } from '@/lib/domain/logging/relog/build-pick-pipeline-result';
 import {
   buildRelogRawInput,
+  capRawInput,
   relogRefsOf,
 } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -89,9 +90,9 @@ export async function stageRelogAnalysisAction(
     // The composer's own sentence when the client sent it: joining the resolved
     // names puts every scanned product after every relogged dish, whatever
     // order they were typed in.
-    const rawInput = buildRelogRawInput(
-      parsed.displayText ? [parsed.displayText] : picks.names
-    );
+    const rawInput = parsed.displayText
+      ? capRawInput(parsed.displayText)
+      : buildRelogRawInput(picks.names);
     const loggedAt = getUtcInstantForLocalDate(
       parsed.loggedDate,
       parsed.timezoneOffset

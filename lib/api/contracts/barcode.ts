@@ -8,11 +8,11 @@
  */
 import { z } from 'zod';
 import { barcodeSchema } from '@/lib/core/validation/barcode';
+import { foodItemGramsSchema } from '@/lib/core/validation/food-limits';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 
 /** Query for `GET /api/v1/barcode/search?code=<digits>`. */
 export const barcodeSearchQuerySchema = z.object({
@@ -32,11 +32,7 @@ export type BarcodeSearchQuery = z.infer<typeof barcodeSearchQuerySchema>;
  */
 export const logBarcodeMealSchema = z.object({
   barcode: barcodeSchema,
-  grams: z
-    .number()
-    .positive('Khối lượng phải lớn hơn 0')
-    .finite()
-    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
+  grams: foodItemGramsSchema,
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,

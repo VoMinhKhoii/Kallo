@@ -9,7 +9,7 @@
 // The bounded triple is DEGENERATE — `{low:v, mid:v, high:v}` — for the same
 // reason a relogged dish's is: confirm re-runs `goalAdjustNutrition` on every
 // ingredient, and a printed label is not an estimate to be adjusted. See the
-// header of `build-relog-pipeline-result.ts` for the arithmetic.
+// header of `build-pick-pipeline-result.ts` for the arithmetic.
 import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
 import type {
   BoundedNutrition,

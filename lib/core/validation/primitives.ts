@@ -37,12 +37,3 @@ export const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLower
 /** Opaque tuple cursor shared by the friend/group history feeds. A plain ISO
  * timestamp remains valid for legacy Flutter clients. */
 export const beforeCursorSchema = z.string().trim().min(1).max(500).optional();
-
-/** Maximum plausible gram weight for a single logged food item or package.
- *  Single source of truth shared by OFF sizing validation (`parseSizeGrams`),
- *  the staging schema (`stageBarcodeMealSchema`), the composer's barcode pick
- *  and the quantity picker's clamp — so all of them enforce the same upper
- *  bound and a large-but-valid package is never silently truncated. Lives here
- *  rather than under `lib/domain/barcode/` because `lib/core` may not import
- *  from `lib/domain`. */
-export const MAX_FOOD_ITEM_GRAMS = 100_000;

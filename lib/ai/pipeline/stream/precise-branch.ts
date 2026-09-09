@@ -3,7 +3,10 @@ import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
+import {
+  buildRelogRawInput,
+  capRawInput,
+} from '@/lib/domain/logging/relog/relog';
 import { PERSIST_DEADLINE_MS, upsertPendingAnalysis } from './persist-analysis';
 import type { StreamRun } from './types';
 import { emitPartialFailure } from './unresolved-response';
@@ -99,14 +102,14 @@ export async function runPreciseBranch({
   // the free text with the picks cut out, so rebuilding from its parts appends
   // them and reorders anything typed after one — `/cơm gà + 1 kem vani` saved as
   // `+ 1 kem vani, cơm gà`. The join stays as the fallback for clients that
-  // send no `displayText`, where dropping the dish names would be worse.
+  // send no `displayText`, where dropping the pick names would be worse.
   let rawInput = ctx.message;
   if (ctx.refs && ctx.refs.length > 0) {
-    const applied = await ctx.mergeRelogRefs(result.data, ctx.refs, userId);
+    const applied = await ctx.mergePicks(result.data, ctx.refs, userId);
     result.data = applied.result;
-    rawInput = buildRelogRawInput(
-      ctx.displayText ? [ctx.displayText] : [ctx.message, ...applied.dishNames]
-    );
+    rawInput = ctx.displayText
+      ? capRawInput(ctx.displayText)
+      : buildRelogRawInput([ctx.message, ...applied.pickNames]);
   }
 
   const meal = toParsedMeal(result.data);

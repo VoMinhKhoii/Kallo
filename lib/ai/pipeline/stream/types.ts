@@ -31,7 +31,7 @@ export interface AnalysisStreamContext {
    * What the saved meal is LABELLED with when relog picks are in play — the
    * user's sentence with the `/` markers stripped, in the order they typed it.
    * Absent (older clients) the label is rebuilt from `message` + the resolved
-   * dish names, which appends the picks and reorders the sentence.
+   * pick names, which appends the picks and reorders the sentence.
    */
   displayText?: string;
   /**
@@ -41,11 +41,11 @@ export interface AnalysisStreamContext {
    * `lib/actions/meals/relog/`, and `lib/ai/` sits below the actions layer —
    * importing upward would invert the dependency order in ARCHITECTURE.md.
    */
-  mergeRelogRefs: (
+  mergePicks: (
     aiResult: PipelineResult,
     refs: ComposerPickRef[],
     userId: string
-  ) => Promise<{ result: PipelineResult; dishNames: string[] }>;
+  ) => Promise<{ result: PipelineResult; pickNames: string[] }>;
 }
 
 /** One in-flight submission: the request context plus this run's own state. */

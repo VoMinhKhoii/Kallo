@@ -1,6 +1,9 @@
-// Turn relogged dishes (copied `meal_items` rows) into a `PipelineResult` so
-// they can ride the SAME staged-analysis → editable review → confirm path that
-// AI meals use, instead of writing straight to the DB.
+// Turn the composer's PICKS — relogged dishes (copied `meal_items` rows) and
+// scanned products alike — into a `PipelineResult` so they can ride the SAME
+// staged-analysis → editable review → confirm path that AI meals use, instead
+// of writing straight to the DB. Named for picks rather than relog because a
+// barcode pick has no source meal to re-log, and both kinds arrive here as
+// already-frozen items.
 //
 // The one trick that makes this safe: confirm (`confirmAndSaveMealAction`)
 // re-runs `goalAdjustNutrition` on every ingredient's `boundedNutrition` at

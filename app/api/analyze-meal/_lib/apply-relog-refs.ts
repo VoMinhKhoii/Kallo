@@ -1,6 +1,6 @@
 import { resolveComposerPicks } from '@/lib/actions/meals/relog/resolve-picks';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { mergeRelogIntoPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+import { mergeRelogIntoPipelineResult } from '@/lib/domain/logging/relog/build-pick-pipeline-result';
 import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
 
 /**
@@ -22,7 +22,7 @@ export async function applyRelogRefs(
   aiResult: PipelineResult,
   refs: ComposerPickRef[],
   userId: string
-): Promise<{ result: PipelineResult; dishNames: string[] }> {
+): Promise<{ result: PipelineResult; pickNames: string[] }> {
   const picks = await resolveComposerPicks(userId, refs);
   // The picks' own confidence, which `mergeRelogIntoPipelineResult` then takes
   // the weakest of against the AI half — a meal is no more confident than its
@@ -32,5 +32,5 @@ export async function applyRelogRefs(
     picks.items,
     picks.confidence
   );
-  return { result, dishNames: picks.names };
+  return { result, pickNames: picks.names };
 }

@@ -160,7 +160,7 @@ vi.mock('@/lib/domain/barcode/cache', () => ({
   findCachedRows: (...args: unknown[]) => mockFindCachedRows(...args),
 }));
 
-vi.mock('@/lib/domain/logging/relog/build-relog-pipeline-result', () => ({
+vi.mock('@/lib/domain/logging/relog/build-pick-pipeline-result', () => ({
   buildFrozenMealItem: (dish: { name: string }) => ({ frozen: dish.name }),
   mergeRelogIntoPipelineResult: (...args: unknown[]) =>
     mockMergeRelogIntoPipelineResult(...args),

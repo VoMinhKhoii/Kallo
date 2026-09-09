@@ -193,10 +193,17 @@ export function sumStagedMacros(
  *  share one derivation: the label shown the instant you submit is the label
  *  that gets persisted, with no second source of truth to drift. */
 export function buildRelogRawInput(labels: string[]): string {
-  const joined = labels.join(', ');
-  return joined.length > RELOG_RAW_INPUT_MAX
-    ? `${joined.slice(0, RELOG_RAW_INPUT_MAX - 1)}…`
-    : joined;
+  return capRawInput(labels.join(', '));
+}
+
+/** The `meals.raw_input` length cap on its own, for the callers that already
+ *  HAVE the finished sentence (the composer's `displayText`) and only need it
+ *  fitted to the column. Wrapping such a string in a one-element array just to
+ *  join it back read as a derivation that isn't one. */
+export function capRawInput(text: string): string {
+  return text.length > RELOG_RAW_INPUT_MAX
+    ? `${text.slice(0, RELOG_RAW_INPUT_MAX - 1)}…`
+    : text;
 }
 
 const RELOG_RAW_INPUT_MAX = 500;

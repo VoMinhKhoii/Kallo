@@ -13,16 +13,12 @@
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { MealConfidence, PipelineMealItem } from '@/lib/ai/types/result';
 import { findCachedRows } from '@/lib/domain/barcode/cache';
-import {
-  BARCODE_RESCAN_MESSAGE,
-  BarcodeServiceError,
-  mapBarcodeServiceError,
-} from '@/lib/domain/barcode/errors';
+import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
 import {
   buildFrozenMealItem,
   toMealConfidence,
-} from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+} from '@/lib/domain/logging/relog/build-pick-pipeline-result';
 import type {
   BarcodeRef,
   ComposerPickRef,
@@ -59,24 +55,6 @@ interface PickSlot {
 }
 
 /**
- * The cache is what a SEARCH fills, so a barcode with no row was never looked
- * up — the client has to scan it again rather than have this endpoint quietly
- * reach out to a provider mid-analysis.
- *
- * Thrown pre-mapped as the `/api/v1` `BARCODE_NOT_CACHED` envelope: the one
- * value then reads correctly on all three transports this resolver feeds — a
- * 404 through `handleRouteError`, a 404 through `serializeError`, and a
- * `barcode_not_cached` SSE frame through `toStreamErrorEvent`, which only
- * understands `AppError` and would otherwise flatten it to a generic
- * "Failed to process meal".
- */
-function notCached(): unknown {
-  return mapBarcodeServiceError(
-    new BarcodeServiceError('not_cached', BARCODE_RESCAN_MESSAGE)
-  );
-}
-
-/**
  * Resolve every pick a submit carried.
  *
  * The relog half runs inside a short transaction holding `FOR UPDATE` on the
@@ -92,24 +70,26 @@ export async function resolveComposerPicks(
 ): Promise<ResolvedPicks> {
   const slots: PickSlot[] = refs.map(() => ({ items: [], names: [] }));
 
-  // Original positions, so both halves can be written back into the order the
-  // user staged them.
-  const barcodeIndices: number[] = [];
-  const relogIndices: number[] = [];
+  // Original positions carried alongside the narrowed ref, so both halves can
+  // be written back into the order the user staged them without re-reading
+  // `refs` through a cast.
+  const barcodePicks: { index: number; ref: BarcodeRef }[] = [];
+  const relogPicks: { index: number; ref: RelogRef }[] = [];
   for (const [index, ref] of refs.entries()) {
-    if (ref.kind === 'barcode') barcodeIndices.push(index);
-    else relogIndices.push(index);
+    if (ref.kind === 'barcode') barcodePicks.push({ index, ref });
+    else relogPicks.push({ index, ref });
   }
 
   // ONE query for every scanned pick, deduped: 20 picks were 20 sequential
   // round trips against a two-connection pool.
   const cached = await findCachedRows(
-    barcodeIndices.map((index) => (refs[index] as BarcodeRef).barcode)
+    barcodePicks.map(({ ref }) => ref.barcode)
   );
-  for (const index of barcodeIndices) {
-    const ref = refs[index] as BarcodeRef;
+  for (const { index, ref } of barcodePicks) {
     const row = cached.get(ref.barcode);
-    if (!row) throw notCached();
+    // A barcode with no cache row was never SEARCHED, and this resolver must
+    // not quietly reach out to a provider mid-analysis — the client rescans.
+    if (!row) throw barcodeNotCachedError();
     const { item } = buildBarcodeMealItem(row, ref.grams);
     slots[index].items.push(item);
     slots[index].names.push(item.name);
@@ -121,20 +101,20 @@ export async function resolveComposerPicks(
     confidence,
   });
 
-  if (relogIndices.length === 0) return flatten('high');
+  if (relogPicks.length === 0) return flatten('high');
 
   const { dishes, sourceConfidences } = await db.transaction((tx) =>
     resolveRelogSources(
       tx,
       userId,
-      relogIndices.map((index) => refs[index] as RelogRef),
+      relogPicks.map(({ ref }) => ref),
       { lock: true }
     )
   );
   // `refIndex` is the dish's position in the RELOG-only list handed to the
-  // resolver, so map it back through `relogIndices` to the original ref.
+  // resolver, so map it back through `relogPicks` to the original ref.
   for (const dish of dishes) {
-    const slot = slots[relogIndices[dish.refIndex]];
+    const slot = slots[relogPicks[dish.refIndex].index];
     slot.items.push(buildFrozenMealItem(dish));
     slot.names.push(dish.name);
   }

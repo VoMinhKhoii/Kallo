@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
             cheatIntensity,
             refs,
             displayText,
-            mergeRelogRefs: applyRelogRefs,
+            mergePicks: applyRelogRefs,
           },
         });
       } finally {

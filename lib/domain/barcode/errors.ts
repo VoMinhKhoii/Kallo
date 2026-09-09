@@ -50,6 +50,25 @@ export const BARCODE_RESCAN_MESSAGE =
   'Không tìm thấy sản phẩm đã quét. Hãy quét lại.';
 
 /**
+ * The `BARCODE_NOT_CACHED` envelope as an {@link AppError}, already mapped.
+ *
+ * The cache is what a SEARCH fills, so a barcode with no row was never looked
+ * up — the caller has to tell the client to scan it again. Handed out mapped
+ * because the one value has to read correctly on all three transports the
+ * composer's picks feed: a 404 through `handleRouteError`, a 404 through
+ * `serializeError`, and a `barcode_not_cached` SSE frame through
+ * `toStreamErrorEvent`, which only understands `AppError` and would otherwise
+ * flatten a raw {@link BarcodeServiceError} to a generic "Failed to process
+ * meal". Typed as `AppError` rather than {@link mapBarcodeServiceError}'s
+ * `unknown` so `throw`ing it needs no cast at the call site.
+ */
+export function barcodeNotCachedError(
+  message = BARCODE_RESCAN_MESSAGE
+): AppError {
+  return new AppError('BARCODE_NOT_CACHED', 404, false, message);
+}
+
+/**
  * Map a {@link BarcodeServiceError} onto the standard `/api/v1` error envelope
  * with a real HTTP status. Domain codes get barcode-specific `BARCODE_*`
  * codes (the Flutter client maps them to localized copy); infrastructure
@@ -69,10 +88,7 @@ export function mapBarcodeServiceError(error: unknown): unknown {
         error.userMessage ?? 'No product found for this barcode.'
       );
     case 'not_cached':
-      return new AppError(
-        'BARCODE_NOT_CACHED',
-        404,
-        false,
+      return barcodeNotCachedError(
         error.userMessage ??
           'Barcode must be searched before logging. Please rescan.'
       );

@@ -12,11 +12,7 @@ import {
   mealMessageSchema,
 } from '@/lib/core/validation/meal';
 import { findCachedRows } from '@/lib/domain/barcode/cache';
-import {
-  BARCODE_RESCAN_MESSAGE,
-  BarcodeServiceError,
-  mapBarcodeServiceError,
-} from '@/lib/domain/barcode/errors';
+import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
@@ -76,9 +72,7 @@ async function assertScannedPicksAreCached(
 
   const cached = await findCachedRows(barcodes);
   if (barcodes.some((barcode) => !cached.has(barcode))) {
-    throw mapBarcodeServiceError(
-      new BarcodeServiceError('not_cached', BARCODE_RESCAN_MESSAGE)
-    );
+    throw barcodeNotCachedError();
   }
 }
 

@@ -8,10 +8,7 @@ import type { StagedEntriesApi } from '@/hooks/meals/relog/use-staged-entries';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import type { ChatMessage } from '@/lib/core/types/meal';
 import { stripMentions } from '@/lib/domain/logging/relog/mentions';
-import {
-  buildRelogRawInput,
-  type RelogRef,
-} from '@/lib/domain/logging/relog/relog';
+import { capRawInput, type RelogRef } from '@/lib/domain/logging/relog/relog';
 
 /** One key per staged SELECTION, order-independent. */
 const selectionKey = (stageIds: readonly string[]) =>
@@ -135,7 +132,7 @@ export function useRelogSubmit(args: {
       const durablyStaged = await handleSubmit({
         message: freeText,
         refs,
-        label: buildRelogRawInput([snapshot]),
+        label: capRawInput(snapshot),
       });
       if (durablyStaged) {
         staged.consume('');
@@ -161,7 +158,7 @@ export function useRelogSubmit(args: {
     // the server falls back to joining the resolved names, which reorders the
     // sentence. Omitted (not sent empty) if the composer is somehow blank: the
     // contract requires a real sentence, and the name-join is the fallback.
-    const displayText = buildRelogRawInput([getText().trim()]);
+    const displayText = capRawInput(getText().trim());
     try {
       const result = await stageRelogAnalysisAction({
         items: refs,

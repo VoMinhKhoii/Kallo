@@ -3,11 +3,11 @@
 import { z } from 'zod';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { barcodeSchema } from '@/lib/core/validation/barcode';
+import { foodItemGramsSchema } from '@/lib/core/validation/food-limits';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 import {
   BarcodeServiceError,
   searchBarcodeProduct,
@@ -28,10 +28,7 @@ const searchBarcodeSchema = z.object({
 
 const stageBarcodeMealSchema = z.object({
   barcode: barcodeSchema,
-  grams: z
-    .number()
-    .positive('Khối lượng phải lớn hơn 0')
-    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
+  grams: foodItemGramsSchema,
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });

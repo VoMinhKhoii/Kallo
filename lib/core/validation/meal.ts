@@ -4,9 +4,9 @@
  */
 import { z } from 'zod';
 import { barcodeSchema } from '@/lib/core/validation/barcode';
+import { foodItemGramsSchema } from '@/lib/core/validation/food-limits';
 import {
   dateStringSchema,
-  MAX_FOOD_ITEM_GRAMS,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 
@@ -78,14 +78,6 @@ export const displayTextSchema = withMealTextHygiene(
 );
 
 /**
- * A single relog reference: a pointer the server re-resolves under
- * `WHERE user_id = …`, carrying NO nutrition/grams/names. A `dish` ref names one
- * `meal_items` group; a `meal` ref expands server-side to every dish of that
- * meal. Defined here so both the meals contract and the analyze-meal request
- * body reuse ONE schema — the picks a combined submit sends alongside free text
- * validate identically to a pure relog.
- */
-/**
  * A scanned product riding in the composer beside the relog picks. Carries the
  * barcode and the grams the user chose — never a name or a number, so the
  * server resolves the label from its own cache exactly as it does for a relog.
@@ -93,13 +85,17 @@ export const displayTextSchema = withMealTextHygiene(
 export const barcodeRefSchema = z.object({
   kind: z.literal('barcode'),
   barcode: barcodeSchema,
-  grams: z
-    .number()
-    .positive('Khối lượng phải lớn hơn 0')
-    .finite()
-    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
+  grams: foodItemGramsSchema,
 });
 
+/**
+ * A single relog reference: a pointer the server re-resolves under
+ * `WHERE user_id = …`, carrying NO nutrition/grams/names. A `dish` ref names one
+ * `meal_items` group; a `meal` ref expands server-side to every dish of that
+ * meal. Defined here so both the meals contract and the analyze-meal request
+ * body reuse ONE schema — the picks a combined submit sends alongside free text
+ * validate identically to a pure relog.
+ */
 export const relogRefSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('dish'),

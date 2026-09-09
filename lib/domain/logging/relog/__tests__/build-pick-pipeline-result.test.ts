@@ -18,7 +18,7 @@ import {
   mergeRelogIntoPipelineResult,
   type RelogSourceRow,
   toDegenerateBounded,
-} from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+} from '@/lib/domain/logging/relog/build-pick-pipeline-result';
 
 // A meal_items-shaped row. Only the fields the builder reads matter; nutrient
 // columns are keyed by NUTRITION_KEYS (extractNutritionValues reads them).
