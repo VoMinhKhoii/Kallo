@@ -24,7 +24,6 @@ class MealInputController {
 }
 
 /// Natural-language meal composer: a growing multiline input + submit/stop.
-///
 /// Ported 1:1 from web `components/logging/input/composer/meal-input.tsx`.
 class MealInput extends StatefulWidget {
   const MealInput({
@@ -105,12 +104,11 @@ class _MealInputState extends State<MealInput>
 
   /// Owned only when the caller didn't supply one — disposing a borrowed
   /// controller would break the feed the moment the composer rebuilt.
-  ///
   /// INVARIANT: a caller supplies [MealInput.textController] for this widget's
-  /// whole life or never at all. `late final` bakes that in — starting at null
-  /// and passing one later would strand this undisposed, since [dispose] frees
-  /// it only while `_ownsController` holds. The feed owns one for the life of
-  /// the screen; the quick-log sheet passes none.
+  /// whole life or never at all (the feed always; the quick-log sheet never).
+  /// `late final` bakes that in: starting at null and passing one later would
+  /// strand this undisposed, since [dispose] frees it only while
+  /// `_ownsController` holds.
   late final MentionTextEditingController _ownedController =
       MentionTextEditingController();
   bool _ownsController = false;
@@ -170,13 +168,8 @@ class _MealInputState extends State<MealInput>
     setState(() {});
   }
 
-  void _onFocusChange() {
-    if (_focusNode.hasFocus) {
-      _focus.forward();
-    } else {
-      _focus.reverse();
-    }
-  }
+  void _onFocusChange() =>
+      _focusNode.hasFocus ? _focus.forward() : _focus.reverse();
 
   void _setText(String text) => _controller.setTextAndSync(text);
 
@@ -199,20 +192,23 @@ class _MealInputState extends State<MealInput>
   Widget build(BuildContext context) {
     // The slot is ALWAYS here, empty when the picker is closed: dropping it
     // changes this subtree's root type, so `Widget.canUpdate` fails and the
-    // card is re-inflated — which closes the field's platform input connection
-    // and leaves it waiting on a focus CHANGE that never comes, because the
-    // FocusNode kept focus. That was `/` killing the keyboard.
-    // Flexible only when there IS a picker: it is the half that yields room
-    // under a bounded dock, and the quick-log sheet lays this out unbounded.
+    // card is re-inflated, closing the field's platform input connection and
+    // leaving it waiting on a focus CHANGE that never comes because the
+    // FocusNode kept focus. That was `/` killing the keyboard. Both children
+    // are loose Flexibles so a BOUNDED dock shrinks them: the picker yields
+    // first, then the card, which alone outruns the dock's budget on a long
+    // message (133pt at one line, +23 a line) and inflexible overflowed DOWN
+    // past the keyboard, taking mode/scan/send out of reach. Loose fit in a
+    // `min` column is the one flex shape `RenderFlex` does not assert on when
+    // unbounded, which is how the quick-log sheet still lays this out.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.popupSlot == null)
-          const SizedBox.shrink()
-        else
-          Flexible(child: widget.popupSlot!),
-        _buildCard(context),
+        widget.popupSlot == null
+            ? const SizedBox.shrink()
+            : Flexible(child: widget.popupSlot!),
+        Flexible(child: _buildCard(context)),
       ],
     );
   }
@@ -229,58 +225,62 @@ class _MealInputState extends State<MealInput>
           // around it.
           if (widget.notice != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                KalloSpacing.sp1,
-                KalloSpacing.sp1,
-                KalloSpacing.sp1,
-                0,
-              ),
+              padding: const EdgeInsets.all(KalloSpacing.sp1).copyWith(bottom: 0),
               child: widget.notice!,
             ),
-          Padding(
-            padding: LoggingSpacing.composer,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Line 1 — the composer field, full width.
-                ConstrainedBox(
-                  constraints: _fieldBox,
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.newline,
-                    style: _fieldText,
-                    cursorColor: KalloColors.accent,
-                    decoration: InputDecoration(
-                      isCollapsed: true,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
-                      hintText:
-                          widget.hintText ?? 'logging.composerPlaceholder'.tr(),
-                      hintStyle: _fieldText.copyWith(color: kInkMuted),
+          // The FIELD is what gives when the card is squeezed: notice and
+          // action row stay inflexible, so the row is the LAST thing to go.
+          Flexible(
+            child: Padding(
+              padding: LoggingSpacing.composer,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Line 1 — the composer field, full width. Flexible: the
+                  // multiline TextField already scrolls itself past _fieldBox's
+                  // max, so a tighter budget only makes it scroll sooner.
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: _fieldBox,
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        style: _fieldText,
+                        cursorColor: KalloColors.accent,
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
+                          hintText:
+                              widget.hintText ??
+                              'logging.composerPlaceholder'.tr(),
+                          hintStyle: _fieldText.copyWith(color: kInkMuted),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: KalloSpacing.sp0_5),
-                // Line 2 — mode, scan, send.
-                ComposerActionRow(
-                  analyzing: widget.analyzing,
-                  canSubmit: _canSubmit,
-                  modeIcon: widget.modeIcon,
-                  modeLabel: widget.modeLabel,
-                  modeDetail: widget.modeDetail,
-                  onModePressed: widget.onModePressed,
-                  onBarcodePressed: widget.onBarcodePressed,
-                  onCancel: widget.onCancel,
-                  onSubmit: _submit,
-                ),
-              ],
+                  const SizedBox(height: KalloSpacing.sp0_5),
+                  // Line 2 — mode, scan, send.
+                  ComposerActionRow(
+                    analyzing: widget.analyzing,
+                    canSubmit: _canSubmit,
+                    modeIcon: widget.modeIcon,
+                    modeLabel: widget.modeLabel,
+                    modeDetail: widget.modeDetail,
+                    onModePressed: widget.onModePressed,
+                    onBarcodePressed: widget.onBarcodePressed,
+                    onCancel: widget.onCancel,
+                    onSubmit: _submit,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

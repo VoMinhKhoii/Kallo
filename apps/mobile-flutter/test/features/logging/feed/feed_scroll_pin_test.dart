@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -155,6 +157,74 @@ void main() {
       controller.position.pixels,
       restingAt,
       reason: 'a settled pin does not follow the card as it grows',
+    );
+  });
+
+  testWidgets('a fast answer, moments after the travel, is not chased', (
+    tester,
+  ) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10),
+    );
+    handle.pinToBottom('2026-01-01');
+    await tester.pumpAndSettle();
+    // A reveal this quick used to fall inside the 1.2s window, and was taken
+    // to the new bottom as an un-animated jump — the reveal-scroll again.
+    await tester.pump(const Duration(milliseconds: 300));
+    final restingAt = controller.position.pixels;
+
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 20),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.position.pixels,
+      restingAt,
+      reason: 'the settle window must not outlast the layout it follows',
+    );
+  });
+
+  testWidgets('a second request mid-travel travels, it does not jump', (
+    tester,
+  ) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10),
+    );
+
+    handle.pinToBottom('2026-01-01');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100)); // mid-travel
+
+    // Every pixel move from here: a request refused mid-travel used to be
+    // rescued by the correction, which carries the whole remaining distance in
+    // a single frame.
+    final startedAt = controller.position.pixels;
+    final steps = <double>[];
+    var last = startedAt;
+    controller.addListener(() {
+      steps.add((controller.position.pixels - last).abs());
+      last = controller.position.pixels;
+    });
+
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 20),
+    );
+    handle.pinToBottom('2026-01-01');
+    await tester.pumpAndSettle(const Duration(milliseconds: 16));
+
+    expect(controller.position.pixels, controller.position.maxScrollExtent);
+    final travelled = (controller.position.pixels - startedAt).abs();
+    expect(
+      steps.reduce(math.max),
+      lessThan(travelled / 3),
+      reason: 'one frame carried the whole distance, so it was a jump',
     );
   });
 

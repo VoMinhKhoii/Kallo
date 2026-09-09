@@ -279,7 +279,25 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      invalidateMealSurfaces(ref.invalidate, userId, date);
+      // The meal COMMITTED the moment the POST returned. A refetch that fails
+      // afterwards (flaky network) must not surface as a failed save: the sheet
+      // would hold the quantity step, the user would log the product a second
+      // time, and the day would carry it twice. Fall back to invalidation, as
+      // `stageRelogAnalysis` does for the same reason.
+      //
+      // AWAITED, and before the sheet pops: popping fires `onLogged`, which
+      // pins the feed to the tail. A bare invalidate lands the refetch after
+      // the pin has released, so the feed rides to the PREVIOUS last card and
+      // opens a screen of empty room under it.
+      final day = LoggingDayArgs(userId, date);
+      try {
+        await ref.read(loggingDayProvider(day).notifier).refresh();
+      } catch (_) {
+        ref.invalidate(loggingDayProvider(day));
+      }
+      // The day is refreshed above; re-invalidating it here would throw that
+      // result away and put the refetch back after the pin.
+      invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
       return true;
     } catch (error) {
       state = state.copyWith(

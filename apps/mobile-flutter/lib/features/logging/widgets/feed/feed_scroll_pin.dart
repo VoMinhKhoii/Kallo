@@ -6,7 +6,6 @@ import 'package:flutter/rendering.dart';
 import '../../../../theme/kallo_motion.dart';
 
 /// Imperative handle for [FeedScrollPin] — the feed asks the tail to follow.
-///
 /// Held by `FeedArea` and handed to the three places that put something new at
 /// the bottom of the day: a submitted analysis, a staged relog, and a staged
 /// cheat repeat. Nothing else scrolls the feed.
@@ -14,18 +13,16 @@ class FeedScrollPinHandle {
   _FeedScrollPinState? _state;
 
   /// The day whose feed holds a viewport of room after its last item, so that
-  /// riding to the bottom lands the newest turn at the TOP of the screen
-  /// rather than flush against the composer. Null until the first send. It
-  /// belongs to the handle because it is the same request the pin is: "put the
-  /// tail where it can be read". Without it `maxScrollExtent` has nowhere to go
-  /// on a short day and a send appears to do nothing.
-  ///
-  /// A DATE rather than a flag, because the room belongs to the day it was
-  /// asked for: paging elsewhere must not leave an old day's last meal above a
-  /// screen of nothing, and paging back should find the room where it was.
-  ///
-  /// Owned by `FeedArea`, which outlives every list that reads it, so nothing
-  /// disposes this — `ValueListenableBuilder` drops its own listener.
+  /// riding to the bottom lands the newest turn at the TOP of the screen rather
+  /// than flush against the composer. Null until the first send. It belongs to
+  /// the handle because it is the same request the pin is: "put the tail where
+  /// it can be read" — without it `maxScrollExtent` has nowhere to go on a
+  /// short day and a send appears to do nothing. A DATE rather than a flag,
+  /// because the room belongs to the day it was asked for: paging elsewhere
+  /// must not leave an old day's last meal above a screen of nothing, and
+  /// paging back should find the room where it was. Owned by `FeedArea`, which
+  /// outlives every list that reads it, so nothing disposes this —
+  /// `ValueListenableBuilder` drops its own listener.
   final ValueNotifier<String?> tailRoomFor = ValueNotifier<String?>(null);
 
   /// Ride the bottom of [date]'s list, opening the tail room so that the
@@ -37,21 +34,18 @@ class FeedScrollPinHandle {
 }
 
 /// Carries the newest turn to the top of the screen when the feed asks, and
-/// then GETS OUT OF THE WAY.
-///
-/// One deliberate travel per request, plus corrections while the layout under
-/// it is still moving — the keyboard's ~250ms inset ramp and the dock
-/// re-measuring behind it both change `maxScrollExtent` after the target was
-/// computed. Corrections JUMP: `animateTo` cancels what is in flight and
-/// restarts from the current pixel, so re-aiming every frame produced a scroll
-/// that never landed — the stutter.
-///
-/// The pin then RELEASES itself, and only an explicit
-/// [FeedScrollPinHandle.pinToBottom] arms it again. Both halves are
-/// load-bearing: an always-armed pin followed the streaming card as it grew,
-/// dragging the just-sent message off the top — and it stayed armed for the
-/// rest of the session, so merely opening the keyboard (which grows the feed's
-/// reserved padding, and with it the extent) threw the feed to the bottom.
+/// then GETS OUT OF THE WAY. One deliberate travel per request, plus
+/// corrections while the layout under it is still moving — the keyboard's
+/// ~250ms inset ramp and the dock re-measuring behind it both change
+/// `maxScrollExtent` after the target was computed. Corrections JUMP:
+/// `animateTo` cancels what is in flight and restarts from the current pixel,
+/// so re-aiming every frame never landed — the stutter. The pin then RELEASES
+/// itself, and only an explicit [FeedScrollPinHandle.pinToBottom] arms it
+/// again. Both halves are load-bearing: an always-armed pin followed the
+/// streaming card as it grew, dragging the just-sent message off the top — and
+/// it stayed armed for the session, so opening the keyboard (which grows the
+/// feed's reserved padding, and with it the extent) threw the feed to the
+/// bottom.
 class FeedScrollPin extends StatefulWidget {
   const FeedScrollPin({
     super.key,
@@ -71,21 +65,21 @@ class FeedScrollPin extends StatefulWidget {
 class _FeedScrollPinState extends State<FeedScrollPin> {
   /// The deliberate travel when the feed asks for the tail.
   static const Duration _travel = KalloMotion.scrollTo;
-  static const Curve _travelCurve = KalloEase.decelerate;
 
-  /// How long corrections keep following a request. Long enough to cover the
-  /// keyboard's retract and the dock's re-measure behind it; short enough that
-  /// the answer arriving a second later is never chased.
-  static const Duration _settle = Duration(milliseconds: 1200);
-
+  /// How long corrections follow a request once its travel has LANDED: the
+  /// keyboard's ~250ms retract plus one dock re-measure. Armed as [_travel] +
+  /// this, or the pin releases before its own corrections are due. At 1.2s it
+  /// also spanned a fast reveal, chasing the answer to the new bottom.
+  static const Duration _settle = Duration(milliseconds: 350);
   static const double _epsilon = 1; // sub-pixel drift is not worth a scroll
 
   bool _pinned = false;
+  Timer? _release;
 
   /// True while the deliberate travel runs — corrections stay out of its way.
   bool _travelling = false;
 
-  Timer? _release;
+  bool _pendingTravel = false;
 
   @override
   void initState() {
@@ -112,7 +106,7 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
   void _pin() {
     _pinned = true;
     _release?.cancel();
-    _release = Timer(_settle, _unpin);
+    _release = Timer(_travel + _settle, _unpin);
     _aim(animate: true);
   }
 
@@ -122,19 +116,23 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
     _pinned = false;
   }
 
-  /// Move to the tail: the first move ANIMATES, every correction after it JUMPS.
-  ///
-  /// Always deferred: [ScrollMetricsNotification] fires DURING layout, and the
-  /// tail room opens in the very frame a request arrives, so neither the extent
-  /// to aim at nor a safe moment to scroll exists yet.
-  ///
-  /// Riding the bottom IS putting the newest turn at the top: the tail room
-  /// makes `maxScrollExtent` that turn's own top offset for anything shorter
-  /// than a viewport — `feed_tail_room.dart` carries the arithmetic.
+  /// Move to the tail: a request ANIMATES, every correction after it JUMPS. A
+  /// request arriving mid-travel is queued, not refused: the landing travel
+  /// aimed at an extent that has since moved, and a jump to rescue that is the
+  /// stutter. Always deferred — [ScrollMetricsNotification] fires DURING layout
+  /// and the tail room opens in the frame a request arrives, so neither the
+  /// extent nor a safe moment to scroll exists yet. Riding the bottom IS
+  /// putting the newest turn at the top: the tail room makes `maxScrollExtent`
+  /// that turn's own top offset for anything shorter than a viewport —
+  /// `feed_tail_room.dart` carries the arithmetic.
   void _aim({required bool animate}) {
-    if (_travelling) return;
+    if (_travelling) {
+      _pendingTravel |= animate;
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !_pinned || _travelling) return;
+      if (!mounted || !_pinned) return;
+      if (_travelling) return _aim(animate: animate);
       final controller = widget.controller;
       if (!controller.hasClients) return;
       final position = controller.position;
@@ -146,14 +144,18 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
         await controller.animateTo(
           target,
           duration: _travel,
-          curve: _travelCurve,
+          curve: KalloEase.decelerate,
         );
       } finally {
         _travelling = false;
+        _release?.cancel(); // the window runs from the LANDING — see [_settle]
+        if (mounted && _pinned) _release = Timer(_settle, _unpin);
       }
-      // A lazy list builds more of itself on the way down, so the extent can
-      // have moved under the travel. One correction closes that gap.
-      _aim(animate: false);
+      // A lazy list grows under the travel, so one correction closes the gap —
+      // unless a pin arrived mid-travel, which gets a travel of its own.
+      final queued = _pendingTravel;
+      _pendingTravel = false;
+      _aim(animate: queued);
     });
   }
 
@@ -164,11 +166,10 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
       // the ListView alone is not enough: it needs a ScrollUpdateNotification
       // carrying dragDetails, which never arrives when the drag is pure
       // overscroll (dragging DOWN from the top clamps, so pixels never move and
-      // only an OverscrollNotification fires). A drag START always fires.
-      //
-      // It lives here rather than in the list because it answers the same
-      // question the pin does — "did the user take over?" — and the two must
-      // not disagree about it.
+      // only an OverscrollNotification fires). A drag START always fires. It
+      // lives here rather than in the list because it answers the same question
+      // the pin does — "did the user take over?" — and the two must not
+      // disagree about it.
       onNotification: (n) {
         if (n.depth == 0 && n.dragDetails != null) {
           FocusManager.instance.primaryFocus?.unfocus();

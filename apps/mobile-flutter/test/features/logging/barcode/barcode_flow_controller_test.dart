@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
@@ -12,7 +14,10 @@ class FakeApiClient extends ApiClient {
   @override
   Future<T> get<T>(String path) async {
     requests.add(('GET', path, null));
-    return handler!('GET', path, null) as T;
+    // A handler may answer with a Future when a test needs to hold a request
+    // open and watch what does (or does not) happen while it is in flight.
+    final answer = handler!('GET', path, null);
+    return (answer is Future ? await answer : answer) as T;
   }
 
   @override
@@ -147,6 +152,45 @@ void main() {
       expect(json['loggedDate'], '2026-07-02');
       expect(json['mealId'], isNotEmpty);
       expect(json['timezoneOffset'], isA<int>());
+    });
+
+    test('does not resolve until the day feed has refetched', () async {
+      await landOnProduct();
+      // Popping the sheet is what pins the feed to its tail, and the sheet pops
+      // the moment this resolves. A save that only INVALIDATES the day lands
+      // its refetch after the pin has let go, so the feed rides to the previous
+      // last card and opens a screen of empty room under it.
+      final dayGate = Completer<Map<String, dynamic>>();
+      api.handler = (method, path, body) {
+        if (path.startsWith('/api/v1/logging/day')) return dayGate.future;
+        if (path.startsWith('/api/v1/meals/dates')) return <dynamic>[];
+        return <String, dynamic>{};
+      };
+
+      var resolved = false;
+      final logging = notifier()
+          .logMeal(userId: 'user-1', date: '2026-07-02', grams: 150)
+          .then((ok) {
+            resolved = true;
+            return ok;
+          });
+      // Let the POST and the refetch it triggers both go out.
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        api.requests.any((r) => r.$2.startsWith('/api/v1/logging/day')),
+        isTrue,
+        reason: 'the save asks the day to refetch itself',
+      );
+      expect(
+        resolved,
+        isFalse,
+        reason: 'the refetch must land before the sheet pops and pins the feed',
+      );
+
+      dayGate.complete(<String, dynamic>{});
+      expect(await logging, isTrue);
     });
 
     test('failure keeps the quantity step and the product', () async {
