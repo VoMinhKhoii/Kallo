@@ -1,9 +1,3 @@
-import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
-import type {
-  BoundedNutrition,
-  NutritionValues,
-} from '@/lib/ai/types/nutrition-values';
-import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
@@ -13,54 +7,16 @@ import {
   rowToProduct,
 } from '@/lib/domain/barcode/cache';
 import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
-import type {
-  BarcodeErrorCode,
-  ParsedBarcodeProduct,
-} from '@/lib/domain/barcode/types';
+import { BarcodeServiceError } from '@/lib/domain/barcode/errors';
+import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
+import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
-/**
- * Domain failure in the barcode flow, carrying a stable {@link BarcodeErrorCode}.
- *
- * The service THROWS instead of returning `{success:false}` unions so that
- * callers choose their own error transport: server actions catch and fold into
- * their result union (web dialog contract), while `/api/v1/barcode/*` routes
- * map codes onto the standard `{error:{code,status,...}}` envelope with real
- * HTTP statuses. Crucially this keeps auth/validation failures OUT of the
- * domain-error path — an expired mobile token must surface as a 401, not as a
- * `server_error` inside an HTTP 200.
- */
-export class BarcodeServiceError extends Error {
-  constructor(
-    public readonly code: Exclude<BarcodeErrorCode, 'invalid_input'>,
-    message?: string
-  ) {
-    super(message ?? `Barcode flow failed: ${code}`);
-    this.name = 'BarcodeServiceError';
-  }
-}
-
-function scaleNutrition(
-  nutrition: NutritionValues,
-  factor: number
-): NutritionValues {
-  const scaled = {} as NutritionValues;
-  for (const key of NUTRITION_KEYS) {
-    const val = nutrition[key];
-    scaled[key] = val !== null ? Number((val * factor).toFixed(2)) : null;
-  }
-  return scaled;
-}
-
-function buildBoundedNutrition(nutrition: NutritionValues): BoundedNutrition {
-  const bounded = {} as BoundedNutrition;
-  for (const key of NUTRITION_KEYS) {
-    const val = nutrition[key];
-    bounded[key] = val !== null ? { low: val, mid: val, high: val } : null;
-  }
-  return bounded;
-}
+// Re-exported from its dependency-light home so every existing importer keeps
+// one path; `errors.ts` holds it so a caller that only classifies a failure
+// need not pull this module's DB and provider-chain imports in behind it.
+export { BarcodeServiceError } from '@/lib/domain/barcode/errors';
 
 /**
  * Look up a product by (digits-only, pre-validated) barcode. Checks the local
@@ -139,42 +95,21 @@ export async function stageBarcodeMeal(
     throw new BarcodeServiceError('not_cached');
   }
 
-  const nutrition = extractNutritionValues(dbProduct);
-  const scaledNutrition = scaleNutrition(nutrition, input.grams / 100);
-  const boundedNutrition = buildBoundedNutrition(scaledNutrition);
-
   const loggedAt = getUtcInstantForLocalDate(
     input.loggedDate,
     input.timezoneOffset
   );
 
-  // 2. Build PipelineResult object mimicking natural language decomposition output
+  // 2. The same frozen item a composer barcode PICK produces — one builder, so
+  //    scanning a carton and scanning it mid-sentence can never disagree.
+  const { item, nutrition } = buildBarcodeMealItem(dbProduct, input.grams);
   const pipelineResult: PipelineResult = {
     mealSlot: null,
     confidenceOverall: 'high',
     unmatchedIngredients: [],
-    displayedNutrition: scaledNutrition,
-    boundedNutrition: boundedNutrition,
-    mealItems: [
-      {
-        name: dbProduct.namePrimary,
-        displayedNutrition: scaledNutrition,
-        boundedNutrition: boundedNutrition,
-        ingredients: [
-          {
-            ingredientName: dbProduct.namePrimary,
-            foodCompositionId: dbProduct.id,
-            estimatedGrams: input.grams,
-            rawEquivalentGrams: input.grams,
-            cookingMethod: null,
-            userFacingUnit: 'g',
-            matchConfidence: 1,
-            boundedNutrition: boundedNutrition,
-            displayedNutrition: scaledNutrition,
-          },
-        ],
-      },
-    ],
+    displayedNutrition: nutrition,
+    boundedNutrition: item.boundedNutrition,
+    mealItems: [item],
   };
 
   // 3. Insert into pending_analyses

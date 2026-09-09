@@ -1,6 +1,6 @@
 'use server';
 
-import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
+import { resolveComposerPicks } from '@/lib/actions/meals/relog/resolve-picks';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { upsertPendingAnalysis } from '@/lib/ai/pipeline/stream/persist-analysis';
 import {
@@ -10,17 +10,21 @@ import {
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import type { ParsedMeal } from '@/lib/core/types/meal';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import { buildRelogPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
-import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
+import { buildPickPipelineResult } from '@/lib/domain/logging/relog/build-pick-pipeline-result';
+import {
+  buildRelogRawInput,
+  capRawInput,
+  relogRefsOf,
+} from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db/client';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,
 } from '@/lib/infra/rate-limit/relog-guard';
 
 /**
- * WEB pure-relog: stage the picked dishes as a `pending_analyses` row so they
+ * Pure PICKS: stage what the composer staged — past dishes, scanned products,
+ * or both — as a `pending_analyses` row so they
  * land in the SAME editable review card AI meals use, then let the ordinary
  * confirm path save them. Deterministic — no AI pipeline, no provider spend, so
  * no analysis guard in the AI-cost sense. It IS billing-gated: relog is a
@@ -35,12 +39,11 @@ import {
  * `relogMealItemsAction` remains for callers that want a committed meal with no
  * review step.
  *
- * The resolve runs in a short transaction with `FOR UPDATE` on the source meals
- * (like the direct writer): without it, a concurrent split-share could halve a
- * source's `meal_items` and set `portion_factor < 1` between the eligibility
- * check and the row read, and we'd snapshot the halved rows under the full dish
- * name. The lock closes that window; the copied numbers are frozen into the
- * pending row, so nothing after commit can corrupt them.
+ * `resolveComposerPicks` owns the resolution — including the short transaction
+ * holding `FOR UPDATE` on the source meals, without which a concurrent
+ * split-share could halve a source's `meal_items` between the eligibility check
+ * and the row read. It also resolves the composer's OTHER kind of pick, a
+ * scanned product, so a scan-only submit lands as the same editable card.
  */
 export async function stageRelogAnalysisAction(
   input: StageRelogAnalysisInput
@@ -54,10 +57,17 @@ export async function stageRelogAnalysisAction(
   const { user, profile } = await requireAuthAndProfile();
   // Premium gate BEFORE the rate guard: a locked user must not burn their
   // (shared) relog write budget on a call that can only end in 402.
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'relog'
-  );
+  //
+  // Only when a RELOG pick is actually in the list. Barcode logging carries no
+  // entitlement of its own anywhere else in the product (`/api/v1/barcode/log`
+  // gates nothing), so a scan-only submit arriving through this action must not
+  // become the one barcode path behind the paywall.
+  if (relogRefsOf(parsed.items).length > 0) {
+    await assertFeatureAccess(
+      { userId: user.id, profileCreatedAt: profile.createdAt },
+      'relog'
+    );
+  }
 
   // Throttled HERE, not at the route: the web composer calls this action
   // directly. This path opens a transaction holding `FOR UPDATE` on the source
@@ -71,12 +81,18 @@ export async function stageRelogAnalysisAction(
   // source meals. `DB_POOL_MAX` defaults to 2, so that is the whole pool, which
   // is precisely the starvation the guard exists to prevent.
   return withRelogGuard('write', RELOG_WRITE_ROUTE, user.id, async () => {
-    const { dishes, sourceConfidences } = await db.transaction((tx) =>
-      resolveRelogSources(tx, user.id, parsed.items, { lock: true })
-    );
+    const picks = await resolveComposerPicks(user.id, parsed.items);
 
-    const pipelineResult = buildRelogPipelineResult(dishes, sourceConfidences);
-    const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
+    const pipelineResult = buildPickPipelineResult(
+      picks.items,
+      picks.confidence
+    );
+    // The composer's own sentence when the client sent it: joining the resolved
+    // names puts every scanned product after every relogged dish, whatever
+    // order they were typed in.
+    const rawInput = parsed.displayText
+      ? capRawInput(parsed.displayText)
+      : buildRelogRawInput(picks.names);
     const loggedAt = getUtcInstantForLocalDate(
       parsed.loggedDate,
       parsed.timezoneOffset

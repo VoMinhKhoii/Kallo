@@ -178,9 +178,9 @@ export const MEAL_PATHS: Record<string, PathItem> = {
   '/api/v1/meals/relog/stage': {
     post: authed({
       operationId: 'stageRelog',
-      summary: 'Stage a re-log for review',
+      summary: 'Stage the composer’s picks for review',
       description:
-        'Like `relogMeals`, but stages the picks as a pending analysis so they land in the same editable review card an AI-analysed meal does, instead of being written immediately. `attemptId` is required — it is the upsert key that stops repeated staging accumulating rows.',
+        'Stages everything the composer picked — past dishes, past meals, or scanned products — as a pending analysis, so they land in the same editable review card an AI-analysed meal does instead of being written immediately. Every entry is a reference the server re-resolves: a dish or meal from the caller’s own history, or a barcode from the product cache (a barcode never searched is a 404 `BARCODE_NOT_CACHED` — rescan it). `displayText` is what the meal is LABELLED with, the sentence as it reads in the composer; omitted, the label is the resolved names joined in staged order. `attemptId` is required — it is the upsert key that stops repeated staging accumulating rows.',
       tags: TAGS,
       body: fromZod(stageRelogAnalysisSchema),
       ok: ref('StagedRelogAnalysis'),

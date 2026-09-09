@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/data/manual_log_providers.dart';
 import 'package:kallo_mobile/models/nutrition/ingredient.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// ApiClient stand-in that records requests and replays canned responses —
 /// never touches HTTP or the Supabase session.

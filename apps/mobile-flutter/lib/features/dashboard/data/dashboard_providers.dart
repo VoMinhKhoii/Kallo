@@ -26,6 +26,7 @@ import '../../../services/http/query.dart';
 import '../../../models/profile/dashboard.dart';
 import '../../../models/profile/weight.dart';
 import 'logging_day.dart';
+import '../../../models/http/api_error.dart';
 
 /// The aggregate dashboard payload — `GET /api/v1/dashboard` decoded into its
 /// four slices. Keyed by `(userId, date)`, like the RN

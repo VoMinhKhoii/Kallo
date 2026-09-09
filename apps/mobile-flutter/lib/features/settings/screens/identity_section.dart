@@ -7,7 +7,6 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../services/http/api_client.dart';
 import '../../../models/social/circle.dart';
 import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/form/kallo_text_field.dart';
@@ -20,6 +19,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
+import '../../../models/http/api_error.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;

@@ -1,4 +1,4 @@
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/core/validation/food-limits';
 
 /** How the user is sizing the scanned product. */
 export type AmountMode = 'serving' | 'package' | 'grams';

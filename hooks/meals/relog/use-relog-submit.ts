@@ -8,10 +8,7 @@ import type { StagedEntriesApi } from '@/hooks/meals/relog/use-staged-entries';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import type { ChatMessage } from '@/lib/core/types/meal';
 import { stripMentions } from '@/lib/domain/logging/relog/mentions';
-import {
-  buildRelogRawInput,
-  type RelogRef,
-} from '@/lib/domain/logging/relog/relog';
+import { capRawInput, type RelogRef } from '@/lib/domain/logging/relog/relog';
 
 /** One key per staged SELECTION, order-independent. */
 const selectionKey = (stageIds: readonly string[]) =>
@@ -127,16 +124,15 @@ export function useRelogSubmit(args: {
     // restores the same way, so the two platforms lose the same keystrokes.
     if (freeText.length > 0) {
       const snapshot = getText();
-      // The card's label is derived the way the SERVER derives the persisted
-      // one — same helper, same order — so the streaming card, the confirmable
-      // card and the saved meal all read as the same meal.
+      // The label is the composer's own sentence, in the order it was typed —
+      // and it rides the submit, so the streaming card, the confirmable card
+      // and the saved meal all carry that one string. Rebuilding it from
+      // `[freeText, ...pickNames]` appended the picks instead, which reorders
+      // the sentence whenever one of them was not last.
       const durablyStaged = await handleSubmit({
         message: freeText,
         refs,
-        label: buildRelogRawInput([
-          freeText,
-          ...staged.entries.map((entry) => entry.label),
-        ]),
+        label: capRawInput(snapshot),
       });
       if (durablyStaged) {
         staged.consume('');
@@ -156,12 +152,20 @@ export function useRelogSubmit(args: {
     // second pending card for one meal. Changing the selection mints a new id.
     const stageIds = staged.entries.map((entry) => entry.stageId);
     const attemptId = attemptIdFor(stageIds);
+    // The composer's own sentence — the mention runs, in the order they were
+    // typed. The SAME derivation the combined branch's label uses, so a submit
+    // is labelled the same way whether or not free text rode along; without it
+    // the server falls back to joining the resolved names, which reorders the
+    // sentence. Omitted (not sent empty) if the composer is somehow blank: the
+    // contract requires a real sentence, and the name-join is the fallback.
+    const displayText = capRawInput(getText().trim());
     try {
       const result = await stageRelogAnalysisAction({
         items: refs,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         attemptId,
+        ...(displayText.length > 0 ? { displayText } : {}),
       });
       setMessages((prev) => [
         ...prev,

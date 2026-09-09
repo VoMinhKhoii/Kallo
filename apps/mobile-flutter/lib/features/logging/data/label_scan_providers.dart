@@ -21,6 +21,7 @@ import '../logic/label/image_shrink.dart';
 import '../logic/label/review.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
+import '../../../models/http/api_error.dart';
 
 const _uuid = Uuid();
 
@@ -279,8 +280,6 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      invalidateMealSurfaces(ref.invalidate, userId, date);
-      return true;
     } catch (error) {
       state = state.copyWith(
         phase: LabelScanPhase.review,
@@ -288,6 +287,20 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       );
       return false;
     }
+    // The meal COMMITTED the moment the POST returned, so nothing below may
+    // turn a saved meal into a failed save — [settleAfterMealWrite] sits
+    // outside the try that owns the return value and never throws.
+    await settleAfterMealWrite(
+      ref.read,
+      ref.invalidate,
+      userId: userId,
+      date: date,
+      // The day is refreshed by the helper; re-invalidating it here would throw
+      // that result away and put the refetch back after the pin.
+      also: () =>
+          invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false),
+    );
+    return true;
   }
 
   /// Discard the current photo and shoot another.

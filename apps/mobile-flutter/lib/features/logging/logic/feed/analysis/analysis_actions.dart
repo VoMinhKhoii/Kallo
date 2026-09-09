@@ -3,13 +3,13 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../services/http/api_client.dart';
-import '../../../../models/logging/cheat.dart';
-import '../../../../models/logging/relog.dart';
-import '../../../../models/logging/streaming.dart';
-import '../../data/logging_keys.dart';
-import '../../data/logging_providers.dart';
-import '../../data/stream_analysis_controller.dart';
+import '../../../../../models/http/stream_analyze_input.dart';
+import '../../../../../models/logging/cheat.dart';
+import '../../../../../models/logging/relog.dart';
+import '../../../../../models/logging/streaming.dart';
+import '../../../data/logging_keys.dart';
+import '../../../data/logging_providers.dart';
+import '../../../data/stream_analysis_controller.dart';
 
 /// Hand the typed meal to the analyze stream. Shared by a fresh submit, a retry
 /// of a failed attempt, and a cheat-clarify resubmit — they differ only in the
@@ -30,7 +30,8 @@ void startMealAnalysis(
   required CheatIntensity cheatIntensity,
   String? clarifyAnswer,
   String? attemptId,
-  List<RelogRef>? refs,
+  List<ComposerPickRef>? refs,
+  String? displayText,
 }) {
   ref
       .read(streamAnalysisProvider.notifier)
@@ -44,6 +45,9 @@ void startMealAnalysis(
           clarifyAnswer: clarifyAnswer,
           attemptId: attemptId,
           refs: isCheat ? null : refs,
+          // Only meaningful beside refs — the server labels a pickless meal
+          // with `message`, which already is the sentence.
+          displayText: refs == null || isCheat ? null : displayText,
         ),
       );
 }

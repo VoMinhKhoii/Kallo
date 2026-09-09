@@ -20,6 +20,16 @@ export interface SourceItemRow {
 export interface ResolvedDish<T extends SourceItemRow> {
   name: string;
   rows: T[];
+  /**
+   * Index in the `refs` array of the reference that produced this dish — a
+   * `meal` ref stamps its own index on every dish it expands to.
+   *
+   * A TAG, not a reordering: this list is already in ref order. It exists so a
+   * caller holding OTHER kinds of pick (a scanned product) can interleave them
+   * back into the order the user staged, instead of appending one kind after
+   * the other and calling that the meal.
+   */
+  refIndex: number;
 }
 
 export class RelogResolutionError extends Error {}
@@ -94,7 +104,7 @@ export function resolveRelogDishes<T extends SourceItemRow>(
     }
   };
 
-  for (const ref of refs) {
+  for (const [refIndex, ref] of refs.entries()) {
     if (ref.kind === 'dish') {
       const key = `${ref.sourceMealId}:${ref.mealItemOrder}`;
       const group = byDish.get(key);
@@ -103,7 +113,7 @@ export function resolveRelogDishes<T extends SourceItemRow>(
           'Món ăn không còn trong lịch sử. Hãy bỏ món đó rồi thử lại.'
         );
       }
-      push({ name: group[0].mealItemName, rows: group });
+      push({ name: group[0].mealItemName, rows: group, refIndex });
       continue;
     }
     const keys = dishOrderByMeal.get(ref.sourceMealId) ?? [];
@@ -114,7 +124,7 @@ export function resolveRelogDishes<T extends SourceItemRow>(
     }
     for (const key of keys) {
       const group = byDish.get(key) as T[];
-      push({ name: group[0].mealItemName, rows: group });
+      push({ name: group[0].mealItemName, rows: group, refIndex });
     }
   }
 

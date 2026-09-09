@@ -19,7 +19,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' show MediaType;
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
-import '../../models/logging/relog.dart';
+import '../../models/http/api_error.dart';
+import '../../models/http/stream_analyze_input.dart';
 import '../../models/logging/streaming.dart';
 import '../auth/supabase_service.dart';
 import '../env/env.dart';
@@ -27,30 +28,6 @@ import '../env/env.dart';
 part 'api_client_uploads.dart';
 
 const _authRefreshSkew = Duration(minutes: 5);
-
-/// Client-side mirror of the server `ApiError` envelope.
-///
-/// Re-implemented (not imported) exactly as the RN client does, because the
-/// server's `lib/errors.ts` pulls in `next/server`.
-class ApiError implements Exception {
-  final String code;
-  final int status;
-  final bool retryable;
-  final String message;
-  final double? retryAfterSeconds;
-
-  ApiError(
-    this.code,
-    this.status,
-    this.retryable,
-    this.message, [
-    this.retryAfterSeconds,
-  ]);
-
-  @override
-  String toString() =>
-      'ApiError($code, $status, retryable=$retryable): $message';
-}
 
 /// Parse a `Retry-After` header: numeric seconds first, else HTTP-date delta.
 /// Returns `null` when absent/unparseable. Mirrors `parseRetryAfter` in RN.
@@ -88,67 +65,6 @@ ApiError _toApiError(http.Response res) {
       retryAfterSeconds,
     );
   }
-}
-
-/// Input for the meal-analysis SSE stream (`POST /api/analyze-meal`).
-class StreamAnalyzeInput {
-  final String message;
-  final String loggedDate;
-  final int timezoneOffset;
-  final String? locale; // 'en' | 'vi'
-
-  /// 'cheat' runs the slider estimator instead of the decomposition pipeline;
-  /// omitted/null means 'precise' (the default pipeline).
-  final String? mode;
-
-  /// Indulgence magnitude for cheat mode — 'light' | 'medium' | 'heavy';
-  /// scales the slider anchor grams server-side.
-  final String? cheatIntensity;
-  final String? cheatType;
-
-  /// Reply to a prior vague-input cheat clarifying question.
-  final String? clarifyAnswer;
-
-  /// Stable per-attempt id. Reused across re-analyses of one logging attempt
-  /// (retry, cheat-clarify resubmit) so the server upserts the same
-  /// `pending_analyses` staging row instead of orphaning its predecessor. Sent
-  /// only when set — a null attemptId always inserts a fresh row server-side.
-  final String? attemptId;
-
-  /// Relog picks riding alongside free text (precise mode only). The server
-  /// runs the pipeline on [message] ALONE and merges these deterministically
-  /// afterwards, so a relogged dish is copied verbatim, never re-estimated.
-  ///
-  /// The server rejects `mode: 'cheat'` together with refs rather than silently
-  /// dropping them, so callers must keep this empty outside normal mode.
-  final List<RelogRef>? refs;
-
-  const StreamAnalyzeInput({
-    required this.message,
-    required this.loggedDate,
-    required this.timezoneOffset,
-    this.locale,
-    this.mode,
-    this.cheatIntensity,
-    this.cheatType,
-    this.clarifyAnswer,
-    this.attemptId,
-    this.refs,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'message': message,
-    'loggedDate': loggedDate,
-    'timezoneOffset': timezoneOffset,
-    if (locale != null) 'locale': locale,
-    if (mode != null) 'mode': mode,
-    if (cheatIntensity != null) 'cheatIntensity': cheatIntensity,
-    if (cheatType != null) 'cheatType': cheatType,
-    if (clarifyAnswer != null) 'clarifyAnswer': clarifyAnswer,
-    if (attemptId != null) 'attemptId': attemptId,
-    if (refs != null && refs!.isNotEmpty)
-      'refs': refs!.map((ref) => ref.toJson()).toList(),
-  };
 }
 
 class ApiClient {

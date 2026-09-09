@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildRelogRawInput,
+  capRawInput,
   escapeLikeToken,
   parseSlashToken,
   type RelogStagedEntry,
@@ -212,5 +214,27 @@ describe('sumStagedMacros', () => {
       carbohydrateG: null,
       fatG: null,
     });
+  });
+});
+
+describe('capRawInput', () => {
+  it('returns a sentence within the cap unchanged', () => {
+    expect(capRawInput('cơm gà + 1 kem vani')).toBe('cơm gà + 1 kem vani');
+  });
+
+  it('leaves a sentence of exactly the cap length alone', () => {
+    const exact = 'a'.repeat(500);
+    expect(capRawInput(exact)).toBe(exact);
+  });
+
+  it('truncates past the cap and marks the cut with an ellipsis', () => {
+    const capped = capRawInput('a'.repeat(501));
+    expect(capped).toHaveLength(500);
+    expect(capped).toBe(`${'a'.repeat(499)}…`);
+  });
+
+  it('is the cap `buildRelogRawInput` applies to its joined labels', () => {
+    const labels = ['b'.repeat(300), 'c'.repeat(300)];
+    expect(buildRelogRawInput(labels)).toBe(capRawInput(labels.join(', ')));
   });
 });

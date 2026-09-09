@@ -4,41 +4,45 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../../../models/logging/scan_outcome.dart';
 import '../../../data/barcode_providers.dart';
+import '../../../logic/relog/scan_purpose.dart';
 import 'frame/barcode_camera_session.dart';
 import 'frame/barcode_camera_view.dart';
 import 'frame/barcode_frame_status.dart';
 import 'barcode_manual_input.dart';
 import 'barcode_product_step.dart';
 
-/// The barcode branch of the scan sheet: scan (or type) a product barcode,
-/// pick an amount, and log it as a meal in one shot — no pending-confirmation
-/// card.
+/// The barcode branch of the scan sheet: scan (or type) a product barcode and
+/// pick an amount. Confirming that amount does whatever [purpose] says — log
+/// the meal in one shot (no pending-confirmation card), or hand the product
+/// back for the composer to splice into the sentence being typed.
 ///
 /// The surrounding chrome (surface, header, saving lock) belongs to
 /// `scan_sheet.dart`, which hosts this alongside the nutrition-label branch;
-/// this widget is only the body. It pops the sheet with `true` once a meal is
-/// saved.
+/// this widget is only the body. It pops with a [ScanOutcome].
 ///
-/// A lookup that finds nothing does NOT replace this body: the camera keeps
-/// the screen and the miss is reported inside the frame, so the sheet holds
-/// its height and the scanner is still live to try the next package.
+/// A lookup that finds nothing does NOT replace this body: the miss is reported
+/// inside the frame, so the sheet holds its height and the scanner stays live.
 ///
-/// [onFallbackToText] is invoked when the user picks "describe it instead" on
-/// a product we couldn't find — the sheet pops itself first.
-/// [onScanLabelInstead] switches the host to the label branch, which is the
-/// better exit for a product Open Food Facts has never heard of.
+/// [onFallbackToText] fires when the user picks "describe it instead" on a
+/// product we couldn't find — the sheet pops itself first.
+/// [onScanLabelInstead] switches the host to the label branch.
 class BarcodeScannerSheet extends ConsumerStatefulWidget {
   const BarcodeScannerSheet({
     super.key,
     required this.userId,
     required this.date,
     required this.onScanLabelInstead,
+    required this.purpose,
     this.onFallbackToText,
   });
 
   final String userId;
   final String date;
+
+  /// Log the product, or hand it back — see [ScanPurpose].
+  final ScanPurpose purpose;
   final VoidCallback onScanLabelInstead;
   final VoidCallback? onFallbackToText;
 
@@ -58,10 +62,9 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     super.dispose();
   }
 
-  /// Whether the lookup in flight (or the one that just failed) was TYPED.
-  /// The controller lands both on the scanning phase, but a typed code has to
-  /// come back to its keyboard: the user reaching for it has usually already
-  /// told us the camera is no use to them.
+  /// Whether the lookup in flight (or the one that failed) was TYPED. Both land
+  /// on the scanning phase, but a typed code comes back to its keyboard: the
+  /// user reaching for it has told us the camera is no use to them.
   bool _manualLookup = false;
 
   void _onDetect(BarcodeCapture capture) {
@@ -87,13 +90,29 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     ref.read(barcodeFlowProvider.notifier).scanAgain();
   }
 
+  /// Latched for the duration of a commit: on the pick path the pop IS the
+  /// action, so a second tap landing before the route is gone would pop the
+  /// sheet under us as well.
+  bool _committing = false;
+
   Future<void> _confirm(int grams) async {
-    final saved = await ref
-        .read(barcodeFlowProvider.notifier)
-        .logMeal(userId: widget.userId, date: widget.date, grams: grams);
-    if (saved && mounted) {
-      Navigator.of(context).pop(true);
+    final product = ref.read(barcodeFlowProvider).product;
+    if (product == null || _committing) return;
+    _committing = true;
+    final outcome = await widget.purpose.commit(
+      ref,
+      product: product,
+      grams: grams,
+      userId: widget.userId,
+      date: widget.date,
+    );
+    if (outcome == null) {
+      // Nothing to pop for: the save failed and the amount step is holding its
+      // error. Unlatch, or the retry it offers would do nothing.
+      _committing = false;
+      return;
     }
+    if (mounted) Navigator.of(context).pop(outcome);
   }
 
   @override
@@ -101,8 +120,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     // Re-arm whenever we are back to accepting a scan, tear down once the
     // viewport leaves the screen. This listener fires synchronously with the
     // state change — which can originate inside the scanner's own detection
-    // callback — so disposal is deferred a frame rather than run from within
-    // that stream's callstack.
+    // callback — so disposal is deferred a frame, not run from that callstack.
     ref.listen(barcodeFlowProvider, (previous, next) {
       if (next.phase == BarcodeFlowPhase.scanning) {
         // Including after a miss: the frame keeps scanning, which is what
@@ -120,17 +138,14 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     return _buildBody(ref.watch(barcodeFlowProvider));
   }
 
-  /// The live viewport holds the screen from the first frame through the
-  /// lookup — the search runs over the picture, not in place of it. A typed
-  /// lookup is the exception: it never leaves the keyboard, so the camera has
-  /// no reason to be running behind it.
+  /// The live viewport holds the screen through the lookup — the search runs
+  /// over the picture, not in place of it. A typed lookup keeps its keyboard.
   bool _showsCamera(BarcodeFlowState state) =>
       !_manualLookup &&
       (state.phase == BarcodeFlowPhase.scanning ||
           state.phase == BarcodeFlowPhase.searching);
 
-  /// The typing surface, whether the user is still on it or is waiting on the
-  /// code they typed.
+  /// The typing surface, on it or waiting on the code typed into it.
   Widget _manualInput(BarcodeFlowState state) => BarcodeManualInput(
     controller: _manualController,
     onSubmit: _submitManual,
@@ -156,7 +171,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                 widget.onFallbackToText == null
                     ? null
                     : () {
-                      Navigator.of(context).pop(false);
+                      Navigator.of(context).pop();
                       widget.onFallbackToText?.call();
                     },
           ),
@@ -171,6 +186,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           // Keyed per product so amount state re-initializes on each scan.
           key: ValueKey(product.barcode),
           product: product,
+          purpose: widget.purpose,
           saving: state.phase == BarcodeFlowPhase.saving,
           errorText: state.errorKey?.tr(),
           onBack: _backToCamera,

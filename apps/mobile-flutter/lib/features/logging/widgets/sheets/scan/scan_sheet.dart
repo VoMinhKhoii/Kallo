@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../models/logging/scan_outcome.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../data/barcode_providers.dart';
@@ -9,6 +10,7 @@ import '../../../data/label_scan_providers.dart';
 import '../barcode/barcode_scanner_sheet.dart';
 import '../label/label_scan_branch.dart';
 import 'scan_type_toggle.dart';
+import '../../../logic/relog/scan_purpose.dart';
 
 /// Open the scan sheet: read a packaged product either by its barcode or by
 /// the nutrition table printed on the box, then log it in one shot — no
@@ -20,20 +22,24 @@ import 'scan_type_toggle.dart';
 /// offers the other as its recovery action, and the toggle up top lets the
 /// user switch before failing at all.
 ///
-/// Resolves to `true` when a meal was logged (the caller toasts).
+/// Resolves to a [ScanSaved] when a meal was written (the caller toasts), or a
+/// [ScanPicked] when [purpose] asked for the product back instead — the
+/// composer's own scan icon, splicing it into the sentence being typed.
 /// [onFallbackToText] hands the user the AI composer instead.
-Future<bool?> showScanSheet(
+Future<ScanOutcome?> showScanSheet(
   BuildContext context, {
   required String userId,
   required String date,
+  required ScanPurpose purpose,
   VoidCallback? onFallbackToText,
 }) {
-  return showNhamSheet<bool>(
+  return showNhamSheet<ScanOutcome>(
     context,
     isScrollControlled: true,
     builder: (context) => ScanSheet(
       userId: userId,
       date: date,
+      purpose: purpose,
       onFallbackToText: onFallbackToText,
     ),
   );
@@ -44,11 +50,17 @@ class ScanSheet extends ConsumerStatefulWidget {
     super.key,
     required this.userId,
     required this.date,
+    required this.purpose,
     this.onFallbackToText,
   });
 
   final String userId;
   final String date;
+
+  /// Log the scanned product, or hand it back to the composer — see
+  /// [ScanPurpose]. Barcode only: a photographed label is not a product the
+  /// server can re-resolve, so that branch keeps logging either way.
+  final ScanPurpose purpose;
   final VoidCallback? onFallbackToText;
 
   @override
@@ -112,6 +124,7 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
       ? BarcodeScannerSheet(
           userId: widget.userId,
           date: widget.date,
+          purpose: widget.purpose,
           onFallbackToText: widget.onFallbackToText,
           onScanLabelInstead: () => _switchTo(ScanType.label),
         )

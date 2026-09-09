@@ -13,6 +13,7 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
 import 'onboarding_test_support.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// Answers the entitlement endpoint and nothing else: the dashboard warm-up is
 /// deliberately allowed to fail, since the screen must not depend on it.

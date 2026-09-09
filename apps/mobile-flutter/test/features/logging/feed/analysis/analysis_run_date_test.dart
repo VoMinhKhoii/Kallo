@@ -1,15 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:kallo_mobile/features/logging/logic/feed/analysis_run.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/analysis/analysis_run.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/models/http/stream_analyze_input.dart';
 
 /// An analysis that goes out and never answers on its own, so the test decides
 /// when — and on which day — the answer lands.
@@ -45,6 +47,24 @@ void main() {
       ),
     );
 
+    // The answer's only feedback is a haptic — it does not scroll the feed,
+    // which by then holds a turn the user is reading. The send's own ride to
+    // the top is counted separately.
+    var buzzed = 0;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') buzzed++;
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
     var pinned = 0;
     final composer = MentionTextEditingController();
     addTearDown(composer.dispose);
@@ -57,21 +77,30 @@ void main() {
 
     // Sent on Monday, answered while Monday is still on screen.
     run.startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'phở bò');
-    pinned = 0; // the send rides the tail too; only the answer is under test
-    run.reveal(ref, userId: 'u1', date: '2026-08-10');
-    expect(pinned, 1, reason: 'the answer for the day on screen belongs on it');
-
-    // Sent on Monday, answered after the user paged to Tuesday. The card is
-    // pinned to `stream.loggedDate` by [FeedViewState], so Tuesday's feed has
-    // nothing new on it — riding its tail and buzzing for it is an answer
-    // delivered to the wrong screen.
-    run.startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'bún chả');
+    expect(pinned, 1, reason: 'the SEND carries its turn to the top');
     pinned = 0;
-    run.reveal(ref, userId: 'u1', date: '2026-08-11');
+    buzzed = 0;
+    run.reveal(ref, userId: 'u1', date: '2026-08-10');
+    await tester.pump();
+    expect(buzzed, 1, reason: 'the answer for the day on screen belongs on it');
     expect(
       pinned,
       0,
-      reason: "Monday's answer must not pull Tuesday's feed to its tail",
+      reason: 'and it lands in the room the send left, without scrolling',
+    );
+
+    // Sent on Monday, answered after the user paged to Tuesday. The card is
+    // pinned to `stream.loggedDate` by [FeedViewState], so Tuesday's feed has
+    // nothing new on it — buzzing for it is an answer delivered to the wrong
+    // screen.
+    run.startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'bún chả');
+    buzzed = 0;
+    run.reveal(ref, userId: 'u1', date: '2026-08-11');
+    await tester.pump();
+    expect(
+      buzzed,
+      0,
+      reason: "Monday's answer must not buzz for Tuesday's feed",
     );
 
     // The reveal is kept, not thrown away — paging back to Monday still finds

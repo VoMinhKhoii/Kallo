@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import { stageRelogAnalysisSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
+import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export const runtime = 'nodejs';
@@ -16,7 +17,11 @@ export const runtime = 'nodejs';
  *  already does), or the composer would save two different ways depending on
  *  whether the user happened to type anything alongside their picks.
  *
- *  The body carries only references, never nutrition. */
+ *  The body carries only references, never nutrition.
+ *
+ *  A scanned pick whose product is no longer cached comes back as the SAME 404
+ *  `BARCODE_NOT_CACHED` envelope `POST /api/v1/barcode/log` returns, so the
+ *  client prompts a rescan whichever way it staged the scan. */
 export async function POST(req: NextRequest) {
   try {
     await requireAuthAndProfile();
@@ -24,6 +29,6 @@ export async function POST(req: NextRequest) {
     const result = await stageRelogAnalysisAction(body);
     return Response.json(result);
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(mapBarcodeServiceError(error));
   }
 }

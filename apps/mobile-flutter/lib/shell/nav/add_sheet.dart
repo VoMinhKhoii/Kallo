@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../features/dashboard/widgets/weight/weight_log_sheet.dart';
-import '../../features/logging/widgets/sheets/quick_log_sheet.dart';
+import '../../features/logging/logic/composer/quick_log_actions.dart';
 import '../../shared/widgets/list/list_row.dart';
 import '../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../shared/widgets/sheet/kallo_sheet_header.dart';

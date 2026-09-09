@@ -92,6 +92,34 @@ export type RelogRef =
   | { kind: 'dish'; sourceMealId: string; mealItemOrder: number }
   | { kind: 'meal'; sourceMealId: string };
 
+/**
+ * A packaged product scanned INTO the composer, at the grams the user picked.
+ *
+ * The same discipline as a {@link RelogRef}: no nutrition, no name — the server
+ * re-resolves the product from the barcode cache and scales the label itself.
+ * A client can only ever point at a product it has already searched (the cache
+ * is what a search fills), which is why an unknown barcode is `not_cached`
+ * rather than a lookup this endpoint performs.
+ */
+export interface BarcodeRef {
+  kind: 'barcode';
+  barcode: string;
+  grams: number;
+}
+
+/** Everything the composer can carry beside its free text. */
+export type ComposerPickRef = RelogRef | BarcodeRef;
+
+/** The picks that point at past meals — what `resolveRelogSources` resolves. */
+export function relogRefsOf(refs: ComposerPickRef[]): RelogRef[] {
+  return refs.filter((ref): ref is RelogRef => ref.kind !== 'barcode');
+}
+
+/** The picks that point at scanned products. */
+export function barcodeRefsOf(refs: ComposerPickRef[]): BarcodeRef[] {
+  return refs.filter((ref): ref is BarcodeRef => ref.kind === 'barcode');
+}
+
 /** One row in the staged list above the composer. `stageId` is client-minted so
  *  duplicate picks of the same dish stay independently removable — keying on
  *  the ref would make "remove" hit the wrong row. `summary` and `label` are
@@ -165,10 +193,17 @@ export function sumStagedMacros(
  *  share one derivation: the label shown the instant you submit is the label
  *  that gets persisted, with no second source of truth to drift. */
 export function buildRelogRawInput(labels: string[]): string {
-  const joined = labels.join(', ');
-  return joined.length > RELOG_RAW_INPUT_MAX
-    ? `${joined.slice(0, RELOG_RAW_INPUT_MAX - 1)}…`
-    : joined;
+  return capRawInput(labels.join(', '));
+}
+
+/** The `meals.raw_input` length cap on its own, for the callers that already
+ *  HAVE the finished sentence (the composer's `displayText`) and only need it
+ *  fitted to the column. Wrapping such a string in a one-element array just to
+ *  join it back read as a derivation that isn't one. */
+export function capRawInput(text: string): string {
+  return text.length > RELOG_RAW_INPUT_MAX
+    ? `${text.slice(0, RELOG_RAW_INPUT_MAX - 1)}…`
+    : text;
 }
 
 const RELOG_RAW_INPUT_MAX = 500;

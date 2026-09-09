@@ -15,6 +15,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/http/api_error.dart';
 import '../http/api_client.dart';
 
 /// The server's locale-agnostic code for a gated feature (lowercase — it comes

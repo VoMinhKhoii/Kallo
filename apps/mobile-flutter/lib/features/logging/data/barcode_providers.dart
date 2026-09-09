@@ -11,6 +11,7 @@ import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
+import '../../../models/http/api_error.dart';
 
 const _uuid = Uuid();
 
@@ -142,8 +143,9 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   }
 
   /// Stage + confirm the current product at [grams] in one call. Returns true
-  /// on success (the sheet pops and toasts); on failure the quantity step
-  /// stays put with an inline error so the chosen amount isn't lost.
+  /// on success (the sheet pops and toasts). A failure keeps the quantity step
+  /// and its chosen amount, with the error inline — except `not_cached`, which
+  /// only a fresh search can repair and so routes back to the scanner.
   Future<bool> logMeal({
     required String userId,
     required String date,
@@ -165,8 +167,6 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      invalidateMealSurfaces(ref.invalidate, userId, date);
-      return true;
     } catch (error) {
       final key = _errorKeyFor(error);
       // A purged cache row (not_cached) can only be repaired by re-searching;
@@ -182,6 +182,20 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       );
       return false;
     }
+    // The meal COMMITTED the moment the POST returned, so nothing below may
+    // turn a saved meal into a failed save — [settleAfterMealWrite] sits
+    // outside the try that owns the return value and never throws.
+    await settleAfterMealWrite(
+      ref.read,
+      ref.invalidate,
+      userId: userId,
+      date: date,
+      // The day is refreshed by the helper; re-invalidating it here would throw
+      // that result away and put the refetch back after the pin.
+      also: () =>
+          invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false),
+    );
+    return true;
   }
 
   /// Resume scanning after an error or from the quantity step's back link.

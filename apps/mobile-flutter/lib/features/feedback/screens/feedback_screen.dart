@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../models/http/api_error.dart';
 import '../../../services/http/api_client.dart';
 import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';

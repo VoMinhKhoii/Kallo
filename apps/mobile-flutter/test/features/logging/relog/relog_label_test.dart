@@ -79,4 +79,24 @@ void main() {
       );
     });
   });
+
+  group('capDisplayText', () {
+    test('leaves an ordinary sentence alone', () {
+      expect(capDisplayText('Phở bò với trà đá'), 'Phở bò với trà đá');
+    });
+
+    // The server REJECTS a longer label rather than trimming it, so an
+    // uncapped sentence loses the whole meal, not its tail.
+    test('cuts at the cap the server enforces', () {
+      final long = 'a' * (kMaxDisplayTextChars + 50);
+      expect(capDisplayText(long).length, kMaxDisplayTextChars);
+    });
+
+    test('never cuts a surrogate pair in half', () {
+      final long = '${'a' * (kMaxDisplayTextChars - 1)}🍜🍜';
+      final out = capDisplayText(long);
+      expect(out.length, kMaxDisplayTextChars - 1);
+      expect(out.codeUnits.last, isNot(inInclusiveRange(0xD800, 0xDBFF)));
+    });
+  });
 }
