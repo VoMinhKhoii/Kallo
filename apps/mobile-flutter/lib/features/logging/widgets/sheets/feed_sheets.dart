@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../logic/meal_log_mode.dart';
 import '../../logic/relog/scanned_pick.dart';
+import '../../../../models/logging/scan_outcome.dart';
 import '../composer/composer_actions.dart';
 import '../relog/mention_text_controller.dart';
 import 'manual/manual_log_sheet.dart';
@@ -40,7 +41,8 @@ class FeedSheets {
   /// Where a scanned product lands when the COMPOSER asked for the scan.
   final MentionTextEditingController composer;
 
-  /// A sheet wrote a meal: bring it into view, as a send does.
+  /// A sheet WROTE a meal: bring it into view, as a send does. Not fired for a
+  /// sheet the user simply closed — a cancel must move nothing.
   final VoidCallback onLogged;
 
   Future<void> openMode() => chooseLogMode(
@@ -56,29 +58,29 @@ class FeedSheets {
 
   /// The mode chooser's Scan row: one shot, saved on the spot.
   Future<void> openBarcode() async {
-    await openScanLogSheet(
+    final outcome = await openScanLogSheet(
       context,
       userId: userId,
       date: date,
       onFallbackToText: onFallbackToText,
     );
-    onLogged();
+    if (outcome is ScanSaved) onLogged();
   }
 
   /// The composer's scan icon: the product joins the sentence being typed.
   Future<void> openBarcodePick() async {
-    final picked = await openScanPickSheet(
+    final outcome = await openScanPickSheet(
       context,
       userId: userId,
       date: date,
       onFallbackToText: onFallbackToText,
     );
-    if (picked != null && context.mounted) {
-      stageScannedPick(context, composer, picked);
-    } else {
-      // The label branch inside the same sheet saves; so does a scan the user
-      // switched to the mode row for. Either way a card may have landed.
-      onLogged();
+    // The nutrition-LABEL branch inside the same sheet still writes a meal —
+    // there is no reference to hand back for a photographed table — so that
+    // one lands in the feed and wants carrying into view.
+    if (outcome is ScanSaved) return onLogged();
+    if (outcome is ScanPicked && context.mounted) {
+      stageScannedPick(context, composer, outcome);
     }
   }
 }

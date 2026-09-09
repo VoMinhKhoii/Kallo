@@ -47,7 +47,7 @@ Future<void> chooseLogMode(
 /// printed on the package. Unlike manual (which saves silently), both scan
 /// paths persist the meal in one server call with no pending card, so a
 /// success toast is the only confirmation the user gets.
-Future<void> openScanLogSheet(
+Future<ScanOutcome?> openScanLogSheet(
   BuildContext context, {
   required String userId,
   required String date,
@@ -68,7 +68,7 @@ Future<void> openScanLogSheet(
 /// The nutrition-LABEL branch inside the same sheet still saves: a photographed
 /// table is not a product the server can re-resolve, so there is no reference
 /// to hand back. That outcome toasts exactly as the one-shot flow does.
-Future<ScanPicked?> openScanPickSheet(
+Future<ScanOutcome?> openScanPickSheet(
   BuildContext context, {
   required String userId,
   required String date,
@@ -81,7 +81,9 @@ Future<ScanPicked?> openScanPickSheet(
   onFallbackToText: onFallbackToText,
 );
 
-Future<ScanPicked?> _openScan(
+/// Null when the user simply closed the sheet — which is NOT nothing to the
+/// caller: a cancel must not toast, and must not move the feed.
+Future<ScanOutcome?> _openScan(
   BuildContext context, {
   required String userId,
   required String date,
@@ -101,7 +103,7 @@ Future<ScanPicked?> _openScan(
     HapticFeedback.mediumImpact();
     showTopToast(context, 'logging.scan.savedMeal'.tr());
   }
-  return outcome is ScanPicked ? outcome : null;
+  return outcome;
 }
 
 /// "Log it again": re-stage a past cheat occasion's sliders (seeded with last
