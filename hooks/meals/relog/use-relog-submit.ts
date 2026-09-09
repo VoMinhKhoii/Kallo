@@ -127,16 +127,15 @@ export function useRelogSubmit(args: {
     // restores the same way, so the two platforms lose the same keystrokes.
     if (freeText.length > 0) {
       const snapshot = getText();
-      // The card's label is derived the way the SERVER derives the persisted
-      // one — same helper, same order — so the streaming card, the confirmable
-      // card and the saved meal all read as the same meal.
+      // The label is the composer's own sentence, in the order it was typed —
+      // and it rides the submit, so the streaming card, the confirmable card
+      // and the saved meal all carry that one string. Rebuilding it from
+      // `[freeText, ...pickNames]` appended the picks instead, which reorders
+      // the sentence whenever one of them was not last.
       const durablyStaged = await handleSubmit({
         message: freeText,
         refs,
-        label: buildRelogRawInput([
-          freeText,
-          ...staged.entries.map((entry) => entry.label),
-        ]),
+        label: buildRelogRawInput([snapshot]),
       });
       if (durablyStaged) {
         staged.consume('');

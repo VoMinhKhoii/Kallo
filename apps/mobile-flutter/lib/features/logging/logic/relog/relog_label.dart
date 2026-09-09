@@ -1,10 +1,11 @@
 /// Turning the composer's `/`-marked sentence back into ordinary prose.
 ///
 /// The card a submit produces shows the user their OWN words. It does not
-/// rebuild a label out of parts: joining `[free text, ...pick names]` — how the
-/// server derives `meals.raw_input` — reorders the sentence whenever a pick did
-/// not come last, so "/1 cơm gà… + 1 kem vani" came back as "+ 1 kem vani,
-/// 1 cơm gà…". Stripping the markers in place preserves the order for free.
+/// rebuild a label out of parts: joining `[free text, ...pick names]` reorders
+/// the sentence whenever a pick did not come last, so "/1 cơm gà… + 1 kem
+/// vani" came back as "+ 1 kem vani, 1 cơm gà…". Stripping the markers in
+/// place preserves the order for free — and the result rides the submit as
+/// `displayText`, so `meals.raw_input` is this string rather than the join.
 library;
 
 import '../../../../models/logging/relog.dart';

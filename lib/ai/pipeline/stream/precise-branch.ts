@@ -93,14 +93,20 @@ export async function runPreciseBranch({
   // `analyzeMeal`, so their goal-adjusted numbers are reproduced, not
   // re-estimated. Merging here (before preview + staging) makes the `result`
   // event, the pending row, and confirm all see one combined meal with no extra
-  // client round-trip. `rawInput` folds in the relog dish names so the saved
-  // meal's history text isn't just the free text (which would drop the
-  // relogged dishes from the label).
+  // client round-trip.
+  //
+  // The LABEL is the user's own sentence when the client sent it: `message` is
+  // the free text with the picks cut out, so rebuilding from its parts appends
+  // them and reorders anything typed after one — `/cơm gà + 1 kem vani` saved as
+  // `+ 1 kem vani, cơm gà`. The join stays as the fallback for clients that
+  // send no `displayText`, where dropping the dish names would be worse.
   let rawInput = ctx.message;
   if (ctx.refs && ctx.refs.length > 0) {
     const applied = await ctx.mergeRelogRefs(result.data, ctx.refs, userId);
     result.data = applied.result;
-    rawInput = buildRelogRawInput([ctx.message, ...applied.dishNames]);
+    rawInput = buildRelogRawInput(
+      ctx.displayText ? [ctx.displayText] : [ctx.message, ...applied.dishNames]
+    );
   }
 
   const meal = toParsedMeal(result.data);

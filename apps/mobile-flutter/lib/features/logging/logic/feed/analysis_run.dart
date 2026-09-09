@@ -69,7 +69,7 @@ class FeedAnalysisRun {
   /// as a cheat estimate. Frozen here because a retry must replay the attempt
   /// that failed — not re-derive one from a composer the user has edited since,
   /// nor from a mode they have switched in the meantime.
-  List<RelogRef> _inFlightRefs = const [];
+  List<ComposerPickRef> _inFlightRefs = const [];
   bool _inFlightCheat = false;
 
   /// What the in-flight run's card should SAY: the user's OWN sentence with the
@@ -82,9 +82,8 @@ class FeedAnalysisRun {
   /// the dish it followed. The card is the user reading their own words back,
   /// so it shows them in the order they wrote them.
   ///
-  /// The persisted card, once confirmed, still carries the server's joined
-  /// form. That divergence is deliberate: the alternative is a card that reads
-  /// scrambled for the whole time the analysis is on screen.
+  /// Sent with the submit as `displayText`, so the persisted card carries this
+  /// exact string too — one label, from the send through to the saved meal.
   String? _inFlightLabelText;
 
   String? get inFlightLabel => _inFlightLabelText ?? _inFlightText;
@@ -119,7 +118,7 @@ class FeedAnalysisRun {
   /// that went out. "Try again" replays THIS, so a retry can never attach picks
   /// the attempt never carried, or resubmit a cheat estimate as a normal
   /// analysis because the user changed mode while the error card sat there.
-  List<RelogRef> _failedRefs = const [];
+  List<ComposerPickRef> _failedRefs = const [];
   List<String> _failedPicks = const [];
   String? _failedLabel;
   bool _failedCheat = false;
@@ -175,7 +174,7 @@ class FeedAnalysisRun {
     required String userId,
     required String date,
     required String freeText,
-    required List<RelogRef> refs,
+    required List<ComposerPickRef> refs,
     required List<String> pickNames,
   }) {
     _attemptId = _uuid.v4();
@@ -360,7 +359,7 @@ class FeedAnalysisRun {
     required String userId,
     required String date,
     required String text,
-    List<RelogRef>? refs,
+    List<ComposerPickRef>? refs,
     List<String> pickNames = const [],
     bool? isCheat,
     String? label,
@@ -395,6 +394,7 @@ class FeedAnalysisRun {
       cheatIntensity: ref.read(cheatIntensityProvider),
       attemptId: _attemptId,
       refs: refs,
+      displayText: label,
     );
   }
 }

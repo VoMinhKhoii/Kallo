@@ -120,6 +120,29 @@ List<RelogMention> reconcileMentions(
   );
 }
 
+/// Splice [label] in at [caret], consuming nothing — how a scanned product
+/// enters a sentence, since nothing was typed to summon it.
+///
+/// A space is added on each side only where one is missing, so the result reads
+/// as prose whether the caret sat mid-sentence, after a space, or at the end.
+({String value, int caret, int start}) insertMentionAt(
+  String value,
+  int caret,
+  String label,
+) {
+  final at = caret.clamp(0, value.length);
+  final before = value.substring(0, at);
+  final after = value.substring(at);
+  final lead = before.isEmpty || before.endsWith(' ') ? '' : ' ';
+  final trail = after.startsWith(' ') ? '' : ' ';
+  final start = before.length + lead.length;
+  return (
+    value: '$before$lead$label$trail$after',
+    caret: start + label.length + trail.length,
+    start: start,
+  );
+}
+
 /// Remove every mention's text, leaving whatever the user typed around them.
 ///
 /// Applied after a successful submit: the mentions have been logged, so their

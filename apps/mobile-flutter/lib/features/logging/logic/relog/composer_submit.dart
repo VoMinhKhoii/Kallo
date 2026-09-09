@@ -9,6 +9,7 @@ import '../feed/analysis_run.dart';
 import '../meal_log_mode.dart';
 import 'composer_submit_plan.dart';
 import 'pure_relog_staging.dart';
+import 'relog_label.dart';
 
 /// The composer's unified submit: [planComposerSubmit] decides which of the
 /// three shapes a submit is, this runs it. One handler covers all three, so a
@@ -77,6 +78,7 @@ class ComposerSubmitter {
             date: date,
             refs: refs,
             stageIds: stageIds,
+            displayText: unmarkPicks(text, composer.entries),
             onStaged: onStaged,
             onStagingChange: (staging) {
               _staging = staging;

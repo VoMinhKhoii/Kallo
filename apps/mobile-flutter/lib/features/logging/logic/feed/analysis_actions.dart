@@ -30,7 +30,8 @@ void startMealAnalysis(
   required CheatIntensity cheatIntensity,
   String? clarifyAnswer,
   String? attemptId,
-  List<RelogRef>? refs,
+  List<ComposerPickRef>? refs,
+  String? displayText,
 }) {
   ref
       .read(streamAnalysisProvider.notifier)
@@ -44,6 +45,9 @@ void startMealAnalysis(
           clarifyAnswer: clarifyAnswer,
           attemptId: attemptId,
           refs: isCheat ? null : refs,
+          // Only meaningful beside refs — the server labels a pickless meal
+          // with `message`, which already is the sentence.
+          displayText: refs == null || isCheat ? null : displayText,
         ),
       );
 }

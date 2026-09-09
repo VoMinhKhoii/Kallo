@@ -6,7 +6,7 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
-import type { RelogRef } from '@/lib/domain/logging/relog/relog';
+import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
 import type { db as appDb } from '@/lib/infra/db/client';
 
 /** Everything the stream needs that the pre-stream phase already resolved. */
@@ -26,7 +26,14 @@ export interface AnalysisStreamContext {
   cheatType?: string;
   clarifyAnswer?: string;
   cheatIntensity?: CheatIntensity;
-  refs?: RelogRef[];
+  refs?: ComposerPickRef[];
+  /**
+   * What the saved meal is LABELLED with when relog picks are in play — the
+   * user's sentence with the `/` markers stripped, in the order they typed it.
+   * Absent (older clients) the label is rebuilt from `message` + the resolved
+   * dish names, which appends the picks and reorders the sentence.
+   */
+  displayText?: string;
   /**
    * Folds the user's relog picks into a finished pipeline result.
    *
@@ -36,7 +43,7 @@ export interface AnalysisStreamContext {
    */
   mergeRelogRefs: (
     aiResult: PipelineResult,
-    refs: RelogRef[],
+    refs: ComposerPickRef[],
     userId: string
   ) => Promise<{ result: PipelineResult; dishNames: string[] }>;
 }

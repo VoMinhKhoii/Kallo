@@ -121,7 +121,12 @@ class StreamAnalyzeInput {
   ///
   /// The server rejects `mode: 'cheat'` together with refs rather than silently
   /// dropping them, so callers must keep this empty outside normal mode.
-  final List<RelogRef>? refs;
+  final List<ComposerPickRef>? refs;
+
+  /// What the saved meal is LABELLED with — the sentence on screen, markers
+  /// off. [message] is that sentence with the picks CUT OUT, so without this
+  /// the server rebuilds the label and appends them, reordering the sentence.
+  final String? displayText;
 
   const StreamAnalyzeInput({
     required this.message,
@@ -134,6 +139,7 @@ class StreamAnalyzeInput {
     this.clarifyAnswer,
     this.attemptId,
     this.refs,
+    this.displayText,
   });
 
   Map<String, dynamic> toJson() => {
@@ -148,6 +154,7 @@ class StreamAnalyzeInput {
     if (attemptId != null) 'attemptId': attemptId,
     if (refs != null && refs!.isNotEmpty)
       'refs': refs!.map((ref) => ref.toJson()).toList(),
+    if (displayText != null) 'displayText': displayText,
   };
 }
 

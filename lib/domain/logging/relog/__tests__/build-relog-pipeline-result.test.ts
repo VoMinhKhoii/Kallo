@@ -14,7 +14,7 @@ import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
 import {
   buildFrozenMealItem,
-  buildRelogPipelineResult,
+  buildPickPipelineResult,
   mergeRelogIntoPipelineResult,
   type RelogSourceRow,
   toDegenerateBounded,
@@ -128,14 +128,20 @@ describe('buildFrozenMealItem', () => {
   });
 });
 
-describe('buildRelogPipelineResult', () => {
+/** The dishes a caller used to hand in directly, now frozen first — the
+ *  resolver does this step so a scanned product can join the same list. */
+function frozen(dishes: Parameters<typeof buildFrozenMealItem>[0][]) {
+  return dishes.map((d) => buildFrozenMealItem(d));
+}
+
+describe('buildPickPipelineResult', () => {
   it('sums meal nutrition from the frozen rows and empties unmatched', () => {
-    const result = buildRelogPipelineResult(
-      [
+    const result = buildPickPipelineResult(
+      frozen([
         dish('A', [row({ mealItemName: 'A', caloriesKcal: 100, proteinG: 5 })]),
         dish('B', [row({ mealItemName: 'B', caloriesKcal: 250, proteinG: 8 })]),
-      ],
-      ['high', 'high']
+      ]),
+      'high'
     );
     expect(result.displayedNutrition.caloriesKcal).toBe(350);
     expect(result.displayedNutrition.proteinG).toBe(13);
@@ -143,20 +149,13 @@ describe('buildRelogPipelineResult', () => {
     expect(result.mealSlot).toBeNull();
   });
 
-  it('takes the WEAKEST source confidence, never upgrading', () => {
+  it('carries the confidence the resolver decided, unchanged', () => {
+    // Deciding it is `resolveComposerPicks`' job — the weakest across the
+    // source meals, or 'high' when every pick was a scanned label.
     expect(
-      buildRelogPipelineResult(
-        [dish('A', [row({ mealItemName: 'A' })])],
-        ['high', 'low', 'medium']
-      ).confidenceOverall
-    ).toBe('low');
-  });
-
-  it('defaults to low when sources carry no usable confidence', () => {
-    expect(
-      buildRelogPipelineResult(
-        [dish('A', [row({ mealItemName: 'A' })])],
-        [null, 'bogus']
+      buildPickPipelineResult(
+        frozen([dish('A', [row({ mealItemName: 'A' })])]),
+        'low'
       ).confidenceOverall
     ).toBe('low');
   });
@@ -165,12 +164,12 @@ describe('buildRelogPipelineResult', () => {
     // Two picks of the same dish → two items. Confirm keys meal_item_order on
     // array index, so this is what stops the pair collapsing into one halved
     // group.
-    const result = buildRelogPipelineResult(
-      [
+    const result = buildPickPipelineResult(
+      frozen([
         dish('Cà phê', [row({ mealItemName: 'Cà phê', caloriesKcal: 50 })]),
         dish('Cà phê', [row({ mealItemName: 'Cà phê', caloriesKcal: 50 })]),
-      ],
-      ['medium', 'medium']
+      ]),
+      'medium'
     );
     expect(result.mealItems).toHaveLength(2);
     expect(result.displayedNutrition.caloriesKcal).toBe(100);

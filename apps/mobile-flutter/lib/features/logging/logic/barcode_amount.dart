@@ -69,3 +69,13 @@ double? scalePer100(double? per100, int grams, {int decimals = 1}) {
   final factor = math.pow(10, decimals).toDouble();
   return (value * factor).round() / factor;
 }
+
+/// What a scanned product reads as INSIDE the composer's sentence: its name and
+/// the amount, so "2 shot cafe + Sữa tươi TH true milk (180g)" says back what
+/// was actually scanned.
+///
+/// The grams are in the label because they are the half the user chose and the
+/// half a bare product name hides. The reference beside it carries the same
+/// number, so nothing here is load-bearing — break the text and the pick drops,
+/// which is exactly what a broken relog label does.
+String barcodePickLabel(String name, int grams) => '$name (${grams}g)';

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/scan_outcome.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
@@ -51,19 +52,56 @@ Future<void> openScanLogSheet(
   required String userId,
   required String date,
   required VoidCallback onFallbackToText,
+}) => _openScan(
+  context,
+  userId: userId,
+  date: date,
+  asPick: false,
+  onFallbackToText: onFallbackToText,
+);
+
+/// The COMPOSER's own scan icon: the product comes back as a pick for the
+/// sentence being typed, and nothing is written until that sentence is sent.
+/// Scanning is composing here — it is what lets "2 shot cafe + sữa" hold the
+/// sữa's real label instead of logging it as a second meal beside the coffee.
+///
+/// The nutrition-LABEL branch inside the same sheet still saves: a photographed
+/// table is not a product the server can re-resolve, so there is no reference
+/// to hand back. That outcome toasts exactly as the one-shot flow does.
+Future<ScanPicked?> openScanPickSheet(
+  BuildContext context, {
+  required String userId,
+  required String date,
+  required VoidCallback onFallbackToText,
+}) => _openScan(
+  context,
+  userId: userId,
+  date: date,
+  asPick: true,
+  onFallbackToText: onFallbackToText,
+);
+
+Future<ScanPicked?> _openScan(
+  BuildContext context, {
+  required String userId,
+  required String date,
+  required bool asPick,
+  required VoidCallback onFallbackToText,
 }) async {
-  final saved = await showScanSheet(
+  final outcome = await showScanSheet(
     context,
     userId: userId,
     date: date,
+    asPick: asPick,
     // Neither the barcode nor the label got us there → the AI composer is the
     // better tool: pop the sheet and hand the user the keyboard.
     onFallbackToText: onFallbackToText,
   );
-  if (saved == true && context.mounted) {
+  if (outcome is ScanSaved && context.mounted) {
     HapticFeedback.mediumImpact();
     showTopToast(context, 'logging.scan.savedMeal'.tr());
   }
+  return outcome is ScanPicked ? outcome : null;
 }
 
 /// "Log it again": re-stage a past cheat occasion's sliders (seeded with last

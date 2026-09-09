@@ -95,8 +95,9 @@ Future<void> stageRelogAnalysis(
   WidgetRef ref, {
   required String userId,
   required String date,
-  required List<RelogRef> items,
+  required List<ComposerPickRef> items,
   required String attemptId,
+  String? displayText,
 }) async {
   final api = ref.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/meals/relog/stage', {
@@ -104,6 +105,10 @@ Future<void> stageRelogAnalysis(
     'loggedDate': date,
     'timezoneOffset': timezoneOffsetMinutes(),
     'attemptId': attemptId,
+    // The sentence the picks read as. Without it the server labels the meal
+    // with the resolved names in resolution order, which puts every scanned
+    // product after every relogged dish however they were typed.
+    if (displayText != null) 'displayText': displayText,
   });
   // The stage COMMITTED the moment the POST returned. A refetch that fails
   // afterwards (flaky network) must not surface as a staging failure: the

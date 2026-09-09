@@ -60,8 +60,12 @@ Future<void> stagePureRelog(
   required MentionTextEditingController composer,
   required String userId,
   required String date,
-  required List<RelogRef> refs,
+  required List<ComposerPickRef> refs,
   required List<String> stageIds,
+
+  /// The composer's sentence with the `/` markers taken off — the label the
+  /// staged meal is saved under, in the order it was typed.
+  required String displayText,
   required VoidCallback onStaged,
   required ValueChanged<bool> onStagingChange,
 }) async {
@@ -73,6 +77,7 @@ Future<void> stagePureRelog(
       userId: userId,
       date: date,
       items: refs,
+      displayText: displayText,
       // Never the feed's own attempt id: the server upserts pending analyses on
       // (user_id, attempt_id), so borrowing the id of a revealed-but-
       // unconfirmed AI card would overwrite that card's row with this relog.

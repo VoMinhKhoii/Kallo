@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../logic/meal_log_mode.dart';
+import '../../logic/relog/scanned_pick.dart';
 import '../composer/composer_actions.dart';
+import '../relog/mention_text_controller.dart';
 import 'manual/manual_log_sheet.dart';
 
 /// The sheets the feed composer can open over itself.
@@ -18,6 +20,8 @@ class FeedSheets {
     required this.mode,
     required this.onPersistentMode,
     required this.onFallbackToText,
+    required this.composer,
+    required this.onLogged,
   });
 
   final BuildContext context;
@@ -33,6 +37,12 @@ class FeedSheets {
   /// Barcode gave up (product not found): hand the user the keyboard instead.
   final VoidCallback onFallbackToText;
 
+  /// Where a scanned product lands when the COMPOSER asked for the scan.
+  final MentionTextEditingController composer;
+
+  /// A sheet wrote a meal: bring it into view, as a send does.
+  final VoidCallback onLogged;
+
   Future<void> openMode() => chooseLogMode(
     context,
     current: mode,
@@ -44,10 +54,31 @@ class FeedSheets {
   Future<void> openManual() =>
       showManualLogSheet(context, userId: userId, date: date);
 
-  Future<void> openBarcode() => openScanLogSheet(
-    context,
-    userId: userId,
-    date: date,
-    onFallbackToText: onFallbackToText,
-  );
+  /// The mode chooser's Scan row: one shot, saved on the spot.
+  Future<void> openBarcode() async {
+    await openScanLogSheet(
+      context,
+      userId: userId,
+      date: date,
+      onFallbackToText: onFallbackToText,
+    );
+    onLogged();
+  }
+
+  /// The composer's scan icon: the product joins the sentence being typed.
+  Future<void> openBarcodePick() async {
+    final picked = await openScanPickSheet(
+      context,
+      userId: userId,
+      date: date,
+      onFallbackToText: onFallbackToText,
+    );
+    if (picked != null && context.mounted) {
+      stageScannedPick(context, composer, picked);
+    } else {
+      // The label branch inside the same sheet saves; so does a scan the user
+      // switched to the mode row for. Either way a card may have landed.
+      onLogged();
+    }
+  }
 }

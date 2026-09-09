@@ -40,6 +40,10 @@ export interface StreamAnalyzeInput {
    *  AI pipeline; the server resolves these deterministically and merges them
    *  into the result before staging, so relogged dishes are never re-analyzed. */
   refs?: RelogRef[];
+  /** What the saved meal is LABELLED with, beside `refs` — the composer's own
+   *  sentence. `message` is that sentence with the picks cut out, so without
+   *  this the server rebuilds the label and appends them, reordering it. */
+  displayText?: string;
 }
 
 /**

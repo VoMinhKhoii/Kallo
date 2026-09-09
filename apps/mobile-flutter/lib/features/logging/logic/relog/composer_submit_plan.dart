@@ -22,7 +22,7 @@ class PlainAnalysis extends ComposerSubmitPlan {
 /// Picks only, no free text: stage a deterministic relog analysis and surface
 /// its review card. No AI, no provider spend.
 class PureRelog extends ComposerSubmitPlan {
-  final List<RelogRef> refs;
+  final List<ComposerPickRef> refs;
 
   /// The stage ids behind [refs]. Carried so the composer can clear EXACTLY
   /// what it submitted: the field stays editable while the request is in
@@ -40,7 +40,7 @@ class PureRelog extends ComposerSubmitPlan {
 /// re-analyzed.
 class CombinedAnalysis extends ComposerSubmitPlan {
   final String freeText;
-  final List<RelogRef> refs;
+  final List<ComposerPickRef> refs;
 
   /// The picks' display names, positionally aligned with [refs]. Carried here
   /// rather than re-derived at the call site so the card's label can never

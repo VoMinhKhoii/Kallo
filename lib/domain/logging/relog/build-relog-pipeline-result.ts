@@ -52,7 +52,7 @@ const CONFIDENCE_VALUES: readonly MealConfidence[] = ['high', 'medium', 'low'];
 
 /** Map the weakest-confidence string to a `MealConfidence`. Defaults to 'low'
  *  (never upgrade): an unrecognized or all-null source must not read as 'high'. */
-function toMealConfidence(value: string | null): MealConfidence {
+export function toMealConfidence(value: string | null): MealConfidence {
   return (CONFIDENCE_VALUES as readonly string[]).includes(value ?? '')
     ? (value as MealConfidence)
     : 'low';
@@ -116,23 +116,24 @@ export function buildFrozenMealItem<T extends RelogSourceRow>(
 }
 
 /**
- * Build a full frozen `PipelineResult` for a PURE relog (no AI portion).
+ * Build a full frozen `PipelineResult` for a PURE pick submit (no AI portion).
  *
- * Dishes are kept in staged order; confirm uses each item's array index as its
+ * Items arrive already frozen — a relogged dish or a scanned product, resolved
+ * by `resolveComposerPicks` — and are kept in staged order; confirm uses each
+ * item's array index as its
  * `mealItemOrder`, so two picks of the same dish stay distinct groups (no
  * silent halving). Meal nutrition is SUMMED from the frozen items — never a
  * source meal's stored total. `mealSlot: null` lets confirm infer the slot from
- * the new instant, and confidence is the weakest across contributing sources.
+ * the new instant; `resolveComposerPicks` decides the confidence.
  */
-export function buildRelogPipelineResult<T extends RelogSourceRow>(
-  dishes: ResolvedDish<T>[],
-  sourceConfidences: (string | null)[]
+export function buildPickPipelineResult(
+  mealItems: PipelineMealItem[],
+  confidence: MealConfidence
 ): PipelineResult {
-  const mealItems = dishes.map((dish) => buildFrozenMealItem(dish));
   return {
     mealItems,
     mealSlot: null,
-    confidenceOverall: toMealConfidence(weakestConfidence(sourceConfidences)),
+    confidenceOverall: confidence,
     boundedNutrition: sumBoundedNutrition(
       mealItems.map((item) => item.boundedNutrition)
     ),

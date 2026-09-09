@@ -3,10 +3,12 @@
  * references, and the analyze-meal request body they combine into.
  */
 import { z } from 'zod';
+import { barcodeSchema } from '@/lib/core/validation/barcode';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 
 const urlOnlyPattern = /^(?:https?:\/\/\S*|www\.\S*)$/iu;
 
@@ -44,6 +46,21 @@ export const mealTextSchema = z
  * body reuse ONE schema — the picks a combined submit sends alongside free text
  * validate identically to a pure relog.
  */
+/**
+ * A scanned product riding in the composer beside the relog picks. Carries the
+ * barcode and the grams the user chose — never a name or a number, so the
+ * server resolves the label from its own cache exactly as it does for a relog.
+ */
+export const barcodeRefSchema = z.object({
+  kind: z.literal('barcode'),
+  barcode: barcodeSchema,
+  grams: z
+    .number()
+    .positive('Khối lượng phải lớn hơn 0')
+    .finite()
+    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
+});
+
 export const relogRefSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('dish'),
@@ -54,6 +71,16 @@ export const relogRefSchema = z.discriminatedUnion('kind', [
     kind: z.literal('meal'),
     sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
   }),
+]);
+
+/**
+ * Everything the composer can stage: a past dish, a past meal, or a scanned
+ * product. One union, because a submit carries them in one list — the server
+ * partitions by `kind` and resolves each half deterministically.
+ */
+export const composerPickRefSchema = z.discriminatedUnion('kind', [
+  ...relogRefSchema.options,
+  barcodeRefSchema,
 ]);
 
 /**
@@ -85,7 +112,17 @@ export const mealMessageSchema = z
     // AI pipeline; these are resolved deterministically and MERGED into the
     // result before staging, so relogged dishes are never re-analyzed. Precise
     // mode only (the cheat branch returns before relog handling).
-    refs: z.array(relogRefSchema).min(1).max(20).optional(),
+    refs: z.array(composerPickRefSchema).min(1).max(20).optional(),
+    // The sentence the user is looking at, markers stripped — what the saved
+    // meal is LABELLED with. Derived from `message` + `refs` server-side when
+    // absent, which appends the picks and so reorders anything typed after
+    // one: `/cơm gà + 1 kem vani` came back as `+ 1 kem vani, cơm gà`. A label
+    // only; every number still comes from the server's own ref resolution.
+    //
+    // Roomier than `message`, which is this sentence with up to 20 pick labels
+    // CUT OUT of it — capping both at 500 would reject a legal composer. The
+    // server truncates it to the same 500 the rebuilt label gets.
+    displayText: z.string().trim().min(1).max(2000).optional(),
   })
   .refine(
     (data) => !(data.mode === 'cheat' && data.refs && data.refs.length > 0),

@@ -64,14 +64,19 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.
   Composer modes: normal (AI), cheat meal (AI slider estimate — intensity strip, clarify
   fallback, "log it again" chips via `/api/v1/meals/cheat-*`), manual, barcode.
-  Normal mode also carries **relog**: typing `/` opens a picker of dishes and meals you
-  have logged before (`/api/v1/meals/relog/candidates`), and a pick becomes tinted text
-  inside the field plus a staged reference. Picks alone stage a deterministic review card
-  (`/api/v1/meals/relog/stage`, no AI); picks alongside free text ride the analyze stream
-  as `refs` and are merged server-side. Either way the server copies the stored
-  `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
-  re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
-  web's mirror-element overlay.
+  Instant mode also carries **picks**: typing `/` opens a picker of dishes and meals you
+  have logged before (`/api/v1/meals/relog/candidates`), and the composer's own scan icon
+  opens the barcode sheet in PICK mode, which hands the product back instead of logging
+  it. Either becomes tinted text inside the field plus a staged reference. Picks alone
+  stage a deterministic review card (`/api/v1/meals/relog/stage`, no AI); picks alongside
+  free text ride the analyze stream as `refs` and are merged server-side. Either way the
+  server re-resolves them itself — past meals hold goal-adjusted macros that cannot be
+  re-derived, and a scanned label is read out of the barcode cache. The composer sends
+  its own sentence as `displayText`, so the saved meal is labelled in the order it was
+  typed rather than with the resolved names appended. Tinting comes from
+  `MentionTextEditingController.buildTextSpan`, not the web's mirror-element overlay.
+  The mode sheet's Scan row still logs in one shot — the composer icon composes, every
+  other entry point saves.
   Any sent message can be **held for Copy / Edit** (`widgets/turn/user_message_bubble.dart`,
   an iOS `CupertinoContextMenu`). Edit is the path back to your own words: it parks the
   message in `composerRefillProvider` and the dock refills the field from there

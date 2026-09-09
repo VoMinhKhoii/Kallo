@@ -159,6 +159,10 @@ vi.mock('@/lib/domain/logging/relog/build-relog-pipeline-result', () => ({
   buildFrozenMealItem: (dish: { name: string }) => ({ frozen: dish.name }),
   mergeRelogIntoPipelineResult: (...args: unknown[]) =>
     mockMergeRelogIntoPipelineResult(...args),
+  // Real: it is the pure string→confidence mapping the resolver folds the
+  // source meals down with, and stubbing it would only re-implement it here.
+  toMealConfidence: (value: string | null) =>
+    value === 'high' || value === 'medium' ? value : 'low',
 }));
 
 interface MockNutrition {
@@ -1292,6 +1296,69 @@ describe('POST /api/analyze-meal', () => {
     await res.text();
 
     expect(mockMergeRelogIntoPipelineResult.mock.calls[0]?.[2]).toBe('low');
+  });
+
+  it('labels the meal with the sentence the user typed', async () => {
+    // The client sends the free text as `message` (picks cut out) and the
+    // sentence as `displayText`. Rebuilding the label from its parts appends
+    // the picks, which reorders anything typed after one — the saved meal came
+    // back as 'phở bò, Cơm tấm' for a sentence that read the other way round.
+    mockAnalyzeMeal.mockImplementation(async () => ({
+      success: true,
+      data: { ...mockPipelineData },
+    }));
+    mockResolveRelogSources.mockResolvedValue({
+      dishes: [{ name: 'Cơm tấm' }],
+      sourceConfidences: ['high'],
+    });
+    mockMergeRelogIntoPipelineResult.mockImplementation(
+      (aiResult: object) => aiResult
+    );
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        refs: [RELOG_REF],
+        displayText: 'Cơm tấm và phở bò',
+      })
+    );
+    await res.text();
+
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ rawInput: 'Cơm tấm và phở bò' })
+    );
+  });
+
+  it('caps an over-long sentence the way the rebuilt label is capped', async () => {
+    mockAnalyzeMeal.mockImplementation(async () => ({
+      success: true,
+      data: { ...mockPipelineData },
+    }));
+    mockResolveRelogSources.mockResolvedValue({
+      dishes: [{ name: 'Cơm tấm' }],
+      sourceConfidences: ['high'],
+    });
+    mockMergeRelogIntoPipelineResult.mockImplementation(
+      (aiResult: object) => aiResult
+    );
+
+    // `message` is capped at 500, but the sentence it was cut out of can be
+    // longer — up to 20 pick labels longer. It is truncated, never rejected.
+    const long = 'á'.repeat(900);
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        refs: [RELOG_REF],
+        displayText: long,
+      })
+    );
+    await res.text();
+
+    const inserted = mockInsertValues.mock.calls.at(-1)?.[0] as {
+      rawInput: string;
+    };
+    expect(inserted.rawInput).toHaveLength(500);
+    expect(inserted.rawInput.endsWith('…')).toBe(true);
   });
 
   it('leaves the raw input alone when there are no picks', async () => {

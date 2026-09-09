@@ -121,6 +121,8 @@ export async function validateRequest(request: NextRequest) {
         // Combined relog picks (precise mode only). Resolved + merged after the
         // pipeline runs on `message` alone — never fed into the AI.
         refs: parsed.data.refs,
+        // The user's own sentence, for `meals.raw_input`. See the schema.
+        displayText: parsed.data.displayText,
         profile,
       },
     };

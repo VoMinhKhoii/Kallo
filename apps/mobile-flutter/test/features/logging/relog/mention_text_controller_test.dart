@@ -56,6 +56,56 @@ void main() {
   setUp(() => c = MentionTextEditingController());
   tearDown(() => c.dispose());
 
+  group('scanned picks', () {
+    const milk = BarcodeRef(barcode: '8935001234567', grams: 180);
+
+    test('splices in at the caret, mid-sentence', () {
+      _type(c, '2 shot cafe +  đá');
+      // Caret between the '+' and 'đá' — where the user left it.
+      c.value = c.value.copyWith(
+        selection: const TextSelection.collapsed(offset: 14),
+      );
+
+      expect(c.insertPick('Sữa tươi TH (180g)', milk, 'stage-1'), isTrue);
+
+      expect(c.text, '2 shot cafe + Sữa tươi TH (180g) đá');
+      expect(c.entries.single.ref, milk);
+      expect(
+        c.freeText,
+        '2 shot cafe + đá',
+        reason: 'the AI sees the sentence WITHOUT the scanned product',
+      );
+    });
+
+    test('appends when nothing has been typed yet', () {
+      expect(c.insertPick('Sữa tươi TH (180g)', milk, 'stage-1'), isTrue);
+      expect(c.text, 'Sữa tươi TH (180g) ');
+      expect(c.entries, hasLength(1));
+    });
+
+    test('drops its reference when the label is broken, like a relog pick', () {
+      c.insertPick('Sữa tươi TH (180g)', milk, 'stage-1');
+      _type(c, 'Sữa tươi TH');
+
+      expect(
+        c.entries,
+        isEmpty,
+        reason: 'a half-deleted label must not still log the product',
+      );
+    });
+
+    test('stands beside a relog pick in one sentence', () {
+      _type(c, '/');
+      _pick(c, _dish('Phở bò'), 'stage-1');
+      c.insertPick('Sữa tươi TH (180g)', milk, 'stage-2');
+
+      expect(c.entries.map((e) => e.ref), [
+        const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
+        milk,
+      ], reason: 'staged order is composer order, which the submit sends');
+    });
+  });
+
   group('picking', () {
     test('writes the label into the text and stages the reference', () {
       _type(c, '/pho');

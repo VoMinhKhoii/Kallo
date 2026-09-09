@@ -186,11 +186,51 @@ class RelogCandidatesResponse {
 /// What the client posts back on submit. Deliberately carries NO nutrition,
 /// grams or names — only a pointer the server re-resolves under
 /// `WHERE user_id = …`. The client is never the source of truth for numbers.
-sealed class RelogRef {
-  final String sourceMealId;
-  const RelogRef({required this.sourceMealId});
+/// Anything the composer can stage beside its free text.
+///
+/// Every one of them is a REFERENCE and nothing more: no nutrition, no grams
+/// the server did not sanction, no name. The server re-resolves each on its
+/// own — a past meal under `WHERE user_id = …`, a scanned product out of the
+/// barcode cache — so a tampered client can only ever point at something it
+/// could have picked by hand.
+sealed class ComposerPickRef {
+  const ComposerPickRef();
 
   Map<String, dynamic> toJson();
+}
+
+/// A pick that points at something the user has logged before.
+sealed class RelogRef extends ComposerPickRef {
+  final String sourceMealId;
+  const RelogRef({required this.sourceMealId});
+}
+
+/// A packaged product scanned INTO the sentence, at the amount the user chose.
+///
+/// It carries the barcode rather than the product because the server holds the
+/// only trustworthy copy of the label — the same discipline the relog refs
+/// keep. An unsearched barcode is refused rather than looked up mid-analysis.
+class BarcodeRef extends ComposerPickRef {
+  final String barcode;
+  final double grams;
+
+  const BarcodeRef({required this.barcode, required this.grams});
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': 'barcode',
+    'barcode': barcode,
+    'grams': grams,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is BarcodeRef &&
+      other.barcode == barcode &&
+      other.grams == grams;
+
+  @override
+  int get hashCode => Object.hash(barcode, grams);
 }
 
 class RelogDishRef extends RelogRef {
@@ -243,7 +283,7 @@ class RelogMealRef extends RelogRef {
 /// copies the rows — so there is no cached macro here to go stale.
 class RelogStagedEntry {
   final String stageId;
-  final RelogRef ref;
+  final ComposerPickRef ref;
 
   /// The text written into the composer, `/` included — also what
   /// `reconcileMentions` matches on to find this pick again after an edit.

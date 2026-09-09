@@ -68,7 +68,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `account-deletion/` | queued deletion jobs and their retry |
-| `barcode/` | Open Food Facts lookup and decode, plus `amount.ts` — the gram clamp, per-100g scaling and mode→grams resolution the quantity picker runs on |
+| `barcode/` | Open Food Facts lookup and decode, plus `amount.ts` — the gram clamp, per-100g scaling and mode→grams resolution the quantity picker runs on — and `meal-item.ts`, the one builder both the one-shot scan and a composer barcode pick produce their frozen meal item with |
 | `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake), `entitlement/` (the grant side) and `activation/` (the browser's bounded recovery loops for a purchase the server has not projected); `entitlements-client.ts` is the browser's read of the contract |
 | `cheat/` | cheat-meal slider math |
 | `dashboard/` | dashboard aggregations |

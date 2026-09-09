@@ -79,9 +79,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
 
-  /// Keeps the tail in view while the answer lands. See [FeedScrollPin] — a
-  /// single post-frame scroll aimed at a `maxScrollExtent` that the streaming
-  /// card and the keyboard inset were both still changing, so it stopped short.
+  /// Carries a new turn to the top of the screen — see [FeedScrollPin], which
+  /// does it once per request and then lets go.
   final FeedScrollPinHandle _pin = FeedScrollPinHandle();
 
   /// Inline error for a failed confirm (saving a meal) — not analysis errors,
@@ -251,6 +250,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       mode: mode,
       onPersistentMode: cheatActions.setMode,
       onFallbackToText: _inputController.focus,
+      composer: _textController,
+      onLogged: () => _pin.pinToBottom(widget.date),
     );
 
     final footer = FeedFooter(
@@ -299,7 +300,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
           analyzing: stream.isAnalyzing,
           onModePressed: sheets.openMode,
-          onBarcodePressed: sheets.openBarcode,
+          onBarcodePressed: sheets.openBarcodePick,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
               () => _rebuild(() => _noticeDismissedFor = widget.date),

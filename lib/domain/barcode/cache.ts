@@ -50,7 +50,8 @@ export function barcodeCacheId(
   return `${BARCODE_CACHE_PREFIXES[providerId]}${barcode}`;
 }
 
-type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
+/** One cached product row. Exported because the meal-item builder maps it. */
+export type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
 
 /**
  * The best cached row for a barcode across all providers, or undefined.

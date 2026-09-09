@@ -6,25 +6,21 @@ import '../../logic/relog/mentions.dart';
 import '../../logic/relog/slash_token.dart';
 import 'mention_span_builder.dart';
 
-/// The composer's text controller, aware of the relog picks living inside its
-/// own value.
+/// The composer's text controller, aware of the picks living inside its value.
 ///
 /// The web paints a mirror `<div>` behind a transparent-text `<textarea>` to
-/// tint part of the value (`input/relog/mention-overlay.tsx`) because a browser
-/// textarea cannot colour a run of its own text. Flutter can: overriding
-/// [buildTextSpan] styles the runs in the REAL field, so caret, selection and
-/// glyphs can never drift out of register — the whole class of bugs the mirror
-/// exists to manage.
+/// tint part of the value, because a browser textarea cannot colour a run of
+/// its own text. Flutter can: overriding [buildTextSpan] styles the runs in the
+/// REAL field, so caret, selection and glyphs never drift out of register.
 ///
 /// The value is the single source of truth for what the user sees; [mentions]
 /// is the parallel list of references plus each one's offset into it.
 /// [syncMentions] re-derives those offsets after every edit and DROPS any
-/// mention whose text the user broke — that is what stops a half-deleted dish
-/// name from still logging a dish.
-/// A committed pick keeps the `/` it was summoned with (see [mentionPrefix])
-/// and is painted in [KalloColors.mention] — nothing else. No fill, no chip, no
-/// macro preview: the sentence reads `/Phở bò và 2 quả trứng`, so the token is
-/// visibly a reference rather than prose even before you register the colour.
+/// mention whose text the user broke — what stops a half-deleted dish name
+/// from still logging a dish.
+/// A relog pick keeps the `/` it was summoned with (see [mentionPrefix]); a
+/// scanned one has no marker to keep. Both are painted in
+/// [KalloColors.mention] and nothing else — no fill, no chip, no macro preview.
 class MentionTextEditingController extends TextEditingController {
   MentionTextEditingController({super.text});
 
@@ -37,10 +33,9 @@ class MentionTextEditingController extends TextEditingController {
 
   bool get isFull => _mentions.length >= kRelogMaxStaged;
 
-  /// The `/` token open at the caret, or null — including whenever there is a
-  /// selection range (no single insertion point to complete into), or when the
-  /// token turns out to be a committed pick's own slash ([isInsideMention]
-  /// carries that reasoning).
+  /// The `/` token open at the caret, or null — including on a selection range
+  /// (no insertion point to complete into) or when the token turns out to be a
+  /// committed pick's own slash ([isInsideMention] carries the reasoning).
   SlashToken? get activeToken {
     final selection = value.selection;
     if (!selection.isValid || !selection.isCollapsed) return null;
@@ -49,9 +44,8 @@ class MentionTextEditingController extends TextEditingController {
     return token;
   }
 
-  /// Re-locate the mentions against the current text. Call after every edit.
-  /// Notifies only when something actually moved, so the field doesn't rebuild
-  /// on every keystroke of ordinary prose.
+  /// Re-locate the mentions against the current text, after every edit. Notifies
+  /// only when something moved, so ordinary prose does not rebuild the field.
   void syncMentions() {
     final reconciled = reconcileMentions(text, _mentions);
     final unchanged =
@@ -89,37 +83,62 @@ class MentionTextEditingController extends TextEditingController {
     // `stripMentions` as a stray character in what the AI sees.
     final display = '$mentionPrefix${candidate.name}';
     final inserted = insertMention(text, token, display);
-    // FIRST in the list, not last. `reconcileMentions` sorts by offset, and the
-    // new pick ties with any existing mention that started exactly where this
-    // one was spliced in — the tie has to break in favour of the newcomer,
-    // because the splice is what pushed the other one right.
-    _mentions = reconcileMentions(inserted.value, [
+    _commit(
+      inserted,
       RelogMention(
         stageId: stageId,
         ref: candidate.ref,
         label: display,
         start: inserted.start,
       ),
-      ..._mentions,
-    ]);
+    );
+    return true;
+  }
+
+  /// Splice a pick in at the caret with no `/` token to consume — how a scanned
+  /// product enters a sentence, since nothing was typed to summon it. Its label
+  /// carries no marker either; the tint is what says "reference". Downstream
+  /// copes: `reconcileMentions` matches on the label, `relogPickName` falls
+  /// through for one without a prefix.
+  bool insertPick(String label, ComposerPickRef ref, String stageId) {
+    if (isFull) return false;
+    final selection = value.selection;
+    final caret = selection.isValid && selection.isCollapsed
+        ? selection.baseOffset
+        : text.length;
+    final inserted = insertMentionAt(text, caret, label);
+    _commit(
+      inserted,
+      RelogMention(
+        stageId: stageId,
+        ref: ref,
+        label: label,
+        start: inserted.start,
+      ),
+    );
+    return true;
+  }
+
+  /// Re-locate the mentions around a freshly spliced one and write the value.
+  /// The newcomer goes FIRST: `reconcileMentions` sorts by offset and it ties
+  /// with anything that started where the splice landed — the tie must break
+  /// its way, because the splice is what pushed the other one right.
+  void _commit(({String value, int caret, int start}) inserted, RelogMention m) {
+    _mentions = reconcileMentions(inserted.value, [m, ..._mentions]);
     value = TextEditingValue(
       text: inserted.value,
       selection: TextSelection.collapsed(offset: inserted.caret),
     );
     notifyListeners();
-    return true;
   }
 
   /// The free text the user typed AROUND the picks — what the AI should see.
   String get freeText => stripMentions(text, _mentions);
 
   /// Drop the picks and their text after a submit that durably staged, keeping
-  /// whatever the user typed alongside — that part is theirs.
-  ///
-  /// [stageIds] names exactly what was submitted. The field stays editable while
-  /// a stage request is in flight, so consuming "everything staged now" would
-  /// also swallow a pick made after the POST went out — removed from the
-  /// composer despite never having been sent, and unrecoverable.
+  /// whatever the user typed alongside. [stageIds] names exactly what was sent:
+  /// the field stays editable while a stage is in flight, so consuming
+  /// "everything staged now" would swallow a pick that never went out.
   void consumeMentions(Set<String> stageIds) {
     final consumed =
         _mentions.where((m) => stageIds.contains(m.stageId)).toList();

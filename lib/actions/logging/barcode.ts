@@ -1,8 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import { barcodeSchema } from '@/lib/api/contracts/barcode';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
+import { barcodeSchema } from '@/lib/core/validation/barcode';
 import {
   dateStringSchema,
   timezoneOffsetSchema,

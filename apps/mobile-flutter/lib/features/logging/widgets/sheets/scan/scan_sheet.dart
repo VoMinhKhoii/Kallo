@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../models/logging/scan_outcome.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../data/barcode_providers.dart';
@@ -20,20 +21,24 @@ import 'scan_type_toggle.dart';
 /// offers the other as its recovery action, and the toggle up top lets the
 /// user switch before failing at all.
 ///
-/// Resolves to `true` when a meal was logged (the caller toasts).
+/// Resolves to a [ScanSaved] when a meal was written (the caller toasts), or a
+/// [ScanPicked] when [asPick] asked for the product back instead — the
+/// composer's own scan icon, splicing it into the sentence being typed.
 /// [onFallbackToText] hands the user the AI composer instead.
-Future<bool?> showScanSheet(
+Future<ScanOutcome?> showScanSheet(
   BuildContext context, {
   required String userId,
   required String date,
+  bool asPick = false,
   VoidCallback? onFallbackToText,
 }) {
-  return showNhamSheet<bool>(
+  return showNhamSheet<ScanOutcome>(
     context,
     isScrollControlled: true,
     builder: (context) => ScanSheet(
       userId: userId,
       date: date,
+      asPick: asPick,
       onFallbackToText: onFallbackToText,
     ),
   );
@@ -44,11 +49,17 @@ class ScanSheet extends ConsumerStatefulWidget {
     super.key,
     required this.userId,
     required this.date,
+    this.asPick = false,
     this.onFallbackToText,
   });
 
   final String userId;
   final String date;
+
+  /// Hand the product back for the composer to splice in, rather than logging
+  /// it. Barcode only — a photographed label is not a product the server can
+  /// re-resolve, so that branch keeps logging either way.
+  final bool asPick;
   final VoidCallback? onFallbackToText;
 
   @override
@@ -112,6 +123,7 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
       ? BarcodeScannerSheet(
           userId: widget.userId,
           date: widget.date,
+          asPick: widget.asPick,
           onFallbackToText: widget.onFallbackToText,
           onScanLabelInstead: () => _switchTo(ScanType.label),
         )

@@ -7,21 +7,12 @@
  *   - `export type` re-exports (erased at runtime).
  */
 import { z } from 'zod';
+import { barcodeSchema } from '@/lib/core/validation/barcode';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
-
-/**
- * The one source of truth for what a barcode string looks like — shared by
- * the REST contract below and the server actions in `lib/actions/logging/barcode.ts`.
- */
-export const barcodeSchema = z
-  .string()
-  .min(1, 'Mã vạch không được để trống')
-  .max(64)
-  .regex(/^\d+$/, 'Mã vạch chỉ được chứa số');
 
 /** Query for `GET /api/v1/barcode/search?code=<digits>`. */
 export const barcodeSearchQuerySchema = z.object({
