@@ -293,7 +293,7 @@
     "relatedMatch": "liên quan"
   },
   "mode": {
-    "normal": "Instant",
+    "normal": "Tính ngay",
     "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
     "manual": "Thủ công",
     "manualDescription": "Tìm món và nhập chính xác số gam",
