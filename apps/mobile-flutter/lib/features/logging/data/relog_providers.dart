@@ -108,23 +108,33 @@ Future<void> stageRelogAnalysis(
     // The sentence the picks read as. Without it the server labels the meal
     // with the resolved names in resolution order, which puts every scanned
     // product after every relogged dish however they were typed.
-    if (displayText != null) 'displayText': displayText,
+    //
+    // OMITTED when blank rather than sent empty: the server's `displayText` is
+    // `.min(1)`, so an empty string 400s the whole stage — one blank label
+    // costing the entire meal. Web's submit guards it the same way
+    // (`displayText.length > 0 ? { displayText } : {}`).
+    if (displayText != null && displayText.trim().isNotEmpty)
+      'displayText': displayText,
   });
-  // The stage COMMITTED the moment the POST returned. A refetch that fails
-  // afterwards (flaky network) must not surface as a staging failure: the
-  // caller would keep the picks, the user would resubmit, and a fresh attempt
-  // id would stage a SECOND pending row — two review cards for one meal. Fall
-  // back to invalidation, as `logMealAgain` does for the same reason.
-  final day = LoggingDayArgs(userId, date);
-  try {
-    await ref.read(loggingDayProvider(day).notifier).refresh();
-  } catch (_) {
-    ref.invalidate(loggingDayProvider(day));
-  }
-  // The picks just gained an occurrence, which is what the candidate ranking
-  // scores on — drop the cached searches so the next `/` reflects it. Done here
-  // rather than in `invalidateMealSurfaces` because that lives in
-  // logging_providers, and importing this file from there would close an import
-  // cycle for what is only a suggestion cache.
-  ref.invalidate(relogCandidatesProvider);
+  // The stage COMMITTED the moment the POST returned. Nothing below may
+  // surface as a staging failure: the caller would keep the picks, the user
+  // would resubmit, and a fresh attempt id would stage a SECOND pending row —
+  // two review cards for one meal. [settleAfterMealWrite] swallows the lot.
+  await settleAfterMealWrite(
+    ref.read,
+    ref.invalidate,
+    userId: userId,
+    date: date,
+    // The picks just gained an occurrence, which is what the candidate ranking
+    // scores on — drop the cached searches so the next `/` reflects it. Passed
+    // in rather than folded into `invalidateMealSurfaces` because that lives in
+    // logging_providers, and importing this file from there would close an
+    // import cycle for what is only a suggestion cache.
+    //
+    // The rest of `invalidateMealSurfaces` is deliberately NOT run here: a
+    // stage writes a pending analysis, not a meal, so the dashboard, the
+    // nutrition overview and the meal-dates dots have nothing new to show
+    // until the user confirms the card.
+    also: () => ref.invalidate(relogCandidatesProvider),
+  );
 }

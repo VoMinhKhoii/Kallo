@@ -14,6 +14,7 @@ import 'barcode_grams_picker.dart';
 import 'barcode_nutrition_preview.dart';
 import 'barcode_serving_picker.dart';
 import '../../../../../theme/calm_tokens.dart';
+import '../../../logic/relog/scan_purpose.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
 /// package, or custom grams — only the modes the product has sizing for — with
@@ -28,15 +29,14 @@ class BarcodeProductStep extends StatefulWidget {
     required this.saving,
     required this.onBack,
     required this.onConfirm,
-    this.asPick = false,
+    required this.purpose,
     this.errorText,
   });
 
   final BarcodeProduct product;
 
-  /// The product goes back to the composer instead of being logged, so the
-  /// button says so.
-  final bool asPick;
+  /// Why the sheet was opened — the CTA names what confirming will do.
+  final ScanPurpose purpose;
   final bool saving;
   final VoidCallback onBack;
 
@@ -185,9 +185,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
               ),
               const Spacer(),
               SheetConfirmButton(
-                label: widget.asPick
-                    ? 'logging.barcode.addToMeal'.tr()
-                    : 'logging.barcode.addMeal'.tr(),
+                label: widget.purpose.ctaKey.tr(),
                 saving: widget.saving,
                 onTap: () => widget.onConfirm(grams),
               ),

@@ -6,10 +6,10 @@ import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// The thread page's SECOND source: `GET /api/v1/groups/shares/<id>`.
 ///

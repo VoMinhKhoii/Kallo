@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../services/env/env.dart';
-import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -14,6 +13,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
 import '../../logic/handle_validation.dart';
 import 'invite_controls.dart';
+import '../../../../models/http/api_error.dart';
 
 /// Builds the shareable invite URL for [handle] in the current locale.
 String inviteLinkFor(BuildContext context, String handle) =>

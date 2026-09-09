@@ -11,9 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../models/http/api_error.dart';
 import '../../../../models/logging/relog.dart';
 import '../../../../services/billing/feature_lock.dart';
-import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/relog_providers.dart';
 import '../../widgets/relog/mention_text_controller.dart';
@@ -65,8 +65,9 @@ Future<void> stagePureRelog(
   required List<String> stageIds,
 
   /// The composer's sentence with the `/` markers taken off — the label the
-  /// staged meal is saved under, in the order it was typed.
-  required String displayText,
+  /// staged meal is saved under, in the order it was typed. Null or blank
+  /// leaves it off the wire entirely; see [stageRelogAnalysis].
+  required String? displayText,
   required VoidCallback onStaged,
   required ValueChanged<bool> onStagingChange,
 }) async {

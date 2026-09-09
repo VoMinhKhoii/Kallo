@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../logic/meal_log_mode.dart';
-import '../../logic/relog/scanned_pick.dart';
 import '../../../../models/logging/scan_outcome.dart';
-import '../composer/composer_actions.dart';
-import '../relog/mention_text_controller.dart';
-import 'manual/manual_log_sheet.dart';
+import '../../widgets/relog/mention_text_controller.dart';
+import '../../widgets/sheets/manual/manual_log_sheet.dart';
+import '../meal_log_mode.dart';
+import '../relog/scan_purpose.dart';
+import '../relog/scanned_pick.dart';
+import 'composer_actions.dart';
 
 /// The sheets the feed composer can open over itself.
 ///
@@ -61,8 +62,9 @@ class FeedSheets {
 
   /// The mode chooser's Scan row: one shot, saved on the spot.
   Future<void> openBarcode() async {
-    final outcome = await openScanLogSheet(
+    final outcome = await openScanSheet(
       context,
+      purpose: ScanPurpose.log,
       userId: userId,
       date: date,
       onFallbackToText: focusComposer,
@@ -83,8 +85,9 @@ class FeedSheets {
 
   /// The pick branch itself: the product joins the sentence being typed.
   Future<void> openBarcodePick() async {
-    final outcome = await openScanPickSheet(
+    final outcome = await openScanSheet(
       context,
+      purpose: ScanPurpose.pick,
       userId: userId,
       date: date,
       onFallbackToText: focusComposer,

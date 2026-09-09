@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/features/logging/logic/composer/quick_log_actions.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/quick_log_sheet.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';

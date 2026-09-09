@@ -10,9 +10,10 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/barcode/barcode_scanner_sheet.dart';
-import 'package:kallo_mobile/features/logging/widgets/sheets/feed_sheets.dart';
+import 'package:kallo_mobile/features/logging/logic/composer/feed_sheets.dart';
 
 import '../../../l10n_test_loader.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
 
 /// The composer's scan icon means two different things depending on the mode
 /// it is tapped in, and main only ever had one of them.
@@ -135,7 +136,7 @@ void main() {
 
   testWidgets('normal mode scans a PICK into the sentence', (tester) async {
     final branch = await tapScanIcon(tester, MealLogMode.normal);
-    expect(branch.asPick, isTrue);
+    expect(branch.purpose, ScanPurpose.pick);
   });
 
   testWidgets('cheat mode logs the product on the spot instead', (
@@ -143,8 +144,8 @@ void main() {
   ) async {
     final branch = await tapScanIcon(tester, MealLogMode.cheat);
     expect(
-      branch.asPick,
-      isFalse,
+      branch.purpose,
+      ScanPurpose.log,
       reason: 'a pick cannot ride a cheat submit — it would arrive as prose',
     );
   });

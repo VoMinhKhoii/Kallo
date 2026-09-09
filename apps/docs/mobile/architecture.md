@@ -28,7 +28,7 @@ lib/
     billing/             RevenueCat purchases + entitlement state
     analytics/           PostHog wrapper (no-op until keys set)
     env/                 compile-time config (String.fromEnvironment / --dart-define)
-  models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
+  models/              DTOs grouped by domain: http/ nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
   shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
                        chrome/ dialog/ feedback/ form/ gauge/ list/ motion/

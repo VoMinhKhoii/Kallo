@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../models/http/api_error.dart';
 import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_models.dart';

@@ -10,6 +10,7 @@ import '../../../data/label_scan_providers.dart';
 import '../barcode/barcode_scanner_sheet.dart';
 import '../label/label_scan_branch.dart';
 import 'scan_type_toggle.dart';
+import '../../../logic/relog/scan_purpose.dart';
 
 /// Open the scan sheet: read a packaged product either by its barcode or by
 /// the nutrition table printed on the box, then log it in one shot — no
@@ -22,14 +23,14 @@ import 'scan_type_toggle.dart';
 /// user switch before failing at all.
 ///
 /// Resolves to a [ScanSaved] when a meal was written (the caller toasts), or a
-/// [ScanPicked] when [asPick] asked for the product back instead — the
+/// [ScanPicked] when [purpose] asked for the product back instead — the
 /// composer's own scan icon, splicing it into the sentence being typed.
 /// [onFallbackToText] hands the user the AI composer instead.
 Future<ScanOutcome?> showScanSheet(
   BuildContext context, {
   required String userId,
   required String date,
-  bool asPick = false,
+  required ScanPurpose purpose,
   VoidCallback? onFallbackToText,
 }) {
   return showNhamSheet<ScanOutcome>(
@@ -38,7 +39,7 @@ Future<ScanOutcome?> showScanSheet(
     builder: (context) => ScanSheet(
       userId: userId,
       date: date,
-      asPick: asPick,
+      purpose: purpose,
       onFallbackToText: onFallbackToText,
     ),
   );
@@ -49,17 +50,17 @@ class ScanSheet extends ConsumerStatefulWidget {
     super.key,
     required this.userId,
     required this.date,
-    this.asPick = false,
+    required this.purpose,
     this.onFallbackToText,
   });
 
   final String userId;
   final String date;
 
-  /// Hand the product back for the composer to splice in, rather than logging
-  /// it. Barcode only — a photographed label is not a product the server can
-  /// re-resolve, so that branch keeps logging either way.
-  final bool asPick;
+  /// Log the scanned product, or hand it back to the composer — see
+  /// [ScanPurpose]. Barcode only: a photographed label is not a product the
+  /// server can re-resolve, so that branch keeps logging either way.
+  final ScanPurpose purpose;
   final VoidCallback? onFallbackToText;
 
   @override
@@ -123,7 +124,7 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
       ? BarcodeScannerSheet(
           userId: widget.userId,
           date: widget.date,
-          asPick: widget.asPick,
+          purpose: widget.purpose,
           onFallbackToText: widget.onFallbackToText,
           onScanLabelInstead: () => _switchTo(ScanType.label),
         )

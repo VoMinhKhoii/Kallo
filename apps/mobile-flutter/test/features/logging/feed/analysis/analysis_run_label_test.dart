@@ -5,13 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:kallo_mobile/features/logging/logic/feed/analysis_run.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/analysis/analysis_run.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/models/logging/relog.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/models/http/stream_analyze_input.dart';
 
 /// Captures the submit without answering it.
 class _CapturingApi extends ApiClient {

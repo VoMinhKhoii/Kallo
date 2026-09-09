@@ -21,6 +21,7 @@ import '../../../services/http/api_client.dart';
 import '../../../models/logging/cheat.dart';
 import '../../../models/logging/meal.dart';
 import '../../../models/logging/streaming.dart';
+import '../../../models/http/stream_analyze_input.dart';
 
 /// Immutable streaming state — the RN `StreamAnalysisState`.
 class StreamAnalysisState {

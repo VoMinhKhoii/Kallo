@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/logging/logic/label/image_shrink.dart';
 import 'package:kallo_mobile/features/logging/logic/label/review.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// ApiClient stand-in that records requests and replays canned responses —
 /// never touches HTTP or the Supabase session. Same shape as the barcode

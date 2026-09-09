@@ -21,6 +21,7 @@ import 'package:kallo_mobile/features/circle/widgets/feed/feed_rhythm.dart';
 
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

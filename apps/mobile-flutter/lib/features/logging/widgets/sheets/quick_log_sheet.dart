@@ -7,58 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../../../services/auth/session_provider.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shell/nav/nav_actions.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
+import '../../logic/composer/composer_actions.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_group.dart';
-import '../composer/composer_actions.dart';
 import '../composer/meal_input.dart';
-import 'manual/manual_log_sheet.dart';
-import '../../../../shell/nav/nav_actions.dart';
-
-/// Opens the quick-log sheet — the dashboard FAB's composer.
-///
-/// A modal sheet rather than a bar hanging off the FAB: the keyboard comes up
-/// over a stable surface instead of over a control the user can drag, and
-/// there is room for the REAL [MealInput] the logging feed composes with.
-///
-/// It resolves to a ONE-SHOT mode when the user picks Manual or Barcode inside
-/// it: the sheet pops ITSELF and hands the launch back here, so the one-shot
-/// opens from the dashboard rather than stacking on a sheet on its way out.
-/// Normal / Cheat are persistent — they only change what Send does.
-Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
-  final oneShot = await showNhamSheet<MealLogMode>(
-    context,
-    isScrollControlled: true,
-    builder: (context) => const QuickLogSheet(),
-  );
-  if (oneShot == null || !context.mounted) return;
-
-  final userId = ref.read(currentSessionProvider)?.user.id;
-  if (userId == null) return;
-  // A meal logged from the dashboard is eaten now: today is the only target.
-  final date = todayDateString();
-
-  switch (oneShot) {
-    case MealLogMode.manual:
-      await showManualLogSheet(context, userId: userId, date: date);
-    case MealLogMode.barcode:
-      await openScanLogSheet(
-        context,
-        userId: userId,
-        date: date,
-        // Neither scan got us there → re-open the sheet, caret in the field.
-        onFallbackToText: () {
-          if (context.mounted) showQuickLogSheet(context, ref);
-        },
-      );
-    case MealLogMode.normal:
-    case MealLogMode.cheat:
-      break; // persistent modes never resolve the sheet
-  }
-}
 
 /// Type a meal here, land on the logging feed with it already being analyzed.
 ///

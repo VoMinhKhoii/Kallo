@@ -11,6 +11,7 @@ import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
+import '../../../models/http/api_error.dart';
 
 const _uuid = Uuid();
 
@@ -181,31 +182,19 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       );
       return false;
     }
-    // The meal COMMITTED the moment the POST returned, so NOTHING below may
-    // turn a saved meal into a failed save — this block sits outside the try
-    // that owns the return value, and swallows whatever it throws. A refetch
-    // that fails (flaky network) falls back to invalidation, as
-    // `stageRelogAnalysis` does; an invalidate that throws in turn (the sheet's
-    // own scope gone while the POST was in flight) is swallowed with it. Report
-    // failure here and the user logs the product a SECOND time.
-    //
-    // AWAITED, and before the sheet pops: popping fires `onLogged`, which pins
-    // the feed to the tail. A bare invalidate lands the refetch after the pin
-    // has released, so the feed rides to the PREVIOUS last card and opens a
-    // screen of empty room under it.
-    final day = LoggingDayArgs(userId, date);
-    try {
-      try {
-        await ref.read(loggingDayProvider(day).notifier).refresh();
-      } catch (_) {
-        ref.invalidate(loggingDayProvider(day));
-      }
-      // The day is refreshed above; re-invalidating it here would throw that
-      // result away and put the refetch back after the pin.
-      invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
-    } catch (_) {
-      // The save stands. Nothing left to refresh means nothing left to do.
-    }
+    // The meal COMMITTED the moment the POST returned, so nothing below may
+    // turn a saved meal into a failed save — [settleAfterMealWrite] sits
+    // outside the try that owns the return value and never throws.
+    await settleAfterMealWrite(
+      ref.read,
+      ref.invalidate,
+      userId: userId,
+      date: date,
+      // The day is refreshed by the helper; re-invalidating it here would throw
+      // that result away and put the refetch back after the pin.
+      also: () =>
+          invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false),
+    );
     return true;
   }
 

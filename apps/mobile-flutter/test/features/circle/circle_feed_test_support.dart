@@ -9,6 +9,7 @@ import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 typedef Request = ({String method, String path, Object? body});
 typedef RequestHandler = FutureOr<Object?> Function(Request request);

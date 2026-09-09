@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:kallo_mobile/features/logging/logic/feed/analysis_run.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/analysis/analysis_run.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/models/http/stream_analyze_input.dart';
 
 /// An analysis that goes out and never answers on its own, so the test decides
 /// when — and on which day — the answer lands.

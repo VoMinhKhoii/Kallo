@@ -2,6 +2,7 @@ import 'package:kallo_mobile/services/billing/activation_pending.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/services/billing/purchases_service.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 class PaywallEntitlementsApi extends ApiClient {
   PaywallEntitlementsApi({

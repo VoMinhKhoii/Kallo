@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// Records every onboarding post so the flush order is assertable, and can be
 /// told to fail the Nth one.

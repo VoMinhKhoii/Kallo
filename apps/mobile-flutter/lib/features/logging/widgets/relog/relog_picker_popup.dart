@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/logging/relog.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -8,6 +7,8 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../logic/logging_spacing.dart';
+import 'relog_picker_close_row.dart';
+import 'relog_picker_collapsed.dart';
 import 'relog_picker_group.dart';
 
 /// The `/` picker: past dishes and past meals in two labelled groups. INLINE
@@ -43,7 +44,7 @@ class RelogPickerPopup extends StatelessWidget {
   /// Below this the picker cannot show a single row: its close affordance (44)
   /// and the bottom gap (12) are a rigid 56pt floor, and the rest is a strip too
   /// short to pick from. It hands the room back to the field AND closes itself
-  /// ([_CollapsedPicker]). UNBOUNDED is `infinity`, so the sheet is spared.
+  /// ([RelogPickerCollapsed]). UNBOUNDED is `infinity`, so the sheet is spared.
   static const double _minUsableHeight = 120;
 
   /// Copy ON the band, so the band's own foreground token rather than ink.
@@ -52,7 +53,7 @@ class RelogPickerPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (_, box) => box.maxHeight < _minUsableHeight
-        ? _CollapsedPicker(onDismiss: onDismiss)
+        ? RelogPickerCollapsed(onDismiss: onDismiss)
         : _panel(),
   );
 
@@ -84,7 +85,7 @@ class RelogPickerPopup extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CloseRow(onDismiss: onDismiss),
+            RelogPickerCloseRow(onDismiss: onDismiss),
             Flexible(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: _maxHeight),
@@ -132,69 +133,4 @@ class RelogPickerPopup extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The close affordance, alone on its row; the `/` you just typed is the title.
-/// NOT optional chrome — a phone keyboard has no Escape, and the picker is an
-/// inline sibling in the dock, not an overlay: no barrier, no `PopScope`,
-/// nothing closes on a tap outside. The one other caller of
-/// `SlashPickerState.dismiss` is [_CollapsedPicker], which nobody can tap.
-class _CloseRow extends StatelessWidget {
-  const _CloseRow({required this.onDismiss});
-
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Semantics(
-        button: true,
-        label: 'logging.relog.closePicker'.tr(),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onDismiss,
-          child: const SizedBox(
-            width: LoggingIcons.hit,
-            height: LoggingIcons.hit,
-            // White @ 70% — the notice's own dismiss glyph. Translucent only
-            // because it carries no text: not held to the copy's 4.5:1.
-            child: Icon(
-              LucideIcons.x300,
-              size: LoggingIcons.size,
-              color: KalloColors.bandForeground70,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The collapse branch, a StatefulWidget because it has a SIDE EFFECT.
-/// Rendering nothing is not closing: the query stayed live, so every keystroke
-/// still ran a search whose rows could never be seen. It dismisses instead —
-/// ONCE, from [initState] (a StatelessWidget's build may run several times in a
-/// frame) and post-frame, because this runs during layout. `dismiss` remembers
-/// the token, so typing on stays closed and a fresh `/` re-opens.
-class _CollapsedPicker extends StatefulWidget {
-  const _CollapsedPicker({required this.onDismiss});
-
-  final VoidCallback onDismiss;
-
-  @override
-  State<_CollapsedPicker> createState() => _CollapsedPickerState();
-}
-
-class _CollapsedPickerState extends State<_CollapsedPicker> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onDismiss();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
 }

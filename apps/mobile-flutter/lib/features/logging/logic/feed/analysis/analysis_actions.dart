@@ -3,13 +3,13 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../services/http/api_client.dart';
-import '../../../../models/logging/cheat.dart';
-import '../../../../models/logging/relog.dart';
-import '../../../../models/logging/streaming.dart';
-import '../../data/logging_keys.dart';
-import '../../data/logging_providers.dart';
-import '../../data/stream_analysis_controller.dart';
+import '../../../../../models/http/stream_analyze_input.dart';
+import '../../../../../models/logging/cheat.dart';
+import '../../../../../models/logging/relog.dart';
+import '../../../../../models/logging/streaming.dart';
+import '../../../data/logging_keys.dart';
+import '../../../data/logging_providers.dart';
+import '../../../data/stream_analysis_controller.dart';
 
 /// Hand the typed meal to the analyze stream. Shared by a fresh submit, a retry
 /// of a failed attempt, and a cheat-clarify resubmit — they differ only in the
