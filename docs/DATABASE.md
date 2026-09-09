@@ -115,6 +115,9 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260901194713_rate_limit_counters_storage.sql` | B (Manual) | `rate_limit_counters` set `UNLOGGED` + `fillfactor = 70` — counters are soft state, events stay LOGGED |
 | `20260901194714_rate_limit_consume_function.sql` | B (Manual) | `rate_limit_consume()` — one-statement minute/hour/day consume, UTC-pinned, blocked requests write nothing |
 | `20260901194715_rate_limit_retention.sql` | B (Manual) | Four reapers (limiter counters/events + the two legacy analysis-guard tables) on the guarded pg_cron schedule, fail-loud |
+| `20260905090000_reduce_to_operational_analytics.sql` | B (Manual) | Reduce the analytics plane to the operational dashboard contract |
+| `20260909071000_supabase_24h_range.sql` | B (Manual) | Add the latest anchored UTC observation day to analytics range filtering |
+| `20260909071500_trace_stage_outputs.sql` | B (Manual) | Add recursively sanitized, bounded stage outputs to meal-analysis traces |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
