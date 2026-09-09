@@ -3,12 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_scroll_pin.dart';
 
-/// A list whose length the test can grow, standing in for the streaming card
-/// getting taller and the keyboard inset re-padding the feed.
+/// A list whose length and bottom padding the test can grow, standing in for
+/// the streaming card getting taller and the keyboard inset re-padding the feed.
 Widget _host({
   required FeedScrollPinHandle handle,
   required ScrollController controller,
   required int items,
+  double padding = 0,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox(
@@ -18,6 +19,7 @@ Widget _host({
         controller: controller,
         child: ListView.builder(
           controller: controller,
+          padding: EdgeInsets.only(bottom: padding),
           itemCount: items,
           itemBuilder: (_, i) => SizedBox(height: 100, child: Text('$i')),
         ),
@@ -25,6 +27,9 @@ Widget _host({
     ),
   ),
 );
+
+/// Past the pin's settle window — the point after which it has let go.
+const _afterSettle = Duration(seconds: 2);
 
 void main() {
   testWidgets('rides the tail down to the bottom when asked', (tester) async {
@@ -41,7 +46,9 @@ void main() {
     expect(controller.position.pixels, controller.position.maxScrollExtent);
   });
 
-  testWidgets('re-aims when the content grows underneath it', (tester) async {
+  testWidgets('corrects while the layout under the travel is still moving', (
+    tester,
+  ) async {
     final handle = FeedScrollPinHandle();
     final controller = ScrollController();
     addTearDown(controller.dispose);
@@ -52,9 +59,9 @@ void main() {
     await tester.pumpAndSettle();
     final firstBottom = controller.position.maxScrollExtent;
 
-    // This is the case the old one-shot scroll got wrong: it aimed at an extent
-    // that the streaming card and the keyboard were still changing, so it
-    // landed short of the bottom it was asked for.
+    // The keyboard's inset ramp and the dock's re-measure both land after the
+    // target was computed. Inside the settle window the pin still owns the
+    // feed, so it closes the gap they opened.
     await tester.pumpWidget(
       _host(handle: handle, controller: controller, items: 20),
     );
@@ -93,9 +100,7 @@ void main() {
     );
   });
 
-  testWidgets('takes the tail back when the user returns to it', (
-    tester,
-  ) async {
+  testWidgets('returning to the tail does not re-arm it', (tester) async {
     final handle = FeedScrollPinHandle();
     final controller = ScrollController();
     addTearDown(controller.dispose);
@@ -110,8 +115,11 @@ void main() {
     // Scroll back to the end under their own power.
     await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pumpAndSettle();
-    expect(controller.position.pixels, controller.position.maxScrollExtent);
+    final restingAt = controller.position.pixels;
+    expect(restingAt, controller.position.maxScrollExtent);
 
+    // Silently re-arming here is what made every later layout change — the
+    // keyboard opening, above all — throw the feed to the bottom.
     await tester.pumpWidget(
       _host(handle: handle, controller: controller, items: 20),
     );
@@ -119,8 +127,64 @@ void main() {
 
     expect(
       controller.position.pixels,
-      controller.position.maxScrollExtent,
-      reason: 'back at the tail, the feed should follow again',
+      restingAt,
+      reason: 'only an explicit request may arm the pin',
+    );
+  });
+
+  testWidgets('releases itself once the layout has settled', (tester) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10),
+    );
+    handle.pinToBottom('2026-01-01');
+    await tester.pumpAndSettle();
+    await tester.pump(_afterSettle);
+    final restingAt = controller.position.pixels;
+
+    // The answer streaming in, a second after the send. The turn the user is
+    // reading must stay where it is.
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 20),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.position.pixels,
+      restingAt,
+      reason: 'a settled pin does not follow the card as it grows',
+    );
+  });
+
+  testWidgets('opening the keyboard long after a send moves nothing', (
+    tester,
+  ) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10),
+    );
+    handle.pinToBottom('2026-01-01');
+    await tester.pumpAndSettle();
+    await tester.pump(_afterSettle);
+
+    final restingAt = controller.position.pixels;
+
+    // Tapping the composer opens the keyboard, which grows the feed's reserved
+    // padding and with it `maxScrollExtent`. That was all a still-armed pin
+    // needed: it chased the new bottom and the day slid up under the thumb.
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, items: 10, padding: 300),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.position.pixels,
+      restingAt,
+      reason: 'opening the keyboard is not a request to scroll',
     );
   });
 }

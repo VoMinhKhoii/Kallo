@@ -50,7 +50,7 @@ class FeedAnalysisRun {
   /// Something the feed renders changed — rebuild.
   final VoidCallback onChanged;
 
-  /// Bring the footer (streaming card / revealed answer) into view.
+  /// Carry this turn to the top — on START, never when its answer lands.
   final VoidCallback onScrollToAnswer;
 
   /// The text of the run currently in flight — restored to the composer if it
@@ -260,16 +260,16 @@ class FeedAnalysisRun {
     // the composer was already cleared, and the snapshot is now spent.
     _relogSnapshot = null;
     // Pull the staged row into the day cache NOW, not at confirm. Until this
-    // lands the card exists only in stream state, and a hot reload (which makes
-    // Riverpod re-run Notifier.build) or a relaunch wiped it off the screen
-    // even though the server still had it staged.
+    // lands the card exists only in stream state, and a hot reload (Riverpod
+    // re-runs Notifier.build) or a relaunch wiped it off a still-staged meal.
     refreshStagedAnalysisDay(ref, userId: userId, fallbackDate: runDate);
-    // The answer's day is no longer on screen. The reveal is KEPT (paging back
-    // finds it), but the haptic and the ride to the tail would be addressed to
-    // a feed with nothing new on it, so they are dropped.
+    // The answer's day is no longer on screen: the reveal is KEPT (paging back
+    // finds it), but the haptic would be addressed to nothing. No ride to the
+    // tail either, on any day — the send already carried this turn to the top
+    // over a viewport of room, so scrolling again only pushed the sent message
+    // off the screen as the revealed card took its final height.
     if (runDate != date) return;
     HapticFeedback.lightImpact();
-    onScrollToAnswer();
   }
 
   void fail(
