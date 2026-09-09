@@ -49,17 +49,16 @@ class MealInput extends StatefulWidget {
   final ValueChanged<String> onSubmit;
   final VoidCallback? onCancel;
 
-  /// While true the action button shows Stop (the run can be cancelled) — but
-  /// the field stays editable so a new meal can be typed mid-analysis (the
-  /// requestId-supersede mechanism handles overlap).
+  /// While true the action button shows Stop — but the field stays editable so
+  /// a new meal can be typed mid-analysis (requestId-supersede handles it).
   final bool analyzing;
 
   /// Opens the mode selector (Normal / Cheat meal / Manual). Rendered as an
   /// icon + label on the input bar's second line.
   final VoidCallback? onModePressed;
 
-  /// One-tap barcode scanning next to the mode control — scanning a packaged
-  /// product is frequent enough to skip the mode-sheet detour.
+  /// One-tap barcode scanning next to the mode control — frequent enough to
+  /// skip the mode-sheet detour.
   final VoidCallback? onBarcodePressed;
 
   /// Label + icon of the currently selected mode, shown on the mode control.
@@ -74,24 +73,22 @@ class MealInput extends StatefulWidget {
   final String? hintText;
 
   /// An optional band pinned across the TOP of the card, inside its border and
-  /// clipped by its radius — currently the under-logged-day note. It sits in
-  /// here rather than above the card so the message and the field that answers
-  /// it read as one object.
+  /// clipped by its radius — currently the under-logged-day note. Inside
+  /// rather than above, so message and remedy read as one object.
   final Widget? notice;
 
   /// The field's text controller, supplied when the caller needs to read or
   /// tint what is in it — the feed passes its [MentionTextEditingController] so
-  /// relog picks render as tinted runs inside the real field. Omitted (the
-  /// quick-log sheet) the composer owns a plain one of its own.
+  /// relog picks render as tinted runs in the real field. Omitted (the
+  /// quick-log sheet), the composer owns a plain one.
   final MentionTextEditingController? textController;
 
-  /// Fired whenever the value OR the caret may have moved. The relog picker
-  /// keys off the token immediately left of the caret, and the caret moves
-  /// without the text changing (taps, selection handles).
+  /// Fired whenever the value OR the caret may have moved — the relog picker
+  /// keys off the token left of a caret that moves without the text changing.
   final VoidCallback? onSync;
 
-  /// Content stacked above the whole card — the `/` picker. It sits outside the
-  /// card's border, the way it floats over the composer on the web.
+  /// Content stacked above the whole card — the `/` picker, outside the card's
+  /// border, the way it floats over the composer on the web.
   final Widget? popupSlot;
 
   @override
@@ -103,20 +100,17 @@ class _MealInputState extends State<MealInput>
   /// One line, growing to about eight before the field scrolls itself.
   static const _fieldBox = BoxConstraints(minHeight: 24, maxHeight: 200);
 
-  /// Body — a sentence typed under a keyboard reads at the same size it will
-  /// be read back at in the feed.
+  /// Body — typed at the size it will be read back at in the feed.
   static final _fieldText = dashBody();
 
-  /// Owned only when the caller didn't supply one — a controller belongs to
-  /// whoever created it, and disposing a borrowed one would break the feed the
-  /// moment the composer rebuilt.
+  /// Owned only when the caller didn't supply one — disposing a borrowed
+  /// controller would break the feed the moment the composer rebuilt.
   ///
-  /// INVARIANT: a caller either supplies [MealInput.textController] for this
-  /// widget's whole life or never supplies one. `late final` bakes that in — a
-  /// caller that started at null and later passed a controller would strand
-  /// this one undisposed, since [dispose] only frees it while `_ownsController`
-  /// is still true. Both call sites hold to it: the feed owns one controller
-  /// for the life of the screen, and the quick-log sheet passes none.
+  /// INVARIANT: a caller supplies [MealInput.textController] for this widget's
+  /// whole life or never at all. `late final` bakes that in — starting at null
+  /// and passing one later would strand this undisposed, since [dispose] frees
+  /// it only while `_ownsController` holds. The feed owns one for the life of
+  /// the screen; the quick-log sheet passes none.
   late final MentionTextEditingController _ownedController =
       MentionTextEditingController();
   bool _ownsController = false;
@@ -149,8 +143,7 @@ class _MealInputState extends State<MealInput>
       oldWidget.controller._state = null;
       widget.controller._state = this;
     }
-    // Move the listener with the controller, or a swapped-in field would go
-    // silent: no mention reconciliation, no `/` picker, no submit arming.
+    // Move the listener with the controller, or a swapped-in field goes silent.
     if (oldWidget.textController != widget.textController) {
       (oldWidget.textController ?? _ownedController).removeListener(_onChanged);
       _ownsController = widget.textController == null;
@@ -168,9 +161,9 @@ class _MealInputState extends State<MealInput>
     super.dispose();
   }
 
-  /// One handler for every "the value or the caret may have moved" signal. The
-  /// mentions are re-located FIRST so a broken label has already dropped its
-  /// reference by the time the picker re-reads the token.
+  /// One handler for every "value or caret may have moved" signal. Mentions are
+  /// re-located FIRST, so a broken label has dropped its reference before the
+  /// picker re-reads the token.
   void _onChanged() {
     _controller.syncMentions();
     widget.onSync?.call();
@@ -195,25 +188,32 @@ class _MealInputState extends State<MealInput>
   void _submit() {
     if (!_canSubmit) return;
     HapticFeedback.lightImpact();
-    // Drop the keyboard before the answer arrives. It covers half the feed, and
-    // the card that is about to stream in belongs at the bottom of a viewport
-    // that is about to grow — leaving focus put meant the user sent a meal and
-    // then had to dismiss the keyboard themselves to read the reply. Every flow
-    // that wants the field back asks for it (MealInputController.focus).
+    // Drop the keyboard before the answer arrives: it covers half the feed, and
+    // leaving focus put meant dismissing it yourself to read the reply. Every
+    // flow that wants the field back asks (MealInputController.focus).
     _focusNode.unfocus();
     widget.onSubmit(_controller.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    final card = _buildCard(context);
-    if (widget.popupSlot == null) return card;
-    // The picker sits OUTSIDE the card's border, above it — the composer stays
-    // one object and the picker reads as a sheet floating over the feed.
+    // The slot is ALWAYS here, empty when the picker is closed: dropping it
+    // changes this subtree's root type, so `Widget.canUpdate` fails and the
+    // card is re-inflated — which closes the field's platform input connection
+    // and leaves it waiting on a focus CHANGE that never comes, because the
+    // FocusNode kept focus. That was `/` killing the keyboard.
+    // Flexible only when there IS a picker: it is the half that yields room
+    // under a bounded dock, and the quick-log sheet lays this out unbounded.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [widget.popupSlot!, card],
+      children: [
+        if (widget.popupSlot == null)
+          const SizedBox.shrink()
+        else
+          Flexible(child: widget.popupSlot!),
+        _buildCard(context),
+      ],
     );
   }
 

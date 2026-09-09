@@ -1116,7 +1116,7 @@
     "modeSelector": {
       "title": "How do you want to log?",
       "button": "Mode",
-      "normal": "Normal",
+      "normal": "Instant",
       "normalDesc": "Describe a meal in your own words",
       "cheat": "Cheat meal",
       "cheatDesc": "Log a treat without the breakdown",

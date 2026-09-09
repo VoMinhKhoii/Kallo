@@ -1116,7 +1116,7 @@
     "modeSelector": {
       "title": "Bạn muốn ghi thế nào?",
       "button": "Chế độ",
-      "normal": "Bình thường",
+      "normal": "Instant",
       "normalDesc": "Mô tả bữa ăn bằng lời của bạn",
       "cheat": "Bữa xả",
       "cheatDesc": "Ghi nhanh bữa xả, không cần phân tích",

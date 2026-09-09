@@ -44,8 +44,10 @@ class RelogPickerPopup extends StatelessWidget {
   final VoidCallback? onRetry;
 
   /// Web's `max-h-72`. Tall enough for ~4 rows; past that the list scrolls
-  /// rather than pushing the composer off the keyboard.
-  static const double _maxHeight = 288;
+  /// rather than pushing the composer off the keyboard. A CEILING, not a
+  /// height: the dock is bounded, so a short screen hands the picker less and
+  /// it gives up the difference before the field does.
+  static const double maxHeight = 288;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +89,7 @@ class RelogPickerPopup extends StatelessWidget {
             _CloseRow(onDismiss: onDismiss),
             Flexible(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: _maxHeight),
+                constraints: const BoxConstraints(maxHeight: maxHeight),
                 child:
                     isEmpty
                         ? Padding(

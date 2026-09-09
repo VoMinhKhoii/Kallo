@@ -104,16 +104,20 @@ class ComposerDock extends StatelessWidget {
               ),
             ),
             // The opaque base — everything from the composer card down is a
-            // solid surface, including the home-indicator inset.
-            Container(
-              color: KalloColors.surface,
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                0,
-                KalloSpacing.sp3,
-                bottomInset + LoggingSpacing.block,
+            // solid surface, including the home-indicator inset. Flexible so a
+            // BOUNDED dock shrinks what it holds (the `/` picker yields first)
+            // rather than overflowing the Stack it is aligned in.
+            Flexible(
+              child: Container(
+                color: KalloColors.surface,
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  0,
+                  KalloSpacing.sp3,
+                  bottomInset + LoggingSpacing.block,
+                ),
+                child: child,
               ),
-              child: child,
             ),
           ],
         ),

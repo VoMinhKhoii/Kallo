@@ -277,10 +277,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     return ScrollSeparator(
       header: MacroSummary(view: view, profile: profile),
 
-      overlay: Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
+      // Filled, not bottom-anchored: the dock must be BOUNDED by this Stack or
+      // the `/` picker grows past its top and is clipped. See [FeedComposer].
+      overlay: Positioned.fill(
         child: FeedComposer(
           view: view,
           calorieTarget: profile.calorieTarget,
