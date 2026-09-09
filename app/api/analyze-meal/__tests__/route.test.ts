@@ -24,6 +24,7 @@ const mockLogUnmatchedIngredients = vi.fn((..._args: unknown[]) =>
 const mockEstimateCheatMeal = vi.fn();
 const mockResolveRelogSources = vi.fn();
 const mockMergeRelogIntoPipelineResult = vi.fn();
+const mockFindCachedRows = vi.fn();
 const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
 const mockPendingAnalyses = {
   table: 'pending_analyses',
@@ -153,6 +154,10 @@ vi.mock('@/lib/domain/cheat/estimate', () => ({
 
 vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
   resolveRelogSources: (...args: unknown[]) => mockResolveRelogSources(...args),
+}));
+
+vi.mock('@/lib/domain/barcode/cache', () => ({
+  findCachedRows: (...args: unknown[]) => mockFindCachedRows(...args),
 }));
 
 vi.mock('@/lib/domain/logging/relog/build-relog-pipeline-result', () => ({
@@ -359,6 +364,8 @@ describe('POST /api/analyze-meal', () => {
     mockEstimateCheatMeal.mockReset();
     mockResolveRelogSources.mockReset();
     mockMergeRelogIntoPipelineResult.mockReset();
+    mockFindCachedRows.mockReset();
+    mockFindCachedRows.mockResolvedValue(new Map());
   });
 
   afterEach(() => {
@@ -1238,7 +1245,12 @@ describe('POST /api/analyze-meal', () => {
       data: { ...mockPipelineData },
     }));
     mockResolveRelogSources.mockResolvedValue({
-      dishes: [{ name: 'Cơm tấm' }, { name: 'Chè' }],
+      // Both dishes came from ONE staged ref, so they carry its index — the
+      // tag `resolveComposerPicks` puts each pick back in staged order by.
+      dishes: [
+        { name: 'Cơm tấm', refIndex: 0 },
+        { name: 'Chè', refIndex: 0 },
+      ],
       sourceConfidences: ['high', 'medium'],
     });
     mockMergeRelogIntoPipelineResult.mockImplementation(
@@ -1283,7 +1295,7 @@ describe('POST /api/analyze-meal', () => {
       data: { ...mockPipelineData },
     }));
     mockResolveRelogSources.mockResolvedValue({
-      dishes: [{ name: 'Cơm tấm' }],
+      dishes: [{ name: 'Cơm tấm', refIndex: 0 }],
       sourceConfidences: [null],
     });
     mockMergeRelogIntoPipelineResult.mockImplementation(
@@ -1308,7 +1320,7 @@ describe('POST /api/analyze-meal', () => {
       data: { ...mockPipelineData },
     }));
     mockResolveRelogSources.mockResolvedValue({
-      dishes: [{ name: 'Cơm tấm' }],
+      dishes: [{ name: 'Cơm tấm', refIndex: 0 }],
       sourceConfidences: ['high'],
     });
     mockMergeRelogIntoPipelineResult.mockImplementation(
@@ -1335,7 +1347,7 @@ describe('POST /api/analyze-meal', () => {
       data: { ...mockPipelineData },
     }));
     mockResolveRelogSources.mockResolvedValue({
-      dishes: [{ name: 'Cơm tấm' }],
+      dishes: [{ name: 'Cơm tấm', refIndex: 0 }],
       sourceConfidences: ['high'],
     });
     mockMergeRelogIntoPipelineResult.mockImplementation(
@@ -1344,7 +1356,12 @@ describe('POST /api/analyze-meal', () => {
 
     // `message` is capped at 500, but the sentence it was cut out of can be
     // longer — up to 20 pick labels longer. It is truncated, never rejected.
-    const long = 'á'.repeat(900);
+    // A real sentence, not a repeated character: `displayText` now carries the
+    // same hygiene `message` does, and 900 identical letters is garbage either
+    // way — what this pins is the 500-char TRUNCATION, not the input filter.
+    const long = 'Cơm tấm sườn bì chả và một ly trà đá. '
+      .repeat(25)
+      .slice(0, 900);
     const res = await POST(
       createRequest({
         ...mealRequestBody('phở bò'),
@@ -1359,6 +1376,53 @@ describe('POST /api/analyze-meal', () => {
     };
     expect(inserted.rawInput).toHaveLength(500);
     expect(inserted.rawInput.endsWith('…')).toBe(true);
+  });
+
+  it('refuses an uncached scanned pick BEFORE spending an analysis', async () => {
+    // The cache is what a search fills, so a barcode with no row was never
+    // looked up. Caught pre-stream: `resolveComposerPicks` would catch it too,
+    // but only after the provider call has already been paid for — and by then
+    // the refusal can only be an SSE frame, not a status code.
+    mockFindCachedRows.mockResolvedValue(new Map());
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        refs: [{ kind: 'barcode', barcode: '8935001234567', grams: 250 }],
+      })
+    );
+
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    // The same envelope the one-shot `/api/v1/barcode/log` path returns, so the
+    // client prompts a rescan whichever way the scan was submitted.
+    expect(json.error.code).toBe('BARCODE_NOT_CACHED');
+    expect(mockAnalyzeMeal).not.toHaveBeenCalled();
+    expect(mockFindCachedRows).toHaveBeenCalledWith(['8935001234567']);
+  });
+
+  it('streams normally when every scanned pick is cached', async () => {
+    mockFindCachedRows.mockResolvedValue(
+      new Map([['8935001234567', { namePrimary: 'Sữa', caloriesKcal: '60' }]])
+    );
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    mockMergeRelogIntoPipelineResult.mockImplementation(
+      (aiResult: object) => aiResult
+    );
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        refs: [{ kind: 'barcode', barcode: '8935001234567', grams: 250 }],
+      })
+    );
+    await res.text();
+
+    expect(res.status).toBe(200);
+    expect(mockAnalyzeMeal).toHaveBeenCalled();
   });
 
   it('leaves the raw input alone when there are no picks', async () => {

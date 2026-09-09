@@ -18,7 +18,7 @@ const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
 const resolveRelogSources = vi.fn();
 const assertFeatureAccess = vi.fn();
-const findCachedRow = vi.fn();
+const findCachedRows = vi.fn();
 
 vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   checkAnalysisGuards,
@@ -37,7 +37,7 @@ vi.mock('@/lib/infra/db/client', () => ({
 vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
   resolveRelogSources,
 }));
-vi.mock('@/lib/domain/barcode/cache', () => ({ findCachedRow }));
+vi.mock('@/lib/domain/barcode/cache', () => ({ findCachedRows }));
 // Only the paths that get PAST the gate reach the write; the mock is what lets
 // one of them run to completion here.
 vi.mock('@/lib/ai/pipeline/stream/persist-analysis', () => ({
@@ -204,11 +204,18 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     // `/api/v1/barcode/log` gates nothing — so routing scanned picks through
     // this action must not make it the one barcode path behind the paywall.
     lock();
-    findCachedRow.mockResolvedValue({
-      id: 'off:8935001234567',
-      namePrimary: 'Sữa tươi TH true milk',
-      caloriesKcal: '60',
-    });
+    findCachedRows.mockResolvedValue(
+      new Map([
+        [
+          '8935001234567',
+          {
+            id: 'off:8935001234567',
+            namePrimary: 'Sữa tươi TH true milk',
+            caloriesKcal: '60',
+          },
+        ],
+      ])
+    );
 
     await stageRelogAnalysisAction({
       ...relogInput,
@@ -217,7 +224,13 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     });
 
     expect(assertFeatureAccess).not.toHaveBeenCalled();
-    expect(findCachedRow).toHaveBeenCalledWith('8935001234567');
+    expect(findCachedRows).toHaveBeenCalledWith(['8935001234567']);
+    // Open the paywall, not the throttle: this path still opens a transaction
+    // and writes a fat `pending_analyses` row, so it stays on the SHARED relog
+    // write counter like every other write action.
+    expect(checkAnalysisGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
+    );
   });
 
   it('instant-save refuses a locked user without spending rate budget', async () => {

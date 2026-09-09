@@ -7,7 +7,17 @@ import {
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
-import { mealMessageSchema } from '@/lib/core/validation/meal';
+import {
+  type MealMessageInput,
+  mealMessageSchema,
+} from '@/lib/core/validation/meal';
+import { findCachedRows } from '@/lib/domain/barcode/cache';
+import {
+  BARCODE_RESCAN_MESSAGE,
+  BarcodeServiceError,
+  mapBarcodeServiceError,
+} from '@/lib/domain/barcode/errors';
+import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
@@ -46,6 +56,29 @@ export function resolveGeminiConfig(): GeminiConfigResult {
   } catch (error) {
     console.error('[analyze-meal] AI provider misconfigured:', error);
     return { ok: false, error: serializeError(Errors.internal()) };
+  }
+}
+
+/**
+ * Refuse a submit carrying a scanned pick this server has never cached, BEFORE
+ * the stream (and so before the provider spend) starts.
+ *
+ * `resolveComposerPicks` checks the same thing when it resolves the picks, but
+ * that runs after the AI call has already been paid for — and mid-stream the
+ * refusal can only be an SSE frame, not a status code. This one is the cheap
+ * one: same `BARCODE_NOT_CACHED` envelope, no analysis, no charge.
+ */
+async function assertScannedPicksAreCached(
+  refs: MealMessageInput['refs']
+): Promise<void> {
+  const barcodes = barcodeRefsOf(refs ?? []).map((ref) => ref.barcode);
+  if (barcodes.length === 0) return;
+
+  const cached = await findCachedRows(barcodes);
+  if (barcodes.some((barcode) => !cached.has(barcode))) {
+    throw mapBarcodeServiceError(
+      new BarcodeServiceError('not_cached', BARCODE_RESCAN_MESSAGE)
+    );
   }
 }
 
@@ -99,6 +132,8 @@ export async function validateRequest(request: NextRequest) {
         parsed.error.issues[0]?.message ?? 'Invalid input'
       );
     }
+
+    await assertScannedPicksAreCached(parsed.data.refs);
 
     return {
       data: {

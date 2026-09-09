@@ -82,6 +82,38 @@ describe('resolveRelogDishes', () => {
     expect(resolved.map((d) => d.name)).toEqual(['Trà đá', 'Phở bò', 'Phở bò']);
   });
 
+  it('tags each dish with the ref that produced it', () => {
+    // The tag is what lets a caller holding OTHER picks (a scanned product)
+    // interleave them back into staged order instead of appending them.
+    const resolved = resolveRelogDishes(
+      [dishRef(MEAL_A, 1), mealRef(MEAL_B), dishRef(MEAL_A, 0)],
+      ROWS
+    );
+    expect(resolved.map((d) => d.refIndex)).toEqual([0, 1, 2]);
+  });
+
+  it('stamps every dish of an expanded meal with that meal ref’s index', () => {
+    // One ref, several dishes: they all carry ITS index, so they stay
+    // contiguous — a meal cannot be split around a scan staged after it.
+    const resolved = resolveRelogDishes(
+      [dishRef(MEAL_B, 0), mealRef(MEAL_A)],
+      ROWS
+    );
+    expect(resolved.map((d) => [d.name, d.refIndex])).toEqual([
+      ['Phở bò', 0],
+      ['Phở bò', 1],
+      ['Trà đá', 1],
+    ]);
+  });
+
+  it('keeps duplicate picks of one dish on their own ref indexes', () => {
+    const resolved = resolveRelogDishes(
+      [dishRef(MEAL_A, 0), dishRef(MEAL_A, 0)],
+      ROWS
+    );
+    expect(resolved.map((d) => d.refIndex)).toEqual([0, 1]);
+  });
+
   it('keeps duplicate picks of the same dish as separate dishes', () => {
     // Two bowls is a real meal; collapsing them would halve what was logged.
     const resolved = resolveRelogDishes(

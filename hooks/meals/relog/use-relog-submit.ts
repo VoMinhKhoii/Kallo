@@ -155,12 +155,20 @@ export function useRelogSubmit(args: {
     // second pending card for one meal. Changing the selection mints a new id.
     const stageIds = staged.entries.map((entry) => entry.stageId);
     const attemptId = attemptIdFor(stageIds);
+    // The composer's own sentence — the mention runs, in the order they were
+    // typed. The SAME derivation the combined branch's label uses, so a submit
+    // is labelled the same way whether or not free text rode along; without it
+    // the server falls back to joining the resolved names, which reorders the
+    // sentence. Omitted (not sent empty) if the composer is somehow blank: the
+    // contract requires a real sentence, and the name-join is the fallback.
+    const displayText = buildRelogRawInput([getText().trim()]);
     try {
       const result = await stageRelogAnalysisAction({
         items: refs,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         attemptId,
+        ...(displayText.length > 0 ? { displayText } : {}),
       });
       setMessages((prev) => [
         ...prev,

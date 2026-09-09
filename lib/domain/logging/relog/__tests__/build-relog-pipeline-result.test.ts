@@ -48,7 +48,9 @@ function dish(
   name: string,
   rows: (RelogSourceRow & Record<string, unknown>)[]
 ): ResolvedDish<RelogSourceRow> {
-  return { name, rows };
+  // `refIndex` tags which staged pick produced the dish; these builders never
+  // read it, so one value is enough here.
+  return { name, rows, refIndex: 0 };
 }
 
 describe('toDegenerateBounded', () => {

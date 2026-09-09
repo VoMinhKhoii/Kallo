@@ -119,12 +119,12 @@ export function buildFrozenMealItem<T extends RelogSourceRow>(
  * Build a full frozen `PipelineResult` for a PURE pick submit (no AI portion).
  *
  * Items arrive already frozen — a relogged dish or a scanned product, resolved
- * by `resolveComposerPicks` — and are kept in staged order; confirm uses each
- * item's array index as its
- * `mealItemOrder`, so two picks of the same dish stay distinct groups (no
- * silent halving). Meal nutrition is SUMMED from the frozen items — never a
- * source meal's stored total. `mealSlot: null` lets confirm infer the slot from
- * the new instant; `resolveComposerPicks` decides the confidence.
+ * by `resolveComposerPicks` — and are kept in the order the picks were STAGED;
+ * confirm uses each item's array index as its `mealItemOrder`, so two picks of
+ * the same dish stay distinct groups (no silent halving). Meal nutrition is
+ * SUMMED from the frozen items — never a source meal's stored total.
+ * `mealSlot: null` lets confirm infer the slot from the new instant;
+ * `resolveComposerPicks` decides the confidence.
  */
 export function buildPickPipelineResult(
   mealItems: PipelineMealItem[],

@@ -5,7 +5,7 @@ import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
 import type { CheatSliderSpec } from '@/lib/core/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/core/types/meal';
-import type { RelogRef } from '@/lib/domain/logging/relog/relog';
+import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
 
 export interface StreamAnalysisState {
   status: StreamStatus;
@@ -36,10 +36,11 @@ export interface StreamAnalyzeInput {
   /** Stable per-attempt id. Reused across re-analyses of one card so the server
    *  upserts the same staging row instead of orphaning its predecessor. */
   attemptId?: string;
-  /** Combined relog: picks staged alongside free text. Only `message` runs the
-   *  AI pipeline; the server resolves these deterministically and merges them
-   *  into the result before staging, so relogged dishes are never re-analyzed. */
-  refs?: RelogRef[];
+  /** Combined relog: picks staged alongside free text — a past dish, a past
+   *  meal, or a scanned product. Only `message` runs the AI pipeline; the
+   *  server resolves these deterministically and merges them into the result
+   *  before staging, so picked items are never re-analyzed. */
+  refs?: ComposerPickRef[];
   /** What the saved meal is LABELLED with, beside `refs` — the composer's own
    *  sentence. `message` is that sentence with the picks cut out, so without
    *  this the server rebuilds the label and appends them, reordering it. */

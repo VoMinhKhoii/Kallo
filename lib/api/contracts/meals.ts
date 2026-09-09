@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import {
   composerPickRefSchema,
+  displayTextSchema,
   relogRefSchema,
 } from '@/lib/core/validation/meal';
 import {
@@ -260,9 +261,10 @@ export const stageRelogAnalysisSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
   attemptId: z.string().uuid('attemptId phải là UUID hợp lệ.'),
   // The sentence the picks read as in the composer. Absent, the label is the
-  // resolved names joined in resolution order, which puts every scanned product
-  // after every relogged dish however they were typed.
-  displayText: z.string().trim().min(1).max(2000).optional(),
+  // resolved names joined in staged order. It becomes `meals.raw_input`, so it
+  // carries the SAME hygiene a typed meal description does — one schema, no
+  // second way for a label to reach the database.
+  displayText: displayTextSchema.optional(),
 });
 
 export type StageRelogAnalysisInput = z.infer<typeof stageRelogAnalysisSchema>;

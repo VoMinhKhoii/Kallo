@@ -12,24 +12,29 @@
 // can do by naming one is log a product it could equally have scanned.
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { MealConfidence, PipelineMealItem } from '@/lib/ai/types/result';
-import { Errors } from '@/lib/core/errors/catalog';
-import { findCachedRow } from '@/lib/domain/barcode/cache';
+import { findCachedRows } from '@/lib/domain/barcode/cache';
+import {
+  BARCODE_RESCAN_MESSAGE,
+  BarcodeServiceError,
+  mapBarcodeServiceError,
+} from '@/lib/domain/barcode/errors';
 import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
 import {
   buildFrozenMealItem,
   toMealConfidence,
 } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
-import {
-  barcodeRefsOf,
-  type ComposerPickRef,
-  relogRefsOf,
-  weakestConfidence,
+import type {
+  BarcodeRef,
+  ComposerPickRef,
+  RelogRef,
 } from '@/lib/domain/logging/relog/relog';
+import { weakestConfidence } from '@/lib/domain/logging/relog/relog';
 import { db } from '@/lib/infra/db/client';
 
 export interface ResolvedPicks {
-  /** Frozen items, relogged dishes first and scanned products after them.
-   *  Positional order becomes confirm's `mealItemOrder`. */
+  /** Frozen items in the order the picks were STAGED — a scanned product sits
+   *  where the user put it, not after every relogged dish. Positional order
+   *  becomes confirm's `mealItemOrder`. */
   items: PipelineMealItem[];
   /** Display names, positionally aligned with {@link items}. */
   names: string[];
@@ -43,6 +48,32 @@ export interface ResolvedPicks {
    * — one product, two answers.
    */
   confidence: MealConfidence;
+}
+
+/** One output slot per ORIGINAL ref. A `meal` ref fills its slot with several
+ *  dishes, which is what keeps a meal's dishes contiguous when the slots are
+ *  flattened back into one list. */
+interface PickSlot {
+  items: PipelineMealItem[];
+  names: string[];
+}
+
+/**
+ * The cache is what a SEARCH fills, so a barcode with no row was never looked
+ * up — the client has to scan it again rather than have this endpoint quietly
+ * reach out to a provider mid-analysis.
+ *
+ * Thrown pre-mapped as the `/api/v1` `BARCODE_NOT_CACHED` envelope: the one
+ * value then reads correctly on all three transports this resolver feeds — a
+ * 404 through `handleRouteError`, a 404 through `serializeError`, and a
+ * `barcode_not_cached` SSE frame through `toStreamErrorEvent`, which only
+ * understands `AppError` and would otherwise flatten it to a generic
+ * "Failed to process meal".
+ */
+function notCached(): unknown {
+  return mapBarcodeServiceError(
+    new BarcodeServiceError('not_cached', BARCODE_RESCAN_MESSAGE)
+  );
 }
 
 /**
@@ -59,43 +90,54 @@ export async function resolveComposerPicks(
   userId: string,
   refs: ComposerPickRef[]
 ): Promise<ResolvedPicks> {
-  const relogRefs = relogRefsOf(refs);
-  const barcodeRefs = barcodeRefsOf(refs);
+  const slots: PickSlot[] = refs.map(() => ({ items: [], names: [] }));
 
-  const scanned = await Promise.all(
-    barcodeRefs.map(async (ref) => {
-      const row = await findCachedRow(ref.barcode);
-      // The cache is what a SEARCH fills, so a barcode with no row was never
-      // looked up — the client has to scan it again rather than have this
-      // endpoint quietly reach out to a provider mid-analysis.
-      if (!row) {
-        throw Errors.validationFailed(
-          'Không tìm thấy sản phẩm đã quét. Hãy quét lại.'
-        );
-      }
-      return buildBarcodeMealItem(row, ref.grams).item;
-    })
-  );
-
-  if (relogRefs.length === 0) {
-    return {
-      items: scanned,
-      names: scanned.map((item) => item.name),
-      confidence: 'high',
-    };
+  // Original positions, so both halves can be written back into the order the
+  // user staged them.
+  const barcodeIndices: number[] = [];
+  const relogIndices: number[] = [];
+  for (const [index, ref] of refs.entries()) {
+    if (ref.kind === 'barcode') barcodeIndices.push(index);
+    else relogIndices.push(index);
   }
 
-  const { dishes, sourceConfidences } = await db.transaction((tx) =>
-    resolveRelogSources(tx, userId, relogRefs, { lock: true })
+  // ONE query for every scanned pick, deduped: 20 picks were 20 sequential
+  // round trips against a two-connection pool.
+  const cached = await findCachedRows(
+    barcodeIndices.map((index) => (refs[index] as BarcodeRef).barcode)
   );
-  const relogged = dishes.map((dish) => buildFrozenMealItem(dish));
+  for (const index of barcodeIndices) {
+    const ref = refs[index] as BarcodeRef;
+    const row = cached.get(ref.barcode);
+    if (!row) throw notCached();
+    const { item } = buildBarcodeMealItem(row, ref.grams);
+    slots[index].items.push(item);
+    slots[index].names.push(item.name);
+  }
 
-  return {
-    items: [...relogged, ...scanned],
-    names: [
-      ...dishes.map((dish) => dish.name),
-      ...scanned.map((item) => item.name),
-    ],
-    confidence: toMealConfidence(weakestConfidence(sourceConfidences)),
-  };
+  const flatten = (confidence: MealConfidence): ResolvedPicks => ({
+    items: slots.flatMap((slot) => slot.items),
+    names: slots.flatMap((slot) => slot.names),
+    confidence,
+  });
+
+  if (relogIndices.length === 0) return flatten('high');
+
+  const { dishes, sourceConfidences } = await db.transaction((tx) =>
+    resolveRelogSources(
+      tx,
+      userId,
+      relogIndices.map((index) => refs[index] as RelogRef),
+      { lock: true }
+    )
+  );
+  // `refIndex` is the dish's position in the RELOG-only list handed to the
+  // resolver, so map it back through `relogIndices` to the original ref.
+  for (const dish of dishes) {
+    const slot = slots[relogIndices[dish.refIndex]];
+    slot.items.push(buildFrozenMealItem(dish));
+    slot.names.push(dish.name);
+  }
+
+  return flatten(toMealConfidence(weakestConfidence(sourceConfidences)));
 }

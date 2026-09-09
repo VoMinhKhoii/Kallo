@@ -7,34 +7,16 @@ import {
   rowToProduct,
 } from '@/lib/domain/barcode/cache';
 import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
+import { BarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
-import type {
-  BarcodeErrorCode,
-  ParsedBarcodeProduct,
-} from '@/lib/domain/barcode/types';
+import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
-/**
- * Domain failure in the barcode flow, carrying a stable {@link BarcodeErrorCode}.
- *
- * The service THROWS instead of returning `{success:false}` unions so that
- * callers choose their own error transport: server actions catch and fold into
- * their result union (web dialog contract), while `/api/v1/barcode/*` routes
- * map codes onto the standard `{error:{code,status,...}}` envelope with real
- * HTTP statuses. Crucially this keeps auth/validation failures OUT of the
- * domain-error path — an expired mobile token must surface as a 401, not as a
- * `server_error` inside an HTTP 200.
- */
-export class BarcodeServiceError extends Error {
-  constructor(
-    public readonly code: Exclude<BarcodeErrorCode, 'invalid_input'>,
-    message?: string
-  ) {
-    super(message ?? `Barcode flow failed: ${code}`);
-    this.name = 'BarcodeServiceError';
-  }
-}
+// Re-exported from its dependency-light home so every existing importer keeps
+// one path; `errors.ts` holds it so a caller that only classifies a failure
+// need not pull this module's DB and provider-chain imports in behind it.
+export { BarcodeServiceError } from '@/lib/domain/barcode/errors';
 
 /**
  * Look up a product by (digits-only, pre-validated) barcode. Checks the local
