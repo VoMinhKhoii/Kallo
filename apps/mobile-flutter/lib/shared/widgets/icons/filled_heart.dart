@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -13,12 +12,17 @@ import 'tinted_svg.dart';
 /// beside it. Drawn by [TintedSvg], like every other one-colour glyph.
 class FilledHeart extends StatelessWidget {
   const FilledHeart({
-    this.size = KalloIcons.tertiary,
+    required this.size,
     this.color = KalloColors.danger,
     super.key,
   });
 
+  /// Required, with no default: this glyph is the ON state of an outline that
+  /// is optically compensated per glyph ([KalloIcons.optical]), and the two
+  /// must be the same size or the post twitches as it is hearted. A tier
+  /// default here was a size nothing rendered and an invitation to mismatch.
   final double size;
+
   final Color color;
 
   @override
@@ -32,25 +36,10 @@ class FilledHeart extends StatelessWidget {
   );
 }
 
-/// Parses the filled heart AHEAD of the first tap, into flutter_svg's own
-/// cache, under the key [FilledHeart]'s [SvgPicture.string] will look under.
-///
-/// `SvgPicture.string` parses its source the first time the glyph is built —
-/// and on the Circle feed that moment is the tap that hearts a post, so the
-/// fill landed a frame or two late on the one interaction the surface is
-/// built around. Warming at page load makes the hearted state a repaint of
-/// something already decoded.
-///
-/// Idempotent, and cheap to call again: `putIfAbsent` hands back the entry —
-/// pending or decoded — for a key the cache already holds, so only the first
-/// caller in the process pays for the parse. [SvgStringLoader] keys by the
-/// source string, so this is the same entry the widget resolves to (the app
-/// installs no `DefaultSvgTheme`, so the null context here reads the same
-/// default theme the widget's context does).
-void precacheFilledHeart() {
-  const loader = SvgStringLoader(_svg);
-  svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
-}
+/// Parses the filled heart ahead of the first tap — see [precacheTintedSvg]
+/// for the cache-key reasoning. Called once at app start (`main.dart`): the
+/// warm is process-global and has nothing to do with any one feed's lifecycle.
+void precacheFilledHeart() => precacheTintedSvg(_svg);
 
 const String _svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000" stroke="#000" '

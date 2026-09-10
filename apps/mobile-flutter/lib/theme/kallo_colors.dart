@@ -46,6 +46,17 @@ abstract final class KalloColors {
   static const Color accent = Color(0xFFC9A87C); // signature tan
   static const Color accentDark = Color(0xFFB89968);
 
+  // ── Brand sweep ──────────────────────────────────────────────────────
+  /// The two hues of the brand sweep: the wash behind `/start` and every
+  /// onboarding step ([StartAurora]), and the fill of the tab bar's "+"
+  /// ([KalloGradients.brandSweep]).
+  ///
+  /// Tokens because there are now two consumers and they must not drift — the
+  /// aurora paints them at 16–55% alpha and the "+" at full opacity, which is
+  /// exactly the pair that would silently diverge if each kept its own literal.
+  static const Color brandApricot = Color(0xFFFFD2B0);
+  static const Color brandLilac = Color(0xFFDCC4FF);
+
   // ── The muted band ───────────────────────────────────────────────────
   // The surface the composer's inline under-logged notice (`PartialDayNotice`)
   // and the relog `/` picker both paint: white copy on muted grey. Pinned to
@@ -175,6 +186,16 @@ abstract final class KalloColors {
   /// Deliberately far lighter than [cardWhite30] — at 30%+ this reads as a
   /// highlight bar rather than a press.
   static const Color pressWashOnInk = Color(0x1FFFFFFF); // white @ 12%
+
+  /// Press wash for the one GOLD surface — the paywall's buy button.
+  ///
+  /// The fourth case of the same rule, and the only one that darkens rather
+  /// than lightens: the gold gradient runs #FBE27A→#EDBF2F, so [pressWashOnInk]
+  /// vanishes into it and [pressWash] at 6% is too faint to register against a
+  /// fill that bright. It lives here rather than in the paywall because a press
+  /// wash is a system statement, even when only one surface needs this one —
+  /// the gold HEXES stay fenced in `plans/gold_surface.dart`.
+  static const Color pressWashOnGold = Color(0x1F141413); // ink @ 12%
 
   // ── Danger alpha variants ────────────────────────────────────────────
   // Washes and hairlines behind destructive UI. These existed as hardcoded

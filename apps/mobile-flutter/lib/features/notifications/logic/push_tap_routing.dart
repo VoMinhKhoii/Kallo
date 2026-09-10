@@ -96,7 +96,14 @@ void routePushTap(ProviderContainer container, PushPayload payload) {
   // after a group tap must not stay scoped to that earlier group.
   container.read(circleSelectedViewProvider.notifier).state =
       destination.groupId;
-  openPushDestination(container.read(routerProvider), destination.path);
+  // Circle is the branch every notification destination lives under, so it is
+  // what goes down first on a cold tap — named HERE because which branch owns
+  // a thread is this feature's knowledge, not the shell's.
+  pushOverShell(
+    container.read(routerProvider),
+    base: '/circle',
+    path: destination.path,
+  );
 }
 
 String? _stringAt(Map<String, dynamic> data, String key) {

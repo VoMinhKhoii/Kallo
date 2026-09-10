@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../services/billing/entitlement_state.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -21,47 +20,6 @@ class PaywallFeatureList extends StatelessWidget {
         const SizedBox(height: KalloSpacing.sp3),
         _FeatureRow(text: tr('paywall.feature3')),
       ],
-    );
-  }
-}
-
-class PaywallTrialCountdown extends StatelessWidget {
-  const PaywallTrialCountdown({required this.trial, super.key});
-
-  final TrialState trial;
-
-  @override
-  Widget build(BuildContext context) {
-    final label =
-        trial.daysRemaining <= 1
-            ? tr('paywall.trialCountdownLastDay')
-            : tr(
-              'paywall.trialCountdown',
-              namedArgs: {'days': '${trial.daysRemaining}'},
-            );
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KalloSpacing.sp3,
-        vertical: KalloSpacing.sp2_5,
-      ),
-      decoration: BoxDecoration(
-        color: KalloColors.accent10,
-        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            LucideIcons.clock300,
-            size: KalloIcons.tertiary,
-            color: KalloColors.accentDark,
-          ),
-          const SizedBox(width: KalloSpacing.sp2),
-          Flexible(
-            child: Text(label, style: dashMeta(color: KalloColors.text)),
-          ),
-        ],
-      ),
     );
   }
 }

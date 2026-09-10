@@ -7,9 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/paywall/logic/plan_pricing.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
-import 'package:kallo_mobile/features/paywall/widgets/chrome/paywall_header.dart';
+import 'package:kallo_mobile/features/paywall/widgets/paywall_header.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
-import 'package:kallo_mobile/features/paywall/widgets/plans/gold_cta.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/plan_cta.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_sheet_actions.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/features/paywall/widgets/states/paywall_status.dart';
@@ -119,27 +119,18 @@ Future<void> pumpPaywall(
   await _frames(tester);
 }
 
-/// The one button that buys: gold on the yearly plan, the app's ink CTA on the
-/// monthly one. Everything else on the band is an exit or a link.
-Finder _inkCta() => find.byWidgetPredicate(
-  (w) => w is KalloButton && w.variant == KalloButtonVariant.cta,
-);
+/// The one button that buys, whichever period is selected — [PlanCta.gold]
+/// only says what it is painted on. Everything else on the band is an exit or
+/// a link.
+PlanCta _cta(WidgetTester tester) =>
+    tester.widget<PlanCta>(find.byType(PlanCta));
 
 Finder _stayFree() => find.byWidgetPredicate(
   (w) => w is KalloButton && w.variant == KalloButtonVariant.secondary,
 );
 
-bool _isGold(WidgetTester tester) => find.byType(GoldCta).evaluate().isNotEmpty;
-
-String _ctaTitle(WidgetTester tester) => _isGold(tester)
-    ? tester.widget<GoldCta>(find.byType(GoldCta)).label
-    : tester.widget<KalloButton>(_inkCta()).title;
-
-String? _ctaChip(WidgetTester tester) =>
-    _isGold(tester) ? tester.widget<GoldCta>(find.byType(GoldCta)).chipLabel : null;
-
 Future<void> _tapBuy(WidgetTester tester) async {
-  await tester.tap(_isGold(tester) ? find.byType(GoldCta) : _inkCta());
+  await tester.tap(find.byType(PlanCta));
   await _frames(tester);
 }
 
@@ -175,7 +166,7 @@ void main() {
     // Yearly is preselected, so the buy button wears the gold. Lifetime is
     // deliberately absent — the toggle is a two-choice decision.
     expect(tester.widget<PlanToggle>(find.byType(PlanToggle)).yearly, isTrue);
-    expect(_isGold(tester), isTrue);
+    expect(_cta(tester).gold, isTrue);
     expect(find.text(tr('paywall.packageLifetime')), findsNothing);
   });
 
@@ -186,11 +177,15 @@ void main() {
 
     // $9.99 x 12 = $119.88 against the $24.99 the yearly plan asks — a 80%
     // saving. (The arithmetic itself is covered in plan_pricing_test.dart.)
-    expect(_ctaChip(tester), isNotNull);
+    expect(_cta(tester).chipLabel, isNotNull);
 
     await _pickMonthly(tester);
-    expect(_isGold(tester), isFalse, reason: 'gold marks the deal, not the tap');
-    expect(_ctaChip(tester), isNull);
+    expect(
+      _cta(tester).gold,
+      isFalse,
+      reason: 'gold marks the deal, not the tap',
+    );
+    expect(_cta(tester).chipLabel, isNull);
   });
 
   testWidgets('the button buys the period the toggle is on', (tester) async {
@@ -214,13 +209,16 @@ void main() {
   ) async {
     await pumpPaywall(tester, api: PaywallEntitlementsApi(trialActive: false));
 
-    expect(_ctaTitle(tester), tr('paywall.startTrialDays', namedArgs: {'days': '7'}));
+    expect(
+      _cta(tester).label,
+      tr('paywall.startTrialDays', namedArgs: {'days': '7'}),
+    );
 
     // Monthly carries no introductory offer, so the promise goes away with it
     // and the button names the price instead.
     await _pickMonthly(tester);
     expect(
-      _ctaTitle(tester),
+      _cta(tester).label,
       tr('paywall.startMonthly', namedArgs: {'price': r'$9.99'}),
     );
   });
@@ -240,7 +238,7 @@ void main() {
       ),
     );
 
-    expect(_ctaTitle(tester), tr('paywall.purchase'));
+    expect(_cta(tester).label, tr('paywall.purchase'));
     expect(find.textContaining('days free'), findsNothing);
     // The charge starts now, so the line names no date.
     expect(find.textContaining('from'), findsNothing);
@@ -257,7 +255,7 @@ void main() {
       ),
     );
 
-    expect(_ctaTitle(tester), tr('paywall.purchase'));
+    expect(_cta(tester).label, tr('paywall.purchase'));
   });
 
   testWidgets('the renewal line leads with the billed amount, then the date', (
@@ -293,8 +291,8 @@ void main() {
     // A segmented control with one live half is a label wearing a control's
     // chrome, and the gold marks a deal there is nothing to compare against.
     expect(find.byType(PlanToggle), findsNothing);
-    expect(_isGold(tester), isFalse);
-    expect(tester.widget<KalloButton>(_inkCta()).onPressed, isNotNull);
+    expect(_cta(tester).gold, isFalse);
+    expect(_cta(tester).onPressed, isNotNull);
   });
 
   testWidgets('Restore, Terms and Privacy all clear the 44pt hit target', (
@@ -322,7 +320,7 @@ void main() {
     expect(tester.takeException(), isNull, reason: 'nothing overflows');
 
     // The decision stays pinned whatever the table does above it.
-    expect(find.byType(GoldCta), findsOneWidget);
+    expect(find.byType(PlanCta), findsOneWidget);
     expect(_stayFree(), findsOneWidget);
 
     await tester.scrollUntilVisible(find.text(tr('paywall.compareCircle')), 200);
@@ -344,16 +342,10 @@ void main() {
       expect(find.byType(PaywallRetryNote), findsNothing);
       expect(find.text(tr('paywall.unavailableBody')), findsNothing);
 
-      // Only the buy button changes.
-      if (_isGold(tester)) {
-        final cta = tester.widget<GoldCta>(find.byType(GoldCta));
-        expect(cta.disabled, isTrue);
-        expect(cta.onPressed, isNull);
-      } else {
-        final cta = tester.widget<KalloButton>(_inkCta());
-        expect(cta.disabled, isTrue);
-        expect(cta.onPressed, isNull);
-      }
+      // Only the buy button changes — one widget, so one assertion whichever
+      // period the offering left selected.
+      expect(_cta(tester).disabled, isTrue);
+      expect(_cta(tester).onPressed, isNull);
 
       // …and both exits survive, so the screen is never a trap: the close
       // glyph in the header, and "Stay on Free" on the band.

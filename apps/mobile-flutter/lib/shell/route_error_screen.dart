@@ -37,13 +37,7 @@ class RouteErrorScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
             child: AppHeader(
-              onBack: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  goToLogging(context);
-                }
-              },
+              onBack: () => popOrOpenLogging(context),
             ),
           ),
           Expanded(

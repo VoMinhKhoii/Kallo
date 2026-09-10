@@ -9,8 +9,8 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/start_aurora.dart';
 import '../data/paywall_controller.dart';
-import '../widgets/chrome/paywall_header.dart';
-import '../widgets/plans/paywall_purchase_face.dart';
+import '../widgets/paywall_header.dart';
+import 'paywall_purchase_face.dart';
 import '../widgets/states/paywall_premium_body.dart';
 import '../widgets/states/paywall_status.dart';
 

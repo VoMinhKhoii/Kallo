@@ -2,7 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/shared/widgets/icons/filled_heart.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 /// The hearted state's glyph. Lucide is a FONT here, so `Icon(fill: 1)` is a
@@ -12,14 +14,18 @@ void main() {
   SvgPicture svgOf(WidgetTester tester) =>
       tester.widget<SvgPicture>(find.byType(SvgPicture));
 
-  testWidgets('draws the tertiary 18pt glyph in danger by default', (
+  testWidgets('wears the outline\'s optical size and danger by default', (
     tester,
   ) async {
-    await tester.pumpWidget(const FilledHeart());
+    // The size the Circle row actually renders — the same table entry the
+    // outline heart resolves to, so the two states cannot differ.
+    final size = KalloIcons.optical(LucideIcons.heart300);
+    await tester.pumpWidget(FilledHeart(size: size));
 
     final svg = svgOf(tester);
-    expect(svg.width, 18);
-    expect(svg.height, 18);
+    expect(size, 20);
+    expect(svg.width, size);
+    expect(svg.height, size);
     expect(
       svg.colorFilter,
       const ColorFilter.mode(KalloColors.danger, BlendMode.srcIn),

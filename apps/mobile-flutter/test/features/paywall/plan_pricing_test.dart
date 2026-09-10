@@ -20,55 +20,29 @@ Package _monthlyAt(double price, {String currency = 'USD'}) => Package(
 );
 
 void main() {
-  test('the plan list drops lifetime and puts the yearly plan first', () {
-    final plans = visiblePlans([
-      monthlyPackage,
-      lifetimePackage,
-      annualPackage,
-    ]);
-
-    expect(plans.map((p) => p.packageType), [
-      PackageType.annual,
-      PackageType.monthly,
-    ]);
-  });
-
-  test('the default selection is the yearly plan', () {
-    final plans = visiblePlans([monthlyPackage, annualPackage]);
-
-    expect(defaultPlan(plans), annualPackage);
-  });
-
-  test('with no yearly plan the first one on offer is the default', () {
-    expect(defaultPlan([monthlyPackage]), monthlyPackage);
-    expect(defaultPlan(const []), isNull);
-  });
-
   test('a free introductory period is measured in days', () {
     expect(freeTrialDays(annualPackage), 7);
     expect(freeTrialDays(monthlyPackage), 0);
   });
 
-  test('the yearly row strikes twelve monthly payments', () {
+  test('the saving is measured against twelve monthly payments', () {
     final pricing = yearlyPricing(
       annual: annualPackage,
       monthly: _monthlyAt(3.49),
       locale: 'en',
     );
 
-    expect(pricing.struckYearly, r'$41.88');
     expect(pricing.perMonth, r'$2.08');
     expect(pricing.savePercent, 40);
   });
 
-  test('without a monthly plan there is nothing to strike or boast', () {
+  test('without a monthly plan there is nothing to boast', () {
     final pricing = yearlyPricing(
       annual: annualPackage,
       monthly: null,
       locale: 'en',
     );
 
-    expect(pricing.struckYearly, isNull);
     expect(pricing.savePercent, isNull);
     expect(pricing.perMonth, r'$2.08');
   });
@@ -80,15 +54,17 @@ void main() {
       locale: 'en',
     );
 
-    expect(pricing.struckYearly, isNull);
     expect(pricing.savePercent, isNull);
+    // The per-month figure is still honest — it is derived from the yearly
+    // price alone, and only the COMPARISON needs a second currency to match.
+    expect(pricing.perMonth, r'$2.08');
   });
 
   test('omitting the locale falls back to the DEVICE one the store priced in',
       () {
-    // The row shows `priceString` (formatted by the store, for the device)
-    // beside these two; formatting them in the app locale instead is how
-    // "24,99 US\$" ended up next to "\$41.88".
+    // The renewal line shows `priceString` (formatted by the store, for the
+    // device) beside the derived per-month figure; formatting that in the app
+    // locale instead is how "24,99 US\$" ended up next to "\$2.08".
     final derived =
         yearlyPricing(annual: annualPackage, monthly: _monthlyAt(3.49));
     final device = yearlyPricing(
@@ -98,7 +74,7 @@ void main() {
     );
 
     expect(derived.perMonth, device.perMonth);
-    expect(derived.struckYearly, device.struckYearly);
+    expect(derived.savePercent, device.savePercent);
   });
 
   test('the trial promise needs the store\'s blessing, not just the offer', () {

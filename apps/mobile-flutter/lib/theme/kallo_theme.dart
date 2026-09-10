@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../shell/nav/swipe_back/swipe_back_transitions.dart';
 import 'kallo_colors.dart';
 import 'kallo_typography.dart';
 
@@ -64,6 +64,36 @@ abstract final class KalloIcons {
   /// tier has ONE size rather than two neighbouring ones — 16 read as a speck
   /// beside the new 17pt row label).
   static const double tertiary = 18;
+
+  /// Optical sizes WITHIN [tertiary] — the same tier, not a fourth one.
+  ///
+  /// All these glyphs come off the same 24 grid at the same 1.5 stroke and
+  /// still do not carry the same ink: `message-circle` and `copy` are convex,
+  /// area-filling shapes covering ~20x20 of that grid, while `heart` is
+  /// ~20x17.5 and tapers to a point. Set to one number they do not read as one
+  /// size — the heart reads smaller than the two beside it.
+  ///
+  /// A table here rather than an override at each call site: the compensation
+  /// is a property of the GLYPH, and as three per-call-site numbers a fourth
+  /// glyph added to the Circle action row silently got 18 and read a size off
+  /// from its neighbours.
+  ///
+  /// `final`, not `const`: [IconData] overrides `==`, which Dart forbids as a
+  /// constant map key. Nothing here needs a const context.
+  static final Map<IconData, double> _optical = {
+    LucideIcons.heart300: 20,
+    LucideIcons.messageCircle300: 17,
+    LucideIcons.copy300: 17,
+  };
+
+  /// [tertiary], optically compensated for [icon].
+  static double optical(IconData icon) => _optical[icon] ?? tertiary;
+
+  /// The tallest glyph any compensated row can contain. `feed_day_group.dart`
+  /// derives its action-row slack from this, so raising an entry in [_optical]
+  /// can no longer silently make that file's arithmetic negative.
+  static double get opticalMax =>
+      _optical.values.fold(tertiary, (a, b) => a > b ? a : b);
 
   /// Square tap target around the glyph. The pressed wash hugs the glyph, so
   /// the target can grow for accessibility without the affordance growing too.
@@ -185,19 +215,13 @@ abstract final class KalloTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      // Cupertino's slide, with the back drag widened from iOS's 20pt edge
-      // strip to the whole page (`shell/nav/swipe_back/`). Registered for
-      // android as well as the Apple platforms on purpose: widget tests run as
-      // android, so an iOS-only registration would make the gesture
-      // untestable, and android already got Cupertino transitions on the
-      // routes that used to be `CupertinoPage`.
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.iOS: KalloSwipeBackTransitionsBuilder(),
-          TargetPlatform.macOS: KalloSwipeBackTransitionsBuilder(),
-          TargetPlatform.android: KalloSwipeBackTransitionsBuilder(),
-        },
-      ),
+      // No `pageTransitionsTheme` here on purpose: the page transition is the
+      // NAV layer's (`shell/nav/swipe_back/kKalloPageTransitions`), and
+      // `lib/theme/` is the bottom layer — every widget in the app imports it
+      // for a spacing token. Reaching up into `shell/` from here put the whole
+      // gesture stack behind `KalloSpacing` and left `theme -> shell -> theme`
+      // one tidy-up away (sourcing the duration from `KalloMotion` would do
+      // it). `app.dart` composes the two instead, where both are in view.
       // Cards separate by surface alone on the #F8F7F4 canvas: solid white,
       // radius 22, NO border, NO shadow (native pass, 2026-08-31).
       cardTheme: CardThemeData(

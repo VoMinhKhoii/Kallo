@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/settings/widgets/chrome/settings_navigator.dart';
 import 'package:kallo_mobile/shared/widgets/surface/scroll_separator.dart';
-import 'package:kallo_mobile/theme/kallo_theme.dart';
+import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 
 /// An iOS edge-swipe: a long, fast drag from the left gutter.
 Future<void> edgeSwipe(WidgetTester tester) async {
@@ -73,7 +73,7 @@ Future<void> midScreenSwipe(WidgetTester tester) async {
 /// on both levels, so the nested-navigator contract is exercised against the
 /// gesture the app really ships.
 Widget themedShell(Widget settings) => MaterialApp(
-      theme: KalloTheme.light(),
+      theme: kalloAppTheme(),
       home: Builder(
         builder: (context) => Center(
           child: TextButton(

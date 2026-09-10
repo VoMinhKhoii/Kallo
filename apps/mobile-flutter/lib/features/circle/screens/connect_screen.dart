@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../models/http/api_error.dart';
 import '../../../models/social/circle.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -66,7 +67,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
                 color: KalloColors.textMuted,
                 onPressed: () =>
-                    context.canPop() ? context.pop() : context.go('/circle'),
+                    popOr(context, (router) => router.go('/circle')),
               ),
             ),
           ),

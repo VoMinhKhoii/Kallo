@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/theme/kallo_theme.dart';
+import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 
 /// The app-wide back drag (`shell/nav/swipe_back/`).
 ///
@@ -17,7 +17,7 @@ void main() {
   const second = Key('second-page');
 
   Widget app({Widget? secondBody}) => MaterialApp(
-    theme: KalloTheme.light(),
+    theme: kalloAppTheme(),
     home: Builder(
       builder: (context) => Scaffold(
         key: first,
@@ -163,7 +163,7 @@ void main() {
     late BuildContext ctx;
     await tester.pumpWidget(
       MaterialApp(
-        theme: KalloTheme.light(),
+        theme: kalloAppTheme(),
         home: Builder(
           builder: (context) {
             ctx = context;

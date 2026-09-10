@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import 'swipe_back_detector.dart';
 
 /// The app's page transition: Cupertino's slide, with a back drag that starts
 /// anywhere on the page instead of inside iOS's 20pt edge strip.
 ///
-/// Installed once in [KalloTheme.light]'s `pageTransitionsTheme` rather than
-/// per route. `MaterialPageRoute.buildTransitions` resolves the builder off the
+/// Installed once via [kKalloPageTransitions] rather than per route. `MaterialPageRoute.buildTransitions` resolves the builder off the
 /// theme, so every route in the app — and every route added later — inherits
 /// this without a `pageBuilder` of its own. That is also why the four routes
 /// that used to be `CupertinoPage` are now `MaterialPage`: a `CupertinoPage`
@@ -56,3 +56,22 @@ class KalloSwipeBackTransitionsBuilder extends PageTransitionsBuilder {
     );
   }
 }
+
+/// The app's `pageTransitionsTheme`, composed into [MaterialApp] by `app.dart`.
+///
+/// It lives HERE, beside the builder, rather than in `KalloTheme.light()`:
+/// `lib/theme/` is the layer every widget imports for a spacing token, and a
+/// theme that reached up into `shell/nav/` dragged the gesture stack in behind
+/// it and left a `theme -> shell -> theme` cycle one edit away.
+///
+/// Registered for android as well as the Apple platforms on purpose: widget
+/// tests run as android, so an iOS-only registration would make the gesture
+/// untestable, and android already got Cupertino transitions on the routes
+/// that used to be `CupertinoPage`.
+const kKalloPageTransitions = PageTransitionsTheme(
+  builders: <TargetPlatform, PageTransitionsBuilder>{
+    TargetPlatform.iOS: KalloSwipeBackTransitionsBuilder(),
+    TargetPlatform.macOS: KalloSwipeBackTransitionsBuilder(),
+    TargetPlatform.android: KalloSwipeBackTransitionsBuilder(),
+  },
+);

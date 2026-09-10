@@ -1,5 +1,7 @@
 import 'package:flutter/painting.dart';
 
+import 'kallo_colors.dart';
+
 /// Brand gradients — the app's first gradient token.
 ///
 /// Colour, type, spacing and motion all resolve to a named token set; a
@@ -35,6 +37,6 @@ abstract final class KalloGradients {
   static const LinearGradient brandSweep = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFD2B0), Color(0xFFDCC4FF)],
+    colors: [KalloColors.brandApricot, KalloColors.brandLilac],
   );
 }

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/paywall_controller.dart';
-import 'gold_cta.dart';
+import '../../logic/plan_offer.dart';
 import 'paywall_sheet_actions.dart';
+import 'plan_cta.dart';
 
 /// Everything below the table, pinned to the bottom edge: the buy button, what
 /// it will charge, the way out, and the obligations.
@@ -15,38 +15,26 @@ import 'paywall_sheet_actions.dart';
 /// above may scroll past the fold on a small phone — it is evidence, and the
 /// user can go looking for it — but the price, the renewal terms and the exit
 /// are never something to scroll for.
+///
+/// It takes the [offer] whole rather than the five strings inside it: those
+/// five must agree with each other, and `plan_offer.dart` is where they are
+/// made to.
 class PaywallBuyBand extends StatelessWidget {
   const PaywallBuyBand({
-    required this.state,
-    required this.label,
-    required this.renewalLine,
-    required this.yearly,
+    required this.offer,
     required this.onBuy,
     required this.onStayFree,
-    this.chipLabel,
     this.loading = false,
-    this.disabled = false,
     super.key,
   });
 
-  final PaywallState state;
+  final PaywallOffer offer;
 
-  /// The buy button's label and its optional savings chip.
-  final String label;
-  final String? chipLabel;
-
-  /// "Auto-renews at … until cancelled." — never hidden, never behind a
-  /// toggle (see `plan_promise.dart`).
-  final String renewalLine;
-
-  /// Gold for the yearly plan, the app's ordinary ink CTA for the monthly one.
-  /// The gold marks the DEAL: putting it on both would make it decoration.
-  final bool yearly;
-
+  /// Null with the store closed or a purchase already in flight — the button
+  /// goes dead, the rest of the band does not move.
   final VoidCallback? onBuy;
   final VoidCallback onStayFree;
   final bool loading;
-  final bool disabled;
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +50,17 @@ class PaywallBuyBand extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buy(),
+          PlanCta(
+            label: offer.ctaLabel,
+            chipLabel: offer.chipLabel,
+            gold: offer.yearly,
+            loading: loading,
+            disabled: onBuy == null,
+            onPressed: onBuy,
+          ),
           const SizedBox(height: KalloSpacing.sp1_5),
           Text(
-            renewalLine,
+            offer.renewalLine,
             style: dashCaption().copyWith(height: 1.35),
             textAlign: TextAlign.center,
           ),
@@ -89,28 +84,9 @@ class PaywallBuyBand extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: KalloSpacing.sp1_5),
-          PaywallSheetActions(state: state),
+          const PaywallSheetActions(),
         ],
       ),
-    );
-  }
-
-  Widget _buy() {
-    if (yearly) {
-      return GoldCta(
-        label: label,
-        chipLabel: chipLabel,
-        loading: loading,
-        disabled: disabled,
-        onPressed: onBuy,
-      );
-    }
-    return KalloButton(
-      title: label,
-      variant: KalloButtonVariant.cta,
-      loading: loading,
-      disabled: disabled,
-      onPressed: onBuy,
     );
   }
 }

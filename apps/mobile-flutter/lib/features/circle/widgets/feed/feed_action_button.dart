@@ -5,8 +5,9 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
-/// Glyph size, and the minimum square the tap target must fill. Both are the
-/// app-wide values now: 18 on 44. The row's old 16pt glyph read as a footnote
+/// Glyph size, and the minimum square the tap target must fill — both the
+/// app-wide values: the tertiary tier (optically compensated per glyph, see
+/// [KalloIcons.optical]) on 44. The row's old 16pt glyph read as a footnote
 /// under a 14pt meal line rather than as the post's three controls.
 ///
 /// The canvas pulls the action row's margins in (-8 top / -12 bottom) so the
@@ -15,7 +16,7 @@ import '../../../../theme/kallo_theme.dart';
 /// as well as off the layout — the pull is paid by the day card's post padding
 /// instead (see `feed_day_group.dart`), which moves the same pixels with all
 /// 44pt intact.
-const double _glyph = KalloIcons.tertiary;
+double _glyph(IconData icon) => KalloIcons.optical(icon);
 const double _hit = KalloIcons.hit;
 
 /// The inset between a button's ink and the edge of its box — the SAME on
@@ -54,23 +55,10 @@ class FeedActionButton extends StatelessWidget {
     this.activeGlyph,
     this.toggled,
     this.alignment = Alignment.center,
-    this.glyphSize,
   });
 
   final VoidCallback? onTap;
   final IconData icon;
-
-  /// Optical override for the glyph's point size — still the TERTIARY tier
-  /// (`mobile.md`, *Icons*), not a fourth size.
-  ///
-  /// All three glyphs come off the same 24 grid at the same 1.5 stroke, and
-  /// they still do not carry the same ink: `message-circle` and `copy` are
-  /// convex, area-filling shapes covering ~20x20 of that grid, while `heart`
-  /// is ~20x17.5 and tapers to a point. Set to one number they do not read as
-  /// one size — the heart reads smaller than the two beside it. Compensating
-  /// per glyph is what makes the row look like one tier. Null keeps the
-  /// tier's nominal [_glyph].
-  final double? glyphSize;
 
   /// Visible label beside the glyph — the heart's count, "Log this too". It
   /// is also what a labelled action is ANNOUNCED as: the text merges into this
@@ -141,8 +129,10 @@ class FeedActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            activeGlyph ??
-                Icon(icon, size: glyphSize ?? _glyph, color: _actionInk),
+            // The size comes from the glyph, not from the call site: see
+            // [KalloIcons.optical]. Three per-call-site numbers meant a fourth
+            // glyph added to this row silently read a size off.
+            activeGlyph ?? Icon(icon, size: _glyph(icon), color: _actionInk),
             if (label != null) ...[
               const SizedBox(width: KalloSpacing.sp1_5),
               Text(label!, style: dashMeta(color: _actionInk)),

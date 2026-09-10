@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/scan_type_toggle.dart';
-import 'package:kallo_mobile/shared/widgets/form/segmented_strip.dart';
+import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import '../../app_fonts.dart';

@@ -288,10 +288,18 @@ do not necessarily read as one size: `message-circle` and `copy` are convex and
 fill ~20×20 of Lucide's 24 grid, while `heart` covers ~20×17.5 and tapers to a
 point, so the Circle post's row read as a big bubble, a big copy and a small
 heart at a flat 18. It is compensated per glyph *within* the tier — heart 20,
-bubble and copy 17 (`feed_entry_actions.dart`) — and the filled heart takes the
-same 20 as the outline, or the post twitches a size as it is hearted. This is
-the only place in the app that does it; say why at the call site, and do not
-read it as licence for a fourth tier.
+bubble and copy 17 — and the filled heart takes the same 20 as the outline, or
+the post twitches a size as it is hearted.
+
+The compensation is **one table keyed by glyph**, `KalloIcons.optical(icon)`,
+not a size argument at each call site. It is a property of the glyph, and as
+three per-call-site numbers a fourth glyph added to that row silently got 18
+and read a size off from its neighbours. `FilledHeart` reads the same entry as
+the outline, so the two states cannot diverge, and `KalloIcons.opticalMax`
+feeds the day card's action-row slack (`feed_day_group.dart`) — an assert now,
+where it used to be a sentence in a comment one file away from the numbers it
+depended on. Add a glyph to the table, not a number to a widget; and do not
+read any of this as licence for a fourth tier.
 
 **Stroke weight is 1.5, not Lucide's default 2.0.** Every glyph comes from the
 `300` constants (`LucideIcons.user300`, not `LucideIcons.user`) — the package

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import 'option_strip_segment.dart';
-import 'segmented_strip.dart';
+import 'segmented/segmented_strip.dart';
 
 /// A single option for [OptionStrip]: a label, an optional hint sub-label, and
 /// an optional leading Lucide icon (web `size-3.5`, currentColor).

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shell/nav/swipe_back/back_swipe.dart';
+
 /// A right-swipe on a wizard screen goes back one, the same as the chevron.
 ///
 /// **Wrapping, never an overlay.** Ancestor recognizers join the gesture arena
@@ -32,16 +34,17 @@ class OnboardingStepSwipe extends StatefulWidget {
 
   final Widget child;
 
-  /// Fraction of the region's width a slow drag must cover to commit. A fifth,
-  /// against the transition's 22% sweep — far enough not to fire on a stray
-  /// horizontal wobble during a vertical scroll.
+  /// Fraction of the region's width a slow drag must cover to commit. A
+  /// fifth, against the transition's 22% sweep — far enough not to fire on a
+  /// stray horizontal wobble during a vertical scroll, and deliberately below
+  /// [BackSwipe.commitFraction]: half a screen is the bar for a drag that has
+  /// been dragging the page along with it, and nothing moves under the finger
+  /// here (see the class doc).
+  ///
+  /// The FLICK bar is not local — it is [BackSwipe.minFlingWidthsPerSecond],
+  /// shared with the route gesture, because "how hard did they flick" is the
+  /// same question on both and was previously answered in two different units.
   static const double commitFraction = 0.2;
-
-  /// Pixels per second past which the drag is a flick and distance stops
-  /// mattering. Deliberately well above Flutter's `kMinFlingVelocity` (50),
-  /// which is a "did it move at all" floor: at 50 a lazy horizontal wobble
-  /// during a vertical scroll would step the wizard back.
-  static const double flingVelocity = 400;
 
   @override
   State<OnboardingStepSwipe> createState() => _OnboardingStepSwipeState();
@@ -50,7 +53,7 @@ class OnboardingStepSwipe extends StatefulWidget {
 class _OnboardingStepSwipeState extends State<OnboardingStepSwipe> {
   double _travelled = 0;
 
-  bool get _backIsRight => Directionality.of(context) != TextDirection.rtl;
+  double get _backSign => BackSwipe.backSign(context);
 
   void _onStart(DragStartDetails _) => _travelled = 0;
 
@@ -65,11 +68,11 @@ class _OnboardingStepSwipeState extends State<OnboardingStepSwipe> {
     final width = context.size?.width ?? 0;
     if (width <= 0) return;
 
-    final sign = _backIsRight ? 1 : -1;
+    final sign = _backSign;
     final travelled = _travelled * sign;
     final velocity = details.velocity.pixelsPerSecond.dx * sign;
 
-    final flung = velocity >= OnboardingStepSwipe.flingVelocity;
+    final flung = BackSwipe.isFling(velocity, width);
     final dragged =
         travelled >= width * OnboardingStepSwipe.commitFraction && velocity >= 0;
     if (!flung && !dragged) return;

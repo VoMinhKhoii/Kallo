@@ -5,39 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-
-/// One line of the comparison: what it is, and what each tier gets.
-///
-/// [free] and [pro] are `true` (a tick), `null` (not included) or a STRING —
-/// the one shape a tick cannot carry, for the row whose answer is a number
-/// rather than a yes. [note] is the single qualifier a tick also cannot carry.
-typedef _Row = ({String label, String? note, Object? free, Object? pro});
-
-/// What Free and Pro each get, as the gate matrix actually reads
-/// (`lib/domain/billing/entitlement/features.ts`, and `docs/BILLING.md`).
-///
-/// Eight rows, consolidated from the eleven gates: the ones that ship or
-/// withhold together say so on one line ("relog, cheat meal, split"). Two of
-/// them exist to be GENEROUS rather than to sell — manual entry, barcode and
-/// macro tracking are ticked in BOTH columns because they are ungated
-/// forever, and a table that showed Free as empty would be a claim the code
-/// does not support.
-List<_Row> _rows() => [
-  (label: tr('paywall.compareLogging'), note: null, free: true, pro: true),
-  (label: tr('paywall.compareMacros'), note: null, free: true, pro: true),
-  (label: tr('paywall.compareAi'), note: null, free: null, pro: true),
-  (label: tr('paywall.compareLabel'), note: null, free: null, pro: true),
-  (label: tr('paywall.compareVisual'), note: null, free: null, pro: true),
-  (label: tr('paywall.compareMicros'), note: null, free: null, pro: true),
-  (label: tr('paywall.compareModes'), note: null, free: null, pro: true),
-  (
-    label: tr('paywall.compareCircle'),
-    // Reading, reacting and replying are never gated — only the COUNTS are.
-    note: tr('paywall.compareCircleNote'),
-    free: tr('paywall.compareCircleFree'),
-    pro: tr('paywall.compareUnlimited'),
-  ),
-];
+import '../../logic/compare_rows.dart';
 
 /// The Free ↔ Pro table: the thing the screen is actually for.
 ///
@@ -57,7 +25,7 @@ class PlanComparison extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = _rows();
+    final rows = compareRows();
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,
@@ -110,7 +78,7 @@ class PlanComparison extends StatelessWidget {
 class _PlanComparisonRow extends StatelessWidget {
   const _PlanComparisonRow({required this.row, required this.ruled});
 
-  final _Row row;
+  final CompareRow row;
 
   /// Every row but the first carries the hairline ABOVE it, so the table has
   /// no rule under its last line and none between the heads and row one.
@@ -150,25 +118,23 @@ class _PlanComparisonRow extends StatelessWidget {
     );
   }
 
-  /// A tick, a dash, or a short string. The Pro tick is the app's success
-  /// emerald and the Free tick is muted ink: both mean "included", and the
-  /// colour is what says which column is the offer.
-  static Widget _cell(Object? value, {required bool pro, required double width}) {
+  /// The Pro tick is the app's success emerald and the Free tick is muted ink:
+  /// both mean "included", and the colour is what says which column is the
+  /// offer. Exhaustive over [Cell] — a new kind fails to compile here.
+  static Widget _cell(Cell value, {required bool pro, required double width}) {
     final Widget child = switch (value) {
-      true => Icon(
+      Included() => Icon(
         LucideIcons.check300,
         size: KalloIcons.tertiary,
         color: pro ? KalloColors.successAccent : kInkMuted,
       ),
-      // Not "missing" — the row simply is not part of the tier, and a dash
-      // says that more quietly than a cross does.
-      null => const Icon(
+      Excluded() => const Icon(
         LucideIcons.minus300,
         size: KalloIcons.tertiary,
         color: KalloColors.textMuted50,
       ),
-      _ => Text(
-        value as String,
+      Quantity(:final text) => Text(
+        text,
         style: dashCaption(color: pro ? kInk : kInkMuted),
         textAlign: TextAlign.center,
       ),

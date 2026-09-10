@@ -8,6 +8,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
 
@@ -36,7 +37,15 @@ class FeedEntryActions extends ConsumerStatefulWidget {
 }
 
 class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
+  /// Guard ONLY — never read in `build`, so it is mutated plainly rather than
+  /// through `setState`. The heart stays lit and enabled for the whole round
+  /// trip (the dim read as the like failing), so there is nothing on screen
+  /// for a rebuild to change; two `setState`s per tap rebuilt the whole action
+  /// row for no visual difference.
   bool _toggling = false;
+
+  /// Read in `build` — "Log this too" DOES go disabled while it runs, so this
+  /// one owes its rebuilds. The asymmetry with [_toggling] is the point.
   bool _logging = false;
 
   /// Hearts the post. The heart is never DISABLED while this runs (see the
@@ -48,7 +57,7 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     // buzz as though it landed. The tick is the only instant confirmation the
     // heart's own state change does not already give.
     HapticFeedback.lightImpact();
-    setState(() => _toggling = true);
+    _toggling = true;
     try {
       await toggleShareReaction(
         ref,
@@ -64,7 +73,7 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
         );
       }
     } finally {
-      if (mounted) setState(() => _toggling = false);
+      _toggling = false;
     }
   }
 
@@ -126,16 +135,16 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           // double tap fall through to the post underneath.
           onTap: _toggle,
           icon: LucideIcons.heart300,
-          // Optical, not a new tier: `heart` is ~20x17.5 on the 24 grid and
-          // tapers to a point, so at the tier's nominal 18 it read smaller
-          // than the two area-filling glyphs beside it.
-          glyphSize: 20,
           // Lucide is a FONT here, so `Icon(fill:)` never filled the heart on
           // the phone: the hearted state is its own SVG glyph, painted in the
           // swipe-to-delete red so a hearted post looks hearted from across
           // the row. Same 20 as the outline, or the post would twitch a size
           // as it is hearted.
-          activeGlyph: reactions.mine ? const FilledHeart(size: 20) : null,
+          // The SAME optical size the outline resolves to, read from the same
+          // table, or the post twitches a size as it is hearted.
+          activeGlyph: reactions.mine
+              ? FilledHeart(size: KalloIcons.optical(LucideIcons.heart300))
+              : null,
           // The name is SPOKEN — the visible text beside the glyph is a bare
           // count — and the state rides the same node, so the heart announces
           // as one "Heart, 2, button" that is on or off.
@@ -151,10 +160,6 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
         FeedActionButton(
           onTap: widget.onReply,
           icon: LucideIcons.messageCircle300,
-          // The two area-filling glyphs come DOWN to the heart's optical
-          // weight instead: a convex ~20x20 shape at 18 out-inks a heart at
-          // the same 18.
-          glyphSize: 17,
           semanticLabel: tr('groups.feed.reply'),
           // The count rides the glyph exactly as the heart's does — that IS
           // the reply count now that the card shows no replies under the
@@ -169,8 +174,6 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           FeedActionButton(
             onTap: _logging ? null : _log,
             icon: LucideIcons.copy300,
-            // Same optical step down as the bubble, and for the same reason.
-            glyphSize: 17,
             label: tr('groups.feed.logCopy'),
           ),
       ],

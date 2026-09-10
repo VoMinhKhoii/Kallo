@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'back_swipe.dart';
 import 'swipe_back_recognizer.dart';
 
 /// Drives a route's pop animation from a horizontal drag started ANYWHERE on
@@ -34,11 +35,6 @@ class SwipeBackDetector<T> extends StatefulWidget {
   final PageRoute<T> route;
   final Widget child;
 
-  /// Screen widths per second past which the release is a fling and the
-  /// direction of travel decides, rather than how far the page got.
-  /// Cupertino's own value.
-  static const double minFlingVelocity = 1;
-
   @override
   State<SwipeBackDetector<T>> createState() => _SwipeBackDetectorState<T>();
 }
@@ -52,8 +48,7 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
     super.initState();
     _recognizer = SwipeBackDragRecognizer(
       debugOwner: this,
-      isRightToLeft: () =>
-          mounted && Directionality.of(context) == TextDirection.rtl,
+      isRightToLeft: () => mounted && BackSwipe.backSign(context) < 0,
     )
       ..onStart = _handleDragStart
       ..onUpdate = _handleDragUpdate
@@ -89,8 +84,9 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
 
   /// The drag's travel as the animation reads it: 1.0 is fully on screen, 0.0
   /// is dismissed, and "back" is whichever way the text runs from.
-  double _logical(double value) =>
-      Directionality.of(context) == TextDirection.rtl ? -value : value;
+  /// A raw horizontal number re-signed so that POSITIVE means "toward back",
+  /// whichever way the locale runs.
+  double _logical(double value) => value * BackSwipe.backSign(context);
 
   void _handleDragStart(DragStartDetails details) {
     final route = widget.route;
@@ -129,10 +125,13 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
       // Something popped this route out from under the drag; where it goes now
       // depends only on whether it is still in the stack.
       animateForward = route.isActive;
-    } else if (velocity.abs() >= SwipeBackDetector.minFlingVelocity) {
+      // `velocity` is already in screen widths per second (divided by [_width]
+      // above), which is the unit [BackSwipe] states its bar in.
+    } else if (velocity.abs() >= BackSwipe.minFlingWidthsPerSecond) {
       animateForward = velocity <= 0;
     } else {
-      animateForward = (route.animation?.value ?? 1) > 0.5;
+      animateForward =
+          (route.animation?.value ?? 1) > BackSwipe.commitFraction;
     }
 
     if (animateForward) {

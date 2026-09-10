@@ -3,7 +3,11 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
+// `Localization` and `Translations` are not on the umbrella export.
+import 'package:easy_localization/src/localization.dart';
+import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Test-only l10n loader that reads the JSON straight from disk.
@@ -40,5 +44,23 @@ void setUpL10nBinding() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
+  });
+}
+
+/// Loads the real `en.json` into `Localization.instance` so `tr()` answers in
+/// a PURE test — no widget, no pump.
+///
+/// The paywall's copy rules (`logic/plan_offer.dart`) are pure functions that
+/// happen to call `tr()`, and mounting an `EasyLocalization` just to read a
+/// string back would make those cases widget tests again, which is the thing
+/// pulling them out of the widget was for.
+void setUpTranslations() {
+  setUpAll(() async {
+    const locale = Locale('en');
+    final map = await const FsL10nLoader().load('assets/l10n', locale);
+    Localization.load(locale, translations: Translations(map));
+    // `DateFormat.MMMd(locale)` throws without this. A widget test gets it
+    // from `MaterialApp`'s localization delegates; a pure one has to ask.
+    await initializeDateFormatting(locale.languageCode, null);
   });
 }

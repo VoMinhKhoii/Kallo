@@ -15,16 +15,19 @@ import '../../logic/paywall_result.dart';
 /// meta line under the CTA. The legal pages open through
 /// `shared/logic/legal_links.dart`, so they land in the app's own language.
 class PaywallSheetActions extends ConsumerWidget {
-  const PaywallSheetActions({required this.state, super.key});
-
-  final PaywallState state;
+  const PaywallSheetActions({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final languageCode = context.locale.languageCode;
+    // Watched here rather than passed down: this is the only thing on the band
+    // that cares about the phase, and threading it through the band made the
+    // band's signature about a purchase machine it otherwise ignores.
+    final phase = ref.watch(
+      paywallControllerProvider.select((state) => state.phase),
+    );
     final busy =
-        state.phase == PaywallPhase.purchasing ||
-        state.phase == PaywallPhase.verifying;
+        phase == PaywallPhase.purchasing || phase == PaywallPhase.verifying;
     // Intrinsic widths, not `Flexible`: equal shares ellipsized "Restore
     // purchases" while the two shorter labels sat on room they had no use for.
     // The line as a whole scales down only when it cannot fit.

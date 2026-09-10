@@ -3,17 +3,29 @@ import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../shared/widgets/form/segmented/segmented_strip.dart';
 import 'gold_surface.dart';
 
-/// Monthly ↔ yearly, as a segmented control on the app's track.
+/// Monthly ↔ yearly, on the app's segmented track.
 ///
-/// The yearly half is ALWAYS gold, selected or not — the gold marks the deal,
-/// not the selection, which is why the same treatment reappears on the buy
-/// button below. What marks the selection is elevation: the chosen half is
-/// raised (a white pill, or the gold's own glow), and the unchosen gold takes
-/// a 20% ink veil so the raised white beside it plainly wins. Two lit objects
-/// with nothing separating them is what an untinted gold half produced.
+/// **Why this is not [SegmentedStrip].** That file is the app's one
+/// mode-switch primitive and says so — every other segmented control in the
+/// app draws through it, and this one is the documented exception. Its model
+/// is ONE white thumb that travels between segments, and this control cannot
+/// have one: the yearly half is permanently gold, so a travelling white thumb
+/// would cover the gold on arrival, and a thumb that changed colour in flight
+/// would be the cross-fade the primitive exists to eliminate. The two designs
+/// are incompatible at the model, not at the trim. Anything that is NOT
+/// forced by that — the track, the raised-pill shadow, the label tier, the
+/// haptic, the a11y shape — is deliberately identical to the primitive's, so
+/// the two read as one control family.
+///
+/// The gold marks the DEAL, not the selection, which is why the same
+/// treatment reappears on the buy button below. What marks the selection is
+/// elevation: the chosen half is raised (a white pill, or the gold's own
+/// glow), and the unchosen gold takes an ink veil so the raised white beside
+/// it plainly wins. Two lit objects with nothing separating them is what an
+/// untinted gold half produced.
 class PlanToggle extends StatelessWidget {
   const PlanToggle({
     required this.monthlyLabel,
@@ -37,7 +49,9 @@ class PlanToggle extends StatelessWidget {
   static const double _pad = KalloSpacing.sp1;
 
   /// The unchosen gold's veil. Dark rather than white: white lifts the gold
-  /// towards the raised pill it is meant to sit behind.
+  /// towards the raised pill it is meant to sit behind. Twice
+  /// [KalloColors.pressWashOnGold] — this recedes a surface for as long as it
+  /// is unchosen, where that one marks a momentary press.
   static const Color _veil = Color(0x33141413); // ink @ 20%
 
   @override
@@ -101,9 +115,9 @@ class PlanToggle extends StatelessWidget {
     decoration: BoxDecoration(
       color: yearly ? Colors.transparent : kCardSurface,
       borderRadius: BorderRadius.circular(KalloRadii.pill),
-      boxShadow: yearly ? null : const [KalloShadows.xs],
+      boxShadow: yearly ? null : const [KalloShadows.sm],
     ),
-    child: Center(child: Text(monthlyLabel, style: _label(!yearly))),
+    child: _label(monthlyLabel, !yearly),
   );
 
   Widget _yearly() => GoldPlanSurface(
@@ -113,19 +127,28 @@ class PlanToggle extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (!yearly) const ColoredBox(color: _veil),
-        Center(child: Text(yearlyLabel, style: _label(true))),
+        _label(yearlyLabel, true),
       ],
     ),
   );
 
-  /// 15, between Body (16) and Meta (14): the two labels share a 350pt row
-  /// with the Vietnamese "Gói tháng"/"Gói năm" pair, and Body overflows it.
-  /// The chosen half is semibold ink; the unchosen monthly recedes to muted.
-  TextStyle _label(bool selected) => TextStyle(
-    fontFamily: KalloTextStyles.sansFamily,
-    fontSize: 15,
-    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-    letterSpacing: -0.1,
-    color: selected ? kInk : kInkMuted,
+  /// [dashBody] and a [FittedBox], exactly as [SegmentedStrip] sets its own
+  /// labels — the scale rather than a bespoke size, and the longest label
+  /// shrinks at the top of the Dynamic Type range instead of clipping.
+  /// Colour marks the selection; the semibold is this control's one addition,
+  /// because a gold half needs more than a colour shift to read as chosen.
+  Widget _label(String text, bool selected) => Center(
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        text,
+        maxLines: 1,
+        softWrap: false,
+        style: dashBody(
+          color: selected ? kInk : kInkMuted,
+          weight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    ),
   );
 }

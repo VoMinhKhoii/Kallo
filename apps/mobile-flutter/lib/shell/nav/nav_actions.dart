@@ -25,44 +25,44 @@ const Set<String> _shellRoots = {
 /// the stack to Today and back dropped the user there). From outside the shell
 /// — post-welcome, post-paywall, a Settings deep action — there is no branch
 /// underneath, so Today goes down first and back has somewhere to go.
-void openLogging(GoRouter router) {
-  final location = router.state.matchedLocation;
-  // Already there — do nothing. `/logging` is not a shell root, so falling
-  // through would `go('/dashboard')` and push a SECOND logging route over the
-  // first: back would then land on Today instead of the tab the user came
-  // from, and a double-fired call (two taps on the pill's Log item, a tap plus
-  // a deep link) would stack duplicate logging routes to pop through.
-  if (location == '/logging') return;
-  if (!_shellRoots.contains(location)) {
-    router.go('/dashboard');
-  }
-  router.push('/logging');
-}
+void openLogging(GoRouter router) =>
+    pushOverShell(router, base: '/dashboard', path: '/logging');
 
 /// [openLogging] for the call sites that hold a live [BuildContext].
 void goToLogging(BuildContext context) => openLogging(GoRouter.of(context));
 
-/// Opens a location a NOTIFICATION tap resolved to, leaving something under it
-/// to go back to.
+/// Opens [path] with a shell branch under it, so back has somewhere to go.
 ///
-/// A tap can arrive cold — the app was not running, so there is no shell — and
-/// `go` alone was the answer to that: it always lands somewhere real. The cost
-/// was that the thread page then had NOTHING beneath it, so the back gesture
-/// had nowhere to go and only the chevron worked (via [popOr]'s `/circle`
-/// fallback). Seeding the branch first and pushing over it gives the swipe a
-/// destination while keeping the cold-start guarantee. Same shape as
-/// [openLogging], for the same reason.
+/// A destination can be reached cold — the app was not running, so there is no
+/// shell — and `go` alone was the answer to that: it always lands somewhere
+/// real. The cost was that the destination then had NOTHING beneath it, so the
+/// back gesture had nowhere to go and only the chevron worked (via [popOr]'s
+/// fallback). Seeding [base] first and pushing over it gives the swipe a
+/// destination while keeping the cold-start guarantee.
+///
+/// [base] is the caller's, not this file's: which branch belongs under a
+/// notification's thread is `features/notifications` knowledge, and hard-coding
+/// `/circle` here put a feature's routing table inside the shell.
 ///
 /// A destination that IS a shell branch is just a branch switch — there is
 /// nothing to push over it.
-void openPushDestination(GoRouter router, String path) {
+void pushOverShell(
+  GoRouter router, {
+  required String base,
+  required String path,
+}) {
+  final at = router.state.matchedLocation;
+  // Already there — do nothing. Falling through would seed [base] and push a
+  // SECOND copy: back would then land on the seed instead of where the user
+  // came from, and a double-fired call (two taps on the pill's Log item, two
+  // taps on the same notification, a tap plus a deep link) would stack
+  // duplicate routes to pop through.
+  if (at == path) return;
   if (_shellRoots.contains(path)) {
     router.go(path);
     return;
   }
-  if (!_shellRoots.contains(router.state.matchedLocation)) {
-    router.go('/circle');
-  }
+  if (!_shellRoots.contains(at)) router.go(base);
   router.push(path);
 }
 
