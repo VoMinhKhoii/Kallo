@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -7,6 +8,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
 
@@ -35,12 +37,27 @@ class FeedEntryActions extends ConsumerStatefulWidget {
 }
 
 class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
+  /// Guard ONLY — never read in `build`, so it is mutated plainly rather than
+  /// through `setState`. The heart stays lit and enabled for the whole round
+  /// trip (the dim read as the like failing), so there is nothing on screen
+  /// for a rebuild to change; two `setState`s per tap rebuilt the whole action
+  /// row for no visual difference.
   bool _toggling = false;
+
+  /// Read in `build` — "Log this too" DOES go disabled while it runs, so this
+  /// one owes its rebuilds. The asymmetry with [_toggling] is the point.
   bool _logging = false;
 
+  /// Hearts the post. The heart is never DISABLED while this runs (see the
+  /// button below): this guard is the whole debounce, so a second tap
+  /// mid-request is dropped here rather than by dimming the control.
   Future<void> _toggle() async {
     if (_toggling) return;
-    setState(() => _toggling = true);
+    // After the guard, not before: a tap that is being swallowed should not
+    // buzz as though it landed. The tick is the only instant confirmation the
+    // heart's own state change does not already give.
+    HapticFeedback.lightImpact();
+    _toggling = true;
     try {
       await toggleShareReaction(
         ref,
@@ -56,7 +73,7 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
         );
       }
     } finally {
-      if (mounted) setState(() => _toggling = false);
+      _toggling = false;
     }
   }
 
@@ -107,13 +124,27 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         FeedActionButton(
-          onTap: _toggling ? null : _toggle,
+          // NEVER `_toggling ? null : _toggle`. The like is already optimistic
+          // (`toggleReactionLocal` runs before the request), so disabling the
+          // button turned the heart red and instantly greyed it — [Opacity] at
+          // 0.5 for the whole round trip, up to the 15s mutation timeout —
+          // then snapped it back. `_toggle`'s own `_toggling` guard debounces
+          // the second tap, so nothing is lost by staying enabled, and an
+          // enabled pressable still enters the gesture arena and claims its
+          // pointer (`kallo_pressable.dart`, *Nesting*) rather than letting a
+          // double tap fall through to the post underneath.
+          onTap: _toggle,
           icon: LucideIcons.heart300,
           // Lucide is a FONT here, so `Icon(fill:)` never filled the heart on
           // the phone: the hearted state is its own SVG glyph, painted in the
           // swipe-to-delete red so a hearted post looks hearted from across
-          // the row.
-          activeGlyph: reactions.mine ? const FilledHeart() : null,
+          // the row. Same 20 as the outline, or the post would twitch a size
+          // as it is hearted.
+          // The SAME optical size the outline resolves to, read from the same
+          // table, or the post twitches a size as it is hearted.
+          activeGlyph: reactions.mine
+              ? FilledHeart(size: KalloIcons.optical(LucideIcons.heart300))
+              : null,
           // The name is SPOKEN — the visible text beside the glyph is a bare
           // count — and the state rides the same node, so the heart announces
           // as one "Heart, 2, button" that is on or off.

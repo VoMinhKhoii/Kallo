@@ -7,7 +7,6 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
-import '../../logic/circle_spacing.dart';
 import 'thread_composer_avatar.dart';
 import 'thread_dock_insets.dart';
 import 'thread_send_button.dart';
@@ -145,11 +144,16 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Card pad (16) + the avatar rail (44) = 60, landing the
-                // disc's left edge at 72: the rail the replies stand on. The
-                // body's own 12 of scroll padding is NOT owed on top — this
-                // dock pays the same 12 — so the two cancel at the card inset.
-                const SizedBox(width: KalloSpacing.sp4 + kContentRail),
+                // No reply rail here. The dock used to lead with a 60pt spacer
+                // (card pad 16 + the avatar rail 44) so its disc landed on the
+                // replies' own indent, 72 from the screen edge — which left
+                // the field starting a fifth of the way across the phone and
+                // reading as a reply to the last reply. The composer is dock
+                // CHROME, not a reply in the thread: it spans the page and
+                // starts at the dock's own 12 of padding. The reply ROWS keep
+                // `_replyIndent` (`thread_body.dart`), because they are the
+                // thing that owes that rail.
+                //
                 // Pinned to the field's bottom line by the row's `end`
                 // alignment, in a box its minimum height, so the disc sits ON
                 // the first line rather than under a grown draft.

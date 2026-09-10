@@ -21,11 +21,23 @@ const double _innerPad = KalloSpacing.sp4;
 /// margin on the row: Flutter clips hit-testing to a parent's box, so pulling
 /// the row itself would take those 12pt off the targets too.
 ///
-/// The canvas value, NOT the row's true slack ((44 − 18) / 2 = 13): the pull
-/// is subtracted from the card's own [_edgePad], which is also 12, and a pull
-/// larger than the pad it comes out of is a negative inset. The slack merely
-/// has to cover the pull, which at 13 ≥ 12 it does.
+/// The canvas value, NOT the row's true slack: the pull is subtracted from
+/// the card's own [_edgePad], which is also 12, and a pull larger than the pad
+/// it comes out of is a negative inset. The slack merely has to COVER the
+/// pull, and the row's true slack is `(44 − tallest glyph) / 2` = 12 under the
+/// optically compensated heart at 20.
+///
+/// That relationship used to live in this sentence alone, one file away from
+/// the numbers it depended on — raising a glyph in the action row would have
+/// made this arithmetic negative and thrown a layout assert here, in a file
+/// that had not changed. It is an assert now.
 const double _actionSlack = KalloSpacing.sp3;
+
+/// Guards [_actionSlack] against the row it is measured from: raising an entry
+/// in [KalloIcons.optical] now fails HERE, loudly, instead of producing a
+/// negative inset at layout time.
+bool _slackCoversPull() =>
+    _actionSlack <= (KalloIcons.hit - KalloIcons.opticalMax) / 2;
 
 /// One day of the Circle feed: a 14/500 muted [GroupLabel] over a white
 /// grouped card holding that day's posts (native pass, 2026-08-31).
@@ -53,6 +65,11 @@ class FeedDayGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      _slackCoversPull(),
+      'the action row\'s tallest glyph outgrew the slack _actionSlack is '
+      'pulled out of — see KalloIcons.optical',
+    );
     final label = threadDayLabel(date, locale: context.locale.languageCode);
     final text = switch (label.kind) {
       ThreadDayLabelKind.today => tr('groups.wall.todayLabel'),

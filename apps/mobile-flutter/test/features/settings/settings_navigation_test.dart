@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/settings/widgets/chrome/settings_navigator.dart';
 import 'package:kallo_mobile/shared/widgets/surface/scroll_separator.dart';
+import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 
 /// An iOS edge-swipe: a long, fast drag from the left gutter.
 Future<void> edgeSwipe(WidgetTester tester) async {
@@ -40,6 +41,62 @@ class _Root extends StatelessWidget {
             onPressed: () => Navigator.of(context).push(
               CupertinoPageRoute<void>(
                 builder: (_) => const Material(child: Center(child: Text('editor'))),
+              ),
+            ),
+            child: const Text('settings-root'),
+          ),
+        ),
+      );
+}
+
+
+/// The app's own full-width back drag: a fast drag starting at the MIDDLE of
+/// the screen, which stock Cupertino's 20pt edge strip would ignore.
+///
+/// `timedDragFrom`, not a `moveBy` loop: the loop above works only because it
+/// drags 90% of the width and wins on POSITION — its synthetic moves leave the
+/// velocity tracker reading zero, so a shorter drag would silently be judged as
+/// a release below the half-way line. This one carries a real velocity, which
+/// is what the app's fling threshold is written against.
+Future<void> midScreenSwipe(WidgetTester tester) async {
+  final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+  await tester.timedDragFrom(
+    Offset(size.width / 2, 300),
+    const Offset(400, 0),
+    const Duration(milliseconds: 250),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// The shell as the ROUTER actually builds it: the app theme (which is where
+/// the full-width back drag is installed) and `MaterialPage`/`MaterialPageRoute`
+/// on both levels, so the nested-navigator contract is exercised against the
+/// gesture the app really ships.
+Widget themedShell(Widget settings) => MaterialApp(
+      theme: kalloAppTheme(),
+      home: Builder(
+        builder: (context) => Center(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => settings),
+            ),
+            child: const Text('shell'),
+          ),
+        ),
+      ),
+    );
+
+class _ThemedRoot extends StatelessWidget {
+  const _ThemedRoot();
+
+  @override
+  Widget build(BuildContext context) => Material(
+        child: Center(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    const Material(child: Center(child: Text('editor'))),
               ),
             ),
             child: const Text('settings-root'),
@@ -94,6 +151,43 @@ void main() {
       expect(ok, isTrue);
       expect(find.text('editor'), findsNothing);
       expect(find.text('settings-root'), findsOneWidget);
+    });
+
+    testWidgets(
+      'the app-wide full-width drag still pops ONE level on a drill-in',
+      (tester) async {
+        await tester.pumpWidget(
+          themedShell(const SettingsNavigator(root: _ThemedRoot())),
+        );
+        await tester.tap(find.text('shell'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('settings-root'));
+        await tester.pumpAndSettle();
+        expect(find.text('editor'), findsOneWidget);
+
+        await midScreenSwipe(tester);
+
+        // The outer route reports `canPop: false` while the nested stack has
+        // something to pop, so `popGestureEnabled` refuses to arm the app's
+        // detector and the inner route owns the drag.
+        expect(find.text('editor'), findsNothing);
+        expect(find.text('settings-root'), findsOneWidget);
+      },
+    );
+
+    testWidgets('at the nested root the full-width drag closes settings', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themedShell(const SettingsNavigator(root: _ThemedRoot())),
+      );
+      await tester.tap(find.text('shell'));
+      await tester.pumpAndSettle();
+
+      await midScreenSwipe(tester);
+
+      expect(find.text('settings-root'), findsNothing);
+      expect(find.text('shell'), findsOneWidget);
     });
   });
 

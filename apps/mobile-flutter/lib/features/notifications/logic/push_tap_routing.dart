@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../router.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../services/push/push_channel.dart';
 import '../../circle/data/feed_providers.dart';
 import '../../circle/logic/circle_thread_route.dart';
@@ -95,10 +96,14 @@ void routePushTap(ProviderContainer container, PushPayload payload) {
   // after a group tap must not stay scoped to that earlier group.
   container.read(circleSelectedViewProvider.notifier).state =
       destination.groupId;
-  // `go`, not `push`: a tap can arrive cold with no shell beneath it, and the
-  // thread page's back action is `popOr` (`shell/nav/nav_actions.dart`), which
-  // already falls back to `/circle` when there is nothing to pop.
-  container.read(routerProvider).go(destination.path);
+  // Circle is the branch every notification destination lives under, so it is
+  // what goes down first on a cold tap — named HERE because which branch owns
+  // a thread is this feature's knowledge, not the shell's.
+  pushOverShell(
+    container.read(routerProvider),
+    base: '/circle',
+    path: destination.path,
+  );
 }
 
 String? _stringAt(Map<String, dynamic> data, String key) {

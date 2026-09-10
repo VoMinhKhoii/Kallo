@@ -153,52 +153,81 @@ void main() {
       ],
     );
 
-    // Read the route information rather than the delegate's configuration:
-    // `go()` updates this synchronously, while the delegate only settles after
-    // the (async) route parse, which never runs without a widget tree.
-    String locationOf(GoRouter router) =>
-        router.routeInformationProvider.value.uri.toString();
+    // A thread tap now PUSHES over a seeded `/circle`, and a push only reaches
+    // the delegate through the (async) route parse — which needs a widget tree.
+    // So these pump one and read the router's own settled state, rather than
+    // the route-information provider `go()` used to update synchronously.
+    Future<void> pump(WidgetTester tester, GoRouter router) async {
+      await tester.pumpWidget(
+        WidgetsApp.router(
+          routerConfig: router,
+          color: const Color(0xFF000000),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
 
-    test('a group tap selects the group and navigates to circle', () {
+    String locationOf(GoRouter router) => router.state.matchedLocation;
+
+    testWidgets('a group tap selects the group and navigates to circle', (
+      tester,
+    ) async {
       final router = testRouter();
       addTearDown(router.dispose);
       final container = containerWith(router);
+      await pump(tester, router);
 
       routePushTap(container, {'type': 'chat.message', 'targetId': 'g-7'});
+      await tester.pumpAndSettle();
 
       expect(container.read(circleSelectedViewProvider), 'g-7');
       expect(locationOf(router), '/circle');
+      // A shell branch is a branch SWITCH, so there is nothing stacked over it.
+      expect(router.canPop(), isFalse);
     });
 
-    test('a share tap clears nothing and lands on circle', () {
+    testWidgets('a share tap clears nothing and lands on circle', (
+      tester,
+    ) async {
       final router = testRouter();
       addTearDown(router.dispose);
       final container = containerWith(router);
+      await pump(tester, router);
 
       routePushTap(container, {'type': 'share.reaction'});
+      await tester.pumpAndSettle();
 
       expect(container.read(circleSelectedViewProvider), isNull);
       expect(locationOf(router), '/circle');
     });
 
-    test('a share tap after a group tap returns to the combined feed', () {
+    testWidgets('a share tap after a group tap returns to the combined feed', (
+      tester,
+    ) async {
       final router = testRouter();
       addTearDown(router.dispose);
       final container = containerWith(router);
+      await pump(tester, router);
 
       routePushTap(container, {'type': 'group.added', 'targetId': 'g-1'});
+      await tester.pumpAndSettle();
       expect(container.read(circleSelectedViewProvider), 'g-1');
 
       routePushTap(container, {'type': 'share.reply'});
+      await tester.pumpAndSettle();
       expect(container.read(circleSelectedViewProvider), isNull);
     });
 
-    test('a share tap opens the thread page', () {
+    testWidgets('a share tap opens the thread page OVER the circle feed', (
+      tester,
+    ) async {
       final router = testRouter();
       addTearDown(router.dispose);
       final container = containerWith(router);
+      await pump(tester, router);
 
       routePushTap(container, {'type': 'group.added', 'targetId': 'g-1'});
+      await tester.pumpAndSettle();
       expect(container.read(circleSelectedViewProvider), 'g-1');
 
       routePushTap(container, {
@@ -206,21 +235,49 @@ void main() {
         'objectType': 'share',
         'objectId': 's1',
       });
+      await tester.pumpAndSettle();
 
       // The thread reads its post out of the combined feed, so the earlier
       // group scope has to be cleared along with the navigation.
       expect(container.read(circleSelectedViewProvider), isNull);
       expect(locationOf(router), '/circle/s1');
+      // The point of the seed: `/circle` is underneath, so the back GESTURE
+      // has somewhere to go instead of only the chevron's popOr fallback.
+      expect(router.canPop(), isTrue);
     });
 
-    test('an unroutable payload is a no-op', () {
+    testWidgets('a cold thread tap still seeds the feed underneath', (
+      tester,
+    ) async {
+      // The cold case the old `go` existed for: nothing has been navigated
+      // yet, so there is no shell to push over.
       final router = testRouter();
       addTearDown(router.dispose);
       final container = containerWith(router);
+      await pump(tester, router);
+
+      routePushTap(container, {
+        'type': 'share.reply',
+        'objectType': 'share',
+        'objectId': 's9',
+      });
+      await tester.pumpAndSettle();
+
+      expect(locationOf(router), '/circle/s9');
+      expect(router.canPop(), isTrue);
+    });
+
+    testWidgets('an unroutable payload is a no-op', (tester) async {
+      final router = testRouter();
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+      await pump(tester, router);
 
       routePushTap(container, {'type': 'streak.milestone'});
+      await tester.pumpAndSettle();
 
       expect(locationOf(router), '/dashboard');
+      expect(router.canPop(), isFalse);
     });
   });
 }

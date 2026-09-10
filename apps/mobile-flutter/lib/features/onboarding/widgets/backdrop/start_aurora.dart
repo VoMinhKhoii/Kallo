@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/kallo_colors.dart';
+
 /// How hard the sweep is turned up, and how far down the page it reaches.
 ///
 /// Two knobs, because the two are not the same thing: the signed-out start
@@ -54,8 +56,8 @@ class _AuroraPainter extends CustomPainter {
 
   final AuroraSpec spec;
 
-  static const Color _apricot = Color(0xFFFFD2B0);
-  static const Color _lilac = Color(0xFFDCC4FF);
+  static const Color _apricot = KalloColors.brandApricot;
+  static const Color _lilac = KalloColors.brandLilac;
   static const Color _ember = Color(0xFFE05A2B);
   static const Color _violet = Color(0xFF8A4FE0);
 

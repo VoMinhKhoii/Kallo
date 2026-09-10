@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../shared/data/surface_cast.dart';
+import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/circle_spacing.dart';
 import '../feed/feed_entry.dart';
@@ -77,16 +78,29 @@ class ThreadBody extends StatelessWidget {
             ],
           ),
           if (entry.replies.isEmpty) ...[
-            // One quiet line on the replies' own rail, not an illustrated
-            // empty state: an empty thread is the ordinary case here, and a
-            // cast with a headline under a single post says at the volume of
-            // a problem that there is simply nothing here yet. It sits closer
-            // to the post than the replies do — it belongs to that post
-            // rather than standing in for a list.
-            const SizedBox(height: KalloSpacing.sp3),
-            Padding(
-              padding: const EdgeInsets.only(left: _replyIndent),
-              child: Text(tr('groups.feed.noReplies'), style: dashMeta()),
+            // The capybara is back (it was dropped for one muted line in
+            // `40e1cbe`). A thread with no replies is not a post with a note
+            // under it — it is a LIST with nothing in it, and the app answers
+            // an empty list with its cast everywhere else, so the one surface
+            // that answered with grey text read as the page having failed to
+            // finish drawing. It is the `compact` state, which is the size
+            // that belongs under a single post.
+            //
+            // `sp4`, not the line's `sp3`: 12 was measured for a text line
+            // sitting close to the post it belongs to; a state of its own
+            // stands off the card by the app's block rhythm.
+            const SizedBox(height: KalloSpacing.sp4),
+            // Full width, or the surface's centred cast and copy would sit
+            // hard against the left edge under this start-aligned column.
+            SizedBox(
+              width: double.infinity,
+              child: KalloSurfaceState(
+                area: SurfaceArea.circle,
+                kind: SurfaceKind.empty,
+                compact: true,
+                title: tr('groups.feed.noReplies'),
+                subtitle: tr('groups.feed.noRepliesBody'),
+              ),
             ),
           ] else ...[
             const SizedBox(height: KalloSpacing.sp4),

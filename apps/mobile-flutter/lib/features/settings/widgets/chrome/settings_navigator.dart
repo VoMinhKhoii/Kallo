@@ -1,23 +1,25 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 /// The settings tab's nested [Navigator], plus the pop plumbing that makes
 /// swipe-back pop ONE level at a time.
 ///
-/// Two Cupertino stacks are live at once: the root router's `/settings`
-/// `CupertinoPage` and this nested navigator. Each installs an edge-swipe
-/// detector on the same 20px strip, and the OUTER one wins the gesture arena —
-/// its detector sits above the whole subtree in hit-test order, so it is added
-/// to the arena first. Measured, not assumed: with both detectors live, a
-/// swipe on a drill-in never reached the inner route and instead dragged the
-/// entire settings tab (popping it outright on a long drag).
+/// Two page stacks are live at once: the root router's `/settings` route and
+/// this nested navigator. Both wear the app's full-width back drag
+/// (`shell/nav/swipe_back/`, installed app-wide through the theme), and
+/// without the contract below the OUTER one would win: a swipe on a drill-in
+/// never reached the inner route and instead dragged the entire settings tab,
+/// popping it outright on a long drag. Measured, not assumed — and widening
+/// the drag from a 20pt edge strip to the whole page only makes it easier to
+/// hit.
 ///
 /// The fix is the standard nested-navigator pop contract. While the nested
 /// stack has something to pop, the settings route reports `canPop: false`;
-/// that makes the outer route's `popDisposition` `doNotPop`, which is exactly
-/// the condition Cupertino checks before arming its back gesture. With the
-/// outer gesture disarmed the inner [CupertinoPageRoute] owns the swipe and
-/// pops one level. Back at the nested root, `canPop` flips to true and the
-/// swipe takes the whole tab away again.
+/// that makes the outer route's `popDisposition` `doNotPop`, and
+/// `ModalRoute.popGestureEnabled` — the getter the app's detector reads, the
+/// same one stock Cupertino reads — then refuses to arm. With the outer
+/// gesture disarmed the inner [MaterialPageRoute] owns the swipe and pops one
+/// level. Back at the nested root, `canPop` flips to true and the swipe takes
+/// the whole tab away again.
 ///
 /// The same switch routes the Android system back button into the nested stack
 /// instead of closing settings from a sub-page.
@@ -60,7 +62,7 @@ class _SettingsNavigatorState extends State<SettingsNavigator> {
         child: Navigator(
           key: _navigator,
           onGenerateRoute:
-              (settings) => CupertinoPageRoute<void>(
+              (settings) => MaterialPageRoute<void>(
                 settings: settings,
                 builder: (_) => widget.root,
               ),

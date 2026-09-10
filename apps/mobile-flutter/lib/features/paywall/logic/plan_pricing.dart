@@ -1,5 +1,5 @@
-/// Plan arithmetic for the Kallo Pro sheet: which packages the free face
-/// offers, and the yearly row's derived strike / per-month / save-percent copy.
+/// Plan arithmetic for the Kallo Pro screen: which packages the free face
+/// offers, and the yearly plan's derived per-month and save-percent figures.
 ///
 /// Everything here is DERIVED from the live store product (price + currency
 /// code), never from a hardcoded number: the App Store and Play localize and
@@ -14,8 +14,12 @@ import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// The two packages the free face is about, out of whatever the offering
-/// carries. The sheet needs the pair in order for its rows AND as a pair for
-/// their copy (the yearly row strikes twelve of the monthly price).
+/// carries. Lifetime — and any other package the offering holds — is
+/// deliberately dropped: the screen is a two-period decision, and a third
+/// option turns the toggle back into a price list.
+///
+/// They are needed as a PAIR, not just individually: the yearly plan's saving
+/// is measured against twelve of the monthly price.
 ({Package? annual, Package? monthly}) splitPlans(List<Package> packages) => (
       annual: _firstOfType(packages, PackageType.annual),
       monthly: _firstOfType(packages, PackageType.monthly),
@@ -26,27 +30,6 @@ Package? _firstOfType(List<Package> packages, PackageType type) {
     if (package.packageType == type) return package;
   }
   return null;
-}
-
-/// The plans the free paywall shows, yearly first. Lifetime — and any other
-/// package the offering carries — is deliberately absent: the sheet is a
-/// two-choice decision, and a third row turns it back into a price list.
-List<Package> visiblePlans(List<Package> packages) {
-  final split = splitPlans(packages);
-  return [
-    if (split.annual != null) split.annual!,
-    if (split.monthly != null) split.monthly!,
-  ];
-}
-
-/// The plan that is selected before the user picks: the yearly one, or the
-/// first on offer when the offering has no annual package.
-Package? defaultPlan(List<Package> plans) {
-  if (plans.isEmpty) return null;
-  for (final plan in plans) {
-    if (plan.packageType == PackageType.annual) return plan;
-  }
-  return plans.first;
 }
 
 /// Days of FREE introductory access [package] offers, or 0 when it offers
@@ -96,31 +79,26 @@ bool offersTrial({
       days: freeTrialDays(plan),
     );
 
-/// The clock the legal line's "starting {date}" reads, behind a provider so a
-/// test can pin the date without the sheet growing a parameter for it.
+/// The clock the renewal line's "from {date}" reads, behind a provider so a
+/// test can pin the date without the screen growing a parameter for it.
 final paywallClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
 
 /// The locale the STORE formatted `priceString` in — the DEVICE's, not the
-/// app's. All three figures on the yearly row share one line, so deriving the
-/// derived two in the app locale puts "24,99 US\$" beside "\$41.88" for anyone
-/// whose phone and app disagree.
+/// app's. The billed amount and the derived per-month figure share one line,
+/// so deriving the second in the app locale puts "24,99 US\$" beside "\$2.08"
+/// for anyone whose phone and app disagree.
 String deviceCurrencyLocale() => PlatformDispatcher.instance.locale.toString();
 
-/// What the yearly row says under its name.
+/// The yearly plan's derived figures.
 class YearlyPricing {
   const YearlyPricing({
     required this.perMonth,
-    this.struckYearly,
     this.savePercent,
   });
 
-  /// The yearly price divided by twelve — "$2.08".
+  /// The yearly price divided by twelve — "$2.08". The renewal line carries
+  /// it in brackets AFTER the amount actually billed, never instead of it.
   final String perMonth;
-
-  /// Twelve monthly payments, struck through. Null when the monthly package is
-  /// absent (or priced in another currency): there is then nothing honest to
-  /// strike, so the row shows the per-month line alone.
-  final String? struckYearly;
 
   /// Saving against those twelve payments, to the nearest 5. Null hides the
   /// chip rather than boasting a number that cannot be computed.
@@ -146,7 +124,6 @@ YearlyPricing yearlyPricing({
   final twelve = monthlyProduct.price * 12;
   return YearlyPricing(
     perMonth: perMonth,
-    struckYearly: money.format(twelve),
     savePercent: savePercent(annual: product.price, monthlyYear: twelve),
   );
 }

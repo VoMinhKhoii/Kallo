@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/auth/supabase_service.dart';
+import '../logic/reuse_grant.dart';
 
 /// Which auth action is currently in flight. Lets the UI spin only the button
 /// that was tapped while still disabling the others — replacing the old single
@@ -181,12 +182,20 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     }
   }
 
-  /// Native Google sign-in. Opens the in-app Google account picker
+  /// Native Google sign-in. Reuses the grant the user has already given where
+  /// there is one, otherwise opens the in-app Google account picker
   /// (`google_sign_in` v7), then hands Supabase the returned identity token via
   /// `signInWithIdToken` — the same end state Apple reaches, with no Safari
   /// app-switch or `nham://auth-callback` deep-link round-trip. We only
   /// authenticate (no Google API calls), so the ID token alone is passed; no
   /// access token and no nonce (Google's `authenticate()` doesn't expose one).
+  ///
+  /// `attemptLightweightAuthentication()` goes FIRST. This used to call
+  /// `authenticate()` unconditionally on every tap, which walks a returning
+  /// user through the consent screen — and, on a re-consent, makes Google send
+  /// them another "you granted access" email — for a grant they had already
+  /// given. See [reuseGrantOrAuthenticate] for why the null-checks are
+  /// two-deep.
   Future<void> signInWithGoogle() async {
     state = state.copyWith(
       action: AuthAction.google,
@@ -194,9 +203,13 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       clearNotice: true,
     );
     try {
-      // Native account picker / one-tap. Throws GoogleSignInException on cancel.
-      final account = await GoogleSignIn.instance.authenticate(
-        scopeHint: const ['email', 'profile'],
+      // Silent reuse first; the native account picker only if there is no
+      // grant to reuse. Either path throws GoogleSignInException on cancel.
+      final account = await reuseGrantOrAuthenticate(
+        lightweight: GoogleSignIn.instance.attemptLightweightAuthentication,
+        authenticate: () => GoogleSignIn.instance.authenticate(
+          scopeHint: const ['email', 'profile'],
+        ),
       );
       // `authentication` is a synchronous getter in v7; idToken is minted for
       // the `serverClientId` (Web) audience configured at init.

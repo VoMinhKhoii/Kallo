@@ -13,7 +13,7 @@ import 'features/circle/logic/circle_deep_links.dart';
 import 'features/logging/data/logging_providers.dart';
 import 'features/notifications/logic/push_registration.dart';
 import 'router.dart';
-import 'theme/kallo_theme.dart';
+import 'shell/kallo_app_theme.dart';
 
 /// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
@@ -103,7 +103,7 @@ class _NhamAppState extends ConsumerState<KalloApp>
         child: MaterialApp.router(
           title: 'Kallo',
           debugShowCheckedModeBanner: false,
-          theme: KalloTheme.light(),
+          theme: kalloAppTheme(),
           routerConfig: router,
           // Dynamic Type is respected, but capped: the feed's fixed-width
           // columns overflow past ~1.3x.

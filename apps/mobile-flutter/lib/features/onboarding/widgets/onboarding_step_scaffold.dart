@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
 import '../logic/onboarding_step_spec.dart';
 import 'backdrop/backdrop_slice.dart';
 import 'backdrop/step_backdrop.dart';
+import 'onboarding_step_content.dart';
 import 'onboarding_step_header.dart';
 import 'onboarding_step_transition.dart';
 
@@ -19,7 +19,9 @@ import 'onboarding_step_transition.dart';
 /// across the six screens: the gradient backdrop, the header (wordmark and the
 /// progress bar that fills across it), the bun with its bubble, and the black
 /// CTA pinned to the bottom. Only [OnboardingStepSpec.title] and the body under
-/// it travel — see [OnboardingStepTransition] for why.
+/// it travel — see [OnboardingStepTransition] for why, and
+/// [OnboardingStepContent] for the region itself, which is also where a
+/// right-swipe back is caught.
 ///
 /// Two of the fixtures MORPH rather than hold still. The bubble retypes its new
 /// line (the mascot resets its typewriter on a `speech` change) and its height
@@ -151,7 +153,18 @@ class OnboardingStepScaffold extends StatelessWidget {
       Positioned.fill(
         child: OnboardingStepTransition(
           direction: direction,
-          child: KeyedSubtree(key: ValueKey(screen), child: _content(inset)),
+          child: KeyedSubtree(
+            key: ValueKey(screen),
+            // Inside the keyed subtree: the swipe commits by threshold, so
+            // there is no in-flight state to carry across a screen change, and
+            // mounting per screen means the callback is always the current
+            // screen's.
+            child: OnboardingStepContent(
+              spec: spec,
+              bottomInset: ctaReserve + inset,
+              onBack: onBack,
+            ),
+          ),
         ),
       ),
       Positioned(
@@ -175,24 +188,6 @@ class OnboardingStepScaffold extends StatelessWidget {
               onPressed: onContinue,
             ),
           ),
-        ),
-      ),
-    ],
-  );
-
-  /// The sliding region: the title, then the screen's own controls under it in
-  /// a scroll view that starts at the top on every screen.
-  Widget _content(double inset) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(spec.title, style: kPageTitle()),
-      const SizedBox(height: KalloSpacing.sp3),
-      Expanded(
-        child: SingleChildScrollView(
-          primary: false,
-          padding: EdgeInsets.only(bottom: ctaReserve + inset),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: spec.body,
         ),
       ),
     ],

@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/widgets/form/option_strip.dart';
-import '../../../../../shared/widgets/form/segmented_strip.dart';
+import '../../../../../shared/widgets/form/segmented/segmented_strip.dart';
 import '../../../../../theme/kallo_theme.dart';
 
 /// Which side of the package the user is pointing the phone at.

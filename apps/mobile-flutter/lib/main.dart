@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
+import 'shared/widgets/icons/filled_heart.dart';
 import 'services/env/env.dart';
 import 'services/auth/supabase_service.dart';
 
@@ -49,21 +50,40 @@ Future<void> main() async {
   // Initialize native Google sign-in once (v7 requires a single async init
   // before the first `authenticate()`). Guarded on the Web client ID so a dev
   // build without Google config still boots — the Google button then surfaces a
-  // clear error instead of crashing at startup. `serverClientId` is the Web
-  // OAuth client ID (the audience Supabase's "Authorized Client IDs" verifies);
-  // `clientId` is the iOS client ID, needed on iOS only.
+  // clear error instead of crashing at startup.
   if (Env.googleWebClientId.isNotEmpty) {
-    // `clientId` is an iOS-only concern (Android derives it from serverClientId
-    // + the registered SHA-1); passing the iOS client ID on Android can be
-    // rejected, so scope it to iOS.
+    // `clientId` is an iOS-only concern (Android derives it from
+    // `serverClientId` + the registered SHA-1); passing the iOS client ID on
+    // Android can be rejected, so scope it to iOS.
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+    final iosClientId = isIos && Env.googleIosClientId.isNotEmpty
+        ? Env.googleIosClientId
+        : null;
     await GoogleSignIn.instance.initialize(
-      clientId: isIos && Env.googleIosClientId.isNotEmpty
-          ? Env.googleIosClientId
-          : null,
-      serverClientId: Env.googleWebClientId,
+      clientId: iosClientId,
+      // `serverClientId` is what Google mints the ID token's `aud` claim for,
+      // and asking for one is also what requests OFFLINE ACCESS — the
+      // server-side grant behind Google's "you shared data with this app"
+      // mail, which arrived on every single sign-in. On iOS we have our own
+      // client to audience the token to, so we drop it: no server auth code
+      // is requested, and Supabase verifies the token against the iOS client
+      // ID in its Google provider's "Authorized Client IDs" (added
+      // 2026-09-10, alongside the Web one the web app and Android still use).
+      //
+      // Not conditional on the platform but on HAVING that client ID: a build
+      // without `GOOGLE_IOS_CLIENT_ID` has nothing else to audience against,
+      // so it keeps the Web client exactly as before rather than initializing
+      // with no audience at all.
+      serverClientId: iosClientId == null ? Env.googleWebClientId : null,
     );
   }
+
+  // Parse the one inline SVG the app swaps in on a tap — the Circle heart's
+  // filled state — before any frame needs it. Process-global and idempotent,
+  // so it belongs at boot rather than in the lifecycle of whichever feed
+  // happens to mount first (`ThreadFeed` used to host it, which cost that
+  // widget a State object for a side effect that was never per-instance).
+  precacheFilledHeart();
 
   // Dark status-bar content on the cream surface — RN `<StatusBar style="dark" />`.
   SystemChrome.setSystemUIOverlayStyle(

@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../shared/widgets/surface/kallo_screen.dart';
 import '../theme/calm_tokens.dart';
@@ -28,13 +27,7 @@ class PlaceholderScreen extends StatelessWidget {
             // Back affordance: a deep link can land here directly, so the
             // header must always offer a way out (pop if possible, else home).
             child: AppHeader(
-              onBack: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  goToLogging(context);
-                }
-              },
+              onBack: () => popOrOpenLogging(context),
             ),
           ),
           Expanded(

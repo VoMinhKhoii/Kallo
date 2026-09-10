@@ -12,6 +12,7 @@ import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_prov
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_content.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_header.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_wizard.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -137,6 +138,16 @@ bool _selected(WidgetTester tester, String label) => tester
 
 bool _ctaDisabled(WidgetTester tester) =>
     tester.widget<KalloButton>(find.byType(KalloButton)).disabled;
+
+/// A back flick on the sliding content region — the same move as the chevron.
+Future<void> _swipeBack(WidgetTester tester) async {
+  await tester.timedDragFrom(
+    tester.getCenter(find.byType(OnboardingStepContent)),
+    const Offset(200, 0),
+    const Duration(milliseconds: 120),
+  );
+  await _frames(tester);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -479,6 +490,34 @@ void main() {
       warnIfMissed: false,
     );
     await _frames(tester);
+    expect(closed, 1);
+  });
+
+  testWidgets('a right swipe on the content steps back and keeps the answers',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _boot(tester, _app(FakeOnboardingSink(), profile: _profile));
+
+    await _tap(tester, 'Continue'); // 1 → 2
+    await _tap(tester, 'Australia');
+    await _tap(tester, 'Continue'); // 2 → 3
+    expect(find.text('About you'), findsOneWidget);
+
+    await _swipeBack(tester);
+
+    expect(find.text('Where do you cook?'), findsOneWidget);
+    expect(_selected(tester, 'Australia'), isTrue);
+  });
+
+  testWidgets('a right swipe on screen 1 closes the wizard, like the chevron',
+      (tester) async {
+    var closed = 0;
+    await _boot(tester, _app(FakeOnboardingSink(), onClose: () => closed++));
+
+    await _swipeBack(tester);
+
     expect(closed, 1);
   });
 }

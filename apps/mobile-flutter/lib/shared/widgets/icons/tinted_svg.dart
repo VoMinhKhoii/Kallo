@@ -48,3 +48,26 @@ class TintedSvg extends StatelessWidget {
     excludeFromSemantics: excludeFromSemantics,
   );
 }
+
+/// Parses [svgSource] into `flutter_svg`'s cache ahead of the frame that first
+/// draws it.
+///
+/// The parse is synchronous on the UI thread, so an inline SVG swapped in on a
+/// tap — the Circle heart filling — landed a frame or two late on the one
+/// interaction its surface is built around. Warming at app start makes that
+/// swap a repaint of something already decoded.
+///
+/// Idempotent, and cheap to call again: `putIfAbsent` hands back the entry —
+/// pending or decoded — for a key the cache already holds, so only the first
+/// caller in the process pays for the parse. [SvgStringLoader] keys by the
+/// source string, so this is the same entry [TintedSvg] resolves to (the app
+/// installs no `DefaultSvgTheme`, so the null context here reads the same
+/// default theme the widget's context does).
+///
+/// It lives beside [TintedSvg] rather than beside any one glyph: the cache key
+/// and the null-context reasoning are properties of THIS seam, and the second
+/// glyph that wants warming should not have to rediscover them.
+void precacheTintedSvg(String svgSource) {
+  final loader = SvgStringLoader(svgSource);
+  svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
+}

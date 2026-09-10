@@ -100,13 +100,23 @@ class StartScreen extends StatelessWidget {
                   KalloButton(
                     title: tr('onboarding.start.cta'),
                     variant: KalloButtonVariant.cta,
-                    onPressed: () => context.go('/onboarding'),
+                    onPressed: () => context.push('/onboarding'),
                   ),
                   const SizedBox(height: KalloSpacing.sp3),
                   // The quiet way back for an account that already exists.
+                  //
+                  // PUSH, not go, for both of these: `/start` is where both
+                  // roads begin, and a `go` would replace it — leaving the
+                  // wizard's screen-1 chevron and the sign-in face with
+                  // nothing under them to return to. Every pre-auth route is
+                  // in `_preAuthRoutes`, so the redirect leaves a signed-out
+                  // user on whichever one they are standing on, and the stack
+                  // is cleared for them the moment they sign in (the redirect
+                  // to `/welcome` re-parses the location and drops the pushed
+                  // matches).
                   MetaAction(
                     label: tr('onboarding.start.haveAccount'),
-                    onTap: () => context.go('/sign-in'),
+                    onTap: () => context.push('/sign-in'),
                   ),
                   const SizedBox(height: KalloSpacing.sp3),
                 ],

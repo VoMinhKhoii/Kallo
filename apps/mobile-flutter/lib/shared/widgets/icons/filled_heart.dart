@@ -12,12 +12,17 @@ import 'tinted_svg.dart';
 /// beside it. Drawn by [TintedSvg], like every other one-colour glyph.
 class FilledHeart extends StatelessWidget {
   const FilledHeart({
-    this.size = KalloIcons.tertiary,
+    required this.size,
     this.color = KalloColors.danger,
     super.key,
   });
 
+  /// Required, with no default: this glyph is the ON state of an outline that
+  /// is optically compensated per glyph ([KalloIcons.optical]), and the two
+  /// must be the same size or the post twitches as it is hearted. A tier
+  /// default here was a size nothing rendered and an invitation to mismatch.
   final double size;
+
   final Color color;
 
   @override
@@ -30,6 +35,11 @@ class FilledHeart extends StatelessWidget {
     excludeFromSemantics: true,
   );
 }
+
+/// Parses the filled heart ahead of the first tap — see [precacheTintedSvg]
+/// for the cache-key reasoning. Called once at app start (`main.dart`): the
+/// warm is process-global and has nothing to do with any one feed's lifecycle.
+void precacheFilledHeart() => precacheTintedSvg(_svg);
 
 const String _svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000" stroke="#000" '

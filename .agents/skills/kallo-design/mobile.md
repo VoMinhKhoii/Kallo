@@ -167,7 +167,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 | `kInkMuted` | `#7A7870` | everything secondary — labels, units, captions, dates (lightened from `#6E6D66`, 2026-09-02) |
 
 `KalloColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
-(warm select wash — also the in-app primary button fill `btnPrimarySoft`), the accent `#C9A87C`, umber `#695E4E` (toggles/progress only — no longer a button fill),
+(warm select wash — also the in-app primary button fill `btnPrimarySoft`; the tab bar's `+` left that tier for `KalloGradients.brandSweep` on 2026-09-10), the accent `#C9A87C`, umber `#695E4E` (toggles/progress only — no longer a button fill),
 `success`, and macro colours.
 
 **Red means "this destroys something", not "your numbers are off."** Those were
@@ -272,7 +272,7 @@ accessibility without the press affordance growing with it.
 | Token | Size | Role |
 |-------|------|------|
 | `KalloIcons.primary` | **24** | navigation + primary utility — pill-nav glyphs, settings row leading icons, header icons. The glyph that carries a row or a screen. (`KalloIcons.size` is an alias.) |
-| `KalloIcons.action` | **21** | an action ON a card — the Log meal-card action row, Circle heart/comment/Eat-this, discard, the confirm-circle check. At 24 these clusters out-weighed the meal they belonged to. |
+| `KalloIcons.action` | **21** | an action ON a card — the Log meal-card action row, discard, the confirm-circle check. At 24 these clusters out-weighed the meal they belonged to. (The Circle post's row is NOT here: it sits on `tertiary`, and has since the Threads pass.) |
 | `KalloIcons.tertiary` | **18** | small inline affordances — collapse chevron, copy/remove minis, quiet suffix actions, and **disclosure chevrons** (moved 16 → 18 so the tier has one size, not two neighbouring ones). |
 
 `LoggingIcons.size` is now an alias of `tertiary` and `LoggingIcons.action` of
@@ -282,6 +282,24 @@ app's tiers instead of private numbers.
 **Non-action DATA glyphs are outside the tiers.** The 14pt macro-legend food
 icons are content, not controls; they stay 14 (the legend text beside them sits
 on Caption 12, so 14 still reads as the larger of the pair).
+
+**A tier is an optical size, not a number.** Three glyphs at the same point size
+do not necessarily read as one size: `message-circle` and `copy` are convex and
+fill ~20×20 of Lucide's 24 grid, while `heart` covers ~20×17.5 and tapers to a
+point, so the Circle post's row read as a big bubble, a big copy and a small
+heart at a flat 18. It is compensated per glyph *within* the tier — heart 20,
+bubble and copy 17 — and the filled heart takes the same 20 as the outline, or
+the post twitches a size as it is hearted.
+
+The compensation is **one table keyed by glyph**, `KalloIcons.optical(icon)`,
+not a size argument at each call site. It is a property of the glyph, and as
+three per-call-site numbers a fourth glyph added to that row silently got 18
+and read a size off from its neighbours. `FilledHeart` reads the same entry as
+the outline, so the two states cannot diverge, and `KalloIcons.opticalMax`
+feeds the day card's action-row slack (`feed_day_group.dart`) — an assert now,
+where it used to be a sentence in a comment one file away from the numbers it
+depended on. Add a glyph to the table, not a number to a widget; and do not
+read any of this as licence for a fourth tier.
 
 **Stroke weight is 1.5, not Lucide's default 2.0.** Every glyph comes from the
 `300` constants (`LucideIcons.user300`, not `LucideIcons.user`) — the package
@@ -410,9 +428,13 @@ the ink ripple, the spinning arc, the bottom-up page transition — are what mak
 an app read as "a Flutter app" rather than as an app. None of them is a taste
 call the design system gets to make differently per surface.
 
-This rule mostly *describes* what the app already does: routes push
-`CupertinoPage`, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
-is a Cupertino alert, the switch is `Switch.adaptive`. The long-press menu was
+This rule mostly *describes* what the app already does: routes slide the
+Cupertino way, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
+is a Cupertino alert, the switch is `Switch.adaptive`. Note *how* the routes do
+it since 2026-09-10 — the `Page` type is `MaterialPage`, and the Cupertino
+transition (plus a widened back drag) is installed once in the theme's
+`pageTransitionsTheme`. That is boundary 2 in action: the platform's anatomy
+and timing, reached through the seam that lets us change one thing about it. The long-press menu was
 on that list until 2026-09-08 and is now the rule's one documented exception —
 the app owns it (boundary 3, below). It had never been written down, so every
 new surface re-decided from scratch — which is how 17 Material spinners
@@ -421,7 +443,7 @@ accumulated under a Cupertino navigation stack.
 | Instead of | Use | State |
 |------------|-----|-------|
 | `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
-| `MaterialPageRoute` | `CupertinoPageRoute` / `CupertinoPage` | 1 site left (`auth/widgets/email_auth_form.dart`) |
+| a bottom-up Material page transition | `KalloSwipeBackTransitionsBuilder` in the theme (`shell/nav/swipe_back/`) — Cupertino's slide plus a back drag that starts anywhere, not on a 20pt edge | ✅ done 2026-09-10, app-wide. `MaterialPage`/`MaterialPageRoute` is now the RIGHT type: a `CupertinoPage` builds its own transition and never reads the theme, so it opts a route OUT of the app's gesture. 1 site left that pushes no route at all (`auth/widgets/email_auth_form.dart`) |
 | `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release, SHRINK-WRAPS its child in both axes (a parent that wants it wider hands it tight constraints), and owns its pointer even when disabled, so a nested target never lights the row behind it | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
 | `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
@@ -513,7 +535,7 @@ renders as Material.
 | `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
 | `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold. `KalloMenuActionRow` (`shared/widgets/menu/kallo_menu_card.dart`) was built on it from the start — the long-press menu's rows never wore a ripple |
 | arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
-| `MaterialPageRoute` → `CupertinoPageRoute` | 1 | `auth/widgets/email_auth_form.dart` — the only route in the app that does not slide |
+| ~~`MaterialPageRoute` → `CupertinoPageRoute`~~ | 0 | **Reversed 2026-09-10.** The transition moved into the theme, so `MaterialPageRoute` is what the app wants everywhere and the four `CupertinoPage` routes were converted TO it. Converting the other way now silently drops a route out of the full-width back gesture |
 | `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
 
 ### Two app-wide changes worth remembering
@@ -562,9 +584,16 @@ Reach for these before writing a local variant:
 `kNavShadows` — the nav is TRUE elevation), four tabs as 24pt stroke glyphs
 alone (ink when active, muted idle — icon-only since 2026-09-02, the tab name
 lives in `Semantics`; `kNavShowsLabels` restores 10pt regular labels), Nutrition's
-glyph is the apple, and a 52pt beige `+` circle opening
-the Add sheet (Log a meal / Log weight). Today/Nutrition/Circle switch shell
-branches; **Log pushes the feed full-screen** (root CupertinoPage — the
+glyph is the apple, and a 52pt `+` circle opening
+the Add sheet (Log a meal / Log weight). That disc wears
+`KalloGradients.brandSweep` (apricot `#FFD2B0` → lilac `#DCC4FF`, diagonal, full
+opacity) since 2026-09-10 — the onboarding aurora's two hues, saturated: it is
+the app's one always-present create affordance, and the flat beige
+`btnPrimarySoft` read as chrome on a white capsule. The aurora's own 0.16–0.55
+alphas cannot be reused at 52pt; they composite to within a few points of white
+over that area. Ink clears AA on both stops (13.2:1 / 11.7:1), so the glyph
+stays on the two-colour system. Today/Nutrition/Circle switch shell
+branches; **Log pushes the feed full-screen** (a root `MaterialPage` — the
 composer owns that screen's bottom edge; a back chevron in the timeline picker
 returns to the previous tab). The bar slides away while the keyboard is up.
 Settings pushes from the dashboard avatar (`profile_avatar_button.dart`),
@@ -604,6 +633,17 @@ mid-reaction. A disabled control is still a control; iOS never lets a dimmed
 button's tap reach what is under it. Fixed 2026-09-08 — an inert non-null
 callback keeps the arena entry (`shared/widgets/surface/kallo_pressable.dart`,
 *Nesting*; the protocol is in `shared/widgets/surface/press_scope.dart`).
+
+**An icon row's gaps are the sum of its paddings, and they move.** The Circle
+post's three actions sat in a `Wrap` with no `spacing:`, each button paying a
+different inset — 0 for a glyph-only one, 10 for a labelled one, plus a 44pt
+`minWidth` that padded the leading button's box with 26pt of trailing dead
+space. Measured, the ink landed 39 and 23 apart, and a like count appearing
+MOVED the neighbours. A row of equal gaps is one constant on every side of
+every button, boxes touching, with the minimum width dropped wherever the
+alignment already pins the glyph — never a per-button guess. Fixed 2026-09-10;
+`circle_feed_widgets_test.dart` measures the ink rects, not the boxes, because
+the boxes were never the thing that looked wrong.
 
 **`InputDecorationTheme` wins.** The app theme sets `filled: true` and an
 `OutlineInputBorder` on `enabledBorder`. Clearing only `border` leaves the
