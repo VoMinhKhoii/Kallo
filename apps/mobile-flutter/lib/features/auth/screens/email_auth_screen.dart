@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -58,13 +58,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     showTopToast(context, message, variant: TopToastVariant.error);
   }
 
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/sign-in');
-    }
-  }
+  void _back() => popOr(context, (router) => router.go('/sign-in'));
 
   @override
   Widget build(BuildContext context) {

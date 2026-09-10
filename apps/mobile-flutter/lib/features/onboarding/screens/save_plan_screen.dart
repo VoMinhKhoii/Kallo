@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../auth/widgets/auth_page.dart';
 import '../widgets/backdrop/backdrop_slice.dart';
@@ -97,7 +97,7 @@ class SavePlanScreen extends StatelessWidget {
         )?.backButtonTooltip,
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => context.go('/onboarding'),
+      onTap: () => popOr(context, (router) => router.go('/onboarding')),
       child: const SizedBox(
         width: KalloIcons.hit,
         height: KalloIcons.hit,

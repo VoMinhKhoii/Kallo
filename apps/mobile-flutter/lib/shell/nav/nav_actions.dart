@@ -42,6 +42,30 @@ void openLogging(GoRouter router) {
 /// [openLogging] for the call sites that hold a live [BuildContext].
 void goToLogging(BuildContext context) => openLogging(GoRouter.of(context));
 
+/// Opens a location a NOTIFICATION tap resolved to, leaving something under it
+/// to go back to.
+///
+/// A tap can arrive cold — the app was not running, so there is no shell — and
+/// `go` alone was the answer to that: it always lands somewhere real. The cost
+/// was that the thread page then had NOTHING beneath it, so the back gesture
+/// had nowhere to go and only the chevron worked (via [popOr]'s `/circle`
+/// fallback). Seeding the branch first and pushing over it gives the swipe a
+/// destination while keeping the cold-start guarantee. Same shape as
+/// [openLogging], for the same reason.
+///
+/// A destination that IS a shell branch is just a branch switch — there is
+/// nothing to push over it.
+void openPushDestination(GoRouter router, String path) {
+  if (_shellRoots.contains(path)) {
+    router.go(path);
+    return;
+  }
+  if (!_shellRoots.contains(router.state.matchedLocation)) {
+    router.go('/circle');
+  }
+  router.push(path);
+}
+
 /// Leaves a screen that may or may not have been pushed: pop when there is
 /// something under it, otherwise hand the router to [fallback]. Every route
 /// pushed over the shell with `parentNavigatorKey` can be entered cold — a

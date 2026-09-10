@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../services/auth/session_provider.dart';
+import '../../../shell/nav/nav_actions.dart';
 import '../../../theme/kallo_colors.dart';
 import '../providers/onboarding_providers.dart';
 import '../widgets/onboarding_wizard.dart';
@@ -35,12 +36,24 @@ class OnboardingScreen extends ConsumerWidget {
       // status bar, or its top sweep begins on a hard flat band. The wizard
       // insets its own chrome instead (see [OnboardingStepScaffold]).
       body: OnboardingWizard(
-        onComplete: () => context.go(signedIn ? '/welcome' : '/save-plan'),
+        // Signed OUT this is a step FORWARD in a flow the user can still walk
+        // back out of, so `/save-plan` is pushed over the wizard. Signed in,
+        // `/welcome` flushes the draft and enters the app — it must not be
+        // poppable back into the wizard, so that one stays a `go`.
+        onComplete: () => signedIn
+            ? context.go('/welcome')
+            : context.push('/save-plan'),
         onClose: () {
           if (!signedIn) {
-            context.go('/start');
+            // Pushed from `/start` in the ordinary run, so pop back onto the
+            // live screen rather than rebuilding it. Reached cold — the resume
+            // redirect drops a returning user straight here — there is nothing
+            // under it and the fallback runs.
+            popOr(context, (router) => router.go('/start'));
             return;
           }
+          // The forced first-run wizard is the only route on the stack, and
+          // the flag must be set BEFORE the go or the redirect re-forces it.
           ref.read(onboardingForceDismissedProvider.notifier).state = true;
           context.go('/dashboard');
         },
