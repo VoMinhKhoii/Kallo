@@ -89,11 +89,18 @@ are rejected before SDK configuration. When the current platform's key is empty 
 dev build without RevenueCat config still boots).
 
 > **Native Google sign-in setup.** `GOOGLE_WEB_CLIENT_ID` is the Google Cloud **Web**
-> OAuth client ID (passed to `google_sign_in` as `serverClientId`); it must also be added
-> to the Supabase Google provider's **Authorized Client IDs** (for *both* dev and prod
-> projects). `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
+> OAuth client ID, passed to `google_sign_in` as `serverClientId` on Android and used by
+> the web app. `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
 > (`com.googleusercontent.apps.…`) must be set as a URL scheme in
-> [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist). Android needs the
+> [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist).
+>
+> **Both** must be listed in the Supabase Google provider's **Authorized Client IDs**,
+> comma-separated, on *both* dev and prod projects — that list is what verifies the ID
+> token's `aud` claim. iOS drops `serverClientId` (2026-09-10) so its token is audienced
+> to the iOS client instead of the Web one; asking for a server client is also what
+> requests offline access, which is the grant behind Google's "you shared data with this
+> app" mail on every sign-in. Removing the iOS client ID from that Supabase list breaks
+> iOS Google sign-in outright. Android needs the
 > debug **SHA-1** registered on an Android OAuth client (package `com.nham.kallo_mobile`);
 > no Firebase / `google-services.json`.
 
