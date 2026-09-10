@@ -182,9 +182,10 @@ describe('nutrition summary helpers', () => {
     });
   });
 
-  it('resolves the initial range from recent logged days', () => {
-    expect(resolveInitialRange(13)).toBe('7d');
-    expect(resolveInitialRange(14)).toBe('30d');
+  it('resolves the initial range to 7d for everyone', () => {
+    // `auto` used to promote anyone with 14+ logged days in the last 30 to
+    // '30d'. The window is now the same for a first-day user and a daily one.
+    expect(resolveInitialRange()).toBe('7d');
   });
 
   it('applies logged-day thresholds for each trend range', () => {

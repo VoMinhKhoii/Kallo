@@ -9,8 +9,12 @@ class PaywallEntitlementsApi extends ApiClient {
     this.failPrePurchaseCheck = false,
     this.premiumBeforePurchase = false,
     this.trialActive = true,
+    this.failGet = false,
   });
 
+  /// The entitlement snapshot itself cannot be read — the provider surfaces an
+  /// AsyncError and the paywall never learns which tier this user is on.
+  final bool failGet;
   final bool failPrePurchaseCheck;
   final bool premiumBeforePurchase;
   final bool trialActive;
@@ -21,6 +25,9 @@ class PaywallEntitlementsApi extends ApiClient {
   @override
   Future<T> get<T>(String path) async {
     getCalls += 1;
+    if (failGet) {
+      throw ApiError('UPSTREAM_UNAVAILABLE', 503, true, 'No entitlement.');
+    }
     return freeEntitlement(
       purchasesEnabled: purchasesEnabled,
       trialActive: trialActive,
@@ -53,8 +60,13 @@ class PaywallPurchasesService extends PurchasesService {
     List<PurchaseOutcome> outcomes = const [PurchaseOutcome.success],
     this.packages = const [monthlyPackage],
     this.trialEligibleIds,
+    this.available = true,
   }) : outcomes = [...outcomes],
        super(apiKey: '');
+
+  /// False stands in for a build with no RevenueCat key — the store is not
+  /// open for business and no offering will ever load.
+  final bool available;
 
   /// Which product ids the store would still start a trial on. `null` — the
   /// default — means "every id asked about", so a test that is not about
@@ -79,7 +91,7 @@ class PaywallPurchasesService extends PurchasesService {
   Package? lastPurchased;
 
   @override
-  bool get purchasesAvailable => true;
+  bool get purchasesAvailable => available;
 
   @override
   Future<List<Package>> getPackages(String userId) async => packages;

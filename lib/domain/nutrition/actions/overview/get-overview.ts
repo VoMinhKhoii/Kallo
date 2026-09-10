@@ -171,9 +171,10 @@ export async function getNutritionOverview(
   // its result and its rejection continue to propagate normally.
   gatePromise.catch(() => {});
 
-  // Start the count and hold the promise: it only ever gates which range to
-  // use, so `auto` awaits it here and a pinned range lets it run alongside the
-  // window fetch inside `buildOverview`.
+  // Start the count and hold the promise. Nothing on this path awaits it any
+  // more — `resolveInitialRange` stopped branching on it — so it now always
+  // runs alongside the window fetch inside `buildOverview`, which awaits it in
+  // its own `Promise.all` and carries it out in the payload.
   const loggedDaysLast30 = countLoggedDaysLast30({
     userId: user.id,
     startDate: last30Period.startDate,
@@ -188,9 +189,7 @@ export async function getNutritionOverview(
     profile,
     requestedRange: parsed.range,
     resolvedRange:
-      parsed.range === 'auto'
-        ? resolveInitialRange(await loggedDaysLast30)
-        : parsed.range,
+      parsed.range === 'auto' ? resolveInitialRange() : parsed.range,
     timezoneOffset: parsed.timezoneOffset,
     dayScope: parsed.days,
     loggedDaysLast30,

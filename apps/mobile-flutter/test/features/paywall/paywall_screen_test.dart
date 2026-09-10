@@ -8,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/paywall/logic/plan_pricing.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
 import 'package:kallo_mobile/features/paywall/widgets/paywall_header.dart';
+import 'package:kallo_mobile/features/paywall/widgets/paywall_pro_band.dart';
 import 'package:kallo_mobile/features/paywall/widgets/paywall_sheet_actions.dart';
+import 'package:kallo_mobile/features/paywall/widgets/paywall_status.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plan_row.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/billing/activation_pending.dart';
@@ -287,6 +289,69 @@ void main() {
 
     expect(find.byType(PlanRow), findsNWidgets(2));
     expect(tester.takeException(), isNull);
+  });
+
+  /// Both ways the store can be shut: no RevenueCat key in the build, and the
+  /// server's own `purchasesEnabled: false`. Neither is anything the user can
+  /// retry their way out of, so neither may take the paywall away from them.
+  group('a store that is not open', () {
+    Future<void> expectOrdinaryPaywallWithDeadCta(WidgetTester tester) async {
+      // The pitch, the legal line and the quiet action row all stay.
+      expect(find.byType(PaywallProBand), findsOneWidget);
+      expect(find.byType(PaywallSheetActions), findsOneWidget);
+      expect(find.text(tr('paywall.legal')), findsOneWidget);
+
+      // No error copy, no retry, no empty state.
+      expect(find.byType(PaywallNote), findsNothing);
+      expect(find.byType(PaywallRetryNote), findsNothing);
+      expect(find.text(tr('paywall.unavailableBody')), findsNothing);
+
+      // Only the CTA changes.
+      await tester.ensureVisible(find.byType(KalloButton));
+      await tester.pumpAndSettle();
+      final cta = tester.widget<KalloButton>(find.byType(KalloButton));
+      expect(cta.disabled, isTrue);
+      expect(cta.onPressed, isNull);
+
+      // …and both exits survive, so the screen is never a trap.
+      expect(
+        find.descendant(
+          of: find.byType(PaywallHeader),
+          matching: find.byType(GestureDetector),
+        ),
+        findsNWidgets(2),
+      );
+    }
+
+    testWidgets('with no store to talk to at all', (tester) async {
+      await pumpPaywall(
+        tester,
+        purchases: PaywallPurchasesService(
+          packages: const [annualPackage, monthlyPackage],
+          available: false,
+        ),
+      );
+
+      expect(find.byType(PlanRow), findsNothing, reason: 'nothing loaded');
+      await expectOrdinaryPaywallWithDeadCta(tester);
+    });
+
+    testWidgets('with the entitlement itself unreadable', (tester) async {
+      // Used to replace the whole page with a retry note — which hid the
+      // pitch, and offered a retry for something a retry cannot fix.
+      await pumpPaywall(tester, api: PaywallEntitlementsApi(failGet: true));
+
+      await expectOrdinaryPaywallWithDeadCta(tester);
+    });
+
+    testWidgets('with commerce switched off server-side', (tester) async {
+      await pumpPaywall(
+        tester,
+        api: PaywallEntitlementsApi()..purchasesEnabled = false,
+      );
+
+      await expectOrdinaryPaywallWithDeadCta(tester);
+    });
   });
 
   testWidgets('the onboarding variant sends both exits into logging', (

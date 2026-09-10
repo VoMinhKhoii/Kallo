@@ -19,7 +19,8 @@ class PaywallHeader extends StatelessWidget {
 
   final VoidCallback onClose;
 
-  /// Absent on the premium / loading faces — there is no Free to stay on.
+  /// Absent on the premium face only — a subscriber has no Free to stay on.
+  /// Every other face keeps it, so the paywall is always closable two ways.
   final VoidCallback? onStayFree;
 
   @override
