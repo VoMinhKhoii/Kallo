@@ -174,6 +174,16 @@ is false, free users do not see paywalls/trial upsells and both web and mobile
 purchase boundaries refuse to load offerings. Disable purchases first during
 rollback, independently of access enforcement.
 
+On **mobile**, a paywall reached anyway with the switch off (a deep link, a
+gated action) renders its ordinary face — header, Pro pitch, plan sheet — with
+the CTA **disabled** and no error copy, no retry and no empty state (2026-09-10).
+A closed store is not a failure the user can act on, and replacing the page with
+an error hid the pitch and offered a retry for something a retry cannot fix. The
+close glyph and "Stay on Free" are present on every non-premium face, so the
+screen is never a trap. The same treatment covers a missing RevenueCat key and
+an unreadable entitlement; only the mid-purchase phases (`verifying`,
+`activationPending`) still speak, because money is actually in flight.
+
 The 402 body:
 
 ```json

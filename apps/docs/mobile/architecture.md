@@ -13,7 +13,7 @@ the web app's mobile-responsive view, sharing the same backend and Supabase proj
 | Auth + data | `supabase_flutter` ^2.10, `http` ^1.3 |
 | Storage | `flutter_secure_storage` ^9.2 |
 | i18n | `easy_localization` ^3, `flutter_localizations`, `intl` |
-| Google sign-in | Native `google_sign_in` ^7.2 (in-app account picker) → Supabase `signInWithIdToken` — same shape as Apple, no Safari/`nham://auth-callback` round-trip |
+| Google sign-in | Native `google_sign_in` ^7.2 → Supabase `signInWithIdToken` — same shape as Apple, no Safari/`nham://auth-callback` round-trip. A returning user's existing grant is reused via `attemptLightweightAuthentication()` first; the in-app account picker only opens when there is none, so signing in stops re-triggering Google's "you granted access" mail |
 
 ## Layout
 
@@ -107,7 +107,7 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   fails. Validation is NOT vendored: `toParsedMeal` (`lib/ai/adapters/parsed-meal.ts`) drops any vessel
   a picker can't safely render, so both clients inherit one guarantee — the Dart parser's
   own checks are defense in depth for rows written before that guard existed.
-- **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
+- **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows. Both clients send `range: 'auto'` and the SERVER picks the opening window (`lib/domain/nutrition/pattern/summary.ts`) — it is `7d` for everyone since 2026-09-10, where it used to promote heavy loggers to `30d`.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 
 ## Cross-cutting design
@@ -118,9 +118,25 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
   the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
   admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
-  full-screen** over the shell as a root `CupertinoPage` (the composer owns its
+  full-screen** over the shell as a root `MaterialPage` (the composer owns its
   bottom edge; swipe-back returns to the previous tab), like `/settings`, which now
   pushes from the dashboard avatar.
+- **The back gesture:** every pushed route can be dragged back from ANYWHERE on the
+  page, not from iOS's 20pt edge strip (`shell/nav/swipe_back/`, 2026-09-10). It is
+  a vendored Cupertino gesture installed once as `KalloTheme.light`'s
+  `pageTransitionsTheme`, so routes inherit it by being ordinary `MaterialPage`s —
+  which is why there are no `CupertinoPage`s left: one would build its own
+  transition and opt that route out. The detector WRAPS each page rather than
+  sitting above it, so a horizontal scrollable under the finger (the timeline's
+  week pager, the portion and pace rulers, a swipe-to-remove row) wins the gesture
+  arena by construction. `SettingsNavigator`'s nested stack still arbitrates
+  through `popGestureEnabled`, and the onboarding wizard catches its own
+  right-swipe one level further in (`OnboardingStepSwipe`).
+- **The pre-auth stack:** `/start → /onboarding → /save-plan` and
+  `/start → /sign-in` are **pushes**, so back works by gesture and by chevron; the
+  exits that enter the app (`/welcome`, `/dashboard`) stay `go`. A notification tap
+  seeds `/circle` and pushes the thread over it (`nav_actions.openPushDestination`)
+  so a cold tap still has something underneath.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`

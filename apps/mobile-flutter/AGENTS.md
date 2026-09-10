@@ -38,8 +38,10 @@ lib/services/   — infrastructure edges, one subfolder per concern:
 lib/models/     — data models (ported from web lib/*/types.ts), grouped by domain:
                   http/, nutrition/, logging/, social/, profile/
 lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
-                  and its slots), nav/ (the floating pill tab bar, its Add sheet
-                  and the goToLogging helpers), plus tab_scaffold.dart,
+                  and its slots), nav/ (the floating pill tab bar, its Add sheet,
+                  the goToLogging/popOr helpers, and swipe_back/ — the app-wide
+                  full-width back gesture, installed through the theme), plus
+                  tab_scaffold.dart,
                   placeholder_screen.dart and route_error_screen.dart (the
                   go_router errorBuilder) — the routed surfaces the shell itself
                   hands the router
