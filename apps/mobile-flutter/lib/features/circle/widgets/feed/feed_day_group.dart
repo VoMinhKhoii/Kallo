@@ -21,10 +21,12 @@ const double _innerPad = KalloSpacing.sp4;
 /// margin on the row: Flutter clips hit-testing to a parent's box, so pulling
 /// the row itself would take those 12pt off the targets too.
 ///
-/// The canvas value, NOT the row's true slack ((44 − 18) / 2 = 13): the pull
-/// is subtracted from the card's own [_edgePad], which is also 12, and a pull
-/// larger than the pad it comes out of is a negative inset. The slack merely
-/// has to cover the pull, which at 13 ≥ 12 it does.
+/// The canvas value, NOT the row's true slack ((44 − 20) / 2 = 12 under the
+/// tallest glyph, the optically compensated heart): the pull is subtracted
+/// from the card's own [_edgePad], which is also 12, and a pull larger than
+/// the pad it comes out of is a negative inset. The slack merely has to cover
+/// the pull, which at 12 ≥ 12 it still does — a glyph any taller than 20 in
+/// this row would stop being true.
 const double _actionSlack = KalloSpacing.sp3;
 
 /// One day of the Circle feed: a 14/500 muted [GroupLabel] over a white

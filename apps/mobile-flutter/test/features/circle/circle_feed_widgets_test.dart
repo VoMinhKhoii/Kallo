@@ -17,6 +17,7 @@ import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_rhythm.dart';
 
 import 'circle_feed_test_support.dart';
@@ -296,6 +297,99 @@ void main() {
     expect(tops[2].dy, tops[0].dy);
     expect(tops[1].dx, greaterThan(tops[0].dx));
     expect(tops[2].dx, greaterThan(tops[1].dx));
+  });
+
+  /// What the eye reads as the gap: the space between one action's LAST ink
+  /// (its label, or its glyph when it has none) and the next action's glyph.
+  ///
+  /// Measured on the ink and not on the button boxes, which is where the old
+  /// row's unevenness hid: the boxes touch by design, so a box measurement
+  /// says nothing, and the 44pt minimum width on a glyph-only leading button
+  /// padded its box out with 26pt of air that only the ink can see.
+  List<double> inkGaps(WidgetTester tester) {
+    final buttons = find.byType(FeedActionButton);
+    final count = tester.widgetList(buttons).length;
+    Finder inkIn(int i, Finder ink) =>
+        find.descendant(of: buttons.at(i), matching: ink);
+    final glyph = find.byWidgetPredicate((w) => w is Icon || w is FilledHeart);
+    final text = find.byType(Text);
+    return [
+      for (var i = 1; i < count; i++)
+        tester.getRect(inkIn(i, glyph)).left -
+            (tester.any(inkIn(i - 1, text))
+                ? tester.getRect(inkIn(i - 1, text)).right
+                : tester.getRect(inkIn(i - 1, glyph)).right),
+    ];
+  }
+
+  testWidgets('the action row keeps one gap, with and without its counts', (
+    tester,
+  ) async {
+    // 14 of pad on either side of every button's ink, and the boxes touch —
+    // so every gap is 28, and a count or a label appearing cannot move the
+    // actions beside it. Before this the row measured 39 and 23 on a fresh
+    // post and shifted again the moment a heart was tapped.
+    const gap = KalloSpacing.sp3_5 * 2;
+
+    await pump(tester, post(entry()));
+    expect(find.text('2'), findsNothing, reason: 'no counts in this fixture');
+    final bare = inkGaps(tester);
+    expect(bare, hasLength(2));
+    expect(bare[0], closeTo(gap, 0.01));
+    expect(bare[1], closeTo(bare[0], 0.01));
+
+    // Both counts printing now, which is what used to flip the heart's own
+    // side pad from 0 to 10 and re-space the whole row.
+    await pump(
+      tester,
+      post(
+        entry(reactions: const ShareReactions(count: 2), repliesTotal: 3),
+      ),
+    );
+    final counted = inkGaps(tester);
+    expect(counted, hasLength(2));
+    expect(counted[0], closeTo(gap, 0.01));
+    expect(counted[1], closeTo(counted[0], 0.01));
+  });
+
+  testWidgets('the heart does not dim while its reaction is in flight', (
+    tester,
+  ) async {
+    // The like is optimistic, so the request is invisible by design — but the
+    // button used to disable itself for the whole round trip (up to a 15s
+    // timeout), which dimmed the freshly red heart to 50% and read as the
+    // like having failed. The debounce lives in the handler instead.
+    final response = Completer<Map<String, dynamic>>();
+    final api = FakeApiClient((request) {
+      if (request.method == 'GET') return pageJson([entryJson('s1')], null);
+      return response.future;
+    });
+    await pump(
+      tester,
+      const _FeedHost(),
+      overrides: [apiClientProvider.overrideWithValue(api)],
+    );
+    double heartOpacity() =>
+        tester
+            .widgetList<Opacity>(
+              find.descendant(
+                of: find.byType(FeedActionButton).first,
+                matching: find.byType(Opacity),
+              ),
+            )
+            .first
+            .opacity;
+
+    expect(heartOpacity(), 1);
+    await tester.tap(find.byIcon(LucideIcons.heart300));
+    await tester.pump();
+    // Hearted, and at full strength while the request is still open.
+    expect(find.byType(FilledHeart), findsOneWidget);
+    expect(heartOpacity(), 1);
+
+    response.complete({'reacted': true, 'count': 3});
+    await tester.pumpAndSettle();
+    expect(heartOpacity(), 1);
   });
 
   testWidgets('a post in the feed shows no replies under it', (tester) async {

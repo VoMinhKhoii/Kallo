@@ -1527,6 +1527,7 @@
       "openThread": "Open thread",
       "threadTitle": "Replies",
       "noReplies": "No replies yet",
+      "noRepliesBody": "Be the first to say something.",
       "threadGone": "This post isn't here any more",
       "threadGoneBody": "It may have been deleted, or shared with a group you're not in.",
       "portion": "{portion} portion",

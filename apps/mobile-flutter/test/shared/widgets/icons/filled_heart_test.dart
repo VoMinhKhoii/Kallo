@@ -39,4 +39,26 @@ void main() {
       const ColorFilter.mode(Color(0xFF00FF00), BlendMode.srcIn),
     );
   });
+
+  testWidgets('the warm decodes ONCE, into the entry the widget then reuses', (
+    tester,
+  ) async {
+    // The Circle feed warms this glyph at page load so the first heart tap
+    // is a repaint rather than an SVG parse on the UI thread. That only buys
+    // anything if the warmed entry is the one the widget looks up — same
+    // source string, same (absent) theme — so the count must not grow when
+    // the widget mounts.
+    svg.cache.clear();
+    precacheFilledHeart();
+    Future<void> decode() => tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 400)),
+    );
+    await decode();
+    expect(svg.cache.count, 1, reason: 'the warm decoded into the cache');
+
+    await tester.pumpWidget(const FilledHeart(size: 20));
+    await decode();
+    await tester.pumpAndSettle();
+    expect(svg.cache.count, 1, reason: 'the widget hit the warmed entry');
+  });
 }

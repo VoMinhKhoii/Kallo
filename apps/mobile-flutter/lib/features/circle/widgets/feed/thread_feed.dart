@@ -6,6 +6,7 @@ import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/feedback/sliver_centered_state.dart';
+import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -15,7 +16,7 @@ import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
 import 'feed_day_group.dart';
 
-class ThreadFeed extends ConsumerWidget {
+class ThreadFeed extends ConsumerStatefulWidget {
   const ThreadFeed({
     required this.feed,
     required this.header,
@@ -52,29 +53,47 @@ class ThreadFeed extends ConsumerWidget {
   final bool showAddFriend;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ThreadFeed> createState() => _ThreadFeedState();
+}
+
+class _ThreadFeedState extends ConsumerState<ThreadFeed> {
+  @override
+  void initState() {
+    super.initState();
+    // The wall is where a heart gets tapped, so the filled glyph is parsed
+    // here — once, on the frame the feed mounts — rather than on the UI
+    // thread at the instant a post is hearted. Idempotent, so every feed
+    // that mounts after the first pays nothing.
+    precacheFilledHeart();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification.metrics.axis == Axis.vertical &&
             notification.depth == 0 &&
             notification.metrics.extentAfter < 400) {
-          ref.read(sharedMealFeedProvider(scope).notifier).loadMore();
+          ref.read(sharedMealFeedProvider(widget.scope).notifier).loadMore();
         }
         return false;
       },
-      child: feed.when(
+      child: widget.feed.when(
         // The skeleton is top-anchored on purpose: it previews where the
         // first post's card lands, so it sits exactly where that card will —
         // which is why it goes down the CONTENT path and not the state one.
         loading:
             () => _contentScroll([
-              header,
+              widget.header,
               const SizedBox(height: KalloSpacing.sp3),
               const CircleWallSkeleton(),
             ]),
         error:
             (_, __) => _stateScroll(
-              CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
+              CircleErrorCard(
+                onRetry: widget.onRetry,
+                isRetrying: widget.feed.isLoading,
+              ),
             ),
         data: (state) => _dataList(context, state),
       ),
@@ -95,7 +114,7 @@ class ThreadFeed extends ConsumerWidget {
   /// the bar. The inset is the bar's measured height, which the shell reports
   /// as the body's bottom padding.
   Widget _contentScroll(List<Widget> children) => KalloRefreshableScroll(
-    onRefresh: onRefresh,
+    onRefresh: widget.onRefresh,
     slivers:
         (bottomInset) => [
           SliverPadding(
@@ -115,12 +134,14 @@ class ThreadFeed extends ConsumerWidget {
   /// the fill sliver instead, since a trailing spacer below a sliver that
   /// already fills the viewport lands below the fold and pushes nothing.
   Widget _stateScroll(Widget state) => KalloRefreshableScroll(
-    onRefresh: onRefresh,
+    onRefresh: widget.onRefresh,
     slivers:
         (bottomInset) => [
           SliverPadding(
             padding: _pad(KalloSpacing.sp2, 0),
-            sliver: SliverList(delegate: SliverChildListDelegate([header])),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([widget.header]),
+            ),
           ),
           SliverCenteredState(
             padding: _pad(KalloSpacing.sp3, bottomInset),
@@ -133,11 +154,11 @@ class ThreadFeed extends ConsumerWidget {
     if (state.entries.isEmpty) {
       return _stateScroll(_empty());
     }
-    final children = <Widget>[header];
+    final children = <Widget>[widget.header];
     for (final day in groupEntriesByDay(state.entries)) {
       children.add(const SizedBox(height: KalloSpacing.sp3));
       children.add(
-        FeedDayGroup(date: day.date, entries: day.entries, scope: scope),
+        FeedDayGroup(date: day.date, entries: day.entries, scope: widget.scope),
       );
     }
     if (state.isLoadingMore) {
@@ -160,15 +181,15 @@ class ThreadFeed extends ConsumerWidget {
   /// outside auth and the paywall.
   Widget _empty() => KalloSurfaceState(
     area: SurfaceArea.circle,
-    kind: emptyPose,
-    title: tr(emptyTitleKey, namedArgs: emptyNamedArgs),
-    subtitle: tr(emptyDescriptionKey, namedArgs: emptyNamedArgs),
+    kind: widget.emptyPose,
+    title: tr(widget.emptyTitleKey, namedArgs: widget.emptyNamedArgs),
+    subtitle: tr(widget.emptyDescriptionKey, namedArgs: widget.emptyNamedArgs),
     action:
-        showAddFriend
+        widget.showAddFriend
             ? KalloButton(
               title: tr('groups.page.addFriend'),
               variant: KalloButtonVariant.cta,
-              onPressed: onAddFriend,
+              onPressed: widget.onAddFriend,
             )
             : null,
   );

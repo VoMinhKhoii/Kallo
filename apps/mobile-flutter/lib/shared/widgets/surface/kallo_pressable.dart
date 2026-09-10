@@ -37,11 +37,13 @@ import 'press_scope.dart';
 /// an inert tap callback and claims its pointer up the chain, so nothing above
 /// it washes or fires. A disabled control is still a control — iOS never lets
 /// a dimmed button's tap fall through to what is behind it. The Circle heart
-/// is the case: [FeedEntryActions] passes `onTap: null` while its reaction
-/// request is in flight, inside a post that opens the thread, so with the
-/// press falling through a double tap on the heart navigated away
-/// mid-reaction. [PressScope] and [PressClaims] hold the protocol and the
-/// reasoning behind it.
+/// was the case: it used to pass `onTap: null` while its reaction request was
+/// in flight, inside a post that opens the thread, so with the press falling
+/// through a double tap on the heart navigated away mid-reaction. It stays
+/// ENABLED now and debounces in its own handler (the dim read as the like
+/// failing), which claims the same pointer for the same reason — the Circle
+/// "Log this too" action still takes the disabled path. [PressScope] and
+/// [PressClaims] hold the protocol and the reasoning behind it.
 ///
 /// **Scrolling (2026-09-08).** A pointer that travels more than `kTouchSlop`
 /// from where it landed ends the wash, finger still down: past that distance

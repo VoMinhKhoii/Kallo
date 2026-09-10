@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
@@ -98,5 +99,36 @@ void main() {
     await pumpFeed(tester, AsyncError(Exception('offline'), StackTrace.empty));
     expect(find.byType(CircleErrorCard), findsOneWidget);
     expectCentredUnderHeader(tester);
+  });
+
+  testWidgets('a thread with no replies stands its cast under the post, '
+      'centred', (tester) async {
+    // The thread's empty state is the same illustrated surface, `compact`,
+    // under the post. It lives inside a start-aligned column, so it only
+    // reads as centred because it is handed the full width — drop that and
+    // the capybara and its copy sit hard against the left edge.
+    final api = FakeApiClient(
+      (request) =>
+          request.path == '/api/v1/groups/friends/feed'
+              ? pageJson([entryJson('s1')], null)
+              : readMarker(request),
+    );
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's1'),
+      api: api,
+      size: viewport,
+      decodeAssets: true,
+    );
+
+    expect(find.text('No replies yet'), findsOneWidget);
+    final cast = find.byType(SurfaceIllustration);
+    expect(cast, findsOneWidget);
+    final state = tester.getRect(find.byType(KalloSurfaceState));
+    expect(state.width, moreOrLessEquals(viewport.width - 2 * 12, epsilon: 1));
+    expect(
+      tester.getRect(cast).center.dx,
+      moreOrLessEquals(state.center.dx, epsilon: 1),
+    );
   });
 }

@@ -18,6 +18,16 @@ import '../../../../theme/kallo_theme.dart';
 const double _glyph = KalloIcons.tertiary;
 const double _hit = KalloIcons.hit;
 
+/// The inset between a button's ink and the edge of its box — the SAME on
+/// every button in the row, labelled or not, and on both sides.
+///
+/// It is what makes the gaps equal: neighbouring boxes touch, so the
+/// ink-to-ink gap is always [_sidePad] twice (28) whatever either button
+/// holds. The row used to spend 0 on a glyph-only button and 10 on a labelled
+/// one, so a count appearing under a heart MOVED its neighbours, and a fresh
+/// post's three actions sat 39 and 23 apart.
+const double _sidePad = KalloSpacing.sp3_5;
+
 /// Actions sit one step darker than the calm secondary.
 ///
 /// `calm_tokens.dart` holds the app to two text colours, and this is a
@@ -28,9 +38,12 @@ const double _hit = KalloIcons.hit;
 /// controls need to look pressable.
 const Color _actionInk = KalloColors.textSoft;
 
-/// One Circle-post action: an 18pt glyph centred in a 44pt square, with an
-/// optional label riding alongside it INSIDE the same target — so a labelled
-/// action grows sideways rather than growing a second hit box.
+/// One Circle-post action: a tertiary-tier glyph in a 44pt-tall target, with
+/// an optional label riding alongside it INSIDE the same target — so a
+/// labelled action grows sideways rather than growing a second hit box.
+///
+/// Every button pays the same [_sidePad] on both sides, which is what holds
+/// the row's ink-to-ink gaps equal as counts and labels come and go.
 class FeedActionButton extends StatelessWidget {
   const FeedActionButton({
     super.key,
@@ -41,10 +54,23 @@ class FeedActionButton extends StatelessWidget {
     this.activeGlyph,
     this.toggled,
     this.alignment = Alignment.center,
+    this.glyphSize,
   });
 
   final VoidCallback? onTap;
   final IconData icon;
+
+  /// Optical override for the glyph's point size — still the TERTIARY tier
+  /// (`mobile.md`, *Icons*), not a fourth size.
+  ///
+  /// All three glyphs come off the same 24 grid at the same 1.5 stroke, and
+  /// they still do not carry the same ink: `message-circle` and `copy` are
+  /// convex, area-filling shapes covering ~20x20 of that grid, while `heart`
+  /// is ~20x17.5 and tapers to a point. Set to one number they do not read as
+  /// one size — the heart reads smaller than the two beside it. Compensating
+  /// per glyph is what makes the row look like one tier. Null keeps the
+  /// tier's nominal [_glyph].
+  final double? glyphSize;
 
   /// Visible label beside the glyph — the heart's count, "Log this too". It
   /// is also what a labelled action is ANNOUNCED as: the text merges into this
@@ -78,6 +104,15 @@ class FeedActionButton extends StatelessWidget {
   /// so its glyph lands on the content column rather than 10pt in. That is
   /// what the canvas' -12 left margin buys, bought here without taking
   /// anything off the target.
+  ///
+  /// The leading action also drops the row's [_hit] minimum WIDTH. That
+  /// minimum is what injected 26pt of trailing dead space into the heart's
+  /// box — the actual mechanism behind the 39-vs-23 gaps — and dropping it
+  /// makes the heart's tap target its ink plus one [_sidePad] (34x44 on a
+  /// post with no count, wider with one) rather than 44x44. That is accepted
+  /// because its left edge IS the card's content edge, so there is no
+  /// neighbouring control to mis-hit; the 44 that a thumb misses on in a
+  /// scrolling feed is the height, and the height is untouched.
   final Alignment alignment;
 
   @override
@@ -88,25 +123,26 @@ class FeedActionButton extends StatelessWidget {
     // Container with an alignment and no height is an Align that takes all
     // the height it is offered, which is how the thread composer once
     // ballooned over its own reply list.
-    // A labelled action breathes sideways inside its target; a glyph-only one
-    // is the bare 44pt square. A row's first action drops the leading pad so
-    // its glyph lands on the content column.
-    final sidePad = label == null ? 0.0 : KalloSpacing.sp2_5;
+    // One [_sidePad] on every side of every button, so neighbouring boxes
+    // touch and the ink lands 28 apart whether or not a label is printing. A
+    // glyph-only box measures 14+18+14 = 46, so [_hit]'s minimum width never
+    // binds and the glyph keeps its own 14; the row's first action drops both
+    // that minimum and its left pad, landing its glyph on the content column
+    // (see [alignment]).
+    final leading = alignment == Alignment.centerLeft;
     final Widget button = Opacity(
       opacity: onTap == null ? 0.5 : 1,
       child: KalloPressable(
         onTap: onTap,
         height: _hit,
-        constraints: const BoxConstraints(minWidth: _hit),
-        padding: EdgeInsets.only(
-          left: alignment == Alignment.centerLeft ? 0 : sidePad,
-          right: sidePad,
-        ),
+        constraints: leading ? null : const BoxConstraints(minWidth: _hit),
+        padding: EdgeInsets.only(left: leading ? 0 : _sidePad, right: _sidePad),
         alignment: alignment,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            activeGlyph ?? Icon(icon, size: _glyph, color: _actionInk),
+            activeGlyph ??
+                Icon(icon, size: glyphSize ?? _glyph, color: _actionInk),
             if (label != null) ...[
               const SizedBox(width: KalloSpacing.sp1_5),
               Text(label!, style: dashMeta(color: _actionInk)),

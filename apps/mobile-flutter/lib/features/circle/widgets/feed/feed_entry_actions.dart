@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -38,8 +39,15 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
   bool _toggling = false;
   bool _logging = false;
 
+  /// Hearts the post. The heart is never DISABLED while this runs (see the
+  /// button below): this guard is the whole debounce, so a second tap
+  /// mid-request is dropped here rather than by dimming the control.
   Future<void> _toggle() async {
     if (_toggling) return;
+    // After the guard, not before: a tap that is being swallowed should not
+    // buzz as though it landed. The tick is the only instant confirmation the
+    // heart's own state change does not already give.
+    HapticFeedback.lightImpact();
     setState(() => _toggling = true);
     try {
       await toggleShareReaction(
@@ -107,13 +115,27 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         FeedActionButton(
-          onTap: _toggling ? null : _toggle,
+          // NEVER `_toggling ? null : _toggle`. The like is already optimistic
+          // (`toggleReactionLocal` runs before the request), so disabling the
+          // button turned the heart red and instantly greyed it — [Opacity] at
+          // 0.5 for the whole round trip, up to the 15s mutation timeout —
+          // then snapped it back. `_toggle`'s own `_toggling` guard debounces
+          // the second tap, so nothing is lost by staying enabled, and an
+          // enabled pressable still enters the gesture arena and claims its
+          // pointer (`kallo_pressable.dart`, *Nesting*) rather than letting a
+          // double tap fall through to the post underneath.
+          onTap: _toggle,
           icon: LucideIcons.heart300,
+          // Optical, not a new tier: `heart` is ~20x17.5 on the 24 grid and
+          // tapers to a point, so at the tier's nominal 18 it read smaller
+          // than the two area-filling glyphs beside it.
+          glyphSize: 20,
           // Lucide is a FONT here, so `Icon(fill:)` never filled the heart on
           // the phone: the hearted state is its own SVG glyph, painted in the
           // swipe-to-delete red so a hearted post looks hearted from across
-          // the row.
-          activeGlyph: reactions.mine ? const FilledHeart() : null,
+          // the row. Same 20 as the outline, or the post would twitch a size
+          // as it is hearted.
+          activeGlyph: reactions.mine ? const FilledHeart(size: 20) : null,
           // The name is SPOKEN — the visible text beside the glyph is a bare
           // count — and the state rides the same node, so the heart announces
           // as one "Heart, 2, button" that is on or off.
@@ -129,6 +151,10 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
         FeedActionButton(
           onTap: widget.onReply,
           icon: LucideIcons.messageCircle300,
+          // The two area-filling glyphs come DOWN to the heart's optical
+          // weight instead: a convex ~20x20 shape at 18 out-inks a heart at
+          // the same 18.
+          glyphSize: 17,
           semanticLabel: tr('groups.feed.reply'),
           // The count rides the glyph exactly as the heart's does — that IS
           // the reply count now that the card shows no replies under the
@@ -143,6 +169,8 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           FeedActionButton(
             onTap: _logging ? null : _log,
             icon: LucideIcons.copy300,
+            // Same optical step down as the bubble, and for the same reason.
+            glyphSize: 17,
             label: tr('groups.feed.logCopy'),
           ),
       ],
