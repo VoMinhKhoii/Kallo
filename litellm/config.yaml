@@ -2,41 +2,41 @@ model_list:
   # Primary model group for meal analysis & decomposition (Gemini Flash pool)
   - model_name: gemini-3.1-flash-lite
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3.1-flash-lite
       api_key: os.environ/GEMINI_API_KEY_1
   - model_name: gemini-3.1-flash-lite
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3.1-flash-lite
       api_key: os.environ/GEMINI_API_KEY_2
   - model_name: gemini-3.1-flash-lite
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3.1-flash-lite
       api_key: os.environ/GEMINI_API_KEY_3
 
   - model_name: gemini-3-flash-preview
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3-flash-preview
       api_key: os.environ/GEMINI_API_KEY_1
   - model_name: gemini-3-flash-preview
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3-flash-preview
       api_key: os.environ/GEMINI_API_KEY_2
   - model_name: gemini-3-flash-preview
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-3-flash-preview
       api_key: os.environ/GEMINI_API_KEY_3
 
   - model_name: gemini-2.5-flash
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-flash-latest
       api_key: os.environ/GEMINI_API_KEY_1
   - model_name: gemini-2.5-flash
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-flash-latest
       api_key: os.environ/GEMINI_API_KEY_2
   - model_name: gemini-2.5-flash
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-flash-latest
       api_key: os.environ/GEMINI_API_KEY_3
 
   - model_name: gemini-1.5-flash
