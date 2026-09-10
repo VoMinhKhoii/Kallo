@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -40,14 +40,19 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///     `/nutrition`, `/circle`) plus the off-bar `/admin`. Each is its own
 ///     branch so state/scroll persist across tab switches.
 ///   • `/logging` is a ROOT route pushed full-screen over the shell (the
-///     pill nav's Log item; Cupertino swipe-back returns to the tab the user
-///     came from — feed state lives in providers, so nothing is lost).
+///     pill nav's Log item; swipe-back returns to the tab the user came from —
+///     feed state lives in providers, so nothing is lost).
 ///   • `/start`, `/sign-in` (+ `/sign-in/email`), `/sign-up`, `/onboarding`,
 ///     `/save-plan` (+ `/save-plan/email`),
 ///     `/welcome` and `/settings` are standalone root routes (`/settings`
-///     pushes over the shell from the dashboard avatar with Cupertino
-///     swipe-back).
+///     pushes over the shell from the dashboard avatar).
 ///   • `/` redirects based on auth + onboarding state.
+///
+/// Pages are `MaterialPage`, NOT `CupertinoPage`: the app's transition and its
+/// full-width back drag are installed once in `KalloTheme.light`'s
+/// `pageTransitionsTheme` (`shell/nav/swipe_back/`), and a `CupertinoPage`
+/// builds its own transition without ever consulting the theme. So a route
+/// added here inherits the gesture by doing nothing.
 ///
 /// The redirect diverges from the web auth gate in `middleware.ts` from Phase
 /// C2 on: mobile runs onboarding BEFORE sign-in, so a signed-out user is not
@@ -155,23 +160,23 @@ final routerProvider = Provider<GoRouter>((ref) {
             (context, state) =>
                 ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
       ),
-      // Settings pushes over the shell (Cupertino swipe-back) from the header
-      // avatar — it's an account surface, not a primary tab destination.
+      // Settings pushes over the shell from the header avatar — it's an
+      // account surface, not a primary tab destination.
       GoRoute(
         path: '/settings',
         parentNavigatorKey: _rootKey,
         pageBuilder:
             (context, state) =>
-                const CupertinoPage<void>(child: SettingsScreen()),
+                const MaterialPage<void>(child: SettingsScreen()),
       ),
       // Paywall — pushed over the shell (from Settings, or when a gated action
-      // hits an HTTP 402). Cupertino swipe-back like Settings. `?onboarding=1`
+      // hits an HTTP 402), like Settings. `?onboarding=1`
       // is the last step of the first run: both exits then continue INTO the
       // app instead of popping back to the setup interstitial.
       GoRoute(
         path: '/paywall',
         parentNavigatorKey: _rootKey,
-        pageBuilder: (context, state) => CupertinoPage<void>(
+        pageBuilder: (context, state) => MaterialPage<void>(
           child: PaywallScreen(
             onboarding: state.uri.queryParameters['onboarding'] == '1',
           ),
@@ -186,7 +191,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder:
             (context, state) =>
-                const CupertinoPage<void>(child: LoggingScreen()),
+                const MaterialPage<void>(child: LoggingScreen()),
       ),
 
       // One Circle post and its replies, pushed over the shell from the feed's
@@ -203,7 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/circle/:shareId',
         parentNavigatorKey: _rootKey,
         pageBuilder:
-            (context, state) => CupertinoPage<void>(
+            (context, state) => MaterialPage<void>(
               child: CircleThreadScreen(
                 shareId: state.pathParameters['shareId'] ?? '',
                 scope: state.uri.queryParameters['scope'],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../shell/nav/swipe_back/swipe_back_transitions.dart';
 import 'kallo_colors.dart';
 import 'kallo_typography.dart';
 
@@ -183,6 +184,19 @@ abstract final class KalloTheme {
         foregroundColor: KalloColors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
+      ),
+      // Cupertino's slide, with the back drag widened from iOS's 20pt edge
+      // strip to the whole page (`shell/nav/swipe_back/`). Registered for
+      // android as well as the Apple platforms on purpose: widget tests run as
+      // android, so an iOS-only registration would make the gesture
+      // untestable, and android already got Cupertino transitions on the
+      // routes that used to be `CupertinoPage`.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.iOS: KalloSwipeBackTransitionsBuilder(),
+          TargetPlatform.macOS: KalloSwipeBackTransitionsBuilder(),
+          TargetPlatform.android: KalloSwipeBackTransitionsBuilder(),
+        },
       ),
       // Cards separate by surface alone on the #F8F7F4 canvas: solid white,
       // radius 22, NO border, NO shadow (native pass, 2026-08-31).
