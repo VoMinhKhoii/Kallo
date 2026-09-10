@@ -98,3 +98,6 @@ scripts/eval/*.json
 # One-off local eval harnesses — throwaway probes, not a shared entry point.
 # They live in scripts/eval/local/ alongside the tracked one-off captures.
 scripts/eval/local/*.local.ts
+
+# Scratch design canvases seeded by the `design` skill.
+.design/
