@@ -2,9 +2,9 @@ import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { logBarcodeMealSchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
+import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { stageBarcodeMeal } from '@/lib/domain/barcode/service';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { mapBarcodeServiceError } from '../_errors';
 
 export const runtime = 'nodejs';
 

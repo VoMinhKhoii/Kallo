@@ -16,6 +16,8 @@ import 'package:kallo_mobile/services/http/api_client.dart';
 
 import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
 
 /// "No product found" used to collapse the sheet into a short white panel —
 /// red alert puck, the raw code, and four stacked full-width actions, one of
@@ -153,6 +155,7 @@ void main() {
                               child: BarcodeScannerSheet(
                                 userId: 'user-1',
                                 date: '2026-09-01',
+                                purpose: ScanPurpose.log,
                                 onScanLabelInstead: () {},
                                 onFallbackToText: () {},
                               ),

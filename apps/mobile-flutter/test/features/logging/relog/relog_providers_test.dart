@@ -208,6 +208,36 @@ void main() {
       },
     );
 
+    test('a day refresh that FAILS does not fail the stage', () async {
+      // The stage COMMITTED the moment the POST returned. Surface a flaky
+      // refetch as a staging failure and the caller keeps the picks, the user
+      // resubmits, and a fresh attempt id stages a SECOND pending row — two
+      // review cards for one meal.
+      api.handler = (method, path, __) {
+        if (method == 'POST') return {'analysisId': 'analysis-1'};
+        throw Exception('the network went away after the stage landed');
+      };
+
+      await expectLater(
+        stageRelogAnalysis(
+          // Refresh AND the invalidate it falls back to both throw — the
+          // sheet's own scope going away while the POST was in flight.
+          _DeadRef(container),
+          userId: 'user-1',
+          date: '2026-07-02',
+          items: const [RelogMealRef(sourceMealId: 'meal-9')],
+          attemptId: 'attempt-1',
+        ),
+        completes,
+      );
+
+      expect(
+        api.requests.any((r) => r.$2.startsWith('/api/v1/logging/day')),
+        isTrue,
+        reason: 'the refresh was attempted — it just did not survive',
+      );
+    });
+
     test('always sends an attemptId — the server requires one', () async {
       // Without it the server's (user_id, attempt_id) upsert degenerates into
       // an INSERT per call, since NULLs never conflict.
@@ -247,6 +277,16 @@ class _Ref implements WidgetRef {
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnsupportedError('not needed by these tests');
+}
+
+/// A ref whose scope is GONE: the refresh fails and so does every invalidate
+/// it might fall back to. Nothing here may reach the caller.
+class _DeadRef extends _Ref {
+  _DeadRef(super.container);
+
+  @override
+  void invalidate(ProviderOrFamily provider) =>
+      throw StateError('the scope this ref belonged to was disposed');
 }
 
 // The five-minute keep-alive means a signed-out account's meal names, macros

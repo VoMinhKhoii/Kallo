@@ -9,8 +9,9 @@ import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
 import '../../data/logging_ui_state.dart';
 import '../../data/stream_analysis_controller.dart';
-import '../../logic/feed/analysis_actions.dart';
-import '../../logic/feed/analysis_run.dart';
+import '../../logic/composer/feed_sheets.dart';
+import '../../logic/feed/analysis/analysis_actions.dart';
+import '../../logic/feed/analysis/analysis_run.dart';
 import '../../logic/feed/cheat_actions.dart';
 import '../../logic/feed/confirm_actions.dart';
 import '../../logic/feed/meal_actions.dart';
@@ -22,7 +23,6 @@ import '../../logic/relog/relog_picker_controller.dart';
 import '../composer/feed_composer.dart';
 import '../composer/meal_input.dart';
 import '../relog/mention_text_controller.dart';
-import '../sheets/feed_sheets.dart';
 import 'feed_footer.dart';
 import 'feed_list.dart';
 import 'feed_scroll_pin.dart';
@@ -79,9 +79,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
 
-  /// Keeps the tail in view while the answer lands. See [FeedScrollPin] — a
-  /// single post-frame scroll aimed at a `maxScrollExtent` that the streaming
-  /// card and the keyboard inset were both still changing, so it stopped short.
+  /// Carries a new turn to the top of the screen — see [FeedScrollPin], which
+  /// does it once per request and then lets go.
   final FeedScrollPinHandle _pin = FeedScrollPinHandle();
 
   /// Inline error for a failed confirm (saving a meal) — not analysis errors,
@@ -250,7 +249,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       date: widget.date,
       mode: mode,
       onPersistentMode: cheatActions.setMode,
-      onFallbackToText: _inputController.focus,
+      focusComposer: _inputController.focus,
+      composer: _textController,
+      onLogged: () => _pin.pinToBottom(widget.date),
     );
 
     final footer = FeedFooter(
@@ -277,10 +278,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     return ScrollSeparator(
       header: MacroSummary(view: view, profile: profile),
 
-      overlay: Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
+      // Filled, not bottom-anchored: the dock must be BOUNDED by this Stack or
+      // the `/` picker grows past its top and is clipped. See [FeedComposer].
+      overlay: Positioned.fill(
         child: FeedComposer(
           view: view,
           calorieTarget: profile.calorieTarget,
@@ -300,7 +300,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
           analyzing: stream.isAnalyzing,
           onModePressed: sheets.openMode,
-          onBarcodePressed: sheets.openBarcode,
+          onBarcodePressed: sheets.openBarcodeFromComposer,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
               () => _rebuild(() => _noticeDismissedFor = widget.date),

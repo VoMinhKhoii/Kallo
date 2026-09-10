@@ -7,7 +7,7 @@
  * for every source, and the cache-read path re-applies the sizing rule so
  * persisted rows obey the same bounds as freshly ingested ones.
  */
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/core/validation/food-limits';
 import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
 
 export function parseNumber(val: unknown): number | null {

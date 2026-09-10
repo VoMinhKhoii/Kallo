@@ -24,6 +24,7 @@ import {
   barcodeCacheId,
   cacheBarcodeProduct,
   findCachedRow,
+  findCachedRows,
   getBarcodeSourceIds,
   rowToProduct,
 } from '../cache';
@@ -64,6 +65,8 @@ describe('barcodeCacheId', () => {
 });
 
 describe('findCachedRow', () => {
+  // One element of findCachedRows — these pin that the single read keeps the
+  // same ranking rule rather than growing a second copy of it.
   it('looks every provider prefix up in a single query', async () => {
     const { from, where, limit } = mockSelect([]);
 
@@ -95,6 +98,59 @@ describe('findCachedRow', () => {
   it('is undefined when nothing is cached', async () => {
     mockSelect([]);
     await expect(findCachedRow('0000000000000')).resolves.toBeUndefined();
+  });
+});
+
+describe('findCachedRows', () => {
+  it('looks every barcode × provider up in a single query', async () => {
+    const { limit } = mockSelect([]);
+
+    await findCachedRows(['049000050103', '8934563138162']);
+
+    // 2 barcodes × 2 providers. One round trip: a composer submit can carry 20
+    // scanned picks, against a pool that defaults to two connections.
+    expect(mockDbSelect).toHaveBeenCalledTimes(1);
+    expect(limit).toHaveBeenCalledWith(4);
+  });
+
+  it('collapses duplicate barcodes before querying', async () => {
+    const { limit } = mockSelect([]);
+
+    await findCachedRows(['8934563138162', '8934563138162']);
+
+    expect(limit).toHaveBeenCalledWith(2);
+  });
+
+  it('runs no query at all for an empty list', async () => {
+    mockSelect([]);
+
+    await expect(findCachedRows([])).resolves.toEqual(new Map());
+    expect(mockDbSelect).not.toHaveBeenCalled();
+  });
+
+  it('applies the provider rank PER barcode, not per returned row', async () => {
+    // Postgres does not define row order for an `IN` list, so the winner is
+    // chosen by rank in JS — here the off_ row is returned first for both.
+    mockSelect([
+      cachedRow({ id: 'off_049000050103' }),
+      cachedRow({ id: 'off_8934563138162' }),
+      cachedRow({ id: 'fdc_049000050103' }),
+    ]);
+
+    const rows = await findCachedRows(['049000050103', '8934563138162']);
+
+    expect(rows.get('049000050103')?.id).toBe('fdc_049000050103');
+    // Legacy off_-only rows still resolve, in the same batch.
+    expect(rows.get('8934563138162')?.id).toBe('off_8934563138162');
+  });
+
+  it('omits a barcode nothing is cached under', async () => {
+    mockSelect([cachedRow({ id: 'off_8934563138162' })]);
+
+    const rows = await findCachedRows(['8934563138162', '0000000000000']);
+
+    expect(rows.has('0000000000000')).toBe(false);
+    expect(rows.size).toBe(1);
   });
 });
 

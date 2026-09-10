@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/form/decimal_input.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../data/dashboard_providers.dart';
@@ -23,6 +22,7 @@ import '../../logic/dashboard_spacing.dart';
 import 'weight_amount_field.dart';
 import 'weight_submit_button.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../models/http/api_error.dart';
 
 const double _weightMin = 30;
 const double _weightMax = 300;

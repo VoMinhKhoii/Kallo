@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/skeleton.dart';
@@ -16,6 +15,7 @@ import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import 'circle_feed_test_support.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// The Circle thread page — one post and its replies on their own route.
 ///

@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../models/http/api_error.dart';
 import '../../../models/social/circle.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';

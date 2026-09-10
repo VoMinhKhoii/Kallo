@@ -22,6 +22,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
+import '../../../models/http/api_error.dart';
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
 const Duration kCirclePollInterval = Duration(seconds: 30);

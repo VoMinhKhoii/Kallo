@@ -17,6 +17,7 @@ import 'package:kallo_mobile/models/social/circle.dart';
 
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 final _groupsRefreshProvider =
     StateProvider<AsyncValue<List<ChatGroupIdentity>>>(

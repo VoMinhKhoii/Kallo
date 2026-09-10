@@ -55,8 +55,8 @@ bool isInsideMention(int offset, List<RelogMention> mentions) =>
 
 /// Re-locate every mention after the text changed.
 ///
-/// Walks the mentions in order, claiming the next occurrence of each label at
-/// or after the previous one ended. A mention whose label no longer appears has
+/// Walks the mentions in order, claiming the occurrence of each label nearest
+/// to where it last sat, at or after the previous one ended. A mention whose label no longer appears has
 /// been edited or deleted by the user, so it is DROPPED — and with it the
 /// reference, which is what stops a half-deleted name from still logging a
 /// dish.
@@ -91,13 +91,59 @@ List<RelogMention> reconcileMentions(
   var cursor = 0;
   for (final (_, mention) in indexed) {
     if (mention.label.isEmpty) continue;
-    final index = value.indexOf(mention.label, cursor);
+    // A mention claims the occurrence NEAREST to where it last sat, not the
+    // first one after the cursor. This is what binds a freshly spliced pick to
+    // the offset it was spliced AT: typing the product name as prose first —
+    // "Sữa TH (180g) roi " — and then scanning that same product must tint the
+    // run just inserted, not the words typed a moment ago, which carry no
+    // reference and would take the tint (and, next keystroke, the reference)
+    // with them. Nearest rather than EXACT because an offset only stays exact
+    // until the next character is typed in front of it, and one keystroke is
+    // not an edit to the pick: it moves, it does not jump to the prose copy.
+    final index = _claim(value, mention, cursor);
     if (index == -1) continue;
     surviving.add(mention.movedTo(index));
     cursor = index + mention.label.length;
   }
   return surviving;
 }
+
+/// The occurrence of [m]'s label at or after [cursor] that sits closest to the
+/// offset [m] claims, or -1 when the label no longer appears there at all.
+///
+/// Monotone from [cursor], so the walk still keeps duplicate picks distinct —
+/// each one searches from where the previous one ended. The scan stops at the
+/// first occurrence PAST the claimed offset: occurrences only run left to
+/// right, so from there the distance can only grow.
+int _claim(String value, RelogMention m, int cursor) {
+  var best = -1;
+  for (
+    var i = value.indexOf(m.label, cursor);
+    i != -1;
+    i = value.indexOf(m.label, i + 1)
+  ) {
+    if (best == -1 || (i - m.start).abs() < (best - m.start).abs()) best = i;
+    if (i > m.start) break;
+  }
+  return best;
+}
+
+/// Move every mention at or after [at] by [delta] — the arithmetic of a splice.
+///
+/// Applied BEFORE [reconcileMentions] so each mention arrives carrying its
+/// post-splice offset. That is what makes the reconcile order-proof: the walk
+/// sorts on real positions instead of depending on the caller listing the
+/// newcomer first and the tie breaking its way. A caret sitting anywhere but
+/// the end of the sentence produced exactly that dependency, and it broke as
+/// soon as a separator space pushed the newcomer one past the splice index.
+List<RelogMention> shiftMentions(
+  List<RelogMention> mentions, {
+  required int at,
+  required int delta,
+}) => [
+  for (final mention in mentions)
+    mention.start >= at ? mention.movedTo(mention.start + delta) : mention,
+];
 
 /// Replace the `/`-token with the picked label.
 ///
@@ -117,6 +163,66 @@ List<RelogMention> reconcileMentions(
     value: '$before$label$separator$after',
     caret: token.start + label.length + separator.length,
     start: token.start,
+  );
+}
+
+final RegExp _endsBlank = RegExp(r'\s$');
+final RegExp _startsBlank = RegExp(r'^\s');
+
+/// Where a spliced pick actually lands, and the text it lands in.
+///
+/// Two things sit between "the user's selection" and "an index to splice at":
+///
+///  - A caret resting INSIDE a committed label would cut that label in half —
+///    `/Phở bò` with the caret at 3 became `/Ph <product> ở bò`, which no
+///    longer matches the label [reconcileMentions] looks for, so the relog
+///    reference was destroyed by inserting an unrelated one. The caret moves
+///    to the END of the mention it sits in: a pick never splits a pick.
+///  - A selection RANGE has no insertion point at all. The pick REPLACES it,
+///    the same thing typing a character would do, so the range is removed here
+///    and the splice happens where it began.
+({String text, int at}) resolvePickSplice(
+  String text,
+  List<RelogMention> mentions, {
+  required int start,
+  required int end,
+}) {
+  final from = start.clamp(0, text.length);
+  final to = end.clamp(from, text.length);
+  if (to > from) return (text: text.replaceRange(from, to, ''), at: from);
+  for (final mention in mentions) {
+    // `>` not `>=`: a caret resting on the label's FIRST character is in front
+    // of the pick, not inside it, so the newcomer goes there rather than being
+    // thrown to the far side of a pick the user was typing ahead of.
+    if (from > mention.start && from < mention.end) {
+      return (text: text, at: mention.end);
+    }
+  }
+  return (text: text, at: from);
+}
+
+/// Splice [label] in at [caret], consuming nothing — how a scanned product
+/// enters a sentence, since nothing was typed to summon it.
+///
+/// A space is added on each side only where one is missing, so the result reads
+/// as prose whether the caret sat mid-sentence, after a space, or at the end.
+/// ANY whitespace counts as that separator, newlines included: a pick spliced
+/// at the start of a fresh line must not be indented by a space of our own.
+({String value, int caret, int start}) insertMentionAt(
+  String value,
+  int caret,
+  String label,
+) {
+  final at = caret.clamp(0, value.length);
+  final before = value.substring(0, at);
+  final after = value.substring(at);
+  final lead = before.isEmpty || _endsBlank.hasMatch(before) ? '' : ' ';
+  final trail = _startsBlank.hasMatch(after) ? '' : ' ';
+  final start = before.length + lead.length;
+  return (
+    value: '$before$lead$label$trail$after',
+    caret: start + label.length + trail.length,
+    start: start,
   );
 }
 

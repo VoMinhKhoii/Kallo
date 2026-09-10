@@ -1,51 +1,36 @@
-import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
+import { resolveComposerPicks } from '@/lib/actions/meals/relog/resolve-picks';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import {
-  buildFrozenMealItem,
-  mergeRelogIntoPipelineResult,
-} from '@/lib/domain/logging/relog/build-relog-pipeline-result';
-import {
-  type RelogRef,
-  weakestConfidence,
-} from '@/lib/domain/logging/relog/relog';
-import { db } from '@/lib/infra/db/client';
+import { mergeRelogIntoPipelineResult } from '@/lib/domain/logging/relog/build-pick-pipeline-result';
+import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
 
 /**
- * Combined-relog merge for `/api/analyze-meal`: fold the user's picks into the
+ * Combined-pick merge for `/api/analyze-meal`: fold the user's picks into the
  * AI pipeline result AFTER the pipeline has run on the free text alone.
  *
  * The picks are resolved deterministically and copied verbatim (as frozen items
  * with degenerate bounded triples) — they NEVER enter `analyzeMeal`, so a past
- * dish's goal-adjusted numbers are reproduced, not re-estimated.
+ * dish's goal-adjusted numbers and a scanned label's printed ones are
+ * reproduced, not re-estimated. `resolveComposerPicks` owns both halves and the
+ * lock the relog half needs.
  *
- * The resolve runs in a short transaction with `FOR UPDATE` on the source meals
- * (like the direct writer + pure-relog staging): without the lock a concurrent
- * split-share could halve a source's rows and set `portion_factor < 1` between
- * the eligibility check and the row read, snapshotting halved rows under the
- * full dish name.
- *
- * Returns the merged result AND the resolved dish names, so the caller can fold
- * them into the persisted `rawInput` (otherwise the combined meal's history text
- * would be the free text alone, dropping the relogged dishes).
+ * Returns the merged result AND the resolved names, so the caller can fall back
+ * to them for the persisted `rawInput` when a client sent no `displayText`
+ * (otherwise the combined meal's history text would be the free text alone,
+ * dropping every pick from the label).
  */
 export async function applyRelogRefs(
   aiResult: PipelineResult,
-  refs: RelogRef[],
+  refs: ComposerPickRef[],
   userId: string
-): Promise<{ result: PipelineResult; dishNames: string[] }> {
-  const { dishes, sourceConfidences } = await db.transaction((tx) =>
-    resolveRelogSources(tx, userId, refs, { lock: true })
-  );
-  const relogItems = dishes.map((dish) => buildFrozenMealItem(dish));
-  const relogConfidence = weakestConfidence(sourceConfidences);
+): Promise<{ result: PipelineResult; pickNames: string[] }> {
+  const picks = await resolveComposerPicks(userId, refs);
+  // The picks' own confidence, which `mergeRelogIntoPipelineResult` then takes
+  // the weakest of against the AI half — a meal is no more confident than its
+  // least confident part, and the AI half can still pull a scan's 'high' down.
   const result = mergeRelogIntoPipelineResult(
     aiResult,
-    relogItems,
-    // `mergeRelogIntoPipelineResult` maps null/unknown → 'low' internally, so a
-    // null here can never silently upgrade the combined meal's confidence.
-    relogConfidence === 'medium' || relogConfidence === 'high'
-      ? relogConfidence
-      : 'low'
+    picks.items,
+    picks.confidence
   );
-  return { result, dishNames: dishes.map((d) => d.name) };
+  return { result, pickNames: picks.names };
 }

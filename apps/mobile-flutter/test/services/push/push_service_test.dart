@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/services/push/push_channel.dart';
 import 'package:kallo_mobile/services/push/push_service.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 typedef Request = ({String method, String path, Object? body});
 

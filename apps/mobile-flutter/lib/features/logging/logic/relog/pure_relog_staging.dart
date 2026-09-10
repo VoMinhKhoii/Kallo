@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../models/http/api_error.dart';
 import '../../../../models/logging/relog.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
@@ -60,8 +61,13 @@ Future<void> stagePureRelog(
   required MentionTextEditingController composer,
   required String userId,
   required String date,
-  required List<RelogRef> refs,
+  required List<ComposerPickRef> refs,
   required List<String> stageIds,
+
+  /// The composer's sentence with the `/` markers taken off — the label the
+  /// staged meal is saved under, in the order it was typed. Null or blank
+  /// leaves it off the wire entirely; see [stageRelogAnalysis].
+  required String? displayText,
   required VoidCallback onStaged,
   required ValueChanged<bool> onStagingChange,
 }) async {
@@ -73,6 +79,7 @@ Future<void> stagePureRelog(
       userId: userId,
       date: date,
       items: refs,
+      displayText: displayText,
       // Never the feed's own attempt id: the server upserts pending analyses on
       // (user_id, attempt_id), so borrowing the id of a revealed-but-
       // unconfirmed AI card would overwrite that card's row with this relog.
@@ -94,9 +101,21 @@ Future<void> stagePureRelog(
     // error toast would misreport. Server enforcement stays the only gate —
     // this is purely how the refusal is presented.
     if (context.mounted && !handledFeatureLock(context, error)) {
-      showTopToast(context, 'errors.internal'.tr());
+      showTopToast(context, _stageErrorKey(error).tr());
     }
   } finally {
     if (context.mounted) onStagingChange(false);
   }
 }
+
+/// The copy a failed stage deserves.
+///
+/// A scanned pick is a barcode the server re-resolves out of its cache, and a
+/// purged row comes back from the stage endpoint as `BARCODE_NOT_CACHED` (404)
+/// — the same envelope the barcode routes return. That is not an internal
+/// error and "something went wrong" leaves the user with nowhere to go, while
+/// "scan it again" is exactly the repair. Everything else stays generic.
+String _stageErrorKey(Object error) =>
+    error is ApiError && error.code == 'BARCODE_NOT_CACHED'
+        ? 'logging.barcode.error.notCached'
+        : 'errors.internal';

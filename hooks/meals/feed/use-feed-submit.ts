@@ -65,12 +65,11 @@ export function useFeedSubmit({
   const handleSubmit = async (override?: {
     message: string;
     refs?: RelogRef[];
-    /** What the CARD should say, when that differs from what the AI is sent.
-     *  A combined relog submits the free text alone but must still read as the
-     *  whole meal — the server labels the persisted row
-     *  `buildRelogRawInput([message, ...dishNames])`, so a card labelled with
-     *  the free text alone silently grows the relogged dishes back the moment
-     *  the persisted card replaces it. */
+    /** What the MEAL should be called, when that differs from what the AI is
+     *  sent. A combined relog submits the free text alone but must still read
+     *  as the whole meal, so this rides along as `displayText` and becomes the
+     *  persisted `meals.raw_input` — the card the user sees while it streams
+     *  and the meal that is saved carry one and the same label. */
     label?: string;
   }): Promise<boolean> => {
     if (stream.isAnalyzing) return false;
@@ -125,7 +124,7 @@ export function useFeedSubmit({
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         attemptId,
-        ...(refs && refs.length > 0 ? { refs } : {}),
+        ...(refs && refs.length > 0 ? { refs, displayText: label } : {}),
         ...(isCheat
           ? {
               mode: 'cheat' as const,

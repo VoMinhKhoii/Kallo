@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../../models/logging/scan_outcome.dart';
 import '../../../../../services/billing/feature_lock.dart';
 import '../../../data/label_scan_providers.dart';
 import '../../../logic/label/review.dart';
@@ -71,7 +72,7 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
     final saved = await ref
         .read(labelScanProvider.notifier)
         .logMeal(userId: widget.userId, date: widget.date, review: review);
-    if (saved && mounted) Navigator.of(context).pop(true);
+    if (saved && mounted) Navigator.of(context).pop(const ScanSaved());
   }
 
   @override

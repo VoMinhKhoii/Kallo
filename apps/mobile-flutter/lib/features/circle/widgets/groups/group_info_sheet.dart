@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
@@ -15,6 +14,7 @@ import '../../data/feed_providers.dart';
 import 'group_add_people.dart';
 import '../states/group_info_skeleton.dart';
 import 'group_members_list.dart';
+import '../../../../models/http/api_error.dart';
 
 class GroupInfoSheet extends ConsumerStatefulWidget {
   const GroupInfoSheet({required this.groupId, super.key});
