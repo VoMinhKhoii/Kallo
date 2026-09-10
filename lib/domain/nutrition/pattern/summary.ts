@@ -36,8 +36,25 @@ interface NutrientBuckets {
   limitedDataCount: number;
 }
 
-export function resolveInitialRange(loggedDaysLast30: number): NutritionRange {
-  return loggedDaysLast30 < 14 ? '7d' : '30d';
+/**
+ * The range a `range: 'auto'` request lands on — always `'7d'`.
+ *
+ * Both clients send `auto` and neither hardcodes a window, so this one line is
+ * where "which range does Nutrition open on" is decided for web and mobile at
+ * once. It used to open on `'30d'` for anyone with 14+ logged days in the last
+ * 30; a month of bars is a report, and the surface is meant to answer "how has
+ * this week gone". Seven days is the answer for everyone, including the heavy
+ * loggers the old branch promoted.
+ *
+ * It takes no argument on purpose. The old `loggedDaysLast30` parameter was
+ * the whole branch, and keeping it would leave every caller computing an
+ * answer this function no longer reads. The COUNT itself is still very much
+ * alive — it rides the overview payload via `actions/overview/mapper.ts` and
+ * drives the trend thresholds in `getTrendStatus` — it just no longer picks
+ * the range.
+ */
+export function resolveInitialRange(): NutritionRange {
+  return '7d';
 }
 
 export function getTrendStatus(

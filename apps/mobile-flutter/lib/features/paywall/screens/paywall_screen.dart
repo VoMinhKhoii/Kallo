@@ -55,15 +55,18 @@ class PaywallScreen extends ConsumerWidget {
                 body: tr('paywall.verifyPending'),
                 leading: const PaywallSpinner(),
               ),
+              stayFree: true,
             ),
-            error: (_, _) => _note(
+            // The entitlement never arrived, so we cannot know this user is
+            // premium — and an unreadable entitlement is not something they
+            // can retry their way out of. Show the ordinary paywall against
+            // the conservative free snapshot with the CTA dead, rather than
+            // replacing the page with an error the user did not cause.
+            error: (_, _) => _purchase(
               context,
-              PaywallRetryNote(
-                message: tr('paywall.loadError'),
-                onRetry: () => ref
-                    .read(entitlementsProvider(userId).notifier)
-                    .reconcile(),
-              ),
+              EntitlementState.free,
+              state,
+              storeUnavailable: true,
             ),
           ),
         ),
@@ -77,8 +80,9 @@ class PaywallScreen extends ConsumerWidget {
   Widget _purchase(
     BuildContext context,
     EntitlementState entitlement,
-    PaywallState state,
-  ) {
+    PaywallState state, {
+    bool storeUnavailable = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -104,6 +108,7 @@ class PaywallScreen extends ConsumerWidget {
                   child: PaywallPlanSheet(
                     entitlement: entitlement,
                     state: state,
+                    storeUnavailable: storeUnavailable,
                   ),
                 ),
               ),
@@ -117,10 +122,14 @@ class PaywallScreen extends ConsumerWidget {
   Widget _premium(BuildContext context, EntitlementState entitlement) =>
       _note(context, PaywallPremiumBody(entitlement: entitlement));
 
-  Widget _note(BuildContext context, Widget child) => Column(
+  /// [stayFree] is false only on the premium face — a subscriber has no Free
+  /// to choose. Every face that is not KNOWN to be premium keeps both exits,
+  /// so the screen is always closable two ways.
+  Widget _note(BuildContext context, Widget child, {bool stayFree = false}) =>
+      Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _header(context, stayFree: false),
+          _header(context, stayFree: stayFree),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(

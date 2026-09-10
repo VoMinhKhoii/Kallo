@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/calm_tokens.dart';
 import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_gradients.dart';
 import '../../theme/kallo_theme.dart';
 import 'add_sheet.dart';
 import 'nav_actions.dart';
@@ -136,9 +137,16 @@ class PillNavBar extends ConsumerWidget {
   }
 }
 
-/// The 52pt center action: a beige circle with an ink plus (the button
-/// system's in-app primary), the one piece of nav chrome with its own
+/// The 52pt center action: an ink plus on the brand sweep
+/// ([KalloGradients.brandSweep]), the one piece of nav chrome with its own
 /// shadow.
+///
+/// It used to wear the flat beige `btnPrimarySoft` of the in-app primary
+/// button. It is not one of those: it is the app's single always-present
+/// create affordance, and on a white capsule the beige disc read as chrome
+/// rather than as the thing you tap. The gradient is the onboarding sweep's
+/// own two hues at full opacity, which is what carries them at 52pt — see the
+/// token's doc for why the aurora's alphas cannot be reused here.
 class _AddButton extends StatelessWidget {
   const _AddButton({required this.onTap});
 
@@ -162,7 +170,9 @@ class _AddButton extends StatelessWidget {
               width: kNavAddSize,
               height: kNavAddSize,
               decoration: const BoxDecoration(
-                color: KalloColors.btnPrimarySoft,
+                // `gradient`, not `color` — BoxDecoration takes one or the
+                // other, never both.
+                gradient: KalloGradients.brandSweep,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
