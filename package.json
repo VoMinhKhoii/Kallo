@@ -13,6 +13,7 @@
     "eval:pipeline": "bun --conditions=react-server scripts/eval/run-eval.ts",
     "eval:smoke": "bun --conditions=react-server scripts/eval/run-eval.ts --tier smoke --concurrency 1",
     "eval:core": "bun --conditions=react-server scripts/eval/run-eval.ts --tier core --concurrency 2",
+    "test:litellm": "bun scripts/dev/test-litellm-failover.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "bunx drizzle-kit generate",

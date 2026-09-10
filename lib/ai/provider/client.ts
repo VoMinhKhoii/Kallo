@@ -2,7 +2,8 @@ import { GoogleGenAI } from '@google/genai';
 
 export type GeminiProviderConfig =
   | { provider: 'ai-studio'; apiKey: string }
-  | { provider: 'vertex'; project: string; location: string };
+  | { provider: 'vertex'; project: string; location: string }
+  | { provider: 'litellm'; baseUrl: string; apiKey: string };
 
 /**
  * Resolve the Gemini provider config from environment variables.
@@ -11,6 +12,8 @@ export type GeminiProviderConfig =
  * - AI_PROVIDER="vertex": uses GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION via
  *   Application Default Credentials. On Cloud Run, ADC comes from the service
  *   account; locally it comes from `gcloud auth application-default login`.
+ * - AI_PROVIDER="litellm": uses LITELLM_BASE_URL + LITELLM_MASTER_KEY for local/sidecar
+ *   proxy gateway routing & key rotation.
  *
  * Throws with a clear message if the required variables for the chosen
  * provider are missing or if AI_PROVIDER has an unknown value.
@@ -40,50 +43,61 @@ export function resolveGeminiProvider(
     return { provider: 'ai-studio', apiKey };
   }
 
+  if (provider === 'litellm') {
+    const rawBaseUrl = env.LITELLM_BASE_URL?.trim() || 'http://localhost:4000';
+    const baseUrl = rawBaseUrl.endsWith('/gemini')
+      ? rawBaseUrl
+      : `${rawBaseUrl.replace(/\/$/, '')}/gemini`;
+    const apiKey =
+      env.LITELLM_MASTER_KEY?.trim() || 'sk-kallo-litellm-local-dev-key';
+    return { provider: 'litellm', baseUrl, apiKey };
+  }
+
   throw new Error(
-    `Unknown AI_PROVIDER="${provider}"; expected "ai-studio" or "vertex"`
+    `Unknown AI_PROVIDER="${provider}"; expected "ai-studio", "vertex", or "litellm"`
   );
 }
 
 /**
  * Module-level cache of GoogleGenAI clients keyed by provider identity.
- *
- * Why: on the Vertex path the SDK constructs a GoogleAuth instance whose
- * cachedCredential lives only for the lifetime of that GoogleGenAI. A fresh
- * client per request means a fresh metadata-server token fetch per request
- * (~10-40 ms warm, ~50-150 ms cold) on the critical path of every meal
- * analysis. Reusing a single client per {provider,project,location|apiKey}
- * lets the SDK amortize OAuth token refresh across requests (~1 fetch/hour).
- *
- * Cache-miss logs double as a startup signal for which provider resolved —
- * silent fallback to ai-studio (e.g. an empty AI_PROVIDER env var on a
- * Vertex-bound Cloud Run service) is visible in Cloud Logging on first use.
  */
 const aiClientCache = new Map<string, GoogleGenAI>();
 
 function cacheKeyFor(config: GeminiProviderConfig): string {
-  return config.provider === 'vertex'
-    ? `vertex|${config.project}|${config.location}`
-    : `ai-studio|${config.apiKey}`;
+  if (config.provider === 'vertex') {
+    return `vertex|${config.project}|${config.location}`;
+  }
+  if (config.provider === 'litellm') {
+    return `litellm|${config.baseUrl}|${config.apiKey}`;
+  }
+  return `ai-studio|${config.apiKey}`;
 }
 
 export function getOrCreateAiClient(config: GeminiProviderConfig): GoogleGenAI {
   const key = cacheKeyFor(config);
   let ai = aiClientCache.get(key);
   if (!ai) {
-    ai =
-      config.provider === 'vertex'
-        ? new GoogleGenAI({
-            vertexai: true,
-            project: config.project,
-            location: config.location,
-          })
-        : new GoogleGenAI({ apiKey: config.apiKey });
+    if (config.provider === 'vertex') {
+      ai = new GoogleGenAI({
+        vertexai: true,
+        project: config.project,
+        location: config.location,
+      });
+    } else if (config.provider === 'litellm') {
+      ai = new GoogleGenAI({
+        apiKey: config.apiKey,
+        httpOptions: { baseUrl: config.baseUrl },
+      });
+    } else {
+      ai = new GoogleGenAI({ apiKey: config.apiKey });
+    }
     aiClientCache.set(key, ai);
     const summary =
       config.provider === 'vertex'
         ? `vertex project=${config.project} location=${config.location}`
-        : 'ai-studio';
+        : config.provider === 'litellm'
+          ? `litellm baseUrl=${config.baseUrl}`
+          : 'ai-studio';
     console.info(`[gemini] provider resolved: ${summary}`);
   }
   return ai;

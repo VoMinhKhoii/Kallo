@@ -265,7 +265,6 @@ async function run(text: string, attempts = 3) {
   throw new Error('unreachable');
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: throwaway capture record
 const byKey: Record<string, any> = (() => {
   try {
     return JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
@@ -335,7 +334,6 @@ for (const category of [...new Set(SAMPLES.map((s) => s.category))]) {
     for (const r of rows) {
       const t = r.parsed.totalMacros;
       const vessels = r.parsed.items
-        // biome-ignore lint/suspicious/noExplicitAny: capture record
         .map((it: any) =>
           it.vessel
             ? `${it.vessel.family} t${it.vessel.tier}${it.vessel.kind ? `/${it.vessel.kind}` : ''}`
