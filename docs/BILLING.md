@@ -175,14 +175,29 @@ purchase boundaries refuse to load offerings. Disable purchases first during
 rollback, independently of access enforcement.
 
 On **mobile**, a paywall reached anyway with the switch off (a deep link, a
-gated action) renders its ordinary face — header, Pro pitch, plan sheet — with
-the CTA **disabled** and no error copy, no retry and no empty state (2026-09-10).
-A closed store is not a failure the user can act on, and replacing the page with
-an error hid the pitch and offered a retry for something a retry cannot fix. The
-close glyph and "Stay on Free" are present on every non-premium face, so the
-screen is never a trap. The same treatment covers a missing RevenueCat key and
-an unreadable entitlement; only the mid-purchase phases (`verifying`,
-`activationPending`) still speak, because money is actually in flight.
+gated action) renders its ordinary face — header, guide, plan toggle, Free ↔ Pro
+table — with the buy button **disabled** and no error copy, no retry and no
+empty state (2026-09-10). A closed store is not a failure the user can act on,
+and replacing the page with an error hid the pitch and offered a retry for
+something a retry cannot fix. The close glyph and "Stay on Free" are present on
+every non-premium face, so the screen is never a trap. The same treatment covers
+a missing RevenueCat key and an unreadable entitlement; only the mid-purchase
+phases (`verifying`, `activationPending`) still speak, because money is actually
+in flight.
+
+**The face itself (2026-09-10).** `PaywallScreen` is the `StartAurora` sweep,
+the wordmark header, then `PaywallPurchaseFace`: the guide bun saying what the
+yearly plan saves (or how much trial is left), "Choose your plan", a
+monthly/yearly toggle whose yearly half wears the gold, and an eight-row
+`PlanComparison` of the gate matrix in `entitlement/features.ts`. Two of those
+rows tick in BOTH columns on purpose — manual entry, barcode and macro tracking
+are ungated forever, and reading/reacting/replying in Circle are never gated, so
+a table showing Free as empty would be a claim the code does not support. The
+buy button, its renewal line, "Stay on Free", the consent sentence and
+Restore/Terms/Privacy are pinned to the bottom edge; only the table scrolls.
+Per Apple's April 2026 removal of Cal AI, the renewal line leads with the amount
+actually billed and carries the derived per-month figure in brackets after it,
+is never behind a toggle, and there is no second paywall on dismiss.
 
 The 402 body:
 

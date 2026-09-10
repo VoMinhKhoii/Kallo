@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/brand/wordmark_bar.dart';
-import '../../../shared/widgets/typography/meta_action.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/brand/wordmark_bar.dart';
+import '../../../../shared/widgets/typography/meta_action.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// The paywall's chrome: close glyph left, the wordmark centred, "Stay on
 /// Free" right — the same [WordmarkBar] the onboarding steps wear, so the last

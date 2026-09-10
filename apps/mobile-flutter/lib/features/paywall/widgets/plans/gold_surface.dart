@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_theme.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// The gold treatment the yearly plan row wears — the ONE loud surface in the
 /// app, and the only place these hexes are allowed to exist. Deliberately
@@ -20,10 +20,17 @@ class GoldPlanSurface extends StatelessWidget {
     required this.radius,
     required this.child,
     this.chipLabel,
+    this.glow = true,
     super.key,
   });
 
   final double radius;
+
+  /// The gold cast the surface throws on the canvas beneath it. Off for a
+  /// surface that is present but NOT the current choice — the unselected half
+  /// of the plan toggle — where a glow would put two lit objects side by side
+  /// and leave the selection unreadable.
+  final bool glow;
 
   /// "Best value · save 40%". Absent when the saving cannot be computed.
   final String? chipLabel;
@@ -36,7 +43,7 @@ class GoldPlanSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget surface = DecoratedBox(
-      decoration: _decoration(radius),
+      decoration: _decoration(radius, glow: glow),
       child: Stack(
         children: [
           // Glitter under a diagonal shimmer. Purely decorative.
@@ -97,7 +104,7 @@ class GoldPlanSurface extends StatelessWidget {
 
 /// 135° top-left → bottom-right, with the mid stop pulled to 45% so the light
 /// catch sits above the centre line rather than through the text.
-BoxDecoration _decoration(double radius) => BoxDecoration(
+BoxDecoration _decoration(double radius, {required bool glow}) => BoxDecoration(
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -106,13 +113,15 @@ BoxDecoration _decoration(double radius) => BoxDecoration(
       ),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: kGoldBorder),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x4DE9B62E), // gold @ 30%
-          blurRadius: 28,
-          offset: Offset(0, 10),
-        ),
-      ],
+      boxShadow: glow
+          ? const [
+              BoxShadow(
+                color: Color(0x4DE9B62E), // gold @ 30%
+                blurRadius: 28,
+                offset: Offset(0, 10),
+              ),
+            ]
+          : null,
     );
 
 /// Two layers of specks at co-prime-ish pitches so the eye reads scatter

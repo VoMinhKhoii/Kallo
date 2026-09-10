@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/logic/legal_links.dart';
-import '../../../shared/widgets/typography/meta_action.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
-import '../data/paywall_controller.dart';
-import '../logic/paywall_result.dart';
+import '../../../../shared/logic/legal_links.dart';
+import '../../../../shared/widgets/typography/meta_action.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../data/paywall_controller.dart';
+import '../../logic/paywall_result.dart';
 
 /// "Restore purchases · Terms · Privacy" — the three obligations, on one quiet
 /// meta line under the CTA. The legal pages open through
