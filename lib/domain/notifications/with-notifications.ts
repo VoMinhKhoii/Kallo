@@ -41,11 +41,13 @@ export type ScopedNotify = (
 /**
  * Derive the lock-screen payload from the instruction that wrote the row.
  *
- * Only the fields push actually consumes cross over: `objectType`/`objectId`
- * identify the row for the feed, not the device, and the free-form `data` bag
- * is narrowed to the one presentation key the copy templates interpolate
- * (`groupName`, and only when it is really a string — the chat_groups column
- * is nullable and a null must fall through to the anonymous label).
+ * Only the fields push actually consumes cross over. `objectType`/`objectId`
+ * are among them: the share id is what a tap opens (`share` + id →
+ * `/circle/<shareId>`), so it has to reach the device, not just the feed row.
+ * The free-form `data` bag stays narrowed to the one presentation key the copy
+ * templates interpolate (`groupName`, and only when it is really a string —
+ * the chat_groups column is nullable and a null must fall through to the
+ * anonymous label).
  */
 export function toPushPayload(
   input: NotifyInput,
@@ -59,6 +61,8 @@ export function toPushPayload(
       ...(extra?.actorName === undefined ? {} : { name: extra.actorName }),
     },
     ...(typeof groupName === 'string' ? { data: { groupName } } : {}),
+    ...(input.objectType === undefined ? {} : { objectType: input.objectType }),
+    ...(input.objectId === undefined ? {} : { objectId: input.objectId }),
     ...(input.targetType === undefined ? {} : { targetType: input.targetType }),
     ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
     groupKey: input.groupKey,
@@ -94,7 +98,7 @@ export async function withNotifications<T>(
 
   // Committed. Sending in parallel is safe: each entry is an independent
   // fan-out, and sendNotificationPush swallows its own failures, so one dead
-  // FCM call can never reject the after() task.
+  // APNs call can never reject the after() task.
   after(() =>
     Promise.all(
       queued.map((entry) =>

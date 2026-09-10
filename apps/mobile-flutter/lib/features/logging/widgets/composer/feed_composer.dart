@@ -105,18 +105,69 @@ class FeedComposer extends ConsumerWidget {
       input: controller,
     );
     // Nothing here is derived from the controller's own state: a pick lives as
-    // text INSIDE the field, so the value, its tint and the send button's arming
-    // all rebuild from `MealInput`'s own listener. The dock stays out of the
-    // keystroke path entirely.
-    return ComposerDock(
-      onHeightChanged: onHeightChanged,
-      child: _buildDock(context),
+    // text INSIDE the field, so the value, its tint and the send button's
+    // arming all rebuild from `MealInput`'s listener — not from this dock.
+    // Bottom-aligned inside the feed's `Positioned.fill`, so the dock is
+    // BOUNDED and can shrink. Unbounded — the old `Positioned(bottom: 0)` — it
+    // grew past the top of the Stack once picker + composer + keyboard stacked
+    // up and had its head clipped off. Taps above it still reach the cards:
+    // `Align` hit-tests its child alone.
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ComposerDock(
+        onHeightChanged: onHeightChanged,
+        child: _buildDock(context),
+      ),
     );
   }
 
   Widget _buildDock(BuildContext context) {
     final isNormal = mode == MealLogMode.normal;
+    final input = MealInput(
+      controller: controller,
+      textController: textController,
+      onSync: onSync,
+      onSubmit: onSubmit,
+      onCancel: onCancel,
+      analyzing: analyzing,
+      popupSlot:
+          isNormal && relogQuery != null
+              ? RelogPickerSection(
+                userId: userId,
+                query: relogQuery!,
+                onSelect: onSelectRelog,
+                onDismiss: onDismissRelog,
+              )
+              : null,
+      // Under-logged past day: the note rides INSIDE the field's card, because
+      // the way to fix the day is to type the meal missing from it.
+      notice:
+          view.showPartialDayNotice && !noticeDismissed
+              ? PartialDayNotice(
+                calories: view.dailyCalories,
+                target: calorieTarget,
+                onDismiss: onDismissNotice,
+              )
+              : null,
+      modeLabel: mealModeLabel(mode),
+      // Only cheat carries a qualifier; every other mode is its name alone.
+      modeDetail:
+          mode == MealLogMode.cheat
+              ? cheatIntensityLabel(cheatIntensity)
+              : null,
+      modeIcon: mealModeIcon(mode),
+      hintText:
+          mode == MealLogMode.cheat
+              ? 'logging.cheatPlaceholder'.tr()
+              : null,
+      onModePressed: onModePressed,
+      // iOS-only for now; null hides the icon entirely. Gated on the shared
+      // `isBarcodeLoggingSupported` — the mode sheet's source of truth too.
+      onBarcodePressed: isBarcodeLoggingSupported ? onBarcodePressed : null,
+    );
     return Column(
+      // Min: the dock is bounded now, and `max` would stretch it full height.
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (errorText != null)
@@ -139,51 +190,9 @@ class FeedComposer extends ConsumerWidget {
           ),
           const SizedBox(height: LoggingSpacing.block),
         ],
-        MealInput(
-          controller: controller,
-          textController: textController,
-          onSync: onSync,
-          onSubmit: onSubmit,
-          onCancel: onCancel,
-          analyzing: analyzing,
-          popupSlot:
-              isNormal && relogQuery != null
-                  ? RelogPickerSection(
-                    userId: userId,
-                    query: relogQuery!,
-                    onSelect: onSelectRelog,
-                    onDismiss: onDismissRelog,
-                  )
-                  : null,
-          // Under-logged past day: the note rides INSIDE the field's card,
-          // because the way to fix the day is to type the meal missing from
-          // it — message and remedy as one object.
-          notice:
-              view.showPartialDayNotice && !noticeDismissed
-                  ? PartialDayNotice(
-                    calories: view.dailyCalories,
-                    target: calorieTarget,
-                    onDismiss: onDismissNotice,
-                  )
-                  : null,
-          modeLabel: mealModeLabel(mode),
-          // Only cheat carries a qualifier; every other mode is its name alone.
-          modeDetail:
-              mode == MealLogMode.cheat
-                  ? cheatIntensityLabel(cheatIntensity)
-                  : null,
-          modeIcon: mealModeIcon(mode),
-          hintText:
-              mode == MealLogMode.cheat
-                  ? 'logging.cheatPlaceholder'.tr()
-                  : null,
-          onModePressed: onModePressed,
-          // iOS-only for now (matches the mode sheet's gating); null hides
-          // the composer icon entirely. Gated via the shared
-          // `isBarcodeLoggingSupported` (same source of truth as the mode
-          // sheet).
-          onBarcodePressed: isBarcodeLoggingSupported ? onBarcodePressed : null,
-        ),
+        // The flexible half of the dock — inside it the `/` picker is in
+        // turn the half that yields, so the field never shrinks.
+        Flexible(child: input),
       ],
     );
   }

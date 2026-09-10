@@ -276,6 +276,47 @@ void invalidateMealSurfaces(
   invalidate(nutritionOverviewProvider);
 }
 
+/// Settle the surfaces a committed meal write touched, and NEVER throw.
+///
+/// The write COMMITTED the moment its POST returned, so nothing here may turn a
+/// saved meal into a failed save. A refetch that fails (flaky network) falls
+/// back to invalidation; an invalidate that throws in turn (the sheet's own
+/// scope gone while the POST was in flight) is swallowed with it. Report
+/// failure from here and the user logs the same thing a SECOND time.
+///
+/// AWAITED by every caller, and before the sheet pops: popping fires the
+/// feed's pin to the tail. A bare invalidate lands the refetch after the pin
+/// has released, so the feed rides to the PREVIOUS last card and opens a
+/// screen of empty room under it.
+///
+/// [read] and [invalidate] are taken as functions rather than a `Ref`: the
+/// three callers hold a Notifier `Ref` (barcode, label scan) or a `WidgetRef`
+/// (relog staging), and Riverpod 2 gives those two no common supertype. Tear
+/// off `ref.read` / `ref.invalidate` at the call site — the shape
+/// [invalidateMealSurfaces] already uses.
+///
+/// [also] runs INSIDE the same swallow, for the surfaces only one caller has to
+/// drop.
+Future<void> settleAfterMealWrite(
+  T Function<T>(ProviderListenable<T> provider) read,
+  void Function(ProviderOrFamily provider) invalidate, {
+  required String userId,
+  required String date,
+  void Function()? also,
+}) async {
+  final day = loggingDayProvider(LoggingDayArgs(userId, date));
+  try {
+    try {
+      await read(day.notifier).refresh();
+    } catch (_) {
+      invalidate(day);
+    }
+    also?.call();
+  } catch (_) {
+    // The write stands. Nothing left to refresh means nothing left to do.
+  }
+}
+
 /// Confirm a pending analysis into a saved meal, then refetch the day.
 ///
 /// Deliberately NOT optimistic. Dropping the staged row the instant confirm was

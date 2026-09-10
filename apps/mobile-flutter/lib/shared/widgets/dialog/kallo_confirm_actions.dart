@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
+import '../surface/kallo_pressable.dart';
 
 /// The confirm dialog's actions: full-width 44pt TEXT rows, stacked, each one
 /// separated from the content above it by a 0.5pt hairline.
@@ -88,7 +88,29 @@ class KalloAlertHairline extends StatelessWidget {
 /// One alert action: a full-width, centred, 44pt-minimum text row that washes
 /// on press. No fill, no radius — the row IS the button, which is why the
 /// hairlines above and below it are what separate it from its neighbours.
-class KalloAlertAction extends StatefulWidget {
+///
+/// The full width comes from the stacking [Column]'s
+/// [CrossAxisAlignment.stretch] above, which hands this row a TIGHT width —
+/// not from [KalloPressable], which shrink-wraps its child.
+///
+/// **The press (2026-09-07).** The wash was [KalloColors.hover] (`#F0EAE0`),
+/// an opaque warm cream — that is the SELECTED token, not the pressed one, and
+/// holding a row turned it into a solid cream slab. It is
+/// [KalloColors.pressWash] now (ink at 6%), the app's documented press token,
+/// already what `shared/widgets/form/sheet_confirm_button.dart` paints; it
+/// darkens the row instead of repainting it.
+///
+/// **The hold (2026-09-07).** The row behaves exactly as the platform's own
+/// alert action does: the wash lasts the ENTIRE hold and the action FIRES on
+/// release (`mobile.md`, *Platform — Cupertino wherever it exists*, boundary
+/// 2: the platform wins on behaviour). An arena-driven wash cannot deliver
+/// that — a long press winning the arena at ~500ms rejects the tap and its
+/// `onTapCancel` drops the wash with the finger still down.
+///
+/// Both are fixed by [KalloPressable], which takes the press state OUT of the
+/// gesture arena so no arena resolution can cancel the wash, and fires on
+/// release like the platform's own action. This row was its first consumer.
+class KalloAlertAction extends StatelessWidget {
   const KalloAlertAction({
     super.key,
     required this.label,
@@ -103,40 +125,22 @@ class KalloAlertAction extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<KalloAlertAction> createState() => _KalloAlertActionState();
-}
-
-class _KalloAlertActionState extends State<KalloAlertAction> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: widget.label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        // Animated, not a bare Container: every other quiet button in the app
-        // crossfades its wash rather than snapping it on.
-        child: AnimatedContainer(
-          duration: KalloMotion.press,
-          curve: KalloEase.press,
-          alignment: Alignment.center,
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp2,
-          ),
-          color: _pressed ? KalloColors.hover : const Color(0x00000000),
-          child: Text(
-            widget.label,
-            textAlign: TextAlign.center,
-            style: dashBody(color: widget.color, weight: widget.weight),
-          ),
+      label: label,
+      child: KalloPressable(
+        onTap: onTap,
+        alignment: Alignment.center,
+        constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+        padding: const EdgeInsets.symmetric(
+          horizontal: KalloSpacing.sp4,
+          vertical: KalloSpacing.sp2,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: dashBody(color: color, weight: weight),
         ),
       ),
     );

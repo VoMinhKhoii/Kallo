@@ -36,7 +36,7 @@ lib/services/   — infrastructure edges, one subfolder per concern:
                   http/ (api_client, uploads, query cache policy), auth/
                   (supabase_service, session_provider), billing/, analytics/, env/
 lib/models/     — data models (ported from web lib/*/types.ts), grouped by domain:
-                  nutrition/, logging/, social/, profile/
+                  http/, nutrition/, logging/, social/, profile/
 lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
                   and its slots), nav/ (the floating pill tab bar, its Add sheet
                   and the goToLogging helpers), plus tab_scaffold.dart,

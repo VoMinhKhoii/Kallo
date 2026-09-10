@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/actions/confirm_meal_removal.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
@@ -99,9 +99,30 @@ void main() {
 
   testWidgets('opens on the native iOS alert surface', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
-    expect(find.byType(CupertinoPopupSurface), findsOneWidget);
+    expect(find.byKey(kKalloConfirmSurface), findsOneWidget);
     // A system alert is 270 wide; a lookalike that is not reads as a lookalike.
-    expect(tester.getSize(find.byType(CupertinoPopupSurface)).width, 270);
+    expect(tester.getSize(find.byKey(kKalloConfirmSurface)).width, 270);
+  });
+
+  testWidgets('the card is SOLID white, never a frosted surface', (
+    tester,
+  ) async {
+    // It was a CupertinoPopupSurface: ~80% opaque over a backdrop blur, the
+    // one see-through surface in an app whose design system opens by naming
+    // solid surfaces. A translucent card is also what made a pressed action
+    // row look like a glitch.
+    await _open(tester, _host(onResult: (_) {}));
+    final fill = tester.widget<ColoredBox>(
+      find
+          .descendant(
+            of: find.byKey(kKalloConfirmSurface),
+            matching: find.byType(ColoredBox),
+          )
+          .first,
+    );
+    expect(fill.color, kCardSurface);
+    expect(fill.color.a, 1.0, reason: 'the card must not be translucent');
+    expect(find.byType(BackdropFilter), findsNothing);
   });
 
   testWidgets('both options are the verbs the caller named', (tester) async {
@@ -212,7 +233,7 @@ void main() {
 
   testWidgets('centres the title and the description', (tester) async {
     await _open(tester, _host(onResult: (_) {}));
-    final card = tester.getRect(find.byType(CupertinoPopupSurface));
+    final card = tester.getRect(find.byKey(kKalloConfirmSurface));
     expect(
       tester.getRect(find.text('Xoá bữa ăn này?')).center.dx,
       closeTo(card.center.dx, 0.5),

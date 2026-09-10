@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/data/barcode_providers.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 /// ApiClient stand-in that records requests and replays canned responses —
 /// never touches HTTP or the Supabase session.
@@ -12,13 +15,17 @@ class FakeApiClient extends ApiClient {
   @override
   Future<T> get<T>(String path) async {
     requests.add(('GET', path, null));
-    return handler!('GET', path, null) as T;
+    // A handler may answer with a Future when a test needs to hold a request
+    // open and watch what does (or does not) happen while it is in flight.
+    final answer = handler!('GET', path, null);
+    return (answer is Future ? await answer : answer) as T;
   }
 
   @override
   Future<T> post<T>(String path, [Object? body]) async {
     requests.add(('POST', path, body));
-    return handler!('POST', path, body) as T;
+    final answer = handler!('POST', path, body);
+    return (answer is Future ? await answer : answer) as T;
   }
 }
 
@@ -147,6 +154,97 @@ void main() {
       expect(json['loggedDate'], '2026-07-02');
       expect(json['mealId'], isNotEmpty);
       expect(json['timezoneOffset'], isA<int>());
+    });
+
+    test('does not resolve until the day feed has refetched', () async {
+      await landOnProduct();
+      // Popping the sheet is what pins the feed to its tail, and the sheet pops
+      // the moment this resolves. A save that only INVALIDATES the day lands
+      // its refetch after the pin has let go, so the feed rides to the previous
+      // last card and opens a screen of empty room under it.
+      final dayGate = Completer<Map<String, dynamic>>();
+      api.handler = (method, path, body) {
+        if (path.startsWith('/api/v1/logging/day')) return dayGate.future;
+        if (path.startsWith('/api/v1/meals/dates')) return <dynamic>[];
+        return <String, dynamic>{};
+      };
+
+      var resolved = false;
+      final logging = notifier()
+          .logMeal(userId: 'user-1', date: '2026-07-02', grams: 150)
+          .then((ok) {
+            resolved = true;
+            return ok;
+          });
+      // Let the POST and the refetch it triggers both go out.
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        api.requests.any((r) => r.$2.startsWith('/api/v1/logging/day')),
+        isTrue,
+        reason: 'the save asks the day to refetch itself',
+      );
+      expect(
+        resolved,
+        isFalse,
+        reason: 'the refetch must land before the sheet pops and pins the feed',
+      );
+
+      dayGate.complete(<String, dynamic>{});
+      expect(await logging, isTrue);
+    });
+
+    test('a day refetch that fails does not un-save the meal', () async {
+      await landOnProduct();
+      api.handler = (method, path, body) {
+        if (path == '/api/v1/barcode/log') {
+          return <String, dynamic>{'mealId': 'meal-1'};
+        }
+        // The network drops between the POST and the refetch it triggers.
+        throw ApiError('INTERNAL', 500, true, 'x');
+      };
+
+      final ok = await notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        grams: 150,
+      );
+
+      expect(ok, isTrue, reason: 'the POST returned — the meal is saved');
+      expect(
+        state().errorKey,
+        isNull,
+        reason: 'an inline error here invites a second log of the same product',
+      );
+    });
+
+    test('a scope that dies mid-POST still reports the save', () async {
+      await landOnProduct();
+      final logGate = Completer<Map<String, dynamic>>();
+      api.handler = (method, path, body) {
+        if (path == '/api/v1/barcode/log') return logGate.future;
+        return <String, dynamic>{};
+      };
+
+      final logging = notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        grams: 150,
+      );
+      await Future<void>.delayed(Duration.zero);
+      // The sheet's own scope goes away while the POST is in flight, so the
+      // refresh — and the invalidations after it — run on a container that is
+      // already gone and throw. The meal COMMITTED when the POST returned:
+      // reporting failure for it is what has the user log the product twice.
+      container.dispose();
+      logGate.complete(<String, dynamic>{});
+
+      expect(
+        await logging,
+        isTrue,
+        reason: 'a saved meal must never be reported as a failed save',
+      );
     });
 
     test('failure keeps the quantity step and the product', () async {

@@ -1,4 +1,12 @@
 /// Mutations that splice authoritative share state into every alive feed.
+///
+/// The feed caches are patched in place (optimistically, then with the
+/// server's numbers). The thread page's SECOND source —
+/// `sharedMealEntryProvider`, the post fetched by id when no loaded feed holds
+/// it — is not patched but INVALIDATED on success: it is a plain read of one
+/// endpoint, and refetching it is both simpler and honest about where its
+/// numbers come from. Each invalidate is a no-op unless a thread page is
+/// currently showing that post as a fetched entry.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +21,10 @@ import '../../dashboard/data/dashboard_providers.dart'
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
+import '../logic/find_share_entry.dart';
 import 'chat_group_providers.dart';
 import 'feed_providers.dart';
+import 'share_entry_provider.dart';
 
 const Duration _mutationTimeout = Duration(seconds: 15);
 
@@ -25,12 +35,20 @@ class _ReactionSnapshot {
   final int count;
 }
 
-List<String?> _aliveFeedScopes(WidgetRef ref) {
+/// Every feed that is currently mounted and therefore owes a splice.
+///
+/// [from] is the CALLER's own scope, required by the signature because the
+/// candidate set is otherwise built from what the Circle tab has selected —
+/// which says nothing about where the mutation was fired from. A reply or a
+/// heart from the thread page of a group post, with the tab still on the
+/// friends feed (a cold deep link, any entry point that is not the tab), would
+/// splice into no feed at all and the reply the user just wrote would vanish.
+List<String?> _aliveFeedScopes(WidgetRef ref, {required String? from}) {
   final selected = ref.read(circleSelectedViewProvider);
   final groupIds =
       ref.read(chatGroupsProvider).valueOrNull?.map((group) => group.id) ??
       const <String>[];
-  final candidates = <String?>{null, selected, ...groupIds};
+  final candidates = <String?>{null, selected, from, ...groupIds};
   return candidates
       .where((scope) => ref.exists(sharedMealFeedProvider(scope)))
       .toList(growable: false);
@@ -38,7 +56,7 @@ List<String?> _aliveFeedScopes(WidgetRef ref) {
 
 Set<String?> _scopeUnion(WidgetRef ref, Iterable<String?> originalScopes) => {
   ...originalScopes,
-  ..._aliveFeedScopes(ref),
+  ..._aliveFeedScopes(ref, from: null),
 };
 
 SharedMealFeedNotifier _notifier(WidgetRef ref, String? scope) =>
@@ -46,20 +64,20 @@ SharedMealFeedNotifier _notifier(WidgetRef ref, String? scope) =>
 
 _ReactionSnapshot? _reactionSnapshot(WidgetRef ref, String? scope, String id) {
   final entries = ref.read(sharedMealFeedProvider(scope)).valueOrNull?.entries;
-  if (entries == null) return null;
-  for (final entry in entries) {
-    if (entry.meal.shareId == id) {
-      return _ReactionSnapshot(
-        mine: entry.reactions.mine,
-        count: entry.reactions.count,
-      );
-    }
-  }
-  return null;
+  final entry = findShareEntry(entries, id);
+  if (entry == null) return null;
+  return _ReactionSnapshot(
+    mine: entry.reactions.mine,
+    count: entry.reactions.count,
+  );
 }
 
-Future<void> toggleShareReaction(WidgetRef ref, String shareId) async {
-  final scopes = _aliveFeedScopes(ref);
+Future<void> toggleShareReaction(
+  WidgetRef ref,
+  String shareId, {
+  String? scope,
+}) async {
+  final scopes = _aliveFeedScopes(ref, from: scope);
   final snapshots = <String?, _ReactionSnapshot?>{
     for (final scope in scopes) scope: _reactionSnapshot(ref, scope, shareId),
   };
@@ -80,6 +98,13 @@ Future<void> toggleShareReaction(WidgetRef ref, String shareId) async {
       if (!ref.exists(sharedMealFeedProvider(scope))) continue;
       _notifier(ref, scope).applyReaction(shareId, mine: mine, count: count);
     }
+    // Refetch, don't patch: a thread page reading this post out of the
+    // single-share endpoint gets the new count the same way it got the old
+    // one. ON SUCCESS ONLY — the rollback below has nothing to heal there,
+    // because the optimistic toggle never touched that read in the first
+    // place. Invalidating on failure would spend a request to re-fetch the
+    // state the page is already showing.
+    ref.invalidate(sharedMealEntryProvider(shareId));
   } catch (_) {
     for (final scope in _scopeUnion(ref, scopes)) {
       if (!ref.exists(sharedMealFeedProvider(scope))) continue;
@@ -98,8 +123,9 @@ Future<void> createShareReply(
   WidgetRef ref, {
   required String shareId,
   required String body,
+  String? scope,
 }) async {
-  final scopes = _aliveFeedScopes(ref);
+  final scopes = _aliveFeedScopes(ref, from: scope);
   final replyId = const Uuid().v4();
   final json = await ref
       .read(apiClientProvider)
@@ -114,6 +140,10 @@ Future<void> createShareReply(
     if (!ref.exists(sharedMealFeedProvider(scope))) continue;
     _notifier(ref, scope).appendReply(shareId, reply);
   }
+  // A post opened from a notification is in no feed to append to — without
+  // this the reply posts and the thread the author is looking at never shows
+  // it. The refetch also brings the server's own `repliesTotal`.
+  ref.invalidate(sharedMealEntryProvider(shareId));
 }
 
 Future<void> logSharedMeal(WidgetRef ref, String shareId) async {

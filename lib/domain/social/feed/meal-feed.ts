@@ -66,6 +66,25 @@ export interface SharedMealRow {
   avatarPath: string | null;
 }
 
+/** The one projection every shared-meal read selects. Exported so a
+ * single-share lookup (share-lookup.ts) builds the identical SharedMealRow
+ * instead of restating the column list and drifting from it. */
+export const sharedMealColumns = {
+  friendUserId: mealShares.actorId,
+  mealId: meals.id,
+  shareId: mealShares.id,
+  rawInput: meals.rawInput,
+  caloriesKcal: meals.caloriesKcal,
+  proteinG: meals.proteinG,
+  carbohydrateG: meals.carbohydrateG,
+  fatG: meals.fatG,
+  portionFactor: meals.portionFactor,
+  sharedAt: mealShares.sharedAt,
+  loggedAt: meals.loggedAt,
+  sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
+  ...publicProfileColumns,
+};
+
 /** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
 export function todayLocalDate(timezoneOffset: number): string {
   return toLocalDayKey(Date.now(), timezoneOffset);
@@ -87,21 +106,7 @@ export async function mostRecentSharedMealsToday(
 
   return (
     db
-      .selectDistinctOn([mealShares.actorId], {
-        friendUserId: mealShares.actorId,
-        mealId: meals.id,
-        shareId: mealShares.id,
-        rawInput: meals.rawInput,
-        caloriesKcal: meals.caloriesKcal,
-        proteinG: meals.proteinG,
-        carbohydrateG: meals.carbohydrateG,
-        fatG: meals.fatG,
-        portionFactor: meals.portionFactor,
-        sharedAt: mealShares.sharedAt,
-        loggedAt: meals.loggedAt,
-        sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
-        ...publicProfileColumns,
-      })
+      .selectDistinctOn([mealShares.actorId], sharedMealColumns)
       .from(mealShares)
       .innerJoin(
         meals,
@@ -152,21 +157,7 @@ export async function sharedMealsBefore(
   // Fetch one extra row so hasMore/nextCursor is known from a single
   // round trip instead of a separate count query.
   const rows = await db
-    .select({
-      friendUserId: mealShares.actorId,
-      mealId: meals.id,
-      shareId: mealShares.id,
-      rawInput: meals.rawInput,
-      caloriesKcal: meals.caloriesKcal,
-      proteinG: meals.proteinG,
-      carbohydrateG: meals.carbohydrateG,
-      fatG: meals.fatG,
-      portionFactor: meals.portionFactor,
-      sharedAt: mealShares.sharedAt,
-      loggedAt: meals.loggedAt,
-      sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
-      ...publicProfileColumns,
-    })
+    .select(sharedMealColumns)
     .from(mealShares)
     .innerJoin(
       meals,

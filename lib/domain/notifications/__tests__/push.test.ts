@@ -47,17 +47,40 @@ const GROUP = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 
 /** Every select in this module is `.select().from().where()`, except the actor
  *  name lookup which adds `.limit()`; one queue serves both. */
+/** Every WHERE clause handed to a queued select, in call order. */
+const selectWheres: unknown[] = [];
+
 function queueSelects(...rowSets: unknown[][]) {
   const queue = [...rowSets];
+  selectWheres.length = 0;
   mockSelect.mockImplementation(() => {
     const rows = queue.shift() ?? [];
     const query = {
       from: vi.fn(() => query),
-      where: vi.fn(() => Object.assign(Promise.resolve(rows), query)),
+      where: vi.fn((clause: unknown) => {
+        selectWheres.push(clause);
+        return Object.assign(Promise.resolve(rows), query);
+      }),
       limit: vi.fn(() => Promise.resolve(rows)),
     };
     return query;
   });
+}
+
+/** Column names and bound values reachable inside a Drizzle SQL clause. */
+function clauseAtoms(clause: unknown, out: string[] = []): string[] {
+  if (!clause || typeof clause !== 'object') return out;
+  const node = clause as {
+    queryChunks?: unknown[];
+    name?: string;
+    value?: unknown;
+  };
+  if (typeof node.name === 'string') out.push(`col:${node.name}`);
+  if ('value' in node && typeof node.value === 'string') {
+    out.push(`val:${node.value}`);
+  }
+  for (const chunk of node.queryChunks ?? []) clauseAtoms(chunk, out);
+  return out;
 }
 
 function capturingDelete() {
@@ -237,6 +260,50 @@ describe('sendNotificationPush', () => {
     });
   });
 
+  // The share id is what a tap opens: `/circle/<objectId>`. It rides the same
+  // flat all-strings map, so it must survive as a string next to `type`.
+  it('carries the share id through as objectType/objectId', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      {
+        type: 'share.reply',
+        actor: { id: FRIEND, name: 'Mai' },
+        objectType: 'share',
+        objectId: 'share-1',
+        groupKey: 'share.reply:share-1',
+      },
+      sender
+    );
+
+    expect(sent[0][0].data).toEqual({
+      type: 'share.reply',
+      objectType: 'share',
+      objectId: 'share-1',
+    });
+  });
+
+  it('emits no object keys for an event that has no object', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'friend.joined', actor: { id: FRIEND, name: 'Mai' } },
+      sender
+    );
+
+    expect(sent[0][0].data).toEqual({ type: 'friend.joined' });
+  });
+
   it('deletes exactly the registrations the sender says are dead', async () => {
     queueSelects(
       [
@@ -287,7 +354,7 @@ describe('sendNotificationPush', () => {
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const sender: PushSender = {
-      send: vi.fn().mockRejectedValue(new Error('FCM is down')),
+      send: vi.fn().mockRejectedValue(new Error('APNs is down')),
     };
 
     await expect(
@@ -302,15 +369,18 @@ describe('sendNotificationPush', () => {
   });
 
   // The sender is resolved inside the try, not as a default argument: default
-  // arguments evaluate BEFORE the body, so a JSON.parse of a malformed service
-  // account would reject the after() task instead of being swallowed here.
-  it('survives a malformed FCM service account with no sender passed', async () => {
+  // arguments evaluate BEFORE the body, so parsing a malformed .p8 would reject
+  // the after() task instead of being swallowed here.
+  it('survives a malformed APNs signing key with no sender passed', async () => {
     queueSelects(
       [{ userId: OWNER, token: 'owner-phone' }],
       [{ userId: OWNER, preferredLocale: 'en' }]
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubEnv('FCM_SERVICE_ACCOUNT_JSON', '{ not json');
+    vi.stubEnv('APNS_KEY_ID', 'ABC123DEFG');
+    vi.stubEnv('APNS_TEAM_ID', 'ZNG57U88R5');
+    vi.stubEnv('APNS_BUNDLE_ID', 'com.khoivo.nham');
+    vi.stubEnv('APNS_KEY_P8', '-----BEGIN PRIVATE KEY-----\nnot-a-key\n');
 
     await expect(
       sendNotificationPush([OWNER], {
@@ -321,6 +391,23 @@ describe('sendNotificationPush', () => {
 
     vi.unstubAllEnvs();
     errors.mockRestore();
+  });
+
+  it('loads only iOS registrations — the DB CHECK still admits other platforms', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reaction', actor: { id: FRIEND } },
+      { send: async () => [] }
+    );
+
+    const atoms = clauseAtoms(selectWheres[0]);
+    expect(atoms).toContain('col:platform');
+    expect(atoms).toContain('val:ios');
   });
 
   it('skips the fan-out when the global push budget is exhausted', async () => {

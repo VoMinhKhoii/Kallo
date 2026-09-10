@@ -6,11 +6,9 @@ import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
+import '../../logic/circle_spacing.dart';
+import '../../logic/circle_thread_route.dart';
 import 'feed_entry.dart';
-
-/// Avatar (32) + its gap (12): where the content column starts, and therefore
-/// where a separator between two posts begins.
-const double kContentRail = 44;
 
 /// Vertical padding between a post and the card edge (12) versus between a
 /// post and the separator under it (16) — the canvas' two card metrics.
@@ -22,6 +20,11 @@ const double _innerPad = KalloSpacing.sp4;
 /// its 44pt tap boxes carry. That pull is paid HERE rather than as a negative
 /// margin on the row: Flutter clips hit-testing to a parent's box, so pulling
 /// the row itself would take those 12pt off the targets too.
+///
+/// The canvas value, NOT the row's true slack ((44 − 18) / 2 = 13): the pull
+/// is subtracted from the card's own [_edgePad], which is also 12, and a pull
+/// larger than the pad it comes out of is a negative inset. The slack merely
+/// has to cover the pull, which at 13 ≥ 12 it does.
 const double _actionSlack = KalloSpacing.sp3;
 
 /// One day of the Circle feed: a 14/500 muted [GroupLabel] over a white
@@ -34,10 +37,19 @@ const double _actionSlack = KalloSpacing.sp3;
 /// into the app's card anatomy says the same thing with the surface, and the
 /// label drops to the quiet tier the rest of the app uses above a card.
 class FeedDayGroup extends StatelessWidget {
-  const FeedDayGroup({required this.date, required this.entries, super.key});
+  const FeedDayGroup({
+    required this.date,
+    required this.entries,
+    this.scope,
+    super.key,
+  });
 
   final DateTime date;
   final List<CircleFeedEntry> entries;
+
+  /// The feed these posts were read from, carried down so a post's reply glyph
+  /// can name it in the thread URL it pushes.
+  final String? scope;
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +77,35 @@ class FeedDayGroup extends StatelessWidget {
                       (i == entries.length - 1 ? _edgePad : _innerPad) -
                       _actionSlack,
                 ),
-                child: FeedEntry(entry: entries[i]),
+                child: _post(context, entries[i]),
               ),
           ],
         ),
       ],
     );
   }
+
+  /// The FEED composes the post's navigation, not [FeedEntry]: the widget
+  /// draws a post and takes what its tap and its reply glyph do as callbacks,
+  /// which is what lets the thread page draw the same post with no tap target
+  /// and a composer focus of its own (`thread/thread_body.dart`).
+  Widget _post(BuildContext context, CircleFeedEntry entry) => FeedEntry(
+    entry: entry,
+    scope: scope,
+    onOpen:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+        ),
+    // `compose: true`: the glyph used to open a composer under the post, so
+    // the page it pushes now arrives with the field focused.
+    onReply:
+        () => openCircleThread(
+          context,
+          shareId: entry.meal.shareId,
+          scope: scope,
+          compose: true,
+        ),
+  );
 }

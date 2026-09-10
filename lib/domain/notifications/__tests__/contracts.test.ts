@@ -3,6 +3,7 @@ import {
   markReadBodySchema,
   markSeenBodySchema,
   notificationsListQuerySchema,
+  pushTokenBodySchema,
 } from '@/lib/domain/notifications/contracts';
 
 const ID = 'd3bbef22-cf3e-4bb1-9e90-9eecef613d44';
@@ -51,5 +52,34 @@ describe('markReadBodySchema', () => {
       markReadBodySchema.parse({ ids: new Array(51).fill(ID) })
     ).toThrow();
     expect(() => markReadBodySchema.parse({ ids: ['nope'] })).toThrow();
+  });
+});
+
+describe('pushTokenBodySchema', () => {
+  const HEX = 'ab'.repeat(32);
+
+  it('accepts a hex APNs device token for iOS', () => {
+    expect(pushTokenBodySchema.parse({ token: HEX, platform: 'ios' })).toEqual({
+      token: HEX,
+      platform: 'ios',
+    });
+  });
+
+  it('rejects anything APNs could not address', () => {
+    // Not hex — the FCM-era opaque string shape.
+    expect(
+      pushTokenBodySchema.safeParse({
+        token: 'apns-device-token',
+        platform: 'ios',
+      }).success
+    ).toBe(false);
+    // Odd length: not whole bytes.
+    expect(
+      pushTokenBodySchema.safeParse({ token: 'abc', platform: 'ios' }).success
+    ).toBe(false);
+    // The only transport is APNs.
+    expect(
+      pushTokenBodySchema.safeParse({ token: HEX, platform: 'android' }).success
+    ).toBe(false);
   });
 });

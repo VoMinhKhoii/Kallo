@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/feed_mutations.dart';
 import 'feed_action_button.dart';
@@ -13,14 +14,20 @@ class FeedEntryActions extends ConsumerStatefulWidget {
   const FeedEntryActions({
     required this.entry,
     required this.onReply,
+    this.scope,
     super.key,
   });
 
   final CircleFeedEntry entry;
 
+  /// The feed this post was read from, passed to the reaction mutation so the
+  /// heart lands in THIS feed's cache even when the Circle tab has another
+  /// one selected.
+  final String? scope;
+
   /// Opens the reply composer. Reply lives in this row rather than under the
   /// replies list so that all three affordances read as one interaction
-  /// system; [ShareReplies] owns the composer itself.
+  /// system; the thread page's `ThreadComposer` owns the composer itself.
   final VoidCallback onReply;
 
   @override
@@ -35,7 +42,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     if (_toggling) return;
     setState(() => _toggling = true);
     try {
-      await toggleShareReaction(ref, widget.entry.meal.shareId);
+      await toggleShareReaction(
+        ref,
+        widget.entry.meal.shareId,
+        scope: widget.scope,
+      );
     } catch (_) {
       if (mounted) {
         showTopToast(
@@ -78,24 +89,55 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     // column and the glyph sits flush with the meal text above, which is what
     // the canvas' -12 left margin buys. The box still extends its full width
     // to the right, so nothing is taken off the target to get there.
-    return Row(
+    //
+    // A [Wrap], not a [Row]: the three targets are fixed-width boxes around
+    // text ("Log this too", the counts), so at a large text scale on a narrow
+    // screen they add up past the content column and a Row CLIPS the third
+    // one — content that cannot be seen. Wrapping drops it to a second line
+    // instead.
+    //
+    // Safe here only because [KalloPressable] shrink-wraps (see its *Sizing*
+    // doc, 2026-09-08). It did not before: a Wrap offers its children the
+    // COLUMN's width as a finite max, the pressable's Container-alignment
+    // grew to it, and all three actions stacked one per line. A Row hid that
+    // by offering unbounded width — so "a Wrap lays out identically to a Row"
+    // was never true; it is true now because the child no longer takes the
+    // width it is offered.
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Semantics(
-          label: tr('groups.feed.heart'),
-          button: true,
+        FeedActionButton(
+          onTap: _toggling ? null : _toggle,
+          icon: LucideIcons.heart300,
+          // Lucide is a FONT here, so `Icon(fill:)` never filled the heart on
+          // the phone: the hearted state is its own SVG glyph, painted in the
+          // swipe-to-delete red so a hearted post looks hearted from across
+          // the row.
+          activeGlyph: reactions.mine ? const FilledHeart() : null,
+          // The name is SPOKEN — the visible text beside the glyph is a bare
+          // count — and the state rides the same node, so the heart announces
+          // as one "Heart, 2, button" that is on or off.
+          semanticLabel: tr('groups.feed.heart'),
           toggled: reactions.mine,
-          child: FeedActionButton(
-            onTap: _toggling ? null : _toggle,
-            icon: LucideIcons.heart300,
-            fill: reactions.mine ? 1 : 0,
-            label: '${reactions.count}',
-            alignment: Alignment.centerLeft,
-          ),
+          // Zero prints nothing, exactly as the reply glyph's count does: an
+          // unhearted post carried a literal "0" beside the outline, so a
+          // fresh post opened reading "0" and "no replies" as its two loudest
+          // characters. The spoken name still says "Heart".
+          label: reactions.count > 0 ? '${reactions.count}' : null,
+          alignment: Alignment.centerLeft,
         ),
         FeedActionButton(
           onTap: widget.onReply,
           icon: LucideIcons.messageCircle300,
           semanticLabel: tr('groups.feed.reply'),
+          // The count rides the glyph exactly as the heart's does — that IS
+          // the reply count now that the card shows no replies under the
+          // post. Zero prints nothing: an empty thread is the common case and
+          // a "0" beside every bubble is noise, not information.
+          label:
+              widget.entry.repliesTotal > 0
+                  ? '${widget.entry.repliesTotal}'
+                  : null,
         ),
         if (!widget.entry.isSelf)
           FeedActionButton(

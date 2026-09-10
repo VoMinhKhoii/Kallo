@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_theme.dart';
+import '../../../../../shared/widgets/gauge/ruler/ruler_marks.dart';
+import '../../../../../shared/widgets/gauge/ruler/ruler_painter.dart';
 import 'portion_ruler_face.dart';
-import 'portion_ruler_marks.dart';
-import 'portion_ruler_painter.dart';
 
 /// A tape-measure: the ruler and its silhouettes scroll together under a fixed
 /// centre needle, instead of a needle travelling a static scale.
@@ -147,7 +147,7 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                   children: [
                     SizedBox(
                       height: glyphHeight,
-                      child: PortionRulerBand(
+                      child: RulerBand(
                         majors: widget.majors,
                         width: _contentWidth,
                         slotWidth: _column,
@@ -158,20 +158,20 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                     const SizedBox(height: portionNeedleGap),
                     CustomPaint(
                       size: Size(_contentWidth, portionRulerHeight),
-                      painter: PortionRulerPainter(
+                      painter: RulerPainter(
                         majors: widget.majors,
                         graduations: widget.graduations,
                       ),
                     ),
                     const SizedBox(height: KalloSpacing.sp1),
-                    // Scaled, not fixed. Every child of PortionRulerBand is
+                    // Scaled, not fixed. Every child of RulerBand is
                     // `Positioned`, so the Stack cannot size itself to them and
                     // the band needs a height — but a flat 18 clipped the gram
                     // digits at the 1.3x Dynamic Type ceiling, and a clipped
                     // gram figure reads as a plausible but wrong number.
                     SizedBox(
                       height: MediaQuery.textScalerOf(context).scale(18),
-                      child: PortionRulerBand(
+                      child: RulerBand(
                         majors: widget.majors,
                         width: _contentWidth,
                         slotWidth: _column,
@@ -186,10 +186,15 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                 ),
               ),
             ),
-            IgnorePointer(child: PortionRulerNeedle(height: glyphHeight)),
+            IgnorePointer(child: _needle(glyphHeight)),
           ],
         );
       },
     );
   }
+
+  /// The fixed reading mark, hung clear of the silhouette band it points at.
+  Widget _needle(double glyphHeight) => Padding(
+      padding: EdgeInsets.only(top: glyphHeight + portionNeedleGap),
+      child: const RulerNeedle(bar: portionRulerHeight + KalloSpacing.sp1));
 }

@@ -12,6 +12,36 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+/// First letter upper-cased, the rest left exactly as typed.
+///
+/// Meal names are whatever the user wrote into the composer, so they arrive
+/// lower-case as often as not; a card that prints "phở bò" reads as a fragment
+/// rather than as the meal's name. Applied at the RENDER site (see
+/// `shared/widgets/nutrition/meal_block.dart`), never on the model — the raw
+/// input has to survive intact for editing and re-logging.
+///
+/// A name whose FIRST WORD already carries an upper-case letter is left alone:
+/// barcode and OCR products arrive with the brand's own casing ("belVita
+/// cookies (30g)", "iPro shake"), and upper-casing the first grapheme rewrites
+/// a brand name the user never typed. Only an all-lower-case first word is
+/// something the composer plausibly produced.
+///
+/// Grapheme-based, not `s[0]`: Vietnamese diacritics can be composed from two
+/// code units, and indexing would split one. Mirrors web `capitalizeFirst`
+/// (`lib/core/text/capitalize.ts`), brand rule included. A name starting with
+/// a digit or an emoji comes back untouched, which is what upper-casing a
+/// non-letter does.
+///
+/// The first-word check stands in for provenance the meal model does not
+/// carry — typed, scanned, or OCR'd. A `source` on the meal would replace it.
+String capitalizeFirst(String s) {
+  if (s.isEmpty) return s;
+  final int space = s.indexOf(' ');
+  final String first = space == -1 ? s : s.substring(0, space);
+  if (first != first.toLowerCase()) return s;
+  return s.characters.first.toUpperCase() + s.characters.skip(1).toString();
+}
+
 /// Rounds to a whole number, mapping null to 0. Mirrors web `round0`.
 int round0(num? n) => n == null ? 0 : n.round();
 
@@ -19,6 +49,15 @@ int round0(num? n) => n == null ? 0 : n.round();
 /// web's `toLocaleString()` instead of the hardcoded comma grouping.
 String formatCount(int n, String locale) =>
     NumberFormat.decimalPattern(locale).format(n);
+
+/// Exactly one fraction digit, locale-aware (en "0.5", vi "0,5").
+/// `toStringAsFixed(1)` hardcodes the decimal POINT, which is wrong in every
+/// comma-decimal locale — Vietnamese included.
+String formatOneDecimal(num n, String locale) =>
+    (NumberFormat.decimalPattern(locale)
+          ..minimumFractionDigits = 1
+          ..maximumFractionDigits = 1)
+        .format(n);
 
 /// The locale to format figures for, from whatever scope is mounted.
 ///

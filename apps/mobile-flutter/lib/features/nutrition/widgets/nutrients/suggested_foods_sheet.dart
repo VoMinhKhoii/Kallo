@@ -10,7 +10,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../models/nutrition/nutrition.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../logic/status.dart';
+import '../../logic/nutrient_display.dart';
 import '../../providers/candidates_response.dart';
 import '../../providers/food_candidates_provider.dart';
 import '../states/suggested_foods_skeleton.dart';

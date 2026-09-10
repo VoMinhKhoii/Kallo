@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import 'kallo_alert_surface.dart';
 import 'kallo_confirm_actions.dart';
 
 /// The app's ONE confirmation dialog.
@@ -26,13 +27,26 @@ import 'kallo_confirm_actions.dart';
 ///
 /// **2026-09-03, second pass (user reference: Instagram's iOS "Delete post?"
 /// alert): the filled pills are retired for the native alert anatomy.** The
-/// chrome AND the content are the platform's now — a 270pt
-/// [CupertinoPopupSurface] scaled in over a blurred barrier, a centred title
-/// and message, then stacked full-width text actions divided by 0.5pt
-/// hairlines: the destructive verb red and semibold, the safe one quiet ink.
-/// Only the type is the app's (Be Vietnam Pro, [kSectionHeader]/[dashBody]).
-/// The stack survives the rewrite: [CupertinoAlertDialog] would put two short
-/// verbs side by side, which is the arrangement the labels change was about.
+/// chrome AND the content are the platform's now — a 270pt card scaled in over
+/// the barrier, a centred title and message, then stacked full-width text
+/// actions divided by 0.5pt hairlines: the destructive verb red and semibold,
+/// the safe one quiet ink. Only the type is the app's (Be Vietnam Pro,
+/// [kSectionHeader]/[dashBody]). The stack survives the rewrite:
+/// [CupertinoAlertDialog] would put two short verbs side by side, which is the
+/// arrangement the labels change was about.
+///
+/// **2026-09-07: the card is SOLID white, and the barrier is the app's.** It
+/// was a `CupertinoPopupSurface`, whose fill is ~80% opaque over a backdrop
+/// blur. That put the one frosted, see-through surface in an app whose design
+/// system opens by naming solid surfaces and no stacked translucency
+/// (`calm_tokens.dart`) — and it made the press wash on an action row read as
+/// a glitch, an opaque patch appearing on a translucent card. The 14pt corner
+/// and the 270pt width are kept; only the material changed.
+///
+/// The scrim moved with it. [showCupertinoDialog] ignores
+/// `dialogTheme.barrierColor` and supplies its own ~20% black, so this dialog
+/// dimmed the page less than every other modal in the app; it now passes the
+/// theme's value explicitly.
 ///
 /// Returns false for every way out that is not the affirmative — cancel, the
 /// barrier, and the system back gesture alike.
@@ -50,6 +64,10 @@ Future<bool> showKalloConfirm(
   final confirmed = await showCupertinoDialog<bool>(
     context: context,
     barrierDismissible: true,
+    // Explicit, because showCupertinoDialog does NOT read
+    // `dialogTheme.barrierColor`. Same black/50 the nav drawer, the sheets and
+    // the web dialog use.
+    barrierColor: kKalloAlertBarrier,
     // These confirms open from inside bottom sheets, which now live on the
     // root navigator too (see `showNhamSheet`). Keeping the dialog explicitly
     // rooted means it is never owned by a surface that can be dismissed out
@@ -66,10 +84,6 @@ Future<bool> showKalloConfirm(
   );
   return confirmed ?? false;
 }
-
-/// A system alert is 270pt wide on every iPhone. Matching it is most of what
-/// makes a custom card read as the platform's own.
-const double _kAlertWidth = 270;
 
 class _KalloConfirmDialog extends StatelessWidget {
   const _KalloConfirmDialog({
@@ -104,8 +118,8 @@ class _KalloConfirmDialog extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
           child: SizedBox(
-            width: _kAlertWidth,
-            child: CupertinoPopupSurface(
+            width: kKalloAlertWidth,
+            child: KalloAlertSurface(
               // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
               // is the red/double-yellow-underline error style, and every
               // `Text(style: …)` here MERGES onto it — which is where the

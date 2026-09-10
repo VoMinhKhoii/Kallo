@@ -51,7 +51,9 @@ class FeedNutrition extends StatelessWidget {
     // Nothing measured at all — the meal text alone, rather than a row of
     // dashes over an empty bar.
     if (kcal == null && composition.totalKcal <= 0) {
-      return Text(meal.rawInput, style: dashBody());
+      // Capitalised the same way [MealBlock] capitalises its title — this is
+      // the one meal-text path that does not go through it.
+      return Text(capitalizeFirst(meal.rawInput), style: dashBody());
     }
 
     return MealBlock(

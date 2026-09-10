@@ -1,5 +1,9 @@
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import type { NotificationType } from '@/lib/domain/notifications/types';
+import {
+  circleGroupHref,
+  circleThreadHref,
+} from '@/lib/domain/social/circle-routes';
 
 /** The three types that collapse into "X and N others…" per object. The rest
  *  are always one distinct human action toward you (docs/NOTIFICATIONS.md —
@@ -40,11 +44,24 @@ export function messageValues(
   };
 }
 
-/** Where tapping the row goes. Only group adds have a destination of their
- *  own; everything else in the v1 catalogue lives on the Circle surface. */
+/** Where tapping the row goes. A group add opens the group; anything about one
+ *  share opens THAT share's page, so a reply notification lands on the reply
+ *  and not on a feed the user then has to search. The rest of the v1 catalogue
+ *  has no destination finer than the Circle surface itself.
+ *
+ *  The routing question is "is this row's object a share?", and the payload
+ *  already answers it: `objectType: 'share'` is written by exactly the three
+ *  share producers (`lib/actions/meal-sharing/{reactions,replies,log-shared}`),
+ *  while `share.invite_accepted` records an `'invite'`. A parallel set of types
+ *  would be a second, driftable copy of that discriminant — the plural-copy
+ *  policy above is a separate question and stays a separate set. Mobile routes
+ *  the same way (`push_tap_routing.dart`). */
 export function notificationHref(item: NotificationItem): string {
   if (item.type === 'group.added' && item.targetId) {
-    return `/circle/g/${item.targetId}`;
+    return circleGroupHref(item.targetId);
+  }
+  if (item.objectType === 'share' && item.objectId) {
+    return circleThreadHref(item.objectId);
   }
   return '/circle';
 }

@@ -18,6 +18,7 @@ const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
 const resolveRelogSources = vi.fn();
 const assertFeatureAccess = vi.fn();
+const findCachedRows = vi.fn();
 
 vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   checkAnalysisGuards,
@@ -35,6 +36,12 @@ vi.mock('@/lib/infra/db/client', () => ({
 }));
 vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
   resolveRelogSources,
+}));
+vi.mock('@/lib/domain/barcode/cache', () => ({ findCachedRows }));
+// Only the paths that get PAST the gate reach the write; the mock is what lets
+// one of them run to completion here.
+vi.mock('@/lib/ai/pipeline/stream/persist-analysis', () => ({
+  upsertPendingAnalysis: vi.fn(async () => [{ id: 'analysis-1' }]),
 }));
 
 const { loadRelogCandidatesAction } = await import(
@@ -190,6 +197,40 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     );
     expect(checkAnalysisGuards).not.toHaveBeenCalled();
     expect(resolveRelogSources).not.toHaveBeenCalled();
+  });
+
+  it('does not paywall a scan-only submit', async () => {
+    // A barcode carries no entitlement anywhere else in the product —
+    // `/api/v1/barcode/log` gates nothing — so routing scanned picks through
+    // this action must not make it the one barcode path behind the paywall.
+    lock();
+    findCachedRows.mockResolvedValue(
+      new Map([
+        [
+          '8935001234567',
+          {
+            id: 'off:8935001234567',
+            namePrimary: 'Sữa tươi TH true milk',
+            caloriesKcal: '60',
+          },
+        ],
+      ])
+    );
+
+    await stageRelogAnalysisAction({
+      ...relogInput,
+      items: [{ kind: 'barcode', barcode: '8935001234567', grams: 180 }],
+      attemptId: crypto.randomUUID(),
+    });
+
+    expect(assertFeatureAccess).not.toHaveBeenCalled();
+    expect(findCachedRows).toHaveBeenCalledWith(['8935001234567']);
+    // Open the paywall, not the throttle: this path still opens a transaction
+    // and writes a fat `pending_analyses` row, so it stays on the SHARED relog
+    // write counter like every other write action.
+    expect(checkAnalysisGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
+    );
   });
 
   it('instant-save refuses a locked user without spending rate budget', async () => {

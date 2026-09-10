@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../typography/kallo_text.dart';
@@ -64,6 +65,7 @@ class KalloButton extends StatefulWidget {
     this.variant = KalloButtonVariant.primary,
     this.loading = false,
     this.disabled = false,
+    this.animateTitle = false,
   });
 
   final String title;
@@ -71,6 +73,11 @@ class KalloButton extends StatefulWidget {
   final KalloButtonVariant variant;
   final bool loading;
   final bool disabled;
+
+  /// Cross-fades the label when [title] changes — the onboarding CTA turning
+  /// into "Save my plan". Off by default: a label that changes for a different
+  /// reason (a count, a countdown) should not dissolve every time.
+  final bool animateTitle;
 
   @override
   State<KalloButton> createState() => _NhamButtonState();
@@ -128,15 +135,11 @@ class _NhamButtonState extends State<KalloButton> {
                         : KalloColors.text,
               ),
             )
-            : KalloText(
-              widget.title,
-              variant: KalloTextVariant.body,
-              style: KalloTextStyles.sansSemiBold(
-                fontSize: KalloFontSize.md,
-              ).copyWith(color: labelColor),
-            );
+            : _label(labelColor);
 
-    return Opacity(
+    return AnimatedOpacity(
+      duration: KalloMotion.press,
+      curve: KalloEase.press,
       opacity: opacity,
       child: GestureDetector(
         onTapDown: _isDisabled ? null : (_) => setState(() => _pressed = true),
@@ -172,6 +175,26 @@ class _NhamButtonState extends State<KalloButton> {
           child: content,
         ),
       ),
+    );
+  }
+
+  Widget _label(Color color) {
+    final Widget text = KalloText(
+      widget.title,
+      variant: KalloTextVariant.body,
+      style: KalloTextStyles.sansSemiBold(
+        fontSize: KalloFontSize.md,
+      ).copyWith(color: color),
+    );
+    if (!widget.animateTitle) return text;
+    return AnimatedSwitcher(
+      duration: KalloMotion.quick,
+      // Stacked, not side by side: the CTA must not twitch mid-dissolve.
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.center,
+        children: [...previous, if (current != null) current],
+      ),
+      child: KeyedSubtree(key: ValueKey(widget.title), child: text),
     );
   }
 }

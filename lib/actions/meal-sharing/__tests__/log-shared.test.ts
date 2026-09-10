@@ -241,6 +241,8 @@ describe('logSharedMealAction', () => {
     expect(mockSendNotificationPush).toHaveBeenCalledWith([OWNER], {
       type: 'share.logged',
       actor: { id: mockUser.id },
+      objectType: 'share',
+      objectId: SHARE_ID,
       groupKey: `share.logged:${SHARE_ID}`,
     });
   });

@@ -14,14 +14,14 @@ import 'barcode_grams_picker.dart';
 import 'barcode_nutrition_preview.dart';
 import 'barcode_serving_picker.dart';
 import '../../../../../theme/calm_tokens.dart';
+import '../../../logic/relog/scan_purpose.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
-/// package, or custom grams — offering only the modes the product actually
-/// has sizing for — with a live nutrition preview for the chosen amount.
+/// package, or custom grams — only the modes the product has sizing for — with
+/// a live nutrition preview for the chosen amount.
 ///
 /// Port of the web's `barcode-product-step.tsx`. Owns all amount state; the
-/// sheet keys this widget on `product.barcode` so defaults re-initialize on
-/// each scan.
+/// sheet keys it on `product.barcode` so defaults re-initialize per scan.
 class BarcodeProductStep extends StatefulWidget {
   const BarcodeProductStep({
     super.key,
@@ -29,18 +29,21 @@ class BarcodeProductStep extends StatefulWidget {
     required this.saving,
     required this.onBack,
     required this.onConfirm,
+    required this.purpose,
     this.errorText,
   });
 
   final BarcodeProduct product;
+
+  /// Why the sheet was opened — the CTA names what confirming will do.
+  final ScanPurpose purpose;
   final bool saving;
   final VoidCallback onBack;
 
   /// Called with the resolved gram amount to log.
   final ValueChanged<int> onConfirm;
 
-  /// Inline save error, shown above the footer so the chosen amount survives
-  /// a failed attempt.
+  /// Inline save error, above the footer so a failed attempt keeps the amount.
   final String? errorText;
 
   @override
@@ -182,7 +185,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
               ),
               const Spacer(),
               SheetConfirmButton(
-                label: 'logging.barcode.addMeal'.tr(),
+                label: widget.purpose.ctaKey.tr(),
                 saving: widget.saving,
                 onTap: () => widget.onConfirm(grams),
               ),

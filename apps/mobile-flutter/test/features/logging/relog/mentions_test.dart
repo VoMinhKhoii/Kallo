@@ -45,6 +45,54 @@ void main() {
     });
   });
 
+  group('insertMentionAt', () {
+    test('splices at the caret with a space on each side', () {
+      final result = insertMentionAt('cafe roi', 4, 'Sữa TH (180g)');
+      expect(result.value, 'cafe Sữa TH (180g) roi');
+      expect(result.start, 5);
+    });
+
+    // Any whitespace is a separator, not just a space: a pick opening a fresh
+    // line must sit at the margin, not one space in from it.
+    test('adds no leading space after a newline', () {
+      final result = insertMentionAt('cafe\n', 5, 'Sữa TH (180g)');
+      expect(result.value, 'cafe\nSữa TH (180g) ');
+      expect(result.start, 5);
+    });
+
+    test('adds no trailing space before a newline', () {
+      final result = insertMentionAt('cafe\nroi', 5, 'Sữa TH (180g)');
+      expect(result.value, 'cafe\nSữa TH (180g) roi');
+    });
+  });
+
+  group('shiftMentions', () {
+    test('moves everything at or after the splice, leaves the rest', () {
+      final out = shiftMentions([
+        _mention('Cà phê', 0),
+        _mention('Phở bò', 10),
+      ], at: 10, delta: 5);
+      expect(out.map((m) => m.start), [0, 15]);
+    });
+
+    test('a deletion shifts left', () {
+      final out = shiftMentions([_mention('Phở bò', 20)], at: 4, delta: -3);
+      expect(out.single.start, 17);
+    });
+
+    // What makes the reconcile order-proof: fed post-splice offsets, the walk
+    // sorts on real positions instead of trusting the caller's ordering.
+    test('feeds reconcileMentions offsets it can sort on', () {
+      final shifted = shiftMentions([_mention('/Phở bò', 4)], at: 4, delta: 14);
+      final out = reconcileMentions('cafe Sữa TH (180g) /Phở bò ', [
+        _mention('Sữa TH (180g)', 5),
+        ...shifted,
+      ]);
+      expect(out.map((m) => m.label), ['Sữa TH (180g)', '/Phở bò']);
+      expect(out.map((m) => m.start), [5, 19]);
+    });
+  });
+
   group('reconcileMentions', () {
     test('keeps a mention whose text is untouched', () {
       final out = reconcileMentions('Phở bò ', [_mention('Phở bò', 0)]);
@@ -107,6 +155,24 @@ void main() {
       ]);
       expect(out.map((m) => m.label), ['Cà phê', 'Phở bò']);
       expect(out.map((m) => m.start), [0, 7]);
+    });
+
+    // Two picks of the same dish that both claim the SAME offset — a shape
+    // `shiftMentions` normally rules out, since the splice that put one there
+    // pushed the other right. The nearest-occurrence walk cannot keep both: the
+    // first-listed one is nearest to the occurrence at 2 (distance 0, against 2
+    // for the one at 0), takes it, and leaves the cursor past the end of the
+    // string. Keeping both would need the earlier-listed mention to accept a
+    // WORSE match so the later one could have its own, i.e. matching the whole
+    // set at once rather than one at a time — the same single survivor the
+    // exact-offset preference produced, and no reference is invented for a
+    // pick the text cannot place.
+    test('two mentions claiming one offset leave a single survivor', () {
+      final out = reconcileMentions('A A', [
+        _mention('A', 2, stageId: 'a'),
+        _mention('A', 2, stageId: 'b'),
+      ]);
+      expect(out.map((m) => (m.stageId, m.start)), [('a', 2)]);
     });
 
     // A pick spliced in exactly where another one started: the splice is what

@@ -6,25 +6,29 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'services/auth/session_provider.dart';
+import 'features/auth/screens/email_auth_screen.dart';
 import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
 import 'features/circle/screens/circle_screen.dart';
+import 'features/circle/screens/circle_thread_screen.dart';
 import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
 import 'features/nutrition/screens/nutrition_screen.dart';
+import 'features/onboarding/providers/onboarding_draft_providers.dart';
 import 'features/onboarding/providers/onboarding_providers.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
+import 'features/onboarding/screens/save_plan_screen.dart';
+import 'features/onboarding/screens/start_screen.dart';
 import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
-import 'services/auth/supabase_service.dart';
+import 'router_redirect.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/route_error_screen.dart';
+import 'shell/splash_screen.dart';
 import 'shell/tab_scaffold.dart';
-import 'theme/kallo_colors.dart';
-import 'theme/kallo_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -38,19 +42,25 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///   • `/logging` is a ROOT route pushed full-screen over the shell (the
 ///     pill nav's Log item; Cupertino swipe-back returns to the tab the user
 ///     came from — feed state lives in providers, so nothing is lost).
-///   • `/sign-in`, `/sign-up`, `/onboarding`, `/welcome`, and `/settings` are
-///     standalone root routes (`/settings` pushes over the shell from the
-///     dashboard avatar with Cupertino swipe-back).
+///   • `/start`, `/sign-in` (+ `/sign-in/email`), `/sign-up`, `/onboarding`,
+///     `/save-plan` (+ `/save-plan/email`),
+///     `/welcome` and `/settings` are standalone root routes (`/settings`
+///     pushes over the shell from the dashboard avatar with Cupertino
+///     swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
-/// The redirect is the mobile counterpart of the web auth gate in
-/// `middleware.ts`: signed-out → `/sign-in`; signed-in but onboarding
-/// incomplete → `/onboarding`; otherwise → `/dashboard`. It re-evaluates on
-/// every auth state change via [refreshListenable] (an auth-stream bridge),
-/// matching RN's `onAuthStateChange` re-render.
+/// The redirect diverges from the web auth gate in `middleware.ts` from Phase
+/// C2 on: mobile runs onboarding BEFORE sign-in, so a signed-out user is not
+/// bounced to `/sign-in` but to wherever their LOCAL DRAFT says they are. The
+/// rules are quoted, in order, on [resolveRedirect] — one copy, in the file
+/// that applies them; [_redirect] below is only the Riverpod plumbing.
+///
+/// It re-evaluates on every auth state change via [refreshListenable] (an
+/// auth-stream bridge), matching RN's `onAuthStateChange` re-render, and on
+/// the async provider settles it listens to below.
 final routerProvider = Provider<GoRouter>((ref) {
   // Re-run redirects whenever Supabase auth state changes.
-  final refresh = _GoRouterAuthRefresh(SupabaseService.client.auth);
+  final refresh = _GoRouterAuthRefresh(ref.read(authEventsProvider));
   ref.onDispose(refresh.dispose);
 
   // Re-run redirects when the async profile resolves and flips the
@@ -61,6 +71,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(profileProvider, (_, __) => refresh.ping());
   ref.listen(onboardingResumeProvider, (_, __) => refresh.ping());
   ref.listen(onboardingForceDismissedProvider, (_, __) => refresh.ping());
+  // The signed-out landing is decided by the local draft, which arrives from
+  // secure storage a beat late — same shape as the profile above, same fix.
+  ref.listen(onboardingDraftProvider, (_, __) => refresh.ping());
 
   return GoRouter(
     navigatorKey: _rootKey,
@@ -72,86 +85,33 @@ final routerProvider = Provider<GoRouter>((ref) {
     // say different things to the user.
     errorBuilder: (context, state) =>
         RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
-    redirect: (context, state) {
-      // While the very first session restore is in flight, hold on `/` (the
-      // splash) rather than flashing the sign-in screen — mirrors RN's
-      // `loading` ActivityIndicator gate.
-      final sessionAsync = ref.read(sessionProvider);
-      if (sessionAsync.isLoading && !sessionAsync.hasValue) {
-        return state.matchedLocation == '/' ? null : '/';
-      }
-
-      // Read the AUTHORITATIVE session straight off the client, not the
-      // `sessionProvider` AsyncValue. The refresh listenable and the provider
-      // both subscribe to `onAuthStateChange`; on sign-out the redirect can run
-      // (driven by the listenable) before the provider's stream has propagated
-      // the null, leaving a stale signed-in value and stranding the user in the
-      // app. `auth.currentSession` is updated synchronously before the event
-      // fires, so it's always current here.
-      final session = SupabaseService.client.auth.currentSession;
-      final signedIn = session != null;
-      final loc = state.matchedLocation;
-
-      final atAuth = loc == '/sign-in' || loc == '/sign-up';
-      final atOnboarding = loc == '/onboarding';
-      final atWelcome = loc == '/welcome';
-
-      // Signed out: only the auth routes — and the invite connect screen —
-      // are reachable. The connect screen renders the "sign in to connect"
-      // state itself (and stashes the slug), so it must NOT bounce to sign-in.
-      if (!signedIn) {
-        if (atAuth || loc.startsWith('/circle/invite/')) return null;
-        return '/sign-in';
-      }
-
-      // The post-finish setup interstitial is always reachable while signed in
-      // (it warms caches then routes to /logging) — never bounce it, even mid
-      // completion when the profile is briefly stale.
-      if (atWelcome) return null;
-
-      final firstSession = _isFirstSession(session.user);
-      final dismissed = ref.read(onboardingForceDismissedProvider);
-
-      // Brand-new first-session users: hold on the splash until the profile (the
-      // onboarding decision) resolves, so they don't flash the dashboard first.
-      if (firstSession && !dismissed) {
-        final profileAsync = ref.read(profileProvider);
-        if (profileAsync.isLoading && !profileAsync.hasValue) {
-          return loc == '/' ? null : '/';
-        }
-      }
-
-      // Force ONLY brand-new first-session users with an incomplete profile into
-      // the full-page wizard. Returning-incomplete users are NOT forced — they
-      // resume via the sidebar dialog. Closing/finishing sets the session-scoped
-      // dismissed flag so the router stops re-forcing them.
-      final forceOnboarding =
-          firstSession && !dismissed && ref.read(onboardingResumeProvider);
-      if (forceOnboarding) {
-        return atOnboarding ? null : '/onboarding';
-      }
-
-      // Not forced: bounce away from the index / auth / onboarding routes into
-      // the app; leave in-app tab routes (and /welcome, handled above) alone.
-      if (loc == '/' || atAuth || atOnboarding) {
-        // A pending invite (stashed when a signed-out user opened an invite
-        // link) wins over the dashboard, so the invite survives the sign-in
-        // detour. The connect screen clears it on mount.
-        final pending = ref.read(pendingInviteSlugProvider);
-        if (pending != null) return '/circle/invite/$pending';
-        return '/dashboard';
-      }
-      return null;
-    },
+    redirect: (context, state) => _redirect(ref, state.matchedLocation),
     routes: [
       // Index — pure redirect target (resolved above). A bare splash so there's
       // a frame to render while the redirect computes.
-      GoRoute(path: '/', builder: (context, state) => const _SplashScreen()),
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
 
+      // The signed-out entry: brand, a preview of the Log screen, and the two
+      // ways in (start the wizard, or sign in to an existing account).
+      GoRoute(
+        path: '/start',
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => const StartScreen(),
+      ),
       GoRoute(
         path: '/sign-in',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const SignInScreen(),
+        routes: [
+          // The email path, pushed from the welcome face's "Continue with
+          // email". A child route so Back pops to the options that opened it.
+          GoRoute(
+            path: 'email',
+            parentNavigatorKey: _rootKey,
+            builder: (context, state) =>
+                const EmailAuthScreen(createAccount: false),
+          ),
+        ],
       ),
       GoRoute(
         path: '/sign-up',
@@ -162,6 +122,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      // The last signed-out step: the auth surface under the wizard's chrome,
+      // reached when the draft is complete.
+      GoRoute(
+        path: '/save-plan',
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => const SavePlanScreen(),
+        routes: [
+          // Same screen, opened on sign-UP: whoever just built a plan here has
+          // no account yet. Back pops to `/save-plan`.
+          GoRoute(
+            path: 'email',
+            parentNavigatorKey: _rootKey,
+            builder: (context, state) =>
+                const EmailAuthScreen(createAccount: true),
+          ),
+        ],
       ),
       GoRoute(
         path: '/welcome',
@@ -188,13 +165,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const CupertinoPage<void>(child: SettingsScreen()),
       ),
       // Paywall — pushed over the shell (from Settings, or when a gated action
-      // hits an HTTP 402). Cupertino swipe-back like Settings.
+      // hits an HTTP 402). Cupertino swipe-back like Settings. `?onboarding=1`
+      // is the last step of the first run: both exits then continue INTO the
+      // app instead of popping back to the setup interstitial.
       GoRoute(
         path: '/paywall',
         parentNavigatorKey: _rootKey,
-        pageBuilder:
-            (context, state) =>
-                const CupertinoPage<void>(child: PaywallScreen()),
+        pageBuilder: (context, state) => CupertinoPage<void>(
+          child: PaywallScreen(
+            onboarding: state.uri.queryParameters['onboarding'] == '1',
+          ),
+        ),
       ),
       // The logging feed — FULL-SCREEN over the shell (the pill nav's Log
       // item, and every "take me to logging" call site via goToLogging). The
@@ -206,6 +187,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder:
             (context, state) =>
                 const CupertinoPage<void>(child: LoggingScreen()),
+      ),
+
+      // One Circle post and its replies, pushed over the shell from the feed's
+      // reply glyph. `scope` names the feed the post was read from (absent =
+      // the combined friends feed): the page prefers that feed's live cache
+      // and falls back to fetching the single share, the two sources documented
+      // in `features/circle/data/thread_providers.dart`. The scope stays in
+      // the URL because the feed is the primary read.
+      //
+      // `:shareId` SHADOWS any literal `/circle/<word>` segment — go_router
+      // takes the first match — so a future one must be declared BEFORE this
+      // route, exactly as `/circle/invite/:slug` already is above.
+      GoRoute(
+        path: '/circle/:shareId',
+        parentNavigatorKey: _rootKey,
+        pageBuilder:
+            (context, state) => CupertinoPage<void>(
+              child: CircleThreadScreen(
+                shareId: state.pathParameters['shareId'] ?? '',
+                scope: state.uri.queryParameters['scope'],
+                autofocusComposer: state.uri.queryParameters['compose'] == '1',
+              ),
+            ),
       ),
 
       // The pill-nav destinations — each its own branch so state/scroll
@@ -261,6 +265,39 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Gathers what [resolveRedirect] needs out of Riverpod. The rule itself is in
+/// `router_redirect.dart` — plain values in, a location out — so it can be
+/// tested without a Supabase client or a single pumped screen.
+String? _redirect(Ref ref, String location) {
+  final sessionAsync = ref.read(sessionProvider);
+  // The AUTHORITATIVE session, straight off the client: the listenable and the
+  // provider both subscribe to `onAuthStateChange`, so on sign-out the redirect
+  // can run before the provider's stream has propagated the null and strand the
+  // user in the app. `auth.currentSession` is updated synchronously.
+  final session = ref.read(currentSessionReaderProvider)();
+  final draftAsync = ref.read(onboardingDraftProvider);
+  final profileAsync = ref.read(profileProvider);
+
+  return resolveRedirect(
+    location: location,
+    sessionLoading: !_settled(sessionAsync),
+    signedIn: session != null,
+    draft: (loading: !_settled(draftAsync), value: draftAsync.valueOrNull),
+    firstSession: _isFirstSession(session?.user),
+    dismissed: ref.read(onboardingForceDismissedProvider),
+    onboarding: (
+      force: ref.read(onboardingResumeProvider),
+      loading: !_settled(profileAsync),
+    ),
+    pendingInvite: ref.read(pendingInviteSlugProvider),
+  );
+}
+
+/// Whether an async source has an answer the redirect may act on. A REFRESH is
+/// not a wait — every save invalidates the profile — so the hold is `isLoading`
+/// AND nothing to show.
+bool _settled(AsyncValue<Object?> async) => !async.isLoading || async.hasValue;
+
 /// Whether this looks like the user's very first session — a brand-new account
 /// whose last sign-in is within 60s of creation. Mirrors the web layout's
 /// `isFirstSession` gate (`app/[locale]/(app)/layout.tsx`) so only fresh
@@ -281,9 +318,9 @@ bool _isFirstSession(User? user) {
 /// sign-out, token refresh) — the go_router equivalent of RN's
 /// `onAuthStateChange` re-render.
 class _GoRouterAuthRefresh extends ChangeNotifier {
-  _GoRouterAuthRefresh(GoTrueClient auth) {
+  _GoRouterAuthRefresh(Stream<AuthState> events) {
     notifyListeners();
-    _sub = auth.onAuthStateChange.listen(
+    _sub = events.listen(
       (_) => notifyListeners(),
       // gotrue surfaces auth failures (refresh blips, expired-session
       // recovery) as errors on this stream. A `listen` without an error
@@ -304,66 +341,5 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
   void dispose() {
     _sub.cancel();
     super.dispose();
-  }
-}
-
-/// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the Lora "Kallo" wordmark breathing gently on the cream
-/// surface, instead of a generic Material spinner. The cream background matches
-/// the native LaunchScreen so the native→Flutter handoff is seamless.
-class _SplashScreen extends StatefulWidget {
-  const _SplashScreen();
-
-  @override
-  State<_SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<_SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    // Gentle breathing pulse, paused under reduced-motion.
-    if (!WidgetsBinding
-        .instance
-        .platformDispatcher
-        .accessibilityFeatures
-        .disableAnimations) {
-      _controller.repeat(reverse: true);
-    } else {
-      _controller.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final wordmark = Text(
-      'Kallo',
-      style: KalloTextStyles.serifRegular(
-        fontSize: 32,
-      ).copyWith(color: KalloColors.text),
-    );
-    return ColoredBox(
-      color: KalloColors.surface,
-      child: Center(
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
-          child: wordmark,
-        ),
-      ),
-    );
   }
 }

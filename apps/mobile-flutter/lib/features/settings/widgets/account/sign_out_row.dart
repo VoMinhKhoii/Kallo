@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../services/auth/session_provider.dart';
+import '../../../../services/push/push_service.dart';
 import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../shared/widgets/list/list_row.dart';
@@ -43,6 +44,10 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
     if (!confirmed || _signingOut || !mounted) return;
     setState(() => _signingOut = true);
     try {
+      // Release the APNs device token BEFORE the session goes: the DELETE
+      // rides the same Bearer token. It never throws — a failed release must
+      // not strand the user in a signed-in app.
+      await ref.read(pushServiceProvider).unregister();
       await ref.read(authControllerProvider).signOut();
       if (!mounted) return;
       context.go('/sign-in');

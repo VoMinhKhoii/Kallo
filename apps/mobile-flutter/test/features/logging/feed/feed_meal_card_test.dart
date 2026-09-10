@@ -16,6 +16,13 @@ import '../../../l10n_test_loader.dart';
 
 const _raw = 'phở bò tái nạm';
 
+/// What the CARD prints for [_raw]. A meal card capitalises its title at the
+/// render site (`MealBlock`), while the user's own message bubble quotes what
+/// they actually typed — so the two now differ by one letter and a test that
+/// wants the card must say so. A literal, not the helper: a test that
+/// computes its expectation with the code under test cannot fail.
+const _cardRaw = 'Phở bò tái nạm';
+
 const _meal = PersistedMeal(
   id: 'm1',
   rawInput: _raw,
@@ -60,6 +67,11 @@ const _grouped = PersistedMeal(
 /// A meal text long enough to wrap — the case the chevron used to drift on.
 const _longRaw =
     'phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại, '
+    'thêm một chén nước béo và bánh phở tươi đặc biệt của quán';
+
+/// What the card prints for [_longRaw] — a literal, as [_cardRaw] is.
+const _longCard =
+    'Phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại, '
     'thêm một chén nước béo và bánh phở tươi đặc biệt của quán';
 
 const _longTitled = PersistedMeal(
@@ -160,7 +172,7 @@ void main() {
     expect(find.text('Beef slices').hitTestable(), findsNothing);
 
     // The whole meal block is the toggle target.
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
     expect(find.text('Beef slices').hitTestable(), findsOneWidget);
 
@@ -181,9 +193,10 @@ void main() {
     // moment the meal was stored — the conversation turned into a list.
     expect(find.byType(UserMessageBubble), findsOneWidget);
     expect(find.byType(MealTimeDivider), findsOneWidget);
-    // Twice: the bubble, and the card's own quote (which is also its
-    // expand/collapse tap target).
-    expect(find.text(_raw), findsNWidgets(2));
+    // Both survive: the bubble quotes the user verbatim, the card prints the
+    // meal's name capitalised. Two renderings of one meal, not one.
+    expect(find.text(_raw), findsOneWidget);
+    expect(find.text(_cardRaw), findsOneWidget);
   });
 
   testWidgets('the bubble sits between the divider and the card', (
@@ -241,7 +254,7 @@ void main() {
     await tester.pumpWidget(_wrap(_longTitled));
     await tester.pumpAndSettle();
 
-    final title = tester.getRect(find.text(_longRaw).last);
+    final title = tester.getRect(find.text(_longCard).last);
     final chevron = tester.getRect(find.byType(PersistedMealChevronToggle));
 
     expect(title.height, greaterThan(30),
@@ -259,7 +272,7 @@ void main() {
     await tester.pumpWidget(_wrap(_grouped));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
 
     final detail = tester.getRect(find.text('Beef slices'));
@@ -277,7 +290,7 @@ void main() {
     await tester.pumpWidget(_wrap(_longGrouped));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(_raw).last);
+    await tester.tap(find.text(_cardRaw));
     await tester.pumpAndSettle();
 
     final name = tester.getRect(find.text(_longDish));

@@ -6,7 +6,7 @@
 /// invalidation prefixes match the web keys exactly.
 library;
 
-import 'api_client.dart';
+import '../../models/http/api_error.dart';
 
 /// react-query `staleTime: 60_000`. Data is considered fresh for this long;
 /// feature providers should avoid refetching within the window.

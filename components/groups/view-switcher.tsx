@@ -6,6 +6,7 @@ import { useCircleFeed } from '@/hooks/social/circle/use-circle-feed';
 import { useFriendsFeedReadMarker } from '@/hooks/social/circle/use-friend-thread-feed';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
+import { circleGroupHref } from '@/lib/domain/social/circle-routes';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +
@@ -79,7 +80,7 @@ export function ViewSwitcher() {
       </Link>
 
       {namedGroups.map((group) => {
-        const href = `/circle/g/${group.id}`;
+        const href = circleGroupHref(group.id);
         const active = pathname === href;
         return (
           <Link

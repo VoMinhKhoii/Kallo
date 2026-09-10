@@ -17,4 +17,26 @@ describe('MacroScale', () => {
     expect(screen.getByText(/F:\s*—/)).toBeInTheDocument();
     expect(screen.queryByText(/F:\s*0g/)).not.toBeInTheDocument();
   });
+
+  it('leads the row with a caller-supplied figure and shares the width out', () => {
+    const { container } = render(
+      <MacroScale
+        grams={{ protein: 38, carbohydrate: 64, fat: 12 }}
+        leading={<span>420 kcal</span>}
+      />
+    );
+
+    const row = container.firstElementChild;
+    expect(row).toHaveClass('justify-between');
+    expect(row).not.toHaveClass('justify-evenly');
+    expect(row?.firstElementChild).toHaveTextContent('420 kcal');
+  });
+
+  it('spaces the three evenly when nothing leads them', () => {
+    const { container } = render(
+      <MacroScale grams={{ protein: 38, carbohydrate: 64, fat: 12 }} />
+    );
+
+    expect(container.firstElementChild).toHaveClass('justify-evenly');
+  });
 });

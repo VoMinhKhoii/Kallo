@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/logging_providers.dart';
 import '../../widgets/relog/mention_text_controller.dart';
-import '../feed/analysis_run.dart';
+import '../feed/analysis/analysis_run.dart';
 import '../meal_log_mode.dart';
 import 'composer_submit_plan.dart';
 import 'pure_relog_staging.dart';
+import 'relog_label.dart';
 
 /// The composer's unified submit: [planComposerSubmit] decides which of the
 /// three shapes a submit is, this runs it. One handler covers all three, so a
@@ -77,6 +78,7 @@ class ComposerSubmitter {
             date: date,
             refs: refs,
             stageIds: stageIds,
+            displayText: capDisplayText(unmarkPicks(text, composer.entries)),
             onStaged: onStaged,
             onStagingChange: (staging) {
               _staging = staging;

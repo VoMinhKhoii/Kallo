@@ -308,7 +308,7 @@ export const rateLimitPolicies = {
   },
 
   /**
-   * FCM fan-out backstop. Degraded on purpose: this guard runs INSIDE the send
+   * APNs fan-out backstop. Degraded on purpose: this guard runs INSIDE the send
    * path, and failing it closed would turn a limiter outage into a failure to
    * save the user's message. The worst case is a skipped push.
    */

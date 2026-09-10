@@ -49,15 +49,19 @@ export type TargetRow = Record<
   BiologicalSex,
   {
     value: number;
-    unit: 'mg' | 'mcg';
+    unit: 'g' | 'mg' | 'mcg';
   }
 >;
 
 // An age-banded entry resolves the right TargetRow based on profile.age.
 // Bands are evaluated in order; the first whose `minAge` is <= age wins.
-// Always include a band with `minAge: 0` as the catch-all default (so missing
-// ages still resolve to the youngest-adult band rather than dropping to
-// `unsupported`). Bands must be listed in DESCENDING `minAge` order.
+// Always include a band with `minAge: 0` as the catch-all, so an age below
+// everything the source publishes still resolves rather than dropping to
+// `unsupported`. It is the LOWEST published band that carries that floor — an
+// unknown age no longer lands here at all: `resolveAgeBand` scores it as a
+// young adult explicitly (ASSUMED_ADULT_AGE), so no table needs a duplicate
+// adult row at the bottom to be read correctly.
+// Bands must be listed in DESCENDING `minAge` order.
 export interface AgeBand {
   minAge: number;
   row: TargetRow;
@@ -328,6 +332,66 @@ export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
 // where WHO/FAO 2004 does not publish a value (copper, manganese, sodium,
 // potassium, phosphorus). Adults 19–50 y unless noted.
 export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
+  // NASEM 2005 Macronutrients DRI — total fiber, Adequate Intake by sex and
+  // age (the 14 g / 1,000 kcal basis tabulated). Neither VN MoH 2016 nor
+  // WHO/FAO 2004 publish a fiber figure, so every context resolves it here.
+  // Onboarding accepts ages from 13 up (`bodyMetricsSchema` in
+  // `lib/domain/onboarding/schemas.ts`), so a profile CAN be a minor and the
+  // adult AI would over-target them; the child bands below are the rest of the
+  // published table, kept whole rather than truncated at 13.
+  fiberG: {
+    ageBands: [
+      {
+        minAge: 51,
+        row: {
+          male: { value: 30, unit: 'g' },
+          female: { value: 21, unit: 'g' },
+        },
+      },
+      {
+        minAge: 19,
+        row: {
+          male: { value: 38, unit: 'g' },
+          female: { value: 25, unit: 'g' },
+        },
+      },
+      {
+        minAge: 14,
+        row: {
+          male: { value: 38, unit: 'g' },
+          female: { value: 26, unit: 'g' },
+        },
+      },
+      {
+        minAge: 9,
+        row: {
+          male: { value: 31, unit: 'g' },
+          female: { value: 26, unit: 'g' },
+        },
+      },
+      {
+        minAge: 4,
+        row: {
+          male: { value: 25, unit: 'g' },
+          female: { value: 25, unit: 'g' },
+        },
+      },
+      {
+        // The 1–3 y AI, doubling as this file's `minAge: 0` catch-all. NASEM
+        // publishes nothing below 1 y (infants have an AI for total fat, not
+        // fiber), so the youngest published band is the honest floor — there
+        // is no separate infant row to lose. An age-unknown profile does NOT
+        // land here: it resolves as a 19-year-old (see resolveAgeBand), which
+        // is why the duplicate adult row that used to sit at the bottom of
+        // this table is gone.
+        minAge: 0,
+        row: {
+          male: { value: 19, unit: 'g' },
+          female: { value: 19, unit: 'g' },
+        },
+      },
+    ],
+  },
   copperMcg: {
     // IOM 2001 RDA, adults.
     male: { value: 900, unit: 'mcg' },
@@ -382,6 +446,9 @@ export const TARGET_KEYS: NutritionNutrientKey[] = [
   // Promoted from educational pull-quote — pull-quote stays in
   // educationCards, but the row also gets a real scored target.
   'vitaminDMcg',
+  // Fiber scores off the NASEM AI in every context — it is the one target key
+  // absent from both VIETNAM_RDA and WHO_FAO (see NASEM_DRI.fiberG).
+  'fiberG',
   // Hidden bookkeeping nutrient.
   'vitaminHMcg',
 ];

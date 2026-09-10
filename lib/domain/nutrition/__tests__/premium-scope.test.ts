@@ -27,9 +27,10 @@ function card(nutrient: NutritionNutrientKey): NutrientCardData {
 }
 
 /**
- * Fiber is a premium micronutrient (MORE_NUTRIENTS), not a macro row — it has
- * no reference target, so it lands in `moreNutrients` with an unsupported
- * target and must be stripped for non-entitled viewers like the rest.
+ * Fiber is a premium micronutrient (MORE_NUTRIENTS), not a macro row, so it
+ * lands in `moreNutrients` and must be stripped for non-entitled viewers like
+ * the rest. This fixture deliberately carries no target: the strip is what is
+ * under test here, and it must hold whatever target fiber resolves to.
  */
 function fiberCard(): NutrientCardData {
   return {

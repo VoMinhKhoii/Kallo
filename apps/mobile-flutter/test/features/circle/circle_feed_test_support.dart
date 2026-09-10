@@ -1,10 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+
+import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 
 typedef Request = ({String method, String path, Object? body});
 typedef RequestHandler = FutureOr<Object?> Function(Request request);
@@ -111,6 +116,18 @@ Map<String, dynamic> replyJson(String id) => {
   'createdAt': '2026-07-18T04:05:06.000Z',
 };
 
+/// `GET /api/v1/groups/shares/<id>` — the single-share read the thread page
+/// falls back to when its feed cache does not hold the post
+/// (`data/share_entry_provider.dart`). A helper rather than a literal so a
+/// test asserting that NO fallback fetch happened cannot drift from the
+/// provider, and so it can never be confused with the `/shares/reply` and
+/// `/shares/reaction` mutations that share its prefix.
+String sharePath(String shareId) =>
+    '/api/v1/groups/shares/${Uri.encodeComponent(shareId)}';
+
+/// The single-share response envelope: `{ entry }`, one [entryJson].
+Map<String, dynamic> shareJson(Map<String, dynamic> entry) => {'entry': entry};
+
 Map<String, dynamic> pageJson(
   List<Map<String, dynamic>> entries,
   String? cursor,
@@ -140,6 +157,119 @@ Future<SharedMealFeedState> mountFeed(
   holdProvider(container, provider);
   return container.read(provider.future);
 }
+
+/// The two reads every Circle screen makes on the side: the friends feed
+/// invalidates the read marker on every load, and the thread's composer reads
+/// the viewer's own profile for its avatar. A handler that only knows the feed
+/// path makes both retry and pollute the request log. Answer them and move on.
+Object? readMarker(Request request) => switch (request.path) {
+  '/api/v1/groups/friends/read-marker' => {
+    'lastReadAt': '2026-07-18T00:00:00.000Z',
+  },
+  '/api/v1/groups/profile' => {
+    'profile': {'userId': 'me', 'handle': 'khoa', 'displayName': 'Khoa'},
+  },
+  _ => unexpectedRequest(request),
+};
+
+/// The one app tree these tests mount: the l10n the strings come from, and a
+/// [ProviderScope] over it. [app] builds the [MaterialApp] under a [Builder],
+/// because the localization delegates are read off the context.
+///
+/// [size] fixes the test view (at devicePixelRatio 1) for a layout assertion
+/// and resets it afterwards; [decodeAssets] spends real time so the
+/// illustrations, which decode off the main isolate, reach their true height
+/// before anything is measured; [settle] is off for a surface that animates
+/// forever (a shimmer) and would time out `pumpAndSettle`.
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  required Widget Function(BuildContext context) app,
+  Size? size,
+  bool settle = true,
+  bool decodeAssets = false,
+}) async {
+  if (size != null) {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.reset);
+  }
+  await tester.pumpWidget(
+    EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/l10n',
+      fallbackLocale: const Locale('en'),
+      assetLoader: const FsL10nLoader(),
+      child: ProviderScope(overrides: overrides, child: Builder(builder: app)),
+    ),
+  );
+  if (decodeAssets) {
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+  }
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
+
+/// Mounts [child] as a screen under the app's l10n and a [ProviderScope]
+/// answering with [api] (plus any extra [overrides]), and settles it.
+///
+/// [expand] hands [child] the TIGHT, page-sized box the real page gives it (a
+/// `Scaffold` body under a `SizedBox.expand`); a bare `home` is loose, and a
+/// state measured there would shrink-wrap and hide the layout under test. See
+/// [_pumpApp] for [size], [settle] and [decodeAssets].
+Future<void> pumpCircleScreen(
+  WidgetTester tester,
+  Widget child, {
+  FakeApiClient? api,
+  List<Override> overrides = const [],
+  Size? size,
+  bool expand = false,
+  bool settle = true,
+  bool decodeAssets = false,
+}) => _pumpApp(
+  tester,
+  overrides: [
+    if (api != null) apiClientProvider.overrideWithValue(api),
+    ...overrides,
+  ],
+  size: size,
+  settle: settle,
+  decodeAssets: decodeAssets,
+  app:
+      (context) => MaterialApp(
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        home: expand ? Scaffold(body: SizedBox.expand(child: child)) : child,
+      ),
+);
+
+/// The same tree driven by a real [router] instead of a `home` — for a test
+/// whose subject is where a tap LANDS, which only a router can answer.
+Future<void> pumpCircleRouter(
+  WidgetTester tester,
+  GoRouter router, {
+  FakeApiClient? api,
+  List<Override> overrides = const [],
+}) => _pumpApp(
+  tester,
+  overrides: [
+    if (api != null) apiClientProvider.overrideWithValue(api),
+    ...overrides,
+  ],
+  app:
+      (context) => MaterialApp.router(
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        routerConfig: router,
+      ),
+);
 
 ProviderContainer makeContainer(FakeApiClient api) {
   final container = ProviderContainer(

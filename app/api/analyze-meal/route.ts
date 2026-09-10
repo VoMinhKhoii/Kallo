@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     cheatIntensity,
     attemptId,
     refs,
+    displayText,
     profile,
   } = validation.data;
 
@@ -113,7 +114,8 @@ export async function POST(request: NextRequest) {
             clarifyAnswer,
             cheatIntensity,
             refs,
-            mergeRelogRefs: applyRelogRefs,
+            displayText,
+            mergePicks: applyRelogRefs,
           },
         });
       } finally {

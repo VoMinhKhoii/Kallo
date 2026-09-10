@@ -3,6 +3,8 @@
  * references, and the analyze-meal request body they combine into.
  */
 import { z } from 'zod';
+import { barcodeSchema } from '@/lib/core/validation/barcode';
+import { foodItemGramsSchema } from '@/lib/core/validation/food-limits';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
@@ -19,22 +21,72 @@ function isHighlyRepetitiveSingleToken(value: string): boolean {
   return characters.length >= 8 && new Set(characters).size === 1;
 }
 
+/**
+ * The hygiene every meal-facing free-text field shares: stored NFC (Telex/VNI
+ * types decomposed, our data is composed), at least one real letter, not a bare
+ * URL, not one character mashed. Applied AFTER the length bounds so each field
+ * keeps its own cap and its own too-long message, and after the NFC transform
+ * so the refinements judge the exact string that gets persisted.
+ *
+ * Extracted so `displayText` — which BECOMES `meals.raw_input` — cannot drift
+ * from `message`; a label was the one meal string reaching the database with no
+ * hygiene at all.
+ */
+function withMealTextHygiene(schema: z.ZodString) {
+  return schema
+    .transform((s) => s.normalize('NFC'))
+    .refine((s) => /\p{L}/u.test(s), 'Tin nhắn phải chứa ít nhất một chữ cái.')
+    .refine((s) => !urlOnlyPattern.test(s), 'Vui lòng nhập mô tả món ăn.')
+    .refine(
+      (s) => !isHighlyRepetitiveSingleToken(s),
+      'Vui lòng nhập mô tả món ăn.'
+    );
+}
+
 /** Hard cap on a meal description — the NL-refine budget mirrors this. */
 export const MEAL_TEXT_MAX_LENGTH = 500;
 
+/**
+ * Hard cap on the composer's own sentence. Roomier than a meal description,
+ * which is this sentence with up to 20 pick labels CUT OUT of it — capping both
+ * at 500 would reject a legal composer. The server truncates it to the same 500
+ * the rebuilt label gets (`buildRelogRawInput`).
+ */
+export const DISPLAY_TEXT_MAX_LENGTH = 2000;
+
 /** Shared inner schema for a meal description string (used by API + feed submit). */
-export const mealTextSchema = z
-  .string()
-  .trim()
-  .min(1, 'Vui lòng nhập món ăn.')
-  .max(MEAL_TEXT_MAX_LENGTH, 'Tin nhắn quá dài (tối đa 500 ký tự).')
-  .transform((s) => s.normalize('NFC'))
-  .refine((s) => /\p{L}/u.test(s), 'Tin nhắn phải chứa ít nhất một chữ cái.')
-  .refine((s) => !urlOnlyPattern.test(s), 'Vui lòng nhập mô tả món ăn.')
-  .refine(
-    (s) => !isHighlyRepetitiveSingleToken(s),
-    'Vui lòng nhập mô tả món ăn.'
-  );
+export const mealTextSchema = withMealTextHygiene(
+  z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập món ăn.')
+    .max(MEAL_TEXT_MAX_LENGTH, 'Tin nhắn quá dài (tối đa 500 ký tự).')
+);
+
+/**
+ * The sentence the user is looking at, markers stripped — what the saved meal
+ * is LABELLED with. Same hygiene as {@link mealTextSchema}, a wider cap: it is
+ * persisted verbatim as `meals.raw_input`, so anything the description schema
+ * refuses must not reach the database through the label instead.
+ */
+export const displayTextSchema = withMealTextHygiene(
+  z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập món ăn.')
+    .max(DISPLAY_TEXT_MAX_LENGTH, 'Tin nhắn quá dài (tối đa 2000 ký tự).')
+);
+
+/**
+ * A scanned product riding in the composer beside the relog picks. Carries the
+ * barcode and the grams the user chose — never a name or a number, so the
+ * server resolves the label from its own cache exactly as it does for a relog.
+ */
+export const barcodeRefSchema = z.object({
+  kind: z.literal('barcode'),
+  barcode: barcodeSchema,
+  grams: foodItemGramsSchema,
+});
 
 /**
  * A single relog reference: a pointer the server re-resolves under
@@ -54,6 +106,16 @@ export const relogRefSchema = z.discriminatedUnion('kind', [
     kind: z.literal('meal'),
     sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
   }),
+]);
+
+/**
+ * Everything the composer can stage: a past dish, a past meal, or a scanned
+ * product. One union, because a submit carries them in one list — the server
+ * partitions by `kind` and resolves each half deterministically.
+ */
+export const composerPickRefSchema = z.discriminatedUnion('kind', [
+  ...relogRefSchema.options,
+  barcodeRefSchema,
 ]);
 
 /**
@@ -85,7 +147,13 @@ export const mealMessageSchema = z
     // AI pipeline; these are resolved deterministically and MERGED into the
     // result before staging, so relogged dishes are never re-analyzed. Precise
     // mode only (the cheat branch returns before relog handling).
-    refs: z.array(relogRefSchema).min(1).max(20).optional(),
+    refs: z.array(composerPickRefSchema).min(1).max(20).optional(),
+    // The sentence the user is looking at, markers stripped — what the saved
+    // meal is LABELLED with. Derived from `message` + `refs` server-side when
+    // absent, which appends the picks and so reorders anything typed after
+    // one: `/cơm gà + 1 kem vani` came back as `+ 1 kem vani, cơm gà`. A label
+    // only; every number still comes from the server's own ref resolution.
+    displayText: displayTextSchema.optional(),
   })
   .refine(
     (data) => !(data.mode === 'cheat' && data.refs && data.refs.length > 0),
@@ -95,6 +163,14 @@ export const mealMessageSchema = z
       message: 'Không thể ghi lại món đã lưu ở chế độ xả.',
       path: ['refs'],
     }
-  );
+  )
+  .refine((data) => !(data.displayText && !data.refs?.length), {
+    // `displayText` exists ONLY because `message` has the pick labels cut out
+    // of it. With no picks the two are the same sentence, so a second one is
+    // either a mistake or an attempt to persist a label the description schema
+    // never saw — one contract, not two.
+    message: 'Nhãn hiển thị chỉ đi kèm món đã chọn.',
+    path: ['displayText'],
+  });
 
 export type MealMessageInput = z.infer<typeof mealMessageSchema>;

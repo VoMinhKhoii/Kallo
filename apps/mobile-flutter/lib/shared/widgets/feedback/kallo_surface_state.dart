@@ -12,6 +12,12 @@ import '../brand/surface_illustration.dart';
 /// this widget — pass the [area] it stands on and the [kind] it is saying, and
 /// the cast picks the pose (and, after 22:00, the sleeping pose).
 ///
+/// The box is its content, at least [minHeight]: under a loose finite height
+/// (a `Center` in a fill sliver) it hugs rather than fills, which is what lets
+/// a card around it stay a card. The column is [MainAxisSize.min], so
+/// `mainAxisAlignment: center` matters only under TIGHT constraints (an
+/// `Expanded`, a `SizedBox.expand`), where it keeps the content mid-box.
+///
 /// Twin of the web `components/shared/surface-state/` (keep in sync).
 class KalloSurfaceState extends StatelessWidget {
   const KalloSurfaceState({
@@ -84,6 +90,7 @@ class KalloSurfaceState extends StatelessWidget {
             horizontal: compact ? KalloSpacing.sp4 : KalloSpacing.sp6,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

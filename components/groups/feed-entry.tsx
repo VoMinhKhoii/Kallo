@@ -1,26 +1,37 @@
 'use client';
 
-import { Copy, Heart } from 'lucide-react';
+import { Copy, Heart, MessageCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ShareReplies } from '@/components/groups/share-replies';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
+import { Link } from '@/i18n/navigation';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
+import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import { cn } from '@/lib/core/ui/cn';
+import { circleThreadHref } from '@/lib/domain/social/circle-routes';
 
+/** A portion factor as the glyph people read (½, ⅓, ¼), else a percentage. */
 function fractionLabel(factor: number): string {
   if (Math.abs(factor - 0.5) < 0.001) return '½';
   if (Math.abs(factor - 1 / 3) < 0.001) return '⅓';
   if (Math.abs(factor - 0.25) < 0.001) return '¼';
   return `${Math.round(factor * 100)}%`;
+}
+
+/** A glyph's label carries its figure only when there is one. The count lives
+ * IN the label because the figure beside the glyph is drawn for the eye alone:
+ * a screen reader must hear "Reply 3", not a bare "Reply". */
+function withCount(label: string, count: number): string {
+  return count > 0 ? `${label} ${count}` : label;
 }
 
 /** One flat Threads-style meal post with portion and share-scoped actions. */
@@ -47,76 +58,106 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
+  // Same formatter the grams beside it use (MacroScale), so one legend row
+  // never mixes a raw `1234` with a localised `1.234`.
+  const kcalLabel =
+    meal.caloriesKcal == null
+      ? '— kcal'
+      : `${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
+  const reactionCount = entry.reactions.count;
+  const heartLabel = withCount(t('heart'), reactionCount);
+  const replyLabel = withCount(t('reply'), entry.repliesTotal);
 
   return (
     <div className="flex gap-3">
       <ProfileAvatar avatarUrl={friend.avatarUrl} label={label} />
       <div className="min-w-0 flex-1">
         <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
-          <b className="font-bold font-sans-display text-[#141413] text-[15px]">
+          <b className="font-bold font-sans-display text-[15px] text-kallo-text">
             {label}
           </b>
           {/* A backfilled meal (logged for a past date) is shared "now", so its
               elapsed time would misleadingly read "just now" — hide it. */}
           {!meal.isBackfilled && (
-            <span className="font-sans-display text-[#6E6D66] text-[15px]">
+            <span className="font-sans-display text-[15px] text-kallo-text-muted">
               {formatElapsed(meal.sharedAt, locale)}
             </span>
           )}
           {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-[#E8E6DC]/60 px-2 py-px font-medium font-sans-display text-[#6E6D66] text-[10px]">
+            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-[10px] text-kallo-text-muted">
               {t('portion', {
                 portion: fractionLabel(meal.portionFactor),
               })}
             </span>
           )}
         </div>
-        <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
-          {meal.rawInput}
+        <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
+          {capitalizeFirst(meal.rawInput)}
         </p>
         {hasNutrition && (
           <div className="mt-2.5 flex flex-col gap-1">
-            {/* The unit stays quiet so the figure carries the mass, not the
-                word. Body weight, not the meal name's: at a larger size the
-                figure outweighed the dish above it, which puts the post's
-                focus back on the number this vocabulary took it off. */}
-            <span className="font-sans-display text-[#6E6D66] text-[11px]">
-              <span className="font-medium text-[#141413] text-[13px] tabular-nums">
-                {meal.caloriesKcal == null
-                  ? '—'
-                  : Math.round(meal.caloriesKcal)}
-              </span>{' '}
-              kcal
-            </span>
             {composition.totalKcal > 0 && (
               <CompositionBar
                 segments={composition.segments}
                 variant="compact"
               />
             )}
-            <MacroScale grams={grams} />
+            {/* Meal-text size, under the bar, leading the legend — the same
+                anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
+                head of a spaceBetween row. Figure and unit are ONE string
+                (mobile's `fmtKcal`), so the two can never wrap apart. */}
+            <MacroScale
+              grams={grams}
+              leading={
+                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                  {kcalLabel}
+                </span>
+              }
+            />
           </div>
         )}
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">
+        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-kallo-text-muted tabular-nums">
           <button
             type="button"
-            aria-label={t('heart')}
+            aria-label={heartLabel}
             aria-pressed={entry.reactions.mine}
             disabled={toggleReaction.isPending}
             onClick={() => toggleReaction.mutate(meal.shareId)}
             className={cn(
               'inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
-              entry.reactions.mine && 'text-[#141413]'
+              entry.reactions.mine && 'text-kallo-text'
             )}
           >
+            {/* A hearted post has to look hearted from across the row; at
+                ink it was the same near-black as the glyph beside it. The
+                request was "red filled", and each platform satisfies it out of
+                its OWN palette — mobile's `danger` (#D11A1A), web's
+                `--kallo-danger` (terracotta). Web bans pure red outright, so a
+                literal #D11A1A here was mobile's token smuggled onto the web
+                canvas, not a shared value. */}
             <Heart
               className={cn(
                 'size-[15px]',
-                entry.reactions.mine && 'fill-[#141413]'
+                entry.reactions.mine && 'fill-kallo-danger text-kallo-danger'
               )}
             />
-            <span>{entry.reactions.count}</span>
+            {/* Zero reads as a scoreboard on a post nobody has answered —
+                Threads shows the glyph alone until there is a figure. The
+                reply glyph beside it already hid its own 0; the heart was the
+                one holdout. */}
+            {reactionCount > 0 && <span>{reactionCount}</span>}
           </button>
+          {/* The thread lives on the post's own page, not under the card: a
+              feed row that carries its replies stops being one glanceable post.
+              A count on the glyph is what says there is anything to open. */}
+          <Link
+            href={circleThreadHref(meal.shareId)}
+            aria-label={replyLabel}
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text"
+          >
+            <MessageCircle className="size-[15px]" />
+            {entry.repliesTotal > 0 && <span>{entry.repliesTotal}</span>}
+          </Link>
           {/* Split half is still deferred — it needs a confirmation step. */}
           {!entry.isSelf && (
             <>
@@ -127,7 +168,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                   if (!requirePremium('copy_split')) return;
                   logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
                 }}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text disabled:opacity-50"
               >
                 <Copy className="size-[15px]" />
                 <span>{t('logCopy')}</span>
@@ -136,11 +177,6 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             </>
           )}
         </div>
-        <ShareReplies
-          shareId={meal.shareId}
-          replies={entry.replies}
-          repliesTotal={entry.repliesTotal}
-        />
       </div>
     </div>
   );

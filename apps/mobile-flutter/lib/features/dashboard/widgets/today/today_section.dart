@@ -16,6 +16,7 @@ import '../../../../shared/logic/display_format.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../logic/dashboard_spacing.dart';
+import '../../logic/meal_order.dart';
 import '../states/card_skeletons.dart';
 import '../states/section_state.dart';
 import 'dock_targets.dart';
@@ -93,8 +94,7 @@ class _Dock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final meals = [...day.persistedMeals]
-      ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    final meals = mealsNewestFirst(day.persistedMeals);
 
     var totalCalories = 0.0;
     var totalProtein = 0.0;

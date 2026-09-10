@@ -30,6 +30,14 @@ export const friendsThreadFeedKeys = {
   all: ['friends-thread-feed'] as const,
 };
 
+/** One share's own page (/circle/<shareId>). Rooted separately from the feeds
+ * so `isFeedQuery` can admit it into the reaction/reply cache updates while
+ * `detail` keeps each post's cache entry distinct. */
+export const shareThreadKeys = {
+  all: ['share-thread'] as const,
+  detail: (shareId: string) => ['share-thread', shareId] as const,
+};
+
 /** The actor's "last checked the combined Friends feed" marker. */
 export const friendsFeedReadMarkerKeys = {
   all: ['friends-feed-read-marker'] as const,

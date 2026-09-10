@@ -84,6 +84,11 @@ export const dismissMealShareInviteSchema = z.object({
   inviteId: uuidSchema,
 });
 
+/** Read one shared meal (the per-post thread page) by its share id. */
+export const shareThreadSchema = z.object({
+  shareId: uuidSchema,
+});
+
 /** Fetch the combined Friends thread's shared-meal history (the actor plus
  * every accepted friend), newest-first, paginated. */
 export const friendsThreadFeedSchema = z.object({

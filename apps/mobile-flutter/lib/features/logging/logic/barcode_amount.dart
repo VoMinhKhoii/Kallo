@@ -69,3 +69,23 @@ double? scalePer100(double? per100, int grams, {int decimals = 1}) {
   final factor = math.pow(10, decimals).toDouble();
   return (value * factor).round() / factor;
 }
+
+/// What a scanned product reads as INSIDE the composer's sentence: its brand,
+/// its name and the amount, so "2 shot cafe + TH true milk Sữa tươi (180g)"
+/// says back what was actually scanned.
+///
+/// The BRAND is there because a bare name does not identify a package: two
+/// "Sữa tươi" from different companies are different products with different
+/// numbers, and a sentence holding both would read as the same pick twice —
+/// which is also what `reconcileMentions` would then see. Products without one
+/// keep the bare name.
+///
+/// The grams are in the label because they are the half the user chose and the
+/// half a bare product name hides. The reference beside it carries the same
+/// number, so nothing here is load-bearing — break the text and the pick drops,
+/// which is exactly what a broken relog label does.
+String barcodePickLabel(BarcodeProduct product, int grams) {
+  final brand = product.brand;
+  final name = brand == null ? product.name : '$brand ${product.name}';
+  return '$name (${grams}g)';
+}

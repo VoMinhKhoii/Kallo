@@ -50,31 +50,67 @@ export function barcodeCacheId(
   return `${BARCODE_CACHE_PREFIXES[providerId]}${barcode}`;
 }
 
-type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
+/** One cached product row. Exported because the meal-item builder maps it. */
+export type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
 
 /**
- * The best cached row for a barcode across all providers, or undefined.
- * Used by both the search and the staging path, so staging resolves whichever
- * provider actually answered without needing a provider hint in its input.
+ * The best cached row for EACH of `barcodes`, keyed by barcode. Barcodes with
+ * nothing cached are simply absent from the map.
+ *
+ * One query for the whole batch: a composer submit can carry up to 20 scanned
+ * picks, and resolving them one at a time would be 20 sequential round trips
+ * against a pool that defaults to two connections. Duplicates collapse first,
+ * so scanning the same carton twice costs one id in the `IN` list.
+ *
+ * The winner per barcode is chosen by {@link BARCODE_PROVIDER_RANK} in JS —
+ * never by returned row order, which Postgres does not define for an `IN` list.
  */
-export async function findCachedRow(
-  barcode: string
-): Promise<BarcodeCacheRow | undefined> {
-  const rankedIds = BARCODE_PROVIDER_RANK.map((providerId) =>
-    barcodeCacheId(providerId, barcode)
+export async function findCachedRows(
+  barcodes: string[]
+): Promise<Map<string, BarcodeCacheRow>> {
+  const unique = [...new Set(barcodes)];
+  if (unique.length === 0) return new Map();
+
+  const ids = unique.flatMap((barcode) =>
+    BARCODE_PROVIDER_RANK.map((providerId) =>
+      barcodeCacheId(providerId, barcode)
+    )
   );
 
   const rows = await db
     .select()
     .from(vietnameseFoodComposition)
-    .where(inArray(vietnameseFoodComposition.id, rankedIds))
-    .limit(rankedIds.length);
+    .where(inArray(vietnameseFoodComposition.id, ids))
+    .limit(ids.length);
 
-  for (const id of rankedIds) {
-    const row = rows.find((candidate) => candidate.id === id);
-    if (row) return row;
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const best = new Map<string, BarcodeCacheRow>();
+  for (const barcode of unique) {
+    for (const providerId of BARCODE_PROVIDER_RANK) {
+      const row = byId.get(barcodeCacheId(providerId, barcode));
+      if (row) {
+        best.set(barcode, row);
+        break;
+      }
+    }
   }
-  return undefined;
+  return best;
+}
+
+/**
+ * The best cached row for a barcode across all providers, or undefined.
+ * Used by both the search and the staging path, so staging resolves whichever
+ * provider actually answered without needing a provider hint in its input.
+ *
+ * A single-element {@link findCachedRows}, deliberately: there is ONE ranking
+ * rule, and a second copy of it here is how the batch read and the single read
+ * would eventually disagree about which provider wins.
+ */
+export async function findCachedRow(
+  barcode: string
+): Promise<BarcodeCacheRow | undefined> {
+  const rows = await findCachedRows([barcode]);
+  return rows.get(barcode);
 }
 
 /**

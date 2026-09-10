@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../data/logging_providers.dart';
-import '../../widgets/composer/composer_actions.dart';
+import '../composer/composer_actions.dart';
 import '../../widgets/composer/meal_input.dart';
 import '../meal_log_mode.dart';
-import 'analysis_actions.dart';
-import 'analysis_run.dart';
+import 'analysis/analysis_actions.dart';
+import 'analysis/analysis_run.dart';
 
 /// The feed's cheat branch: the composer's persistent mode and its intensity,
 /// plus the two ways a cheat estimate is (re)started — answering the estimator's

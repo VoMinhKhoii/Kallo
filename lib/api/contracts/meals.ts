@@ -9,7 +9,11 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
-import { relogRefSchema } from '@/lib/core/validation/meal';
+import {
+  composerPickRefSchema,
+  displayTextSchema,
+  relogRefSchema,
+} from '@/lib/core/validation/meal';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
@@ -248,10 +252,19 @@ export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
  * Flutter `relog_providers.dart`).
  */
 export const stageRelogAnalysisSchema = z.object({
-  items: relogItemsSchema.shape.items,
+  // WIDER than `relogItemsSchema.shape.items`: the composer can also stage a
+  // scanned product, and a scan-only submit must still produce one editable
+  // card. The direct writer keeps the narrow relog-only list — nothing scans
+  // into "log it again".
+  items: z.array(composerPickRefSchema).min(1).max(20),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
   attemptId: z.string().uuid('attemptId phải là UUID hợp lệ.'),
+  // The sentence the picks read as in the composer. Absent, the label is the
+  // resolved names joined in staged order. It becomes `meals.raw_input`, so it
+  // carries the SAME hygiene a typed meal description does — one schema, no
+  // second way for a label to reach the database.
+  displayText: displayTextSchema.optional(),
 });
 
 export type StageRelogAnalysisInput = z.infer<typeof stageRelogAnalysisSchema>;

@@ -56,7 +56,7 @@ function providerRetryAfterSeconds(error: unknown): number {
  * Anything not recognized as an OCR domain failure is returned UNTOUCHED so
  * `handleRouteError` can classify it — a `ZodError` must still surface as a
  * 400 `VALIDATION_FAILED`, not as a generic 500. Same contract as
- * `app/api/v1/barcode/_errors.ts`. The classification itself lives in
+ * `mapBarcodeServiceError`. The classification itself lives in
  * `lib/domain/nutrition/ocr/error.ts` so the web Server Action agrees with us.
  */
 export function mapNutritionLabelError(error: unknown): unknown {
