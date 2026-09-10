@@ -1524,6 +1524,7 @@
       "openThread": "Mở chủ đề",
       "threadTitle": "Trả lời",
       "noReplies": "Chưa có trả lời nào",
+      "noRepliesBody": "Hãy là người đầu tiên lên tiếng.",
       "threadGone": "Bài đăng này không còn ở đây",
       "threadGoneBody": "Có thể đã bị xoá, hoặc được chia sẻ trong một nhóm bạn không tham gia.",
       "portion": "{portion} phần",

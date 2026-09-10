@@ -152,7 +152,7 @@ void main() {
     );
   });
 
-  testWidgets('no replies reads as one quiet line under the post', (
+  testWidgets('no replies reads as the surface\'s own empty state', (
     tester,
   ) async {
     final api = FakeApiClient(
@@ -167,26 +167,24 @@ void main() {
       api: api,
     );
 
-    // A line, not an illustrated surface: an empty thread is the ordinary
-    // case here, and a cast plus a headline over one post is a page telling
-    // the user that nothing is wrong at the volume of something being wrong.
+    // The surface's own empty state, cast and all — the same answer every
+    // other empty list in the app gives. It was one muted line for a while
+    // (`40e1cbe`), which read as the page having failed to finish drawing.
     final line = find.text('No replies yet');
     expect(line, findsOneWidget);
-    expect(find.byType(KalloSurfaceState), findsNothing);
+    expect(find.byType(KalloSurfaceState), findsOneWidget);
+    expect(find.text('Be the first to say something.'), findsOneWidget);
+    // A block's gap under the card, not the line's tighter one: this is a
+    // state of its own now rather than a note belonging to the post.
     expect(
-      tester.getTopLeft(line).dy -
+      tester.getRect(find.byType(KalloSurfaceState)).top -
           tester.getBottomLeft(find.byType(GroupedListCard)).dy,
-      closeTo(KalloSpacing.sp3, 1),
-    );
-    // And it sits where a reply would have: on the same rail.
-    expect(
-      tester.getTopLeft(line).dx,
-      tester.getTopLeft(find.byIcon(LucideIcons.heart300)).dx,
+      closeTo(KalloSpacing.sp4, 1),
     );
   });
 
-  testWidgets('the composer leads with the viewer\'s own avatar, on the '
-      'replies\' rail', (tester) async {
+  testWidgets('the composer leads with the viewer\'s own avatar, at the '
+      'page\'s own edge', (tester) async {
     final api = FakeApiClient(
       (request) =>
           request.path == '/api/v1/groups/friends/feed'
@@ -206,17 +204,23 @@ void main() {
       matching: find.byType(ProfileAvatarDisc),
     );
     expect(disc, findsOneWidget);
-    // The reply rows' disc, at the reply rows' left edge: the field reads as
-    // the next reply in the thread rather than as a bar bolted under it.
+    // The reply rows' disc — but NOT on the reply rows' rail. The dock is
+    // page chrome, so it starts at the page's own 12 of padding and the field
+    // spans the phone; leading with the replies' 60pt indent put the disc 72
+    // from the edge and left the composer reading as a reply to the last
+    // reply.
     expect(tester.widget<ProfileAvatarDisc>(disc).size, 28);
+    expect(tester.getTopLeft(disc).dx, KalloSpacing.sp3);
     expect(
       tester.getTopLeft(disc).dx,
-      tester.getTopLeft(
-        find.descendant(
-          of: find.byType(ReplyRow),
-          matching: find.byType(ProfileAvatarDisc),
-        ),
-      ).dx,
+      lessThan(
+        tester.getTopLeft(
+          find.descendant(
+            of: find.byType(ReplyRow),
+            matching: find.byType(ProfileAvatarDisc),
+          ),
+        ).dx,
+      ),
     );
   });
 
