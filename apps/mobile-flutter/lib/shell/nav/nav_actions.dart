@@ -62,8 +62,70 @@ void pushOverShell(
     router.go(path);
     return;
   }
-  if (!_shellRoots.contains(at)) router.go(base);
-  router.push(path);
+  if (_shellRoots.contains(at)) {
+    // Already standing on a branch — push straight over it. ONE call, which
+    // is why this path never showed the bug below.
+    router.push(path);
+    return;
+  }
+  _seedThenPush(router, base: base, path: path);
+}
+
+/// Seeds [base] and pushes [path] over it — as two navigations that are
+/// ORDERED, which `go` immediately followed by `push` is not.
+///
+/// `GoRouter.push` reads its base synchronously — `base:
+/// routerDelegate.currentConfiguration` (`go_router/src/router.dart`) — while
+/// `go` only reaches the delegate after the router's async route parse. So
+/// `router.go(base); router.push(path);` builds the push on the stack we are
+/// STANDING on rather than the one we just asked for, and the two land in a
+/// nondeterministic order: sometimes `[base, path]`, sometimes the seed
+/// arriving last and wiping the pushed route out from under the navigator,
+/// which rendered as a bare grey screen that only an app restart cleared.
+///
+/// It only ever bit the paths that need the seed — the first run's hand-off
+/// from `/welcome`, the paywall's two exits, a cold notification tap — which
+/// is why the pill nav's Log item, pushing from a branch it is already on, has
+/// always been fine.
+///
+/// So: wait for the delegate to actually report a stack that is no longer the
+/// one we left, then push. Not for [base] specifically — if a redirect sent
+/// the seed somewhere else, opening [path] over THAT is still what the caller
+/// asked for.
+///
+/// **This is a hazard fix, not a proven one.** The synchronous base capture is
+/// plain in go_router's source, and the paths that show the grey screen are
+/// exactly the ones that take this branch — but the ordering could not be made
+/// to fail in a test, so it is not established as the cause. It therefore
+/// carries a same-frame fallback: if the delegate has not moved by the end of
+/// the frame, push anyway. That keeps this strictly no worse than the
+/// `go`-then-`push` it replaces — including if a redirect returns the seed to
+/// where we started, which would otherwise leave the caller here forever.
+void _seedThenPush(
+  GoRouter router, {
+  required String base,
+  required String path,
+}) {
+  final delegate = router.routerDelegate;
+  final from = delegate.currentConfiguration.uri.toString();
+  var pushed = false;
+  late final VoidCallback onSettled;
+
+  void pushOnce() {
+    if (pushed) return;
+    pushed = true;
+    delegate.removeListener(onSettled);
+    router.push(path);
+  }
+
+  onSettled = () {
+    if (pushed) return;
+    if (delegate.currentConfiguration.uri.toString() == from) return;
+    pushOnce();
+  };
+  delegate.addListener(onSettled);
+  router.go(base);
+  WidgetsBinding.instance.addPostFrameCallback((_) => pushOnce());
 }
 
 /// Leaves a screen that may or may not have been pushed: pop when there is
