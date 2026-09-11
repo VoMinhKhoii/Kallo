@@ -4,6 +4,7 @@
 // must never do is throw itself — and it must not need a theme, a locale, a
 // provider or an asset to draw.
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shell/kallo_error_widget.dart';
@@ -39,6 +40,47 @@ void main() {
     // the grey screen reports its own cause instead of needing a console.
     expect(kReleaseMode, isFalse);
     expect(find.textContaining('the cause'), findsOneWidget);
+  });
+
+  testWidgets('the details are copyable — the only channel a release has', (
+    tester,
+  ) async {
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await tester.pumpWidget(
+      KalloErrorWidget(
+        details: FlutterErrorDetails(
+          exception: StateError('the cause'),
+          library: 'widgets library',
+          stack: StackTrace.fromString('#0 Somewhere.build'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Copy details'));
+    await tester.pumpAndSettle();
+
+    // A photograph of the screen is not a bug report; the clipboard has to
+    // carry the stack the screen cannot legibly show.
+    expect(copied, hasLength(1));
+    expect(copied.single, contains('the cause'));
+    expect(copied.single, contains('widgets library'));
+    expect(copied.single, contains('#0 Somewhere.build'));
+    expect(find.text('Copied'), findsOneWidget);
   });
 
   testWidgets('a long stack trace scrolls instead of overflowing', (
