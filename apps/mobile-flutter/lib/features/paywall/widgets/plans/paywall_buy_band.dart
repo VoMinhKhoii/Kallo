@@ -58,12 +58,16 @@ class PaywallBuyBand extends StatelessWidget {
             disabled: onBuy == null,
             onPressed: onBuy,
           ),
-          const SizedBox(height: KalloSpacing.sp1_5),
-          Text(
-            offer.renewalLine,
-            style: dashCaption().copyWith(height: 1.35),
-            textAlign: TextAlign.center,
-          ),
+          // Empty on the store-closed face — no purchase, nothing to
+          // disclose — and then it takes no room either.
+          if (offer.renewalLine.isNotEmpty) ...[
+            const SizedBox(height: KalloSpacing.sp1_5),
+            Text(
+              offer.renewalLine,
+              style: dashCaption().copyWith(height: 1.35),
+              textAlign: TextAlign.center,
+            ),
+          ],
           const SizedBox(height: KalloSpacing.sp2),
           // Secondary, not ghost: declining is a real choice and gets a real
           // button, which is also why the header no longer carries it as a

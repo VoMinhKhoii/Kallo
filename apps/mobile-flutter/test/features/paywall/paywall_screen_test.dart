@@ -368,9 +368,18 @@ void main() {
         ),
       );
 
-      expect(find.byType(PlanToggle), findsNothing, reason: 'nothing loaded');
-      // With nothing to price, the sheet still owes the user its terms.
-      expect(find.text(tr('paywall.legal')), findsOneWidget);
+      // The toggle STAYS: this face is the ordinary screen with a dead
+      // button, and dropping a whole control out of it read on device as the
+      // toggle having been lost.
+      expect(find.byType(PlanToggle), findsOneWidget);
+      expect(
+        tester.widget<PlanToggle>(find.byType(PlanToggle)).onChanged,
+        isNull,
+        reason: 'inert — there is no second period to switch to',
+      );
+      // Nothing to price, so no renewal line either: the long legal paragraph
+      // that used to stand in here restated the consent sentence below it.
+      expect(find.text(tr('paywall.legal')), findsNothing);
       expectOrdinaryPaywallWithDeadCta(tester);
     });
 

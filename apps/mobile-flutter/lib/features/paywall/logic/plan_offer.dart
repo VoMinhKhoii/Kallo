@@ -31,7 +31,7 @@ class PaywallOffer {
   const PaywallOffer({
     required this.plan,
     required this.yearly,
-    required this.hasBothPeriods,
+    required this.showPeriodToggle,
     required this.ctaLabel,
     required this.renewalLine,
     required this.guideLine,
@@ -47,10 +47,18 @@ class PaywallOffer {
   /// Gold marks the DEAL, not the tap.
   final bool yearly;
 
-  /// Both periods are on offer, so there is something for the toggle to
-  /// switch BETWEEN. A segmented control with one live half is a label
-  /// wearing a control's chrome.
-  final bool hasBothPeriods;
+  /// Whether to draw the period toggle at all.
+  ///
+  /// True when both periods are on offer — and ALSO when the offering is
+  /// empty, which is the store-closed face: that face is meant to be the
+  /// ordinary screen with a dead button (`docs/BILLING.md`), and silently
+  /// dropping a whole control out of it read as the toggle having been lost.
+  /// It is inert there, like everything else on that face.
+  ///
+  /// False only when the store really does offer ONE period: a segmented
+  /// control with one live half is a label wearing a control's chrome, and a
+  /// yearly half that cannot be picked is a lie about what is for sale.
+  final bool showPeriodToggle;
 
   final String ctaLabel;
   final String renewalLine;
@@ -80,7 +88,18 @@ PaywallOffer paywallOffer({
   required DateTime now,
 }) {
   final split = splitPlans(packages);
-  final yearly = yearlyPicked ?? split.annual != null;
+  // Default to the yearly plan: it is the deal, and it is what the toggle
+  // shows selected. With NO packages at all there is no annual to point at,
+  // but the inert toggle still has to show something — and showing the
+  // monthly half selected would preview the wrong default.
+  //
+  // An empty offering OVERRIDES a pick rather than deferring to it. The pick
+  // is only reachable while a plan exists (the toggle is inert otherwise), so
+  // a user who chose monthly and then lost the offering — a reload that comes
+  // back empty, purchases switched off mid-session — would otherwise leave the
+  // dead toggle showing monthly selected against nothing for sale.
+  final yearly = packages.isEmpty ||
+      (yearlyPicked ?? (split.annual != null || split.monthly == null));
   // Falls back to the other period when the picked one is not on offer, so a
   // single-plan offering still buys something.
   final plan = yearly
@@ -100,7 +119,8 @@ PaywallOffer paywallOffer({
   return PaywallOffer(
     plan: plan,
     yearly: yearly,
-    hasBothPeriods: split.annual != null && split.monthly != null,
+    showPeriodToggle:
+        (split.annual != null && split.monthly != null) || packages.isEmpty,
     ctaLabel: _ctaLabel(plan: plan, offer: offer, trialActive: trial.active),
     renewalLine: _renewalLine(
       plan: plan,
@@ -139,8 +159,12 @@ String _ctaLabel({
 }
 
 /// What will be charged, when it starts, and that it repeats until cancelled.
-/// Falls back to the plain legal sentence with no [plan] at all — the
-/// store-closed face still owes the user its terms with nothing to sell.
+///
+/// EMPTY with no [plan] at all. There is then no purchase to disclose terms
+/// for, and the consent sentence below the band already names the Terms, the
+/// Privacy Policy and the auto-renewal — so the long legal paragraph that used
+/// to stand in here was three lines of Vietnamese fine print restating, under
+/// a dead button, something the line beneath it said again.
 String _renewalLine({
   required Package? plan,
   required String? perMonth,
@@ -148,7 +172,7 @@ String _renewalLine({
   required String locale,
   required DateTime now,
 }) {
-  if (plan == null) return tr('paywall.legal');
+  if (plan == null) return '';
   final price = plan.storeProduct.priceString;
   // Only a trial defers the first charge. Without one the subscription starts
   // now, and naming a date would be an invented grace period.

@@ -62,6 +62,29 @@ void pushOverShell(
     router.go(path);
     return;
   }
+  // Seed a branch underneath, then push over it.
+  //
+  // These two are NOT ordered against each other, and the hazard is real:
+  // `GoRouter.push` reads its base synchronously — `base:
+  // routerDelegate.currentConfiguration` (`go_router/src/router.dart`) — while
+  // `go` reaches the delegate only after the router's async route parse, so
+  // the push can be built on the stack we are standing on rather than the one
+  // we just asked for.
+  //
+  // It is left alone anyway. An attempt to order them — listen for the
+  // delegate to report the seeded stack, then push — needs a fallback for the
+  // case where a redirect returns the seed to where it started and the
+  // delegate therefore never changes. Every fallback available (a post-frame
+  // callback, a timer) can fire BEFORE the parse settles, and then it pushes
+  // on the stale configuration *and* tears down the listener that would have
+  // done it correctly: strictly worse than this, in the exact failure mode it
+  // was meant to prevent. Ordering these properly needs a settlement signal
+  // go_router does not expose, or a route table where `/logging` is a child of
+  // the branch so one `go` builds both.
+  //
+  // The race is also unproven: it could not be made to fail under
+  // `flutter test`, and `push_over_shell_test.dart` pins the stack shape every
+  // caller depends on.
   if (!_shellRoots.contains(at)) router.go(base);
   router.push(path);
 }

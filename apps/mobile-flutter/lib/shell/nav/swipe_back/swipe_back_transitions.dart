@@ -25,6 +25,30 @@ class KalloSwipeBackTransitionsBuilder extends PageTransitionsBuilder {
   Duration get transitionDuration =>
       CupertinoRouteTransitionMixin.kTransitionDuration;
 
+  /// 350ms going BACK, against 500 going forward.
+  ///
+  /// Cupertino's own gesture controller does not let a released swipe finish
+  /// at the route's push duration: `_CupertinoBackGestureController.dragEnd`
+  /// retimes the settle to `_kDroppedSwipePageAnimationDuration` (350ms,
+  /// `cupertino/route.dart`) before handing the pop to the navigator. This
+  /// detector pops through the navigator directly — that is what lets the page
+  /// leave from where the finger dropped it instead of snapping back on screen
+  /// first — so nothing was retiming anything, and a drag released at 60%
+  /// spent a full 500ms crawling through the last 40%. On device that read as
+  /// "swiping left/right still feels really slow", and it is the whole of it.
+  ///
+  /// The route's [AnimationController] is `@protected`, so the per-gesture
+  /// retime Cupertino does is not reachable from here; this is the public
+  /// hook, and `MaterialRouteTransitionMixin` feeds it straight to the
+  /// controller's `reverseDuration` (`material/page.dart`).
+  ///
+  /// It is BROADER than Cupertino's rule on purpose: a chevron tap now pops at
+  /// 350 too, where stock iOS would take 500. One duration for "going back",
+  /// however the user asked, is the more legible rule of the two — and the
+  /// faster one is the one that matches the gesture.
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 350);
+
   @override
   DelegatedTransitionBuilder? get delegatedTransition =>
       CupertinoPageTransition.delegatedTransition;

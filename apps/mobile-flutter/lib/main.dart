@@ -8,6 +8,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
+import 'shared/widgets/icons/brush_check.dart';
+import 'shell/kallo_error_widget.dart';
 import 'shared/widgets/icons/filled_heart.dart';
 import 'services/env/env.dart';
 import 'services/auth/supabase_service.dart';
@@ -83,7 +85,12 @@ Future<void> main() async {
   // so it belongs at boot rather than in the lifecycle of whichever feed
   // happens to mount first (`ThreadFeed` used to host it, which cost that
   // widget a State object for a side effect that was never per-instance).
+  // Before anything can build: a widget that throws must not leave the user
+  // on Flutter's release-mode grey rectangle with no way out and no cause.
+  installKalloErrorWidget();
+
   precacheFilledHeart();
+  precacheBrushCheck();
 
   // Dark status-bar content on the cream surface — RN `<StatusBar style="dark" />`.
   SystemChrome.setSystemUIOverlayStyle(
