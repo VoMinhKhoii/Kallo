@@ -41,7 +41,7 @@ void main() {
     expect(offer.plan, annualPackage);
     // Lifetime is not a period — it must not make the toggle think there is a
     // third choice, nor become what the button buys.
-    expect(offer.hasBothPeriods, isTrue);
+    expect(offer.showPeriodToggle, isTrue);
   });
 
   test('the promise is one answer: trial label, trial date, no bare price', () {
@@ -86,7 +86,7 @@ void main() {
 
   test('a single-period offering still buys, and hides the toggle', () {
     final monthlyOnly = offerFor(const [monthlyPackage]);
-    expect(monthlyOnly.hasBothPeriods, isFalse);
+    expect(monthlyOnly.showPeriodToggle, isFalse);
     expect(monthlyOnly.plan, monthlyPackage);
     expect(monthlyOnly.yearly, isFalse);
     // No monthly price to measure against, so nothing is boasted.
@@ -98,12 +98,19 @@ void main() {
     expect(forced.plan, monthlyPackage);
   });
 
-  test('with nothing on offer it still owes the user its terms', () {
+  test('with nothing on offer the face keeps its shape and says nothing', () {
     final offer = offerFor(const []);
 
     expect(offer.plan, isNull);
-    expect(offer.renewalLine, tr('paywall.legal'));
+    // No purchase to disclose terms for; the consent sentence under the band
+    // still names the Terms, the Privacy Policy and the auto-renewal.
+    expect(offer.renewalLine, isEmpty);
     expect(offer.chipLabel, isNull);
+    // The store-closed face is the ORDINARY screen with a dead button, so it
+    // keeps the toggle rather than silently dropping a control out of it —
+    // showing the yearly default it would show if the store were open.
+    expect(offer.showPeriodToggle, isTrue);
+    expect(offer.yearly, isTrue);
   });
 
   test('a running trial makes the bun count it down instead of boasting', () {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
+import 'package:kallo_mobile/shell/nav/swipe_back/swipe_back_transitions.dart';
 
 /// The app-wide back drag (`shell/nav/swipe_back/`).
 ///
@@ -155,6 +156,20 @@ void main() {
     // The list scrolled; the route did not pop.
     expect(find.byKey(second), findsOneWidget);
     expect(controller.offset, lessThan(600));
+  });
+
+  testWidgets('a released swipe settles at 350ms, not the push\'s 500', (
+    tester,
+  ) async {
+    // Cupertino retimes a dropped swipe to 350 before popping; this detector
+    // pops through the navigator, so the reverse duration is what carries that
+    // timing. At the push's 500 a drag released near the end crawled.
+    const builder = KalloSwipeBackTransitionsBuilder();
+    expect(builder.reverseTransitionDuration.inMilliseconds, 350);
+    expect(
+      builder.reverseTransitionDuration,
+      lessThan(builder.transitionDuration),
+    );
   });
 
   testWidgets('the theme keeps Cupertino’s 500ms push, not Material’s 300ms', (

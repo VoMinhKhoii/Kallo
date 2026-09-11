@@ -62,19 +62,37 @@ class GuideBubble extends StatelessWidget {
         // The tail: a 10px square rotated 45°, bordered on the left and
         // bottom edges — the two the rotation swings to the leftmost point.
         // Its white fill covers the bubble's own border where they overlap.
+        //
+        // CENTRED on the bubble's height, not pinned a fixed 22 from its top.
+        // That 22 was measured against onboarding's two- and three-line
+        // bubbles, where it happens to land near the middle; on the paywall's
+        // ONE-line bubble (~39 tall) it sat 7pt low, down in the bottom corner
+        // radius, and read as a detached notch rather than a tail — "the shape
+        // between the bun and the message looks weird, why is it different
+        // from the others".
+        //
+        // The midpoint is also the only height that is correct at EVERY size:
+        // a rounded rectangle's left edge has a vertical tangent exactly
+        // there, so the tail meets flat wall even when the bubble is short
+        // enough that its whole left edge is curve.
         Positioned(
           left: -5,
-          top: 22,
-          width: 10,
-          height: 10,
-          child: Transform.rotate(
-            angle: math.pi / 4,
-            child: const DecoratedBox(
-              decoration: BoxDecoration(
-                color: kCardSurface,
-                border: Border(
-                  left: BorderSide(color: KalloColors.border),
-                  bottom: BorderSide(color: KalloColors.border),
+          top: 0,
+          bottom: 0,
+          child: Center(
+            child: SizedBox(
+              width: 10,
+              height: 10,
+              child: Transform.rotate(
+                angle: math.pi / 4,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: kCardSurface,
+                    border: Border(
+                      left: BorderSide(color: KalloColors.border),
+                      bottom: BorderSide(color: KalloColors.border),
+                    ),
+                  ),
                 ),
               ),
             ),

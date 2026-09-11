@@ -115,12 +115,14 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
       children: [
         PaywallGuide(line: offer.guideLine),
         const SizedBox(height: KalloSpacing.sp3_5),
-        if (offer.hasBothPeriods) ...[
+        if (offer.showPeriodToggle) ...[
           PlanToggle(
             monthlyLabel: tr('paywall.toggleMonthly'),
             yearlyLabel: tr('paywall.toggleYearly'),
             yearly: offer.yearly,
-            onChanged: purchasing
+            // Inert while a purchase is in flight, and on the store-closed
+            // face, where there is no second period to switch to.
+            onChanged: purchasing || offer.plan == null
                 ? null
                 : (value) => setState(() => _yearly = value),
           ),

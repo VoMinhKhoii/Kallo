@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../shared/widgets/icons/brush_check.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -17,11 +18,35 @@ import '../../logic/compare_rows.dart';
 class PlanComparison extends StatelessWidget {
   const PlanComparison({super.key});
 
-  /// The Free column is narrow because it only ever holds a glyph or "2 / 10";
-  /// Pro is wide enough for the longest cell in either language — Vietnamese
-  /// "Không giới hạn", which needs 87.
-  static const double _freeColumn = 50;
-  static const double _proColumn = 88;
+  /// The Free column only ever holds a glyph, "2 / 10" or its own heading;
+  /// Pro also carries Vietnamese "Không giới hạn", the longest cell in either
+  /// language.
+  ///
+  /// Both were measured against bundled Be Vietnam Pro metrics and both were
+  /// a hair too tight on a real handset — "Miễn phí" (48.5 measured) wrapped
+  /// inside 50 and then lost its second line to a fixed-height header row.
+  /// They carry a few points of slack now, and [_columnText] makes the fit
+  /// unconditional rather than a measurement that has to keep being right.
+  static const double _freeColumn = 56;
+  static const double _proColumn = 92;
+
+  /// Column text that CANNOT wrap: it shrinks to fit instead.
+  ///
+  /// These two columns are fixed-width by design — that is what holds every
+  /// tick on the same two verticals however long a row label runs — so text
+  /// inside them has no room to reflow into. Wrapping was the failure mode,
+  /// not the fallback. Same `FittedBox(scaleDown)` the meta row under the buy
+  /// button and [SegmentedStrip]'s labels use, and for the same reason.
+  static Widget _columnText(String label, TextStyle style) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(
+      label,
+      style: style,
+      maxLines: 1,
+      softWrap: false,
+      textAlign: TextAlign.center,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +77,11 @@ class PlanComparison extends StatelessWidget {
 
   /// The two column names. Pro is ink and semibold, Free is muted — the
   /// column heads carry the ranking so the rows below them do not have to.
-  Widget _header() => SizedBox(
-    height: 26,
+  Widget _header() => Container(
+    // A MINIMUM, never a fixed height: at 26 exactly, a heading that wrapped
+    // had its second line clipped instead of pushing the row open.
+    constraints: const BoxConstraints(minHeight: 26),
+    alignment: Alignment.bottomCenter,
     child: Row(
       children: [
         const Spacer(),
@@ -67,10 +95,8 @@ class PlanComparison extends StatelessWidget {
     ),
   );
 
-  static Widget _head(String label, double width, TextStyle style) => SizedBox(
-    width: width,
-    child: Text(label, style: style, textAlign: TextAlign.center),
-  );
+  static Widget _head(String label, double width, TextStyle style) =>
+      SizedBox(width: width, child: _columnText(label, style));
 }
 
 /// One row of the table. Its own widget so the row's height is set by its own
@@ -123,8 +149,7 @@ class _PlanComparisonRow extends StatelessWidget {
   /// offer. Exhaustive over [Cell] — a new kind fails to compile here.
   static Widget _cell(Cell value, {required bool pro, required double width}) {
     final Widget child = switch (value) {
-      Included() => Icon(
-        LucideIcons.check300,
+      Included() => BrushCheck(
         size: KalloIcons.tertiary,
         color: pro ? KalloColors.successAccent : kInkMuted,
       ),
@@ -133,10 +158,11 @@ class _PlanComparisonRow extends StatelessWidget {
         size: KalloIcons.tertiary,
         color: KalloColors.textMuted50,
       ),
-      Quantity(:final text) => Text(
+      // Same no-wrap rule as the headings: "Không giới hạn" broke across two
+      // lines against a one-glyph cell opposite it and read as a defect.
+      Quantity(:final text) => PlanComparison._columnText(
         text,
-        style: dashCaption(color: pro ? kInk : kInkMuted),
-        textAlign: TextAlign.center,
+        dashCaption(color: pro ? kInk : kInkMuted),
       ),
     };
     return SizedBox(width: width, child: Center(child: child));

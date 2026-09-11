@@ -54,7 +54,78 @@ const _blankMetricsDraft = OnboardingDraft(
   screenReached: 6,
 );
 
+/// The returning user who walks the wizard and THEN signs in with Apple or
+/// Google — an existing account, so `firstSession` is false throughout.
+///
+/// On device this sequence ends "account activated, then the paywall, then
+/// sometimes a blank screen". These pin every redirect decision along it, so
+/// the rule is ruled in or out of that: at no point may it park the user on
+/// the splash or bounce them off the screen they were sent to.
+void _returningUserSignsInAfterOnboarding() {
+  group('a returning user who signs in AFTER the wizard', () {
+    // The wizard ran signed out, so the answers are still on disk and the
+    // profile is mid-invalidate for most of this — every step save drops it.
+    test('lands on /welcome to flush, not back into the wizard', () {
+      expect(
+        _at(
+          '/save-plan',
+          signedIn: true,
+          draft: _finishedDraft,
+          profileLoading: true,
+        ),
+        '/welcome',
+      );
+    });
+
+    test('/welcome is never redirected off mid-flush', () {
+      // Draft still on disk, profile loading, dismissed not yet set: the state
+      // the interstitial actually sits in while its three saves are in flight.
+      expect(
+        _at(
+          '/welcome',
+          signedIn: true,
+          draft: _finishedDraft,
+          profileLoading: true,
+        ),
+        isNull,
+      );
+      // And again once the flush has cleared the draft but the reads have not
+      // returned, which is where `finish()` spends most of its time.
+      expect(_at('/welcome', signedIn: true, profileLoading: true), isNull);
+    });
+
+    test('the paywall it hands off to is left alone, not parked on /', () {
+      // What `finish()` leaves behind: draft flushed, dismissal set.
+      expect(
+        _at('/paywall', signedIn: true, dismissed: true, profileLoading: true),
+        isNull,
+      );
+      // And without the dismissal, which is the window before `finish()`
+      // reaches its last line: still fine, because this user is not a
+      // first-session account and the force rules never apply to them.
+      expect(_at('/paywall', signedIn: true, profileLoading: true), isNull);
+    });
+
+    test('both paywall exits reach the app', () {
+      expect(_at('/dashboard', signedIn: true, dismissed: true), isNull);
+      expect(_at('/logging', signedIn: true, dismissed: true), isNull);
+    });
+
+    // The one state that CAN strand this user on the splash, and the reason
+    // the sequence above is worth pinning: a session that goes back to
+    // loading with nothing cached takes every route to `/` and holds it
+    // there. Nothing in the flush path should do that — if a device ever
+    // shows the splash here, this is the input to look for.
+    test('only an unsettled session parks them on the splash', () {
+      expect(_at('/paywall', signedIn: true, sessionLoading: true), '/');
+      expect(_at('/', signedIn: true, sessionLoading: true), isNull);
+    });
+  });
+}
+
 void main() {
+  _returningUserSignsInAfterOnboarding();
+
   test('the splash holds while the session is restoring', () {
     expect(_at('/', sessionLoading: true), isNull);
     expect(_at('/dashboard', sessionLoading: true), '/');
