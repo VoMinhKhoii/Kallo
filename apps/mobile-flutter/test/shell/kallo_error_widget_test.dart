@@ -108,6 +108,62 @@ void main() {
     expect(built, isA<KalloErrorWidget>());
   });
 
+  testWidgets('it survives unbounded height — a throw inside a ListView', (
+    tester,
+  ) async {
+    // The case that made it throw on its own account: replacing a failed
+    // child of a scrollable gives the Column infinite height, where a
+    // non-zero flex is a layout assertion. Details OPEN, which is the branch
+    // that carried the Flexible.
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: const MediaQueryData(),
+          child: ListView(
+            children: [
+              KalloErrorWidget(details: detailsFor(StateError('in a list'))),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull, reason: 'no layout assertion');
+    expect(find.textContaining('in a list'), findsOneWidget);
+  });
+
+  testWidgets('a clipboard that rejects says so instead of throwing', (
+    tester,
+  ) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          throw PlatformException(code: 'unavailable');
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await tester.pumpWidget(
+      KalloErrorWidget(details: detailsFor(StateError('the cause'))),
+    );
+    await tester.tap(find.text('Copy details'));
+    await tester.pumpAndSettle();
+
+    // An unhandled async error raised BY the error screen is the worst
+    // possible outcome here; the button carries the bad news instead.
+    expect(tester.takeException(), isNull);
+    expect(find.text('Copy failed'), findsOneWidget);
+  });
+
   testWidgets('a widget that throws mid-build lands on it, not on grey', (
     tester,
   ) async {

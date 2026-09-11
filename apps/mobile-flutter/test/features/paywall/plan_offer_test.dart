@@ -111,6 +111,9 @@ void main() {
     // showing the yearly default it would show if the store were open.
     expect(offer.showPeriodToggle, isTrue);
     expect(offer.yearly, isTrue);
+    // Even against a stale pick: the toggle is only tappable while a plan
+    // exists, so a monthly pick can outlive the offering that allowed it.
+    expect(offerFor(const [], yearlyPicked: false).yearly, isTrue);
   });
 
   test('a running trial makes the bun count it down instead of boasting', () {

@@ -12,24 +12,49 @@ import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/shell/nav/nav_actions.dart';
 
 void main() {
-  GoRouter routerAt(String initial) => GoRouter(
-    initialLocation: initial,
-    routes: [
-      for (final path in const [
-        '/welcome',
-        '/paywall',
-        '/dashboard',
-        '/circle',
-        '/logging',
-        '/circle/thread/1',
-      ])
-        GoRoute(
-          path: path,
-          builder: (_, _) =>
-              Center(child: Text(path, textDirection: TextDirection.ltr)),
+  /// PRODUCTION topology, not a flat list of routes.
+  ///
+  /// The shell roots are `StatefulShellRoute.indexedStack` BRANCHES and
+  /// `/logging` is a root route pushed over them (`router.dart`), which is the
+  /// whole subject here — modelling them as sibling top-level routes would let
+  /// these pass while the real app selected the wrong stack.
+  GoRouter routerAt(String initial) {
+    final shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell-test');
+    Widget leaf(String path) =>
+        Center(child: Text(path, textDirection: TextDirection.ltr));
+    GoRoute root(String path) =>
+        GoRoute(path: path, builder: (_, _) => leaf(path));
+
+    return GoRouter(
+      initialLocation: initial,
+      routes: [
+        // Off the shell: where the first run hands off from, and where the
+        // paywall's exits are taken.
+        root('/welcome'),
+        root('/paywall'),
+        // Pushed full-screen OVER the shell, on the root navigator.
+        root('/logging'),
+        root('/circle/thread/1'),
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, shell) => Column(
+            children: [
+              Expanded(child: shell),
+              // Stands in for the pill nav, so the branch index is visible.
+              Text('branch:${shell.currentIndex}',
+                  textDirection: TextDirection.ltr),
+            ],
+          ),
+          branches: [
+            for (final path in const ['/dashboard', '/nutrition', '/circle'])
+              StatefulShellBranch(
+                navigatorKey: path == '/dashboard' ? shellKey : null,
+                routes: [root(path)],
+              ),
+          ],
         ),
-    ],
-  );
+      ],
+    );
+  }
 
   Future<GoRouter> pump(WidgetTester tester, String initial) async {
     final router = routerAt(initial);
@@ -85,11 +110,21 @@ void main() {
     // it must keep the branch it is standing on rather than resetting to the
     // base (logging from Circle used to drop the user on Today).
     final router = await pump(tester, '/circle');
+    expect(find.text('branch:2'), findsOneWidget, reason: 'starts on Circle');
 
     pushOverShell(router, base: '/dashboard', path: '/logging');
     await tester.pumpAndSettle();
 
     expect(stackOf(router), ['/circle', '/logging']);
+
+    // And back lands on the tab they came FROM. Seeding `/dashboard` here is
+    // what used to rewrite the stack to Today, so logging a meal from Circle
+    // dropped the user on Today on the way back. `/logging` covers the shell
+    // while it is up, so this is only checkable after the pop — and only
+    // checkable at all because the fixture is a real indexedStack.
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('branch:2'), findsOneWidget);
   });
 
   testWidgets('a shell branch destination is a branch switch, not a push', (

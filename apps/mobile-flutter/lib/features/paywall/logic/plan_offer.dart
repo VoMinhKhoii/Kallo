@@ -92,8 +92,14 @@ PaywallOffer paywallOffer({
   // shows selected. With NO packages at all there is no annual to point at,
   // but the inert toggle still has to show something — and showing the
   // monthly half selected would preview the wrong default.
-  final yearly =
-      yearlyPicked ?? (split.annual != null || split.monthly == null);
+  //
+  // An empty offering OVERRIDES a pick rather than deferring to it. The pick
+  // is only reachable while a plan exists (the toggle is inert otherwise), so
+  // a user who chose monthly and then lost the offering — a reload that comes
+  // back empty, purchases switched off mid-session — would otherwise leave the
+  // dead toggle showing monthly selected against nothing for sale.
+  final yearly = packages.isEmpty ||
+      (yearlyPicked ?? (split.annual != null || split.monthly == null));
   // Falls back to the other period when the picked one is not on offer, so a
   // single-plan offering still buys something.
   final plan = yearly

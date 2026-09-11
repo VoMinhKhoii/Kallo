@@ -45,6 +45,7 @@ class _KalloErrorWidgetState extends State<KalloErrorWidget> {
   /// is already a developer.
   late bool _revealed = !kReleaseMode;
   bool _copied = false;
+  bool _copyFailed = false;
 
   /// Exception, library and stack — everything a report needs, which is more
   /// than the screen can legibly show.
@@ -54,70 +55,100 @@ class _KalloErrorWidgetState extends State<KalloErrorWidget> {
     if (widget.details.stack != null) '\n${widget.details.stack}',
   ].join('\n');
 
+  /// Caught, not propagated. `_tap` takes a [VoidCallback] and therefore
+  /// DISCARDS this future, so a rejected `Clipboard.setData` — a platform with
+  /// no clipboard implementation, a `MissingPluginException` — would surface
+  /// as an unhandled async error raised BY the screen that exists to report
+  /// errors. It says so on the button instead.
   Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: _report));
-    if (mounted) setState(() => _copied = true);
+    try {
+      await Clipboard.setData(ClipboardData(text: _report));
+      if (mounted) setState(() => _copied = true);
+    } catch (_) {
+      if (mounted) setState(() => _copyFailed = true);
+    }
   }
+
+  String get _copyLabel => _copyFailed
+      ? 'Copy failed'
+      : _copied
+      ? 'Copied'
+      : 'Copy details';
 
   @override
   Widget build(BuildContext context) {
+    // The incoming height decides the layout, because this widget replaces
+    // whatever threw — INCLUDING a child of a ListView or another Column,
+    // where the height is unbounded. A `Flexible` there is a non-zero flex
+    // under infinite space, which is a layout assertion: the error surface
+    // would then throw on its own account, from inside the error path, which
+    // is the one thing it must never do.
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: ColoredBox(
-        color: KalloErrorWidget.surface,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 64),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Something broke on this screen.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                  color: KalloErrorWidget.ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Close Kallo and open it again. Your data is safe — nothing '
-                'was lost.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: KalloErrorWidget.muted,
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (!_revealed)
-                _tap('Show details', () => setState(() => _revealed = true))
-              else ...[
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Text(
-                      _report,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        height: 1.35,
-                        color: KalloErrorWidget.ink,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _tap(_copied ? 'Copied' : 'Copy details', _copy),
-              ],
-            ],
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) => _body(constraints.hasBoundedHeight),
       ),
     );
   }
+
+  Widget _body(bool bounded) => ColoredBox(
+    color: KalloErrorWidget.surface,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 64),
+      child: Column(
+        // `max` would ask for infinite height when there is none to be had.
+        mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Something broke on this screen.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              height: 1.3,
+              color: KalloErrorWidget.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Close Kallo and open it again. Your data is safe — nothing '
+            'was lost.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: KalloErrorWidget.muted,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (!_revealed)
+            _tap('Show details', () => setState(() => _revealed = true))
+          else ...[
+            // Scrolls within the space it has when there IS space; otherwise
+            // it simply takes its own height and whatever contains it scrolls.
+            if (bounded)
+              Flexible(child: SingleChildScrollView(child: _reportText))
+            else
+              _reportText,
+            const SizedBox(height: 16),
+            _tap(_copyLabel, _copy),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  Widget get _reportText => Text(
+    _report,
+    style: const TextStyle(
+      fontSize: 11,
+      height: 1.35,
+      color: KalloErrorWidget.ink,
+      fontFamily: 'monospace',
+    ),
+  );
 
   /// A tap target built from primitives — no `TextButton`, which would want a
   /// Material ancestor this screen cannot assume it still has.
