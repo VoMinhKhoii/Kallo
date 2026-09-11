@@ -15,10 +15,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../../models/logging/relog.dart';
+import '../../../../../services/billing/feature_lock.dart';
 import '../../../data/logging_providers.dart';
 import '../../../data/stream_analysis_controller.dart';
 import '../../../widgets/composer/meal_input.dart';
@@ -266,8 +266,11 @@ class FeedAnalysisRun {
       input.setText(attempt.text);
     }
     ref.read(streamAnalysisProvider.notifier).reset();
+    // Through the shared helper, not a bare push: this runs inside a
+    // `ref.listen` callback, and [openPaywall] is what defers the navigation
+    // out of Riverpod's flush.
     if (paymentRequired && context.mounted) {
-      context.push('/paywall');
+      openPaywall(context);
     }
   }
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +23,7 @@ import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'router_redirect.dart';
+import 'shell/nav/router_refresh.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/route_error_screen.dart';
 import 'shell/splash_screen.dart';
@@ -62,10 +61,13 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///
 /// It re-evaluates on every auth state change via [refreshListenable] (an
 /// auth-stream bridge), matching RN's `onAuthStateChange` re-render, and on
-/// the async provider settles it listens to below.
+/// the async provider settles it listens to below. Every one of those
+/// re-evaluations is DEFERRED by [RouterRefresh] — [_redirect] reads seven
+/// providers and go_router runs it synchronously, which is unsafe from
+/// inside a Riverpod notification. That file carries the whole rule.
 final routerProvider = Provider<GoRouter>((ref) {
   // Re-run redirects whenever Supabase auth state changes.
-  final refresh = _GoRouterAuthRefresh(ref.read(authEventsProvider));
+  final refresh = RouterRefresh(ref.read(authEventsProvider));
   ref.onDispose(refresh.dispose);
 
   // Re-run redirects when the async profile resolves and flips the
@@ -88,8 +90,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     // says: "no routes for location" is an address with no screen behind it; a
     // redirect loop or any other GoException is a route that failed. The two
     // say different things to the user.
-    errorBuilder: (context, state) =>
-        RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
+    errorBuilder:
+        (context, state) => RouteErrorScreen(
+          notFound: RouteErrorScreen.isNotFound(state.error),
+        ),
     redirect: (context, state) => _redirect(ref, state.matchedLocation),
     routes: [
       // Index — pure redirect target (resolved above). A bare splash so there's
@@ -113,8 +117,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'email',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) =>
-                const EmailAuthScreen(createAccount: false),
+            builder:
+                (context, state) => const EmailAuthScreen(createAccount: false),
           ),
         ],
       ),
@@ -140,8 +144,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'email',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) =>
-                const EmailAuthScreen(createAccount: true),
+            builder:
+                (context, state) => const EmailAuthScreen(createAccount: true),
           ),
         ],
       ),
@@ -176,11 +180,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/paywall',
         parentNavigatorKey: _rootKey,
-        pageBuilder: (context, state) => MaterialPage<void>(
-          child: PaywallScreen(
-            onboarding: state.uri.queryParameters['onboarding'] == '1',
-          ),
-        ),
+        pageBuilder:
+            (context, state) => MaterialPage<void>(
+              child: PaywallScreen(
+                onboarding: state.uri.queryParameters['onboarding'] == '1',
+              ),
+            ),
       ),
       // The logging feed — FULL-SCREEN over the shell (the pill nav's Log
       // item, and every "take me to logging" call site via goToLogging). The
@@ -315,36 +320,4 @@ bool _isFirstSession(User? user) {
   final lastSignIn = lastRaw != null ? DateTime.tryParse(lastRaw) : null;
   final signIn = lastSignIn ?? created;
   return signIn.difference(created).abs() < const Duration(seconds: 60);
-}
-
-/// Bridges Supabase's auth stream to a [Listenable] for [GoRouter.refreshListenable].
-///
-/// Re-runs the router's redirect on every auth state change (sign-in,
-/// sign-out, token refresh) — the go_router equivalent of RN's
-/// `onAuthStateChange` re-render.
-class _GoRouterAuthRefresh extends ChangeNotifier {
-  _GoRouterAuthRefresh(Stream<AuthState> events) {
-    notifyListeners();
-    _sub = events.listen(
-      (_) => notifyListeners(),
-      // gotrue surfaces auth failures (refresh blips, expired-session
-      // recovery) as errors on this stream. A `listen` without an error
-      // handler forwards them to the zone's uncaught-error handler; re-running
-      // the redirect is the right response instead, since the client may have
-      // dropped the session along the way.
-      onError: (Object _, StackTrace __) => notifyListeners(),
-    );
-  }
-
-  late final StreamSubscription<AuthState> _sub;
-
-  /// Lets external Riverpod listeners (e.g. the onboarding-resume decision)
-  /// trigger a redirect re-evaluation.
-  void ping() => notifyListeners();
-
-  @override
-  void dispose() {
-    _sub.cancel();
-    super.dispose();
-  }
 }

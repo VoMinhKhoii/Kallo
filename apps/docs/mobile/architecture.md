@@ -132,6 +132,15 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   arena by construction. `SettingsNavigator`'s nested stack still arbitrates
   through `popGestureEnabled`, and the onboarding wizard catches its own
   right-swipe one level further in (`OnboardingStepSwipe`).
+- **Never route from inside a Riverpod notification.** go_router re-parses
+  SYNCHRONOUSLY — a `refreshListenable` notify, a `context.push`, a `context.go` all
+  run the redirect in the caller's own stack frame, and that redirect reads seven
+  providers. Fired from a `ref.listen` callback, those reads land inside the provider
+  scheduler's flush and can re-enter an element whose dependency map it is still
+  iterating, which throws in the build phase and kills the screen (the TestFlight grey
+  screen of 2026-09-11). So the router's refresh is deferred and coalesced
+  (`shell/nav/router_refresh.dart`) and `openPaywall` waits a frame
+  (`services/billing/feature_lock.dart`). A new listener that navigates owes the same.
 - **The pre-auth stack:** `/start → /onboarding → /save-plan` and
   `/start → /sign-in` are **pushes**, so back works by gesture and by chevron; the
   exits that enter the app (`/welcome`, `/dashboard`) stay `go`. A notification tap

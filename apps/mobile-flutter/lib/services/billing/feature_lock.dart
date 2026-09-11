@@ -23,10 +23,27 @@ import '../http/api_client.dart';
 /// it sits beside in the error maps).
 const String kFeatureLockedCode = 'feature_locked';
 
-/// Send the user to the paywall. The one place the route literal lives for
-/// feature-lock recovery, so a controller that already mapped its 402 onto an
-/// error key (the scan sheets) lands in the same place as a raw catch site.
-void openPaywall(BuildContext context) => context.push('/paywall');
+/// Send the user to the paywall, after the frame in flight. The one place the
+/// route literal lives for feature-lock recovery, so a controller that already
+/// mapped its 402 onto an error key (the scan sheets) lands in the same place
+/// as a raw catch site.
+///
+/// The deferral is not cosmetic. Two callers fire from inside a `ref.listen`
+/// callback — `label_scan_branch` and `analysis_run`'s stream handler — which
+/// Riverpod invokes while its scheduler is flushing the provider graph.
+/// `context.push` re-parses the route table SYNCHRONOUSLY and the router's
+/// redirect reads seven providers on the way through, which can re-enter a
+/// provider the scheduler is mid-iteration over and throw `Concurrent
+/// modification during iteration` as an uncaught build-phase exception — the
+/// screen dies and the app has to be force-quit. `shell/nav/router_refresh
+/// .dart` carries the full mechanism; this is the same hazard reached through
+/// a push instead of a refresh. One frame is invisible next to the transition
+/// it precedes, so every caller takes it rather than each one remembering.
+void openPaywall(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) context.push('/paywall');
+  });
+}
 
 /// Whether [error] is the server refusing a gated feature.
 bool isFeatureLocked(Object error) => error is ApiError && error.status == 402;
