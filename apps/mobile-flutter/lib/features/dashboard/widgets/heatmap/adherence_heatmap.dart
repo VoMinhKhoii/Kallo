@@ -22,6 +22,7 @@ import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
 import 'heatmap_grid_painter.dart';
+import 'heatmap_legend.dart';
 import 'heatmap_month_strip.dart';
 import '../../../../theme/calm_tokens.dart';
 
@@ -45,7 +46,6 @@ const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
 const double _dayLabelGutter = KalloSpacing.sp1; // gap-1 (4px)
 const double _bubbleHalfW = 60;
-const double _legendBarHeight = 6;
 
 class AdherenceHeatmap extends ConsumerWidget {
   const AdherenceHeatmap({super.key, required this.args});
@@ -369,56 +369,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 ],
               ),
 
-              // Legend: the full-width scale with its two ends named UNDER it.
-              // Flanking the bar cost it ~120pt of width, which at five equal
-              // segments left each tier too narrow to read as a step.
-              Padding(
-                padding: const EdgeInsets.only(top: DashboardSpacing.section),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        _legendBarHeight / 2,
-                      ),
-                      child: Container(
-                        height: _legendBarHeight,
-                        decoration: const BoxDecoration(
-                          // Five equal discrete segments, one per tier — the
-                          // same five flat colours the cells use, each
-                          // repeated so its slice has hard edges.
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              HeatmapColors.far, HeatmapColors.far,
-                              HeatmapColors.moderate, HeatmapColors.moderate,
-                              HeatmapColors.slight, HeatmapColors.slight,
-                              HeatmapColors.close, HeatmapColors.close,
-                              HeatmapColors.onTarget, HeatmapColors.onTarget,
-                            ],
-                            stops: HeatmapBands.legendStops,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: DashboardSpacing.row),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          tr('dashboard.adherenceHeatmap.offTarget'),
-                          style: dashMeta(color: kInkMuted),
-                        ),
-                        Text(
-                          tr('dashboard.adherenceHeatmap.onTarget'),
-                          style: dashMeta(color: kInkMuted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              const HeatmapLegend(),
             ],
           );
         },

@@ -1,83 +1,113 @@
+/**
+ * Vendored twin of
+ * `apps/mobile-flutter/lib/features/dashboard/logic/heatmap_colors.dart` — keep
+ * the bands, the ramp and the on-track label set in sync with it.
+ *
+ * One hue, five steps of opacity, plus one colour that is not on the scale at
+ * all.
+ *
+ * **Green says how much of the goal the day reached**, deepening to target and
+ * stopping there. Within it more is better, monotonically, the way a
+ * contribution graph reads — so a pale cell is unambiguously "ate less", never
+ * "off target in some direction".
+ *
+ * Over-target does NOT continue the ramp. If it did, a 60% day and a 150% day
+ * would land on the same pale green while still faintly reading as "some good",
+ * which is the exact ambiguity the ramp exists to avoid.
+ */
 export const HEATMAP_COLORS = {
-  onTarget: 'var(--kallo-heatmap-on-target)',
-  close: 'var(--kallo-heatmap-close)',
-  slight: 'var(--kallo-heatmap-slight)',
-  moderate: 'var(--kallo-heatmap-moderate)',
-  far: 'var(--kallo-heatmap-far)',
+  /** The one hue the scale is built from. */
+  scale: 'var(--kallo-heatmap-on-target)',
+  /** Over target — the one warm cell, ungraded on purpose. */
+  over: 'var(--kallo-heatmap-far)',
 } as const;
 
 /**
- * The band edges, as |ratio - 1|. The classifier and the legend bar both read
- * these, so the bar can never advertise a scale the cells don't use.
+ * The ramp, as alpha applied to `HEATMAP_COLORS.scale`. Ported from amicro's
+ * `dither-heatmap`, which paints one hex at five opacities rather than five
+ * hues — that is what lets an empty cell be the same material as a full one
+ * instead of a grey from a second palette.
+ */
+export const HEATMAP_RAMP = {
+  onTarget: 1,
+  nearlyFull: 0.8,
+  light: 0.55,
+  veryLight: 0.3,
+  /** Nothing logged, or outside the window — the hue at a whisper, not a grey. */
+  empty: 0.08,
+  /**
+   * A logged day under the gate the user has NOT attested yet: the one cell
+   * that wants them to act, so the one cell with a ring. Above `empty` because
+   * at the 15px cell a small phone draws, a 1px ring on an 8% interior is the
+   * only thing separating it from a blank day; still below `veryLight`, so it
+   * adds no rung to the ladder.
+   */
+  awaiting: 0.16,
+} as const;
+
+/**
+ * The two boundaries of the scale.
  *
- * Deliberately wide: two of the five colours read as red, so a narrow scale
- * painted an ordinary ±20% day as failure. Red starts at ±50% — "ate half or
- * double the target" — which is worth noticing.
+ * `gate` is deliberately the SAME number as `PARTIAL_DAY_FRACTION`: a day
+ * either reached 85% of its target or it did not, and that one fact decides
+ * both whether the day counts toward trends and where it lands on the ramp.
+ * Two numbers here would be two stories.
  */
 export const HEATMAP_BANDS = {
-  /** OVER target — the signal worth keeping sharp. */
-  over: { onTarget: 0.1, close: 0.2, slight: 0.35, moderate: 0.5 },
-  /**
-   * UNDER target — deliberately more forgiving. Most under-target days are
-   * under-LOGGED rather than under-eaten (a forgotten snack is
-   * indistinguishable from a deficit), so treating both directions equally
-   * coloured ordinary days as failure.
-   */
-  under: { onTarget: 0.2, close: 0.3, slight: 0.4, moderate: 0.5 },
+  gate: 0.85,
+  overTarget: 1.15,
 } as const;
 
-/**
- * The legend bar's CSS gradient: five EQUAL discrete segments, one per tier,
- * each colour emitted at both ends of its slice so the edges are hard.
- *
- * Equal on purpose, and kept identical to the Dart twin's `legendStops`. A
- * legend is a key — it names the vocabulary, it does not measure anything.
- * Sizing the slices to the bands' widths gave the two warm tiers half the bar,
- * which reads as "most of your days are bad" before a cell is drawn; and with
- * the bands now asymmetric there is no single width to be proportional to.
- */
-export function heatmapLegendGradient(): string {
-  const ramp = [
-    HEATMAP_COLORS.far,
-    HEATMAP_COLORS.moderate,
-    HEATMAP_COLORS.slight,
-    HEATMAP_COLORS.close,
-    HEATMAP_COLORS.onTarget,
-  ];
-  const stops = ramp
-    .map((c, i) => `${c} ${i * 20}%, ${c} ${(i + 1) * 20}%`)
-    .join(', ');
-  return `linear-gradient(to right, ${stops})`;
+/** The label keys that count toward "% on track". */
+export const ON_TRACK_LABELS = new Set(['onTarget']);
+
+export function heatmapScaleAt(opacity: number): string {
+  return `color-mix(in srgb, ${HEATMAP_COLORS.scale} ${opacity * 100}%, transparent)`;
 }
 
+/**
+ * The legend's ramp swatches, palest first. A discrete set, not a gradient: a
+ * continuous bar named only at its two ends is what let the old five-tier scale
+ * over-promise, since the under-target half it implied could never paint.
+ */
+export function heatmapLegendSwatches(): string[] {
+  return [
+    HEATMAP_RAMP.empty,
+    HEATMAP_RAMP.veryLight,
+    HEATMAP_RAMP.light,
+    HEATMAP_RAMP.nearlyFull,
+    HEATMAP_RAMP.onTarget,
+  ].map(heatmapScaleAt);
+}
+
+/**
+ * Resolved fill + i18n label key for a cell's adherence `ratio`
+ * (1.0 == exactly on target).
+ *
+ * The three sub-`gate` steps are reachable ONLY for a day the user attested:
+ * the server nulls `ratio` on an unattested day under the gate, so it never
+ * arrives here. A pale green cell therefore always means "the user confirmed
+ * they ate this little", never "we are guessing".
+ */
 export function getHeatmapColor(ratio: number | null): {
   bg: string;
   labelKey: string;
 } {
   if (ratio === null) return { bg: 'transparent', labelKey: 'noData' };
-
-  const over = ratio > 1;
-  const dist = Math.abs(ratio - 1.0);
-  // Asymmetric on purpose — see HEATMAP_BANDS.under.
-  const b = over ? HEATMAP_BANDS.over : HEATMAP_BANDS.under;
-  if (dist <= b.onTarget) {
-    return { bg: HEATMAP_COLORS.onTarget, labelKey: 'onTarget' };
+  if (ratio > HEATMAP_BANDS.overTarget) {
+    return { bg: HEATMAP_COLORS.over, labelKey: 'overTarget' };
   }
-  if (dist <= b.close) {
-    return { bg: HEATMAP_COLORS.close, labelKey: 'close' };
+  if (ratio >= HEATMAP_BANDS.gate) {
+    return { bg: heatmapScaleAt(HEATMAP_RAMP.onTarget), labelKey: 'onTarget' };
   }
-  if (dist <= b.slight)
+  if (ratio >= 0.65) {
     return {
-      bg: HEATMAP_COLORS.slight,
-      labelKey: over ? 'slightlyOver' : 'slightlyUnder',
+      bg: heatmapScaleAt(HEATMAP_RAMP.nearlyFull),
+      labelKey: 'nearlyFull',
     };
-  if (dist <= b.moderate)
-    return {
-      bg: HEATMAP_COLORS.moderate,
-      labelKey: over ? 'over' : 'under',
-    };
-  return {
-    bg: HEATMAP_COLORS.far,
-    labelKey: over ? 'farOver' : 'farUnder',
-  };
+  }
+  if (ratio >= 0.4) {
+    return { bg: heatmapScaleAt(HEATMAP_RAMP.light), labelKey: 'light' };
+  }
+  return { bg: heatmapScaleAt(HEATMAP_RAMP.veryLight), labelKey: 'veryLight' };
 }

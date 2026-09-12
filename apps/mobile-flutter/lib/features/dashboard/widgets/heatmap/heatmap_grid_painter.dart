@@ -8,37 +8,69 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../models/profile/dashboard.dart';
-import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../logic/heatmap_colors.dart';
 
 const double _cellRadius = 3; // rounded-[3px]
 
-/// One cell's solid fill + optional stroke (+ centered dot for cheat days).
-/// Three solid states (no fractional opacity multipliers): logged = scale
-/// colour, unlogged/partial = neutral track (partial gets a hairline ring),
-/// out-of-range = barely-there cream. A cheat day replaces its intensity
-/// colour with the calm warm ring + fill + accent dot (web parity, never red).
-({Color fill, Color? stroke, bool dot}) _cellRectProps(HeatmapCell? cell) {
+/// The cheat day's fill: the onboarding aurora's two hues, poured VERTICALLY
+/// and washed to 0.92.
+///
+/// Deliberately not `KalloGradients.brandSweep` — that is diagonal at full
+/// opacity and belongs to the tab bar's `+`, the app's one always-present
+/// create affordance. Sharing it would put the create gesture's signature on a
+/// history cell. Same family, different axis and weight.
+///
+/// Being the only gradient on the grid is what lets the cheat cell drop the
+/// ring and the centre dot it used to need: nothing else here shimmers, so
+/// nothing else can be mistaken for it.
+const LinearGradient _cheatGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xEBFFD2B0), Color(0xEBDCC4FF)],
+);
+
+/// One cell's paint: a flat fill, or a gradient, plus an optional ring.
+///
+/// Four kinds of cell, and only one of them carries a ring — the day that is
+/// waiting on the user. Everything else is fill alone, which is what keeps the
+/// grid readable at the 15px cell an iPhone SE draws.
+({Color? fill, Gradient? gradient, Color? stroke}) _cellRectProps(
+  HeatmapCell? cell,
+) {
   final ratio = cell?.ratio;
   final isLogged = cell?.status == HeatmapCellStatus.logged && ratio != null;
+
   if (isLogged) {
     if (cell!.hasCheatMeal) {
-      return (
-        fill: HeatmapColors.cheatFill,
-        stroke: HeatmapColors.cheat,
-        dot: true,
-      );
+      return (fill: HeatmapColors.cheatFill, gradient: _cheatGradient, stroke: null);
     }
-    return (fill: getHeatmapColor(ratio).bg ?? kTrack, stroke: null, dot: false);
+    return (
+      fill: getHeatmapColor(ratio).bg ?? HeatmapColors.scaleAt(HeatmapColors.empty),
+      gradient: null,
+      stroke: null,
+    );
   }
-  final isMuted =
-      cell?.status == HeatmapCellStatus.future ||
-      cell?.status == HeatmapCellStatus.outside;
-  if (isMuted) {
-    return (fill: kPage, stroke: null, dot: false); // out-of-range
+
+  // Logged but under the gate and not yet attested: the one actionable cell, so
+  // the one with a ring. Its wash is above `empty` because at 15px a 1px ring
+  // on an 8% interior is the only thing separating it from a blank day.
+  if (cell?.status == HeatmapCellStatus.partial) {
+    return (
+      fill: HeatmapColors.scaleAt(HeatmapColors.awaiting),
+      gradient: null,
+      stroke: KalloColors.textMuted,
+    );
   }
-  final isPartial = cell?.status == HeatmapCellStatus.partial;
-  return (fill: kTrack, stroke: isPartial ? kHairline : null, dot: false);
+
+  // Unlogged, future and out-of-range all land here. The user does not need to
+  // tell them apart on the grid — none of them is a reading — and collapsing
+  // them keeps the empty state one material instead of two greys.
+  return (
+    fill: HeatmapColors.scaleAt(HeatmapColors.empty),
+    gradient: null,
+    stroke: null,
+  );
 }
 
 class HeatmapGridPainter extends CustomPainter {
@@ -108,19 +140,26 @@ class HeatmapGridPainter extends CustomPainter {
           const Radius.circular(_cellRadius),
         );
 
-        // Solid fill; cellAlpha is only the per-cell reveal fade (→ 1).
-        fillPaint.color = props.fill.withValues(alpha: cellAlpha);
-        canvas.drawRRect(rrect, fillPaint);
+        // Solid fill; cellAlpha is only the per-cell reveal fade (→ 1). A
+        // gradient cell paints its flat base first so the wash has something
+        // warm underneath rather than compositing onto the card.
+        fillPaint.shader = null;
+        if (props.fill != null) {
+          fillPaint.color = props.fill!.withValues(
+            alpha: props.fill!.a * cellAlpha,
+          );
+          canvas.drawRRect(rrect, fillPaint);
+        }
+        if (props.gradient != null) {
+          fillPaint.color = Colors.white.withValues(alpha: cellAlpha);
+          fillPaint.shader = props.gradient!.createShader(rect);
+          canvas.drawRRect(rrect, fillPaint);
+          fillPaint.shader = null;
+        }
 
         if (props.stroke != null) {
           strokePaint.color = props.stroke!.withValues(alpha: cellAlpha);
           canvas.drawRRect(rrect, strokePaint);
-        }
-
-        // Cheat-day marker: a small centered accent dot (web's ● overlay).
-        if (props.dot) {
-          fillPaint.color = HeatmapColors.cheat.withValues(alpha: cellAlpha);
-          canvas.drawCircle(Offset(cx, cy), (sq * scale) * 0.12, fillPaint);
         }
       }
     }

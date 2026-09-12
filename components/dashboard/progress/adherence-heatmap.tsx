@@ -14,7 +14,12 @@ import type {
   HeatmapRange,
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
-import { getHeatmapColor, heatmapLegendGradient } from './heatmap-colors';
+import {
+  getHeatmapColor,
+  HEATMAP_RAMP,
+  heatmapScaleAt,
+} from './heatmap-colors';
+import { HeatmapLegend } from './heatmap-legend';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -123,43 +128,32 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                       }
                       className={cn(
                         'relative aspect-square w-full cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
-                        // Cheat day: a calm warm ring instead of intensity
-                        // grading — recognizable, never red.
-                        isCheat && 'ring-1 ring-kallo-cheat ring-inset'
+                        // The one actionable cell — logged, under the gate, not
+                        // yet attested — is the one cell with a ring.
+                        isPartial && 'border border-kallo-text-muted'
                       )}
                       style={{
                         gridRow: di + 2,
                         gridColumn: wi + 2,
+                        // The cheat day is the grid's only gradient, which is
+                        // what lets it drop the ring and dot it used to need:
+                        // nothing else here shimmers. Vertical and washed, so
+                        // it stays distinct from the diagonal full-opacity
+                        // brand sweep that belongs to the create affordance.
+                        backgroundImage: isCheat
+                          ? 'linear-gradient(180deg, rgb(255 210 176 / 0.92), rgb(220 196 255 / 0.92))'
+                          : undefined,
                         backgroundColor: isCheat
                           ? 'var(--kallo-cheat-fill)'
                           : isLogged
                             ? bg
-                            : undefined,
+                            : heatmapScaleAt(
+                                isPartial
+                                  ? HEATMAP_RAMP.awaiting
+                                  : HEATMAP_RAMP.empty
+                              ),
                       }}
-                    >
-                      {!isLogged && (
-                        <div
-                          className={cn(
-                            'absolute inset-0 rounded-[3px]',
-                            // Empty cells take their tint from the muted-ink
-                            // taupe so the grid reads on the white card;
-                            // future/outside days recede to a fainter step.
-                            isMuted
-                              ? 'bg-kallo-text-muted/6'
-                              : 'bg-kallo-text-muted/12',
-                            isPartial && 'border border-kallo-border'
-                          )}
-                        />
-                      )}
-                      {isCheat && (
-                        <span
-                          aria-hidden
-                          className="absolute inset-0 flex items-center justify-center text-[8px] text-kallo-cheat"
-                        >
-                          ●
-                        </span>
-                      )}
-                    </motion.button>
+                    ></motion.button>
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
@@ -172,23 +166,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             })
           )}
 
-          {/* Legend — the grid's final row, spanning exactly the week columns
-              so its edges align with the cells above. */}
-          <div
-            className="flex items-center gap-2 pt-2"
-            style={{ gridRow: 9, gridColumn: `2 / span ${numWeeks}` }}
-          >
-            <span className="text-kallo-text-muted text-xs">
-              {t('offTarget')}
-            </span>
-            <div
-              className="h-1.5 flex-1 rounded-full"
-              style={{ background: heatmapLegendGradient() }}
-            />
-            <span className="text-kallo-text-muted text-xs">
-              {t('onTarget')}
-            </span>
-          </div>
+          <HeatmapLegend numWeeks={numWeeks} />
         </div>
       </div>
     </TooltipProvider>
