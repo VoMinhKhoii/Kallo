@@ -21,6 +21,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
+import '../../logic/heatmap_range.dart';
 import 'heatmap_grid_painter.dart';
 import 'heatmap_legend.dart';
 import 'heatmap_month_strip.dart';
@@ -38,7 +39,6 @@ List<String> _weekdayInitials(String locale) {
   ];
 }
 
-const double _gap90d = 2; // GAP['90d']
 /// Floor for the weekday gutter; the real width is measured, because narrow
 /// weekday names are not one character in every language — Vietnamese renders
 /// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
@@ -55,16 +55,23 @@ class AdherenceHeatmap extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(heatmapProvider(args));
+    // Only the card knows how wide it is, and the provider decides what to
+    // fetch — so the measurement has to travel back up. Keyed on the resolved
+    // RANGE, so a resize within one range changes nothing.
+    void resolve(HeatmapRange range) {
+      if (ref.read(heatmapRangeProvider) == range) return;
+      ref.read(heatmapRangeProvider.notifier).state = range;
+    }
 
     return async.when(
       // A weigh-in invalidates the bundle, so heatmapProvider goes isReloading
       // and .when would drop the drawn grid back to its loading body —
       // skipLoadingOnReload only defaults true on refresh.
       skipLoadingOnReload: true,
-      loading: () => const _HeatmapBody(data: null),
+      loading: () => _HeatmapBody(data: null, onRangeResolved: resolve),
       // Empty/loaded both render the grid; the server always returns a full
       // grid for the range (unlogged days are the "not logged" track).
-      data: (data) => _HeatmapBody(data: data),
+      data: (data) => _HeatmapBody(data: data, onRangeResolved: resolve),
       error:
           (_, __) => KalloCard(
             padding: DashboardSpacing.card,
@@ -103,8 +110,9 @@ class _Bubble {
 }
 
 class _HeatmapBody extends StatefulWidget {
-  const _HeatmapBody({required this.data});
+  const _HeatmapBody({required this.data, required this.onRangeResolved});
   final HeatmapData? data;
+  final ValueChanged<HeatmapRange> onRangeResolved;
 
   @override
   State<_HeatmapBody> createState() => _HeatmapBodyState();
@@ -113,6 +121,9 @@ class _HeatmapBody extends StatefulWidget {
 class _HeatmapBodyState extends State<_HeatmapBody>
     with SingleTickerProviderStateMixin {
   _Bubble? _bubble;
+
+  /// The last range reported upward, so a resize inside one range is silent.
+  HeatmapRange? _lastResolved;
 
   // Per-cell wave reveal: each cell animates {opacity:0,scale:0.6}→{1,1} over
   // 0.16s with a stagger delay of wi*0.01 + di*0.005. The controller spans the
@@ -190,15 +201,38 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
   }
 
-  double _cellSize(double contentWidth, int numWeeks, double dayLabelWidth) {
+  /// Cell edge for the width we were handed.
+  ///
+  /// Clamped at BOTH ends. The floor keeps a narrow phone legible; the ceiling
+  /// is what stops a tablet inflating the 90-day grid into ~51px tiles whose
+  /// gutters vanish — extra width should buy history (a wider range, chosen in
+  /// [_resolveRange]), never bigger squares.
+  double _cellSize(
+    double contentWidth,
+    int numWeeks,
+    double dayLabelWidth,
+    HeatmapRange range,
+  ) {
     if (numWeeks <= 0) return 10;
+    final gap = heatmapCellGap[range]!;
     final available =
-        contentWidth -
-        dayLabelWidth -
-        _dayLabelGutter -
-        (numWeeks - 1) * _gap90d;
+        contentWidth - dayLabelWidth - _dayLabelGutter - (numWeeks - 1) * gap;
     final sq = (available / numWeeks).floorToDouble();
-    return sq < 10 ? 10 : sq;
+    return sq.clamp(10, heatmapMaxCell[range]!);
+  }
+
+  /// Tell the provider which range this width can carry, once per change.
+  void _resolveRange(double contentWidth, double dayLabelWidth) {
+    final range = chooseRenderedHeatmapRange(
+      preferredRange: HeatmapRange.year,
+      availableWidth: contentWidth - dayLabelWidth - _dayLabelGutter,
+    );
+    if (range == _lastResolved) return;
+    _lastResolved = range;
+    // During layout — deferred, or it would mutate a provider mid-build.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => widget.onRangeResolved(range),
+    );
   }
 
   @override
@@ -221,11 +255,17 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
-          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth);
-          final step = sq + _gap90d;
+          _resolveRange(contentWidth, dayLabelWidth);
+          // Geometry follows the data actually on screen, not the range the
+          // width just asked for — those differ for one frame while the wider
+          // request is in flight.
+          final range = heatmapRangeForColumns(numWeeks);
+          final gap = heatmapCellGap[range]!;
+          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth, range);
+          final step = sq + gap;
           final gridWidth =
-              numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * _gap90d : 0.0;
-          final gridHeight = 7 * sq + 6 * _gap90d;
+              numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * gap : 0.0;
+          final gridHeight = 7 * sq + 6 * gap;
           final adherence = _adherence;
 
           return Column(
@@ -241,7 +281,15 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   (data != null && adherence.loggedDays >= 3)
                       ? tr(
                         'dashboard.adherenceHeatmap.onTrack',
-                        namedArgs: {'percent': '${adherence.percent}'},
+                        namedArgs: {
+                          'percent': '${adherence.percent}',
+                          // The window is part of the claim: the same account
+                          // scores differently over 90 days and over a year,
+                          // and a wide layout silently shows the wider one.
+                          'window': tr(
+                            'dashboard.adherenceHeatmap.window.${range.name}',
+                          ),
+                        },
                       )
                       : ' ',
                   style: dashMeta(color: kInk, tabular: true),
@@ -265,7 +313,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                               top:
                                   i == 0
                                       ? monthStripHeight + KalloSpacing.sp1
-                                      : _gap90d,
+                                      : gap,
                             ),
                             padding: const EdgeInsets.only(
                               right: _dayLabelPadRight,
@@ -292,7 +340,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             data?.monthHeaders ??
                             const <HeatmapMonthHeader>[],
                         cellSize: sq,
-                        gap: _gap90d,
+                        gap: gap,
                         gridWidth: gridWidth,
                         style: monthLabelStyle,
                         height: monthStripHeight,

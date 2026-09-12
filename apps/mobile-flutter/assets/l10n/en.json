@@ -1068,7 +1068,7 @@
       "steady": "Steady"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% on track",
+      "onTrack": "{percent}% on track · {window}",
       "notLogged": "Not logged",
       "partial": "Awaiting confirmation",
       "future": "Future day",
@@ -1079,7 +1079,12 @@
       "overTarget": "Over target",
       "nearlyFull": "Nearly full",
       "light": "Light day",
-      "veryLight": "Very light day"
+      "veryLight": "Very light day",
+      "window": {
+        "d30": "30 days",
+        "d90": "90 days",
+        "year": "1 year"
+      }
     },
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",

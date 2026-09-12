@@ -1068,7 +1068,7 @@
       "steady": "Ổn định"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
+      "onTrack": "{percent}% đúng mục tiêu · {window}",
       "notLogged": "Chưa ghi nhận",
       "partial": "Chờ xác nhận",
       "future": "Ngày trong tương lai",
@@ -1079,7 +1079,12 @@
       "overTarget": "Vượt mục tiêu",
       "nearlyFull": "Gần đủ",
       "light": "Ăn nhẹ",
-      "veryLight": "Ăn rất ít"
+      "veryLight": "Ăn rất ít",
+      "window": {
+        "d30": "30 ngày",
+        "d90": "90 ngày",
+        "year": "1 năm"
+      }
     },
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
