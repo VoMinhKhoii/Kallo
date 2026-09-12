@@ -46,6 +46,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     mockConfirm.mockResolvedValue(savedMealResult({ calories: 450 }));
 
@@ -75,6 +76,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     // Hold the server response so we can inspect the OPTIMISTIC insert before
     // onSuccess overwrites it with authoritative values.
@@ -125,6 +127,7 @@ describe('useConfirmMeal optimistic update', () => {
       mealItemGroups: [],
     } as unknown as LoggingDayData['persistedMeals'][number];
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      markedComplete: false,
       persistedMeals: [existing],
       pendingConfirmations: [
         {
@@ -157,6 +160,7 @@ describe('useConfirmMeal optimistic update', () => {
     const snapshot: LoggingDayData = {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     };
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, snapshot);
     mockConfirm.mockRejectedValue(new Error('boom'));
@@ -186,6 +190,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     const cancelSpy = vi.spyOn(queryClient, 'cancelQueries');
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -227,6 +232,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     // The server call resolves, but a stale read overwrites the optimistic
     // insert with the empty pre-save snapshot just before success.
@@ -234,6 +240,7 @@ describe('useConfirmMeal optimistic update', () => {
       queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
         persistedMeals: [],
         pendingConfirmations: [],
+        markedComplete: false,
       });
       return savedMealResult();
     });
@@ -262,6 +269,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     mockConfirm.mockResolvedValue({ mealId: 'meal-1' }); // no `meal`
@@ -297,6 +305,7 @@ describe('useConfirmMeal optimistic update', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     const dailyKey = dailyMealsKeys.byDate(DATE);
     // Defined (stale) data present, then a refetch left in flight over it.

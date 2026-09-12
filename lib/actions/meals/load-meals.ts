@@ -21,6 +21,7 @@ import {
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
+  dayCompletionMarks,
   mealItems,
   mealShares,
   meals,
@@ -260,9 +261,19 @@ export async function loadLoggingDay(input: {
 }): Promise<LoggingDayData> {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  const [persistedMeals, pendingConfirmations] = await Promise.all([
+  const [persistedMeals, pendingConfirmations, marks] = await Promise.all([
     loadMealsByDateForUser(user.id, parsed),
     loadPendingAnalysesByDateForUser(user.id, parsed),
+    db
+      .select({ id: dayCompletionMarks.id })
+      .from(dayCompletionMarks)
+      .where(
+        and(
+          eq(dayCompletionMarks.userId, user.id),
+          eq(dayCompletionMarks.localDate, parsed.date)
+        )
+      )
+      .limit(1),
     // Hygiene: reap this user's long-abandoned staging rows so the table doesn't
     // grow unbounded. Best-effort:
     //  - swallow its own errors: a failed DELETE (lock/pooler hiccup) must not
@@ -278,7 +289,11 @@ export async function loadLoggingDay(input: {
     reapAbandonedPendingAnalyses(user.id),
   ]);
 
-  return { persistedMeals, pendingConfirmations };
+  return {
+    persistedMeals,
+    pendingConfirmations,
+    markedComplete: marks.length > 0,
+  };
 }
 
 // ---------------------------------------------------------------------------

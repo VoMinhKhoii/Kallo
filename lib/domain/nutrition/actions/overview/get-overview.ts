@@ -20,6 +20,7 @@ import { mapOverviewRowsToDto } from './mapper';
 import {
   countLoggedDaysLast30,
   fetchDailyCalorieTotals,
+  fetchDayCompletionMarks,
   fetchOverviewRows,
 } from './query';
 import { type NutritionProfile, nullableNumber } from './row-metrics';
@@ -114,7 +115,7 @@ async function buildOverview({
   const bounds = getUtcBounds(period, timezoneOffset);
   const calorieTarget = nullableNumber(profile.calorieTarget);
 
-  const [rows, previousCalorieAverages, dayCount] = await Promise.all([
+  const [rows, previousCalorieAverages, dayCount, marks] = await Promise.all([
     fetchOverviewRows({
       userId,
       startDate: period.startDate,
@@ -130,6 +131,9 @@ async function buildOverview({
       calorieTarget,
     }),
     loggedDaysLast30,
+    // Days the user attested were fully logged. Stored as local date strings,
+    // so they compare directly against the rows' `localDate` keys.
+    fetchDayCompletionMarks(userId, period.startDate, period.endDate),
   ]);
 
   const overview = mapOverviewRowsToDto({
@@ -141,6 +145,7 @@ async function buildOverview({
     period,
     dayScope,
     previousCalorieAverages,
+    markedDates: new Set(marks),
   });
 
   assertOverviewHasNoTrendArrays(overview);

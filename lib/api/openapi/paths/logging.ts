@@ -1,4 +1,5 @@
 import { logBarcodeMealSchema } from '@/lib/api/contracts/barcode';
+import { markDayCompleteSchema } from '@/lib/api/contracts/meals';
 import {
   authed,
   dateParam,
@@ -31,6 +32,18 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       parameters: [dateParam, tzParam],
       ok: ref('LoggingDay'),
+    }),
+  },
+
+  '/api/v1/logging/day/complete': {
+    post: authed({
+      operationId: 'markDayComplete',
+      summary: 'Attest that a day is fully logged',
+      description:
+        "Marks a past day as everything the user actually ate, so it rejoins trends at its real logged calories instead of being held out as under-logged. One-way: there is no un-marking, and re-sending the same day is a no-op rather than an error. Rejects a day that has not finished in the user's timezone, and a day with no meals.",
+      tags: TAGS,
+      body: fromZod(markDayCompleteSchema),
+      ok: ref('Acknowledgement'),
     }),
   },
 

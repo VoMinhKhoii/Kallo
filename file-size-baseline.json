@@ -38,7 +38,6 @@
   },
   "folders": {
     "components/groups": 12,
-    "components/auth": 11,
-    "lib/actions/meals": 11
+    "components/auth": 11
   }
 }

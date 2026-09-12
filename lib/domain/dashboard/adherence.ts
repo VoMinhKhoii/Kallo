@@ -26,6 +26,8 @@ interface BuildCalorieAdherenceHeatmapInput {
   dailyCalories: DailyCalories[];
   calorieTarget: number | null;
   timezoneOffset: number;
+  /** Local dates the user attested were fully logged ("Mình ăn đủ rồi"). */
+  markedDates?: ReadonlySet<string>;
   now?: Date;
 }
 
@@ -135,6 +137,7 @@ export function buildCalorieAdherenceHeatmapData({
   dailyCalories,
   calorieTarget,
   timezoneOffset,
+  markedDates,
   now = new Date(),
 }: BuildCalorieAdherenceHeatmapInput): HeatmapData {
   const endKey = getLocalDateKey(now, timezoneOffset);
@@ -176,9 +179,14 @@ export function buildCalorieAdherenceHeatmapData({
       : DEFAULT_RING_CALORIE_TARGET;
   // Days under-logged relative to the target are marked 'partial' so they are
   // neither colour-graded as a low-intake day nor counted toward adherence.
+  // A day the user attested is exempt: it grades and counts at its real
+  // calories, which is the whole point of the attestation.
   const { partialDates } = classifyDayCompleteness(
     dailyCalories,
-    calorieTarget
+    calorieTarget,
+    {
+      markedDates,
+    }
   );
 
   for (

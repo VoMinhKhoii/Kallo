@@ -117,6 +117,16 @@ export type UpdateMealBody = z.infer<typeof updateMealBodySchema>;
  * optional client-generated id so the optimistic card and the persisted row
  * share a stable key.
  */
+/**
+ * "Mình ăn đủ rồi" — the user attesting a past day is fully logged. Shared by
+ * the server action and the route so the mobile client validates the same
+ * shape it will be held to.
+ */
+export const markDayCompleteSchema = z.object({
+  date: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
 export const saveManualMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
   items: z

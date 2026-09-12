@@ -104,6 +104,7 @@ describe('save-meal flow — in-flight heal (integration)', () => {
       return {
         persistedMeals: server.meals,
         pendingConfirmations: server.pending,
+        markedComplete: false,
       };
     });
 
@@ -123,6 +124,7 @@ describe('save-meal flow — in-flight heal (integration)', () => {
       day.resolve({
         persistedMeals: [savedMeal('meal-0', 300)],
         pendingConfirmations: [],
+        markedComplete: false,
       });
     });
 
@@ -153,6 +155,7 @@ describe('save-meal flow — in-flight heal (integration)', () => {
       return {
         persistedMeals: server.meals,
         pendingConfirmations: server.pending,
+        markedComplete: false,
       };
     });
 
@@ -185,10 +188,12 @@ describe('save-meal flow — in-flight heal (integration)', () => {
       initial.resolve({
         persistedMeals: [savedMeal('meal-0', 300)],
         pendingConfirmations: [],
+        markedComplete: false,
       });
       heal.resolve({
         persistedMeals: server.meals,
         pendingConfirmations: [],
+        markedComplete: false,
       });
     });
 

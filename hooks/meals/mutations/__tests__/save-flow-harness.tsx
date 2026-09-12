@@ -257,6 +257,7 @@ export function installServerMocks(mocks: {
     async (): Promise<LoggingDayData> => ({
       persistedMeals: server.meals,
       pendingConfirmations: server.pending,
+      markedComplete: false,
     })
   );
   mocks.mockLoadMealsByDate.mockImplementation(

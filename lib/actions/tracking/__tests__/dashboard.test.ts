@@ -66,18 +66,26 @@ describe('loadCalorieAdherenceHeatmap', () => {
   });
 
   it('loads meal rows and builds the heatmap snapshot', async () => {
-    mockDbSelect.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          groupBy: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue([
-              { date: '2026-04-30', calories: '1200', hasCheatMeal: false },
-              { date: '2026-05-01', calories: '1800', hasCheatMeal: true },
-            ]),
+    // Two selects in order: the grouped meal totals, then the day-completion
+    // marks (which awaits at `where`, with no groupBy/orderBy).
+    mockDbSelect
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([
+                { date: '2026-04-30', calories: '1200', hasCheatMeal: false },
+                { date: '2026-05-01', calories: '1800', hasCheatMeal: true },
+              ]),
+            }),
           }),
         }),
-      }),
-    });
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([{ localDate: '2026-04-30' }]),
+        }),
+      });
 
     const heatmap = await loadCalorieAdherenceHeatmap({
       range: '30d',
@@ -88,7 +96,17 @@ describe('loadCalorieAdherenceHeatmap', () => {
     expect(heatmap.monthHeaders).toEqual([
       { month: 'May', startColumn: 0, span: 2 },
     ]);
-    expect(mockDbSelect).toHaveBeenCalledTimes(1);
+    // The attested day must reach the builder, or a marked day would silently
+    // stay partial on the grid.
+    expect(mockBuildCalorieAdherenceHeatmapData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        markedDates: new Set(['2026-04-30']),
+      })
+    );
+    // Two flat queries for the whole grid — the meal totals and the marks.
+    // The guard is against a per-day or per-week fan-out, not against the
+    // count itself; bump it deliberately, never to make a red test green.
+    expect(mockDbSelect).toHaveBeenCalledTimes(2);
     expect(mockBuildCalorieAdherenceHeatmapData).toHaveBeenCalledWith(
       expect.objectContaining({
         range: '30d',

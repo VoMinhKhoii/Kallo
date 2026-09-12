@@ -5,7 +5,7 @@ import {
   TimezoneCookie,
 } from '@/components/app/timezone-cookie';
 import { LoggingShell } from '@/components/logging/logging-shell';
-import { dayHasEntries } from '@/lib/actions/meals/day-has-entries';
+import { dayHasEntries } from '@/lib/actions/meals/day/day-has-entries';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';

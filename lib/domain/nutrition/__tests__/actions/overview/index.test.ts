@@ -6,12 +6,14 @@ const {
   mockCheckFeatureGate,
   mockCountLoggedDaysLast30,
   mockFetchDailyCalorieTotals,
+  mockFetchDayCompletionMarks,
   mockFetchOverviewRows,
   mockRequireAuthAndProfile,
 } = vi.hoisted(() => ({
   mockCheckFeatureGate: vi.fn(),
   mockCountLoggedDaysLast30: vi.fn(),
   mockFetchDailyCalorieTotals: vi.fn(),
+  mockFetchDayCompletionMarks: vi.fn(),
   mockFetchOverviewRows: vi.fn(),
   mockRequireAuthAndProfile: vi.fn(),
 }));
@@ -27,6 +29,7 @@ vi.mock('@/lib/infra/auth/session', () => ({
 vi.mock('@/lib/domain/nutrition/actions/overview/query', () => ({
   countLoggedDaysLast30: mockCountLoggedDaysLast30,
   fetchDailyCalorieTotals: mockFetchDailyCalorieTotals,
+  fetchDayCompletionMarks: mockFetchDayCompletionMarks,
   fetchOverviewRows: mockFetchOverviewRows,
 }));
 
@@ -124,6 +127,9 @@ describe('getNutritionOverview', () => {
     mockCountLoggedDaysLast30.mockResolvedValue(14);
     mockFetchOverviewRows.mockResolvedValue(threeDayRows);
     mockFetchDailyCalorieTotals.mockResolvedValue([]);
+    // No attested days by default; the override is exercised in the
+    // completeness unit tests, which own that behaviour.
+    mockFetchDayCompletionMarks.mockResolvedValue([]);
   });
 
   it('rejects invalid ranges', async () => {

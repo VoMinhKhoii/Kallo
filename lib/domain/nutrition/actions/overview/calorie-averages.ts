@@ -19,11 +19,13 @@ import type { DailyCalorieTotal } from './query';
  */
 export function buildCalorieAverages(
   dayTotals: DailyCalorieTotal[],
-  calorieTarget: number | null
+  calorieTarget: number | null,
+  markedDates?: ReadonlySet<string>
 ): CalorieAverages {
   const loggedDays = dayTotals.filter((day) => day.calories > 0);
   const strict = classifyDayCompleteness(loggedDays, calorieTarget, {
     safetyValve: false,
+    markedDates,
   });
 
   const sum = (days: DailyCalorieTotal[]) =>
