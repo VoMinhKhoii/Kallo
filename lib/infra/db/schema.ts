@@ -417,6 +417,46 @@ export const bodyWeightLog = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Day Completion Marks
+// ---------------------------------------------------------------------------
+
+/**
+ * Days the user explicitly attested were fully logged ("Mình ăn đủ rồi").
+ *
+ * A day under `PARTIAL_DAY_FRACTION` of its calorie target is classified
+ * `partial` and held out of trends, because a forgotten snack is
+ * indistinguishable from a genuinely light day. This table is the user saying
+ * "no, that IS everything I ate" — the day then rejoins trends at its real
+ * logged calories, never at a fabricated target.
+ *
+ * Append-only by design: the mark is one-way, so there is no delete path and
+ * the row's existence IS the flag. Shaped after `bodyWeightLog` — the repo's
+ * other per-local-date table — so the (user, date) uniqueness is enforced by
+ * the same constraint pattern rather than by application code.
+ */
+export const dayCompletionMarks = pgTable(
+  'day_completion_marks',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // The user's LOCAL date, resolved from their tz offset at write time — the
+    // same day key the heatmap and nutrition aggregates group by.
+    localDate: date('local_date').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('day_completion_marks_user_date_uniq').on(
+      table.userId,
+      table.localDate
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Unmatched Ingredients
 // ---------------------------------------------------------------------------
 
@@ -2005,5 +2045,11 @@ export const rateLimitEvents = pgTable(
       table.route,
       table.createdAt
     ),
+    // The retention reaper's batch predicate is created_at ALONE, and the
+    // composite above leads with `route` so it cannot serve one. Shipped in
+    // 20260901194712 and required by 20260901194715's batched delete; it went
+    // missing from this file at some point, so every `db:generate` since has
+    // wanted to DROP it out from under the reaper. Restored, not re-created.
+    index('rate_limit_events_created_idx').on(table.createdAt),
   ]
 );
