@@ -131,3 +131,68 @@ describe('isLikelyPartialDay', () => {
     expect(isLikelyPartialDay(0, 2000)).toBe(false);
   });
 });
+
+describe('marked days', () => {
+  it('short-circuits isLikelyPartialDay however far under the floor', () => {
+    expect(isLikelyPartialDay(1, 2000, true)).toBe(false);
+    expect(isLikelyPartialDay(1, 2000)).toBe(true);
+  });
+
+  it('keeps a marked date out of partialDates', () => {
+    const days = [
+      { date: 'a', calories: 400 },
+      { date: 'b', calories: 2000 },
+    ];
+    const { partialDates, completeDates } = classifyDayCompleteness(
+      days,
+      2000,
+      { markedDates: new Set(['a']) }
+    );
+    expect(partialDates.has('a')).toBe(false);
+    expect(completeDates.has('a')).toBe(true);
+    expect(completeDates.has('b')).toBe(true);
+  });
+
+  it('leaves unmarked under-logged days partial', () => {
+    const days = [
+      { date: 'a', calories: 400 },
+      { date: 'b', calories: 500 },
+      { date: 'c', calories: 2000 },
+    ];
+    const { partialDates } = classifyDayCompleteness(days, 2000, {
+      markedDates: new Set(['a']),
+    });
+    expect(partialDates.has('a')).toBe(false);
+    expect(partialDates.has('b')).toBe(true);
+  });
+
+  // The valve promotes every logged day when NONE qualifies. One marked day
+  // means one qualifies, so the rest must stay partial — otherwise marking a
+  // single day would silently launder every other under-logged day in the
+  // window into the averages.
+  it('a marked day keeps the safety valve shut for the others', () => {
+    const days = [
+      { date: 'a', calories: 400 },
+      { date: 'b', calories: 500 },
+    ];
+    expect(classifyDayCompleteness(days, 2000).partialDays).toBe(0);
+
+    const marked = classifyDayCompleteness(days, 2000, {
+      markedDates: new Set(['a']),
+    });
+    expect(marked.completeDays).toBe(1);
+    expect(marked.partialDays).toBe(1);
+    expect(marked.partialDates.has('b')).toBe(true);
+  });
+
+  it('counts a marked day at its real calories, not the target', () => {
+    const days = [{ date: 'a', calories: 400 }];
+    const { completeDates } = classifyDayCompleteness(days, 2000, {
+      markedDates: new Set(['a']),
+    });
+    // The classifier only ever reports membership; callers average the row's
+    // own calories. Guarding that it is reported as complete is what lets the
+    // real 400 flow through instead of being dropped.
+    expect(completeDates).toEqual(new Set(['a']));
+  });
+});
