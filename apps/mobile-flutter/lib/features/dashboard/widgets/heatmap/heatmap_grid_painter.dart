@@ -24,10 +24,16 @@ const double _cellRadius = 3; // rounded-[3px]
 /// Being the only gradient on the grid is what lets the cheat cell drop the
 /// ring and the centre dot it used to need: nothing else here shimmers, so
 /// nothing else can be mistaken for it.
-const LinearGradient _cheatGradient = LinearGradient(
+/// Not `const`: the wash is derived from the brand tokens rather than having
+/// their hexes baked in with the alpha pre-applied, so if the aurora's hues ever
+/// move this moves with them. One gradient per library load is not a hot path.
+final LinearGradient _cheatGradient = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
-  colors: [Color(0xEBFFD2B0), Color(0xEBDCC4FF)],
+  colors: [
+    KalloColors.brandApricot.withValues(alpha: 0.92),
+    KalloColors.brandLilac.withValues(alpha: 0.92),
+  ],
 );
 
 /// One cell's paint: a flat fill, or a gradient, plus an optional ring.
@@ -35,7 +41,7 @@ const LinearGradient _cheatGradient = LinearGradient(
 /// Four kinds of cell, and only one of them carries a ring — the day that is
 /// waiting on the user. Everything else is fill alone, which is what keeps the
 /// grid readable at the 15px cell an iPhone SE draws.
-({Color? fill, Gradient? gradient, Color? stroke}) _cellRectProps(
+({Color fill, Gradient? gradient, Color? stroke}) _cellRectProps(
   HeatmapCell? cell,
 ) {
   final ratio = cell?.ratio;
@@ -43,10 +49,16 @@ const LinearGradient _cheatGradient = LinearGradient(
 
   if (isLogged) {
     if (cell!.hasCheatMeal) {
-      return (fill: HeatmapColors.cheatFill, gradient: _cheatGradient, stroke: null);
+      return (
+        fill: HeatmapColors.cheatFill,
+        gradient: _cheatGradient,
+        stroke: null,
+      );
     }
     return (
-      fill: getHeatmapColor(ratio).bg ?? HeatmapColors.scaleAt(HeatmapColors.empty),
+      fill:
+          heatmapTierColor(heatmapTierFor(ratio)) ??
+          HeatmapColors.scaleAt(HeatmapRamp.empty),
       gradient: null,
       stroke: null,
     );
@@ -57,7 +69,7 @@ const LinearGradient _cheatGradient = LinearGradient(
   // on an 8% interior is the only thing separating it from a blank day.
   if (cell?.status == HeatmapCellStatus.partial) {
     return (
-      fill: HeatmapColors.scaleAt(HeatmapColors.awaiting),
+      fill: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
       gradient: null,
       stroke: KalloColors.textMuted,
     );
@@ -67,7 +79,7 @@ const LinearGradient _cheatGradient = LinearGradient(
   // tell them apart on the grid — none of them is a reading — and collapsing
   // them keeps the empty state one material instead of two greys.
   return (
-    fill: HeatmapColors.scaleAt(HeatmapColors.empty),
+    fill: HeatmapColors.scaleAt(HeatmapRamp.empty),
     gradient: null,
     stroke: null,
   );
@@ -144,12 +156,10 @@ class HeatmapGridPainter extends CustomPainter {
         // gradient cell paints its flat base first so the wash has something
         // warm underneath rather than compositing onto the card.
         fillPaint.shader = null;
-        if (props.fill != null) {
-          fillPaint.color = props.fill!.withValues(
-            alpha: props.fill!.a * cellAlpha,
-          );
-          canvas.drawRRect(rrect, fillPaint);
-        }
+        fillPaint.color = props.fill.withValues(
+          alpha: props.fill.a * cellAlpha,
+        );
+        canvas.drawRRect(rrect, fillPaint);
         if (props.gradient != null) {
           fillPaint.color = Colors.white.withValues(alpha: cellAlpha);
           fillPaint.shader = props.gradient!.createShader(rect);

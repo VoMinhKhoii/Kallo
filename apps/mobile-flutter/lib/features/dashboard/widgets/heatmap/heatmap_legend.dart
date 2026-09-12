@@ -39,7 +39,7 @@ class HeatmapLegend extends StatelessWidget {
             label: '$t.cheatDay'.tr(),
           ),
           _LegendItem(
-            color: HeatmapColors.scaleAt(HeatmapColors.awaiting),
+            color: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
             border: kInkMuted,
             label: '$t.partial'.tr(),
           ),
@@ -58,11 +58,11 @@ class _Ramp extends StatelessWidget {
   Widget build(BuildContext context) {
     const t = 'dashboard.adherenceHeatmap';
     const steps = [
-      HeatmapColors.empty,
-      HeatmapColors.veryLight,
-      HeatmapColors.light,
-      HeatmapColors.nearlyFull,
-      HeatmapColors.onTarget,
+      HeatmapRamp.empty,
+      HeatmapRamp.veryLight,
+      HeatmapRamp.light,
+      HeatmapRamp.nearlyFull,
+      HeatmapRamp.onTarget,
     ];
     return Row(
       mainAxisSize: MainAxisSize.min,

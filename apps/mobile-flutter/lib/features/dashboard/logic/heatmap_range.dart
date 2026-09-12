@@ -86,3 +86,43 @@ HeatmapRange heatmapRangeForColumns(int columns) {
   if (columns > heatmapWeekCount[HeatmapRange.d30]!) return HeatmapRange.d90;
   return HeatmapRange.d30;
 }
+
+/// The gap between the weekday gutter and the first column. Lives here rather
+/// than in the card because it is part of the grid's width arithmetic, and both
+/// functions below have to subtract exactly what the card lays out.
+const double heatmapDayLabelGutter = 4;
+
+/// Width left for the cells once the weekday gutter is taken out.
+double _gridWidth(double contentWidth, double dayLabelWidth) =>
+    contentWidth - dayLabelWidth - heatmapDayLabelGutter;
+
+/// The range a card of this width should ASK FOR.
+HeatmapRange heatmapRangeForWidth({
+  required double contentWidth,
+  required double dayLabelWidth,
+}) => chooseRenderedHeatmapRange(
+  preferredRange: HeatmapRange.year,
+  availableWidth: _gridWidth(contentWidth, dayLabelWidth),
+);
+
+/// Cell edge for the width the card was handed.
+///
+/// Clamped at BOTH ends. The floor keeps a narrow phone legible; the ceiling is
+/// what stops a tablet inflating the 90-day grid into ~51px tiles whose gutters
+/// vanish — extra width should buy history (a wider range, via
+/// [heatmapRangeForWidth]), never bigger squares.
+double heatmapCellSize({
+  required double contentWidth,
+  required double dayLabelWidth,
+  required int numWeeks,
+  required HeatmapRange range,
+}) {
+  if (numWeeks <= 0) return 10;
+  final gap = heatmapCellGap[range]!;
+  final available =
+      _gridWidth(contentWidth, dayLabelWidth) - (numWeeks - 1) * gap;
+  return (available / numWeeks).floorToDouble().clamp(
+    10,
+    heatmapMaxCell[range]!,
+  );
+}

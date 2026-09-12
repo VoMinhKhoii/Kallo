@@ -4,7 +4,7 @@
     "apps/mobile-flutter/lib/features/settings/screens/body_metrics.dart": 646,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_slider_card.dart": 576,
     "components/logging/sidebar/mobile-timeline-picker.tsx": 495,
-    "apps/mobile-flutter/lib/features/dashboard/widgets/heatmap/adherence_heatmap.dart": 487,
+    "apps/mobile-flutter/lib/features/dashboard/widgets/heatmap/adherence_heatmap.dart": 468,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form.dart": 424,
     "apps/mobile-flutter/lib/features/settings/widgets/inputs/country_select.dart": 413,
     "components/onboarding/wizard-shell.tsx": 387,

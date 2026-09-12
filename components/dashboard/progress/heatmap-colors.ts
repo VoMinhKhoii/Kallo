@@ -53,13 +53,23 @@ export const HEATMAP_RAMP = {
  * both whether the day counts toward trends and where it lands on the ramp.
  * Two numbers here would be two stories.
  */
+/**
+ * Where a day's ratio lands. The colour and the i18n key are both DERIVED from
+ * this, so the two can never disagree — the on-track score asks for a tier, not
+ * for a string that happens to spell one.
+ */
+export type HeatmapTier =
+  | 'onTarget'
+  | 'nearlyFull'
+  | 'light'
+  | 'veryLight'
+  | 'overTarget'
+  | 'noData';
+
 export const HEATMAP_BANDS = {
   gate: 0.85,
   overTarget: 1.15,
 } as const;
-
-/** The label keys that count toward "% on track". */
-export const ON_TRACK_LABELS = new Set(['onTarget']);
 
 export function heatmapScaleAt(opacity: number): string {
   return `color-mix(in srgb, ${HEATMAP_COLORS.scale} ${opacity * 100}%, transparent)`;
@@ -81,33 +91,36 @@ export function heatmapLegendSwatches(): string[] {
 }
 
 /**
- * Resolved fill + i18n label key for a cell's adherence `ratio`
- * (1.0 == exactly on target).
+ * Where a cell's adherence `ratio` lands (1.0 == exactly on target).
  *
  * The three sub-`gate` steps are reachable ONLY for a day the user attested:
  * the server nulls `ratio` on an unattested day under the gate, so it never
  * arrives here. A pale green cell therefore always means "the user confirmed
  * they ate this little", never "we are guessing".
  */
-export function getHeatmapColor(ratio: number | null): {
-  bg: string;
-  labelKey: string;
-} {
-  if (ratio === null) return { bg: 'transparent', labelKey: 'noData' };
-  if (ratio > HEATMAP_BANDS.overTarget) {
-    return { bg: HEATMAP_COLORS.over, labelKey: 'overTarget' };
+export function heatmapTierFor(ratio: number | null): HeatmapTier {
+  if (ratio === null) return 'noData';
+  if (ratio > HEATMAP_BANDS.overTarget) return 'overTarget';
+  if (ratio >= HEATMAP_BANDS.gate) return 'onTarget';
+  if (ratio >= 0.65) return 'nearlyFull';
+  if (ratio >= 0.4) return 'light';
+  return 'veryLight';
+}
+
+/** The fill a tier paints. `noData` has nothing to grade. */
+export function heatmapTierColor(tier: HeatmapTier): string {
+  switch (tier) {
+    case 'noData':
+      return 'transparent';
+    case 'overTarget':
+      return HEATMAP_COLORS.over;
+    case 'onTarget':
+      return heatmapScaleAt(HEATMAP_RAMP.onTarget);
+    case 'nearlyFull':
+      return heatmapScaleAt(HEATMAP_RAMP.nearlyFull);
+    case 'light':
+      return heatmapScaleAt(HEATMAP_RAMP.light);
+    case 'veryLight':
+      return heatmapScaleAt(HEATMAP_RAMP.veryLight);
   }
-  if (ratio >= HEATMAP_BANDS.gate) {
-    return { bg: heatmapScaleAt(HEATMAP_RAMP.onTarget), labelKey: 'onTarget' };
-  }
-  if (ratio >= 0.65) {
-    return {
-      bg: heatmapScaleAt(HEATMAP_RAMP.nearlyFull),
-      labelKey: 'nearlyFull',
-    };
-  }
-  if (ratio >= 0.4) {
-    return { bg: heatmapScaleAt(HEATMAP_RAMP.light), labelKey: 'light' };
-  }
-  return { bg: heatmapScaleAt(HEATMAP_RAMP.veryLight), labelKey: 'veryLight' };
 }

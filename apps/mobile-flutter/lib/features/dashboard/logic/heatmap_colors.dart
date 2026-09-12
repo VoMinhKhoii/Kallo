@@ -23,6 +23,11 @@ import '../../../theme/kallo_colors.dart';
 /// would land on the same pale green while still faintly reading as "some
 /// good", which is the exact ambiguity the ramp exists to avoid. Eating past
 /// the goal is a different kind of day, so it gets a different colour.
+/// Where a day's ratio lands. The colour and the i18n key are both DERIVED from
+/// this, so the two can never disagree — the on-track score asks for a tier, not
+/// for a string that happens to spell one.
+enum HeatmapTier { onTarget, nearlyFull, light, veryLight, overTarget, noData }
+
 abstract final class HeatmapColors {
   /// The one hue the scale is built from.
   static const Color scale = KalloColors.heatmapOnTarget; // #7ca368
@@ -36,10 +41,17 @@ abstract final class HeatmapColors {
   static const Color cheat = KalloColors.accent; // #c9a87c
   static const Color cheatFill = Color(0xFFF3E6D2);
 
-  /// The ramp, as alpha applied to [scale]. Ported from amicro's
-  /// `dither-heatmap`, which paints one hex at five opacities rather than five
-  /// hues — that is what lets an empty cell be the same material as a full one
-  /// instead of a grey from a second palette.
+  static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
+}
+
+/// The ramp, as alpha applied to [HeatmapColors.scale]. Ported from amicro's
+/// `dither-heatmap`, which paints one hex at five opacities rather than five
+/// hues — that is what lets an empty cell be the same material as a full one
+/// instead of a grey from a second palette.
+///
+/// Separate from [HeatmapColors] because these are opacities, not colours, and
+/// mirrors the web twin's `HEATMAP_RAMP`.
+abstract final class HeatmapRamp {
   static const double onTarget = 1.0;
   static const double nearlyFull = 0.80;
   static const double light = 0.55;
@@ -57,8 +69,6 @@ abstract final class HeatmapColors {
   /// only difference. 0.16 still sits below [veryLight], so it reads as "less
   /// than the lowest real step" and adds no rung to the ladder.
   static const double awaiting = 0.16;
-
-  static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
 }
 
 /// The two boundaries of the scale.
@@ -73,43 +83,30 @@ abstract final class HeatmapBands {
 
   /// Above this, the day has gone past the goal and leaves the green ramp.
   static const double overTarget = 1.15;
-
-  /// The label keys that count toward "% on track". The score reads this rather
-  /// than re-deriving a threshold, so it can never drift from the colours on
-  /// screen.
-  static const Set<String> onTrackLabels = {'onTarget'};
 }
 
-/// Resolved fill + i18n label key for a cell's adherence [ratio]
-/// (1.0 == exactly on target). Mirrors web `getHeatmapColor`.
+/// Where a cell's adherence [ratio] lands (1.0 == exactly on target). Mirrors
+/// web `heatmapTierFor`.
 ///
 /// The three sub-[HeatmapBands.gate] steps are reachable ONLY for a day the
 /// user attested: the server nulls `ratio` on an unattested day under the gate,
 /// so it never arrives here. A pale green cell therefore always means "the user
 /// confirmed they ate this little", never "we are guessing".
-({Color? bg, String labelKey}) getHeatmapColor(double? ratio) {
-  if (ratio == null) return (bg: null, labelKey: 'noData');
-
-  if (ratio > HeatmapBands.overTarget) {
-    return (bg: HeatmapColors.over, labelKey: 'overTarget');
-  }
-  if (ratio >= HeatmapBands.gate) {
-    return (
-      bg: HeatmapColors.scaleAt(HeatmapColors.onTarget),
-      labelKey: 'onTarget',
-    );
-  }
-  if (ratio >= 0.65) {
-    return (
-      bg: HeatmapColors.scaleAt(HeatmapColors.nearlyFull),
-      labelKey: 'nearlyFull',
-    );
-  }
-  if (ratio >= 0.40) {
-    return (bg: HeatmapColors.scaleAt(HeatmapColors.light), labelKey: 'light');
-  }
-  return (
-    bg: HeatmapColors.scaleAt(HeatmapColors.veryLight),
-    labelKey: 'veryLight',
-  );
+HeatmapTier heatmapTierFor(double? ratio) {
+  if (ratio == null) return HeatmapTier.noData;
+  if (ratio > HeatmapBands.overTarget) return HeatmapTier.overTarget;
+  if (ratio >= HeatmapBands.gate) return HeatmapTier.onTarget;
+  if (ratio >= 0.65) return HeatmapTier.nearlyFull;
+  if (ratio >= 0.40) return HeatmapTier.light;
+  return HeatmapTier.veryLight;
 }
+
+/// The fill a tier paints, or null when there is nothing to grade.
+Color? heatmapTierColor(HeatmapTier tier) => switch (tier) {
+  HeatmapTier.noData => null,
+  HeatmapTier.overTarget => HeatmapColors.over,
+  HeatmapTier.onTarget => HeatmapColors.scaleAt(HeatmapRamp.onTarget),
+  HeatmapTier.nearlyFull => HeatmapColors.scaleAt(HeatmapRamp.nearlyFull),
+  HeatmapTier.light => HeatmapColors.scaleAt(HeatmapRamp.light),
+  HeatmapTier.veryLight => HeatmapColors.scaleAt(HeatmapRamp.veryLight),
+};

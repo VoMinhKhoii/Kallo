@@ -44,7 +44,6 @@ List<String> _weekdayInitials(String locale) {
 /// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
 const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
-const double _dayLabelGutter = KalloSpacing.sp1; // gap-1 (4px)
 const double _bubbleHalfW = 60;
 
 class AdherenceHeatmap extends ConsumerWidget {
@@ -165,12 +164,10 @@ class _HeatmapBodyState extends State<_HeatmapBody>
             cell.ratio != null &&
             !cell.hasCheatMeal) {
           total++;
-          // Ask the classifier, don't re-derive a threshold: the bands are
-          // asymmetric now, so a single number cannot express "green or
-          // light green" any more.
-          if (HeatmapBands.onTrackLabels.contains(
-            getHeatmapColor(cell.ratio).labelKey,
-          )) {
+          // Ask the classifier for the tier rather than re-deriving a
+          // threshold here, so the score can never disagree with the colour
+          // the same day paints.
+          if (heatmapTierFor(cell.ratio) == HeatmapTier.onTarget) {
             onTarget++;
           }
         }
@@ -201,31 +198,11 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
   }
 
-  /// Cell edge for the width we were handed.
-  ///
-  /// Clamped at BOTH ends. The floor keeps a narrow phone legible; the ceiling
-  /// is what stops a tablet inflating the 90-day grid into ~51px tiles whose
-  /// gutters vanish — extra width should buy history (a wider range, chosen in
-  /// [_resolveRange]), never bigger squares.
-  double _cellSize(
-    double contentWidth,
-    int numWeeks,
-    double dayLabelWidth,
-    HeatmapRange range,
-  ) {
-    if (numWeeks <= 0) return 10;
-    final gap = heatmapCellGap[range]!;
-    final available =
-        contentWidth - dayLabelWidth - _dayLabelGutter - (numWeeks - 1) * gap;
-    final sq = (available / numWeeks).floorToDouble();
-    return sq.clamp(10, heatmapMaxCell[range]!);
-  }
-
-  /// Tell the provider which range this width can carry, once per change.
+  /// Report upward which range this width can carry, once per change.
   void _resolveRange(double contentWidth, double dayLabelWidth) {
-    final range = chooseRenderedHeatmapRange(
-      preferredRange: HeatmapRange.year,
-      availableWidth: contentWidth - dayLabelWidth - _dayLabelGutter,
+    final range = heatmapRangeForWidth(
+      contentWidth: contentWidth,
+      dayLabelWidth: dayLabelWidth,
     );
     if (range == _lastResolved) return;
     _lastResolved = range;
@@ -261,7 +238,12 @@ class _HeatmapBodyState extends State<_HeatmapBody>
           // request is in flight.
           final range = heatmapRangeForColumns(numWeeks);
           final gap = heatmapCellGap[range]!;
-          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth, range);
+          final sq = heatmapCellSize(
+            contentWidth: contentWidth,
+            dayLabelWidth: dayLabelWidth,
+            numWeeks: numWeeks,
+            range: range,
+          );
           final step = sq + gap;
           final gridWidth =
               numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * gap : 0.0;
@@ -330,7 +312,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                       ],
                     ),
                   ),
-                  const SizedBox(width: _dayLabelGutter),
+                  const SizedBox(width: heatmapDayLabelGutter),
                   // Month strip + grid.
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +460,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         if (cell.hasCheatMeal) {
           return tr('dashboard.adherenceHeatmap.cheatDay');
         }
-        final labelKey = getHeatmapColor(cell.ratio).labelKey;
+        final labelKey = heatmapTierFor(cell.ratio).name;
         final pct = (cell.ratio! * 100).round();
         return '${tr('dashboard.adherenceHeatmap.$labelKey')} · $pct%';
     }

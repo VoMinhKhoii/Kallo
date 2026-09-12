@@ -15,9 +15,10 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import {
-  getHeatmapColor,
   HEATMAP_RAMP,
   heatmapScaleAt,
+  heatmapTierColor,
+  heatmapTierFor,
 } from './heatmap-colors';
 import { HeatmapLegend } from './heatmap-legend';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
@@ -59,8 +60,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
 
     if (cell.hasCheatMeal) return t('cheatDay');
-    const { labelKey } = getHeatmapColor(cell.ratio);
-    return `${t(labelKey)} · ${Math.round(cell.ratio * 100)}%`;
+    return `${t(heatmapTierFor(cell.ratio))} · ${Math.round(cell.ratio * 100)}%`;
   };
 
   if (numWeeks === 0) return null;
@@ -95,7 +95,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             data.cells.map((dayRow, di) => {
               const cell = dayRow[wi];
               const ratio = cell?.ratio ?? null;
-              const { bg } = getHeatmapColor(ratio);
+              const bg = heatmapTierColor(heatmapTierFor(ratio));
               const isLogged = cell?.status === 'logged' && ratio !== null;
               const isCheat = isLogged && Boolean(cell?.hasCheatMeal);
               const isPartial = cell?.status === 'partial';
