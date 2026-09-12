@@ -118,6 +118,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260905090000_reduce_to_operational_analytics.sql` | B (Manual) | Reduce the analytics plane to the operational dashboard contract |
 | `20260909071000_supabase_24h_range.sql` | B (Manual) | Add the latest anchored UTC observation day to analytics range filtering |
 | `20260909071500_trace_stage_outputs.sql` | B (Manual) | Add recursively sanitized, bounded stage outputs to meal-analysis traces |
+| `20260912172822_add_day_completion_marks.sql` | A (Drizzle) | `day_completion_marks` — days the user attested were fully logged |
+| `20260912172830_rls_day_completion_marks.sql` | B (Manual) | RLS for `day_completion_marks`; SELECT + INSERT only, since the mark is one-way |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

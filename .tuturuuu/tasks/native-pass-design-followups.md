@@ -12,7 +12,7 @@ change. Verified on iPhone 17 Pro Max simulator, 2026-09-01.
 4. **Welcome screen is bottom-heavy** — roughly 280pt of empty canvas sits above the logo; rebalance the vertical composition.
 5. **Settings child pages use a different form idiom** — children render bare fields on canvas while the parent uses grouped white cards; align children to the grouped-card idiom.
 6. **Region & language subtitle describes the wrong section** — "Country of origin and current residence" sits under the title but explains the block below the Language section; move or reword it.
-7. **Adherence heatmap legend is misleading** *(product decision)* — a 0.85 `PARTIAL_DAY_FRACTION` gate forces every under-target day to `partial` (uncoloured outline), so the legend's under-target terracotta range is unreachable and a warm cell can only ever mean over-eating; either redraw the legend honestly or lower/remove the gate.
+7. ~~**Adherence heatmap legend is misleading** *(product decision)* — a 0.85 `PARTIAL_DAY_FRACTION` gate forces every under-target day to `partial` (uncoloured outline), so the legend's under-target terracotta range is unreachable and a warm cell can only ever mean over-eating; either redraw the legend honestly or lower/remove the gate.~~ **Resolved** — the gate stays, and the scale was rebuilt around it: one green ramp saying how much of the goal the day reached, stopping at target, with one ungraded warm cell past 115%. The sub-gate steps are reachable only for a day the user attested via "Mình ăn đủ rồi", so a pale cell always means the user confirmed it. The legend is discrete labelled swatches, which cannot advertise a range the cells never paint.
 
 ## Notes
 
