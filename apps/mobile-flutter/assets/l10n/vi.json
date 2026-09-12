@@ -1267,7 +1267,13 @@
       "retryDay": "Tải lại ngày",
       "partialDayNotice": {
         "title": "Ngày này có thể ghi chưa đủ",
-        "body": "Mới ghi {calories}/{target} kcal mục tiêu, nên ngày này tạm bị bỏ khỏi xu hướng. Thêm những gì bạn bỏ sót để tính lại ngày này."
+        "body": "Mới ghi {calories}/{target} kcal mục tiêu, nên ngày này tạm bị bỏ khỏi xu hướng.",
+        "markComplete": "Mình ăn đủ rồi",
+        "confirmTitle": "Ghi nhận ngày này đã đủ?",
+        "confirmBody": "Kallo sẽ tính ngày này vào xu hướng với {calories} kcal đã ghi. Không hoàn tác được.",
+        "confirmAccept": "Mình ăn đủ rồi",
+        "confirmCancel": "Để sau",
+        "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
       },
       "partialYesterdayPrompt": {
         "title": "Hôm qua có vẻ ghi chưa đủ",

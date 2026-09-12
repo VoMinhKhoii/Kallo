@@ -1267,7 +1267,13 @@
       "retryDay": "Retry day",
       "partialDayNotice": {
         "title": "This day may be under-logged",
-        "body": "Only {calories} of your {target} kcal target is logged, so it's set aside from your trends. Add anything you missed to fold it back in."
+        "body": "Only {calories}/{target} kcal of your target logged, so this day is set aside from trends.",
+        "markComplete": "That's everything I ate",
+        "confirmTitle": "Mark this day as fully logged?",
+        "confirmBody": "Kallo will count this day toward your trends at the {calories} kcal you logged. This can't be undone.",
+        "confirmAccept": "That's everything I ate",
+        "confirmCancel": "Not now",
+        "markError": "Couldn't confirm this day. Please try again."
       },
       "partialYesterdayPrompt": {
         "title": "Yesterday looks under-logged",

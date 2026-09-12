@@ -16,7 +16,17 @@ const double partialDayFraction = 0.85;
 /// True when a past day's logged calories are positive but below
 /// [partialDayFraction] of the target — likely under-logged, so the trends set
 /// it aside.
-bool isLikelyPartialDay(double calories, int? calorieTarget) {
+///
+/// [isMarked] short-circuits everything: the user has explicitly attested this
+/// day is fully logged, and a direct statement from the person who ate the food
+/// outranks a heuristic about them. Mirrors the `isMarked` parameter on the TS
+/// twin — keep the two in step.
+bool isLikelyPartialDay(
+  double calories,
+  int? calorieTarget, {
+  bool isMarked = false,
+}) {
+  if (isMarked) return false;
   if (calorieTarget == null || calorieTarget <= 0) return false;
   if (calories <= 0) return false;
   return calories < partialDayFraction * calorieTarget;
@@ -58,7 +68,9 @@ List<MealItem> applyQuantityChange(
     final double minQuantity =
         (item.unit == 'g' || item.unit == 'ml') ? minDishGrams : 0;
     final double newQuantity =
-        (item.quantity + delta) < minQuantity ? minQuantity : item.quantity + delta;
+        (item.quantity + delta) < minQuantity
+            ? minQuantity
+            : item.quantity + delta;
     final double ratio =
         originalItem.quantity > 0 ? newQuantity / originalItem.quantity : 0;
 

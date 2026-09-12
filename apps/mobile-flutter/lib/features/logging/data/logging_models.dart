@@ -231,9 +231,15 @@ class LoggingDayData {
   final List<PersistedMeal> persistedMeals;
   final List<PendingMealConfirmation> pendingConfirmations;
 
+  /// The user attested this day is fully logged ("Mình ăn đủ rồi"), so the
+  /// under-logged notice stays down and the day counts toward trends at its
+  /// real calories. One-way — there is no un-marking.
+  final bool markedComplete;
+
   const LoggingDayData({
     required this.persistedMeals,
     required this.pendingConfirmations,
+    this.markedComplete = false,
   });
 
   factory LoggingDayData.fromJson(Map<String, dynamic> json) => LoggingDayData(
@@ -248,14 +254,17 @@ class LoggingDayData {
                   PendingMealConfirmation.fromJson(e as Map<String, dynamic>),
             )
             .toList(),
+    markedComplete: json['markedComplete'] as bool? ?? false,
   );
 
   LoggingDayData copyWith({
     List<PersistedMeal>? persistedMeals,
     List<PendingMealConfirmation>? pendingConfirmations,
+    bool? markedComplete,
   }) => LoggingDayData(
     persistedMeals: persistedMeals ?? this.persistedMeals,
     pendingConfirmations: pendingConfirmations ?? this.pendingConfirmations,
+    markedComplete: markedComplete ?? this.markedComplete,
   );
 }
 

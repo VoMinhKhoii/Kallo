@@ -7,7 +7,7 @@ import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
-import '../../data/persisted_meal_mutations.dart';
+import '../../data/mutations/persisted_meal_mutations.dart';
 
 /// Everything the feed does to a meal card that already exists server-side:
 /// removal with its undo window (for a SAVED meal, and for a STAGED analysis
