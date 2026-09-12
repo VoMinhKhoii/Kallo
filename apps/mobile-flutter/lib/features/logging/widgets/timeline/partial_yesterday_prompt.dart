@@ -40,12 +40,11 @@ class PartialYesterdayPrompt extends ConsumerWidget {
     final dayAsync = ref.watch(
       loggingDayProvider(LoggingDayArgs(userId, yesterday)),
     );
-    final meals =
-        dayAsync.valueOrNull?.persistedMeals ?? const <PersistedMeal>[];
+    // An attested day IS in the trends, so nudging about it would be false.
+    final day = dayAsync.valueOrNull;
+    final meals = day?.persistedMeals ?? const <PersistedMeal>[];
 
-    final hasMeals = meals.isNotEmpty;
-    // A meal with unknown calories makes the day's total untrustworthy, so the
-    // partial-day check would be misleading — suppress the prompt then.
+    // Unknown calories make the day's total untrustworthy — suppress then.
     final hasUnknownCalories = meals.any(
       (m) => m.nutrition.caloriesKcal == null,
     );
@@ -54,7 +53,8 @@ class PartialYesterdayPrompt extends ConsumerWidget {
     );
 
     if (dismissed ||
-        !hasMeals ||
+        meals.isEmpty ||
+        (day?.markedComplete ?? false) ||
         hasUnknownCalories ||
         !isLikelyPartialDay(calories.toDouble(), calorieTarget)) {
       return const SizedBox.shrink();

@@ -248,7 +248,11 @@ export function useFeedController(args: {
     hasPersistedMeals &&
     !hasPendingMessages &&
     !hasStreamingMessages &&
-    isLikelyPartialDay(day.dailyTotals.calories, profile.calorieTarget);
+    isLikelyPartialDay(
+      day.dailyTotals.calories,
+      profile.calorieTarget,
+      day.markedComplete
+    );
 
   return {
     day,

@@ -15,11 +15,15 @@ function nutrition(caloriesKcal: number | null): NutritionValues {
   return { ...base, caloriesKcal } as unknown as NutritionValues;
 }
 
-function dayWith(...calories: (number | null)[]) {
+function dayWith(
+  calories: (number | null)[],
+  { markedComplete = false }: { markedComplete?: boolean } = {}
+) {
   mockUseLoggingDay.mockReturnValue({
     data: {
       persistedMeals: calories.map((c) => ({ nutrition: nutrition(c) })),
       pendingConfirmations: [],
+      markedComplete,
     },
   });
 }
@@ -44,7 +48,7 @@ describe('PartialYesterdayPrompt', () => {
     );
 
   it('renders when yesterday is under-logged', () => {
-    dayWith(400); // 400 < 85% of 2000
+    dayWith([400]); // 400 < 85% of 2000
     renderPrompt();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
@@ -56,14 +60,14 @@ describe('PartialYesterdayPrompt', () => {
     ['the day is at or above the floor', [1800]], // 1800 >= 85% of 2000
     ['calories are unknown', [null]],
   ])('renders nothing when %s', (_label, calories) => {
-    dayWith(...calories);
+    dayWith(calories);
     const { container } = renderPrompt();
 
     expect(container).toBeEmptyDOMElement();
   });
 
   it('opens yesterday when the action button is clicked', () => {
-    dayWith(400);
+    dayWith([400]);
     renderPrompt();
 
     fireEvent.click(screen.getByRole('button', { name: 'open' }));
@@ -71,10 +75,19 @@ describe('PartialYesterdayPrompt', () => {
   });
 
   it('calls onDismiss when the dismiss button is clicked', () => {
-    dayWith(400);
+    dayWith([400]);
     renderPrompt();
 
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  // A day attested on another device is IN the trends, so the prompt claiming
+  // it was set aside would be a false statement, not just a stale nudge.
+  it('stays down once the user has attested the day', () => {
+    dayWith([400], { markedComplete: true });
+    const { container } = renderPrompt();
+
+    expect(container).toBeEmptyDOMElement();
   });
 });
