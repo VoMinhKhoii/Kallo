@@ -1038,9 +1038,7 @@
     "offTrack": "Lệch kế hoạch",
     "mealsLogged": "Đã ghi {count}",
     "ranges": {
-      "thirtyDays": "30 ngày",
-      "ninetyDays": "90 ngày",
-      "year": "Năm"
+      "thirtyDays": "30 ngày"
     },
     "units": {
       "kg": "kg"

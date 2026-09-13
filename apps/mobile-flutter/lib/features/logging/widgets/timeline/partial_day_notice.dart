@@ -69,7 +69,10 @@ class PartialDayNotice extends StatelessWidget {
                   children: [
                     Text(
                       'logging.feedArea.partialDayNotice.title'.tr(),
-                      style: dashBody(color: KalloColors.bandForeground),
+                      style: dashBody(
+                        color: KalloColors.bandForeground,
+                        weight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: LoggingSpacing.row),
                     Text(
@@ -101,6 +104,12 @@ class PartialDayNotice extends StatelessWidget {
 /// screen paints, so the affordance has to come forward off it rather than sit
 /// as another muted shape on it. Ink on white is the app's ordinary reading
 /// pair, so no third "on-band" text colour is introduced.
+///
+/// Full width on [KalloRadii.button], the token whose own comment reserves the
+/// full round for exactly this shape. It is the block's only action, so a
+/// hugging capsule left a ragged edge under copy that already runs the full
+/// width. The label stays regular: this token set reserves weight for titles
+/// and names (see [dashBody]), and the title above is the one carrying it.
 class _MarkCompleteButton extends StatelessWidget {
   const _MarkCompleteButton({required this.onTap});
 
@@ -114,14 +123,15 @@ class _MarkCompleteButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Container(
+          width: double.infinity,
           constraints: const BoxConstraints(minHeight: LoggingIcons.hit),
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3_5),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           decoration: BoxDecoration(
             color: kCardSurface,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
                 LucideIcons.check300,
@@ -131,7 +141,7 @@ class _MarkCompleteButton extends StatelessWidget {
               const SizedBox(width: KalloSpacing.sp2),
               Text(
                 'logging.feedArea.partialDayNotice.markComplete'.tr(),
-                style: dashBody(color: kInk, weight: FontWeight.w600),
+                style: dashBody(color: kInk),
               ),
             ],
           ),
