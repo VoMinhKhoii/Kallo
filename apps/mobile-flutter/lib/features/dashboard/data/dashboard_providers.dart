@@ -125,12 +125,36 @@ final weightSummaryProvider =
   return bundle.weightSummary;
 });
 
-/// `useHeatmap('90d')` → the adherence heatmap slice. Fixed at the 90-day
-/// window (the range the web resolves to at phone width).
+/// The range the heatmap card resolved to for the width it was given.
+///
+/// Set by the card after layout, because only the card knows how wide it is.
+/// Defaults to the 90-day window — what every phone width resolves to — so the
+/// first paint uses the range already in the bundle and no second request is
+/// made on the device most users are holding.
+final heatmapRangeProvider = StateProvider<HeatmapRange>(
+  (ref) => HeatmapRange.d90,
+);
+
+/// `useHeatmap(range)` → the adherence heatmap slice.
+///
+/// The bundle always carries the 90-day window, so that case costs nothing. A
+/// wider layout (a tablet) resolves to the year and pays one extra request for
+/// it — keyed on the RESOLVED RANGE, not on the raw width, so rotating or
+/// resizing within a range cannot thrash the cache.
 final heatmapProvider =
     FutureProvider.family<HeatmapData, DashboardArgs>((ref, args) async {
-  final bundle = await ref.watch(dashboardBundleProvider(args).future);
-  return bundle.heatmap;
+  final range = ref.watch(heatmapRangeProvider);
+  if (range == HeatmapRange.d90) {
+    final bundle = await ref.watch(dashboardBundleProvider(args).future);
+    return bundle.heatmap;
+  }
+  final tz = localTimezoneOffsetMinutes();
+  final json = await ref
+      .watch(apiClientProvider)
+      .get<Map<String, dynamic>>(
+        '/api/v1/dashboard/heatmap?range=${range.value}&tz=$tz',
+      );
+  return HeatmapData.fromJson(json);
 });
 
 /// `useLogWeight()` → logs (upserts) a day's weight via `POST /api/v1/weight`,

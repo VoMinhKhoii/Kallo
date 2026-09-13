@@ -1068,22 +1068,23 @@
       "steady": "Steady"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% on track",
+      "onTrack": "{percent}% on track · {window}",
       "notLogged": "Not logged",
-      "partial": "Partial day (under-logged)",
+      "partial": "Awaiting confirmation",
       "future": "Future day",
       "outside": "Outside selected range",
-      "offTarget": "Off target",
       "onTarget": "On target",
       "noData": "No data",
-      "close": "Close",
-      "slightlyOver": "Slightly over",
-      "slightlyUnder": "Slightly under",
-      "over": "Over",
-      "under": "Under",
-      "farOver": "Far over",
-      "farUnder": "Far under",
-      "cheatDay": "Cheat day"
+      "cheatDay": "Cheat day",
+      "overTarget": "Over target",
+      "nearlyFull": "Nearly full",
+      "light": "Light day",
+      "veryLight": "Very light day",
+      "window": {
+        "d30": "30 days",
+        "d90": "90 days",
+        "year": "1 year"
+      }
     },
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
@@ -1267,7 +1268,13 @@
       "retryDay": "Retry day",
       "partialDayNotice": {
         "title": "This day may be under-logged",
-        "body": "Only {calories} of your {target} kcal target is logged, so it's set aside from your trends. Add anything you missed to fold it back in."
+        "body": "Only {calories}/{target} kcal of your target logged, so this day is set aside from trends.",
+        "markComplete": "That's everything I ate",
+        "confirmTitle": "Mark this day as fully logged?",
+        "confirmBody": "Kallo will count this day toward your trends at the {calories} kcal you logged. This can't be undone.",
+        "confirmAccept": "That's everything I ate",
+        "confirmCancel": "Not now",
+        "markError": "Couldn't confirm this day. Please try again."
       },
       "partialYesterdayPrompt": {
         "title": "Yesterday looks under-logged",

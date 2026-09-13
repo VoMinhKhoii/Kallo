@@ -143,6 +143,7 @@ export const routeInventory = {
   ],
   'api/v1/groups/shares/route.ts': ['session', false, 'none-cheap'],
   'api/v1/ingredients/search/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/logging/day/complete/route.ts': ['session', true, 'none-cheap'],
   'api/v1/logging/day/route.ts': ['session', false, 'none-cheap'],
   'api/v1/meals/[mealId]/duplicate/route.ts': ['session', false, 'none-cheap'],
   'api/v1/meals/[mealId]/route.ts': ['session', false, 'none-cheap'],

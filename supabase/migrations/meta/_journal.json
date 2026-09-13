@@ -477,6 +477,13 @@
       "when": 1788292032527,
       "tag": "20260901194712_add_rate_limit_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1789234102868,
+      "tag": "20260912172822_add_day_completion_marks",
+      "breakpoints": true
     }
   ]
 }

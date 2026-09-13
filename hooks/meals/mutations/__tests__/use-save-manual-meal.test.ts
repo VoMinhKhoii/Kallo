@@ -58,6 +58,7 @@ describe('useSaveManualMeal', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
 
     // Hold the server response to inspect the optimistic insert first.
@@ -108,6 +109,7 @@ describe('useSaveManualMeal', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     mockSaveManual.mockRejectedValue(new Error('boom'));
 
@@ -122,6 +124,7 @@ describe('useSaveManualMeal', () => {
   it('leaves pending confirmations untouched (manual saves have none)', async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      markedComplete: false,
       persistedMeals: [],
       pendingConfirmations: [
         {
@@ -145,6 +148,7 @@ describe('useSaveManualMeal', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     mockSaveManual.mockResolvedValue(savedMealResult({ id: 'meal-manual-1' }));

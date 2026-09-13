@@ -15,6 +15,7 @@ import { useFeedSubmit } from '@/hooks/meals/feed/use-feed-submit';
 import { useMealCardActions } from '@/hooks/meals/feed/use-meal-card-actions';
 import { useSettledOnce } from '@/hooks/meals/feed/use-settled-once';
 import { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
+import { useMarkDayComplete } from '@/hooks/meals/mutations/use-mark-day-complete';
 import { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import { useRecentCheatOccasions } from '@/hooks/meals/queries/use-recent-cheat-occasions';
 import { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
@@ -240,6 +241,7 @@ export function useFeedController(args: {
 
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
+  const markDayComplete = useMarkDayComplete(profile.userId, selectedDate);
   const showPartialDayNotice =
     isPastDay &&
     !day.isDayLoading &&
@@ -248,7 +250,11 @@ export function useFeedController(args: {
     hasPersistedMeals &&
     !hasPendingMessages &&
     !hasStreamingMessages &&
-    isLikelyPartialDay(day.dailyTotals.calories, profile.calorieTarget);
+    isLikelyPartialDay(
+      day.dailyTotals.calories,
+      profile.calorieTarget,
+      day.markedComplete
+    );
 
   return {
     day,
@@ -281,5 +287,6 @@ export function useFeedController(args: {
     animateComposerLayout,
     isToday,
     showPartialDayNotice,
+    markDayComplete,
   };
 }

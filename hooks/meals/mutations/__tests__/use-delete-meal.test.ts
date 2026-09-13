@@ -44,6 +44,7 @@ describe('useDeleteMeal', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [savedMealResult({ id: 'meal-1' }).meal],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     queryClient.setQueryData<PersistedMeal[]>(dailyMealsKeys.byDate(DATE), [
       savedMealResult({ id: 'meal-1' }).meal,
@@ -82,6 +83,7 @@ describe('useDeleteMeal', () => {
         savedMealResult({ id: 'meal-2' }).meal,
       ],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     let resolveDelete!: () => void;
     vi.mocked(deleteMealAction).mockImplementation(
@@ -112,6 +114,7 @@ describe('useDeleteMeal', () => {
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [savedMealResult({ id: 'meal-1' }).meal],
       pendingConfirmations: [],
+      markedComplete: false,
     });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     vi.mocked(deleteMealAction).mockRejectedValue(new Error('boom'));

@@ -17,7 +17,11 @@ import {
 } from '@/lib/domain/dashboard/adherence';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
+import {
+  bodyWeightLog,
+  dayCompletionMarks,
+  meals,
+} from '@/lib/infra/db/schema';
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
@@ -95,6 +99,20 @@ export async function loadCalorieAdherenceHeatmap(input: {
     .groupBy(localDateExpr)
     .orderBy(asc(localDateExpr));
 
+  // Days the user attested are stored as local date strings already, so they
+  // compare directly against the grouped `localDateExpr` keys above — no
+  // timezone maths on the read path.
+  const marks = await db
+    .select({ localDate: dayCompletionMarks.localDate })
+    .from(dayCompletionMarks)
+    .where(
+      and(
+        eq(dayCompletionMarks.userId, user.id),
+        gte(dayCompletionMarks.localDate, startKey),
+        lt(dayCompletionMarks.localDate, nextEndKey)
+      )
+    );
+
   return buildCalorieAdherenceHeatmapData({
     range: parsed.range,
     dailyCalories: dailyCalories.map((day) => ({
@@ -104,6 +122,7 @@ export async function loadCalorieAdherenceHeatmap(input: {
     })),
     calorieTarget: profile.calorieTarget,
     timezoneOffset: parsed.timezoneOffset,
+    markedDates: new Set(marks.map((mark) => mark.localDate)),
     now,
   });
 }

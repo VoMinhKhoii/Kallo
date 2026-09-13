@@ -26,11 +26,19 @@ export interface DayCompleteness {
  * `classifyDayCompleteness` there is no median fallback or safety valve, so a
  * lone partial day stays partial. Requires a target; returns false when none is
  * set or the day is empty (an empty day is "unlogged", not "partial").
+ *
+ * `isMarked` short-circuits everything: the user has explicitly attested that
+ * this day is fully logged, and a direct statement from the person who ate the
+ * food outranks a heuristic about the person who ate the food.
  */
 export function isLikelyPartialDay(
   calories: number,
-  calorieTarget: number | null
+  calorieTarget: number | null,
+  isMarked = false
 ): boolean {
+  if (isMarked) {
+    return false;
+  }
   if (calorieTarget === null || calorieTarget <= 0) {
     return false;
   }
@@ -74,6 +82,17 @@ export interface ClassifyDayCompletenessOptions {
    * genuinely under-logged period yields zero complete days.
    */
   safetyValve?: boolean;
+  /**
+   * Local dates the user explicitly marked as fully logged. These are complete
+   * regardless of how far under the baseline they fall — the calorie total is
+   * still their real one, so the day rejoins the averages at what they actually
+   * ate rather than at the target.
+   *
+   * Applied BEFORE the safety valve, so a marked day is enough to keep the
+   * valve shut: once one day is genuinely complete, promoting the rest would
+   * hide exactly the under-logging the valve exists to tolerate.
+   */
+  markedDates?: ReadonlySet<string>;
 }
 
 export function classifyDayCompleteness(
@@ -81,7 +100,7 @@ export function classifyDayCompleteness(
   calorieTarget: number | null,
   options: ClassifyDayCompletenessOptions = {}
 ): DayCompleteness {
-  const { safetyValve = true } = options;
+  const { safetyValve = true, markedDates } = options;
   const loggedDays = dayCalories.filter((day) => day.calories > 0);
 
   const allComplete = (): DayCompleteness => ({
@@ -112,7 +131,7 @@ export function classifyDayCompleteness(
   const partialDates = new Set<string>();
 
   for (const day of loggedDays) {
-    if (day.calories < floor) {
+    if (day.calories < floor && !markedDates?.has(day.date)) {
       partialDates.add(day.date);
     } else {
       completeDates.add(day.date);

@@ -83,6 +83,8 @@ export function useFeedDay(args: {
     isDayLoading,
     isDayRetrying,
     refetchLoggingDay,
+    /** The user attested this day is fully logged; the notice must stay down. */
+    markedComplete: loggingDay?.markedComplete ?? false,
     persistedMeals,
     orderedPersistedMeals,
     pendingConfirmations,

@@ -64,6 +64,12 @@ export interface PendingMealConfirmation {
 export interface LoggingDayData {
   persistedMeals: PersistedMeal[];
   pendingConfirmations: PendingMealConfirmation[];
+  /**
+   * The user attested this day is fully logged ("Mình ăn đủ rồi"), so the
+   * under-logged notice stays down and the day counts toward trends at its
+   * real calories. One-way: there is no un-marking.
+   */
+  markedComplete: boolean;
 }
 
 /**

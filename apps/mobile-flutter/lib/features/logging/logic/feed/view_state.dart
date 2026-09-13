@@ -64,7 +64,8 @@ class FeedViewState {
     // refreshed the moment it lands so the card survives a hot reload or a
     // relaunch. Until the user confirms, that row and the reveal are the SAME
     // meal — render both and it appears twice.
-    final revealedId = stream.status == StreamStatus.done ? stream.analysisId : null;
+    final revealedId =
+        stream.status == StreamStatus.done ? stream.analysisId : null;
     // Oldest first, like persistedMeals above. The server hands these back
     // `ORDER BY logged_at DESC`, so taking them as-is put two unconfirmed meals
     // on screen in the opposite order to every other card in the day.
@@ -150,9 +151,10 @@ class FeedViewState {
 
     final isEmpty = !isLoading && entries.isEmpty && !hasLiveTail;
 
-    // A past day with real meals but under half the target reads as
-    // under-logged; the trends set it aside, so we say so (and offer to fold it
-    // back in by adding what was missed). Only when nothing is mid-flight.
+    // A past day with real meals but under the target fraction reads as
+    // under-logged; the trends set it aside, so we say so — and offer the two
+    // ways out: add what was missed, or attest the day was already complete.
+    // Only when nothing is mid-flight, and never once attested.
     final isPastDay = date.compareTo(todayDateString()) < 0;
     final showPartialDayNotice =
         isPastDay &&
@@ -164,7 +166,11 @@ class FeedViewState {
         !isStreaming &&
         !isRevealing &&
         !isCheatRevealing &&
-        isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
+        isLikelyPartialDay(
+          dailyCalories.toDouble(),
+          profile.calorieTarget,
+          isMarked: day?.markedComplete ?? false,
+        );
 
     return FeedViewState(
       date: date,

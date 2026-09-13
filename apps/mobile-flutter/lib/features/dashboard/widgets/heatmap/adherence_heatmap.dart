@@ -21,7 +21,9 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
+import '../../logic/heatmap_range.dart';
 import 'heatmap_grid_painter.dart';
+import 'heatmap_legend.dart';
 import 'heatmap_month_strip.dart';
 import '../../../../theme/calm_tokens.dart';
 
@@ -37,15 +39,12 @@ List<String> _weekdayInitials(String locale) {
   ];
 }
 
-const double _gap90d = 2; // GAP['90d']
 /// Floor for the weekday gutter; the real width is measured, because narrow
 /// weekday names are not one character in every language — Vietnamese renders
 /// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
 const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
-const double _dayLabelGutter = KalloSpacing.sp1; // gap-1 (4px)
 const double _bubbleHalfW = 60;
-const double _legendBarHeight = 6;
 
 class AdherenceHeatmap extends ConsumerWidget {
   const AdherenceHeatmap({super.key, required this.args});
@@ -55,16 +54,23 @@ class AdherenceHeatmap extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(heatmapProvider(args));
+    // Only the card knows how wide it is, and the provider decides what to
+    // fetch — so the measurement has to travel back up. Keyed on the resolved
+    // RANGE, so a resize within one range changes nothing.
+    void resolve(HeatmapRange range) {
+      if (ref.read(heatmapRangeProvider) == range) return;
+      ref.read(heatmapRangeProvider.notifier).state = range;
+    }
 
     return async.when(
       // A weigh-in invalidates the bundle, so heatmapProvider goes isReloading
       // and .when would drop the drawn grid back to its loading body —
       // skipLoadingOnReload only defaults true on refresh.
       skipLoadingOnReload: true,
-      loading: () => const _HeatmapBody(data: null),
+      loading: () => _HeatmapBody(data: null, onRangeResolved: resolve),
       // Empty/loaded both render the grid; the server always returns a full
       // grid for the range (unlogged days are the "not logged" track).
-      data: (data) => _HeatmapBody(data: data),
+      data: (data) => _HeatmapBody(data: data, onRangeResolved: resolve),
       error:
           (_, __) => KalloCard(
             padding: DashboardSpacing.card,
@@ -103,8 +109,9 @@ class _Bubble {
 }
 
 class _HeatmapBody extends StatefulWidget {
-  const _HeatmapBody({required this.data});
+  const _HeatmapBody({required this.data, required this.onRangeResolved});
   final HeatmapData? data;
+  final ValueChanged<HeatmapRange> onRangeResolved;
 
   @override
   State<_HeatmapBody> createState() => _HeatmapBodyState();
@@ -113,6 +120,9 @@ class _HeatmapBody extends StatefulWidget {
 class _HeatmapBodyState extends State<_HeatmapBody>
     with SingleTickerProviderStateMixin {
   _Bubble? _bubble;
+
+  /// The last range reported upward, so a resize inside one range is silent.
+  HeatmapRange? _lastResolved;
 
   // Per-cell wave reveal: each cell animates {opacity:0,scale:0.6}→{1,1} over
   // 0.16s with a stagger delay of wi*0.01 + di*0.005. The controller spans the
@@ -154,12 +164,10 @@ class _HeatmapBodyState extends State<_HeatmapBody>
             cell.ratio != null &&
             !cell.hasCheatMeal) {
           total++;
-          // Ask the classifier, don't re-derive a threshold: the bands are
-          // asymmetric now, so a single number cannot express "green or
-          // light green" any more.
-          if (HeatmapBands.onTrackLabels.contains(
-            getHeatmapColor(cell.ratio).labelKey,
-          )) {
+          // Ask the classifier for the tier rather than re-deriving a
+          // threshold here, so the score can never disagree with the colour
+          // the same day paints.
+          if (heatmapTierFor(cell.ratio) == HeatmapTier.onTarget) {
             onTarget++;
           }
         }
@@ -190,15 +198,18 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
   }
 
-  double _cellSize(double contentWidth, int numWeeks, double dayLabelWidth) {
-    if (numWeeks <= 0) return 10;
-    final available =
-        contentWidth -
-        dayLabelWidth -
-        _dayLabelGutter -
-        (numWeeks - 1) * _gap90d;
-    final sq = (available / numWeeks).floorToDouble();
-    return sq < 10 ? 10 : sq;
+  /// Report upward which range this width can carry, once per change.
+  void _resolveRange(double contentWidth, double dayLabelWidth) {
+    final range = heatmapRangeForWidth(
+      contentWidth: contentWidth,
+      dayLabelWidth: dayLabelWidth,
+    );
+    if (range == _lastResolved) return;
+    _lastResolved = range;
+    // During layout — deferred, or it would mutate a provider mid-build.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => widget.onRangeResolved(range),
+    );
   }
 
   @override
@@ -221,11 +232,22 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
-          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth);
-          final step = sq + _gap90d;
+          _resolveRange(contentWidth, dayLabelWidth);
+          // Geometry follows the data actually on screen, not the range the
+          // width just asked for — those differ for one frame while the wider
+          // request is in flight.
+          final range = heatmapRangeForColumns(numWeeks);
+          final gap = heatmapCellGap[range]!;
+          final sq = heatmapCellSize(
+            contentWidth: contentWidth,
+            dayLabelWidth: dayLabelWidth,
+            numWeeks: numWeeks,
+            range: range,
+          );
+          final step = sq + gap;
           final gridWidth =
-              numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * _gap90d : 0.0;
-          final gridHeight = 7 * sq + 6 * _gap90d;
+              numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * gap : 0.0;
+          final gridHeight = 7 * sq + 6 * gap;
           final adherence = _adherence;
 
           return Column(
@@ -241,7 +263,15 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   (data != null && adherence.loggedDays >= 3)
                       ? tr(
                         'dashboard.adherenceHeatmap.onTrack',
-                        namedArgs: {'percent': '${adherence.percent}'},
+                        namedArgs: {
+                          'percent': '${adherence.percent}',
+                          // The window is part of the claim: the same account
+                          // scores differently over 90 days and over a year,
+                          // and a wide layout silently shows the wider one.
+                          'window': tr(
+                            'dashboard.adherenceHeatmap.window.${range.name}',
+                          ),
+                        },
                       )
                       : ' ',
                   style: dashMeta(color: kInk, tabular: true),
@@ -265,7 +295,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                               top:
                                   i == 0
                                       ? monthStripHeight + KalloSpacing.sp1
-                                      : _gap90d,
+                                      : gap,
                             ),
                             padding: const EdgeInsets.only(
                               right: _dayLabelPadRight,
@@ -282,7 +312,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                       ],
                     ),
                   ),
-                  const SizedBox(width: _dayLabelGutter),
+                  const SizedBox(width: heatmapDayLabelGutter),
                   // Month strip + grid.
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +322,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             data?.monthHeaders ??
                             const <HeatmapMonthHeader>[],
                         cellSize: sq,
-                        gap: _gap90d,
+                        gap: gap,
                         gridWidth: gridWidth,
                         style: monthLabelStyle,
                         height: monthStripHeight,
@@ -369,56 +399,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 ],
               ),
 
-              // Legend: the full-width scale with its two ends named UNDER it.
-              // Flanking the bar cost it ~120pt of width, which at five equal
-              // segments left each tier too narrow to read as a step.
-              Padding(
-                padding: const EdgeInsets.only(top: DashboardSpacing.section),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        _legendBarHeight / 2,
-                      ),
-                      child: Container(
-                        height: _legendBarHeight,
-                        decoration: const BoxDecoration(
-                          // Five equal discrete segments, one per tier — the
-                          // same five flat colours the cells use, each
-                          // repeated so its slice has hard edges.
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              HeatmapColors.far, HeatmapColors.far,
-                              HeatmapColors.moderate, HeatmapColors.moderate,
-                              HeatmapColors.slight, HeatmapColors.slight,
-                              HeatmapColors.close, HeatmapColors.close,
-                              HeatmapColors.onTarget, HeatmapColors.onTarget,
-                            ],
-                            stops: HeatmapBands.legendStops,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: DashboardSpacing.row),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          tr('dashboard.adherenceHeatmap.offTarget'),
-                          style: dashMeta(color: kInkMuted),
-                        ),
-                        Text(
-                          tr('dashboard.adherenceHeatmap.onTarget'),
-                          style: dashMeta(color: kInkMuted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              const HeatmapLegend(),
             ],
           );
         },
@@ -479,7 +460,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         if (cell.hasCheatMeal) {
           return tr('dashboard.adherenceHeatmap.cheatDay');
         }
-        final labelKey = getHeatmapColor(cell.ratio).labelKey;
+        final labelKey = heatmapTierFor(cell.ratio).name;
         final pct = (cell.ratio! * 100).round();
         return '${tr('dashboard.adherenceHeatmap.$labelKey')} · $pct%';
     }

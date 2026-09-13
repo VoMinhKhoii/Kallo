@@ -33,13 +33,22 @@ export function mergeConfirmedMealIntoDay(
     // Seed it so the ring reflects this meal immediately. Note: setQueriesData
     // only runs this updater for already-cached query entries; it cannot create
     // one where the query is unmounted.
-    return { persistedMeals: [meal], pendingConfirmations: [] };
+    // markedComplete false is the honest seed: the attestation lives on the
+    // server and this branch has no day payload to read it from. The real
+    // value arrives with the in-flight load.
+    return {
+      persistedMeals: [meal],
+      pendingConfirmations: [],
+      markedComplete: false,
+    };
   }
   return {
     persistedMeals: upsertById(old.persistedMeals, meal),
     pendingConfirmations: analysisId
       ? old.pendingConfirmations.filter((p) => p.id !== analysisId)
       : old.pendingConfirmations,
+    // Saving a meal never changes whether the user attested the day.
+    markedComplete: old.markedComplete,
   };
 }
 

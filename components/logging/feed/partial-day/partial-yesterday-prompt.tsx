@@ -38,7 +38,7 @@ export function PartialYesterdayPrompt({
   if (
     !hasMeals ||
     hasUnknownCalories ||
-    !isLikelyPartialDay(calories, calorieTarget)
+    !isLikelyPartialDay(calories, calorieTarget, data?.markedComplete)
   ) {
     return null;
   }

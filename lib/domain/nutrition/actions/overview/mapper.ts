@@ -44,6 +44,12 @@ interface MapOverviewRowsInput {
   dayScope?: NutritionDayScope;
   /** Equal-length window immediately before `period`, for the delta figure. */
   previousCalorieAverages: CalorieAverages;
+  /**
+   * Local dates the user attested were fully logged. Exempt from the
+   * partial-day gate in every classification below, so an attested light day
+   * averages in at its real calories instead of being held out.
+   */
+  markedDates?: ReadonlySet<string>;
 }
 
 export function mapOverviewRowsToDto({
@@ -55,6 +61,7 @@ export function mapOverviewRowsToDto({
   period,
   dayScope,
   previousCalorieAverages,
+  markedDates,
 }: MapOverviewRowsInput): NutritionOverview {
   const loggedDates = new Set(
     rows.filter((row) => row.calories > 0).map((row) => row.localDate)
@@ -112,13 +119,18 @@ export function mapOverviewRowsToDto({
   // caller asks for the `'complete'` scope, for the whole body too.
   const strict = classifyDayCompleteness(dayCalorieList, calorieTarget, {
     safetyValve: false,
+    markedDates,
   });
 
   // Both scopes' calorie averages, shipped regardless of `dayScope` so the
   // client can show one as hero and the other as a subtle secondary and swap
   // them without a refetch. Same helper the previous window is scored by, so
   // the two sides of the delta can never drift apart.
-  const calorieAverages = buildCalorieAverages(dayCalorieList, calorieTarget);
+  const calorieAverages = buildCalorieAverages(
+    dayCalorieList,
+    calorieTarget,
+    markedDates
+  );
   const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
 
   // Pick the day set the body (macros/series/grid) averages over. Legacy
@@ -126,7 +138,7 @@ export function mapOverviewRowsToDto({
   // an explicit scope uses the strict classification.
   const legacy =
     dayScope === undefined
-      ? classifyDayCompleteness(dayCalorieList, calorieTarget)
+      ? classifyDayCompleteness(dayCalorieList, calorieTarget, { markedDates })
       : null;
   const { averagingDates, averagingDayCount, completeDays, partialDays } =
     dayScope === 'all'

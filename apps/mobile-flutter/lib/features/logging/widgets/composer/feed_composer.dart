@@ -8,6 +8,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../logic/composer/composer_refill.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
+import '../../logic/feed/day_actions.dart';
 import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_group.dart';
 import '../cheat/cheat_occasion_chips.dart';
@@ -116,12 +117,12 @@ class FeedComposer extends ConsumerWidget {
       alignment: Alignment.bottomCenter,
       child: ComposerDock(
         onHeightChanged: onHeightChanged,
-        child: _buildDock(context),
+        child: _buildDock(context, ref),
       ),
     );
   }
 
-  Widget _buildDock(BuildContext context) {
+  Widget _buildDock(BuildContext context, WidgetRef ref) {
     final isNormal = mode == MealLogMode.normal;
     final input = MealInput(
       controller: controller,
@@ -147,6 +148,8 @@ class FeedComposer extends ConsumerWidget {
                 calories: view.dailyCalories,
                 target: calorieTarget,
                 onDismiss: onDismissNotice,
+                onMarkComplete:
+                    () => confirmAndMarkDay(context, ref, view, userId),
               )
               : null,
       modeLabel: mealModeLabel(mode),
@@ -157,9 +160,7 @@ class FeedComposer extends ConsumerWidget {
               : null,
       modeIcon: mealModeIcon(mode),
       hintText:
-          mode == MealLogMode.cheat
-              ? 'logging.cheatPlaceholder'.tr()
-              : null,
+          mode == MealLogMode.cheat ? 'logging.cheatPlaceholder'.tr() : null,
       onModePressed: onModePressed,
       // iOS-only for now; null hides the icon entirely. Gated on the shared
       // `isBarcodeLoggingSupported` — the mode sheet's source of truth too.

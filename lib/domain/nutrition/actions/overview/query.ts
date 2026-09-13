@@ -1,6 +1,7 @@
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { db } from '@/lib/infra/db/client';
 import {
+  dayCompletionMarks,
   ingredientSources,
   mealItems,
   meals,
@@ -187,4 +188,29 @@ export async function fetchOverviewRows(
       eq(vietnameseFoodComposition.sourceId, ingredientSources.id)
     )
     .where(where);
+}
+
+/**
+ * Local dates in `[startDate, endDate]` the user attested were fully logged.
+ *
+ * Lives here rather than inline in `get-overview.ts` because this module IS the
+ * DB seam for the overview: everything that touches the database goes through
+ * it, which is what lets the action's tests run without a connection.
+ */
+export async function fetchDayCompletionMarks(
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<string[]> {
+  const rows = await db
+    .select({ localDate: dayCompletionMarks.localDate })
+    .from(dayCompletionMarks)
+    .where(
+      and(
+        eq(dayCompletionMarks.userId, userId),
+        gte(dayCompletionMarks.localDate, startDate),
+        lte(dayCompletionMarks.localDate, endDate)
+      )
+    );
+  return rows.map((row) => row.localDate);
 }

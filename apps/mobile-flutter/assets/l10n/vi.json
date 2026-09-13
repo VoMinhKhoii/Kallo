@@ -1068,22 +1068,23 @@
       "steady": "Ổn định"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
+      "onTrack": "{percent}% đúng mục tiêu · {window}",
       "notLogged": "Chưa ghi nhận",
-      "partial": "Ngày ghi thiếu",
+      "partial": "Chờ xác nhận",
       "future": "Ngày trong tương lai",
       "outside": "Ngoài khoảng đang xem",
-      "offTarget": "Lệch mục tiêu",
       "onTarget": "Đúng mục tiêu",
       "noData": "Không có dữ liệu",
-      "close": "Rất gần",
-      "slightlyOver": "Hơi vượt",
-      "slightlyUnder": "Hơi thiếu",
-      "over": "Vượt",
-      "under": "Thiếu",
-      "farOver": "Vượt nhiều",
-      "farUnder": "Thiếu nhiều",
-      "cheatDay": "Ngày xả"
+      "cheatDay": "Ngày xả",
+      "overTarget": "Vượt mục tiêu",
+      "nearlyFull": "Gần đủ",
+      "light": "Ăn nhẹ",
+      "veryLight": "Ăn rất ít",
+      "window": {
+        "d30": "30 ngày",
+        "d90": "90 ngày",
+        "year": "1 năm"
+      }
     },
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
@@ -1267,7 +1268,13 @@
       "retryDay": "Tải lại ngày",
       "partialDayNotice": {
         "title": "Ngày này có thể ghi chưa đủ",
-        "body": "Mới ghi {calories}/{target} kcal mục tiêu, nên ngày này tạm bị bỏ khỏi xu hướng. Thêm những gì bạn bỏ sót để tính lại ngày này."
+        "body": "Mới ghi {calories}/{target} kcal mục tiêu, nên ngày này tạm bị bỏ khỏi xu hướng.",
+        "markComplete": "Mình ăn đủ rồi",
+        "confirmTitle": "Ghi nhận ngày này đã đủ?",
+        "confirmBody": "Kallo sẽ tính ngày này vào xu hướng với {calories} kcal đã ghi. Không hoàn tác được.",
+        "confirmAccept": "Mình ăn đủ rồi",
+        "confirmCancel": "Để sau",
+        "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
       },
       "partialYesterdayPrompt": {
         "title": "Hôm qua có vẻ ghi chưa đủ",
