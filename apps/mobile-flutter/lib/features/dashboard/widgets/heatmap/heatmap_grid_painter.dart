@@ -13,29 +13,6 @@ import '../../logic/heatmap_colors.dart';
 
 const double _cellRadius = 3; // rounded-[3px]
 
-/// The cheat day's fill: the onboarding aurora's two hues, poured VERTICALLY
-/// and washed to 0.92.
-///
-/// Deliberately not `KalloGradients.brandSweep` — that is diagonal at full
-/// opacity and belongs to the tab bar's `+`, the app's one always-present
-/// create affordance. Sharing it would put the create gesture's signature on a
-/// history cell. Same family, different axis and weight.
-///
-/// Being the only gradient on the grid is what lets the cheat cell drop the
-/// ring and the centre dot it used to need: nothing else here shimmers, so
-/// nothing else can be mistaken for it.
-/// Not `const`: the wash is derived from the brand tokens rather than having
-/// their hexes baked in with the alpha pre-applied, so if the aurora's hues ever
-/// move this moves with them. One gradient per library load is not a hot path.
-final LinearGradient _cheatGradient = LinearGradient(
-  begin: Alignment.topCenter,
-  end: Alignment.bottomCenter,
-  colors: [
-    KalloColors.brandApricot.withValues(alpha: 0.92),
-    KalloColors.brandLilac.withValues(alpha: 0.92),
-  ],
-);
-
 /// One cell's paint: a flat fill, or a gradient, plus an optional ring.
 ///
 /// Four kinds of cell, and only one of them carries a ring — the day that is
@@ -50,8 +27,8 @@ final LinearGradient _cheatGradient = LinearGradient(
   if (isLogged) {
     if (cell!.hasCheatMeal) {
       return (
-        fill: HeatmapColors.cheatFill,
-        gradient: _cheatGradient,
+        fill: HeatmapCheat.fill,
+        gradient: HeatmapCheat.gradient,
         stroke: null,
       );
     }

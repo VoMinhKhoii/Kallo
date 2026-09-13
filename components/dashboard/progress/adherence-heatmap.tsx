@@ -15,6 +15,7 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import {
+  HEATMAP_CHEAT,
   HEATMAP_RAMP,
   heatmapScaleAt,
   heatmapTierColor,
@@ -141,10 +142,10 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                         // it stays distinct from the diagonal full-opacity
                         // brand sweep that belongs to the create affordance.
                         backgroundImage: isCheat
-                          ? 'linear-gradient(180deg, rgb(255 210 176 / 0.92), rgb(220 196 255 / 0.92))'
+                          ? HEATMAP_CHEAT.gradient
                           : undefined,
                         backgroundColor: isCheat
-                          ? 'var(--kallo-cheat-fill)'
+                          ? HEATMAP_CHEAT.fill
                           : isLogged
                             ? bg
                             : heatmapScaleAt(

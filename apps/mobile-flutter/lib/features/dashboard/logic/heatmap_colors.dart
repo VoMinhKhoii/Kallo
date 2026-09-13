@@ -7,7 +7,7 @@
 /// CSS `var(--…)` does not resolve outside the web).
 library;
 
-import 'dart:ui';
+import 'package:flutter/painting.dart';
 
 import '../../../theme/kallo_colors.dart';
 
@@ -36,12 +36,43 @@ abstract final class HeatmapColors {
   /// the same colour; the figure is a tap away.
   static const Color over = KalloColors.heatmapFar; // #d37b69
 
-  /// Cheat days are neutral — a calm warm ring + fill instead of intensity
-  /// grading (web `--kallo-cheat` / `--kallo-cheat-fill`), never red.
-  static const Color cheat = KalloColors.accent; // #c9a87c
-  static const Color cheatFill = Color(0xFFF3E6D2);
-
   static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
+}
+
+/// The cheat day's paint, in one place because TWO surfaces draw it: the grid
+/// cell and the legend swatch that claims to explain the grid cell. Held apart
+/// from [HeatmapColors] so that class stays colours-only — this is a recipe
+/// (a base plus a wash over it), not a colour.
+///
+/// A cheat day is neutral, not a miss: it intentionally exceeds target, so it
+/// is never the warm over-target cell and never red.
+///
+/// [gradient] is the onboarding aurora's two hues, poured VERTICALLY and washed
+/// to 0.92. Deliberately not `KalloGradients.brandSweep` — that is diagonal at
+/// full opacity and belongs to the tab bar's `+`, the app's one always-present
+/// create affordance. Sharing it would put the create gesture's signature on a
+/// history cell. Same family, different axis and weight.
+///
+/// Being the grid's only gradient is what lets the cheat cell drop the ring and
+/// centre dot it used to need: nothing else here shimmers, so nothing else can
+/// be mistaken for it. The legend must therefore draw it ringless too — a ring
+/// in the key and none on the grid is a key that describes a different app.
+///
+/// Not `const`: the wash is derived from the brand tokens rather than having
+/// their hexes baked in with the alpha pre-applied, so if the aurora's hues
+/// ever move this moves with them.
+abstract final class HeatmapCheat {
+  /// The opaque base the wash sits on (web `--kallo-cheat-fill`).
+  static const Color fill = Color(0xFFF3E6D2);
+
+  static final LinearGradient gradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      KalloColors.brandApricot.withValues(alpha: 0.92),
+      KalloColors.brandLilac.withValues(alpha: 0.92),
+    ],
+  );
 }
 
 /// The ramp, as alpha applied to [HeatmapColors.scale]. Ported from amicro's
