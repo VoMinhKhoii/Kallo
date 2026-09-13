@@ -7,7 +7,7 @@
 /// CSS `var(--…)` does not resolve outside the web).
 library;
 
-import 'dart:ui';
+import 'package:flutter/painting.dart';
 
 import '../../../theme/kallo_colors.dart';
 
@@ -36,12 +36,91 @@ abstract final class HeatmapColors {
   /// the same colour; the figure is a tap away.
   static const Color over = KalloColors.heatmapFar; // #d37b69
 
-  /// Cheat days are neutral — a calm warm ring + fill instead of intensity
-  /// grading (web `--kallo-cheat` / `--kallo-cheat-fill`), never red.
-  static const Color cheat = KalloColors.accent; // #c9a87c
-  static const Color cheatFill = Color(0xFFF3E6D2);
-
   static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
+}
+
+/// The corner radius every cell and every legend swatch draws.
+///
+/// Here rather than private to each painting site: the grid and the key are
+/// two surfaces drawing one shape, and a constant repeated in both with a
+/// "keep these in sync" comment is precisely how the cheat cell and its swatch
+/// drifted apart.
+const double heatmapCellRadius = 3;
+
+/// One cell's paint: a flat fill, optionally a ring around it.
+///
+/// [fill] is a [Gradient] only for the cheat day — the grid's one gradient.
+typedef HeatmapCellPaint = ({Color fill, Gradient? gradient, Color? stroke});
+
+/// What each kind of cell is painted with — the single definition the grid
+/// painter AND the legend both read.
+///
+/// This exists because sharing the COLOURS was not enough. The cheat swatch
+/// once drew a flat fill inside an accent ring while the cell drew a ringless
+/// wash: both read the same palette, and still disagreed, because each
+/// assembled its own recipe from the parts. What drifts is the assembly, so the
+/// assembly is what has to be shared. Anything with a legend entry belongs
+/// here; nothing else should build a cell's appearance from the raw tokens.
+abstract final class HeatmapCellPaints {
+  /// The cheat day — neutral, not a miss: it intentionally exceeds target, so
+  /// it is never the warm over-target cell and never red.
+  ///
+  /// The aurora's two hues poured VERTICALLY, deliberately not
+  /// `KalloGradients.brandSweep` — that is diagonal at full opacity and belongs
+  /// to the tab bar's `+`, the app's one always-present create affordance.
+  /// Sharing it would put the create gesture's signature on a history cell.
+  ///
+  /// The 0.92 wash is PRE-COMPOSITED onto `#F3E6D2` rather than layered over it
+  /// at paint time. Blending at a fixed alpha is affine in the colour, so
+  /// interpolating-then-blending and blending-then-interpolating are the same
+  /// image — and collapsing it to one opaque gradient removes the two-pass
+  /// recipe each surface previously had to reproduce correctly from a comment.
+  ///
+  /// Being the grid's only gradient is what lets this cell drop the ring and
+  /// centre dot it used to need: nothing else here shimmers.
+  static final HeatmapCellPaint cheat = (
+    fill: const Color(0xFFF3E6D2),
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color.alphaBlend(
+          KalloColors.brandApricot.withValues(alpha: 0.92),
+          const Color(0xFFF3E6D2),
+        ),
+        Color.alphaBlend(
+          KalloColors.brandLilac.withValues(alpha: 0.92),
+          const Color(0xFFF3E6D2),
+        ),
+      ],
+    ),
+    stroke: null,
+  );
+
+  /// A logged day under the gate that the user has NOT attested — the one cell
+  /// that wants them to act, so the one cell with a ring.
+  static final HeatmapCellPaint awaiting = (
+    fill: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
+    gradient: null,
+    stroke: KalloColors.textMuted,
+  );
+
+  /// Unlogged, future and out-of-range alike. The user does not need to tell
+  /// them apart — none is a reading — and collapsing them keeps the empty state
+  /// one material instead of several greys.
+  static final HeatmapCellPaint empty = (
+    fill: HeatmapColors.scaleAt(HeatmapRamp.empty),
+    gradient: null,
+    stroke: null,
+  );
+
+  /// A graded day. [HeatmapTier.noData] has nothing to grade, so it falls back
+  /// to [empty]'s fill.
+  static HeatmapCellPaint tier(HeatmapTier tier) => (
+    fill: heatmapTierColor(tier) ?? empty.fill,
+    gradient: null,
+    stroke: null,
+  );
 }
 
 /// The ramp, as alpha applied to [HeatmapColors.scale]. Ported from amicro's
@@ -110,3 +189,18 @@ Color? heatmapTierColor(HeatmapTier tier) => switch (tier) {
   HeatmapTier.light => HeatmapColors.scaleAt(HeatmapRamp.light),
   HeatmapTier.veryLight => HeatmapColors.scaleAt(HeatmapRamp.veryLight),
 };
+
+/// The legend's ramp swatches, palest first. Mirrors web
+/// `heatmapLegendSwatches`.
+///
+/// A discrete set, not a gradient bar: a continuous bar named only at its two
+/// ends is what let the old five-tier scale over-promise, since the
+/// under-target half it implied could never paint.
+List<Color> heatmapLegendSwatches() =>
+    const [
+      HeatmapRamp.empty,
+      HeatmapRamp.veryLight,
+      HeatmapRamp.light,
+      HeatmapRamp.nearlyFull,
+      HeatmapRamp.onTarget,
+    ].map(HeatmapColors.scaleAt).toList();

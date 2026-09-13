@@ -15,10 +15,10 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import {
-  HEATMAP_RAMP,
-  heatmapScaleAt,
-  heatmapTierColor,
+  HEATMAP_CELL_PAINTS,
+  HEATMAP_CELL_RADIUS_CLASS,
   heatmapTierFor,
+  heatmapTierPaint,
 } from './heatmap-colors';
 import { HeatmapLegend } from './heatmap-legend';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
@@ -95,10 +95,18 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             data.cells.map((dayRow, di) => {
               const cell = dayRow[wi];
               const ratio = cell?.ratio ?? null;
-              const bg = heatmapTierColor(heatmapTierFor(ratio));
               const isLogged = cell?.status === 'logged' && ratio !== null;
               const isCheat = isLogged && Boolean(cell?.hasCheatMeal);
               const isPartial = cell?.status === 'partial';
+              // Classify only; the APPEARANCE of each kind lives in
+              // heatmap-colors.ts, where the legend reads the same records.
+              const paint = isCheat
+                ? HEATMAP_CELL_PAINTS.cheat
+                : isLogged
+                  ? heatmapTierPaint(heatmapTierFor(ratio))
+                  : isPartial
+                    ? HEATMAP_CELL_PAINTS.awaiting
+                    : HEATMAP_CELL_PAINTS.empty;
               const isMuted =
                 cell?.status === 'future' || cell?.status === 'outside';
               const isFocusable = (isLogged || isPartial) && !isMuted;
@@ -127,31 +135,18 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             }
                       }
                       className={cn(
-                        'relative aspect-square w-full cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
-                        // The one actionable cell — logged, under the gate, not
-                        // yet attested — is the one cell with a ring.
-                        isPartial && 'border border-kallo-text-muted'
+                        'relative aspect-square w-full cursor-default transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
+                        HEATMAP_CELL_RADIUS_CLASS,
+                        // The ring rides on the paint record, so the one
+                        // actionable cell cannot grow or lose it on only one
+                        // of the two surfaces that draw it.
+                        paint.ringClass
                       )}
                       style={{
                         gridRow: di + 2,
                         gridColumn: wi + 2,
-                        // The cheat day is the grid's only gradient, which is
-                        // what lets it drop the ring and dot it used to need:
-                        // nothing else here shimmers. Vertical and washed, so
-                        // it stays distinct from the diagonal full-opacity
-                        // brand sweep that belongs to the create affordance.
-                        backgroundImage: isCheat
-                          ? 'linear-gradient(180deg, rgb(255 210 176 / 0.92), rgb(220 196 255 / 0.92))'
-                          : undefined,
-                        backgroundColor: isCheat
-                          ? 'var(--kallo-cheat-fill)'
-                          : isLogged
-                            ? bg
-                            : heatmapScaleAt(
-                                isPartial
-                                  ? HEATMAP_RAMP.awaiting
-                                  : HEATMAP_RAMP.empty
-                              ),
+                        backgroundColor: paint.backgroundColor,
+                        backgroundImage: paint.backgroundImage,
                       }}
                     ></motion.button>
                   </TooltipTrigger>

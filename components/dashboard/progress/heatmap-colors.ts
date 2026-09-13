@@ -124,3 +124,58 @@ export function heatmapTierColor(tier: HeatmapTier): string {
       return heatmapScaleAt(HEATMAP_RAMP.veryLight);
   }
 }
+
+/** The corner radius every cell and every legend swatch draws. */
+export const HEATMAP_CELL_RADIUS_CLASS = 'rounded-[3px]';
+
+export interface HeatmapCellPaint {
+  backgroundColor: string;
+  /** Set only for the cheat day — the grid's one gradient. */
+  backgroundImage?: string;
+  /** Tailwind ring classes; set only for the one actionable cell. */
+  ringClass?: string;
+}
+
+/** The aurora wash, pre-composited onto the cheat base. See HEATMAP_CELL_PAINTS. */
+function auroraOver(hue: string): string {
+  return `color-mix(in srgb, var(${hue}) 92%, var(--kallo-cheat-fill))`;
+}
+
+/**
+ * What each kind of cell is painted with — the single definition the grid cell
+ * AND the legend swatch both read.
+ *
+ * This exists because sharing the COLOURS was not enough. The cheat swatch once
+ * drew a flat fill inside an accent ring while the cell drew a ringless wash;
+ * the web legend omitted both the cheat and the awaiting cell entirely. Each
+ * surface assembled its own recipe from the parts, so what drifts is the
+ * assembly — and the assembly is what has to be shared.
+ *
+ * The cheat wash is PRE-COMPOSITED via `color-mix` rather than layered as a
+ * translucent `backgroundImage` over `backgroundColor`. Blending at a fixed
+ * alpha is affine in the colour, so the result is identical, and mixing into
+ * `--kallo-cheat-fill` keeps dark mode's darker base behaving as before. It
+ * also derives from the brand tokens the way the Flutter twin does, instead of
+ * baking the two hues in as literals.
+ */
+export const HEATMAP_CELL_PAINTS: Record<
+  'cheat' | 'awaiting' | 'empty',
+  HeatmapCellPaint
+> = {
+  cheat: {
+    backgroundColor: 'var(--kallo-cheat-fill)',
+    backgroundImage: `linear-gradient(180deg, ${auroraOver('--kallo-brand-apricot')}, ${auroraOver('--kallo-brand-lilac')})`,
+  },
+  awaiting: {
+    backgroundColor: heatmapScaleAt(HEATMAP_RAMP.awaiting),
+    ringClass: 'border border-kallo-text-muted',
+  },
+  empty: { backgroundColor: heatmapScaleAt(HEATMAP_RAMP.empty) },
+};
+
+/** A graded day. `noData` has nothing to grade, so it falls back to `empty`. */
+export function heatmapTierPaint(tier: HeatmapTier): HeatmapCellPaint {
+  return tier === 'noData'
+    ? HEATMAP_CELL_PAINTS.empty
+    : { backgroundColor: heatmapTierColor(tier) };
+}

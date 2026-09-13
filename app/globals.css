@@ -162,7 +162,6 @@
   --color-kallo-heatmap-slight: var(--kallo-heatmap-slight);
   --color-kallo-heatmap-moderate: var(--kallo-heatmap-moderate);
   --color-kallo-heatmap-far: var(--kallo-heatmap-far);
-  --color-kallo-cheat: var(--kallo-cheat);
   --color-kallo-cheat-fill: var(--kallo-cheat-fill);
   /* Bar visualization tokens */
   --color-kallo-bar-miss: var(--kallo-bar-miss);
@@ -268,9 +267,14 @@
   --kallo-heatmap-slight: #d4c9ad;
   --kallo-heatmap-moderate: #e09c84;
   --kallo-heatmap-far: #d37b69;
-  /* Cheat-day token — warm accent, recognizable but never red */
-  --kallo-cheat: #c9a87c;
+  /* Cheat-day base — the opaque ground the aurora wash is mixed into */
   --kallo-cheat-fill: #f3e6d2;
+  /* Onboarding aurora, the cheat cell's two hues. Same in both themes: the
+     wash is what carries the theme, via --kallo-cheat-fill. Declared so
+     HEATMAP_CHEAT derives its gradient from the brand the way its Flutter
+     twin does, instead of baking these hexes in. */
+  --kallo-brand-apricot: #ffd2b0;
+  --kallo-brand-lilac: #dcc4ff;
   /* Bar visualization token */
   --kallo-bar-miss: #d4c9ad;
 }
@@ -347,8 +351,7 @@
   --kallo-heatmap-slight: #c4b99d;
   --kallo-heatmap-moderate: #cf8b76;
   --kallo-heatmap-far: #e08878;
-  /* Cheat-day token — warm accent, recognizable but never red */
-  --kallo-cheat: #c9a87c;
+  /* Cheat-day base — the opaque ground the aurora wash is mixed into */
   --kallo-cheat-fill: #4a3f2e;
   /* Bar visualization token */
   --kallo-bar-miss: #6b6054;

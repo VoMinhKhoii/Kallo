@@ -308,10 +308,13 @@ class _ContentState extends State<_Content> {
               // clearance, so the scroll ends right under the heatmap.
               _Section(
                 children: [
-                  SectionHeaderRow(
-                    title: tr('dashboard.consistency'),
-                    meta: tr('dashboard.ranges.ninetyDays'),
-                  ),
+                  // No meta here: the heatmap card states its own window in
+                  // its "{percent}% on track · {window}" line, and unlike a
+                  // static header that line TRACKS the range the layout
+                  // resolved to. A fixed "90 days" up here both repeated it
+                  // and would have gone on claiming 90 days on a tablet that
+                  // had stepped up to the year.
+                  SectionHeaderRow(title: tr('dashboard.consistency')),
                   AdherenceHeatmap(args: widget.args),
                 ],
               ),

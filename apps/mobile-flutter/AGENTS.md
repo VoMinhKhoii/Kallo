@@ -46,8 +46,9 @@ lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app 
                   go_router errorBuilder) — the routed surfaces the shell itself
                   hands the router
 lib/theme/      — colors, typography, spacing tokens — the reference shape
-test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
-                  l10n_test_loader.dart sit at its root
+test/           — mirrors lib/; only widget_test.dart, app_fonts.dart,
+                  l10n_test_loader.dart and golden_tolerance.dart sit at its
+                  root. Golden PNGs live in a goldens/ beside their test
 ```
 
 - No `lib/data/`. It claimed to hold static data and actually held the HTTP client, analytics, env, session and billing; it merged into `lib/services/`. Static tables live with their consumer (`features/<f>/data/`) or in `lib/shared/data/`.
@@ -57,7 +58,7 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
 - **No barrels — and a re-export may not cross a folder.** The root `AGENTS.md` bans re-export hubs; Dart is no exception, and the structure gate's barrel rule only scans `.ts`, so this one is on you. Two shapes, one rule:
   - A file whose whole job is `export '…';` lines is a barrel — delete it and let callers import the file they need. `shared/widgets/widgets.dart` was exactly that (7 re-exports, 5 importers) and is gone. Its cost: `SectionEyebrow`, `Screen` and `TargetProgressBar` had no direct importer anywhere, so nothing could tell you who actually depended on them.
   - A real module **may** re-export a file in its own folder — that is the folder's public entry speaking for its own internals (`toast/top_toast.dart` → `top_toast_pill.dart`, `surface/kallo_primitives.dart` → `kallo_screen.dart`). It may **not** re-export another folder's module: `dashboard/widgets/states/card_skeletons.dart` and `circle/widgets/states/friend_list_skeleton.dart` both re-exported `shared/widgets/feedback/skeleton.dart`, which let dashboard and circle widgets reach a shared primitive through a feature file. Both re-exports were removed.
-- `test/` mirrors `lib/`, and the mirror collapses the `widgets/`/`logic/` layer: a test lives in the folder its subject lives in — `test/features/<f>/[<sub-concern>/]`, `test/services/<concern>/`, `test/shared/<layer>/`. The block above claimed this mirror while most test files sat flat at the root, so the claim was worth nothing as a gate; they were moved and it is now true. Exactly three files stay at the root: `l10n_test_loader.dart` and `app_fonts.dart` (helpers any test may reach for — §4 quotes the l10n path, so it must not move), and `widget_test.dart`, which boots the whole app and therefore mirrors nothing.
+- `test/` mirrors `lib/`, and the mirror collapses the `widgets/`/`logic/` layer: a test lives in the folder its subject lives in — `test/features/<f>/[<sub-concern>/]`, `test/services/<concern>/`, `test/shared/<layer>/`. The block above claimed this mirror while most test files sat flat at the root, so the claim was worth nothing as a gate; they were moved and it is now true. Exactly four files stay at the root: `l10n_test_loader.dart`, `app_fonts.dart` and `golden_tolerance.dart` (helpers any test may reach for — §4 quotes the l10n path, so it must not move), and `widget_test.dart`, which boots the whole app and therefore mirrors nothing.
 - Sub-concern folder names are shared vocabulary, not per-feature invention. `states/` is the loading/error/empty states of a surface (circle, dashboard, nutrition all use it); `chrome/` is a surface's own furniture — its header, its navigator, the bar it always shows.
 - Parity work must match the web source 1:1 — interactions, transitions, and exact sizing/spacing, not just static layout. EXCEPTION: the iOS-native pass (2026-08-31) is a sanctioned app-wide divergence — canvas, buttons, inputs, hit targets and the shell (pill nav instead of the web drawer) follow `.agents/skills/kallo-design/mobile.md` and the approved canvas, not the web source.
 
@@ -67,5 +68,10 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
 - **fastlane**: install via gem/bundler context described in `releasing.md`; the Homebrew fastlane breaks CocoaPods (reinstall pods if hit).
 - **Simulator**: build from the `/tmp` mirror; iOS 26 runtime must be downloaded; ATS needs `NSAllowsLocalNetworking` for the local dev API; use idb clipboard-paste to enter text.
 - **Measuring text width in a widget test requires `loadAppFonts()`** (`test/app_fonts.dart`). Without it every glyph renders in a ~1em placeholder: "CHẤT BÉO" measures 90pt instead of 59pt, which is enough to fail a layout that is fine — and, in the other direction, to pass one that is not.
+- **Golden tests** guard APPEARANCE, which the value assertions cannot see: a legend swatch that stopped matching the cell it explains, a font weight on the wrong line. Both shipped green. They run inside the ordinary `flutter test`, so CI already gates them.
+  - Regenerate after an INTENDED visual change with `flutter test --update-goldens <path>`, then **look at the PNG** before committing — an unreviewed regenerate turns the guard off silently. The diff is the review artifact; that is the whole point.
+  - Call `useTolerantGoldens()` (`test/golden_tolerance.dart`) in `setUpAll`. It budgets ABSOLUTE differing pixels, not a percentage: a percentage scales with the canvas, and 0.5% was measured letting a whole-card golden pass a legend swatch that had lost its gradient.
+  - Call `loadAppFonts()` AND `loadIconFonts()`. Without the latter every `Icon` bakes in as a tofu box, so the golden records a placeholder where the design has a glyph.
+  - Give the host a real `Scaffold`. Without a `Material` ancestor every `Text` renders with Flutter's amber debug underline, and the golden records that as if it were design.
 - **Discarding a staged meal is mobile-only.** `DELETE /api/v1/meals/pending/[analysisId]` and the trash affordance on `StagedMealCard` have no web counterpart yet, so the two feeds are NOT 1:1 here. Web staged cards still exit only by being confirmed.
 - **Backend**: the app talks to `/api/v1/*` on the web dev server; Drizzle decimals arrive as strings, and targets are `null` for incomplete onboarding — model accordingly.
