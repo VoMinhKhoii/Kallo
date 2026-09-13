@@ -80,6 +80,8 @@ export function FeedArea({
         showPartialDayNotice={feed.showPartialDayNotice}
         calorieTarget={profile.calorieTarget}
         goal={profile.goal}
+        isMarkingDayComplete={feed.markDayComplete.isPending}
+        onMarkDayComplete={() => feed.markDayComplete.mutate()}
       />
 
       {/* Body: the cards region + the composer. When empty, the composer is

@@ -16,6 +16,8 @@ interface FeedHeaderProps {
   showPartialDayNotice: boolean;
   calorieTarget: number;
   goal: Goal | null;
+  onMarkDayComplete: () => void;
+  isMarkingDayComplete: boolean;
 }
 
 /** The day's macro-summary strip plus the past-day "partial day" notice. */
@@ -28,6 +30,8 @@ export function FeedHeader({
   showPartialDayNotice,
   calorieTarget,
   goal,
+  onMarkDayComplete,
+  isMarkingDayComplete,
 }: FeedHeaderProps) {
   const t = useTranslations('logging.feedArea');
 
@@ -55,6 +59,8 @@ export function FeedHeader({
           <div className="mx-auto max-w-3xl">
             <PartialDayNotice
               calories={dailyTotals.calories}
+              isMarkingComplete={isMarkingDayComplete}
+              onMarkComplete={onMarkDayComplete}
               target={calorieTarget}
             />
           </div>

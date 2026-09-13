@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { forwardRef, useImperativeHandle } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
@@ -63,12 +70,14 @@ vi.mock('@/components/logging/input/composer/meal-input', () => ({
 
 const {
   mockInvalidateQueries,
+  mockMarkDayComplete,
   mockMutate,
   mockUseLoggingDay,
   mockUseStreamAnalysis,
   mockUseStreamingTerminalEffects,
 } = vi.hoisted(() => ({
   mockInvalidateQueries: vi.fn(),
+  mockMarkDayComplete: vi.fn(),
   mockMutate: vi.fn(),
   mockUseLoggingDay: vi.fn(),
   mockUseStreamAnalysis: vi.fn(),
@@ -93,6 +102,10 @@ vi.mock('@/hooks/meals/feed/use-feed-submit', () => ({
 
 vi.mock('@/hooks/meals/mutations/use-confirm-meal', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
+}));
+
+vi.mock('@/hooks/meals/mutations/use-mark-day-complete', () => ({
+  useMarkDayComplete: () => ({ mutate: mockMarkDayComplete, isPending: false }),
 }));
 
 vi.mock('@/hooks/meals/mutations/use-update-meal', () => ({
@@ -463,6 +476,29 @@ describe('FeedArea', () => {
     // to the proactive yesterday prompt, which does not render on a past day.
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'open' })).toBeNull();
+  });
+
+  it('marks the day complete from the notice, once the dialog is accepted', async () => {
+    const user = userEvent.setup();
+    dayWithMeals([makeMeal(400)]);
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /markComplete/ }));
+    expect(mockMarkDayComplete).not.toHaveBeenCalled();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'confirmAccept' })
+    );
+
+    await waitFor(() => expect(mockMarkDayComplete).toHaveBeenCalledTimes(1));
   });
 
   it('does not show the in-context notice on a past day at/above target', () => {

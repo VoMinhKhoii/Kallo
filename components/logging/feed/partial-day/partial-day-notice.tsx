@@ -1,13 +1,25 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { MarkDayCompleteButton } from '@/components/logging/feed/partial-day/mark-day-complete-button';
 
 interface PartialDayNoticeProps {
   calories: number;
   target: number;
+  /**
+   * Attest that this day is fully logged. One-way, so the button confirms
+   * first; this component only reports the decision.
+   */
+  onMarkComplete: () => void;
+  isMarkingComplete: boolean;
 }
 
-export function PartialDayNotice({ calories, target }: PartialDayNoticeProps) {
+export function PartialDayNotice({
+  calories,
+  target,
+  onMarkComplete,
+  isMarkingComplete,
+}: PartialDayNoticeProps) {
   const t = useTranslations('logging.feedArea.partialDayNotice');
 
   return (
@@ -21,6 +33,11 @@ export function PartialDayNotice({ calories, target }: PartialDayNoticeProps) {
       <p className="mt-1 font-sans-display text-[13px] text-kallo-text-muted">
         {t('body', { calories, target })}
       </p>
+      <MarkDayCompleteButton
+        calories={calories}
+        isPending={isMarkingComplete}
+        onConfirm={onMarkComplete}
+      />
     </div>
   );
 }
