@@ -23,29 +23,6 @@ export const HEATMAP_COLORS = {
 } as const;
 
 /**
- * The cheat day's paint, in one place because TWO surfaces draw it: the grid
- * cell and the legend swatch that claims to explain the grid cell.
- *
- * A cheat day is neutral, not a miss: it intentionally exceeds target, so it is
- * never the warm over-target cell and never red.
- *
- * `gradient` is the onboarding aurora's two hues poured VERTICALLY and washed
- * to 0.92 — deliberately not the diagonal full-opacity brand sweep, which
- * belongs to the create affordance and would put that gesture's signature on a
- * history cell. It is translucent, so it must ride ON `fill` as a
- * `backgroundImage` over a `backgroundColor`, never replace it.
- *
- * Being the grid's only gradient is what lets the cheat cell drop the ring and
- * centre dot it used to need, so the legend must draw it ringless too.
- */
-export const HEATMAP_CHEAT = {
-  /** The opaque base the wash sits on — theme-aware, so never a literal hex. */
-  fill: 'var(--kallo-cheat-fill)',
-  gradient:
-    'linear-gradient(180deg, rgb(255 210 176 / 0.92), rgb(220 196 255 / 0.92))',
-} as const;
-
-/**
  * The ramp, as alpha applied to `HEATMAP_COLORS.scale`. Ported from amicro's
  * `dither-heatmap`, which paints one hex at five opacities rather than five
  * hues — that is what lets an empty cell be the same material as a full one
@@ -146,4 +123,59 @@ export function heatmapTierColor(tier: HeatmapTier): string {
     case 'veryLight':
       return heatmapScaleAt(HEATMAP_RAMP.veryLight);
   }
+}
+
+/** The corner radius every cell and every legend swatch draws. */
+export const HEATMAP_CELL_RADIUS_CLASS = 'rounded-[3px]';
+
+export interface HeatmapCellPaint {
+  backgroundColor: string;
+  /** Set only for the cheat day — the grid's one gradient. */
+  backgroundImage?: string;
+  /** Tailwind ring classes; set only for the one actionable cell. */
+  ringClass?: string;
+}
+
+/** The aurora wash, pre-composited onto the cheat base. See HEATMAP_CELL_PAINTS. */
+function auroraOver(hue: string): string {
+  return `color-mix(in srgb, var(${hue}) 92%, var(--kallo-cheat-fill))`;
+}
+
+/**
+ * What each kind of cell is painted with — the single definition the grid cell
+ * AND the legend swatch both read.
+ *
+ * This exists because sharing the COLOURS was not enough. The cheat swatch once
+ * drew a flat fill inside an accent ring while the cell drew a ringless wash;
+ * the web legend omitted both the cheat and the awaiting cell entirely. Each
+ * surface assembled its own recipe from the parts, so what drifts is the
+ * assembly — and the assembly is what has to be shared.
+ *
+ * The cheat wash is PRE-COMPOSITED via `color-mix` rather than layered as a
+ * translucent `backgroundImage` over `backgroundColor`. Blending at a fixed
+ * alpha is affine in the colour, so the result is identical, and mixing into
+ * `--kallo-cheat-fill` keeps dark mode's darker base behaving as before. It
+ * also derives from the brand tokens the way the Flutter twin does, instead of
+ * baking the two hues in as literals.
+ */
+export const HEATMAP_CELL_PAINTS: Record<
+  'cheat' | 'awaiting' | 'empty',
+  HeatmapCellPaint
+> = {
+  cheat: {
+    backgroundColor: 'var(--kallo-cheat-fill)',
+    backgroundImage: `linear-gradient(180deg, ${auroraOver('--kallo-brand-apricot')}, ${auroraOver('--kallo-brand-lilac')})`,
+  },
+  awaiting: {
+    backgroundColor: heatmapScaleAt(HEATMAP_RAMP.awaiting),
+    ringClass: 'border border-kallo-text-muted',
+  },
+  empty: { backgroundColor: heatmapScaleAt(HEATMAP_RAMP.empty) },
+};
+
+/** A graded day. `noData` has nothing to grade, so it falls back to `empty`. */
+export function heatmapTierPaint(tier: HeatmapTier): HeatmapCellPaint {
+  return tier === 'noData'
+    ? HEATMAP_CELL_PAINTS.empty
+    : { backgroundColor: heatmapTierColor(tier) };
 }

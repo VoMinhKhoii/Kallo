@@ -79,16 +79,14 @@ void main() {
     await tester.pumpWidget(_host());
     await tester.pumpAndSettle();
 
-    final swatch = _swatchFor(tester, 'Ngày xả');
-    final background = swatch.decoration as BoxDecoration;
-    final wash = swatch.foregroundDecoration as BoxDecoration?;
+    final background =
+        _swatchFor(tester, 'Ngày xả').decoration as BoxDecoration;
 
-    expect(background.color, HeatmapCheat.fill);
-    // Two layers, as HeatmapGridPainter draws them: BoxDecoration.gradient
-    // IGNORES color, so the translucent wash has to be a foreground decoration
-    // or the warm base underneath it is silently dropped.
-    expect(wash?.gradient, HeatmapCheat.gradient);
-    expect(background.gradient, isNull);
+    // The swatch must be the SAME paint record the grid painter consumes, not
+    // an equal-looking one assembled here — assembling is what let this key
+    // claim a flat ringed swatch while the cell drew a ringless wash.
+    expect(background.gradient, same(HeatmapCellPaints.cheat.gradient));
+    expect(background.color, HeatmapCellPaints.cheat.fill);
     // The cell is ringless — being the grid's only gradient is what earns that.
     expect(background.border, isNull);
     expect(background.color, isNot(KalloColors.accent));
@@ -98,11 +96,15 @@ void main() {
     await tester.pumpWidget(_host());
     await tester.pumpAndSettle();
 
-    final swatch = _swatchFor(tester, 'Chờ xác nhận');
-    final background = swatch.decoration as BoxDecoration;
+    final background =
+        _swatchFor(tester, 'Chờ xác nhận').decoration as BoxDecoration;
 
-    expect(background.color, HeatmapColors.scaleAt(HeatmapRamp.awaiting));
-    expect(background.border, isNotNull);
+    // Same record the painter reads, so the ring cannot go missing on one side.
+    expect(background.color, HeatmapCellPaints.awaiting.fill);
+    expect(
+      background.border,
+      Border.all(color: HeatmapCellPaints.awaiting.stroke!),
+    );
     expect(background.gradient, isNull);
   });
 }

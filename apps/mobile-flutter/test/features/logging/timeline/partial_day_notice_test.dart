@@ -83,15 +83,15 @@ void main() {
     await tester.pumpWidget(_host(onMarkComplete: () {}, onDismiss: () {}));
     await tester.pumpAndSettle();
 
-    final button = tester.widget<Container>(
-      find
-          .ancestor(
-            of: find.text('Mình ăn đủ rồi'),
-            matching: find.byType(Container),
-          )
-          .first,
-    );
-    final decoration = button.decoration as BoxDecoration;
+    final capsule =
+        find
+            .ancestor(
+              of: find.text('Mình ăn đủ rồi'),
+              matching: find.byType(Container),
+            )
+            .first;
+    final decoration =
+        tester.widget<Container>(capsule).decoration as BoxDecoration;
     expect(
       decoration.borderRadius,
       BorderRadius.circular(KalloRadii.button),
@@ -102,9 +102,9 @@ void main() {
     // constraints.maxWidth at infinity either way, so only the laid-out size
     // tells a full-width capsule from one hugging its label.
     final band = tester.getSize(find.byType(PartialDayNotice)).width;
-    final capsule = tester.getSize(find.byType(Container).at(1)).width;
-    expect(capsule, lessThan(band), reason: 'inset by the band padding');
-    expect(capsule, greaterThan(band * 0.8), reason: 'but otherwise the width');
+    final width = tester.getSize(capsule).width;
+    expect(width, lessThan(band), reason: 'inset by the band padding');
+    expect(width, greaterThan(band * 0.8), reason: 'but otherwise the width');
   });
 
   // Weight is reserved for titles in this token set (calm_tokens.dart): the

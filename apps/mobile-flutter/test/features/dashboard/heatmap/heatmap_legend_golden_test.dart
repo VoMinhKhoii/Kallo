@@ -1,12 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_legend.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 
-import '../../../app_fonts.dart';
 import '../../../golden_tolerance.dart';
 import '../../../l10n_test_loader.dart';
 
@@ -51,16 +49,7 @@ Widget _host(Locale locale) => EasyLocalization(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-    await loadAppFonts();
-    useTolerantGoldens();
-  });
+  setUpGoldens();
 
   // Both locales: Vietnamese is the primary language and its labels are the
   // long ones, so it is the case that actually wraps.
@@ -77,6 +66,6 @@ void main() {
         find.byType(HeatmapLegend),
         matchesGoldenFile('goldens/heatmap_legend_${locale.languageCode}.png'),
       );
-    });
+    }, skip: skipOffGoldenPlatform);
   }
 }

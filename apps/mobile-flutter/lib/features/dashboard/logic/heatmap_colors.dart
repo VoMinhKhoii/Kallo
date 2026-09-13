@@ -39,39 +39,87 @@ abstract final class HeatmapColors {
   static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
 }
 
-/// The cheat day's paint, in one place because TWO surfaces draw it: the grid
-/// cell and the legend swatch that claims to explain the grid cell. Held apart
-/// from [HeatmapColors] so that class stays colours-only — this is a recipe
-/// (a base plus a wash over it), not a colour.
+/// The corner radius every cell and every legend swatch draws.
 ///
-/// A cheat day is neutral, not a miss: it intentionally exceeds target, so it
-/// is never the warm over-target cell and never red.
-///
-/// [gradient] is the onboarding aurora's two hues, poured VERTICALLY and washed
-/// to 0.92. Deliberately not `KalloGradients.brandSweep` — that is diagonal at
-/// full opacity and belongs to the tab bar's `+`, the app's one always-present
-/// create affordance. Sharing it would put the create gesture's signature on a
-/// history cell. Same family, different axis and weight.
-///
-/// Being the grid's only gradient is what lets the cheat cell drop the ring and
-/// centre dot it used to need: nothing else here shimmers, so nothing else can
-/// be mistaken for it. The legend must therefore draw it ringless too — a ring
-/// in the key and none on the grid is a key that describes a different app.
-///
-/// Not `const`: the wash is derived from the brand tokens rather than having
-/// their hexes baked in with the alpha pre-applied, so if the aurora's hues
-/// ever move this moves with them.
-abstract final class HeatmapCheat {
-  /// The opaque base the wash sits on (web `--kallo-cheat-fill`).
-  static const Color fill = Color(0xFFF3E6D2);
+/// Here rather than private to each painting site: the grid and the key are
+/// two surfaces drawing one shape, and a constant repeated in both with a
+/// "keep these in sync" comment is precisely how the cheat cell and its swatch
+/// drifted apart.
+const double heatmapCellRadius = 3;
 
-  static final LinearGradient gradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      KalloColors.brandApricot.withValues(alpha: 0.92),
-      KalloColors.brandLilac.withValues(alpha: 0.92),
-    ],
+/// One cell's paint: a flat fill, optionally a ring around it.
+///
+/// [fill] is a [Gradient] only for the cheat day — the grid's one gradient.
+typedef HeatmapCellPaint = ({Color fill, Gradient? gradient, Color? stroke});
+
+/// What each kind of cell is painted with — the single definition the grid
+/// painter AND the legend both read.
+///
+/// This exists because sharing the COLOURS was not enough. The cheat swatch
+/// once drew a flat fill inside an accent ring while the cell drew a ringless
+/// wash: both read the same palette, and still disagreed, because each
+/// assembled its own recipe from the parts. What drifts is the assembly, so the
+/// assembly is what has to be shared. Anything with a legend entry belongs
+/// here; nothing else should build a cell's appearance from the raw tokens.
+abstract final class HeatmapCellPaints {
+  /// The cheat day — neutral, not a miss: it intentionally exceeds target, so
+  /// it is never the warm over-target cell and never red.
+  ///
+  /// The aurora's two hues poured VERTICALLY, deliberately not
+  /// `KalloGradients.brandSweep` — that is diagonal at full opacity and belongs
+  /// to the tab bar's `+`, the app's one always-present create affordance.
+  /// Sharing it would put the create gesture's signature on a history cell.
+  ///
+  /// The 0.92 wash is PRE-COMPOSITED onto `#F3E6D2` rather than layered over it
+  /// at paint time. Blending at a fixed alpha is affine in the colour, so
+  /// interpolating-then-blending and blending-then-interpolating are the same
+  /// image — and collapsing it to one opaque gradient removes the two-pass
+  /// recipe each surface previously had to reproduce correctly from a comment.
+  ///
+  /// Being the grid's only gradient is what lets this cell drop the ring and
+  /// centre dot it used to need: nothing else here shimmers.
+  static final HeatmapCellPaint cheat = (
+    fill: const Color(0xFFF3E6D2),
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color.alphaBlend(
+          KalloColors.brandApricot.withValues(alpha: 0.92),
+          const Color(0xFFF3E6D2),
+        ),
+        Color.alphaBlend(
+          KalloColors.brandLilac.withValues(alpha: 0.92),
+          const Color(0xFFF3E6D2),
+        ),
+      ],
+    ),
+    stroke: null,
+  );
+
+  /// A logged day under the gate that the user has NOT attested — the one cell
+  /// that wants them to act, so the one cell with a ring.
+  static final HeatmapCellPaint awaiting = (
+    fill: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
+    gradient: null,
+    stroke: KalloColors.textMuted,
+  );
+
+  /// Unlogged, future and out-of-range alike. The user does not need to tell
+  /// them apart — none is a reading — and collapsing them keeps the empty state
+  /// one material instead of several greys.
+  static final HeatmapCellPaint empty = (
+    fill: HeatmapColors.scaleAt(HeatmapRamp.empty),
+    gradient: null,
+    stroke: null,
+  );
+
+  /// A graded day. [HeatmapTier.noData] has nothing to grade, so it falls back
+  /// to [empty]'s fill.
+  static HeatmapCellPaint tier(HeatmapTier tier) => (
+    fill: heatmapTierColor(tier) ?? empty.fill,
+    gradient: null,
+    stroke: null,
   );
 }
 
@@ -141,3 +189,18 @@ Color? heatmapTierColor(HeatmapTier tier) => switch (tier) {
   HeatmapTier.light => HeatmapColors.scaleAt(HeatmapRamp.light),
   HeatmapTier.veryLight => HeatmapColors.scaleAt(HeatmapRamp.veryLight),
 };
+
+/// The legend's ramp swatches, palest first. Mirrors web
+/// `heatmapLegendSwatches`.
+///
+/// A discrete set, not a gradient bar: a continuous bar named only at its two
+/// ends is what let the old five-tier scale over-promise, since the
+/// under-target half it implied could never paint.
+List<Color> heatmapLegendSwatches() =>
+    const [
+      HeatmapRamp.empty,
+      HeatmapRamp.veryLight,
+      HeatmapRamp.light,
+      HeatmapRamp.nearlyFull,
+      HeatmapRamp.onTarget,
+    ].map(HeatmapColors.scaleAt).toList();

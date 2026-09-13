@@ -15,14 +15,13 @@ import '../../logic/heatmap_colors.dart';
 /// with words cannot make a claim the cells do not honour.
 ///
 /// The ramp is one row — it IS a single idea, "how much of the goal" — and the
-/// two off-ramp cells follow as their own named items.
+/// three off-ramp cells follow as their own named items, because none of them
+/// is a step on that ramp. Every kind of cell the grid can paint is named here:
+/// a key that omits one quietly reclassifies it as something else.
 class HeatmapLegend extends StatelessWidget {
   const HeatmapLegend({super.key});
 
   static const double _swatch = 12;
-
-  /// Matches the grid cell's `_cellRadius`.
-  static const double _radius = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -35,18 +34,20 @@ class HeatmapLegend extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           const _Ramp(),
-          _LegendItem(color: HeatmapColors.over, label: '$t.overTarget'.tr()),
-          // Same two-part recipe the cell paints, read from the same place —
-          // this swatch previously drew a flat fill inside an accent ring,
-          // which is what the cell looked like BEFORE the aurora landed.
+          // Each item asks the palette for the paint of the kind it names,
+          // rather than assembling one from the raw tokens — assembling is what
+          // let this key claim a flat ringed swatch while the cell it explains
+          // drew a ringless wash.
           _LegendItem(
-            color: HeatmapCheat.fill,
-            gradient: HeatmapCheat.gradient,
+            paint: HeatmapCellPaints.tier(HeatmapTier.overTarget),
+            label: '$t.overTarget'.tr(),
+          ),
+          _LegendItem(
+            paint: HeatmapCellPaints.cheat,
             label: '$t.cheatDay'.tr(),
           ),
           _LegendItem(
-            color: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
-            border: kInkMuted,
+            paint: HeatmapCellPaints.awaiting,
             label: '$t.partial'.tr(),
           ),
         ],
@@ -63,20 +64,13 @@ class _Ramp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const t = 'dashboard.adherenceHeatmap';
-    const steps = [
-      HeatmapRamp.empty,
-      HeatmapRamp.veryLight,
-      HeatmapRamp.light,
-      HeatmapRamp.nearlyFull,
-      HeatmapRamp.onTarget,
-    ];
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('$t.notLogged'.tr(), style: dashMeta(color: kInkMuted)),
         const SizedBox(width: KalloSpacing.sp2),
-        for (final step in steps) ...[
-          _Swatch(color: HeatmapColors.scaleAt(step)),
+        for (final swatch in heatmapLegendSwatches()) ...[
+          _Swatch(paint: (fill: swatch, gradient: null, stroke: null)),
           const SizedBox(width: 3),
         ],
         const SizedBox(width: KalloSpacing.sp1),
@@ -87,59 +81,47 @@ class _Ramp extends StatelessWidget {
 }
 
 class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    this.border,
-    this.gradient,
-  });
+  const _LegendItem({required this.paint, required this.label});
 
-  final Color color;
-  final Color? border;
-  final Gradient? gradient;
+  final HeatmapCellPaint paint;
   final String label;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _Swatch(color: color, border: border, gradient: gradient),
+      _Swatch(paint: paint),
       const SizedBox(width: KalloSpacing.sp1_5),
       Text(label, style: dashMeta(color: kInkMuted)),
     ],
   );
 }
 
+/// One cell, drawn as a widget instead of onto a canvas.
+///
+/// The two render paths cannot be shared — the grid is a [CustomPainter] — so
+/// what is shared is the [HeatmapCellPaint] they both consume. A gradient here
+/// is opaque and REPLACES the fill (`BoxDecoration` ignores `color` when
+/// `gradient` is set), which is correct only because the cheat wash is
+/// pre-composited in the palette; that is the same single pass the painter now
+/// makes.
 class _Swatch extends StatelessWidget {
-  const _Swatch({required this.color, this.border, this.gradient});
+  const _Swatch({required this.paint});
 
-  final Color color;
-  final Color? border;
-
-  /// Washed over [color] rather than replacing it, exactly as the grid painter
-  /// lays the cheat cell down: the wash is translucent and needs the base.
-  final Gradient? gradient;
+  final HeatmapCellPaint paint;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(HeatmapLegend._radius);
+    final stroke = paint.stroke;
     return Container(
       width: HeatmapLegend._swatch,
       height: HeatmapLegend._swatch,
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: radius,
-        border: border == null ? null : Border.all(color: border!),
+        color: paint.fill,
+        gradient: paint.gradient,
+        borderRadius: BorderRadius.circular(heatmapCellRadius),
+        border: stroke == null ? null : Border.all(color: stroke),
       ),
-      // TWO passes, exactly as `HeatmapGridPainter` lays the cheat cell down:
-      // the base fill, then the wash over it. Not `BoxDecoration.gradient` —
-      // that IGNORES `color`, so the 0.92 aurora would composite onto the card
-      // instead of onto the warm base and the swatch would quietly stop
-      // matching the cell it explains.
-      foregroundDecoration:
-          gradient == null
-              ? null
-              : BoxDecoration(gradient: gradient, borderRadius: radius),
     );
   }
 }

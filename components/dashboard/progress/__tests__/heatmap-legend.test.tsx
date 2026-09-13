@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { HEATMAP_CHEAT } from '../heatmap-colors';
+import { HEATMAP_CELL_PAINTS } from '../heatmap-colors';
 import { HeatmapLegend } from '../heatmap-legend';
 
 describe('HeatmapLegend', () => {
@@ -26,12 +26,12 @@ describe('HeatmapLegend', () => {
     const swatch = screen.getByText('cheatDay').previousElementSibling;
     // Two layers, as the cell uses: the wash is translucent, so it rides on
     // the base as backgroundImage rather than replacing it.
-    // toHaveStyle, not a string compare on style.backgroundImage: jsdom
-    // re-serialises `rgb(r g b / a)` to legacy `rgba(r, g, b, a)`, so the raw
-    // property never equals the source literal even when it is the same paint.
+    // The swatch must carry the SAME paint record the grid cell consumes, not
+    // an equal-looking one assembled here — assembling is what let this legend
+    // omit two cell kinds and draw a third wrongly.
     expect(swatch).toHaveStyle({
-      backgroundColor: HEATMAP_CHEAT.fill,
-      backgroundImage: HEATMAP_CHEAT.gradient,
+      backgroundColor: HEATMAP_CELL_PAINTS.cheat.backgroundColor,
+      backgroundImage: HEATMAP_CELL_PAINTS.cheat.backgroundImage,
     });
     // Ringless, because the cell is ringless — being the grid's only gradient
     // is what earns that.

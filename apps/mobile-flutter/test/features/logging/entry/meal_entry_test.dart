@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +16,8 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import '../../../l10n_test_loader.dart';
+
+import '../../../app_fonts.dart';
 
 /// The two widths the card has to survive: a 390pt phone (iPhone 14/15) and a
 /// 320pt one (SE / small Android). Both are the DEVICE width — the card's own
@@ -114,12 +114,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
     // Measure against the real typeface. With the test font (every glyph one em
     // wide) these widths are fiction, and every claim here is about real ones.
-    final loader = FontLoader('BeVietnamPro')..addFont(
-      File(
-        'assets/google_fonts/BeVietnamPro-Regular.ttf',
-      ).readAsBytes().then(ByteData.sublistView),
-    );
-    await loader.load();
+    // Was a hand-rolled loader for Regular ALONE: this file makes real-glyph
+    // width assertions, and a missing face is substituted silently.
+    await loadAppFonts();
   });
 
   for (final width in [_phone390, _phone320]) {
@@ -181,7 +178,12 @@ void main() {
     const drifting = ParsedMeal(
       mealName: 'Bữa tối',
       // The server's figure. The three items below sum to 490.
-      totalMacros: MacroBreakdown(calories: 489, protein: 30, carbs: 60, fat: 10),
+      totalMacros: MacroBreakdown(
+        calories: 489,
+        protein: 30,
+        carbs: 60,
+        fat: 10,
+      ),
       items: [
         MealItem(
           id: 'd1',
@@ -211,20 +213,22 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       _wrap(
-        MealEntry(
-          parsedMeal: drifting,
-          rawInput: 'ba món',
-          onConfirm: (_) {},
-        ),
+        MealEntry(parsedMeal: drifting, rawInput: 'ba món', onConfirm: (_) {}),
         width: _phone390,
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('489 kcal'), findsOneWidget,
-        reason: 'the staged card must show the server total');
-    expect(find.text('490 kcal'), findsNothing,
-        reason: 'round-then-sum drift is back');
+    expect(
+      find.text('489 kcal'),
+      findsOneWidget,
+      reason: 'the staged card must show the server total',
+    );
+    expect(
+      find.text('490 kcal'),
+      findsNothing,
+      reason: 'round-then-sum drift is back',
+    );
   });
 
   group('the total tracks what will actually be SUBMITTED', () {
@@ -232,7 +236,12 @@ void main() {
     /// test above).
     const drifting = ParsedMeal(
       mealName: 'Bữa tối',
-      totalMacros: MacroBreakdown(calories: 489, protein: 30, carbs: 60, fat: 10),
+      totalMacros: MacroBreakdown(
+        calories: 489,
+        protein: 30,
+        carbs: 60,
+        fat: 10,
+      ),
       items: [
         MealItem(
           id: 'd1',
@@ -309,7 +318,9 @@ void main() {
     });
   });
 
-  testWidgets('a re-staged analysis replaces the card\'s items', (tester) async {
+  testWidgets('a re-staged analysis replaces the card\'s items', (
+    tester,
+  ) async {
     // StagedMealCard is keyed by `pending.id`, and analysis_run REUSES the
     // attemptId for a retry / cheat-clarify — so a re-staged analysis arrives
     // at the SAME card with a new parsedMeal. Without didUpdateWidget the
@@ -319,7 +330,12 @@ void main() {
 
     const restaged = ParsedMeal(
       mealName: 'Bữa trưa',
-      totalMacros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+      totalMacros: MacroBreakdown(
+        calories: 300,
+        protein: 20,
+        carbs: 30,
+        fat: 8,
+      ),
       items: [
         MealItem(
           id: 'r1',
@@ -473,11 +489,7 @@ void main() {
     testWidgets('the live turn still staggers its rows in', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          MealEntry(
-            parsedMeal: _meal,
-            rawInput: 'cơm gà',
-            onConfirm: (_) {},
-          ),
+          MealEntry(parsedMeal: _meal, rawInput: 'cơm gà', onConfirm: (_) {}),
           width: 390,
         ),
       );
@@ -495,7 +507,12 @@ void main() {
     // on ids and amounts alone called that "unchanged".
     const one = ParsedMeal(
       mealName: 'Bữa trưa',
-      totalMacros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+      totalMacros: MacroBreakdown(
+        calories: 300,
+        protein: 20,
+        carbs: 30,
+        fat: 8,
+      ),
       items: [
         MealItem(
           id: 'r1',
@@ -510,7 +527,12 @@ void main() {
     // Matching on ids, quantities and calories alone saw no change at all.
     const reEstimated = ParsedMeal(
       mealName: 'Bữa trưa',
-      totalMacros: MacroBreakdown(calories: 300, protein: 44, carbs: 30, fat: 8),
+      totalMacros: MacroBreakdown(
+        calories: 300,
+        protein: 44,
+        carbs: 30,
+        fat: 8,
+      ),
       items: [
         MealItem(
           id: 'r1',
@@ -560,7 +582,9 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(card(one, loggedAt: DateTime(2026, 8, 11, 12, 15)));
+      await tester.pumpWidget(
+        card(one, loggedAt: DateTime(2026, 8, 11, 12, 15)),
+      );
       await tester.pumpAndSettle();
       expect(find.textContaining('12:15'), findsOneWidget);
 
@@ -636,7 +660,12 @@ void main() {
     const vessel = PieceVessel(tier: 3, count: 1, kind: PieceKind.fish);
     const before = ParsedMeal(
       mealName: 'Bữa tối',
-      totalMacros: MacroBreakdown(calories: 300, protein: 30, carbs: 4, fat: 18),
+      totalMacros: MacroBreakdown(
+        calories: 300,
+        protein: 30,
+        carbs: 4,
+        fat: 18,
+      ),
       items: [
         MealItem(
           id: 'p1',
@@ -650,7 +679,12 @@ void main() {
     );
     const restaged = ParsedMeal(
       mealName: 'Bữa tối',
-      totalMacros: MacroBreakdown(calories: 520, protein: 52, carbs: 7, fat: 31),
+      totalMacros: MacroBreakdown(
+        calories: 520,
+        protein: 52,
+        carbs: 7,
+        fat: 31,
+      ),
       items: [
         MealItem(
           id: 'p1',
@@ -672,11 +706,12 @@ void main() {
       _wrap(
         ValueListenableBuilder<ParsedMeal>(
           valueListenable: meal,
-          builder: (_, value, _) => MealEntry(
-            parsedMeal: value,
-            rawInput: 'cá kho',
-            onConfirm: (_) {},
-          ),
+          builder:
+              (_, value, _) => MealEntry(
+                parsedMeal: value,
+                rawInput: 'cá kho',
+                onConfirm: (_) {},
+              ),
         ),
         width: _phone390,
       ),

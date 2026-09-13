@@ -1,12 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/core/ui/cn';
 import {
-  HEATMAP_CHEAT,
-  HEATMAP_COLORS,
-  HEATMAP_RAMP,
+  HEATMAP_CELL_PAINTS,
+  HEATMAP_CELL_RADIUS_CLASS,
+  type HeatmapCellPaint,
   heatmapLegendSwatches,
-  heatmapScaleAt,
+  heatmapTierPaint,
 } from './heatmap-colors';
 
 /**
@@ -35,43 +36,48 @@ export function HeatmapLegend({ numWeeks }: { numWeeks: number }) {
         <span className="text-kallo-text-muted text-xs">{t('notLogged')}</span>
         <span className="flex items-center gap-[3px]">
           {heatmapLegendSwatches().map((swatch) => (
-            <span
-              className="size-3 rounded-[3px]"
-              key={swatch}
-              style={{ backgroundColor: swatch }}
-            />
+            <Swatch key={swatch} paint={{ backgroundColor: swatch }} />
           ))}
         </span>
         <span className="text-kallo-text-muted text-xs">{t('onTarget')}</span>
       </span>
-      <span className="flex items-center gap-1.5">
-        <span
-          className="size-3 rounded-[3px]"
-          style={{ backgroundColor: HEATMAP_COLORS.over }}
-        />
-        <span className="text-kallo-text-muted text-xs">{t('overTarget')}</span>
-      </span>
-      {/* The wash rides ON the base as backgroundImage over backgroundColor,
-          the same two layers the cell uses — and ringless, because the cell is
-          ringless. Read from HEATMAP_CHEAT so the two cannot drift. */}
-      <span className="flex items-center gap-1.5">
-        <span
-          className="size-3 rounded-[3px]"
-          style={{
-            backgroundColor: HEATMAP_CHEAT.fill,
-            backgroundImage: HEATMAP_CHEAT.gradient,
-          }}
-        />
-        <span className="text-kallo-text-muted text-xs">{t('cheatDay')}</span>
-      </span>
-      {/* The one actionable cell, and the grid's only ring. */}
-      <span className="flex items-center gap-1.5">
-        <span
-          className="size-3 rounded-[3px] border border-kallo-text-muted"
-          style={{ backgroundColor: heatmapScaleAt(HEATMAP_RAMP.awaiting) }}
-        />
-        <span className="text-kallo-text-muted text-xs">{t('partial')}</span>
-      </span>
+      {/* Each item asks the palette for the paint of the kind it names, rather
+          than assembling one from the raw tokens — assembling is what let this
+          key omit two cell kinds and draw a third wrongly. */}
+      <LegendItem
+        label={t('overTarget')}
+        paint={heatmapTierPaint('overTarget')}
+      />
+      <LegendItem label={t('cheatDay')} paint={HEATMAP_CELL_PAINTS.cheat} />
+      <LegendItem label={t('partial')} paint={HEATMAP_CELL_PAINTS.awaiting} />
     </div>
+  );
+}
+
+/** One cell, drawn as a swatch — same paint record the grid cell consumes. */
+function Swatch({ paint }: { paint: HeatmapCellPaint }) {
+  return (
+    <span
+      className={cn('size-3', HEATMAP_CELL_RADIUS_CLASS, paint.ringClass)}
+      style={{
+        backgroundColor: paint.backgroundColor,
+        backgroundImage: paint.backgroundImage,
+      }}
+    />
+  );
+}
+
+function LegendItem({
+  label,
+  paint,
+}: {
+  label: string;
+  paint: HeatmapCellPaint;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <Swatch paint={paint} />
+      <span className="text-kallo-text-muted text-xs">{label}</span>
+    </span>
   );
 }

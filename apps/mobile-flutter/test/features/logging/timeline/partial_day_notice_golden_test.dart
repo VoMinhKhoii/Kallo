@@ -1,12 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/timeline/partial_day_notice.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 
-import '../../../app_fonts.dart';
 import '../../../golden_tolerance.dart';
 import '../../../l10n_test_loader.dart';
 
@@ -51,17 +49,7 @@ Widget _host(Locale locale) => EasyLocalization(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('plugins.flutter.io/shared_preferences'),
-          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-        );
-    await EasyLocalization.ensureInitialized();
-    await loadAppFonts();
-    await loadIconFonts();
-    useTolerantGoldens();
-  });
+  setUpGoldens();
 
   for (final locale in [const Locale('vi'), const Locale('en')]) {
     testWidgets('notice — ${locale.languageCode}', (tester) async {
@@ -79,6 +67,6 @@ void main() {
           'goldens/partial_day_notice_${locale.languageCode}.png',
         ),
       );
-    });
+    }, skip: skipOffGoldenPlatform);
   }
 }

@@ -1,12 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/macros/macro_trio.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
+
+import '../../../app_fonts.dart';
 
 /// The width a meal row actually gets inside the card on a 390pt phone: the
 /// feed's gutter plus the card's own padding. Every claim below is about that
@@ -78,12 +77,9 @@ void main() {
   setUpAll(() async {
     // Measure against the real typeface. With the test font (every glyph one em
     // wide) these widths are fiction, and the whole point here is real widths.
-    final loader = FontLoader('BeVietnamPro')..addFont(
-      File(
-        'assets/google_fonts/BeVietnamPro-Regular.ttf',
-      ).readAsBytes().then(ByteData.sublistView),
-    );
-    await loader.load();
+    // Was a hand-rolled loader for Regular ALONE: this file makes real-glyph
+    // width assertions, and a missing face is substituted silently.
+    await loadAppFonts();
   });
 
   testWidgets('keeps the unit on a three-digit kcal figure', (tester) async {

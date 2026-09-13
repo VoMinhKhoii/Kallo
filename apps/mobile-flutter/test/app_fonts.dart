@@ -3,6 +3,15 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Every weight `pubspec.yaml` declares. Loading only 400/500 (as this did
+/// until 2026-09-13) does not fail — Flutter silently picks the nearest loaded
+/// face — so a w600 title renders as Medium, which is both the wrong advance
+/// for a width assertion and the wrong rasterisation for a golden.
+/// Under-loading is invisible until something compares pixels, which is why
+/// `app_fonts_test.dart` asserts this list against the pubspec rather than
+/// trusting this comment.
+const appFontWeights = ['Regular', 'Medium', 'SemiBold', 'Bold'];
+
 /// Loads the app's real bundled font into the test binding.
 ///
 /// **Call this in any test that measures or asserts on text WIDTH.** Without
@@ -15,16 +24,9 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// Height assertions are safe without it: the calm type tokens all set an
 /// explicit `height` multiplier, so line boxes are font-independent.
-/// All four declared weights, matching `pubspec.yaml`. Loading only 400/500
-/// (as this did until 2026-09-13) does not fail — Flutter silently picks the
-/// nearest loaded face — so a w600 title renders as Medium, which is both the
-/// wrong advance for a width assertion and the wrong rasterisation for a
-/// golden. Under-loading is invisible until something compares pixels.
-const _weights = ['Regular', 'Medium', 'SemiBold', 'Bold'];
-
 Future<void> loadAppFonts() async {
   final loader = FontLoader('BeVietnamPro');
-  for (final weight in _weights) {
+  for (final weight in appFontWeights) {
     loader.addFont(
       rootBundle.load('assets/google_fonts/BeVietnamPro-$weight.ttf'),
     );
@@ -42,15 +44,19 @@ Future<void> loadAppFonts() async {
 ///
 /// The family carries the `packages/<pkg>/` prefix because the icons declare a
 /// `fontPackage`; that prefixed name is what the engine resolves at paint time.
+///
+/// Loads the 300 weight only — the app also draws `*400` icons (the tab bar's
+/// `plus400`, `house400`), so a golden over one of THOSE surfaces needs its
+/// face added here or it bakes in tofu exactly as this function exists to
+/// prevent. Kept to what the current goldens render: the Lucide faces are
+/// ~455KB each, more than all four text weights combined.
 Future<void> loadIconFonts() async {
+  const family = 'Lucide300';
+  const asset = 'LucideVariable-w300';
   const package = 'lucide_icons_flutter';
-  // The app draws the 300 weight (`LucideIcons.check300`, `x300`).
-  const weights = {'Lucide300': 'LucideVariable-w300'};
-  for (final entry in weights.entries) {
-    final loader = FontLoader('packages/$package/${entry.key}');
-    loader.addFont(
-      rootBundle.load('packages/$package/assets/build_font/${entry.value}.ttf'),
-    );
-    await loader.load();
-  }
+  final loader = FontLoader('packages/$package/$family');
+  loader.addFont(
+    rootBundle.load('packages/$package/assets/build_font/$asset.ttf'),
+  );
+  await loader.load();
 }
