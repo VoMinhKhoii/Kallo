@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Golden-test diagnostic output: generateFailureOutput writes the master/test/
+# diff PNGs beside the golden on a failure. Useful locally, never a commit —
+# and a stale failures/ next to a passing golden reads as an unfixed bug.
+test/**/failures/
