@@ -15,6 +15,7 @@ class PortionSeat {
     required this.initials,
     required this.label,
     required this.parts,
+    this.colorIndex,
   });
 
   final String id;
@@ -26,6 +27,11 @@ class PortionSeat {
   final String label;
 
   final int parts;
+
+  /// Which seat colour to wear. Defaults to the seat's position, which is what
+  /// the split meter wants; the whole-portion tab sets it explicitly because
+  /// each person there sits alone in their own battery.
+  final int? colorIndex;
 }
 
 /// Seat colours, in the order people join. Seat 0 is always you.
@@ -113,6 +119,10 @@ class _PortionBatteryState extends State<PortionBattery> {
   List<int> get _parts =>
       _draft ?? widget.seats.map((s) => s.parts).toList(growable: false);
 
+  /// The dish as drawn — kTotalParts on the split meter, one battery's own
+  /// cell count on the whole-portion tab.
+  int get _dishParts => _parts.reduce((a, b) => a + b);
+
   void _onDragStart(int boundary) {
     HapticFeedback.lightImpact();
     setState(() {
@@ -122,7 +132,7 @@ class _PortionBatteryState extends State<PortionBattery> {
   }
 
   void _onDragUpdate(int boundary, double localX, double trackWidth) {
-    final perPart = trackWidth / kTotalParts;
+    final perPart = trackWidth / _dishParts;
     if (perPart <= 0) return;
     final desired = (localX / perPart).round();
     final next = partsAfterDrag(
@@ -224,7 +234,7 @@ class _PortionBatteryState extends State<PortionBattery> {
     for (var i = 0; i <= boundary; i++) {
       leftParts += parts[i];
     }
-    final perPart = trackWidth / kTotalParts;
+    final perPart = trackWidth / _dishParts;
     // +6 for the shell's border and padding, so the grip lands on the seam
     // between two cells rather than on the shell's outer edge.
     final centre = 6 + leftParts * perPart;
@@ -321,7 +331,8 @@ class _Shell extends StatelessWidget {
   Widget build(BuildContext context) {
     final cells = <Widget>[];
     for (var seat = 0; seat < parts.length; seat++) {
-      final color = kSeatColors[seat % kSeatColors.length];
+      final color =
+          kSeatColors[(seats[seat].colorIndex ?? seat) % kSeatColors.length];
       for (var i = 0; i < parts[seat]; i++) {
         cells.add(
           Expanded(
@@ -386,6 +397,8 @@ class _PinRow extends StatelessWidget {
   final double? totalKcal;
   final ValueChanged<int>? onRemove;
 
+  int get _dishParts => parts.reduce((a, b) => a + b);
+
   @override
   Widget build(BuildContext context) {
     // Deliberately NOT a fixed height: the kcal line grows with Dynamic Type
@@ -398,11 +411,11 @@ class _PinRow extends StatelessWidget {
             flex: parts[seat],
             child: _Pin(
               key: ValueKey('pin-${seats[seat].id}'),
-              seat: seat,
+              seat: seats[seat].colorIndex ?? seat,
               initials: seats[seat].initials,
               kcal: totalKcal == null
                   ? null
-                  : (totalKcal! * parts[seat] / kTotalParts).round(),
+                  : (totalKcal! * parts[seat] / _dishParts).round(),
               onRemove:
                   seat == 0 || onRemove == null ? null : () => onRemove!(seat),
             ),
@@ -506,6 +519,53 @@ class _Pin extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+      ],
+    );
+  }
+}
+
+/// The whole-portion tab's meter: one FULL battery per person.
+///
+/// A divided bar would lie here — nothing is being split, so nothing is drawn
+/// split. Each battery holds `kTotalParts ~/ n` cells so a cell is exactly the
+/// width it is on the split meter, which is what lets the two states morph into
+/// each other instead of cross-fading.
+class WholePortionBatteries extends StatelessWidget {
+  const WholePortionBatteries({
+    super.key,
+    required this.seats,
+    required this.totalKcal,
+  });
+
+  final List<PortionSeat> seats;
+  final double? totalKcal;
+
+  @override
+  Widget build(BuildContext context) {
+    final per = kTotalParts ~/ seats.length;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var seat = 0; seat < seats.length; seat++) ...[
+          if (seat > 0) const SizedBox(width: KalloSpacing.sp3),
+          Expanded(
+            child: PortionBattery(
+              key: ValueKey('whole-${seats[seat].id}'),
+              // A party of one, holding the whole of its own battery.
+              seats: [
+                PortionSeat(
+                  id: seats[seat].id,
+                  initials: seats[seat].initials,
+                  label: seats[seat].label,
+                  parts: per,
+                  colorIndex: seat,
+                ),
+              ],
+              totalKcal: totalKcal,
+              interactive: false,
+            ),
+          ),
+        ],
       ],
     );
   }

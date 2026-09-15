@@ -1598,26 +1598,32 @@
       "shareCardTitle": "Bữa ăn của tôi trên Kallo"
     },
     "shareMeal": {
-      "title": "Chia sẻ bữa ăn này",
-      "description": "Chọn những người bạn đã ăn cùng. Họ sẽ nhận được lời mời để thêm vào nhật ký của mình.",
+      "title": "Chia sẻ bữa ăn",
       "mode": {
-        "copy": {
-          "label": "Cùng một món",
-          "hint": "Mỗi người ghi trọn phần món ăn."
-        },
-        "split": {
-          "label": "Chia phần",
-          "hint": "Chia đều một món cho mỗi người."
-        }
+        "whole": "Nguyên phần",
+        "split": "Chia phần"
       },
-      "splitPreview": "Phần của bạn giảm còn {portion} ngay bây giờ — mỗi người một phần bằng nhau.",
-      "loadingFriends": "Đang tải danh sách bạn bè…",
-      "noFriends": "Chưa có ai trong danh sách. Hãy thêm bạn trước.",
-      "submitEmpty": "Chọn một người bạn",
+      "addSectionTitle": "Thêm bạn bè",
+      "allAdded": "Đã thêm tất cả bạn bè.",
+      "pickSomeone": "Thêm một người bạn để chia sẻ bữa này.",
+      "splitEvenly": "Chia đều",
+      "you": "Bạn",
+      "youInitial": "Bạn",
       "submit": {
-        "one": "Gửi cho {count} người bạn",
-        "other": "Gửi cho {count} người bạn"
+        "one": "Chia sẻ với {count} người · còn {kcal} kcal",
+        "other": "Chia sẻ với {count} người · còn {kcal} kcal"
       },
+      "submitNoKcal": {
+        "one": "Chia sẻ với {count} người",
+        "other": "Chia sẻ với {count} người"
+      },
+      "submitEmpty": "Chọn một người bạn",
+      "undo": "Hoàn tác",
+      "undoFailed": "Không hoàn tác được — có thể ai đó đã nhận phần rồi.",
+      "emptyTitle": "Chưa có ai trong danh sách",
+      "emptyBody": "Thêm một người bạn để có thể chia sẻ bữa ăn với họ.",
+      "addFriends": "Thêm bạn bè",
+      "loadingFriends": "Đang tải danh sách bạn bè…",
       "copySuccess": {
         "one": "Đã gửi cho {count} người bạn",
         "other": "Đã gửi cho {count} người bạn"

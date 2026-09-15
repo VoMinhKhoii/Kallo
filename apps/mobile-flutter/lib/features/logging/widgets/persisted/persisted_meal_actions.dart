@@ -47,7 +47,7 @@ class PersistedMealActions extends StatelessWidget {
           MealActionIconButton(
             icon: LucideIcons.userPlus300,
             label: 'logging.persistedMealCard.shareWithFriends'.tr(),
-            onTap: () => showShareMealSheet(context, meal.id),
+            onTap: () => showShareMealSheet(context, meal),
           ),
         const Spacer(),
         PersistedMealShareToCircleButton(mealId: meal.id, share: meal.share),
