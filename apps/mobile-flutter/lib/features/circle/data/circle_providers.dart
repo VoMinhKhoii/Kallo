@@ -295,16 +295,42 @@ Future<void> shareMealWithFriends(
   required String mealId,
   required List<String> friendUserIds,
   required String mode, // 'copy' | 'split'
+  /// Uneven split only: my own run in parts of a 20-part dish. Omit for the
+  /// even 1/(N+1) split the server has always done.
+  int? myParts,
+  /// Uneven split only: one entry per recipient, `{userId, parts}`. Must cover
+  /// every id in [friendUserIds] and sum with [myParts] to exactly 20.
+  List<Map<String, Object>>? splits,
 }) async {
   final api = ref.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/groups/meal-share', {
     'mealId': mealId,
     'friendUserIds': friendUserIds,
     'mode': mode,
+    if (myParts != null) 'myParts': myParts,
+    if (splits != null) 'splits': splits,
   });
   ref.invalidate(loggingDayProvider);
   // The dashboard reads its ring off a separate bundle/day cache — invalidate
   // it too or the Today card + week-strip ring keep the pre-split total.
+  ref.invalidate(dashboardBundleProvider);
+  ref.invalidate(dashboardDayProvider);
+  ref.invalidate(circleFeedProvider);
+}
+
+/// Undo a split (`POST /api/v1/groups/meal-share/undo`) — restores my meal to
+/// a full portion and withdraws the offers. Refused server-side once anyone has
+/// accepted, so the toast's five seconds are UX rather than the real guard.
+///
+/// Invalidates exactly what the share did: an undo has to put every surface the
+/// share touched back, not just the one in front of the user.
+Future<void> undoMealShare(WidgetRef ref, String mealId) async {
+  final api = ref.read(apiClientProvider);
+  await api.post<Map<String, dynamic>>(
+    '/api/v1/groups/meal-share/undo',
+    {'mealId': mealId},
+  );
+  ref.invalidate(loggingDayProvider);
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
   ref.invalidate(circleFeedProvider);
