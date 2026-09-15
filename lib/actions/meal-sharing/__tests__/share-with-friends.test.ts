@@ -326,6 +326,154 @@ describe('shareMealWithFriendsAction', () => {
     expect(invites).toHaveLength(2);
   });
 
+  it('even split writes copy_factor 1, so accept stays a verbatim copy', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]);
+    queueWhereSelect([friendEdge]);
+    queueLimitSelect([]);
+    installUpdate({});
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'split',
+    });
+
+    const invites = captured.invites.vals as Array<Record<string, unknown>>;
+    // This is the compatibility guarantee: pre-existing rows default to 1 and
+    // every even split keeps producing 1, so accept behaves exactly as shipped.
+    expect(invites[0]?.copyFactor).toBe(1);
+  });
+
+  it('uneven split: 13 parts to me, 7 to them', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]);
+    queueWhereSelect([friendEdge]);
+    queueLimitSelect([]);
+
+    const setValues: Record<string, unknown>[] = [];
+    installUpdate({ captures: setValues });
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    const result = await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'split',
+      myParts: 13,
+      splits: [{ userId: UUID_FRIEND, parts: 7 }],
+    });
+
+    // I keep 13/20 of the dish.
+    expect(result.portionFactor).toBeCloseTo(0.65, 6);
+    const mealUpdate = setValues[1];
+    expect(mealUpdate?.portionFactor).toBeCloseTo(0.65, 6);
+
+    const invites = captured.invites.vals as Array<Record<string, unknown>>;
+    // Their share of the ORIGINAL dish — the inbox label.
+    expect(Number(invites[0]?.portionFactor)).toBeCloseTo(0.35, 6);
+    // …and what accept multiplies my already-scaled meal by: 7/13, NOT 0.35.
+    // Conflating the two is the bug an uneven split would otherwise ship.
+    expect(invites[0]?.copyFactor).toBeCloseTo(7 / 13, 6);
+  });
+
+  it('uneven split: three people, unequal runs', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]);
+    queueWhereSelect([
+      friendEdge,
+      { userLow: UUID_FRIEND_2, userHigh: mockUser.id },
+    ]);
+    queueLimitSelect([]);
+    installUpdate({});
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    const result = await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND, UUID_FRIEND_2],
+      mode: 'split',
+      myParts: 10,
+      splits: [
+        { userId: UUID_FRIEND, parts: 6 },
+        { userId: UUID_FRIEND_2, parts: 4 },
+      ],
+    });
+
+    expect(result.portionFactor).toBeCloseTo(0.5, 6);
+    const invites = captured.invites.vals as Array<Record<string, unknown>>;
+    const byUser = new Map(
+      invites.map((i) => [i.toUserId as string, i])
+    );
+    expect(Number(byUser.get(UUID_FRIEND)?.portionFactor)).toBeCloseTo(0.3, 6);
+    expect(byUser.get(UUID_FRIEND)?.copyFactor).toBeCloseTo(0.6, 6);
+    expect(Number(byUser.get(UUID_FRIEND_2)?.portionFactor)).toBeCloseTo(0.2, 6);
+    expect(byUser.get(UUID_FRIEND_2)?.copyFactor).toBeCloseTo(0.4, 6);
+  });
+
+  it('rejects parts that do not sum to the whole dish', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]);
+    queueWhereSelect([friendEdge]);
+
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+        myParts: 12,
+        splits: [{ userId: UUID_FRIEND, parts: 7 }], // 19, not 20
+      })
+    ).rejects.toThrow('bằng cả bữa ăn');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a run under the floor', async () => {
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+        myParts: 19,
+        splits: [{ userId: UUID_FRIEND, parts: 1 }],
+      })
+      // Caught by zod's per-field min(2) before the transaction even opens.
+    ).rejects.toThrow();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects parts on a copy — only a split divides anything', async () => {
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'copy',
+        myParts: 13,
+        splits: [{ userId: UUID_FRIEND, parts: 7 }],
+      })
+    ).rejects.toThrow();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects parts for someone who was not selected', async () => {
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+        myParts: 13,
+        splits: [{ userId: UUID_FRIEND_2, parts: 7 }],
+      })
+    ).rejects.toThrow();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
   it('rejects a split when a selected friend already accepted this meal', async () => {
     // Copy-then-split path: the friend accepted a copy earlier; a split would
     // scale the sender's meal while the protected upsert creates no new offer.
