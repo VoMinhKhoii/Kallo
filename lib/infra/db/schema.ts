@@ -1356,10 +1356,20 @@ export const mealShareInvites = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     mode: text('mode').notNull(),
-    // Fraction of the source meal the recipient receives: 1 for a full copy,
-    // 1/(participants) for a split. Stored so the inbox can label "½ portion"
-    // and accept scales the copied rows by exactly this factor.
+    // Fraction of the ORIGINAL meal the recipient receives: 1 for a full copy,
+    // parts/20 for a split. Display only — the inbox labels "35%" from this.
     portionFactor: numeric('portion_factor').notNull().default('1'),
+    // What accept multiplies the SOURCE meal by. The sender's meal is already
+    // scaled to their own run by the time an invite exists, so this is a ratio
+    // between two runs, not a fraction of the dish — and the two differ the
+    // moment a split is uneven.
+    //
+    // Default 1 is compatibility, not a placeholder: an even split yields
+    // exactly 1, which is the verbatim copy the shipped accept path performs.
+    // Every pre-existing row is correct unchanged; there is no backfill.
+    copyFactor: numeric('copy_factor', { mode: 'number' })
+      .notNull()
+      .default(1),
     status: text('status').notNull().default('pending'),
     // The meal materialized in the recipient's diary once accepted (NULL until).
     acceptedMealId: uuid('accepted_meal_id').references(() => meals.id, {
@@ -1384,6 +1394,11 @@ export const mealShareInvites = pgTable(
     check(
       'meal_share_invites_mode_check',
       sql`${table.mode} IN ('copy', 'split')`
+    ),
+    // A factor of zero or below is not a share, it is a deletion.
+    check(
+      'meal_share_invites_copy_factor_check',
+      sql`${table.copyFactor} > 0`
     ),
     check(
       'meal_share_invites_status_check',
