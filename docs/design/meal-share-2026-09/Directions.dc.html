@@ -1,0 +1,508 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Kallo — Share a meal: how native do we go</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Lora:ital,wght@0,400;1,300&display=swap">
+<style>
+:root{
+  --canvas:#F8F7F4; --elev:#FFFFFF; --hover:#F0EAE0; --track:#EDECE7;
+  --ink:#141413; --muted:#7A7870; --soft:#3D3D3A;
+  --accent:#C9A87C; --accent10:rgba(201,168,124,.10); --accent20:rgba(201,168,124,.20);
+  --accent50:rgba(201,168,124,.50); --accentDark:#B89968;
+  --border:#E2DFD4; --borderSoft:rgba(226,223,212,.6); --borderFaint:rgba(226,223,212,.3);
+  --btn:#695E4E; --sage:#7ca368; --terra:#d37b69;
+}
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{margin:0;background:#EFEDE7;color:var(--ink);
+  font-family:'Be Vietnam Pro',ui-sans-serif,system-ui,sans-serif;font-size:13px}
+.board{width:3040px;padding:34px 40px 60px}
+h1{font-family:Lora,serif;font-weight:400;font-size:30px;margin:0 0 4px;letter-spacing:-.3px}
+h1 em{font-style:italic;font-weight:300;color:var(--accent)}
+.sub{font-size:14px;color:var(--muted);margin:0 0 30px;max-width:900px;line-height:1.55}
+.band{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  margin:38px 0 4px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.bandnote{font-size:13px;color:var(--muted);margin:9px 0 20px;line-height:1.5}
+.row{display:flex;gap:26px;align-items:flex-start}
+.cell{width:390px}
+.cap{font-size:12px;color:var(--muted);margin:11px 2px 0;line-height:1.45}
+.cap b{color:var(--ink);font-weight:600}
+
+/* ---- phone frame ---- */
+.phone{width:390px;height:790px;border-radius:46px;background:#111;padding:9px;
+  box-shadow:0 20px 44px rgba(20,20,19,.20),0 2px 5px rgba(20,20,19,.14);position:relative}
+.screen{width:100%;height:100%;border-radius:38px;background:var(--canvas);overflow:hidden;position:relative}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:28px;
+  border-radius:16px;background:#111;z-index:9}
+.sbar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 26px 4px;font-size:13px;font-weight:600}
+.homebar{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:132px;height:5px;
+  border-radius:3px;background:rgba(20,20,19,.26)}
+.dim{position:absolute;inset:0;background:rgba(20,20,19,.32);border-radius:38px}
+
+/* ---- sheet ---- */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--elev);
+  border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(20,20,19,.12);padding:0 0 26px}
+.grab{width:36px;height:4px;border-radius:2px;background:#DAD7CC;margin:9px auto 0}
+.sheettitle{font-size:16px;font-weight:600;letter-spacing:-.3px;text-align:center;padding:13px 0 12px}
+
+/* ---- app primitives ---- */
+.card{background:var(--elev);border-radius:18px;border:1px solid var(--borderSoft);padding:15px}
+.mealname{font-size:16px;line-height:1.3;letter-spacing:-.2px}
+.meta{font-size:14px;color:var(--muted);letter-spacing:-.1px}
+.val{font-size:16px}
+.cpt{font-size:12px;color:var(--muted)}
+.ink{color:var(--ink)}
+.acts{display:flex;align-items:center;gap:2px;margin-top:13px;padding-top:12px;border-top:1px solid var(--borderFaint)}
+.ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--muted)}
+.ic.on{background:var(--hover);color:var(--ink)}
+.ic svg{width:18px;height:18px;stroke-width:1.6;fill:none;stroke:currentColor;
+  stroke-linecap:round;stroke-linejoin:round}
+.spacer{flex:1}
+
+.modecard{flex:1;border-radius:14px;border:1px solid var(--borderSoft);background:var(--elev);padding:10px 12px}
+.modecard.sel{background:var(--accent10);border-color:var(--accent50)}
+.modecard .l{font-size:16px;line-height:1.3}
+.modecard .h{font-size:14px;color:var(--muted);margin-top:2px;line-height:1.3}
+
+.frow{display:flex;align-items:center;gap:12px;padding:9px 4px;border-radius:12px}
+.frow.sel{background:var(--hover)}
+.av{width:34px;height:34px;border-radius:50%;background:var(--accent20);display:grid;place-items:center;
+  font-size:13px;color:var(--soft);flex:none}
+.fname{font-size:16px;letter-spacing:-.2px;flex:1}
+.tick{width:22px;height:22px;border-radius:50%;border:1.4px solid var(--border);flex:none}
+.tick.on{background:var(--ink);border-color:var(--ink);display:grid;place-items:center}
+.tick.on svg{width:13px;height:13px;stroke:#fff;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+.cta{height:50px;border-radius:25px;background:var(--hover);display:flex;align-items:center;
+  justify-content:center;gap:8px;font-size:16px}
+.cta.off{opacity:.5}
+.cta svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;
+  background:var(--accent10);font-size:12px}
+.skel{height:14px;border-radius:7px;background:var(--track)}
+
+/* ---- callout ---- */
+.co{position:absolute;width:26px;height:26px;border-radius:50%;background:var(--terra);color:#fff;
+  font-size:13px;font-weight:600;display:grid;place-items:center;z-index:20;
+  box-shadow:0 2px 6px rgba(20,20,19,.3)}
+.co.good{background:var(--sage)}
+.leg{display:grid;grid-template-columns:30px 1fr;gap:10px 12px;align-items:start;max-width:560px}
+.leg .n{width:24px;height:24px;border-radius:50%;background:var(--terra);color:#fff;font-size:12px;
+  font-weight:600;display:grid;place-items:center;margin-top:1px}
+.leg .n.good{background:var(--sage)}
+.leg p{margin:0;font-size:13px;line-height:1.55;color:var(--soft)}
+.leg p b{color:var(--ink);font-weight:600}
+.leg p code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;color:var(--muted)}
+
+/* ---- the proposed portion split bar ---- */
+.splitbar{height:56px;border-radius:14px;overflow:hidden;display:flex;position:relative;
+  border:1px solid var(--borderSoft);background:var(--track)}
+.splitbar .mine{background:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center;
+  padding-left:13px;gap:1px}
+.splitbar .theirs{background:var(--accent);color:#fff;display:flex;flex-direction:column;justify-content:center;
+  align-items:flex-end;padding-right:13px;gap:1px}
+.splitbar .who{font-size:12px;opacity:.75;letter-spacing:.01em}
+.splitbar .pct{font-size:16px;letter-spacing:-.2px}
+.handle{position:absolute;top:0;bottom:0;width:26px;transform:translateX(-13px);display:grid;place-items:center;z-index:4}
+.handle i{display:block;width:7px;height:34px;border-radius:4px;background:#fff;
+  box-shadow:0 0 0 1px rgba(20,20,19,.22),0 2px 6px rgba(20,20,19,.34)}
+.splitbar.even .mine,.splitbar.even .theirs{opacity:.92}
+.readout{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);
+  letter-spacing:-.1px;margin-top:9px}
+.readout b{color:var(--ink);font-weight:400}
+.ticks{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted)}
+
+/* ---- browser frame (web) ---- */
+.win{width:1180px;border-radius:12px;overflow:hidden;background:#fff;
+  box-shadow:0 18px 40px rgba(20,20,19,.16),0 2px 4px rgba(20,20,19,.10)}
+.chrome{height:38px;background:#EAE7E0;display:flex;align-items:center;gap:7px;padding:0 13px;
+  border-bottom:1px solid var(--border)}
+.dot{width:11px;height:11px;border-radius:50%;background:#D5D1C8}
+.urlbar{flex:1;height:23px;border-radius:12px;background:#fff;margin-left:9px;
+  display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--muted)}
+.wbody{height:664px;background:var(--canvas);position:relative;overflow:hidden}
+.wrail{position:absolute;left:0;top:0;bottom:0;width:212px;background:#fff;border-right:1px solid var(--border);padding:20px 15px}
+.wmain{position:absolute;left:212px;right:0;top:0;bottom:0;padding:26px 34px}
+.wdim{position:absolute;inset:0;background:rgba(20,20,19,.34)}
+.dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:472px;background:#fff;
+  border-radius:14px;border:1px solid var(--borderSoft);box-shadow:0 24px 50px rgba(20,20,19,.24)}
+.railrow{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:9px;
+  font-size:14px;color:var(--muted)}
+.railrow.on{background:var(--hover);color:var(--ink)}
+.railrow svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wtitle{font-family:Lora,serif;font-size:22px;font-weight:400;letter-spacing:-.2px}
+.btnbrown{height:42px;border-radius:11px;background:var(--btn);color:#fff;display:flex;
+  align-items:center;justify-content:center;gap:8px;font-size:14px}
+.btnbrown.off{opacity:.5}
+.btnbrown svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btnghost{height:42px;border-radius:11px;border:1px solid var(--border);background:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:14px;color:var(--soft)}
+
+/* ---- direction board additions ---- */
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:44px}
+.navbar .t{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.navbar .a{font-size:16px}
+.navbar .a.off{color:var(--muted);opacity:.45}
+.glist{background:var(--elev);border-radius:16px;overflow:hidden}
+.grow{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:50px}
+.gsep{height:1px;background:var(--borderFaint);margin-left:14px}
+.gsep.full{margin-left:0}
+.gfoot{font-size:13px;color:var(--muted);line-height:1.4;padding:8px 16px 0}
+.ghead{font-size:14px;color:var(--muted);padding:0 4px 7px}
+.chk{width:18px;height:18px;flex:none}
+.chk svg{width:18px;height:18px;stroke:var(--ink);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.slider{height:30px;display:flex;align-items:center;position:relative}
+.strack{height:4px;border-radius:2px;background:var(--track);flex:1;position:relative}
+.sfill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--ink)}
+.sknob{position:absolute;top:50%;width:28px;height:28px;border-radius:50%;background:#fff;
+  transform:translate(-14px,-14px);box-shadow:0 1px 1px rgba(20,20,19,.10),0 3px 8px rgba(20,20,19,.22)}
+.bigpct{font-size:40px;line-height:1;letter-spacing:-1px}
+.ruler{height:64px;position:relative;border-top:1px solid var(--border)}
+.rticks{position:absolute;left:0;right:0;top:0;height:22px;
+  background-image:repeating-linear-gradient(to right,var(--border) 0 1px,transparent 1px 18px)}
+.rticks.tall{height:34px;background-image:repeating-linear-gradient(to right,var(--border) 0 1px,transparent 1px 90px)}
+.needle{position:absolute;top:-1px;left:50%;width:2px;height:40px;background:var(--ink);transform:translateX(-1px)}
+.rlab{position:absolute;top:42px;font-size:12px;color:var(--muted);transform:translateX(-50%)}
+.wide{height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;background:var(--hover)}
+.wide.off{opacity:.45}
+.wide.ghost{background:transparent;color:var(--muted)}
+.dirtag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.dirname{font-size:16px;font-weight:600;letter-spacing:-.2px;margin-bottom:3px}
+</style>
+</head>
+<body>
+<div class="board" style="width:2640px">
+<h1>Share a meal — <em>how native do we go</em></h1>
+<p class="sub">Four directions for the sender sheet, ordered by how much they defer to iOS convention over
+Kallo's own chrome. Every one of them drops the chips, pins a full-width action, and kills the two-card mode
+grid. Pick one — or mix: the header, the portion control and the list style are independent choices.</p>
+
+<div class="band">The four directions</div>
+<div class="row">
+
+  <!-- A -->
+  <div class="cell">
+    <div class="dirtag">Direction A</div><div class="dirname">System grouped</div>
+    <p class="cap" style="margin:0 0 12px">Defers hardest to iOS. No invented controls at all.</p>
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="sbar"><span>9:41</span><span>●●●</span></div>
+      <div class="navbar"><span class="a">Huỷ</span><span class="t">Chia sẻ bữa ăn</span><span class="a">Chia</span></div>
+      <div style="padding:8px 16px 0">
+        <div class="glist">
+          <div class="grow"><div class="mealname" style="flex:1">Bánh mì thịt nướng + trà đá</div><div class="meta">1.040 kcal</div></div>
+        </div>
+        <div class="ghead" style="padding-top:20px">Cách chia</div>
+        <div class="glist">
+          <div class="grow"><div class="mealname" style="flex:1">Bản sao</div></div>
+          <div class="gsep"></div>
+          <div class="grow"><div class="mealname" style="flex:1">Chia phần</div>
+            <div class="chk"><svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg></div></div>
+        </div>
+        <div class="gfoot">Một phần bữa, chia cho bạn và người bạn chọn.</div>
+        <div class="ghead" style="padding-top:18px">Phần của bạn</div>
+        <div class="glist">
+          <div class="grow" style="padding-bottom:4px"><div class="mealname" style="flex:1">Bạn giữ</div>
+            <div class="val">65%<span class="meta"> · 676 kcal</span></div></div>
+          <div class="grow" style="padding-top:0;min-height:0">
+            <div class="slider" style="flex:1"><div class="strack"><div class="sfill" style="width:65%"></div>
+              <div class="sknob" style="left:65%"></div></div></div>
+          </div>
+        </div>
+        <div class="gfoot">Mai Ngọc nhận 35% — 364 kcal. Bữa đã ghi của bạn sẽ giảm còn 676 kcal.</div>
+        <div class="ghead" style="padding-top:18px">Chia với</div>
+        <div class="glist">
+          <div class="grow"><div class="av">MN</div><div class="mealname" style="flex:1">Mai Ngọc</div>
+            <div class="chk"><svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg></div></div>
+          <div class="gsep" style="margin-left:60px"></div>
+          <div class="grow"><div class="av">TH</div><div class="mealname" style="flex:1">Thu Hà</div></div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+    <p class="cap"><b>Nav-bar action, grouped inset lists, trailing checkmarks, a stock slider.</b>
+    Mode becomes two list rows — exactly how Settings picks one of N. The consequence lives in a grouped-list
+    footer, which is the iOS slot for precisely this sentence. No sheet CTA at all: “Chia” is top-right.
+    <br><b>Cost:</b> tallest layout; the action moves to a 44pt corner target, which is further from the thumb.</p>
+  </div>
+
+  <!-- B -->
+  <div class="cell">
+    <div class="dirtag">Direction B</div><div class="dirname">Detent sheet, hero split</div>
+    <p class="cap" style="margin:0 0 12px">Kallo chrome, iOS bones. The division is the hero.</p>
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="sbar"><span>9:41</span><span>●●●</span></div>
+      <div class="dim"></div>
+      <div class="sheet" style="height:632px;padding-bottom:0">
+        <div class="grab"></div>
+        <div style="padding:16px 16px 0">
+          <div style="font-size:28px;font-weight:600;letter-spacing:-.6px;line-height:1.15">Chia sẻ bữa ăn</div>
+          <div class="meta" style="margin-top:5px">Bánh mì thịt nướng + trà đá · 1.040 kcal</div>
+          <div style="display:flex;height:40px;border-radius:20px;background:var(--track);padding:3px;margin-top:16px">
+            <div style="flex:1;display:grid;place-items:center;font-size:16px;color:var(--muted)">Bản sao</div>
+            <div style="flex:1;border-radius:17px;background:#fff;display:grid;place-items:center;font-size:16px;
+                 box-shadow:0 1px 3px rgba(20,20,19,.10)">Chia phần</div>
+          </div>
+          <div style="margin-top:18px">
+            <div class="splitbar" style="height:72px">
+              <div class="mine" style="width:65%"><div class="who">Bạn</div><div class="pct" style="font-size:22px">65%</div></div>
+              <div class="theirs" style="width:35%"><div class="who">Mai Ngọc</div><div class="pct" style="font-size:22px">35%</div></div>
+              <div class="handle" style="left:65%"><i></i></div>
+            </div>
+            <div class="readout"><span>Bạn giữ <b>676 kcal</b></span><span>Mai nhận <b>364 kcal</b></span></div>
+          </div>
+          <div class="meta" style="margin-top:20px">Chia với</div>
+          <div style="margin-top:2px">
+            <div class="frow" style="padding:11px 0"><div class="av">MN</div><div class="fname">Mai Ngọc</div>
+              <div class="chk"><svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg></div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:11px 0"><div class="av">TH</div><div class="fname">Thu Hà</div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:11px 0;opacity:.5"><div class="av">QA</div><div class="fname">Quốc Anh</div></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px 26px">
+          <div class="meta" style="margin-bottom:11px;text-align:center">Bữa đã ghi của bạn sẽ giảm còn 676 kcal.</div>
+          <div class="wide">Chia với Mai Ngọc</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+    <p class="cap"><b>Left-aligned 28pt title, subject on the meta line, full-width 52pt pill, hairline-separated
+    rows with trailing checkmarks.</b> No wash on the selected row, no chips anywhere. The bar carries 22pt
+    numbers so the split is legible at arm’s length.
+    <br><b>Cost:</b> the divider bar is a control iOS does not have, so it has to teach itself.</p>
+  </div>
+
+</div>
+
+<div class="row" style="margin-top:34px">
+
+  <!-- C -->
+  <div class="cell">
+    <div class="dirtag">Direction C</div><div class="dirname">House idiom — the portion ruler</div>
+    <p class="cap" style="margin:0 0 12px">Reuses the control the app already taught in Log.</p>
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="sbar"><span>9:41</span><span>●●●</span></div>
+      <div class="dim"></div>
+      <div class="sheet" style="height:640px;padding-bottom:0">
+        <div class="grab"></div>
+        <div style="padding:16px 16px 0">
+          <div style="font-size:28px;font-weight:600;letter-spacing:-.6px;line-height:1.15">Chia sẻ bữa ăn</div>
+          <div class="meta" style="margin-top:5px">Bánh mì thịt nướng + trà đá · 1.040 kcal</div>
+          <div style="display:flex;height:40px;border-radius:20px;background:var(--track);padding:3px;margin-top:16px">
+            <div style="flex:1;display:grid;place-items:center;font-size:16px;color:var(--muted)">Bản sao</div>
+            <div style="flex:1;border-radius:17px;background:#fff;display:grid;place-items:center;font-size:16px;
+                 box-shadow:0 1px 3px rgba(20,20,19,.10)">Chia phần</div>
+          </div>
+
+          <div style="margin-top:22px;text-align:center">
+            <div class="meta">Phần của bạn</div>
+            <div class="bigpct" style="margin-top:5px">65<span style="font-size:20px;letter-spacing:0">%</span></div>
+            <div class="meta" style="margin-top:4px">676 kcal · Mai nhận 364</div>
+          </div>
+          <div class="ruler" style="margin-top:14px">
+            <div class="rticks"></div><div class="rticks tall" style="left:9px"></div>
+            <div class="needle"></div>
+            <div class="rlab" style="left:22%">một nửa</div>
+            <div class="rlab" style="left:74%">gần hết</div>
+          </div>
+
+          <div class="meta" style="margin-top:22px">Chia với</div>
+          <div style="margin-top:2px">
+            <div class="frow" style="padding:11px 0"><div class="av">MN</div><div class="fname">Mai Ngọc</div>
+              <div class="chk"><svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg></div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:11px 0"><div class="av">TH</div><div class="fname">Thu Hà</div></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px 26px">
+          <div class="meta" style="margin-bottom:11px;text-align:center">Bữa đã ghi của bạn sẽ giảm còn 676 kcal.</div>
+          <div class="wide">Chia với Mai Ngọc</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+    <p class="cap"><b>The scrubbing ruler from <code>portion_ruler_control.dart</code>, unchanged.</b> Hero number,
+    hanging graduations, centred needle, a quiet note. The user has already learned this gesture when logging a
+    bowl of rice, so the split costs them nothing new — and we ship one portion control, not two.
+    <br><b>Cost:</b> shows only YOUR number; the friend’s share is prose, not geometry.</p>
+  </div>
+
+  <!-- D1 -->
+  <div class="cell">
+    <div class="dirtag">Direction D</div><div class="dirname">Two steps, one job each</div>
+    <p class="cap" style="margin:0 0 12px">A push inside the sheet. Step 1 of 2.</p>
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="sbar"><span>9:41</span><span>●●●</span></div>
+      <div class="dim"></div>
+      <div class="sheet" style="height:560px;padding-bottom:0">
+        <div class="grab"></div>
+        <div class="navbar"><span class="a">Huỷ</span><span class="t">Chia phần</span><span class="a off">Tiếp</span></div>
+        <div style="padding:8px 16px 0">
+          <div style="font-size:28px;font-weight:600;letter-spacing:-.6px;line-height:1.15">Chia với ai?</div>
+          <div class="meta" style="margin-top:5px">Bánh mì thịt nướng + trà đá · 1.040 kcal</div>
+          <div style="margin-top:18px">
+            <div class="frow" style="padding:12px 0"><div class="av">MN</div><div class="fname">Mai Ngọc</div>
+              <div class="chk"><svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg></div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:12px 0"><div class="av">TH</div><div class="fname">Thu Hà</div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:12px 0"><div class="av">QA</div><div class="fname">Quốc Anh</div></div>
+            <div class="gsep" style="margin-left:46px"></div>
+            <div class="frow" style="padding:12px 0"><div class="av">LP</div><div class="fname">Lan Phương</div></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px 26px"><div class="wide">Tiếp tục</div></div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+    <p class="cap"><b>Step one asks one question.</b> The list gets the whole sheet, so eight friends fit without
+    a scroll fight, and mode has already been chosen back on the meal card’s menu.</p>
+  </div>
+
+  <!-- D2 -->
+  <div class="cell">
+    <div class="dirtag">&nbsp;</div><div class="dirname">Two steps — step 2 of 2</div>
+    <p class="cap" style="margin:0 0 12px">Pushed, with a back chevron. Portion gets the room.</p>
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="sbar"><span>9:41</span><span>●●●</span></div>
+      <div class="dim"></div>
+      <div class="sheet" style="height:560px;padding-bottom:0">
+        <div class="grab"></div>
+        <div class="navbar"><span class="a">‹ Người</span><span class="t">Chia phần</span><span class="a">&nbsp;</span></div>
+        <div style="padding:8px 16px 0">
+          <div style="font-size:28px;font-weight:600;letter-spacing:-.6px;line-height:1.15">Ai ăn nhiều hơn?</div>
+          <div class="meta" style="margin-top:5px">Bạn và Mai Ngọc · 1.040 kcal</div>
+          <div style="margin-top:26px">
+            <div class="splitbar" style="height:88px">
+              <div class="mine" style="width:65%"><div class="who">Bạn</div><div class="pct" style="font-size:26px">65%</div>
+                <div class="who" style="font-size:12px">676 kcal</div></div>
+              <div class="theirs" style="width:35%"><div class="who">Mai Ngọc</div><div class="pct" style="font-size:26px">35%</div>
+                <div class="who" style="font-size:12px">364 kcal</div></div>
+              <div class="handle" style="left:65%"><i style="height:52px"></i></div>
+            </div>
+            <div class="ticks" style="margin-top:9px"><span>Mai ăn nhiều hơn</span><span>Bạn ăn nhiều hơn</span></div>
+          </div>
+          <div style="margin-top:26px" class="glist">
+            <div class="grow"><div class="mealname" style="flex:1">Chia đều</div>
+              <div class="meta">50 / 50</div></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px 26px">
+          <div class="meta" style="margin-bottom:11px;text-align:center">Bữa đã ghi của bạn sẽ giảm còn 676 kcal.</div>
+          <div class="wide">Chia với Mai Ngọc</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+    <p class="cap"><b>An 88pt bar with kcal inside each zone, and a one-tap “Chia đều” reset row.</b>
+    <br><b>Cost:</b> two steps for what was one tap. Only worth it if uneven splitting is common, not rare.</p>
+  </div>
+
+</div>
+
+<div class="band">Killing the chips — the receiving end</div>
+<p class="bandnote">The invite card is where chips are worst: two 34pt pills floating right, competing for a
+decision that deserves a full-width target. Shown at phone content width (390 − 32pt gutters).</p>
+<div class="row">
+
+  <div style="width:390px">
+    <div class="dirtag">T1 · today</div>
+    <div style="background:var(--canvas);padding:16px;border-radius:14px">
+      <div class="card" style="border-radius:16px;box-shadow:0 1px 2px rgba(20,20,19,.05)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="av" style="width:24px;height:24px;font-size:10px">KV</div>
+          <div class="meta ink" style="flex:1">Khôi đã chia phần bữa ăn với bạn</div></div>
+        <div style="display:flex;gap:8px;margin-top:9px;align-items:flex-start">
+          <div class="mealname" style="flex:1">Bánh mì thịt nướng + trà đá</div>
+          <div class="pill">1/2 phần</div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:9px">
+          <div class="cpt">P: 19g&nbsp;&nbsp;C: 48g&nbsp;&nbsp;F: 17g</div><div class="val">520 kcal</div></div>
+        <div style="height:1px;background:var(--borderFaint);margin:13px 0"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <div style="height:34px;padding:0 14px;border-radius:17px;border:1px solid var(--border);display:flex;align-items:center;font-size:14px;color:var(--muted)">Bỏ qua</div>
+          <div style="height:34px;padding:0 14px;border-radius:17px;background:var(--hover);display:flex;align-items:center;font-size:14px">Nhận</div></div>
+      </div>
+    </div>
+    <p class="cap">Three chip shapes in one card: a portion pill and two action pills. The primary action is
+    the smallest tappable thing on screen and sits furthest from the thumb.</p>
+  </div>
+
+  <div style="width:390px">
+    <div class="dirtag">T2 · full-width primary</div>
+    <div style="background:var(--canvas);padding:16px;border-radius:14px">
+      <div class="card" style="border-radius:16px;box-shadow:0 1px 2px rgba(20,20,19,.05)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="av" style="width:24px;height:24px;font-size:10px">KV</div>
+          <div class="meta ink" style="flex:1">Khôi đã chia phần bữa ăn với bạn</div></div>
+        <div class="mealname" style="margin-top:9px">Bánh mì thịt nướng + trà đá</div>
+        <div style="margin-top:11px">
+          <div class="splitbar" style="height:30px;border-radius:9px">
+            <div class="mine" style="width:65%;background:var(--track);color:var(--muted);justify-content:center;padding-left:11px">
+              <div class="who" style="opacity:1;font-size:12px">Khôi 65%</div></div>
+            <div class="theirs" style="width:35%;justify-content:center;padding-right:11px">
+              <div class="who" style="opacity:1;font-size:12px">Bạn 35%</div></div></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:11px">
+          <div class="cpt">P: 13g&nbsp;&nbsp;C: 34g&nbsp;&nbsp;F: 12g</div><div class="val">364 kcal</div></div>
+        <div style="margin-top:14px"><div class="wide" style="height:46px">Nhận vào nhật ký</div></div>
+        <div style="margin-top:6px"><div class="wide ghost" style="height:40px;font-size:14px">Bỏ qua</div></div>
+      </div>
+    </div>
+    <p class="cap"><b>Recommended.</b> One full-width primary, one quiet full-width text action under it. The
+    portion becomes geometry instead of a pill, so the chip disappears without losing the information.</p>
+  </div>
+
+  <div style="width:390px">
+    <div class="dirtag">T3 · action rows</div>
+    <div style="background:var(--canvas);padding:16px;border-radius:14px">
+      <div class="card" style="border-radius:16px;box-shadow:0 1px 2px rgba(20,20,19,.05);padding:0;overflow:hidden">
+        <div style="padding:15px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="av" style="width:24px;height:24px;font-size:10px">KV</div>
+            <div class="meta ink" style="flex:1">Khôi đã chia phần bữa ăn với bạn</div></div>
+          <div class="mealname" style="margin-top:9px">Bánh mì thịt nướng + trà đá</div>
+          <div style="margin-top:11px">
+            <div class="splitbar" style="height:30px;border-radius:9px">
+              <div class="mine" style="width:65%;background:var(--track);color:var(--muted);justify-content:center;padding-left:11px">
+                <div class="who" style="opacity:1;font-size:12px">Khôi 65%</div></div>
+              <div class="theirs" style="width:35%;justify-content:center;padding-right:11px">
+                <div class="who" style="opacity:1;font-size:12px">Bạn 35%</div></div></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:11px">
+            <div class="cpt">P: 13g&nbsp;&nbsp;C: 34g&nbsp;&nbsp;F: 12g</div><div class="val">364 kcal</div></div>
+        </div>
+        <div class="gsep full"></div>
+        <div class="grow" style="justify-content:center"><div class="mealname">Nhận vào nhật ký</div></div>
+        <div class="gsep full"></div>
+        <div class="grow" style="justify-content:center"><div class="mealname" style="color:var(--muted)">Bỏ qua</div></div>
+      </div>
+    </div>
+    <p class="cap">The iOS action-sheet shape: hairline-divided full-bleed rows, no button chrome at all.
+    Calmest of the three — but it reads as a menu, which undersells “accept this into your diary”.</p>
+  </div>
+
+</div>
+
+<div class="band">The rules behind all four</div>
+<div style="display:flex;gap:70px;margin-top:20px">
+<div class="leg">
+  <div class="n good">1</div><p><b>One full-width primary per surface, at the bottom.</b> 52pt, pinned, thumb-reachable. Secondary actions are text, not outlined pills. Nothing important is ever a 34pt chip in a corner.</p>
+  <div class="n good">2</div><p><b>Selection is a trailing checkmark, not a wash.</b> The beige row fill reads as hover, which touch does not have. iOS marks the chosen row at the trailing edge and leaves the background alone.</p>
+  <div class="n good">3</div><p><b>Separators, not cards.</b> Four friends in four bordered cards is a web list. One hairline inset past the avatar is the iOS list, and it lets the rows breathe at 50pt.</p>
+  <div class="n good">4</div><p><b>Explanations go in footers.</b> iOS has a slot for “what this will do”: 13pt muted, under the group it describes. That is where the rescale warning belongs — not in a banner, not in an alert.</p>
+</div>
+<div class="leg">
+  <div class="n good">5</div><p><b>Haptics are part of the visual design.</b> <code>selectionClick</code> on every friend toggle and mode change, <code>lightImpact</code> when the portion bar snaps to 50%. Silence is what makes a Flutter sheet feel like a web page.</p>
+  <div class="n good">6</div><p><b>Never invent a control the platform already has</b> — and never ship two controls for one concept. Directions A and C both honour this (stock slider / the app’s own ruler); B and D earn their custom bar only if two-sided numbers matter.</p>
+  <div class="n good">7</div><p><b>Titles go left, at 28/600.</b> A centred 16pt sheet title is an Android/web habit. iOS sheets that matter use a large left-aligned title; the centred one is for utility sheets with no content of their own.</p>
+  <div class="n good">8</div><p><b>Chip inventory to delete:</b> two mode cards, the beige selected-row wash, the <code>1/2 phần</code> portion pill, the two invite action pills, and the accept/dismiss pills in the web activity row. Five shapes, all replaced by rows, checkmarks, geometry or full-width buttons.</p>
+</div>
+</div>
+
+<p style="margin:46px 0 0;font-size:12px;color:var(--muted)">Kallo · meal sharing · directions · 2026-09-15</p>
+</div>
+</body>
+</html>
