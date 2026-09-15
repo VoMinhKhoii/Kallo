@@ -57,7 +57,13 @@ class TopToastPill extends StatelessWidget {
           // Solid white, not the retired cream — #FFFCF8 read yellow against
           // the neutral canvas.
           color: kCardSurface,
-          borderRadius: BorderRadius.circular(KalloRadii.pill),
+          // Squircle, not a stadium. The toast is a floating SURFACE, and the
+          // app gives surfaces a squircle (card 22, container 16) while the
+          // pill is reserved for buttons. `card` would not read as one here:
+          // the toast stands ~45pt tall, so 22 is half its height and renders
+          // as a stadium anyway. 18 is the first step down that keeps a
+          // visible flat edge at this height.
+          borderRadius: BorderRadius.circular(KalloRadii.xxl),
           border: Border.all(color: kHairline),
           boxShadow: kCardShadows,
         ),
