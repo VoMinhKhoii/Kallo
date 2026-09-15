@@ -13,12 +13,20 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type MealRow = typeof meals.$inferSelect;
 type MealItemRow = typeof mealItems.$inferSelect;
 
-/** Scale the actor's item rows, totals, and alcohol in place for a split. */
+/**
+ * Scale the actor's item rows, totals, and alcohol in place for a split.
+ *
+ * [portionFactorAfter] defaults to [factor], which is right for a split: you
+ * scale a full meal to 0.65 and it now IS a 0.65 portion. Undo is the case
+ * where they differ — it scales by 1/0.65 to restore the values, but the meal
+ * ends up a full portion again, not a 1.54 one.
+ */
 export async function scaleOwnMealInPlace(
   tx: Tx,
   source: MealRow,
   itemRows: MealItemRow[],
-  factor: number
+  factor: number,
+  portionFactorAfter: number = factor
 ): Promise<PersistedMeal> {
   const scaled = itemRows.map((row) => ({
     row,
@@ -41,7 +49,7 @@ export async function scaleOwnMealInPlace(
     .set({
       ...nutritionValuesToRow(mealNutrition),
       alcoholG: newAlcoholG,
-      portionFactor: factor,
+      portionFactor: portionFactorAfter,
     })
     .where(and(eq(meals.id, source.id), eq(meals.userId, source.userId)));
 
@@ -73,6 +81,6 @@ export async function scaleOwnMealInPlace(
     share: shareRow
       ? { shareId: shareRow.id, visibility: shareRow.visibility }
       : null,
-    portionFactor: factor,
+    portionFactor: portionFactorAfter,
   });
 }

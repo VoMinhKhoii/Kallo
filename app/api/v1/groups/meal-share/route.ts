@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
         mealId: string;
         friendUserIds: string[];
         mode: 'copy' | 'split';
+        myParts?: number;
+        splits?: { userId: string; parts: number }[];
       }
     );
     return NextResponse.json(result);
