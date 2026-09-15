@@ -34,6 +34,7 @@ export const schema = {
     toUserId: 'mealShareInvites.toUserId',
     fromUserId: 'mealShareInvites.fromUserId',
     status: 'mealShareInvites.status',
+    copyFactor: 'mealShareInvites.copyFactor',
   },
   friendships: {
     id: 'friendships.id',

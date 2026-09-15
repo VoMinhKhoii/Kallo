@@ -58,6 +58,7 @@ export async function acceptMealShareInviteAction(input: {
       .select({
         sourceMealId: mealShareInvites.sourceMealId,
         fromUserId: mealShareInvites.fromUserId,
+        copyFactor: mealShareInvites.copyFactor,
       })
       .from(mealShareInvites)
       .where(
@@ -155,11 +156,28 @@ export async function acceptMealShareInviteAction(input: {
       parsed.loggedDate,
       parsed.timezoneOffset
     );
-    // Materialize the sender's meal in my diary — verbatim, no re-scaling (a
-    // split's share is already baked into the source's stored values). Shared
-    // helper — the same copy the "log again" path performs.
+    // Materialize the sender's meal in my diary, scaled by the invite's
+    // `copy_factor` — the ratio between my run and the sender's REMAINING run.
+    //
+    // An EVEN split leaves those two runs equal, so the factor is 1 and this is
+    // the verbatim copy the shipped code performed; that is also what every
+    // pre-existing row defaults to. An UNEVEN split is the case verbatim got
+    // wrong: the sender scaled themselves to their own share up front, and my
+    // share is a different fraction of the same dish, so copying their meal
+    // unscaled would hand me their portion instead of mine.
+    //
+    // Guarded, not trusted: every nutrition column is `value * factor`, so a
+    // NaN or non-positive factor would write NaN kcal into the reader's diary
+    // and corrupt every total that day — silently, and unrecoverably. The
+    // column is NOT NULL with a `> 0` check, so this can only fire on a schema
+    // drift, which is exactly when you want a refusal instead of a write.
+    const copyFactor = Number(invite.copyFactor);
+    if (!Number.isFinite(copyFactor) || copyFactor <= 0) {
+      throw Errors.validationFailed('Phần được chia không hợp lệ.');
+    }
+
     const { mealId, meal } = await copyMealVerbatim(tx, source, sourceItems, {
-      factor: 1,
+      factor: copyFactor,
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,

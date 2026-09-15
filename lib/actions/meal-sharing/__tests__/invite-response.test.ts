@@ -130,7 +130,7 @@ describe('acceptMealShareInviteAction', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('rejects when the invite cannot be claimed (tenant safety / race)', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [] }); // claim UPDATE matches zero rows
     await expect(
@@ -144,7 +144,7 @@ describe('acceptMealShareInviteAction', () => {
   });
 
   it('rejects when no longer an accepted friend of the sender', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([]); // friendship recheck finds nothing
@@ -159,7 +159,7 @@ describe('acceptMealShareInviteAction', () => {
   });
 
   it('copies the source meal verbatim into my diary with its portion', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]); // the sender's split share, row-locked before claim
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]); // still friends
@@ -194,8 +194,66 @@ describe('acceptMealShareInviteAction', () => {
     });
   });
 
+  it('scales the copy by copy_factor on an uneven split', async () => {
+    // The sender kept 13 of 20 parts and offered me 7, so their meal was
+    // already scaled to 0.65 and my run is 7/13 of what they are holding.
+    // Copying verbatim here would hand me THEIR portion, not mine.
+    queueLimitSelect([
+      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 7 / 13 },
+    ]);
+    queueLimitSelect([sourceMeal({ portionFactor: 0.65, caloriesKcal: 650 })]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem({ estimatedGrams: 130, caloriesKcal: 650 })]);
+
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    const result = await acceptMealShareInviteAction({
+      inviteId: UUID_INVITE,
+      newMealId: UUID_NEW,
+      loggedDate: '2026-04-05',
+      timezoneOffset: -420,
+    });
+
+    const mealVals = captured.meal.vals as Record<string, unknown>;
+    // 650 kcal of the sender's remaining 13 parts, scaled to my 7: 350.
+    expect(mealVals.caloriesKcal).toBeCloseTo(350, 6);
+    // And my share of the ORIGINAL dish is 7/20 = 0.35, which is what the
+    // portion factor has to end up at for the card to label it honestly.
+    expect(mealVals.portionFactor).toBeCloseTo(0.35, 6);
+    const items = captured.items.vals as Array<Record<string, unknown>>;
+    expect(items[0]?.estimatedGrams).toBeCloseTo(70, 6);
+    expect(result.meal.portionFactor).toBeCloseTo(0.35, 6);
+  });
+
+  it('refuses rather than writing NaN when the factor is not usable', async () => {
+    // Only reachable on schema drift (the column is NOT NULL with a > 0
+    // check), but the failure mode is silent diary corruption, so it throws.
+    queueLimitSelect([
+      {
+        sourceMealId: UUID_MEAL,
+        fromUserId: UUID_FRIEND,
+        copyFactor: Number.NaN,
+      },
+    ]);
+    queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
+
+    await expect(
+      acceptMealShareInviteAction({
+        inviteId: UUID_INVITE,
+        loggedDate: '2026-04-05',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('không hợp lệ');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
   it('schedules the sender push once the accept commits', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
@@ -268,7 +326,7 @@ describe('every resolution closes the invite notification server-side', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('closes the recipient aggregate inside the accept transaction', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
@@ -305,7 +363,7 @@ describe('every resolution closes the invite notification server-side', () => {
   });
 
   it('does not close anything when the accept loses the claim race', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [] }); // claim matched zero rows
 
@@ -328,7 +386,7 @@ describe('the recipient side stays free', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('completes a full accept without ever consulting the feature gate', async () => {
-    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 }]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]);
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
