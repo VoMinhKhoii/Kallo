@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { PortionSeat } from '@/components/groups/share-meal/portion-battery';
 import type { CircleMember } from '@/lib/actions/groups/types';
+import type { shareMealWithFriends } from '@/lib/domain/social/circle-client';
 import {
   evenParts,
   MAX_PARTICIPANTS,
@@ -28,6 +29,12 @@ function initialsOf(label: string) {
  * them are worth reading on their own — adding or removing a seat has to
  * rebalance the parts. Twin of `ShareMealDraft` in `share_meal_draft.dart`.
  */
+/** The request body `shareMealWithFriends` takes — reused, never restated. */
+export type ShareMealRequest = Parameters<typeof shareMealWithFriends>[0];
+
+/** The draft, named so consumers depend on the real shape and not a copy. */
+export type ShareDraft = ReturnType<typeof useShareDraft>;
+
 export function useShareDraft(labels: { you: string; youInitial: string }) {
   const [seated, setSeated] = useState<CircleMember[]>([]);
   const [parts, setParts] = useState<number[]>(() => evenParts(2));
@@ -88,6 +95,28 @@ export function useShareDraft(labels: { you: string; youInitial: string }) {
         userId: m.profile.userId,
         parts: parts[i + 1],
       })),
+    /**
+     * The whole request body, so the submit path never reassembles it.
+     *
+     * ALWAYS sends parts for a split, even an untouched even one: 20 is not
+     * divisible by 3, so the meter draws an even three-way split as 7/7/6
+     * (35/35/30) while the server's no-parts path divides 20 by 3 exactly. The
+     * user would confirm one allocation and the database would store another.
+     */
+    submission: (mealId: string, isSplit: boolean): ShareMealRequest => ({
+      mealId,
+      friendUserIds: seated.map((m) => m.profile.userId),
+      mode: isSplit ? 'split' : 'copy',
+      ...(isSplit
+        ? {
+            myParts: parts[0],
+            splits: seated.map((m, i) => ({
+              userId: m.profile.userId,
+              parts: parts[i + 1],
+            })),
+          }
+        : {}),
+    }),
     /** My own run, in parts. A whole-portion share keeps the entire dish. */
     keptParts: (isSplit: boolean) =>
       isSplit && seated.length > 0 ? parts[0] : TOTAL_PARTS,
