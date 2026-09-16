@@ -30,7 +30,8 @@
       "remove": "Xoá",
       "stay": "Ở lại",
       "staySignedIn": "Ở lại"
-    }
+    },
+    "more": "Thêm nữa"
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -1644,7 +1645,10 @@
       "dismiss": "Bỏ qua",
       "accepted": "Đã thêm vào nhật ký",
       "error": "Chưa được — vui lòng thử lại.",
-      "loadError": "Không tải được lời mời. Chạm để thử lại."
+      "loadError": "Không tải được lời mời. Chạm để thử lại.",
+      "acceptShort": "Nhận",
+      "yourShare": "Bạn {percent}%",
+      "restShare": "Đã chia {percent}%"
     },
     "invite": {
       "title": "Mời vào vòng kết nối",
