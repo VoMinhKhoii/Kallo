@@ -144,6 +144,21 @@ describe('undoMealShareAction', () => {
     expect(mockTxDelete).not.toHaveBeenCalled();
   });
 
+  it('refuses when my only outgoing invite is a copy, not a split', async () => {
+    // The bypass: accept a 35% share, then COPY-share it onward. Copy mode is
+    // allowed on a fractional meal, so you now own an outgoing invite — which
+    // is no evidence at all that you split anything. Scoping the lookup to
+    // mode='split' is what closes it.
+    queueLimitSelect([sourceMeal({ portionFactor: 0.35, caloriesKcal: 350 })]);
+    queueWhereSelect([]); // the mode='split' lookup finds nothing
+
+    await expect(undoMealShareAction({ mealId: UUID_MEAL })).rejects.toThrow(
+      'không phải do bạn chia phần'
+    );
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
+  });
+
   it('restores the full portion and withdraws the pending offers', async () => {
     // The sender kept 13/20, so their meal sits at 0.65 — 650 of 1000 kcal.
     queueLimitSelect([sourceMeal({ portionFactor: 0.65, caloriesKcal: 650 })]);

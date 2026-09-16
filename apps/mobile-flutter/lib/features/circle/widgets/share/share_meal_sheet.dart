@@ -95,6 +95,13 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
     setState(() => _submitting = true);
     final count = _seated.length;
     final isSplit = _mode == 'split';
+    // Captured BEFORE the request: everything the toast needs has to outlive
+    // this widget, because the sheet pops on success and the undo action can
+    // fire seconds later, by which point this ConsumerState is disposed and
+    // its `ref` throws on read.
+    final container = ProviderScope.containerOf(context, listen: false);
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+    final mealId = widget.meal.id;
     try {
       await shareMealWithFriends(
         ref,
@@ -117,16 +124,16 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
               ]
             : null,
       );
-      if (!mounted) return;
+      if (!mounted || !rootContext.mounted) return;
       Navigator.of(context).pop();
       // The undo rides on the confirmation rather than a separate surface: it
       // is only ever wanted in the seconds right after the tap.
       showTopToast(
-        context,
+        rootContext,
         (isSplit ? 'groups.shareMeal.splitSuccess' : 'groups.shareMeal.copySuccess')
             .plural(count, namedArgs: {'count': '$count'}),
         actionLabel: isSplit ? tr('groups.shareMeal.undo') : null,
-        onAction: isSplit ? () => _undo(widget.meal.id) : null,
+        onAction: isSplit ? () => _runUndo(container, rootContext, mealId) : null,
       );
     } catch (error) {
       if (!mounted) return;
@@ -141,15 +148,22 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
     }
   }
 
-  Future<void> _undo(String mealId) async {
+  /// Deliberately static and free of `this`: it runs after the sheet is gone,
+  /// so touching any instance state (`ref`, `context`, `mounted`) would either
+  /// throw or silently swallow the result.
+  static Future<void> _runUndo(
+    ProviderContainer container,
+    BuildContext rootContext,
+    String mealId,
+  ) async {
     try {
-      await undoMealShare(ref, mealId);
+      await undoMealShare(container, mealId);
     } catch (_) {
-      // Refused (someone already accepted) or offline. The sheet is gone by
-      // now, so the toast is the only place left to say so.
-      if (!mounted) return;
+      // Refused (someone already accepted) or offline. The sheet is long gone,
+      // so the root overlay is the only place left to say so.
+      if (!rootContext.mounted) return;
       showTopToast(
-        context,
+        rootContext,
         tr('groups.shareMeal.undoFailed'),
         variant: TopToastVariant.error,
       );

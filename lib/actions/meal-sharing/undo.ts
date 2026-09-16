@@ -53,12 +53,16 @@ export async function undoMealShareAction(input: {
       throw Errors.validationFailed('Bữa ăn này chưa được chia phần.');
     }
 
-    // Only invites I SENT for this meal. Scoping by fromUserId is what makes
-    // this an undo rather than a general "inflate any fractional meal" tool:
-    // an accepted split copy is itself a meal with portionFactor < 1 and no
-    // outgoing invites of its own, so without this scope the check below finds
-    // nothing to object to and the recipient's 35% share gets rescaled to a
-    // full portion in their own diary.
+    // SPLIT invites I sent for this meal. Both halves of that scope matter.
+    //
+    // fromUserId, because an accepted split copy is itself a meal with
+    // portionFactor < 1 — without the scope, undo would rescale the recipient's
+    // own 35% share to a full portion in their diary.
+    //
+    // mode = 'split', because copy mode is allowed on a fractional meal: accept
+    // a 35% share, copy-share it onward, and you own an outgoing invite that is
+    // no evidence at all that you split anything. Only a split creates the
+    // fractional state undo reverses.
     const invites = await tx
       .select({
         toUserId: mealShareInvites.toUserId,
@@ -68,12 +72,13 @@ export async function undoMealShareAction(input: {
       .where(
         and(
           eq(mealShareInvites.sourceMealId, source.id),
-          eq(mealShareInvites.fromUserId, user.id)
+          eq(mealShareInvites.fromUserId, user.id),
+          eq(mealShareInvites.mode, 'split')
         )
       );
 
-    // No offers means this meal's fraction did not come from a split I made —
-    // an accepted copy, or a portion edited by hand. Nothing here to undo.
+    // No split offers means this meal's fraction did not come from a split I
+    // made — an accepted share, or a portion edited by hand. Nothing to undo.
     if (invites.length === 0) {
       throw Errors.validationFailed('Bữa ăn này không phải do bạn chia phần.');
     }
@@ -81,10 +86,9 @@ export async function undoMealShareAction(input: {
     // The one refusal that matters. Their copy is already in their diary and
     // restoring ours would leave the dish counted one and a half times.
     //
-    // Deliberately conservative: this refuses on ANY accepted invite for the
-    // meal, including one from an earlier copy that the split did not touch.
-    // Narrowing it would mean identifying which invites a given split created,
-    // which nothing currently records.
+    // Scoped to split invites for the same reason: an accepted COPY made before
+    // the split is unrelated to it — that recipient took the meal as it stood,
+    // and restoring mine puts the world back exactly as if I had never split.
     if (invites.some((i) => i.status === 'accepted')) {
       throw Errors.validationFailed(
         'Một người bạn đã nhận phần rồi — không thể hoàn tác.'
