@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/logic/split_parts.dart';
-import 'package:kallo_mobile/features/circle/widgets/share/portion_battery.dart';
+import 'package:kallo_mobile/features/circle/widgets/share/portion/portion_battery.dart';
+import 'package:kallo_mobile/features/circle/widgets/share/portion/portion_seats.dart';
 
 List<PortionSeat> seatsFrom(List<int> parts) => [
       for (var i = 0; i < parts.length; i++)

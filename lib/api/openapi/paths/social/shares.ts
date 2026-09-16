@@ -191,8 +191,13 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         required: ['mealId'],
         properties: { mealId: { type: 'string', format: 'uuid' } },
       },
-      ok: ref('Acknowledgement'),
-      okStatus: '201',
+      // 200 with the restored meal, which is what the route actually returns —
+      // the client reconciles its card against it.
+      ok: {
+        type: 'object',
+        required: ['meal'],
+        properties: { meal: ref('Meal') },
+      },
     }),
   },
 

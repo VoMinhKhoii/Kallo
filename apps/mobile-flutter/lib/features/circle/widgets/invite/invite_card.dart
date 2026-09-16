@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
@@ -13,7 +12,8 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
-import '../share/portion_battery.dart' show kSeatColors;
+import '../share/portion/portion_seats.dart' show kSeatColors;
+import 'invite_card_parts.dart';
 import 'portion_readout.dart';
 
 String _fmtKcal(double? value) =>
@@ -87,7 +87,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             KalloSheetHeader(title: widget.invite.from.label),
-            _OverflowRow(
+            InviteOverflowRow(
               icon: LucideIcons.x300,
               label: tr('groups.invites.dismiss'),
               onTap: () {
@@ -121,7 +121,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _AvatarWithBadge(profile: invite.from),
+              InviteAvatarWithBadge(profile: invite.from),
               const SizedBox(width: KalloSpacing.sp3),
               Expanded(
                 child: Column(
@@ -141,12 +141,12 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                 ),
               ),
               const SizedBox(width: KalloSpacing.sp2),
-              _BlackPill(
+              InviteBlackPill(
                 label: tr('groups.invites.acceptShort'),
                 loading: _busy,
                 onTap: _accept,
               ),
-              _OverflowButton(onTap: _busy ? null : _openOverflow),
+              InviteOverflowButton(onTap: _busy ? null : _openOverflow),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp3),
@@ -178,154 +178,6 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// The avatar with a status badge, so the KIND of notification is readable
-/// before any text is — and stays readable once the row goes quiet.
-class _AvatarWithBadge extends StatelessWidget {
-  const _AvatarWithBadge({required this.profile});
-
-  final CircleProfile profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 42,
-      height: 42,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          ProfileAvatarDisc(profile: profile, size: 42),
-          Positioned(
-            right: -2,
-            bottom: -2,
-            child: Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                color: kSeatColors[1],
-                shape: BoxShape.circle,
-                border: Border.all(color: KalloColors.elev, width: 2),
-              ),
-              child: const Icon(
-                LucideIcons.check300,
-                size: 9,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The one live action in the row. Ink fill, white label — the highest contrast
-/// the cream canvas allows, which is the role white-on-dark plays in Threads.
-class _BlackPill extends StatelessWidget {
-  const _BlackPill({
-    required this.label,
-    required this.loading,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool loading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: loading ? null : onTap,
-        child: Opacity(
-          opacity: loading ? 0.55 : 1,
-          child: Container(
-            height: 36,
-            constraints: const BoxConstraints(minWidth: 72),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-            decoration: BoxDecoration(
-              color: KalloColors.text,
-              borderRadius: BorderRadius.circular(KalloRadii.pill),
-            ),
-            child: loading
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(label, style: dashMeta(color: Colors.white)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OverflowButton extends StatelessWidget {
-  const _OverflowButton({required this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tr('common.more'),
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: const SizedBox(
-          width: KalloIcons.hit,
-          height: KalloIcons.hit,
-          child: Icon(
-            LucideIcons.ellipsis300,
-            size: KalloIcons.size,
-            color: KalloColors.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OverflowRow extends StatelessWidget {
-  const _OverflowRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: KalloIcons.hit + 8),
-        child: Row(
-          children: [
-            Icon(icon, size: KalloIcons.size, color: KalloColors.textMuted),
-            const SizedBox(width: KalloSpacing.sp3),
-            Text(label, style: dashBody()),
-          ],
-        ),
       ),
     );
   }

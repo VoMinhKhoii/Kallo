@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../circle/widgets/share/share_meal_sheet.dart';
+import '../../../circle/widgets/share/show_share_meal_sheet.dart';
 import '../../data/logging_models.dart';
 import '../actions/confirm_meal_removal.dart';
 import '../actions/meal_action_icon_button.dart';

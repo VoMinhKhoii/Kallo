@@ -5,7 +5,12 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('@/hooks/social/circle/use-friends', () => ({
-  useFriends: () => ({ data: [], isPending: false, isError: false, refetch: vi.fn() }),
+  useFriends: () => ({
+    data: [],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }));
 vi.mock('@/hooks/social/sharing/use-share-meal-with-friends', () => ({
   useShareMealWithFriends: () => ({ isPending: false, mutate: vi.fn() }),
