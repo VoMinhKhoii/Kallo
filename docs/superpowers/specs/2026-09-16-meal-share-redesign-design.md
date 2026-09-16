@@ -1,7 +1,9 @@
 # Meal sharing — redesign and uneven splits
 
 **Status:** design approved, pending spec review
-**Boards:** `docs/design/meal-share-2026-09/` (Share, Directions, Battery, Units, Notches, Seats, Pins, Clean, States, Native, Grip)
+**Renders:** `docs/design/meal-share-2026-09/render/` — the shipped widget, at every party size.
+The eleven exploration boards that produced this design were deliberately not merged: they were
+throwaway scaffolding and this spec is what they were for.
 
 ## Problem
 

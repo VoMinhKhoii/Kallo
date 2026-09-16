@@ -192,7 +192,8 @@ describe('copyFactorFor', () => {
 
 - [ ] `flutter analyze` + full Flutter suite
 - [ ] `bun test` for the server + web suites
-- [ ] Simulator walkthrough, frames committed under `docs/design/meal-share-2026-09/sim/`
+- [ ] Widget renders committed under `docs/design/meal-share-2026-09/render/` (generated with the
+      repo's golden machinery, NOT left as golden tests — goldens here are Linux-only)
 - [ ] `/codex` adversarial review, looped until it verifies
 - [ ] `/thermo-nuclear-code-quality-review`
 - [ ] `/ship` with the frames in the PR body
