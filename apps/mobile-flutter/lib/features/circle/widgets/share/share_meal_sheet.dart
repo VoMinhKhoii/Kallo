@@ -101,11 +101,16 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
         mealId: widget.meal.id,
         friendUserIds: _seated.map((p) => p.userId).toList(),
         mode: isSplit ? 'split' : 'copy',
-        // Only send parts for a split the user actually shaped. An untouched
-        // even split goes up without them and takes the server's original
-        // 1/(N+1) path, which keeps the common case on the oldest code.
-        myParts: isSplit && !_isEven ? _parts.first : null,
-        splits: isSplit && !_isEven
+        // ALWAYS send the parts for a split, even an untouched even one.
+        //
+        // Skipping them on "even" looked like a safe optimisation and was not:
+        // 20 is not divisible by 3, so the meter draws an even three-way split
+        // as 7/7/6 (35/35/30) while the server's no-parts path divides 20 by 3
+        // exactly. The user confirmed one allocation and the database stored a
+        // different one. Sending what the meter shows makes the two agree by
+        // construction, and the two-person case is 10/10 either way.
+        myParts: isSplit ? _parts.first : null,
+        splits: isSplit
             ? [
                 for (var i = 0; i < _seated.length; i++)
                   {'userId': _seated[i].userId, 'parts': _parts[i + 1]},
@@ -134,15 +139,6 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
         variant: TopToastVariant.error,
       );
     }
-  }
-
-  /// True when the current parts are exactly what an even split would produce.
-  bool get _isEven {
-    final even = evenParts(_seated.length + 1);
-    for (var i = 0; i < even.length; i++) {
-      if (even[i] != _parts[i]) return false;
-    }
-    return true;
   }
 
   Future<void> _undo(String mealId) async {

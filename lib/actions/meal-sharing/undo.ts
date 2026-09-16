@@ -53,16 +53,38 @@ export async function undoMealShareAction(input: {
       throw Errors.validationFailed('Bữa ăn này chưa được chia phần.');
     }
 
+    // Only invites I SENT for this meal. Scoping by fromUserId is what makes
+    // this an undo rather than a general "inflate any fractional meal" tool:
+    // an accepted split copy is itself a meal with portionFactor < 1 and no
+    // outgoing invites of its own, so without this scope the check below finds
+    // nothing to object to and the recipient's 35% share gets rescaled to a
+    // full portion in their own diary.
     const invites = await tx
       .select({
         toUserId: mealShareInvites.toUserId,
         status: mealShareInvites.status,
       })
       .from(mealShareInvites)
-      .where(eq(mealShareInvites.sourceMealId, source.id));
+      .where(
+        and(
+          eq(mealShareInvites.sourceMealId, source.id),
+          eq(mealShareInvites.fromUserId, user.id)
+        )
+      );
+
+    // No offers means this meal's fraction did not come from a split I made —
+    // an accepted copy, or a portion edited by hand. Nothing here to undo.
+    if (invites.length === 0) {
+      throw Errors.validationFailed('Bữa ăn này không phải do bạn chia phần.');
+    }
 
     // The one refusal that matters. Their copy is already in their diary and
     // restoring ours would leave the dish counted one and a half times.
+    //
+    // Deliberately conservative: this refuses on ANY accepted invite for the
+    // meal, including one from an earlier copy that the split did not touch.
+    // Narrowing it would mean identifying which invites a given split created,
+    // which nothing currently records.
     if (invites.some((i) => i.status === 'accepted')) {
       throw Errors.validationFailed(
         'Một người bạn đã nhận phần rồi — không thể hoàn tác.'
@@ -93,6 +115,8 @@ export async function undoMealShareAction(input: {
       .where(
         and(
           eq(mealShareInvites.sourceMealId, source.id),
+          // Same scope as the check above — withdraw only my own offers.
+          eq(mealShareInvites.fromUserId, user.id),
           inArray(mealShareInvites.status, ['pending', 'dismissed'])
         )
       )

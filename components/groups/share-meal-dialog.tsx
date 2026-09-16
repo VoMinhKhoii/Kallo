@@ -118,12 +118,6 @@ export function ShareMealDialog({
     setSeated(nextSeated);
   };
 
-  /** True when the parts are exactly what an even split would produce. */
-  const isEven = useMemo(() => {
-    const even = evenParts(seated.length + 1);
-    return even.every((p, i) => p === parts[i]);
-  }, [parts, seated.length]);
-
   const seats: PortionSeat[] = [
     {
       id: 'me',
@@ -151,9 +145,15 @@ export function ShareMealDialog({
         mealId,
         friendUserIds: seated.map((m) => m.profile.userId),
         mode: isSplit ? 'split' : 'copy',
-        // An untouched even split posts WITHOUT parts, so the common case keeps
-        // taking the server's original 1/(N+1) path.
-        ...(isSplit && !isEven
+        // ALWAYS send the parts for a split, even an untouched even one.
+        //
+        // Skipping them on "even" looked like a safe optimisation and was not:
+        // 20 is not divisible by 3, so the meter draws an even three-way split
+        // as 7/7/6 (35/35/30) while the server's no-parts path divides 20 by 3
+        // exactly. The user confirmed one allocation and the database stored a
+        // different one. Sending what the meter shows makes the two agree by
+        // construction, and the two-person case is 10/10 either way.
+        ...(isSplit
           ? {
               myParts: parts[0],
               splits: seated.map((m, i) => ({

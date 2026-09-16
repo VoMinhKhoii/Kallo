@@ -150,7 +150,7 @@ describe('acceptMealShareInviteAction', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([sourceMeal()]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([]); // friendship recheck finds nothing
     await expect(
       acceptMealShareInviteAction({
@@ -167,7 +167,7 @@ describe('acceptMealShareInviteAction', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]); // the sender's split share, row-locked before claim
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]); // still friends
     queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
 
@@ -204,11 +204,11 @@ describe('acceptMealShareInviteAction', () => {
     // The sender kept 13 of 20 parts and offered me 7, so their meal was
     // already scaled to 0.65 and my run is 7/13 of what they are holding.
     // Copying verbatim here would hand me THEIR portion, not mine.
-    queueLimitSelect([
-      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 7 / 13 },
-    ]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.65, caloriesKcal: 650 })]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({
+      returning: [{ id: UUID_INVITE, copyFactor: 7 / 13 }],
+    });
     queueLimitSelect([{ id: 'friendship-1' }]);
     queueWhereSelect([sourceItem({ estimatedGrams: 130, caloriesKcal: 650 })]);
 
@@ -236,15 +236,11 @@ describe('acceptMealShareInviteAction', () => {
   it('refuses rather than writing NaN when the factor is not usable', async () => {
     // Only reachable on schema drift (the column is NOT NULL with a > 0
     // check), but the failure mode is silent diary corruption, so it throws.
-    queueLimitSelect([
-      {
-        sourceMealId: UUID_MEAL,
-        fromUserId: UUID_FRIEND,
-        copyFactor: Number.NaN,
-      },
-    ]);
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({
+      returning: [{ id: UUID_INVITE, copyFactor: Number.NaN }],
+    });
     queueLimitSelect([{ id: 'friendship-1' }]);
     queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
 
@@ -263,7 +259,7 @@ describe('acceptMealShareInviteAction', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([sourceMeal()]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
     queueWhereSelect([sourceItem()]);
     mockTxInsert.mockImplementation(routeInserts({}));
@@ -338,7 +334,7 @@ describe('every resolution closes the invite notification server-side', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([sourceMeal()]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
     queueWhereSelect([sourceItem()]);
     mockTxInsert.mockImplementation(routeInserts({}));
@@ -402,7 +398,7 @@ describe('the recipient side stays free', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]);
-    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
     queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
     mockTxInsert.mockImplementation(routeInserts({}));

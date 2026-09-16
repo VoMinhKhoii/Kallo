@@ -129,6 +129,21 @@ describe('undoMealShareAction', () => {
     );
   });
 
+  it('refuses a fractional meal that I did not split — an accepted share is not mine to inflate', async () => {
+    // An accepted split copy IS a meal with portionFactor < 1, owned by the
+    // recipient, with no outgoing invites of its own. Without the fromUserId
+    // scope the accepted-check finds nothing to object to and 1/0.35 writes a
+    // full portion into their diary. Reachable straight off the public route.
+    queueLimitSelect([sourceMeal({ portionFactor: 0.35, caloriesKcal: 350 })]);
+    queueWhereSelect([]); // no invites I sent for this meal
+
+    await expect(undoMealShareAction({ mealId: UUID_MEAL })).rejects.toThrow(
+      'không phải do bạn chia phần'
+    );
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
+  });
+
   it('restores the full portion and withdraws the pending offers', async () => {
     // The sender kept 13/20, so their meal sits at 0.65 — 650 of 1000 kcal.
     queueLimitSelect([sourceMeal({ portionFactor: 0.65, caloriesKcal: 650 })]);

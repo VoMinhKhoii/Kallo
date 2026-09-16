@@ -417,6 +417,30 @@ describe('shareMealWithFriendsAction', () => {
     expect(byUser.get(UUID_FRIEND_2)?.copyFactor).toBeCloseTo(0.4, 6);
   });
 
+  it('rejects parts naming myself — they would be silently discarded', async () => {
+    // recipientIds drops self, but a self entry left in `splits` still passes
+    // the 20-part sum. The parts allocated to it then belong to nobody: the
+    // meal is scaled by myParts/20 while the dish no longer adds up.
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]);
+    queueWhereSelect([friendEdge]);
+
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND, mockUser.id],
+        mode: 'split',
+        myParts: 2,
+        splits: [
+          { userId: UUID_FRIEND, parts: 2 },
+          { userId: mockUser.id, parts: 16 },
+        ],
+      })
+    ).rejects.toThrow('khớp với những người được chọn');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
   it('rejects parts that do not sum to the whole dish', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);

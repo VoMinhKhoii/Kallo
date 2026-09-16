@@ -58,7 +58,6 @@ export async function acceptMealShareInviteAction(input: {
       .select({
         sourceMealId: mealShareInvites.sourceMealId,
         fromUserId: mealShareInvites.fromUserId,
-        copyFactor: mealShareInvites.copyFactor,
       })
       .from(mealShareInvites)
       .where(
@@ -103,7 +102,17 @@ export async function acceptMealShareInviteAction(input: {
           eq(mealShareInvites.status, 'pending')
         )
       )
-      .returning({ id: mealShareInvites.id });
+      // `copy_factor` comes back from the CLAIM, not from the discovery read
+      // above. That read happens before the source meal is locked, so a
+      // concurrent re-share can take the lock, rescale the meal and upsert a
+      // new factor while this accept waits — and the pre-lock value would then
+      // scale the new source by the old ratio. RETURNING is the only read that
+      // is atomic with the transition, so it is the only one that can be
+      // trusted to match the source we just locked.
+      .returning({
+        id: mealShareInvites.id,
+        copyFactor: mealShareInvites.copyFactor,
+      });
     if (!claimed[0]) {
       throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
     }
@@ -171,7 +180,7 @@ export async function acceptMealShareInviteAction(input: {
     // and corrupt every total that day — silently, and unrecoverably. The
     // column is NOT NULL with a `> 0` check, so this can only fire on a schema
     // drift, which is exactly when you want a refusal instead of a write.
-    const copyFactor = Number(invite.copyFactor);
+    const copyFactor = Number(claimed[0].copyFactor);
     if (!Number.isFinite(copyFactor) || copyFactor <= 0) {
       throw Errors.validationFailed('Phần được chia không hợp lệ.');
     }

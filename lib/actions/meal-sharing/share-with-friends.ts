@@ -176,7 +176,21 @@ export async function shareMealWithFriendsAction(input: {
     // rule set is the same one the client draws with.
     const uneven = parsed.mode === 'split' && parsed.splits != null;
     if (uneven) {
-      assertPartsValid(parsed.myParts as number, parsed.splits as SplitPart[]);
+      // Validate against recipientIds, NOT the raw friendUserIds: dedup and the
+      // drop-self filter above can shrink the recipient set, and parts for
+      // someone who is no longer a recipient would be silently discarded —
+      // scaling the sender's meal by a share of a dish that never fully adds up.
+      const splits = parsed.splits as SplitPart[];
+      const recipientSet = new Set(recipientIds);
+      const covered =
+        splits.length === recipientIds.length &&
+        splits.every((s) => recipientSet.has(s.userId));
+      if (!covered) {
+        throw Errors.validationFailed(
+          'Tỉ lệ phải khớp với những người được chọn.'
+        );
+      }
+      assertPartsValid(parsed.myParts as number, splits);
     }
 
     const myParts = uneven

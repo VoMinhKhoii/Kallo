@@ -22,6 +22,7 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       portionFactor: mealShareInvites.portionFactor,
       createdAt: mealShareInvites.createdAt,
       fromUserId: mealShareInvites.fromUserId,
+      copyFactor: mealShareInvites.copyFactor,
       rawInput: meals.rawInput,
       caloriesKcal: meals.caloriesKcal,
       proteinG: meals.proteinG,
@@ -69,25 +70,38 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
     )
     .orderBy(desc(mealShareInvites.createdAt));
 
-  return rows.map((row) => ({
-    id: row.id,
-    mode: row.mode === 'split' ? 'split' : 'copy',
-    portionFactor: Number(row.portionFactor) || 1,
-    createdAt: row.createdAt.toISOString(),
-    from: {
-      userId: row.fromUserId,
-      handle: row.handle,
-      displayName: row.displayName,
-      avatarSeed: row.avatarSeed,
-      // Uploaded photo takes precedence over the synced OAuth picture.
-      avatarUrl: avatarUrlFor(row.avatarPath) ?? row.avatarUrl,
-    },
-    meal: {
-      rawInput: row.rawInput,
-      caloriesKcal: row.caloriesKcal,
-      proteinG: row.proteinG,
-      carbohydrateG: row.carbohydrateG,
-      fatG: row.fatG,
-    },
-  }));
+  return rows.map((row) => {
+    // The joined meal is the SENDER's row, which a split already scaled down to
+    // THEIR share. `copy_factor` is what accept will multiply it by, so it is
+    // also what turns those numbers into the offer being made to this reader.
+    //
+    // Without it an uneven split shows the sender's 650 kcal beside the
+    // reader's own "35%", and accepting then writes 350 — the card would be
+    // advertising a portion nobody is being offered. An even split has a factor
+    // of 1, so this is a no-op for every pre-existing row.
+    const factor = Number(row.copyFactor);
+    const scale = Number.isFinite(factor) && factor > 0 ? factor : 1;
+    const times = (v: number | null) => (v == null ? null : v * scale);
+    return {
+      id: row.id,
+      mode: row.mode === 'split' ? 'split' : 'copy',
+      portionFactor: Number(row.portionFactor) || 1,
+      createdAt: row.createdAt.toISOString(),
+      from: {
+        userId: row.fromUserId,
+        handle: row.handle,
+        displayName: row.displayName,
+        avatarSeed: row.avatarSeed,
+        // Uploaded photo takes precedence over the synced OAuth picture.
+        avatarUrl: avatarUrlFor(row.avatarPath) ?? row.avatarUrl,
+      },
+      meal: {
+        rawInput: row.rawInput,
+        caloriesKcal: times(row.caloriesKcal),
+        proteinG: times(row.proteinG),
+        carbohydrateG: times(row.carbohydrateG),
+        fatG: times(row.fatG),
+      },
+    };
+  });
 }

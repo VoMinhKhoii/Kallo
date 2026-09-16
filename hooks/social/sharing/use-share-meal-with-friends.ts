@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
+import { dailyMealsKeys, loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import {
   shareMealWithFriends,
   undoMealShare,
@@ -20,6 +20,9 @@ export function useShareMealWithFriends() {
     mutationFn: shareMealWithFriends,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
+      // The dashboard reads its ring off a separate cache; without this the
+      // calorie ring keeps the pre-split total until it goes stale on its own.
+      queryClient.invalidateQueries({ queryKey: dailyMealsKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
     },
   });
@@ -35,6 +38,7 @@ export function useUndoMealShare() {
     mutationFn: undoMealShare,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
+      queryClient.invalidateQueries({ queryKey: dailyMealsKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
     },
   });

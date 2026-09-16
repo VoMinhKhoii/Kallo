@@ -6,7 +6,10 @@
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 
-export const MOCK_USER = { id: 'user-123', email: 'me@example.com' };
+export const MOCK_USER = {
+  id: '9d1f2c44-7b3e-4a55-9c22-1aa2bb334455',
+  email: 'me@example.com',
+};
 
 /** The premium gates key their trial window off the profile's creation date. */
 export const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
