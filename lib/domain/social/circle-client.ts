@@ -152,12 +152,26 @@ export function shareMealWithFriends(input: {
   mealId: string;
   friendUserIds: string[];
   mode: 'copy' | 'split';
+  /** Uneven split only: my own run, in parts of a 20-part dish. */
+  myParts?: number;
+  /** Uneven split only: one entry per recipient. Must cover every id in
+   *  `friendUserIds` and sum with `myParts` to exactly 20. */
+  splits?: { userId: string; parts: number }[];
 }) {
   return postJson<{
     invitedCount: number;
     portionFactor: number;
     meal: ConfirmMealResponse['meal'] | null;
   }>('/api/v1/groups/meal-share', input);
+}
+
+/** Undo a split: restore my meal and withdraw the offers it created. Refused
+ *  server-side once anybody has accepted. */
+export function undoMealShare(input: { mealId: string }) {
+  return postJson<{ meal: ConfirmMealResponse['meal'] }>(
+    '/api/v1/groups/meal-share/undo',
+    input
+  );
 }
 
 /** Pending copy/split offers addressed to me (the Circle inbox). */

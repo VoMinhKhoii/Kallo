@@ -175,6 +175,8 @@ export function PrecisePersistedMealCard({
         <div className="mt-1.5 px-1">
           <MealCardActionBar
             mealId={meal.id}
+            mealName={meal.rawInput}
+            totalKcal={meal.nutrition.caloriesKcal ?? null}
             share={meal.share}
             canEdit={canEdit}
             canShare={canShare}

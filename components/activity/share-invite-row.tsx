@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { useMarkNotificationRead } from '@/hooks/notifications/use-notification-state';
@@ -13,7 +13,7 @@ import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { cn } from '@/lib/core/ui/cn';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
-import { inviteMode } from './notification-copy';
+import { inviteMode, invitePortionPercent } from './notification-copy';
 import { NotificationAvatars, NotificationMessage } from './notification-parts';
 
 /** The invite's terminal state, as a quiet chip. Only "accepted" names an act:
@@ -52,6 +52,7 @@ export function ShareInviteRow({
   const pending = item.invite?.status === 'pending' && inviteId !== null;
   const busy = accept.isPending || dismiss.isPending;
   const mode = inviteMode(item);
+  const percent = invitePortionPercent(item);
 
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
@@ -107,21 +108,27 @@ export function ShareInviteRow({
               {mode === 'split' ? t('invite.modeSplit') : t('invite.modeCopy')}
             </span>
           )}
+          {/* What accepting actually gets you. Without it the reader has to
+              accept blind to find out what their share is. */}
+          {percent !== null && (
+            <span className="text-kallo-text">{percent}%</span>
+          )}
         </div>
 
         {pending ? (
           <div className="mt-2.5 flex items-center gap-2">
+            {/* One live action, at the highest contrast the cream canvas
+                allows — the role white-on-dark plays in a dark feed. The
+                dismiss is a text action beside it, not a second button. */}
             <button
               type="button"
               onClick={handleAccept}
               disabled={busy}
               aria-busy={accept.isPending}
-              className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
             >
-              {accept.isPending ? (
+              {accept.isPending && (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Check className="h-3.5 w-3.5" />
               )}
               {t('invite.accept')}
             </button>
@@ -129,9 +136,8 @@ export function ShareInviteRow({
               type="button"
               onClick={handleDismiss}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-60"
+              className="px-2 py-1.5 font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-55"
             >
-              <X className="h-3.5 w-3.5" />
               {t('invite.dismiss')}
             </button>
           </div>

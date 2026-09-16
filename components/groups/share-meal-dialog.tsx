@@ -1,10 +1,15 @@
 'use client';
 
-import { Loader2, Users2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { FriendPickRow } from '@/components/groups/share-meal/friend-pick-row';
+import {
+  PortionBattery,
+  type PortionSeat,
+} from '@/components/groups/share-meal/portion-battery';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,80 +18,170 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/social/circle/use-friends';
-import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
+import {
+  useShareMealWithFriends,
+  useUndoMealShare,
+} from '@/hooks/social/sharing/use-share-meal-with-friends';
+import type { CircleMember } from '@/lib/actions/groups/types';
 import { cn } from '@/lib/core/ui/cn';
+import {
+  evenParts,
+  MAX_PARTICIPANTS,
+  partsAfterAdd,
+  partsAfterRemoval,
+} from '@/lib/domain/social/splits/parts';
 
-type Mode = 'copy' | 'split';
+type Mode = 'whole' | 'split';
 
 interface ShareMealDialogProps {
   mealId: string;
+  mealName: string;
+  totalKcal: number | null;
   trigger: ReactNode;
 }
 
+function initialsOf(label: string) {
+  const words = label.trim().split(/\s+/u);
+  if (words.length >= 2) {
+    return (words.at(-2)![0] + words.at(-1)![0]).toUpperCase();
+  }
+  return label.slice(0, 2).toUpperCase();
+}
+
 /**
- * Offer a saved meal to specific friends. Copy sends everyone the full dish;
- * split divides one shared item equally (self + selected friends), reducing the
- * logger's own portion. Recipients accept from their Circle inbox. A successful
- * share invalidates the logging day (the split rescale) via the mutation hook.
+ * Offer a saved meal to specific friends.
+ *
+ * Twin of the mobile sheet (`share_meal_sheet.dart`) — same information
+ * architecture, same rules, desktop affordances. People at the table are pins
+ * above the meter; the list below holds only friends who are not, so nobody is
+ * ever listed twice and there is no checkmark column to scan.
  */
-export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
+export function ShareMealDialog({
+  mealId,
+  mealName,
+  totalKcal,
+  trigger,
+}: ShareMealDialogProps) {
   const t = useTranslations('groups.shareMeal');
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>('copy');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Defer the friends fetch until the dialog is actually opened — the trigger
-  // renders on every meal card, so an always-on query would fan out per card.
-  const { data: circle = [], isPending } = useFriends({ enabled: open });
+  const [mode, setMode] = useState<Mode>('whole');
+  const [seated, setSeated] = useState<CircleMember[]>([]);
+  const [parts, setParts] = useState<number[]>(() => evenParts(2));
+
+  // Deferred until the dialog opens: the trigger renders on every meal card,
+  // so an always-on query would fan out per card.
+  const {
+    data: circle = [],
+    isPending,
+    isError,
+    refetch,
+  } = useFriends({
+    enabled: open,
+  });
   const share = useShareMealWithFriends();
+  const undo = useUndoMealShare();
 
   const friends = useMemo(
     () => circle.filter((m) => m.status === 'accepted'),
     [circle]
   );
+  const unseated = useMemo(
+    () =>
+      friends.filter(
+        (m) => !seated.some((s) => s.profile.userId === m.profile.userId)
+      ),
+    [friends, seated]
+  );
 
   const reset = () => {
-    setSelected(new Set());
-    setMode('copy');
+    setSeated([]);
+    setParts(evenParts(2));
+    setMode('whole');
   };
 
-  // Reset the draft whenever the dialog closes (cancel or success), so the next
-  // open on any card starts clean instead of inheriting a stale selection.
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
-    if (!next) {
-      reset();
-    }
+    if (!next) reset();
   };
 
-  const toggle = (userId: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
-      }
-      return next;
-    });
+  const add = (member: CircleMember) => {
+    if (seated.length + 1 >= MAX_PARTICIPANTS) return;
+    setParts(seated.length === 0 ? evenParts(2) : partsAfterAdd(parts));
+    setSeated([...seated, member]);
+  };
 
-  const count = selected.size;
-  // The fraction each participant keeps on a split (self + selected friends).
-  const portionLabel = count > 0 ? `1/${count + 1}` : '—';
+  const removeSeat = (seat: number) => {
+    const nextSeated = seated.filter((_, i) => i !== seat - 1);
+    setParts(
+      nextSeated.length === 0 ? evenParts(2) : partsAfterRemoval(parts, seat)
+    );
+    setSeated(nextSeated);
+  };
+
+  /** True when the parts are exactly what an even split would produce. */
+  const isEven = useMemo(() => {
+    const even = evenParts(seated.length + 1);
+    return even.every((p, i) => p === parts[i]);
+  }, [parts, seated.length]);
+
+  const seats: PortionSeat[] = [
+    {
+      id: 'me',
+      initials: t('youInitial'),
+      label: t('you'),
+      parts: parts[0],
+    },
+    ...seated.map((m, i) => ({
+      id: m.profile.userId,
+      initials: initialsOf(m.profile.displayName ?? m.profile.handle),
+      label: m.profile.displayName ?? m.profile.handle,
+      parts: parts[i + 1],
+    })),
+  ];
+
+  const keptParts = mode === 'split' && seated.length > 0 ? parts[0] : 20;
+  const kept =
+    totalKcal == null ? null : Math.round((totalKcal * keptParts) / 20);
 
   const handleShare = () => {
-    if (count === 0 || share.isPending) {
-      return;
-    }
+    if (seated.length === 0 || share.isPending) return;
+    const isSplit = mode === 'split';
     share.mutate(
-      { mealId, friendUserIds: Array.from(selected), mode },
+      {
+        mealId,
+        friendUserIds: seated.map((m) => m.profile.userId),
+        mode: isSplit ? 'split' : 'copy',
+        // An untouched even split posts WITHOUT parts, so the common case keeps
+        // taking the server's original 1/(N+1) path.
+        ...(isSplit && !isEven
+          ? {
+              myParts: parts[0],
+              splits: seated.map((m, i) => ({
+                userId: m.profile.userId,
+                parts: parts[i + 1],
+              })),
+            }
+          : {}),
+      },
       {
         onSuccess: () => {
           toast.success(
-            mode === 'split'
-              ? t('splitSuccess', { count })
-              : t('copySuccess', { count })
+            isSplit
+              ? t('splitSuccess', { count: seated.length })
+              : t('copySuccess', { count: seated.length }),
+            isSplit
+              ? {
+                  action: {
+                    label: t('undo'),
+                    onClick: () =>
+                      undo.mutate(
+                        { mealId },
+                        { onError: () => toast.error(t('undoFailed')) }
+                      ),
+                  },
+                }
+              : undefined
           );
-          // handleOpenChange resets the draft on close.
           setOpen(false);
           reset();
         },
@@ -96,86 +191,169 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {/* One corner family: dialog 16, controls 12, so the nesting reads as
+          deliberate rather than as three unrelated radii. */}
       <DialogContent
         aria-describedby={undefined}
-        className="gap-5 border-kallo-border/60 bg-white"
+        className="gap-0 rounded-2xl border-kallo-border/60 bg-white p-0"
       >
-        <DialogHeader>
-          <DialogTitle className="font-serif text-kallo-text text-xl">
+        <DialogHeader className="px-[22px] pt-5">
+          <DialogTitle className="font-serif text-[22px] text-kallo-text">
             {t('title')}
           </DialogTitle>
+          <p className="truncate font-sans-display text-[13px] text-kallo-text-muted">
+            {mealName}
+          </p>
         </DialogHeader>
 
-        {/* Mode: full copy vs even split */}
-        <div className="grid grid-cols-2 gap-2">
-          {(['copy', 'split'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={mode === m}
-              onClick={() => setMode(m)}
-              className={cn(
-                'rounded-xl border px-3 py-2.5 text-left transition-colors',
-                mode === m
-                  ? 'border-kallo-border bg-kallo-hover'
-                  : 'border-kallo-border/60 bg-white hover:bg-kallo-hover/40'
-              )}
-            >
-              <span className="block font-medium font-sans-display text-[13px] text-kallo-text">
-                {t(`mode.${m}.label`)}
-              </span>
-              <span className="mt-0.5 block font-sans-display text-[11px] text-kallo-text-muted">
-                {t(`mode.${m}.hint`)}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {mode === 'split' && count > 0 && (
-          <p className="font-medium font-sans-display text-[12px] text-kallo-text">
-            {t('splitPreview', { portion: portionLabel })}
-          </p>
-        )}
-
-        {/* Friend picker (accepted friends only) */}
-        <div className="max-h-[40vh] space-y-1 overflow-y-auto">
-          {isPending && (
-            <p className="font-sans-display text-[13px] text-kallo-text-muted">
-              {t('loadingFriends')}
-            </p>
-          )}
-          {!isPending && friends.length === 0 && (
-            <p className="font-sans-display text-[13px] text-kallo-text-muted">
-              {t('noFriends')}
-            </p>
-          )}
-          {!isPending &&
-            friends.map((member) => (
-              <FriendPickRow
-                key={member.profile.userId}
-                member={member}
-                selected={selected.has(member.profile.userId)}
-                onToggle={toggle}
-              />
+        <div className="px-[22px]">
+          <div className="mt-3.5 flex h-9 rounded-xl bg-kallo-hover/70 p-[3px]">
+            {(['whole', 'split'] as const).map((m) => (
+              <button
+                aria-pressed={mode === m}
+                className={cn(
+                  'flex-1 rounded-[9px] font-sans-display text-[13px] transition-colors',
+                  mode === m
+                    ? 'bg-white text-kallo-text shadow-sm'
+                    : 'text-kallo-text-muted'
+                )}
+                key={m}
+                onClick={() => setMode(m)}
+                type="button"
+              >
+                {t(`mode.${m}`)}
+              </button>
             ))}
+          </div>
+
+          {isPending && <DialogSkeleton />}
+
+          {!isPending && isError && (
+            <div className="py-2">
+              <SurfaceState
+                action={
+                  <Button onClick={() => refetch()} size="sm" variant="ink">
+                    {t('retry')}
+                  </Button>
+                }
+                area="circle"
+                compact
+                kind="error"
+                subtitle={t('errorBody')}
+                title={t('errorTitle')}
+              />
+            </div>
+          )}
+
+          {!(isPending || isError) && friends.length === 0 && (
+            <div className="py-2">
+              <SurfaceState
+                area="circle"
+                compact
+                kind="empty"
+                subtitle={t('emptyBody')}
+                title={t('emptyTitle')}
+              />
+            </div>
+          )}
+
+          {!(isPending || isError) && friends.length > 0 && (
+            <>
+              <div className="mt-4">
+                {seated.length === 0 ? (
+                  <p className="font-sans-display text-[13px] text-kallo-text-muted">
+                    {t('pickSomeone')}
+                  </p>
+                ) : (
+                  <PortionBattery
+                    interactive={mode === 'split'}
+                    onChange={setParts}
+                    onRemove={removeSeat}
+                    seats={seats}
+                    totalKcal={totalKcal}
+                  />
+                )}
+              </div>
+
+              {mode === 'split' && seated.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    className="font-sans-display text-[12px] text-kallo-text"
+                    onClick={() => setParts(evenParts(seated.length + 1))}
+                    type="button"
+                  >
+                    {t('splitEvenly')}
+                  </button>
+                </div>
+              )}
+
+              <p className="mt-4 font-sans-display text-[12px] text-kallo-text-muted">
+                {t('addSectionTitle')}
+              </p>
+              <div className="max-h-[150px] overflow-y-auto">
+                {unseated.length === 0 ? (
+                  <p className="py-3 font-sans-display text-[13px] text-kallo-text-muted">
+                    {t('allAdded')}
+                  </p>
+                ) : (
+                  unseated.map((member) => (
+                    <button
+                      className="flex w-full items-center gap-3 rounded-xl py-2 transition-colors hover:bg-kallo-hover/40 disabled:opacity-45"
+                      disabled={seated.length + 1 >= MAX_PARTICIPANTS}
+                      key={member.profile.userId}
+                      onClick={() => add(member)}
+                      type="button"
+                    >
+                      <span className="flex size-8 items-center justify-center rounded-full bg-kallo-hover font-sans-display text-[12px] text-kallo-text">
+                        {initialsOf(
+                          member.profile.displayName ?? member.profile.handle
+                        )}
+                      </span>
+                      <span className="truncate font-sans-display text-[14px] text-kallo-text">
+                        {member.profile.displayName ?? member.profile.handle}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={count === 0 || share.isPending}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[14px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {share.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Users2 className="h-4 w-4" />
-          )}
-          {count === 0 ? t('submitEmpty') : t('submit', { count })}
-        </button>
+        <div className="mt-4 flex items-center justify-end gap-3 border-kallo-border/60 border-t px-[22px] py-3.5">
+          <Button onClick={() => handleOpenChange(false)} variant="outline">
+            {t('cancel')}
+          </Button>
+          <Button
+            disabled={seated.length === 0 || share.isPending}
+            onClick={handleShare}
+          >
+            {share.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {seated.length === 0
+              ? t('submitEmpty')
+              : kept === null
+                ? t('submitNoKcal', { count: seated.length })
+                : t('submit', { count: seated.length, kcal: kept })}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DialogSkeleton() {
+  return (
+    <div className="mt-4 animate-pulse">
+      <div className="mx-auto h-5 w-24 rounded-lg bg-kallo-hover" />
+      <div className="mt-2.5 h-[46px] rounded-xl bg-kallo-hover" />
+      <div className="mt-5 space-y-3">
+        <div className="h-8 w-40 rounded-lg bg-kallo-hover" />
+        <div className="h-8 w-32 rounded-lg bg-kallo-hover" />
+      </div>
+    </div>
   );
 }

@@ -73,24 +73,30 @@
     "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
   },
   "shareMeal": {
-    "title": "Chia sẻ bữa ăn này",
+    "title": "Chia sẻ bữa ăn",
     "mode": {
-      "copy": {
-        "label": "Cùng một món",
-        "hint": "Mỗi người ghi trọn phần món ăn."
-      },
-      "split": {
-        "label": "Chia phần",
-        "hint": "Chia đều một món cho mỗi người."
-      }
+      "whole": "Nguyên phần",
+      "split": "Chia phần"
     },
-    "splitPreview": "Phần của bạn giảm còn {portion} ngay bây giờ — mỗi người một phần bằng nhau.",
-    "loadingFriends": "Đang tải danh sách bạn bè…",
-    "noFriends": "Chưa có ai trong danh sách. Hãy thêm bạn trước.",
+    "addSectionTitle": "Thêm bạn bè",
+    "allAdded": "Đã thêm tất cả bạn bè.",
+    "pickSomeone": "Thêm một người bạn để chia sẻ bữa này.",
+    "splitEvenly": "Chia đều",
+    "you": "Bạn",
+    "youInitial": "Bạn",
+    "submit": "Chia sẻ với {count} người · còn {kcal} kcal",
+    "submitNoKcal": "Chia sẻ với {count} người",
     "submitEmpty": "Chọn một người bạn",
-    "submit": "Chia sẻ với {count, plural, other {# người bạn}}",
-    "copySuccess": "Đã gửi cho {count, plural, other {# người bạn}}",
-    "splitSuccess": "Đã chia phần với {count, plural, other {# người bạn}}",
+    "cancel": "Huỷ",
+    "retry": "Thử lại",
+    "undo": "Hoàn tác",
+    "undoFailed": "Không hoàn tác được — có thể ai đó đã nhận phần rồi.",
+    "emptyTitle": "Chưa có ai trong danh sách",
+    "emptyBody": "Thêm một người bạn để có thể chia sẻ bữa ăn với họ.",
+    "errorTitle": "Không tải được danh sách",
+    "errorBody": "Kiểm tra kết nối rồi thử lại nhé.",
+    "copySuccess": "Đã gửi cho {count} người bạn",
+    "splitSuccess": "Đã chia phần với {count} người bạn",
     "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại."
   },
   "invites": {

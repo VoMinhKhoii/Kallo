@@ -110,3 +110,47 @@ export function copyFactorFor(recipientParts: number, myParts: number): number {
   }
   return recipientParts / myParts;
 }
+
+/**
+ * Remove the participant at [index], returning their parts to the table.
+ *
+ * The freed parts spread across everyone left rather than going to one person,
+ * and any remainder lands on the earliest seat, so the result still sums to
+ * TOTAL_PARTS exactly. Mirrors `partsAfterRemoval` in `split_parts.dart`.
+ */
+export function partsAfterRemoval(parts: number[], index: number): number[] {
+  const freed = parts[index];
+  const next = parts.filter((_, i) => i !== index);
+  const share = Math.floor(freed / next.length);
+  let remainder = freed - share * next.length;
+  return next.map((p) => {
+    const extra = remainder > 0 ? 1 : 0;
+    remainder -= extra;
+    return p + share + extra;
+  });
+}
+
+/**
+ * Seat one more person, taking their floor from whoever can most afford it.
+ *
+ * Taking from the largest run rather than resetting means adding a person never
+ * silently discards a split somebody set by hand. Mirrors `partsAfterAdd` in
+ * `split_parts.dart`.
+ */
+export function partsAfterAdd(parts: number[]): number[] {
+  const next = [...parts];
+  let owed = MIN_PARTS;
+  while (owed > 0) {
+    let largest = 0;
+    for (let i = 1; i < next.length; i++) {
+      if (next[i] > next[largest]) largest = i;
+    }
+    // Everyone is already at the floor: the table is full in practice and the
+    // caller should have refused before reaching here.
+    if (next[largest] <= MIN_PARTS) break;
+    next[largest] -= 1;
+    owed -= 1;
+  }
+  next.push(MIN_PARTS - owed);
+  return next;
+}

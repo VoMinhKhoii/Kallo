@@ -2,7 +2,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
-import { shareMealWithFriends } from '@/lib/domain/social/circle-client';
+import {
+  shareMealWithFriends,
+  undoMealShare,
+} from '@/lib/domain/social/circle-client';
 import { circleFeedKeys } from '@/lib/domain/social/query-keys';
 
 /**
@@ -15,6 +18,21 @@ export function useShareMealWithFriends() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: shareMealWithFriends,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
+      queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+    },
+  });
+}
+
+/**
+ * Undo a split. Invalidates exactly what the share did — an undo has to put
+ * every surface the share touched back, not just the one in front of the user.
+ */
+export function useUndoMealShare() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: undoMealShare,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });

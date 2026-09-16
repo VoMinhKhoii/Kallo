@@ -37,8 +37,10 @@ function renderBar() {
       canShare
       isRefineOpen={false}
       mealId="meal-1"
+      mealName="Bánh mì thịt nướng"
       onEditAmounts={vi.fn()}
       share={null}
+      totalKcal={1040}
     />
   );
 }

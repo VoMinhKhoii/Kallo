@@ -152,7 +152,44 @@ export const SHARE_PATHS: Record<string, PathItem> = {
             description: 'Recipients. Must be accepted connections.',
           },
           mode: { type: 'string', enum: ['copy', 'split'] },
+          myParts: {
+            type: 'integer',
+            minimum: 2,
+            maximum: 18,
+            description:
+              'Uneven split only: the sender’s own run, in parts of a 20-part dish. Omit for the even 1/(N+1) split.',
+          },
+          splits: {
+            type: 'array',
+            description:
+              'Uneven split only: one entry per recipient. Must cover every id in `friendUserIds` and sum with `myParts` to exactly 20.',
+            items: {
+              type: 'object',
+              required: ['userId', 'parts'],
+              properties: {
+                userId: { type: 'string', format: 'uuid' },
+                parts: { type: 'integer', minimum: 2, maximum: 18 },
+              },
+            },
+          },
         },
+      },
+      ok: ref('Acknowledgement'),
+      okStatus: '201',
+    }),
+  },
+
+  '/api/v1/groups/meal-share/undo': {
+    post: authed({
+      operationId: 'undoMealShare',
+      summary: 'Undo a split and withdraw its offers',
+      description:
+        'Restores the sender’s meal to a full portion and deletes the pending invites it created. Refused once any recipient has accepted — their copy is already in their own diary.',
+      tags: TAGS,
+      body: {
+        type: 'object',
+        required: ['mealId'],
+        properties: { mealId: { type: 'string', format: 'uuid' } },
       },
       ok: ref('Acknowledgement'),
       okStatus: '201',

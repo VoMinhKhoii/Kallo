@@ -5,6 +5,8 @@ import {
   evenParts,
   MAX_PARTICIPANTS,
   MIN_PARTS,
+  partsAfterAdd,
+  partsAfterRemoval,
   TOTAL_PARTS,
 } from '@/lib/domain/social/splits/parts';
 
@@ -92,5 +94,42 @@ describe('copyFactorFor', () => {
 
   it('refuses a sender run of zero rather than dividing by it', () => {
     expect(() => copyFactorFor(10, 0)).toThrow();
+  });
+});
+
+describe('partsAfterRemoval', () => {
+  it('returns the freed parts to the table and still sums to the dish', () => {
+    const next = partsAfterRemoval([8, 6, 6], 1);
+    expect(next).toHaveLength(2);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('never leaves anyone under the floor', () => {
+    for (let i = 0; i < 4; i++) {
+      const next = partsAfterRemoval([5, 5, 5, 5], i);
+      expect(Math.min(...next)).toBeGreaterThanOrEqual(MIN_PARTS);
+      expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+    }
+  });
+});
+
+describe('partsAfterAdd', () => {
+  it('seats the newcomer at the floor, taken from the largest run', () => {
+    expect(partsAfterAdd([10, 10])).toEqual([9, 9, MIN_PARTS]);
+  });
+
+  it('preserves a hand-set split as far as the floor allows', () => {
+    // The 6 is untouched; the 14 pays for the newcomer.
+    expect(partsAfterAdd([14, 6])).toEqual([12, 6, MIN_PARTS]);
+  });
+
+  it('agrees with the Dart twin all the way to a full table', () => {
+    let parts = evenParts(2);
+    while (parts.length < MAX_PARTICIPANTS) {
+      parts = partsAfterAdd(parts);
+      expect(parts.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+      expect(Math.min(...parts)).toBeGreaterThanOrEqual(MIN_PARTS);
+    }
+    expect(parts).toHaveLength(MAX_PARTICIPANTS);
   });
 });
