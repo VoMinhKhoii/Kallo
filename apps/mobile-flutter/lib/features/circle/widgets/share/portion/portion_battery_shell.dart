@@ -7,8 +7,7 @@ import 'portion_seats.dart';
 
 /// The battery shell and its coloured cells.
 class BatteryShell extends StatelessWidget {
-  const BatteryShell({
-    super.key,required this.seats, required this.parts});
+  const BatteryShell({super.key, required this.seats, required this.parts});
 
   final List<PortionSeat> seats;
   final List<int> parts;
@@ -44,7 +43,15 @@ class BatteryShell extends StatelessWidget {
         borderRadius: BorderRadius.circular(KalloRadii.xl),
         border: Border.all(color: KalloColors.text, width: 2),
       ),
-      child: Row(children: cells),
+      // STRETCH, not the default centre: a DecoratedBox with no child takes
+      // its height from its constraints, and a centred Row hands its children
+      // a LOOSE height — so every cell collapsed to zero and the meter painted
+      // an empty shell. Assertions could not see it (the widgets are all in the
+      // tree at zero height); the render did.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: cells,
+      ),
     );
   }
 }

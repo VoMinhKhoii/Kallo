@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/logic/split_parts.dart';
@@ -131,22 +132,38 @@ void main() {
     await pump(tester, parts: [7, 7, 6], onRemove: removed.add);
 
     // One × per seat EXCEPT seat 0.
-    expect(find.byIcon(Icons.close), findsNWidgets(2));
+    expect(find.byIcon(LucideIcons.x300), findsNWidgets(2));
   });
 
   testWidgets('no remove badges when the caller offers no handler',
       (tester) async {
     await pump(tester, parts: [7, 7, 6]);
-    expect(find.byIcon(Icons.close), findsNothing);
+    expect(find.byIcon(LucideIcons.x300), findsNothing);
   });
 
   testWidgets('tapping a badge removes that seat', (tester) async {
     final removed = <int>[];
     await pump(tester, parts: [7, 7, 6], onRemove: removed.add);
 
-    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.tap(find.byIcon(LucideIcons.x300).first);
     await tester.pump();
     expect(removed, [1]);
+  });
+
+  testWidgets('cells actually occupy the shell', (tester) async {
+    await pump(tester, parts: [13, 7]);
+
+    // Counting cells by key passes even when every one of them is zero-height:
+    // a DecoratedBox with no child takes its size from its constraints, and a
+    // centred Row hands out LOOSE ones. That shipped an empty shell once.
+    final cell = find
+        .byWidgetPredicate((w) =>
+            w.key is ValueKey<String> &&
+            (w.key as ValueKey<String>).value.startsWith('cell-u0-'))
+        .first;
+    final size = tester.getSize(cell);
+    expect(size.height, greaterThan(40));
+    expect(size.width, greaterThan(0));
   });
 
   testWidgets('fits six seats without overflowing', (tester) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../theme/calm_tokens.dart';
@@ -132,7 +133,7 @@ class _Pin extends StatelessWidget {
                         border: Border.all(color: KalloColors.border),
                       ),
                       child: const Icon(
-                        Icons.close,
+                        LucideIcons.x300,
                         size: 11,
                         color: KalloColors.textSoft,
                       ),
