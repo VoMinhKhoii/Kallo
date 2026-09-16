@@ -3,7 +3,7 @@
 import {
   PortionBattery,
   type PortionSeat,
-} from '@/components/groups/share-meal/portion-battery';
+} from '@/components/groups/share-meal/portion/battery';
 
 /**
  * The portion block: the meter, and the reset beside it.

@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { PortionNotch } from '@/components/groups/share-meal/portion-notch';
-import { PortionPin } from '@/components/groups/share-meal/portion-pin';
+import { PortionNotch } from '@/components/groups/share-meal/portion/notch';
+import { PortionPin } from '@/components/groups/share-meal/portion/pin';
 import { partsAfterDrag } from '@/lib/domain/social/splits/parts';
 
 /** One seat at the table: who, and how many parts they hold. */

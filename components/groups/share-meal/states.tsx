@@ -1,6 +1,6 @@
 'use client';
 
-import { ShareMealDialogSkeleton } from '@/components/groups/share-meal/share-meal-add-lane';
+import { ShareMealDialogSkeleton } from '@/components/groups/share-meal/add-lane';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 

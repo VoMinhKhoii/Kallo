@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import type {
   ShareDraft,
   ShareMealRequest,
-} from '@/components/groups/share-meal/use-share-draft';
+} from '@/hooks/social/sharing/use-share-draft';
 
 /**
  * Posting the share, and the confirmation that carries the undo.

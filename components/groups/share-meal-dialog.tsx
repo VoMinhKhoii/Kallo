@@ -2,13 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
-import { ShareMealAddLane } from '@/components/groups/share-meal/share-meal-add-lane';
-import { ShareMealDialogFooter } from '@/components/groups/share-meal/share-meal-dialog-footer';
-import { ShareMealDialogStates } from '@/components/groups/share-meal/share-meal-dialog-states';
-import { ShareMealMeter } from '@/components/groups/share-meal/share-meal-meter';
-import { ShareMealTabs } from '@/components/groups/share-meal/share-meal-tabs';
-import { useShareDraft } from '@/components/groups/share-meal/use-share-draft';
-import { useShareSubmit } from '@/components/groups/share-meal/use-share-submit';
+import { ShareMealAddLane } from '@/components/groups/share-meal/add-lane';
+import { ShareMealDialogFooter } from '@/components/groups/share-meal/footer';
+import { ShareMealMeter } from '@/components/groups/share-meal/meter';
+import { ShareMealDialogStates } from '@/components/groups/share-meal/states';
+import { ShareMealTabs } from '@/components/groups/share-meal/tabs';
 import {
   Dialog,
   DialogContent,
@@ -17,10 +15,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/social/circle/use-friends';
+import { useShareDraft } from '@/hooks/social/sharing/use-share-draft';
 import {
   useShareMealWithFriends,
   useUndoMealShare,
 } from '@/hooks/social/sharing/use-share-meal-with-friends';
+import { useShareSubmit } from '@/hooks/social/sharing/use-share-submit';
 import { TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 
 type Mode = 'whole' | 'split';

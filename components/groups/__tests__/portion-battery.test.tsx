@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   PortionBattery,
   type PortionSeat,
-} from '@/components/groups/share-meal/portion-battery';
+} from '@/components/groups/share-meal/portion/battery';
 import { MIN_PARTS, TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 
 function seatsFrom(parts: number[]): PortionSeat[] {

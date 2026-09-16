@@ -1,6 +1,6 @@
 'use client';
 
-import type { PortionSeat } from '@/components/groups/share-meal/portion-battery';
+import type { PortionSeat } from '@/components/groups/share-meal/portion/battery';
 import { cn } from '@/lib/core/ui/cn';
 import { MIN_PARTS, TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 

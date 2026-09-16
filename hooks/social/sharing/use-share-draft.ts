@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { PortionSeat } from '@/components/groups/share-meal/portion-battery';
+import type { PortionSeat } from '@/components/groups/share-meal/portion/battery';
 import type { CircleMember } from '@/lib/actions/groups/types';
 import type { shareMealWithFriends } from '@/lib/domain/social/circle-client';
 import {
