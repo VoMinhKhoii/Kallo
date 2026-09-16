@@ -96,16 +96,14 @@ void main() {
     await pump(tester, parts: [10, 10], onChanged: (p) => got = p);
 
     final handle = tester.ensureSemantics();
-    final node = find.byType(PortionBattery);
-    tester.binding.pipelineOwner.semanticsOwner!.performAction(
-      tester.getSemantics(find.bySemanticsLabel(RegExp('Bạn và Người 1'))).id,
+    tester.semantics.performAction(
+      find.semantics.byLabel(RegExp('Bạn và Người 1')),
       SemanticsAction.increase,
     );
     await tester.pump();
 
     expect(got, [11, 9]);
     handle.dispose();
-    expect(node, findsOneWidget);
   });
 
   testWidgets('refuses to step past the floor instead of reporting a change',
@@ -115,8 +113,8 @@ void main() {
     await pump(tester, parts: [18, 2], onChanged: (p) => got = p);
 
     final handle = tester.ensureSemantics();
-    tester.binding.pipelineOwner.semanticsOwner!.performAction(
-      tester.getSemantics(find.bySemanticsLabel(RegExp('Bạn và Người 1'))).id,
+    tester.semantics.performAction(
+      find.semantics.byLabel(RegExp('Bạn và Người 1')),
       SemanticsAction.increase,
     );
     await tester.pump();
