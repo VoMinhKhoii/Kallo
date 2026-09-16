@@ -165,15 +165,6 @@ export function shareMealWithFriends(input: {
   }>('/api/v1/groups/meal-share', input);
 }
 
-/** Undo a split: restore my meal and withdraw the offers it created. Refused
- *  server-side once anybody has accepted. */
-export function undoMealShare(input: { mealId: string }) {
-  return postJson<{ meal: ConfirmMealResponse['meal'] }>(
-    '/api/v1/groups/meal-share/undo',
-    input
-  );
-}
-
 /** Pending copy/split offers addressed to me (the Circle inbox). */
 export function fetchMealShareInvites(): Promise<MealShareInvite[]> {
   return request<{ invites: MealShareInvite[] }>('/api/v1/groups/invites').then(

@@ -16,10 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/social/circle/use-friends';
 import { useShareDraft } from '@/hooks/social/sharing/use-share-draft';
-import {
-  useShareMealWithFriends,
-  useUndoMealShare,
-} from '@/hooks/social/sharing/use-share-meal-with-friends';
+import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
 import { useShareSubmit } from '@/hooks/social/sharing/use-share-submit';
 import { TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 
@@ -62,14 +59,12 @@ export function ShareMealDialog({
     enabled: open,
   });
   const share = useShareMealWithFriends();
-  const undo = useUndoMealShare();
   const handleShare = useShareSubmit({
     draft,
     mealId,
     mode,
     share,
     t,
-    undo,
     onDone: () => handleOpenChange(false),
   });
 
@@ -176,7 +171,6 @@ export function ShareMealDialog({
           }
           onCancel={() => handleOpenChange(false)}
           onShare={handleShare}
-          pending={share.isPending}
         />
       </DialogContent>
     </Dialog>

@@ -1,6 +1,5 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 
@@ -19,14 +18,12 @@ export function ShareMealDialogFooter({
   label,
   cancelLabel,
   disabled,
-  pending,
   onShare,
   onCancel,
 }: {
   label: string;
   cancelLabel: string;
   disabled: boolean;
-  pending: boolean;
   onShare: () => void;
   onCancel: () => void;
 }) {
@@ -35,8 +32,7 @@ export function ShareMealDialogFooter({
       <Button onClick={onCancel} variant="outline">
         {cancelLabel}
       </Button>
-      <Button disabled={disabled || pending} onClick={onShare}>
-        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      <Button disabled={disabled} onClick={onShare}>
         {label}
       </Button>
     </DialogFooter>

@@ -2,23 +2,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../logging/data/logging_models.dart';
 import '../../data/circle_providers.dart';
 import '../states/friend_list_skeleton.dart';
 import 'share_meal_body.dart';
 import 'share_meal_draft.dart';
-import 'share_meal_outcome.dart';
+import 'share_meal_request.dart';
 import 'share_meal_states.dart';
 import 'share_meal_footer.dart';
 
 /// The sheet body. Opened through `showShareMealSheet`, which owns the
-/// confirmation toast and the undo that rides on it — both have to outlive
-/// this widget, so neither can live here.
+/// confirmation toast, the undo, and the send — all three outlive this widget,
+/// so none of them can live here.
 class ShareMealSheet extends ConsumerStatefulWidget {
   const ShareMealSheet({super.key, required this.meal});
 
@@ -31,28 +29,24 @@ class ShareMealSheet extends ConsumerStatefulWidget {
 class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
   final _draft = ShareMealDraft();
 
-  bool _submitting = false;
-
   /// The lane holds its height so the footer never moves — not when the list
   /// is long, not when the tab changes.
   static const double _laneHeight = 150;
 
   double? get _totalKcal => widget.meal.nutrition.caloriesKcal;
 
-  bool get _canSubmit => !_draft.isEmpty && !_submitting;
+  bool get _canSubmit => !_draft.isEmpty;
 
 
-  Future<void> _submit() async {
+  void _submit() {
     if (!_canSubmit) return;
-    setState(() => _submitting = true);
-    final count = _draft.seated.length;
     final isSplit = _draft.isSplit;
-    try {
-      await shareMealWithFriends(
-        ref,
+    // Hand the share back unsent; the caller holds it for the undo window.
+    Navigator.of(context).pop(
+      ShareMealRequest(
         mealId: widget.meal.id,
         friendUserIds: _draft.seated.map((p) => p.userId).toList(),
-        mode: isSplit ? 'split' : 'copy',
+        isSplit: isSplit,
         // ALWAYS send the parts for a split, even an untouched even one.
         //
         // Skipping them on "even" looked like a safe optimisation and was not:
@@ -63,28 +57,8 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
         // construction, and the two-person case is 10/10 either way.
         myParts: isSplit ? _draft.parts.first : null,
         splits: isSplit ? _draft.splitsPayload() : null,
-      );
-      if (!mounted) return;
-      // Hand the outcome back; the caller raises the toast from a context that
-      // is inside the overlay and still alive when the undo fires.
-      Navigator.of(context).pop(
-        ShareMealOutcome(
-          mealId: widget.meal.id,
-          isSplit: isSplit,
-          count: count,
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      // The draft survives a failure: a retry should be one tap, not a rebuild.
-      setState(() => _submitting = false);
-      if (handledFeatureLock(context, error)) return;
-      showTopToast(
-        context,
-        tr('groups.shareMeal.error'),
-        variant: TopToastVariant.error,
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -101,7 +75,6 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
           KalloSheetHeader(
             title: tr('groups.shareMeal.title'),
             subtitle: widget.meal.rawInput,
-            closeEnabled: !_submitting,
           ),
           Flexible(
             child: SingleChildScrollView(
@@ -147,7 +120,6 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
             seatedCount: _draft.seated.length,
             keptParts: _draft.keptParts,
             totalKcal: _totalKcal,
-            submitting: _submitting,
             canSubmit: _canSubmit,
             onSubmit: _submit,
             onCancel: () => Navigator.of(context).pop(),

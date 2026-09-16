@@ -127,28 +127,17 @@ needed.**
 
 ### Undo
 
-The success toast carries `actionLabel: 'Hoàn tác'`. `showTopToast` already supports an action and returns a
-future that completes on dismissal, so the client side exists.
+The share is **held on the client, not sent**, for the five seconds its toast is up — the same shape as
+removing a meal (`meal_actions.dart`, `use-meal-card-actions.ts`). "Hoàn tác" drops the held request; the
+toast closing without it posts the request. There is no undo endpoint.
 
-`undoMealShareAction(mealId)` is a compensating write, not a delayed one — the share is real the moment the
-button is pressed, so a killed app cannot silently drop it:
+A compensating write was considered and rejected: by the time the toast shows, the recipients' pushes have
+already gone out (post-commit), so undoing on the server leaves them tapping a notification for an invite
+that no longer exists — and a friend who accepts inside the window makes the undo refusable. Deferring means
+nobody hears about a share that was taken back, and undo costs no request.
 
-1. Lock the source meal `FOR UPDATE`, scoped to the actor.
-2. **Refuse if any invite for this meal is `accepted`** — the recipient already has a copy; their meal is not
-   ours to revoke. Message names them.
-3. Rescale the sender's meal by `1 / source.portionFactor` — the split wrote `myParts / 20` there, so the
-   factor needs no new storage — and set `portionFactor = 1`.
-4. **Delete** the pending invite rows (they should never have existed — not `dismissed`, which is a decision
-   the recipient did not make).
-5. `closeAggregates` for every notified recipient, so the notification disappears the way a split's
-   auto-dismiss already does.
-
-The 5-second toast is UX; **the server guard is "no accepted invites"**, which is the real safety and has no
-time limit.
-
-> **Known imprecision.** Step 3 multiplies by a reciprocal, so a round-trip is not bit-exact. The split guard
-> requires `portionFactor == 1` beforehand, so the error is a relative 1e-12 on values the app rounds for
-> display. If it ever shows, the exact fix is snapshotting the pre-split rows rather than dividing.
+The trade: a share is lost if the app is killed or the tab closed inside the window, and a server refusal
+(including the premium 402, which routes to the paywall) surfaces after the toast rather than inside the sheet.
 
 ## Motion and haptics
 
@@ -205,8 +194,7 @@ Both need to be written down so the next person does not "fix" them back.
 ## Verification
 
 - Server: `myParts + sum(parts) === 20`; accept applies `copy_factor`; even splits produce `copy_factor = 1`
-  and byte-identical rows to today; undo refuses once any invite is accepted; undo deletes rather than
-  dismisses.
+  and byte-identical rows to today; undo sends nothing.
 - Widget: notch clamping at both neighbours and at the two-part floor; seat reassignment on removal; the lane
   keeping the footer fixed across list length and tab; `KalloSurfaceState` rendered for empty/error/offline.
 - Golden: the meter at 2, 3, 6 people, at rest and clamped, at 1.0× and 1.3×.

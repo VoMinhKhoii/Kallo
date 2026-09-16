@@ -17,7 +17,6 @@ class ShareMealFooter extends StatelessWidget {
     required this.seatedCount,
     required this.keptParts,
     required this.totalKcal,
-    required this.submitting,
     required this.canSubmit,
     required this.onSubmit,
     required this.onCancel,
@@ -26,7 +25,6 @@ class ShareMealFooter extends StatelessWidget {
   final int seatedCount;
   final int keptParts;
   final double? totalKcal;
-  final bool submitting;
   final bool canSubmit;
   final VoidCallback onSubmit;
   final VoidCallback onCancel;
@@ -63,7 +61,6 @@ class ShareMealFooter extends StatelessWidget {
           KalloButton(
             title: label,
             animateTitle: true,
-            loading: submitting,
             disabled: !canSubmit,
             onPressed: onSubmit,
           ),
@@ -71,7 +68,6 @@ class ShareMealFooter extends StatelessWidget {
           KalloButton(
             variant: KalloButtonVariant.ghost,
             title: tr('common.cancel'),
-            disabled: submitting,
             onPressed: onCancel,
           ),
         ],

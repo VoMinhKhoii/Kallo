@@ -179,28 +179,6 @@ export const SHARE_PATHS: Record<string, PathItem> = {
     }),
   },
 
-  '/api/v1/groups/meal-share/undo': {
-    post: authed({
-      operationId: 'undoMealShare',
-      summary: 'Undo a split and withdraw its offers',
-      description:
-        'Restores the sender’s meal to a full portion and deletes the pending invites it created. Refused once any recipient has accepted — their copy is already in their own diary.',
-      tags: TAGS,
-      body: {
-        type: 'object',
-        required: ['mealId'],
-        properties: { mealId: { type: 'string', format: 'uuid' } },
-      },
-      // 200 with the restored meal, which is what the route actually returns —
-      // the client reconciles its card against it.
-      ok: {
-        type: 'object',
-        required: ['meal'],
-        properties: { meal: ref('Meal') },
-      },
-    }),
-  },
-
   '/api/v1/groups/profile': {
     get: authed({
       operationId: 'getMyPublicProfile',

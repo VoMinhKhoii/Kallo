@@ -124,7 +124,6 @@ export const routeInventory = {
   'api/v1/groups/invites/dismiss/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/invites/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/meal-share/route.ts': ['session', false, 'none-cheap'],
-  'api/v1/groups/meal-share/undo/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/profile/avatar/route.ts': ['session', true, 'avatarUpload'],
   'api/v1/groups/profile/name/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/profile/route.ts': ['session', false, 'none-cheap'],

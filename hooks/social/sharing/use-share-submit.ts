@@ -8,12 +8,15 @@ import type {
 } from '@/hooks/social/sharing/use-share-draft';
 
 /**
- * Posting the share, and the confirmation that carries the undo.
+ * Posting the share, held behind its undo.
  *
- * Kept out of the dialog because it is the one place the mutation, the toast
- * and the compensating write meet — and because the dialog is otherwise pure
- * layout. It does NOT know the wire format: the draft owns that, so the two
- * cannot drift.
+ * Nothing is sent when the dialog closes. The request waits out the toast and
+ * is posted only when it closes without "Undo", so undo just drops it — no
+ * server round trip, and no friend is notified of a share that was taken back.
+ * Same shape as removing a meal (`use-meal-card-actions.ts`).
+ *
+ * It does NOT know the wire format: the draft owns that, so the two cannot
+ * drift.
  */
 export function useShareSubmit({
   draft,
@@ -21,51 +24,47 @@ export function useShareSubmit({
   mode,
   share,
   t,
-  undo,
   onDone,
 }: {
   draft: ShareDraft;
   mealId: string;
   mode: 'whole' | 'split';
   share: {
-    isPending: boolean;
-    mutate: (
-      vars: ShareMealRequest,
-      opts?: { onSuccess?: () => void; onError?: () => void }
-    ) => void;
+    mutate: (vars: ShareMealRequest, opts?: { onError?: () => void }) => void;
   };
   t: ReturnType<typeof useTranslations>;
-  undo: {
-    mutate: (vars: { mealId: string }, opts?: { onError?: () => void }) => void;
-  };
   onDone: () => void;
 }) {
   return () => {
     const count = draft.seated.length;
-    if (count === 0 || share.isPending) {
+    if (count === 0) {
       return;
     }
     const isSplit = mode === 'split';
-    share.mutate(draft.submission(mealId, isSplit), {
-      onSuccess: () => {
-        toast.success(
-          isSplit ? t('splitSuccess', { count }) : t('copySuccess', { count }),
-          isSplit
-            ? {
-                action: {
-                  label: t('undo'),
-                  onClick: () =>
-                    undo.mutate(
-                      { mealId },
-                      { onError: () => toast.error(t('undoFailed')) }
-                    ),
-                },
-              }
-            : undefined
-        );
-        onDone();
-      },
-      onError: () => toast.error(t('error')),
-    });
+    const request = draft.submission(mealId, isSplit);
+
+    // Settles exactly once: sonner can fire both onAutoClose and onDismiss.
+    let settled = false;
+    const commit = () => {
+      if (settled) return;
+      settled = true;
+      share.mutate(request, { onError: () => toast.error(t('error')) });
+    };
+
+    toast.success(
+      isSplit ? t('splitSuccess', { count }) : t('copySuccess', { count }),
+      {
+        duration: 5000,
+        action: {
+          label: t('undo'),
+          onClick: () => {
+            settled = true;
+          },
+        },
+        onAutoClose: commit,
+        onDismiss: commit,
+      }
+    );
+    onDone();
   };
 }

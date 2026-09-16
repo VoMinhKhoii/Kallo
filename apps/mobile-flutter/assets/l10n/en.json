@@ -1623,7 +1623,6 @@
       },
       "submitEmpty": "Pick a friend",
       "undo": "Undo",
-      "undoFailed": "Couldn't undo — someone may have taken their share already.",
       "emptyTitle": "No one in your circle yet",
       "emptyBody": "Add a friend and you can share meals with them.",
       "addFriends": "Add friends",

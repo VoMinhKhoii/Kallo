@@ -107,9 +107,6 @@ export const shareMealWithFriendsSchema = z
     }
   );
 
-/** Undo a split: restore my meal and withdraw the offers it created. */
-export const undoMealShareSchema = z.object({ mealId: uuidSchema });
-
 /** Accept a pending meal-share invite into my own diary for the chosen day. */
 export const acceptMealShareInviteSchema = z.object({
   inviteId: uuidSchema,

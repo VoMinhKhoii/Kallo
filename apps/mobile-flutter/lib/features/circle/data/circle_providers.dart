@@ -290,8 +290,11 @@ String _todayLocalDate() {
 /// Offer a saved meal to specific friends as a full copy or an even split
 /// (`POST /api/v1/groups/meal-share`). A split rescales the logger's own meal
 /// down to their share, so the day + wall are invalidated. Throws [ApiError].
+///
+/// Takes a [ProviderContainer], not a `WidgetRef`: it runs after the share's
+/// undo window closes, by which point the sheet that built it is long disposed.
 Future<void> shareMealWithFriends(
-  WidgetRef ref, {
+  ProviderContainer container, {
   required String mealId,
   required List<String> friendUserIds,
   required String mode, // 'copy' | 'split'
@@ -302,7 +305,7 @@ Future<void> shareMealWithFriends(
   /// every id in [friendUserIds] and sum with [myParts] to exactly 20.
   List<Map<String, Object>>? splits,
 }) async {
-  final api = ref.read(apiClientProvider);
+  final api = container.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/groups/meal-share', {
     'mealId': mealId,
     'friendUserIds': friendUserIds,
@@ -310,34 +313,9 @@ Future<void> shareMealWithFriends(
     if (myParts != null) 'myParts': myParts,
     if (splits != null) 'splits': splits,
   });
-  ref.invalidate(loggingDayProvider);
+  container.invalidate(loggingDayProvider);
   // The dashboard reads its ring off a separate bundle/day cache — invalidate
   // it too or the Today card + week-strip ring keep the pre-split total.
-  ref.invalidate(dashboardBundleProvider);
-  ref.invalidate(dashboardDayProvider);
-  ref.invalidate(circleFeedProvider);
-}
-
-/// Undo a split (`POST /api/v1/groups/meal-share/undo`) — restores my meal to
-/// a full portion and withdraws the offers. Refused server-side once anyone has
-/// accepted, so the toast's five seconds are UX rather than the real guard.
-///
-/// Invalidates exactly what the share did: an undo has to put every surface the
-/// share touched back, not just the one in front of the user.
-/// Takes a [ProviderContainer], not a `WidgetRef`, on purpose: the only caller
-/// is a toast action that fires up to two seconds AFTER the sheet that offered
-/// it has been popped and disposed. A `WidgetRef` belonging to a dead
-/// `ConsumerState` throws the moment it is read, so the undo would silently
-/// never leave the device — and the catch around it would swallow that, because
-/// the widget is no longer mounted to show the failure. A container outlives
-/// any one widget.
-Future<void> undoMealShare(ProviderContainer container, String mealId) async {
-  final api = container.read(apiClientProvider);
-  await api.post<Map<String, dynamic>>(
-    '/api/v1/groups/meal-share/undo',
-    {'mealId': mealId},
-  );
-  container.invalidate(loggingDayProvider);
   container.invalidate(dashboardBundleProvider);
   container.invalidate(dashboardDayProvider);
   container.invalidate(circleFeedProvider);

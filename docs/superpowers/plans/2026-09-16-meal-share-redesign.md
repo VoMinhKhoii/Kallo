@@ -4,7 +4,7 @@
 
 **Goal:** Ship uneven meal splits on a portion-battery control, with a redesigned share surface on both platforms and an undo.
 
-**Architecture:** Integers on the wire (20 parts), a per-invite `copy_factor` defaulting to 1 so existing rows and even splits are untouched, one new Flutter widget (`PortionBattery`) with a pure-logic core that both platforms' rules are tested against, and a compensating `undoMealShare` write guarded on "no invite accepted".
+**Architecture:** Integers on the wire (20 parts), a per-invite `copy_factor` defaulting to 1 so existing rows and even splits are untouched, one new Flutter widget (`PortionBattery`) with a pure-logic core that both platforms' rules are tested against, and an undo that holds the request client-side until the toast closes (no endpoint).
 
 **Tech Stack:** Next.js 15 / Drizzle / Postgres / zod on the server; Flutter + Riverpod on mobile; React + TanStack Query on web.
 
@@ -131,17 +131,10 @@ describe('copyFactorFor', () => {
 - [ ] **Step 4: Extend the zod schema and the action.**
 - [ ] **Step 5: Run, commit** — `feat(social): uneven meal splits`
 
-### Task 6: `undoMealShare`
+### Task 6: Undo (client-side)
 
-**Files:**
-- Create: `lib/actions/meal-sharing/undo.ts`, `app/api/v1/groups/meal-share/undo/route.ts`
-- Test: `lib/actions/meal-sharing/__tests__/undo.test.ts`
-
-- [ ] **Step 1: Test it refuses once any invite is accepted**, naming the accepter.
-- [ ] **Step 2: Test it restores `portionFactor = 1`** and rescales items by the reciprocal.
-- [ ] **Step 3: Test it DELETES pending invites** rather than dismissing them, and closes the aggregates.
-- [ ] **Step 4: Implement**, locking the meal `FOR UPDATE` first, scoped to the actor.
-- [ ] **Step 5: Run, commit** — `feat(social): undo a meal share`
+No server work. Both clients hold the share request for the 5-second toast and post it only when the toast
+closes without "Undo" — mirroring meal removal. See the spec's Undo section for why not a compensating write.
 
 ## Phase 2 — Mobile: the control
 
