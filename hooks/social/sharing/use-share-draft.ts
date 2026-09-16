@@ -1,6 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import {
+  initialsFor,
+  labelFor,
+} from '@/components/groups/invite/profile-identity';
 import type { PortionSeat } from '@/components/groups/share-meal/portion/battery';
 import type { CircleMember } from '@/lib/actions/groups/types';
 import type { shareMealWithFriends } from '@/lib/domain/social/circle-client';
@@ -11,16 +15,6 @@ import {
   partsAfterRemoval,
   TOTAL_PARTS,
 } from '@/lib/domain/social/splits/parts';
-
-function initialsOf(label: string) {
-  const words = label.trim().split(/\s+/u);
-  if (words.length >= 2) {
-    return (
-      (words.at(-2)?.[0] ?? '') + (words.at(-1)?.[0] ?? '')
-    ).toUpperCase();
-  }
-  return label.slice(0, 2).toUpperCase();
-}
 
 /**
  * The share being composed: who is at the table and how the dish divides.
@@ -71,8 +65,8 @@ export function useShareDraft(labels: { you: string; youInitial: string }) {
       },
       ...seated.map((m, i) => ({
         id: m.profile.userId,
-        initials: initialsOf(m.profile.displayName ?? m.profile.handle),
-        label: m.profile.displayName ?? m.profile.handle,
+        initials: initialsFor(m.profile),
+        label: labelFor(m.profile),
         parts: parts[i + 1],
       })),
     ],

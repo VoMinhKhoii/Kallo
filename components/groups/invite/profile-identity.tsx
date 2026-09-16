@@ -12,6 +12,22 @@ export function labelFor(profile: Identity): string {
   return profile.displayName?.trim() || profile.handle;
 }
 
+/**
+ * Up to two initials for a glyph too small to hold a photo — the portion
+ * meter's 30px pin. Everything larger uses `ProfileAvatar`, which shows the
+ * person's real picture.
+ */
+export function initialsFor(profile: Identity): string {
+  const label = labelFor(profile);
+  const words = label.trim().split(/\s+/u);
+  if (words.length >= 2) {
+    return (
+      (words.at(-2)?.[0] ?? '') + (words.at(-1)?.[0] ?? '')
+    ).toUpperCase();
+  }
+  return label.slice(0, 2).toUpperCase();
+}
+
 /** Avatar + label, used in the circle list, pickers, and the connect screen. */
 export function ProfileIdentity({ profile }: { profile: Identity }) {
   return (
