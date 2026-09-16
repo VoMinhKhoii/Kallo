@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -141,10 +142,12 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                 ),
               ),
               const SizedBox(width: KalloSpacing.sp2),
-              InviteBlackPill(
-                label: tr('groups.invites.acceptShort'),
+              KalloButton(
+                variant: KalloButtonVariant.cta,
+                compact: true,
+                title: tr('groups.invites.acceptShort'),
                 loading: _busy,
-                onTap: _accept,
+                onPressed: _accept,
               ),
               InviteOverflowButton(onTap: _busy ? null : _openOverflow),
             ],

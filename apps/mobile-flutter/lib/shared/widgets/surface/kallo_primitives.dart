@@ -66,6 +66,7 @@ class KalloButton extends StatefulWidget {
     this.loading = false,
     this.disabled = false,
     this.animateTitle = false,
+    this.compact = false,
   });
 
   final String title;
@@ -78,6 +79,16 @@ class KalloButton extends StatefulWidget {
   /// into "Save my plan". Off by default: a label that changes for a different
   /// reason (a count, a countdown) should not dissolve every time.
   final bool animateTitle;
+
+  /// A 36pt button that rides IN a row rather than owning its own line: the
+  /// live action on a notification, where a 50pt primary would out-weigh the
+  /// message it belongs to.
+  ///
+  /// A density, not a new variant — it keeps every variant's fill, press
+  /// shift, disabled dim and loading spinner. Added because the invite card
+  /// had grown a hand-rolled copy of all four that was already drifting (it
+  /// had no press state at all).
+  final bool compact;
 
   @override
   State<KalloButton> createState() => _NhamButtonState();
@@ -157,14 +168,17 @@ class _NhamButtonState extends State<KalloButton> {
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeInOut,
           constraints: BoxConstraints(
-            minHeight: switch (variant) {
-              KalloButtonVariant.cta || KalloButtonVariant.primary => 50,
-              _ => 44,
-            },
+            minHeight: widget.compact
+                ? 36
+                : switch (variant) {
+                    KalloButtonVariant.cta || KalloButtonVariant.primary => 50,
+                    _ => 44,
+                  },
+            minWidth: widget.compact ? 72 : 0,
           ),
-          padding: const EdgeInsets.symmetric(
-            vertical: KalloSpacing.sp3,
-            horizontal: KalloSpacing.sp5,
+          padding: EdgeInsets.symmetric(
+            vertical: widget.compact ? KalloSpacing.sp1 : KalloSpacing.sp3,
+            horizontal: widget.compact ? KalloSpacing.sp3 : KalloSpacing.sp5,
           ),
           decoration: BoxDecoration(
             color: bg,

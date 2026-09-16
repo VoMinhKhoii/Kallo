@@ -50,57 +50,6 @@ class InviteAvatarWithBadge extends StatelessWidget {
   }
 }
 
-/// The one live action in the row. Ink fill, white label — the highest contrast
-/// the cream canvas allows, which is the role white-on-dark plays in Threads.
-class InviteBlackPill extends StatelessWidget {
-  const InviteBlackPill({
-    super.key,
-    required this.label,
-    required this.loading,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool loading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: loading ? null : onTap,
-        child: Opacity(
-          opacity: loading ? 0.55 : 1,
-          child: Container(
-            height: 36,
-            constraints: const BoxConstraints(minWidth: 72),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-            decoration: BoxDecoration(
-              color: KalloColors.text,
-              borderRadius: BorderRadius.circular(KalloRadii.pill),
-            ),
-            child: loading
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(label, style: dashMeta(color: Colors.white)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class InviteOverflowButton extends StatelessWidget {
   const InviteOverflowButton({
     super.key,required this.onTap});
