@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/split_parts.dart';
 import 'portion_battery_shell.dart';
 import 'portion_notch.dart';

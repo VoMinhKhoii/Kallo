@@ -1,5 +1,3 @@
-import 'package:flutter/widgets.dart';
-
 import '../../../../theme/kallo_theme.dart';
 
 /// The dimensions every portion surface shares.
