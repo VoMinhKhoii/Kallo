@@ -33,25 +33,23 @@ vi.mock('@/lib/domain/notifications/notify', () => ({
 }));
 
 // tx.delete is new here — undo is the only sharing path that removes rows.
-const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTxDelete, mockTx } =
-  vi.hoisted(() => {
-    const mockTxSelect = vi.fn();
-    const mockTxUpdate = vi.fn();
-    const mockTxInsert = vi.fn();
-    const mockTxDelete = vi.fn();
-    return {
-      mockTxSelect,
-      mockTxUpdate,
-      mockTxInsert,
-      mockTxDelete,
-      mockTx: {
-        select: mockTxSelect,
-        update: mockTxUpdate,
-        insert: mockTxInsert,
-        delete: mockTxDelete,
-      },
-    };
-  });
+const { mockTxSelect, mockTxUpdate, mockTxDelete, mockTx } = vi.hoisted(() => {
+  const mockTxSelect = vi.fn();
+  const mockTxUpdate = vi.fn();
+  const mockTxDelete = vi.fn();
+  return {
+    mockTxSelect,
+    mockTxUpdate,
+    mockTxDelete,
+    // No insert: undo writes nothing new. It restores the meal in place and
+    // removes the offers it made.
+    mockTx: {
+      select: mockTxSelect,
+      update: mockTxUpdate,
+      delete: mockTxDelete,
+    },
+  };
+});
 
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({

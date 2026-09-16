@@ -81,7 +81,9 @@ export const shareMealWithFriendsSchema = z
     mode: z.enum(['copy', 'split']),
     myParts: z.number().int().min(2).max(18).optional(),
     splits: z
-      .array(z.object({ userId: uuidSchema, parts: z.number().int().min(2).max(18) }))
+      .array(
+        z.object({ userId: uuidSchema, parts: z.number().int().min(2).max(18) })
+      )
       .min(1)
       .max(5)
       .optional(),
@@ -98,9 +100,12 @@ export const shareMealWithFriendsSchema = z
       v.splits.every((s) => v.friendUserIds.includes(s.userId)),
     { message: 'Tỉ lệ phải khớp với những người được chọn.' }
   )
-  .refine((v) => v.splits == null || v.splits.length === v.friendUserIds.length, {
-    message: 'Mỗi người được chọn cần một phần.',
-  });
+  .refine(
+    (v) => v.splits == null || v.splits.length === v.friendUserIds.length,
+    {
+      message: 'Mỗi người được chọn cần một phần.',
+    }
+  );
 
 /** Undo a split: restore my meal and withdraw the offers it created. */
 export const undoMealShareSchema = z.object({ mealId: uuidSchema });

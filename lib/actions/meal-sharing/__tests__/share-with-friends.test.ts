@@ -407,12 +407,13 @@ describe('shareMealWithFriendsAction', () => {
 
     expect(result.portionFactor).toBeCloseTo(0.5, 6);
     const invites = captured.invites.vals as Array<Record<string, unknown>>;
-    const byUser = new Map(
-      invites.map((i) => [i.toUserId as string, i])
-    );
+    const byUser = new Map(invites.map((i) => [i.toUserId as string, i]));
     expect(Number(byUser.get(UUID_FRIEND)?.portionFactor)).toBeCloseTo(0.3, 6);
     expect(byUser.get(UUID_FRIEND)?.copyFactor).toBeCloseTo(0.6, 6);
-    expect(Number(byUser.get(UUID_FRIEND_2)?.portionFactor)).toBeCloseTo(0.2, 6);
+    expect(Number(byUser.get(UUID_FRIEND_2)?.portionFactor)).toBeCloseTo(
+      0.2,
+      6
+    );
     expect(byUser.get(UUID_FRIEND_2)?.copyFactor).toBeCloseTo(0.4, 6);
   });
 

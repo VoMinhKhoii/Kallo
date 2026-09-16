@@ -192,8 +192,7 @@ export async function shareMealWithFriendsAction(input: {
 
     // The actor's own share of the ORIGINAL dish. For an even split this is
     // exactly 1/(N+1) as before — TOTAL_PARTS cancels out.
-    const portionFactor =
-      parsed.mode === 'split' ? myParts / TOTAL_PARTS : 1;
+    const portionFactor = parsed.mode === 'split' ? myParts / TOTAL_PARTS : 1;
 
     /** A recipient's share of the original dish — what their inbox labels. */
     const recipientFactor = (toUserId: string) =>
@@ -224,9 +223,10 @@ export async function shareMealWithFriendsAction(input: {
           portionFactor: String(recipientFactor(toUserId)),
           // What accept multiplies the (already-scaled) source by. Equal runs
           // give exactly 1, which is the verbatim copy accept used to hardcode.
-          copyFactor: parsed.mode === 'split'
-            ? copyFactorFor(partsByUser.get(toUserId) as number, myParts)
-            : 1,
+          copyFactor:
+            parsed.mode === 'split'
+              ? copyFactorFor(partsByUser.get(toUserId) as number, myParts)
+              : 1,
         }))
       )
       .onConflictDoUpdate({
