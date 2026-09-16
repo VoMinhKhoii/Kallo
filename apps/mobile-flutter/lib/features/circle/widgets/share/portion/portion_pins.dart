@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
-import 'portion_seats.dart';
+import '../../portion/portion_seats.dart';
 
 /// kcal over an inverted water-drop pin, centred on the run it owns.
 class PortionPinRow extends StatelessWidget {

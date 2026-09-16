@@ -7,7 +7,7 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../share/portion/portion_seats.dart' show kSeatColors;
+import '../portion/portion_seats.dart' show kSeatColors;
 
 /// The avatar with a status badge, so the KIND of notification is readable
 /// before any text is — and stays readable once the row goes quiet.

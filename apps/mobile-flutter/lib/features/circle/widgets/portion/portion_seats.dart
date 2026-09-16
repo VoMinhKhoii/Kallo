@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_colors.dart';
 
 /// One seat at the table: who they are and how many parts they hold.
 @immutable

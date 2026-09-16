@@ -6,7 +6,8 @@ import '../../../logic/split_parts.dart';
 import 'portion_battery_shell.dart';
 import 'portion_notch.dart';
 import 'portion_pins.dart';
-import 'portion_seats.dart';
+import '../../portion/portion_metrics.dart';
+import '../../portion/portion_seats.dart';
 
 
 /// The portion battery: a dish divided into [kTotalParts] cells, one coloured
@@ -44,14 +45,6 @@ class PortionBattery extends StatefulWidget {
 
   final bool interactive;
 
-  /// Shell height. The drag band, not just the visual.
-  static const double shellHeight = 56;
-
-  /// How far the grip grows past the shell while held, top and bottom.
-  static const double gripOverhang = 6;
-
-  /// The touch target, which is independent of the 12pt visual.
-  static const double gripTarget = KalloIcons.hit; // 44
 
   @override
   State<PortionBattery> createState() => _PortionBatteryState();
@@ -153,7 +146,7 @@ class _PortionBatteryState extends State<PortionBattery> {
               onRemove: widget.onRemove,
             ),
             SizedBox(
-              height: PortionBattery.shellHeight,
+              height: PortionMetrics.shellHeight,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -179,7 +172,6 @@ class _PortionBatteryState extends State<PortionBattery> {
                       ],
                     ),
                   ),
-                  const BatteryNub(),
                 ],
               ),
             ),

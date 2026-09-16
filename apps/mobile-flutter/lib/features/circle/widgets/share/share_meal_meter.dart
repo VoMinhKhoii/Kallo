@@ -5,7 +5,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'portion/portion_battery.dart';
-import 'portion/portion_seats.dart';
+import '../portion/portion_seats.dart';
 import 'portion/whole_portion_batteries.dart';
 
 /// The portion block: whichever meter the current tab calls for, plus the

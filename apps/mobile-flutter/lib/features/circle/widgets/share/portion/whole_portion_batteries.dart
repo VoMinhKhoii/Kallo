@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/split_parts.dart';
 import 'portion_battery.dart';
-import 'portion_seats.dart';
+import '../../portion/portion_seats.dart';
 
 /// The whole-portion tab's meter: one FULL battery per person.
 ///

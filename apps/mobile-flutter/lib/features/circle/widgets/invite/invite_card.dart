@@ -12,7 +12,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
-import '../share/portion/portion_seats.dart' show kSeatColors;
+import '../portion/portion_seats.dart' show kSeatColors;
 import 'invite_card_parts.dart';
 import 'portion_readout.dart';
 

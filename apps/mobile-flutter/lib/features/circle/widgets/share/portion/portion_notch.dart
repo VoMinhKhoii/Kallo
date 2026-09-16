@@ -4,8 +4,8 @@ import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_motion.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/split_parts.dart';
-import 'portion_battery.dart' show PortionBattery;
-import 'portion_seats.dart';
+import '../../portion/portion_metrics.dart';
+import '../../portion/portion_seats.dart';
 
 /// One draggable boundary between two runs.
 ///
@@ -81,10 +81,10 @@ class PortionNotch extends StatelessWidget {
     );
 
     return Positioned(
-      left: centre - PortionBattery.gripTarget / 2,
-      top: -PortionBattery.gripOverhang,
-      bottom: -PortionBattery.gripOverhang,
-      width: PortionBattery.gripTarget,
+      left: centre - PortionMetrics.gripTarget / 2,
+      top: -PortionMetrics.gripOverhang,
+      bottom: -PortionMetrics.gripOverhang,
+      width: PortionMetrics.gripTarget,
       child: Semantics(
         slider: true,
         label: '${seatLeft.label} và ${seatRight.label}',
@@ -103,7 +103,7 @@ class PortionNotch extends StatelessWidget {
             // grip is centred on the boundary and the box is the 44pt target.
             final local = box.globalToLocal(details.globalPosition);
             onDragUpdate(
-              centre + local.dx - PortionBattery.gripTarget / 2 - 6,
+              centre + local.dx - PortionMetrics.gripTarget / 2 - 6,
             );
           },
           onHorizontalDragEnd: (_) => onDragEnd(),
@@ -115,9 +115,9 @@ class PortionNotch extends StatelessWidget {
               width: held ? 14 : 12,
               // At rest the grip is exactly the shell; held, it reaches past
               // it, where no cell gap can follow.
-              height: PortionBattery.shellHeight -
+              height: PortionMetrics.shellHeight -
                   8 +
-                  (held ? PortionBattery.gripOverhang * 2 : 0),
+                  (held ? PortionMetrics.gripOverhang * 2 : 0),
               decoration: BoxDecoration(
                 color: KalloColors.elev,
                 borderRadius: BorderRadius.circular(KalloRadii.pill),

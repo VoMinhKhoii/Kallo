@@ -4,15 +4,16 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/split_parts.dart';
+import '../portion/portion_cells.dart';
+import '../portion/portion_metrics.dart';
 
 /// A compact, read-only battery: how much of a shared dish is yours.
 ///
-/// Deliberately NOT `PortionBattery` with `interactive: false`. That control is
-/// built to be dragged — 56pt tall, a pin per person, a kcal readout above each
-/// — and the recipient is being shown a division, not offered one. Squeezing it
-/// into a card would be reuse for its own sake. What the two DO share is the
-/// cell grid and the seat colours, so the two readings look like the same
-/// object family.
+/// Composed from the SAME [BatteryFrame] and [PortionCells] the draggable meter
+/// uses, so the two readings cannot drift apart on radius, cell rounding or
+/// nub. What it deliberately does not borrow is the meter's interaction
+/// anatomy — 56pt shell, a pin and a kcal per person — because the recipient is
+/// being shown a division, not offered one.
 class PortionReadout extends StatelessWidget {
   const PortionReadout({
     super.key,
@@ -34,7 +35,6 @@ class PortionReadout extends StatelessWidget {
     // show a boundary the control could not have produced.
     final mineParts =
         ((minePercent / 100) * kTotalParts).round().clamp(0, kTotalParts);
-    final restParts = kTotalParts - mineParts;
 
     return Semantics(
       label: '$restLabel, $mineLabel',
@@ -42,41 +42,25 @@ class PortionReadout extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 30,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: KalloColors.elev,
-                    borderRadius: BorderRadius.circular(KalloRadii.lg),
-                    border: Border.all(color: KalloColors.text, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      // The sender's share stays NEUTRAL: one invite cannot
-                      // know how the remainder was divided among anyone else,
-                      // so colouring it would claim more than we know.
-                      for (var i = 0; i < restParts; i++)
-                        const _Cell(color: KalloColors.track),
-                      for (var i = 0; i < mineParts; i++)
-                        _Cell(color: mineColor),
-                    ],
-                  ),
+          BatteryFrame(
+            height: PortionMetrics.readoutHeight,
+            borderWidth: 1.5,
+            radius: KalloRadii.lg,
+            padding: 3,
+            child: PortionCells(
+              cellRadius: 3,
+              cellGap: 0.75,
+              runs: [
+                // The sender's share stays NEUTRAL: one invite cannot know how
+                // the remainder was divided among anyone else, so colouring it
+                // would claim more than we know.
+                PortionRun(
+                  color: KalloColors.track,
+                  parts: kTotalParts - mineParts,
                 ),
-              ),
-              Container(
-                width: 4,
-                height: 13,
-                margin: const EdgeInsets.only(left: 2),
-                decoration: const BoxDecoration(
-                  color: KalloColors.text,
-                  borderRadius:
-                      BorderRadius.horizontal(right: Radius.circular(2)),
-                ),
-              ),
-            ],
+                PortionRun(color: mineColor, parts: mineParts),
+              ],
+            ),
           ),
           const SizedBox(height: KalloSpacing.sp2),
           Row(
@@ -87,27 +71,6 @@ class PortionReadout extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Cell extends StatelessWidget {
-  const _Cell({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0.75),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
       ),
     );
   }
