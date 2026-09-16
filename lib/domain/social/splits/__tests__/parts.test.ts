@@ -6,6 +6,7 @@ import {
   MAX_PARTICIPANTS,
   MIN_PARTS,
   partsAfterAdd,
+  partsAfterDrag,
   partsAfterRemoval,
   TOTAL_PARTS,
 } from '@/lib/domain/social/splits/parts';
@@ -131,5 +132,38 @@ describe('partsAfterAdd', () => {
       expect(Math.min(...parts)).toBeGreaterThanOrEqual(MIN_PARTS);
     }
     expect(parts).toHaveLength(MAX_PARTICIPANTS);
+  });
+});
+
+describe('partsAfterDrag', () => {
+  it('moves parts between the two runs the boundary bounds, only', () => {
+    const next = partsAfterDrag([7, 7, 6], 1, 16);
+    expect(next).toEqual([7, 9, 4]);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('never lets a boundary pass its left neighbour', () => {
+    // Dragging hard left would put the middle run at a negative size.
+    expect(partsAfterDrag([7, 7, 6], 1, 2)).toEqual([7, MIN_PARTS, 11]);
+  });
+
+  it('never lets a boundary pass its right neighbour', () => {
+    const next = partsAfterDrag([7, 7, 6], 1, 999);
+    expect(next.at(-1)).toBe(MIN_PARTS);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('always produces a split the server would accept', () => {
+    // Every reachable drag on a three-way split, against the same validator
+    // the action runs. The control must not be able to build a refusal.
+    for (let target = -5; target <= TOTAL_PARTS + 5; target++) {
+      const next = partsAfterDrag([7, 7, 6], 1, target);
+      expect(() =>
+        assertPartsValid(next[0], [
+          { userId: 'a', parts: next[1] },
+          { userId: 'b', parts: next[2] },
+        ])
+      ).not.toThrow();
+    }
   });
 });

@@ -3,7 +3,7 @@
 import { useId, useState } from 'react';
 import { PortionNotch } from '@/components/groups/share-meal/portion-notch';
 import { PortionPin } from '@/components/groups/share-meal/portion-pin';
-import { MIN_PARTS } from '@/lib/domain/social/splits/parts';
+import { partsAfterDrag } from '@/lib/domain/social/splits/parts';
 
 /** One seat at the table: who, and how many parts they hold. */
 export interface PortionSeat {
@@ -29,24 +29,6 @@ export const SEAT_COLORS = [
   '#F04438',
   '#2E90FA',
 ] as const;
-
-/** Move one part across the boundary after `boundary`, clamped both ways. */
-export function partsAfterDrag(
-  parts: number[],
-  boundary: number,
-  desiredLeftEnd: number
-): number[] {
-  const before = parts.slice(0, boundary).reduce((a, b) => a + b, 0);
-  const pairTotal = parts[boundary] + parts[boundary + 1];
-  const leftEnd = Math.min(
-    Math.max(desiredLeftEnd, before + MIN_PARTS),
-    before + pairTotal - MIN_PARTS
-  );
-  const next = [...parts];
-  next[boundary] = leftEnd - before;
-  next[boundary + 1] = pairTotal - next[boundary];
-  return next;
-}
 
 interface PortionBatteryProps {
   seats: PortionSeat[];

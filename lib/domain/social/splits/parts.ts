@@ -154,3 +154,34 @@ export function partsAfterAdd(parts: number[]): number[] {
   next.push(MIN_PARTS - owed);
   return next;
 }
+
+/**
+ * Move a boundary, clamped so the meter can never produce a split the server
+ * would refuse.
+ *
+ * Two clauses, and together they make overlap impossible by construction:
+ *   1. A notch never passes its neighbours — crossing one would mean somebody
+ *      owns a negative run.
+ *   2. A notch stops MIN_PARTS short of each, so no run is ever narrower than
+ *      the pin sitting on it.
+ *
+ * Only the two runs the boundary sits between change; everyone else is left
+ * alone, which is what keeps one drag from quietly restating another person's
+ * share. Mirrors `partsAfterDrag` in `split_parts.dart`.
+ */
+export function partsAfterDrag(
+  parts: number[],
+  boundary: number,
+  desiredLeftEnd: number
+): number[] {
+  const before = parts.slice(0, boundary).reduce((a, b) => a + b, 0);
+  const pairTotal = parts[boundary] + parts[boundary + 1];
+  const leftEnd = Math.min(
+    Math.max(desiredLeftEnd, before + MIN_PARTS),
+    before + pairTotal - MIN_PARTS
+  );
+  const next = [...parts];
+  next[boundary] = leftEnd - before;
+  next[boundary + 1] = pairTotal - next[boundary];
+  return next;
+}
