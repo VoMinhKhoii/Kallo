@@ -119,8 +119,12 @@ export async function undoMealShareAction(input: {
       .where(
         and(
           eq(mealShareInvites.sourceMealId, source.id),
-          // Same scope as the check above — withdraw only my own offers.
+          // The SAME scope as the lookup above, all three predicates. Without
+          // mode='split' an undo also withdraws pending COPY offers made from
+          // the same meal — offers the split never touched and that undoing it
+          // has no business cancelling.
           eq(mealShareInvites.fromUserId, user.id),
+          eq(mealShareInvites.mode, 'split'),
           inArray(mealShareInvites.status, ['pending', 'dismissed'])
         )
       )

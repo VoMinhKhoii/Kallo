@@ -23,15 +23,72 @@ import '../states/friend_list_skeleton.dart';
 import 'add_friend_row.dart';
 import 'portion_battery.dart';
 
+/// What the sheet did, handed back so the CALLER can confirm it.
+@immutable
+class ShareMealOutcome {
+  const ShareMealOutcome({
+    required this.mealId,
+    required this.isSplit,
+    required this.count,
+  });
+
+  final String mealId;
+  final bool isSplit;
+  final int count;
+}
+
 /// Opens the "share this meal" sheet: pick whether everyone gets a full
 /// portion or the dish is divided, set who is at the table, and — on a split —
 /// how much each of them had.
-Future<void> showShareMealSheet(BuildContext context, PersistedMeal meal) {
-  return showNhamSheet<void>(
+///
+/// The confirmation toast is raised HERE, from [context], rather than inside
+/// the sheet. Two reasons, both learned the hard way: the sheet's own context
+/// is disposed moments after it pops, and a NavigatorState's context sits above
+/// the overlay `showTopToast` searches, so a toast raised from either simply
+/// never appears — taking the undo affordance with it. The opening context is
+/// inside the overlay and outlives the sheet.
+Future<void> showShareMealSheet(BuildContext context, PersistedMeal meal) async {
+  final container = ProviderScope.containerOf(context, listen: false);
+  final outcome = await showNhamSheet<ShareMealOutcome>(
     context,
     isScrollControlled: true,
     builder: (_) => _ShareMealSheet(meal: meal),
   );
+  if (outcome == null || !context.mounted) return;
+
+  showTopToast(
+    context,
+    (outcome.isSplit
+            ? 'groups.shareMeal.splitSuccess'
+            : 'groups.shareMeal.copySuccess')
+        .plural(outcome.count, namedArgs: {'count': '${outcome.count}'}),
+    // The undo rides on the confirmation rather than a separate surface: it is
+    // only ever wanted in the seconds right after the tap.
+    actionLabel: outcome.isSplit ? tr('groups.shareMeal.undo') : null,
+    onAction: outcome.isSplit
+        ? () => _runUndo(container, context, outcome.mealId)
+        : null,
+  );
+}
+
+/// Runs after the sheet is gone, so it holds no widget state — only a
+/// container and a context that both outlive it.
+Future<void> _runUndo(
+  ProviderContainer container,
+  BuildContext hostContext,
+  String mealId,
+) async {
+  try {
+    await undoMealShare(container, mealId);
+  } catch (_) {
+    // Refused (someone already accepted) or offline.
+    if (!hostContext.mounted) return;
+    showTopToast(
+      hostContext,
+      tr('groups.shareMeal.undoFailed'),
+      variant: TopToastVariant.error,
+    );
+  }
 }
 
 class _ShareMealSheet extends ConsumerStatefulWidget {
@@ -95,13 +152,6 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
     setState(() => _submitting = true);
     final count = _seated.length;
     final isSplit = _mode == 'split';
-    // Captured BEFORE the request: everything the toast needs has to outlive
-    // this widget, because the sheet pops on success and the undo action can
-    // fire seconds later, by which point this ConsumerState is disposed and
-    // its `ref` throws on read.
-    final container = ProviderScope.containerOf(context, listen: false);
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final mealId = widget.meal.id;
     try {
       await shareMealWithFriends(
         ref,
@@ -124,16 +174,15 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
               ]
             : null,
       );
-      if (!mounted || !rootContext.mounted) return;
-      Navigator.of(context).pop();
-      // The undo rides on the confirmation rather than a separate surface: it
-      // is only ever wanted in the seconds right after the tap.
-      showTopToast(
-        rootContext,
-        (isSplit ? 'groups.shareMeal.splitSuccess' : 'groups.shareMeal.copySuccess')
-            .plural(count, namedArgs: {'count': '$count'}),
-        actionLabel: isSplit ? tr('groups.shareMeal.undo') : null,
-        onAction: isSplit ? () => _runUndo(container, rootContext, mealId) : null,
+      if (!mounted) return;
+      // Hand the outcome back; the caller raises the toast from a context that
+      // is inside the overlay and still alive when the undo fires.
+      Navigator.of(context).pop(
+        ShareMealOutcome(
+          mealId: widget.meal.id,
+          isSplit: isSplit,
+          count: count,
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -143,28 +192,6 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
       showTopToast(
         context,
         tr('groups.shareMeal.error'),
-        variant: TopToastVariant.error,
-      );
-    }
-  }
-
-  /// Deliberately static and free of `this`: it runs after the sheet is gone,
-  /// so touching any instance state (`ref`, `context`, `mounted`) would either
-  /// throw or silently swallow the result.
-  static Future<void> _runUndo(
-    ProviderContainer container,
-    BuildContext rootContext,
-    String mealId,
-  ) async {
-    try {
-      await undoMealShare(container, mealId);
-    } catch (_) {
-      // Refused (someone already accepted) or offline. The sheet is long gone,
-      // so the root overlay is the only place left to say so.
-      if (!rootContext.mounted) return;
-      showTopToast(
-        rootContext,
-        tr('groups.shareMeal.undoFailed'),
         variant: TopToastVariant.error,
       );
     }
