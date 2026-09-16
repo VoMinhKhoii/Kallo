@@ -8,6 +8,7 @@ import {
   partsAfterAdd,
   partsAfterDrag,
   partsAfterRemoval,
+  resolveShareAllocation,
   TOTAL_PARTS,
 } from '@/lib/domain/social/splits/parts';
 
@@ -164,6 +165,92 @@ describe('partsAfterDrag', () => {
           { userId: 'b', parts: next[2] },
         ])
       ).not.toThrow();
+    }
+  });
+});
+
+describe('resolveShareAllocation', () => {
+  it('gives a copy everyone the whole dish', () => {
+    const a = resolveShareAllocation({
+      mode: 'copy',
+      recipientIds: ['a', 'b'],
+    });
+    expect(a.senderFactor).toBe(1);
+    expect(a.recipients.get('a')).toEqual({ portionFactor: 1, copyFactor: 1 });
+  });
+
+  it('an even split matches the shipped 1/(N+1), with copyFactor 1', () => {
+    const a = resolveShareAllocation({ mode: 'split', recipientIds: ['a'] });
+    expect(a.senderFactor).toBeCloseTo(0.5, 6);
+    // copyFactor 1 is the compatibility guarantee: accept stays verbatim.
+    expect(a.recipients.get('a')).toEqual({
+      portionFactor: 0.5,
+      copyFactor: 1,
+    });
+
+    const three = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a', 'b'],
+    });
+    expect(three.senderFactor).toBeCloseTo(1 / 3, 6);
+    expect(three.recipients.get('b')?.copyFactor).toBeCloseTo(1, 6);
+  });
+
+  it('an uneven split keeps the two factors apart', () => {
+    const a = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a'],
+      myParts: 13,
+      splits: [{ userId: 'a', parts: 7 }],
+    });
+    expect(a.senderFactor).toBeCloseTo(0.65, 6);
+    // Share of the ORIGINAL dish vs. ratio against the sender's REMAINING run.
+    // Conflating these is the bug an uneven split would otherwise ship.
+    expect(a.recipients.get('a')?.portionFactor).toBeCloseTo(0.35, 6);
+    expect(a.recipients.get('a')?.copyFactor).toBeCloseTo(7 / 13, 6);
+  });
+
+  it('refuses parts that do not cover the POST-dedup recipients', () => {
+    // 'b' was deduped or dropped upstream; their parts would vanish silently
+    // and leave the sender scaled by a dish that never adds up.
+    expect(() =>
+      resolveShareAllocation({
+        mode: 'split',
+        recipientIds: ['a'],
+        myParts: 8,
+        splits: [
+          { userId: 'a', parts: 7 },
+          { userId: 'b', parts: 5 },
+        ],
+      })
+    ).toThrow();
+  });
+
+  it('refuses a sum that is not the whole dish', () => {
+    expect(() =>
+      resolveShareAllocation({
+        mode: 'split',
+        recipientIds: ['a'],
+        myParts: 12,
+        splits: [{ userId: 'a', parts: 7 }],
+      })
+    ).toThrow();
+  });
+
+  it('every recipient factor pair is self-consistent', () => {
+    const a = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a', 'b'],
+      myParts: 10,
+      splits: [
+        { userId: 'a', parts: 6 },
+        { userId: 'b', parts: 4 },
+      ],
+    });
+    // portionFactor / senderFactor === copyFactor, by definition. If these two
+    // ever disagree, accept scales by the wrong number.
+    for (const [, r] of a.recipients) {
+      expect(r.copyFactor).toBeCloseTo(r.portionFactor / a.senderFactor, 6);
     }
   });
 });

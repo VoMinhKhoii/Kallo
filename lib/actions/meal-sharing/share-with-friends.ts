@@ -26,12 +26,7 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
-import {
-  assertPartsValid,
-  copyFactorFor,
-  type SplitPart,
-  TOTAL_PARTS,
-} from '@/lib/domain/social/splits/parts';
+import { resolveShareAllocation } from '@/lib/domain/social/splits/parts';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -166,53 +161,15 @@ export async function shareMealWithFriendsAction(input: {
       );
     }
 
-    // How the dish divides.
-    //
-    // Even (no `splits`): the actor plus everyone they are splitting with, one
-    // equal share each — the shipped path, byte for byte.
-    //
-    // Uneven: whole parts of a 20-part dish. `assertPartsValid` owns the
-    // relationships between them (sum, floor, party size, duplicates) so the
-    // rule set is the same one the client draws with.
-    const uneven = parsed.mode === 'split' && parsed.splits != null;
-    if (uneven) {
-      // Validate against recipientIds, NOT the raw friendUserIds: dedup and the
-      // drop-self filter above can shrink the recipient set, and parts for
-      // someone who is no longer a recipient would be silently discarded —
-      // scaling the sender's meal by a share of a dish that never fully adds up.
-      const splits = parsed.splits as SplitPart[];
-      const recipientSet = new Set(recipientIds);
-      const covered =
-        splits.length === recipientIds.length &&
-        splits.every((s) => recipientSet.has(s.userId));
-      if (!covered) {
-        throw Errors.validationFailed(
-          'Tỉ lệ phải khớp với những người được chọn.'
-        );
-      }
-      assertPartsValid(parsed.myParts as number, splits);
-    }
-
-    const myParts = uneven
-      ? (parsed.myParts as number)
-      : TOTAL_PARTS / (recipientIds.length + 1);
-
-    /** Parts held by each recipient, keyed by user, for the invite rows. */
-    const partsByUser = new Map<string, number>(
-      uneven
-        ? (parsed.splits as SplitPart[]).map((s) => [s.userId, s.parts])
-        : recipientIds.map((id) => [id, myParts])
-    );
-
-    // The actor's own share of the ORIGINAL dish. For an even split this is
-    // exactly 1/(N+1) as before — TOTAL_PARTS cancels out.
-    const portionFactor = parsed.mode === 'split' ? myParts / TOTAL_PARTS : 1;
-
-    /** A recipient's share of the original dish — what their inbox labels. */
-    const recipientFactor = (toUserId: string) =>
-      parsed.mode === 'split'
-        ? (partsByUser.get(toUserId) as number) / TOTAL_PARTS
-        : 1;
+    // How the dish divides — answered once, in the domain layer, so this
+    // transaction never has to hold two easily-confused factors in its head.
+    const allocation = resolveShareAllocation({
+      mode: parsed.mode,
+      recipientIds,
+      myParts: parsed.myParts,
+      splits: parsed.splits,
+    });
+    const portionFactor = allocation.senderFactor;
 
     // A split reduces the actor to their own share; a copy leaves it untouched.
     const meal =
@@ -234,13 +191,12 @@ export async function shareMealWithFriendsAction(input: {
           toUserId,
           mode: parsed.mode,
           // Their share of the original dish — the inbox label.
-          portionFactor: String(recipientFactor(toUserId)),
+          portionFactor: String(
+            allocation.recipients.get(toUserId)?.portionFactor
+          ),
           // What accept multiplies the (already-scaled) source by. Equal runs
           // give exactly 1, which is the verbatim copy accept used to hardcode.
-          copyFactor:
-            parsed.mode === 'split'
-              ? copyFactorFor(partsByUser.get(toUserId) as number, myParts)
-              : 1,
+          copyFactor: allocation.recipients.get(toUserId)?.copyFactor,
         }))
       )
       .onConflictDoUpdate({
@@ -276,7 +232,8 @@ export async function shareMealWithFriendsAction(input: {
           mode: parsed.mode,
           // Their share, not the actor's — the two differ the moment a split
           // is uneven, and this number is what the push copy reads out.
-          portionFactor: recipientFactor(invite.toUserId),
+          portionFactor: allocation.recipients.get(invite.toUserId)
+            ?.portionFactor,
           mealName: source.rawInput,
         },
       }))

@@ -185,3 +185,80 @@ export function partsAfterDrag(
   next[boundary + 1] = pairTotal - next[boundary];
   return next;
 }
+
+/** Everything the persistence layer needs to write one share. */
+export interface ShareAllocation {
+  /** The sender's own share of the original dish. 1 for a whole-portion send. */
+  senderFactor: number;
+  /** Per recipient, keyed by user id. */
+  recipients: Map<string, { portionFactor: number; copyFactor: number }>;
+}
+
+/**
+ * Turn a validated request into the factors the rows actually store.
+ *
+ * This is the whole "how does this dish divide" question, answered once and in
+ * the domain layer. It lived inside the share transaction, where it needed four
+ * casts and a closure to express, and where it was easy to mistake one factor
+ * for the other — `portionFactor` (share of the ORIGINAL dish, for the inbox
+ * label) and `copyFactor` (run ÷ the sender's REMAINING run, what accept
+ * multiplies by) are equal for an even split and diverge for an uneven one.
+ *
+ * [recipientIds] is the POST-dedup, post-drop-self set. Passing the raw request
+ * ids instead is how parts for a non-recipient get silently discarded, leaving
+ * the sender scaled by a share of a dish that never fully adds up.
+ */
+export function resolveShareAllocation(input: {
+  mode: 'copy' | 'split';
+  recipientIds: string[];
+  myParts?: number;
+  splits?: SplitPart[];
+}): ShareAllocation {
+  const { mode, recipientIds } = input;
+
+  if (mode === 'copy') {
+    return {
+      senderFactor: 1,
+      recipients: new Map(
+        recipientIds.map((id) => [id, { portionFactor: 1, copyFactor: 1 }])
+      ),
+    };
+  }
+
+  const uneven = input.splits != null && input.myParts != null;
+  if (uneven) {
+    const splits = input.splits as SplitPart[];
+    const recipientSet = new Set(recipientIds);
+    const covers =
+      splits.length === recipientIds.length &&
+      splits.every((s) => recipientSet.has(s.userId));
+    if (!covers) {
+      throw Errors.validationFailed(
+        'Tỉ lệ phải khớp với những người được chọn.'
+      );
+    }
+    assertPartsValid(input.myParts as number, splits);
+  }
+
+  const myParts = uneven
+    ? (input.myParts as number)
+    : TOTAL_PARTS / (recipientIds.length + 1);
+  const partsFor = (id: string) =>
+    uneven
+      ? ((input.splits as SplitPart[]).find((s) => s.userId === id)
+          ?.parts as number)
+      : myParts;
+
+  return {
+    senderFactor: myParts / TOTAL_PARTS,
+    recipients: new Map(
+      recipientIds.map((id) => [
+        id,
+        {
+          portionFactor: partsFor(id) / TOTAL_PARTS,
+          copyFactor: copyFactorFor(partsFor(id), myParts),
+        },
+      ])
+    ),
+  };
+}
