@@ -14,19 +14,20 @@ import '../../l10n_test_loader.dart';
 /// nutrition page is that action, so it must not fall back to the beige
 /// in-app primary.
 Widget _app() => EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
           home: const Scaffold(body: EmptyState()),
         ),
-      ),
-    );
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,8 +41,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('the "Log a meal" action is the black ink button',
-      (tester) async {
+  testWidgets('the "Log a meal" action is the black ink button', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
@@ -56,7 +58,10 @@ void main() {
     );
     final fill = (container.decoration! as BoxDecoration).color;
     expect(fill, KalloColors.btnPrimary);
-    expect(fill, isNot(KalloColors.btnPrimarySoft),
-        reason: 'surface-state actions are ink, not the beige primary');
+    expect(
+      fill,
+      isNot(KalloColors.btnPrimarySoft),
+      reason: 'surface-state actions are ink, not the beige primary',
+    );
   });
 }

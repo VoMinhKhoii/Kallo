@@ -119,15 +119,16 @@ class _SegmentedStripState extends State<SegmentedStrip> {
       duration: KalloMotion.quick,
       curve: KalloEase.standard,
       tween: ColorTween(end: i == widget.activeIndex ? kInk : kInkMuted),
-      builder: (context, color, child) => FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          widget.options[i].label,
-          maxLines: 1,
-          softWrap: false,
-          style: dashBody(color: color ?? kInkMuted),
-        ),
-      ),
+      builder:
+          (context, color, child) => FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              widget.options[i].label,
+              maxLines: 1,
+              softWrap: false,
+              style: dashBody(color: color ?? kInkMuted),
+            ),
+          ),
     ),
   );
 }

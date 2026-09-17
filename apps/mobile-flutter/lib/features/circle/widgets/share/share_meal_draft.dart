@@ -47,7 +47,7 @@ class ShareMealDraft {
 
   /// One entry per recipient, for the wire.
   List<Map<String, Object>> splitsPayload() => [
-        for (var i = 0; i < seated.length; i++)
-          {'userId': seated[i].userId, 'parts': parts[i + 1]},
-      ];
+    for (var i = 0; i < seated.length; i++)
+      {'userId': seated[i].userId, 'parts': parts[i + 1]},
+  ];
 }

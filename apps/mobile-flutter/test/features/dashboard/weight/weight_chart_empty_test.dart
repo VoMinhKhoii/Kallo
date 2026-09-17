@@ -20,7 +20,9 @@ WeightSummaryData _summary({required List<double> weights}) =>
     WeightSummaryData(
       range: '30d',
       weights: weights,
-      weightDates: [for (var i = 0; i < weights.length; i++) '2026-08-0${i + 1}'],
+      weightDates: [
+        for (var i = 0; i < weights.length; i++) '2026-08-0${i + 1}',
+      ],
       currentWeight: 65.9,
       todayWeight: null,
       weightPlaceholder: 65.9,
@@ -34,24 +36,23 @@ WeightSummaryData _summary({required List<double> weights}) =>
     );
 
 Widget _app(WeightSummaryData summary) => ProviderScope(
-      overrides: [
-        weightSummaryProvider.overrideWith((ref, args) async => summary),
-      ],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  overrides: [weightSummaryProvider.overrideWith((ref, args) async => summary)],
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
             home: const Scaffold(body: WeightChart(args: _args)),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -65,8 +66,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('with nothing logged the card is ONLY the empty state',
-      (tester) async {
+  testWidgets('with nothing logged the card is ONLY the empty state', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app(_summary(weights: const [])));
     await tester.pumpAndSettle();
 
@@ -74,14 +76,21 @@ void main() {
       find.text('Log your first weight to start tracking your trend.'),
       findsOneWidget,
     );
-    expect(find.text('65.9'), findsNothing,
-        reason: 'the profile weight is not a reading — no hero number');
-    expect(find.text('kg'), findsNothing,
-        reason: 'no unit without a figure to qualify');
+    expect(
+      find.text('65.9'),
+      findsNothing,
+      reason: 'the profile weight is not a reading — no hero number',
+    );
+    expect(
+      find.text('kg'),
+      findsNothing,
+      reason: 'no unit without a figure to qualify',
+    );
   });
 
-  testWidgets('once something is logged the hero number comes back',
-      (tester) async {
+  testWidgets('once something is logged the hero number comes back', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app(_summary(weights: const [67.0, 65.9])));
     await tester.pumpAndSettle();
 

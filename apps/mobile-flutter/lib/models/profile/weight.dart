@@ -46,42 +46,45 @@ class WeightSummaryData {
   factory WeightSummaryData.fromJson(Map<String, dynamic> json) =>
       WeightSummaryData(
         range: json['range'] as String,
-        weights: (json['weights'] as List<dynamic>)
-            .map((e) => (e as num).toDouble())
-            .toList(),
+        weights:
+            (json['weights'] as List<dynamic>)
+                .map((e) => (e as num).toDouble())
+                .toList(),
         // Backwards compatible: an older server omits `weightDates`, in which
         // case the chart falls back to positional x labels.
-        weightDates: (json['weightDates'] as List<dynamic>? ?? const [])
-            .map((e) => e as String)
-            .toList(),
+        weightDates:
+            (json['weightDates'] as List<dynamic>? ?? const [])
+                .map((e) => e as String)
+                .toList(),
         currentWeight: (json['currentWeight'] as num).toDouble(),
         todayWeight: (json['todayWeight'] as num?)?.toDouble(),
         weightPlaceholder: (json['weightPlaceholder'] as num).toDouble(),
         daysLogged: json['daysLogged'] as int,
         periodStartWeight: (json['periodStartWeight'] as num).toDouble(),
         expectedEndWeight: (json['expectedEndWeight'] as num).toDouble(),
-        goalDirection: WeightGoalDirection.values
-            .byName(json['goalDirection'] as String),
+        goalDirection: WeightGoalDirection.values.byName(
+          json['goalDirection'] as String,
+        ),
         periodElapsedDays: json['periodElapsedDays'] as int?,
         projectedEndWeight: (json['projectedEndWeight'] as num).toDouble(),
         canProject: json['canProject'] as bool,
       );
 
   Map<String, dynamic> toJson() => {
-        'range': range,
-        'weights': weights,
-        'weightDates': weightDates,
-        'currentWeight': currentWeight,
-        'todayWeight': todayWeight,
-        'weightPlaceholder': weightPlaceholder,
-        'daysLogged': daysLogged,
-        'periodStartWeight': periodStartWeight,
-        'expectedEndWeight': expectedEndWeight,
-        'goalDirection': goalDirection.name,
-        'periodElapsedDays': periodElapsedDays,
-        'projectedEndWeight': projectedEndWeight,
-        'canProject': canProject,
-      };
+    'range': range,
+    'weights': weights,
+    'weightDates': weightDates,
+    'currentWeight': currentWeight,
+    'todayWeight': todayWeight,
+    'weightPlaceholder': weightPlaceholder,
+    'daysLogged': daysLogged,
+    'periodStartWeight': periodStartWeight,
+    'expectedEndWeight': expectedEndWeight,
+    'goalDirection': goalDirection.name,
+    'periodElapsedDays': periodElapsedDays,
+    'projectedEndWeight': projectedEndWeight,
+    'canProject': canProject,
+  };
 
   WeightSummaryData copyWith({
     String? range,
@@ -97,23 +100,22 @@ class WeightSummaryData {
     int? Function()? periodElapsedDays,
     double? projectedEndWeight,
     bool? canProject,
-  }) =>
-      WeightSummaryData(
-        range: range ?? this.range,
-        weights: weights ?? this.weights,
-        weightDates: weightDates ?? this.weightDates,
-        currentWeight: currentWeight ?? this.currentWeight,
-        todayWeight:
-            todayWeight != null ? todayWeight() : this.todayWeight,
-        weightPlaceholder: weightPlaceholder ?? this.weightPlaceholder,
-        daysLogged: daysLogged ?? this.daysLogged,
-        periodStartWeight: periodStartWeight ?? this.periodStartWeight,
-        expectedEndWeight: expectedEndWeight ?? this.expectedEndWeight,
-        goalDirection: goalDirection ?? this.goalDirection,
-        periodElapsedDays: periodElapsedDays != null
+  }) => WeightSummaryData(
+    range: range ?? this.range,
+    weights: weights ?? this.weights,
+    weightDates: weightDates ?? this.weightDates,
+    currentWeight: currentWeight ?? this.currentWeight,
+    todayWeight: todayWeight != null ? todayWeight() : this.todayWeight,
+    weightPlaceholder: weightPlaceholder ?? this.weightPlaceholder,
+    daysLogged: daysLogged ?? this.daysLogged,
+    periodStartWeight: periodStartWeight ?? this.periodStartWeight,
+    expectedEndWeight: expectedEndWeight ?? this.expectedEndWeight,
+    goalDirection: goalDirection ?? this.goalDirection,
+    periodElapsedDays:
+        periodElapsedDays != null
             ? periodElapsedDays()
             : this.periodElapsedDays,
-        projectedEndWeight: projectedEndWeight ?? this.projectedEndWeight,
-        canProject: canProject ?? this.canProject,
-      );
+    projectedEndWeight: projectedEndWeight ?? this.projectedEndWeight,
+    canProject: canProject ?? this.canProject,
+  );
 }

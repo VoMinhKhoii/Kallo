@@ -46,22 +46,22 @@ class ProfileFormValues {
   });
 
   ProfileFormValues clone() => ProfileFormValues(
-        biologicalSex: biologicalSex,
-        weightKg: weightKg,
-        heightCm: heightCm,
-        age: age,
-        activityLevel: activityLevel,
-        goal: goal,
-        aggression: aggression,
-        carbSplit: carbSplit,
-        countryOfOrigin: countryOfOrigin,
-        countryOfResidence: countryOfResidence,
-        oilUsage: oilUsage,
-        defaultRicePortion: defaultRicePortion,
-        sugarBraised: sugarBraised,
-        defaultProteinPortion: defaultProteinPortion,
-        brothConsumption: brothConsumption,
-      );
+    biologicalSex: biologicalSex,
+    weightKg: weightKg,
+    heightCm: heightCm,
+    age: age,
+    activityLevel: activityLevel,
+    goal: goal,
+    aggression: aggression,
+    carbSplit: carbSplit,
+    countryOfOrigin: countryOfOrigin,
+    countryOfResidence: countryOfResidence,
+    oilUsage: oilUsage,
+    defaultRicePortion: defaultRicePortion,
+    sugarBraised: sugarBraised,
+    defaultProteinPortion: defaultProteinPortion,
+    brothConsumption: brothConsumption,
+  );
 
   bool equalsTo(ProfileFormValues o) =>
       biologicalSex == o.biologicalSex &&
@@ -119,67 +119,67 @@ class ProfileFormValues {
 // ── enum parse helpers (tolerant of null/unknown) ──────────────────────────
 
 BiologicalSex? _sexFrom(String? s) => switch (s) {
-      'male' => BiologicalSex.male,
-      'female' => BiologicalSex.female,
-      _ => null,
-    };
+  'male' => BiologicalSex.male,
+  'female' => BiologicalSex.female,
+  _ => null,
+};
 
 ActivityLevel? _activityFrom(String? s) => switch (s) {
-      'sedentary' => ActivityLevel.sedentary,
-      'light' => ActivityLevel.light,
-      'moderate' => ActivityLevel.moderate,
-      'very_active' => ActivityLevel.veryActive,
-      _ => null,
-    };
+  'sedentary' => ActivityLevel.sedentary,
+  'light' => ActivityLevel.light,
+  'moderate' => ActivityLevel.moderate,
+  'very_active' => ActivityLevel.veryActive,
+  _ => null,
+};
 
 Goal? _goalFrom(String? s) => switch (s) {
-      'cutting' => Goal.cutting,
-      'bulking' => Goal.bulking,
-      'maintaining' => Goal.maintaining,
-      _ => null,
-    };
+  'cutting' => Goal.cutting,
+  'bulking' => Goal.bulking,
+  'maintaining' => Goal.maintaining,
+  _ => null,
+};
 
 CarbSplit? _carbFrom(String? s) => switch (s) {
-      'moderate_carb' => CarbSplit.moderateCarb,
-      'lower_carb' => CarbSplit.lowerCarb,
-      'higher_carb' => CarbSplit.higherCarb,
-      _ => null,
-    };
+  'moderate_carb' => CarbSplit.moderateCarb,
+  'lower_carb' => CarbSplit.lowerCarb,
+  'higher_carb' => CarbSplit.higherCarb,
+  _ => null,
+};
 
 OilUsage? _oilFrom(String? s) => switch (s) {
-      'minimal' => OilUsage.minimal,
-      'normal' => OilUsage.normal,
-      'heavy' => OilUsage.heavy,
-      _ => null,
-    };
+  'minimal' => OilUsage.minimal,
+  'normal' => OilUsage.normal,
+  'heavy' => OilUsage.heavy,
+  _ => null,
+};
 
 RicePortion? _riceFrom(String? s) => switch (s) {
-      'small' => RicePortion.small,
-      'medium' => RicePortion.medium,
-      'large' => RicePortion.large,
-      _ => null,
-    };
+  'small' => RicePortion.small,
+  'medium' => RicePortion.medium,
+  'large' => RicePortion.large,
+  _ => null,
+};
 
 SugarBraised? _sugarFrom(String? s) => switch (s) {
-      'low' => SugarBraised.low,
-      'medium' => SugarBraised.medium,
-      'high' => SugarBraised.high,
-      _ => null,
-    };
+  'low' => SugarBraised.low,
+  'medium' => SugarBraised.medium,
+  'high' => SugarBraised.high,
+  _ => null,
+};
 
 ProteinPortion? _proteinFrom(String? s) => switch (s) {
-      'small' => ProteinPortion.small,
-      'medium' => ProteinPortion.medium,
-      'large' => ProteinPortion.large,
-      _ => null,
-    };
+  'small' => ProteinPortion.small,
+  'medium' => ProteinPortion.medium,
+  'large' => ProteinPortion.large,
+  _ => null,
+};
 
 BrothConsumption? _brothFrom(String? s) => switch (s) {
-      'leave_it' => BrothConsumption.leaveIt,
-      'some' => BrothConsumption.some,
-      'finish_it' => BrothConsumption.finishIt,
-      _ => null,
-    };
+  'leave_it' => BrothConsumption.leaveIt,
+  'some' => BrothConsumption.some,
+  'finish_it' => BrothConsumption.finishIt,
+  _ => null,
+};
 
 /// Field identifiers, used to map a validation error to its owning tab.
 enum ProfileField { biologicalSex, weightKg, heightCm, age }
@@ -191,8 +191,9 @@ Map<ProfileField, String> validateBodyMetrics(ProfileFormValues v) {
   final errors = <ProfileField, String>{};
 
   if (v.biologicalSex == null) {
-    errors[ProfileField.biologicalSex] =
-        tr('validation.bodyMetrics.sexRequired');
+    errors[ProfileField.biologicalSex] = tr(
+      'validation.bodyMetrics.sexRequired',
+    );
   }
 
   final w = v.weightKg;

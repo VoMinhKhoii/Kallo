@@ -82,9 +82,10 @@ class _SegmentedThumbState extends State<SegmentedThumb>
 
   double get _scale {
     final t = _c.value;
-    final phase = t <= _popEnd
-        ? KalloEase.press.transform(t / _popEnd)
-        : 1 - KalloEase.standard.transform((t - _popEnd) / (1 - _popEnd));
+    final phase =
+        t <= _popEnd
+            ? KalloEase.press.transform(t / _popEnd)
+            : 1 - KalloEase.standard.transform((t - _popEnd) / (1 - _popEnd));
     return 1 + (SegmentedThumb.peakScale - 1) * phase;
   }
 
@@ -98,10 +99,11 @@ class _SegmentedThumbState extends State<SegmentedThumb>
       widthFactor: 1 / widget.count,
       child: AnimatedBuilder(
         animation: _c,
-        builder: (context, child) => FractionalTranslation(
-          translation: Offset(_position, 0),
-          child: Transform.scale(scale: _scale, child: child),
-        ),
+        builder:
+            (context, child) => FractionalTranslation(
+              translation: Offset(_position, 0),
+              child: Transform.scale(scale: _scale, child: child),
+            ),
         child: const DecoratedBox(
           decoration: BoxDecoration(
             color: kCardSurface,

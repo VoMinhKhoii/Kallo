@@ -105,24 +105,25 @@ class GoldPlanSurface extends StatelessWidget {
 /// 135° top-left → bottom-right, with the mid stop pulled to 45% so the light
 /// catch sits above the centre line rather than through the text.
 BoxDecoration _decoration(double radius, {required bool glow}) => BoxDecoration(
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFBE27A), Color(0xFFF9D447), Color(0xFFEDBF2F)],
-        stops: [0, 0.45, 1],
-      ),
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: kGoldBorder),
-      boxShadow: glow
+  gradient: const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFBE27A), Color(0xFFF9D447), Color(0xFFEDBF2F)],
+    stops: [0, 0.45, 1],
+  ),
+  borderRadius: BorderRadius.circular(radius),
+  border: Border.all(color: kGoldBorder),
+  boxShadow:
+      glow
           ? const [
-              BoxShadow(
-                color: Color(0x4DE9B62E), // gold @ 30%
-                blurRadius: 28,
-                offset: Offset(0, 10),
-              ),
-            ]
+            BoxShadow(
+              color: Color(0x4DE9B62E), // gold @ 30%
+              blurRadius: 28,
+              offset: Offset(0, 10),
+            ),
+          ]
           : null,
-    );
+);
 
 /// Two layers of specks at co-prime-ish pitches so the eye reads scatter
 /// rather than a grid. The jitter is a deterministic LCG — the same row

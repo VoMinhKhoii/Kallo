@@ -72,9 +72,8 @@ class _DisplayNameRowState extends ConsumerState<DisplayNameRow> {
     if (_editing) return _buildEditor();
     return InviteValueRow(
       label: tr('groups.invite.appearTitle'),
-      value: _current.isNotEmpty
-          ? _current
-          : tr('groups.invite.appearFallback'),
+      value:
+          _current.isNotEmpty ? _current : tr('groups.invite.appearFallback'),
       muted: _current.isEmpty,
       actions: [
         InviteGlyphAction(

@@ -12,8 +12,7 @@ import '../portion/portion_seats.dart' show kSeatColors;
 /// The avatar with a status badge, so the KIND of notification is readable
 /// before any text is — and stays readable once the row goes quiet.
 class InviteAvatarWithBadge extends StatelessWidget {
-  const InviteAvatarWithBadge({
-    super.key,required this.profile});
+  const InviteAvatarWithBadge({super.key, required this.profile});
 
   final CircleProfile profile;
 
@@ -51,8 +50,7 @@ class InviteAvatarWithBadge extends StatelessWidget {
 }
 
 class InviteOverflowButton extends StatelessWidget {
-  const InviteOverflowButton({
-    super.key,required this.onTap});
+  const InviteOverflowButton({super.key, required this.onTap});
 
   final VoidCallback? onTap;
 

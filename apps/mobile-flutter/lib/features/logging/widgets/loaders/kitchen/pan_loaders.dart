@@ -18,11 +18,12 @@ class PanFlipPainter extends LoaderPainter {
   void paint(Canvas canvas, Size size) {
     final s = size.width / 40;
     final p = loaderPhase(seconds, _dur);
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2 * s
-      ..strokeCap = StrokeCap.round
-      ..color = color;
+    final stroke =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2 * s
+          ..strokeCap = StrokeCap.round
+          ..color = color;
 
     // The pan tips down to launch and rocks back — a quarter of the cycle.
     final tilt = math.sin(p * 2 * math.pi) * 0.22;
@@ -83,11 +84,12 @@ class WhiskPainter extends LoaderPainter {
         ..color = color.withValues(alpha: 0.28),
     );
 
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * s
-      ..strokeCap = StrokeCap.round
-      ..color = color;
+    final stroke =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2 * s
+          ..strokeCap = StrokeCap.round
+          ..color = color;
 
     // The bowl it works in — without it the whisk read as a lone diagonal.
     canvas.drawArc(
@@ -99,7 +101,8 @@ class WhiskPainter extends LoaderPainter {
     );
 
     // The whisk leans into the stroke: the head orbits, the grip stays up top.
-    final head = centre + Offset(math.cos(angle) * 7 * s, math.sin(angle) * 4 * s);
+    final head =
+        centre + Offset(math.cos(angle) * 7 * s, math.sin(angle) * 4 * s);
     final grip = Offset(20 * s + math.cos(angle) * 3 * s, 3 * s);
     canvas.drawLine(grip, head, stroke..strokeWidth = 2.2 * s);
 

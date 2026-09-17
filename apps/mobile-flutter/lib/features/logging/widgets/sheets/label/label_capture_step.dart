@@ -103,19 +103,21 @@ class LabelCaptureStep extends StatelessWidget {
 
   List<Widget> _previewChildren(LabelImage held) => [
     ScanCameraStage(
-      builder: (context, size) => Image.file(
-        File(held.path),
-        fit: BoxFit.cover,
-        // The picker wrote this file moments ago; if it has vanished the
-        // useful move is to shoot another, not to crash the sheet.
-        errorBuilder: (context, _, __) => const Center(
-          child: Icon(
-            LucideIcons.imageOff300,
-            size: KalloIcons.size,
-            color: KalloColors.textMuted,
+      builder:
+          (context, size) => Image.file(
+            File(held.path),
+            fit: BoxFit.cover,
+            // The picker wrote this file moments ago; if it has vanished the
+            // useful move is to shoot another, not to crash the sheet.
+            errorBuilder:
+                (context, _, __) => const Center(
+                  child: Icon(
+                    LucideIcons.imageOff300,
+                    size: KalloIcons.size,
+                    color: KalloColors.textMuted,
+                  ),
+                ),
           ),
-        ),
-      ),
     ),
     const SizedBox(height: KalloSpacing.sp3),
     KalloButton(

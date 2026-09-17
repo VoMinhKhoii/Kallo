@@ -80,8 +80,7 @@ class _StepOriginState extends State<StepOrigin> {
         kCountries.where((c) => countryMatches(c, _query)).toList();
     final matchingValues = {for (final c in matching) c.value};
     final suggestions = suggested.where(matchingValues.contains).toList();
-    final rest =
-        matching.where((c) => !suggested.contains(c.value)).toList();
+    final rest = matching.where((c) => !suggested.contains(c.value)).toList();
     final residence = widget.answers.countryOfResidence;
 
     return Column(
@@ -103,9 +102,10 @@ class _StepOriginState extends State<StepOrigin> {
             label: _display(value, language),
             height: StepOrigin.suggestionHeight,
             selected: widget.answers.countryOfOrigin == value,
-            note: value == widget.deviceCountry
-                ? tr('onboarding.fromDevice')
-                : null,
+            note:
+                value == widget.deviceCountry
+                    ? tr('onboarding.fromDevice')
+                    : null,
             onTap: () => _pick(value),
           ),
         ],
@@ -142,13 +142,14 @@ class _StepOriginState extends State<StepOrigin> {
     return ListRow(
       label: countryLabel(country, language),
       onTap: () => _pick(country.value),
-      trailing: selected
-          ? const Icon(
-              LucideIcons.check300,
-              size: KalloIcons.tertiary,
-              color: kInk,
-            )
-          : null,
+      trailing:
+          selected
+              ? const Icon(
+                LucideIcons.check300,
+                size: KalloIcons.tertiary,
+                color: kInk,
+              )
+              : null,
     );
   }
 }
@@ -160,12 +161,12 @@ OnboardingStepSpec stepOriginSpec({
   required String? deviceCountry,
   required VoidCallback onChanged,
 }) => (
-      title: tr('onboarding.origin.stepTitle'),
-      body: StepOrigin(
-        answers: answers,
-        deviceCountry: deviceCountry,
-        onChanged: onChanged,
-      ),
-      ctaLabel: tr('onboarding.continueLabel'),
-      ctaEnabled: true,
-    );
+  title: tr('onboarding.origin.stepTitle'),
+  body: StepOrigin(
+    answers: answers,
+    deviceCountry: deviceCountry,
+    onChanged: onChanged,
+  ),
+  ctaLabel: tr('onboarding.continueLabel'),
+  ctaEnabled: true,
+);

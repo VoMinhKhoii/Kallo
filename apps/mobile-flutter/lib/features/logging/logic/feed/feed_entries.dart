@@ -57,18 +57,17 @@ final class StagedEntry extends FeedEntry {
 List<FeedEntry> buildFeedEntries({
   required List<PersistedMeal> saved,
   required List<PendingMealConfirmation> staged,
-}) =>
-    <FeedEntry>[
-      for (final meal in saved) SavedEntry(meal),
-      for (final pending in staged)
-        if (pending.parsedMeal != null || pending.cheatSpec != null)
-          StagedEntry(pending),
-    ]..sort((a, b) {
-      final byTime = a.loggedAt.compareTo(b.loggedAt);
-      // Ids only break ties, and only so the order is stable across rebuilds —
-      // two meals logged in the same millisecond must not swap places.
-      return byTime != 0 ? byTime : a.id.compareTo(b.id);
-    });
+}) => <FeedEntry>[
+  for (final meal in saved) SavedEntry(meal),
+  for (final pending in staged)
+    if (pending.parsedMeal != null || pending.cheatSpec != null)
+      StagedEntry(pending),
+]..sort((a, b) {
+  final byTime = a.loggedAt.compareTo(b.loggedAt);
+  // Ids only break ties, and only so the order is stable across rebuilds —
+  // two meals logged in the same millisecond must not swap places.
+  return byTime != 0 ? byTime : a.id.compareTo(b.id);
+});
 
 /// Both timestamps arrive from the server as `toISOString()`, but a row can be
 /// written locally without a zone; parsing rather than comparing the strings

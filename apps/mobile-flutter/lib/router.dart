@@ -88,8 +88,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     // says: "no routes for location" is an address with no screen behind it; a
     // redirect loop or any other GoException is a route that failed. The two
     // say different things to the user.
-    errorBuilder: (context, state) =>
-        RouteErrorScreen(notFound: RouteErrorScreen.isNotFound(state.error)),
+    errorBuilder:
+        (context, state) => RouteErrorScreen(
+          notFound: RouteErrorScreen.isNotFound(state.error),
+        ),
     redirect: (context, state) => _redirect(ref, state.matchedLocation),
     routes: [
       // Index — pure redirect target (resolved above). A bare splash so there's
@@ -113,8 +115,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'email',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) =>
-                const EmailAuthScreen(createAccount: false),
+            builder:
+                (context, state) => const EmailAuthScreen(createAccount: false),
           ),
         ],
       ),
@@ -140,8 +142,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'email',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) =>
-                const EmailAuthScreen(createAccount: true),
+            builder:
+                (context, state) => const EmailAuthScreen(createAccount: true),
           ),
         ],
       ),
@@ -176,11 +178,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/paywall',
         parentNavigatorKey: _rootKey,
-        pageBuilder: (context, state) => MaterialPage<void>(
-          child: PaywallScreen(
-            onboarding: state.uri.queryParameters['onboarding'] == '1',
-          ),
-        ),
+        pageBuilder:
+            (context, state) => MaterialPage<void>(
+              child: PaywallScreen(
+                onboarding: state.uri.queryParameters['onboarding'] == '1',
+              ),
+            ),
       ),
       // The logging feed — FULL-SCREEN over the shell (the pill nav's Log
       // item, and every "take me to logging" call site via goToLogging). The

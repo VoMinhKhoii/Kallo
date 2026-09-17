@@ -46,9 +46,10 @@ class ShareMealBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unseated = friends
-        .where((m) => !seated.any((s) => s.userId == m.profile.userId))
-        .toList();
+    final unseated =
+        friends
+            .where((m) => !seated.any((s) => s.userId == m.profile.userId))
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,27 +89,29 @@ class ShareMealBody extends StatelessWidget {
         Text(tr('groups.shareMeal.addSectionTitle'), style: dashMeta()),
         SizedBox(
           height: laneHeight,
-          child: unseated.isEmpty
-              ? Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: KalloSpacing.sp3),
-                    child: Text(
-                      tr('groups.shareMeal.allAdded'),
-                      style: dashMeta(),
+          child:
+              unseated.isEmpty
+                  ? Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: KalloSpacing.sp3),
+                      child: Text(
+                        tr('groups.shareMeal.allAdded'),
+                        style: dashMeta(),
+                      ),
                     ),
+                  )
+                  : ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: unseated.length,
+                    itemBuilder:
+                        (_, i) => AddFriendRow(
+                          profile: unseated[i].profile,
+                          // Past the palette there is no seat to give them.
+                          enabled: seated.length + 1 < kMaxParticipants,
+                          onTap: () => onAdd(unseated[i].profile),
+                        ),
                   ),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: unseated.length,
-                  itemBuilder: (_, i) => AddFriendRow(
-                    profile: unseated[i].profile,
-                    // Past the palette there is no seat to give them.
-                    enabled: seated.length + 1 < kMaxParticipants,
-                    onTap: () => onAdd(unseated[i].profile),
-                  ),
-                ),
         ),
       ],
     );

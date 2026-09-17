@@ -67,10 +67,7 @@ class OnboardingNudge extends ConsumerWidget {
             style: dashBody(weight: FontWeight.w500),
           ),
           const SizedBox(height: KalloSpacing.sp1),
-          Text(
-            tr('app.onboardingNudge.description'),
-            style: dashMeta(),
-          ),
+          Text(tr('app.onboardingNudge.description'), style: dashMeta()),
           const SizedBox(height: KalloSpacing.sp3),
           ClipRRect(
             borderRadius: BorderRadius.circular(KalloRadii.pill),
@@ -102,4 +99,3 @@ class OnboardingNudge extends ConsumerWidget {
     );
   }
 }
-

@@ -9,13 +9,14 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-typedef OnboardingStepSpec = ({
-  // The page title: the first thing in the sliding region.
-  String title,
-  // Everything under the title, inside the region's own scroll view.
-  Widget body,
-  // The label the CTA wears; it cross-fades when this changes.
-  String ctaLabel,
-  // False holds the CTA — screen 3 with an out-of-range metric.
-  bool ctaEnabled,
-});
+typedef OnboardingStepSpec =
+    ({
+      // The page title: the first thing in the sliding region.
+      String title,
+      // Everything under the title, inside the region's own scroll view.
+      Widget body,
+      // The label the CTA wears; it cross-fades when this changes.
+      String ctaLabel,
+      // False holds the CTA — screen 3 with an out-of-range metric.
+      bool ctaEnabled,
+    });

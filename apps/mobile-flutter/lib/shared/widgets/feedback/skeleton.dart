@@ -54,15 +54,17 @@ class _SkeletonPulseState extends State<SkeletonPulse>
     // Tailwind `animate-pulse`: opacity 1→.5→1, 2s, cubic-bezier(0.4,0,0.6,1),
     // infinite. A 1s reversing tween (1.0→0.5) with that ease gives the 2s loop.
     // Build can run repeatedly — memoize so the controller is made only once.
-    final opacity = _opacity ??= Tween<double>(begin: 1.0, end: 0.5).animate(
-      CurvedAnimation(
-        parent: _c ??= AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 1000),
-        )..repeat(reverse: true),
-        curve: const Cubic(0.4, 0.0, 0.6, 1.0),
-      ),
-    );
+    final opacity =
+        _opacity ??= Tween<double>(begin: 1.0, end: 0.5).animate(
+          CurvedAnimation(
+            parent:
+                _c ??= AnimationController(
+                  vsync: this,
+                  duration: const Duration(milliseconds: 1000),
+                )..repeat(reverse: true),
+            curve: const Cubic(0.4, 0.0, 0.6, 1.0),
+          ),
+        );
     return _PulseScope(
       child: FadeTransition(opacity: opacity, child: widget.child),
     );
@@ -111,13 +113,13 @@ class SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: const BoxDecoration(
-          color: KalloColors.track,
-          shape: BoxShape.circle,
-        ),
-      );
+    width: size,
+    height: size,
+    decoration: const BoxDecoration(
+      color: KalloColors.track,
+      shape: BoxShape.circle,
+    ),
+  );
 }
 
 /// A white card matching the real dashboard cards, holding skeleton [children].
@@ -128,19 +130,19 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: kCardSurface,
-          borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: kCardShadows,
-        ),
-        child: SkeletonPulse(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: children,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: kCardSurface,
+      borderRadius: BorderRadius.circular(kCardRadius),
+      boxShadow: kCardShadows,
+    ),
+    child: SkeletonPulse(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    ),
+  );
 }
 
 /// An out-of-card eyebrow placeholder (matches the section headers).
@@ -148,15 +150,15 @@ class SkeletonHeader extends StatelessWidget {
   const SkeletonHeader({super.key});
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: SkeletonPulse(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SkeletonBar(width: 120, height: 11, radius: 4),
-              SkeletonBar(width: 52, height: 11, radius: 4),
-            ],
-          ),
-        ),
-      );
+    padding: EdgeInsets.only(bottom: 8),
+    child: SkeletonPulse(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SkeletonBar(width: 120, height: 11, radius: 4),
+          SkeletonBar(width: 52, height: 11, radius: 4),
+        ],
+      ),
+    ),
+  );
 }

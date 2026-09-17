@@ -52,14 +52,14 @@ class StepLanguage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final option in options) ...[
-          if (option != options.first)
-            const SizedBox(height: KalloSpacing.sp3),
+          if (option != options.first) const SizedBox(height: KalloSpacing.sp3),
           OptionRow(
             label: tr(option.key),
             selected: answers.preferredLocale == option.code,
-            note: localeFromDevice && option.code == deviceLanguage
-                ? tr('onboarding.fromDevice')
-                : null,
+            note:
+                localeFromDevice && option.code == deviceLanguage
+                    ? tr('onboarding.fromDevice')
+                    : null,
             onTap: () => _pick(context, option.code),
           ),
         ],
@@ -82,13 +82,13 @@ OnboardingStepSpec stepLanguageSpec({
   required bool localeFromDevice,
   required VoidCallback onChanged,
 }) => (
-      title: tr('onboarding.language.title'),
-      body: StepLanguage(
-        answers: answers,
-        deviceLanguage: deviceLanguage,
-        localeFromDevice: localeFromDevice,
-        onChanged: onChanged,
-      ),
-      ctaLabel: tr('onboarding.continueLabel'),
-      ctaEnabled: true,
-    );
+  title: tr('onboarding.language.title'),
+  body: StepLanguage(
+    answers: answers,
+    deviceLanguage: deviceLanguage,
+    localeFromDevice: localeFromDevice,
+    onChanged: onChanged,
+  ),
+  ctaLabel: tr('onboarding.continueLabel'),
+  ctaEnabled: true,
+);

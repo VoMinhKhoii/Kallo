@@ -93,9 +93,10 @@ class CheatSlider {
     key: CheatSliderKey.fromWire(json['key'] as String),
     label: json['label'] as String? ?? '',
     defaultLevel: (json['defaultLevel'] as num).toDouble(),
-    anchors: (json['anchors'] as List<dynamic>? ?? [])
-        .map((e) => CheatSliderAnchor.fromJson(e as Map<String, dynamic>))
-        .toList(),
+    anchors:
+        (json['anchors'] as List<dynamic>? ?? [])
+            .map((e) => CheatSliderAnchor.fromJson(e as Map<String, dynamic>))
+            .toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -146,16 +147,18 @@ class CheatSliderSpec {
 
   factory CheatSliderSpec.fromJson(Map<String, dynamic> json) =>
       CheatSliderSpec(
-        sliders: (json['sliders'] as List<dynamic>? ?? [])
-            .map((e) => CheatSlider.fromJson(e as Map<String, dynamic>))
-            .toList(),
+        sliders:
+            (json['sliders'] as List<dynamic>? ?? [])
+                .map((e) => CheatSlider.fromJson(e as Map<String, dynamic>))
+                .toList(),
         mealSlot: json['mealSlot'] as String?,
         confidence: json['confidence'] as String?,
-        clarifyingQuestion: json['clarifyingQuestion'] == null
-            ? null
-            : CheatClarifyingQuestion.fromJson(
-                json['clarifyingQuestion'] as Map<String, dynamic>,
-              ),
+        clarifyingQuestion:
+            json['clarifyingQuestion'] == null
+                ? null
+                : CheatClarifyingQuestion.fromJson(
+                  json['clarifyingQuestion'] as Map<String, dynamic>,
+                ),
       );
 
   Map<String, dynamic> toJson() => {

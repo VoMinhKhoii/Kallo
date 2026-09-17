@@ -72,44 +72,49 @@ const stackKey = 'feed-stack';
 /// The feed's own geometry: a bounded Stack with the composer filled into it,
 /// under a keyboard. [Positioned.fill] is the production wiring — see
 /// `feed_area.dart`.
-Widget _wrap(Widget child, {double height = 500, double keyboard = 300}) =>
-    ProviderScope(
-      overrides: [apiClientProvider.overrideWithValue(_FakeApiClient())],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('vi')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+Widget _wrap(
+  Widget child, {
+  double height = 500,
+  double keyboard = 300,
+}) => ProviderScope(
+  overrides: [apiClientProvider.overrideWithValue(_FakeApiClient())],
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en'), Locale('vi')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
             home: Builder(
-              builder: (context) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: SizedBox(
-                    height: height,
-                    width: 390,
-                    // The feed's Stack, and a Material for the TextField.
-                    child: Material(
-                      child: Stack(
-                        key: const ValueKey(stackKey),
-                        children: [Positioned.fill(child: child)],
+              builder:
+                  (context) => MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                        height: height,
+                        width: 390,
+                        // The feed's Stack, and a Material for the TextField.
+                        child: Material(
+                          child: Stack(
+                            key: const ValueKey(stackKey),
+                            children: [Positioned.fill(child: child)],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 FeedComposer _composer({
   required MentionTextEditingController textController,
@@ -186,10 +191,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       _wrap(
-        _Host(
-          textController: textController,
-          inputController: inputController,
-        ),
+        _Host(textController: textController, inputController: inputController),
       ),
     );
     await tester.pumpAndSettle();
@@ -346,7 +348,8 @@ void main() {
     expect(
       tester.getRect(find.byType(TextField)).height,
       greaterThanOrEqualTo(190),
-      reason: 'the card is laid out before the flex is divided, so it takes '
+      reason:
+          'the card is laid out before the flex is divided, so it takes '
           'the height it needs',
     );
     expect(

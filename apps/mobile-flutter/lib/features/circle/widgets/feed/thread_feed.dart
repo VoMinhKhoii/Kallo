@@ -74,10 +74,7 @@ class ThreadFeed extends ConsumerWidget {
             ]),
         error:
             (_, __) => _stateScroll(
-              CircleErrorCard(
-                onRetry: onRetry,
-                isRetrying: feed.isLoading,
-              ),
+              CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
             ),
         data: (state) => _dataList(context, state),
       ),
@@ -123,9 +120,7 @@ class ThreadFeed extends ConsumerWidget {
         (bottomInset) => [
           SliverPadding(
             padding: _pad(KalloSpacing.sp2, 0),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([header]),
-            ),
+            sliver: SliverList(delegate: SliverChildListDelegate([header])),
           ),
           SliverCenteredState(
             padding: _pad(KalloSpacing.sp3, bottomInset),

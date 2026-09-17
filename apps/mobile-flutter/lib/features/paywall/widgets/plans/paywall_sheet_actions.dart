@@ -60,8 +60,7 @@ class PaywallSheetActions extends ConsumerWidget {
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     HapticFeedback.lightImpact();
-    final result =
-        await ref.read(paywallControllerProvider.notifier).restore();
+    final result = await ref.read(paywallControllerProvider.notifier).restore();
     if (context.mounted) handlePaywallResult(context, result);
   }
 }
@@ -71,7 +70,7 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1_5),
-        child: Text('·', style: dashMeta()),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1_5),
+    child: Text('·', style: dashMeta()),
+  );
 }

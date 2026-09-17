@@ -44,8 +44,9 @@ class ManualAddedBlock extends ConsumerWidget {
         ManualAddedList(
           items: state.items,
           disabled: state.isSaving,
-          onGramsChange: (id, grams) =>
-              ref.read(manualLogProvider.notifier).updateGrams(id, grams),
+          onGramsChange:
+              (id, grams) =>
+                  ref.read(manualLogProvider.notifier).updateGrams(id, grams),
           onRemove: (id) => ref.read(manualLogProvider.notifier).removeItem(id),
         ),
         const SizedBox(height: KalloSpacing.sp2),

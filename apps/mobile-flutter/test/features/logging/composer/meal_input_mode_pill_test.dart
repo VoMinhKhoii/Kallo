@@ -38,21 +38,22 @@ void main() {
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Scaffold(
-              body: MealInput(
-                controller: MealInputController(),
-                onSubmit: (_) {},
-                modeLabel: 'Cheat meal',
-                modeDetail: modeDetail,
-                onModePressed: () {},
-                onBarcodePressed: withBarcode ? () {} : null,
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: Scaffold(
+                  body: MealInput(
+                    controller: MealInputController(),
+                    onSubmit: (_) {},
+                    modeLabel: 'Cheat meal',
+                    modeDetail: modeDetail,
+                    onModePressed: () {},
+                    onBarcodePressed: withBarcode ? () {} : null,
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       );
 

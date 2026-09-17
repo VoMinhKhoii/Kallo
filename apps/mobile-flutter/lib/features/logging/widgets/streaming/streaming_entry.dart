@@ -35,9 +35,10 @@ class StreamingEntry extends StatelessWidget {
     final completed = stream.completedItems;
     final completedNames = completed.map((i) => i.name.toLowerCase()).toSet();
     // Names detected but not yet carrying macros — the streaming waterfall.
-    final pendingNames = stream.items
-        .where((n) => !completedNames.contains(n.toLowerCase()))
-        .toList();
+    final pendingNames =
+        stream.items
+            .where((n) => !completedNames.contains(n.toLowerCase()))
+            .toList();
     final hasItems = completed.isNotEmpty || pendingNames.isNotEmpty;
 
     return Padding(

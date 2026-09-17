@@ -112,8 +112,10 @@ void main() {
         // Opening the sheet clamps the dish's grams into the envelope; that
         // clamp is what threw on a descending range.
         expect(() => 150.clamp(envelope.min, envelope.max), returnsNormally);
-        expect(() => RulerScale(anchors, envelope.min, envelope.max).divisions,
-            returnsNormally);
+        expect(
+          () => RulerScale(anchors, envelope.min, envelope.max).divisions,
+          returnsNormally,
+        );
       }
     });
   });
@@ -125,11 +127,7 @@ void main() {
     // portion to a different number — 70 g became 69 g before the fix.
     test('contains every anchor exactly, for every parseable count', () {
       for (var count = 1.0; count <= maxPieceCount; count += 0.25) {
-        final vessel = PieceVessel(
-          tier: 3,
-          count: count,
-          kind: PieceKind.fish,
-        );
+        final vessel = PieceVessel(tier: 3, count: count, kind: PieceKind.fish);
         final anchors = buildPieceAnchors(vessel, 'en');
         final envelope = gramEnvelope(anchors);
         final scale = RulerScale(anchors, envelope.min, envelope.max);
@@ -157,11 +155,7 @@ void main() {
       // The reason `divisions` exists at all: a screen-reader swipe moves one
       // division, and it must move the portion by something.
       for (var count = 1.0; count <= maxPieceCount; count += 0.25) {
-        final vessel = PieceVessel(
-          tier: 3,
-          count: count,
-          kind: PieceKind.fish,
-        );
+        final vessel = PieceVessel(tier: 3, count: count, kind: PieceKind.fish);
         final anchors = buildPieceAnchors(vessel, 'en');
         final envelope = gramEnvelope(anchors);
         final scale = RulerScale(anchors, envelope.min, envelope.max);

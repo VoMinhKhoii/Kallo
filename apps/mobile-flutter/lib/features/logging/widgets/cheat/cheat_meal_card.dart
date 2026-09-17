@@ -87,11 +87,16 @@ class _CheatMealCardState extends State<CheatMealCard>
   Widget build(BuildContext context) {
     final meal = widget.meal;
     final locale = localeOf(context);
-    final time = DateFormat.jm(locale).format(DateTime.parse(meal.loggedAt).toLocal());
+    final time = DateFormat.jm(
+      locale,
+    ).format(DateTime.parse(meal.loggedAt).toLocal());
 
     // Cheat calories are an estimate the user placed themselves — flag with ≈.
     final kcal = meal.nutrition.caloriesKcal;
-    final caloriesApprox = kcal == null ? fmtKcal(kcal, locale: locale) : '≈ ${fmtKcal(kcal, locale: locale)}';
+    final caloriesApprox =
+        kcal == null
+            ? fmtKcal(kcal, locale: locale)
+            : '≈ ${fmtKcal(kcal, locale: locale)}';
 
     final curvedExpand = _curvedExpand;
 

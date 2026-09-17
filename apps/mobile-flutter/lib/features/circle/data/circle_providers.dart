@@ -107,9 +107,7 @@ final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
 /// round-trip. It is one small object for the session; the explicit
 /// `ref.invalidate(myCircleProfileProvider)` calls below (rename, avatar
 /// upload, handle change) still refresh it exactly as before.
-final myCircleProfileProvider = FutureProvider<CircleProfile>((
-  ref,
-) async {
+final myCircleProfileProvider = FutureProvider<CircleProfile>((ref) async {
   // Keyed on the account: without this watch a sign-out/sign-in on a shared
   // device would carry the previous user's avatar, name and invite slug over.
   ref.watch(currentSessionProvider)?.user.id;
@@ -185,7 +183,9 @@ Future<CircleProfile> renameCircleProfile(
     '/api/v1/groups/profile/name',
     {'displayName': displayName},
   );
-  final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
+  final profile = CircleProfile.fromJson(
+    json['profile'] as Map<String, dynamic>,
+  );
   ref.invalidate(myCircleProfileProvider);
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
@@ -217,9 +217,12 @@ Future<CircleProfile> uploadCircleAvatar(
 /// falls back to the initials disc.
 Future<CircleProfile> removeCircleAvatar(WidgetRef ref) async {
   final api = ref.read(apiClientProvider);
-  final json =
-      await api.delete<Map<String, dynamic>>('/api/v1/groups/profile/avatar');
-  final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
+  final json = await api.delete<Map<String, dynamic>>(
+    '/api/v1/groups/profile/avatar',
+  );
+  final profile = CircleProfile.fromJson(
+    json['profile'] as Map<String, dynamic>,
+  );
   ref.invalidate(myCircleProfileProvider);
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
@@ -301,6 +304,7 @@ Future<void> shareMealWithFriends(
   /// Uneven split only: my own run in parts of a 20-part dish. Omit for the
   /// even 1/(N+1) split the server has always done.
   int? myParts,
+
   /// Uneven split only: one entry per recipient, `{userId, parts}`. Must cover
   /// every id in [friendUserIds] and sum with [myParts] to exactly 20.
   List<Map<String, Object>>? splits,

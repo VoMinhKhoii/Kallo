@@ -41,9 +41,10 @@ class AuthModeToggle extends StatelessWidget {
           child: IgnorePointer(
             ignoring: busy,
             child: AuthQuietLink(
-              label: createMode
-                  ? tr('auth.signUp.signInLink')
-                  : tr('auth.signIn.signUpLink'),
+              label:
+                  createMode
+                      ? tr('auth.signUp.signInLink')
+                      : tr('auth.signIn.signUpLink'),
               emphasis: true,
               onTap: onToggle,
             ),

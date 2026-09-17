@@ -55,11 +55,12 @@ const double _cornerRatio = 4 / 9;
   // [gaugeOverCapPath] refuses it.
   final p = progress.isNaN ? 0.0 : progress.clamp(0.0, 1.0);
   final minShare = kGaugeMinSweep / span;
-  final shown = p <= 0
-      ? 0.0
-      : p >= 1
-      ? 1.0
-      : p.clamp(minShare, 1 - minShare);
+  final shown =
+      p <= 0
+          ? 0.0
+          : p >= 1
+          ? 1.0
+          : p.clamp(minShare, 1 - minShare);
   final mid = kGaugeStartAngle - span * shown;
 
   Path segment(double from, double to) => roundedSectorPath(

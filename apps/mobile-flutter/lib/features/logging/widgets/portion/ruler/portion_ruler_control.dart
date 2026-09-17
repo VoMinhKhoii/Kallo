@@ -91,8 +91,7 @@ class PortionRulerControlState extends State<PortionRulerControl> {
 
   /// Grams one graduation away, clamped to the scale.
   int gramsAfter(int direction) => _scale.toGrams(
-    (_scale.toPosition(_ownGrams) +
-            direction * (positionMax / graduations))
+    (_scale.toPosition(_ownGrams) + direction * (positionMax / graduations))
         .clamp(0.0, positionMax.toDouble()),
   );
 
@@ -118,8 +117,8 @@ class PortionRulerControlState extends State<PortionRulerControl> {
           glyphBandAspect: widget.glyphBandAspect,
           glyphBuilder: widget.glyphBuilder,
           labelFor: widget.labelFor,
-          onChanged: (fraction) =>
-              _emit(_scale.toGrams(fraction * positionMax)),
+          onChanged:
+              (fraction) => _emit(_scale.toGrams(fraction * positionMax)),
         ),
       ),
     );

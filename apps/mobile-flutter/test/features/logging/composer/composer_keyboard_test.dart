@@ -65,7 +65,10 @@ Widget _host({ValueChanged<double>? onHeightChanged}) => MaterialApp(
 /// padding, so measuring the element would measure the lift, not the dock.
 Rect _dock(WidgetTester tester) => tester.getRect(
   find
-      .descendant(of: find.byType(ComposerDock), matching: find.byType(Container))
+      .descendant(
+        of: find.byType(ComposerDock),
+        matching: find.byType(Container),
+      )
       .first,
 );
 

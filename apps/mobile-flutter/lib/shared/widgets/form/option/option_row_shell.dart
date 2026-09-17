@@ -110,16 +110,17 @@ class _OptionRowShellState extends State<OptionRowShell> {
       onTap: widget.enabled ? _handleTap : null,
       child: Opacity(
         opacity: widget.enabled ? 1 : 0.6,
-        child: widget.enabled
-            ? GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _handleTap,
-                onTapDown: (_) => setState(() => _pressed = true),
-                onTapUp: (_) => setState(() => _pressed = false),
-                onTapCancel: () => setState(() => _pressed = false),
-                child: row,
-              )
-            : row,
+        child:
+            widget.enabled
+                ? GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _handleTap,
+                  onTapDown: (_) => setState(() => _pressed = true),
+                  onTapUp: (_) => setState(() => _pressed = false),
+                  onTapCancel: () => setState(() => _pressed = false),
+                  child: row,
+                )
+                : row,
       ),
     );
   }

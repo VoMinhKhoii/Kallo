@@ -21,14 +21,15 @@ GoRouter _router() => GoRouter(
   routes: [
     GoRoute(
       path: '/start',
-      builder: (context, state) => Scaffold(
-        body: Center(
-          child: TextButton(
-            onPressed: () => context.push('/sign-in'),
-            child: const Text('have-account'),
+      builder:
+          (context, state) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => context.push('/sign-in'),
+                child: const Text('have-account'),
+              ),
+            ),
           ),
-        ),
-      ),
     ),
     GoRoute(path: '/sign-in', builder: (_, _) => const SignInScreen()),
   ],
@@ -41,12 +42,13 @@ Widget _app(GoRouter router) => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp.router(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        routerConfig: router,
-      ),
+      builder:
+          (context) => MaterialApp.router(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            routerConfig: router,
+          ),
     ),
   ),
 );

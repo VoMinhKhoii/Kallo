@@ -32,7 +32,8 @@ class BodyMetrics extends StatelessWidget {
 
     // Live TDEE / targets — recomputed on every form mutation (the controller
     // notifies, the screen rebuilds this panel). Matches RN useWatch + useMemo.
-    final allMetricsFilled = v.biologicalSex != null &&
+    final allMetricsFilled =
+        v.biologicalSex != null &&
         v.weightKg != null &&
         !(v.weightKg!.isNaN) &&
         v.heightCm != null &&
@@ -49,16 +50,21 @@ class BodyMetrics extends StatelessWidget {
       tdee = calcTDEE(bmr, v.activityLevel);
     }
 
-    final rawTarget = tdee == null
-        ? 0.0
-        : calcDailyTargets(tdee, v.goal, v.aggression, v.carbSplit).calories;
+    final rawTarget =
+        tdee == null
+            ? 0.0
+            : calcDailyTargets(
+              tdee,
+              v.goal,
+              v.aggression,
+              v.carbSplit,
+            ).calories;
     // Clamp the DISPLAYED target once at the source — the server persists
     // max(500) (see profile_payload.dart), so the hero, carb-split previews and
     // every macro-gram preview derived from it must name that same effective
     // target. Mirrors web 40f859b. Only a real computed target is floored; an
     // incomplete form (tdee null) stays 0 and is never rendered.
-    final targetCalories =
-        tdee != null && rawTarget < 500 ? 500.0 : rawTarget;
+    final targetCalories = tdee != null && rawTarget < 500 ? 500.0 : rawTarget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,8 +82,9 @@ class BodyMetrics extends StatelessWidget {
                     value: v.biologicalSex?.name ?? '',
                     placeholder: t('sexPlaceholder'),
                     onChange: (s) {
-                      form.update((f) =>
-                          f.biologicalSex = BiologicalSex.values.byName(s));
+                      form.update(
+                        (f) => f.biologicalSex = BiologicalSex.values.byName(s),
+                      );
                       form.clearError(ProfileField.biologicalSex);
                     },
                     options: [
@@ -156,13 +163,17 @@ class BodyMetrics extends StatelessWidget {
               label: t('activityLevel'),
               child: CustomSelect(
                 value: activityLevelToString(v.activityLevel),
-                onChange: (s) =>
-                    form.update((f) => f.activityLevel = _activityFrom(s)),
+                onChange:
+                    (s) =>
+                        form.update((f) => f.activityLevel = _activityFrom(s)),
                 options: [
                   CustomSelectOption(value: 'sedentary', label: t('sedentary')),
                   CustomSelectOption(value: 'light', label: t('light')),
                   CustomSelectOption(value: 'moderate', label: t('moderate')),
-                  CustomSelectOption(value: 'very_active', label: t('veryActive')),
+                  CustomSelectOption(
+                    value: 'very_active',
+                    label: t('veryActive'),
+                  ),
                 ],
               ),
             ),
@@ -174,9 +185,10 @@ class BodyMetrics extends StatelessWidget {
           const SizedBox(height: KalloSpacing.sp8),
           Container(
             padding: const EdgeInsets.only(top: KalloSpacing.sp6),
-            decoration: const Border(
-              top: BorderSide(color: KalloColors.inputBorder),
-            ).toDecoration(),
+            decoration:
+                const Border(
+                  top: BorderSide(color: KalloColors.inputBorder),
+                ).toDecoration(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -204,12 +216,12 @@ class BodyMetrics extends StatelessWidget {
 }
 
 ActivityLevel _activityFrom(String s) => switch (s) {
-      'sedentary' => ActivityLevel.sedentary,
-      'light' => ActivityLevel.light,
-      'moderate' => ActivityLevel.moderate,
-      'very_active' => ActivityLevel.veryActive,
-      _ => ActivityLevel.light,
-    };
+  'sedentary' => ActivityLevel.sedentary,
+  'light' => ActivityLevel.light,
+  'moderate' => ActivityLevel.moderate,
+  'very_active' => ActivityLevel.veryActive,
+  _ => ActivityLevel.light,
+};
 
 // ── Shared building blocks ───────────────────────────────────────────────
 
@@ -257,10 +269,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     // Calm scale, not the 11px eyebrow: settings holds three sizes (serif
     // title / body / meta) and field labels are quiet meta, sentence case.
-    return Text(
-      text,
-      style: dashMeta(),
-    );
+    return Text(text, style: dashMeta());
   }
 }
 
@@ -292,10 +301,7 @@ class _NumberField extends StatelessWidget {
         ),
         if (error != null) ...[
           const SizedBox(height: 6), // gap-1.5
-          Text(
-            error!,
-            style: dashMeta(color: KalloColors.danger),
-          ),
+          Text(error!, style: dashMeta(color: KalloColors.danger)),
         ],
       ],
     );
@@ -406,7 +412,8 @@ class _AggressionField extends StatelessWidget {
   Widget build(BuildContext context) {
     String t(String k) => tr('onboarding.bodyMetrics.$k');
     final isCutting = form.values.goal == Goal.cutting;
-    final label = '${t('aggressionLabel')} '
+    final label =
+        '${t('aggressionLabel')} '
         '(${isCutting ? t('aggressionDeficit') : t('aggressionSurplus')})';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -434,12 +441,18 @@ class _CarbSplitField extends StatelessWidget {
   Widget build(BuildContext context) {
     String t(String k) => tr('onboarding.bodyMetrics.$k');
     final info = {
-      CarbSplit.moderateCarb:
-          (label: t('moderateCarb'), desc: t('moderateCarbDescription')),
-      CarbSplit.lowerCarb:
-          (label: t('lowerCarb'), desc: t('lowerCarbDescription')),
-      CarbSplit.higherCarb:
-          (label: t('higherCarb'), desc: t('higherCarbDescription')),
+      CarbSplit.moderateCarb: (
+        label: t('moderateCarb'),
+        desc: t('moderateCarbDescription'),
+      ),
+      CarbSplit.lowerCarb: (
+        label: t('lowerCarb'),
+        desc: t('lowerCarbDescription'),
+      ),
+      CarbSplit.higherCarb: (
+        label: t('higherCarb'),
+        desc: t('higherCarbDescription'),
+      ),
     };
 
     return Column(
@@ -487,9 +500,10 @@ class _CarbCardState extends State<_CarbCard> {
   Widget build(BuildContext context) {
     // Unselected `hover:border-[#C9A87C]/50` — border lightens to accent50 on
     // press; selected keeps the solid accent border + shadow-sm.
-    final borderColor = widget.active
-        ? KalloColors.text.withValues(alpha: 0.3)
-        : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
+    final borderColor =
+        widget.active
+            ? KalloColors.text.withValues(alpha: 0.3)
+            : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -507,15 +521,9 @@ class _CarbCardState extends State<_CarbCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.label,
-              style: dashBody(),
-            ),
+            Text(widget.label, style: dashBody()),
             const SizedBox(height: KalloSpacing.sp1),
-            Text(
-              widget.desc,
-              style: dashMeta(),
-            ),
+            Text(widget.desc, style: dashMeta()),
             // gap-1 + mt-1 → ~8px above the macros row.
             const SizedBox(height: KalloSpacing.sp2),
             Row(
@@ -533,10 +541,7 @@ class _CarbCardState extends State<_CarbCard> {
     );
   }
 
-  Widget _macro(String s) => Text(
-        s,
-        style: dashMeta(),
-      );
+  Widget _macro(String s) => Text(s, style: dashMeta());
 }
 
 // ── Hero target card ─────────────────────────────────────────────────────
@@ -560,14 +565,17 @@ class _HeroTarget extends StatelessWidget {
     final delta = (tdee - calories).abs();
     final isCutting = goal == Goal.cutting;
 
-    final subtitle = StringBuffer()
-      ..write('${t('basedOnTdee')} ~${groupThousands(tdee)} ${t('kcal')}');
+    final subtitle =
+        StringBuffer()
+          ..write('${t('basedOnTdee')} ~${groupThousands(tdee)} ${t('kcal')}');
     if (goal == Goal.maintaining) {
       subtitle.write(' · ${t('maintenance')}');
     } else {
-      subtitle.write(' · ${isCutting ? '−' : '+'}${groupThousands(delta)} '
-          '${t('perDay')} '
-          '${isCutting ? t('aggressionDeficit') : t('aggressionSurplus')}');
+      subtitle.write(
+        ' · ${isCutting ? '−' : '+'}${groupThousands(delta)} '
+        '${t('perDay')} '
+        '${isCutting ? t('aggressionDeficit') : t('aggressionSurplus')}',
+      );
     }
 
     return Container(
@@ -593,10 +601,7 @@ class _HeroTarget extends StatelessWidget {
                 // counter-example, and Hero already carries its own tracking.
                 style: dashHero(),
               ),
-              Text(
-                ' ${t('kcal')}',
-                style: dashMeta(),
-              ),
+              Text(' ${t('kcal')}', style: dashMeta()),
             ],
           ),
           const SizedBox(height: 6), // mt-1.5
@@ -608,9 +613,10 @@ class _HeroTarget extends StatelessWidget {
           const SizedBox(height: KalloSpacing.sp5),
           Container(
             padding: const EdgeInsets.only(top: KalloSpacing.sp4),
-            decoration: const Border(
-              top: BorderSide(color: KalloColors.accent20),
-            ).toDecoration(),
+            decoration:
+                const Border(
+                  top: BorderSide(color: KalloColors.accent20),
+                ).toDecoration(),
             child: Row(
               children: [
                 _macroCol(t('protein'), macros.proteinG.round()),
@@ -625,20 +631,14 @@ class _HeroTarget extends StatelessWidget {
   }
 
   Widget _macroCol(String label, int grams) => Expanded(
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: dashMeta(),
-            ),
-            const SizedBox(height: 2), // gap-0.5
-            Text(
-              '${grams}g',
-              style: dashBody(),
-            ),
-          ],
-        ),
-      );
+    child: Column(
+      children: [
+        Text(label, style: dashMeta()),
+        const SizedBox(height: 2), // gap-0.5
+        Text('${grams}g', style: dashBody()),
+      ],
+    ),
+  );
 }
 
 extension on Border {

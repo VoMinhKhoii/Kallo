@@ -12,17 +12,17 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 /// an opaque Container, which paints over the InkResponse splash.
 void main() {
   Widget host({required bool active}) => MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: MealActionIconButton(
-              icon: LucideIcons.userPlus300,
-              label: 'Share',
-              active: active,
-              onTap: () {},
-            ),
-          ),
+    home: Scaffold(
+      body: Center(
+        child: MealActionIconButton(
+          icon: LucideIcons.userPlus300,
+          label: 'Share',
+          active: active,
+          onTap: () {},
         ),
-      );
+      ),
+    ),
+  );
 
   testWidgets('tap target stays LoggingIcons.hit', (tester) async {
     await tester.pumpWidget(host(active: false));
@@ -32,8 +32,9 @@ void main() {
     );
   });
 
-  testWidgets('selected wash hugs the glyph, smaller than the hit box',
-      (tester) async {
+  testWidgets('selected wash hugs the glyph, smaller than the hit box', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(active: true));
 
     final ink = tester.widget<Ink>(find.byType(Ink));
@@ -44,10 +45,7 @@ void main() {
       lessThan(LoggingIcons.hit),
       reason: 'a selected action must not fill its whole tap target',
     );
-    expect(
-      (ink.decoration! as BoxDecoration).color,
-      KalloColors.hover,
-    );
+    expect((ink.decoration! as BoxDecoration).color, KalloColors.hover);
   });
 
   testWidgets('idle draws no wash', (tester) async {

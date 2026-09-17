@@ -69,9 +69,10 @@ class _TickerFlipState extends State<TickerFlip>
   void initState() {
     super.initState();
     _adopt();
-    _controller = AnimationController(vsync: this, duration: _half * 2)
-      ..addListener(_onTick)
-      ..addStatusListener(_onStatus);
+    _controller =
+        AnimationController(vsync: this, duration: _half * 2)
+          ..addListener(_onTick)
+          ..addStatusListener(_onStatus);
   }
 
   void _adopt() {

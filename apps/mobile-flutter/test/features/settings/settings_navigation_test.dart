@@ -19,36 +19,39 @@ Future<void> edgeSwipe(WidgetTester tester) async {
 /// The shell: `/settings` is pushed as a Cupertino route, exactly as the router
 /// does, so the nested navigator is nested inside a swipeable route.
 Widget shell(Widget settings) => MaterialApp(
-      home: Builder(
-        builder: (context) => Center(
+  home: Builder(
+    builder:
+        (context) => Center(
           child: TextButton(
-            onPressed: () => Navigator.of(context).push(
-              CupertinoPageRoute<void>(builder: (_) => settings),
-            ),
+            onPressed:
+                () => Navigator.of(
+                  context,
+                ).push(CupertinoPageRoute<void>(builder: (_) => settings)),
             child: const Text('shell'),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 class _Root extends StatelessWidget {
   const _Root();
 
   @override
   Widget build(BuildContext context) => Material(
-        child: Center(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).push(
+    child: Center(
+      child: TextButton(
+        onPressed:
+            () => Navigator.of(context).push(
               CupertinoPageRoute<void>(
-                builder: (_) => const Material(child: Center(child: Text('editor'))),
+                builder:
+                    (_) => const Material(child: Center(child: Text('editor'))),
               ),
             ),
-            child: const Text('settings-root'),
-          ),
-        ),
-      );
+        child: const Text('settings-root'),
+      ),
+    ),
+  );
 }
-
 
 /// The app's own full-width back drag: a fast drag starting at the MIDDLE of
 /// the screen, which stock Cupertino's 20pt edge strip would ignore.
@@ -73,36 +76,39 @@ Future<void> midScreenSwipe(WidgetTester tester) async {
 /// on both levels, so the nested-navigator contract is exercised against the
 /// gesture the app really ships.
 Widget themedShell(Widget settings) => MaterialApp(
-      theme: kalloAppTheme(),
-      home: Builder(
-        builder: (context) => Center(
+  theme: kalloAppTheme(),
+  home: Builder(
+    builder:
+        (context) => Center(
           child: TextButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => settings),
-            ),
+            onPressed:
+                () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute<void>(builder: (_) => settings)),
             child: const Text('shell'),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 class _ThemedRoot extends StatelessWidget {
   const _ThemedRoot();
 
   @override
   Widget build(BuildContext context) => Material(
-        child: Center(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).push(
+    child: Center(
+      child: TextButton(
+        onPressed:
+            () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) =>
-                    const Material(child: Center(child: Text('editor'))),
+                builder:
+                    (_) => const Material(child: Center(child: Text('editor'))),
               ),
             ),
-            child: const Text('settings-root'),
-          ),
-        ),
-      );
+        child: const Text('settings-root'),
+      ),
+    ),
+  );
 }
 
 void main() {
@@ -211,7 +217,9 @@ void main() {
     ) async {
       await pumpWith(
         tester,
-        ListView(children: List.generate(50, (_) => const SizedBox(height: 40))),
+        ListView(
+          children: List.generate(50, (_) => const SizedBox(height: 40)),
+        ),
         const ValueKey('list'),
       );
       expect(opacity(tester), 0);

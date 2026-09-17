@@ -95,12 +95,12 @@ OnboardingStepSpec stepTargetSpec({
   required VoidCallback onChanged,
   required VoidCallback onFillMissing,
 }) => (
-      title: tr('onboarding.target.title'),
-      body: StepTarget(
-        answers: answers,
-        onChanged: onChanged,
-        onFillMissing: onFillMissing,
-      ),
-      ctaLabel: tr('onboarding.savePlan'),
-      ctaEnabled: true,
-    );
+  title: tr('onboarding.target.title'),
+  body: StepTarget(
+    answers: answers,
+    onChanged: onChanged,
+    onFillMissing: onFillMissing,
+  ),
+  ctaLabel: tr('onboarding.savePlan'),
+  ctaEnabled: true,
+);

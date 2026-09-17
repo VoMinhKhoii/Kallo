@@ -70,24 +70,35 @@ class MacroTrendChart extends StatelessWidget {
             // chart. Transparent leaves the stack bands as the only paint.
             if (bar.isGap)
               BarChartRodData(
-                  toY: 0, width: barWidth, color: Colors.transparent)
+                toY: 0,
+                width: barWidth,
+                color: Colors.transparent,
+              )
             else
               BarChartRodData(
                 toY: bar.total,
                 width: barWidth,
                 color: Colors.transparent,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
                 // Stacked P/C/F kcal bands, matching the legend order & colors.
                 rodStackItems: [
-                  BarChartRodStackItem(0, bar.proteinKcal,
-                      shade(kCompositionColors['protein']!, bar)),
                   BarChartRodStackItem(
-                      bar.proteinKcal,
-                      bar.proteinKcal + bar.carbsKcal,
-                      shade(kCompositionColors['carbohydrate']!, bar)),
-                  BarChartRodStackItem(bar.proteinKcal + bar.carbsKcal,
-                      bar.total, shade(kCompositionColors['fat']!, bar)),
+                    0,
+                    bar.proteinKcal,
+                    shade(kCompositionColors['protein']!, bar),
+                  ),
+                  BarChartRodStackItem(
+                    bar.proteinKcal,
+                    bar.proteinKcal + bar.carbsKcal,
+                    shade(kCompositionColors['carbohydrate']!, bar),
+                  ),
+                  BarChartRodStackItem(
+                    bar.proteinKcal + bar.carbsKcal,
+                    bar.total,
+                    shade(kCompositionColors['fat']!, bar),
+                  ),
                 ],
               ),
           ],
@@ -133,18 +144,21 @@ class MacroTrendChart extends StatelessWidget {
               show: true,
               drawVerticalLine: false,
               horizontalInterval: step,
-              getDrawingHorizontalLine: (value) => const FlLine(
-                color: KalloColors.borderBiscotti40,
-                strokeWidth: 1,
-                dashArray: [4, 4],
-              ),
+              getDrawingHorizontalLine:
+                  (value) => const FlLine(
+                    color: KalloColors.borderBiscotti40,
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               leftTitles: kcalAxisTitles(step: step, maxLabel: axis.maxLabel),
               bottomTitles: bucketAxisTitles(
                 labels: tickLabels,

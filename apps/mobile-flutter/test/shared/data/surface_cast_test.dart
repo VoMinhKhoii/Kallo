@@ -21,7 +21,8 @@ void main() {
             expect(
               File(path).existsSync(),
               isTrue,
-              reason: '$path (${area.name}/${kind.name}/night=$lateNight) '
+              reason:
+                  '$path (${area.name}/${kind.name}/night=$lateNight) '
                   'is not bundled',
             );
           }

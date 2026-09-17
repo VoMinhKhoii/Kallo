@@ -146,27 +146,28 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
         // pinned copy in the overlay — where nothing else knows it — wraps
         // where the page wrapped. [SentBubble] explains what it buys.
         child: LayoutBuilder(
-          builder: (context, page) => Semantics(
-            // VoiceOver gets the same actions without the gesture: a long
-            // press is invisible to anyone who cannot discover it by holding.
-            // Copy has a standard semantic action; Edit does not, so it goes
-            // through the custom-action list the rotor reads out.
-            onCopy: _copy,
-            customSemanticsActions: {
-              CustomSemanticsAction(label: 'logging.edit'.tr()): _edit,
-            },
-            child: GestureDetector(
-              // Opaque: the whole pill answers the hold, not just the glyph
-              // run of text under the finger.
-              behavior: HitTestBehavior.opaque,
-              onLongPress: () => _openMenu(page.maxWidth),
-              child: SentBubble(
-                key: _pill,
-                text: widget.text,
-                pageWidth: page.maxWidth,
+          builder:
+              (context, page) => Semantics(
+                // VoiceOver gets the same actions without the gesture: a long
+                // press is invisible to anyone who cannot discover it by holding.
+                // Copy has a standard semantic action; Edit does not, so it goes
+                // through the custom-action list the rotor reads out.
+                onCopy: _copy,
+                customSemanticsActions: {
+                  CustomSemanticsAction(label: 'logging.edit'.tr()): _edit,
+                },
+                child: GestureDetector(
+                  // Opaque: the whole pill answers the hold, not just the glyph
+                  // run of text under the finger.
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: () => _openMenu(page.maxWidth),
+                  child: SentBubble(
+                    key: _pill,
+                    text: widget.text,
+                    pageWidth: page.maxWidth,
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ),
     ),

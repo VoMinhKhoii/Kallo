@@ -36,12 +36,13 @@ Future<PortionPick?> showPortionPicker(
 }) {
   return showNhamSheet<PortionPick>(
     context,
-    builder: (context) => _PortionPickerSheet(
-      vessel: vessel,
-      grams: grams,
-      itemCalories: itemCalories,
-      itemQuantity: itemQuantity,
-    ),
+    builder:
+        (context) => _PortionPickerSheet(
+          vessel: vessel,
+          grams: grams,
+          itemCalories: itemCalories,
+          itemQuantity: itemQuantity,
+        ),
   );
 }
 
@@ -110,9 +111,10 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
     final anchors = _anchors!;
     final title = 'logging.portionPicker.title'.tr();
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final kcal = widget.itemQuantity > 0
-        ? (widget.itemCalories * _grams) / widget.itemQuantity
-        : 0.0;
+    final kcal =
+        widget.itemQuantity > 0
+            ? (widget.itemCalories * _grams) / widget.itemQuantity
+            : 0.0;
 
     return KalloSheetSurface(
       // Cup glyphs are taller than they are wide, so the container branch runs

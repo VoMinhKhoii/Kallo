@@ -40,7 +40,10 @@ class EcgPainter extends LoaderPainter {
       }
       // Stop mid-segment at the head, interpolating so the line grows smoothly.
       final t = ((headX - a.dx) / (b.dx - a.dx)).clamp(0.0, 1.0);
-      path.lineTo((a.dx + (b.dx - a.dx) * t) * s, (a.dy + (b.dy - a.dy) * t) * s);
+      path.lineTo(
+        (a.dx + (b.dx - a.dx) * t) * s,
+        (a.dy + (b.dy - a.dy) * t) * s,
+      );
       break;
     }
 
@@ -90,10 +93,11 @@ class DashPainter extends LoaderPainter {
     final start = len * p;
     final end = start + span;
 
-    final head = end <= len
-        ? metric.extractPath(start, end)
-        : (metric.extractPath(start, len)
-          ..addPath(metric.extractPath(0, end - len), Offset.zero));
+    final head =
+        end <= len
+            ? metric.extractPath(start, end)
+            : (metric.extractPath(start, len)
+              ..addPath(metric.extractPath(0, end - len), Offset.zero));
 
     canvas.drawPath(
       head,

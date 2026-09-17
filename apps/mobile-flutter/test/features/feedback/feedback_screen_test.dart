@@ -16,21 +16,22 @@ import '../../l10n_test_loader.dart';
 /// of that stack: the title lives in [PageHeader] beside the back chevron and
 /// the body never repeats it or describes it back to you.
 Widget _app() => ProviderScope(
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
             home: const FeedbackScreen(),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

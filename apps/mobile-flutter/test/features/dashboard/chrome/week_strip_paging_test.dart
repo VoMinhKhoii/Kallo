@@ -59,19 +59,20 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              home: Scaffold(
-                body: WeekStrip(
-                  args: args,
-                  todayDate: _today,
-                  selectedDate: selected,
-                  onSelectDay: taps.add,
+            builder:
+                (context) => MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  home: Scaffold(
+                    body: WeekStrip(
+                      args: args,
+                      todayDate: _today,
+                      selectedDate: selected,
+                      onSelectDay: taps.add,
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ),
         ),
       ),
@@ -120,19 +121,13 @@ void main() {
 
     // Sep 4 is on today's page but in the future: no tap handler at all.
     expect(
-      find.ancestor(
-        of: find.text('4'),
-        matching: find.byType(GestureDetector),
-      ),
+      find.ancestor(of: find.text('4'), matching: find.byType(GestureDetector)),
       findsNothing,
       reason: 'a future day must not be wrapped in a tap target',
     );
     // …and today, the control, is.
     expect(
-      find.ancestor(
-        of: find.text('2'),
-        matching: find.byType(GestureDetector),
-      ),
+      find.ancestor(of: find.text('2'), matching: find.byType(GestureDetector)),
       findsOneWidget,
     );
 

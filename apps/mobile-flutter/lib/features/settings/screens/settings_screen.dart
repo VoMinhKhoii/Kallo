@@ -156,8 +156,8 @@ class _SettingsList extends ConsumerWidget {
           padding: SettingsSpacing.rowList(context),
           itemCount: items.length,
           itemBuilder: (_, i) => items[i],
-          separatorBuilder: (_, __) =>
-              const SizedBox(height: SettingsSpacing.group),
+          separatorBuilder:
+              (_, __) => const SizedBox(height: SettingsSpacing.group),
         ),
       ),
     );

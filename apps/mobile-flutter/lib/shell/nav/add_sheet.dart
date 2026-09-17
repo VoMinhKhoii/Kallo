@@ -20,50 +20,51 @@ import '../../theme/kallo_theme.dart';
 Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
   return showNhamSheet<void>(
     context,
-    builder: (sheetContext) => KalloSheetSurface(
-      padding: EdgeInsets.only(
-        left: KalloSpacing.sp4,
-        right: KalloSpacing.sp4,
-        // The 34pt home inset IS the sheet's bottom gap — a spacing token on
-        // top of it reads as a stray band under the last row. Phones without
-        // a home indicator report 0, so the gap floors at sp4.
-        bottom: math.max(
-          MediaQuery.viewPaddingOf(sheetContext).bottom,
-          KalloSpacing.sp4,
+    builder:
+        (sheetContext) => KalloSheetSurface(
+          padding: EdgeInsets.only(
+            left: KalloSpacing.sp4,
+            right: KalloSpacing.sp4,
+            // The 34pt home inset IS the sheet's bottom gap — a spacing token on
+            // top of it reads as a stray band under the last row. Phones without
+            // a home indicator report 0, so the gap floors at sp4.
+            bottom: math.max(
+              MediaQuery.viewPaddingOf(sheetContext).bottom,
+              KalloSpacing.sp4,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              KalloSheetHeader(title: tr('app.addSheet.title')),
+              ListRow(
+                icon: LucideIcons.utensils300,
+                label: tr('app.addSheet.logMeal'),
+                subline: tr('app.addSheet.logMealHint'),
+                showChevron: true,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showQuickLogSheet(context, ref);
+                },
+              ),
+              // Separator inset to the text column, as in every grouped card.
+              const Padding(
+                padding: EdgeInsets.only(left: 36),
+                child: ColoredBox(color: kHairline, child: SizedBox(height: 1)),
+              ),
+              ListRow(
+                icon: LucideIcons.gauge300,
+                label: tr('app.addSheet.logWeight'),
+                subline: tr('app.addSheet.logWeightHint'),
+                showChevron: true,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showWeightLogSheet(context, ref);
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          KalloSheetHeader(title: tr('app.addSheet.title')),
-          ListRow(
-            icon: LucideIcons.utensils300,
-            label: tr('app.addSheet.logMeal'),
-            subline: tr('app.addSheet.logMealHint'),
-            showChevron: true,
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              showQuickLogSheet(context, ref);
-            },
-          ),
-          // Separator inset to the text column, as in every grouped card.
-          const Padding(
-            padding: EdgeInsets.only(left: 36),
-            child: ColoredBox(color: kHairline, child: SizedBox(height: 1)),
-          ),
-          ListRow(
-            icon: LucideIcons.gauge300,
-            label: tr('app.addSheet.logWeight'),
-            subline: tr('app.addSheet.logWeightHint'),
-            showChevron: true,
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              showWeightLogSheet(context, ref);
-            },
-          ),
-        ],
-      ),
-    ),
   );
 }

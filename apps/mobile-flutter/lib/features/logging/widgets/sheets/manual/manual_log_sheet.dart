@@ -123,7 +123,9 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
     // The surface lifts itself clear of the keyboard; the cap it is given
     // has to come off the height the keyboard LEAVES, not the whole screen.
     return KalloSheetSurface(
-      constraints: BoxConstraints(maxHeight: (media.size.height - keyboardInset) * 0.9),
+      constraints: BoxConstraints(
+        maxHeight: (media.size.height - keyboardInset) * 0.9,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -137,39 +139,40 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
           // is the row already sitting against the search pill.
           Flexible(
             child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                reverse: true,
-                physics: const ClampingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ManualAddedBlock(
-                          key: _addedKey,
-                          onSave: _save,
-                          errorText: _errorText,
+              builder:
+                  (context, constraints) => SingleChildScrollView(
+                    reverse: true,
+                    physics: const ClampingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ManualAddedBlock(
+                              key: _addedKey,
+                              onSave: _save,
+                              errorText: _errorText,
+                            ),
+                            const Spacer(),
+                            const SizedBox(height: KalloSpacing.sp3),
+                            ManualResultsList(
+                              query: _query,
+                              resultsAsync: resultsAsync,
+                              onPick: (ingredient) {
+                                ref
+                                    .read(manualLogProvider.notifier)
+                                    .addIngredient(ingredient);
+                                _revealAdded();
+                              },
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        const SizedBox(height: KalloSpacing.sp3),
-                        ManualResultsList(
-                          query: _query,
-                          resultsAsync: resultsAsync,
-                          onPick: (ingredient) {
-                            ref
-                                .read(manualLogProvider.notifier)
-                                .addIngredient(ingredient);
-                            _revealAdded();
-                          },
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
             ),
           ),
           const SizedBox(height: KalloSpacing.sp2),
@@ -177,13 +180,13 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
           // 34pt home inset at rest (floored for phones without one); the
           // pad's own inset covers it when the keyboard is up.
           SizedBox(
-            height: keyboardInset > 0
-                ? KalloSpacing.sp2
-                : math.max(media.viewPadding.bottom, KalloSpacing.sp4),
+            height:
+                keyboardInset > 0
+                    ? KalloSpacing.sp2
+                    : math.max(media.viewPadding.bottom, KalloSpacing.sp4),
           ),
         ],
       ),
     );
   }
-
 }

@@ -19,18 +19,14 @@ class MealTimeDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const line = Expanded(
-      child: Divider(
-        color: KalloColors.borderFaint,
-        height: 1,
-        thickness: 1,
-      ),
+      child: Divider(color: KalloColors.borderFaint, height: 1, thickness: 1),
     );
     return Row(
       children: [
         line,
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: Text(time, style: dashMeta(),),
+          child: Text(time, style: dashMeta()),
         ),
         line,
       ],

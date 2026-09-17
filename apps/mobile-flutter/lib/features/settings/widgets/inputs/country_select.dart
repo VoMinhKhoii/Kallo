@@ -159,10 +159,7 @@ class _CountrySelectState extends State<CountrySelect> {
                           '×', // ×
                           style: dashBody().copyWith(
                             height: 1,
-                            color:
-                                _clearPressed
-                                    ? kInk
-                                    : kInkMuted,
+                            color: _clearPressed ? kInk : kInkMuted,
                           ),
                         ),
                       ),
@@ -262,7 +259,9 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                         padding: const EdgeInsets.all(KalloSpacing.sp2),
                         decoration:
                             const Border(
-                              bottom: BorderSide(color: KalloColors.inputBorder),
+                              bottom: BorderSide(
+                                color: KalloColors.inputBorder,
+                              ),
                             ).toBoxDecoration(),
                         child: TextField(
                           controller: _search,
@@ -389,17 +388,8 @@ class _CountryRowState extends State<_CountryRow> {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: dashBody(
-                  ),
-                ),
-              ),
-              Text(
-                widget.vi,
-                style: dashMeta(),
-              ),
+              Expanded(child: Text(widget.label, style: dashBody())),
+              Text(widget.vi, style: dashMeta()),
             ],
           ),
         ),

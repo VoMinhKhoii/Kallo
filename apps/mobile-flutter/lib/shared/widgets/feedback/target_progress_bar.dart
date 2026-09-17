@@ -56,9 +56,10 @@ class _TargetProgressBarState extends State<TargetProgressBar>
   }
 
   Animation<double> _buildAnimation() {
-    return Tween<double>(begin: 0, end: _targetFill).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    return Tween<double>(
+      begin: 0,
+      end: _targetFill,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   void _run() {
@@ -96,9 +97,10 @@ class _TargetProgressBarState extends State<TargetProgressBar>
 
   @override
   Widget build(BuildContext context) {
-    final fillColor = !_hasValue
-        ? KalloColors.stone50
-        : widget.showExceed
+    final fillColor =
+        !_hasValue
+            ? KalloColors.stone50
+            : widget.showExceed
             ? KalloColors.offTarget
             : widget.fillColor ?? KalloColors.text;
 
@@ -153,9 +155,10 @@ class _TargetProgressBarState extends State<TargetProgressBar>
                   width: 1,
                   height: 7,
                   child: ColoredBox(
-                    color: widget.showExceed
-                        ? KalloColors.offTarget70
-                        : KalloColors.stone70,
+                    color:
+                        widget.showExceed
+                            ? KalloColors.offTarget70
+                            : KalloColors.stone70,
                   ),
                 ),
             ],

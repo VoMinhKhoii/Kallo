@@ -49,8 +49,7 @@ class _CountrySheetState extends State<_CountrySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final matches =
-        kCountries.where((c) => countryMatches(c, _query)).toList();
+    final matches = kCountries.where((c) => countryMatches(c, _query)).toList();
 
     // The keyboard inset is `KalloSheetSurface`'s job — it lifts the surface so
     // the pinned search and the list clear the pad.
@@ -80,25 +79,26 @@ class _CountrySheetState extends State<_CountrySheet> {
               ),
             ),
             Expanded(
-              child: matches.isEmpty
-                  ? Center(
-                      child: Text(
-                        tr('onboarding.origin.noCountries'),
-                        style: dashBody(color: kInkMuted),
+              child:
+                  matches.isEmpty
+                      ? Center(
+                        child: Text(
+                          tr('onboarding.origin.noCountries'),
+                          style: dashBody(color: kInkMuted),
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          KalloSpacing.sp4,
+                          0,
+                          KalloSpacing.sp4,
+                          KalloSpacing.sp6,
+                        ),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        itemCount: matches.length,
+                        itemBuilder: (context, i) => _row(context, matches[i]),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        KalloSpacing.sp4,
-                        0,
-                        KalloSpacing.sp4,
-                        KalloSpacing.sp6,
-                      ),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: matches.length,
-                      itemBuilder: (context, i) => _row(context, matches[i]),
-                    ),
             ),
           ],
         ),
@@ -113,13 +113,14 @@ class _CountrySheetState extends State<_CountrySheet> {
       label: countryLabel(country, language),
       value: countryAlias(country, language),
       onTap: () => Navigator.of(context).pop(country.value),
-      trailing: selected
-          ? const Icon(
-              LucideIcons.check300,
-              size: KalloIcons.tertiary,
-              color: kInk,
-            )
-          : null,
+      trailing:
+          selected
+              ? const Icon(
+                LucideIcons.check300,
+                size: KalloIcons.tertiary,
+                color: kInk,
+              )
+              : null,
     );
   }
 }

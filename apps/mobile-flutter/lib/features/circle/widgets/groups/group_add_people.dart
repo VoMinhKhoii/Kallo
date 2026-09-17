@@ -66,9 +66,8 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
     return ref
         .watch(circleFriendsProvider)
         .when(
-          loading: () => FriendListSkeleton(
-            semanticsLabel: tr('common.loading'),
-          ),
+          loading:
+              () => FriendListSkeleton(semanticsLabel: tr('common.loading')),
           error:
               (_, __) => Center(
                 child: CircleErrorCard(

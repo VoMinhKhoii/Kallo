@@ -29,9 +29,10 @@ class PaywallEntitlementsApi extends ApiClient {
       throw ApiError('UPSTREAM_UNAVAILABLE', 503, true, 'No entitlement.');
     }
     return freeEntitlement(
-      purchasesEnabled: purchasesEnabled,
-      trialActive: trialActive,
-    ) as T;
+          purchasesEnabled: purchasesEnabled,
+          trialActive: trialActive,
+        )
+        as T;
   }
 
   @override
@@ -49,9 +50,10 @@ class PaywallEntitlementsApi extends ApiClient {
       return premiumEntitlement() as T;
     }
     return freeEntitlement(
-      purchasesEnabled: purchasesEnabled,
-      trialActive: trialActive,
-    ) as T;
+          purchasesEnabled: purchasesEnabled,
+          trialActive: trialActive,
+        )
+        as T;
   }
 }
 

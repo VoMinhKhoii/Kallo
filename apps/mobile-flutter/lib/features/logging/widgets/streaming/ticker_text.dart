@@ -23,21 +23,14 @@ class TickerText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      _span(),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
+    return Text.rich(_span(), maxLines: 1, overflow: TextOverflow.ellipsis);
   }
 
   TextSpan _span() {
     final verbText = verb;
     if (verbText != null) {
       // Umber, so "working" reads as the app's own voice rather than as data.
-      return TextSpan(
-        style: dashBody(color: KalloColors.btn),
-        text: verbText,
-      );
+      return TextSpan(style: dashBody(color: KalloColors.btn), text: verbText);
     }
 
     // The meal's own words, as on web: serif italic in primary ink, set to

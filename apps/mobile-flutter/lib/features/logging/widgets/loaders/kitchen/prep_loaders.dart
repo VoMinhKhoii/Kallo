@@ -19,15 +19,17 @@ class KnifeChopPainter extends LoaderPainter {
     final s = size.width / 40;
     final p = loaderPhase(seconds, _dur);
     // Fast down (first 35%), slower lift back — a chop, not a metronome.
-    final down = p < 0.35
-        ? Curves.easeIn.transform(p / 0.35)
-        : 1 - Curves.easeOut.transform((p - 0.35) / 0.65);
+    final down =
+        p < 0.35
+            ? Curves.easeIn.transform(p / 0.35)
+            : 1 - Curves.easeOut.transform((p - 0.35) / 0.65);
 
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2 * s
-      ..strokeCap = StrokeCap.round
-      ..color = color;
+    final stroke =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2 * s
+          ..strokeCap = StrokeCap.round
+          ..color = color;
 
     // The board takes the hit right as the blade lands.
     final hit = (down > 0.92) ? (down - 0.92) / 0.08 : 0.0;
@@ -78,10 +80,11 @@ class RiceFallPainter extends LoaderPainter {
     final paint = Paint()..color = color;
 
     // The heap they are landing in.
-    final heap = Path()
-      ..moveTo(10 * s, 34 * s)
-      ..quadraticBezierTo(20 * s, 24 * s, 30 * s, 34 * s)
-      ..close();
+    final heap =
+        Path()
+          ..moveTo(10 * s, 34 * s)
+          ..quadraticBezierTo(20 * s, 24 * s, 30 * s, 34 * s)
+          ..close();
     canvas.drawPath(heap, Paint()..color = color.withValues(alpha: 0.45));
 
     for (final (x, begin, lean) in _grains) {
@@ -117,12 +120,13 @@ class PourDripPainter extends LoaderPainter {
     final falling = p < 0.55;
 
     // The vessel, tipped: a lip on the left that the drop leaves from.
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2 * s
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = color;
+    final stroke =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2 * s
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..color = color;
     canvas.drawPath(
       Path()
         ..moveTo(9 * s, 3 * s)

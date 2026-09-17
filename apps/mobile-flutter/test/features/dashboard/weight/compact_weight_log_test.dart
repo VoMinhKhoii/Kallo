@@ -18,19 +18,20 @@ Widget _wrap() => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        home: const Scaffold(
-          body: CompactWeightLog(
-            currentWeight: 68,
-            todayWeight: null,
-            todayDate: '2026-08-31',
-            args: (userId: 'u1', date: '2026-08-31'),
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: const Scaffold(
+              body: CompactWeightLog(
+                currentWeight: 68,
+                todayWeight: null,
+                todayDate: '2026-08-31',
+                args: (userId: 'u1', date: '2026-08-31'),
+              ),
+            ),
           ),
-        ),
-      ),
     ),
   ),
 );
@@ -59,13 +60,14 @@ void main() {
     expect(saveLabel, findsOneWidget);
 
     final button = tester.widget<Container>(
-      find
-          .ancestor(of: saveLabel, matching: find.byType(Container))
-          .first,
+      find.ancestor(of: saveLabel, matching: find.byType(Container)).first,
     );
     final decoration = button.decoration! as BoxDecoration;
-    expect(decoration.color, KalloColors.btnPrimarySoft,
-        reason: 'in-app primary fill is the beige wash, not umber');
+    expect(
+      decoration.color,
+      KalloColors.btnPrimarySoft,
+      reason: 'in-app primary fill is the beige wash, not umber',
+    );
     expect(
       decoration.borderRadius,
       BorderRadius.circular(KalloRadii.button),
@@ -95,9 +97,12 @@ void main() {
       reason: 'full-width fields are 52pt tall',
     );
 
-    final decoration = tester.widget<TextField>(
-      find.descendant(of: field, matching: find.byType(TextField)),
-    ).decoration!;
+    final decoration =
+        tester
+            .widget<TextField>(
+              find.descendant(of: field, matching: find.byType(TextField)),
+            )
+            .decoration!;
     for (final border in [
       decoration.border,
       decoration.enabledBorder,
@@ -112,10 +117,7 @@ void main() {
     }
     // 18 is the shared field's inset — where text starts inside a radius-26
     // pill. A smaller one lets the first glyph ride the curve.
-    expect(
-      (decoration.contentPadding! as EdgeInsets).left,
-      18,
-    );
+    expect((decoration.contentPadding! as EdgeInsets).left, 18);
     // Still the track fill, which is the whole reason this field is
     // hand-decorated rather than a KalloTextField.
     expect(decoration.fillColor, KalloColors.track);

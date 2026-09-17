@@ -13,12 +13,13 @@ import '../../l10n_test_loader.dart';
 /// kcal on the title line and no timestamp — the time belongs to Circle posts,
 /// where a meal has an author and a moment; your own dock only has the day.
 Widget _wrap(Widget child) => EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
@@ -26,25 +27,24 @@ Widget _wrap(Widget child) => EasyLocalization(
             body: Center(child: SizedBox(width: 358, child: child)),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 PersistedMeal _meal({
   required String id,
   required String name,
   double? protein = 28,
-}) =>
-    PersistedMeal(
-      id: id,
-      rawInput: name,
-      loggedAt: '2026-08-31T13:04:00Z',
-      nutrition: MealNutrition(
-        caloriesKcal: 420,
-        proteinG: protein,
-        carbohydrateG: 52,
-        fatG: 9,
-      ),
-    );
+}) => PersistedMeal(
+  id: id,
+  rawInput: name,
+  loggedAt: '2026-08-31T13:04:00Z',
+  nutrition: MealNutrition(
+    caloriesKcal: 420,
+    proteinG: protein,
+    carbohydrateG: 52,
+    fatG: 9,
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -58,8 +58,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('a meal row is a MealBlock with kcal on the title line',
-      (tester) async {
+  testWidgets('a meal row is a MealBlock with kcal on the title line', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _wrap(MealList(meals: [_meal(id: '1', name: 'Phở bò tái')])),
     );
@@ -74,8 +75,9 @@ void main() {
     expect(find.textContaining(':'), findsNothing);
   });
 
-  testWidgets('an unmeasured macro reads as a dash, not a confident zero',
-      (tester) async {
+  testWidgets('an unmeasured macro reads as a dash, not a confident zero', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _wrap(MealList(meals: [_meal(id: '1', name: 'Cơm tấm', protein: null)])),
     );

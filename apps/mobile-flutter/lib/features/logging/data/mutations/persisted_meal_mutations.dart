@@ -33,15 +33,13 @@ Future<void> updatePersistedMeal(
   required List<String> removeIds,
 }) async {
   try {
-    final res = await ref
-        .read(apiClientProvider)
-        .patch<Map<String, dynamic>>(
-          '/api/v1/meals/${Uri.encodeComponent(mealId)}',
-          {
-            if (edits.isNotEmpty) 'edits': edits,
-            if (removeIds.isNotEmpty) 'removeIds': removeIds,
-          },
-        );
+    final res = await ref.read(apiClientProvider).patch<Map<String, dynamic>>(
+      '/api/v1/meals/${Uri.encodeComponent(mealId)}',
+      {
+        if (edits.isNotEmpty) 'edits': edits,
+        if (removeIds.isNotEmpty) 'removeIds': removeIds,
+      },
+    );
     final mealJson = res['meal'] as Map<String, dynamic>?;
     if (mealJson != null) {
       ref

@@ -62,12 +62,15 @@ class DaySummary extends StatelessWidget {
 
     // For multi-day ranges with ≥2 buckets, show the macro-calorie trend chart;
     // a single day has no trend, so it keeps the composition bar.
-    final macroSeries = daySeries.series
-        .where((s) =>
-            s.metric == 'protein' ||
-            s.metric == 'carbohydrate' ||
-            s.metric == 'fat')
-        .toList();
+    final macroSeries =
+        daySeries.series
+            .where(
+              (s) =>
+                  s.metric == 'protein' ||
+                  s.metric == 'carbohydrate' ||
+                  s.metric == 'fat',
+            )
+            .toList();
     final bucketCount =
         macroSeries.isEmpty ? 0 : macroSeries.first.buckets.length;
     final showTrend = resolvedRange != '1d' && bucketCount >= 2;
@@ -93,26 +96,28 @@ class DaySummary extends StatelessWidget {
             locale: locale,
             onScopeChange: onScopeChange,
             dateSpan: dateSpan,
-            selectedValue: selectedIndex == null
-                ? null
-                : (macros
-                        .where((m) => m.key == 'calories')
-                        .firstOrNull
-                        ?.averagePerDay ??
-                    0),
+            selectedValue:
+                selectedIndex == null
+                    ? null
+                    : (macros
+                            .where((m) => m.key == 'calories')
+                            .firstOrNull
+                            ?.averagePerDay ??
+                        0),
             hasSelection: selectedIndex != null,
             isEmpty: isEmpty,
             // How this window compares with the one before it, same length and
             // same day scope. Absent while a column is selected — one bucket
             // has no "period before" of its own — and absent when nothing was
             // logged back then.
-            diff: selectedIndex == null &&
-                    activeAvg != null &&
-                    previousCalorieAverages.forScope(scope).averagePerDay !=
-                        null
-                ? activeAvg -
-                    previousCalorieAverages.forScope(scope).averagePerDay!
-                : null,
+            diff:
+                selectedIndex == null &&
+                        activeAvg != null &&
+                        previousCalorieAverages.forScope(scope).averagePerDay !=
+                            null
+                    ? activeAvg -
+                        previousCalorieAverages.forScope(scope).averagePerDay!
+                    : null,
           ),
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: KalloSpacing.sp3),

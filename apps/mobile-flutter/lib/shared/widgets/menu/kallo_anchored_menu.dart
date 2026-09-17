@@ -81,21 +81,22 @@ Future<T?> showKalloAnchoredMenu<T>(
     barrierColor: const Color(0x00000000),
     transitionDuration: KalloMotion.quick,
     pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-    transitionBuilder: (dialogContext, animation, _, __) => AnchoredMenuLayer(
-      anchor: anchor,
-      overlaySize: overlaySize,
-      animation: animation,
-      edge: edge,
-      header: header,
-      pinned: pinned,
-      rows: [
-        for (final action in actions)
-          KalloMenuActionRow(
-            label: action.label,
-            icon: action.icon,
-            onTap: () => Navigator.of(dialogContext).pop(action.value),
-          ),
-      ],
-    ),
+    transitionBuilder:
+        (dialogContext, animation, _, __) => AnchoredMenuLayer(
+          anchor: anchor,
+          overlaySize: overlaySize,
+          animation: animation,
+          edge: edge,
+          header: header,
+          pinned: pinned,
+          rows: [
+            for (final action in actions)
+              KalloMenuActionRow(
+                label: action.label,
+                icon: action.icon,
+                onTap: () => Navigator.of(dialogContext).pop(action.value),
+              ),
+          ],
+        ),
   );
 }

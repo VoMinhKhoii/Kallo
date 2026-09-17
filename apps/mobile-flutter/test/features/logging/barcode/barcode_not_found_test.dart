@@ -131,43 +131,45 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              // The host sheet's own shape: a bottom-anchored column that lets
-              // the branch size itself, which is exactly what must not move.
-              home: Builder(
-                builder: (context) => MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(textScale)),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: SizedBox(
-                        width: 320,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: BarcodeScannerSheet(
-                                userId: 'user-1',
-                                date: '2026-09-01',
-                                purpose: ScanPurpose.log,
-                                onScanLabelInstead: () {},
-                                onFallbackToText: () {},
+            builder:
+                (context) => MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  // The host sheet's own shape: a bottom-anchored column that lets
+                  // the branch size itself, which is exactly what must not move.
+                  home: Builder(
+                    builder:
+                        (context) => MediaQuery(
+                          data: MediaQuery.of(
+                            context,
+                          ).copyWith(textScaler: TextScaler.linear(textScale)),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: SizedBox(
+                                width: 320,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: BarcodeScannerSheet(
+                                        userId: 'user-1',
+                                        date: '2026-09-01',
+                                        purpose: ScanPurpose.log,
+                                        onScanLabelInstead: () {},
+                                        onFallbackToText: () {},
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
                   ),
                 ),
-              ),
-            ),
           ),
         ),
       ),

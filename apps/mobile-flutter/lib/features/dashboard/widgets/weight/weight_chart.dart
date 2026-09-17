@@ -40,32 +40,34 @@ class WeightChart extends ConsumerWidget {
         skipLoadingOnReload: true,
         // Skeleton of the card body (no spinner) — the card is already drawn,
         // so only its inner rows shimmer.
-        loading: () => SkeletonPulse(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: weightCardSkeletonChildren(),
-          ),
-        ),
-        error: (_, __) => Container(
-          constraints: const BoxConstraints(minHeight: 200),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                LucideIcons.cloudOff300,
-                size: KalloIcons.size,
-                color: kInkMuted,
+        loading:
+            () => SkeletonPulse(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: weightCardSkeletonChildren(),
               ),
-              const SizedBox(height: KalloSpacing.sp2),
-              Text(
-                tr('dashboard.progressLoadError'),
-                textAlign: TextAlign.center,
-                style: dashMeta(color: kInkMuted),
+            ),
+        error:
+            (_, __) => Container(
+              constraints: const BoxConstraints(minHeight: 200),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    LucideIcons.cloudOff300,
+                    size: KalloIcons.size,
+                    color: kInkMuted,
+                  ),
+                  const SizedBox(height: KalloSpacing.sp2),
+                  Text(
+                    tr('dashboard.progressLoadError'),
+                    textAlign: TextAlign.center,
+                    style: dashMeta(color: kInkMuted),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
         data: (data) => _Body(data: data),
       ),
     );
@@ -151,10 +153,7 @@ class _TrendBadge extends StatelessWidget {
     final arrow = delta > 0 ? '↑' : '↓';
     return Text(
       '$arrow ${delta.abs().toStringAsFixed(1)}',
-      style: dashBody(
-        color: kInkMuted,
-        tabular: true,
-      ),
+      style: dashBody(color: kInkMuted, tabular: true),
     );
   }
 }

@@ -20,16 +20,17 @@ import '../l10n_test_loader.dart';
 /// indicator, 24) — 118 with an indicator, 108 without.
 Widget _branch() => KalloRefreshableScroll(
   onRefresh: () async {},
-  slivers: (bottomInset) => [
-    SliverPadding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      sliver: SliverList(
-        delegate: SliverChildListDelegate([
-          const SizedBox(height: 2000, child: Text('branch-body')),
-        ]),
-      ),
-    ),
-  ],
+  slivers:
+      (bottomInset) => [
+        SliverPadding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              const SizedBox(height: 2000, child: Text('branch-body')),
+            ]),
+          ),
+        ),
+      ],
 );
 
 GoRouter _router() => GoRouter(
@@ -75,12 +76,13 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp.router(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              routerConfig: router,
-            ),
+            builder:
+                (context) => MaterialApp.router(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  routerConfig: router,
+                ),
           ),
         ),
       ),

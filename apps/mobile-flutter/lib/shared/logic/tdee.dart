@@ -99,9 +99,10 @@ MacroTargets calcDailyTargets(
     final safeAggression = aggression ?? 0;
     final adjustment =
         deficitOverride ?? (safeAggression * kAggressionKcalPerKg).round();
-    calories = goal == Goal.cutting
-        ? tdee - adjustment.toDouble()
-        : tdee + adjustment.toDouble();
+    calories =
+        goal == Goal.cutting
+            ? tdee - adjustment.toDouble()
+            : tdee + adjustment.toDouble();
   }
 
   return calcMacroGrams(calories, carbSplit);

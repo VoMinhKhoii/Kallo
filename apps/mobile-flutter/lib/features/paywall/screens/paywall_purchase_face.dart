@@ -91,9 +91,10 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
         PaywallBuyBand(
           offer: offer,
           loading: purchasing,
-          onBuy: purchasing || _storeClosed || plan == null
-              ? null
-              : () => _purchase(plan),
+          onBuy:
+              purchasing || _storeClosed || plan == null
+                  ? null
+                  : () => _purchase(plan),
           onStayFree: widget.onStayFree,
         ),
       ],
@@ -122,9 +123,10 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
             yearly: offer.yearly,
             // Inert while a purchase is in flight, and on the store-closed
             // face, where there is no second period to switch to.
-            onChanged: purchasing || offer.plan == null
-                ? null
-                : (value) => setState(() => _yearly = value),
+            onChanged:
+                purchasing || offer.plan == null
+                    ? null
+                    : (value) => setState(() => _yearly = value),
           ),
           const SizedBox(height: KalloSpacing.sp2_5),
         ],
@@ -133,9 +135,8 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     ),
   );
 
-  Future<void> _purchase(Package plan) => _run(
-    () => ref.read(paywallControllerProvider.notifier).purchase(plan),
-  );
+  Future<void> _purchase(Package plan) =>
+      _run(() => ref.read(paywallControllerProvider.notifier).purchase(plan));
 
   Future<void> _run(Future<PaywallActionResult> Function() action) async {
     final result = await action();

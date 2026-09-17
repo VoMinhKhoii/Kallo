@@ -47,29 +47,31 @@ class WeightSubmitButton extends StatelessWidget {
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: pressed && !pending
-                ? Color.alphaBlend(
-                    KalloColors.pressWash,
-                    KalloColors.btnPrimarySoft,
-                  )
-                : KalloColors.btnPrimarySoft,
+            color:
+                pressed && !pending
+                    ? Color.alphaBlend(
+                      KalloColors.pressWash,
+                      KalloColors.btnPrimarySoft,
+                    )
+                    : KalloColors.btnPrimarySoft,
             borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
-          child: pending
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: KalloColors.text),
-                )
-              : Text(
-                  label,
-                  // Sentence-case, body-sized label — a native button reads as
-                  // a word, not a techy 11px all-caps eyebrow.
-                  style: dashBody(
-                    color: KalloColors.text,
+          child:
+              pending
+                  ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: KalloColors.text,
+                    ),
+                  )
+                  : Text(
+                    label,
+                    // Sentence-case, body-sized label — a native button reads as
+                    // a word, not a techy 11px all-caps eyebrow.
+                    style: dashBody(color: KalloColors.text),
                   ),
-                ),
         ),
       ),
     );

@@ -37,7 +37,8 @@ class ManualAddedList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const ColoredBox(color: kHairline, child: SizedBox(height: 1)),
+            if (i > 0)
+              const ColoredBox(color: kHairline, child: SizedBox(height: 1)),
             _AddedRow(
               key: ValueKey(items[i].id),
               item: items[i],
@@ -93,7 +94,7 @@ class _AddedRow extends StatelessWidget {
                   kcal == null
                       ? '—'
                       : '${kcal.round()} '
-                            '${'logging.manualLogging.kcalPer100g'.tr()}',
+                          '${'logging.manualLogging.kcalPer100g'.tr()}',
                   style: dashMeta(tabular: true),
                 ),
               ],

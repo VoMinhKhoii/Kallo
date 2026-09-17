@@ -29,10 +29,7 @@ class CircleListSection extends ConsumerWidget {
       data: (members) {
         final circle = members.where((m) => m.isAccepted).toList();
         if (circle.isEmpty) {
-          return Text(
-            tr('groups.circle.empty'),
-            style: dashMeta(),
-          );
+          return Text(tr('groups.circle.empty'), style: dashMeta());
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,10 +119,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
                   borderRadius: BorderRadius.circular(KalloRadii.md),
                   border: Border.all(color: KalloColors.borderSoft),
                 ),
-                child: Text(
-                  tr('groups.circle.remove'),
-                  style: dashMeta(),
-                ),
+                child: Text(tr('groups.circle.remove'), style: dashMeta()),
               ),
             ),
           ),

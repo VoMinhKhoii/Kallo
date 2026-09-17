@@ -26,7 +26,8 @@ final _bounds = Rect.fromLTWH(0, 0, _viewport.width, _viewport.height);
 /// The long Vietnamese error copy, doubled: two full sentences is the worst
 /// subtitle any surface can be handed.
 const _title = 'Trang này chưa tải được.';
-const _subtitle = 'Có lỗi từ phía chúng tôi, bạn thử lại nhé. '
+const _subtitle =
+    'Có lỗi từ phía chúng tôi, bạn thử lại nhé. '
     'Có lỗi từ phía chúng tôi, bạn thử lại nhé.';
 
 Widget _sized(Widget child) => MediaQuery(
@@ -35,8 +36,7 @@ Widget _sized(Widget child) => MediaQuery(
 );
 
 /// Plain-strings harness: no l10n, for the anatomy itself.
-Widget _app(Widget child) =>
-    MaterialApp(home: Scaffold(body: _sized(child)));
+Widget _app(Widget child) => MaterialApp(home: Scaffold(body: _sized(child)));
 
 /// Same, with the app's real Vietnamese copy loaded from disk.
 Widget _l10nApp(Widget child) => EasyLocalization(
@@ -46,12 +46,13 @@ Widget _l10nApp(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: _sized(child)),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: _sized(child)),
+        ),
   ),
 );
 
@@ -125,8 +126,9 @@ void main() {
   /// its content there rather than fill the region: a host that paints a card
   /// around it (nutrition's `InlineError`) would otherwise paint a white slab
   /// as tall as the page instead of a card.
-  testWidgets('under a Center in a finite region the box hugs its content',
-      (tester) async {
+  testWidgets('under a Center in a finite region the box hugs its content', (
+    tester,
+  ) async {
     const window = Size(390, 700);
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = window;
@@ -184,8 +186,9 @@ void main() {
     ),
   );
 
-  testWidgets('compact error state overflows a host that fixes 200pt',
-      (tester) async {
+  testWidgets('compact error state overflows a host that fixes 200pt', (
+    tester,
+  ) async {
     await _pump(tester, _app(SizedBox(height: 200, child: compact())));
 
     expect(find.text(_title), findsOneWidget);
@@ -199,8 +202,9 @@ void main() {
     );
   });
 
-  testWidgets('compact error state holds when the host sets only a minimum',
-      (tester) async {
+  testWidgets('compact error state holds when the host sets only a minimum', (
+    tester,
+  ) async {
     await _pump(
       tester,
       _app(
@@ -222,10 +226,7 @@ void main() {
   });
 
   testWidgets('EmptyMeals holds inside the Today card', (tester) async {
-    await _pump(
-      tester,
-      _l10nApp(const KalloCard(child: EmptyMeals())),
-    );
+    await _pump(tester, _l10nApp(const KalloCard(child: EmptyMeals())));
 
     expect(tester.takeException(), isNull);
     expect(find.text(tr('dashboard.noMealsToday')), findsOneWidget);
@@ -253,21 +254,23 @@ void main() {
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp.router(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            builder: (_, child) => _sized(child ?? const SizedBox.shrink()),
-            routerConfig: GoRouter(
-              initialLocation: '/',
-              routes: [
-                GoRoute(
-                  path: '/',
-                  builder: (_, __) => const RouteErrorScreen(notFound: true),
+          builder:
+              (context) => MaterialApp.router(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                builder: (_, child) => _sized(child ?? const SizedBox.shrink()),
+                routerConfig: GoRouter(
+                  initialLocation: '/',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder:
+                          (_, __) => const RouteErrorScreen(notFound: true),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
         ),
       ),
     );

@@ -79,13 +79,15 @@ class _LabelCameraPreviewState extends State<LabelCameraPreview>
       shutterLabel: widget.shutterLabel,
       onShutter: _session.shoot,
       leading: widget.leading,
-      builder: (context, size) => ValueListenableBuilder<CameraController?>(
-        valueListenable: _session.controller,
-        builder: (context, controller, _) =>
-            controller == null || !controller.value.isInitialized
-            ? const SizedBox.shrink()
-            : _preview(controller, size),
-      ),
+      builder:
+          (context, size) => ValueListenableBuilder<CameraController?>(
+            valueListenable: _session.controller,
+            builder:
+                (context, controller, _) =>
+                    controller == null || !controller.value.isInitialized
+                        ? const SizedBox.shrink()
+                        : _preview(controller, size),
+          ),
     );
   }
 

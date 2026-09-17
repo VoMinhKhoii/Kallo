@@ -46,13 +46,14 @@ class SectionState extends StatelessWidget {
         minHeight: compact ? 180 : null,
         title: tr('dashboard.sectionErrorTitle'),
         subtitle: message,
-        action: hasAction
-            ? KalloButton(
-                title: actionLabel!,
-                variant: KalloButtonVariant.cta,
-                onPressed: onAction,
-              )
-            : null,
+        action:
+            hasAction
+                ? KalloButton(
+                  title: actionLabel!,
+                  variant: KalloButtonVariant.cta,
+                  onPressed: onAction,
+                )
+                : null,
       ),
     );
   }

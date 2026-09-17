@@ -85,9 +85,7 @@ class BarcodeFrameNotice extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: dashMeta(
-                  color: KalloColors.bandForeground,
-                ),
+                style: dashMeta(color: KalloColors.bandForeground),
               ),
               if (code != null && code.isNotEmpty) ...[
                 const SizedBox(height: KalloSpacing.sp0_5),
@@ -143,9 +141,7 @@ class _RouteLink extends StatelessWidget {
             // The app's own text-link treatment (the auth footer's), in the
             // on-dark palette: without the rule these read as two more
             // sentences of the message they sit under.
-            style: dashMeta(
-              color: KalloColors.bandForeground,
-            ).copyWith(
+            style: dashMeta(color: KalloColors.bandForeground).copyWith(
               decoration: TextDecoration.underline,
               decorationColor: KalloColors.bandForeground70,
             ),

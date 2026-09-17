@@ -47,7 +47,10 @@ void main() {
   test('the promise is one answer: trial label, trial date, no bare price', () {
     final offer = offerFor(const [annualPackage, monthlyPackage]);
 
-    expect(offer.ctaLabel, tr('paywall.startTrialDays', namedArgs: {'days': '7'}));
+    expect(
+      offer.ctaLabel,
+      tr('paywall.startTrialDays', namedArgs: {'days': '7'}),
+    );
     // The billed amount leads; the derived per-month figure follows it in
     // brackets. The other way round is what Apple cited against Cal AI.
     expect(offer.renewalLine, contains(r'$24.99/year'));
@@ -56,10 +59,10 @@ void main() {
   });
 
   test('a customer the store would refuse gets no trial in EITHER half', () {
-    final offer = offerFor(
-      const [annualPackage, monthlyPackage],
-      eligible: const {},
-    );
+    final offer = offerFor(const [
+      annualPackage,
+      monthlyPackage,
+    ], eligible: const {});
 
     expect(offer.ctaLabel, tr('paywall.purchase'));
     // The label and the line are derived together, so a button that promises
@@ -69,10 +72,10 @@ void main() {
   });
 
   test('the monthly half names its price and drops the gold and the chip', () {
-    final offer = offerFor(
-      const [annualPackage, monthlyPackage],
-      yearlyPicked: false,
-    );
+    final offer = offerFor(const [
+      annualPackage,
+      monthlyPackage,
+    ], yearlyPicked: false);
 
     expect(offer.yearly, isFalse);
     expect(offer.plan, monthlyPackage);
@@ -117,10 +120,10 @@ void main() {
   });
 
   test('a running trial makes the bun count it down instead of boasting', () {
-    final counting = offerFor(
-      const [annualPackage, monthlyPackage],
-      trial: const TrialState(active: true, endsAt: null, daysRemaining: 3),
-    );
+    final counting = offerFor(const [
+      annualPackage,
+      monthlyPackage,
+    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 3));
     expect(
       counting.guideLine,
       tr('paywall.trialCountdown', namedArgs: {'days': '3'}),
@@ -128,32 +131,34 @@ void main() {
     // Mid-trial there is no second trial to start.
     expect(counting.ctaLabel, tr('paywall.purchaseTrial'));
 
-    final lastDay = offerFor(
-      const [annualPackage, monthlyPackage],
-      trial: const TrialState(active: true, endsAt: null, daysRemaining: 1),
-    );
+    final lastDay = offerFor(const [
+      annualPackage,
+      monthlyPackage,
+    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 1));
     expect(lastDay.guideLine, tr('paywall.trialCountdownLastDay'));
   });
 
-  test('the saving is boasted once, in the chip and in the bun, or not at all',
-      () {
-    // $9.99 x 12 = $119.88 against the $24.99 the yearly plan asks.
-    final both = offerFor(const [annualPackage, monthlyPackage]);
-    expect(both.savePercent, 80);
-    expect(
-      both.chipLabel,
-      tr('paywall.saveChip', namedArgs: {'percent': '80'}),
-    );
-    expect(
-      both.guideLine,
-      tr('paywall.guideSavings', namedArgs: {'percent': '80'}),
-    );
+  test(
+    'the saving is boasted once, in the chip and in the bun, or not at all',
+    () {
+      // $9.99 x 12 = $119.88 against the $24.99 the yearly plan asks.
+      final both = offerFor(const [annualPackage, monthlyPackage]);
+      expect(both.savePercent, 80);
+      expect(
+        both.chipLabel,
+        tr('paywall.saveChip', namedArgs: {'percent': '80'}),
+      );
+      expect(
+        both.guideLine,
+        tr('paywall.guideSavings', namedArgs: {'percent': '80'}),
+      );
 
-    // Nothing to compare against: the chip goes, and the bun says the other
-    // thing rather than a saving it cannot compute.
-    final annualOnly = offerFor(const [annualPackage]);
-    expect(annualOnly.savePercent, isNull);
-    expect(annualOnly.chipLabel, isNull);
-    expect(annualOnly.guideLine, tr('paywall.guideUnlock'));
-  });
+      // Nothing to compare against: the chip goes, and the bun says the other
+      // thing rather than a saving it cannot compute.
+      final annualOnly = offerFor(const [annualPackage]);
+      expect(annualOnly.savePercent, isNull);
+      expect(annualOnly.chipLabel, isNull);
+      expect(annualOnly.guideLine, tr('paywall.guideUnlock'));
+    },
+  );
 }

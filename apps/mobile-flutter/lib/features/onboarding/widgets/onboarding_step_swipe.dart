@@ -27,7 +27,11 @@ import '../../../shell/nav/swipe_back/back_swipe.dart';
 /// null while a save is in flight and on screen 1 of a mandatory run, so a
 /// silent no-op is the correct behaviour in both.
 class OnboardingStepSwipe extends StatefulWidget {
-  const OnboardingStepSwipe({super.key, required this.onBack, required this.child});
+  const OnboardingStepSwipe({
+    super.key,
+    required this.onBack,
+    required this.child,
+  });
 
   /// One screen back, or null where there is nowhere to go.
   final VoidCallback? onBack;
@@ -74,7 +78,8 @@ class _OnboardingStepSwipeState extends State<OnboardingStepSwipe> {
 
     final flung = BackSwipe.isFling(velocity, width);
     final dragged =
-        travelled >= width * OnboardingStepSwipe.commitFraction && velocity >= 0;
+        travelled >= width * OnboardingStepSwipe.commitFraction &&
+        velocity >= 0;
     if (!flung && !dragged) return;
 
     HapticFeedback.selectionClick();

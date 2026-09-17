@@ -124,25 +124,28 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
           MediaQuery.viewInsetsOf(context).bottom,
         );
     final flipped = anchor.bottom + KalloSpacing.sp2 + height > floor;
-    final wantedTop = flipped
-        ? anchor.top - KalloSpacing.sp2 - height
-        : anchor.bottom + KalloSpacing.sp2;
+    final wantedTop =
+        flipped
+            ? anchor.top - KalloSpacing.sp2 - height
+            : anchor.bottom + KalloSpacing.sp2;
     // The vertical twin of the horizontal clamp below. A bubble taller than
     // the screen minus the card flips a card whose header and first row would
     // land above y=0; when the screen is too short to hold both bounds the top
     // one wins, exactly as the leading edge wins horizontally — a card that
     // overhangs the floor still shows the header that says what it is.
     final ceiling = MediaQuery.paddingOf(context).top + KalloSpacing.sp3;
-    final top = ceiling >= floor - height
-        ? ceiling
-        : wantedTop.clamp(ceiling, floor - height);
+    final top =
+        ceiling >= floor - height
+            ? ceiling
+            : wantedTop.clamp(ceiling, floor - height);
 
     final leadingEdge = widget.edge == KalloMenuEdge.leading;
     final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
     final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
-    final left = maxLeft <= KalloSpacing.sp3
-        ? KalloSpacing.sp3
-        : wanted.clamp(KalloSpacing.sp3, maxLeft);
+    final left =
+        maxLeft <= KalloSpacing.sp3
+            ? KalloSpacing.sp3
+            : wanted.clamp(KalloSpacing.sp3, maxLeft);
 
     return Stack(
       children: [
@@ -173,11 +176,12 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
             opacity: _curved,
             child: ScaleTransition(
               scale: Tween<double>(begin: 0.92, end: 1).animate(_curved),
-              alignment: flipped
-                  ? (leadingEdge
-                        ? Alignment.bottomLeft
-                        : Alignment.bottomRight)
-                  : (leadingEdge ? Alignment.topLeft : Alignment.topRight),
+              alignment:
+                  flipped
+                      ? (leadingEdge
+                          ? Alignment.bottomLeft
+                          : Alignment.bottomRight)
+                      : (leadingEdge ? Alignment.topLeft : Alignment.topRight),
               // The card is the transitions' `child`, so a tick never rebuilds
               // it. The overlay sits above every Material in the app, and
               // nothing below here introduces one — without this the row

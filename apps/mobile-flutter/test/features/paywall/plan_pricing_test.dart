@@ -60,30 +60,46 @@ void main() {
     expect(pricing.perMonth, r'$2.08');
   });
 
-  test('omitting the locale falls back to the DEVICE one the store priced in',
-      () {
-    // The renewal line shows `priceString` (formatted by the store, for the
-    // device) beside the derived per-month figure; formatting that in the app
-    // locale instead is how "24,99 US\$" ended up next to "\$2.08".
-    final derived =
-        yearlyPricing(annual: annualPackage, monthly: _monthlyAt(3.49));
-    final device = yearlyPricing(
-      annual: annualPackage,
-      monthly: _monthlyAt(3.49),
-      locale: deviceCurrencyLocale(),
-    );
+  test(
+    'omitting the locale falls back to the DEVICE one the store priced in',
+    () {
+      // The renewal line shows `priceString` (formatted by the store, for the
+      // device) beside the derived per-month figure; formatting that in the app
+      // locale instead is how "24,99 US\$" ended up next to "\$2.08".
+      final derived = yearlyPricing(
+        annual: annualPackage,
+        monthly: _monthlyAt(3.49),
+      );
+      final device = yearlyPricing(
+        annual: annualPackage,
+        monthly: _monthlyAt(3.49),
+        locale: deviceCurrencyLocale(),
+      );
 
-    expect(derived.perMonth, device.perMonth);
-    expect(derived.savePercent, device.savePercent);
-  });
+      expect(derived.perMonth, device.perMonth);
+      expect(derived.savePercent, device.savePercent);
+    },
+  );
 
   test('the trial promise needs the store\'s blessing, not just the offer', () {
     // Same product, four customers — only the first is promised days.
     for (final (why, plan, active, eligible, promised) in [
       ('eligible', annualPackage, false, {'kallo_premium_annual'}, true),
       ('the store refuses them', annualPackage, false, <String>{}, false),
-      ('already mid-trial', annualPackage, true, {'kallo_premium_annual'}, false),
-      ('no introductory period', monthlyPackage, false, {'kallo_premium_monthly'}, false),
+      (
+        'already mid-trial',
+        annualPackage,
+        true,
+        {'kallo_premium_annual'},
+        false,
+      ),
+      (
+        'no introductory period',
+        monthlyPackage,
+        false,
+        {'kallo_premium_monthly'},
+        false,
+      ),
     ]) {
       expect(
         offersTrial(

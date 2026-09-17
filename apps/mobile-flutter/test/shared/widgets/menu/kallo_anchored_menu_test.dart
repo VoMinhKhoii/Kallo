@@ -15,16 +15,8 @@ import '../../../l10n_test_loader.dart';
 /// decides — the flip and the two clamps — is in
 /// `anchored_menu_layer_test.dart`.
 const _actions = [
-  KalloMenuAction(
-    label: 'Copy',
-    icon: LucideIcons.copy300,
-    value: 'copy',
-  ),
-  KalloMenuAction(
-    label: 'Edit',
-    icon: LucideIcons.pencil300,
-    value: 'edit',
-  ),
+  KalloMenuAction(label: 'Copy', icon: LucideIcons.copy300, value: 'copy'),
+  KalloMenuAction(label: 'Edit', icon: LucideIcons.pencil300, value: 'edit'),
 ];
 
 /// A page with one button that opens the menu at [anchor] and records what it
@@ -40,29 +32,32 @@ Widget _app({
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(
-        body: Builder(
-          builder: (inner) => Center(
-            child: TextButton(
-              onPressed: () async => picked.add(
-                await showKalloAnchoredMenu<String>(
-                  inner,
-                  anchor: anchor,
-                  actions: _actions,
-                  header: header,
-                  edge: edge,
-                ),
-              ),
-              child: const Text('open'),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(
+            body: Builder(
+              builder:
+                  (inner) => Center(
+                    child: TextButton(
+                      onPressed:
+                          () async => picked.add(
+                            await showKalloAnchoredMenu<String>(
+                              inner,
+                              anchor: anchor,
+                              actions: _actions,
+                              header: header,
+                              edge: edge,
+                            ),
+                          ),
+                      child: const Text('open'),
+                    ),
+                  ),
             ),
           ),
         ),
-      ),
-    ),
   ),
 );
 

@@ -91,9 +91,10 @@ class _WeekStripState extends ConsumerState<WeekStrip> {
           physics: const PageScrollPhysics(),
           itemCount: kWeekPageBase + 1, // page kWeekPageBase == today's week
           itemBuilder: (context, page) {
-            final days = buildCenteredStripFromAnchor(
-              weekAnchorForPage(widget.todayDate, page),
-            ).days;
+            final days =
+                buildCenteredStripFromAnchor(
+                  weekAnchorForPage(widget.todayDate, page),
+                ).days;
             return Row(
               children: [
                 for (final d in days)

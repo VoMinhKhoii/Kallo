@@ -80,12 +80,11 @@ List<RelogMention> reconcileMentions(
   String value,
   List<RelogMention> mentions,
 ) {
-  final indexed = [
-    for (var i = 0; i < mentions.length; i++) (i, mentions[i]),
-  ]..sort((a, b) {
-    final byStart = a.$2.start.compareTo(b.$2.start);
-    return byStart != 0 ? byStart : a.$1.compareTo(b.$1);
-  });
+  final indexed = [for (var i = 0; i < mentions.length; i++) (i, mentions[i])]
+    ..sort((a, b) {
+      final byStart = a.$2.start.compareTo(b.$2.start);
+      return byStart != 0 ? byStart : a.$1.compareTo(b.$1);
+    });
 
   final surviving = <RelogMention>[];
   var cursor = 0;

@@ -11,19 +11,20 @@ import '../../l10n_test_loader.dart';
 /// Wraps a widget in the minimal localization + Material scaffolding the
 /// `DaySummary` needs. It takes plain data params, so no ProviderScope/Supabase.
 Widget _wrap(Widget child) => EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
           home: Scaffold(body: child),
         ),
-      ),
-    );
+  ),
+);
 
 CalorieAverages _averages({double? complete = 2000, double? all = 350}) =>
     CalorieAverages(
@@ -38,25 +39,24 @@ DaySummary _daySummary({
   ValueChanged<NutritionDayScope>? onScopeChange,
   int? selectedIndex,
   bool isEmpty = false,
-}) =>
-    DaySummary(
-      macros: macros,
-      resolvedRange: '7d',
-      daySeries: const NutritionDaySeries(unit: 'day', series: []),
-      calorieAverages: averages,
-      // Nothing logged in the window before — no delta to draw.
-      previousCalorieAverages: const CalorieAverages(
-        all: CalorieScopeAverage(averagePerDay: null, days: 0),
-        complete: CalorieScopeAverage(averagePerDay: null, days: 0),
-      ),
-      scope: scope,
-      onScopeChange: onScopeChange ?? (_) {},
-      dateSpan: '10 – 16 Aug 2026',
-      todayIndex: -1,
-      selectedIndex: selectedIndex,
-      onSelect: (_) {},
-      isEmpty: isEmpty,
-    );
+}) => DaySummary(
+  macros: macros,
+  resolvedRange: '7d',
+  daySeries: const NutritionDaySeries(unit: 'day', series: []),
+  calorieAverages: averages,
+  // Nothing logged in the window before — no delta to draw.
+  previousCalorieAverages: const CalorieAverages(
+    all: CalorieScopeAverage(averagePerDay: null, days: 0),
+    complete: CalorieScopeAverage(averagePerDay: null, days: 0),
+  ),
+  scope: scope,
+  onScopeChange: onScopeChange ?? (_) {},
+  dateSpan: '10 – 16 Aug 2026',
+  todayIndex: -1,
+  selectedIndex: selectedIndex,
+  onSelect: (_) {},
+  isEmpty: isEmpty,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -66,19 +66,16 @@ void main() {
     // platform channel so it resolves in the test's fake-async zone.
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-    );
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
     await EasyLocalization.ensureInitialized();
   });
 
   testWidgets('shows the active scope and names the other one', (tester) async {
     await tester.pumpWidget(
       _wrap(
-        _daySummary(
-          scope: NutritionDayScope.complete,
-          averages: _averages(),
-        ),
+        _daySummary(scope: NutritionDayScope.complete, averages: _averages()),
       ),
     );
     await tester.pumpAndSettle();
@@ -110,15 +107,11 @@ void main() {
     expect(promoted, NutritionDayScope.all);
   });
 
-  testWidgets('on logged days the switch points back to complete',
-      (tester) async {
+  testWidgets('on logged days the switch points back to complete', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      _wrap(
-        _daySummary(
-          scope: NutritionDayScope.all,
-          averages: _averages(),
-        ),
-      ),
+      _wrap(_daySummary(scope: NutritionDayScope.all, averages: _averages())),
     );
     await tester.pumpAndSettle();
 
@@ -126,8 +119,9 @@ void main() {
     expect(find.text('Complete days'), findsOneWidget);
   });
 
-  testWidgets('complete scope with no complete days reads as a dash',
-      (tester) async {
+  testWidgets('complete scope with no complete days reads as a dash', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _wrap(
         _daySummary(
@@ -153,10 +147,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       _wrap(
-        _daySummary(
-          scope: NutritionDayScope.complete,
-          averages: _averages(),
-        ),
+        _daySummary(scope: NutritionDayScope.complete, averages: _averages()),
       ),
     );
     await tester.pumpAndSettle();
@@ -173,9 +164,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _wrap(
-        _daySummary(scope: NutritionDayScope.all, averages: _averages()),
-      ),
+      _wrap(_daySummary(scope: NutritionDayScope.all, averages: _averages())),
     );
     await tester.pumpAndSettle();
 

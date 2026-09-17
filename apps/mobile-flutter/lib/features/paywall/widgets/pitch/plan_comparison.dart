@@ -115,13 +115,12 @@ class _PlanComparisonRow extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp1),
-      decoration: ruled
-          ? const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: KalloColors.borderSoft),
-              ),
-            )
-          : null,
+      decoration:
+          ruled
+              ? const BoxDecoration(
+                border: Border(top: BorderSide(color: KalloColors.borderSoft)),
+              )
+              : null,
       child: Row(
         children: [
           Expanded(

@@ -111,15 +111,9 @@ void main() {
   Widget loggingHeader() => const Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      CalorieDial.compact(
-        logged: 2219,
-        target: 1844,
-        goal: MacroGoal.cutting,
-      ),
+      CalorieDial.compact(logged: 2219, target: 1844, goal: MacroGoal.cutting),
       SizedBox(width: KalloSpacing.sp2),
-      Expanded(
-        child: MacroDialRow.compact(current: _current, target: _target),
-      ),
+      Expanded(child: MacroDialRow.compact(current: _current, target: _target)),
     ],
   );
 

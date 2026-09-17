@@ -55,9 +55,10 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
     final Color base = quiet ? KalloColors.track : KalloColors.btnPrimarySoft;
     // Press is a background colour-shift, not an opacity dim — as on
     // [KalloButton].
-    final Color fill = _pressed && tappable
-        ? Color.alphaBlend(KalloColors.pressWash, base)
-        : base;
+    final Color fill =
+        _pressed && tappable
+            ? Color.alphaBlend(KalloColors.pressWash, base)
+            : base;
     final Color fg = quiet ? KalloColors.textMuted : KalloColors.text;
 
     return Semantics(

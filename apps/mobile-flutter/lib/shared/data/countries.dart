@@ -24,8 +24,26 @@ class Country {
 }
 
 const Set<String> _kAsianBmiCodes = {
-  'AF', 'BD', 'CN', 'HK', 'ID', 'IN', 'JP', 'KH', 'KR', 'LA',
-  'LK', 'MM', 'MY', 'NP', 'PH', 'PK', 'SG', 'TH', 'TW', 'VN',
+  'AF',
+  'BD',
+  'CN',
+  'HK',
+  'ID',
+  'IN',
+  'JP',
+  'KH',
+  'KR',
+  'LA',
+  'LK',
+  'MM',
+  'MY',
+  'NP',
+  'PH',
+  'PK',
+  'SG',
+  'TH',
+  'TW',
+  'VN',
 };
 
 const List<Country> kCountries = [

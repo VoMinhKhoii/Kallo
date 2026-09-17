@@ -12,9 +12,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('no Lora anywhere under lib/features/auth', () {
     final offenders = <String>[];
-    for (final entity in Directory('lib/features/auth').listSync(
-      recursive: true,
-    )) {
+    for (final entity in Directory(
+      'lib/features/auth',
+    ).listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       final source = entity.readAsStringSync();
       if (source.contains('serifRegular') ||

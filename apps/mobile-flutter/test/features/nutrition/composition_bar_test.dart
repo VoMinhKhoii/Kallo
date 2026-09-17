@@ -11,21 +11,26 @@ void main() {
   // Measuring the CompositionBar itself cannot catch this — the container was
   // always the right size. Measure a SEGMENT.
   testWidgets('every segment paints at the full bar height', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 300,
-            child: CompositionBar(
-              segments: compositionFromGrams(
-                (protein: 25, carbohydrate: 89, fat: 15),
-              ).segments,
-              height: 6,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: CompositionBar(
+                segments:
+                    compositionFromGrams((
+                      protein: 25,
+                      carbohydrate: 89,
+                      fat: 15,
+                    )).segments,
+                height: 6,
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     final boxes = find.descendant(
       of: find.byType(CompositionBar),
       matching: find.byType(ColoredBox),
@@ -42,25 +47,34 @@ void main() {
   // the two INTERIOR ends, so the middle segment reads as a slab wedged between
   // two lozenges. Each segment carries its own pill instead.
   testWidgets('every segment is its own pill', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 300,
-            child: CompositionBar(
-              segments: compositionFromGrams(
-                (protein: 25, carbohydrate: 89, fat: 15),
-              ).segments,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: CompositionBar(
+                segments:
+                    compositionFromGrams((
+                      protein: 25,
+                      carbohydrate: 89,
+                      fat: 15,
+                    )).segments,
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     final clips = find.descendant(
       of: find.byType(CompositionBar),
       matching: find.byType(ClipRRect),
     );
-    expect(clips, findsNWidgets(4), reason: 'outer silhouette + one per segment');
+    expect(
+      clips,
+      findsNWidgets(4),
+      reason: 'outer silhouette + one per segment',
+    );
 
     final boxes = find.descendant(
       of: find.byType(CompositionBar),
@@ -90,20 +104,25 @@ void main() {
   // of the surface behind. The gutter is what makes rounded segments legible,
   // so the full-size variant carries it too — not just the compact one.
   testWidgets('the full-size bar gutters its segments', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 300,
-            child: CompositionBar(
-              segments: compositionFromGrams(
-                (protein: 25, carbohydrate: 89, fat: 0),
-              ).segments,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: CompositionBar(
+                segments:
+                    compositionFromGrams((
+                      protein: 25,
+                      carbohydrate: 89,
+                      fat: 0,
+                    )).segments,
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     final boxes = find.descendant(
       of: find.byType(CompositionBar),
       matching: find.byType(ColoredBox),

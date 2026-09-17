@@ -22,10 +22,8 @@ int nutritionTimezoneOffset() => -DateTime.now().timeZoneOffset.inMinutes;
 
 /// The family argument: the requested range plus the day scope (all vs complete
 /// days) the averages/series are computed over.
-typedef NutritionOverviewArg = ({
-  NutritionRangeInput range,
-  NutritionDayScope scope,
-});
+typedef NutritionOverviewArg =
+    ({NutritionRangeInput range, NutritionDayScope scope});
 
 /// Family keyed by (range, scope). The query key registry tuple is
 /// `QueryKeys.nutritionOverview(range, tz, scope)`.
@@ -86,7 +84,8 @@ class NutritionOverviewNotifier
     // This selection's own data if we have it, otherwise whatever the account
     // last saw, so the layout never blanks mid-switch.
     final previous =
-        _lastOverviewByArg[cacheKey] ?? _lastOverviewByAccount[_accountKey(userId)];
+        _lastOverviewByArg[cacheKey] ??
+        _lastOverviewByAccount[_accountKey(userId)];
     if (previous != null) {
       state = AsyncData(previous);
     }

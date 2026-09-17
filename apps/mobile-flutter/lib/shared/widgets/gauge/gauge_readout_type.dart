@@ -71,4 +71,3 @@ TextStyle gaugeDenominator() => const TextStyle(
   color: kInkMuted,
   fontFeatures: [FontFeature.tabularFigures()],
 );
-

@@ -82,24 +82,25 @@ class _InviteCardState extends ConsumerState<InviteCard> {
   Future<void> _openOverflow() async {
     await showNhamSheet<void>(
       context,
-      builder: (sheetContext) => KalloSheetSurface(
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            KalloSheetHeader(title: widget.invite.from.label),
-            InviteOverflowRow(
-              icon: LucideIcons.x300,
-              label: tr('groups.invites.dismiss'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _dismiss();
-              },
+      builder:
+          (sheetContext) => KalloSheetSurface(
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                KalloSheetHeader(title: widget.invite.from.label),
+                InviteOverflowRow(
+                  icon: LucideIcons.x300,
+                  label: tr('groups.invites.dismiss'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _dismiss();
+                  },
+                ),
+                const SizedBox(height: KalloSpacing.sp5),
+              ],
             ),
-            const SizedBox(height: KalloSpacing.sp5),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -163,10 +164,14 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             PortionReadout(
               minePercent: percent,
               mineColor: kSeatColors[1],
-              mineLabel: tr('groups.invites.yourShare',
-                  namedArgs: {'percent': '$percent'}),
-              restLabel: tr('groups.invites.restShare',
-                  namedArgs: {'percent': '${100 - percent}'}),
+              mineLabel: tr(
+                'groups.invites.yourShare',
+                namedArgs: {'percent': '$percent'},
+              ),
+              restLabel: tr(
+                'groups.invites.restShare',
+                namedArgs: {'percent': '${100 - percent}'},
+              ),
             ),
           ],
           const SizedBox(height: KalloSpacing.sp3),

@@ -47,9 +47,8 @@ int onboardingScreenForTargetInput(TargetInput input) => switch (input) {
 /// The EARLIEST screen that would fill anything screen 6 is missing. Falls
 /// back to screen 3 when nothing is missing (the button is not shown then).
 int screenForMissingTargetInputs(OnboardingAnswers answers) {
-  final screens = answers.missingTargetInputs
-      .map(onboardingScreenForTargetInput)
-      .toList()
-    ..sort();
+  final screens =
+      answers.missingTargetInputs.map(onboardingScreenForTargetInput).toList()
+        ..sort();
   return screens.isEmpty ? 3 : screens.first;
 }

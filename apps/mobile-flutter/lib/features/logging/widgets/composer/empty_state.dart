@@ -64,9 +64,8 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
   @override
   Widget build(BuildContext context) {
     final name = _name;
-    final prompt = name == null
-        ? _key.tr()
-        : '${_key}Named'.tr(namedArgs: {'name': name});
+    final prompt =
+        name == null ? _key.tr() : '${_key}Named'.tr(namedArgs: {'name': name});
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),

@@ -56,10 +56,13 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
               vertical: KalloSpacing.sp3,
             ),
             decoration: BoxDecoration(
-              color: _pressed
-                  ? Color.alphaBlend(
-                      KalloColors.pressWash, KalloColors.btnPrimarySoft)
-                  : KalloColors.btnPrimarySoft,
+              color:
+                  _pressed
+                      ? Color.alphaBlend(
+                        KalloColors.pressWash,
+                        KalloColors.btnPrimarySoft,
+                      )
+                      : KalloColors.btnPrimarySoft,
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child:

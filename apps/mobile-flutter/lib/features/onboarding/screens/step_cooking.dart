@@ -13,13 +13,14 @@ import '../logic/onboarding_step_spec.dart';
 /// accessors that read and write the answer on [CookingHabits]. The options
 /// come off the ENUM rather than being spelled out again, so no second copy of
 /// the value sets can drift from the payload the server accepts.
-typedef CookingHabit = ({
-  String label,
-  List<Enum> values,
-  List<String> optionLabels,
-  Enum Function(CookingHabits) read,
-  CookingHabits Function(CookingHabits, Enum) write,
-});
+typedef CookingHabit =
+    ({
+      String label,
+      List<Enum> values,
+      List<String> optionLabels,
+      Enum Function(CookingHabits) read,
+      CookingHabits Function(CookingHabits, Enum) write,
+    });
 
 /// Screen 5 — "Your cooking habits": five strips, every one opening on its
 /// middle answer. It is a calibration, not an interview.
@@ -128,8 +129,8 @@ OnboardingStepSpec stepCookingSpec({
   required OnboardingAnswers answers,
   required VoidCallback onChanged,
 }) => (
-      title: tr('onboarding.cooking.title'),
-      body: StepCooking(answers: answers, onChanged: onChanged),
-      ctaLabel: tr('onboarding.continueLabel'),
-      ctaEnabled: true,
-    );
+  title: tr('onboarding.cooking.title'),
+  body: StepCooking(answers: answers, onChanged: onChanged),
+  ctaLabel: tr('onboarding.continueLabel'),
+  ctaEnabled: true,
+);

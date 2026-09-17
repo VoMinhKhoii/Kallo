@@ -153,10 +153,7 @@ void main() {
     }
     // ~1.04: enough to read as the control answering the tap, not as growth.
     expect(peak, greaterThan(base));
-    expect(
-      peak,
-      closeTo(base * SegmentedThumb.peakScale, base * 0.01),
-    );
+    expect(peak, closeTo(base * SegmentedThumb.peakScale, base * 0.01));
 
     await tester.pumpAndSettle();
     expect(_thumb(tester).width, closeTo(base, 0.01));

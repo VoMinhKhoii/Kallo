@@ -78,12 +78,12 @@ class WeightChartCanvas extends StatelessWidget {
         hasElapsed ? periodElapsedDays! : (lastIndex > 0 ? lastIndex : 1);
     final naturalForecastDay =
         lastIndex + (lastIndex * (_rangeDays - elapsed)) / elapsed;
-    final forecastDay = showForecast
-        ? math.min(naturalForecastDay, lastIndex / 0.8)
-        : lastIndex.toDouble();
+    final forecastDay =
+        showForecast
+            ? math.min(naturalForecastDay, lastIndex / 0.8)
+            : lastIndex.toDouble();
 
-    final axis =
-        niceYAxis([...weights, if (showForecast) projectedEndWeight]);
+    final axis = niceYAxis([...weights, if (showForecast) projectedEndWeight]);
     final yStep = axis.step;
     // One point: centre it. The lone spot sits at x = 0, so a 0…1 domain
     // pinned it (and its tick label) against the plot's left edge with the
@@ -119,7 +119,12 @@ class WeightChartCanvas extends StatelessWidget {
           final scaler = MediaQuery.textScalerOf(context);
           // Measured, not assumed — see [weightDateAxisHeight].
           final dateAxisHeight = weightDateAxisHeight(axisLabel, scaler);
-          final gutter = weightYAxisGutter(maxLabel, minLabel, axisLabel, scaler);
+          final gutter = weightYAxisGutter(
+            maxLabel,
+            minLabel,
+            axisLabel,
+            scaler,
+          );
           final plotWidth = math.max(constraints.maxWidth - gutter, 1.0);
           final xLabels = weightXTickLabels(
             pointCount: weights.length,
@@ -165,34 +170,39 @@ class WeightChartCanvas extends StatelessWidget {
               ),
               lineTouchData: LineTouchData(
                 handleBuiltInTouches: true,
-                getTouchedSpotIndicator: (barData, indexes) => indexes
-                    .map(
-                      (i) => TouchedSpotIndicatorData(
-                        const FlLine(color: Colors.transparent),
-                        FlDotData(
-                          getDotPainter: (spot, pct, bar, idx) =>
-                              FlDotCirclePainter(
-                            radius: 4,
-                            color: KalloColors.accent,
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
+                getTouchedSpotIndicator:
+                    (barData, indexes) =>
+                        indexes
+                            .map(
+                              (i) => TouchedSpotIndicatorData(
+                                const FlLine(color: Colors.transparent),
+                                FlDotData(
+                                  getDotPainter:
+                                      (spot, pct, bar, idx) =>
+                                          FlDotCirclePainter(
+                                            radius: 4,
+                                            color: KalloColors.accent,
+                                            strokeWidth: 2,
+                                            strokeColor: Colors.white,
+                                          ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipColor: (_) => kCardSurface,
                   tooltipBorder: const BorderSide(color: kHairline),
                   tooltipRoundedRadius: KalloRadii.md,
-                  getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
-                    // Skip the dotted forecast bar (drawn first when present).
-                    if (showForecast && s.barIndex == 0) return null;
-                    return LineTooltipItem(
-                      '${s.y.toStringAsFixed(1)} $kg',
-                      dashMeta(color: kInk, tabular: true),
-                    );
-                  }).toList(),
+                  getTooltipItems:
+                      (touchedSpots) =>
+                          touchedSpots.map((s) {
+                            // Skip the dotted forecast bar (drawn first when present).
+                            if (showForecast && s.barIndex == 0) return null;
+                            return LineTooltipItem(
+                              '${s.y.toStringAsFixed(1)} $kg',
+                              dashMeta(color: kInk, tabular: true),
+                            );
+                          }).toList(),
                 ),
               ),
               lineBarsData: [
@@ -219,14 +229,18 @@ class WeightChartCanvas extends StatelessWidget {
                   isStrokeJoinRound: false,
                   dotData: FlDotData(
                     show: true,
-                    getDotPainter: (spot, pct, bar, idx) => idx == lastIndex
-                        ? const TodayDotPainter(color: KalloColors.accent)
-                        : FlDotCirclePainter(
-                            radius: 3,
-                            color: KalloColors.accent,
-                            strokeColor: Colors.white,
-                            strokeWidth: 1.5,
-                          ),
+                    getDotPainter:
+                        (spot, pct, bar, idx) =>
+                            idx == lastIndex
+                                ? const TodayDotPainter(
+                                  color: KalloColors.accent,
+                                )
+                                : FlDotCirclePainter(
+                                  radius: 3,
+                                  color: KalloColors.accent,
+                                  strokeColor: Colors.white,
+                                  strokeWidth: 1.5,
+                                ),
                   ),
                 ),
               ],
@@ -240,7 +254,11 @@ class WeightChartCanvas extends StatelessWidget {
           return Stack(
             children: [
               Positioned.fill(left: gutter, child: chart),
-              Positioned(top: 0, left: 0, child: Text(maxLabel, style: axisLabel)),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Text(maxLabel, style: axisLabel),
+              ),
               Positioned(
                 bottom: dateAxisHeight,
                 left: 0,

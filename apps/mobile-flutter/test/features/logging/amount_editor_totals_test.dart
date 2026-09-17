@@ -9,19 +9,18 @@ PersistedIngredient ing(
   double? p,
   double? c,
   double? f,
-}) =>
-    PersistedIngredient(
-      id: id,
-      ingredientName: id,
-      estimatedGrams: grams,
-      userFacingUnit: 'g',
-      nutrition: MealNutrition(
-        caloriesKcal: kcal,
-        proteinG: p,
-        carbohydrateG: c,
-        fatG: f,
-      ),
-    );
+}) => PersistedIngredient(
+  id: id,
+  ingredientName: id,
+  estimatedGrams: grams,
+  userFacingUnit: 'g',
+  nutrition: MealNutrition(
+    caloriesKcal: kcal,
+    proteinG: p,
+    carbohydrateG: c,
+    fatG: f,
+  ),
+);
 
 EditableIngredientRow row(String id, {double? grams, bool removed = false}) =>
     EditableIngredientRow(id: id, grams: grams, removed: removed);
@@ -29,11 +28,8 @@ EditableIngredientRow row(String id, {double? grams, bool removed = false}) =>
 void main() {
   group('computeEditedTotals', () {
     test('unchanged grams pass macros through at scale 1', () {
-      final ingredients = [
-        ing('a', grams: 100, kcal: 200, p: 10, c: 20, f: 5),
-      ];
-      final totals =
-          computeEditedTotals(ingredients, [row('a', grams: 100)]);
+      final ingredients = [ing('a', grams: 100, kcal: 200, p: 10, c: 20, f: 5)];
+      final totals = computeEditedTotals(ingredients, [row('a', grams: 100)]);
       expect(totals.caloriesKcal, 200);
       expect(totals.proteinG, 10);
       expect(totals.carbohydrateG, 20);
@@ -41,12 +37,9 @@ void main() {
     });
 
     test('scales each field by editedGrams / estimatedGrams', () {
-      final ingredients = [
-        ing('a', grams: 100, kcal: 200, p: 10, c: 20, f: 5),
-      ];
+      final ingredients = [ing('a', grams: 100, kcal: 200, p: 10, c: 20, f: 5)];
       // Doubled grams → doubled macros.
-      final totals =
-          computeEditedTotals(ingredients, [row('a', grams: 200)]);
+      final totals = computeEditedTotals(ingredients, [row('a', grams: 200)]);
       expect(totals.caloriesKcal, 400);
       expect(totals.proteinG, 20);
       expect(totals.carbohydrateG, 40);
@@ -119,11 +112,10 @@ void main() {
     });
 
     test('every field null when the only rows are removed', () {
-      final ingredients = [
-        ing('a', grams: 100, kcal: 100, p: 10, c: 20, f: 5),
-      ];
-      final totals =
-          computeEditedTotals(ingredients, [row('a', grams: 100, removed: true)]);
+      final ingredients = [ing('a', grams: 100, kcal: 100, p: 10, c: 20, f: 5)];
+      final totals = computeEditedTotals(ingredients, [
+        row('a', grams: 100, removed: true),
+      ]);
       expect(totals.caloriesKcal, isNull);
       expect(totals.proteinG, isNull);
       expect(totals.carbohydrateG, isNull);

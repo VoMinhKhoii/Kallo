@@ -22,8 +22,10 @@ GoRouter _router() => GoRouter(
     ),
     GoRoute(
       path: '/logging',
-      pageBuilder: (_, _) =>
-          const CupertinoPage<void>(child: Scaffold(body: Text('logging-page'))),
+      pageBuilder:
+          (_, _) => const CupertinoPage<void>(
+            child: Scaffold(body: Text('logging-page')),
+          ),
     ),
     StatefulShellRoute.indexedStack(
       builder: (_, _, shell) => Scaffold(body: shell),

@@ -85,18 +85,21 @@ void main() {
       expect(state().errorKey, 'logging.barcode.error.invalidInput');
     });
 
-    test('BARCODE_NOT_FOUND maps to the notFound key, back on scanning', () async {
-      api.handler =
-          (_, __, ___) =>
-              throw ApiError('BARCODE_NOT_FOUND', 404, false, 'not found');
+    test(
+      'BARCODE_NOT_FOUND maps to the notFound key, back on scanning',
+      () async {
+        api.handler =
+            (_, __, ___) =>
+                throw ApiError('BARCODE_NOT_FOUND', 404, false, 'not found');
 
-      await notifier().search('0000000000000');
+        await notifier().search('0000000000000');
 
-      final s = state();
-      expect(s.phase, BarcodeFlowPhase.scanning);
-      expect(s.errorKey, 'logging.barcode.error.notFound');
-      expect(s.isNotFound, isTrue);
-    });
+        final s = state();
+        expect(s.phase, BarcodeFlowPhase.scanning);
+        expect(s.errorKey, 'logging.barcode.error.notFound');
+        expect(s.isNotFound, isTrue);
+      },
+    );
 
     test('unknown errors map to the generic server key', () async {
       api.handler = (_, __, ___) => throw ApiError('INTERNAL', 500, true, 'x');
@@ -107,17 +110,20 @@ void main() {
       expect(state().isNotFound, isFalse);
     });
 
-    test('single-flight: a second search while one is in flight is dropped', () async {
-      api.handler = (_, __, ___) => <String, dynamic>{'product': productJson};
+    test(
+      'single-flight: a second search while one is in flight is dropped',
+      () async {
+        api.handler = (_, __, ___) => <String, dynamic>{'product': productJson};
 
-      // search() flips state to `searching` synchronously (before its first
-      // await), so a burst of decode callbacks hits the guard.
-      final first = notifier().search('111');
-      final second = notifier().search('222');
-      await Future.wait([first, second]);
+        // search() flips state to `searching` synchronously (before its first
+        // await), so a burst of decode callbacks hits the guard.
+        final first = notifier().search('111');
+        final second = notifier().search('222');
+        await Future.wait([first, second]);
 
-      expect(api.requests.single.$2, '/api/v1/barcode/search?code=111');
-    });
+        expect(api.requests.single.$2, '/api/v1/barcode/search?code=111');
+      },
+    );
   });
 
   group('logMeal', () {
@@ -127,34 +133,37 @@ void main() {
       api.requests.clear();
     }
 
-    test('posts barcode/grams/date and invalidates surfaces on success', () async {
-      await landOnProduct();
-      api.handler = (method, path, body) {
-        if (path == '/api/v1/barcode/log') {
-          return <String, dynamic>{'mealId': 'meal-1'};
-        }
-        // invalidated surfaces refetch — answer them all.
-        if (path.startsWith('/api/v1/meals/dates')) return <dynamic>[];
-        return <String, dynamic>{};
-      };
+    test(
+      'posts barcode/grams/date and invalidates surfaces on success',
+      () async {
+        await landOnProduct();
+        api.handler = (method, path, body) {
+          if (path == '/api/v1/barcode/log') {
+            return <String, dynamic>{'mealId': 'meal-1'};
+          }
+          // invalidated surfaces refetch — answer them all.
+          if (path.startsWith('/api/v1/meals/dates')) return <dynamic>[];
+          return <String, dynamic>{};
+        };
 
-      final ok = await notifier().logMeal(
-        userId: 'user-1',
-        date: '2026-07-02',
-        grams: 150,
-      );
+        final ok = await notifier().logMeal(
+          userId: 'user-1',
+          date: '2026-07-02',
+          grams: 150,
+        );
 
-      expect(ok, isTrue);
-      final (method, path, body) =
-          api.requests.where((r) => r.$2 == '/api/v1/barcode/log').single;
-      expect(method, 'POST');
-      final json = body as Map<String, dynamic>;
-      expect(json['barcode'], '8934563138162');
-      expect(json['grams'], 150);
-      expect(json['loggedDate'], '2026-07-02');
-      expect(json['mealId'], isNotEmpty);
-      expect(json['timezoneOffset'], isA<int>());
-    });
+        expect(ok, isTrue);
+        final (method, path, body) =
+            api.requests.where((r) => r.$2 == '/api/v1/barcode/log').single;
+        expect(method, 'POST');
+        final json = body as Map<String, dynamic>;
+        expect(json['barcode'], '8934563138162');
+        expect(json['grams'], 150);
+        expect(json['loggedDate'], '2026-07-02');
+        expect(json['mealId'], isNotEmpty);
+        expect(json['timezoneOffset'], isA<int>());
+      },
+    );
 
     test('does not resolve until the day feed has refetched', () async {
       await landOnProduct();
@@ -330,21 +339,24 @@ void main() {
       await notifier().search(code);
     }
 
-    test('the same code, while its miss is showing, does not re-search', () async {
-      await missOn('8934563138162');
-      expect(api.requests, hasLength(1));
-      expect(state().lastBarcode, '8934563138162');
-      expect(state().errorKey, 'logging.barcode.error.notFound');
+    test(
+      'the same code, while its miss is showing, does not re-search',
+      () async {
+        await missOn('8934563138162');
+        expect(api.requests, hasLength(1));
+        expect(state().lastBarcode, '8934563138162');
+        expect(state().errorKey, 'logging.barcode.error.notFound');
 
-      // The next frame off the same package, and the one after it.
-      await notifier().search('8934563138162');
-      await notifier().search(' 8934563-138162 ');
+        // The next frame off the same package, and the one after it.
+        await notifier().search('8934563138162');
+        await notifier().search(' 8934563-138162 ');
 
-      expect(api.requests, hasLength(1));
-      expect(state().errorKey, 'logging.barcode.error.notFound');
-      // The miss on screen still names the code it belongs to.
-      expect(state().lastBarcode, '8934563138162');
-    });
+        expect(api.requests, hasLength(1));
+        expect(state().errorKey, 'logging.barcode.error.notFound');
+        // The miss on screen still names the code it belongs to.
+        expect(state().lastBarcode, '8934563138162');
+      },
+    );
 
     test('a different package still searches', () async {
       await missOn('8934563138162');
@@ -357,15 +369,18 @@ void main() {
       ]);
     });
 
-    test('scanAgain clears the block, so the same code searches again', () async {
-      await missOn('8934563138162');
+    test(
+      'scanAgain clears the block, so the same code searches again',
+      () async {
+        await missOn('8934563138162');
 
-      notifier().scanAgain();
-      expect(state().errorKey, isNull);
-      await notifier().search('8934563138162');
+        notifier().scanAgain();
+        expect(state().errorKey, isNull);
+        await notifier().search('8934563138162');
 
-      expect(api.requests, hasLength(2));
-    });
+        expect(api.requests, hasLength(2));
+      },
+    );
 
     test('enterManualMode clears the block too', () async {
       await missOn('8934563138162');

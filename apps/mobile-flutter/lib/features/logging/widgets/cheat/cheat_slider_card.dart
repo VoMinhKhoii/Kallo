@@ -106,9 +106,7 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(widget.rawInput, style: dashBody()),
-                  ),
+                  Expanded(child: Text(widget.rawInput, style: dashBody())),
                   const SizedBox(width: KalloSpacing.sp3),
                   CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
                 ],
@@ -125,10 +123,7 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                     '≈ ${resolved.caloriesKcal} ${'logging.cheatSliders.kcal'.tr()}',
                     style: dashValue(),
                   ),
-                  Text(
-                    macroLine.toString(),
-                    style: dashMeta(tabular: true),
-                  ),
+                  Text(macroLine.toString(), style: dashMeta(tabular: true)),
                 ],
               ),
               const SizedBox(height: KalloSpacing.sp4),
@@ -237,10 +232,7 @@ class _CheatSliderRow extends StatelessWidget {
           children: [
             Icon(cheatSliderIcon(slider.key), size: 16, color: color),
             const SizedBox(width: 6),
-            Text(
-              slider.label,
-              style: dashBody(),
-            ),
+            Text(slider.label, style: dashBody()),
           ],
         ),
         stopsBand(top: true),
@@ -312,10 +304,9 @@ class _StopLabel extends StatelessWidget {
             ? trackWidth - labelWidth
             : (center - labelWidth / 2).clamp(0.0, trackWidth - labelWidth);
 
-    final style = dashMeta(color: exact || between ? kInk : kInkMuted).copyWith(
-      height: 1.25,
-      fontWeight: FontWeight.w400,
-    );
+    final style = dashMeta(
+      color: exact || between ? kInk : kInkMuted,
+    ).copyWith(height: 1.25, fontWeight: FontWeight.w400);
 
     return Positioned(
       left: left,
@@ -368,10 +359,7 @@ class _ClarifyCard extends StatelessWidget {
             Text(rawInput, style: dashBody()),
             const SizedBox(height: KalloSpacing.sp3),
           ],
-          Text(
-            question.prompt,
-            style: dashBody(),
-          ),
+          Text(question.prompt, style: dashBody()),
           if (options.isNotEmpty) ...[
             const SizedBox(height: KalloSpacing.sp3),
             Wrap(
@@ -446,10 +434,7 @@ class _ClarifyChipState extends State<_ClarifyChip> {
                 color: _pressed ? KalloColors.accent60 : KalloColors.borderSoft,
               ),
             ),
-            child: Text(
-              widget.label,
-              style: dashBody(),
-            ),
+            child: Text(widget.label, style: dashBody()),
           ),
         ),
       ),
@@ -478,10 +463,7 @@ class CheatBadge extends StatelessWidget {
         children: [
           const Icon(LucideIcons.partyPopper300, size: 12, color: kInk),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: dashMeta(color: kInk),
-          ),
+          Text(label, style: dashMeta(color: kInk)),
         ],
       ),
     );
@@ -526,12 +508,13 @@ class _SaveButtonState extends State<_SaveButton> {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _pressed && tappable
-                  ? Color.alphaBlend(
-                      KalloColors.pressWash,
-                      KalloColors.btnPrimarySoft,
-                    )
-                  : KalloColors.btnPrimarySoft,
+              color:
+                  _pressed && tappable
+                      ? Color.alphaBlend(
+                        KalloColors.pressWash,
+                        KalloColors.btnPrimarySoft,
+                      )
+                      : KalloColors.btnPrimarySoft,
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(
@@ -543,10 +526,7 @@ class _SaveButtonState extends State<_SaveButton> {
                   color: KalloColors.text,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  'logging.cheatSliders.confirm'.tr(),
-                  style: dashBody(),
-                ),
+                Text('logging.cheatSliders.confirm'.tr(), style: dashBody()),
               ],
             ),
           ),

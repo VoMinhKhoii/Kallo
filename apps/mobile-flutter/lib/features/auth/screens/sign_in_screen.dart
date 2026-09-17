@@ -44,8 +44,8 @@ class SignInScreen extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.topLeft,
                   child: AppHeaderBackButton(
-                    onBack: () =>
-                        popOr(context, (router) => router.go('/start')),
+                    onBack:
+                        () => popOr(context, (router) => router.go('/start')),
                   ),
                 ),
               ),

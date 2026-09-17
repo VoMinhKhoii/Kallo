@@ -291,9 +291,7 @@ class _LifecycleApi extends ApiClient {
   @override
   Future<T> post<T>(String path, [Object? body]) {
     postCalls += 1;
-    return Future<T>.value(
-      _entitlement(premium: reconcileYieldsPremium) as T,
-    );
+    return Future<T>.value(_entitlement(premium: reconcileYieldsPremium) as T);
   }
 }
 

@@ -13,26 +13,24 @@ void main() {
     required ValueChanged<double> onHeightChanged,
     Widget child = const SizedBox(height: 64),
   }) => MaterialApp(
-        home: Scaffold(
-          body: Stack(
-            children: [
-              const Positioned.fill(child: ColoredBox(color: Colors.teal)),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: ComposerDock(
-                  onHeightChanged: onHeightChanged,
-                  child: child,
-                ),
-              ),
-            ],
+    home: Scaffold(
+      body: Stack(
+        children: [
+          const Positioned.fill(child: ColoredBox(color: Colors.teal)),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ComposerDock(onHeightChanged: onHeightChanged, child: child),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
-  testWidgets('reports its laid-out height, content plus its own padding',
-      (tester) async {
+  testWidgets('reports its laid-out height, content plus its own padding', (
+    tester,
+  ) async {
     double? reported;
     await tester.pumpWidget(host(onHeightChanged: (h) => reported = h));
     await tester.pumpAndSettle();
@@ -66,8 +64,9 @@ void main() {
     );
   });
 
-  testWidgets('is a solid surface, so cards pass cleanly behind it',
-      (tester) async {
+  testWidgets('is a solid surface, so cards pass cleanly behind it', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(onHeightChanged: (_) {}));
     await tester.pumpAndSettle();
 

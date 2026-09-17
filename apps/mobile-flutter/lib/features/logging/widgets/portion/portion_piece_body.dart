@@ -61,17 +61,18 @@ class PortionPieceBody extends StatelessWidget {
           // the sheet doesn't change height between a flat fillet and an
           // upright drumstick.
           glyphBandAspect: glyphRowAspect(anchors.length) / anchors.length,
-          glyphBuilder: (index, column) => PortionGlyph(
-            tier: pieceTiers[anchors[index].tier - 1],
-            kind: vessel.kind,
-            columnWidth: column,
-            label: '$prefix${anchors[index].label}',
-            selected: anchors[index].tier == claimed?.tier,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onChanged(anchors[index].value.round());
-            },
-          ),
+          glyphBuilder:
+              (index, column) => PortionGlyph(
+                tier: pieceTiers[anchors[index].tier - 1],
+                kind: vessel.kind,
+                columnWidth: column,
+                label: '$prefix${anchors[index].label}',
+                selected: anchors[index].tier == claimed?.tier,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(anchors[index].value.round());
+                },
+              ),
           // PER PIECE, not the multiplied total. The silhouette above is ONE
           // piece, so its label is that piece's weight; the count lives in the
           // "3 × slice" line and the total in the readout. "450 g" under a
@@ -88,8 +89,7 @@ class PortionPieceBody extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: dashMeta(
-          ),
+          style: dashMeta(),
         ),
       ],
     );

@@ -62,12 +62,13 @@ Widget _app(GoRouter router) => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp.router(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        routerConfig: router,
-      ),
+      builder:
+          (context) => MaterialApp.router(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            routerConfig: router,
+          ),
     ),
   ),
 );
@@ -95,10 +96,12 @@ void main() {
   /// The pill's own rect. `PillNavBar` is the bottomNavigationBar SLOT, whose
   /// height never changes; the capsule inside it is what travels.
   Rect pill(WidgetTester tester) => tester.getRect(
-    find.descendant(
-      of: find.byType(PillNavBar),
-      matching: find.byType(Container),
-    ).first,
+    find
+        .descendant(
+          of: find.byType(PillNavBar),
+          matching: find.byType(Container),
+        )
+        .first,
   );
 
   testWidgets('scrolling down hides the bar and scrolling up reveals it', (
@@ -110,7 +113,10 @@ void main() {
     expect(pill(tester).bottom, lessThanOrEqualTo(screen));
 
     // Drag up = read down the page.
-    await tester.drag(find.byKey(const ValueKey('long')), const Offset(0, -400));
+    await tester.drag(
+      find.byKey(const ValueKey('long')),
+      const Offset(0, -400),
+    );
     await tester.pumpAndSettle();
     expect(
       pill(tester).top,
@@ -120,7 +126,8 @@ void main() {
     expect(
       tester.getSize(find.byType(PillNavBar)).height,
       slotHeight,
-      reason: 'hiding must translate the bar, never resize the nav slot — '
+      reason:
+          'hiding must translate the bar, never resize the nav slot — '
           'that height is every branch body’s bottom inset',
     );
 
@@ -157,7 +164,10 @@ void main() {
     await pump(tester);
     final screen = tester.getSize(find.byType(MaterialApp)).height;
 
-    await tester.drag(find.byKey(const ValueKey('long')), const Offset(0, -400));
+    await tester.drag(
+      find.byKey(const ValueKey('long')),
+      const Offset(0, -400),
+    );
     await tester.pumpAndSettle();
     expect(pill(tester).top, greaterThanOrEqualTo(screen));
 

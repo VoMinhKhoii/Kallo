@@ -30,17 +30,18 @@ Future<void> showTopToast(
   final completer = Completer<void>();
   late final OverlayEntry entry;
   entry = OverlayEntry(
-    builder: (_) => _TopToast(
-      message: message,
-      variant: variant,
-      actionLabel: actionLabel,
-      onAction: onAction,
-      duration: duration,
-      onDone: () {
-        if (entry.mounted) entry.remove();
-        if (!completer.isCompleted) completer.complete();
-      },
-    ),
+    builder:
+        (_) => _TopToast(
+          message: message,
+          variant: variant,
+          actionLabel: actionLabel,
+          onAction: onAction,
+          duration: duration,
+          onDone: () {
+            if (entry.mounted) entry.remove();
+            if (!completer.isCompleted) completer.complete();
+          },
+        ),
   );
   overlay.insert(entry);
   return completer.future;

@@ -58,17 +58,18 @@ class ProfileAvatarDisc extends StatelessWidget {
       child: ClipOval(
         child: SizedBox.square(
           dimension: size,
-          child: url == null || url.isEmpty
-              ? fallback
-              : CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.cover,
-                  memCacheWidth:
-                      (size * MediaQuery.devicePixelRatioOf(context)).round(),
-                  fadeInDuration: KalloMotion.quick,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
+          child:
+              url == null || url.isEmpty
+                  ? fallback
+                  : CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    memCacheWidth:
+                        (size * MediaQuery.devicePixelRatioOf(context)).round(),
+                    fadeInDuration: KalloMotion.quick,
+                    placeholder: (_, _) => fallback,
+                    errorWidget: (_, _, _) => fallback,
+                  ),
         ),
       ),
     );

@@ -36,25 +36,26 @@ Widget _wrap(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: MediaQuery(
-        data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(
-          body: SingleChildScrollView(
-            child: StagedMealCard(
-              pending: pending,
-              busy: busy,
-              onConfirm: (_, _) {},
-              onConfirmCheat: (_, _) {},
-              onDiscard: onDiscard ?? () {},
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: StagedMealCard(
+                  pending: pending,
+                  busy: busy,
+                  onConfirm: (_, _) {},
+                  onConfirmCheat: (_, _) {},
+                  onDiscard: onDiscard ?? () {},
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    ),
   ),
 );
 

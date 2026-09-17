@@ -75,20 +75,21 @@ abstract final class KalloTextStyles {
   // ── Sans (Be Vietnam Pro) ─────────────────────────────────────────
 
   static TextStyle sansRegular({double? fontSize, double? height}) => TextStyle(
-        fontFamily: sansFamily,
-        fontWeight: FontWeight.w400,
-        fontSize: fontSize,
-        height: height,
-      );
+    fontFamily: sansFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: fontSize,
+    height: height,
+  );
 
   static TextStyle sansMedium({double? fontSize, double? height}) => TextStyle(
-        fontFamily: sansFamily,
-        fontWeight: FontWeight.w500,
-        fontSize: fontSize,
-        height: height,
-      );
+    fontFamily: sansFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: fontSize,
+    height: height,
+  );
 
-  static TextStyle sansSemiBold({double? fontSize, double? height}) => TextStyle(
+  static TextStyle sansSemiBold({double? fontSize, double? height}) =>
+      TextStyle(
         fontFamily: sansFamily,
         fontWeight: FontWeight.w600,
         fontSize: fontSize,
@@ -96,11 +97,11 @@ abstract final class KalloTextStyles {
       );
 
   static TextStyle sansBold({double? fontSize, double? height}) => TextStyle(
-        fontFamily: sansFamily,
-        fontWeight: FontWeight.w700,
-        fontSize: fontSize,
-        height: height,
-      );
+    fontFamily: sansFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: fontSize,
+    height: height,
+  );
 
   // ── Semantic presets ──────────────────────────────────────────────
 

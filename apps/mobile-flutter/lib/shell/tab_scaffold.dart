@@ -37,8 +37,8 @@ class TabScaffold extends ConsumerWidget {
       backgroundColor: KalloColors.surface,
       extendBody: true,
       body: NotificationListener<UserScrollNotification>(
-        onNotification: (n) =>
-            ref.read(navVisibilityProvider.notifier).applyScroll(n),
+        onNotification:
+            (n) => ref.read(navVisibilityProvider.notifier).applyScroll(n),
         child: navigationShell,
       ),
       bottomNavigationBar: PillNavBar(navigationShell: navigationShell),

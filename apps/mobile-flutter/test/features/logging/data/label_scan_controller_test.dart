@@ -157,18 +157,22 @@ void main() {
       expect(state().phase, LabelScanPhase.capture);
     });
 
-    test('keeps the photo when the scan fails, so a retry is one tap', () async {
-      await notifier().pickImage(ImageSource.camera);
-      api.handler = (_, __, ___) =>
-          throw ApiError('OCR_NO_LABEL_DETECTED', 422, false, 'no label');
+    test(
+      'keeps the photo when the scan fails, so a retry is one tap',
+      () async {
+        await notifier().pickImage(ImageSource.camera);
+        api.handler =
+            (_, __, ___) =>
+                throw ApiError('OCR_NO_LABEL_DETECTED', 422, false, 'no label');
 
-      await notifier().scan();
+        await notifier().scan();
 
-      expect(state().phase, LabelScanPhase.preview);
-      expect(state().image, isNotNull);
-      expect(state().errorKey, 'logging.labelScan.error.noLabelDetected');
-      expect(state().isNoLabelDetected, isTrue);
-    });
+        expect(state().phase, LabelScanPhase.preview);
+        expect(state().image, isNotNull);
+        expect(state().errorKey, 'logging.labelScan.error.noLabelDetected');
+        expect(state().isNoLabelDetected, isTrue);
+      },
+    );
 
     test('maps each server code onto its own copy', () async {
       Future<String?> keyFor(ApiError error) async {
@@ -263,8 +267,8 @@ void main() {
     test('a failed save keeps the review step and its edits', () async {
       await reachReview();
       final review = reviewFor(state());
-      api.handler = (_, __, ___) =>
-          throw ApiError('INTERNAL_ERROR', 500, false, 'boom');
+      api.handler =
+          (_, __, ___) => throw ApiError('INTERNAL_ERROR', 500, false, 'boom');
 
       final saved = await notifier().logMeal(
         userId: 'user-1',
@@ -303,7 +307,10 @@ void main() {
       expect(state().phase, LabelScanPhase.review);
       expect(state().label, isNull);
       expect(
-        LabelReviewState(state().label, defaultProductName: 'Scanned food').unit,
+        LabelReviewState(
+          state().label,
+          defaultProductName: 'Scanned food',
+        ).unit,
         'serving',
       );
     });
@@ -337,15 +344,26 @@ void main() {
       expect(result.image!.path, path);
     });
 
-    test('a PNG is recognised from its magic bytes, not its extension', () async {
-      final path = await write('label.jpg', [
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00,
-      ]);
+    test(
+      'a PNG is recognised from its magic bytes, not its extension',
+      () async {
+        final path = await write('label.jpg', [
+          0x89,
+          0x50,
+          0x4e,
+          0x47,
+          0x0d,
+          0x0a,
+          0x1a,
+          0x0a,
+          0x00,
+        ]);
 
-      final result = await labelImageFromFile(path);
+        final result = await labelImageFromFile(path);
 
-      expect(result.image!.mimeType, 'image/png');
-    });
+        expect(result.image!.mimeType, 'image/png');
+      },
+    );
 
     test('anything that is not JPEG/PNG/WebP is unsupported', () async {
       final path = await write('label.jpg', List<int>.filled(64, 0x41));
@@ -370,8 +388,10 @@ void main() {
     test('an empty file is rejected too', () async {
       final path = await write('empty.jpg', const <int>[]);
 
-      expect((await labelImageFromFile(path)).failure,
-          LabelImageFailure.tooLarge);
+      expect(
+        (await labelImageFromFile(path)).failure,
+        LabelImageFailure.tooLarge,
+      );
     });
 
     test('a file that vanished reports the camera, not a bad image', () async {

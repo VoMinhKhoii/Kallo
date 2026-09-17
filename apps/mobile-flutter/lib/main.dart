@@ -58,9 +58,10 @@ Future<void> main() async {
     // `serverClientId` + the registered SHA-1); passing the iOS client ID on
     // Android can be rejected, so scope it to iOS.
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
-    final iosClientId = isIos && Env.googleIosClientId.isNotEmpty
-        ? Env.googleIosClientId
-        : null;
+    final iosClientId =
+        isIos && Env.googleIosClientId.isNotEmpty
+            ? Env.googleIosClientId
+            : null;
     await GoogleSignIn.instance.initialize(
       clientId: iosClientId,
       // `serverClientId` is what Google mints the ID token's `aud` claim for,

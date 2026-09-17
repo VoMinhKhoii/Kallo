@@ -47,8 +47,7 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
         child: GestureDetector(
           onTapDown:
               widget.busy ? null : (_) => setState(() => _pressed = true),
-          onTapUp:
-              widget.busy ? null : (_) => setState(() => _pressed = false),
+          onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
           onTapCancel:
               widget.busy ? null : () => setState(() => _pressed = false),
           onTap: widget.busy ? null : widget.onTap,
@@ -60,12 +59,13 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _pressed
-                  ? Color.alphaBlend(
-                      KalloColors.pressWash,
-                      KalloColors.btnPrimarySoft,
-                    )
-                  : KalloColors.btnPrimarySoft,
+              color:
+                  _pressed
+                      ? Color.alphaBlend(
+                        KalloColors.pressWash,
+                        KalloColors.btnPrimarySoft,
+                      )
+                      : KalloColors.btnPrimarySoft,
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(

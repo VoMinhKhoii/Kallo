@@ -26,33 +26,33 @@ import '../../l10n_test_loader.dart';
 /// The routes mirror `router.dart`'s nesting; the real one is unreachable in a
 /// test because it wants a Supabase client.
 GoRouter _router(String initialLocation) => GoRouter(
-      initialLocation: initialLocation,
+  initialLocation: initialLocation,
+  routes: [
+    GoRoute(
+      path: '/sign-in',
+      builder: (context, state) => const Scaffold(body: AuthPage()),
       routes: [
         GoRoute(
-          path: '/sign-in',
-          builder: (context, state) => const Scaffold(body: AuthPage()),
-          routes: [
-            GoRoute(
-              path: 'email',
-              builder: (context, state) =>
-                  const EmailAuthScreen(createAccount: false),
-            ),
-          ],
-        ),
-        GoRoute(
-          path: '/save-plan',
-          builder: (context, state) =>
-              const Scaffold(body: AuthPage(compact: true)),
-          routes: [
-            GoRoute(
-              path: 'email',
-              builder: (context, state) =>
-                  const EmailAuthScreen(createAccount: true),
-            ),
-          ],
+          path: 'email',
+          builder:
+              (context, state) => const EmailAuthScreen(createAccount: false),
         ),
       ],
-    );
+    ),
+    GoRoute(
+      path: '/save-plan',
+      builder:
+          (context, state) => const Scaffold(body: AuthPage(compact: true)),
+      routes: [
+        GoRoute(
+          path: 'email',
+          builder:
+              (context, state) => const EmailAuthScreen(createAccount: true),
+        ),
+      ],
+    ),
+  ],
+);
 
 Widget _app(String initialLocation) {
   final router = _router(initialLocation);
@@ -63,12 +63,13 @@ Widget _app(String initialLocation) {
       fallbackLocale: const Locale('en'),
       assetLoader: const FsL10nLoader(),
       child: Builder(
-        builder: (context) => MaterialApp.router(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          routerConfig: router,
-        ),
+        builder:
+            (context) => MaterialApp.router(
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+              locale: context.locale,
+              routerConfig: router,
+            ),
       ),
     ),
   );

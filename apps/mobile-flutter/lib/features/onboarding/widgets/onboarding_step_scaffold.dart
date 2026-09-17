@@ -82,46 +82,47 @@ class OnboardingStepScaffold extends StatelessWidget {
     // the home indicator's inset itself.
     final inset = MediaQuery.viewPaddingOf(context).bottom;
     return LayoutBuilder(
-      builder: (context, box) => Stack(
-        children: [
-          const Positioned.fill(child: StepBackdrop()),
-          // Only the chrome is inset, and only at the top: the band below it
-          // reaches the screen's bottom edge on purpose.
-          SafeArea(
-            bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Edge to edge: the header insets its own row so the chevron
-                // glyph lands on the gutter the title below it starts on.
-                OnboardingStepHeader(
-                  step: screen,
-                  total: kOnboardingScreenCount,
-                  progressLabel: tr(
-                    'onboarding.stepOf',
-                    namedArgs: {
-                      'current': '$screen',
-                      'total': '$kOnboardingScreenCount',
-                    },
-                  ),
-                  onBack: onBack,
-                  onSkip: onSkip,
-                  skipLabel: onSkip == null ? null : tr('common.skip'),
-                ),
-                const SizedBox(height: KalloSpacing.sp3),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: KalloSpacing.sp6,
+      builder:
+          (context, box) => Stack(
+            children: [
+              const Positioned.fill(child: StepBackdrop()),
+              // Only the chrome is inset, and only at the top: the band below it
+              // reaches the screen's bottom edge on purpose.
+              SafeArea(
+                bottom: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Edge to edge: the header insets its own row so the chevron
+                    // glyph lands on the gutter the title below it starts on.
+                    OnboardingStepHeader(
+                      step: screen,
+                      total: kOnboardingScreenCount,
+                      progressLabel: tr(
+                        'onboarding.stepOf',
+                        namedArgs: {
+                          'current': '$screen',
+                          'total': '$kOnboardingScreenCount',
+                        },
+                      ),
+                      onBack: onBack,
+                      onSkip: onSkip,
+                      skipLabel: onSkip == null ? null : tr('common.skip'),
                     ),
-                    child: _guideAndContent(box.biggest, inset),
-                  ),
+                    const SizedBox(height: KalloSpacing.sp3),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KalloSpacing.sp6,
+                        ),
+                        child: _guideAndContent(box.biggest, inset),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 

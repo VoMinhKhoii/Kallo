@@ -82,62 +82,65 @@ class KalloSheetSubHeader extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, KalloSpacing.sp1),
           child: LayoutBuilder(
-            builder: (context, constraints) => Stack(
-              alignment: Alignment.center,
-              children: [
-                // Centred on the sheet, so it does not drift with the length
-                // of the parent's name.
-                SizedBox(
-                  height: _target,
-                  child: Center(
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: kSectionHeader(),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Semantics(
-                    button: true,
-                    label: parentTitle,
-                    excludeSemantics: true,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onBack,
-                      child: ConstrainedBox(
-                        // Never let a long parent name run under the centred
-                        // title: it gives way first.
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.38,
-                          minHeight: _target,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              LucideIcons.chevronLeft300,
-                              size: KalloIcons.size,
-                              color: KalloColors.textMuted,
-                            ),
-                            Flexible(
-                              child: Text(
-                                _label(context, constraints.maxWidth),
-                                maxLines: 1,
-                                style: dashBody(color: KalloColors.textMuted),
-                              ),
-                            ),
-                          ],
+            builder:
+                (context, constraints) => Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Centred on the sheet, so it does not drift with the length
+                    // of the parent's name.
+                    SizedBox(
+                      height: _target,
+                      child: Center(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: kSectionHeader(),
                         ),
                       ),
                     ),
-                  ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Semantics(
+                        button: true,
+                        label: parentTitle,
+                        excludeSemantics: true,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onBack,
+                          child: ConstrainedBox(
+                            // Never let a long parent name run under the centred
+                            // title: it gives way first.
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth * 0.38,
+                              minHeight: _target,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  LucideIcons.chevronLeft300,
+                                  size: KalloIcons.size,
+                                  color: KalloColors.textMuted,
+                                ),
+                                Flexible(
+                                  child: Text(
+                                    _label(context, constraints.maxWidth),
+                                    maxLines: 1,
+                                    style: dashBody(
+                                      color: KalloColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           ),
         ),
       ],

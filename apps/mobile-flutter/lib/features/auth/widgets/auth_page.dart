@@ -76,7 +76,8 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       onGoogle: _controller.signInWithGoogle,
       onEmail: _openEmail,
     );
-    final Widget face = widget.compact ? options : WelcomeView(options: options);
+    final Widget face =
+        widget.compact ? options : WelcomeView(options: options);
 
     final Widget content = SafeArea(
       child: Align(
@@ -103,7 +104,8 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     return Stack(
       children: [
         Positioned.fill(
-          child: widget.background ?? const ColoredBox(color: KalloColors.surface),
+          child:
+              widget.background ?? const ColoredBox(color: KalloColors.surface),
         ),
         content,
       ],

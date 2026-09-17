@@ -254,74 +254,75 @@ class _ContentState extends State<_Content> {
     // refetch — see [KalloRefreshableScroll].
     return KalloRefreshableScroll(
       onRefresh: widget.onRefresh,
-      slivers: (bottomInset) => [
-        SliverPadding(
-          padding: EdgeInsets.only(
-            left: KalloSpacing.sp3,
-            right: KalloSpacing.sp3,
-            // AppHeader already pays sp1 below itself; sp2 here nets the one
-            // 12px step between the wordmark and the week strip.
-            top: KalloSpacing.sp2,
-            // The floating pill nav is not part of the layout (the shell runs
-            // extendBody), so it arrives as the body's bottom padding — its
-            // MEASURED height, on this device, with this home indicator.
-            bottom: bottomInset,
-          ),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // SECTION 1 — week strip + the paged day-viewer (the wordmark
-              // lives in the header row, beside the avatar).
-              WeekStrip(
-                args: widget.args,
-                todayDate: widget.todayDate,
-                selectedDate: _selectedDate,
-                onSelectDay: _onSelectDay,
+      slivers:
+          (bottomInset) => [
+            SliverPadding(
+              padding: EdgeInsets.only(
+                left: KalloSpacing.sp3,
+                right: KalloSpacing.sp3,
+                // AppHeader already pays sp1 below itself; sp2 here nets the one
+                // 12px step between the wordmark and the week strip.
+                top: KalloSpacing.sp2,
+                // The floating pill nav is not part of the layout (the shell runs
+                // extendBody), so it arrives as the body's bottom padding — its
+                // MEASURED height, on this device, with this home indicator.
+                bottom: bottomInset,
               ),
-              // No trailing margin: each _Section below pays its own break.
-              if (widget.isFirstRun)
-                TodaySection(
-                  args: widget.args,
-                  targets: widget.targets,
-                  dateLabel: _dateLabel(widget.todayDate, locale),
-                  isFirstRun: true,
-                )
-              else
-                DayPager(
-                  controller: _pageController,
-                  todayDate: widget.todayDate,
-                  userId: widget.args.userId,
-                  targets: widget.targets,
-                  onPageChanged: _onPageChanged,
-                  dateLabel: (d) => _dateLabel(d, locale),
-                ),
-              // SECTION 2 — Progress.
-              _Section(
-                children: [
-                  SectionHeaderRow(
-                    title: tr('dashboard.progress'),
-                    meta: tr('dashboard.ranges.thirtyDays'),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // SECTION 1 — week strip + the paged day-viewer (the wordmark
+                  // lives in the header row, beside the avatar).
+                  WeekStrip(
+                    args: widget.args,
+                    todayDate: widget.todayDate,
+                    selectedDate: _selectedDate,
+                    onSelectDay: _onSelectDay,
                   ),
-                  WeightChart(args: widget.args),
-                ],
+                  // No trailing margin: each _Section below pays its own break.
+                  if (widget.isFirstRun)
+                    TodaySection(
+                      args: widget.args,
+                      targets: widget.targets,
+                      dateLabel: _dateLabel(widget.todayDate, locale),
+                      isFirstRun: true,
+                    )
+                  else
+                    DayPager(
+                      controller: _pageController,
+                      todayDate: widget.todayDate,
+                      userId: widget.args.userId,
+                      targets: widget.targets,
+                      onPageChanged: _onPageChanged,
+                      dateLabel: (d) => _dateLabel(d, locale),
+                    ),
+                  // SECTION 2 — Progress.
+                  _Section(
+                    children: [
+                      SectionHeaderRow(
+                        title: tr('dashboard.progress'),
+                        meta: tr('dashboard.ranges.thirtyDays'),
+                      ),
+                      WeightChart(args: widget.args),
+                    ],
+                  ),
+                  // SECTION 3 — Consistency. The padding's bottom is the nav
+                  // clearance, so the scroll ends right under the heatmap.
+                  _Section(
+                    children: [
+                      // No meta here: the heatmap card states its own window in
+                      // its "{percent}% on track · {window}" line, and unlike a
+                      // static header that line TRACKS the range the layout
+                      // resolved to. A fixed "90 days" up here both repeated it
+                      // and would have gone on claiming 90 days on a tablet that
+                      // had stepped up to the year.
+                      SectionHeaderRow(title: tr('dashboard.consistency')),
+                      AdherenceHeatmap(args: widget.args),
+                    ],
+                  ),
+                ]),
               ),
-              // SECTION 3 — Consistency. The padding's bottom is the nav
-              // clearance, so the scroll ends right under the heatmap.
-              _Section(
-                children: [
-                  // No meta here: the heatmap card states its own window in
-                  // its "{percent}% on track · {window}" line, and unlike a
-                  // static header that line TRACKS the range the layout
-                  // resolved to. A fixed "90 days" up here both repeated it
-                  // and would have gone on claiming 90 days on a tablet that
-                  // had stepped up to the year.
-                  SectionHeaderRow(title: tr('dashboard.consistency')),
-                  AdherenceHeatmap(args: widget.args),
-                ],
-              ),
-            ]),
-          ),
-        ),
-      ],
+            ),
+          ],
     );
   }
 }

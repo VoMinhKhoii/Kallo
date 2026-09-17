@@ -8,7 +8,6 @@ import '../../../theme/kallo_theme.dart';
 export 'kallo_button.dart';
 export 'kallo_screen.dart';
 
-
 /// White card separating by surface alone on the `#F8F7F4` canvas — radius
 /// 22, NO border, NO shadow (native pass, 2026-08-31; shadows are reserved
 /// for true elevation: sheets, menus, the pill nav).
@@ -32,10 +31,7 @@ class KalloCard extends StatelessWidget {
     final radius = borderRadius ?? BorderRadius.circular(KalloRadii.card);
     return Container(
       padding: padding,
-      decoration: BoxDecoration(
-        color: KalloColors.elev,
-        borderRadius: radius,
-      ),
+      decoration: BoxDecoration(color: KalloColors.elev, borderRadius: radius),
       child: child,
     );
   }

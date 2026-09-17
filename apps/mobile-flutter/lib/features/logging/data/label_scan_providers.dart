@@ -230,10 +230,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       final label = NutritionLabel.fromJson(
         (json['label'] as Map<String, dynamic>?) ?? const {},
       );
-      state = state.copyWith(
-        phase: LabelScanPhase.review,
-        label: () => label,
-      );
+      state = state.copyWith(phase: LabelScanPhase.review, label: () => label);
     } catch (error) {
       state = state.copyWith(
         phase: LabelScanPhase.preview,
@@ -297,8 +294,13 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       date: date,
       // The day is refreshed by the helper; re-invalidating it here would throw
       // that result away and put the refetch back after the pin.
-      also: () =>
-          invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false),
+      also:
+          () => invalidateMealSurfaces(
+            ref.invalidate,
+            userId,
+            date,
+            includeDay: false,
+          ),
     );
     return true;
   }
@@ -316,9 +318,8 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
   /// Back out of the review step to the photo it came from.
   void backToPreview() {
     state = state.copyWith(
-      phase: state.image == null
-          ? LabelScanPhase.capture
-          : LabelScanPhase.preview,
+      phase:
+          state.image == null ? LabelScanPhase.capture : LabelScanPhase.preview,
       errorKey: () => null,
     );
   }

@@ -53,11 +53,13 @@ void main() {
     });
 
     test('spans the reference sector', () {
-      final bounds = _tightBounds(gaugePaths(
-        center: _center,
-        outerRadius: _outerRadius,
-        progress: 0.84,
-      ).filled);
+      final bounds = _tightBounds(
+        gaugePaths(
+          center: _center,
+          outerRadius: _outerRadius,
+          progress: 0.84,
+        ).filled,
+      );
       // Left and top are the sector's own extremes: 180° and 90° at radius 72.
       expect(bounds.left, closeTo(_center.dx - _outerRadius, 0.05));
       expect(bounds.top, closeTo(_center.dy - _outerRadius, 0.05));
@@ -73,9 +75,11 @@ void main() {
         progress: 0.84,
       );
       // A 4° gap sits between them, so the two never share an edge.
-      expect(paths.filled.getBounds().overlaps(paths.remainder.getBounds()),
-          isTrue,
-          reason: 'bounding boxes still overlap — they are arcs, not blocks');
+      expect(
+        paths.filled.getBounds().overlaps(paths.remainder.getBounds()),
+        isTrue,
+        reason: 'bounding boxes still overlap — they are arcs, not blocks',
+      );
       final gap = _startOf(paths.remainder) - _startOf(paths.filled);
       expect(gap.distance, greaterThan(1));
     });
@@ -117,11 +121,14 @@ void main() {
     });
 
     test('small values stay proportional rather than snapping to a floor', () {
-      double width(double progress) => _tightBounds(gaugePaths(
-        center: _center,
-        outerRadius: _outerRadius,
-        progress: progress,
-      ).filled).width;
+      double width(double progress) =>
+          _tightBounds(
+            gaugePaths(
+              center: _center,
+              outerRadius: _outerRadius,
+              progress: progress,
+            ).filled,
+          ).width;
       // Above the minimum sliver the mark tracks the value; it does not sit at
       // one size until the old 6.5% threshold lets it go.
       final widths = [0.03, 0.04, 0.06, 0.10].map(width).toList();
@@ -145,16 +152,12 @@ void main() {
     test('holds its proportions when scaled at a small value', () {
       // The fitted corner is derived from the radii, so it has to stay a pure
       // ratio down where it is doing the fitting.
-      final small = _tightBounds(gaugePaths(
-        center: Offset.zero,
-        outerRadius: 36,
-        progress: 0.03,
-      ).filled);
-      final large = _tightBounds(gaugePaths(
-        center: Offset.zero,
-        outerRadius: 72,
-        progress: 0.03,
-      ).filled);
+      final small = _tightBounds(
+        gaugePaths(center: Offset.zero, outerRadius: 36, progress: 0.03).filled,
+      );
+      final large = _tightBounds(
+        gaugePaths(center: Offset.zero, outerRadius: 72, progress: 0.03).filled,
+      );
       expect(large.width, greaterThan(0));
       expect(small.width * 2, closeTo(large.width, 0.05));
       expect(small.height * 2, closeTo(large.height, 0.05));
@@ -188,16 +191,18 @@ void main() {
     test('holds its proportions when scaled', () {
       // The macro dials are the same shape at 44. Band and corner are ratios,
       // so the small dial's bounds are the reference's, scaled.
-      final small = gaugePaths(
-        center: Offset.zero,
-        outerRadius: 36,
-        progress: 0.84,
-      ).filled.getBounds();
-      final large = gaugePaths(
-        center: Offset.zero,
-        outerRadius: 72,
-        progress: 0.84,
-      ).filled.getBounds();
+      final small =
+          gaugePaths(
+            center: Offset.zero,
+            outerRadius: 36,
+            progress: 0.84,
+          ).filled.getBounds();
+      final large =
+          gaugePaths(
+            center: Offset.zero,
+            outerRadius: 72,
+            progress: 0.84,
+          ).filled.getBounds();
       expect(small.width * 2, closeTo(large.width, 0.05));
       expect(small.height * 2, closeTo(large.height, 0.05));
     });

@@ -59,9 +59,10 @@ EditedTotals computeEditedTotals(
     final ing = byId[row.id];
     if (ing == null) continue;
     final base = ing.estimatedGrams;
-    final scale = (row.grams == null || base == null || base == 0)
-        ? 1.0
-        : row.grams! / base;
+    final scale =
+        (row.grams == null || base == null || base == 0)
+            ? 1.0
+            : row.grams! / base;
     final n = ing.nutrition;
     if (n.caloriesKcal != null) {
       calories += n.caloriesKcal! * scale;

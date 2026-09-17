@@ -153,11 +153,7 @@ class _Pill extends StatelessWidget {
                   ),
                   const SizedBox(width: 7),
                 ],
-                Text(
-                  label,
-                  style: dashBody(
-                  ),
-                ),
+                Text(label, style: dashBody()),
               ],
             ),
           ),

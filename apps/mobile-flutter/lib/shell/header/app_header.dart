@@ -43,9 +43,10 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget leading = onBack != null
-        ? AppHeaderBackButton(onBack: onBack!)
-        : (this.leading ?? const SizedBox(width: _hit, height: _hit));
+    final Widget leading =
+        onBack != null
+            ? AppHeaderBackButton(onBack: onBack!)
+            : (this.leading ?? const SizedBox(width: _hit, height: _hit));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
@@ -66,4 +67,3 @@ class AppHeader extends StatelessWidget {
     );
   }
 }
-

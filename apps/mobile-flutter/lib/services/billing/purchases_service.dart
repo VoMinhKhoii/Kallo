@@ -155,9 +155,8 @@ abstract interface class PurchasesGateway {
   Future<Offerings> getOfferings();
   Future<PurchaseResult> purchase(PurchaseParams params);
   Future<CustomerInfo> restorePurchases();
-  Future<Map<String, IntroEligibility>> checkTrialOrIntroductoryPriceEligibility(
-    List<String> productIdentifiers,
-  );
+  Future<Map<String, IntroEligibility>>
+  checkTrialOrIntroductoryPriceEligibility(List<String> productIdentifiers);
 }
 
 class _NativePurchasesGateway implements PurchasesGateway {
@@ -182,9 +181,9 @@ class _NativePurchasesGateway implements PurchasesGateway {
   Future<CustomerInfo> restorePurchases() => Purchases.restorePurchases();
 
   @override
-  Future<Map<String, IntroEligibility>> checkTrialOrIntroductoryPriceEligibility(
-    List<String> productIdentifiers,
-  ) => Purchases.checkTrialOrIntroductoryPriceEligibility(productIdentifiers);
+  Future<Map<String, IntroEligibility>>
+  checkTrialOrIntroductoryPriceEligibility(List<String> productIdentifiers) =>
+      Purchases.checkTrialOrIntroductoryPriceEligibility(productIdentifiers);
 }
 
 /// Thin, env-gated wrapper around the RevenueCat SDK.

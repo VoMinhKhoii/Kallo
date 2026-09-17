@@ -66,10 +66,7 @@ class _CountryField extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: KalloColors.textMuted),
             const SizedBox(width: KalloSpacing.sp2),
-            Text(
-              label,
-              style: dashBody(),
-            ),
+            Text(label, style: dashBody()),
           ],
         ),
         const SizedBox(height: KalloSpacing.sp2),

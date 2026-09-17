@@ -35,7 +35,9 @@ void main() {
       ])
         GoRoute(
           path: path,
-          builder: (_, _) => Center(child: Text(path, textDirection: TextDirection.ltr)),
+          builder:
+              (_, _) =>
+                  Center(child: Text(path, textDirection: TextDirection.ltr)),
         ),
     ],
   );

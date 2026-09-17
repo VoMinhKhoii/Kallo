@@ -181,7 +181,8 @@ void main() {
       expect(
         frames[i].ringLuminance,
         greaterThanOrEqualTo(frames[i - 1].ringLuminance - 1e-6),
-        reason: 'the focus ring got DARKER while withdrawing, at frame $i:'
+        reason:
+            'the focus ring got DARKER while withdrawing, at frame $i:'
             '\n$trace',
       );
       expect(

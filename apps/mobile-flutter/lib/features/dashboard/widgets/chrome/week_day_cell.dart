@@ -57,11 +57,15 @@ class WeekDayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dt = dateStringToDate(date);
-    final weekday = DateFormat('EEE', locale).format(dt); // locale-aware, e.g. "Sun"
+    final weekday = DateFormat(
+      'EEE',
+      locale,
+    ).format(dt); // locale-aware, e.g. "Sun"
     final labelColor = isToday ? kInk : kInkMuted;
 
     final consumed = cell?.consumedRatio;
-    final isFuture = isAfterToday ||
+    final isFuture =
+        isAfterToday ||
         cell?.status == HeatmapCellStatus.future ||
         cell?.status == HeatmapCellStatus.outside;
 
@@ -79,16 +83,17 @@ class WeekDayCell extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 3),
       // The chip's own inset — one row's padding on each side of the cell.
       padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row * 2),
-      decoration: isSelected
-          // A chip this small is the one card-like surface that still takes a
-          // hairline: at 36pt across, white-on-#F8F7F4 alone does not read as
-          // a selected state. Shadow retired with the rest of the cards.
-          ? BoxDecoration(
-              color: kCardSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: kHairline),
-            )
-          : null,
+      decoration:
+          isSelected
+              // A chip this small is the one card-like surface that still takes a
+              // hairline: at 36pt across, white-on-#F8F7F4 alone does not read as
+              // a selected state. Shadow retired with the rest of the cards.
+              ? BoxDecoration(
+                color: kCardSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: kHairline),
+              )
+              : null,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

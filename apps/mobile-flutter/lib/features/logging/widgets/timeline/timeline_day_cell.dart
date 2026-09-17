@@ -137,7 +137,9 @@ class TimelineDayCellState extends State<TimelineDayCell> {
           curve: KalloEase.press,
           constraints: const BoxConstraints(minHeight: 44), // min-h-11
           padding: const EdgeInsets.symmetric(
-              vertical: 4, horizontal: 2), // py-1 px-0.5
+            vertical: 4,
+            horizontal: 2,
+          ), // py-1 px-0.5
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(14.4), // rounded-[0.9rem]
@@ -145,18 +147,9 @@ class TimelineDayCellState extends State<TimelineDayCell> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                dayName,
-                style: dashMeta(color: labelColor),
-              ),
+              Text(dayName, style: dashMeta(color: labelColor)),
               const SizedBox(height: 2), // gap-0.5
-              Text(
-                dayNum,
-                style: dashBody(
-                  color: labelColor,
-                  tabular: true,
-                ),
-              ),
+              Text(dayNum, style: dashBody(color: labelColor, tabular: true)),
               const SizedBox(height: 2),
               dot,
             ],

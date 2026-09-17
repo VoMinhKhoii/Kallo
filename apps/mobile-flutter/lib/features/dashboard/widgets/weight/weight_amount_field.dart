@@ -76,8 +76,12 @@ class WeightAmountField extends StatelessWidget {
       suffixText: tr('dashboard.units.kg'),
       suffixStyle: dashMeta(color: kInkMuted),
       border: _border(Colors.transparent),
-      enabledBorder: _border(hasError ? KalloColors.danger : Colors.transparent),
-      focusedBorder: _border(hasError ? KalloColors.danger : KalloColors.accent),
+      enabledBorder: _border(
+        hasError ? KalloColors.danger : Colors.transparent,
+      ),
+      focusedBorder: _border(
+        hasError ? KalloColors.danger : KalloColors.accent,
+      ),
       disabledBorder: _border(Colors.transparent),
     ),
   );

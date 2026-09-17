@@ -37,19 +37,19 @@ class ScreenTwoValues {
   });
 
   Map<String, dynamic> toJson() => {
-        'biologicalSex': biologicalSex,
-        'weightKg': weightKg,
-        'heightCm': heightCm,
-        'age': age,
-        'activityLevel': activityLevel,
-        'goal': goal,
-        'aggression': aggression,
-        'carbSplit': carbSplit,
-        'deficitOverride': deficitOverride,
-        'tdeeKcal': tdeeKcal,
-        'calorieTarget': calorieTarget,
-        'proteinTargetG': proteinTargetG,
-        'carbsTargetG': carbsTargetG,
-        'fatTargetG': fatTargetG,
-      };
+    'biologicalSex': biologicalSex,
+    'weightKg': weightKg,
+    'heightCm': heightCm,
+    'age': age,
+    'activityLevel': activityLevel,
+    'goal': goal,
+    'aggression': aggression,
+    'carbSplit': carbSplit,
+    'deficitOverride': deficitOverride,
+    'tdeeKcal': tdeeKcal,
+    'calorieTarget': calorieTarget,
+    'proteinTargetG': proteinTargetG,
+    'carbsTargetG': carbsTargetG,
+    'fatTargetG': fatTargetG,
+  };
 }

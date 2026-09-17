@@ -29,18 +29,19 @@ void main() {
     expect(find.textContaining('Your data is safe'), findsOneWidget);
   });
 
-  testWidgets('names the exception outside release, so a device can report it', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      KalloErrorWidget(details: detailsFor(StateError('the cause'))),
-    );
+  testWidgets(
+    'names the exception outside release, so a device can report it',
+    (tester) async {
+      await tester.pumpWidget(
+        KalloErrorWidget(details: detailsFor(StateError('the cause'))),
+      );
 
-    // Tests never run in release mode, so this is the profile/debug contract:
-    // the grey screen reports its own cause instead of needing a console.
-    expect(kReleaseMode, isFalse);
-    expect(find.textContaining('the cause'), findsOneWidget);
-  });
+      // Tests never run in release mode, so this is the profile/debug contract:
+      // the grey screen reports its own cause instead of needing a console.
+      expect(kReleaseMode, isFalse);
+      expect(find.textContaining('the cause'), findsOneWidget);
+    },
+  );
 
   testWidgets('the details are copyable — the only channel a release has', (
     tester,
@@ -87,9 +88,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      KalloErrorWidget(
-        details: detailsFor(StateError('x\n' * 400)),
-      ),
+      KalloErrorWidget(details: detailsFor(StateError('x\n' * 400))),
     );
 
     // An error surface that itself overflows is how one exception becomes two.

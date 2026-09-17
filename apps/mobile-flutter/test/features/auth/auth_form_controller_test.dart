@@ -12,10 +12,11 @@ void main() {
     // guard in app/auth/callback/route.test.ts. Run from the package root, so
     // the monorepo's supabase/ dir is two levels up.
     test('the block-duplicate migration message still contains the marker', () {
-      final sql = File(
-        '../../supabase/migrations/'
-        '20260629120000_block_duplicate_email_signup.sql',
-      ).readAsStringSync();
+      final sql =
+          File(
+            '../../supabase/migrations/'
+            '20260629120000_block_duplicate_email_signup.sql',
+          ).readAsStringSync();
       expect(sql.toLowerCase(), contains(kDuplicateEmailMarker));
     });
   });

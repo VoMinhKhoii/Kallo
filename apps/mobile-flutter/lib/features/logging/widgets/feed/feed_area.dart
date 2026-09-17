@@ -225,10 +225,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       date: widget.date,
       onHoldRemoval: (id) => _rebuild(() => _pendingRemovalIds.add(id)),
       onReleaseRemoval: (id) => _rebuild(() => _pendingRemovalIds.remove(id)),
-      onRemovalFailed: (id) => _rebuild(() {
-        _pendingRemovalIds.remove(id);
-        _errorText = 'errors.internal'.tr();
-      }),
+      onRemovalFailed:
+          (id) => _rebuild(() {
+            _pendingRemovalIds.remove(id);
+            _errorText = 'errors.internal'.tr();
+          }),
     );
 
     final cheatActions = FeedCheatActions(

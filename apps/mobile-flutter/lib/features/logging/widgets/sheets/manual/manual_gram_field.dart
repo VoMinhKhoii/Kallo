@@ -75,7 +75,9 @@ class _ManualGramFieldState extends State<ManualGramField> {
         enabled: widget.enabled,
         textAlign: TextAlign.end,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+        ],
         onChanged: (raw) => widget.onChanged(_parse(raw)),
         cursorColor: KalloColors.accent,
         style: dashBody(),
@@ -101,10 +103,7 @@ class _ManualGramFieldState extends State<ManualGramField> {
           disabledBorder: border,
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-            borderSide: const BorderSide(
-              color: KalloColors.accent40,
-              width: 2,
-            ),
+            borderSide: const BorderSide(color: KalloColors.accent40, width: 2),
           ),
         ),
       ),

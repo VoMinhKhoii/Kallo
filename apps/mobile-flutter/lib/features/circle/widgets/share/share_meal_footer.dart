@@ -31,19 +31,23 @@ class ShareMealFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kept = totalKcal == null
-        ? null
-        : (totalKcal! * keptParts / kTotalParts).round();
+    final kept =
+        totalKcal == null
+            ? null
+            : (totalKcal! * keptParts / kTotalParts).round();
 
-    final label = seatedCount == 0
-        ? tr('groups.shareMeal.submitEmpty')
-        : kept == null
-            ? 'groups.shareMeal.submitNoKcal'
-                .plural(seatedCount, namedArgs: {'count': '$seatedCount'})
+    final label =
+        seatedCount == 0
+            ? tr('groups.shareMeal.submitEmpty')
+            : kept == null
+            ? 'groups.shareMeal.submitNoKcal'.plural(
+              seatedCount,
+              namedArgs: {'count': '$seatedCount'},
+            )
             : 'groups.shareMeal.submit'.plural(
-                seatedCount,
-                namedArgs: {'count': '$seatedCount', 'kcal': '$kept'},
-              );
+              seatedCount,
+              namedArgs: {'count': '$seatedCount', 'kcal': '$kept'},
+            );
 
     return Container(
       decoration: const BoxDecoration(

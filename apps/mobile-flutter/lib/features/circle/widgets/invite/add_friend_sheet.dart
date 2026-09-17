@@ -84,25 +84,28 @@ class _ProfileSection extends ConsumerWidget {
     final profileAsync = ref.watch(myCircleProfileProvider);
     return profileAsync.when(
       loading: () => const AddFriendProfileSkeleton(),
-      error: (_, __) => CircleErrorCard(
-        compact: true,
-        onRetry: () => ref.invalidate(myCircleProfileProvider),
-      ),
-      data: (profile) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DisplayNameRow(profile: profile),
-          const _RowSeparator(),
-          InviteLinkRow(profile: profile),
-          const SizedBox(height: KalloSpacing.sp2),
-          Text(tr('groups.invite.description'), style: dashMeta()),
-          const SizedBox(height: KalloSpacing.sp3),
-          KalloButton(
-            title: tr('groups.invite.shareLink'),
-            onPressed: () => Share.share(inviteLinkFor(context, profile.handle)),
+      error:
+          (_, __) => CircleErrorCard(
+            compact: true,
+            onRetry: () => ref.invalidate(myCircleProfileProvider),
           ),
-        ],
-      ),
+      data:
+          (profile) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DisplayNameRow(profile: profile),
+              const _RowSeparator(),
+              InviteLinkRow(profile: profile),
+              const SizedBox(height: KalloSpacing.sp2),
+              Text(tr('groups.invite.description'), style: dashMeta()),
+              const SizedBox(height: KalloSpacing.sp3),
+              KalloButton(
+                title: tr('groups.invite.shareLink'),
+                onPressed:
+                    () => Share.share(inviteLinkFor(context, profile.handle)),
+              ),
+            ],
+          ),
     );
   }
 }

@@ -20,22 +20,27 @@ void main() {
   Widget app({Widget? secondBody}) => MaterialApp(
     theme: kalloAppTheme(),
     home: Builder(
-      builder: (context) => Scaffold(
-        key: first,
-        body: Center(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
-                  key: second,
-                  body: secondBody ?? const Center(child: Text('second')),
-                ),
+      builder:
+          (context) => Scaffold(
+            key: first,
+            body: Center(
+              child: TextButton(
+                onPressed:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder:
+                            (_) => Scaffold(
+                              key: second,
+                              body:
+                                  secondBody ??
+                                  const Center(child: Text('second')),
+                            ),
+                      ),
+                    ),
+                child: const Text('push'),
               ),
             ),
-            child: const Text('push'),
           ),
-        ),
-      ),
     ),
   );
 
@@ -140,7 +145,8 @@ void main() {
           controller: controller,
           scrollDirection: Axis.horizontal,
           children: <Widget>[
-            for (int i = 0; i < 12; i++) SizedBox(width: 200, child: Text('$i')),
+            for (int i = 0; i < 12; i++)
+              SizedBox(width: 200, child: Text('$i')),
           ],
         ),
       ),

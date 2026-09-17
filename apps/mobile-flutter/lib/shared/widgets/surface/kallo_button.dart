@@ -67,9 +67,13 @@ class _NhamButtonState extends State<KalloButton> {
       case KalloButtonVariant.cta:
         bg = _pressed ? KalloColors.btnDarkHover : KalloColors.btnPrimary;
       case KalloButtonVariant.primary:
-        bg = _pressed
-            ? Color.alphaBlend(KalloColors.pressWash, KalloColors.btnPrimarySoft)
-            : KalloColors.btnPrimarySoft;
+        bg =
+            _pressed
+                ? Color.alphaBlend(
+                  KalloColors.pressWash,
+                  KalloColors.btnPrimarySoft,
+                )
+                : KalloColors.btnPrimarySoft;
       case KalloButtonVariant.secondary:
         bg = _pressed ? KalloColors.hover : KalloColors.elev;
         border = Border.all(color: KalloColors.border);
@@ -113,23 +117,26 @@ class _NhamButtonState extends State<KalloButton> {
         onTapUp: _isDisabled ? null : (_) => setState(() => _pressed = false),
         onTapCancel:
             _isDisabled ? null : () => setState(() => _pressed = false),
-        onTap: _isDisabled
-            ? null
-            : () {
-                // Tactile confirm on every primary/secondary/ghost action.
-                HapticFeedback.lightImpact();
-                widget.onPressed?.call();
-              },
+        onTap:
+            _isDisabled
+                ? null
+                : () {
+                  // Tactile confirm on every primary/secondary/ghost action.
+                  HapticFeedback.lightImpact();
+                  widget.onPressed?.call();
+                },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeInOut,
           constraints: BoxConstraints(
-            minHeight: widget.compact
-                ? 36
-                : switch (variant) {
-                    KalloButtonVariant.cta || KalloButtonVariant.primary => 50,
-                    _ => 44,
-                  },
+            minHeight:
+                widget.compact
+                    ? 36
+                    : switch (variant) {
+                      KalloButtonVariant.cta ||
+                      KalloButtonVariant.primary => 50,
+                      _ => 44,
+                    },
             minWidth: widget.compact ? 72 : 0,
           ),
           padding: EdgeInsets.symmetric(
@@ -160,10 +167,11 @@ class _NhamButtonState extends State<KalloButton> {
     return AnimatedSwitcher(
       duration: KalloMotion.quick,
       // Stacked, not side by side: the CTA must not twitch mid-dissolve.
-      layoutBuilder: (current, previous) => Stack(
-        alignment: Alignment.center,
-        children: [...previous, if (current != null) current],
-      ),
+      layoutBuilder:
+          (current, previous) => Stack(
+            alignment: Alignment.center,
+            children: [...previous, if (current != null) current],
+          ),
       child: KeyedSubtree(key: ValueKey(widget.title), child: text),
     );
   }

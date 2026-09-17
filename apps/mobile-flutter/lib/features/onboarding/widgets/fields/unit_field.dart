@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../shared/widgets/form/decimal_input.dart' show parseDecimalInput;
+import '../../../../shared/widgets/form/decimal_input.dart'
+    show parseDecimalInput;
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -48,8 +49,9 @@ class UnitField extends StatefulWidget {
 }
 
 class _UnitFieldState extends State<UnitField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: _initialText());
+  late final TextEditingController _controller = TextEditingController(
+    text: _initialText(),
+  );
 
   String _initialText() {
     final value = widget.initialValue;
@@ -99,8 +101,9 @@ class _UnitFieldState extends State<UnitField> {
               Flexible(
                 child: IntrinsicWidth(
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(minWidth: UnitField.minInputWidth),
+                    constraints: const BoxConstraints(
+                      minWidth: UnitField.minInputWidth,
+                    ),
                     child: _input(),
                   ),
                 ),
@@ -115,25 +118,25 @@ class _UnitFieldState extends State<UnitField> {
   }
 
   Widget _input() => TextField(
-        controller: _controller,
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.numberWithOptions(decimal: !widget.integer),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(
-            widget.integer ? RegExp(r'[0-9]') : RegExp(r'[0-9.,]'),
-          ),
-        ],
-        onChanged: _report,
-        style: dashBody(tabular: true),
-        cursorColor: KalloColors.accent,
-        decoration: const InputDecoration(
-          isDense: true,
-          filled: false,
-          contentPadding: EdgeInsets.zero,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-        ),
-      );
+    controller: _controller,
+    textAlign: TextAlign.center,
+    keyboardType: TextInputType.numberWithOptions(decimal: !widget.integer),
+    inputFormatters: [
+      FilteringTextInputFormatter.allow(
+        widget.integer ? RegExp(r'[0-9]') : RegExp(r'[0-9.,]'),
+      ),
+    ],
+    onChanged: _report,
+    style: dashBody(tabular: true),
+    cursorColor: KalloColors.accent,
+    decoration: const InputDecoration(
+      isDense: true,
+      filled: false,
+      contentPadding: EdgeInsets.zero,
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+    ),
+  );
 }

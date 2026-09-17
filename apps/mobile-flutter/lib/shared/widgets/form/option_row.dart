@@ -58,25 +58,27 @@ class OptionRow extends StatelessWidget {
       onTap: onTap,
       border: border,
       semanticsLabel: [label, subline, note].whereType<String>().join(', '),
-      surface: (context, pressed, body) => AnimatedContainer(
-        duration: KalloMotion.press,
-        curve: KalloEase.press,
-        height: height,
-        decoration: BoxDecoration(
-          // The press is the ink wash over white, the same one ListRow uses on
-          // the canvas side — a warm wash on a white row barely registers.
-          color: pressed
-              ? Color.alphaBlend(KalloColors.pressWash, kCardSurface)
-              : kCardSurface,
-          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-          border: Border.all(
-            color: selected ? kInk : KalloColors.border,
-            width: border,
+      surface:
+          (context, pressed, body) => AnimatedContainer(
+            duration: KalloMotion.press,
+            curve: KalloEase.press,
+            height: height,
+            decoration: BoxDecoration(
+              // The press is the ink wash over white, the same one ListRow uses on
+              // the canvas side — a warm wash on a white row barely registers.
+              color:
+                  pressed
+                      ? Color.alphaBlend(KalloColors.pressWash, kCardSurface)
+                      : kCardSurface,
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+              border: Border.all(
+                color: selected ? kInk : KalloColors.border,
+                width: border,
+              ),
+              boxShadow: selected ? kCardShadows : null,
+            ),
+            child: body,
           ),
-          boxShadow: selected ? kCardShadows : null,
-        ),
-        child: body,
-      ),
       children: [
         Expanded(child: _text()),
         if (note != null) ...[
@@ -91,7 +93,12 @@ class OptionRow extends StatelessWidget {
     mainAxisAlignment: MainAxisAlignment.center,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: dashBody()),
+      Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: dashBody(),
+      ),
       if (subline != null) ...[
         const SizedBox(height: 2),
         Text(

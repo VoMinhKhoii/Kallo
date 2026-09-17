@@ -14,14 +14,14 @@ void main() {
     // schema's own bounds — and the raw arithmetic is NEGATIVE: a 317 kcal
     // TDEE against an 880 kcal/day deficit.
     OnboardingAnswers steepestCut() => testAnswers(
-          sex: BiologicalSex.female,
-          weight: 30,
-          height: 100,
-          age: 100,
-          activity: ActivityLevel.sedentary,
-          goal: Goal.cutting,
-          aggression: 0.8,
-        );
+      sex: BiologicalSex.female,
+      weight: 30,
+      height: 100,
+      age: 100,
+      activity: ActivityLevel.sedentary,
+      goal: Goal.cutting,
+      aggression: 0.8,
+    );
 
     test('the smallest in-range body on the steepest cut lands ON the floor, '
         'with macros to match', () {
@@ -53,22 +53,24 @@ void main() {
       expect(values.tdeeKcal, 317);
     });
 
-    test('the biggest in-range body on the steepest bulk is untouched by it',
-        () {
-      final answers = testAnswers(
-        weight: 300,
-        height: 250,
-        age: 13,
-        activity: ActivityLevel.sedentary,
-        goal: Goal.bulking,
-        aggression: 0.8,
-      );
+    test(
+      'the biggest in-range body on the steepest bulk is untouched by it',
+      () {
+        final answers = testAnswers(
+          weight: 300,
+          height: 250,
+          age: 13,
+          activity: ActivityLevel.sedentary,
+          goal: Goal.bulking,
+          aggression: 0.8,
+        );
 
-      final tdee = answers.tdeeKcal!;
-      expect(tdee, 5403);
-      expect(answers.targets!.calories, tdee + 880);
-      expect(answers.paceKcal, 880);
-    });
+        final tdee = answers.tdeeKcal!;
+        expect(tdee, 5403);
+        expect(answers.targets!.calories, tdee + 880);
+        expect(answers.paceKcal, 880);
+      },
+    );
   });
 
   group('deficitOverride', () {
@@ -83,14 +85,18 @@ void main() {
     test('and in the pace readout, so the two agree', () {
       // Without this the ruler would still read "550 kcal deficit" beside a
       // card showing a 300 kcal one.
-      expect(testAnswers(goal: Goal.cutting, deficitOverride: 300).paceKcal, 300);
+      expect(
+        testAnswers(goal: Goal.cutting, deficitOverride: 300).paceKcal,
+        300,
+      );
     });
 
     test('is posted back unchanged', () {
       expect(
-        testAnswers(goal: Goal.cutting, deficitOverride: 300)
-            .stepTwoValues!
-            .deficitOverride,
+        testAnswers(
+          goal: Goal.cutting,
+          deficitOverride: 300,
+        ).stepTwoValues!.deficitOverride,
         300,
       );
     });
@@ -108,7 +114,10 @@ void main() {
 
     test('a goal with a pace stores it', () {
       expect(
-        testAnswers(goal: Goal.cutting, aggression: 0.7).stepTwoValues!.aggression,
+        testAnswers(
+          goal: Goal.cutting,
+          aggression: 0.7,
+        ).stepTwoValues!.aggression,
         0.7,
       );
     });
@@ -164,15 +173,12 @@ void main() {
   group('what screen 6 is still waiting on', () {
     test('names the absent inputs, and nothing when they are all there', () {
       expect(testAnswers().missingTargetInputs, isEmpty);
-      expect(
-        testAnswers(body: false).missingTargetInputs,
-        {
-          TargetInput.biologicalSex,
-          TargetInput.weightKg,
-          TargetInput.heightCm,
-          TargetInput.age,
-        },
-      );
+      expect(testAnswers(body: false).missingTargetInputs, {
+        TargetInput.biologicalSex,
+        TargetInput.weightKg,
+        TargetInput.heightCm,
+        TargetInput.age,
+      });
       expect(testAnswers(age: null).missingTargetInputs, {TargetInput.age});
     });
   });

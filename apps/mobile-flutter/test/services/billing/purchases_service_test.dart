@@ -43,16 +43,18 @@ class FakePurchasesGateway implements PurchasesGateway {
   Map<String, IntroEligibilityStatus> eligibility = const {};
 
   @override
-  Future<Map<String, IntroEligibility>> checkTrialOrIntroductoryPriceEligibility(
+  Future<Map<String, IntroEligibility>>
+  checkTrialOrIntroductoryPriceEligibility(
     List<String> productIdentifiers,
   ) async {
     eligibilityAsked.addAll(productIdentifiers);
     return {
       for (final id in productIdentifiers)
         id: IntroEligibility.fromJson({
-          'status': (eligibility[id] ??
-                  IntroEligibilityStatus.introEligibilityStatusUnknown)
-              .index,
+          'status':
+              (eligibility[id] ??
+                      IntroEligibilityStatus.introEligibilityStatusUnknown)
+                  .index,
           'description': '',
         }),
     };
@@ -267,17 +269,18 @@ void main() {
 
   group('trial eligibility', () {
     test('only ELIGIBLE counts — unknown means show the normal price', () async {
-      final gateway = FakePurchasesGateway()
-        ..eligibility = {
-          'kallo_premium_annual':
-              IntroEligibilityStatus.introEligibilityStatusEligible,
-          'kallo_premium_monthly':
-              IntroEligibilityStatus.introEligibilityStatusIneligible,
-          // Android reports this for everything, and RevenueCat's own guidance
-          // is to fall back to the non-introductory price on it.
-          'kallo_premium_lifetime':
-              IntroEligibilityStatus.introEligibilityStatusUnknown,
-        };
+      final gateway =
+          FakePurchasesGateway()
+            ..eligibility = {
+              'kallo_premium_annual':
+                  IntroEligibilityStatus.introEligibilityStatusEligible,
+              'kallo_premium_monthly':
+                  IntroEligibilityStatus.introEligibilityStatusIneligible,
+              // Android reports this for everything, and RevenueCat's own guidance
+              // is to fall back to the non-introductory price on it.
+              'kallo_premium_lifetime':
+                  IntroEligibilityStatus.introEligibilityStatusUnknown,
+            };
       final service = PurchasesService(
         gateway: gateway,
         apiKey: 'test_sandbox',

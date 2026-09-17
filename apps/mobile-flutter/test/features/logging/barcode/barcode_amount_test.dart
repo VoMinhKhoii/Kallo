@@ -177,10 +177,7 @@ void main() {
         name: 'Sữa tươi',
         brand: 'Vinamilk',
       );
-      expect(
-        barcodePickLabel(th, 180),
-        isNot(barcodePickLabel(vinamilk, 180)),
-      );
+      expect(barcodePickLabel(th, 180), isNot(barcodePickLabel(vinamilk, 180)));
     });
   });
 

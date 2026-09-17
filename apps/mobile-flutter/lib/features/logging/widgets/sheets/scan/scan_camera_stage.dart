@@ -57,47 +57,48 @@ class ScanCameraStage extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 3 / 4,
         child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            fit: StackFit.expand,
-            children: [
-              const ColoredBox(color: _stage),
-              builder(context, constraints.biggest),
-              if (notice != null || hint != null)
-                Positioned(
-                  left: KalloSpacing.sp4,
-                  right: KalloSpacing.sp4,
-                  bottom: hasControls ? 100 : KalloSpacing.sp4,
-                  child:
-                      notice ??
-                      Text(
-                        hint!,
-                        textAlign: TextAlign.center,
-                        // Meta in the app's own family — a bare TextStyle here
-                        // would inherit Material's default face on the one
-                        // surface where nothing else sets it.
-                        style: dashMeta(color: const Color(0xBFFFFFFF)),
-                      ),
-                ),
-              if (onShutter != null)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: KalloSpacing.sp4,
-                  child: Center(
-                    child: _Shutter(
-                      onTap: onShutter!,
-                      semanticsLabel: shutterLabel,
+          builder:
+              (context, constraints) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: _stage),
+                  builder(context, constraints.biggest),
+                  if (notice != null || hint != null)
+                    Positioned(
+                      left: KalloSpacing.sp4,
+                      right: KalloSpacing.sp4,
+                      bottom: hasControls ? 100 : KalloSpacing.sp4,
+                      child:
+                          notice ??
+                          Text(
+                            hint!,
+                            textAlign: TextAlign.center,
+                            // Meta in the app's own family — a bare TextStyle here
+                            // would inherit Material's default face on the one
+                            // surface where nothing else sets it.
+                            style: dashMeta(color: const Color(0xBFFFFFFF)),
+                          ),
                     ),
-                  ),
-                ),
-              if (leading != null)
-                Positioned(
-                  left: KalloSpacing.sp5,
-                  bottom: onShutter != null ? 27 : KalloSpacing.sp4,
-                  child: SizedBox(width: 44, height: 44, child: leading),
-                ),
-            ],
-          ),
+                  if (onShutter != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: KalloSpacing.sp4,
+                      child: Center(
+                        child: _Shutter(
+                          onTap: onShutter!,
+                          semanticsLabel: shutterLabel,
+                        ),
+                      ),
+                    ),
+                  if (leading != null)
+                    Positioned(
+                      left: KalloSpacing.sp5,
+                      bottom: onShutter != null ? 27 : KalloSpacing.sp4,
+                      child: SizedBox(width: 44, height: 44, child: leading),
+                    ),
+                ],
+              ),
         ),
       ),
     );

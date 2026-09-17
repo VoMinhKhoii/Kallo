@@ -27,13 +27,15 @@ class PersistedMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: KalloColors.borderFaint,
+          ),
           const SizedBox(height: LoggingSpacing.section),
           for (final group in groups)
             Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: LoggingSpacing.row,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
               child: Row(
                 // The macro figures hug the FIRST line of the dish name. A
                 // two-line Vietnamese name used to drag them down to its

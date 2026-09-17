@@ -17,16 +17,17 @@ extension ApiClientUploads on ApiClient {
   }) async {
     final headers = await _authHeaders();
     final uri = Uri.parse('$_baseUrl$path');
-    final req = http.MultipartRequest('POST', uri)
-      ..headers.addAll(headers)
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: filename,
-          contentType: MediaType.parse(contentType),
-        ),
-      );
+    final req =
+        http.MultipartRequest('POST', uri)
+          ..headers.addAll(headers)
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              bytes,
+              filename: filename,
+              contentType: MediaType.parse(contentType),
+            ),
+          );
     final streamed = await _http.send(req);
     final res = await http.Response.fromStream(streamed);
     if (res.statusCode < 200 || res.statusCode >= 300) {

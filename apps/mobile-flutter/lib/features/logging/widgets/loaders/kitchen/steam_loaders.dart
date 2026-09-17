@@ -23,14 +23,19 @@ class SteamPainter extends LoaderPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width / 40;
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4 * s
-      ..strokeCap = StrokeCap.round;
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4 * s
+          ..strokeCap = StrokeCap.round;
 
     // The rim it comes off, so the wisps read as steam and not as squiggles.
     canvas.drawArc(
-      Rect.fromCenter(center: Offset(20 * s, 33 * s), width: 24 * s, height: 12 * s),
+      Rect.fromCenter(
+        center: Offset(20 * s, 33 * s),
+        width: 24 * s,
+        height: 12 * s,
+      ),
       0,
       math.pi,
       false,
@@ -100,7 +105,4 @@ class BubblesPainter extends LoaderPainter {
 
 const steamLoader = SvgLoaderSpec(id: 'steam', painter: SteamPainter.new);
 
-const bubblesLoader = SvgLoaderSpec(
-  id: 'bubbles',
-  painter: BubblesPainter.new,
-);
+const bubblesLoader = SvgLoaderSpec(id: 'bubbles', painter: BubblesPainter.new);

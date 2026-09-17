@@ -40,15 +40,17 @@ class PortionPinRow extends StatelessWidget {
               key: ValueKey('pin-${seats[seat].id}'),
               seat: _colorOf(seat),
               initials: seats[seat].initials,
-              kcal: totalKcal == null
-                  ? null
-                  : (totalKcal! * parts[seat] / _dishParts).round(),
+              kcal:
+                  totalKcal == null
+                      ? null
+                      : (totalKcal! * parts[seat] / _dishParts).round(),
               // Colour 0 is always you, and you cannot remove yourself. Keyed on
               // colour rather than position so a lone seat in a whole-portion
               // battery (position 0, anyone) still gets its ×.
-              onRemove: _colorOf(seat) == 0 || onRemove == null
-                  ? null
-                  : () => onRemove!(seat),
+              onRemove:
+                  _colorOf(seat) == 0 || onRemove == null
+                      ? null
+                      : () => onRemove!(seat),
             ),
           ),
       ],
@@ -112,10 +114,7 @@ class _Pin extends StatelessWidget {
                   child: Center(
                     child: Transform.rotate(
                       angle: 0.785398,
-                      child: Text(
-                        initials,
-                        style: dashCaption(color: ink),
-                      ),
+                      child: Text(initials, style: dashCaption(color: ink)),
                     ),
                   ),
                 ),

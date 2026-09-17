@@ -45,7 +45,6 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
 
   bool get _canSubmit => !_draft.isEmpty;
 
-
   void _submit() {
     if (!_canSubmit) return;
     final isSplit = _draft.isSplit;
@@ -93,15 +92,16 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
                 0,
               ),
               child: friendsAsync.when(
-                loading: () => FriendListSkeleton(
-                  semanticsLabel: tr('groups.shareMeal.loadingFriends'),
-                ),
-                error: (_, __) => ShareMealErrorState(
-                  onRetry: () => ref.invalidate(circleFriendsProvider),
-                ),
+                loading:
+                    () => FriendListSkeleton(
+                      semanticsLabel: tr('groups.shareMeal.loadingFriends'),
+                    ),
+                error:
+                    (_, __) => ShareMealErrorState(
+                      onRetry: () => ref.invalidate(circleFriendsProvider),
+                    ),
                 data: (members) {
-                  final friends =
-                      members.where((m) => m.isAccepted).toList();
+                  final friends = members.where((m) => m.isAccepted).toList();
                   if (friends.isEmpty) {
                     return ShareMealEmptyState(
                       onAddFriends: widget.onAddFriends,
@@ -116,7 +116,8 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
                     laneHeight: _laneHeight,
                     onModeChanged: (m) => setState(() => _draft.mode = m),
                     onPartsChanged: (p) => setState(() => _draft.parts = p),
-                    onRemoveSeat: (seat) => setState(() => _draft.removeSeat(seat)),
+                    onRemoveSeat:
+                        (seat) => setState(() => _draft.removeSeat(seat)),
                     onSplitEvenly: () => setState(_draft.splitEvenly),
                     onAdd: (p) => setState(() => _draft.add(p)),
                   );
@@ -136,6 +137,4 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
       ),
     );
   }
-
-
 }

@@ -23,18 +23,18 @@ double clampLevel(double level) {
 
 /// The AI's default position per slider — what an untouched card resolves to.
 CheatSliderLevels defaultLevels(CheatSliderSpec spec) => {
-  for (final slider in spec.sliders) slider.key: clampLevel(slider.defaultLevel),
+  for (final slider in spec.sliders)
+    slider.key: clampLevel(slider.defaultLevel),
 };
 
 enum _NutrientKey { proteinG, carbohydrateG, fatG, alcoholG }
 
-double? _nutrient(CheatSliderAnchor anchor, _NutrientKey key) =>
-    switch (key) {
-      _NutrientKey.proteinG => anchor.proteinG,
-      _NutrientKey.carbohydrateG => anchor.carbohydrateG,
-      _NutrientKey.fatG => anchor.fatG,
-      _NutrientKey.alcoholG => anchor.alcoholG,
-    };
+double? _nutrient(CheatSliderAnchor anchor, _NutrientKey key) => switch (key) {
+  _NutrientKey.proteinG => anchor.proteinG,
+  _NutrientKey.carbohydrateG => anchor.carbohydrateG,
+  _NutrientKey.fatG => anchor.fatG,
+  _NutrientKey.alcoholG => anchor.alcoholG,
+};
 
 /// Piecewise-linear interpolation of one nutrient's grams for a slider at
 /// `level`, using its sparse anchors. Anchors should include level 0 and 10;

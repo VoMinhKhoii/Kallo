@@ -63,10 +63,7 @@ class SavePlanScreen extends StatelessWidget {
       // The step header minus the progress bar and the Skip: the back
       // chevron returns to the wizard. It insets itself the same 4pt the
       // wizard's header does, so the glyph lands on the title's gutter.
-      WordmarkBar(
-        gutterInset: WordmarkBar.rowInset,
-        leading: _back(context),
-      ),
+      WordmarkBar(gutterInset: WordmarkBar.rowInset, leading: _back(context)),
       Padding(
         // The chrome keeps the 24pt onboarding gutter; the auth stack
         // below brings its own (`kAuthInset`), so it must not be nested

@@ -38,10 +38,14 @@ void main() {
     final json = jsonDecode(_raw) as Map<String, dynamic>;
     final event = StreamEvent.fromJson(json) as ResultEvent;
     expect(event.data.items, hasLength(4));
-    expect(event.data.items.map((i) => i.vessel).whereType<PieceVessel>(),
-        hasLength(2));
-    expect(event.data.items.map((i) => i.vessel).whereType<ContainerVessel>(),
-        hasLength(2));
+    expect(
+      event.data.items.map((i) => i.vessel).whereType<PieceVessel>(),
+      hasLength(2),
+    );
+    expect(
+      event.data.items.map((i) => i.vessel).whereType<ContainerVessel>(),
+      hasLength(2),
+    );
   });
 
   test('a malformed vessel degrades to null instead of throwing', () {
@@ -55,14 +59,20 @@ void main() {
       <String, dynamic>{},
     ]) {
       final item = {
-        'id': 'x', 'name': 'y', 'quantity': 1, 'unit': 'g',
+        'id': 'x',
+        'name': 'y',
+        'quantity': 1,
+        'unit': 'g',
         'macros': {'calories': 1, 'protein': 1, 'carbs': 1, 'fat': 1},
         'vessel': bad,
       };
       // Not just "didn't throw" — a non-null wrong vessel passes that and is
       // exactly what the picker can't render.
-      expect(MealItem.fromJson(item).vessel, isNull,
-          reason: 'accepted malformed vessel payload $bad');
+      expect(
+        MealItem.fromJson(item).vessel,
+        isNull,
+        reason: 'accepted malformed vessel payload $bad',
+      );
     }
   });
 
@@ -74,11 +84,13 @@ void main() {
     // "doesn't throw" to "is null" — precisely the mislabelling a weak
     // assertion hides.
     final item = {
-      'id': 'x', 'name': 'y', 'quantity': 1, 'unit': 'g',
+      'id': 'x',
+      'name': 'y',
+      'quantity': 1,
+      'unit': 'g',
       'macros': {'calories': 1, 'protein': 1, 'carbs': 1, 'fat': 1},
       'vessel': {'family': 'piece', 'tier': 4.0, 'count': 3, 'kind': 'fish'},
     };
     expect(MealItem.fromJson(item).vessel, isA<PieceVessel>());
   });
 }
-

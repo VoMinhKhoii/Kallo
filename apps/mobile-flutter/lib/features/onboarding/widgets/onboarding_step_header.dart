@@ -51,66 +51,67 @@ class OnboardingStepHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WordmarkBar(
-            gutterInset: WordmarkBar.rowInset,
-            leading: onBack == null ? null : _back(context),
-            trailing: onSkip == null || skipLabel == null
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      WordmarkBar(
+        gutterInset: WordmarkBar.rowInset,
+        leading: onBack == null ? null : _back(context),
+        trailing:
+            onSkip == null || skipLabel == null
                 ? null
                 // Slack on both sides of the label: the left buys the skip
                 // target room, the right stands the label off the screen edge
                 // at 16 (4 of inset + 12 of padding).
                 : MetaAction(
-                    label: skipLabel!,
-                    onTap: onSkip,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: KalloSpacing.sp3,
-                    ),
+                  label: skipLabel!,
+                  onTap: onSkip,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KalloSpacing.sp3,
                   ),
-          ),
-          const SizedBox(height: KalloSpacing.sp3),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: gutter),
-            child: _bar(),
-          ),
-        ],
-      );
+                ),
+      ),
+      const SizedBox(height: KalloSpacing.sp3),
+      Padding(padding: EdgeInsets.symmetric(horizontal: gutter), child: _bar()),
+    ],
+  );
 
   Widget _back(BuildContext context) => Semantics(
-        button: true,
-        label: Localizations.of<MaterialLocalizations>(
-                context, MaterialLocalizations)
-            ?.backButtonTooltip,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onBack,
-          child: const SizedBox(
-            width: KalloIcons.hit,
-            height: KalloIcons.hit,
-            child: Icon(
-              LucideIcons.chevronLeft300,
-              size: KalloIcons.primary,
-              color: kInk,
-            ),
-          ),
+    button: true,
+    label:
+        Localizations.of<MaterialLocalizations>(
+          context,
+          MaterialLocalizations,
+        )?.backButtonTooltip,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onBack,
+      child: const SizedBox(
+        width: KalloIcons.hit,
+        height: KalloIcons.hit,
+        child: Icon(
+          LucideIcons.chevronLeft300,
+          size: KalloIcons.primary,
+          color: kInk,
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _bar() => Semantics(
-        label: progressLabel,
-        excludeSemantics: true,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(barHeight / 2),
-          child: SizedBox(
-            height: barHeight,
-            child: ColoredBox(
-              color: KalloColors.track,
-              child: TweenAnimationBuilder<double>(
-                duration: KalloMotion.emphasis,
-                curve: KalloEase.standard,
-                tween: Tween(end: (step / total).clamp(0.0, 1.0)),
-                builder: (context, fraction, child) => Align(
+    label: progressLabel,
+    excludeSemantics: true,
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(barHeight / 2),
+      child: SizedBox(
+        height: barHeight,
+        child: ColoredBox(
+          color: KalloColors.track,
+          child: TweenAnimationBuilder<double>(
+            duration: KalloMotion.emphasis,
+            curve: KalloEase.standard,
+            tween: Tween(end: (step / total).clamp(0.0, 1.0)),
+            builder:
+                (context, fraction, child) => Align(
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
                     widthFactor: fraction,
@@ -121,11 +122,11 @@ class OnboardingStepHeader extends StatelessWidget {
                     child: child,
                   ),
                 ),
-                // Constant across every frame of the fill — built once.
-                child: const ColoredBox(color: KalloColors.btn),
-              ),
-            ),
+            // Constant across every frame of the fill — built once.
+            child: const ColoredBox(color: KalloColors.btn),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

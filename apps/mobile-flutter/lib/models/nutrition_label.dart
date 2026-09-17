@@ -157,18 +157,22 @@ class NutritionLabel {
       servingSizeDescription: json['servingSizeDescription'] as String?,
       servingsPerContainer: (json['servingsPerContainer'] as num?)?.toDouble(),
       netContent: LabelMeasure.fromJson(json['netContent']),
-      per100g: json.containsKey('per100g')
-          ? _nutrientsFromJson(json['per100g'])
-          : null,
-      per100ml: json.containsKey('per100ml')
-          ? _nutrientsFromJson(json['per100ml'])
-          : null,
-      perServing: json.containsKey('perServing')
-          ? _nutrientsFromJson(json['perServing'])
-          : null,
-      perContainer: json.containsKey('perContainer')
-          ? _nutrientsFromJson(json['perContainer'])
-          : null,
+      per100g:
+          json.containsKey('per100g')
+              ? _nutrientsFromJson(json['per100g'])
+              : null,
+      per100ml:
+          json.containsKey('per100ml')
+              ? _nutrientsFromJson(json['per100ml'])
+              : null,
+      perServing:
+          json.containsKey('perServing')
+              ? _nutrientsFromJson(json['perServing'])
+              : null,
+      perContainer:
+          json.containsKey('perContainer')
+              ? _nutrientsFromJson(json['perContainer'])
+              : null,
     );
   }
 }

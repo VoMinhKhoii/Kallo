@@ -174,14 +174,17 @@ void main() {
     // exact string as prose — so the reference bound to the FIRST occurrence,
     // tinting words that carry no reference and leaving the real pick untinted
     // (and, on the next keystroke, unfindable).
-    test('binds where it was spliced, not to identical prose typed earlier', () {
-      _type(c, 'Sữa TH (180g) roi ');
+    test(
+      'binds where it was spliced, not to identical prose typed earlier',
+      () {
+        _type(c, 'Sữa TH (180g) roi ');
 
-      expect(c.insertPick('Sữa TH (180g)', milk, 'stage-1'), isTrue);
+        expect(c.insertPick('Sữa TH (180g)', milk, 'stage-1'), isTrue);
 
-      expect(c.text, 'Sữa TH (180g) roi Sữa TH (180g) ');
-      expect(c.mentions.single.start, 18);
-    });
+        expect(c.text, 'Sữa TH (180g) roi Sữa TH (180g) ');
+        expect(c.mentions.single.start, 18);
+      },
+    );
 
     // The exact-offset preference above only held while the offset was
     // BYTE-EXACT. One character typed anywhere before the pick and it fell back
@@ -212,10 +215,11 @@ void main() {
       _pick(c, _dish('Phở bò'), 'stage-1');
       c.insertPick('Sữa tươi TH (180g)', milk, 'stage-2');
 
-      expect(c.entries.map((e) => e.ref), [
-        const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
-        milk,
-      ], reason: 'staged order is composer order, which the submit sends');
+      expect(
+        c.entries.map((e) => e.ref),
+        [const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0), milk],
+        reason: 'staged order is composer order, which the submit sends',
+      );
     });
   });
 

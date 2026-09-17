@@ -107,7 +107,8 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
     final target = widget.position * _contentWidth;
     // Only chase an OUTSIDE change (an anchor tap). Re-driving the controller
     // from our own scroll would fight the drag.
-    if ((c.offset - target).abs() > 0.5 && !c.position.isScrollingNotifier.value) {
+    if ((c.offset - target).abs() > 0.5 &&
+        !c.position.isScrollingNotifier.value) {
       _selfDriven = true;
       c
           .animateTo(
@@ -175,11 +176,12 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                         majors: widget.majors,
                         width: _contentWidth,
                         slotWidth: _column,
-                        child: (i) => Text(
-                          widget.labelFor(i),
-                          maxLines: 1,
-                          style: dashMeta(tabular: true),
-                        ),
+                        child:
+                            (i) => Text(
+                              widget.labelFor(i),
+                              maxLines: 1,
+                              style: dashMeta(tabular: true),
+                            ),
                       ),
                     ),
                   ],
@@ -195,6 +197,7 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
 
   /// The fixed reading mark, hung clear of the silhouette band it points at.
   Widget _needle(double glyphHeight) => Padding(
-      padding: EdgeInsets.only(top: glyphHeight + portionNeedleGap),
-      child: const RulerNeedle(bar: portionRulerHeight + KalloSpacing.sp1));
+    padding: EdgeInsets.only(top: glyphHeight + portionNeedleGap),
+    child: const RulerNeedle(bar: portionRulerHeight + KalloSpacing.sp1),
+  );
 }

@@ -128,7 +128,10 @@ void main() {
     // seven day cells with a DateFormat each.
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 45));
-      expect(identical(tester.element(find.byType(TimelineChip)), chip), isTrue);
+      expect(
+        identical(tester.element(find.byType(TimelineChip)), chip),
+        isTrue,
+      );
       expect(
         identical(tester.element(find.byType(TimelineStrip)), strip),
         isTrue,

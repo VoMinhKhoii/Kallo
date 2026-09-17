@@ -26,6 +26,9 @@ const Map<String, LabelMacroIdentity> labelMacroIdentities = {
     LucideIcons.beef300,
     KalloColors.chartProtein,
   ),
-  'carbsGrams': LabelMacroIdentity(LucideIcons.wheat300, KalloColors.chartCarbs),
+  'carbsGrams': LabelMacroIdentity(
+    LucideIcons.wheat300,
+    KalloColors.chartCarbs,
+  ),
   'fatGrams': LabelMacroIdentity(LucideIcons.droplet300, KalloColors.chartFat),
 };

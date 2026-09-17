@@ -46,8 +46,9 @@ Future<LabelImageResult> shrinkLabelImageFile(String path) async {
 Uint8List? _shrinkLabelImageBytes(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return null;
-  final resized = decoded.width > labelImageMaxWidth
-      ? img.copyResize(decoded, width: labelImageMaxWidth.toInt())
-      : decoded;
+  final resized =
+      decoded.width > labelImageMaxWidth
+          ? img.copyResize(decoded, width: labelImageMaxWidth.toInt())
+          : decoded;
   return Uint8List.fromList(img.encodeJpg(resized, quality: labelImageQuality));
 }

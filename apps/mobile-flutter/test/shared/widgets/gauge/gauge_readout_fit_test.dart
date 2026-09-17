@@ -98,65 +98,43 @@ void main() {
 
   for (final entry in widths.entries) {
     for (final scale in scales) {
-      testWidgets(
-        'three-digit macro figures stay inside the dial — '
-        '${entry.key} @${scale}x',
-        (tester) async {
-          await tester.pumpWidget(
-            wrap(
-              const MacroDialRow.compact(
-                current: {
-                  'protein': 202,
-                  'carbohydrate': 547,
-                  'fat': 180,
-                },
-                target: {
-                  'protein': 180,
-                  'carbohydrate': 400,
-                  'fat': 90,
-                },
-              ),
-              width: entry.value,
-              scale: scale,
+      testWidgets('three-digit macro figures stay inside the dial — '
+          '${entry.key} @${scale}x', (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            const MacroDialRow.compact(
+              current: {'protein': 202, 'carbohydrate': 547, 'fat': 180},
+              target: {'protein': 180, 'carbohydrate': 400, 'fat': 90},
             ),
-          );
-          await tester.pumpAndSettle();
+            width: entry.value,
+            scale: scale,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-          expectFigureInsideDial(tester, figure: '202g', dialIndex: 0);
-          expectFigureInsideDial(tester, figure: '547g', dialIndex: 1);
-          expectFigureInsideDial(tester, figure: '180g', dialIndex: 2);
-        },
-      );
+        expectFigureInsideDial(tester, figure: '202g', dialIndex: 0);
+        expectFigureInsideDial(tester, figure: '547g', dialIndex: 1);
+        expectFigureInsideDial(tester, figure: '180g', dialIndex: 2);
+      });
 
-      testWidgets(
-        'four-digit macro figures stay inside the dial — '
-        '${entry.key} @${scale}x',
-        (tester) async {
-          await tester.pumpWidget(
-            wrap(
-              const MacroDialRow.compact(
-                current: {
-                  'protein': 1047,
-                  'carbohydrate': 1382,
-                  'fat': 1180,
-                },
-                target: {
-                  'protein': 180,
-                  'carbohydrate': 400,
-                  'fat': 90,
-                },
-              ),
-              width: entry.value,
-              scale: scale,
+      testWidgets('four-digit macro figures stay inside the dial — '
+          '${entry.key} @${scale}x', (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            const MacroDialRow.compact(
+              current: {'protein': 1047, 'carbohydrate': 1382, 'fat': 1180},
+              target: {'protein': 180, 'carbohydrate': 400, 'fat': 90},
             ),
-          );
-          await tester.pumpAndSettle();
+            width: entry.value,
+            scale: scale,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-          expectFigureInsideDial(tester, figure: '1047g', dialIndex: 0);
-          expectFigureInsideDial(tester, figure: '1382g', dialIndex: 1);
-          expectFigureInsideDial(tester, figure: '1180g', dialIndex: 2);
-        },
-      );
+        expectFigureInsideDial(tester, figure: '1047g', dialIndex: 0);
+        expectFigureInsideDial(tester, figure: '1382g', dialIndex: 1);
+        expectFigureInsideDial(tester, figure: '1180g', dialIndex: 2);
+      });
     }
   }
 
@@ -281,7 +259,10 @@ void main() {
     expect(gaugeClearHalfWidth(44, 0), closeTo(33, 0.01));
     // ABOVE the centre only the ring is in play, and its chord narrows with
     // height: √(33² − 22²).
-    expect(gaugeClearHalfWidth(44, -22), closeTo(math.sqrt(33 * 33 - 484), 0.01));
+    expect(
+      gaugeClearHalfWidth(44, -22),
+      closeTo(math.sqrt(33 * 33 - 484), 0.01),
+    );
     // BELOW it the 120° mouth opens, and past the tips it is the wider of the
     // two — which is why the calorie dial's third line has room to hang there.
     expect(

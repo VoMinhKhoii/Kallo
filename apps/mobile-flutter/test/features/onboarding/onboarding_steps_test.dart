@@ -27,12 +27,13 @@ Future<void> _pump(
       Scaffold(
         body: SafeArea(
           child: StatefulBuilder(
-            builder: (context, setState) => Padding(
-              padding: const EdgeInsets.all(24),
-              child: SingleChildScrollView(
-                child: build(() => setState(() {})),
-              ),
-            ),
+            builder:
+                (context, setState) => Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: SingleChildScrollView(
+                    child: build(() => setState(() {})),
+                  ),
+                ),
           ),
         ),
       ),
@@ -42,10 +43,11 @@ Future<void> _pump(
 }
 
 /// The labels of every [OptionRow] on screen, in order.
-List<String> _rowLabels(WidgetTester tester) => tester
-    .widgetList<OptionRow>(find.byType(OptionRow))
-    .map((row) => row.label)
-    .toList();
+List<String> _rowLabels(WidgetTester tester) =>
+    tester
+        .widgetList<OptionRow>(find.byType(OptionRow))
+        .map((row) => row.label)
+        .toList();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,8 +55,9 @@ void main() {
   setUpAll(initOnboardingTest);
 
   group('screen 1 — language', () {
-    testWidgets('picking a row switches the app locale immediately',
-        (tester) async {
+    testWidgets('picking a row switches the app locale immediately', (
+      tester,
+    ) async {
       final answers = testAnswers();
       await _pump(
         tester,
@@ -81,8 +84,9 @@ void main() {
       );
     });
 
-    testWidgets('a saved locale carries no "from your phone" note',
-        (tester) async {
+    testWidgets('a saved locale carries no "from your phone" note', (
+      tester,
+    ) async {
       await _pump(
         tester,
         (rebuild) => StepLanguage(
@@ -107,22 +111,26 @@ void main() {
           ),
         );
 
-    testWidgets('suggests the device region, then Việt Nam, then the language',
-        (tester) async {
-      await origin(tester, testAnswers(origin: 'Australia'));
+    testWidgets(
+      'suggests the device region, then Việt Nam, then the language',
+      (tester) async {
+        await origin(tester, testAnswers(origin: 'Australia'));
 
-      expect(_rowLabels(tester), [
-        'Australia',
-        'Vietnam',
-        'United States',
-        'United Kingdom',
-      ]);
-      // Only the phone's own guess is noted, and it is preselected.
-      expect(find.text('From your phone'), findsOneWidget);
-      final australia = tester.widget<OptionRow>(find.byType(OptionRow).first);
-      expect(australia.selected, isTrue);
-      expect(australia.note, 'From your phone');
-    });
+        expect(_rowLabels(tester), [
+          'Australia',
+          'Vietnam',
+          'United States',
+          'United Kingdom',
+        ]);
+        // Only the phone's own guess is noted, and it is preselected.
+        expect(find.text('From your phone'), findsOneWidget);
+        final australia = tester.widget<OptionRow>(
+          find.byType(OptionRow).first,
+        );
+        expect(australia.selected, isTrue);
+        expect(australia.note, 'From your phone');
+      },
+    );
 
     testWidgets('the suggestions follow the language picked on screen 1, not '
         'the phone\'s', (tester) async {
@@ -142,8 +150,9 @@ void main() {
       ]);
     });
 
-    testWidgets('typing filters both blocks, ignoring case and diacritics',
-        (tester) async {
+    testWidgets('typing filters both blocks, ignoring case and diacritics', (
+      tester,
+    ) async {
       await origin(tester, testAnswers(origin: 'Australia'));
 
       // "viet" has no accents and no capital; the row it must find has both.
@@ -159,8 +168,13 @@ void main() {
       expect(find.text('Germany'), findsOneWidget);
     });
 
-    testWidgets('the residence line names the phone\'s country', (tester) async {
-      await origin(tester, testAnswers(origin: 'Australia', residence: 'Australia'));
+    testWidgets('the residence line names the phone\'s country', (
+      tester,
+    ) async {
+      await origin(
+        tester,
+        testAnswers(origin: 'Australia', residence: 'Australia'),
+      );
       expect(
         find.text('Living in Australia · from your phone'),
         findsOneWidget,
@@ -168,9 +182,13 @@ void main() {
       expect(find.text('Change'), findsOneWidget);
     });
 
-    testWidgets('a residence the user corrected no longer credits the phone',
-        (tester) async {
-      await origin(tester, testAnswers(origin: 'Australia', residence: 'Germany'));
+    testWidgets('a residence the user corrected no longer credits the phone', (
+      tester,
+    ) async {
+      await origin(
+        tester,
+        testAnswers(origin: 'Australia', residence: 'Germany'),
+      );
 
       expect(find.text('Living in Germany'), findsOneWidget);
       expect(
@@ -182,17 +200,22 @@ void main() {
   });
 
   group('screen 4 — goal', () {
-    Future<void> goal(WidgetTester tester, OnboardingAnswers answers) =>
-        _pump(tester, (rebuild) => StepGoal(answers: answers, onChanged: rebuild));
+    Future<void> goal(WidgetTester tester, OnboardingAnswers answers) => _pump(
+      tester,
+      (rebuild) => StepGoal(answers: answers, onChanged: rebuild),
+    );
 
-    double paceOpacity(WidgetTester tester) => tester
-        .widget<Opacity>(
-          find.ancestor(
-            of: find.byType(PaceRuler),
-            matching: find.byType(Opacity),
-          ).first,
-        )
-        .opacity;
+    double paceOpacity(WidgetTester tester) =>
+        tester
+            .widget<Opacity>(
+              find
+                  .ancestor(
+                    of: find.byType(PaceRuler),
+                    matching: find.byType(Opacity),
+                  )
+                  .first,
+            )
+            .opacity;
 
     testWidgets('maintaining DIMS the pace block rather than removing it — '
         'the page must not collapse under the finger', (tester) async {
@@ -205,10 +228,12 @@ void main() {
       expect(
         tester
             .widget<IgnorePointer>(
-              find.ancestor(
-                of: find.byType(PaceRuler),
-                matching: find.byType(IgnorePointer),
-              ).first,
+              find
+                  .ancestor(
+                    of: find.byType(PaceRuler),
+                    matching: find.byType(IgnorePointer),
+                  )
+                  .first,
             )
             .ignoring,
         isTrue,
@@ -235,8 +260,9 @@ void main() {
   });
 
   group('screen 6 — daily target', () {
-    testWidgets('every figure recomputes when the carb split changes',
-        (tester) async {
+    testWidgets('every figure recomputes when the carb split changes', (
+      tester,
+    ) async {
       final answers = testAnswers();
       await _pump(
         tester,
@@ -263,8 +289,9 @@ void main() {
       expect(find.text('${moderate.fatG.round()} g'), findsNothing);
     });
 
-    testWidgets('no metrics means the unlock copy, not a fabricated target',
-        (tester) async {
+    testWidgets('no metrics means the unlock copy, not a fabricated target', (
+      tester,
+    ) async {
       await _pump(
         tester,
         (rebuild) => StepTarget(
@@ -280,12 +307,14 @@ void main() {
 
   group('screen 3 — about you', () {
     Future<void> about(WidgetTester tester, OnboardingAnswers answers) => _pump(
-          tester,
-          (rebuild) => StepAboutYou(answers: answers, onChanged: rebuild),
-        );
+      tester,
+      (rebuild) => StepAboutYou(answers: answers, onChanged: rebuild),
+    );
 
     String textAt(WidgetTester tester, int i) =>
-        tester.widgetList<TextField>(find.byType(TextField)).elementAt(i)
+        tester
+            .widgetList<TextField>(find.byType(TextField))
+            .elementAt(i)
             .controller!
             .text;
 
@@ -325,9 +354,15 @@ void main() {
       expect(answers.age, 28);
     });
 
-    testWidgets('a value seeded from the saved profile is never overwritten',
-        (tester) async {
-      final answers = testAnswers(sex: null, weight: 82, height: null, age: null);
+    testWidgets('a value seeded from the saved profile is never overwritten', (
+      tester,
+    ) async {
+      final answers = testAnswers(
+        sex: null,
+        weight: 82,
+        height: null,
+        age: null,
+      );
       await about(tester, answers);
 
       await tester.tap(find.text('Female'));
@@ -337,8 +372,9 @@ void main() {
       expect(answers.heightCm, 157);
     });
 
-    testWidgets('the activity rows wear the same anatomy as the other picks',
-        (tester) async {
+    testWidgets('the activity rows wear the same anatomy as the other picks', (
+      tester,
+    ) async {
       await about(tester, testAnswers());
       final rows = tester
           .widgetList<OptionRow>(find.byType(OptionRow))

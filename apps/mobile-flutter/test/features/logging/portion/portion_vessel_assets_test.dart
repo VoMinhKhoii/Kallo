@@ -134,7 +134,8 @@ void main() {
       expect(
         webConst(anchorSource, 'CLAIM_BAND'),
         claimBand,
-        reason: 'the claim band drifted — the two clients would now disagree '
+        reason:
+            'the claim band drifted — the two clients would now disagree '
             'about which tier a portion may call itself',
       );
       expect(
@@ -144,10 +145,11 @@ void main() {
       );
 
       // Tier tables: grams per piece tier, millilitres per container tier.
-      final webGrams = RegExp(r'pieceTier\(\s*(\d+)')
-          .allMatches(vesselSource)
-          .map((m) => int.parse(m.group(1)!))
-          .toList();
+      final webGrams =
+          RegExp(r'pieceTier\(\s*(\d+)')
+              .allMatches(vesselSource)
+              .map((m) => int.parse(m.group(1)!))
+              .toList();
       expect(
         webGrams,
         pieceTiers.map((t) => t.grams).toList(),
@@ -169,16 +171,16 @@ void main() {
           reason: '${entry.key.name} block missing from web data',
         );
       }
-      final ordered = familyStarts.entries.toList()
-        ..sort((a, b) => a.value.compareTo(b.value));
+      final ordered =
+          familyStarts.entries.toList()
+            ..sort((a, b) => a.value.compareTo(b.value));
       for (final (i, entry) in ordered.indexed) {
         final end = i + 1 < ordered.length ? ordered[i + 1].value : null;
         final block = vesselSource.substring(entry.value, end);
         expect(
-          RegExp(r'\bml:\s*(\d+)')
-              .allMatches(block)
-              .map((m) => int.parse(m.group(1)!))
-              .toList(),
+          RegExp(
+            r'\bml:\s*(\d+)',
+          ).allMatches(block).map((m) => int.parse(m.group(1)!)).toList(),
           [for (final tier in vesselFamilies[entry.key]!.values) tier.ml],
           reason: '${entry.key.name} tier millilitres drifted',
         );

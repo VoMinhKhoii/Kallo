@@ -16,21 +16,21 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 const double _hostWidth = 358;
 
 Widget _wrap(Widget child) => MaterialApp(
-      home: Scaffold(
-        body: Center(child: SizedBox(width: _hostWidth, child: child)),
-      ),
-    );
+  home: Scaffold(
+    body: Center(child: SizedBox(width: _hostWidth, child: child)),
+  ),
+);
 
 /// The row's own animated box — the first [AnimatedContainer] under the widget
 /// (the radio is the second, nested inside it).
 BoxDecoration _box(WidgetTester tester, {required bool radio}) {
-  final finder = find
-      .descendant(
-        of: find.byType(OptionRow),
-        matching: find.byType(AnimatedContainer),
-      );
-  final container =
-      tester.widget<AnimatedContainer>(radio ? finder.last : finder.first);
+  final finder = find.descendant(
+    of: find.byType(OptionRow),
+    matching: find.byType(AnimatedContainer),
+  );
+  final container = tester.widget<AnimatedContainer>(
+    radio ? finder.last : finder.first,
+  );
   return container.decoration! as BoxDecoration;
 }
 
@@ -48,10 +48,10 @@ class _HostState extends State<_Host> {
 
   @override
   Widget build(BuildContext context) => OptionRow(
-        label: 'English',
-        selected: _selected,
-        onTap: () => setState(() => _selected = true),
-      );
+    label: 'English',
+    selected: _selected,
+    onTap: () => setState(() => _selected = true),
+  );
 }
 
 void main() {
@@ -59,10 +59,22 @@ void main() {
   // idle is the flat hairline with a hollow one and NO shadow — an unselected
   // row separates from the canvas by surface alone.
   for (final (name, selected, border, ring, color, shadow) in [
-    ('selected', true, OptionRow.selectedBorder, OptionRow.selectedRing, kInk,
-        kCardShadows),
-    ('idle', false, OptionRow.idleBorder, OptionRow.idleRing,
-        KalloColors.border, null),
+    (
+      'selected',
+      true,
+      OptionRow.selectedBorder,
+      OptionRow.selectedRing,
+      kInk,
+      kCardShadows,
+    ),
+    (
+      'idle',
+      false,
+      OptionRow.idleBorder,
+      OptionRow.idleRing,
+      KalloColors.border,
+      null,
+    ),
   ]) {
     testWidgets('$name wears its own border, shadow and radio', (tester) async {
       await tester.pumpWidget(
@@ -93,7 +105,9 @@ void main() {
     expect(tester.getTopLeft(find.text('English')).dx, closeTo(before, 0.01));
   });
 
-  testWidgets('the whole row is the tap target, selected or not', (tester) async {
+  testWidgets('the whole row is the tap target, selected or not', (
+    tester,
+  ) async {
     var taps = 0;
     await tester.pumpWidget(
       _wrap(
@@ -146,8 +160,11 @@ void main() {
     );
 
     final data = tester.getSemantics(find.byType(OptionRow)).getSemanticsData();
-    expect(data.flagsCollection.isInMutuallyExclusiveGroup, isTrue,
-        reason: 'a one-of-many pick must announce as a radio');
+    expect(
+      data.flagsCollection.isInMutuallyExclusiveGroup,
+      isTrue,
+      reason: 'a one-of-many pick must announce as a radio',
+    );
     // Tristate, not bool: "selected" also carries whether the row HAS a
     // selected state at all, which is what makes it a radio and not a label.
     expect(data.flagsCollection.isSelected, Tristate.isTrue);
@@ -175,8 +192,9 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('height is 64 by default and honours the tighter variants',
-      (tester) async {
+  testWidgets('height is 64 by default and honours the tighter variants', (
+    tester,
+  ) async {
     for (final double height in [64.0, 56.0, 48.0]) {
       await tester.pumpWidget(
         _wrap(

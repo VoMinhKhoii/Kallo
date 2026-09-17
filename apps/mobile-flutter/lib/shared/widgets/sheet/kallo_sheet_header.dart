@@ -32,9 +32,9 @@ class KalloSheetHeader extends StatelessWidget {
     this.onClose,
     this.closeEnabled = true,
   }) : assert(
-          title != null || titleWidget != null,
-          'Provide either a title or a titleWidget',
-        );
+         title != null || titleWidget != null,
+         'Provide either a title or a titleWidget',
+       );
 
   final String? title;
 
@@ -91,9 +91,10 @@ class KalloSheetHeader extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                onPressed: closeEnabled
-                    ? (onClose ?? () => Navigator.of(context).pop())
-                    : null,
+                onPressed:
+                    closeEnabled
+                        ? (onClose ?? () => Navigator.of(context).pop())
+                        : null,
                 icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
                 color: KalloColors.textMuted,
                 tooltip: 'common.cancel'.tr(),

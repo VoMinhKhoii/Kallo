@@ -63,13 +63,12 @@ const _draft = OnboardingDraft(
   OnboardingDraft? draft,
   String? region = 'AU',
   String language = 'en',
-}) =>
-    buildOnboardingAnswers(
-      profile: profile,
-      draft: draft,
-      deviceRegion: region,
-      deviceLanguage: language,
-    );
+}) => buildOnboardingAnswers(
+  profile: profile,
+  draft: draft,
+  deviceRegion: region,
+  deviceLanguage: language,
+);
 
 OnboardingAnswers _answers({
   ProfileRow? profile,
@@ -77,8 +76,12 @@ OnboardingAnswers _answers({
   String? region = 'AU',
   String language = 'en',
 }) =>
-    _seed(profile: profile, draft: draft, region: region, language: language)
-        .answers;
+    _seed(
+      profile: profile,
+      draft: draft,
+      region: region,
+      language: language,
+    ).answers;
 
 void main() {
   group('precedence', () {
@@ -125,33 +128,35 @@ void main() {
       expect(answers.cooking.brothConsumption, BrothConsumption.leaveIt);
     });
 
-    test('with neither, the device fills what it can and the rest is neutral',
-        () {
-      final seed = _seed(region: 'VN', language: 'vi');
-      final answers = seed.answers;
+    test(
+      'with neither, the device fills what it can and the rest is neutral',
+      () {
+        final seed = _seed(region: 'VN', language: 'vi');
+        final answers = seed.answers;
 
-      expect(seed.device.deviceCountry, 'Vietnam');
-      expect(answers.countryOfOrigin, 'Vietnam');
-      expect(answers.countryOfResidence, 'Vietnam');
-      expect(answers.preferredLocale, 'vi');
-      // Nothing invents a body: the metrics stay blank and screen 6 says so.
-      expect(answers.biologicalSex, isNull);
-      expect(answers.weightKg, isNull);
-      expect(answers.heightCm, isNull);
-      expect(answers.age, isNull);
-      expect(answers.activityLevel, ActivityLevel.light);
-      expect(answers.goal, Goal.maintaining);
-      expect(answers.aggression, 0.5);
-      expect(answers.carbSplit, CarbSplit.moderateCarb);
-      expect(answers.deficitOverride, isNull);
-      expect(answers.cooking.toJson(), {
-        'oilUsage': 'normal',
-        'defaultRicePortion': 'medium',
-        'sugarBraised': 'medium',
-        'defaultProteinPortion': 'medium',
-        'brothConsumption': 'some',
-      });
-    });
+        expect(seed.device.deviceCountry, 'Vietnam');
+        expect(answers.countryOfOrigin, 'Vietnam');
+        expect(answers.countryOfResidence, 'Vietnam');
+        expect(answers.preferredLocale, 'vi');
+        // Nothing invents a body: the metrics stay blank and screen 6 says so.
+        expect(answers.biologicalSex, isNull);
+        expect(answers.weightKg, isNull);
+        expect(answers.heightCm, isNull);
+        expect(answers.age, isNull);
+        expect(answers.activityLevel, ActivityLevel.light);
+        expect(answers.goal, Goal.maintaining);
+        expect(answers.aggression, 0.5);
+        expect(answers.carbSplit, CarbSplit.moderateCarb);
+        expect(answers.deficitOverride, isNull);
+        expect(answers.cooking.toJson(), {
+          'oilUsage': 'normal',
+          'defaultRicePortion': 'medium',
+          'sugarBraised': 'medium',
+          'defaultProteinPortion': 'medium',
+          'brothConsumption': 'some',
+        });
+      },
+    );
 
     test('a region Kallo does not list — or none at all — leaves the countries '
         'unanswered rather than wrong', () {
@@ -232,8 +237,11 @@ void main() {
       expect(cooking.oilUsage, OilUsage.heavy);
       expect(cooking.sugarBraised, SugarBraised.high);
       expect(cooking.defaultRicePortion, RicePortion.medium);
-      expect(cooking.toJson().keys, hasLength(5),
-          reason: 'screen 5 opens pre-answered, so all five are always set');
+      expect(
+        cooking.toJson().keys,
+        hasLength(5),
+        reason: 'screen 5 opens pre-answered, so all five are always set',
+      );
     });
   });
 

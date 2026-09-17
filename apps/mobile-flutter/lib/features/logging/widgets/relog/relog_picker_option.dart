@@ -90,9 +90,7 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                       widget.candidate.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: dashBody(
-                        color: KalloColors.bandForeground,
-                      ),
+                      style: dashBody(color: KalloColors.bandForeground),
                     ),
                     Text(
                       macroSplit,

@@ -14,17 +14,17 @@ Widget _wrap(
   StreamStatus status = StreamStatus.estimating,
   bool reduceMotion = false,
   Locale locale = const Locale('en'),
-}) =>
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      // tr() resolves through EasyLocalization's own controller — setting
-      // MaterialApp.locale alone leaves it on English.
-      startLocale: locale,
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+}) => EasyLocalization(
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  // tr() resolves through EasyLocalization's own controller — setting
+  // MaterialApp.locale alone leaves it on English.
+  startLocale: locale,
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: locale,
@@ -39,17 +39,18 @@ Widget _wrap(
             ),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 /// One full verb dwell — kept in step with `_verbDwell` in the widget.
 const _dwell = Duration(milliseconds: 2400);
 
 /// The rendered ticker line, prefix included.
-String _line(WidgetTester tester) => tester
-    .widgetList<Text>(find.byType(Text))
-    .map((t) => t.textSpan!.toPlainText())
-    .join();
+String _line(WidgetTester tester) =>
+    tester
+        .widgetList<Text>(find.byType(Text))
+        .map((t) => t.textSpan!.toPlainText())
+        .join();
 
 /// Just the part that flips — the last Text, after any static prefix.
 String _flipped(WidgetTester tester) =>
@@ -68,7 +69,12 @@ void main() {
   });
 
   testWidgets('a stage opens on its first, most literal verb', (tester) async {
-    await tester.pumpWidget(_wrap(const PhaseFrame(StreamStatus.estimating), status: StreamStatus.estimating));
+    await tester.pumpWidget(
+      _wrap(
+        const PhaseFrame(StreamStatus.estimating),
+        status: StreamStatus.estimating,
+      ),
+    );
     await tester.pump();
     expect(_line(tester), 'Weighing…');
     await tester.pumpWidget(_wrap(null, reduceMotion: true));
@@ -77,7 +83,12 @@ void main() {
   testWidgets('a slow stage cycles its verbs so the line keeps moving', (
     tester,
   ) async {
-    await tester.pumpWidget(_wrap(const PhaseFrame(StreamStatus.estimating), status: StreamStatus.estimating));
+    await tester.pumpWidget(
+      _wrap(
+        const PhaseFrame(StreamStatus.estimating),
+        status: StreamStatus.estimating,
+      ),
+    );
     await tester.pump();
     expect(_line(tester), 'Weighing…');
 
@@ -104,13 +115,23 @@ void main() {
   });
 
   testWidgets('a new stage restarts at its own first verb', (tester) async {
-    await tester.pumpWidget(_wrap(const PhaseFrame(StreamStatus.estimating), status: StreamStatus.estimating));
+    await tester.pumpWidget(
+      _wrap(
+        const PhaseFrame(StreamStatus.estimating),
+        status: StreamStatus.estimating,
+      ),
+    );
     await tester.pump();
     await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Calculating…');
 
-    await tester.pumpWidget(_wrap(const PhaseFrame(StreamStatus.assembling), status: StreamStatus.assembling));
+    await tester.pumpWidget(
+      _wrap(
+        const PhaseFrame(StreamStatus.assembling),
+        status: StreamStatus.assembling,
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Plating…');
 
@@ -209,7 +230,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _wrap(const PhaseFrame(StreamStatus.matching), status: StreamStatus.matching, reduceMotion: true),
+      _wrap(
+        const PhaseFrame(StreamStatus.matching),
+        status: StreamStatus.matching,
+        reduceMotion: true,
+      ),
     );
     await tester.pump();
     expect(_line(tester), 'Foraging…');
@@ -238,7 +263,11 @@ void main() {
 
   testWidgets('the verb carries the brand brown', (tester) async {
     await tester.pumpWidget(
-      _wrap(const PhaseFrame(StreamStatus.connecting), status: StreamStatus.connecting, reduceMotion: true),
+      _wrap(
+        const PhaseFrame(StreamStatus.connecting),
+        status: StreamStatus.connecting,
+        reduceMotion: true,
+      ),
     );
     await tester.pump();
     final span = tester.widget<Text>(find.byType(Text)).textSpan! as TextSpan;

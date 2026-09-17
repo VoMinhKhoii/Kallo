@@ -26,14 +26,10 @@ class PlaceholderScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
             // Back affordance: a deep link can land here directly, so the
             // header must always offer a way out (pop if possible, else home).
-            child: AppHeader(
-              onBack: () => popOrOpenLogging(context),
-            ),
+            child: AppHeader(onBack: () => popOrOpenLogging(context)),
           ),
           Expanded(
-            child: Center(
-              child: Text(tr(titleKey), style: kSectionHeader()),
-            ),
+            child: Center(child: Text(tr(titleKey), style: kSectionHeader())),
           ),
         ],
       ),

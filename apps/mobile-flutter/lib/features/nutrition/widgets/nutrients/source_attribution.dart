@@ -63,43 +63,44 @@ void _showCitations(BuildContext context) {
   final bottomInset = MediaQuery.of(context).padding.bottom;
   showNhamSheet<void>(
     context,
-    builder: (_) => KalloSheetSurface(
-      // Citation list grows with the data source count — scroll, don't clip.
-      scrollable: true,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          KalloSheetHeader(title: tr('nutrition.sources.title')),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp5,
-              KalloSpacing.sp1,
-              KalloSpacing.sp5,
-              bottomInset + KalloSpacing.sp5,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(tr('nutrition.sources.intro'), style: dashMeta()),
-                const SizedBox(height: KalloSpacing.sp4),
-                _Citation(
-                  label: tr('nutrition.targetSources.whoFao'),
-                  detail: tr('nutrition.sources.whoFao'),
+    builder:
+        (_) => KalloSheetSurface(
+          // Citation list grows with the data source count — scroll, don't clip.
+          scrollable: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              KalloSheetHeader(title: tr('nutrition.sources.title')),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp5,
+                  KalloSpacing.sp1,
+                  KalloSpacing.sp5,
+                  bottomInset + KalloSpacing.sp5,
                 ),
-                _Citation(
-                  label: tr('nutrition.targetSources.vietnamRda'),
-                  detail: tr('nutrition.sources.vietnamRda'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tr('nutrition.sources.intro'), style: dashMeta()),
+                    const SizedBox(height: KalloSpacing.sp4),
+                    _Citation(
+                      label: tr('nutrition.targetSources.whoFao'),
+                      detail: tr('nutrition.sources.whoFao'),
+                    ),
+                    _Citation(
+                      label: tr('nutrition.targetSources.vietnamRda'),
+                      detail: tr('nutrition.sources.vietnamRda'),
+                    ),
+                    _Citation(
+                      label: tr('nutrition.targetSources.nasem'),
+                      detail: tr('nutrition.sources.nasem'),
+                    ),
+                  ],
                 ),
-                _Citation(
-                  label: tr('nutrition.targetSources.nasem'),
-                  detail: tr('nutrition.sources.nasem'),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
+        ),
   );
 }
 

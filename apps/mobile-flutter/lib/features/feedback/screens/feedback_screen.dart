@@ -212,26 +212,28 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           title: tr('settings.feedback.title'),
           onBack: () => Navigator.of(context).pop(),
         ),
-        child: _sent
-            ? FeedbackSuccess(
-                onDone: () => Navigator.of(context).pop(),
-                onSendAnother: _reset,
-              )
-            : FeedbackForm(
-                type: _type,
-                onTypeChanged: (v) => setState(() => _type = v),
-                message: _message,
-                image: _image,
-                busy: _busy,
-                error: _error,
-                onPickImage: _pickImage,
-                onRemoveImage: () => setState(() {
-                  _image = null;
-                  _uploadedPath = null;
-                  _uploadedForImagePath = null;
-                }),
-                onSubmit: _submit,
-              ),
+        child:
+            _sent
+                ? FeedbackSuccess(
+                  onDone: () => Navigator.of(context).pop(),
+                  onSendAnother: _reset,
+                )
+                : FeedbackForm(
+                  type: _type,
+                  onTypeChanged: (v) => setState(() => _type = v),
+                  message: _message,
+                  image: _image,
+                  busy: _busy,
+                  error: _error,
+                  onPickImage: _pickImage,
+                  onRemoveImage:
+                      () => setState(() {
+                        _image = null;
+                        _uploadedPath = null;
+                        _uploadedForImagePath = null;
+                      }),
+                  onSubmit: _submit,
+                ),
       ),
     );
   }

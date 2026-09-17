@@ -9,42 +9,43 @@ import 'package:kallo_mobile/models/logging/cheat.dart';
 import '../../../l10n_test_loader.dart';
 
 Widget _wrap(Widget child) => EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
           home: Scaffold(body: SingleChildScrollView(child: child)),
         ),
-      ),
-    );
+  ),
+);
 
 /// One protein slider (0→120g across the scale) defaulting to level 5 (60g),
 /// so the untouched card reads `≈ 240 kcal`.
 CheatSliderSpec _spec({CheatClarifyingQuestion? clarify}) => CheatSliderSpec(
-      mealSlot: 'dinner',
-      confidence: 'medium',
-      clarifyingQuestion: clarify,
-      sliders: const [
-        CheatSlider(
-          key: CheatSliderKey.protein,
-          label: 'Meat / seafood',
-          defaultLevel: 5,
-          anchors: [
-            CheatSliderAnchor(level: 0, label: 'none', proteinG: 0),
-            CheatSliderAnchor(level: 2, label: 'a taste', proteinG: 24),
-            CheatSliderAnchor(level: 4, label: 'a plate', proteinG: 48),
-            CheatSliderAnchor(level: 6, label: 'seconds', proteinG: 72),
-            CheatSliderAnchor(level: 8, label: 'thirds', proteinG: 96),
-            CheatSliderAnchor(level: 10, label: 'the feast', proteinG: 120),
-          ],
-        ),
+  mealSlot: 'dinner',
+  confidence: 'medium',
+  clarifyingQuestion: clarify,
+  sliders: const [
+    CheatSlider(
+      key: CheatSliderKey.protein,
+      label: 'Meat / seafood',
+      defaultLevel: 5,
+      anchors: [
+        CheatSliderAnchor(level: 0, label: 'none', proteinG: 0),
+        CheatSliderAnchor(level: 2, label: 'a taste', proteinG: 24),
+        CheatSliderAnchor(level: 4, label: 'a plate', proteinG: 48),
+        CheatSliderAnchor(level: 6, label: 'seconds', proteinG: 72),
+        CheatSliderAnchor(level: 8, label: 'thirds', proteinG: 96),
+        CheatSliderAnchor(level: 10, label: 'the feast', proteinG: 120),
       ],
-    );
+    ),
+  ],
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -52,14 +53,15 @@ void main() {
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-    );
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('renders defaults and updates the kcal readout on slide',
-      (tester) async {
+  testWidgets('renders defaults and updates the kcal readout on slide', (
+    tester,
+  ) async {
     CheatSliderLevels? confirmed;
     await tester.pumpWidget(
       _wrap(
@@ -104,8 +106,9 @@ void main() {
     expect(find.textContaining('≈ 480'), findsOneWidget);
   });
 
-  testWidgets('clarifying question renders option chips and fires onClarify',
-      (tester) async {
+  testWidgets('clarifying question renders option chips and fires onClarify', (
+    tester,
+  ) async {
     String? answered;
     await tester.pumpWidget(
       _wrap(

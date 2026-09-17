@@ -48,6 +48,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile
 
+      # Nothing checked formatting, so the repo drifted into two formatter
+      # generations and a feature diff could not be reformatted without
+      # dragging a hundred unrelated lines with it. Runs on the SDK pinned
+      # above, so this and a contributor's local `dart format` cannot disagree.
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
       - name: Analyze
         run: flutter analyze
 

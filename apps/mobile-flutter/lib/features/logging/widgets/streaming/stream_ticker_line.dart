@@ -64,8 +64,7 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
   /// dish rather than a verb.
   bool _showingItem = false;
 
-  bool get _hasItem =>
-      widget.frame is ItemFrame || widget.frame is MacrosFrame;
+  bool get _hasItem => widget.frame is ItemFrame || widget.frame is MacrosFrame;
 
   bool get _reduceMotion => MediaQuery.disableAnimationsOf(context);
 

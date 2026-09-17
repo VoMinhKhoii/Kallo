@@ -30,35 +30,37 @@ final _session = Session(
 );
 
 Widget _app({required bool bundleFails}) => ProviderScope(
-      overrides: [
-        currentSessionProvider.overrideWithValue(_session),
-        if (bundleFails)
-          dashboardBundleProvider.overrideWith(
-            (ref, args) async => throw Exception('bundle boom'),
-          ),
-      ],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  overrides: [
+    currentSessionProvider.overrideWithValue(_session),
+    if (bundleFails)
+      dashboardBundleProvider.overrideWith(
+        (ref, args) async => throw Exception('bundle boom'),
+      ),
+  ],
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
             home: Scaffold(
               body: Consumer(
-                builder: (context, ref, _) => TextButton(
-                  onPressed: () => showWeightLogSheet(context, ref),
-                  child: const Text('log weight'),
-                ),
+                builder:
+                    (context, ref, _) => TextButton(
+                      onPressed: () => showWeightLogSheet(context, ref),
+                      child: const Text('log weight'),
+                    ),
               ),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,8 +74,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('a failed dashboard bundle surfaces a toast, not a dead end',
-      (tester) async {
+  testWidgets('a failed dashboard bundle surfaces a toast, not a dead end', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app(bundleFails: true));
     await tester.pumpAndSettle();
 

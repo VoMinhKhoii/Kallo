@@ -226,9 +226,7 @@ class BarcodeRef extends ComposerPickRef {
 
   @override
   bool operator ==(Object other) =>
-      other is BarcodeRef &&
-      other.barcode == barcode &&
-      other.grams == grams;
+      other is BarcodeRef && other.barcode == barcode && other.grams == grams;
 
   @override
   int get hashCode => Object.hash(barcode, grams);

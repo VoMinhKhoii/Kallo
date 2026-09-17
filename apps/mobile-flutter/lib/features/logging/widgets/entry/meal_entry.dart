@@ -138,9 +138,10 @@ class _MealEntryState extends State<MealEntry> {
     // the per-item macros re-adds figures the API already rounded once each
     // ("490 kcal" staged against "489" saved). Only an edit that will really be
     // sent makes the local sum the right number.
-    final totals = _draft.dirty
-        ? recalculateTotals(_draft.items)
-        : widget.parsedMeal.totalMacros;
+    final totals =
+        _draft.dirty
+            ? recalculateTotals(_draft.items)
+            : widget.parsedMeal.totalMacros;
 
     // No bottom margin — the feed's list/footer stack owns the gap below.
     return Column(

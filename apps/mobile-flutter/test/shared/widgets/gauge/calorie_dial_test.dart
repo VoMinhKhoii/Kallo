@@ -14,12 +14,15 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: Center(child: SizedBox(width: 358, child: child))),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(
+            body: Center(child: SizedBox(width: 358, child: child)),
+          ),
+        ),
   ),
 );
 
@@ -29,9 +32,7 @@ Future<void> _pump(
   required MacroGoal? goal,
 }) async {
   await tester.pumpWidget(
-    _wrap(
-      CalorieDial(logged: logged, target: 2000, goal: goal),
-    ),
+    _wrap(CalorieDial(logged: logged, target: 2000, goal: goal)),
   );
   await tester.pumpAndSettle();
 }

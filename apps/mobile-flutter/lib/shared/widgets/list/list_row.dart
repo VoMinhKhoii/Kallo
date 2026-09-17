@@ -74,14 +74,12 @@ class _ListRowState extends State<ListRow> {
   @override
   Widget build(BuildContext context) {
     final Color inkColor = widget.danger ? KalloColors.danger : kInk;
-    final Color fill =
-        widget.danger ? KalloColors.danger10 : KalloColors.hover;
+    final Color fill = widget.danger ? KalloColors.danger10 : KalloColors.hover;
 
     final row = AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeInOut,
-      constraints:
-          BoxConstraints(minHeight: widget.subline != null ? 60 : 52),
+      constraints: BoxConstraints(minHeight: widget.subline != null ? 60 : 52),
       color: _pressed ? fill : Colors.transparent,
       child: Row(
         children: [
@@ -89,7 +87,8 @@ class _ListRowState extends State<ListRow> {
             SizedBox(
               width: KalloIcons.size,
               child: Center(
-                child: widget.leading ??
+                child:
+                    widget.leading ??
                     Icon(widget.icon, size: KalloIcons.size, color: inkColor),
               ),
             ),
@@ -100,10 +99,7 @@ class _ListRowState extends State<ListRow> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.label,
-                  style: dashBody(color: inkColor),
-                ),
+                Text(widget.label, style: dashBody(color: inkColor)),
                 if (widget.subline != null) ...[
                   const SizedBox(height: 2),
                   Text(
@@ -128,24 +124,26 @@ class _ListRowState extends State<ListRow> {
       return Opacity(opacity: opacity, child: row);
     }
 
-    final Widget content = _interactive
-        ? GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onTap,
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
-            child: row,
-          )
-        : row;
+    final Widget content =
+        _interactive
+            ? GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onTap,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              child: row,
+            )
+            : row;
 
     return Semantics(
       button: true,
       enabled: _interactive,
       excludeSemantics: true,
-      label: widget.subline != null
-          ? '${widget.label}, ${widget.subline}'
-          : widget.label,
+      label:
+          widget.subline != null
+              ? '${widget.label}, ${widget.subline}'
+              : widget.label,
       // The accessibility action goes the same way the gesture does: a busy
       // row that still exposed `onTap` could be fired from VoiceOver while the
       // touch target was already inert.

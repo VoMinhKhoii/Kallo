@@ -13,12 +13,13 @@ import '../l10n_test_loader.dart';
 /// The sheet chrome every sheet inherits: a grabber saying the surface can be
 /// dragged, and a close X that starts on the sheet's own content inset.
 Widget _app() => EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
@@ -28,8 +29,8 @@ Widget _app() => EasyLocalization(
             ),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,8 +44,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('the header carries a grabber above the title row',
-      (tester) async {
+  testWidgets('the header carries a grabber above the title row', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
@@ -63,16 +65,26 @@ void main() {
     final header = tester.getRect(find.byType(KalloSheetHeader));
     final barRect = tester.getRect(grabber);
     final title = tester.getRect(find.text('Log weight'));
-    expect(barRect.top - header.top, closeTo(KalloSpacing.sp2, 0.5),
-        reason: 'the grabber sits ~8pt off the sheet top');
-    expect(barRect.bottom, lessThan(title.top),
-        reason: 'the grabber sits ABOVE the title row');
-    expect(barRect.center.dx, closeTo(header.center.dx, 0.5),
-        reason: 'the grabber is centred');
+    expect(
+      barRect.top - header.top,
+      closeTo(KalloSpacing.sp2, 0.5),
+      reason: 'the grabber sits ~8pt off the sheet top',
+    );
+    expect(
+      barRect.bottom,
+      lessThan(title.top),
+      reason: 'the grabber sits ABOVE the title row',
+    );
+    expect(
+      barRect.center.dx,
+      closeTo(header.center.dx, 0.5),
+      reason: 'the grabber is centred',
+    );
   });
 
-  testWidgets('the close X starts on the sheet\'s 16pt content inset',
-      (tester) async {
+  testWidgets('the close X starts on the sheet\'s 16pt content inset', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
@@ -82,8 +94,11 @@ void main() {
     // The GLYPH, not its tap target, is what the eye lines up against the
     // sheet's body. It used to sit 8pt of padding plus IconButton's own 48pt
     // centring — 32pt in, level with nothing.
-    expect(glyph.left - header.left, closeTo(KalloSpacing.sp4, 0.5),
-        reason: 'the X must start on the content inset');
+    expect(
+      glyph.left - header.left,
+      closeTo(KalloSpacing.sp4, 0.5),
+      reason: 'the X must start on the content inset',
+    );
 
     // The target still honours 44pt, by extending inward rather than by
     // pushing the glyph in.

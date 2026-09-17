@@ -2,7 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/profile/onboarding.dart';
-import '../../../../shared/logic/display_format.dart' show formatCount, localeOf;
+import '../../../../shared/logic/display_format.dart'
+    show formatCount, localeOf;
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/logic/tdee.dart';
 import '../../../../shared/widgets/form/option_row.dart';
@@ -53,11 +54,12 @@ class TargetCard extends StatelessWidget {
           CompositionBar(
             height: barHeight,
             gap: 4,
-            segments: compositionFromGrams((
-              protein: macros.proteinG,
-              carbohydrate: macros.carbsG,
-              fat: macros.fatG,
-            )).segments,
+            segments:
+                compositionFromGrams((
+                  protein: macros.proteinG,
+                  carbohydrate: macros.carbsG,
+                  fat: macros.fatG,
+                )).segments,
           ),
           const SizedBox(height: KalloSpacing.sp3),
           TargetMacroRows(macros: macros),
@@ -86,22 +88,22 @@ class TargetCard extends StatelessWidget {
   /// pairing to read, and a five-figure target at 1.3x on a 320pt phone runs
   /// past the card.
   Widget _hero(BuildContext context) => FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              formatCount(macros.calories.round(), localeOf(context)),
-              style: dashHero(),
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            Text(tr('onboarding.bodyMetrics.perDay'), style: dashMeta()),
-          ],
+    fit: BoxFit.scaleDown,
+    alignment: Alignment.centerLeft,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          formatCount(macros.calories.round(), localeOf(context)),
+          style: dashHero(),
         ),
-      );
+        const SizedBox(width: KalloSpacing.sp2),
+        Text(tr('onboarding.bodyMetrics.perDay'), style: dashMeta()),
+      ],
+    ),
+  );
 
   /// Protein / fat / carbs, the order the split's own name is quoted in.
   String _ratio(CarbSplit split) {

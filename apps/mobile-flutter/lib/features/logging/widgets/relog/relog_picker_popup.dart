@@ -52,9 +52,11 @@ class RelogPickerPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, box) => box.maxHeight < _minUsableHeight
-        ? RelogPickerCollapsed(onDismiss: onDismiss)
-        : _panel(),
+    builder:
+        (_, box) =>
+            box.maxHeight < _minUsableHeight
+                ? RelogPickerCollapsed(onDismiss: onDismiss)
+                : _panel(),
   );
 
   Widget _panel() {
@@ -62,13 +64,14 @@ class RelogPickerPopup extends StatelessWidget {
     // Three different nothings, not interchangeable: the search failed, nothing
     // matched what you typed, or you have no history. Only the middle retypes.
     final showError = hasError && isEmpty && !isLoading;
-    final emptyMessage = isLoading
-        ? 'logging.relog.searching'.tr()
-        : showError
-        ? 'logging.relog.searchFailed'.tr()
-        : query.isNotEmpty
-        ? 'logging.relog.noResults'.tr()
-        : 'logging.relog.noHistory'.tr();
+    final emptyMessage =
+        isLoading
+            ? 'logging.relog.searching'.tr()
+            : showError
+            ? 'logging.relog.searchFailed'.tr()
+            : query.isNotEmpty
+            ? 'logging.relog.noResults'.tr()
+            : 'logging.relog.noHistory'.tr();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
@@ -89,7 +92,8 @@ class RelogPickerPopup extends StatelessWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: _maxHeight),
-                child: isEmpty
+                child:
+                    isEmpty
                         ? Padding(
                           // The close row above already pays the top inset.
                           padding: const EdgeInsets.all(

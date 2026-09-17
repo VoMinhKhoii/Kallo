@@ -19,42 +19,46 @@ import '../../l10n_test_loader.dart';
 /// and at the app's 1.3x Dynamic Type ceiling.
 class _FakeApiClient extends ApiClient {
   @override
-  Future<T> get<T>(String path) async => const {
-    'results': [
-      {
-        'id': 'fct-rice',
-        'namePrimary': 'Cơm trắng',
-        'nameEn': 'White rice',
-        'state': 'cooked',
-        'per100g': {'caloriesKcal': 130.0, 'proteinG': 2.7},
-      },
-      {
-        'id': 'fct-pork',
-        'namePrimary': 'Thịt heo nạc luộc',
-        'nameEn': 'Lean pork, boiled',
-        'state': 'cooked',
-        'per100g': {'caloriesKcal': 165.0, 'proteinG': 27.0},
-      },
-    ],
-  } as T;
+  Future<T> get<T>(String path) async =>
+      const {
+            'results': [
+              {
+                'id': 'fct-rice',
+                'namePrimary': 'Cơm trắng',
+                'nameEn': 'White rice',
+                'state': 'cooked',
+                'per100g': {'caloriesKcal': 130.0, 'proteinG': 2.7},
+              },
+              {
+                'id': 'fct-pork',
+                'namePrimary': 'Thịt heo nạc luộc',
+                'nameEn': 'Lean pork, boiled',
+                'state': 'cooked',
+                'per100g': {'caloriesKcal': 165.0, 'proteinG': 27.0},
+              },
+            ],
+          }
+          as T;
 }
 
 /// A results list long enough to fill the sheet — the state in which the added
 /// summary lands off-screen.
 class _LongResultsApiClient extends ApiClient {
   @override
-  Future<T> get<T>(String path) async => {
-    'results': [
-      for (var i = 0; i < 12; i++)
-        {
-          'id': 'fct-$i',
-          'namePrimary': 'Món số $i',
-          'nameEn': 'Dish number $i',
-          'state': 'cooked',
-          'per100g': {'caloriesKcal': 100.0 + i, 'proteinG': 5.0},
-        },
-    ],
-  } as T;
+  Future<T> get<T>(String path) async =>
+      {
+            'results': [
+              for (var i = 0; i < 12; i++)
+                {
+                  'id': 'fct-$i',
+                  'namePrimary': 'Món số $i',
+                  'nameEn': 'Dish number $i',
+                  'state': 'cooked',
+                  'per100g': {'caloriesKcal': 100.0 + i, 'proteinG': 5.0},
+                },
+            ],
+          }
+          as T;
 }
 
 const _viewports = <String, Size>{
@@ -71,12 +75,13 @@ Widget _wrap(Widget child, {ApiClient? api}) => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        home: Scaffold(body: child),
-      ),
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: Scaffold(body: child),
+          ),
     ),
   ),
 );
@@ -129,11 +134,16 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             Builder(
-              builder: (c) => TextButton(
-                onPressed: () =>
-                    showManualLogSheet(c, userId: 'u1', date: '2026-01-01'),
-                child: const Text('open'),
-              ),
+              builder:
+                  (c) => TextButton(
+                    onPressed:
+                        () => showManualLogSheet(
+                          c,
+                          userId: 'u1',
+                          date: '2026-01-01',
+                        ),
+                    child: const Text('open'),
+                  ),
             ),
           ),
         );
@@ -162,8 +172,9 @@ void main() {
     }
   }
 
-  testWidgets('adding an item scrolls its confirmation into view',
-      (tester) async {
+  testWidgets('adding an item scrolls its confirmation into view', (
+    tester,
+  ) async {
     // The body opens scrolled to the BOTTOM (`reverse: true`), so the "Added"
     // summary and "Save · N kcal" insert ABOVE the current scroll position.
     // With a full results list that put the only confirmation a tap had landed
@@ -172,11 +183,13 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         Builder(
-          builder: (c) => TextButton(
-            onPressed: () =>
-                showManualLogSheet(c, userId: 'u1', date: '2026-01-01'),
-            child: const Text('open'),
-          ),
+          builder:
+              (c) => TextButton(
+                onPressed:
+                    () =>
+                        showManualLogSheet(c, userId: 'u1', date: '2026-01-01'),
+                child: const Text('open'),
+              ),
         ),
         api: _LongResultsApiClient(),
       ),
@@ -195,7 +208,10 @@ void main() {
       'the Added summary',
     );
     // Visible AND reachable — not merely inside the viewport rect.
-    expect(tester.any(find.text('Added').hitTestable()), isTrue,
-        reason: 'the Added summary is not hit-testable');
+    expect(
+      tester.any(find.text('Added').hitTestable()),
+      isTrue,
+      reason: 'the Added summary is not hit-testable',
+    );
   });
 }

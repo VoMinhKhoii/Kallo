@@ -15,15 +15,15 @@ class FriendRowSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            SkeletonCircle(size: 32),
-            SizedBox(width: 12),
-            Expanded(child: SkeletonBar(widthFactor: 0.55, height: 12)),
-          ],
-        ),
-      );
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    child: Row(
+      children: [
+        SkeletonCircle(size: 32),
+        SizedBox(width: 12),
+        Expanded(child: SkeletonBar(widthFactor: 0.55, height: 12)),
+      ],
+    ),
+  );
 }
 
 /// A pulsing column of three friend-row placeholders under a [Semantics]

@@ -82,10 +82,7 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
           opacity: _scrolled ? 1 : 0,
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          child: const SizedBox(
-            height: 1,
-            child: ColoredBox(color: kHairline),
-          ),
+          child: const SizedBox(height: 1, child: ColoredBox(color: kHairline)),
         ),
         Expanded(
           child: Stack(

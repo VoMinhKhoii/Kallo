@@ -36,7 +36,10 @@ Future<List<MealItem>?> pickPortion(
   // came from — the sheet is modal, so nothing can move the row underneath it
   // while it is open. Deriving it from the list rather than from `item` keeps
   // that true if the sheet ever stops being modal.
-  final current = items.firstWhere((it) => it.id == item.id, orElse: () => item);
+  final current = items.firstWhere(
+    (it) => it.id == item.id,
+    orElse: () => item,
+  );
   return applyQuantityChange(
         items,
         original,

@@ -76,7 +76,8 @@ void main() {
       expect(
         tester.takeException(),
         isNull,
-        reason: 'a day cell overflowed LoggingSpacing.stripFor '
+        reason:
+            'a day cell overflowed LoggingSpacing.stripFor '
             '(${LoggingSpacing.strip} at 1.0x) at ${scale}x',
       );
     });

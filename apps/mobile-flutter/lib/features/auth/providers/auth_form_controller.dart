@@ -103,7 +103,8 @@ class AuthFormState {
       action: clearAction ? null : (action ?? this.action),
       error: clearError ? null : (error ?? this.error),
       notice: clearNotice ? null : (notice ?? this.notice),
-      pendingEmail: clearPendingEmail ? null : (pendingEmail ?? this.pendingEmail),
+      pendingEmail:
+          clearPendingEmail ? null : (pendingEmail ?? this.pendingEmail),
     );
   }
 }
@@ -168,10 +169,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       // No session: a confirmation email is on its way. Hold the address so the
       // UI can cross-fade to a real "Check your email" state (not a toast that
       // vanishes before the user reads it).
-      state = state.copyWith(
-        clearAction: true,
-        pendingEmail: email.trim(),
-      );
+      state = state.copyWith(clearAction: true, pendingEmail: email.trim());
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
@@ -207,9 +205,10 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       // grant to reuse. Either path throws GoogleSignInException on cancel.
       final account = await reuseGrantOrAuthenticate(
         lightweight: GoogleSignIn.instance.attemptLightweightAuthentication,
-        authenticate: () => GoogleSignIn.instance.authenticate(
-          scopeHint: const ['email', 'profile'],
-        ),
+        authenticate:
+            () => GoogleSignIn.instance.authenticate(
+              scopeHint: const ['email', 'profile'],
+            ),
       );
       // `authentication` is a synchronous getter in v7; idToken is minted for
       // the `serverClientId` (Web) audience configured at init.

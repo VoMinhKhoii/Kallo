@@ -41,9 +41,10 @@ final composerDraftProvider = StateProvider<MentionSnapshot>((ref) {
 /// disposed with the State that owns it — never by a provider rebuild.
 class ComposerDraftHost {
   ComposerDraftHost(this._ref) {
-    controller = MentionTextEditingController()
-      ..restore(_ref.read(composerDraftProvider))
-      ..addListener(_flush);
+    controller =
+        MentionTextEditingController()
+          ..restore(_ref.read(composerDraftProvider))
+          ..addListener(_flush);
   }
 
   final WidgetRef _ref;

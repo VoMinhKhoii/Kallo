@@ -11,7 +11,17 @@ class BarsPainter extends LoaderPainter {
 
   static const double _dur = 1;
   static const List<double> _heights = [
-    120, 110, 100, 90, 80, 70, 60, 50, 40, 140, 120,
+    120,
+    110,
+    100,
+    90,
+    80,
+    70,
+    60,
+    50,
+    40,
+    140,
+    120,
   ];
   static const List<double> _ys = [10, 15, 20, 25, 30, 35, 40, 45, 50, 0, 10];
 
@@ -53,10 +63,33 @@ class AudioPainter extends LoaderPainter {
 
   /// (x, duration, heights) straight from the upstream value lists.
   static const List<(double, double, List<double>)> _bars = [
-    (0, 4.3, [
-      20, 45, 57, 80, 64, 32, 66, 45, 64, 23, 66, 13, 64, 56, 34, 34, 2, 23,
-      76, 79, 20,
-    ]),
+    (
+      0,
+      4.3,
+      [
+        20,
+        45,
+        57,
+        80,
+        64,
+        32,
+        66,
+        45,
+        64,
+        23,
+        66,
+        13,
+        64,
+        56,
+        34,
+        34,
+        2,
+        23,
+        76,
+        79,
+        20,
+      ],
+    ),
     (15, 2, [80, 55, 33, 5, 75, 23, 73, 33, 12, 14, 60, 80]),
     (30, 1.4, [50, 34, 78, 23, 56, 23, 34, 76, 80, 54, 21, 50]),
     (45, 2, [30, 45, 13, 80, 56, 72, 45, 76, 34, 23, 67, 30]),
@@ -71,12 +104,7 @@ class AudioPainter extends LoaderPainter {
     for (final (x, dur, heights) in _bars) {
       final h = sampleLinear(heights, loaderPhase(seconds, dur));
       // The upstream group is flipped vertically, so bars rise from the floor.
-      final rect = Rect.fromLTWH(
-        x * sx,
-        (80 - h) * sy,
-        10 * sx,
-        h * sy,
-      );
+      final rect = Rect.fromLTWH(x * sx, (80 - h) * sy, 10 * sx, h * sy);
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, Radius.circular(3 * sx)),
         paint,

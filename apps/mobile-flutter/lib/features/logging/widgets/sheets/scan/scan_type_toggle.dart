@@ -27,7 +27,11 @@ enum ScanType { barcode, label }
 /// Shown only while a branch is still at its entry step — once a product or a
 /// scanned label is on screen, switching would throw that work away.
 class ScanTypeToggle extends StatelessWidget {
-  const ScanTypeToggle({super.key, required this.value, required this.onChange});
+  const ScanTypeToggle({
+    super.key,
+    required this.value,
+    required this.onChange,
+  });
 
   final ScanType value;
   final ValueChanged<ScanType> onChange;

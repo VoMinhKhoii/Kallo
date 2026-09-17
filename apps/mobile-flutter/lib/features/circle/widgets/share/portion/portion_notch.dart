@@ -53,7 +53,7 @@ class PortionNotch extends StatelessWidget {
     // +6 for the shell's border and padding, so the grip lands on the seam
     // between two cells rather than on the shell's outer edge.
     final centre = 6 + leftParts * perPart;
-    
+
     final seatLeft = seats[boundary];
     final seatRight = seats[boundary + 1];
 
@@ -102,9 +102,7 @@ class PortionNotch extends StatelessWidget {
             // Local to the NOTCH, so re-origin against its own left edge: the
             // grip is centred on the boundary and the box is the 44pt target.
             final local = box.globalToLocal(details.globalPosition);
-            onDragUpdate(
-              centre + local.dx - PortionMetrics.gripTarget / 2 - 6,
-            );
+            onDragUpdate(centre + local.dx - PortionMetrics.gripTarget / 2 - 6);
           },
           onHorizontalDragEnd: (_) => onDragEnd(),
           onHorizontalDragCancel: onDragEnd,
@@ -115,7 +113,8 @@ class PortionNotch extends StatelessWidget {
               width: held ? 14 : 12,
               // At rest the grip is exactly the shell; held, it reaches past
               // it, where no cell gap can follow.
-              height: PortionMetrics.shellHeight -
+              height:
+                  PortionMetrics.shellHeight -
                   8 +
                   (held ? PortionMetrics.gripOverhang * 2 : 0),
               decoration: BoxDecoration(

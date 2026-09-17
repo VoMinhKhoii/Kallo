@@ -55,19 +55,22 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              home: Scaffold(
-                body: Builder(
-                  builder: (c) => TextButton(
-                    onPressed: () => showMealModeSheet(c, current: current),
-                    child: const Text('open'),
+            builder:
+                (context) => MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  home: Scaffold(
+                    body: Builder(
+                      builder:
+                          (c) => TextButton(
+                            onPressed:
+                                () => showMealModeSheet(c, current: current),
+                            child: const Text('open'),
+                          ),
+                    ),
                   ),
                 ),
-              ),
-            ),
           ),
         ),
       ),

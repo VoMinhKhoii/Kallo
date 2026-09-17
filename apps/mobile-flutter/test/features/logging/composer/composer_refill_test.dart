@@ -57,14 +57,15 @@ void main() {
       fallbackLocale: const Locale('en'),
       assetLoader: const FsL10nLoader(),
       child: Builder(
-        builder: (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: const Scaffold(
-            body: FeedArea(profile: _profile, date: '2026-01-01'),
-          ),
-        ),
+        builder:
+            (context) => MaterialApp(
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+              locale: context.locale,
+              home: const Scaffold(
+                body: FeedArea(profile: _profile, date: '2026-01-01'),
+              ),
+            ),
       ),
     ),
   );

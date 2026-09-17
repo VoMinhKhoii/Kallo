@@ -33,12 +33,13 @@ Widget _host(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: child),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: child),
+        ),
   ),
 );
 
@@ -86,9 +87,7 @@ void main() {
     return review;
   }
 
-  testWidgets('leads with the calorie figure, then the macros', (
-    tester,
-  ) async {
+  testWidgets('leads with the calorie figure, then the macros', (tester) async {
     await pumpStep(tester);
 
     expect(find.text('Bánh quy Cosy'), findsOneWidget);

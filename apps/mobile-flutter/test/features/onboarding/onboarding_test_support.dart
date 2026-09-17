@@ -22,9 +22,9 @@ import '../../l10n_test_loader.dart';
 Future<void> initOnboardingTest({bool fonts = true}) async {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/shared_preferences'),
-    (call) async => call.method == 'getAll' ? <String, Object>{} : true,
-  );
+        const MethodChannel('plugins.flutter.io/shared_preferences'),
+        (call) async => call.method == 'getAll' ? <String, Object>{} : true,
+      );
   await EasyLocalization.ensureInitialized();
   if (fonts) await loadAppFonts();
 }
@@ -32,46 +32,46 @@ Future<void> initOnboardingTest({bool fonts = true}) async {
 const testUserId = '11111111-1111-1111-1111-111111111111';
 
 Session testSession() => Session(
-      accessToken: 'token',
-      tokenType: 'bearer',
-      user: const User(
-        id: testUserId,
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '2026-07-28T00:00:00.000Z',
-      ),
-    );
+  accessToken: 'token',
+  tokenType: 'bearer',
+  user: const User(
+    id: testUserId,
+    appMetadata: {},
+    userMetadata: {},
+    aud: 'authenticated',
+    createdAt: '2026-07-28T00:00:00.000Z',
+  ),
+);
 
 /// The l10n host every onboarding test pumps under: `assets/l10n` off disk (a
 /// >50KiB locale JSON makes easy_localization isolate-decode and stall forever
 /// under fake-async).
 Widget localized(WidgetBuilder build) => EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      startLocale: const Locale('en'),
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(builder: build),
-    );
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  startLocale: const Locale('en'),
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(builder: build),
+);
 
 Widget localizedHome(Widget home) => localized(
-      (context) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        home: home,
-      ),
-    );
+  (context) => MaterialApp(
+    localizationsDelegates: context.localizationDelegates,
+    supportedLocales: context.supportedLocales,
+    locale: context.locale,
+    home: home,
+  ),
+);
 
 Widget localizedRouter(GoRouter router) => localized(
-      (context) => MaterialApp.router(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        routerConfig: router,
-      ),
-    );
+  (context) => MaterialApp.router(
+    localizationsDelegates: context.localizationDelegates,
+    supportedLocales: context.supportedLocales,
+    locale: context.locale,
+    routerConfig: router,
+  ),
+);
 
 /// The wizard's live answers, defaulted to a complete 30-year-old 70 kg male
 /// body so the derived targets exist. Pass `body: false` for the blank-metrics
@@ -90,28 +90,27 @@ OnboardingAnswers testAnswers({
   double? aggression = 0.5,
   CarbSplit carbSplit = CarbSplit.moderateCarb,
   double? deficitOverride,
-}) =>
-    OnboardingAnswers(
-      preferredLocale: locale,
-      countryOfOrigin: origin,
-      countryOfResidence: residence,
-      biologicalSex: body ? sex : null,
-      weightKg: body ? weight : null,
-      heightCm: body ? height : null,
-      age: body ? age : null,
-      activityLevel: activity,
-      goal: goal,
-      aggression: aggression,
-      carbSplit: carbSplit,
-      deficitOverride: deficitOverride,
-      cooking: const CookingHabits(
-        oilUsage: OilUsage.normal,
-        defaultRicePortion: RicePortion.medium,
-        sugarBraised: SugarBraised.medium,
-        defaultProteinPortion: ProteinPortion.medium,
-        brothConsumption: BrothConsumption.some,
-      ),
-    );
+}) => OnboardingAnswers(
+  preferredLocale: locale,
+  countryOfOrigin: origin,
+  countryOfResidence: residence,
+  biologicalSex: body ? sex : null,
+  weightKg: body ? weight : null,
+  heightCm: body ? height : null,
+  age: body ? age : null,
+  activityLevel: activity,
+  goal: goal,
+  aggression: aggression,
+  carbSplit: carbSplit,
+  deficitOverride: deficitOverride,
+  cooking: const CookingHabits(
+    oilUsage: OilUsage.normal,
+    defaultRicePortion: RicePortion.medium,
+    sugarBraised: SugarBraised.medium,
+    defaultProteinPortion: ProteinPortion.medium,
+    brothConsumption: BrothConsumption.some,
+  ),
+);
 
 /// One recorded call on the wizard's sink.
 typedef SinkSave = ({int step, Map<String, dynamic> data, int screenReached});

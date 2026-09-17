@@ -77,9 +77,7 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          KalloSheetHeader(
-            title: tr('groups.createGroup.title'),
-          ),
+          KalloSheetHeader(title: tr('groups.createGroup.title')),
           Flexible(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),

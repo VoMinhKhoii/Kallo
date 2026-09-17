@@ -67,9 +67,13 @@ void main() {
               child: Center(
                 child: SizedBox(
                   width: width,
-                  child: compact
-                      ? MacroDialRow.compact(current: current, target: target)
-                      : MacroDialRow(current: current, target: target),
+                  child:
+                      compact
+                          ? MacroDialRow.compact(
+                            current: current,
+                            target: target,
+                          )
+                          : MacroDialRow(current: current, target: target),
                 ),
               ),
             ),

@@ -18,11 +18,7 @@ import '../widgets/pace_ruler.dart';
 /// `OnboardingAnswers.applyDefaultGoal`. Tapping any row makes the answer the
 /// user's and stops the default tracking.
 class StepGoal extends StatelessWidget {
-  const StepGoal({
-    super.key,
-    required this.answers,
-    required this.onChanged,
-  });
+  const StepGoal({super.key, required this.answers, required this.onChanged});
 
   final OnboardingAnswers answers;
   final VoidCallback onChanged;
@@ -86,14 +82,14 @@ class StepGoal extends StatelessWidget {
   }
 
   String _hero(BuildContext context) => tr(
-        'onboarding.goal.paceHero',
-        namedArgs: {
-          'pace': formatOneDecimal(
-            answers.aggression ?? WizardDefaults.aggression,
-            localeOf(context),
-          ),
-        },
-      );
+    'onboarding.goal.paceHero',
+    namedArgs: {
+      'pace': formatOneDecimal(
+        answers.aggression ?? WizardDefaults.aggression,
+        localeOf(context),
+      ),
+    },
+  );
 
   String _note(BuildContext context) {
     // On Maintaining the target IS TDEE: "0 kcal surplus" would be nonsense.
@@ -119,8 +115,8 @@ OnboardingStepSpec stepGoalSpec({
   required OnboardingAnswers answers,
   required VoidCallback onChanged,
 }) => (
-      title: tr('onboarding.goal.title'),
-      body: StepGoal(answers: answers, onChanged: onChanged),
-      ctaLabel: tr('onboarding.continueLabel'),
-      ctaEnabled: true,
-    );
+  title: tr('onboarding.goal.title'),
+  body: StepGoal(answers: answers, onChanged: onChanged),
+  ctaLabel: tr('onboarding.continueLabel'),
+  ctaEnabled: true,
+);

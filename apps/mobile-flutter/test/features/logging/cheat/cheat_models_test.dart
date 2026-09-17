@@ -40,26 +40,28 @@ Map<String, dynamic> specJson({bool clarify = false}) => {
 
 void main() {
   group('LoggingDayData decode', () {
-    test('a cheat pending entry (no parsedMeal) decodes instead of crashing',
-        () {
-      final day = LoggingDayData.fromJson({
-        'persistedMeals': <dynamic>[],
-        'pendingConfirmations': [
-          {
-            'id': 'a5a4dcd0-8a3f-4b58-b41f-3c1de2f0a111',
-            'rawInput': 'Buffet nướng Hàn',
-            'loggedAt': '2026-07-10T12:00:00.000Z',
-            'cheatSpec': specJson(),
-          },
-        ],
-      });
-      final pending = day.pendingConfirmations.single;
-      expect(pending.parsedMeal, isNull);
-      expect(pending.cheatSpec, isNotNull);
-      expect(pending.cheatSpec!.sliders, hasLength(2));
-      expect(pending.cheatSpec!.sliders.first.key, CheatSliderKey.protein);
-      expect(pending.cheatSpec!.sliders.last.anchors.last.alcoholG, 40);
-    });
+    test(
+      'a cheat pending entry (no parsedMeal) decodes instead of crashing',
+      () {
+        final day = LoggingDayData.fromJson({
+          'persistedMeals': <dynamic>[],
+          'pendingConfirmations': [
+            {
+              'id': 'a5a4dcd0-8a3f-4b58-b41f-3c1de2f0a111',
+              'rawInput': 'Buffet nướng Hàn',
+              'loggedAt': '2026-07-10T12:00:00.000Z',
+              'cheatSpec': specJson(),
+            },
+          ],
+        });
+        final pending = day.pendingConfirmations.single;
+        expect(pending.parsedMeal, isNull);
+        expect(pending.cheatSpec, isNotNull);
+        expect(pending.cheatSpec!.sliders, hasLength(2));
+        expect(pending.cheatSpec!.sliders.first.key, CheatSliderKey.protein);
+        expect(pending.cheatSpec!.sliders.last.anchors.last.alcoholG, 40);
+      },
+    );
 
     test('a persisted cheat meal decodes entryMode/alcoholG/cheatSliders', () {
       final meal = PersistedMeal.fromJson({

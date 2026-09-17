@@ -107,10 +107,7 @@ class CalorieDial extends StatelessWidget {
         tr(_isCompact ? unit.compact : unit.full),
         gaugeUnit(),
       ),
-      tertiary: GaugeLine(
-        _detail(readout, fmt, fraction),
-        gaugeDenominator(),
-      ),
+      tertiary: GaugeLine(_detail(readout, fmt, fraction), gaugeDenominator()),
     );
   }
 

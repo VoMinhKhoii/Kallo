@@ -34,13 +34,14 @@ Future<void> showShareMealSheet(
   final request = await showNhamSheet<ShareMealRequest>(
     context,
     isScrollControlled: true,
-    builder: (sheetContext) => ShareMealSheet(
-      meal: meal,
-      onAddFriends: () {
-        Navigator.of(sheetContext).pop();
-        if (context.mounted) showAddFriendSheet(context);
-      },
-    ),
+    builder:
+        (sheetContext) => ShareMealSheet(
+          meal: meal,
+          onAddFriends: () {
+            Navigator.of(sheetContext).pop();
+            if (context.mounted) showAddFriendSheet(context);
+          },
+        ),
   );
   if (request == null || !context.mounted) return;
 

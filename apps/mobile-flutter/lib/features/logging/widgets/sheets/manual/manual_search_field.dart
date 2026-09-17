@@ -22,32 +22,37 @@ class ManualSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (context, value, _) => KalloTextField(
-        controller: controller,
-        autofocus: true,
-        hintText: 'logging.manualLogging.searchPlaceholder'.tr(),
-        textInputAction: TextInputAction.search,
-        // 18 left inset + 18 glyph + 12 gap = the decoration's 48pt prefix box,
-        // so the magnifier lands on the pill's own padding line. The glyph
-        // moved 20 → the tertiary tier (Threads icon tiers, 2026-09-01) and
-        // the gap absorbed the 2pt, keeping the 48 intact.
-        prefixIcon: const Padding(
-          padding: EdgeInsets.only(left: 18, right: 12),
-          child: Icon(
-            LucideIcons.search300,
-            size: KalloIcons.tertiary,
-            color: kInkMuted,
-          ),
-        ),
-        suffixIcon: value.text.isEmpty
-            ? null
-            : IconButton(
-                onPressed: controller.clear,
-                icon: const Icon(LucideIcons.x300, size: KalloIcons.tertiary),
+      builder:
+          (context, value, _) => KalloTextField(
+            controller: controller,
+            autofocus: true,
+            hintText: 'logging.manualLogging.searchPlaceholder'.tr(),
+            textInputAction: TextInputAction.search,
+            // 18 left inset + 18 glyph + 12 gap = the decoration's 48pt prefix box,
+            // so the magnifier lands on the pill's own padding line. The glyph
+            // moved 20 → the tertiary tier (Threads icon tiers, 2026-09-01) and
+            // the gap absorbed the 2pt, keeping the 48 intact.
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 18, right: 12),
+              child: Icon(
+                LucideIcons.search300,
+                size: KalloIcons.tertiary,
                 color: kInkMuted,
-                tooltip: 'logging.manualLogging.clearSearch'.tr(),
               ),
-      ),
+            ),
+            suffixIcon:
+                value.text.isEmpty
+                    ? null
+                    : IconButton(
+                      onPressed: controller.clear,
+                      icon: const Icon(
+                        LucideIcons.x300,
+                        size: KalloIcons.tertiary,
+                      ),
+                      color: kInkMuted,
+                      tooltip: 'logging.manualLogging.clearSearch'.tr(),
+                    ),
+          ),
     );
   }
 }
