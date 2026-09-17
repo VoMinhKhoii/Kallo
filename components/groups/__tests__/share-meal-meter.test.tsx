@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { ShareMealMeter } from '@/components/groups/share-meal/meter';
 
 const seats = [
-  { id: 'me', initials: 'B', label: 'Bạn', parts: 10 },
-  { id: 'u1', initials: 'F1', label: 'Người 1', parts: 10 },
+  { id: 'me', avatarUrl: null, initials: 'B', label: 'Bạn', parts: 10 },
+  { id: 'u1', avatarUrl: null, initials: 'F1', label: 'Người 1', parts: 10 },
 ];
 
 function renderMeter(split: boolean, onRemove = vi.fn()) {

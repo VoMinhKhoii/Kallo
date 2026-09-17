@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useMyProfile } from '@/hooks/profile/use-profile';
 import { useFriends } from '@/hooks/social/circle/use-friends';
 import { useShareDraft } from '@/hooks/social/sharing/use-share-draft';
 import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
@@ -46,10 +47,18 @@ export function ShareMealDialog({
   const t = useTranslations('groups.shareMeal');
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('whole');
-  const draft = useShareDraft({ you: t('you'), youInitial: t('youInitial') });
+  // Not deferred behind `open`: every observer shares `profileKeys.mine`, so
+  // the meal cards that each mount this trigger produce ONE fetch, and it is
+  // usually already warm — deferring it only made seat 0's pin pop from
+  // initials to photo as the dialog opened.
+  const { data: me } = useMyProfile();
+  const draft = useShareDraft({
+    avatarUrl: me?.avatarUrl ?? null,
+    initials: t('youInitial'),
+    label: t('you'),
+  });
   const { seated, seats } = draft;
-  // Deferred until the dialog opens: the trigger renders on every meal card,
-  // so an always-on query would fan out per card.
+  // Deferred until the dialog opens: the circle has no other consumer here.
   const {
     data: circle = [],
     isPending,
@@ -99,20 +108,31 @@ export function ShareMealDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       {/* One corner family: dialog 16, controls 12, so the nesting reads as
           deliberate rather than as three unrelated radii. */}
+      {/* A COLUMN, not the primitive's grid. A grid item's automatic minimum
+          size is its min-content width, so one long non-wrapping line — the
+          meal name below, the footer's two `whitespace-nowrap` buttons — sized
+          the single auto column wider than the dialog and spilled the tabs,
+          the meter and the footer outside the card. Column flex items stretch
+          to the container instead, which fixes every child at once and keeps
+          fixing them. `cn()` merges through tailwind-merge, so `flex` replaces
+          `grid` from out here without touching CLI-managed `components/ui`. */}
       <DialogContent
         aria-describedby={undefined}
-        className="gap-0 rounded-2xl border-kallo-border/60 bg-white p-0"
+        className="flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0"
       >
-        <DialogHeader className="px-[22px] pt-5">
+        <DialogHeader className="shrink-0 px-[22px] pt-5">
           <DialogTitle className="font-serif text-[22px] text-kallo-text">
             {t('title')}
           </DialogTitle>
-          <p className="truncate font-sans-display text-[13px] text-kallo-text-muted">
+          {/* Clears the close button, which the primitive pins at `right-4`. */}
+          <p className="truncate pr-[26px] font-sans-display text-[13px] text-kallo-text-muted">
             {mealName}
           </p>
         </DialogHeader>
 
-        <div className="px-[22px]">
+        {/* The only scroller: the header keeps the ×, the footer keeps the
+            primary action, and neither can be scrolled out of reach. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[22px]">
           <ShareMealTabs
             mode={mode}
             onChange={setMode}
