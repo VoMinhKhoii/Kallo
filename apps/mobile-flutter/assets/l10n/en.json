@@ -30,7 +30,8 @@
       "remove": "Remove",
       "stay": "Stay",
       "staySignedIn": "Stay signed in"
-    }
+    },
+    "more": "More"
   },
   "nav": {
     "logging": "Logging",
@@ -1602,25 +1603,30 @@
     },
     "shareMeal": {
       "title": "Share this meal",
-      "description": "Pick friends who ate with you. They'll get it in their inbox to add to their own diary.",
       "mode": {
-        "copy": {
-          "label": "Same meal",
-          "hint": "Everyone logs the full dish."
-        },
-        "split": {
-          "label": "Split it",
-          "hint": "Divide one item evenly between you."
-        }
+        "whole": "Full portion",
+        "split": "Split it"
       },
-      "splitPreview": "Your logged portion drops to {portion} now — everyone gets an equal share.",
-      "loadingFriends": "Loading your circle…",
-      "noFriends": "No one in your circle yet. Add a friend first.",
-      "submitEmpty": "Pick a friend",
+      "addSectionTitle": "Add friends",
+      "allAdded": "Everyone's already at the table.",
+      "pickSomeone": "Add a friend to share this with.",
+      "splitEvenly": "Split evenly",
+      "you": "You",
+      "youInitial": "You",
       "submit": {
-        "one": "Send to {count} friend",
-        "other": "Send to {count} friends"
+        "one": "Share with {count} person · {kcal} kcal left",
+        "other": "Share with {count} people · {kcal} kcal left"
       },
+      "submitNoKcal": {
+        "one": "Share with {count} person",
+        "other": "Share with {count} people"
+      },
+      "submitEmpty": "Pick a friend",
+      "undo": "Undo",
+      "emptyTitle": "No one in your circle yet",
+      "emptyBody": "Add a friend and you can share meals with them.",
+      "addFriends": "Add friends",
+      "loadingFriends": "Loading your circle…",
       "copySuccess": {
         "one": "Sent to {count} friend",
         "other": "Sent to {count} friends"
@@ -1641,7 +1647,10 @@
       "dismiss": "Dismiss",
       "accepted": "Added to your diary",
       "error": "That didn't work — try again.",
-      "loadError": "Couldn't load your invites. Tap to retry."
+      "loadError": "Couldn't load your invites. Tap to retry.",
+      "acceptShort": "Accept",
+      "yourShare": "You {percent}%",
+      "restShare": "Shared out {percent}%"
     },
     "invite": {
       "title": "Invite to your circle",

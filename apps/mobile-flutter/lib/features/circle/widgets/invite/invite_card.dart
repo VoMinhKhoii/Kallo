@@ -1,16 +1,21 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
-import '../../../../shared/widgets/avatar/profile_avatar.dart';
-import 'invite_action.dart';
-import '../../../../theme/calm_tokens.dart';
+import '../portion/portion_seats.dart' show kSeatColors;
+import 'invite_card_parts.dart';
+import 'portion_readout.dart';
 
 String _fmtKcal(double? value) =>
     value == null ? tr('groups.invites.na') : '${value.round()} kcal';
@@ -18,12 +23,13 @@ String _fmtKcal(double? value) =>
 String _fmtG(double? value) =>
     value == null ? tr('groups.invites.na') : '${value.round()}g';
 
-/// A portion fraction as "1/N" (0.5 → "1/2"), or empty for a full portion.
-String _portionLabel(double factor) {
-  if (!factor.isFinite || factor <= 0 || factor >= 1) return '';
-  return '1/${(1 / factor).round()}';
-}
-
+/// An offer someone made you, shaped like a Threads notification: the person,
+/// what they did, and ONE live action as a filled pill on the trailing edge.
+///
+/// The dismiss lives in the overflow rather than beside the accept. Two
+/// competing buttons made the primary action the smallest thing in the card and
+/// put it furthest from the thumb; one filled pill and a `⋯` is the shape every
+/// notification list converged on for a reason.
 class InviteCard extends ConsumerStatefulWidget {
   const InviteCard({required this.invite, super.key});
 
@@ -39,6 +45,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
   Future<void> _accept() async {
     if (_busy) return;
     setState(() => _busy = true);
+    HapticFeedback.selectionClick();
     try {
       await acceptMealShareInvite(ref, widget.invite.id);
       if (!mounted) return;
@@ -70,10 +77,37 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     }
   }
 
+  /// The overflow. One entry today, but it is the slot every later "mute this
+  /// person", "report" and "why am I seeing this" belongs in.
+  Future<void> _openOverflow() async {
+    await showNhamSheet<void>(
+      context,
+      builder: (sheetContext) => KalloSheetSurface(
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            KalloSheetHeader(title: widget.invite.from.label),
+            InviteOverflowRow(
+              icon: LucideIcons.x300,
+              label: tr('groups.invites.dismiss'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _dismiss();
+              },
+            ),
+            const SizedBox(height: KalloSpacing.sp5),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final invite = widget.invite;
-    final portion = _portionLabel(invite.portionFactor);
+    final percent = (invite.portionFactor * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
@@ -86,86 +120,64 @@ class _InviteCardState extends ConsumerState<InviteCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ProfileAvatarDisc(profile: invite.from, size: 24),
-              const SizedBox(width: KalloSpacing.sp2),
+              InviteAvatarWithBadge(profile: invite.from),
+              const SizedBox(width: KalloSpacing.sp3),
               Expanded(
-                child: Text(
-                  tr(
-                    invite.isSplit
-                        ? 'groups.invites.sharedSplit'
-                        : 'groups.invites.sharedCopy',
-                    namedArgs: {'name': invite.from.label},
-                  ),
-                  style: dashMeta(color: kInk),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: KalloSpacing.sp2),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                // Body, not serif: the meal text is content, and the serif slot
-                // is spent once per viewport (mobile.md).
-                child: Text(invite.rawInput, style: dashBody()),
-              ),
-              if (invite.isSplit && portion.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(left: KalloSpacing.sp2, top: 2),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: KalloColors.accent10,
-                    borderRadius: BorderRadius.circular(KalloRadii.pill),
-                  ),
-                  child: Text(
-                    tr(
-                      'groups.invites.portion',
-                      namedArgs: {'portion': portion},
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(invite.from.label, style: dashName()),
+                    Text(
+                      tr(
+                        invite.isSplit
+                            ? 'groups.invites.sharedSplit'
+                            : 'groups.invites.sharedCopy',
+                        namedArgs: {'name': invite.from.label},
+                      ),
+                      style: dashMeta(),
                     ),
-                    // Caption: a fixed pill on the title line, component-internal.
-                    style: dashCaption(color: kInk),
-                  ),
+                  ],
                 ),
+              ),
+              const SizedBox(width: KalloSpacing.sp2),
+              KalloButton(
+                variant: KalloButtonVariant.cta,
+                compact: true,
+                title: tr('groups.invites.acceptShort'),
+                loading: _busy,
+                onPressed: _accept,
+              ),
+              InviteOverflowButton(onTap: _busy ? null : _openOverflow),
             ],
           ),
-          const SizedBox(height: KalloSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp3),
+          Text(invite.rawInput, style: dashBody()),
+          if (invite.isSplit) ...[
+            const SizedBox(height: KalloSpacing.sp3),
+            // Read-only: the recipient is being shown a division, not offered
+            // one. Only THEIR run is tinted — the remainder is neutral rather
+            // than attributed, because a single invite cannot know how the
+            // other shares were split between everyone else.
+            PortionReadout(
+              minePercent: percent,
+              mineColor: kSeatColors[1],
+              mineLabel: tr('groups.invites.yourShare',
+                  namedArgs: {'percent': '$percent'}),
+              restLabel: tr('groups.invites.restShare',
+                  namedArgs: {'percent': '${100 - percent}'}),
+            ),
+          ],
+          const SizedBox(height: KalloSpacing.sp3),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Caption: three tabular pairs sharing the line with the kcal
-              // figure — the same dense-legend shape MealBlock justifies.
               Text(
                 'P: ${_fmtG(invite.proteinG)}  C: ${_fmtG(invite.carbohydrateG)}  F: ${_fmtG(invite.fatG)}',
                 style: dashCaption(tabular: true),
               ),
               Text(_fmtKcal(invite.caloriesKcal), style: dashValue()),
-            ],
-          ),
-          const SizedBox(height: KalloSpacing.sp3),
-          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
-          const SizedBox(height: KalloSpacing.sp3),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              InviteAction(
-                icon: LucideIcons.x300,
-                label: tr('groups.invites.dismiss'),
-                onTap: _busy ? null : _dismiss,
-                filled: false,
-              ),
-              const SizedBox(width: KalloSpacing.sp2),
-              InviteAction(
-                icon: LucideIcons.check300,
-                label: tr('groups.invites.accept'),
-                onTap: _busy ? null : _accept,
-                filled: true,
-                loading: _busy,
-              ),
             ],
           ),
         ],

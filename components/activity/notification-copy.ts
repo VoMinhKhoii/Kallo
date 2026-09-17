@@ -71,3 +71,17 @@ export function inviteMode(item: NotificationItem): 'copy' | 'split' | null {
   const mode = item.data?.mode;
   return mode === 'copy' || mode === 'split' ? mode : null;
 }
+
+/**
+ * The reader's own share, as a whole percent — the number that tells them what
+ * accepting actually costs. Written by `shareMealWithFriendsAction`, which
+ * notifies each recipient with THEIR factor rather than the sender's.
+ *
+ * Null when absent or unusable: the row degrades to saying nothing rather than
+ * printing NaN% next to a real meal.
+ */
+export function invitePortionPercent(item: NotificationItem): number | null {
+  const raw = Number(item.data?.portionFactor);
+  if (!Number.isFinite(raw) || raw <= 0 || raw > 1) return null;
+  return Math.round(raw * 100);
+}

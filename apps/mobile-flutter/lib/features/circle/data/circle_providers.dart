@@ -290,24 +290,35 @@ String _todayLocalDate() {
 /// Offer a saved meal to specific friends as a full copy or an even split
 /// (`POST /api/v1/groups/meal-share`). A split rescales the logger's own meal
 /// down to their share, so the day + wall are invalidated. Throws [ApiError].
+///
+/// Takes a [ProviderContainer], not a `WidgetRef`: it runs after the share's
+/// undo window closes, by which point the sheet that built it is long disposed.
 Future<void> shareMealWithFriends(
-  WidgetRef ref, {
+  ProviderContainer container, {
   required String mealId,
   required List<String> friendUserIds,
   required String mode, // 'copy' | 'split'
+  /// Uneven split only: my own run in parts of a 20-part dish. Omit for the
+  /// even 1/(N+1) split the server has always done.
+  int? myParts,
+  /// Uneven split only: one entry per recipient, `{userId, parts}`. Must cover
+  /// every id in [friendUserIds] and sum with [myParts] to exactly 20.
+  List<Map<String, Object>>? splits,
 }) async {
-  final api = ref.read(apiClientProvider);
+  final api = container.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/groups/meal-share', {
     'mealId': mealId,
     'friendUserIds': friendUserIds,
     'mode': mode,
+    if (myParts != null) 'myParts': myParts,
+    if (splits != null) 'splits': splits,
   });
-  ref.invalidate(loggingDayProvider);
+  container.invalidate(loggingDayProvider);
   // The dashboard reads its ring off a separate bundle/day cache — invalidate
   // it too or the Today card + week-strip ring keep the pre-split total.
-  ref.invalidate(dashboardBundleProvider);
-  ref.invalidate(dashboardDayProvider);
-  ref.invalidate(circleFeedProvider);
+  container.invalidate(dashboardBundleProvider);
+  container.invalidate(dashboardDayProvider);
+  container.invalidate(circleFeedProvider);
 }
 
 /// Accept an invite (`POST /api/v1/groups/invites/accept`) — the scaled meal

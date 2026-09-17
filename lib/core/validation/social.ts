@@ -63,12 +63,49 @@ export const circleFeedSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
-/** Share one of my meals with specific friends as a full copy or a split. */
-export const shareMealWithFriendsSchema = z.object({
-  mealId: uuidSchema,
-  friendUserIds: z.array(uuidSchema).min(1).max(20),
-  mode: z.enum(['copy', 'split']),
-});
+/** Share one of my meals with specific friends as a full copy or a split.
+ *
+ *  `splits` carries an UNEVEN split: whole parts of a 20-part dish, one entry
+ *  per recipient, plus the sender's own `myParts`. Integers on purpose — the
+ *  server asserts they sum to exactly 20, which is one equality check instead
+ *  of chasing "do these fractions add to 0.9999?". Omit both for the even
+ *  1/(N+1) split, which is the shipped behaviour and stays untouched.
+ *
+ *  The bounds here are only the cheap per-field ones; the relationships
+ *  between them (sum, party size, duplicate recipients) live in
+ *  `assertPartsValid` so both platforms and the action share one rule set. */
+export const shareMealWithFriendsSchema = z
+  .object({
+    mealId: uuidSchema,
+    friendUserIds: z.array(uuidSchema).min(1).max(20),
+    mode: z.enum(['copy', 'split']),
+    myParts: z.number().int().min(2).max(18).optional(),
+    splits: z
+      .array(
+        z.object({ userId: uuidSchema, parts: z.number().int().min(2).max(18) })
+      )
+      .min(1)
+      .max(5)
+      .optional(),
+  })
+  .refine((v) => (v.myParts == null) === (v.splits == null), {
+    message: 'myParts và splits phải đi cùng nhau.',
+  })
+  .refine((v) => v.mode === 'split' || v.splits == null, {
+    message: 'Chỉ chia phần mới đặt được tỉ lệ.',
+  })
+  .refine(
+    (v) =>
+      v.splits == null ||
+      v.splits.every((s) => v.friendUserIds.includes(s.userId)),
+    { message: 'Tỉ lệ phải khớp với những người được chọn.' }
+  )
+  .refine(
+    (v) => v.splits == null || v.splits.length === v.friendUserIds.length,
+    {
+      message: 'Mỗi người được chọn cần một phần.',
+    }
+  );
 
 /** Accept a pending meal-share invite into my own diary for the chosen day. */
 export const acceptMealShareInviteSchema = z.object({

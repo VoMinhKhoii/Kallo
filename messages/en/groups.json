@@ -75,20 +75,25 @@
   "shareMeal": {
     "title": "Share this meal",
     "mode": {
-      "copy": {
-        "label": "Same meal",
-        "hint": "Everyone logs the full dish."
-      },
-      "split": {
-        "label": "Split it",
-        "hint": "Divide one item evenly between you."
-      }
+      "whole": "Full portion",
+      "split": "Split it"
     },
-    "splitPreview": "Your logged portion drops to {portion} now — everyone gets an equal share.",
-    "loadingFriends": "Loading your circle…",
-    "noFriends": "No one in your circle yet. Add a friend first.",
+    "addSectionTitle": "Add friends",
+    "allAdded": "Everyone's already at the table.",
+    "pickSomeone": "Add a friend to share this with.",
+    "splitEvenly": "Split evenly",
+    "you": "You",
+    "youInitial": "You",
+    "submit": "Share with {count, plural, one {# person} other {# people}} · {kcal} kcal left",
+    "submitNoKcal": "Share with {count, plural, one {# person} other {# people}}",
     "submitEmpty": "Pick a friend",
-    "submit": "Share with {count, plural, one {# friend} other {# friends}}",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "undo": "Undo",
+    "emptyTitle": "No one in your circle yet",
+    "emptyBody": "Add a friend and you can share meals with them.",
+    "errorTitle": "Couldn't load your circle",
+    "errorBody": "Check your connection and try again.",
     "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
     "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
     "error": "Couldn't share the meal. Try again."

@@ -1,0 +1,2 @@
+ALTER TABLE "meal_share_invites" ADD COLUMN "copy_factor" numeric DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "meal_share_invites" ADD CONSTRAINT "meal_share_invites_copy_factor_check" CHECK ("meal_share_invites"."copy_factor" > 0);

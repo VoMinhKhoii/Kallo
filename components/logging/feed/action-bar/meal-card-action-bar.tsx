@@ -17,6 +17,10 @@ import { RemoveMealButton } from './remove-meal-button';
 
 interface MealCardActionBarProps {
   mealId: string;
+  /** The dish being shared — the dialog names its subject. */
+  mealName: string;
+  /** Whole-dish calories, for the per-person readout on the meter. */
+  totalKcal: number | null;
   share: PersistedMeal['share'];
   canEdit: boolean;
   canShare?: boolean;
@@ -29,6 +33,8 @@ interface MealCardActionBarProps {
 
 export function MealCardActionBar({
   mealId,
+  mealName,
+  totalKcal,
   share,
   canEdit,
   canShare,
@@ -91,6 +97,8 @@ export function MealCardActionBar({
           ) : (
             <ShareMealDialog
               mealId={mealId}
+              mealName={mealName}
+              totalKcal={totalKcal}
               trigger={
                 <ActionIconButton
                   icon={UserPlus}

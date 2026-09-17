@@ -484,6 +484,13 @@
       "when": 1789234102868,
       "tag": "20260912172822_add_day_completion_marks",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1789621811822,
+      "tag": "20260917051011_add_meal_share_invites_copy_factor",
+      "breakpoints": true
     }
   ]
 }

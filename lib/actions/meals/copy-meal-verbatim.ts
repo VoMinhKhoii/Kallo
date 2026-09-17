@@ -21,8 +21,15 @@ type MealItemDbRow = typeof mealItems.$inferSelect;
  * persistence seam shared by the three copy paths — accept-a-share, duplicate,
  * and recipient-initiated "log this too" / "chia đôi" — so they can never drift.
  * Kept out of persisted-meal.ts (which is synchronous client-shape builders) on
- * purpose: this is an async transaction writer. `factor` is `1 | 0.5` only —
- * the sole supported portions.
+ * purpose: this is an async transaction writer.
+ *
+ * `factor` is any positive number. It used to be the literal union `1 | 0.5`
+ * because those were the only two portions the product could produce; uneven
+ * splits make it a ratio of two arbitrary part-runs (see
+ * `meal_share_invites.copy_factor`). The body always multiplied generically —
+ * only the type was narrow — so widening it changes no arithmetic. `factor === 1`
+ * still takes the no-scale branch, which is what keeps an even split writing
+ * rows byte-identical to the shipped behaviour.
  */
 export async function copyMealVerbatim(
   tx: AppTransaction,
@@ -32,7 +39,8 @@ export async function copyMealVerbatim(
     userId: string;
     newMealId?: string;
     loggedAt: Date;
-    factor: 1 | 0.5;
+    /** Positive scale applied to grams, nutrition and alcohol. 1 = verbatim. */
+    factor: number;
   }
 ): Promise<{ mealId: string; meal: PersistedMeal }> {
   const { userId, newMealId, loggedAt, factor } = options;

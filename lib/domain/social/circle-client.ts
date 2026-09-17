@@ -152,6 +152,11 @@ export function shareMealWithFriends(input: {
   mealId: string;
   friendUserIds: string[];
   mode: 'copy' | 'split';
+  /** Uneven split only: my own run, in parts of a 20-part dish. */
+  myParts?: number;
+  /** Uneven split only: one entry per recipient. Must cover every id in
+   *  `friendUserIds` and sum with `myParts` to exactly 20. */
+  splits?: { userId: string; parts: number }[];
 }) {
   return postJson<{
     invitedCount: number;

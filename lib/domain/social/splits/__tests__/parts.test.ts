@@ -1,0 +1,256 @@
+import { describe, expect, it } from 'vitest';
+import {
+  assertPartsValid,
+  copyFactorFor,
+  evenParts,
+  MAX_PARTICIPANTS,
+  MIN_PARTS,
+  partsAfterAdd,
+  partsAfterDrag,
+  partsAfterRemoval,
+  resolveShareAllocation,
+  TOTAL_PARTS,
+} from '@/lib/domain/social/splits/parts';
+
+describe('evenParts', () => {
+  it('splits 20 evenly and hands the remainder to the earliest seats', () => {
+    expect(evenParts(2)).toEqual([10, 10]);
+    // 20 is not divisible by 3: the odd part goes to the earlier seats, which
+    // is why an even three-way split reads 35 / 35 / 30 and not 33 / 33 / 33.
+    expect(evenParts(3)).toEqual([7, 7, 6]);
+    expect(evenParts(4)).toEqual([5, 5, 5, 5]);
+    expect(evenParts(5)).toEqual([4, 4, 4, 4, 4]);
+    expect(evenParts(6)).toEqual([4, 4, 3, 3, 3, 3]);
+  });
+
+  it('always sums to TOTAL_PARTS and never breaks the floor', () => {
+    for (let p = 2; p <= MAX_PARTICIPANTS; p++) {
+      const parts = evenParts(p);
+      expect(parts).toHaveLength(p);
+      expect(parts.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+      expect(Math.min(...parts)).toBeGreaterThanOrEqual(MIN_PARTS);
+    }
+  });
+
+  it('refuses a party the control could not draw', () => {
+    expect(() => evenParts(1)).toThrow();
+    expect(() => evenParts(MAX_PARTICIPANTS + 1)).toThrow();
+  });
+});
+
+describe('assertPartsValid', () => {
+  it('accepts a sum of exactly TOTAL_PARTS', () => {
+    expect(() =>
+      assertPartsValid(10, [{ userId: 'a', parts: 10 }])
+    ).not.toThrow();
+    expect(() =>
+      assertPartsValid(8, [
+        { userId: 'a', parts: 7 },
+        { userId: 'b', parts: 5 },
+      ])
+    ).not.toThrow();
+  });
+
+  it('rejects a sum that is not TOTAL_PARTS', () => {
+    expect(() => assertPartsValid(9, [{ userId: 'a', parts: 10 }])).toThrow();
+    expect(() => assertPartsValid(11, [{ userId: 'a', parts: 10 }])).toThrow();
+  });
+
+  it('rejects anyone under the floor, sender included', () => {
+    expect(() => assertPartsValid(19, [{ userId: 'a', parts: 1 }])).toThrow();
+    expect(() => assertPartsValid(1, [{ userId: 'a', parts: 19 }])).toThrow();
+  });
+
+  it('rejects more participants than the control has seats', () => {
+    const six = Array.from({ length: MAX_PARTICIPANTS }, (_, i) => ({
+      userId: `u${i}`,
+      parts: 3,
+    }));
+    // six friends + the sender is seven participants.
+    expect(() => assertPartsValid(2, six)).toThrow();
+  });
+
+  it('rejects a duplicated recipient', () => {
+    expect(() =>
+      assertPartsValid(10, [
+        { userId: 'a', parts: 5 },
+        { userId: 'a', parts: 5 },
+      ])
+    ).toThrow();
+  });
+
+  it('rejects non-integer parts', () => {
+    expect(() => assertPartsValid(10, [{ userId: 'a', parts: 9.5 }])).toThrow();
+  });
+});
+
+describe('copyFactorFor', () => {
+  it('is exactly 1 for an even two-way split, matching the shipped behaviour', () => {
+    expect(copyFactorFor(10, 10)).toBe(1);
+  });
+
+  it('is the ratio of the recipient run to the sender run', () => {
+    expect(copyFactorFor(7, 13)).toBeCloseTo(7 / 13);
+    expect(copyFactorFor(13, 7)).toBeCloseTo(13 / 7);
+  });
+
+  it('refuses a sender run of zero rather than dividing by it', () => {
+    expect(() => copyFactorFor(10, 0)).toThrow();
+  });
+});
+
+describe('partsAfterRemoval', () => {
+  it('returns the freed parts to the table and still sums to the dish', () => {
+    const next = partsAfterRemoval([8, 6, 6], 1);
+    expect(next).toHaveLength(2);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('never leaves anyone under the floor', () => {
+    for (let i = 0; i < 4; i++) {
+      const next = partsAfterRemoval([5, 5, 5, 5], i);
+      expect(Math.min(...next)).toBeGreaterThanOrEqual(MIN_PARTS);
+      expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+    }
+  });
+});
+
+describe('partsAfterAdd', () => {
+  it('seats the newcomer at the floor, taken from the largest run', () => {
+    expect(partsAfterAdd([10, 10])).toEqual([9, 9, MIN_PARTS]);
+  });
+
+  it('preserves a hand-set split as far as the floor allows', () => {
+    // The 6 is untouched; the 14 pays for the newcomer.
+    expect(partsAfterAdd([14, 6])).toEqual([12, 6, MIN_PARTS]);
+  });
+
+  it('agrees with the Dart twin all the way to a full table', () => {
+    let parts = evenParts(2);
+    while (parts.length < MAX_PARTICIPANTS) {
+      parts = partsAfterAdd(parts);
+      expect(parts.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+      expect(Math.min(...parts)).toBeGreaterThanOrEqual(MIN_PARTS);
+    }
+    expect(parts).toHaveLength(MAX_PARTICIPANTS);
+  });
+});
+
+describe('partsAfterDrag', () => {
+  it('moves parts between the two runs the boundary bounds, only', () => {
+    const next = partsAfterDrag([7, 7, 6], 1, 16);
+    expect(next).toEqual([7, 9, 4]);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('never lets a boundary pass its left neighbour', () => {
+    // Dragging hard left would put the middle run at a negative size.
+    expect(partsAfterDrag([7, 7, 6], 1, 2)).toEqual([7, MIN_PARTS, 11]);
+  });
+
+  it('never lets a boundary pass its right neighbour', () => {
+    const next = partsAfterDrag([7, 7, 6], 1, 999);
+    expect(next.at(-1)).toBe(MIN_PARTS);
+    expect(next.reduce((a, b) => a + b, 0)).toBe(TOTAL_PARTS);
+  });
+
+  it('always produces a split the server would accept', () => {
+    // Every reachable drag on a three-way split, against the same validator
+    // the action runs. The control must not be able to build a refusal.
+    for (let target = -5; target <= TOTAL_PARTS + 5; target++) {
+      const next = partsAfterDrag([7, 7, 6], 1, target);
+      expect(() =>
+        assertPartsValid(next[0], [
+          { userId: 'a', parts: next[1] },
+          { userId: 'b', parts: next[2] },
+        ])
+      ).not.toThrow();
+    }
+  });
+});
+
+describe('resolveShareAllocation', () => {
+  it('gives a copy everyone the whole dish', () => {
+    const a = resolveShareAllocation({
+      mode: 'copy',
+      recipientIds: ['a', 'b'],
+    });
+    expect(a.senderFactor).toBe(1);
+    expect(a.recipients.get('a')).toEqual({ portionFactor: 1, copyFactor: 1 });
+  });
+
+  it('an even split matches the shipped 1/(N+1), with copyFactor 1', () => {
+    const a = resolveShareAllocation({ mode: 'split', recipientIds: ['a'] });
+    expect(a.senderFactor).toBeCloseTo(0.5, 6);
+    // copyFactor 1 is the compatibility guarantee: accept stays verbatim.
+    expect(a.recipients.get('a')).toEqual({
+      portionFactor: 0.5,
+      copyFactor: 1,
+    });
+
+    const three = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a', 'b'],
+    });
+    expect(three.senderFactor).toBeCloseTo(1 / 3, 6);
+    expect(three.recipients.get('b')?.copyFactor).toBeCloseTo(1, 6);
+  });
+
+  it('an uneven split keeps the two factors apart', () => {
+    const a = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a'],
+      myParts: 13,
+      splits: [{ userId: 'a', parts: 7 }],
+    });
+    expect(a.senderFactor).toBeCloseTo(0.65, 6);
+    // Share of the ORIGINAL dish vs. ratio against the sender's REMAINING run.
+    // Conflating these is the bug an uneven split would otherwise ship.
+    expect(a.recipients.get('a')?.portionFactor).toBeCloseTo(0.35, 6);
+    expect(a.recipients.get('a')?.copyFactor).toBeCloseTo(7 / 13, 6);
+  });
+
+  it('refuses parts that do not cover the POST-dedup recipients', () => {
+    // 'b' was deduped or dropped upstream; their parts would vanish silently
+    // and leave the sender scaled by a dish that never adds up.
+    expect(() =>
+      resolveShareAllocation({
+        mode: 'split',
+        recipientIds: ['a'],
+        myParts: 8,
+        splits: [
+          { userId: 'a', parts: 7 },
+          { userId: 'b', parts: 5 },
+        ],
+      })
+    ).toThrow();
+  });
+
+  it('refuses a sum that is not the whole dish', () => {
+    expect(() =>
+      resolveShareAllocation({
+        mode: 'split',
+        recipientIds: ['a'],
+        myParts: 12,
+        splits: [{ userId: 'a', parts: 7 }],
+      })
+    ).toThrow();
+  });
+
+  it('every recipient factor pair is self-consistent', () => {
+    const a = resolveShareAllocation({
+      mode: 'split',
+      recipientIds: ['a', 'b'],
+      myParts: 10,
+      splits: [
+        { userId: 'a', parts: 6 },
+        { userId: 'b', parts: 4 },
+      ],
+    });
+    // portionFactor / senderFactor === copyFactor, by definition. If these two
+    // ever disagree, accept scales by the wrong number.
+    for (const [, r] of a.recipients) {
+      expect(r.copyFactor).toBeCloseTo(r.portionFactor / a.senderFactor, 6);
+    }
+  });
+});

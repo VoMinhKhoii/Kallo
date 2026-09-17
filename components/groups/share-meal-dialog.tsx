@@ -1,10 +1,12 @@
 'use client';
 
-import { Loader2, Users2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { FriendPickRow } from '@/components/groups/share-meal/friend-pick-row';
+import { ShareMealAddLane } from '@/components/groups/share-meal/add-lane';
+import { ShareMealDialogFooter } from '@/components/groups/share-meal/footer';
+import { ShareMealMeter } from '@/components/groups/share-meal/meter';
+import { ShareMealDialogStates } from '@/components/groups/share-meal/states';
+import { ShareMealTabs } from '@/components/groups/share-meal/tabs';
 import {
   Dialog,
   DialogContent,
@@ -13,168 +15,163 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/social/circle/use-friends';
+import { useShareDraft } from '@/hooks/social/sharing/use-share-draft';
 import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
-import { cn } from '@/lib/core/ui/cn';
+import { useShareSubmit } from '@/hooks/social/sharing/use-share-submit';
+import { TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 
-type Mode = 'copy' | 'split';
+type Mode = 'whole' | 'split';
 
 interface ShareMealDialogProps {
   mealId: string;
+  mealName: string;
+  totalKcal: number | null;
   trigger: ReactNode;
 }
 
 /**
- * Offer a saved meal to specific friends. Copy sends everyone the full dish;
- * split divides one shared item equally (self + selected friends), reducing the
- * logger's own portion. Recipients accept from their Circle inbox. A successful
- * share invalidates the logging day (the split rescale) via the mutation hook.
+ * Offer a saved meal to specific friends.
+ *
+ * Twin of the mobile sheet (`share_meal_sheet.dart`) — same information
+ * architecture, same rules, desktop affordances. People at the table are pins
+ * above the meter; the list below holds only friends who are not, so nobody is
+ * ever listed twice and there is no checkmark column to scan.
  */
-export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
+export function ShareMealDialog({
+  mealId,
+  mealName,
+  totalKcal,
+  trigger,
+}: ShareMealDialogProps) {
   const t = useTranslations('groups.shareMeal');
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>('copy');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Defer the friends fetch until the dialog is actually opened — the trigger
-  // renders on every meal card, so an always-on query would fan out per card.
-  const { data: circle = [], isPending } = useFriends({ enabled: open });
+  const [mode, setMode] = useState<Mode>('whole');
+  const draft = useShareDraft({ you: t('you'), youInitial: t('youInitial') });
+  const { seated, seats } = draft;
+  // Deferred until the dialog opens: the trigger renders on every meal card,
+  // so an always-on query would fan out per card.
+  const {
+    data: circle = [],
+    isPending,
+    isError,
+    refetch,
+  } = useFriends({
+    enabled: open,
+  });
   const share = useShareMealWithFriends();
+  const handleShare = useShareSubmit({
+    draft,
+    mealId,
+    mode,
+    share,
+    t,
+    onDone: () => handleOpenChange(false),
+  });
 
   const friends = useMemo(
     () => circle.filter((m) => m.status === 'accepted'),
     [circle]
   );
-
-  const reset = () => {
-    setSelected(new Set());
-    setMode('copy');
-  };
-
-  // Reset the draft whenever the dialog closes (cancel or success), so the next
-  // open on any card starts clean instead of inheriting a stale selection.
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (!next) {
-      reset();
+      draft.reset();
+      setMode('whole');
     }
   };
 
-  const toggle = (userId: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
-      }
-      return next;
-    });
+  const unseated = useMemo(
+    () =>
+      friends.filter(
+        (m) => !seated.some((s) => s.profile.userId === m.profile.userId)
+      ),
+    [friends, seated]
+  );
 
-  const count = selected.size;
-  // The fraction each participant keeps on a split (self + selected friends).
-  const portionLabel = count > 0 ? `1/${count + 1}` : '—';
-
-  const handleShare = () => {
-    if (count === 0 || share.isPending) {
-      return;
-    }
-    share.mutate(
-      { mealId, friendUserIds: Array.from(selected), mode },
-      {
-        onSuccess: () => {
-          toast.success(
-            mode === 'split'
-              ? t('splitSuccess', { count })
-              : t('copySuccess', { count })
-          );
-          // handleOpenChange resets the draft on close.
-          setOpen(false);
-          reset();
-        },
-        onError: () => toast.error(t('error')),
-      }
-    );
-  };
+  const keptParts = draft.keptParts(mode === 'split');
+  const kept =
+    totalKcal == null
+      ? null
+      : Math.round((totalKcal * keptParts) / TOTAL_PARTS);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {/* One corner family: dialog 16, controls 12, so the nesting reads as
+          deliberate rather than as three unrelated radii. */}
       <DialogContent
         aria-describedby={undefined}
-        className="gap-5 border-kallo-border/60 bg-white"
+        className="gap-0 rounded-2xl border-kallo-border/60 bg-white p-0"
       >
-        <DialogHeader>
-          <DialogTitle className="font-serif text-kallo-text text-xl">
+        <DialogHeader className="px-[22px] pt-5">
+          <DialogTitle className="font-serif text-[22px] text-kallo-text">
             {t('title')}
           </DialogTitle>
+          <p className="truncate font-sans-display text-[13px] text-kallo-text-muted">
+            {mealName}
+          </p>
         </DialogHeader>
 
-        {/* Mode: full copy vs even split */}
-        <div className="grid grid-cols-2 gap-2">
-          {(['copy', 'split'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={mode === m}
-              onClick={() => setMode(m)}
-              className={cn(
-                'rounded-xl border px-3 py-2.5 text-left transition-colors',
-                mode === m
-                  ? 'border-kallo-border bg-kallo-hover'
-                  : 'border-kallo-border/60 bg-white hover:bg-kallo-hover/40'
-              )}
-            >
-              <span className="block font-medium font-sans-display text-[13px] text-kallo-text">
-                {t(`mode.${m}.label`)}
-              </span>
-              <span className="mt-0.5 block font-sans-display text-[11px] text-kallo-text-muted">
-                {t(`mode.${m}.hint`)}
-              </span>
-            </button>
-          ))}
-        </div>
+        <div className="px-[22px]">
+          <ShareMealTabs
+            mode={mode}
+            onChange={setMode}
+            splitLabel={t('mode.split')}
+            wholeLabel={t('mode.whole')}
+          />
 
-        {mode === 'split' && count > 0 && (
-          <p className="font-medium font-sans-display text-[12px] text-kallo-text">
-            {t('splitPreview', { portion: portionLabel })}
-          </p>
-        )}
+          <ShareMealDialogStates
+            errorBody={t('errorBody')}
+            errorTitle={t('errorTitle')}
+            emptyBody={t('emptyBody')}
+            emptyTitle={t('emptyTitle')}
+            hasFriends={friends.length > 0}
+            isError={isError}
+            isPending={isPending}
+            onRetry={refetch}
+            retryLabel={t('retry')}
+          />
 
-        {/* Friend picker (accepted friends only) */}
-        <div className="max-h-[40vh] space-y-1 overflow-y-auto">
-          {isPending && (
-            <p className="font-sans-display text-[13px] text-kallo-text-muted">
-              {t('loadingFriends')}
-            </p>
-          )}
-          {!isPending && friends.length === 0 && (
-            <p className="font-sans-display text-[13px] text-kallo-text-muted">
-              {t('noFriends')}
-            </p>
-          )}
-          {!isPending &&
-            friends.map((member) => (
-              <FriendPickRow
-                key={member.profile.userId}
-                member={member}
-                selected={selected.has(member.profile.userId)}
-                onToggle={toggle}
+          {!(isPending || isError) && friends.length > 0 && (
+            <>
+              <ShareMealMeter
+                emptyLabel={t('pickSomeone')}
+                evenlyLabel={t('splitEvenly')}
+                split={mode === 'split'}
+                onChange={draft.setParts}
+                onRemove={draft.removeSeat}
+                onSplitEvenly={draft.splitEvenly}
+                seats={seats}
+                showEvenly={mode === 'split' && seated.length > 0}
+                totalKcal={totalKcal}
               />
-            ))}
+
+              <p className="mt-4 font-sans-display text-[12px] text-kallo-text-muted">
+                {t('addSectionTitle')}
+              </p>
+              <ShareMealAddLane
+                atCapacity={draft.atCapacity}
+                emptyLabel={t('allAdded')}
+                onAdd={draft.add}
+                unseated={unseated}
+              />
+            </>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={count === 0 || share.isPending}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[14px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {share.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Users2 className="h-4 w-4" />
-          )}
-          {count === 0 ? t('submitEmpty') : t('submit', { count })}
-        </button>
+        <ShareMealDialogFooter
+          cancelLabel={t('cancel')}
+          disabled={seated.length === 0}
+          label={
+            seated.length === 0
+              ? t('submitEmpty')
+              : kept === null
+                ? t('submitNoKcal', { count: seated.length })
+                : t('submit', { count: seated.length, kcal: kept })
+          }
+          onCancel={() => handleOpenChange(false)}
+          onShare={handleShare}
+        />
       </DialogContent>
     </Dialog>
   );
