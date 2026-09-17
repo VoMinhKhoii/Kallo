@@ -9,15 +9,14 @@ import { DialogFooter } from '@/components/ui/dialog';
  * The button carries the whole consequence of the share — what you keep — so
  * there is no separate warning line above it.
  *
- * Uses DialogFooter rather than a hand-rolled row: it stacks the two buttons
- * on a narrow viewport (`flex-col-reverse sm:flex-row`), which the version this
- * replaced did not, so the cancel and the primary sat squeezed side by side on
- * a phone browser.
+ * Uses DialogFooter rather than a hand-rolled row, so the side-by-side layout
+ * is the primitive's decision and not this footer's.
  *
- * The primary overrides the button base's `whitespace-nowrap`: its label
- * carries a count AND a kcal figure, and in Vietnamese at a 320px viewport
- * that is wider than the row. `shrink-0` on the base means it cannot give way,
- * so the label wraps rather than running out of the card.
+ * The primary overrides two things from the button base: `whitespace-nowrap`,
+ * because its label carries a count AND a kcal figure and in Vietnamese at a
+ * 320px viewport that is wider than the row; and `shrink-0`, because a button
+ * that cannot give way would push the row out of the card instead of wrapping.
+ * Cancel keeps both — it is two syllables and should hold its width.
  */
 export function ShareMealDialogFooter({
   label,
@@ -38,7 +37,7 @@ export function ShareMealDialogFooter({
         {cancelLabel}
       </Button>
       <Button
-        className="h-auto min-h-9 min-w-0 whitespace-normal py-1.5 text-center"
+        className="h-auto min-h-9 min-w-0 shrink whitespace-normal py-1.5 text-center"
         disabled={disabled}
         onClick={onShare}
       >
