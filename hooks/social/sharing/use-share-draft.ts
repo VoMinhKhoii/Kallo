@@ -29,7 +29,16 @@ export type ShareMealRequest = Parameters<typeof shareMealWithFriends>[0];
 /** The draft, named so consumers depend on the real shape and not a copy. */
 export type ShareDraft = ReturnType<typeof useShareDraft>;
 
-export function useShareDraft(labels: { you: string; youInitial: string }) {
+/** The viewer, shaped like every other seat so seat 0 is not a special case.
+ *  `label`/`initials` are localised ("You"/"Bạn") rather than derived from the
+ *  name, which is why the caller resolves them and hands them over. */
+export interface ShareViewer {
+  label: string;
+  initials: string;
+  avatarUrl: string | null;
+}
+
+export function useShareDraft(viewer: ShareViewer) {
   const [seated, setSeated] = useState<CircleMember[]>([]);
   const [parts, setParts] = useState<number[]>(() => evenParts(2));
 
@@ -59,18 +68,20 @@ export function useShareDraft(labels: { you: string; youInitial: string }) {
     () => [
       {
         id: 'me',
-        initials: labels.youInitial,
-        label: labels.you,
+        avatarUrl: viewer.avatarUrl,
+        initials: viewer.initials,
+        label: viewer.label,
         parts: parts[0],
       },
       ...seated.map((m, i) => ({
         id: m.profile.userId,
+        avatarUrl: m.profile.avatarUrl,
         initials: initialsFor(m.profile),
         label: labelFor(m.profile),
         parts: parts[i + 1],
       })),
     ],
-    [labels.you, labels.youInitial, parts, seated]
+    [viewer.avatarUrl, viewer.initials, viewer.label, parts, seated]
   );
 
   return {

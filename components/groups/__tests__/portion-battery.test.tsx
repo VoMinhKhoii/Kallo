@@ -9,6 +9,7 @@ import { MIN_PARTS, TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 function seatsFrom(parts: number[]): PortionSeat[] {
   return parts.map((p, i) => ({
     id: `u${i}`,
+    avatarUrl: null,
     initials: i === 0 ? 'B' : `F${i}`,
     label: i === 0 ? 'Bạn' : `Người ${i}`,
     parts: p,
@@ -134,5 +135,43 @@ describe('PortionBattery — web', () => {
     // 1040 kcal over 20 parts: 13 parts is 676, 7 is 364.
     expect(screen.getByText('676')).toBeInTheDocument();
     expect(screen.getByText('364')).toBeInTheDocument();
+  });
+
+  it('draws a face in the pin when the person has a photo', () => {
+    const seats = seatsFrom([10, 10]);
+    seats[1].avatarUrl = 'https://example.test/hp.jpg';
+    render(<PortionBattery seats={seats} totalKcal={1040} />);
+
+    const photos = document.querySelectorAll('img');
+    expect(photos).toHaveLength(1);
+    expect(photos[0]).toHaveAttribute('src', 'https://example.test/hp.jpg');
+    // The photoless seat keeps its initials, NOT the avatar fallback disc:
+    // seat 0's "initials" are the localised "You", not a name initial.
+    expect(screen.getByText('B')).toBeInTheDocument();
+  });
+
+  it("drops a photo that fails and shows the pin's own initials", () => {
+    // A stale googleusercontent URL must not leave a broken-image icon in the
+    // drop: the <img> is removed and the glyph behind it — the seat's
+    // initials, not the avatar widget's name initial — is what remains.
+    const seats = seatsFrom([10, 10]);
+    seats[1].avatarUrl = 'https://example.test/hp.jpg';
+    render(<PortionBattery seats={seats} totalKcal={1040} />);
+
+    const photo = document.querySelector('img');
+    expect(photo).toBeInTheDocument();
+    // The glyph is already there, underneath, while the photo loads.
+    expect(screen.getByText('F1')).toBeInTheDocument();
+
+    fireEvent.error(photo as HTMLImageElement);
+    expect(document.querySelector('img')).toBeNull();
+    expect(screen.getByText('F1')).toBeInTheDocument();
+  });
+
+  it('falls back to initials for everyone without a photo', () => {
+    renderBattery([10, 10]);
+    expect(document.querySelectorAll('img')).toHaveLength(0);
+    expect(screen.getByText('B')).toBeInTheDocument();
+    expect(screen.getByText('F1')).toBeInTheDocument();
   });
 });

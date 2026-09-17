@@ -15,6 +15,10 @@ import type { CircleMember } from '@/lib/actions/groups/types';
  * The row is `ProfileAvatar` + `labelFor`, the same pair every other circle
  * list uses. The version this replaced drew its own initials disc, which meant
  * it never showed a friend their actual photo.
+ *
+ * The lane hangs 8px outside the dialog's gutter and the row pads back in by
+ * the same 8px: the avatar stays on the gutter while the hover wash has room
+ * to breathe. Flush against the avatar, its rounded corner clipped the disc.
  */
 export function ShareMealAddLane({
   unseated,
@@ -35,10 +39,10 @@ export function ShareMealAddLane({
     );
   }
   return (
-    <div className="max-h-[150px] overflow-y-auto">
+    <div className="-mx-2 max-h-[150px] overflow-y-auto">
       {unseated.map((member) => (
         <button
-          className="flex w-full items-center gap-3 rounded-xl py-2 transition-colors hover:bg-kallo-hover/40 disabled:opacity-45"
+          className="flex w-full items-center gap-3 rounded-xl p-2 transition-colors hover:bg-kallo-hover/40 disabled:opacity-45"
           disabled={atCapacity}
           key={member.profile.userId}
           onClick={() => onAdd(member)}

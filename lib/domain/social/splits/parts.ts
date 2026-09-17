@@ -17,8 +17,15 @@ import { Errors } from '@/lib/core/errors/catalog';
 /** The dish, in units of 5%. */
 export const TOTAL_PARTS = 20;
 
-/** Nobody may hold less than this. 2 parts = 10%, which is also the narrowest
- *  run the control can draw a face over without the faces colliding. */
+/** Nobody may hold less than this. 2 parts = 10% of the dish.
+ *
+ *  This used to be the narrowest run the control could draw a face over
+ *  without the faces colliding, back when that face was a 30px initials glyph.
+ *  The pin now carries a 36px photo, so at 10% on a phone-width dialog
+ *  neighbouring pins overlap by a few pixels — legible, because each keeps a
+ *  seat-coloured ring, but no longer clearance. Raising this to 3 (15%) would
+ *  restore it at the cost of what a split can express, which is a product
+ *  call, not a layout one. */
 export const MIN_PARTS = 2;
 
 /** Seats in the palette: you plus five friends. */

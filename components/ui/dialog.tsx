@@ -102,7 +102,13 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+        // Side by side at EVERY width. Stacking put the primary above the
+        // cancel on a phone, which reads as two unrelated decisions and moves
+        // the confirm button under the thumb resting on Cancel. A footer whose
+        // primary can outgrow the row says so itself (`shrink whitespace-normal`
+        // on that button); a dialog that genuinely wants a stack passes its own
+        // `flex-col`, which tailwind-merge takes over this.
+        'flex flex-row justify-end gap-2',
         className
       )}
       {...props}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../models/social/circle.dart';
 import '../../../../theme/kallo_colors.dart';
 
 /// One seat at the table: who they are and how many parts they hold.
@@ -10,15 +11,23 @@ class PortionSeat {
     required this.initials,
     required this.label,
     required this.parts,
+    this.profile,
     this.colorIndex,
   });
 
   final String id;
 
-  /// One or two characters drawn inside the pin.
+  /// Who this is, so the pin can draw their photo. Null — or a profile with no
+  /// photo — falls back to [initials] on the seat colour.
+  final CircleProfile? profile;
+
+  /// One or two characters drawn inside the pin, when there is no photo. For
+  /// seat 0 this is the localised "You", never a name initial, which is why
+  /// the pin branches here instead of letting the avatar widget fall back.
   final String initials;
 
-  /// Spoken by the screen reader — the pin itself is a glyph.
+  /// The person's name. Spoken by the notch's screen-reader label, and by
+  /// the remove badge — never by the pin itself, which is decorative.
   final String label;
 
   final int parts;
@@ -27,6 +36,18 @@ class PortionSeat {
   /// the split meter wants; the whole-portion tab sets it explicitly because
   /// each person there sits alone in their own battery.
   final int? colorIndex;
+
+  /// The whole-portion tab reseats everyone in their own battery. It only
+  /// changes [parts] and [colorIndex] — spelling the other fields out by hand
+  /// there is how a new one (like [profile]) gets silently dropped.
+  PortionSeat copyWith({int? parts, int? colorIndex}) => PortionSeat(
+    id: id,
+    profile: profile,
+    initials: initials,
+    label: label,
+    parts: parts ?? this.parts,
+    colorIndex: colorIndex ?? this.colorIndex,
+  );
 }
 
 /// Seat colours, in the order people join. Seat 0 is always you.

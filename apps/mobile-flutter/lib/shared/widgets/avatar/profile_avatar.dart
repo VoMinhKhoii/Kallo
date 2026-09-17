@@ -41,18 +41,32 @@ int discTintIndex(String? seed, String handle) {
 /// disk cache survives the app. The initials disc is both placeholder and
 /// error widget, so a slow or dead URL degrades to the same thing.
 class ProfileAvatarDisc extends StatelessWidget {
-  const ProfileAvatarDisc({required this.profile, this.size = 24, super.key});
+  const ProfileAvatarDisc({
+    required this.profile,
+    this.size = 24,
+    this.fallback,
+    super.key,
+  });
 
   final CircleProfile profile;
   final double size;
 
+  /// Drawn instead of the initials disc while the photo loads and if it never
+  /// arrives. Callers that own a better glyph pass it here: the portion pin's
+  /// seat 0 is a localised "You", and [CircleProfile.initial] would quietly
+  /// replace it with the first letter of their name for as long as the photo
+  /// is in flight — or forever, on a stale URL.
+  final Widget? fallback;
+
   @override
   Widget build(BuildContext context) {
-    final fallback = _InitialsDisc(
-      initial: profile.initial,
-      tintIndex: discTintIndex(profile.avatarSeed, profile.handle),
-      size: size,
-    );
+    final placeholder =
+        fallback ??
+        _InitialsDisc(
+          initial: profile.initial,
+          tintIndex: discTintIndex(profile.avatarSeed, profile.handle),
+          size: size,
+        );
     final url = profile.avatarUrl?.trim();
     return ExcludeSemantics(
       child: ClipOval(
@@ -60,15 +74,15 @@ class ProfileAvatarDisc extends StatelessWidget {
           dimension: size,
           child:
               url == null || url.isEmpty
-                  ? fallback
+                  ? placeholder
                   : CachedNetworkImage(
                     imageUrl: url,
                     fit: BoxFit.cover,
                     memCacheWidth:
                         (size * MediaQuery.devicePixelRatioOf(context)).round(),
                     fadeInDuration: KalloMotion.quick,
-                    placeholder: (_, _) => fallback,
-                    errorWidget: (_, _, _) => fallback,
+                    placeholder: (_, _) => placeholder,
+                    errorWidget: (_, _, _) => placeholder,
                   ),
         ),
       ),
