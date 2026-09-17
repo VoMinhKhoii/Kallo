@@ -41,17 +41,20 @@ class PortionPin extends StatelessWidget {
   static const double _box = _drop + _ring * 2;
 
   /// Their photo when they have one, else their initials on the seat colour.
-  /// Never [ProfileAvatarDisc]'s own initials disc: it would draw the first
-  /// letter of their name where seat 0 needs a localised word.
+  /// The glyph goes down as [ProfileAvatarDisc.fallback] as well, so a photo
+  /// that is still loading or never loads leaves THIS text showing rather than
+  /// the disc's own — which would draw the first letter of their name where
+  /// seat 0 needs a localised word.
   Widget _face() {
-    final person = profile;
-    if (person != null && (person.avatarUrl?.trim().isNotEmpty ?? false)) {
-      return ProfileAvatarDisc(profile: person, size: 32);
-    }
-    return Text(
+    final glyph = Text(
       initials,
       style: dashCaption(color: kSeatInk[seat % kSeatInk.length]),
     );
+    final person = profile;
+    if (person != null && (person.avatarUrl?.trim().isNotEmpty ?? false)) {
+      return ProfileAvatarDisc(profile: person, size: 32, fallback: glyph);
+    }
+    return glyph;
   }
 
   @override

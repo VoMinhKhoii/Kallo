@@ -263,6 +263,24 @@ void main() {
     );
   });
 
+  testWidgets('a pin with a photo still shows ITS initials while loading',
+      (tester) async {
+    // ProfileAvatarDisc's own placeholder draws CircleProfile.initial, which
+    // for seat 0 is the first letter of your name — not the localised "You"
+    // the pin is contracted to draw. The pin hands its glyph down as the
+    // disc's fallback so no load state can swap it.
+    final seats = seatsFrom([10, 10]);
+    await pump(
+      tester,
+      parts: const [10, 10],
+      seats: [withPhoto(seats.first), withPhoto(seats[1])],
+    );
+
+    expect(find.byType(ProfileAvatarDisc), findsNWidgets(2));
+    expect(find.text('B'), findsOneWidget);
+    expect(find.text('F1'), findsOneWidget);
+  });
+
   testWidgets('whole mode carries the photo through the reseat',
       (tester) async {
     // WholePortionBatteries rebuilds every seat so each gets its own battery.
