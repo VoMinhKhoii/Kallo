@@ -110,9 +110,8 @@ class LabelAmountShortcuts {
 
 LabelAmountShortcuts shortcutsFor(NutritionLabel? label, String unit) {
   final serving = label?.servingSize;
-  final servingAmount = serving?.unit == unit
-      ? serving?.value
-      : (unit == 'serving' ? 1.0 : null);
+  final servingAmount =
+      serving?.unit == unit ? serving?.value : (unit == 'serving' ? 1.0 : null);
 
   double? packageAmount;
   final net = label?.netContent;
@@ -134,9 +133,10 @@ LabelAmountShortcuts shortcutsFor(NutritionLabel? label, String unit) {
 class LabelReviewState {
   LabelReviewState(this.label, {required String defaultProductName})
     : _column = reviewColumnFor(label),
-      productName = (label?.productName?.trim().isNotEmpty ?? false)
-          ? label!.productName!.trim()
-          : defaultProductName {
+      productName =
+          (label?.productName?.trim().isNotEmpty ?? false)
+              ? label!.productName!.trim()
+              : defaultProductName {
     _appliedAmount = _column.referenceAmount;
     amountText = formatLabelNumber(_column.referenceAmount);
     for (final key in labelNutrientKeys) {
@@ -180,8 +180,7 @@ class LabelReviewState {
     return trimmed.isNotEmpty && trimmed.length <= 200;
   }
 
-  double get _amountScale =>
-      amountIsValid ? parsedAmount! / _appliedAmount : 1;
+  double get _amountScale => amountIsValid ? parsedAmount! / _appliedAmount : 1;
 
   String nutrientText(String key) => _nutrientTexts[key] ?? '';
 
@@ -238,9 +237,8 @@ class LabelReviewState {
     final scale = nextAmount / _appliedAmount;
     for (final key in labelNutrientKeys) {
       final value = parseLabelDecimal(nutrientText(key));
-      _nutrientTexts[key] = value == null
-          ? ''
-          : formatLabelNumber(value * scale);
+      _nutrientTexts[key] =
+          value == null ? '' : formatLabelNumber(value * scale);
     }
     _appliedAmount = nextAmount;
     amountText = formatLabelNumber(nextAmount);

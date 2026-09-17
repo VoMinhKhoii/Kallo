@@ -36,12 +36,13 @@ Future<ScanOutcome?> showScanSheet(
   return showNhamSheet<ScanOutcome>(
     context,
     isScrollControlled: true,
-    builder: (context) => ScanSheet(
-      userId: userId,
-      date: date,
-      purpose: purpose,
-      onFallbackToText: onFallbackToText,
-    ),
+    builder:
+        (context) => ScanSheet(
+          userId: userId,
+          date: date,
+          purpose: purpose,
+          onFallbackToText: onFallbackToText,
+        ),
   );
 }
 
@@ -120,19 +121,20 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
     );
   }
 
-  Widget _buildBranch() => _scanType == ScanType.barcode
-      ? BarcodeScannerSheet(
-          userId: widget.userId,
-          date: widget.date,
-          purpose: widget.purpose,
-          onFallbackToText: widget.onFallbackToText,
-          onScanLabelInstead: () => _switchTo(ScanType.label),
-        )
-      : LabelScanBranch(
-          userId: widget.userId,
-          date: widget.date,
-          onScanBarcodeInstead: () => _switchTo(ScanType.barcode),
-        );
+  Widget _buildBranch() =>
+      _scanType == ScanType.barcode
+          ? BarcodeScannerSheet(
+            userId: widget.userId,
+            date: widget.date,
+            purpose: widget.purpose,
+            onFallbackToText: widget.onFallbackToText,
+            onScanLabelInstead: () => _switchTo(ScanType.label),
+          )
+          : LabelScanBranch(
+            userId: widget.userId,
+            date: widget.date,
+            onScanBarcodeInstead: () => _switchTo(ScanType.barcode),
+          );
 
   /// Manual barcode entry is its OWN surface within the sheet (its artboard is
   /// `BarcodeEntry`): the toggle would offer a camera switch to someone who
@@ -143,10 +145,10 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
 
   bool _showsToggle(BarcodeFlowState barcode, LabelScanState label) =>
       _scanType == ScanType.barcode
-      ? barcode.phase == BarcodeFlowPhase.scanning ||
-            barcode.phase == BarcodeFlowPhase.searching
-      : label.phase != LabelScanPhase.review &&
-            label.phase != LabelScanPhase.saving;
+          ? barcode.phase == BarcodeFlowPhase.scanning ||
+              barcode.phase == BarcodeFlowPhase.searching
+          : label.phase != LabelScanPhase.review &&
+              label.phase != LabelScanPhase.saving;
 
   /// One neutral "Scan" over the toggle — the title used to name the branch,
   /// which read as a contradiction sitting directly above a control offering

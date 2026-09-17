@@ -24,23 +24,49 @@ class Cooking extends StatelessWidget {
         label: t('oilUsage'),
         value: v.oilUsage.name,
         options: [
-          OptionStripItem(value: 'minimal', label: t('oilMinimal'), hint: t('oilMinimalHint')),
-          OptionStripItem(value: 'normal', label: t('oilNormal'), hint: t('oilNormalHint')),
-          OptionStripItem(value: 'heavy', label: t('oilHeavy'), hint: t('oilHeavyHint')),
+          OptionStripItem(
+            value: 'minimal',
+            label: t('oilMinimal'),
+            hint: t('oilMinimalHint'),
+          ),
+          OptionStripItem(
+            value: 'normal',
+            label: t('oilNormal'),
+            hint: t('oilNormalHint'),
+          ),
+          OptionStripItem(
+            value: 'heavy',
+            label: t('oilHeavy'),
+            hint: t('oilHeavyHint'),
+          ),
         ],
-        onChange: (s) => form.update(
-            (f) => f.oilUsage = OilUsage.values.byName(s)),
+        onChange:
+            (s) => form.update((f) => f.oilUsage = OilUsage.values.byName(s)),
       ),
       _CookingField(
         label: t('ricePortion'),
         value: v.defaultRicePortion.name,
         options: [
-          OptionStripItem(value: 'small', label: t('riceSmall'), hint: t('riceSmallHint')),
-          OptionStripItem(value: 'medium', label: t('riceMedium'), hint: t('riceMediumHint')),
-          OptionStripItem(value: 'large', label: t('riceLarge'), hint: t('riceLargeHint')),
+          OptionStripItem(
+            value: 'small',
+            label: t('riceSmall'),
+            hint: t('riceSmallHint'),
+          ),
+          OptionStripItem(
+            value: 'medium',
+            label: t('riceMedium'),
+            hint: t('riceMediumHint'),
+          ),
+          OptionStripItem(
+            value: 'large',
+            label: t('riceLarge'),
+            hint: t('riceLargeHint'),
+          ),
         ],
-        onChange: (s) => form.update(
-            (f) => f.defaultRicePortion = RicePortion.values.byName(s)),
+        onChange:
+            (s) => form.update(
+              (f) => f.defaultRicePortion = RicePortion.values.byName(s),
+            ),
       ),
       _CookingField(
         label: t('sugar'),
@@ -50,30 +76,60 @@ class Cooking extends StatelessWidget {
           OptionStripItem(value: 'medium', label: t('sugarMedium')),
           OptionStripItem(value: 'high', label: t('sugarHigh')),
         ],
-        onChange: (s) => form.update(
-            (f) => f.sugarBraised = SugarBraised.values.byName(s)),
+        onChange:
+            (s) => form.update(
+              (f) => f.sugarBraised = SugarBraised.values.byName(s),
+            ),
       ),
       _CookingField(
         label: t('proteinPortion'),
         value: v.defaultProteinPortion.name,
         options: [
-          OptionStripItem(value: 'small', label: t('proteinSmall'), hint: t('proteinSmallHint')),
-          OptionStripItem(value: 'medium', label: t('proteinMedium'), hint: t('proteinMediumHint')),
-          OptionStripItem(value: 'large', label: t('proteinLarge'), hint: t('proteinLargeHint')),
+          OptionStripItem(
+            value: 'small',
+            label: t('proteinSmall'),
+            hint: t('proteinSmallHint'),
+          ),
+          OptionStripItem(
+            value: 'medium',
+            label: t('proteinMedium'),
+            hint: t('proteinMediumHint'),
+          ),
+          OptionStripItem(
+            value: 'large',
+            label: t('proteinLarge'),
+            hint: t('proteinLargeHint'),
+          ),
         ],
-        onChange: (s) => form.update(
-            (f) => f.defaultProteinPortion = ProteinPortion.values.byName(s)),
+        onChange:
+            (s) => form.update(
+              (f) => f.defaultProteinPortion = ProteinPortion.values.byName(s),
+            ),
       ),
       _CookingField(
         label: t('broth'),
         value: brothConsumptionToString(v.brothConsumption),
         options: [
-          OptionStripItem(value: 'leave_it', label: t('brothLeave'), hint: t('brothLeaveHint')),
-          OptionStripItem(value: 'some', label: t('brothSome'), hint: t('brothSomeHint')),
-          OptionStripItem(value: 'finish_it', label: t('brothFinish'), hint: t('brothFinishHint')),
+          OptionStripItem(
+            value: 'leave_it',
+            label: t('brothLeave'),
+            hint: t('brothLeaveHint'),
+          ),
+          OptionStripItem(
+            value: 'some',
+            label: t('brothSome'),
+            hint: t('brothSomeHint'),
+          ),
+          OptionStripItem(
+            value: 'finish_it',
+            label: t('brothFinish'),
+            hint: t('brothFinishHint'),
+          ),
         ],
-        onChange: (s) => form.update(
-            (f) => f.brothConsumption = brothConsumptionFromString(s)),
+        onChange:
+            (s) => form.update(
+              (f) => f.brothConsumption = brothConsumptionFromString(s),
+            ),
       ),
     ];
 
@@ -114,10 +170,7 @@ class _CookingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            field.label,
-            style: dashBody(),
-          ),
+          Text(field.label, style: dashBody()),
           const SizedBox(height: KalloSpacing.sp3),
           OptionStrip.settings(
             options: field.options,

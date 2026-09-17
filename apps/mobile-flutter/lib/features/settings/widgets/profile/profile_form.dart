@@ -34,8 +34,9 @@ class ProfileForm extends ConsumerStatefulWidget {
 }
 
 class _ProfileFormState extends ConsumerState<ProfileForm> {
-  late final ProfileFormController _controller =
-      ProfileFormController(ProfileFormValues.fromRow(widget.profile));
+  late final ProfileFormController _controller = ProfileFormController(
+    ProfileFormValues.fromRow(widget.profile),
+  );
   String? _errorText;
 
   // Felt-save state: after a successful save the bar morphs into a
@@ -52,9 +53,10 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     // The saved calorie target lives in the raw profile row (no typed getter);
     // it seeds the count-up's "from" so the morph animates old→new.
     final rawTarget = widget.profile.raw['calorieTarget'];
-    _previousCalorieTarget = rawTarget is num
-        ? rawTarget.round()
-        : int.tryParse(rawTarget?.toString() ?? '') ?? 0;
+    _previousCalorieTarget =
+        rawTarget is num
+            ? rawTarget.round()
+            : int.tryParse(rawTarget?.toString() ?? '') ?? 0;
   }
 
   @override
@@ -225,10 +227,11 @@ class _SaveBarState extends State<_SaveBar>
         opacity: curved,
         child: AnimatedBuilder(
           animation: curved,
-          builder: (context, child) => Transform.translate(
-            offset: Offset(0, 20 * (1 - curved.value)), // y 20 → 0
-            child: child,
-          ),
+          builder:
+              (context, child) => Transform.translate(
+                offset: Offset(0, 20 * (1 - curved.value)), // y 20 → 0
+                child: child,
+              ),
           child: Padding(
             // pb-3 (12) floats the card above the bottom edge; sm:px parity →
             // px-5 (20) on mobile.
@@ -329,46 +332,49 @@ class _BackdropCard extends StatelessWidget {
               ),
             ],
           ),
-          child: savedTarget != null
-              ? _SavedConfirmation(
-                  target: savedTarget!,
-                  previousTarget: previousTarget,
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (errorText != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: KalloSpacing.sp2),
-                        child: Text(
-                          errorText!,
-                          textAlign: TextAlign.right,
-                          style: dashMeta(color: KalloColors.danger),
+          child:
+              savedTarget != null
+                  ? _SavedConfirmation(
+                    target: savedTarget!,
+                    previousTarget: previousTarget,
+                  )
+                  : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: KalloSpacing.sp2,
+                          ),
+                          child: Text(
+                            errorText!,
+                            textAlign: TextAlign.right,
+                            style: dashMeta(color: KalloColors.danger),
+                          ),
                         ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          KalloButton(
+                            title: tr('common.cancel'),
+                            variant: KalloButtonVariant.ghost,
+                            disabled: saving,
+                            onPressed: onCancel,
+                          ),
+                          const SizedBox(width: KalloSpacing.sp2),
+                          // Beige, not the black CTA it used to be: black is
+                          // reserved for auth and paywall since the native pass,
+                          // and this is an ordinary in-app primary.
+                          KalloButton(
+                            title: tr('settings.save'),
+                            loading: saving,
+                            onPressed: onSave,
+                          ),
+                        ],
                       ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        KalloButton(
-                          title: tr('common.cancel'),
-                          variant: KalloButtonVariant.ghost,
-                          disabled: saving,
-                          onPressed: onCancel,
-                        ),
-                        const SizedBox(width: KalloSpacing.sp2),
-                        // Beige, not the black CTA it used to be: black is
-                        // reserved for auth and paywall since the native pass,
-                        // and this is an ordinary in-app primary.
-                        KalloButton(
-                          title: tr('settings.save'),
-                          loading: saving,
-                          onPressed: onSave,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
         ),
       ),
     );
@@ -391,31 +397,26 @@ class _SavedConfirmation extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final fmt = NumberFormat.decimalPattern(locale);
-    final reduceMotion =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         const Icon(LucideIcons.check300, size: 16, color: KalloColors.success),
         const SizedBox(width: 8),
-        Text(
-          tr('settings.saved'),
-          style: dashBody(),
-        ),
+        Text(tr('settings.saved'), style: dashBody()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '·',
-            style: dashBody(color: KalloColors.border),
-          ),
+          child: Text('·', style: dashBody(color: KalloColors.border)),
         ),
         CountUpText(
           value: target.toDouble(),
           from: previousTarget.toDouble(),
           enabled: !reduceMotion,
-          format: (v) => '${fmt.format(v.round())} '
-              '${tr('onboarding.bodyMetrics.perDay')}',
+          format:
+              (v) =>
+                  '${fmt.format(v.round())} '
+                  '${tr('onboarding.bodyMetrics.perDay')}',
           style: dashBody(tabular: true),
         ),
       ],

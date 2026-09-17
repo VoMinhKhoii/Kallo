@@ -57,21 +57,24 @@ abstract final class QueryKeys {
     String userId,
     String date,
     int timezoneOffset,
-  ) =>
-      ['dashboard-bundle', userId, date, timezoneOffset];
+  ) => ['dashboard-bundle', userId, date, timezoneOffset];
 
   static const List<Object?> dashboardAll = ['dashboard'];
   static List<Object?> heatmap(Object range) => ['dashboard', 'heatmap', range];
 
   static const List<Object?> weightAll = ['weight-summary'];
-  static List<Object?> weightByRange(Object range) =>
-      ['weight-summary', range];
+  static List<Object?> weightByRange(Object range) => ['weight-summary', range];
 
   // ---- nutrition ----------------------------------------------------------
   static const List<Object?> nutritionAll = ['nutrition'];
-  static List<Object?> nutritionOverview(Object range, int? tz,
-          [Object? scope]) =>
-      ['nutrition', 'overview', range, tz ?? 'utc', scope ?? 'complete'];
-  static List<Object?> nutritionCandidates(String nutrient) =>
-      ['nutrition', 'candidates', nutrient];
+  static List<Object?> nutritionOverview(
+    Object range,
+    int? tz, [
+    Object? scope,
+  ]) => ['nutrition', 'overview', range, tz ?? 'utc', scope ?? 'complete'];
+  static List<Object?> nutritionCandidates(String nutrient) => [
+    'nutrition',
+    'candidates',
+    nutrient,
+  ];
 }

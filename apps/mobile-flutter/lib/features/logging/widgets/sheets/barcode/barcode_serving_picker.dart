@@ -41,9 +41,7 @@ class BarcodeServingPicker extends StatelessWidget {
               onTap: disabled || servings <= 1 ? null : () => onAdjust(-1),
             ),
             Expanded(
-              child: Center(
-                child: Text('$servings', style: dashValue()),
-              ),
+              child: Center(child: Text('$servings', style: dashValue())),
             ),
             BarcodeStepperButton(
               icon: LucideIcons.plus300,
@@ -83,10 +81,7 @@ class BarcodePackageCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'logging.barcode.wholePackage'.tr(),
-            style: dashBody(),
-          ),
+          Text('logging.barcode.wholePackage'.tr(), style: dashBody()),
           const SizedBox(height: 2),
           Text(
             'logging.barcode.totalGrams'.tr(

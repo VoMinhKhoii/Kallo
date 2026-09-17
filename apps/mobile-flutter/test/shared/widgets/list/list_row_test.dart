@@ -30,8 +30,10 @@ void main() {
       ),
     );
 
-    expect(tester.getSize(find.byType(ListRow)).height,
-        greaterThanOrEqualTo(52));
+    expect(
+      tester.getSize(find.byType(ListRow)).height,
+      greaterThanOrEqualTo(52),
+    );
 
     // Tap the quiet value text, far from the label — still the row's tap.
     await tester.tap(find.text('On'));
@@ -53,12 +55,11 @@ void main() {
         ),
       ),
     );
-    expect(tester.getSize(find.byType(ListRow)).height,
-        greaterThanOrEqualTo(60));
     expect(
-      find.bySemanticsLabel('Account, khoi@example.com'),
-      findsOneWidget,
+      tester.getSize(find.byType(ListRow)).height,
+      greaterThanOrEqualTo(60),
     );
+    expect(find.bySemanticsLabel('Account, khoi@example.com'), findsOneWidget);
   });
 
   testWidgets('busy swaps the trailing affordance for a spinner', (

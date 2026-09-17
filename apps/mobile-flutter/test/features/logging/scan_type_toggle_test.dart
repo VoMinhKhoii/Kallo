@@ -63,25 +63,30 @@ void main() {
         startLocale: locale,
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Builder(
-              builder: (context) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(scale)),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(
-                    width: screenWidth,
-                    child: ScanTypeToggle(value: selected, onChange: (_) {}),
-                  ),
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: Builder(
+                  builder:
+                      (context) => MediaQuery(
+                        data: MediaQuery.of(
+                          context,
+                        ).copyWith(textScaler: TextScaler.linear(scale)),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            width: screenWidth,
+                            child: ScanTypeToggle(
+                              value: selected,
+                              onChange: (_) {},
+                            ),
+                          ),
+                        ),
+                      ),
                 ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -108,7 +113,12 @@ void main() {
             '${locale.languageCode} @ ${scale}x, ${selected.name} selected';
 
         testWidgets('$name: neither label is ellipsised', (tester) async {
-          await pumpToggle(tester, locale: locale, scale: scale, selected: selected);
+          await pumpToggle(
+            tester,
+            locale: locale,
+            scale: scale,
+            selected: selected,
+          );
 
           for (final key in const [
             'logging.scan.barcodeTab',
@@ -136,7 +146,12 @@ void main() {
         testWidgets('$name: the segments are equal and fill the sheet', (
           tester,
         ) async {
-          await pumpToggle(tester, locale: locale, scale: scale, selected: selected);
+          await pumpToggle(
+            tester,
+            locale: locale,
+            scale: scale,
+            selected: selected,
+          );
 
           expect(
             tester.getSize(find.byType(ScanTypeToggle)).width,
@@ -165,9 +180,7 @@ void main() {
     }
   }
 
-  testWidgets('draws the shared primitive on a pill track', (
-    tester,
-  ) async {
+  testWidgets('draws the shared primitive on a pill track', (tester) async {
     await pumpToggle(
       tester,
       locale: const Locale('en'),

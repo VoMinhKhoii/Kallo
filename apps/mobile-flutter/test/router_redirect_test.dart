@@ -20,17 +20,16 @@ String? _at(
   bool profileLoading = false,
   bool resumeOnboarding = false,
   String? pendingInvite,
-}) =>
-    resolveRedirect(
-      location: location,
-      sessionLoading: sessionLoading,
-      signedIn: signedIn,
-      draft: (loading: draftLoading, value: draft),
-      firstSession: firstSession,
-      dismissed: dismissed,
-      onboarding: (force: resumeOnboarding, loading: profileLoading),
-      pendingInvite: pendingInvite,
-    );
+}) => resolveRedirect(
+  location: location,
+  sessionLoading: sessionLoading,
+  signedIn: signedIn,
+  draft: (loading: draftLoading, value: draft),
+  firstSession: firstSession,
+  dismissed: dismissed,
+  onboarding: (force: resumeOnboarding, loading: profileLoading),
+  pendingInvite: pendingInvite,
+);
 
 /// Got as far as screen 2 — answers on disk, wizard unfinished.
 const _partialDraft = OnboardingDraft(
@@ -225,8 +224,10 @@ void main() {
     });
 
     test('a pending invite outranks the dashboard', () {
-      expect(_at('/', signedIn: true, pendingInvite: 'abc'),
-          '/circle/invite/abc');
+      expect(
+        _at('/', signedIn: true, pendingInvite: 'abc'),
+        '/circle/invite/abc',
+      );
     });
   });
 }

@@ -40,19 +40,20 @@ class CircleAddMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Builder(
-    builder: (buttonContext) => IconButton(
-      tooltip: tr('groups.page.addFriend'),
-      onPressed: () => _openMenu(buttonContext),
-      // Pinned to the header's 44 slot: IconButton's own 48 default made this
-      // 4pt wider than the leading slot, which pushed the title off centre.
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-      icon: const Icon(
-        LucideIcons.userPlus300,
-        size: KalloIcons.size,
-        color: kInk,
-      ),
-    ),
+    builder:
+        (buttonContext) => IconButton(
+          tooltip: tr('groups.page.addFriend'),
+          onPressed: () => _openMenu(buttonContext),
+          // Pinned to the header's 44 slot: IconButton's own 48 default made this
+          // 4pt wider than the leading slot, which pushed the title off centre.
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+          icon: const Icon(
+            LucideIcons.userPlus300,
+            size: KalloIcons.size,
+            color: kInk,
+          ),
+        ),
   );
 
   Future<void> _openMenu(BuildContext context) async {

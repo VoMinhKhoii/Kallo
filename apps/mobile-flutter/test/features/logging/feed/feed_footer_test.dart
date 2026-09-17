@@ -29,29 +29,27 @@ const _meal = ParsedMeal(
   ],
 );
 
-FeedViewState _view({
-  bool streaming = false,
-  bool revealing = false,
-}) => FeedViewState(
-  date: '2026-01-01',
-  persistedMeals: const [],
-  pendingConfirmations: const [],
-  entries: const [],
-  isLoading: false,
-  hasError: false,
-  hasUnknownDailyMacros: false,
-  isStreaming: streaming,
-  isRevealing: revealing,
-  isCheatRevealing: false,
-  dailyCalories: 0,
-  dailyProtein: 0,
-  dailyCarbs: 0,
-  dailyFat: 0,
-  hasFailedAttempt: false,
-  isEmpty: false,
-  hasLiveTail: true,
-  showPartialDayNotice: false,
-);
+FeedViewState _view({bool streaming = false, bool revealing = false}) =>
+    FeedViewState(
+      date: '2026-01-01',
+      persistedMeals: const [],
+      pendingConfirmations: const [],
+      entries: const [],
+      isLoading: false,
+      hasError: false,
+      hasUnknownDailyMacros: false,
+      isStreaming: streaming,
+      isRevealing: revealing,
+      isCheatRevealing: false,
+      dailyCalories: 0,
+      dailyProtein: 0,
+      dailyCarbs: 0,
+      dailyFat: 0,
+      hasFailedAttempt: false,
+      isEmpty: false,
+      hasLiveTail: true,
+      showPartialDayNotice: false,
+    );
 
 Widget _wrap({
   required FeedViewState view,
@@ -65,35 +63,36 @@ Widget _wrap({
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: MediaQuery(
-        // The loaders tick forever; without this pumpAndSettle never returns.
-        data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(
-          body: SingleChildScrollView(
-            child: FeedFooter(
-              view: view,
-              stream: stream,
-              streamingRawInput: streamingRawInput,
-              revealRawInput: revealRawInput,
-              confirmPending: false,
-              loaderIndex: 0,
-              sentAt: sentAt,
-              onConfirmReveal: (_, _) {},
-              onConfirmCheatReveal: (_) {},
-              onClarifyCheat: (_) {},
-              failedText: null,
-              failedRetryable: true,
-              onRetry: () {},
-              onDiscardFailed: () {},
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: MediaQuery(
+            // The loaders tick forever; without this pumpAndSettle never returns.
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: FeedFooter(
+                  view: view,
+                  stream: stream,
+                  streamingRawInput: streamingRawInput,
+                  revealRawInput: revealRawInput,
+                  confirmPending: false,
+                  loaderIndex: 0,
+                  sentAt: sentAt,
+                  onConfirmReveal: (_, _) {},
+                  onConfirmCheatReveal: (_) {},
+                  onClarifyCheat: (_) {},
+                  failedText: null,
+                  failedRetryable: true,
+                  onRetry: () {},
+                  onDiscardFailed: () {},
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    ),
   ),
 );
 
@@ -109,25 +108,26 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('while streaming: the bubble carries the words, bare rows below', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(streaming: true),
-        stream: const StreamAnalysisState(
-          status: StreamStatus.decomposing,
-          isAnalyzing: true,
+  testWidgets(
+    'while streaming: the bubble carries the words, bare rows below',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          view: _view(streaming: true),
+          stream: const StreamAnalysisState(
+            status: StreamStatus.decomposing,
+            isAnalyzing: true,
+          ),
+          streamingRawInput: _raw,
         ),
-        streamingRawInput: _raw,
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byType(UserMessageBubble), findsOneWidget);
-    expect(find.byType(StreamingEntry), findsOneWidget);
-    expect(find.text(_raw), findsOneWidget);
-  });
+      expect(find.byType(UserMessageBubble), findsOneWidget);
+      expect(find.byType(StreamingEntry), findsOneWidget);
+      expect(find.text(_raw), findsOneWidget);
+    },
+  );
 
   testWidgets('at reveal: the bubble stays and the card regains its quote', (
     tester,
@@ -212,38 +212,38 @@ void main() {
     );
   });
 
-  testWidgets('the bubble survives the streaming → reveal swap without remounting', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(streaming: true),
-        stream: const StreamAnalysisState(
-          status: StreamStatus.assembling,
-          isAnalyzing: true,
+  testWidgets(
+    'the bubble survives the streaming → reveal swap without remounting',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          view: _view(streaming: true),
+          stream: const StreamAnalysisState(
+            status: StreamStatus.assembling,
+            isAnalyzing: true,
+          ),
+          streamingRawInput: _raw,
         ),
-        streamingRawInput: _raw,
-      ),
-    );
-    await tester.pumpAndSettle();
-    final before = tester.element(find.byType(UserMessageBubble));
+      );
+      await tester.pumpAndSettle();
+      final before = tester.element(find.byType(UserMessageBubble));
 
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(revealing: true),
-        stream: const StreamAnalysisState(
-          status: StreamStatus.done,
-          result: _meal,
-          analysisId: 'a1',
+      await tester.pumpWidget(
+        _wrap(
+          view: _view(revealing: true),
+          stream: const StreamAnalysisState(
+            status: StreamStatus.done,
+            result: _meal,
+            analysisId: 'a1',
+          ),
+          revealRawInput: _raw,
         ),
-        revealRawInput: _raw,
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Same element: a remount here would replay the entrance and the user's
-    // own sentence would visibly blink as the card appeared beneath it.
-    expect(tester.element(find.byType(UserMessageBubble)), same(before));
-  });
-
+      // Same element: a remount here would replay the entrance and the user's
+      // own sentence would visibly blink as the card appeared beneath it.
+      expect(tester.element(find.byType(UserMessageBubble)), same(before));
+    },
+  );
 }

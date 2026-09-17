@@ -69,11 +69,12 @@ class _KalloErrorWidgetState extends State<KalloErrorWidget> {
     }
   }
 
-  String get _copyLabel => _copyFailed
-      ? 'Copy failed'
-      : _copied
-      ? 'Copied'
-      : 'Copy details';
+  String get _copyLabel =>
+      _copyFailed
+          ? 'Copy failed'
+          : _copied
+          ? 'Copied'
+          : 'Copy details';
 
   @override
   Widget build(BuildContext context) {

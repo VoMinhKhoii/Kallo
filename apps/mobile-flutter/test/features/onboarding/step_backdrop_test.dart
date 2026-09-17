@@ -22,19 +22,21 @@ Widget _host(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Builder(
-        builder: (inner) => MediaQuery(
-          // The bun breathes on an endless Ticker, so `pumpAndSettle` would
-          // never return; reduced motion drops the typewriter too.
-          data: MediaQuery.of(inner).copyWith(disableAnimations: true),
-          child: Scaffold(body: SafeArea(child: child)),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Builder(
+            builder:
+                (inner) => MediaQuery(
+                  // The bun breathes on an endless Ticker, so `pumpAndSettle` would
+                  // never return; reduced motion drops the typewriter too.
+                  data: MediaQuery.of(inner).copyWith(disableAnimations: true),
+                  child: Scaffold(body: SafeArea(child: child)),
+                ),
+          ),
         ),
-      ),
-    ),
   ),
 );
 

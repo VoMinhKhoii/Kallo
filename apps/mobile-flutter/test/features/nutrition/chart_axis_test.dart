@@ -11,7 +11,10 @@ List<String> _dates(String start, int count, int stepDays) {
   final first = DateTime.parse('${start}T00:00:00Z');
   return [
     for (var i = 0; i < count; i++)
-      first.add(Duration(days: i * stepDays)).toIso8601String().substring(0, 10),
+      first
+          .add(Duration(days: i * stepDays))
+          .toIso8601String()
+          .substring(0, 10),
   ];
 }
 

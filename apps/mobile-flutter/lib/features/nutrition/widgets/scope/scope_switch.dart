@@ -8,20 +8,18 @@ import '../../../../theme/kallo_theme.dart';
 /// The switch names the scope it moves TO, and the arrow points that way:
 /// complete days sit to the left of logged days.
 class ScopeSwitch extends StatelessWidget {
-  const ScopeSwitch({
-    super.key,
-    required this.onComplete,
-    required this.onTap,
-  });
+  const ScopeSwitch({super.key, required this.onComplete, required this.onTap});
 
   final bool onComplete;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final label = tr(onComplete
-        ? 'nutrition.rhythm.loggedDays'
-        : 'nutrition.rhythm.completeDays');
+    final label = tr(
+      onComplete
+          ? 'nutrition.rhythm.loggedDays'
+          : 'nutrition.rhythm.completeDays',
+    );
     return Semantics(
       button: true,
       label: label,
@@ -45,15 +43,21 @@ class ScopeSwitch extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!onComplete) ...[
-                const Icon(LucideIcons.arrowLeft400, size: 14,
-                    color: kInkMuted),
+                const Icon(
+                  LucideIcons.arrowLeft400,
+                  size: 14,
+                  color: kInkMuted,
+                ),
                 const SizedBox(width: 6),
               ],
               Text(label, style: dashMeta()),
               if (onComplete) ...[
                 const SizedBox(width: 6),
-                const Icon(LucideIcons.arrowRight400, size: 14,
-                    color: kInkMuted),
+                const Icon(
+                  LucideIcons.arrowRight400,
+                  size: 14,
+                  color: kInkMuted,
+                ),
               ],
             ],
           ),
@@ -62,4 +66,3 @@ class ScopeSwitch extends StatelessWidget {
     );
   }
 }
-

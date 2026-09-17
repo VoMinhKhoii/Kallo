@@ -33,8 +33,10 @@ class PortionReadout extends StatelessWidget {
   Widget build(BuildContext context) {
     // Snap to the same 20-part grid the sender divided on, so the bar can never
     // show a boundary the control could not have produced.
-    final mineParts =
-        ((minePercent / 100) * kTotalParts).round().clamp(0, kTotalParts);
+    final mineParts = ((minePercent / 100) * kTotalParts).round().clamp(
+      0,
+      kTotalParts,
+    );
 
     return Semantics(
       label: '$restLabel, $mineLabel',

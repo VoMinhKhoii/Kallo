@@ -94,12 +94,13 @@ class ChatGroupDetail {
         id: json['id'] as String,
         kind: json['kind'] as String,
         name: json['name'] as String?,
-        members: ((json['members'] as List<dynamic>?) ?? const [])
-            .map(
-              (member) =>
-                  ChatGroupMember.fromJson(member as Map<String, dynamic>),
-            )
-            .toList(),
+        members:
+            ((json['members'] as List<dynamic>?) ?? const [])
+                .map(
+                  (member) =>
+                      ChatGroupMember.fromJson(member as Map<String, dynamic>),
+                )
+                .toList(),
         myRole: json['myRole'] as String,
       );
 }

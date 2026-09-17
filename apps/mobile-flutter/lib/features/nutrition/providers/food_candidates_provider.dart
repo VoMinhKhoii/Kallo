@@ -13,15 +13,17 @@ import '../../../models/nutrition/nutrition.dart';
 import 'candidates_response.dart';
 
 final foodCandidatesProvider =
-    FutureProvider.family<CandidatesResponse, NutritionNutrientKey>(
-        (ref, nutrient) async {
-  // Keep the resolved pool for the whole session (gcTime: Infinity).
-  ref.keepAlive();
+    FutureProvider.family<CandidatesResponse, NutritionNutrientKey>((
+      ref,
+      nutrient,
+    ) async {
+      // Keep the resolved pool for the whole session (gcTime: Infinity).
+      ref.keepAlive();
 
-  final api = ref.read(apiClientProvider);
-  final json = await api.post<Map<String, dynamic>>(
-    '/api/v1/nutrition/candidates',
-    {'nutrient': nutrient.name},
-  );
-  return CandidatesResponse.fromJson(json);
-});
+      final api = ref.read(apiClientProvider);
+      final json = await api.post<Map<String, dynamic>>(
+        '/api/v1/nutrition/candidates',
+        {'nutrient': nutrient.name},
+      );
+      return CandidatesResponse.fromJson(json);
+    });

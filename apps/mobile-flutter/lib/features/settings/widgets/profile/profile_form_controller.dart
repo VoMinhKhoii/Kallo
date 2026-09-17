@@ -32,12 +32,12 @@ class ProfileFormController extends ChangeNotifier {
   void setActivity(ActivityLevel a) => update((v) => v.activityLevel = a);
 
   void setGoal(Goal g) => update((v) {
-        v.goal = g;
-        // Mirror RN: switching to cutting/bulking seeds a default pace.
-        if (g != Goal.maintaining && v.aggression == null) {
-          v.aggression = 0.5;
-        }
-      });
+    v.goal = g;
+    // Mirror RN: switching to cutting/bulking seeds a default pace.
+    if (g != Goal.maintaining && v.aggression == null) {
+      v.aggression = 0.5;
+    }
+  });
 
   void setErrors(Map<ProfileField, String> errors) {
     _errors = errors;
@@ -81,9 +81,12 @@ class ProfileFormController extends ChangeNotifier {
   }
 
   static ProfileFormController of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<ProfileFormScope>();
-    assert(scope != null, 'ProfileFormController.of() outside a ProfileFormScope');
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<ProfileFormScope>();
+    assert(
+      scope != null,
+      'ProfileFormController.of() outside a ProfileFormScope',
+    );
     return scope!.controller;
   }
 }

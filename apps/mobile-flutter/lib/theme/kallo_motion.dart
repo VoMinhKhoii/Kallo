@@ -62,7 +62,6 @@ abstract final class KalloMotion {
 
   /// Between one item of a staggered entrance and the next.
   static const Duration stagger = Duration(milliseconds: 50);
-
 }
 
 /// The curves those durations run on. A separate class so a duration and a

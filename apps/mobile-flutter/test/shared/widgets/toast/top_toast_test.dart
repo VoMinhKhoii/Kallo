@@ -16,15 +16,16 @@ TextStyle _resolvedStyle(WidgetTester tester, String text) {
 }
 
 Widget _host(void Function(BuildContext) show) => MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
+  home: Scaffold(
+    body: Builder(
+      builder:
+          (context) => TextButton(
             onPressed: () => show(context),
             child: const Text('go'),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   testWidgets('message carries no inherited text decoration', (tester) async {
@@ -42,8 +43,9 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 3));
   });
 
-  testWidgets('action label carries no inherited text decoration',
-      (tester) async {
+  testWidgets('action label carries no inherited text decoration', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host((c) => showTopToast(c, 'Removed', actionLabel: 'Undo')),
     );

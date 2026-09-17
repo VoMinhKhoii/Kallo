@@ -168,13 +168,14 @@ class _ModeRow extends StatelessWidget {
       label: 'logging.modeSelector.$key'.tr(),
       subline: 'logging.modeSelector.${key}Desc'.tr(),
       onTap: onTap,
-      trailing: selected
-          ? const Icon(
-              LucideIcons.check300,
-              size: KalloIcons.size,
-              color: KalloColors.text,
-            )
-          : null,
+      trailing:
+          selected
+              ? const Icon(
+                LucideIcons.check300,
+                size: KalloIcons.size,
+                color: KalloColors.text,
+              )
+              : null,
     );
   }
 }

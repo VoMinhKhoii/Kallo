@@ -43,9 +43,8 @@ const double kGaugeReadoutClearMargin = 4;
 
 double gaugeClearHalfWidth(double outerRadius, double depth) {
   final inner = gaugeInnerRadius(outerRadius);
-  final ring = depth.abs() < inner
-      ? math.sqrt(inner * inner - depth * depth)
-      : 0.0;
+  final ring =
+      depth.abs() < inner ? math.sqrt(inner * inner - depth * depth) : 0.0;
   final mouth = depth > 0 ? depth * math.tan(60 * _deg) : 0.0;
   return math.max(ring, mouth);
 }
@@ -81,10 +80,7 @@ double gaugeClearHalfWidthForBand(
   );
   final crossing = gaugeInnerRadius(outerRadius) / 2;
   if (crossing > depthTop && crossing < depthBottom) {
-    narrowest = math.min(
-      narrowest,
-      gaugeClearHalfWidth(outerRadius, crossing),
-    );
+    narrowest = math.min(narrowest, gaugeClearHalfWidth(outerRadius, crossing));
   }
   return narrowest;
 }

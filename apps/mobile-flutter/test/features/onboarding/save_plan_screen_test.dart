@@ -27,33 +27,35 @@ const _phone = Size(390, 844);
 /// options as `/sign-in`, under the onboarding chrome, with no way past them —
 /// the app is authenticated-only and the plan is sitting in a local draft.
 Widget _app({EdgeInsets insets = EdgeInsets.zero}) => ProviderScope(
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
             home: Builder(
-              builder: (inner) => MediaQuery(
-                // The bun breathes on an endless Ticker, so `pumpAndSettle`
-                // would never return; reduced motion also drops the typewriter
-                // so the guide line is on screen from the first frame.
-                data: MediaQuery.of(inner).copyWith(
-                  disableAnimations: true,
-                  padding: insets,
-                  viewPadding: insets,
-                ),
-                child: const SavePlanScreen(),
-              ),
+              builder:
+                  (inner) => MediaQuery(
+                    // The bun breathes on an endless Ticker, so `pumpAndSettle`
+                    // would never return; reduced motion also drops the typewriter
+                    // so the guide line is on screen from the first frame.
+                    data: MediaQuery.of(inner).copyWith(
+                      disableAnimations: true,
+                      padding: insets,
+                      viewPadding: insets,
+                    ),
+                    child: const SavePlanScreen(),
+                  ),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -61,9 +63,9 @@ void main() {
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-    );
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
     await EasyLocalization.ensureInitialized();
     // Without the real font metrics every glyph renders ~1em wide and the auth
     // buttons' rows overflow — see AGENTS.md §4.

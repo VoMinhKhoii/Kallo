@@ -65,8 +65,9 @@ class CompactWeightLog extends ConsumerStatefulWidget {
 }
 
 class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: _prefill);
+  late final TextEditingController _controller = TextEditingController(
+    text: _prefill,
+  );
   bool _dirty = false;
   String? _validationError;
   _Feedback? _feedback;
@@ -146,7 +147,9 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
       // Stay populated with the submitted value; clear dirty so the prop-sync
       // (now fed the refetched todayWeight) takes over.
       final text =
-          weightKg == weightKg.truncateToDouble() ? weightKg.truncate().toString() : weightKg.toString();
+          weightKg == weightKg.truncateToDouble()
+              ? weightKg.truncate().toString()
+              : weightKg.toString();
       setState(() {
         _controller.text = text;
         _dirty = false;
@@ -163,18 +166,20 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _pending = false);
-      final message = error is ApiError
-          ? error.message
-          : tr('dashboard.weightCard.saveFailed');
+      final message =
+          error is ApiError
+              ? error.message
+              : tr('dashboard.weightCard.saveFailed');
       _showFeedback(_Feedback(_FeedbackKind.error, message));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final submitLabel = _pending
-        ? tr('dashboard.saving')
-        : _hasTodayWeight
+    final submitLabel =
+        _pending
+            ? tr('dashboard.saving')
+            : _hasTodayWeight
             ? tr('dashboard.weightCard.update')
             : tr('dashboard.save');
 
@@ -217,9 +222,10 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             child: Text(
               _feedback!.message,
               style: dashMeta(
-                color: _feedback!.kind == _FeedbackKind.success
-                    ? KalloColors.success
-                    : KalloColors.danger,
+                color:
+                    _feedback!.kind == _FeedbackKind.success
+                        ? KalloColors.success
+                        : KalloColors.danger,
               ),
             ),
           )
@@ -242,5 +248,4 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
       ],
     );
   }
-
 }

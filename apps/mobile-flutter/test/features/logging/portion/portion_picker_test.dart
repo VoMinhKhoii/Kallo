@@ -19,12 +19,13 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: child),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: child),
+        ),
   ),
 );
 
@@ -60,18 +61,20 @@ Future<PortionPick?> _openPicker(
   await tester.pumpWidget(
     _wrap(
       Builder(
-        builder: (context) => TextButton(
-          onPressed: () async {
-            result = await showPortionPicker(
-              context,
-              vessel: vessel,
-              grams: grams,
-              itemCalories: 300, itemQuantity: 150,
-            );
-            returned = true;
-          },
-          child: const Text('open'),
-        ),
+        builder:
+            (context) => TextButton(
+              onPressed: () async {
+                result = await showPortionPicker(
+                  context,
+                  vessel: vessel,
+                  grams: grams,
+                  itemCalories: 300,
+                  itemQuantity: 150,
+                );
+                returned = true;
+              },
+              child: const Text('open'),
+            ),
       ),
     ),
   );
@@ -171,18 +174,20 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await showPortionPicker(
-                  context,
-                  vessel: _fish,
-                  grams: 150,
-                  itemCalories: 300, itemQuantity: 150,
-                );
-                returned = true;
-              },
-              child: const Text('open'),
-            ),
+            builder:
+                (context) => TextButton(
+                  onPressed: () async {
+                    result = await showPortionPicker(
+                      context,
+                      vessel: _fish,
+                      grams: 150,
+                      itemCalories: 300,
+                      itemQuantity: 150,
+                    );
+                    returned = true;
+                  },
+                  child: const Text('open'),
+                ),
           ),
         ),
       );
@@ -214,18 +219,20 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await showPortionPicker(
-                  context,
-                  vessel: _fish,
-                  grams: 150,
-                  itemCalories: 300, itemQuantity: 150,
-                );
-                returned = true;
-              },
-              child: const Text('open'),
-            ),
+            builder:
+                (context) => TextButton(
+                  onPressed: () async {
+                    result = await showPortionPicker(
+                      context,
+                      vessel: _fish,
+                      grams: 150,
+                      itemCalories: 300,
+                      itemQuantity: 150,
+                    );
+                    returned = true;
+                  },
+                  child: const Text('open'),
+                ),
           ),
         ),
       );

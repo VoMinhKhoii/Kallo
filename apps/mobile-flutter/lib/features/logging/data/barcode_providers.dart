@@ -192,8 +192,13 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       date: date,
       // The day is refreshed by the helper; re-invalidating it here would throw
       // that result away and put the refetch back after the pin.
-      also: () =>
-          invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false),
+      also:
+          () => invalidateMealSurfaces(
+            ref.invalidate,
+            userId,
+            date,
+            includeDay: false,
+          ),
     );
     return true;
   }

@@ -103,17 +103,18 @@ class _AuroraPainter extends CustomPainter {
     double radiusY,
   ) {
     const unit = Rect.fromLTRB(-1, -1, 1, 1);
-    final paint = Paint()
-      ..shader = RadialGradient(
-        // `radius` is a fraction of the box's shortest side (2 units here), so
-        // 0.5 is exactly the unit circle.
-        radius: 0.5,
-        colors: [
-          color.withValues(alpha: opacity * spec.strength),
-          color.withValues(alpha: 0),
-        ],
-        stops: const [0, 0.7],
-      ).createShader(unit);
+    final paint =
+        Paint()
+          ..shader = RadialGradient(
+            // `radius` is a fraction of the box's shortest side (2 units here), so
+            // 0.5 is exactly the unit circle.
+            radius: 0.5,
+            colors: [
+              color.withValues(alpha: opacity * spec.strength),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.7],
+          ).createShader(unit);
 
     canvas.save();
     canvas.translate(center.dx * size.width, center.dy * size.height);

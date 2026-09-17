@@ -36,9 +36,7 @@ class RouteErrorScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-            child: AppHeader(
-              onBack: () => popOrOpenLogging(context),
-            ),
+            child: AppHeader(onBack: () => popOrOpenLogging(context)),
           ),
           Expanded(
             child: Center(
@@ -48,9 +46,13 @@ class RouteErrorScreen extends StatelessWidget {
                   area: SurfaceArea.system,
                   kind: notFound ? SurfaceKind.notFound : SurfaceKind.error,
                   title:
-                      notFound ? tr('common.notFound') : tr('errors.route.title'),
+                      notFound
+                          ? tr('common.notFound')
+                          : tr('errors.route.title'),
                   subtitle: tr(
-                    notFound ? 'errors.route.notFoundBody' : 'errors.route.body',
+                    notFound
+                        ? 'errors.route.notFoundBody'
+                        : 'errors.route.body',
                   ),
                   action: KalloButton(
                     variant: KalloButtonVariant.cta,

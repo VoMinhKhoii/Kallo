@@ -73,13 +73,15 @@ class _PlanCtaState extends State<PlanCta> {
       child: GestureDetector(
         onTapDown: _isDisabled ? null : (_) => setState(() => _pressed = true),
         onTapUp: _isDisabled ? null : (_) => setState(() => _pressed = false),
-        onTapCancel: _isDisabled ? null : () => setState(() => _pressed = false),
-        onTap: _isDisabled
-            ? null
-            : () {
-                HapticFeedback.lightImpact();
-                widget.onPressed?.call();
-              },
+        onTapCancel:
+            _isDisabled ? null : () => setState(() => _pressed = false),
+        onTap:
+            _isDisabled
+                ? null
+                : () {
+                  HapticFeedback.lightImpact();
+                  widget.onPressed?.call();
+                },
         child: Semantics(
           button: true,
           enabled: !_isDisabled,
@@ -104,9 +106,10 @@ class _PlanCtaState extends State<PlanCta> {
           curve: KalloEase.press,
           opacity: _pressed ? 1 : 0,
           child: ColoredBox(
-            color: widget.gold
-                ? KalloColors.pressWashOnGold
-                : KalloColors.pressWashOnInk,
+            color:
+                widget.gold
+                    ? KalloColors.pressWashOnGold
+                    : KalloColors.pressWashOnInk,
           ),
         ),
         Center(child: _content()),
@@ -136,15 +139,16 @@ class _PlanCtaState extends State<PlanCta> {
   /// the gradient is #FBE27A, where white text falls to 1.3:1.
   Color _ink() => widget.gold ? kInk : KalloColors.elev;
 
-  Widget _content() => widget.loading
-      ? SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: _ink()),
-        )
-      : Text(
-          widget.label,
-          style: dashBody(color: _ink(), weight: FontWeight.w600),
-          textAlign: TextAlign.center,
-        );
+  Widget _content() =>
+      widget.loading
+          ? SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, color: _ink()),
+          )
+          : Text(
+            widget.label,
+            style: dashBody(color: _ink(), weight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          );
 }

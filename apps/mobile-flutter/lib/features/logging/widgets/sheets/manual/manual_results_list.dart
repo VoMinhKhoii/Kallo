@@ -37,8 +37,8 @@ class ManualResultsList extends StatelessWidget {
           _isRecents
               ? 'logging.manualLogging.recentFoods'.tr()
               : 'logging.manualLogging.resultsFor'.tr(
-                  namedArgs: {'query': query},
-                ),
+                namedArgs: {'query': query},
+              ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: dashMeta(),
@@ -46,10 +46,11 @@ class ManualResultsList extends StatelessWidget {
         const SizedBox(height: KalloSpacing.sp1),
         resultsAsync.when(
           loading: () => _Message(text: 'logging.manualLogging.searching'.tr()),
-          error: (_, __) => _Message(
-            text: 'errors.internal'.tr(),
-            color: KalloColors.danger,
-          ),
+          error:
+              (_, __) => _Message(
+                text: 'errors.internal'.tr(),
+                color: KalloColors.danger,
+              ),
           data: _buildResults,
         ),
       ],
@@ -64,10 +65,11 @@ class ManualResultsList extends StatelessWidget {
       // An empty recents list just means a new user — nudge them to search
       // rather than show an alarming "no results".
       return _Message(
-        text: (_isRecents
-                ? 'logging.manualLogging.recentsHint'
-                : 'logging.manualLogging.noResults')
-            .tr(),
+        text:
+            (_isRecents
+                    ? 'logging.manualLogging.recentsHint'
+                    : 'logging.manualLogging.noResults')
+                .tr(),
       );
     }
     // Reversed: the closest match lands LAST, adjacent to the search pill.

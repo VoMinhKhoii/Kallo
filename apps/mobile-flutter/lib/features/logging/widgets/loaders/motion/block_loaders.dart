@@ -56,19 +56,15 @@ class LadderPainter extends LoaderPainter {
     for (var i = 0; i < _count; i++) {
       final p = loaderPhase(seconds, _dur, begin: -i * _dur / _count);
       // Up fast, hold, down slow: a step rather than a bob.
-      final lift = p < 0.3
-          ? Curves.easeOut.transform(p / 0.3)
-          : (p < 0.7 ? 1.0 : 1 - Curves.easeIn.transform((p - 0.7) / 0.3));
+      final lift =
+          p < 0.3
+              ? Curves.easeOut.transform(p / 0.3)
+              : (p < 0.7 ? 1.0 : 1 - Curves.easeIn.transform((p - 0.7) / 0.3));
 
       final h = 8 + 14 * lift;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            (5 + i * 8.5) * s,
-            (30 - h) * s,
-            6 * s,
-            h * s,
-          ),
+          Rect.fromLTWH((5 + i * 8.5) * s, (30 - h) * s, 6 * s, h * s),
           Radius.circular(2.4 * s),
         ),
         paint..color = color.withValues(alpha: 0.45 + 0.55 * lift),

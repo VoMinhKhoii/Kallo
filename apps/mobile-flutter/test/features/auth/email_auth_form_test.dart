@@ -20,13 +20,14 @@ final _provider =
     );
 
 Widget _app() => ProviderScope(
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
@@ -36,9 +37,9 @@ Widget _app() => ProviderScope(
               ),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -68,14 +69,23 @@ void main() {
     // Flip to sign-up.
     await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
-    expect(find.text('Create Account'), findsOneWidget,
-        reason: 'the form did not switch to sign-up');
+    expect(
+      find.text('Create Account'),
+      findsOneWidget,
+      reason: 'the form did not switch to sign-up',
+    );
 
     // The errors were raised against the sign-in submit — they must not carry.
-    expect(find.text('Enter a valid email address'), findsNothing,
-        reason: 'the email validation error carried over the mode switch');
-    expect(find.text('Password must be at least 6 characters'), findsNothing,
-        reason: 'the password validation error carried over');
+    expect(
+      find.text('Enter a valid email address'),
+      findsNothing,
+      reason: 'the email validation error carried over the mode switch',
+    );
+    expect(
+      find.text('Password must be at least 6 characters'),
+      findsNothing,
+      reason: 'the password validation error carried over',
+    );
 
     // The typed address survives: changing your mind should not cost a retype.
     expect(

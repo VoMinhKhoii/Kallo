@@ -8,7 +8,6 @@ import 'portion_pins.dart';
 import '../../portion/portion_metrics.dart';
 import '../../portion/portion_seats.dart';
 
-
 /// The portion battery: a dish divided into [kTotalParts] cells, one coloured
 /// run per person, a draggable pill notch on every internal boundary, and a
 /// pin above each run carrying that person's kcal.
@@ -43,7 +42,6 @@ class PortionBattery extends StatefulWidget {
   final ValueChanged<int>? onRemove;
 
   final bool interactive;
-
 
   @override
   State<PortionBattery> createState() => _PortionBatteryState();
@@ -163,8 +161,8 @@ class _PortionBatteryState extends State<PortionBattery> {
                               trackWidth: trackWidth,
                               held: _dragging == b,
                               onDragStart: () => _onDragStart(b),
-                              onDragUpdate: (x) =>
-                                  _onDragUpdate(b, x, trackWidth),
+                              onDragUpdate:
+                                  (x) => _onDragUpdate(b, x, trackWidth),
                               onDragEnd: _onDragEnd,
                               onStep: (d) => _step(b, d),
                             ),
@@ -179,5 +177,4 @@ class _PortionBatteryState extends State<PortionBattery> {
       },
     );
   }
-
 }

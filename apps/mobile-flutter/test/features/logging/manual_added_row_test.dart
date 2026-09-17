@@ -49,24 +49,25 @@ void main() {
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Scaffold(
-              body: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ManualAddedList(
-                  items: [
-                    ManualLogItem(id: 'a', ingredient: _rice, grams: grams),
-                  ],
-                  disabled: false,
-                  onGramsChange: (_, __) {},
-                  onRemove: (_) {},
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: Scaffold(
+                  body: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ManualAddedList(
+                      items: [
+                        ManualLogItem(id: 'a', ingredient: _rice, grams: grams),
+                      ],
+                      disabled: false,
+                      onGramsChange: (_, __) {},
+                      onRemove: (_) {},
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -147,9 +148,7 @@ void main() {
     expect(find.text('234 ${'logging.manualLogging.kcal'.tr()}'), findsNothing);
   });
 
-  testWidgets('the density shows before any grams are entered', (
-    tester,
-  ) async {
+  testWidgets('the density shows before any grams are entered', (tester) async {
     await pumpList(tester);
 
     expect(

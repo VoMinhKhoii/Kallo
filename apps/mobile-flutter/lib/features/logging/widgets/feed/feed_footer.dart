@@ -80,9 +80,10 @@ class FeedFooter extends StatelessWidget {
     // Formatted once: the divider prints it, and the bubble's long-press menu
     // wears the same string as its header.
     final sentAt = this.sentAt;
-    final sentLabel = sentAt == null
-        ? null
-        : DateFormat.jm(context.locale.toString()).format(sentAt);
+    final sentLabel =
+        sentAt == null
+            ? null
+            : DateFormat.jm(context.locale.toString()).format(sentAt);
     // The footer's cards carry no margins of their own, so the stack spaces
     // them at the same block gap the card list uses above.
     return Column(
@@ -94,10 +95,7 @@ class FeedFooter extends StatelessWidget {
         // holds, so a meal sent while an older one is unconfirmed reads down
         // in the order things happened.
         if (showBubble && sentLabel != null)
-          MealTimeDivider(
-            key: const ValueKey('turn-divider'),
-            time: sentLabel,
-          ),
+          MealTimeDivider(key: const ValueKey('turn-divider'), time: sentLabel),
         if (showBubble)
           // A constant key: the bubble must NOT remount when the sibling below
           // it changes type at reveal, or it would replay its entrance. The key

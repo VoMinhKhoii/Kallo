@@ -99,13 +99,15 @@ class PillNavBar extends ConsumerWidget {
                 active: false,
                 onTap: () => goToLogging(context),
               ),
-              _AddButton(onTap: () {
-                HapticFeedback.lightImpact();
-                // The sheet lands over the bar, so leave the bar showing
-                // underneath it rather than half-slid away.
-                ref.read(navVisibilityProvider.notifier).reveal();
-                showAddSheet(context, ref);
-              }),
+              _AddButton(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  // The sheet lands over the bar, so leave the bar showing
+                  // underneath it rather than half-slid away.
+                  ref.read(navVisibilityProvider.notifier).reveal();
+                  showAddSheet(context, ref);
+                },
+              ),
               PillNavItem(
                 icon: LucideIcons.apple300,
                 activeIcon: LucideIcons.apple400,

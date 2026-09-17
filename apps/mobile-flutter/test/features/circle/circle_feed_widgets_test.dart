@@ -342,9 +342,7 @@ void main() {
     // side pad from 0 to 10 and re-space the whole row.
     await pump(
       tester,
-      post(
-        entry(reactions: const ShareReactions(count: 2), repliesTotal: 3),
-      ),
+      post(entry(reactions: const ShareReactions(count: 2), repliesTotal: 3)),
     );
     final counted = inkGaps(tester);
     expect(counted, hasLength(2));

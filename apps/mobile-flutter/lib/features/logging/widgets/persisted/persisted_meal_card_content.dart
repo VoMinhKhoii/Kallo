@@ -18,7 +18,9 @@ class PersistedMealCardContent extends StatelessWidget {
     required this.curvedExpand,
     required this.onToggle,
     this.editorBody,
-    this.borderRadius = const BorderRadius.all(Radius.circular(KalloRadii.card)),
+    this.borderRadius = const BorderRadius.all(
+      Radius.circular(KalloRadii.card),
+    ),
   });
 
   final PersistedMeal meal;
@@ -79,10 +81,7 @@ class PersistedMealCardContent extends StatelessWidget {
                   'carbohydrate': 'C ${fmtG(n.carbohydrateG)}',
                 if (n.fatG != null) 'fat': 'F ${fmtG(n.fatG)}',
               },
-              kcalLabel: fmtKcal(
-                n.caloriesKcal,
-                locale: localeOf(context),
-              ),
+              kcalLabel: fmtKcal(n.caloriesKcal, locale: localeOf(context)),
               kcalPlacement: MealBlockKcal.legendTrailing,
               titleTrailing: PersistedMealChevronToggle(
                 expand: curvedExpand,
@@ -91,16 +90,17 @@ class PersistedMealCardContent extends StatelessWidget {
               // The breakdown opens BETWEEN the title and the bar+legend, so
               // the bar and its total always close the card. The details grow
               // in place and push the bar down with them — no jump-cut.
-              middle: editorBody == null
-                  ? SizeTransition(
-                      sizeFactor: curvedExpand,
-                      alignment: Alignment.topCenter,
-                      child: FadeTransition(
-                        opacity: curvedExpand,
-                        child: PersistedMealExpandedDetails(meal: meal),
-                      ),
-                    )
-                  : null,
+              middle:
+                  editorBody == null
+                      ? SizeTransition(
+                        sizeFactor: curvedExpand,
+                        alignment: Alignment.topCenter,
+                        child: FadeTransition(
+                          opacity: curvedExpand,
+                          child: PersistedMealExpandedDetails(meal: meal),
+                        ),
+                      )
+                      : null,
             ),
           ),
 

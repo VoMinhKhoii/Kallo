@@ -37,18 +37,18 @@ class _Api extends ApiClient {
 }
 
 Map<String, dynamic> _entitlement({required bool premium}) => {
-      'tier': premium ? 'premium' : 'free',
-      'purchasesEnabled': true,
-      'isLifetime': false,
-      'expiresAt': null,
-      'willRenew': false,
-      'source': null,
-      'hasActiveSubscription': premium,
-      'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
-      'features': {
-        'ai_analysis': {'allowed': true, 'reason': 'entitled'},
-      },
-    };
+  'tier': premium ? 'premium' : 'free',
+  'purchasesEnabled': true,
+  'isLifetime': false,
+  'expiresAt': null,
+  'willRenew': false,
+  'source': null,
+  'hasActiveSubscription': premium,
+  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
+  'features': {
+    'ai_analysis': {'allowed': true, 'reason': 'entitled'},
+  },
+};
 
 Widget _app(ApiClient api, {required void Function(GoRouter) onRouter}) {
   final router = GoRouter(
@@ -93,19 +93,18 @@ void main() {
   }
 
   testWidgets('a free user finishes on Kallo Pro', (tester) async {
-    expect(
-      await land(tester, _Api(_entitlement(premium: false))),
-      '/paywall',
-    );
+    expect(await land(tester, _Api(_entitlement(premium: false))), '/paywall');
   });
 
-  testWidgets('a user who already has Pro goes straight to the feed',
-      (tester) async {
+  testWidgets('a user who already has Pro goes straight to the feed', (
+    tester,
+  ) async {
     expect(await land(tester, _Api(_entitlement(premium: true))), '/logging');
   });
 
-  testWidgets('an unreadable entitlement lands in the feed, not the paywall',
-      (tester) async {
+  testWidgets('an unreadable entitlement lands in the feed, not the paywall', (
+    tester,
+  ) async {
     // Failing to reach the endpoint is not evidence that a paying customer is
     // on free, and Pro is one tap away from Settings either way.
     expect(await land(tester, _Api(null)), '/logging');

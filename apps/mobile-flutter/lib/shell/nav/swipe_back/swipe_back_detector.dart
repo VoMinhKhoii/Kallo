@@ -46,14 +46,15 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
   @override
   void initState() {
     super.initState();
-    _recognizer = SwipeBackDragRecognizer(
-      debugOwner: this,
-      isRightToLeft: () => mounted && BackSwipe.backSign(context) < 0,
-    )
-      ..onStart = _handleDragStart
-      ..onUpdate = _handleDragUpdate
-      ..onEnd = _handleDragEnd
-      ..onCancel = _handleDragCancel;
+    _recognizer =
+        SwipeBackDragRecognizer(
+            debugOwner: this,
+            isRightToLeft: () => mounted && BackSwipe.backSign(context) < 0,
+          )
+          ..onStart = _handleDragStart
+          ..onUpdate = _handleDragUpdate
+          ..onEnd = _handleDragEnd
+          ..onCancel = _handleDragCancel;
   }
 
   @override
@@ -116,9 +117,10 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
     _dragging = false;
     final route = widget.route;
     final width = _width;
-    final velocity = width <= 0
-        ? 0.0
-        : _logical(details.velocity.pixelsPerSecond.dx / width);
+    final velocity =
+        width <= 0
+            ? 0.0
+            : _logical(details.velocity.pixelsPerSecond.dx / width);
 
     final bool animateForward;
     if (!route.isCurrent) {
@@ -130,8 +132,7 @@ class _SwipeBackDetectorState<T> extends State<SwipeBackDetector<T>> {
     } else if (velocity.abs() >= BackSwipe.minFlingWidthsPerSecond) {
       animateForward = velocity <= 0;
     } else {
-      animateForward =
-          (route.animation?.value ?? 1) > BackSwipe.commitFraction;
+      animateForward = (route.animation?.value ?? 1) > BackSwipe.commitFraction;
     }
 
     if (animateForward) {

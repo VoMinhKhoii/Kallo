@@ -68,7 +68,8 @@ class PortionContainerBody extends StatelessWidget {
     final ratios = _widthRatios;
     final tiers = _tiers;
     final nearest = _nearest;
-    final nearestTier = tiers[anchors.indexWhere((a) => a.tier == nearest.tier)];
+    final nearestTier =
+        tiers[anchors.indexWhere((a) => a.tier == nearest.tier)];
     // Tallest glyph in column widths — pins the band so the sheet doesn't
     // change height between a flat platter and an upright cup.
     final tallest = [
@@ -96,16 +97,17 @@ class PortionContainerBody extends StatelessWidget {
             return '$g g — ${at.label} (${tier.sizeLabel})';
           },
           glyphBandAspect: 1 / tallest,
-          glyphBuilder: (index, column) => PortionVesselGlyph(
-            asset: tiers[index].asset,
-            width: column * ratios[index],
-            label: '${anchors[index].label} (${tiers[index].sizeLabel})',
-            selected: anchors[index].tier == nearest.tier,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onChanged(anchors[index].value.round());
-            },
-          ),
+          glyphBuilder:
+              (index, column) => PortionVesselGlyph(
+                asset: tiers[index].asset,
+                width: column * ratios[index],
+                label: '${anchors[index].label} (${tiers[index].sizeLabel})',
+                selected: anchors[index].tier == nearest.tier,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(anchors[index].value.round());
+                },
+              ),
           labelFor: (index) => tiers[index].sizeLabel,
           onChanged: onChanged,
         ),

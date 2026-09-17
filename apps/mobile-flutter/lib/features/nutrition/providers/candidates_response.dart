@@ -20,12 +20,12 @@ class FoodCandidate {
   });
 
   factory FoodCandidate.fromJson(Map<String, dynamic> json) => FoodCandidate(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        nameEn: json['nameEn'] as String,
-        amount: (json['amount'] as num?)?.toDouble() ?? 0,
-        unit: json['unit'] as String,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    nameEn: json['nameEn'] as String,
+    amount: (json['amount'] as num?)?.toDouble() ?? 0,
+    unit: json['unit'] as String,
+  );
 }
 
 class CandidatesResponse {
@@ -37,8 +37,9 @@ class CandidatesResponse {
   factory CandidatesResponse.fromJson(Map<String, dynamic> json) =>
       CandidatesResponse(
         nutrient: json['nutrient'] as String,
-        foods: (json['foods'] as List<dynamic>)
-            .map((e) => FoodCandidate.fromJson(e as Map<String, dynamic>))
-            .toList(),
+        foods:
+            (json['foods'] as List<dynamic>)
+                .map((e) => FoodCandidate.fromJson(e as Map<String, dynamic>))
+                .toList(),
       );
 }

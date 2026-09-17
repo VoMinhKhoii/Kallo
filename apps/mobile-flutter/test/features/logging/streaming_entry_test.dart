@@ -28,20 +28,21 @@ Widget _wrap(StreamAnalysisState stream) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: MediaQuery(
-        data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(
-          backgroundColor: KalloColors.surface,
-          body: SingleChildScrollView(
-            child: StreamingEntry(stream: stream, loaderIndex: 0),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              backgroundColor: KalloColors.surface,
+              body: SingleChildScrollView(
+                child: StreamingEntry(stream: stream, loaderIndex: 0),
+              ),
+            ),
           ),
         ),
-      ),
-    ),
   ),
 );
 
@@ -142,8 +143,14 @@ void main() {
     // Below the rows it slid down by a row's height every time a dish landed —
     // the one element meant to say "still working" was the one that moved.
     final ticker = tester.getRect(find.byType(StreamTickerLine));
-    expect(ticker.bottom, lessThanOrEqualTo(tester.getRect(find.text('Phở bò')).top));
-    expect(ticker.bottom, lessThanOrEqualTo(tester.getRect(find.text('Rau thơm')).top));
+    expect(
+      ticker.bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('Phở bò')).top),
+    );
+    expect(
+      ticker.bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('Rau thơm')).top),
+    );
   });
 
   testWidgets('renders BARE — no card chrome around the streamed rows', (
@@ -160,15 +167,16 @@ void main() {
 
     // The card is the finished thing. Nothing inside the streaming body may
     // paint the card's white fill, border or shadow.
-    final decorations = tester
-        .widgetList<DecoratedBox>(
-          find.descendant(
-            of: find.byType(StreamingEntry),
-            matching: find.byType(DecoratedBox),
-          ),
-        )
-        .map((d) => d.decoration)
-        .whereType<BoxDecoration>();
+    final decorations =
+        tester
+            .widgetList<DecoratedBox>(
+              find.descendant(
+                of: find.byType(StreamingEntry),
+                matching: find.byType(DecoratedBox),
+              ),
+            )
+            .map((d) => d.decoration)
+            .whereType<BoxDecoration>();
 
     for (final decoration in decorations) {
       expect(decoration.color, isNot(KalloColors.elev));
@@ -177,19 +185,20 @@ void main() {
     }
   });
 
-  testWidgets('keeps the card\'s 16px content inset so nothing shifts at reveal', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      StreamAnalysisState(
-        status: StreamStatus.estimating,
-        isAnalyzing: true,
-        completedItems: [_item('a', 'Phở bò', 480)],
-      ),
-    );
-    final body = tester.getRect(find.byType(StreamingEntry));
-    final row = tester.getRect(find.text('Phở bò'));
-    expect(row.left - body.left, closeTo(16, 0.5));
-  });
+  testWidgets(
+    'keeps the card\'s 16px content inset so nothing shifts at reveal',
+    (tester) async {
+      await _pump(
+        tester,
+        StreamAnalysisState(
+          status: StreamStatus.estimating,
+          isAnalyzing: true,
+          completedItems: [_item('a', 'Phở bò', 480)],
+        ),
+      );
+      final body = tester.getRect(find.byType(StreamingEntry));
+      final row = tester.getRect(find.text('Phở bò'));
+      expect(row.left - body.left, closeTo(16, 0.5));
+    },
+  );
 }

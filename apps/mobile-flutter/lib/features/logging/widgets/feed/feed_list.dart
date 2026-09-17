@@ -41,7 +41,8 @@ class FeedList extends StatelessWidget {
 
   /// A confirm is in flight — every staged card's controls go inert.
   final bool confirmPending;
-  final void Function(String analysisId, List<MealQuantityEdit> edits) onConfirm;
+  final void Function(String analysisId, List<MealQuantityEdit> edits)
+  onConfirm;
   final void Function(String analysisId, CheatSliderLevels levels)
   onConfirmCheat;
 
@@ -68,12 +69,11 @@ class FeedList extends StatelessWidget {
   final Future<void> Function(PersistedMeal meal) onLogAgain;
 
   @override
-  Widget build(BuildContext context) =>
-      FeedScrollPin(
-        handle: pin,
-        controller: scrollController,
-        child: _buildBody(context),
-      );
+  Widget build(BuildContext context) => FeedScrollPin(
+    handle: pin,
+    controller: scrollController,
+    child: _buildBody(context),
+  );
 
   Widget _buildBody(BuildContext context) {
     final entries = view.entries;
@@ -128,34 +128,35 @@ class FeedList extends StatelessWidget {
             // Log is a pushed route, not a shell branch: no floating nav
             // reports itself here, and the composer dock the feed scrolls
             // under already measures its own safe-area inset.
-            slivers: (_) => [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  0,
-                  KalloSpacing.sp3,
-                  reserve,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    // `.separated`'s own arithmetic, since a sliver list has no
-                    // separator slot: odd indices ARE the gap. The ONE gap
-                    // between turns — no card carries a bottom margin of its
-                    // own, so this separator is the whole story.
-                    (context, index) {
-                      if (index.isOdd) {
-                        return const SizedBox(height: LoggingSpacing.turn);
-                      }
-                      final item = _itemAt(index ~/ 2, entries);
-                      return index ~/ 2 == itemCount - 1
-                          ? withTailRoom(tailRoom, item)
-                          : item;
-                    },
-                    childCount: itemCount * 2 - 1,
+            slivers:
+                (_) => [
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      KalloSpacing.sp3,
+                      0,
+                      KalloSpacing.sp3,
+                      reserve,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        // `.separated`'s own arithmetic, since a sliver list has no
+                        // separator slot: odd indices ARE the gap. The ONE gap
+                        // between turns — no card carries a bottom margin of its
+                        // own, so this separator is the whole story.
+                        (context, index) {
+                          if (index.isOdd) {
+                            return const SizedBox(height: LoggingSpacing.turn);
+                          }
+                          final item = _itemAt(index ~/ 2, entries);
+                          return index ~/ 2 == itemCount - 1
+                              ? withTailRoom(tailRoom, item)
+                              : item;
+                        },
+                        childCount: itemCount * 2 - 1,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
           ),
     );
   }

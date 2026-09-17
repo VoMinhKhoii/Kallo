@@ -92,10 +92,11 @@ class _BunMascotState extends State<BunMascot>
         context,
         // A missing frame is cosmetic; unhandled it is rethrown into
         // `FlutterError.onError` and reported as a crash.
-        onError: (error, _) => developer.log(
-          'bun frame $frame did not precache: $error',
-          name: 'mascot.bun',
-        ),
+        onError:
+            (error, _) => developer.log(
+              'bun frame $frame did not precache: $error',
+              name: 'mascot.bun',
+            ),
       );
     }
   }
@@ -126,7 +127,8 @@ class _BunMascotState extends State<BunMascot>
     while (_shown < _chars.length && elapsed >= _nextChar) {
       final cluster = _chars[_shown++];
       _face.speak(cluster);
-      _nextChar += _isPunctuation(cluster) ? kBunChar + kBunPunctuation : kBunChar;
+      _nextChar +=
+          _isPunctuation(cluster) ? kBunChar + kBunPunctuation : kBunChar;
       changed = true;
     }
     final caretOn =
@@ -153,11 +155,12 @@ class _BunMascotState extends State<BunMascot>
           // travel as `child:` and are not rebuilt per frame.
           child: ValueListenableBuilder<double>(
             valueListenable: _breath,
-            builder: (context, breath, child) => Transform.scale(
-              scale: breath,
-              alignment: Alignment.bottomCenter, // it breathes off its feet
-              child: child,
-            ),
+            builder:
+                (context, breath, child) => Transform.scale(
+                  scale: breath,
+                  alignment: Alignment.bottomCenter, // it breathes off its feet
+                  child: child,
+                ),
             child: Stack(
               fit: StackFit.expand,
               children: [

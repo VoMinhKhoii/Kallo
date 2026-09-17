@@ -28,12 +28,13 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: child),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: child),
+        ),
   ),
 );
 
@@ -49,20 +50,26 @@ SemanticsNode _sliderNode(WidgetTester tester) {
   return nodes.single;
 }
 
-Future<void> _openPicker(WidgetTester tester, ClientVessel vessel, int grams) async {
+Future<void> _openPicker(
+  WidgetTester tester,
+  ClientVessel vessel,
+  int grams,
+) async {
   await tester.pumpWidget(
     _wrap(
       Builder(
-        builder: (context) => TextButton(
-          onPressed: () => showPortionPicker(
-            context,
-            vessel: vessel,
-            grams: grams,
-            itemCalories: 300,
-            itemQuantity: 150,
-          ),
-          child: const Text('open'),
-        ),
+        builder:
+            (context) => TextButton(
+              onPressed:
+                  () => showPortionPicker(
+                    context,
+                    vessel: vessel,
+                    grams: grams,
+                    itemCalories: 300,
+                    itemQuantity: 150,
+                  ),
+              child: const Text('open'),
+            ),
       ),
     ),
   );
@@ -114,7 +121,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('$name slider actually moves on an AT increase', (tester) async {
+    testWidgets('$name slider actually moves on an AT increase', (
+      tester,
+    ) async {
       final handle = tester.ensureSemantics();
       await _openPicker(tester, vessel, 150);
 
@@ -134,7 +143,9 @@ void main() {
     });
   }
 
-  testWidgets('the label rides above the slider node, not on it', (tester) async {
+  testWidgets('the label rides above the slider node, not on it', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await _openPicker(
       tester,

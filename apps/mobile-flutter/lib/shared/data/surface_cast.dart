@@ -58,8 +58,9 @@ String surfaceIllustrationAsset(
   SurfaceKind kind, {
   required bool lateNight,
 }) {
-  final slug = lateNight
-      ? _nightPoses[area]!
-      : (_poses[area]![kind] ?? _poses[area]![SurfaceKind.empty]!);
+  final slug =
+      lateNight
+          ? _nightPoses[area]!
+          : (_poses[area]![kind] ?? _poses[area]![SurfaceKind.empty]!);
   return '$illustrationAssetDir/$slug.svg';
 }

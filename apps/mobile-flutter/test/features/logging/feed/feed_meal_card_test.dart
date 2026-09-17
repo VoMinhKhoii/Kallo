@@ -123,15 +123,16 @@ Widget _localized(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: MediaQuery(
-        data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(body: SingleChildScrollView(child: child)),
-      ),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(body: SingleChildScrollView(child: child)),
+          ),
+        ),
   ),
 );
 
@@ -257,13 +258,22 @@ void main() {
     final title = tester.getRect(find.text(_longCard).last);
     final chevron = tester.getRect(find.byType(PersistedMealChevronToggle));
 
-    expect(title.height, greaterThan(30),
-        reason: 'this fixture must wrap, or the test proves nothing');
+    expect(
+      title.height,
+      greaterThan(30),
+      reason: 'this fixture must wrap, or the test proves nothing',
+    );
     // The chevron's box must start with the title, not at its centre.
-    expect(chevron.top, closeTo(title.top, 6),
-        reason: 'the chevron drifted off the title\'s first line');
-    expect(chevron.center.dy, lessThan(title.center.dy),
-        reason: 'the chevron must ride the first line, not the block centre');
+    expect(
+      chevron.top,
+      closeTo(title.top, 6),
+      reason: 'the chevron drifted off the title\'s first line',
+    );
+    expect(
+      chevron.center.dy,
+      lessThan(title.center.dy),
+      reason: 'the chevron must ride the first line, not the block centre',
+    );
   });
 
   testWidgets('opening the card keeps the bar + legend at the BOTTOM', (
@@ -277,28 +287,39 @@ void main() {
 
     final detail = tester.getRect(find.text('Beef slices'));
     final legend = tester.getRect(find.text('P 30g'));
-    expect(legend.top, greaterThan(detail.bottom),
-        reason: 'the total must close the card, under the per-dish rows');
+    expect(
+      legend.top,
+      greaterThan(detail.bottom),
+      reason: 'the total must close the card, under the per-dish rows',
+    );
   });
 
-  testWidgets('an expanded row hugs the macro figures to the name\'s top line',
-      (tester) async {
-    // Phone width: the name only needs its second line once the macro tail
-    // has taken its share of the row.
-    await tester.binding.setSurfaceSize(const Size(390, 1200));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(_wrap(_longGrouped));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'an expanded row hugs the macro figures to the name\'s top line',
+    (tester) async {
+      // Phone width: the name only needs its second line once the macro tail
+      // has taken its share of the row.
+      await tester.binding.setSurfaceSize(const Size(390, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrap(_longGrouped));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text(_cardRaw));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(_cardRaw));
+      await tester.pumpAndSettle();
 
-    final name = tester.getRect(find.text(_longDish));
-    final kcal = tester.getRect(find.text('220 kcal'));
+      final name = tester.getRect(find.text(_longDish));
+      final kcal = tester.getRect(find.text('220 kcal'));
 
-    expect(name.height, greaterThan(30),
-        reason: 'this dish name must wrap, or the test proves nothing');
-    expect(kcal.top, lessThan(name.center.dy),
-        reason: 'macros must hug the first line, not centre on both');
-  });
+      expect(
+        name.height,
+        greaterThan(30),
+        reason: 'this dish name must wrap, or the test proves nothing',
+      );
+      expect(
+        kcal.top,
+        lessThan(name.center.dy),
+        reason: 'macros must hug the first line, not centre on both',
+      );
+    },
+  );
 }

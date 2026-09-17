@@ -28,32 +28,33 @@ class _HostState extends State<_Host> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        locale: widget.locale,
-        supportedLocales: [widget.locale],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: _hostWidth,
-              child: PaceRuler(
-                value: value,
-                onChanged: (v) => setState(() => value = v),
-                label: 'Pace',
-                hero: _hero,
-                note: _note,
-                lowLabel: 'Gentle',
-                highLabel: 'Aggressive',
-              ),
-            ),
+    locale: widget.locale,
+    supportedLocales: [widget.locale],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    home: Scaffold(
+      body: Center(
+        child: SizedBox(
+          width: _hostWidth,
+          child: PaceRuler(
+            value: value,
+            onChanged: (v) => setState(() => value = v),
+            label: 'Pace',
+            hero: _hero,
+            note: _note,
+            lowLabel: 'Gentle',
+            highLabel: 'Aggressive',
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
-double _offset(WidgetTester tester) => tester
-    .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
-    .controller!
-    .offset;
+double _offset(WidgetTester tester) =>
+    tester
+        .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+        .controller!
+        .offset;
 
 double _value(WidgetTester tester) =>
     tester.state<_HostState>(find.byType(_Host)).value;
@@ -129,23 +130,26 @@ void main() {
     }
   });
 
-  testWidgets("the announced steps follow the locale's decimal mark",
-      (tester) async {
+  testWidgets("the announced steps follow the locale's decimal mark", (
+    tester,
+  ) async {
     // `toStringAsFixed(1)` hardcodes the POINT; Vietnamese writes 0,5.
     final handle = tester.ensureSemantics();
     await _pump(tester, initial: 0.4, locale: const Locale('vi'));
 
-    final data = find.semantics
-        .byFlag(SemanticsFlag.isSlider)
-        .evaluate()
-        .single
-        .getSemanticsData();
+    final data =
+        find.semantics
+            .byFlag(SemanticsFlag.isSlider)
+            .evaluate()
+            .single
+            .getSemanticsData();
     expect(data.increasedValue, '0,5');
     handle.dispose();
   });
 
-  testWidgets('assistive technology can raise and lower the pace',
-      (tester) async {
+  testWidgets('assistive technology can raise and lower the pace', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await _pump(tester);
 

@@ -28,17 +28,18 @@ Future<void> _pump(
     child: Center(
       child: SizedBox(
         width: 300,
-        child: skin == OptionStripSkin.settings
-            ? OptionStrip.settings(
-                options: options,
-                value: value,
-                onChange: onChange ?? (_) {},
-              )
-            : OptionStrip.onboarding(
-                options: options,
-                value: value,
-                onChange: onChange ?? (_) {},
-              ),
+        child:
+            skin == OptionStripSkin.settings
+                ? OptionStrip.settings(
+                  options: options,
+                  value: value,
+                  onChange: onChange ?? (_) {},
+                )
+                : OptionStrip.onboarding(
+                  options: options,
+                  value: value,
+                  onChange: onChange ?? (_) {},
+                ),
       ),
     ),
   ),

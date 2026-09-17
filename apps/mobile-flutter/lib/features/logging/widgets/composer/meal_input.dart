@@ -199,17 +199,18 @@ class _MealInputState extends State<MealInput>
     // what it needs, capped at the dock it alone outruns on a long message (it
     // spilled DOWN past the keyboard). Unbounded that cap is infinity: a no-op.
     return LayoutBuilder(
-      builder: (context, box) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Flexible(child: widget.popupSlot ?? const SizedBox.shrink()),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: box.maxHeight),
-            child: _buildCard(context),
+      builder:
+          (context, box) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Flexible(child: widget.popupSlot ?? const SizedBox.shrink()),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: box.maxHeight),
+                child: _buildCard(context),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -225,7 +226,9 @@ class _MealInputState extends State<MealInput>
           // around it.
           if (widget.notice != null)
             Padding(
-              padding: const EdgeInsets.all(KalloSpacing.sp1).copyWith(bottom: 0),
+              padding: const EdgeInsets.all(
+                KalloSpacing.sp1,
+              ).copyWith(bottom: 0),
               child: widget.notice!,
             ),
           // The FIELD is what gives when the card is squeezed: notice and

@@ -39,8 +39,9 @@ final profileProvider = FutureProvider<ProfileRow?>((ref) async {
 
   final api = ref.read(apiClientProvider);
   return runWithRetry(() async {
-    final json = await api
-        .get<Map<String, dynamic>?>('/api/v1/onboarding/profile');
+    final json = await api.get<Map<String, dynamic>?>(
+      '/api/v1/onboarding/profile',
+    );
     return json == null ? null : ProfileRow.fromJson(json);
   });
 });
@@ -93,10 +94,10 @@ class SaveScreenController {
   }) async {
     final api = _ref.read(apiClientProvider);
     try {
-      await api.post<Map<String, dynamic>>(
-        '/api/v1/onboarding/screen',
-        {'step': step, 'data': data},
-      );
+      await api.post<Map<String, dynamic>>('/api/v1/onboarding/screen', {
+        'step': step,
+        'data': data,
+      });
     } finally {
       // onSettled — refresh the shared profile cache + the heatmap.
       _ref.invalidate(profileProvider);

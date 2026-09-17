@@ -75,9 +75,10 @@ class _FeedbackTypeChipState extends State<FeedbackTypeChip> {
           curve: KalloEase.press,
           padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
           decoration: BoxDecoration(
-            color: on
-                ? KalloColors.hover
-                : (_pressed ? KalloColors.hover40 : KalloColors.elev),
+            color:
+                on
+                    ? KalloColors.hover
+                    : (_pressed ? KalloColors.hover40 : KalloColors.elev),
             borderRadius: BorderRadius.circular(KalloRadii.xxxl),
             border: Border.all(
               color: on ? KalloColors.accent60 : KalloColors.borderSoft,
@@ -178,11 +179,7 @@ class FeedbackScreenshotField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(
-                LucideIcons.imagePlus300,
-                size: 16,
-                color: kInkMuted,
-              ),
+              const Icon(LucideIcons.imagePlus300, size: 16, color: kInkMuted),
               const SizedBox(width: 8),
               Text(
                 tr('settings.feedback.addScreenshot'),

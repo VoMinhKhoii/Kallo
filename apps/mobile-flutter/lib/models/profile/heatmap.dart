@@ -11,10 +11,10 @@ enum HeatmapRange { d30, d90, year }
 
 extension HeatmapRangeValue on HeatmapRange {
   String get value => switch (this) {
-        HeatmapRange.d30 => '30d',
-        HeatmapRange.d90 => '90d',
-        HeatmapRange.year => 'year',
-      };
+    HeatmapRange.d30 => '30d',
+    HeatmapRange.d90 => '90d',
+    HeatmapRange.year => 'year',
+  };
 }
 
 enum HeatmapCellStatus { logged, partial, unlogged, future, outside }
@@ -44,20 +44,20 @@ class HeatmapCell {
   });
 
   factory HeatmapCell.fromJson(Map<String, dynamic> json) => HeatmapCell(
-        date: json['date'] as String,
-        ratio: (json['ratio'] as num?)?.toDouble(),
-        consumedRatio: (json['consumedRatio'] as num?)?.toDouble(),
-        status: HeatmapCellStatus.values.byName(json['status'] as String),
-        hasCheatMeal: json['hasCheatMeal'] as bool? ?? false,
-      );
+    date: json['date'] as String,
+    ratio: (json['ratio'] as num?)?.toDouble(),
+    consumedRatio: (json['consumedRatio'] as num?)?.toDouble(),
+    status: HeatmapCellStatus.values.byName(json['status'] as String),
+    hasCheatMeal: json['hasCheatMeal'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'date': date,
-        'ratio': ratio,
-        'consumedRatio': consumedRatio,
-        'status': status.name,
-        'hasCheatMeal': hasCheatMeal,
-      };
+    'date': date,
+    'ratio': ratio,
+    'consumedRatio': consumedRatio,
+    'status': status.name,
+    'hasCheatMeal': hasCheatMeal,
+  };
 
   HeatmapCell copyWith({
     String? date,
@@ -65,15 +65,13 @@ class HeatmapCell {
     double? Function()? consumedRatio,
     HeatmapCellStatus? status,
     bool? hasCheatMeal,
-  }) =>
-      HeatmapCell(
-        date: date ?? this.date,
-        ratio: ratio != null ? ratio() : this.ratio,
-        consumedRatio:
-            consumedRatio != null ? consumedRatio() : this.consumedRatio,
-        status: status ?? this.status,
-        hasCheatMeal: hasCheatMeal ?? this.hasCheatMeal,
-      );
+  }) => HeatmapCell(
+    date: date ?? this.date,
+    ratio: ratio != null ? ratio() : this.ratio,
+    consumedRatio: consumedRatio != null ? consumedRatio() : this.consumedRatio,
+    status: status ?? this.status,
+    hasCheatMeal: hasCheatMeal ?? this.hasCheatMeal,
+  );
 }
 
 class HeatmapMonthHeader {
@@ -110,11 +108,11 @@ class HeatmapMonthHeader {
   }
 
   Map<String, dynamic> toJson() => {
-        'month': month,
-        if (monthIndex != null) 'monthIndex': monthIndex,
-        'startColumn': startColumn,
-        'span': span,
-      };
+    'month': month,
+    if (monthIndex != null) 'monthIndex': monthIndex,
+    'startColumn': startColumn,
+    'span': span,
+  };
 
   HeatmapMonthHeader copyWith({
     String? month,
@@ -124,49 +122,48 @@ class HeatmapMonthHeader {
     int? monthIndex,
     int? startColumn,
     int? span,
-  }) =>
-      HeatmapMonthHeader(
-        month: month ?? this.month,
-        monthIndex: monthIndex ?? this.monthIndex,
-        startColumn: startColumn ?? this.startColumn,
-        span: span ?? this.span,
-      );
+  }) => HeatmapMonthHeader(
+    month: month ?? this.month,
+    monthIndex: monthIndex ?? this.monthIndex,
+    startColumn: startColumn ?? this.startColumn,
+    span: span ?? this.span,
+  );
 }
 
 class HeatmapData {
   final List<List<HeatmapCell>> cells;
   final List<HeatmapMonthHeader> monthHeaders;
 
-  const HeatmapData({
-    required this.cells,
-    required this.monthHeaders,
-  });
+  const HeatmapData({required this.cells, required this.monthHeaders});
 
   factory HeatmapData.fromJson(Map<String, dynamic> json) => HeatmapData(
-        cells: (json['cells'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>)
-                .map((e) => HeatmapCell.fromJson(e as Map<String, dynamic>))
-                .toList())
-            .toList(),
-        monthHeaders: (json['monthHeaders'] as List<dynamic>)
+    cells:
+        (json['cells'] as List<dynamic>)
             .map(
-                (e) => HeatmapMonthHeader.fromJson(e as Map<String, dynamic>))
+              (row) =>
+                  (row as List<dynamic>)
+                      .map(
+                        (e) => HeatmapCell.fromJson(e as Map<String, dynamic>),
+                      )
+                      .toList(),
+            )
             .toList(),
-      );
+    monthHeaders:
+        (json['monthHeaders'] as List<dynamic>)
+            .map((e) => HeatmapMonthHeader.fromJson(e as Map<String, dynamic>))
+            .toList(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'cells': cells
-            .map((row) => row.map((e) => e.toJson()).toList())
-            .toList(),
-        'monthHeaders': monthHeaders.map((e) => e.toJson()).toList(),
-      };
+    'cells': cells.map((row) => row.map((e) => e.toJson()).toList()).toList(),
+    'monthHeaders': monthHeaders.map((e) => e.toJson()).toList(),
+  };
 
   HeatmapData copyWith({
     List<List<HeatmapCell>>? cells,
     List<HeatmapMonthHeader>? monthHeaders,
-  }) =>
-      HeatmapData(
-        cells: cells ?? this.cells,
-        monthHeaders: monthHeaders ?? this.monthHeaders,
-      );
+  }) => HeatmapData(
+    cells: cells ?? this.cells,
+    monthHeaders: monthHeaders ?? this.monthHeaders,
+  );
 }

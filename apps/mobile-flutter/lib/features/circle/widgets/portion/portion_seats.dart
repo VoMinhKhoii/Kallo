@@ -41,13 +41,13 @@ class PortionSeat {
   /// changes [parts] and [colorIndex] — spelling the other fields out by hand
   /// there is how a new one (like [profile]) gets silently dropped.
   PortionSeat copyWith({int? parts, int? colorIndex}) => PortionSeat(
-        id: id,
-        profile: profile,
-        initials: initials,
-        label: label,
-        parts: parts ?? this.parts,
-        colorIndex: colorIndex ?? this.colorIndex,
-      );
+    id: id,
+    profile: profile,
+    initials: initials,
+    label: label,
+    parts: parts ?? this.parts,
+    colorIndex: colorIndex ?? this.colorIndex,
+  );
 }
 
 /// Seat colours, in the order people join. Seat 0 is always you.

@@ -84,13 +84,14 @@ class CheatIntensityPage extends StatelessWidget {
                   HapticFeedback.selectionClick();
                   onChange(intensity);
                 },
-                trailing: intensity == value
-                    ? const Icon(
-                        LucideIcons.check300,
-                        size: KalloIcons.size,
-                        color: KalloColors.text,
-                      )
-                    : null,
+                trailing:
+                    intensity == value
+                        ? const Icon(
+                          LucideIcons.check300,
+                          size: KalloIcons.size,
+                          color: KalloColors.text,
+                        )
+                        : null,
               ),
           ],
         ),
@@ -103,10 +104,7 @@ class CheatIntensityPage extends StatelessWidget {
             KalloSpacing.sp4,
             0,
           ),
-          child: Text(
-            'logging.cheatIntensity.helper'.tr(),
-            style: dashMeta(),
-          ),
+          child: Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
         ),
       ],
     );

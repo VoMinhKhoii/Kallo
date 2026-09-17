@@ -10,7 +10,6 @@ import '../../../../models/nutrition/vessel.dart';
 import 'portion_anchors.dart';
 import 'vessel_data.dart';
 
-
 class PortionDisplay {
   final VesselAsset asset;
   final String label;
@@ -22,8 +21,8 @@ class PortionDisplay {
 /// Formatted like JS prints a number, so `1.5 × lát`, never `1.5000 ×`.
 String countPrefixFor(ClientVessel vessel) =>
     vessel is PieceVessel && vessel.count > 1
-    ? '${formatAnchorGrams(vessel.count)} × '
-    : '';
+        ? '${formatAnchorGrams(vessel.count)} × '
+        : '';
 
 PortionDisplay portionDisplayFor(
   ClientVessel vessel,

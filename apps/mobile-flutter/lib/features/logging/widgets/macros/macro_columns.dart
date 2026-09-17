@@ -96,7 +96,6 @@ abstract final class MacroColumns {
   static const double split = cell * 3 + cellGap * 2;
 }
 
-
 /// The kcal column: fixed width, pinned to the row's right edge, and scaling
 /// [child] down rather than clipping or ellipsizing it.
 ///
@@ -125,4 +124,3 @@ class MacroKcal extends StatelessWidget {
     );
   }
 }
-

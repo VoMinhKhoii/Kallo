@@ -17,9 +17,10 @@ class RulerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final edge = Paint()
-      ..color = KalloColors.border
-      ..strokeWidth = 1;
+    final edge =
+        Paint()
+          ..color = KalloColors.border
+          ..strokeWidth = 1;
     canvas.drawLine(const Offset(0, 0.5), Offset(size.width, 0.5), edge);
 
     final minorHeight = size.height * 0.42;

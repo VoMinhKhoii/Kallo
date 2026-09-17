@@ -36,9 +36,10 @@ class ShareMealMeter extends ConsumerWidget {
   final VoidCallback onSplitEvenly;
 
   static String initialsOf(CircleProfile p) {
-    final source = (p.displayName?.trim().isNotEmpty ?? false)
-        ? p.displayName!.trim()
-        : p.handle;
+    final source =
+        (p.displayName?.trim().isNotEmpty ?? false)
+            ? p.displayName!.trim()
+            : p.handle;
     final words = source.split(RegExp(r'\s+'));
     if (words.length >= 2) {
       return (words[words.length - 2][0] + words.last[0]).toUpperCase();

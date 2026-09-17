@@ -55,10 +55,10 @@ class MealEntryDishLine extends StatelessWidget {
               style: dashBody().merge(
                 struck
                     ? const TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        decorationColor: kInkMuted,
-                        color: kInkMuted,
-                      )
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: kInkMuted,
+                      color: kInkMuted,
+                    )
                     : null,
               ),
             ),
@@ -80,14 +80,15 @@ class MealEntryDishLine extends StatelessWidget {
               carbs: item.macros.carbs,
               fat: item.macros.fat,
               calories: item.macros.calories,
-              splitReplacement: editing
-                  ? _QuantityStepper(
-                      quantity: item.quantity,
-                      minusDisabled: minusDisabled,
-                      onChange: (delta) => onChange(item.id, delta),
-                      step: step,
-                    )
-                  : null,
+              splitReplacement:
+                  editing
+                      ? _QuantityStepper(
+                        quantity: item.quantity,
+                        minusDisabled: minusDisabled,
+                        onChange: (delta) => onChange(item.id, delta),
+                        step: step,
+                      )
+                      : null,
             ),
           ),
         ],

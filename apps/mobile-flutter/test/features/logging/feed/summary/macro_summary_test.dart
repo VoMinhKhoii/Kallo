@@ -21,14 +21,18 @@ const double _phoneWidth = 390;
 /// A 320pt phone (SE). The calorie dial holds its size; the macros give way.
 const double _narrowPhoneWidth = 320;
 
-Widget _wrap(Widget child, {double textScale = 1.0, double width = _phoneWidth}) =>
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+Widget _wrap(
+  Widget child, {
+  double textScale = 1.0,
+  double width = _phoneWidth,
+}) => EasyLocalization(
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
@@ -47,8 +51,8 @@ Widget _wrap(Widget child, {double textScale = 1.0, double width = _phoneWidth})
             ),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 FeedViewState _viewState({
   bool isLoading = false,

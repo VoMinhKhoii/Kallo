@@ -6,9 +6,8 @@ import 'package:kallo_mobile/shared/widgets/nutrition/meal_block.dart';
 
 import '../../../app_fonts.dart';
 
-Widget _wrap(MealBlock block) => MaterialApp(
-  home: Scaffold(body: SizedBox(width: 358, child: block)),
-);
+Widget _wrap(MealBlock block) =>
+    MaterialApp(home: Scaffold(body: SizedBox(width: 358, child: block)));
 
 void main() {
   // The legend row is width-critical — three icon+figure pairs and a kcal
@@ -48,8 +47,11 @@ void main() {
     }
     final kcal = tester.getRect(find.text('480 kcal'));
     final title = tester.getRect(find.text('Phở bò tái'));
-    expect(kcal.center.dy, closeTo(title.center.dy, title.height),
-        reason: 'titleRight placement keeps kcal on the title line');
+    expect(
+      kcal.center.dy,
+      closeTo(title.center.dy, title.height),
+      reason: 'titleRight placement keeps kcal on the title line',
+    );
   });
 
   testWidgets('a meal missing macros still shows the ones it has', (
@@ -116,12 +118,16 @@ void main() {
 
     final kcal = tester.getRect(find.text('480 kcal'));
     final fat = tester.getRect(find.text('F 12g'));
-    expect(kcal.left, lessThan(fat.left),
-        reason: 'kcal leads the legend on Circle posts');
+    expect(
+      kcal.left,
+      lessThan(fat.left),
+      reason: 'kcal leads the legend on Circle posts',
+    );
   });
 
-  testWidgets('the legend spaces its entries evenly, kcal included',
-      (tester) async {
+  testWidgets('the legend spaces its entries evenly, kcal included', (
+    tester,
+  ) async {
     // The old rule clustered P/C/F at the left on fixed 14pt gaps and shoved
     // kcal to the right with a Spacer, so the same legend read differently on
     // a Circle post and on the Log card. One distribution now, everywhere.
@@ -144,8 +150,8 @@ void main() {
     // Measure the ENTRY boxes, not the text: each macro entry is a glyph plus
     // its label, so text-to-text gaps would fold in the next entry's icon.
     Rect macroEntry(String label) => tester.getRect(
-          find.ancestor(of: find.text(label), matching: find.byType(Row)).first,
-        );
+      find.ancestor(of: find.text(label), matching: find.byType(Row)).first,
+    );
     final entries = <Rect>[
       macroEntry('P 30g'),
       macroEntry('C 50g'),
@@ -157,13 +163,17 @@ void main() {
         entries[i].left - entries[i - 1].right,
     ];
     for (final gap in gaps) {
-      expect(gap, closeTo(gaps.first, 1.0),
-          reason: 'legend gaps must be uniform, got $gaps');
+      expect(
+        gap,
+        closeTo(gaps.first, 1.0),
+        reason: 'legend gaps must be uniform, got $gaps',
+      );
     }
   });
 
-  testWidgets('the bar and legend END the block, below any middle content',
-      (tester) async {
+  testWidgets('the bar and legend END the block, below any middle content', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _wrap(
         MealBlock(
@@ -185,9 +195,15 @@ void main() {
     final title = tester.getRect(find.text('Expanded card'));
     final legend = tester.getRect(find.text('P 30g'));
 
-    expect(detail.top, greaterThan(title.top),
-        reason: 'the detail opens under the title');
-    expect(legend.top, greaterThan(detail.bottom),
-        reason: 'the bar + legend must close the card, under the detail rows');
+    expect(
+      detail.top,
+      greaterThan(title.top),
+      reason: 'the detail opens under the title',
+    );
+    expect(
+      legend.top,
+      greaterThan(detail.bottom),
+      reason: 'the bar + legend must close the card, under the detail rows',
+    );
   });
 }

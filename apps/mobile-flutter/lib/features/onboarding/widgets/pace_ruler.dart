@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../shared/logic/display_format.dart' show formatOneDecimal, localeOf;
+import '../../../shared/logic/display_format.dart'
+    show formatOneDecimal, localeOf;
 import '../../../shared/widgets/gauge/ruler/ruler_marks.dart';
 import '../../../shared/widgets/gauge/ruler/ruler_painter.dart';
 import '../../../theme/calm_tokens.dart';
@@ -59,7 +60,9 @@ class _PaceRulerState extends State<PaceRuler> {
   int get _count => ((widget.max - widget.min) / widget.step).round() + 1;
   double get _pitch => widget.step / 0.1 * PaceRuler.pitchPerTenth;
   double get _contentWidth => _pitch * (_count - 1);
-  List<double> get _majors => [for (var i = 0; i < _count; i++) i / (_count - 1)];
+  List<double> get _majors => [
+    for (var i = 0; i < _count; i++) i / (_count - 1),
+  ];
 
   int _indexOf(double v) =>
       ((v - widget.min) / widget.step).round().clamp(0, _count - 1);
@@ -120,49 +123,55 @@ class _PaceRulerState extends State<PaceRuler> {
       _selfDriven = false;
     } else {
       _controller
-          .animateTo(target,
-              duration: KalloMotion.quick, curve: KalloEase.decelerate)
+          .animateTo(
+            target,
+            duration: KalloMotion.quick,
+            curve: KalloEase.decelerate,
+          )
           .whenComplete(() => _selfDriven = false);
     }
   }
 
   @override
   Widget build(BuildContext context) => Semantics(
-        slider: true,
-        label: widget.label,
-        // Neighbours announce the bare step the graduation shows.
-        value: widget.hero,
-        increasedValue: _stepLabel(_index + 1),
-        decreasedValue: _stepLabel(_index - 1),
-        onIncrease: () => _nudge(1),
-        onDecrease: () => _nudge(-1),
-        child: ExcludeSemantics(
-          child: Column(
-            // Min: a greedy Column strands the strip at the top of the page.
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(widget.hero,
-                  textAlign: TextAlign.center, style: kSectionHeader()),
-              const SizedBox(height: KalloSpacing.sp2),
-              _strip(),
-              const SizedBox(height: KalloSpacing.sp2),
-              Text(widget.note,
-                  textAlign: TextAlign.center, style: dashMeta()),
-              const SizedBox(height: KalloSpacing.sp2),
-              _line(widget.lowLabel, Text(widget.highLabel, style: dashMeta())),
-            ],
+    slider: true,
+    label: widget.label,
+    // Neighbours announce the bare step the graduation shows.
+    value: widget.hero,
+    increasedValue: _stepLabel(_index + 1),
+    decreasedValue: _stepLabel(_index - 1),
+    onIncrease: () => _nudge(1),
+    onDecrease: () => _nudge(-1),
+    child: ExcludeSemantics(
+      child: Column(
+        // Min: a greedy Column strands the strip at the top of the page.
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.hero,
+            textAlign: TextAlign.center,
+            style: kSectionHeader(),
           ),
-        ),
-      );
+          const SizedBox(height: KalloSpacing.sp2),
+          _strip(),
+          const SizedBox(height: KalloSpacing.sp2),
+          Text(widget.note, textAlign: TextAlign.center, style: dashMeta()),
+          const SizedBox(height: KalloSpacing.sp2),
+          _line(widget.lowLabel, Text(widget.highLabel, style: dashMeta())),
+        ],
+      ),
+    ),
+  );
 
   Widget _line(String left, Widget right) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(left, style: dashMeta()), Flexible(child: right)],
-      );
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [Text(left, style: dashMeta()), Flexible(child: right)],
+  );
 
   Widget _strip() => LayoutBuilder(
-        builder: (context, box) => Stack(
+    builder:
+        (context, box) => Stack(
           alignment: Alignment.topCenter,
           clipBehavior: Clip.none, // The needle's cap rides above the hairline.
           children: [
@@ -181,20 +190,23 @@ class _PaceRulerState extends State<PaceRuler> {
                 child: SizedBox(width: _contentWidth, child: _face(context)),
               ),
             ),
-            Transform.translate(offset: Offset(0, -rulerNeedleCap.height),
-                child: const IgnorePointer(child: RulerNeedle(bar: PaceRuler.stripHeight))),
+            Transform.translate(
+              offset: Offset(0, -rulerNeedleCap.height),
+              child: const IgnorePointer(
+                child: RulerNeedle(bar: PaceRuler.stripHeight),
+              ),
+            ),
           ],
         ),
-      );
+  );
 
   /// BARE ticks — no number under each graduation. The figures repeated the
   /// hero line one decimal at a time and turned a calm strip into a chart
   /// axis; the value is already stated above it, and the two end labels say
   /// which way is which.
   Widget _face(BuildContext context) => CustomPaint(
-        size: Size(_contentWidth, PaceRuler.stripHeight),
-        // Minors halfway between the steps.
-        painter:
-            RulerPainter(majors: _majors, graduations: 2 * (_count - 1)),
-      );
+    size: Size(_contentWidth, PaceRuler.stripHeight),
+    // Minors halfway between the steps.
+    painter: RulerPainter(majors: _majors, graduations: 2 * (_count - 1)),
+  );
 }

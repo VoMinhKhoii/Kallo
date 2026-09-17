@@ -35,13 +35,14 @@ import '../../../theme/text_metrics.dart';
   // Pick the step from the *padded* span so the extra headroom doesn't double
   // the gridline count on a wide series.
   final paddedSpan = rawSpan * 1.5;
-  final step = paddedSpan <= 2
-      ? 0.5
-      : paddedSpan <= 5
+  final step =
+      paddedSpan <= 2
+          ? 0.5
+          : paddedSpan <= 5
           ? 1.0
           : paddedSpan <= 12
-              ? 2.0
-              : 5.0;
+          ? 2.0
+          : 5.0;
   final pad = math.max((paddedSpan - rawSpan) / 2, step);
   var min = ((rawMin - pad) / step).floorToDouble() * step;
   var max = ((rawMax + pad) / step).ceilToDouble() * step;

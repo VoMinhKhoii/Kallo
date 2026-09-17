@@ -65,7 +65,9 @@ class StartScreen extends StatelessWidget {
                   const SizedBox(height: _headerTop),
                   const SizedBox(
                     height: WordmarkBar.rowHeight,
-                    child: Center(child: KalloWordmark(height: _wordmarkHeight)),
+                    child: Center(
+                      child: KalloWordmark(height: _wordmarkHeight),
+                    ),
                   ),
                   const SizedBox(height: _headerGap),
                   // Everything the buttons do not claim: the preview and the
@@ -159,10 +161,7 @@ class _PreviewBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, box) {
-        final double scale = math.min(
-          box.maxHeight / visibleHeight,
-          maxScale,
-        );
+        final double scale = math.min(box.maxHeight / visibleHeight, maxScale);
         return SizedBox(
           height: visibleHeight * scale,
           child: OverflowBox(
@@ -237,12 +236,8 @@ class _BandBottom extends CustomClipper<Rect> {
   const _BandBottom();
 
   @override
-  Rect getClip(Size size) => Rect.fromLTRB(
-    -size.width,
-    -size.height,
-    size.width * 2,
-    size.height,
-  );
+  Rect getClip(Size size) =>
+      Rect.fromLTRB(-size.width, -size.height, size.width * 2, size.height);
 
   @override
   bool shouldReclip(_BandBottom oldClipper) => false;

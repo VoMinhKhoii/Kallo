@@ -143,16 +143,11 @@ class _ComposerModeButtonState extends State<ComposerModeButton> {
                     Text.rich(
                       TextSpan(
                         children: [
-                          TextSpan(
-                            text: widget.label,
-                            style: dashBody(),
-                          ),
+                          TextSpan(text: widget.label, style: dashBody()),
                           if (detail != null)
                             TextSpan(
                               text: ' $detail',
-                              style: dashBody(
-                                color: kInkMuted,
-                              ),
+                              style: dashBody(color: kInkMuted),
                             ),
                         ],
                       ),

@@ -33,9 +33,10 @@ class PortionAnchor {
 /// Renders grams the way JS prints a number: `225 g`, `37.5 g` — never `225.0`.
 /// Both clients label the same anchor with the same string.
 String formatAnchorGrams(double value) {
-  final text = value == value.roundToDouble()
-      ? value.toStringAsFixed(0)
-      : value.toString();
+  final text =
+      value == value.roundToDouble()
+          ? value.toStringAsFixed(0)
+          : value.toString();
   return text;
 }
 
@@ -131,7 +132,9 @@ ClientVessel repointVessel(
   PieceVessel() => vessel.copyWith(
     tier: committedPieceTier(vessel.tier, anchors, grams),
   ),
-  ContainerVessel() => vessel.copyWith(tier: nearestAnchor(anchors, grams).tier),
+  ContainerVessel() => vessel.copyWith(
+    tier: nearestAnchor(anchors, grams).tier,
+  ),
 };
 
 /// Equal-spaced track positions (as a 0–1 fraction) — one per anchor, centred

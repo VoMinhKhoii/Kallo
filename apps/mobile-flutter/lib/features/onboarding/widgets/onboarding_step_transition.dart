@@ -58,10 +58,14 @@ class OnboardingStepTransition extends StatelessWidget {
       },
       // Stacked and both full-size: the default switcher layout centres the
       // pair and would let the shorter screen drift up the page as it goes.
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        fit: StackFit.expand,
-        children: [...previousChildren, if (currentChild != null) currentChild],
-      ),
+      layoutBuilder:
+          (currentChild, previousChildren) => Stack(
+            fit: StackFit.expand,
+            children: [
+              ...previousChildren,
+              if (currentChild != null) currentChild,
+            ],
+          ),
       child: child,
     );
   }

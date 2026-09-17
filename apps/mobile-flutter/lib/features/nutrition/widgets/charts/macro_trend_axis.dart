@@ -68,9 +68,7 @@ AxisTitles bucketAxisTitles({
           padding: const EdgeInsets.only(top: 6),
           child: Text(
             label,
-            style: dashMeta(
-              color: emphasised ? kInk : kInkMuted,
-            ),
+            style: dashMeta(color: emphasised ? kInk : kInkMuted),
           ),
         );
       },

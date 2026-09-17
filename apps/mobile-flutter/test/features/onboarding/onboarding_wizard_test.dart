@@ -78,24 +78,25 @@ Widget _app(
     ],
     child: localizedHome(
       Builder(
-        builder: (inner) => MediaQuery(
-          // The bun breathes on an endless Ticker (`pumpAndSettle` would hang);
-          // reduced motion also drops the typewriter.
-          data: MediaQuery.of(inner).copyWith(
-            disableAnimations: true,
-            padding: insets,
-            viewPadding: insets,
-          ),
-          // No SafeArea, exactly like `OnboardingScreen`: the wizard is a
-          // full-bleed page that insets its own chrome.
-          child: Scaffold(
-            backgroundColor: kPage,
-            body: OnboardingWizard(
-              onComplete: onComplete ?? () {},
-              onClose: onClose,
+        builder:
+            (inner) => MediaQuery(
+              // The bun breathes on an endless Ticker (`pumpAndSettle` would hang);
+              // reduced motion also drops the typewriter.
+              data: MediaQuery.of(inner).copyWith(
+                disableAnimations: true,
+                padding: insets,
+                viewPadding: insets,
+              ),
+              // No SafeArea, exactly like `OnboardingScreen`: the wizard is a
+              // full-bleed page that insets its own chrome.
+              child: Scaffold(
+                backgroundColor: kPage,
+                body: OnboardingWizard(
+                  onComplete: onComplete ?? () {},
+                  onClose: onClose,
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     ),
   );
@@ -131,10 +132,11 @@ Future<void> _walkToEnd(WidgetTester tester) async {
 }
 
 /// Whether the [OptionRow] carrying [label] is the chosen one.
-bool _selected(WidgetTester tester, String label) => tester
-    .widgetList<OptionRow>(find.byType(OptionRow))
-    .firstWhere((row) => row.label == label)
-    .selected;
+bool _selected(WidgetTester tester, String label) =>
+    tester
+        .widgetList<OptionRow>(find.byType(OptionRow))
+        .firstWhere((row) => row.label == label)
+        .selected;
 
 bool _ctaDisabled(WidgetTester tester) =>
     tester.widget<KalloButton>(find.byType(KalloButton)).disabled;
@@ -181,10 +183,12 @@ void main() {
     // Screens 1 and 3 collect half a step each: progress only.
     expect(sink.reached, [1, 3]);
     // 2 → step 1, 4 → step 2, 5 → step 3, 6 → step 2 again.
-    expect(
-      sink.saves.map((s) => (s.step, s.screenReached)).toList(),
-      [(1, 2), (2, 4), (3, 5), (2, 6)],
-    );
+    expect(sink.saves.map((s) => (s.step, s.screenReached)).toList(), [
+      (1, 2),
+      (2, 4),
+      (3, 5),
+      (2, 6),
+    ]);
     expect(completed, 1);
     semantics.dispose();
 
@@ -216,8 +220,9 @@ void main() {
     });
   });
 
-  testWidgets('with no metrics the step-2 screens advance without posting',
-      (tester) async {
+  testWidgets('with no metrics the step-2 screens advance without posting', (
+    tester,
+  ) async {
     final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink));
     await _walkToEnd(tester);
@@ -250,8 +255,9 @@ void main() {
     expect(find.text('Save my plan'), findsOneWidget);
   });
 
-  testWidgets('Skip advances without posting but still records the screen',
-      (tester) async {
+  testWidgets('Skip advances without posting but still records the screen', (
+    tester,
+  ) async {
     final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink, resumeScreen: 2, profile: _profile));
 
@@ -263,8 +269,9 @@ void main() {
     expect(sink.reached, [2]);
   });
 
-  testWidgets('a failed save keeps the user on the screen and says so',
-      (tester) async {
+  testWidgets('a failed save keeps the user on the screen and says so', (
+    tester,
+  ) async {
     final sink = FakeOnboardingSink()..fail = true;
     await _boot(tester, _app(sink, resumeScreen: 2, profile: _profile));
 
@@ -286,8 +293,9 @@ void main() {
     expect(find.text('Your daily target'), findsOneWidget);
   });
 
-  testWidgets('About you holds Continue on an out-of-range metric',
-      (tester) async {
+  testWidgets('About you holds Continue on an out-of-range metric', (
+    tester,
+  ) async {
     final sink = FakeOnboardingSink();
     await _boot(tester, _app(sink, resumeScreen: 3, profile: _profile));
     expect(_ctaDisabled(tester), isFalse);
@@ -360,8 +368,9 @@ void main() {
   });
 
   testWidgets('waits for the SESSION, and for a PROFILE that loads, before '
-      'seeding — so a signed-in user keeps the answers they saved',
-      (tester) async {
+      'seeding — so a signed-in user keeps the answers they saved', (
+    tester,
+  ) async {
     // profileProvider answers `AsyncData(null)` the instant it is asked while
     // signed out, and Supabase restores the session a beat later; seeding on
     // that answer gives a signed-in user the device's guesses.
@@ -427,8 +436,9 @@ void main() {
     });
   });
 
-  testWidgets('walking back through the screens keeps every answer',
-      (tester) async {
+  testWidgets('walking back through the screens keeps every answer', (
+    tester,
+  ) async {
     // The scaffold is keyed by screen, so each one is rebuilt from scratch on
     // the way back; only the wizard's single answers object carries the state.
     tester.view.physicalSize = const Size(390, 1400);
@@ -473,8 +483,10 @@ void main() {
     expect(step2['weightKg'], 72.0);
     expect(step2['goal'], 'bulking');
     expect(step2['carbSplit'], 'higher_carb');
-    expect(sink.saves.firstWhere((s) => s.step == 1).data['countryOfOrigin'],
-        'Australia');
+    expect(
+      sink.saves.firstWhere((s) => s.step == 1).data['countryOfOrigin'],
+      'Australia',
+    );
   });
 
   testWidgets('screen 1 offers no Skip, and back there closes the wizard '
@@ -483,7 +495,11 @@ void main() {
     await _boot(tester, _app(FakeOnboardingSink(), onClose: () => closed++));
 
     expect(find.text('Choose your language'), findsOneWidget);
-    expect(find.text('Skip'), findsNothing, reason: 'a language has to be chosen');
+    expect(
+      find.text('Skip'),
+      findsNothing,
+      reason: 'a language has to be chosen',
+    );
 
     await tester.tap(
       find.byIcon(LucideIcons.chevronLeft300),
@@ -493,8 +509,9 @@ void main() {
     expect(closed, 1);
   });
 
-  testWidgets('a right swipe on the content steps back and keeps the answers',
-      (tester) async {
+  testWidgets('a right swipe on the content steps back and keeps the answers', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -511,8 +528,9 @@ void main() {
     expect(_selected(tester, 'Australia'), isTrue);
   });
 
-  testWidgets('a right swipe on screen 1 closes the wizard, like the chevron',
-      (tester) async {
+  testWidgets('a right swipe on screen 1 closes the wizard, like the chevron', (
+    tester,
+  ) async {
     var closed = 0;
     await _boot(tester, _app(FakeOnboardingSink(), onClose: () => closed++));
 

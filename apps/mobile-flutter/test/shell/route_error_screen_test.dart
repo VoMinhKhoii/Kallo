@@ -13,12 +13,13 @@ import '../l10n_test_loader.dart';
 /// screen behind it says "page not found", a route that threw says the app
 /// broke. Both offer exactly one way out.
 Widget _app({required bool notFound}) => EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp.router(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp.router(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
@@ -32,8 +33,8 @@ Widget _app({required bool notFound}) => EasyLocalization(
             ],
           ),
         ),
-      ),
-    );
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -49,9 +50,7 @@ void main() {
 
   test('isNotFound reads the unmatched-location GoException', () {
     expect(
-      RouteErrorScreen.isNotFound(
-        GoException('no routes for location: /nope'),
-      ),
+      RouteErrorScreen.isNotFound(GoException('no routes for location: /nope')),
       isTrue,
     );
   });
@@ -65,8 +64,9 @@ void main() {
     );
   });
 
-  testWidgets('a route that threw reads as an error, with one way out',
-      (tester) async {
+  testWidgets('a route that threw reads as an error, with one way out', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app(notFound: false));
     await tester.pumpAndSettle();
 

@@ -327,13 +327,7 @@ class _DropdownRowState extends State<_DropdownRow> {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  widget.option.label,
-                  style: dashBody(
-                  ),
-                ),
-              ),
+              Expanded(child: Text(widget.option.label, style: dashBody())),
               if (widget.selected)
                 const Icon(
                   LucideIcons.check300,

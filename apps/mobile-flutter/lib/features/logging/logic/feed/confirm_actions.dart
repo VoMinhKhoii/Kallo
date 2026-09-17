@@ -130,7 +130,9 @@ class FeedConfirmActions {
     }
     // Saved — a success haptic + a top toast confirm the meal landed.
     HapticFeedback.mediumImpact();
-    if (context.mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
+    if (context.mounted) {
+      showTopToast(context, 'logging.feedArea.savedMeal'.tr());
+    }
     return true;
   }
 }

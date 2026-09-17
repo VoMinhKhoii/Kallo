@@ -31,20 +31,21 @@ Widget _host(MealInputController controller) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: MealInput(controller: controller, onSubmit: (_) {}),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: MealInput(controller: controller, onSubmit: (_) {}),
+              ),
+            ),
           ),
         ),
-      ),
-    ),
   ),
 );
 

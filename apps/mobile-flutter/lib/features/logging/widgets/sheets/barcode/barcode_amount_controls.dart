@@ -50,8 +50,7 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
               OptionStripItem(value: mode.name, label: _label(mode)),
           ],
           activeIndex: modes.indexOf(selected),
-          onChange: (name) =>
-              onSelect(modes.firstWhere((m) => m.name == name)),
+          onChange: (name) => onSelect(modes.firstWhere((m) => m.name == name)),
         ),
       ],
     );

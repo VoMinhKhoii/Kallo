@@ -32,7 +32,11 @@ class CheatMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: KalloColors.borderFaint,
+          ),
           const SizedBox(height: LoggingSpacing.section),
           if (persisted != null) ...[
             Text('logging.cheatMealCard.youSet'.tr(), style: dashMeta()),
@@ -59,18 +63,18 @@ class CheatMealExpandedDetails extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'logging.cheatMealCard.total'.tr(), style: dashBody(tabular: true),),
+                'logging.cheatMealCard.total'.tr(),
+                style: dashBody(tabular: true),
+              ),
               Flexible(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: Text(
-                        macroLine, style: dashMeta(tabular: true),),
+                      child: Text(macroLine, style: dashMeta(tabular: true)),
                     ),
                     const SizedBox(width: KalloSpacing.sp4),
-                    Text(
-                      caloriesApprox, style: dashValue(),),
+                    Text(caloriesApprox, style: dashValue()),
                   ],
                 ),
               ),
@@ -98,10 +102,7 @@ class _YouSetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          slider.label,
-          style: dashBody(),
-        ),
+        Text(slider.label, style: dashBody()),
         const SizedBox(width: KalloSpacing.sp2),
         _StopScale(level: level, color: cheatSliderColor(slider.key)),
         const SizedBox(width: KalloSpacing.sp3),

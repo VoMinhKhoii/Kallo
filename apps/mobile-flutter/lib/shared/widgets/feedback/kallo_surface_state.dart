@@ -42,9 +42,9 @@ class KalloSurfaceState extends StatelessWidget {
     this.action,
     this.compact = false,
     this.minHeight,
-  })  : area = null,
-        kind = null,
-        now = null;
+  }) : area = null,
+       kind = null,
+       now = null;
 
   /// Which animal. Null only on [KalloSurfaceState.withMark].
   final SurfaceArea? area;

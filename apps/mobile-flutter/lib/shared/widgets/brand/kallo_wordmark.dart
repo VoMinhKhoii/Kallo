@@ -26,10 +26,7 @@ class KalloWordmark extends StatelessWidget {
       _svg,
       height: height,
       width: height * _aspectRatio,
-      colorFilter: ColorFilter.mode(
-        color ?? KalloColors.text,
-        BlendMode.srcIn,
-      ),
+      colorFilter: ColorFilter.mode(color ?? KalloColors.text, BlendMode.srcIn),
       semanticsLabel: 'Kallo',
     );
   }

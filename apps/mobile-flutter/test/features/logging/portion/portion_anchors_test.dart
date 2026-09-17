@@ -139,10 +139,13 @@ void main() {
 
     test('scale the anchors exactly, matching web', () {
       // Web: count * tierGrams, no rounding anywhere.
-      expect(
-        buildPieceAnchors(half, 'en').map((a) => a.value),
-        [45.0, 105.0, 225.0, 375.0, 750.0],
-      );
+      expect(buildPieceAnchors(half, 'en').map((a) => a.value), [
+        45.0,
+        105.0,
+        225.0,
+        375.0,
+        750.0,
+      ]);
     });
 
     test('claim the tier they land on', () {
@@ -158,12 +161,16 @@ void main() {
       expect(formatAnchorGrams(37.5), '37.5');
       expect(countPrefixFor(half), '1.5 × ');
       expect(
-        countPrefixFor(const PieceVessel(tier: 1, count: 3, kind: PieceKind.meat)),
+        countPrefixFor(
+          const PieceVessel(tier: 1, count: 3, kind: PieceKind.meat),
+        ),
         '3 × ',
       );
       // A single piece carries no prefix at all.
       expect(
-        countPrefixFor(const PieceVessel(tier: 1, count: 1, kind: PieceKind.meat)),
+        countPrefixFor(
+          const PieceVessel(tier: 1, count: 1, kind: PieceKind.meat),
+        ),
         '',
       );
     });
@@ -227,12 +234,15 @@ void main() {
       }
     });
 
-    test('scales area as grams^(2/3) — the cbrt law the ruler always meant', () {
-      final smallest = _glyph(0, PieceKind.fish).area;
-      final largest = _glyph(pieceTiers.length - 1, PieceKind.fish).area;
-      final grams = pieceTiers.last.grams / pieceTiers.first.grams;
-      expect(largest / smallest, closeTo(math.pow(grams, 2 / 3), 1e-10));
-    });
+    test(
+      'scales area as grams^(2/3) — the cbrt law the ruler always meant',
+      () {
+        final smallest = _glyph(0, PieceKind.fish).area;
+        final largest = _glyph(pieceTiers.length - 1, PieceKind.fish).area;
+        final grams = pieceTiers.last.grams / pieceTiers.first.grams;
+        expect(largest / smallest, closeTo(math.pow(grams, 2 / 3), 1e-10));
+      },
+    );
   });
 
   group('rulerStep', () {
@@ -263,7 +273,10 @@ void main() {
       final positions = positionBreaks(anchors.length);
       for (final (i, anchor) in anchors.indexed) {
         // Anchor i sits at breakpoint i+1 (breakpoint 0 is the track start).
-        expect(scale.toPosition(anchor.value.round()), closeTo(positions[i + 1], 1e-9));
+        expect(
+          scale.toPosition(anchor.value.round()),
+          closeTo(positions[i + 1], 1e-9),
+        );
       }
     });
 
@@ -317,4 +330,3 @@ void main() {
     });
   });
 }
-

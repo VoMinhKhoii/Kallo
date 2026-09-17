@@ -68,10 +68,11 @@ void main() {
 
   group('shiftMentions', () {
     test('moves everything at or after the splice, leaves the rest', () {
-      final out = shiftMentions([
-        _mention('Cà phê', 0),
-        _mention('Phở bò', 10),
-      ], at: 10, delta: 5);
+      final out = shiftMentions(
+        [_mention('Cà phê', 0), _mention('Phở bò', 10)],
+        at: 10,
+        delta: 5,
+      );
       expect(out.map((m) => m.start), [0, 15]);
     });
 

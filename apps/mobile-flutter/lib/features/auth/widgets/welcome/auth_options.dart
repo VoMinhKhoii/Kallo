@@ -96,11 +96,11 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
         label: tr('auth.welcome.continueWithEmail'),
         excludeSemantics: true,
         child: GestureDetector(
-          onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
+          onTapDown:
+              widget.busy ? null : (_) => setState(() => _pressed = true),
           onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
-          onTapCancel: widget.busy
-              ? null
-              : () => setState(() => _pressed = false),
+          onTapCancel:
+              widget.busy ? null : () => setState(() => _pressed = false),
           onTap: widget.busy ? null : widget.onPressed,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),

@@ -127,7 +127,11 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: KalloColors.borderFaint,
+          ),
           const SizedBox(height: LoggingSpacing.section),
           for (final row in _rows)
             PersistedMealAmountEditorRow(
@@ -137,23 +141,30 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
               onToggleRemove: _toggleRemove,
             ),
           const SizedBox(height: LoggingSpacing.section),
-          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: KalloColors.borderFaint,
+          ),
           const SizedBox(height: LoggingSpacing.section),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'logging.persistedMealCard.total'.tr(), style: dashBody(tabular: true),),
+                'logging.persistedMealCard.total'.tr(),
+                style: dashBody(tabular: true),
+              ),
               Row(
                 children: [
                   Text(
-                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}', style: dashMeta(tabular: true),),
+                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}',
+                    style: dashMeta(tabular: true),
+                  ),
                   const SizedBox(width: KalloSpacing.sp4), // gap-4
                   Text(
-                    fmtKcal(
-                      totals.caloriesKcal,
-                      locale: localeOf(context),
-                    ), style: dashValue(),),
+                    fmtKcal(totals.caloriesKcal, locale: localeOf(context)),
+                    style: dashValue(),
+                  ),
                 ],
               ),
             ],

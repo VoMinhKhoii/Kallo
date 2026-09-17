@@ -244,9 +244,9 @@ void main() {
         },
       };
       expect(
-        EntitlementState.fromJson(locked).showsLockFor(
-          PremiumFeature.labelScan,
-        ),
+        EntitlementState.fromJson(
+          locked,
+        ).showsLockFor(PremiumFeature.labelScan),
         isFalse,
       );
       expect(
@@ -282,31 +282,28 @@ void main() {
       return c;
     }
 
-    test(
-      'returns true immediately when the server is already premium',
-      () async {
-        final api = FakeApiClient(
-          (_) => freeJson(),
-          postHandler: (_) => premiumJson(),
-        );
-        final c = makeContainer(api);
-        // Resolve the initial build first.
-        await c.read(entitlementsProvider(userA).future);
+    test('returns true immediately when the server is already premium', () async {
+      final api = FakeApiClient(
+        (_) => freeJson(),
+        postHandler: (_) => premiumJson(),
+      );
+      final c = makeContainer(api);
+      // Resolve the initial build first.
+      await c.read(entitlementsProvider(userA).future);
 
-        final premium = await c
-            .read(entitlementsProvider(userA).notifier)
-            .pollUntilPremium(
-              interval: const Duration(milliseconds: 1),
-              // Generous: the poll finishes in a few 1ms ticks, but under full-suite
-              // isolate contention a tight wall-clock window flakes (seen at 50ms).
-              timeout: const Duration(seconds: 2),
-            );
+      final premium = await c
+          .read(entitlementsProvider(userA).notifier)
+          .pollUntilPremium(
+            interval: const Duration(milliseconds: 1),
+            // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+            // isolate contention a tight wall-clock window flakes (seen at 50ms).
+            timeout: const Duration(seconds: 2),
+          );
 
-        expect(premium, isTrue);
-        expect(api.getCalls, 1);
-        expect(api.postCalls, 1);
-      },
-    );
+      expect(premium, isTrue);
+      expect(api.getCalls, 1);
+      expect(api.postCalls, 1);
+    });
 
     test('reconciles once, then polls local state until premium', () async {
       final api = FakeApiClient(

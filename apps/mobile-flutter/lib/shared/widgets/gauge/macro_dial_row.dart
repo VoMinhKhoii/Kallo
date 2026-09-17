@@ -86,8 +86,7 @@ class MacroDialRow extends StatelessWidget {
       // Three columns and two gutters. On a narrow phone the dials shrink
       // rather than overflow — the arc holds its proportions at any size.
       final count = kCompositionKeys.length;
-      final column =
-          (constraints.maxWidth - _gutter * (count - 1)) / count;
+      final column = (constraints.maxWidth - _gutter * (count - 1)) / count;
       final radius = math.min(maxRadius, column / 2);
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,

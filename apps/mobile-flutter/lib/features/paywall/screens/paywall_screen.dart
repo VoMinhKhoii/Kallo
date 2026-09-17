@@ -52,30 +52,34 @@ class PaywallScreen extends ConsumerWidget {
             SafeArea(
               bottom: false,
               child: entitlement.when(
-                data: (value) => value.isPremium
-                    ? _premium(context, value)
-                    : _purchase(context, value, state),
-                loading: () => _note(
-                  context,
-                  PaywallNote(
-                    title: tr('paywall.verifying'),
-                    body: tr('paywall.verifyPending'),
-                    leading: const PaywallSpinner(),
-                  ),
-                  stayFree: true,
-                ),
+                data:
+                    (value) =>
+                        value.isPremium
+                            ? _premium(context, value)
+                            : _purchase(context, value, state),
+                loading:
+                    () => _note(
+                      context,
+                      PaywallNote(
+                        title: tr('paywall.verifying'),
+                        body: tr('paywall.verifyPending'),
+                        leading: const PaywallSpinner(),
+                      ),
+                      stayFree: true,
+                    ),
                 // The entitlement never arrived, so we cannot know this user
                 // is premium — and an unreadable entitlement is not something
                 // they can retry their way out of. Show the ordinary paywall
                 // against the conservative free snapshot with the buy button
                 // dead, rather than replacing the page with an error the user
                 // did not cause.
-                error: (_, _) => _purchase(
-                  context,
-                  EntitlementState.free,
-                  state,
-                  storeUnavailable: true,
-                ),
+                error:
+                    (_, _) => _purchase(
+                      context,
+                      EntitlementState.free,
+                      state,
+                      storeUnavailable: true,
+                    ),
               ),
             ),
           ],
@@ -135,12 +139,15 @@ class PaywallScreen extends ConsumerWidget {
         PaywallPhase.activationPending => _note(
           context,
           Consumer(
-            builder: (context, ref, _) => PaywallRetryNote(
-              message: tr('paywall.verifyPending'),
-              onRetry: () => ref
-                  .read(paywallControllerProvider.notifier)
-                  .retryActivation(),
-            ),
+            builder:
+                (context, ref, _) => PaywallRetryNote(
+                  message: tr('paywall.verifyPending'),
+                  onRetry:
+                      () =>
+                          ref
+                              .read(paywallControllerProvider.notifier)
+                              .retryActivation(),
+                ),
           ),
           stayFree: true,
         ),

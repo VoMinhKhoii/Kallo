@@ -23,36 +23,37 @@ const _args = (userId: 'u1', date: '2026-09-01');
 const _weeks = 13;
 
 HeatmapData _threeMonths() => HeatmapData(
-      cells: [
-        for (var day = 0; day < 7; day++)
-          [
-            for (var week = 0; week < _weeks; week++)
-              HeatmapCell(
-                date: '2026-08-0${(day % 9) + 1}',
-                ratio: 0.95,
-                consumedRatio: 0.95,
-                status: HeatmapCellStatus.logged,
-              ),
-          ],
+  cells: [
+    for (var day = 0; day < 7; day++)
+      [
+        for (var week = 0; week < _weeks; week++)
+          HeatmapCell(
+            date: '2026-08-0${(day % 9) + 1}',
+            ratio: 0.95,
+            consumedRatio: 0.95,
+            status: HeatmapCellStatus.logged,
+          ),
       ],
-      monthHeaders: const [
-        HeatmapMonthHeader(month: 'Jul', monthIndex: 7, startColumn: 0, span: 4),
-        HeatmapMonthHeader(month: 'Aug', monthIndex: 8, startColumn: 4, span: 5),
-        HeatmapMonthHeader(month: 'Sep', monthIndex: 9, startColumn: 9, span: 4),
-      ],
-    );
+  ],
+  monthHeaders: const [
+    HeatmapMonthHeader(month: 'Jul', monthIndex: 7, startColumn: 0, span: 4),
+    HeatmapMonthHeader(month: 'Aug', monthIndex: 8, startColumn: 4, span: 5),
+    HeatmapMonthHeader(month: 'Sep', monthIndex: 9, startColumn: 9, span: 4),
+  ],
+);
 
 Widget _app({required TextScaler scaler}) => ProviderScope(
-      overrides: [
-        heatmapProvider.overrideWith((ref, args) async => _threeMonths()),
-      ],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+  overrides: [
+    heatmapProvider.overrideWith((ref, args) async => _threeMonths()),
+  ],
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
@@ -68,9 +69,9 @@ Widget _app({required TextScaler scaler}) => ProviderScope(
               ),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -126,8 +127,11 @@ void main() {
               '${grid.top}',
         );
       }
-      expect(labelled, greaterThanOrEqualTo(2),
-          reason: 'a 3-month window must label at least two of them');
+      expect(
+        labelled,
+        greaterThanOrEqualTo(2),
+        reason: 'a 3-month window must label at least two of them',
+      );
     });
   }
 }

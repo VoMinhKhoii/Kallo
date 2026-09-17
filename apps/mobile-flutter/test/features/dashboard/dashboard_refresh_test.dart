@@ -42,25 +42,25 @@ final _session = Session(
 );
 
 Map<String, dynamic> _bundleJson() => {
-      'profile': null,
-      'day': {'persistedMeals': <dynamic>[]},
-      'weightSummary': {
-        'range': '30d',
-        'weights': <dynamic>[],
-        'weightDates': <dynamic>[],
-        'currentWeight': 70.0,
-        'todayWeight': null,
-        'weightPlaceholder': 70.0,
-        'daysLogged': 0,
-        'periodStartWeight': 70.0,
-        'expectedEndWeight': 68.0,
-        'goalDirection': 'down',
-        'periodElapsedDays': 0,
-        'projectedEndWeight': 69.0,
-        'canProject': false,
-      },
-      'heatmap': {'cells': <dynamic>[], 'monthHeaders': <dynamic>[]},
-    };
+  'profile': null,
+  'day': {'persistedMeals': <dynamic>[]},
+  'weightSummary': {
+    'range': '30d',
+    'weights': <dynamic>[],
+    'weightDates': <dynamic>[],
+    'currentWeight': 70.0,
+    'todayWeight': null,
+    'weightPlaceholder': 70.0,
+    'daysLogged': 0,
+    'periodStartWeight': 70.0,
+    'expectedEndWeight': 68.0,
+    'goalDirection': 'down',
+    'periodElapsedDays': 0,
+    'projectedEndWeight': 69.0,
+    'canProject': false,
+  },
+  'heatmap': {'cells': <dynamic>[], 'monthHeaders': <dynamic>[]},
+};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -74,7 +74,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  Widget app({required Future<DashboardBundle> Function() load}) => ProviderScope(
+  Widget app({
+    required Future<DashboardBundle> Function() load,
+  }) => ProviderScope(
     overrides: [
       currentSessionProvider.overrideWithValue(_session),
       dashboardBundleProvider.overrideWith((ref, args) => load()),
@@ -92,12 +94,13 @@ void main() {
       fallbackLocale: const Locale('en'),
       assetLoader: const FsL10nLoader(),
       child: Builder(
-        builder: (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: const DashboardScreen(),
-        ),
+        builder:
+            (context) => MaterialApp(
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+              locale: context.locale,
+              home: const DashboardScreen(),
+            ),
       ),
     ),
   );
@@ -259,8 +262,9 @@ void main() {
     );
   });
 
-  testWidgets('a bundle refetch does NOT put the loaded page back on skeletons',
-      (tester) async {
+  testWidgets('a bundle refetch does NOT put the loaded page back on skeletons', (
+    tester,
+  ) async {
     // Device report: logging a weight blanked the whole home page. `logWeight`
     // invalidates the bundle, every derived section provider goes isReloading,
     // and `AsyncValue.when` defaults `skipLoadingOnReload: false` in Riverpod
@@ -299,12 +303,21 @@ void main() {
     await tester.pump();
 
     expect(loads, 2, reason: 'the invalidate started a refetch that is stuck');
-    expect(find.byType(WeightChart), findsOneWidget,
-        reason: 'the drawn page survives the reload');
-    expect(find.byType(TodayCardSkeleton), findsNothing,
-        reason: 'Today keeps its rows while the bundle refetches');
-    expect(find.byType(SkeletonPulse), findsNothing,
-        reason: 'no card may shimmer over data it already has');
+    expect(
+      find.byType(WeightChart),
+      findsOneWidget,
+      reason: 'the drawn page survives the reload',
+    );
+    expect(
+      find.byType(TodayCardSkeleton),
+      findsNothing,
+      reason: 'Today keeps its rows while the bundle refetches',
+    );
+    expect(
+      find.byType(SkeletonPulse),
+      findsNothing,
+      reason: 'no card may shimmer over data it already has',
+    );
     expect(
       find.byWidgetPredicate(
         (w) =>

@@ -31,9 +31,12 @@ const Color kPage = KalloColors.surface; // app page — neutral canvas
 const Color kCardSurface = KalloColors.elev; // cards — solid white
 // Tracks the canvas: whenever [kPage] moves, this moves with it by the same
 // delta, or the "recessed" surface ends up lighter than the page it sits on.
-const Color kTrack = KalloColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
-const Color kHairline = KalloColors.border; // the one border (neutral hairline, solid)
-const Color kFieldFill = KalloColors.elev; // input fills read white on the neutral canvas
+const Color kTrack =
+    KalloColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
+const Color kHairline =
+    KalloColors.border; // the one border (neutral hairline, solid)
+const Color kFieldFill =
+    KalloColors.elev; // input fills read white on the neutral canvas
 
 // ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
 const Color kInk = KalloColors.text; // near-black ink — primary data
@@ -87,14 +90,14 @@ const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 /// Full size (the number is the point) and REGULAR: Be Vietnam Pro's Medium
 /// reads as semibold, and at 40pt the size alone carries the figure.
 TextStyle dashHero({Color color = kInk}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 40,
-      fontWeight: FontWeight.w400,
-      height: 1.0,
-      letterSpacing: -1.0,
-      color: color,
-      fontFeatures: _tnum,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 40,
+  fontWeight: FontWeight.w400,
+  height: 1.0,
+  letterSpacing: -1.0,
+  color: color,
+  fontFeatures: _tnum,
+);
 
 /// 16 / 400 — macro gram values, metric values, the figure in a stepper.
 /// Regular, tabular, ink: a figure is set apart from the label beside it by
@@ -103,13 +106,13 @@ TextStyle dashHero({Color color = kInk}) => TextStyle(
 /// are pinned separately in `gauge_readout_type.dart` — a number inside an
 /// arc is sized by the arc, not by this ramp.)
 TextStyle dashValue({Color color = kInk}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.1,
-      color: color,
-      fontFeatures: _tnum,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 16,
+  fontWeight: FontWeight.w400,
+  height: 1.1,
+  color: color,
+  fontFeatures: _tnum,
+);
 
 /// The Body and Meta tiers' size and leading, published as constants so a
 /// layout that must reserve a line of either derives the box from the token
@@ -146,16 +149,15 @@ TextStyle dashBody({
   Color color = kInk,
   FontWeight weight = FontWeight.w400,
   bool tabular = false,
-}) =>
-    TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: kDashBodySize,
-      fontWeight: weight,
-      height: kDashBodyLeading,
-      letterSpacing: -0.2,
-      color: color,
-      fontFeatures: tabular ? _tnum : null,
-    );
+}) => TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: kDashBodySize,
+  fontWeight: weight,
+  height: kDashBodyLeading,
+  letterSpacing: -0.2,
+  color: color,
+  fontFeatures: tabular ? _tnum : null,
+);
 
 /// 15 / 600 — an emphasised NAME sitting directly against 16 body copy: the
 /// Circle post author over the post text, a reply author over the reply.
@@ -166,12 +168,12 @@ TextStyle dashBody({
 /// identity ONLY. A label that IS the row's body (a Settings row label, a
 /// button, a sheet title) stays at 16 — see [dashBody] and [kSectionHeader].
 TextStyle dashName({Color color = kInk}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
-      height: 1.3,
-      color: color,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 15,
+  fontWeight: FontWeight.w600,
+  height: 1.3,
+  color: color,
+);
 
 /// 14 / 400 — the secondary tier: timestamps, units, quiet values, captions.
 /// Leading 1.25 — meta lines are short and rarely wrap; the extra leading only
@@ -189,16 +191,15 @@ TextStyle dashMeta({
   Color color = kInkMuted,
   FontWeight weight = FontWeight.w400,
   bool tabular = false,
-}) =>
-    TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: kDashMetaSize,
-      fontWeight: weight,
-      height: kDashMetaLeading,
-      letterSpacing: -0.1,
-      color: color,
-      fontFeatures: tabular ? _tnum : null,
-    );
+}) => TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: kDashMetaSize,
+  fontWeight: weight,
+  height: kDashMetaLeading,
+  letterSpacing: -0.1,
+  color: color,
+  fontFeatures: tabular ? _tnum : null,
+);
 
 /// 12 / 400·500 — the caption tier, COMPONENT-INTERNAL ONLY.
 ///
@@ -211,15 +212,14 @@ TextStyle dashCaption({
   Color color = kInkMuted,
   FontWeight weight = FontWeight.w400,
   bool tabular = false,
-}) =>
-    TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 12,
-      fontWeight: weight,
-      height: 1.25,
-      color: color,
-      fontFeatures: tabular ? _tnum : null,
-    );
+}) => TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 12,
+  fontWeight: weight,
+  height: 1.25,
+  color: color,
+  fontFeatures: tabular ? _tnum : null,
+);
 
 /// 11 / 400 — ALL-CAPS labels, COMPONENT-INTERNAL ONLY (the macro dial
 /// PROTEIN/CARBS/FAT eyebrows). Retired as a section header in the native
@@ -228,27 +228,26 @@ TextStyle dashCaption({
 TextStyle dashEyebrow({
   Color color = kInkMuted,
   FontWeight weight = FontWeight.w400,
-}) =>
-    TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 11,
-      fontWeight: weight,
-      height: 1.3,
-      letterSpacing: 0.3,
-      color: color,
-    );
+}) => TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 11,
+  fontWeight: weight,
+  height: 1.3,
+  letterSpacing: 0.3,
+  color: color,
+);
 
 /// Lora 22 / 400 — the single editorial serif moment per viewport. The
 /// dashboard's serif slot is now the "Kallo" wordmark (2026-09-01), set at 28;
 /// this stays for editorial moments inside a screen — the first-run question,
 /// an empty state. Serif appears ONCE, never bold, never repeated.
 TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
-      fontSize: 22,
-      fontWeight: FontWeight.w400,
-      height: 1.2,
-      letterSpacing: -0.3,
-      color: color,
-    );
+  fontSize: 22,
+  fontWeight: FontWeight.w400,
+  height: 1.2,
+  letterSpacing: -0.3,
+  color: color,
+);
 
 // ── Header ramp (native pass 2026-08-31, metric-compensated 2026-09-02) ───
 // page title 28/600 → section header 16/600 (optional 14 muted meta right) →
@@ -261,13 +260,13 @@ TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
 /// screen reads title-first. 600 at −0.6 tracking has the mass of SF Bold 34
 /// (the Threads "Activity" title) without the slab.
 TextStyle kPageTitle({Color color = kInk}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 28,
-      fontWeight: FontWeight.w600,
-      height: 1.15,
-      letterSpacing: -0.6,
-      color: color,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 28,
+  fontWeight: FontWeight.w600,
+  height: 1.15,
+  letterSpacing: -0.6,
+  color: color,
+);
 
 /// 16 / 600 / -0.3 — section headers ("Vitamins", "Progress", "Recent
 /// meals"), centred sheet titles, and the page title on a header line (at 16
@@ -275,24 +274,24 @@ TextStyle kPageTitle({Color color = kInk}) => TextStyle(
 /// spends none of its three sizes on chrome). One token for all three; it
 /// absorbed the metrically identical `dashPageTitle` on 2026-09-02.
 TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      height: 1.2,
-      letterSpacing: -0.3,
-      color: color,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 16,
+  fontWeight: FontWeight.w600,
+  height: 1.2,
+  letterSpacing: -0.3,
+  color: color,
+);
 
 /// 14 / 400 muted — group labels above grouped cards ("Targets",
 /// "Preferences", "Today"). Metrically [dashMeta] in its own role: the muted
 /// colour and the 12 of air under it are what make it a label.
 TextStyle kGroupLabel({Color color = kInkMuted}) => TextStyle(
-      fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      height: 1.3,
-      color: color,
-    );
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: 14,
+  fontWeight: FontWeight.w400,
+  height: 1.3,
+  color: color,
+);
 
 // ── Pill nav (native pass, 2026-08-31) ────────────────────────────────────
 /// Gap from each screen edge to the floating pill nav.

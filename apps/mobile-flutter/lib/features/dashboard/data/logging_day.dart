@@ -24,11 +24,11 @@ class MealNutrition {
   final double? fatG;
 
   factory MealNutrition.fromJson(Map<String, dynamic> json) => MealNutrition(
-        caloriesKcal: (json['caloriesKcal'] as num?)?.toDouble(),
-        proteinG: (json['proteinG'] as num?)?.toDouble(),
-        carbohydrateG: (json['carbohydrateG'] as num?)?.toDouble(),
-        fatG: (json['fatG'] as num?)?.toDouble(),
-      );
+    caloriesKcal: (json['caloriesKcal'] as num?)?.toDouble(),
+    proteinG: (json['proteinG'] as num?)?.toDouble(),
+    carbohydrateG: (json['carbohydrateG'] as num?)?.toDouble(),
+    fatG: (json['fatG'] as num?)?.toDouble(),
+  );
 }
 
 /// A persisted meal row for the day — the subset the dashboard renders.
@@ -49,13 +49,13 @@ class PersistedMeal {
   final MealNutrition nutrition;
 
   factory PersistedMeal.fromJson(Map<String, dynamic> json) => PersistedMeal(
-        id: json['id'] as String,
-        rawInput: json['rawInput'] as String? ?? '',
-        loggedAt: json['loggedAt'] as String? ?? '',
-        nutrition: MealNutrition.fromJson(
-          (json['nutrition'] as Map<String, dynamic>?) ?? const {},
-        ),
-      );
+    id: json['id'] as String,
+    rawInput: json['rawInput'] as String? ?? '',
+    loggedAt: json['loggedAt'] as String? ?? '',
+    nutrition: MealNutrition.fromJson(
+      (json['nutrition'] as Map<String, dynamic>?) ?? const {},
+    ),
+  );
 }
 
 /// A day's logging payload — the dashboard only reads [persistedMeals].
@@ -65,8 +65,9 @@ class LoggingDayData {
   final List<PersistedMeal> persistedMeals;
 
   factory LoggingDayData.fromJson(Map<String, dynamic> json) => LoggingDayData(
-        persistedMeals: ((json['persistedMeals'] as List<dynamic>?) ?? const [])
+    persistedMeals:
+        ((json['persistedMeals'] as List<dynamic>?) ?? const [])
             .map((e) => PersistedMeal.fromJson(e as Map<String, dynamic>))
             .toList(),
-      );
+  );
 }

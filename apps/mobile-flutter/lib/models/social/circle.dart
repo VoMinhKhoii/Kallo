@@ -203,9 +203,10 @@ class CircleFeedEntry {
       friend: CircleProfile.fromJson(json['friend'] as Map<String, dynamic>),
       isSelf: json['isSelf'] as bool? ?? false,
       meal: CircleFeedMeal.fromJson(json['meal'] as Map<String, dynamic>),
-      reactions: reactions == null
-          ? const ShareReactions()
-          : ShareReactions.fromJson(reactions),
+      reactions:
+          reactions == null
+              ? const ShareReactions()
+              : ShareReactions.fromJson(reactions),
       replies:
           replies
               ?.map(
@@ -228,12 +229,13 @@ class SharedMealFeedPage {
 
   factory SharedMealFeedPage.fromJson(Map<String, dynamic> json) =>
       SharedMealFeedPage(
-        entries: ((json['entries'] as List<dynamic>?) ?? const [])
-            .map(
-              (entry) =>
-                  CircleFeedEntry.fromJson(entry as Map<String, dynamic>),
-            )
-            .toList(),
+        entries:
+            ((json['entries'] as List<dynamic>?) ?? const [])
+                .map(
+                  (entry) =>
+                      CircleFeedEntry.fromJson(entry as Map<String, dynamic>),
+                )
+                .toList(),
         nextCursor: json['nextCursor'] as String?,
       );
 }

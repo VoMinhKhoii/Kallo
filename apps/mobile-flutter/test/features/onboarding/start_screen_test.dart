@@ -22,16 +22,13 @@ import '../../l10n_test_loader.dart';
 const _small = Size(320, 568);
 
 GoRouter _router() => GoRouter(
-      initialLocation: '/start',
-      routes: [
-        GoRoute(path: '/start', builder: (_, __) => const StartScreen()),
-        GoRoute(
-          path: '/onboarding',
-          builder: (_, __) => const Text('wizard'),
-        ),
-        GoRoute(path: '/sign-in', builder: (_, __) => const Text('auth')),
-      ],
-    );
+  initialLocation: '/start',
+  routes: [
+    GoRoute(path: '/start', builder: (_, __) => const StartScreen()),
+    GoRoute(path: '/onboarding', builder: (_, __) => const Text('wizard')),
+    GoRoute(path: '/sign-in', builder: (_, __) => const Text('auth')),
+  ],
+);
 
 Widget _app(GoRouter router, {TextScaler scale = TextScaler.noScaling}) =>
     ProviderScope(
@@ -41,16 +38,18 @@ Widget _app(GoRouter router, {TextScaler scale = TextScaler.noScaling}) =>
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp.router(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            routerConfig: router,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: scale),
-              child: child!,
-            ),
-          ),
+          builder:
+              (context) => MaterialApp.router(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                routerConfig: router,
+                builder:
+                    (context, child) => MediaQuery(
+                      data: MediaQuery.of(context).copyWith(textScaler: scale),
+                      child: child!,
+                    ),
+              ),
         ),
       ),
     );
@@ -61,9 +60,9 @@ void main() {
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-    );
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
     await EasyLocalization.ensureInitialized();
     await loadAppFonts();
   });

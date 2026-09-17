@@ -55,9 +55,11 @@ class CalorieScopeStats extends StatelessWidget {
 
   void _toggle() {
     HapticFeedback.selectionClick();
-    onScopeChange(scope == NutritionDayScope.complete
-        ? NutritionDayScope.all
-        : NutritionDayScope.complete);
+    onScopeChange(
+      scope == NutritionDayScope.complete
+          ? NutritionDayScope.all
+          : NutritionDayScope.complete,
+    );
   }
 
   @override
@@ -151,27 +153,25 @@ class _CalorieDelta extends StatelessWidget {
     // The arrow is the only thing distinguishing +120 from -120, and an Icon
     // carries no label — without this both read the same aloud.
     return Semantics(
-      label: '${tr(over ? 'nutrition.rhythm.diffUp' : 'nutrition.rhythm.diffDown')} '
+      label:
+          '${tr(over ? 'nutrition.rhythm.diffUp' : 'nutrition.rhythm.diffDown')} '
           '${formatLocalizedNumber(diff.abs(), locale)}',
       excludeSemantics: true,
       child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          over ? LucideIcons.arrowUp400 : LucideIcons.arrowDown400,
-          size: 15,
-          color: kInkMuted,
-        ),
-        const SizedBox(width: 2),
-        Text(
-          formatLocalizedNumber(diff.abs(), locale),
-          // Tabular: the delta is a figure qualifying the hero, not a caption.
-          style: dashMeta(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            over ? LucideIcons.arrowUp400 : LucideIcons.arrowDown400,
+            size: 15,
             color: kInkMuted,
-            tabular: true,
           ),
-        ),
-      ],
+          const SizedBox(width: 2),
+          Text(
+            formatLocalizedNumber(diff.abs(), locale),
+            // Tabular: the delta is a figure qualifying the hero, not a caption.
+            style: dashMeta(color: kInkMuted, tabular: true),
+          ),
+        ],
       ),
     );
   }

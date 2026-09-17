@@ -10,7 +10,11 @@ class TodayDotPainter extends FlDotPainter {
 
   @override
   void draw(Canvas canvas, FlSpot spot, Offset offset) {
-    canvas.drawCircle(offset, 9, Paint()..color = color.withValues(alpha: 0.18));
+    canvas.drawCircle(
+      offset,
+      9,
+      Paint()..color = color.withValues(alpha: 0.18),
+    );
     canvas.drawCircle(offset, 4.5, Paint()..color = color);
     canvas.drawCircle(
       offset,

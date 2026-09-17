@@ -45,24 +45,25 @@ void main() {
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Material(
-              color: Colors.transparent,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: 320,
-                  child: BarcodeScanErrorView(
-                    error: MobileScannerException(errorCode: code),
-                    onEnterManually: onEnterManually ?? () {},
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: Material(
+                  color: Colors.transparent,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SizedBox(
+                      width: 320,
+                      child: BarcodeScanErrorView(
+                        error: MobileScannerException(errorCode: code),
+                        onEnterManually: onEnterManually ?? () {},
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
         ),
       ),
     );

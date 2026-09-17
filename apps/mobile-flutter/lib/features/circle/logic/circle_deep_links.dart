@@ -50,9 +50,11 @@ class _CircleDeepLinkListenerState
   void initState() {
     super.initState();
     // Cold start: the link that launched the app (if any).
-    unawaited(_appLinks.getInitialLink().then((uri) {
-      if (uri != null) _handle(uri);
-    }));
+    unawaited(
+      _appLinks.getInitialLink().then((uri) {
+        if (uri != null) _handle(uri);
+      }),
+    );
     // While running: subsequent links.
     _sub = _appLinks.uriLinkStream.listen(_handle, onError: (_) {});
   }

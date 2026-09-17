@@ -122,7 +122,9 @@ class KalloText extends StatelessWidget {
         ).copyWith(color: KalloColors.stone);
       case KalloTextVariant.eyebrow:
         // sansBold 10px, wide eyebrow tracking, uppercase, stone.
-        return KalloTextStyles.sansBold(fontSize: KalloFontSize.eyebrow).copyWith(
+        return KalloTextStyles.sansBold(
+          fontSize: KalloFontSize.eyebrow,
+        ).copyWith(
           letterSpacing: KalloTracking.eyebrow,
           color: KalloColors.stone,
         );
@@ -132,36 +134,44 @@ class KalloText extends StatelessWidget {
           height: KalloLeading.relaxed,
         ).copyWith(color: KalloColors.text);
       case KalloTextVariant.numDisplay:
-        return KalloTextStyles.serifRegular(fontSize: KalloFontSize.h2).copyWith(
+        return KalloTextStyles.serifRegular(
+          fontSize: KalloFontSize.h2,
+        ).copyWith(
           letterSpacing: KalloTracking.display,
           color: KalloColors.text,
           fontFeatures: const [_tabularNums],
         );
       case KalloTextVariant.numInline:
-        return KalloTextStyles.sansSemiBold(fontSize: KalloFontSize.md).copyWith(
-          color: KalloColors.text,
-          fontFeatures: const [_tabularNums],
-        );
+        return KalloTextStyles.sansSemiBold(
+          fontSize: KalloFontSize.md,
+        ).copyWith(color: KalloColors.text, fontFeatures: const [_tabularNums]);
       case KalloTextVariant.italicAccent:
         return KalloTextStyles.serifItalic(
           fontSize: KalloFontSize.lg,
           height: KalloLeading.relaxed,
         ).copyWith(color: KalloColors.accent);
       case KalloTextVariant.chipText:
-        return KalloTextStyles.sansMedium(fontSize: KalloFontSize.xs)
-            .copyWith(color: KalloColors.textMuted);
+        return KalloTextStyles.sansMedium(
+          fontSize: KalloFontSize.xs,
+        ).copyWith(color: KalloColors.textMuted);
       case KalloTextVariant.numCaption:
-        return KalloTextStyles.sansSemiBold(fontSize: KalloFontSize.xs).copyWith(
+        return KalloTextStyles.sansSemiBold(
+          fontSize: KalloFontSize.xs,
+        ).copyWith(
           color: KalloColors.textMuted,
           fontFeatures: const [_tabularNums],
         );
       case KalloTextVariant.macroLabel:
-        return KalloTextStyles.sansBold(fontSize: KalloFontSize.eyebrow).copyWith(
+        return KalloTextStyles.sansBold(
+          fontSize: KalloFontSize.eyebrow,
+        ).copyWith(
           letterSpacing: KalloTracking.wide,
           color: KalloColors.textMuted,
         );
       case KalloTextVariant.macroValue:
-        return KalloTextStyles.sansRegular(fontSize: KalloFontSize.xxs).copyWith(
+        return KalloTextStyles.sansRegular(
+          fontSize: KalloFontSize.xxs,
+        ).copyWith(
           color: KalloColors.textMuted,
           fontFeatures: const [_tabularNums],
         );
@@ -169,28 +179,28 @@ class KalloText extends StatelessWidget {
       case KalloTextVariant.itemMacro:
       case KalloTextVariant.macroTiny:
       case KalloTextVariant.macroInline:
-        return KalloTextStyles.sansRegular(fontSize: KalloFontSize.eyebrow)
-            .copyWith(
+        return KalloTextStyles.sansRegular(
+          fontSize: KalloFontSize.eyebrow,
+        ).copyWith(
           color: KalloColors.textMuted,
           fontFeatures: const [_tabularNums],
         );
       case KalloTextVariant.itemName:
-        return KalloTextStyles.sansMedium(fontSize: KalloFontSize.detail)
-            .copyWith(color: KalloColors.text);
+        return KalloTextStyles.sansMedium(
+          fontSize: KalloFontSize.detail,
+        ).copyWith(color: KalloColors.text);
       // itemCalories / calorieBold are identical aliases.
       case KalloTextVariant.itemCalories:
       case KalloTextVariant.calorieBold:
-        return KalloTextStyles.sansBold(fontSize: KalloFontSize.detail).copyWith(
-          color: KalloColors.text,
-          fontFeatures: const [_tabularNums],
-        );
+        return KalloTextStyles.sansBold(
+          fontSize: KalloFontSize.detail,
+        ).copyWith(color: KalloColors.text, fontFeatures: const [_tabularNums]);
       case KalloTextVariant.pillLabel:
         return KalloTextStyles.sansMedium(fontSize: KalloFontSize.eyebrow);
       case KalloTextVariant.timeLabel:
-        return KalloTextStyles.sansBold(fontSize: KalloFontSize.xxs).copyWith(
-          letterSpacing: 1.1,
-          color: KalloColors.textMuted60,
-        );
+        return KalloTextStyles.sansBold(
+          fontSize: KalloFontSize.xxs,
+        ).copyWith(letterSpacing: 1.1, color: KalloColors.textMuted60);
       case KalloTextVariant.phaseLabel:
         return KalloTextStyles.sansRegular(
           fontSize: KalloFontSize.xxs,
@@ -205,10 +215,9 @@ class KalloText extends StatelessWidget {
           fontFeatures: const [_tabularNums],
         );
       case KalloTextVariant.numStrong:
-        return KalloTextStyles.sansBold(fontSize: KalloFontSize.md).copyWith(
-          color: KalloColors.text,
-          fontFeatures: const [_tabularNums],
-        );
+        return KalloTextStyles.sansBold(
+          fontSize: KalloFontSize.md,
+        ).copyWith(color: KalloColors.text, fontFeatures: const [_tabularNums]);
     }
   }
 
@@ -219,11 +228,13 @@ class KalloText extends StatelessWidget {
 
     // RN `textTransform: 'uppercase'` lives on eyebrow + macroLabel; Flutter has
     // no text-transform, so uppercase the data to match.
-    final isUppercase = variant == KalloTextVariant.eyebrow ||
+    final isUppercase =
+        variant == KalloTextVariant.eyebrow ||
         variant == KalloTextVariant.macroLabel;
 
     // macroValue is right-aligned in RN unless overridden.
-    final resolvedAlign = textAlign ??
+    final resolvedAlign =
+        textAlign ??
         (variant == KalloTextVariant.macroValue ? TextAlign.right : null);
 
     return Text(

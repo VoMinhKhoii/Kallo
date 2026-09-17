@@ -112,7 +112,8 @@ class _BarcodeCameraViewState extends State<BarcodeCameraView> {
         children: [
           ScanCameraStage(
             // The hint has nothing to add once the frame is talking back.
-            hint: widget.notice == null ? 'logging.barcode.frameHint'.tr() : null,
+            hint:
+                widget.notice == null ? 'logging.barcode.frameHint'.tr() : null,
             notice: widget.notice,
             leading: BarcodeTorchButton(controller: widget.controller),
             builder: (context, size) {

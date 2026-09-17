@@ -30,12 +30,13 @@ class CreateGroupMemberPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => friends.when(
-    loading: () => Flexible(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: FriendListSkeleton(semanticsLabel: tr('common.loading')),
-      ),
-    ),
+    loading:
+        () => Flexible(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: FriendListSkeleton(semanticsLabel: tr('common.loading')),
+          ),
+        ),
     error:
         (_, __) => Flexible(
           child: Center(

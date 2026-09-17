@@ -63,9 +63,10 @@ class GaugeReadoutLine extends StatelessWidget {
     // Charging the margin unconditionally is what this avoids: it would take
     // the compact dial's three-digit `202g` from its 14pt ramp size down to an
     // effective ~10.9pt, which is the "goals too small" regression again.
-    final bound = painter.width <= width
-        ? width
-        : math.max(0.0, width - 2 * kGaugeReadoutClearMargin);
+    final bound =
+        painter.width <= width
+            ? width
+            : math.max(0.0, width - 2 * kGaugeReadoutClearMargin);
 
     // The slot keeps its FULL height whatever the figure inside it does. A
     // bare `FittedBox` shrinks its child in both directions, so a taken-in

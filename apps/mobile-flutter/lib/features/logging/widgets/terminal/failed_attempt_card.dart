@@ -41,10 +41,7 @@ class FailedAttemptCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            rawInput,
-            style: dashBody(),
-          ),
+          Text(rawInput, style: dashBody()),
           const SizedBox(height: KalloSpacing.sp3),
           Text(
             'logging.failedAttempt.message'.tr(),

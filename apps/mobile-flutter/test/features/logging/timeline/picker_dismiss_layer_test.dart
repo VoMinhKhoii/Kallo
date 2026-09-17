@@ -76,31 +76,32 @@ void main() {
       expect(_feedWidth(tester), screenWidth, reason: 'after collapsing');
     });
 
-    testWidgets('taps reach the feed while collapsed, the scrim while expanded', (
-      tester,
-    ) async {
-      final expanded = ValueNotifier(false);
-      addTearDown(expanded.dispose);
+    testWidgets(
+      'taps reach the feed while collapsed, the scrim while expanded',
+      (tester) async {
+        final expanded = ValueNotifier(false);
+        addTearDown(expanded.dispose);
 
-      var dismissed = 0;
-      var feedTaps = 0;
-      await _pumpInColumn(
-        tester,
-        expanded: expanded,
-        onDismiss: () => dismissed++,
-        onFeedTap: () => feedTaps++,
-      );
+        var dismissed = 0;
+        var feedTaps = 0;
+        await _pumpInColumn(
+          tester,
+          expanded: expanded,
+          onDismiss: () => dismissed++,
+          onFeedTap: () => feedTaps++,
+        );
 
-      await tester.tap(find.byKey(const Key('feed')));
-      expect(feedTaps, 1);
-      expect(dismissed, 0);
+        await tester.tap(find.byKey(const Key('feed')));
+        expect(feedTaps, 1);
+        expect(dismissed, 0);
 
-      expanded.value = true;
-      await tester.pump();
+        expanded.value = true;
+        await tester.pump();
 
-      await tester.tap(find.byKey(const Key('feed')));
-      expect(dismissed, 1);
-      expect(feedTaps, 1, reason: 'the scrim swallows the tap');
-    });
+        await tester.tap(find.byKey(const Key('feed')));
+        expect(dismissed, 1);
+        expect(feedTaps, 1, reason: 'the scrim swallows the tap');
+      },
+    );
   });
 }

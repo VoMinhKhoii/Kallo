@@ -61,10 +61,11 @@ class _FadeInDownState extends State<FadeInDown>
       opacity: _t,
       child: AnimatedBuilder(
         animation: _t,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, widget.offset * (1 - _t.value)),
-          child: child,
-        ),
+        builder:
+            (context, child) => Transform.translate(
+              offset: Offset(0, widget.offset * (1 - _t.value)),
+              child: child,
+            ),
         child: widget.child,
       ),
     );

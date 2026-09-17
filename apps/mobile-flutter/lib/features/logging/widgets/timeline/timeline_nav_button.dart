@@ -13,7 +13,11 @@ import '../../../../theme/kallo_theme.dart';
 
 class TimelineNavButton extends StatefulWidget {
   const TimelineNavButton({
-    super.key,required this.icon, required this.color, this.onTap});
+    super.key,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
 
   final IconData icon;
   final Color color;

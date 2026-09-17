@@ -88,11 +88,12 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     final target = finished.target;
     if (target != null) {
       setState(() => _target = target);
-      final reduced = WidgetsBinding
-          .instance
-          .platformDispatcher
-          .accessibilityFeatures
-          .disableAnimations;
+      final reduced =
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .accessibilityFeatures
+              .disableAnimations;
       if (reduced) {
         _count.value = 1;
       } else {
@@ -161,8 +162,9 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                 Text(
                   tr('onboarding.setup.title'),
                   textAlign: TextAlign.center,
-                  style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
-                      .copyWith(color: KalloColors.text),
+                  style: KalloTextStyles.serifRegular(
+                    fontSize: KalloFontSize.h3,
+                  ).copyWith(color: KalloColors.text),
                 ),
                 const SizedBox(height: 8),
                 Text(

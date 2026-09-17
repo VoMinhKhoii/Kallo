@@ -33,7 +33,7 @@ class StepAboutYou extends StatefulWidget {
   final VoidCallback onChanged;
 
   static const List<({ActivityLevel value, String label, String hint})>
-      activities = [
+  activities = [
     (
       value: ActivityLevel.sedentary,
       label: 'onboarding.bodyMetrics.sedentary',
@@ -157,76 +157,94 @@ class _StepAboutYouState extends State<StepAboutYou> {
   }
 
   Widget _metrics() => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: UnitField(
-              key: ValueKey('weight.$_generation'),
-              label: tr('onboarding.bodyMetrics.weight'),
-              unit: tr('onboarding.bodyMetrics.weightUnit'),
-              initialValue: answers.weightKg,
-              hasError: answers.weightOutOfRange,
-              onChanged: (value) {
-                answers.weightKg = value;
-                _typed(TargetInput.weightKg);
-                widget.onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: KalloSpacing.sp2),
-          Expanded(
-            child: UnitField(
-              label: tr('onboarding.bodyMetrics.height'),
-              unit: tr('onboarding.bodyMetrics.heightUnit'),
-              key: ValueKey('height.$_generation'),
-              initialValue: answers.heightCm?.toDouble(),
-              integer: true,
-              hasError: answers.heightOutOfRange,
-              onChanged: (value) {
-                answers.heightCm = value?.toInt();
-                _typed(TargetInput.heightCm);
-                widget.onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: KalloSpacing.sp2),
-          Expanded(
-            child: UnitField(
-              label: tr('onboarding.bodyMetrics.age'),
-              unit: tr('onboarding.bodyMetrics.ageUnit'),
-              key: ValueKey('age.$_generation'),
-              initialValue: answers.age?.toDouble(),
-              integer: true,
-              hasError: answers.ageOutOfRange,
-              onChanged: (value) {
-                answers.age = value?.toInt();
-                _typed(TargetInput.age);
-                widget.onChanged();
-              },
-            ),
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: UnitField(
+          key: ValueKey('weight.$_generation'),
+          label: tr('onboarding.bodyMetrics.weight'),
+          unit: tr('onboarding.bodyMetrics.weightUnit'),
+          initialValue: answers.weightKg,
+          hasError: answers.weightOutOfRange,
+          onChanged: (value) {
+            answers.weightKg = value;
+            _typed(TargetInput.weightKg);
+            widget.onChanged();
+          },
+        ),
+      ),
+      const SizedBox(width: KalloSpacing.sp2),
+      Expanded(
+        child: UnitField(
+          label: tr('onboarding.bodyMetrics.height'),
+          unit: tr('onboarding.bodyMetrics.heightUnit'),
+          key: ValueKey('height.$_generation'),
+          initialValue: answers.heightCm?.toDouble(),
+          integer: true,
+          hasError: answers.heightOutOfRange,
+          onChanged: (value) {
+            answers.heightCm = value?.toInt();
+            _typed(TargetInput.heightCm);
+            widget.onChanged();
+          },
+        ),
+      ),
+      const SizedBox(width: KalloSpacing.sp2),
+      Expanded(
+        child: UnitField(
+          label: tr('onboarding.bodyMetrics.age'),
+          unit: tr('onboarding.bodyMetrics.ageUnit'),
+          key: ValueKey('age.$_generation'),
+          initialValue: answers.age?.toDouble(),
+          integer: true,
+          hasError: answers.ageOutOfRange,
+          onChanged: (value) {
+            answers.age = value?.toInt();
+            _typed(TargetInput.age);
+            widget.onChanged();
+          },
+        ),
+      ),
+    ],
+  );
 
   /// Errors sit under the whole ROW: at a third of the width "Weight must be
   /// at least 30 kg." wraps to three lines and shunts its neighbours.
   List<Widget> _errors() {
-    String? bound(bool over, num? value, ({num min, num max}) range,
-        String minKey, String maxKey) {
+    String? bound(
+      bool over,
+      num? value,
+      ({num min, num max}) range,
+      String minKey,
+      String maxKey,
+    ) {
       if (!over || value == null) return null;
       return tr(value < range.min ? minKey : maxKey);
     }
 
     final messages = <String>[
       for (final message in [
-        bound(answers.weightOutOfRange, answers.weightKg, kWeightRange,
-            'validation.bodyMetrics.weightMin',
-            'validation.bodyMetrics.weightMax'),
-        bound(answers.heightOutOfRange, answers.heightCm, kHeightRange,
-            'validation.bodyMetrics.heightMin',
-            'validation.bodyMetrics.heightMax'),
-        bound(answers.ageOutOfRange, answers.age, kAgeRange,
-            'validation.bodyMetrics.ageMin', 'validation.bodyMetrics.ageMax'),
+        bound(
+          answers.weightOutOfRange,
+          answers.weightKg,
+          kWeightRange,
+          'validation.bodyMetrics.weightMin',
+          'validation.bodyMetrics.weightMax',
+        ),
+        bound(
+          answers.heightOutOfRange,
+          answers.heightCm,
+          kHeightRange,
+          'validation.bodyMetrics.heightMin',
+          'validation.bodyMetrics.heightMax',
+        ),
+        bound(
+          answers.ageOutOfRange,
+          answers.age,
+          kAgeRange,
+          'validation.bodyMetrics.ageMin',
+          'validation.bodyMetrics.ageMax',
+        ),
       ])
         if (message != null) message,
     ];
@@ -245,8 +263,8 @@ OnboardingStepSpec stepAboutYouSpec({
   required OnboardingAnswers answers,
   required VoidCallback onChanged,
 }) => (
-      title: tr('onboarding.aboutYou.title'),
-      body: StepAboutYou(answers: answers, onChanged: onChanged),
-      ctaLabel: tr('onboarding.continueLabel'),
-      ctaEnabled: answers.metricsValid,
-    );
+  title: tr('onboarding.aboutYou.title'),
+  body: StepAboutYou(answers: answers, onChanged: onChanged),
+  ctaLabel: tr('onboarding.continueLabel'),
+  ctaEnabled: answers.metricsValid,
+);

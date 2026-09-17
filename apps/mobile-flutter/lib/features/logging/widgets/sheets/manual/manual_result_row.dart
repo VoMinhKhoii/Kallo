@@ -15,11 +15,7 @@ import '../../../../../theme/kallo_theme.dart';
 /// riding as pills beside the name — grams still mean what the row's state
 /// says, and the subtitle is where a chooser reads it.
 class ManualResultRow extends StatefulWidget {
-  const ManualResultRow({
-    super.key,
-    required this.result,
-    required this.onTap,
-  });
+  const ManualResultRow({super.key, required this.result, required this.onTap});
 
   final IngredientSearchResult result;
   final VoidCallback onTap;

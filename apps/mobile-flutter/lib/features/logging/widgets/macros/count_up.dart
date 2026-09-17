@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 /// Counts a number up from [from] to [value] over [duration] on first build
 /// (and re-counts whenever [value] changes), formatting each frame with [format].
 ///
@@ -92,8 +91,7 @@ class _CountUpTextState extends State<CountUpText>
     return AnimatedBuilder(
       animation: _anim,
       builder:
-          (context, _) =>
-              Text(widget.format(_anim.value), style: widget.style),
+          (context, _) => Text(widget.format(_anim.value), style: widget.style),
     );
   }
 }

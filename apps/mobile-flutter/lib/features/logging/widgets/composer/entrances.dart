@@ -31,10 +31,14 @@ class _Entrance extends StatefulWidget {
 
 class _EntranceState extends State<_Entrance>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: widget.duration);
-  late final Animation<double> _curved =
-      CurvedAnimation(parent: _c, curve: Curves.easeOut);
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
+  late final Animation<double> _curved = CurvedAnimation(
+    parent: _c,
+    curve: Curves.easeOut,
+  );
 
   @override
   void initState() {
@@ -78,9 +82,10 @@ class _EntranceState extends State<_Entrance>
           opacity: t.clamp(0, 1),
           child: Transform.translate(
             offset: translate,
-            child: scale == 1
-                ? child
-                : Transform.scale(scale: scale, child: child),
+            child:
+                scale == 1
+                    ? child
+                    : Transform.scale(scale: scale, child: child),
           ),
         );
       },
@@ -103,11 +108,11 @@ class FadeIn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Entrance(
-        kind: _EntranceKind.fade,
-        duration: duration,
-        delay: delay,
-        child: child,
-      );
+    kind: _EntranceKind.fade,
+    duration: duration,
+    delay: delay,
+    child: child,
+  );
 }
 
 /// Opacity 0→1 + slide up from below.
@@ -124,11 +129,11 @@ class FadeInDown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Entrance(
-        kind: _EntranceKind.down,
-        duration: duration,
-        delay: delay,
-        child: child,
-      );
+    kind: _EntranceKind.down,
+    duration: duration,
+    delay: delay,
+    child: child,
+  );
 }
 
 /// Opacity 0→1 + slide down from above.
@@ -147,12 +152,12 @@ class FadeInUp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Entrance(
-        kind: _EntranceKind.up,
-        duration: duration,
-        delay: delay,
-        offset: offset,
-        child: child,
-      );
+    kind: _EntranceKind.up,
+    duration: duration,
+    delay: delay,
+    offset: offset,
+    child: child,
+  );
 }
 
 /// Opacity 0→1 + slide in from the left (the streaming waterfall).
@@ -171,12 +176,12 @@ class FadeInLeft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Entrance(
-        kind: _EntranceKind.left,
-        duration: duration,
-        delay: delay,
-        offset: offset,
-        child: child,
-      );
+    kind: _EntranceKind.left,
+    duration: duration,
+    delay: delay,
+    offset: offset,
+    child: child,
+  );
 }
 
 /// Opacity 0→1 + scale-in (the empty-state icon, edit/done pill swap).
@@ -193,9 +198,9 @@ class ZoomIn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Entrance(
-        kind: _EntranceKind.zoom,
-        duration: duration,
-        delay: delay,
-        child: child,
-      );
+    kind: _EntranceKind.zoom,
+    duration: duration,
+    delay: delay,
+    child: child,
+  );
 }

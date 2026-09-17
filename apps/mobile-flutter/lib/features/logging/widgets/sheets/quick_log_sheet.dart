@@ -137,16 +137,18 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
               controller: _controller,
               onSubmit: _submit,
               modeLabel: mealModeLabel(mode),
-              modeDetail: isCheat
-                  ? cheatIntensityLabel(ref.watch(cheatIntensityProvider))
-                  : null,
+              modeDetail:
+                  isCheat
+                      ? cheatIntensityLabel(ref.watch(cheatIntensityProvider))
+                      : null,
               modeIcon: mealModeIcon(mode),
               hintText: isCheat ? 'logging.cheatPlaceholder'.tr() : null,
               onModePressed: _openModeSheet,
               // The same one-shot hand-off the mode sheet's Barcode row takes.
-              onBarcodePressed: isBarcodeLoggingSupported
-                  ? () => _handOffOneShot(MealLogMode.barcode)
-                  : null,
+              onBarcodePressed:
+                  isBarcodeLoggingSupported
+                      ? () => _handOffOneShot(MealLogMode.barcode)
+                      : null,
             ),
           ),
         ],

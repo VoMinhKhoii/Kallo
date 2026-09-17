@@ -38,12 +38,13 @@ class AddFriendRow extends StatelessWidget {
         opacity: enabled ? 1 : 0.45,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: enabled
-              ? () {
-                  HapticFeedback.selectionClick();
-                  onTap();
-                }
-              : null,
+          onTap:
+              enabled
+                  ? () {
+                    HapticFeedback.selectionClick();
+                    onTap();
+                  }
+                  : null,
           child: Container(
             constraints: const BoxConstraints(minHeight: KalloIcons.hit),
             padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),

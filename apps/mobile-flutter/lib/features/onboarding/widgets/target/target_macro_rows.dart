@@ -22,10 +22,10 @@ class TargetMacroRows extends StatelessWidget {
   };
 
   Map<String, double> get _grams => {
-        'protein': macros.proteinG,
-        'carbohydrate': macros.carbsG,
-        'fat': macros.fatG,
-      };
+    'protein': macros.proteinG,
+    'carbohydrate': macros.carbsG,
+    'fat': macros.fatG,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -47,27 +47,27 @@ class TargetMacroRows extends StatelessWidget {
   }
 
   Widget _row(String key, double pct) => Row(
-        children: [
-          Icon(
-            kMacroIcons[key],
-            size: KalloIcons.tertiary,
-            color: kCompositionColors[key],
-          ),
-          const SizedBox(width: KalloSpacing.sp2),
-          Expanded(child: Text(tr(_names[key]!), style: dashBody())),
-          Text(
-            '${_grams[key]!.round()} ${tr('onboarding.bodyMetrics.grams')}',
-            style: dashBody(tabular: true),
-          ),
-          const SizedBox(width: KalloSpacing.sp3),
-          SizedBox(
-            width: 36,
-            child: Text(
-              '${pct.round()}%',
-              textAlign: TextAlign.end,
-              style: dashMeta(tabular: true),
-            ),
-          ),
-        ],
-      );
+    children: [
+      Icon(
+        kMacroIcons[key],
+        size: KalloIcons.tertiary,
+        color: kCompositionColors[key],
+      ),
+      const SizedBox(width: KalloSpacing.sp2),
+      Expanded(child: Text(tr(_names[key]!), style: dashBody())),
+      Text(
+        '${_grams[key]!.round()} ${tr('onboarding.bodyMetrics.grams')}',
+        style: dashBody(tabular: true),
+      ),
+      const SizedBox(width: KalloSpacing.sp3),
+      SizedBox(
+        width: 36,
+        child: Text(
+          '${pct.round()}%',
+          textAlign: TextAlign.end,
+          style: dashMeta(tabular: true),
+        ),
+      ),
+    ],
+  );
 }

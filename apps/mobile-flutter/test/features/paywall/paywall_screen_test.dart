@@ -96,22 +96,26 @@ Future<void> pumpPaywall(
         fallbackLocale: const Locale('en'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp.router(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            routerConfig: router,
-            builder: (context, child) => MediaQuery(
-              // The bun breathes on an endless ticker; reduced motion also
-              // drops its typewriter, so the bubble's line is up on frame one.
-              data: MediaQuery.of(context).copyWith(disableAnimations: true),
-              child: MediaQuery.withClampedTextScaling(
-                minScaleFactor: textScale,
-                maxScaleFactor: textScale,
-                child: child!,
+          builder:
+              (context) => MaterialApp.router(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                routerConfig: router,
+                builder:
+                    (context, child) => MediaQuery(
+                      // The bun breathes on an endless ticker; reduced motion also
+                      // drops its typewriter, so the bubble's line is up on frame one.
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(disableAnimations: true),
+                      child: MediaQuery.withClampedTextScaling(
+                        minScaleFactor: textScale,
+                        maxScaleFactor: textScale,
+                        child: child!,
+                      ),
+                    ),
               ),
-            ),
-          ),
         ),
       ),
     ),
@@ -280,20 +284,21 @@ void main() {
     );
   });
 
-  testWidgets('an offering with only a monthly plan sells it without a toggle', (
-    tester,
-  ) async {
-    await pumpPaywall(
-      tester,
-      purchases: PaywallPurchasesService(packages: const [monthlyPackage]),
-    );
+  testWidgets(
+    'an offering with only a monthly plan sells it without a toggle',
+    (tester) async {
+      await pumpPaywall(
+        tester,
+        purchases: PaywallPurchasesService(packages: const [monthlyPackage]),
+      );
 
-    // A segmented control with one live half is a label wearing a control's
-    // chrome, and the gold marks a deal there is nothing to compare against.
-    expect(find.byType(PlanToggle), findsNothing);
-    expect(_cta(tester).gold, isFalse);
-    expect(_cta(tester).onPressed, isNotNull);
-  });
+      // A segmented control with one live half is a label wearing a control's
+      // chrome, and the gold marks a deal there is nothing to compare against.
+      expect(find.byType(PlanToggle), findsNothing);
+      expect(_cta(tester).gold, isFalse);
+      expect(_cta(tester).onPressed, isNotNull);
+    },
+  );
 
   testWidgets('Restore, Terms and Privacy all clear the 44pt hit target', (
     tester,
@@ -323,7 +328,10 @@ void main() {
     expect(find.byType(PlanCta), findsOneWidget);
     expect(_stayFree(), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text(tr('paywall.compareCircle')), 200);
+    await tester.scrollUntilVisible(
+      find.text(tr('paywall.compareCircle')),
+      200,
+    );
     await _frames(tester);
     expect(tester.takeException(), isNull);
   });

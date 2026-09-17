@@ -36,14 +36,17 @@ void main() {
         root('/logging'),
         root('/circle/thread/1'),
         StatefulShellRoute.indexedStack(
-          builder: (context, state, shell) => Column(
-            children: [
-              Expanded(child: shell),
-              // Stands in for the pill nav, so the branch index is visible.
-              Text('branch:${shell.currentIndex}',
-                  textDirection: TextDirection.ltr),
-            ],
-          ),
+          builder:
+              (context, state, shell) => Column(
+                children: [
+                  Expanded(child: shell),
+                  // Stands in for the pill nav, so the branch index is visible.
+                  Text(
+                    'branch:${shell.currentIndex}',
+                    textDirection: TextDirection.ltr,
+                  ),
+                ],
+              ),
           branches: [
             for (final path in const ['/dashboard', '/nutrition', '/circle'])
               StatefulShellBranch(
@@ -66,12 +69,10 @@ void main() {
     return router;
   }
 
-  List<String> stackOf(GoRouter router) => router
-      .routerDelegate
-      .currentConfiguration
-      .matches
-      .map((m) => m.matchedLocation)
-      .toList();
+  List<String> stackOf(GoRouter router) =>
+      router.routerDelegate.currentConfiguration.matches
+          .map((m) => m.matchedLocation)
+          .toList();
 
   testWidgets('from OFF the shell it seeds the branch and lands on the push', (
     tester,

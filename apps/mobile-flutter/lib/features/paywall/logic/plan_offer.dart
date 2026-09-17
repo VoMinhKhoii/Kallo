@@ -98,23 +98,25 @@ PaywallOffer paywallOffer({
   // a user who chose monthly and then lost the offering — a reload that comes
   // back empty, purchases switched off mid-session — would otherwise leave the
   // dead toggle showing monthly selected against nothing for sale.
-  final yearly = packages.isEmpty ||
+  final yearly =
+      packages.isEmpty ||
       (yearlyPicked ?? (split.annual != null || split.monthly == null));
   // Falls back to the other period when the picked one is not on offer, so a
   // single-plan offering still buys something.
-  final plan = yearly
-      ? split.annual ?? split.monthly
-      : split.monthly ?? split.annual;
-  final pricing = split.annual == null
-      ? null
-      : yearlyPricing(annual: split.annual!, monthly: split.monthly);
-  final offer = plan == null
-      ? (trial: false, days: 0)
-      : trialOffer(
-          plan: plan,
-          trialActive: trial.active,
-          eligibleProductIds: trialEligibleProductIds,
-        );
+  final plan =
+      yearly ? split.annual ?? split.monthly : split.monthly ?? split.annual;
+  final pricing =
+      split.annual == null
+          ? null
+          : yearlyPricing(annual: split.annual!, monthly: split.monthly);
+  final offer =
+      plan == null
+          ? (trial: false, days: 0)
+          : trialOffer(
+            plan: plan,
+            trialActive: trial.active,
+            eligibleProductIds: trialEligibleProductIds,
+          );
   final savePercent = pricing?.savePercent;
   return PaywallOffer(
     plan: plan,
@@ -130,9 +132,10 @@ PaywallOffer paywallOffer({
       now: now,
     ),
     guideLine: _guideLine(trial: trial, savePercent: savePercent),
-    chipLabel: yearly && savePercent != null
-        ? tr('paywall.saveChip', namedArgs: {'percent': '$savePercent'})
-        : null,
+    chipLabel:
+        yearly && savePercent != null
+            ? tr('paywall.saveChip', namedArgs: {'percent': '$savePercent'})
+            : null,
     savePercent: savePercent,
   );
 }
@@ -176,9 +179,10 @@ String _renewalLine({
   final price = plan.storeProduct.priceString;
   // Only a trial defers the first charge. Without one the subscription starts
   // now, and naming a date would be an invented grace period.
-  final starts = offer.trial
-      ? DateFormat.MMMd(locale).format(now.add(Duration(days: offer.days)))
-      : null;
+  final starts =
+      offer.trial
+          ? DateFormat.MMMd(locale).format(now.add(Duration(days: offer.days)))
+          : null;
   if (plan.packageType == PackageType.annual && perMonth != null) {
     return tr(
       starts == null ? 'paywall.renewYearlyNow' : 'paywall.renewYearly',
@@ -200,9 +204,9 @@ String _guideLine({required TrialState trial, required int? savePercent}) {
     return trial.daysRemaining <= 1
         ? tr('paywall.trialCountdownLastDay')
         : tr(
-            'paywall.trialCountdown',
-            namedArgs: {'days': '${trial.daysRemaining}'},
-          );
+          'paywall.trialCountdown',
+          namedArgs: {'days': '${trial.daysRemaining}'},
+        );
   }
   if (savePercent == null) return tr('paywall.guideUnlock');
   return tr('paywall.guideSavings', namedArgs: {'percent': '$savePercent'});

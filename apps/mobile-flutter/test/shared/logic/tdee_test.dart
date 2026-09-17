@@ -54,7 +54,6 @@ void main() {
       final bmr = _bmr(weightKg: 70.4);
       expect(bmr, isNot(equals(bmr.roundToDouble())));
     });
-
   });
 
   // The whole chain, once: the two former copies each had their own, and this
@@ -107,35 +106,65 @@ void main() {
 
   group('calcDailyTargets', () {
     test('maintaining leaves the TDEE untouched', () {
-      final m = calcDailyTargets(2200, Goal.maintaining, 0.5, CarbSplit.moderateCarb);
+      final m = calcDailyTargets(
+        2200,
+        Goal.maintaining,
+        0.5,
+        CarbSplit.moderateCarb,
+      );
       expect(m.calories, 2200);
     });
 
     test('maintaining ignores aggression entirely', () {
       expect(
-        calcDailyTargets(2200, Goal.maintaining, 0.8, CarbSplit.moderateCarb).calories,
-        calcDailyTargets(2200, Goal.maintaining, null, CarbSplit.moderateCarb).calories,
+        calcDailyTargets(
+          2200,
+          Goal.maintaining,
+          0.8,
+          CarbSplit.moderateCarb,
+        ).calories,
+        calcDailyTargets(
+          2200,
+          Goal.maintaining,
+          null,
+          CarbSplit.moderateCarb,
+        ).calories,
       );
     });
 
     test('cutting subtracts aggression × kcal-per-kg', () {
       // 0.5 kg/week × 1100 = 550
       expect(
-        calcDailyTargets(2200, Goal.cutting, 0.5, CarbSplit.moderateCarb).calories,
+        calcDailyTargets(
+          2200,
+          Goal.cutting,
+          0.5,
+          CarbSplit.moderateCarb,
+        ).calories,
         1650,
       );
     });
 
     test('bulking adds the same adjustment', () {
       expect(
-        calcDailyTargets(2200, Goal.bulking, 0.5, CarbSplit.moderateCarb).calories,
+        calcDailyTargets(
+          2200,
+          Goal.bulking,
+          0.5,
+          CarbSplit.moderateCarb,
+        ).calories,
         2750,
       );
     });
 
     test('treats a null aggression as zero', () {
       expect(
-        calcDailyTargets(2200, Goal.cutting, null, CarbSplit.moderateCarb).calories,
+        calcDailyTargets(
+          2200,
+          Goal.cutting,
+          null,
+          CarbSplit.moderateCarb,
+        ).calories,
         2200,
       );
     });
@@ -143,14 +172,25 @@ void main() {
     test('rounds the aggression adjustment before applying it', () {
       // 0.35 × 1100 = 385.00000000000006 → 385, not 385.00000000000006
       expect(
-        calcDailyTargets(2200, Goal.cutting, 0.35, CarbSplit.moderateCarb).calories,
+        calcDailyTargets(
+          2200,
+          Goal.cutting,
+          0.35,
+          CarbSplit.moderateCarb,
+        ).calories,
         1815,
       );
     });
 
     test('deficitOverride wins over the aggression maths', () {
       expect(
-        calcDailyTargets(2200, Goal.cutting, 0.5, CarbSplit.moderateCarb, 300).calories,
+        calcDailyTargets(
+          2200,
+          Goal.cutting,
+          0.5,
+          CarbSplit.moderateCarb,
+          300,
+        ).calories,
         1900,
       );
     });
@@ -159,17 +199,31 @@ void main() {
       // The two pre-consolidation copies typed this parameter differently
       // (double? in onboarding, int? in settings); `num?` accepts both.
       expect(
-        calcDailyTargets(2200, Goal.cutting, 0.5, CarbSplit.moderateCarb, 300.4).calories,
+        calcDailyTargets(
+          2200,
+          Goal.cutting,
+          0.5,
+          CarbSplit.moderateCarb,
+          300.4,
+        ).calories,
         1900, // 1899.6 rounded by calcMacroGrams
       );
     });
 
-    test('lets calories go negative — the server clamps, not this function', () {
-      expect(
-        calcDailyTargets(400, Goal.cutting, 0.8, CarbSplit.moderateCarb).calories,
-        lessThan(0),
-      );
-    });
+    test(
+      'lets calories go negative — the server clamps, not this function',
+      () {
+        expect(
+          calcDailyTargets(
+            400,
+            Goal.cutting,
+            0.8,
+            CarbSplit.moderateCarb,
+          ).calories,
+          lessThan(0),
+        );
+      },
+    );
   });
 
   group('web parity', () {
@@ -188,7 +242,11 @@ void main() {
         final match = RegExp(
           '${_snake(level.name)}:\\s*([0-9.]+)',
         ).firstMatch(block!.group(1)!);
-        expect(match, isNotNull, reason: '${level.name} missing from web table');
+        expect(
+          match,
+          isNotNull,
+          reason: '${level.name} missing from web table',
+        );
         expect(
           double.parse(match!.group(1)!),
           kActivityMultipliers[level],
@@ -208,7 +266,11 @@ void main() {
           '${_snake(split.name)}:\\s*\\{\\s*protein:\\s*(\\d+),\\s*'
           'fat:\\s*(\\d+),\\s*carbs:\\s*(\\d+)\\s*\\}',
         ).firstMatch(source);
-        expect(match, isNotNull, reason: '${split.name} missing from web table');
+        expect(
+          match,
+          isNotNull,
+          reason: '${split.name} missing from web table',
+        );
         final ratio = kCarbSplitRatios[split]!;
         expect(
           [
@@ -243,7 +305,9 @@ void main() {
       // `10 * kg + 6.25 * cm - 5 * age`, then `+ 5` male / `- 161` female.
       expect(
         source,
-        contains('10 * metrics.weightKg + 6.25 * metrics.heightCm - 5 * metrics.age'),
+        contains(
+          '10 * metrics.weightKg + 6.25 * metrics.heightCm - 5 * metrics.age',
+        ),
         reason: 'the web BMR base formula changed shape — re-verify calcBMR',
       );
       expect(

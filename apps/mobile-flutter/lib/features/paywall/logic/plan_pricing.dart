@@ -21,9 +21,9 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// They are needed as a PAIR, not just individually: the yearly plan's saving
 /// is measured against twelve of the monthly price.
 ({Package? annual, Package? monthly}) splitPlans(List<Package> packages) => (
-      annual: _firstOfType(packages, PackageType.annual),
-      monthly: _firstOfType(packages, PackageType.monthly),
-    );
+  annual: _firstOfType(packages, PackageType.annual),
+  monthly: _firstOfType(packages, PackageType.monthly),
+);
 
 Package? _firstOfType(List<Package> packages, PackageType type) {
   for (final package in packages) {
@@ -69,15 +69,14 @@ bool offersTrial({
   required Package plan,
   required bool trialActive,
   required Set<String> eligibleProductIds,
-}) =>
-    (
-      trial: offersTrial(
-        plan: plan,
-        trialActive: trialActive,
-        eligibleProductIds: eligibleProductIds,
-      ),
-      days: freeTrialDays(plan),
-    );
+}) => (
+  trial: offersTrial(
+    plan: plan,
+    trialActive: trialActive,
+    eligibleProductIds: eligibleProductIds,
+  ),
+  days: freeTrialDays(plan),
+);
 
 /// The clock the renewal line's "from {date}" reads, behind a provider so a
 /// test can pin the date without the screen growing a parameter for it.
@@ -91,10 +90,7 @@ String deviceCurrencyLocale() => PlatformDispatcher.instance.locale.toString();
 
 /// The yearly plan's derived figures.
 class YearlyPricing {
-  const YearlyPricing({
-    required this.perMonth,
-    this.savePercent,
-  });
+  const YearlyPricing({required this.perMonth, this.savePercent});
 
   /// The yearly price divided by twelve — "$2.08". The renewal line carries
   /// it in brackets AFTER the amount actually billed, never instead of it.

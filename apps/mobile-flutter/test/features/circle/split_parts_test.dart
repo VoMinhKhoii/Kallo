@@ -18,8 +18,10 @@ void main() {
         final parts = evenParts(p);
         expect(parts.length, p);
         expect(parts.reduce((a, b) => a + b), kTotalParts);
-        expect(parts.reduce((a, b) => a < b ? a : b),
-            greaterThanOrEqualTo(kMinParts));
+        expect(
+          parts.reduce((a, b) => a < b ? a : b),
+          greaterThanOrEqualTo(kMinParts),
+        );
       }
     });
   });
@@ -99,8 +101,10 @@ void main() {
     test('never leaves anyone under the floor', () {
       for (var i = 0; i < 4; i++) {
         final next = partsAfterRemoval(const [5, 5, 5, 5], i);
-        expect(next.reduce((a, b) => a < b ? a : b),
-            greaterThanOrEqualTo(kMinParts));
+        expect(
+          next.reduce((a, b) => a < b ? a : b),
+          greaterThanOrEqualTo(kMinParts),
+        );
         expect(next.reduce((a, b) => a + b), kTotalParts);
       }
     });
@@ -131,8 +135,10 @@ void main() {
       while (parts.length < kMaxParticipants) {
         parts = partsAfterAdd(parts);
         expect(parts.reduce((a, b) => a + b), kTotalParts);
-        expect(parts.reduce((a, b) => a < b ? a : b),
-            greaterThanOrEqualTo(kMinParts));
+        expect(
+          parts.reduce((a, b) => a < b ? a : b),
+          greaterThanOrEqualTo(kMinParts),
+        );
       }
       expect(parts.length, kMaxParticipants);
     });

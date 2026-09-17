@@ -66,8 +66,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               child: IconButton(
                 icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
                 color: KalloColors.textMuted,
-                onPressed: () =>
-                    popOr(context, (router) => router.go('/circle')),
+                onPressed:
+                    () => popOr(context, (router) => router.go('/circle')),
               ),
             ),
           ),
@@ -182,8 +182,11 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _accepting = false);
-      showTopToast(context, tr('groups.connect.error'),
-          variant: TopToastVariant.error);
+      showTopToast(
+        context,
+        tr('groups.connect.error'),
+        variant: TopToastVariant.error,
+      );
     }
   }
 
@@ -206,27 +209,31 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
               AnimatedSize(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOut,
-                child: _connected
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: KalloSpacing.sp2),
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 450),
-                          curve: Curves.easeOut,
-                          builder: (context, t, child) => Opacity(
-                            opacity: t,
-                            child: Transform.translate(
-                              offset: Offset(-14 * (1 - t), 0),
-                              child: Transform.scale(
-                                scale: 0.9 + 0.1 * t,
-                                child: child,
-                              ),
-                            ),
+                child:
+                    _connected
+                        ? Padding(
+                          padding: const EdgeInsets.only(
+                            left: KalloSpacing.sp2,
                           ),
-                          child: _Disc(label: youLabel, highlighted: true),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: const Duration(milliseconds: 450),
+                            curve: Curves.easeOut,
+                            builder:
+                                (context, t, child) => Opacity(
+                                  opacity: t,
+                                  child: Transform.translate(
+                                    offset: Offset(-14 * (1 - t), 0),
+                                    child: Transform.scale(
+                                      scale: 0.9 + 0.1 * t,
+                                      child: child,
+                                    ),
+                                  ),
+                                ),
+                            child: _Disc(label: youLabel, highlighted: true),
+                          ),
+                        )
+                        : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -236,8 +243,10 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
             child: Text(
               _connected
                   ? tr('groups.connect.connectedTitle')
-                  : tr('groups.connect.connectTitle',
-                      namedArgs: {'name': widget.inviter.label}),
+                  : tr(
+                    'groups.connect.connectTitle',
+                    namedArgs: {'name': widget.inviter.label},
+                  ),
               key: ValueKey(_connected),
               textAlign: TextAlign.center,
               style: dashHeadline(),
@@ -289,21 +298,20 @@ class _Disc extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: highlighted
-              ? const [Color(0x8CC9A87C), Color(0x99E8E6DC)] // 55% → 60%
-              : const [KalloColors.accent40, KalloColors.borderHalf],
+          colors:
+              highlighted
+                  ? const [Color(0x8CC9A87C), Color(0x99E8E6DC)] // 55% → 60%
+                  : const [KalloColors.accent40, KalloColors.borderHalf],
         ),
         border: Border.all(
-          color: highlighted
-              ? KalloColors.accent40
-              : const Color(0x40C9A87C), // accent @ 25%
+          color:
+              highlighted
+                  ? KalloColors.accent40
+                  : const Color(0x40C9A87C), // accent @ 25%
           width: highlighted ? 2 : 1,
         ),
       ),
-      child: Text(
-        initial,
-        style: dashValue(),
-      ),
+      child: Text(initial, style: dashValue()),
     );
   }
 }
@@ -333,11 +341,7 @@ class _Shell extends StatelessWidget {
             _Disc(label: profile!.label),
             const SizedBox(height: KalloSpacing.sp5),
           ],
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: dashHeadline(),
-          ),
+          Text(title, textAlign: TextAlign.center, style: dashHeadline()),
           const SizedBox(height: KalloSpacing.sp2),
           Text(
             body,

@@ -19,10 +19,10 @@ import '../states/suggested_foods_skeleton.dart';
 /// to the suggested-foods CTA (confidence ≥ 40 · < 90% of target).
 List<NutrientCardData> suggestedFoodNutrients(NutritionOverview overview) {
   final all = [...overview.micronutrients, ...overview.moreNutrients];
-  final eligible = all.where(showChips).toList()
-    ..sort(
-      (a, b) => (a.percentOfTarget ?? 0).compareTo(b.percentOfTarget ?? 0),
-    );
+  final eligible =
+      all.where(showChips).toList()..sort(
+        (a, b) => (a.percentOfTarget ?? 0).compareTo(b.percentOfTarget ?? 0),
+      );
   return eligible.take(5).toList();
 }
 
@@ -66,11 +66,12 @@ class _SuggestedFoodsSheet extends StatelessWidget {
                 bottomInset + KalloSpacing.sp5,
               ),
               itemCount: nutrients.length,
-              separatorBuilder: (_, __) => const Divider(
-                height: KalloSpacing.sp5,
-                thickness: 1,
-                color: KalloColors.borderFaint,
-              ),
+              separatorBuilder:
+                  (_, __) => const Divider(
+                    height: KalloSpacing.sp5,
+                    thickness: 1,
+                    color: KalloColors.borderFaint,
+                  ),
               itemBuilder: (_, i) => _NutrientGap(card: nutrients[i]),
             ),
           ),
@@ -111,15 +112,14 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(
-              child: Text(tr(card.labelKey),
-                  style: kSectionHeader()),
-            ),
+            Expanded(child: Text(tr(card.labelKey), style: kSectionHeader())),
             const SizedBox(width: KalloSpacing.sp2),
             if (shortBy != null && shortBy > 0)
               Text(
-                tr('nutrition.suggestedFoods.short',
-                    namedArgs: {'value': shortBy.toString()}),
+                tr(
+                  'nutrition.suggestedFoods.short',
+                  namedArgs: {'value': shortBy.toString()},
+                ),
                 style: dashMeta(color: KalloColors.offTarget, tabular: true),
               ),
           ],
@@ -127,8 +127,11 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
         const SizedBox(height: KalloSpacing.sp2_5),
         async.when(
           loading: () => const CandidatesSkeleton(),
-          error: (_, __) => Text(tr('nutrition.candidates.error'),
-              style: dashMeta(color: kInkMuted)),
+          error:
+              (_, __) => Text(
+                tr('nutrition.candidates.error'),
+                style: dashMeta(color: kInkMuted),
+              ),
           data: (response) => _foods(response, vi),
         ),
       ],
@@ -138,13 +141,18 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
   Widget _foods(CandidatesResponse response, bool vi) {
     final pool = response.foods;
     if (pool.isEmpty) {
-      return Text(tr('nutrition.candidates.empty'),
-          style: dashMeta(color: kInkMuted));
+      return Text(
+        tr('nutrition.candidates.empty'),
+        style: dashMeta(color: kInkMuted),
+      );
     }
 
     final reserved = pool.where((f) => _reserved.contains(f.id)).toList();
     final rest = pool.where((f) => !_reserved.contains(f.id)).toList();
-    final rotatingSlots = (_visibleCount - reserved.length).clamp(0, pool.length);
+    final rotatingSlots = (_visibleCount - reserved.length).clamp(
+      0,
+      pool.length,
+    );
 
     final rotating = <FoodCandidate>[];
     for (var i = 0; i < rotatingSlots && i < rest.length; i++) {
@@ -176,9 +184,10 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
         if (canRefresh) ...[
           const SizedBox(height: KalloSpacing.sp2),
           _RefreshButton(
-            onTap: () => setState(
-              () => _cursor = (_cursor + rotatingSlots) % rest.length,
-            ),
+            onTap:
+                () => setState(
+                  () => _cursor = (_cursor + rotatingSlots) % rest.length,
+                ),
           ),
         ],
       ],
@@ -209,12 +218,7 @@ class _FoodChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         constraints: BoxConstraints(maxWidth: maxWidth),
-        padding: EdgeInsets.fromLTRB(
-          reserved ? 8 : 10,
-          6,
-          10,
-          6,
-        ),
+        padding: EdgeInsets.fromLTRB(reserved ? 8 : 10, 6, 10, 6),
         decoration: BoxDecoration(
           color: reserved ? KalloColors.accent10 : KalloColors.track,
           borderRadius: BorderRadius.circular(KalloRadii.pill),
@@ -226,7 +230,11 @@ class _FoodChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (reserved) ...[
-              const Icon(LucideIcons.check300, size: 13, color: KalloColors.text),
+              const Icon(
+                LucideIcons.check300,
+                size: 13,
+                color: KalloColors.text,
+              ),
               const SizedBox(width: 4),
             ],
             Flexible(

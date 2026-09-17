@@ -25,9 +25,8 @@ UserScrollNotification _scroll(
     maxScrollExtent: maxScrollExtent,
     pixels: 0,
     viewportDimension: 800,
-    axisDirection: axis == Axis.vertical
-        ? AxisDirection.down
-        : AxisDirection.right,
+    axisDirection:
+        axis == Axis.vertical ? AxisDirection.down : AxisDirection.right,
     devicePixelRatio: 1,
   ),
   context: context,
@@ -76,23 +75,31 @@ void main() {
   testWidgets('reading down a long branch hides the bar', (tester) async {
     final context = await _context(tester);
 
-    notifier().applyScroll(_scroll(context, direction: ScrollDirection.reverse));
+    notifier().applyScroll(
+      _scroll(context, direction: ScrollDirection.reverse),
+    );
 
     expect(visible(), isFalse);
   });
 
   testWidgets('scrolling back up reveals it', (tester) async {
     final context = await _context(tester);
-    notifier().applyScroll(_scroll(context, direction: ScrollDirection.reverse));
+    notifier().applyScroll(
+      _scroll(context, direction: ScrollDirection.reverse),
+    );
 
-    notifier().applyScroll(_scroll(context, direction: ScrollDirection.forward));
+    notifier().applyScroll(
+      _scroll(context, direction: ScrollDirection.forward),
+    );
 
     expect(visible(), isTrue);
   });
 
   testWidgets('idle leaves the bar wherever the drag left it', (tester) async {
     final context = await _context(tester);
-    notifier().applyScroll(_scroll(context, direction: ScrollDirection.reverse));
+    notifier().applyScroll(
+      _scroll(context, direction: ScrollDirection.reverse),
+    );
 
     notifier().applyScroll(_scroll(context, direction: ScrollDirection.idle));
 

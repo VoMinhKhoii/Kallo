@@ -40,9 +40,9 @@ class OnboardingScreen extends ConsumerWidget {
         // back out of, so `/save-plan` is pushed over the wizard. Signed in,
         // `/welcome` flushes the draft and enters the app — it must not be
         // poppable back into the wizard, so that one stays a `go`.
-        onComplete: () => signedIn
-            ? context.go('/welcome')
-            : context.push('/save-plan'),
+        onComplete:
+            () =>
+                signedIn ? context.go('/welcome') : context.push('/save-plan'),
         onClose: () {
           if (!signedIn) {
             // Pushed from `/start` in the ordinary run, so pop back onto the

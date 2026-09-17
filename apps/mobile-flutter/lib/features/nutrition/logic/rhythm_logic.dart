@@ -13,7 +13,6 @@ import '../../../shared/logic/macro_composition.dart';
 
 export '../../../shared/logic/macro_composition.dart';
 
-
 const List<String> kOrderedMacros = ['protein', 'carbohydrate', 'fat'];
 
 String consistencyLabelKey(double? pct) {
@@ -26,20 +25,24 @@ String consistencyLabelKey(double? pct) {
 
 /// Builds the macro composition (kcal-share) segments for the calorie pill.
 Composition buildComposition(List<MacroPattern> macros) {
-  final composition = kCompositionKeys.map((key) {
-    final macro = macros.where((m) => m.key == key).firstOrNull;
-    if (macro == null || macro.averagePerDay <= 0) {
-      return (key: key, kcal: 0.0);
-    }
-    return (key: key, kcal: macro.averagePerDay * kKcalPerGram[key]!);
-  }).toList();
+  final composition =
+      kCompositionKeys.map((key) {
+        final macro = macros.where((m) => m.key == key).firstOrNull;
+        if (macro == null || macro.averagePerDay <= 0) {
+          return (key: key, kcal: 0.0);
+        }
+        return (key: key, kcal: macro.averagePerDay * kKcalPerGram[key]!);
+      }).toList();
   final totalKcal = composition.fold<double>(0, (sum, c) => sum + c.kcal);
-  final segments = composition
-      .map((c) => CompositionSegment(
-            key: c.key,
-            pct: totalKcal > 0 ? (c.kcal / totalKcal) * 100 : 0,
-          ))
-      .toList();
+  final segments =
+      composition
+          .map(
+            (c) => CompositionSegment(
+              key: c.key,
+              pct: totalKcal > 0 ? (c.kcal / totalKcal) * 100 : 0,
+            ),
+          )
+          .toList();
   return Composition(totalKcal: totalKcal, segments: segments);
 }
 

@@ -50,9 +50,7 @@ class InviteValueRow extends StatelessWidget {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: dashBody(
-                    color: muted ? kInkMuted : kInk,
-                  ),
+                  style: dashBody(color: muted ? kInkMuted : kInk),
                 ),
               ],
             ),
@@ -99,30 +97,32 @@ class InviteGlyphAction extends StatelessWidget {
         opacity: disabled ? 0.55 : 1,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: inert
-              ? null
-              : () {
-                  HapticFeedback.selectionClick();
-                  onTap();
-                },
+          onTap:
+              inert
+                  ? null
+                  : () {
+                    HapticFeedback.selectionClick();
+                    onTap();
+                  },
           child: SizedBox(
             width: KalloIcons.hit,
             height: KalloIcons.hit,
             child: Center(
-              child: loading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: KalloColors.textMuted,
+              child:
+                  loading
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: KalloColors.textMuted,
+                        ),
+                      )
+                      : Icon(
+                        icon,
+                        size: KalloIcons.size,
+                        color: emphasis ? kInk : kInkMuted,
                       ),
-                    )
-                  : Icon(
-                      icon,
-                      size: KalloIcons.size,
-                      color: emphasis ? kInk : kInkMuted,
-                    ),
             ),
           ),
         ),

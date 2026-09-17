@@ -54,7 +54,9 @@ void main() {
     expect(backs, 1);
   });
 
-  testWidgets('a slow drag past a fifth of the width goes back', (tester) async {
+  testWidgets('a slow drag past a fifth of the width goes back', (
+    tester,
+  ) async {
     var backs = 0;
     await tester.pumpWidget(host(onBack: () => backs++));
 
@@ -85,14 +87,16 @@ void main() {
     expect(backs, 0);
   });
 
-  testWidgets('a null callback is a silent no-op (busy, or mandatory screen 1)',
-      (tester) async {
-    await tester.pumpWidget(host(onBack: null));
+  testWidgets(
+    'a null callback is a silent no-op (busy, or mandatory screen 1)',
+    (tester) async {
+      await tester.pumpWidget(host(onBack: null));
 
-    await swipe(tester, 300, duration: const Duration(milliseconds: 120));
+      await swipe(tester, 300, duration: const Duration(milliseconds: 120));
 
-    expect(tester.takeException(), isNull);
-  });
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('in RTL, back is a LEFT swipe', (tester) async {
     var backs = 0;
@@ -104,35 +108,46 @@ void main() {
     expect(backs, 1);
 
     await swipe(tester, 300, duration: const Duration(milliseconds: 120));
-    expect(backs, 1, reason: 'the other way is forward, and forward is the CTA');
-  });
-
-  testWidgets('a horizontal control inside wins the drag — the pace ruler case',
-      (tester) async {
-    var backs = 0;
-    final controller = ScrollController();
-    addTearDown(controller.dispose);
-
-    await tester.pumpWidget(
-      host(
-        onBack: () => backs++,
-        child: ListView(
-          controller: controller,
-          scrollDirection: Axis.horizontal,
-          children: <Widget>[
-            for (var i = 0; i < 12; i++) SizedBox(width: 120, child: Text('$i')),
-          ],
-        ),
-      ),
+    expect(
+      backs,
+      1,
+      reason: 'the other way is forward, and forward is the CTA',
     );
-    controller.jumpTo(400);
-    await tester.pump();
-
-    await swipe(tester, 300, duration: const Duration(milliseconds: 120));
-
-    expect(backs, 0, reason: 'the ruler owns the drag, not the wizard');
-    expect(controller.offset, lessThan(400), reason: 'and it actually scrolled');
   });
+
+  testWidgets(
+    'a horizontal control inside wins the drag — the pace ruler case',
+    (tester) async {
+      var backs = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        host(
+          onBack: () => backs++,
+          child: ListView(
+            controller: controller,
+            scrollDirection: Axis.horizontal,
+            children: <Widget>[
+              for (var i = 0; i < 12; i++)
+                SizedBox(width: 120, child: Text('$i')),
+            ],
+          ),
+        ),
+      );
+      controller.jumpTo(400);
+      await tester.pump();
+
+      await swipe(tester, 300, duration: const Duration(milliseconds: 120));
+
+      expect(backs, 0, reason: 'the ruler owns the drag, not the wizard');
+      expect(
+        controller.offset,
+        lessThan(400),
+        reason: 'and it actually scrolled',
+      );
+    },
+  );
 
   testWidgets('a vertical scroll is not a back swipe', (tester) async {
     var backs = 0;
@@ -145,7 +160,8 @@ void main() {
         child: ListView(
           controller: controller,
           children: <Widget>[
-            for (var i = 0; i < 40; i++) SizedBox(height: 60, child: Text('$i')),
+            for (var i = 0; i < 40; i++)
+              SizedBox(height: 60, child: Text('$i')),
           ],
         ),
       ),

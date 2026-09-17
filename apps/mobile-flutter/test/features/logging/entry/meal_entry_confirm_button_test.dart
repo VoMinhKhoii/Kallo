@@ -79,8 +79,9 @@ void main() {
     expect(taps, 1);
   });
 
-  testWidgets('it is a full-width beige pill with its label on it',
-      (tester) async {
+  testWidgets('it is a full-width beige pill with its label on it', (
+    tester,
+  ) async {
     // The native pass shrank this to a 32pt icon circle. It is the one action
     // a staged card exists to ask for, so it wears the app's in-app primary:
     // full width, ~50pt, fully rounded, beige fill + ink label.
@@ -98,8 +99,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Save meal'), findsOneWidget,
-        reason: 'the label must be on the button, not only in a tooltip');
+    expect(
+      find.text('Save meal'),
+      findsOneWidget,
+      reason: 'the label must be on the button, not only in a tooltip',
+    );
 
     final box = tester.getSize(find.byType(MealEntryConfirmButton));
     expect(box.width, 300, reason: 'the pill must fill its slot');
@@ -113,10 +117,7 @@ void main() {
     );
     final decoration = container.decoration! as BoxDecoration;
     expect(decoration.color, KalloColors.btnPrimarySoft);
-    expect(
-      decoration.borderRadius,
-      BorderRadius.circular(KalloRadii.button),
-    );
+    expect(decoration.borderRadius, BorderRadius.circular(KalloRadii.button));
   });
 
   testWidgets('the editing state goes quiet rather than beige', (tester) async {

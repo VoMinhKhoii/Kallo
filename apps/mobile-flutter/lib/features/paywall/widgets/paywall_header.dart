@@ -11,11 +11,7 @@ import '../../../theme/kallo_theme.dart';
 /// Free" right — the same [WordmarkBar] the onboarding steps wear, so the last
 /// screen of the flow does not change shape under the mark.
 class PaywallHeader extends StatelessWidget {
-  const PaywallHeader({
-    required this.onClose,
-    this.onStayFree,
-    super.key,
-  });
+  const PaywallHeader({required this.onClose, this.onStayFree, super.key});
 
   final VoidCallback onClose;
 
@@ -29,32 +25,29 @@ class PaywallHeader extends StatelessWidget {
     // between the last wizard screen and this one.
     gutterInset: WordmarkBar.rowInset,
     leading: _close(context),
-    trailing: onStayFree == null
-        ? null
-        // Padded inside the target: the label stands off the edge and the
-        // slack it stands on is tappable.
-        : MetaAction(
-            label: tr('paywall.stayFree'),
-            onTap: onStayFree,
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
-          ),
+    trailing:
+        onStayFree == null
+            ? null
+            // Padded inside the target: the label stands off the edge and the
+            // slack it stands on is tappable.
+            : MetaAction(
+              label: tr('paywall.stayFree'),
+              onTap: onStayFree,
+              padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
+            ),
   );
 
   Widget _close(BuildContext context) => Semantics(
-        button: true,
-        label: tr('common.close'),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onClose,
-          child: const SizedBox(
-            width: KalloIcons.hit,
-            height: KalloIcons.hit,
-            child: Icon(
-              LucideIcons.x300,
-              size: KalloIcons.primary,
-              color: kInk,
-            ),
-          ),
-        ),
-      );
+    button: true,
+    label: tr('common.close'),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onClose,
+      child: const SizedBox(
+        width: KalloIcons.hit,
+        height: KalloIcons.hit,
+        child: Icon(LucideIcons.x300, size: KalloIcons.primary, color: kInk),
+      ),
+    ),
+  );
 }

@@ -4,11 +4,11 @@ import 'package:kallo_mobile/features/dashboard/data/logging_day.dart';
 import 'package:kallo_mobile/features/dashboard/logic/meal_order.dart';
 
 PersistedMeal _meal(String id, String loggedAt) => PersistedMeal(
-      id: id,
-      rawInput: id,
-      loggedAt: loggedAt,
-      nutrition: const MealNutrition(),
-    );
+  id: id,
+  rawInput: id,
+  loggedAt: loggedAt,
+  nutrition: const MealNutrition(),
+);
 
 void main() {
   group('mealsNewestFirst', () {
@@ -19,10 +19,11 @@ void main() {
         _meal('lunch', '2026-09-05T12:25:00Z'),
       ];
 
-      expect(
-        mealsNewestFirst(meals).map((m) => m.id),
-        ['dinner', 'lunch', 'breakfast'],
-      );
+      expect(mealsNewestFirst(meals).map((m) => m.id), [
+        'dinner',
+        'lunch',
+        'breakfast',
+      ]);
     });
 
     test('does not mutate the list it was given', () {

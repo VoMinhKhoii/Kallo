@@ -15,33 +15,34 @@ import 'package:kallo_mobile/theme/kallo_theme.dart';
 const double _screenWidth = 390;
 
 Widget _wrap(Widget child) => MaterialApp(
-      home: Scaffold(
-        body: Center(child: SizedBox(width: _screenWidth, child: child)),
-      ),
-    );
+  home: Scaffold(
+    body: Center(child: SizedBox(width: _screenWidth, child: child)),
+  ),
+);
 
 OnboardingStepHeader _header({
   int step = 3,
   VoidCallback? onBack,
   VoidCallback? onSkip,
   String? skipLabel,
-}) =>
-    OnboardingStepHeader(
-      step: step,
-      total: 6,
-      progressLabel: 'Step $step of 6',
-      onBack: onBack,
-      onSkip: onSkip,
-      skipLabel: skipLabel,
-    );
+}) => OnboardingStepHeader(
+  step: step,
+  total: 6,
+  progressLabel: 'Step $step of 6',
+  onBack: onBack,
+  onSkip: onSkip,
+  skipLabel: skipLabel,
+);
 
 double _fill(WidgetTester tester) =>
-    tester.widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
+    tester
+        .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
         .widthFactor!;
 
 void main() {
-  testWidgets('the wordmark is centred whatever else the row carries',
-      (tester) async {
+  testWidgets('the wordmark is centred whatever else the row carries', (
+    tester,
+  ) async {
     await tester.pumpWidget(_wrap(_header()));
     await tester.pumpAndSettle();
 
@@ -58,47 +59,53 @@ void main() {
     await tester.pumpAndSettle();
 
     // A three-slot Row would have shifted it; the Stack does not.
-    expect(tester.getCenter(find.byType(KalloWordmark)).dx, closeTo(bare, 0.01));
-  });
-
-  testWidgets('back and skip appear only when they are wired, on 44pt targets',
-      (tester) async {
-    await tester.pumpWidget(_wrap(_header()));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(LucideIcons.chevronLeft300), findsNothing);
-    expect(find.text('Skip'), findsNothing);
-
-    var backs = 0, skips = 0;
-    await tester.pumpWidget(
-      _wrap(
-        _header(
-          onBack: () => backs++,
-          onSkip: () => skips++,
-          skipLabel: 'Skip',
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
     expect(
-      tester.getSize(find.byIcon(LucideIcons.chevronLeft300)).height,
-      KalloIcons.hit,
+      tester.getCenter(find.byType(KalloWordmark)).dx,
+      closeTo(bare, 0.01),
     );
-    // The Icon's own box is not hit-testable — the 44pt GestureDetector
-    // around it is what takes the tap, so the miss warning is noise here.
-    await tester.tap(
-      find.byIcon(LucideIcons.chevronLeft300),
-      warnIfMissed: false,
-    );
-    await tester.pump();
-    await tester.tap(find.text('Skip'));
-    await tester.pump();
-    expect(backs, 1);
-    expect(skips, 1);
   });
 
-  testWidgets('the bar fills step / total and animates between steps',
-      (tester) async {
+  testWidgets(
+    'back and skip appear only when they are wired, on 44pt targets',
+    (tester) async {
+      await tester.pumpWidget(_wrap(_header()));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(LucideIcons.chevronLeft300), findsNothing);
+      expect(find.text('Skip'), findsNothing);
+
+      var backs = 0, skips = 0;
+      await tester.pumpWidget(
+        _wrap(
+          _header(
+            onBack: () => backs++,
+            onSkip: () => skips++,
+            skipLabel: 'Skip',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSize(find.byIcon(LucideIcons.chevronLeft300)).height,
+        KalloIcons.hit,
+      );
+      // The Icon's own box is not hit-testable — the 44pt GestureDetector
+      // around it is what takes the tap, so the miss warning is noise here.
+      await tester.tap(
+        find.byIcon(LucideIcons.chevronLeft300),
+        warnIfMissed: false,
+      );
+      await tester.pump();
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      expect(backs, 1);
+      expect(skips, 1);
+    },
+  );
+
+  testWidgets('the bar fills step / total and animates between steps', (
+    tester,
+  ) async {
     await tester.pumpWidget(_wrap(_header(step: 3)));
     await tester.pumpAndSettle();
     expect(_fill(tester), closeTo(0.5, 1e-9));

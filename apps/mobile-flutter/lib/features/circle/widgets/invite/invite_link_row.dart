@@ -165,9 +165,7 @@ class _InviteLinkRowState extends ConsumerState<InviteLinkRow> {
             showIssue
                 ? tr('groups.invite.endInvalid')
                 : tr('groups.invite.editHint'),
-            style: dashMeta(
-              color: showIssue ? KalloColors.danger : kInkMuted,
-            ),
+            style: dashMeta(color: showIssue ? KalloColors.danger : kInkMuted),
           ),
         ],
       ),

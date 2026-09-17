@@ -112,52 +112,53 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   KalloSheetHeader(
-                    titleWidget: _editingName
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _name,
-                                  maxLength: 60,
-                                  decoration: InputDecoration(
-                                    labelText: tr('groups.info.renameLabel'),
+                    titleWidget:
+                        _editingName
+                            ? Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _name,
+                                    maxLength: 60,
+                                    decoration: InputDecoration(
+                                      labelText: tr('groups.info.renameLabel'),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                onPressed: _renaming ? null : _rename,
-                                tooltip: tr('groups.info.renameSave'),
-                                icon: const Icon(LucideIcons.check300),
-                              ),
-                            ],
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  group.name ?? '',
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: kSectionHeader(),
-                                ),
-                              ),
-                              if (group.myRole == 'owner')
                                 IconButton(
-                                  tooltip: tr('groups.info.renameLabel'),
-                                  onPressed: () {
-                                    _name.text = group.name ?? '';
-                                    setState(() => _editingName = true);
-                                  },
-                                  icon: const Icon(
-                                    LucideIcons.pencil300,
-                                    size: KalloIcons.tertiary,
+                                  onPressed: _renaming ? null : _rename,
+                                  tooltip: tr('groups.info.renameSave'),
+                                  icon: const Icon(LucideIcons.check300),
+                                ),
+                              ],
+                            )
+                            : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    group.name ?? '',
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: kSectionHeader(),
                                   ),
                                 ),
-                            ],
-                          ),
+                                if (group.myRole == 'owner')
+                                  IconButton(
+                                    tooltip: tr('groups.info.renameLabel'),
+                                    onPressed: () {
+                                      _name.text = group.name ?? '';
+                                      setState(() => _editingName = true);
+                                    },
+                                    icon: const Icon(
+                                      LucideIcons.pencil300,
+                                      size: KalloIcons.tertiary,
+                                    ),
+                                  ),
+                              ],
+                            ),
                     subtitle: tr(
                       'groups.info.memberCount',
                       namedArgs: {'count': '${group.members.length}'},
@@ -181,10 +182,16 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                         Text(tr('groups.info.addPeople'), style: dashMeta()),
                         const SizedBox(height: KalloSpacing.sp2),
                         GroupAddPeople(group: group),
-                        const Divider(height: KalloSpacing.sp6, color: kHairline),
+                        const Divider(
+                          height: KalloSpacing.sp6,
+                          color: kHairline,
+                        ),
                         TextButton.icon(
                           onPressed: _leave,
-                          icon: const Icon(LucideIcons.logOut300, size: KalloIcons.tertiary),
+                          icon: const Icon(
+                            LucideIcons.logOut300,
+                            size: KalloIcons.tertiary,
+                          ),
                           label: Text(tr('groups.feed.leave')),
                         ),
                       ],

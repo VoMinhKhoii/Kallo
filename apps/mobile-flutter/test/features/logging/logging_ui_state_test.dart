@@ -40,10 +40,9 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(composerDraftProvider.notifier).state = const MentionSnapshot(
-      text: 'gà nướng',
-      mentions: [],
-    );
+    container
+        .read(composerDraftProvider.notifier)
+        .state = const MentionSnapshot(text: 'gà nướng', mentions: []);
     container.read(expandedMealCardsProvider.notifier).state = {'m1'};
 
     container.read(owner.notifier).state = 'user-b';

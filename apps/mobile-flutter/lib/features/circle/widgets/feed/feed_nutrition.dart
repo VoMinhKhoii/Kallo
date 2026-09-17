@@ -64,9 +64,7 @@ class FeedNutrition extends StatelessWidget {
           key: '${_prefixes[key]} ${_grams(grams[key])}',
       },
       kcalLabel:
-          kcal == null
-              ? '— kcal'
-              : fmtKcal(kcal, locale: localeOf(context)),
+          kcal == null ? '— kcal' : fmtKcal(kcal, locale: localeOf(context)),
       kcalPlacement: MealBlockKcal.legendLeading,
       // Four lines, not the block's default two: a Circle post carries text
       // somebody TYPED, in their own words, while Recent meals shows a name

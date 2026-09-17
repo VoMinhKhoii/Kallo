@@ -32,11 +32,12 @@ String _code(String source) => source
 
 void main() {
   group('icon fonts', () {
-    final sources = Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))
-        .toList();
+    final sources =
+        Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))
+            .toList();
 
     test('finds the app source to scan', () {
       expect(sources, isNotEmpty);

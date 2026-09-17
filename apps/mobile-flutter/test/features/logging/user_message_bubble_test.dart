@@ -43,19 +43,20 @@ Widget _localized(String text, {String? sentAt}) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 390,
-            child: UserMessageBubble(text: text, sentAt: sentAt),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 390,
+                child: UserMessageBubble(text: text, sentAt: sentAt),
+              ),
+            ),
           ),
         ),
-      ),
-    ),
   ),
 );
 
@@ -166,8 +167,10 @@ void main() {
         },
       );
       addTearDown(
-        () => tester.binding.defaultBinaryMessenger
-            .setMockMethodCallHandler(SystemChannels.platform, null),
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
       );
       return written;
     }
@@ -179,8 +182,7 @@ void main() {
     Finder bubbleBoxes() => find.byWidgetPredicate(
       (w) =>
           w is Container &&
-          (w.decoration as BoxDecoration?)?.color ==
-              KalloColors.btnPrimarySoft,
+          (w.decoration as BoxDecoration?)?.color == KalloColors.btnPrimarySoft,
     );
 
     testWidgets('a plain tap does nothing', (tester) async {
@@ -360,15 +362,16 @@ void main() {
 
       await holdBubble(tester);
 
-      final glyphs = tester
-          .widgetList<Icon>(
-            find.descendant(
-              of: find.byType(KalloMenuActionRow),
-              matching: find.byType(Icon),
-            ),
-          )
-          .map((i) => i.icon)
-          .toList();
+      final glyphs =
+          tester
+              .widgetList<Icon>(
+                find.descendant(
+                  of: find.byType(KalloMenuActionRow),
+                  matching: find.byType(Icon),
+                ),
+              )
+              .map((i) => i.icon)
+              .toList();
       // `cupertino_icons` is not a dependency of this app, so a CupertinoIcons
       // glyph has no font behind it and paints as a tofu box on device.
       // Lucide is the one icon font the app bundles, and the only set
@@ -396,8 +399,8 @@ void main() {
       // bubble itself, uncropped and unscaled.
       expect(bubbleBoxes(), findsNWidgets(2));
       for (final box in tester.widgetList<Container>(bubbleBoxes())) {
-        final radius = (box.decoration! as BoxDecoration).borderRadius!
-            as BorderRadius;
+        final radius =
+            (box.decoration! as BoxDecoration).borderRadius! as BorderRadius;
         expect(radius.bottomRight.x, 4);
       }
     });

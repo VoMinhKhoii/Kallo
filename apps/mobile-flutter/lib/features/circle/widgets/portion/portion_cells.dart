@@ -54,10 +54,7 @@ class BatteryFrame extends StatelessWidget {
             decoration: BoxDecoration(
               color: KalloColors.elev,
               borderRadius: BorderRadius.circular(radius),
-              border: Border.all(
-                color: KalloColors.text,
-                width: borderWidth,
-              ),
+              border: Border.all(color: KalloColors.text, width: borderWidth),
             ),
             child: child,
           ),
@@ -116,9 +113,6 @@ class PortionCells extends StatelessWidget {
     // height from its constraints, and a centred Row hands its children a LOOSE
     // height — so every cell collapsed to zero and the frame painted empty.
     // Assertions could not see it; only a render did.
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: cells,
-    );
+    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: cells);
   }
 }

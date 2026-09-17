@@ -49,8 +49,9 @@ ProviderContainer _container({
 }) {
   final container = ProviderContainer(
     overrides: [
-      onboardingDraftStoreProvider
-          .overrideWithValue(OnboardingDraftStore(storage: storage)),
+      onboardingDraftStoreProvider.overrideWithValue(
+        OnboardingDraftStore(storage: storage),
+      ),
       apiClientProvider.overrideWithValue(api),
     ],
   );
@@ -70,8 +71,8 @@ Future<OnboardingDraft?> _readJson(Map<String, dynamic> json) =>
 
 /// Round-trips [draft] through `toJson`/`fromJson` and real JSON text.
 OnboardingDraft _roundTrip(OnboardingDraft draft) => OnboardingDraft.fromJson(
-      jsonDecode(jsonEncode(draft.toJson())) as Map<String, dynamic>,
-    );
+  jsonDecode(jsonEncode(draft.toJson())) as Map<String, dynamic>,
+);
 
 const _step1 = {
   'countryOfOrigin': 'Vietnam',
@@ -104,11 +105,7 @@ void main() {
     });
 
     test('screenReached is clamped to the wizard range', () {
-      for (final (stored, expected) in const [
-        (99, 6),
-        (-3, 0),
-        ('six', 0),
-      ]) {
+      for (final (stored, expected) in const [(99, 6), (-3, 0), ('six', 0)]) {
         expect(
           OnboardingDraft.fromJson({'screenReached': stored}).screenReached,
           expected,
@@ -148,9 +145,7 @@ void main() {
 
       expect(await store.read(), isNull);
 
-      await store.write(
-        const OnboardingDraft(step1: _step1, screenReached: 2),
-      );
+      await store.write(const OnboardingDraft(step1: _step1, screenReached: 2));
       expect(storage.values.keys, [kOnboardingDraftKey]);
 
       final read = await store.read();
@@ -309,10 +304,10 @@ void main() {
       if (draft != null) {
         await OnboardingDraftStore(storage: storage).write(draft);
       }
-      final notifier =
-          _container(storage: storage, api: api).read(
-        onboardingDraftProvider.notifier,
-      );
+      final notifier = _container(
+        storage: storage,
+        api: api,
+      ).read(onboardingDraftProvider.notifier);
       if (expectThrow) {
         await expectLater(notifier.flush(), throwsA(isA<ApiError>()));
       } else {

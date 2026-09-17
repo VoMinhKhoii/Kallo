@@ -35,12 +35,13 @@ Widget _wrap(Widget child) => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        home: Scaffold(body: child),
-      ),
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: Scaffold(body: child),
+          ),
     ),
   ),
 );
@@ -93,11 +94,12 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         Builder(
-          builder: (c) => TextButton(
-            onPressed: () =>
-                showMealModeSheet(c, current: MealLogMode.cheat),
-            child: const Text('open'),
-          ),
+          builder:
+              (c) => TextButton(
+                onPressed:
+                    () => showMealModeSheet(c, current: MealLogMode.cheat),
+                child: const Text('open'),
+              ),
         ),
       ),
     );

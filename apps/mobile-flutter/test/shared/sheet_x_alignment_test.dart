@@ -34,22 +34,24 @@ Widget _wrap(Widget home) => ProviderScope(
     fallbackLocale: const Locale('en'),
     assetLoader: const FsL10nLoader(),
     child: Builder(
-      builder: (context) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        home: Scaffold(body: home),
-      ),
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: Scaffold(body: home),
+          ),
     ),
   ),
 );
 
 /// Opens a sheet from a tap, the way the app does.
 Widget _opener(void Function(BuildContext, WidgetRef) open) => Consumer(
-  builder: (context, ref, _) => TextButton(
-    onPressed: () => open(context, ref),
-    child: const Text('open'),
-  ),
+  builder:
+      (context, ref, _) => TextButton(
+        onPressed: () => open(context, ref),
+        child: const Text('open'),
+      ),
 );
 
 void main() {
@@ -131,9 +133,8 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           KalloSheetSurface(
-            padding: inset == null
-                ? null
-                : EdgeInsets.symmetric(horizontal: inset),
+            padding:
+                inset == null ? null : EdgeInsets.symmetric(horizontal: inset),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

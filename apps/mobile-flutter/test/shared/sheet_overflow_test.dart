@@ -44,12 +44,13 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: child),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: child),
+        ),
   ),
 );
 
@@ -63,9 +64,17 @@ void _sizeTo(WidgetTester tester, Size size, double scale) {
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 }
 
-Future<void> _openSheet(WidgetTester tester, VoidCallback Function(BuildContext) open) async {
+Future<void> _openSheet(
+  WidgetTester tester,
+  VoidCallback Function(BuildContext) open,
+) async {
   await tester.pumpWidget(
-    _wrap(Builder(builder: (c) => TextButton(onPressed: open(c), child: const Text('open')))),
+    _wrap(
+      Builder(
+        builder:
+            (c) => TextButton(onPressed: open(c), child: const Text('open')),
+      ),
+    ),
   );
   await tester.pumpAndSettle();
   await tester.tap(find.text('open'));
@@ -73,7 +82,11 @@ Future<void> _openSheet(WidgetTester tester, VoidCallback Function(BuildContext)
 }
 
 /// The action must be reachable — scrollable counts, clipped does not.
-Future<void> _expectReachable(WidgetTester tester, Finder action, Size size) async {
+Future<void> _expectReachable(
+  WidgetTester tester,
+  Finder action,
+  Size size,
+) async {
   expect(action, findsOneWidget);
   await tester.ensureVisible(action);
   await tester.pumpAndSettle();
@@ -110,13 +123,14 @@ void main() {
     _sizeTo(tester, const Size(390, 844), 1.0);
     await _openSheet(
       tester,
-      (c) => () => showPortionPicker(
-        c,
-        vessel: const PieceVessel(tier: 3, count: 1, kind: PieceKind.fish),
-        grams: 150,
-        itemCalories: 300,
-        itemQuantity: 150,
-      ),
+      (c) =>
+          () => showPortionPicker(
+            c,
+            vessel: const PieceVessel(tier: 3, count: 1, kind: PieceKind.fish),
+            grams: 150,
+            itemCalories: 300,
+            itemQuantity: 150,
+          ),
     );
     expect(find.text('Portion size'), findsOneWidget);
     await tester.drag(find.text('Portion size'), const Offset(0, 500));
@@ -136,14 +150,19 @@ void main() {
         _sizeTo(tester, entry.value, scale);
         await _openSheet(
           tester,
-          (c) => () => showPortionPicker(
-            c,
-            // Poultry: the drumstick is the tallest silhouette in the set.
-            vessel: const PieceVessel(tier: 3, count: 1, kind: PieceKind.poultry),
-            grams: 150,
-            itemCalories: 300,
-            itemQuantity: 150,
-          ),
+          (c) =>
+              () => showPortionPicker(
+                c,
+                // Poultry: the drumstick is the tallest silhouette in the set.
+                vessel: const PieceVessel(
+                  tier: 3,
+                  count: 1,
+                  kind: PieceKind.poultry,
+                ),
+                grams: 150,
+                itemCalories: 300,
+                itemQuantity: 150,
+              ),
         );
         await _expectReachable(tester, find.text('Apply'), entry.value);
       });
@@ -152,19 +171,20 @@ void main() {
         _sizeTo(tester, entry.value, scale);
         await _openSheet(
           tester,
-          (c) => () => showPortionPicker(
-            c,
-            // Cups are the tall case: aspect 0.57 makes tier 4 ~149pt tall,
-            // which is what pushed Apply off a 320pt screen entirely.
-            vessel: const ContainerVessel(
-              family: ContainerFamily.cup,
-              tier: 4,
-              dishClass: DishClass.drink,
-            ),
-            grams: 600,
-            itemCalories: 300,
-            itemQuantity: 150,
-          ),
+          (c) =>
+              () => showPortionPicker(
+                c,
+                // Cups are the tall case: aspect 0.57 makes tier 4 ~149pt tall,
+                // which is what pushed Apply off a 320pt screen entirely.
+                vessel: const ContainerVessel(
+                  family: ContainerFamily.cup,
+                  tier: 4,
+                  dishClass: DishClass.drink,
+                ),
+                grams: 600,
+                itemCalories: 300,
+                itemQuantity: 150,
+              ),
         );
         await _expectReachable(tester, find.text('Apply'), entry.value);
       });

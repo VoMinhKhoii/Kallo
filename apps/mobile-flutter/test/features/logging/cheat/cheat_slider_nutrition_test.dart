@@ -94,21 +94,23 @@ void main() {
   });
 
   group('resolveSliderNutrition', () {
-    test('sums orthogonal axes and derives calories with the 4/4/9/7 identity',
-        () {
-      final result = resolveSliderNutrition(makeSpec(), {
-        CheatSliderKey.protein: 5, // 60g
-        CheatSliderKey.carbs: 0, // 0g
-        CheatSliderKey.fat: 5, // 40g
-        CheatSliderKey.drinks: 0, // none
-      });
-      expect(result.proteinG, 60);
-      expect(result.carbohydrateG, 0);
-      expect(result.fatG, 40);
-      expect(result.alcoholG, 0);
-      // 4*60 + 4*0 + 9*40 + 7*0 = 240 + 360 = 600
-      expect(result.caloriesKcal, 600);
-    });
+    test(
+      'sums orthogonal axes and derives calories with the 4/4/9/7 identity',
+      () {
+        final result = resolveSliderNutrition(makeSpec(), {
+          CheatSliderKey.protein: 5, // 60g
+          CheatSliderKey.carbs: 0, // 0g
+          CheatSliderKey.fat: 5, // 40g
+          CheatSliderKey.drinks: 0, // none
+        });
+        expect(result.proteinG, 60);
+        expect(result.carbohydrateG, 0);
+        expect(result.fatG, 40);
+        expect(result.alcoholG, 0);
+        // 4*60 + 4*0 + 9*40 + 7*0 = 240 + 360 = 600
+        expect(result.caloriesKcal, 600);
+      },
+    );
 
     test('interpolates linearly between sparse anchors', () {
       // carbs at level 5 → halfway between 0g (L0) and 150g (L10) = 75g

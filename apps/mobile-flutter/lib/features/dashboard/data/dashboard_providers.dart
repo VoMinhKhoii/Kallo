@@ -47,13 +47,16 @@ class DashboardBundle {
 
   factory DashboardBundle.fromJson(Map<String, dynamic> json) =>
       DashboardBundle(
-        profile: json['profile'] == null
-            ? null
-            : DashboardProfile.fromJson(
-                json['profile'] as Map<String, dynamic>),
+        profile:
+            json['profile'] == null
+                ? null
+                : DashboardProfile.fromJson(
+                  json['profile'] as Map<String, dynamic>,
+                ),
         day: LoggingDayData.fromJson(json['day'] as Map<String, dynamic>),
         weightSummary: WeightSummaryData.fromJson(
-            json['weightSummary'] as Map<String, dynamic>),
+          json['weightSummary'] as Map<String, dynamic>,
+        ),
         heatmap: HeatmapData.fromJson(json['heatmap'] as Map<String, dynamic>),
       );
 }
@@ -70,24 +73,25 @@ int localTimezoneOffsetMinutes() => -DateTime.now().timeZoneOffset.inMinutes;
 /// `useDashboard` → one aggregate fetch for the whole screen.
 final dashboardBundleProvider =
     FutureProvider.family<DashboardBundle, DashboardArgs>((ref, args) async {
-  final api = ref.watch(apiClientProvider);
-  final tz = localTimezoneOffsetMinutes();
-  final date = Uri.encodeComponent(args.date);
-  return runWithRetry(() async {
-    final json = await api.get<Map<String, dynamic>>(
-      '/api/v1/dashboard?date=$date&tz=$tz',
-    );
-    return DashboardBundle.fromJson(json);
-  });
-});
+      final api = ref.watch(apiClientProvider);
+      final tz = localTimezoneOffsetMinutes();
+      final date = Uri.encodeComponent(args.date);
+      return runWithRetry(() async {
+        final json = await api.get<Map<String, dynamic>>(
+          '/api/v1/dashboard?date=$date&tz=$tz',
+        );
+        return DashboardBundle.fromJson(json);
+      });
+    });
 
 /// `useLoggingDay` → today's persisted meals. Reads the slice the bundle
 /// already fetched (cache-seed parity). Keyed by `(userId, date)`.
-final loggingDayProvider =
-    FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
-  final bundle = await ref.watch(dashboardBundleProvider(args).future);
-  return bundle.day;
-});
+final loggingDayProvider = FutureProvider.family<LoggingDayData, DashboardArgs>(
+  (ref, args) async {
+    final bundle = await ref.watch(dashboardBundleProvider(args).future);
+    return bundle.day;
+  },
+);
 
 /// Per-day meal slice for the dashboard's paged day-viewer.
 ///
@@ -105,25 +109,25 @@ final loggingDayProvider =
 /// (the feed's swipe-remove) both do.
 final dashboardDayProvider =
     FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
-  final api = ref.watch(apiClientProvider);
-  final tz = localTimezoneOffsetMinutes();
-  final date = Uri.encodeComponent(args.date);
-  return runWithRetry(() async {
-    final json = await api.get<Map<String, dynamic>>(
-      '/api/v1/logging/day?date=$date&tz=$tz',
-    );
-    return LoggingDayData.fromJson(json);
-  });
-});
+      final api = ref.watch(apiClientProvider);
+      final tz = localTimezoneOffsetMinutes();
+      final date = Uri.encodeComponent(args.date);
+      return runWithRetry(() async {
+        final json = await api.get<Map<String, dynamic>>(
+          '/api/v1/logging/day?date=$date&tz=$tz',
+        );
+        return LoggingDayData.fromJson(json);
+      });
+    });
 
 /// `useWeightSummary('30d')` → the 30-day weight summary slice. The mobile
 /// chart is fixed at 30d (the section header shows the passive "30 days"
 /// label), so this reads `bundle.weightSummary` directly.
 final weightSummaryProvider =
     FutureProvider.family<WeightSummaryData, DashboardArgs>((ref, args) async {
-  final bundle = await ref.watch(dashboardBundleProvider(args).future);
-  return bundle.weightSummary;
-});
+      final bundle = await ref.watch(dashboardBundleProvider(args).future);
+      return bundle.weightSummary;
+    });
 
 /// The range the heatmap card resolved to for the width it was given.
 ///
@@ -141,8 +145,10 @@ final heatmapRangeProvider = StateProvider<HeatmapRange>(
 /// wider layout (a tablet) resolves to the year and pays one extra request for
 /// it — keyed on the RESOLVED RANGE, not on the raw width, so rotating or
 /// resizing within a range cannot thrash the cache.
-final heatmapProvider =
-    FutureProvider.family<HeatmapData, DashboardArgs>((ref, args) async {
+final heatmapProvider = FutureProvider.family<HeatmapData, DashboardArgs>((
+  ref,
+  args,
+) async {
   final range = ref.watch(heatmapRangeProvider);
   if (range == HeatmapRange.d90) {
     final bundle = await ref.watch(dashboardBundleProvider(args).future);

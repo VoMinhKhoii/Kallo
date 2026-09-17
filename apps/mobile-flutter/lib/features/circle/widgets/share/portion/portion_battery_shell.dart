@@ -22,8 +22,9 @@ class BatteryShell extends StatelessWidget {
         runs: [
           for (var seat = 0; seat < parts.length; seat++)
             PortionRun(
-              color: kSeatColors[
-                  (seats[seat].colorIndex ?? seat) % kSeatColors.length],
+              color:
+                  kSeatColors[(seats[seat].colorIndex ?? seat) %
+                      kSeatColors.length],
               parts: parts[seat],
               key: seats[seat].id,
             ),

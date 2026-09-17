@@ -69,20 +69,25 @@ Future<void> _open(WidgetTester tester, Widget host) async {
 
 /// The style a label actually PAINTS with — the merge of the dialog's
 /// DefaultTextStyle and the `Text.style`, not either one restated.
-TextStyle _painted(WidgetTester tester, String label) => tester
-    .widget<RichText>(
-      find.descendant(of: find.text(label), matching: find.byType(RichText)),
-    )
-    .text
-    .style!;
+TextStyle _painted(WidgetTester tester, String label) =>
+    tester
+        .widget<RichText>(
+          find.descendant(
+            of: find.text(label),
+            matching: find.byType(RichText),
+          ),
+        )
+        .text
+        .style!;
 
 /// Every 0.5pt rule currently on screen, read off the render tree.
-List<Container> _hairlines() => find
-    .byType(Container)
-    .evaluate()
-    .where((e) => (e.renderObject! as RenderBox).size.height == 0.5)
-    .map((e) => e.widget as Container)
-    .toList();
+List<Container> _hairlines() =>
+    find
+        .byType(Container)
+        .evaluate()
+        .where((e) => (e.renderObject! as RenderBox).size.height == 0.5)
+        .map((e) => e.widget as Container)
+        .toList();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -187,16 +192,17 @@ void main() {
     expect(confirm.color, KalloColors.danger);
     expect(confirm.fontWeight, FontWeight.w600);
     // No fill anywhere behind it — the pills are retired.
-    final wash = tester
-        .widget<AnimatedContainer>(
-          find
-              .ancestor(
-                of: find.text('Xoá'),
-                matching: find.byType(AnimatedContainer),
-              )
-              .first,
-        )
-        .decoration;
+    final wash =
+        tester
+            .widget<AnimatedContainer>(
+              find
+                  .ancestor(
+                    of: find.text('Xoá'),
+                    matching: find.byType(AnimatedContainer),
+                  )
+                  .first,
+            )
+            .decoration;
     expect((wash! as BoxDecoration).color, const Color(0x00000000));
   });
 

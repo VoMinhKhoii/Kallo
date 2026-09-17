@@ -45,28 +45,33 @@ void main() {
   group('registry', () {
     test('is spinner-free and uniquely named', () {
       expect(kSvgLoaders, hasLength(19));
-      expect(
-        kSvgLoaders.map((l) => l.id).toSet(),
-        {
-          // The non-circular survivors of the SVG-Loaders set.
-          'audio', 'bars', 'grid', 'hearts', 'three-dots',
-          // Kitchen.
-          'bubbles', 'knife-chop', 'pan-flip', 'pour-drip', 'rice-fall',
-          'steam', 'whisk',
-          // Motion.
-          'bounce', 'dash', 'ecg', 'flip-squares', 'jelly', 'ladder', 'wave',
-        },
-      );
+      expect(kSvgLoaders.map((l) => l.id).toSet(), {
+        // The non-circular survivors of the SVG-Loaders set.
+        'audio', 'bars', 'grid', 'hearts', 'three-dots',
+        // Kitchen.
+        'bubbles', 'knife-chop', 'pan-flip', 'pour-drip', 'rice-fall',
+        'steam', 'whisk',
+        // Motion.
+        'bounce', 'dash', 'ecg', 'flip-squares', 'jelly', 'ladder', 'wave',
+      });
     });
 
     test('carries none of the retired spinners', () {
       // These read as a generic loading circle, which is the one thing this
       // pool exists not to be.
       const retired = {
-        'oval', 'tail-spin', 'rings', 'puff', 'spinning-circles', 'circles',
+        'oval',
+        'tail-spin',
+        'rings',
+        'puff',
+        'spinning-circles',
+        'circles',
         'ball-triangle',
       };
-      expect(kSvgLoaders.map((l) => l.id).toSet().intersection(retired), isEmpty);
+      expect(
+        kSvgLoaders.map((l) => l.id).toSet().intersection(retired),
+        isEmpty,
+      );
     });
 
     test('every loader renders at a positive size', () {

@@ -61,27 +61,31 @@ void main() {
         fallbackLocale: const Locale('vi'),
         assetLoader: const FsL10nLoader(),
         child: Builder(
-          builder: (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: Scaffold(
-              body: Builder(
-                builder: (inner) => Center(
-                  child: ElevatedButton(
-                    onPressed: () async => answer = await showKalloConfirm(
-                      inner,
-                      title: 'Xoá bữa ăn này?',
-                      confirmLabel: 'Xoá',
-                      cancelLabel: 'Giữ lại',
-                      destructive: true,
-                    ),
-                    child: const Text('open'),
+          builder:
+              (context) => MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                home: Scaffold(
+                  body: Builder(
+                    builder:
+                        (inner) => Center(
+                          child: ElevatedButton(
+                            onPressed:
+                                () async =>
+                                    answer = await showKalloConfirm(
+                                      inner,
+                                      title: 'Xoá bữa ăn này?',
+                                      confirmLabel: 'Xoá',
+                                      cancelLabel: 'Giữ lại',
+                                      destructive: true,
+                                    ),
+                            child: const Text('open'),
+                          ),
+                        ),
                   ),
                 ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -98,7 +102,8 @@ void main() {
     expect(
       washOf(tester, 'Xoá'),
       KalloColors.pressWash,
-      reason: 'the wash cleared while the finger was still down — '
+      reason:
+          'the wash cleared while the finger was still down — '
           'the long-press win rejected the tap and its cancel wiped the state',
     );
 

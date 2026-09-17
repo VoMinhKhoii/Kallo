@@ -159,10 +159,7 @@ void main() {
     // the route-information provider `go()` used to update synchronously.
     Future<void> pump(WidgetTester tester, GoRouter router) async {
       await tester.pumpWidget(
-        WidgetsApp.router(
-          routerConfig: router,
-          color: const Color(0xFF000000),
-        ),
+        WidgetsApp.router(routerConfig: router, color: const Color(0xFF000000)),
       );
       await tester.pumpAndSettle();
     }

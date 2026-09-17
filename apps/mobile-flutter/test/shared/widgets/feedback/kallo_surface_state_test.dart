@@ -8,9 +8,8 @@ import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 
 /// Plain strings, no l10n: this is the anatomy under test — the art's size, the
 /// pose the clock picks, and whether the surface announces itself — not copy.
-Widget _app(Widget child) => MaterialApp(
-  home: Scaffold(body: Center(child: child)),
-);
+Widget _app(Widget child) =>
+    MaterialApp(home: Scaffold(body: Center(child: child)));
 
 /// The SVG decodes off the main isolate, so the picture only sizes itself once
 /// real async work has run.
@@ -97,8 +96,9 @@ void main() {
     expect(_assetName(tester), contains('capybara-stuck-jar'));
   });
 
-  testWidgets('announces an error as a live region, an empty state not',
-      (tester) async {
+  testWidgets('announces an error as a live region, an empty state not', (
+    tester,
+  ) async {
     await _pumpArt(
       tester,
       const KalloSurfaceState(

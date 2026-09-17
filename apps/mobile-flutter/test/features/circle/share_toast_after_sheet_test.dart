@@ -13,39 +13,44 @@ import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
 /// These tests pin the contract that actually matters — a toast raised from the
 /// OPENING context, after the sheet is gone, is visible and its action runs.
 void main() {
-  testWidgets('a toast raised from the opening context survives the sheet',
-      (tester) async {
+  testWidgets('a toast raised from the opening context survives the sheet', (
+    tester,
+  ) async {
     var undone = false;
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
-            builder: (hostContext) => Center(
-              child: GestureDetector(
-                onTap: () async {
-                  final outcome = await showNhamSheet<String>(
-                    hostContext,
-                    builder: (sheetContext) => GestureDetector(
-                      onTap: () => Navigator.of(sheetContext).pop('shared'),
-                      child: const SizedBox(
-                        height: 200,
-                        width: 200,
-                        child: Text('close'),
-                      ),
-                    ),
-                  );
-                  if (outcome == null || !hostContext.mounted) return;
-                  showTopToast(
-                    hostContext,
-                    'Đã chia phần',
-                    actionLabel: 'Hoàn tác',
-                    onAction: () => undone = true,
-                  );
-                },
-                child: const Text('open'),
-              ),
-            ),
+            builder:
+                (hostContext) => Center(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final outcome = await showNhamSheet<String>(
+                        hostContext,
+                        builder:
+                            (sheetContext) => GestureDetector(
+                              onTap:
+                                  () =>
+                                      Navigator.of(sheetContext).pop('shared'),
+                              child: const SizedBox(
+                                height: 200,
+                                width: 200,
+                                child: Text('close'),
+                              ),
+                            ),
+                      );
+                      if (outcome == null || !hostContext.mounted) return;
+                      showTopToast(
+                        hostContext,
+                        'Đã chia phần',
+                        actionLabel: 'Hoàn tác',
+                        onAction: () => undone = true,
+                      );
+                    },
+                    child: const Text('open'),
+                  ),
+                ),
           ),
         ),
       ),
@@ -68,25 +73,30 @@ void main() {
     expect(undone, isTrue);
   });
 
-  testWidgets('a NavigatorState context cannot raise one — the trap, pinned',
-      (tester) async {
+  testWidgets('a NavigatorState context cannot raise one — the trap, pinned', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
-            builder: (hostContext) => Center(
-              child: GestureDetector(
-                onTap: () {
-                  // The overlay lives INSIDE the Navigator, so a lookup that
-                  // walks ancestors from the NavigatorState's own context never
-                  // reaches it.
-                  final navContext =
-                      Navigator.of(hostContext, rootNavigator: true).context;
-                  showTopToast(navContext, 'không bao giờ hiện');
-                },
-                child: const Text('open'),
-              ),
-            ),
+            builder:
+                (hostContext) => Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      // The overlay lives INSIDE the Navigator, so a lookup that
+                      // walks ancestors from the NavigatorState's own context never
+                      // reaches it.
+                      final navContext =
+                          Navigator.of(
+                            hostContext,
+                            rootNavigator: true,
+                          ).context;
+                      showTopToast(navContext, 'không bao giờ hiện');
+                    },
+                    child: const Text('open'),
+                  ),
+                ),
           ),
         ),
       ),

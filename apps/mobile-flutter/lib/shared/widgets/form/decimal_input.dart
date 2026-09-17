@@ -51,7 +51,8 @@ class DecimalInput extends StatefulWidget {
 
 class _DecimalInputState extends State<DecimalInput> {
   late final TextEditingController _controller =
-      widget.controller ?? TextEditingController(text: _valueToText(widget.value));
+      widget.controller ??
+      TextEditingController(text: _valueToText(widget.value));
   late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
   bool _ownsController = false;
   bool _ownsFocusNode = false;
@@ -130,23 +131,27 @@ class _DecimalInputState extends State<DecimalInput> {
       controller: _controller,
       focusNode: _focusNode,
       textAlign: widget.textAlign,
-      keyboardType: widget.integer
-          ? const TextInputType.numberWithOptions(decimal: false)
-          : const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: widget.integer
-          ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))]
-          : [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+      keyboardType:
+          widget.integer
+              ? const TextInputType.numberWithOptions(decimal: false)
+              : const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters:
+          widget.integer
+              ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))]
+              : [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
       onChanged: (raw) => widget.onValueChange(_textToValue(raw)),
       onSubmitted: widget.onSubmitted,
       // Input: radii.md(8), 1px inputBorder, elev bg, 12/8 padding, 14px text.
-      style: KalloTextStyles.sansRegular(fontSize: 14)
-          .copyWith(color: KalloColors.text),
+      style: KalloTextStyles.sansRegular(
+        fontSize: 14,
+      ).copyWith(color: KalloColors.text),
       cursorColor: KalloColors.accent,
       decoration: InputDecoration(
         isDense: true,
         hintText: widget.hintText,
-        hintStyle: KalloTextStyles.sansRegular(fontSize: 14)
-            .copyWith(color: KalloColors.textWarm),
+        hintStyle: KalloTextStyles.sansRegular(
+          fontSize: 14,
+        ).copyWith(color: KalloColors.textWarm),
         filled: true,
         fillColor: KalloColors.elev,
         contentPadding: const EdgeInsets.symmetric(
@@ -161,7 +166,7 @@ class _DecimalInputState extends State<DecimalInput> {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(KalloRadii.lg),
-        borderSide: BorderSide(color: color),
-      );
+    borderRadius: BorderRadius.circular(KalloRadii.lg),
+    borderSide: BorderSide(color: color),
+  );
 }

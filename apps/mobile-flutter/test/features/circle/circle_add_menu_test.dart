@@ -14,19 +14,20 @@ import '../../l10n_test_loader.dart';
 /// monospace on a double YELLOW underline. A transparent Material restores the
 /// inherited app style without painting anything.
 Widget _app() => EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
           home: const Scaffold(body: Center(child: CircleAddMenu())),
         ),
-      ),
-    );
+  ),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -60,8 +61,11 @@ void main() {
 
     // ...so its labels do not inherit the framework's debug fallback style.
     final style = DefaultTextStyle.of(tester.element(label)).style;
-    expect(style.decoration, isNot(TextDecoration.underline),
-        reason: 'the yellow no-Material underline is showing');
+    expect(
+      style.decoration,
+      isNot(TextDecoration.underline),
+      reason: 'the yellow no-Material underline is showing',
+    );
     expect(style.decorationColor, isNot(const Color(0xFFFFFF00)));
   });
 }

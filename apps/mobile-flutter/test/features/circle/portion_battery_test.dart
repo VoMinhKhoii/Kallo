@@ -10,31 +10,31 @@ import 'package:kallo_mobile/models/social/circle.dart';
 import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
 
 List<PortionSeat> seatsFrom(List<int> parts) => [
-      for (var i = 0; i < parts.length; i++)
-        PortionSeat(
-          id: 'u$i',
-          initials: i == 0 ? 'B' : 'F$i',
-          label: i == 0 ? 'Bạn' : 'Người $i',
-          parts: parts[i],
-        ),
-    ];
+  for (var i = 0; i < parts.length; i++)
+    PortionSeat(
+      id: 'u$i',
+      initials: i == 0 ? 'B' : 'F$i',
+      label: i == 0 ? 'Bạn' : 'Người $i',
+      parts: parts[i],
+    ),
+];
 
 /// The same seat, with a photo. Its URL never resolves in a widget test — the
 /// binding answers every request with a 400 — which is exactly what these
 /// assertions want: they check that `ProfileAvatarDisc` is REACHED, not what
 /// it paints. The seat-colour-and-initials path is the other test.
 PortionSeat withPhoto(PortionSeat seat) => PortionSeat(
-      id: seat.id,
-      profile: CircleProfile(
-        userId: seat.id,
-        handle: seat.id,
-        displayName: seat.label,
-        avatarUrl: 'https://example.test/${seat.id}.jpg',
-      ),
-      initials: seat.initials,
-      label: seat.label,
-      parts: seat.parts,
-    );
+  id: seat.id,
+  profile: CircleProfile(
+    userId: seat.id,
+    handle: seat.id,
+    displayName: seat.label,
+    avatarUrl: 'https://example.test/${seat.id}.jpg',
+  ),
+  initials: seat.initials,
+  label: seat.label,
+  parts: seat.parts,
+);
 
 Future<void> pump(
   WidgetTester tester, {
@@ -71,19 +71,23 @@ void main() {
 
     // Every part is its own cell, so the dish is always countable. Cells are
     // keyed by PERSON, not position — the same keying the tab morph needs.
-    int cellsFor(String userId) => find
-        .byWidgetPredicate((w) =>
-            w.key is ValueKey<String> &&
-            (w.key as ValueKey<String>).value.startsWith('cell-$userId-'))
-        .evaluate()
-        .length;
+    int cellsFor(String userId) =>
+        find
+            .byWidgetPredicate(
+              (w) =>
+                  w.key is ValueKey<String> &&
+                  (w.key as ValueKey<String>).value.startsWith('cell-$userId-'),
+            )
+            .evaluate()
+            .length;
     expect(cellsFor('u0') + cellsFor('u1'), kTotalParts);
     expect(cellsFor('u0'), 13);
     expect(cellsFor('u1'), 7);
   });
 
-  testWidgets('one notch per internal boundary, never on the ends',
-      (tester) async {
+  testWidgets('one notch per internal boundary, never on the ends', (
+    tester,
+  ) async {
     await pump(tester, parts: [7, 7, 6]);
     // Three people, two seams between them.
     expect(find.byType(GestureDetector).evaluate().length, greaterThan(0));
@@ -102,8 +106,9 @@ void main() {
     expect(sliders, isEmpty);
   });
 
-  testWidgets('each notch announces both neighbours and their parts',
-      (tester) async {
+  testWidgets('each notch announces both neighbours and their parts', (
+    tester,
+  ) async {
     await pump(tester, parts: [13, 7]);
     final slider = tester
         .widgetList<Semantics>(find.byType(Semantics))
@@ -114,8 +119,9 @@ void main() {
     expect(slider.properties.onDecrease, isNotNull);
   });
 
-  testWidgets('increase moves exactly one part to the left run',
-      (tester) async {
+  testWidgets('increase moves exactly one part to the left run', (
+    tester,
+  ) async {
     List<int>? got;
     await pump(tester, parts: [10, 10], onChanged: (p) => got = p);
 
@@ -130,8 +136,9 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('refuses to step past the floor instead of reporting a change',
-      (tester) async {
+  testWidgets('refuses to step past the floor instead of reporting a change', (
+    tester,
+  ) async {
     List<int>? got;
     // The right run is already at the floor.
     await pump(tester, parts: [18, 2], onChanged: (p) => got = p);
@@ -157,8 +164,9 @@ void main() {
     expect(find.byIcon(LucideIcons.x300), findsNWidgets(2));
   });
 
-  testWidgets('no remove badges when the caller offers no handler',
-      (tester) async {
+  testWidgets('no remove badges when the caller offers no handler', (
+    tester,
+  ) async {
     await pump(tester, parts: [7, 7, 6]);
     expect(find.byIcon(LucideIcons.x300), findsNothing);
   });
@@ -172,8 +180,9 @@ void main() {
     expect(removed, [1]);
   });
 
-  testWidgets('whole mode: remove a friend from their own battery, never you',
-      (tester) async {
+  testWidgets('whole mode: remove a friend from their own battery, never you', (
+    tester,
+  ) async {
     final removed = <int>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -206,11 +215,14 @@ void main() {
     // Counting cells by key passes even when every one of them is zero-height:
     // a DecoratedBox with no child takes its size from its constraints, and a
     // centred Row hands out LOOSE ones. That shipped an empty shell once.
-    final cell = find
-        .byWidgetPredicate((w) =>
-            w.key is ValueKey<String> &&
-            (w.key as ValueKey<String>).value.startsWith('cell-u0-'))
-        .first;
+    final cell =
+        find
+            .byWidgetPredicate(
+              (w) =>
+                  w.key is ValueKey<String> &&
+                  (w.key as ValueKey<String>).value.startsWith('cell-u0-'),
+            )
+            .first;
     final size = tester.getSize(cell);
     expect(size.height, greaterThan(40));
     expect(size.width, greaterThan(0));
@@ -221,8 +233,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('draws a face in the pin when the person has a photo',
-      (tester) async {
+  testWidgets('draws a face in the pin when the person has a photo', (
+    tester,
+  ) async {
     final seats = seatsFrom([10, 10]);
     await pump(
       tester,
@@ -237,16 +250,18 @@ void main() {
     expect(find.text('B'), findsOneWidget);
   });
 
-  testWidgets('falls back to initials for everyone without a photo',
-      (tester) async {
+  testWidgets('falls back to initials for everyone without a photo', (
+    tester,
+  ) async {
     await pump(tester, parts: [10, 10]);
     expect(find.byType(ProfileAvatarDisc), findsNothing);
     expect(find.text('B'), findsOneWidget);
     expect(find.text('F1'), findsOneWidget);
   });
 
-  testWidgets('keeps the drop square on a run too narrow to hold it',
-      (tester) async {
+  testWidgets('keeps the drop square on a run too narrow to hold it', (
+    tester,
+  ) async {
     // A 2-part run on a small phone is ~29pt wide against a 40pt drop-plus-
     // ring. It must overlap its neighbour rather than be squeezed to an oval.
     await pump(tester, parts: [kMinParts, kTotalParts - kMinParts], width: 288);
@@ -263,8 +278,9 @@ void main() {
     );
   });
 
-  testWidgets('a pin with a photo still shows ITS initials while loading',
-      (tester) async {
+  testWidgets('a pin with a photo still shows ITS initials while loading', (
+    tester,
+  ) async {
     // ProfileAvatarDisc's own placeholder draws CircleProfile.initial, which
     // for seat 0 is the first letter of your name — not the localised "You"
     // the pin is contracted to draw. The pin hands its glyph down as the
@@ -281,8 +297,9 @@ void main() {
     expect(find.text('F1'), findsOneWidget);
   });
 
-  testWidgets('whole mode carries the photo through the reseat',
-      (tester) async {
+  testWidgets('whole mode carries the photo through the reseat', (
+    tester,
+  ) async {
     // WholePortionBatteries rebuilds every seat so each gets its own battery.
     // Before copyWith() that was a hand-written six-field copy — one forgotten
     // line away from silently dropping every face in this tab.

@@ -48,16 +48,19 @@ void _sizeTo(WidgetTester tester, {double keyboard = 0}) {
   addTearDown(tester.view.reset);
 }
 
-Widget _wrap(ProviderContainer container, Widget child) =>
-    UncontrolledProviderScope(
-      container: container,
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder: (context) => MaterialApp(
+Widget _wrap(
+  ProviderContainer container,
+  Widget child,
+) => UncontrolledProviderScope(
+  container: container,
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
@@ -71,9 +74,9 @@ Widget _wrap(ProviderContainer container, Widget child) =>
               child: Align(alignment: Alignment.bottomCenter, child: child),
             ),
           ),
-        ),
-      ),
-    );
+    ),
+  ),
+);
 
 ProviderContainer _container() {
   final container = ProviderContainer(
@@ -173,23 +176,26 @@ void main() {
       routes: [
         GoRoute(
           path: '/dashboard',
-          builder: (_, _) => Scaffold(
-            body: Consumer(
-              builder: (context, ref, _) => TextButton(
-                onPressed: () async {
-                  await showQuickLogSheet(context, ref);
-                  sheetClosed = true;
-                },
-                child: const Text('open'),
+          builder:
+              (_, _) => Scaffold(
+                body: Consumer(
+                  builder:
+                      (context, ref, _) => TextButton(
+                        onPressed: () async {
+                          await showQuickLogSheet(context, ref);
+                          sheetClosed = true;
+                        },
+                        child: const Text('open'),
+                      ),
+                ),
               ),
-            ),
-          ),
         ),
         GoRoute(
           path: '/logging',
-          pageBuilder: (_, _) => const CupertinoPage<void>(
-            child: Scaffold(body: Text('logging-page')),
-          ),
+          pageBuilder:
+              (_, _) => const CupertinoPage<void>(
+                child: Scaffold(body: Text('logging-page')),
+              ),
         ),
       ],
     );
@@ -204,12 +210,13 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp.router(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              routerConfig: router,
-            ),
+            builder:
+                (context) => MaterialApp.router(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  routerConfig: router,
+                ),
           ),
         ),
       ),
@@ -264,7 +271,8 @@ void main() {
     expect(
       found,
       1,
-      reason: 'the sheet must pass onBarcodePressed, or the row hides the glyph',
+      reason:
+          'the sheet must pass onBarcodePressed, or the row hides the glyph',
     );
   });
 }

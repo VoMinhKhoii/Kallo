@@ -43,8 +43,9 @@ class TimelineStrip extends StatefulWidget {
 
 class _TimelineStripState extends State<TimelineStrip> {
   late String _visibleAnchor = _selectedAnchor;
-  late final PageController _pageController =
-      PageController(initialPage: _pageForAnchor(_selectedAnchor));
+  late final PageController _pageController = PageController(
+    initialPage: _pageForAnchor(_selectedAnchor),
+  );
 
   String get _currentAnchor => widget.today;
   String get _selectedAnchor =>
@@ -174,9 +175,10 @@ class _TimelineStripState extends State<TimelineStrip> {
           TimelineNavButton(
             icon: LucideIcons.chevronRight300,
             onTap: _canNavigateNext ? _scrollNext : null,
-            color: _canNavigateNext
-                ? KalloColors.textMuted
-                : const Color(0x4D6E6D66), // text-kallo-text-muted/30
+            color:
+                _canNavigateNext
+                    ? KalloColors.textMuted
+                    : const Color(0x4D6E6D66), // text-kallo-text-muted/30
           ),
         ],
       ),

@@ -56,13 +56,18 @@ Widget _app(
   ],
   child: localizedHome(
     Builder(
-      builder: (inner) => MediaQuery(
-        data: MediaQuery.of(inner).copyWith(disableAnimations: reduceMotion),
-        child: Scaffold(
-          backgroundColor: kPage,
-          body: SafeArea(child: OnboardingWizard(onComplete: () {}, onClose: null)),
-        ),
-      ),
+      builder:
+          (inner) => MediaQuery(
+            data: MediaQuery.of(
+              inner,
+            ).copyWith(disableAnimations: reduceMotion),
+            child: Scaffold(
+              backgroundColor: kPage,
+              body: SafeArea(
+                child: OnboardingWizard(onComplete: () {}, onClose: null),
+              ),
+            ),
+          ),
     ),
   ),
 );
@@ -82,8 +87,7 @@ Future<void> _boot(WidgetTester tester, Widget app) async {
   await _frames(tester);
 }
 
-State _bunState(WidgetTester tester) =>
-    tester.state(find.byType(BunMascot));
+State _bunState(WidgetTester tester) => tester.state(find.byType(BunMascot));
 
 Rect _rect(WidgetTester tester, Finder finder) => tester.getRect(finder);
 
@@ -92,8 +96,9 @@ void main() {
 
   setUpAll(initOnboardingTest);
 
-  testWidgets('the bun survives the step change as the SAME State object',
-      (tester) async {
+  testWidgets('the bun survives the step change as the SAME State object', (
+    tester,
+  ) async {
     await _boot(tester, _app(FakeOnboardingSink()));
 
     final before = _bunState(tester);
@@ -148,8 +153,9 @@ void main() {
     expect(leaving.left, greaterThan(arriving.left));
   });
 
-  testWidgets('reduced motion cross-fades in place — no translation at all',
-      (tester) async {
+  testWidgets('reduced motion cross-fades in place — no translation at all', (
+    tester,
+  ) async {
     await _boot(tester, _app(FakeOnboardingSink(), reduceMotion: true));
 
     final content = _rect(tester, find.byType(StepLanguage));
@@ -163,15 +169,17 @@ void main() {
     // scroll views, but neither has been shifted off the region's corner.
     expect(_rect(tester, find.byType(StepLanguage)).topLeft, content.topLeft);
     expect(_rect(tester, find.byType(StepOrigin)).topLeft, content.topLeft);
-    final fades = tester
-        .widgetList<FadeTransition>(find.byType(FadeTransition))
-        .map((f) => f.opacity.value)
-        .toList();
+    final fades =
+        tester
+            .widgetList<FadeTransition>(find.byType(FadeTransition))
+            .map((f) => f.opacity.value)
+            .toList();
     expect(fades.any((o) => o > 0 && o < 1), isTrue);
   });
 
-  testWidgets('the CTA cross-fades its label on the way into screen 6',
-      (tester) async {
+  testWidgets('the CTA cross-fades its label on the way into screen 6', (
+    tester,
+  ) async {
     await _boot(tester, _app(FakeOnboardingSink(), resumeScreen: 5));
 
     expect(find.text('Continue'), findsOneWidget);
@@ -190,8 +198,9 @@ void main() {
     expect(find.text('Save my plan'), findsOneWidget);
   });
 
-  testWidgets('the bubble MORPHS its height rather than jumping to it',
-      (tester) async {
+  testWidgets('the bubble MORPHS its height rather than jumping to it', (
+    tester,
+  ) async {
     // 320pt is where the guide lines wrap far enough for the BUBBLE, not the
     // bun, to set the band's height: screen 2's line runs to 112pt there and
     // screen 3's back to the bun's own 77.
@@ -227,23 +236,25 @@ void main() {
     expect(mid, lessThan(before));
   });
 
-  testWidgets('each screen gets its own scroll position, starting at the top',
-      (tester) async {
+  testWidgets('each screen gets its own scroll position, starting at the top', (
+    tester,
+  ) async {
     await _boot(tester, _app(FakeOnboardingSink(), resumeScreen: 2));
 
     // `primary: false` and no controller of its own, so the position lives on
     // the Scrollable the region built.
-    double offset() => tester
-        .state<ScrollableState>(
-          find
-              .descendant(
-                of: find.byType(SingleChildScrollView),
-                matching: find.byType(Scrollable),
-              )
-              .first,
-        )
-        .position
-        .pixels;
+    double offset() =>
+        tester
+            .state<ScrollableState>(
+              find
+                  .descendant(
+                    of: find.byType(SingleChildScrollView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            )
+            .position
+            .pixels;
 
     await tester.dragFrom(
       tester.getCenter(find.byType(OnboardingStepTransition)),

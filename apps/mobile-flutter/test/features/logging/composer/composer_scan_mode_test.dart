@@ -61,7 +61,9 @@ class _FakeScannerPlatform extends MobileScannerPlatform {
   Future<void> updateScanWindow(Rect? window) async {}
 
   @override
-  Future<Set<CameraLensType>> getSupportedLenses() async => {CameraLensType.any};
+  Future<Set<CameraLensType>> getSupportedLenses() async => {
+    CameraLensType.any,
+  };
 }
 
 void main() {
@@ -101,17 +103,18 @@ void main() {
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: Builder(
-            builder: (context) => MaterialApp(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              home: Builder(
-                builder: (context) {
-                  hostContext = context;
-                  return const Scaffold(body: SizedBox.expand());
-                },
-              ),
-            ),
+            builder:
+                (context) => MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  home: Builder(
+                    builder: (context) {
+                      hostContext = context;
+                      return const Scaffold(body: SizedBox.expand());
+                    },
+                  ),
+                ),
           ),
         ),
       ),

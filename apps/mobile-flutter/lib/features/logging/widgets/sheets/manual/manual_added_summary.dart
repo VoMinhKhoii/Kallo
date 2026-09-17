@@ -50,7 +50,7 @@ class ManualAddedSummary extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-for (final key in kCompositionKeys)
+            for (final key in kCompositionKeys)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

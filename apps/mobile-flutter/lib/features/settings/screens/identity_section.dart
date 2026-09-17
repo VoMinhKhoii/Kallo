@@ -143,9 +143,9 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
         header: PageHeader(title: tr('settings.identity.title')),
         child: profileAsync.when(
           loading: () => const _IdentitySkeleton(),
-          error: (_, __) => Center(
-            child: Text(tr('common.error'), style: dashBody()),
-          ),
+          error:
+              (_, __) =>
+                  Center(child: Text(tr('common.error'), style: dashBody())),
           data: (profile) {
             if (!_seeded) {
               _seeded = true;
@@ -178,9 +178,10 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                   // Quiet pair: neither picking a photo nor removing one is
                   // THE action on this screen — saving the name is.
                   KalloButton(
-                    title: profile.hasCustomAvatar
-                        ? tr('settings.identity.avatarChange')
-                        : tr('settings.identity.avatarUpload'),
+                    title:
+                        profile.hasCustomAvatar
+                            ? tr('settings.identity.avatarChange')
+                            : tr('settings.identity.avatarUpload'),
                     variant: KalloButtonVariant.secondary,
                     disabled: _busy,
                     onPressed: _pickAndUpload,
@@ -200,10 +201,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
         const SizedBox(height: KalloSpacing.sp5),
 
         // ── Name ────────────────────────────────────────────────────────
-        Text(
-          tr('settings.identity.nameLabel'),
-          style: dashBody(),
-        ),
+        Text(tr('settings.identity.nameLabel'), style: dashBody()),
         const SizedBox(height: KalloSpacing.sp2),
         KalloTextField(
           controller: _name,
@@ -255,5 +253,3 @@ class _IdentitySkeleton extends StatelessWidget {
     );
   }
 }
-
-

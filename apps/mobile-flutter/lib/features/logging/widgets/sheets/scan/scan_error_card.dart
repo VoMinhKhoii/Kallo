@@ -66,15 +66,15 @@ class ScanErrorCard extends StatelessWidget {
                 color: KalloColors.danger10,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: KalloIcons.size, color: KalloColors.danger),
+              child: Icon(
+                icon,
+                size: KalloIcons.size,
+                color: KalloColors.danger,
+              ),
             ),
           ),
           const SizedBox(height: KalloSpacing.sp3),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: dashBody(),
-          ),
+          Text(message, textAlign: TextAlign.center, style: dashBody()),
           if (detail != null && detail!.isNotEmpty) ...[
             const SizedBox(height: KalloSpacing.sp1),
             Text(

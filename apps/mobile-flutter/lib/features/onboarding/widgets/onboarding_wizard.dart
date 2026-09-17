@@ -133,9 +133,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   /// Jumps BACKWARD to an earlier screen — the Back sweep, whether the user
   /// used the chevron or screen 6's "Add my measurements".
   void _goBackTo(int screen) => setState(() {
-        _direction = -1;
-        _screen = screen;
-      });
+    _direction = -1;
+    _screen = screen;
+  });
 
   /// Whether every source the seed reads has ANSWERED. The seed resolves once,
   /// so seeding off a source that has not landed yet sticks for the session.

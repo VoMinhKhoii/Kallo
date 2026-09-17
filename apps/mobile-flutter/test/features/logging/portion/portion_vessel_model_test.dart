@@ -68,12 +68,20 @@ void main() {
       expect(ClientVessel.fromJson(null), isNull);
       // A family this build doesn't know (a future server addition).
       expect(
-        ClientVessel.fromJson({'family': 'tray', 'tier': 1, 'dishClass': 'solid'}),
+        ClientVessel.fromJson({
+          'family': 'tray',
+          'tier': 1,
+          'dishClass': 'solid',
+        }),
         isNull,
       );
       // Out-of-range tiers would index past the tier tables.
       expect(
-        ClientVessel.fromJson({'family': 'bowl', 'tier': 9, 'dishClass': 'soup'}),
+        ClientVessel.fromJson({
+          'family': 'bowl',
+          'tier': 9,
+          'dishClass': 'soup',
+        }),
         isNull,
       );
       expect(

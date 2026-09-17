@@ -195,7 +195,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       painter.dispose();
     }
     final needed = widest + _dayLabelPadRight;
-    return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
+    return needed > _minDayLabelWidth
+        ? needed.ceilToDouble()
+        : _minDayLabelWidth;
   }
 
   /// Report upward which range this width can carry, once per change.
@@ -224,8 +226,10 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     // once the user scaled up), and the month strip's height is derived from it.
     final scaler = MediaQuery.textScalerOf(context);
     final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle, scaler);
-    final monthStripHeight =
-        HeatmapMonthStrip.heightFor(monthLabelStyle, scaler);
+    final monthStripHeight = HeatmapMonthStrip.heightFor(
+      monthLabelStyle,
+      scaler,
+    );
 
     return KalloCard(
       padding: DashboardSpacing.card,
@@ -319,8 +323,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                     children: [
                       HeatmapMonthStrip(
                         headers:
-                            data?.monthHeaders ??
-                            const <HeatmapMonthHeader>[],
+                            data?.monthHeaders ?? const <HeatmapMonthHeader>[],
                         cellSize: sq,
                         gap: gap,
                         gridWidth: gridWidth,
@@ -370,7 +373,8 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                   double.infinity,
                                 ),
                               ),
-                              bottom: gridHeight - _bubble!.y + KalloSpacing.sp1,
+                              bottom:
+                                  gridHeight - _bubble!.y + KalloSpacing.sp1,
                               child: Container(
                                 constraints: const BoxConstraints(
                                   maxWidth: _bubbleHalfW * 2,

@@ -158,10 +158,7 @@ class KalloSheetSurface extends StatelessWidget {
         // Published INSIDE the padding, so the header it reaches is measuring
         // the same content column its neighbours sit in.
         child: SheetContentInset(
-          horizontal: padding
-                  ?.resolve(Directionality.of(context))
-                  .left ??
-              0,
+          horizontal: padding?.resolve(Directionality.of(context)).left ?? 0,
           child: body,
         ),
       ),

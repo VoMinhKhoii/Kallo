@@ -99,10 +99,7 @@ class TopToastPill extends StatelessWidget {
                   ),
                   // Regular, like every button label: Be Vietnam Pro's
                   // Medium already reads semibold.
-                  child: Text(
-                    actionLabel!,
-                    style: dashBody(),
-                  ),
+                  child: Text(actionLabel!, style: dashBody()),
                 ),
               ),
             ],

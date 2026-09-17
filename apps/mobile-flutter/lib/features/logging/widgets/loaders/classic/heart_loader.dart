@@ -26,12 +26,7 @@ class HeartsPainter extends LoaderPainter {
     for (final (cx, begin) in _hearts) {
       final p = loaderPhase(seconds, _dur, begin: begin);
       canvas.drawPath(
-        _heartPath(Rect.fromLTWH(
-          (cx - 25) * sx,
-          8 * sy,
-          50 * sx,
-          48 * sy,
-        )),
+        _heartPath(Rect.fromLTWH((cx - 25) * sx, 8 * sy, 50 * sx, 48 * sy)),
         Paint()..color = color.withValues(alpha: sampleLinear(_opacity, p)),
       );
     }
@@ -49,25 +44,37 @@ class HeartsPainter extends LoaderPainter {
       ..moveTo(dimple.dx, dimple.dy)
       // Left lobe, then down the left wall to the tip.
       ..cubicTo(
-        r.left + w * 0.42, r.top,
-        r.left, r.top + h * 0.05,
-        r.left, r.top + h * 0.35,
+        r.left + w * 0.42,
+        r.top,
+        r.left,
+        r.top + h * 0.05,
+        r.left,
+        r.top + h * 0.35,
       )
       ..cubicTo(
-        r.left, r.top + h * 0.62,
-        r.left + w * 0.28, r.top + h * 0.78,
-        tip.dx, tip.dy,
+        r.left,
+        r.top + h * 0.62,
+        r.left + w * 0.28,
+        r.top + h * 0.78,
+        tip.dx,
+        tip.dy,
       )
       // Right wall back up, then the right lobe home.
       ..cubicTo(
-        r.right - w * 0.28, r.top + h * 0.78,
-        r.right, r.top + h * 0.62,
-        r.right, r.top + h * 0.35,
+        r.right - w * 0.28,
+        r.top + h * 0.78,
+        r.right,
+        r.top + h * 0.62,
+        r.right,
+        r.top + h * 0.35,
       )
       ..cubicTo(
-        r.right, r.top + h * 0.05,
-        r.right - w * 0.42, r.top,
-        dimple.dx, dimple.dy,
+        r.right,
+        r.top + h * 0.05,
+        r.right - w * 0.42,
+        r.top,
+        dimple.dx,
+        dimple.dy,
       )
       ..close();
   }

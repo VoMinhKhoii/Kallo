@@ -142,9 +142,10 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           // as it is hearted.
           // The SAME optical size the outline resolves to, read from the same
           // table, or the post twitches a size as it is hearted.
-          activeGlyph: reactions.mine
-              ? FilledHeart(size: KalloIcons.optical(LucideIcons.heart300))
-              : null,
+          activeGlyph:
+              reactions.mine
+                  ? FilledHeart(size: KalloIcons.optical(LucideIcons.heart300))
+                  : null,
           // The name is SPOKEN — the visible text beside the glyph is a bare
           // count — and the state rides the same node, so the heart announces
           // as one "Heart, 2, button" that is on or off.

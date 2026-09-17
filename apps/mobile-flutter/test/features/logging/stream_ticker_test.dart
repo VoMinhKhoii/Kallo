@@ -34,10 +34,7 @@ void main() {
     test('falls back to the stage label before any dish is known', () {
       final frame = deriveStreamTicker(_state(status: StreamStatus.matching));
       expect(frame, isA<PhaseFrame>());
-      expect(
-        (frame! as PhaseFrame).labelKey,
-        'logging.streaming.matching',
-      );
+      expect((frame! as PhaseFrame).labelKey, 'logging.streaming.matching');
     });
 
     test('unmapped statuses fall back to the generic analyzing label', () {
@@ -48,9 +45,7 @@ void main() {
     });
 
     test('shows the latest detected name once one arrives', () {
-      final frame = deriveStreamTicker(
-        _state(items: ['Phở bò', 'Rau thơm']),
-      );
+      final frame = deriveStreamTicker(_state(items: ['Phở bò', 'Rau thơm']));
       expect(frame, isA<ItemFrame>());
       expect((frame! as ItemFrame).name, 'Rau thơm');
     });
@@ -84,10 +79,7 @@ void main() {
         ),
       );
       expect(frame, isA<PhaseFrame>());
-      expect(
-        (frame! as PhaseFrame).labelKey,
-        'logging.streaming.assembling',
-      );
+      expect((frame! as PhaseFrame).labelKey, 'logging.streaming.assembling');
     });
   });
 
@@ -97,19 +89,18 @@ void main() {
     // stale text on screen.
     test('are stable across identical states', () {
       final state = _state(completed: [_item('a', 'Phở bò', 480)]);
-      expect(
-        deriveStreamTicker(state)!.key,
-        deriveStreamTicker(state)!.key,
-      );
+      expect(deriveStreamTicker(state)!.key, deriveStreamTicker(state)!.key);
     });
 
     test('change when a new dish resolves', () {
-      final first = deriveStreamTicker(
-        _state(completed: [_item('a', 'Phở bò', 480)]),
-      )!;
-      final second = deriveStreamTicker(
-        _state(completed: [_item('a', 'Phở bò', 480), _item('b', 'Chè', 210)]),
-      )!;
+      final first =
+          deriveStreamTicker(_state(completed: [_item('a', 'Phở bò', 480)]))!;
+      final second =
+          deriveStreamTicker(
+            _state(
+              completed: [_item('a', 'Phở bò', 480), _item('b', 'Chè', 210)],
+            ),
+          )!;
       expect(first.key, isNot(second.key));
     });
 

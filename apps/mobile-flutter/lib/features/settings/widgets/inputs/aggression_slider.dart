@@ -43,15 +43,14 @@ class AggressionSlider extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: '${aggressionKg.toStringAsFixed(2)} '
+                  text:
+                      '${aggressionKg.toStringAsFixed(2)} '
                       '${tr('onboarding.bodyMetrics.weightUnit')}/wk',
                 ),
-                const TextSpan(
-                  text: ' · ',
-                  style: TextStyle(color: kInkMuted),
-                ),
+                const TextSpan(text: ' · ', style: TextStyle(color: kInkMuted)),
                 TextSpan(
-                  text: '$sign$kcalDelta ${tr('onboarding.bodyMetrics.perDay')}',
+                  text:
+                      '$sign$kcalDelta ${tr('onboarding.bodyMetrics.perDay')}',
                 ),
               ],
             ),

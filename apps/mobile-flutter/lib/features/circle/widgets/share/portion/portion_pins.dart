@@ -37,15 +37,17 @@ class PortionPinRow extends StatelessWidget {
               seat: _colorOf(seat),
               profile: seats[seat].profile,
               initials: seats[seat].initials,
-              kcal: totalKcal == null
-                  ? null
-                  : (totalKcal! * parts[seat] / _dishParts).round(),
+              kcal:
+                  totalKcal == null
+                      ? null
+                      : (totalKcal! * parts[seat] / _dishParts).round(),
               // Colour 0 is always you, and you cannot remove yourself. Keyed on
               // colour rather than position so a lone seat in a whole-portion
               // battery (position 0, anyone) still gets its ×.
-              onRemove: _colorOf(seat) == 0 || onRemove == null
-                  ? null
-                  : () => onRemove!(seat),
+              onRemove:
+                  _colorOf(seat) == 0 || onRemove == null
+                      ? null
+                      : () => onRemove!(seat),
             ),
           ),
       ],

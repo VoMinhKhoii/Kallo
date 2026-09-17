@@ -214,12 +214,14 @@ void main() {
     expect(
       tester.getTopLeft(disc).dx,
       lessThan(
-        tester.getTopLeft(
-          find.descendant(
-            of: find.byType(ReplyRow),
-            matching: find.byType(ProfileAvatarDisc),
-          ),
-        ).dx,
+        tester
+            .getTopLeft(
+              find.descendant(
+                of: find.byType(ReplyRow),
+                matching: find.byType(ProfileAvatarDisc),
+              ),
+            )
+            .dx,
       ),
     );
   });

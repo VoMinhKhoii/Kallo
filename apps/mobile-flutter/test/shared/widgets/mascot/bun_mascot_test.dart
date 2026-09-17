@@ -78,7 +78,9 @@ void main() {
       expect(sawLid, isTrue, reason: 'no blink within the first second');
     });
 
-    testWidgets('types the whole line, one character at a time', (tester) async {
+    testWidgets('types the whole line, one character at a time', (
+      tester,
+    ) async {
       const speech = 'Where do you cook most days?';
       await tester.pumpWidget(_host(const BunMascot(speech: speech)));
       await tester.pump();
@@ -97,7 +99,9 @@ void main() {
       const plain = 'aaaaaaaaaaaaaaaaaaaaaaaaa';
       final typed = <int>[];
       for (final line in const [paused, plain]) {
-        await tester.pumpWidget(_host(BunMascot(key: UniqueKey(), speech: line)));
+        await tester.pumpWidget(
+          _host(BunMascot(key: UniqueKey(), speech: line)),
+        );
         await tester.pump(const Duration(milliseconds: 300));
         typed.add(_typed(tester).length);
       }

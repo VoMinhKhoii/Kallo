@@ -91,14 +91,16 @@ MacroTrendBars? buildMacroTrendBars(NutritionDaySeries daySeries) {
     // (A bucket the day scope sets aside keeps its value and is flagged
     // `excluded` instead, so it still draws — greyed.)
     if (rp == null && rc == null && rf == null) {
-      bars.add(MacroBar(
-        index: i,
-        startDate: buckets[i].startDate,
-        endDate: buckets[i].endDate,
-        protein: null,
-        carbohydrate: null,
-        fat: null,
-      ));
+      bars.add(
+        MacroBar(
+          index: i,
+          startDate: buckets[i].startDate,
+          endDate: buckets[i].endDate,
+          protein: null,
+          carbohydrate: null,
+          fat: null,
+        ),
+      );
       continue;
     }
 
