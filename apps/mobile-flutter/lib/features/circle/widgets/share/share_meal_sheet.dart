@@ -18,9 +18,17 @@ import 'share_meal_footer.dart';
 /// confirmation toast, the undo, and the send — all three outlive this widget,
 /// so none of them can live here.
 class ShareMealSheet extends ConsumerStatefulWidget {
-  const ShareMealSheet({super.key, required this.meal});
+  const ShareMealSheet({
+    super.key,
+    required this.meal,
+    required this.onAddFriends,
+  });
 
   final PersistedMeal meal;
+
+  /// Closes this sheet and opens the add-friend flow. Owned by the opener:
+  /// this sheet's context is gone the moment it pops.
+  final VoidCallback onAddFriends;
 
   @override
   ConsumerState<ShareMealSheet> createState() => _ShareMealSheetState();
@@ -96,7 +104,7 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
                       members.where((m) => m.isAccepted).toList();
                   if (friends.isEmpty) {
                     return ShareMealEmptyState(
-                      onAddFriends: () => Navigator.of(context).pop(),
+                      onAddFriends: widget.onAddFriends,
                     );
                   }
                   return ShareMealBody(

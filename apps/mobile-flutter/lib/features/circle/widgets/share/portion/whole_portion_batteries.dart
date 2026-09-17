@@ -16,10 +16,12 @@ class WholePortionBatteries extends StatelessWidget {
     super.key,
     required this.seats,
     required this.totalKcal,
+    required this.onRemove,
   });
 
   final List<PortionSeat> seats;
   final double? totalKcal;
+  final ValueChanged<int> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +46,8 @@ class WholePortionBatteries extends StatelessWidget {
               ],
               totalKcal: totalKcal,
               interactive: false,
+              // Each battery holds one seat, so map its local index back.
+              onRemove: (_) => onRemove(seat),
             ),
           ),
         ],

@@ -4,6 +4,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/logic/split_parts.dart';
 import 'package:kallo_mobile/features/circle/widgets/share/portion/portion_battery.dart';
+import 'package:kallo_mobile/features/circle/widgets/share/portion/whole_portion_batteries.dart';
 import 'package:kallo_mobile/features/circle/widgets/portion/portion_seats.dart';
 
 List<PortionSeat> seatsFrom(List<int> parts) => [
@@ -148,6 +149,34 @@ void main() {
     await tester.tap(find.byIcon(LucideIcons.x300).first);
     await tester.pump();
     expect(removed, [1]);
+  });
+
+  testWidgets('whole mode: remove a friend from their own battery, never you',
+      (tester) async {
+    final removed = <int>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 358,
+              child: WholePortionBatteries(
+                seats: seatsFrom([7, 7, 6]),
+                totalKcal: 1040,
+                onRemove: removed.add,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Each battery holds one seat at local index 0, so a position-based gate
+    // would hide every badge. Two friends, two badges.
+    expect(find.byIcon(LucideIcons.x300), findsNWidgets(2));
+    await tester.tap(find.byIcon(LucideIcons.x300).last);
+    await tester.pump();
+    expect(removed, [2]);
   });
 
   testWidgets('cells actually occupy the shell', (tester) async {

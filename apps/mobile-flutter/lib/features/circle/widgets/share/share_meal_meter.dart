@@ -65,7 +65,11 @@ class ShareMealMeter extends StatelessWidget {
     if (mode == 'whole') {
       // Nothing is divided, so nothing is drawn divided: one full battery per
       // person, at the same unit size the split meter uses.
-      return WholePortionBatteries(seats: seats, totalKcal: totalKcal);
+      return WholePortionBatteries(
+        seats: seats,
+        totalKcal: totalKcal,
+        onRemove: onRemove,
+      );
     }
 
     return Column(

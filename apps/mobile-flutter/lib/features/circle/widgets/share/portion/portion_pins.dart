@@ -24,6 +24,8 @@ class PortionPinRow extends StatelessWidget {
 
   int get _dishParts => parts.reduce((a, b) => a + b);
 
+  int _colorOf(int seat) => seats[seat].colorIndex ?? seat;
+
   @override
   Widget build(BuildContext context) {
     // Deliberately NOT a fixed height: the kcal line grows with Dynamic Type
@@ -36,13 +38,17 @@ class PortionPinRow extends StatelessWidget {
             flex: parts[seat],
             child: _Pin(
               key: ValueKey('pin-${seats[seat].id}'),
-              seat: seats[seat].colorIndex ?? seat,
+              seat: _colorOf(seat),
               initials: seats[seat].initials,
               kcal: totalKcal == null
                   ? null
                   : (totalKcal! * parts[seat] / _dishParts).round(),
-              onRemove:
-                  seat == 0 || onRemove == null ? null : () => onRemove!(seat),
+              // Colour 0 is always you, and you cannot remove yourself. Keyed on
+              // colour rather than position so a lone seat in a whole-portion
+              // battery (position 0, anyone) still gets its ×.
+              onRemove: _colorOf(seat) == 0 || onRemove == null
+                  ? null
+                  : () => onRemove!(seat),
             ),
           ),
       ],

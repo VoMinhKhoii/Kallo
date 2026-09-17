@@ -11,6 +11,9 @@ export interface PortionSeat {
   initials: string;
   label: string;
   parts: number;
+  /** Which seat colour to wear. Defaults to position; the whole-portion tab
+   *  sets it because each person there sits alone in their own battery. */
+  colorIndex?: number;
 }
 
 /**
@@ -96,13 +99,18 @@ export function PortionBattery({
             flex={seat.parts}
             initials={seat.initials}
             label={seat.label}
-            color={SEAT_COLORS[i % SEAT_COLORS.length]}
+            color={SEAT_COLORS[(seat.colorIndex ?? i) % SEAT_COLORS.length]}
             kcal={
               totalKcal == null
                 ? null
                 : Math.round((totalKcal * seat.parts) / dishParts)
             }
-            onRemove={i === 0 || !onRemove ? undefined : () => onRemove(i)}
+            // Colour 0 is always you, and you cannot remove yourself.
+            onRemove={
+              (seat.colorIndex ?? i) === 0 || !onRemove
+                ? undefined
+                : () => onRemove(i)
+            }
           />
         ))}
       </div>
@@ -119,7 +127,10 @@ export function PortionBattery({
                     // shrinking moves cells rather than recolouring them.
                     key={`cell-${seat.id}-${cell}`}
                     style={{
-                      backgroundColor: SEAT_COLORS[i % SEAT_COLORS.length],
+                      backgroundColor:
+                        SEAT_COLORS[
+                          (seat.colorIndex ?? i) % SEAT_COLORS.length
+                        ],
                     }}
                   />
                 ))

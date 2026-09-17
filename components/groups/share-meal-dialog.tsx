@@ -137,7 +137,7 @@ export function ShareMealDialog({
               <ShareMealMeter
                 emptyLabel={t('pickSomeone')}
                 evenlyLabel={t('splitEvenly')}
-                interactive={mode === 'split'}
+                split={mode === 'split'}
                 onChange={draft.setParts}
                 onRemove={draft.removeSeat}
                 onSplitEvenly={draft.splitEvenly}

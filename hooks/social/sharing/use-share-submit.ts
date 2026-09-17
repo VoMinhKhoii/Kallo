@@ -43,12 +43,22 @@ export function useShareSubmit({
     const isSplit = mode === 'split';
     const request = draft.submission(mealId, isSplit);
 
+    // The dialog and its draft are gone by now, so a failure offers the same
+    // request again rather than making the user rebuild the split.
+    const send = () =>
+      share.mutate(request, {
+        onError: () =>
+          toast.error(t('error'), {
+            action: { label: t('retry'), onClick: send },
+          }),
+      });
+
     // Settles exactly once: sonner can fire both onAutoClose and onDismiss.
     let settled = false;
     const commit = () => {
       if (settled) return;
       settled = true;
-      share.mutate(request, { onError: () => toast.error(t('error')) });
+      send();
     };
 
     toast.success(

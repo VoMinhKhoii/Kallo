@@ -4,6 +4,7 @@ import {
   PortionBattery,
   type PortionSeat,
 } from '@/components/groups/share-meal/portion/battery';
+import { TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
 
 /**
  * The portion block: the meter, and the reset beside it.
@@ -14,7 +15,7 @@ import {
 export function ShareMealMeter({
   seats,
   totalKcal,
-  interactive,
+  split,
   showEvenly,
   emptyLabel,
   evenlyLabel,
@@ -24,7 +25,7 @@ export function ShareMealMeter({
 }: {
   seats: PortionSeat[];
   totalKcal: number | null;
-  interactive: boolean;
+  split: boolean;
   showEvenly: boolean;
   emptyLabel: string;
   evenlyLabel: string;
@@ -42,14 +43,35 @@ export function ShareMealMeter({
           <p className="font-sans-display text-[13px] text-kallo-text-muted">
             {emptyLabel}
           </p>
-        ) : (
+        ) : split ? (
           <PortionBattery
-            interactive={interactive}
             onChange={onChange}
             onRemove={onRemove}
             seats={seats}
             totalKcal={totalKcal}
           />
+        ) : (
+          // Nothing is divided, so nothing is drawn divided: one FULL battery
+          // per person, each cell the width it has on the split meter. Twin of
+          // `WholePortionBatteries` on mobile.
+          <div className="flex items-end gap-3">
+            {seats.map((seat, i) => (
+              <div className="min-w-0 flex-1" key={seat.id}>
+                <PortionBattery
+                  interactive={false}
+                  onRemove={() => onRemove(i)}
+                  seats={[
+                    {
+                      ...seat,
+                      parts: Math.floor(TOTAL_PARTS / seats.length),
+                      colorIndex: i,
+                    },
+                  ]}
+                  totalKcal={totalKcal}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

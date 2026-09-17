@@ -7,6 +7,7 @@ import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../logging/data/logging_models.dart';
 import '../../data/circle_providers.dart';
+import '../invite/add_friend_sheet.dart';
 import 'share_meal_request.dart';
 import 'share_meal_sheet.dart';
 
@@ -33,9 +34,43 @@ Future<void> showShareMealSheet(
   final request = await showNhamSheet<ShareMealRequest>(
     context,
     isScrollControlled: true,
-    builder: (_) => ShareMealSheet(meal: meal),
+    builder: (sheetContext) => ShareMealSheet(
+      meal: meal,
+      onAddFriends: () {
+        Navigator.of(sheetContext).pop();
+        if (context.mounted) showAddFriendSheet(context);
+      },
+    ),
   );
   if (request == null || !context.mounted) return;
+
+  // Sent through the container, not the host context: the user may have left
+  // the screen during the window, and that must not drop a share they kept.
+  // The sheet (and its draft) is gone by then, so a failure offers the same
+  // request again rather than making the user rebuild the split.
+  Future<void> send() async {
+    try {
+      await shareMealWithFriends(
+        container,
+        mealId: request.mealId,
+        friendUserIds: request.friendUserIds,
+        mode: request.isSplit ? 'split' : 'copy',
+        myParts: request.myParts,
+        splits: request.splits,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      if (handledFeatureLock(context, error)) return;
+      showTopToast(
+        context,
+        tr('groups.shareMeal.error'),
+        variant: TopToastVariant.error,
+        actionLabel: tr('common.retry'),
+        duration: const Duration(seconds: 5),
+        onAction: send,
+      );
+    }
+  }
 
   var undone = false;
   await showTopToast(
@@ -49,25 +84,5 @@ Future<void> showShareMealSheet(
     onAction: () => undone = true,
   );
   if (undone) return;
-
-  // Sent through the container, not the host context: the user may have left
-  // the screen during the window, and that must not drop a share they kept.
-  try {
-    await shareMealWithFriends(
-      container,
-      mealId: request.mealId,
-      friendUserIds: request.friendUserIds,
-      mode: request.isSplit ? 'split' : 'copy',
-      myParts: request.myParts,
-      splits: request.splits,
-    );
-  } catch (error) {
-    if (!context.mounted) return;
-    if (handledFeatureLock(context, error)) return;
-    showTopToast(
-      context,
-      tr('groups.shareMeal.error'),
-      variant: TopToastVariant.error,
-    );
-  }
+  await send();
 }
