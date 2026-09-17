@@ -6,6 +6,8 @@ import 'package:kallo_mobile/features/circle/logic/split_parts.dart';
 import 'package:kallo_mobile/features/circle/widgets/share/portion/portion_battery.dart';
 import 'package:kallo_mobile/features/circle/widgets/share/portion/whole_portion_batteries.dart';
 import 'package:kallo_mobile/features/circle/widgets/portion/portion_seats.dart';
+import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
 
 List<PortionSeat> seatsFrom(List<int> parts) => [
       for (var i = 0; i < parts.length; i++)
@@ -17,10 +19,29 @@ List<PortionSeat> seatsFrom(List<int> parts) => [
         ),
     ];
 
+/// The same seat, with a photo. Its URL never resolves in a widget test — the
+/// binding answers every request with a 400 — which is exactly what these
+/// assertions want: they check that `ProfileAvatarDisc` is REACHED, not what
+/// it paints. The seat-colour-and-initials path is the other test.
+PortionSeat withPhoto(PortionSeat seat) => PortionSeat(
+      id: seat.id,
+      profile: CircleProfile(
+        userId: seat.id,
+        handle: seat.id,
+        displayName: seat.label,
+        avatarUrl: 'https://example.test/${seat.id}.jpg',
+      ),
+      initials: seat.initials,
+      label: seat.label,
+      parts: seat.parts,
+    );
+
 Future<void> pump(
   WidgetTester tester, {
   required List<int> parts,
   bool interactive = true,
+  double width = 358,
+  List<PortionSeat>? seats,
   ValueChanged<List<int>>? onChanged,
   ValueChanged<int>? onRemove,
 }) {
@@ -29,9 +50,9 @@ Future<void> pump(
       home: Scaffold(
         body: Center(
           child: SizedBox(
-            width: 358,
+            width: width,
             child: PortionBattery(
-              seats: seatsFrom(parts),
+              seats: seats ?? seatsFrom(parts),
               totalKcal: 1040,
               interactive: interactive,
               onChanged: onChanged,
@@ -198,5 +219,72 @@ void main() {
   testWidgets('fits six seats without overflowing', (tester) async {
     await pump(tester, parts: evenParts(6));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('draws a face in the pin when the person has a photo',
+      (tester) async {
+    final seats = seatsFrom([10, 10]);
+    await pump(
+      tester,
+      parts: const [10, 10],
+      seats: [seats.first, withPhoto(seats[1])],
+    );
+
+    expect(find.byType(ProfileAvatarDisc), findsOneWidget);
+    // Seat 0 has no photo, and its "initials" are the localised "You" — never
+    // a name initial — so it keeps the glyph rather than falling back to the
+    // avatar widget's own disc.
+    expect(find.text('B'), findsOneWidget);
+  });
+
+  testWidgets('falls back to initials for everyone without a photo',
+      (tester) async {
+    await pump(tester, parts: [10, 10]);
+    expect(find.byType(ProfileAvatarDisc), findsNothing);
+    expect(find.text('B'), findsOneWidget);
+    expect(find.text('F1'), findsOneWidget);
+  });
+
+  testWidgets('keeps the drop square on a run too narrow to hold it',
+      (tester) async {
+    // A 2-part run on a small phone is ~29pt wide against a 40pt drop-plus-
+    // ring. It must overlap its neighbour rather than be squeezed to an oval.
+    await pump(tester, parts: [kMinParts, kTotalParts - kMinParts], width: 288);
+    expect(
+      tester.getSize(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('pin-u0')),
+              matching: find.byType(Transform),
+            )
+            .first,
+      ),
+      const Size(40, 40),
+    );
+  });
+
+  testWidgets('whole mode carries the photo through the reseat',
+      (tester) async {
+    // WholePortionBatteries rebuilds every seat so each gets its own battery.
+    // Before copyWith() that was a hand-written six-field copy — one forgotten
+    // line away from silently dropping every face in this tab.
+    final seats = seatsFrom([10, 10]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 358,
+              child: WholePortionBatteries(
+                seats: [seats.first, withPhoto(seats[1])],
+                totalKcal: 1040,
+                onRemove: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(ProfileAvatarDisc), findsOneWidget);
   });
 }

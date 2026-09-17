@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/services.dart';
 
-import '../../../../../theme/calm_tokens.dart';
-import '../../../../../theme/kallo_colors.dart';
-import '../../../../../theme/kallo_theme.dart';
 import '../../portion/portion_seats.dart';
+import 'portion_pin.dart';
 
 /// kcal over an inverted water-drop pin, centred on the run it owns.
 class PortionPinRow extends StatelessWidget {
@@ -36,9 +32,10 @@ class PortionPinRow extends StatelessWidget {
         for (var seat = 0; seat < parts.length; seat++)
           Expanded(
             flex: parts[seat],
-            child: _Pin(
+            child: PortionPin(
               key: ValueKey('pin-${seats[seat].id}'),
               seat: _colorOf(seat),
+              profile: seats[seat].profile,
               initials: seats[seat].initials,
               kcal: totalKcal == null
                   ? null
@@ -51,105 +48,6 @@ class PortionPinRow extends StatelessWidget {
                   : () => onRemove!(seat),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _Pin extends StatelessWidget {
-  const _Pin({
-    super.key,
-    required this.seat,
-    required this.initials,
-    required this.kcal,
-    required this.onRemove,
-  });
-
-  final int seat;
-  final String initials;
-  final int? kcal;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = kSeatColors[seat % kSeatColors.length];
-    final ink = kSeatInk[seat % kSeatInk.length];
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        if (kcal != null)
-          Text(
-            '$kcal',
-            style: dashCaption(color: kInk),
-            maxLines: 1,
-            overflow: TextOverflow.clip,
-          ),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: 34,
-          height: 34,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              // The drop: a square with three round corners, rotated so the
-              // square one points down at the run it labels.
-              Transform.rotate(
-                angle: -0.785398, // -45°
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: color,
-                    border: Border.all(color: KalloColors.elev, width: 2),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                      bottomRight: Radius.circular(15),
-                    ),
-                    boxShadow: const [KalloShadows.sm],
-                  ),
-                  child: Center(
-                    child: Transform.rotate(
-                      angle: 0.785398,
-                      child: Text(
-                        initials,
-                        style: dashCaption(color: ink),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (onRemove != null)
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      onRemove!();
-                    },
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: KalloColors.elev,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: KalloColors.border),
-                      ),
-                      child: const Icon(
-                        LucideIcons.x300,
-                        size: 11,
-                        color: KalloColors.textSoft,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
       ],
     );
   }

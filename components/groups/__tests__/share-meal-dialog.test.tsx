@@ -12,6 +12,9 @@ vi.mock('@/hooks/social/circle/use-friends', () => ({
     refetch: vi.fn(),
   }),
 }));
+vi.mock('@/hooks/profile/use-profile', () => ({
+  useMyProfile: () => ({ data: undefined }),
+}));
 vi.mock('@/hooks/social/sharing/use-share-meal-with-friends', () => ({
   useShareMealWithFriends: () => ({ isPending: false, mutate: vi.fn() }),
 }));

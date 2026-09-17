@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../data/circle_providers.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'portion/portion_battery.dart';
@@ -10,7 +12,10 @@ import 'portion/whole_portion_batteries.dart';
 
 /// The portion block: whichever meter the current tab calls for, plus the
 /// "chia đều" reset. Presentation only — every decision stays in the sheet.
-class ShareMealMeter extends StatelessWidget {
+/// Who the viewer is is ambient identity, not a share decision, so the meter
+/// reads it off the provider rather than having it threaded down. The
+/// decisions — mode, parts, the callbacks — still all come from the sheet.
+class ShareMealMeter extends ConsumerWidget {
   const ShareMealMeter({
     super.key,
     required this.mode,
@@ -42,13 +47,14 @@ class ShareMealMeter extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (seated.isEmpty) {
       return Text(tr('groups.shareMeal.pickSomeone'), style: dashMeta());
     }
     final seats = [
       PortionSeat(
         id: 'me',
+        profile: ref.watch(myCircleProfileProvider).valueOrNull,
         initials: tr('groups.shareMeal.youInitial'),
         label: tr('groups.shareMeal.you'),
         parts: parts.first,
@@ -56,6 +62,7 @@ class ShareMealMeter extends StatelessWidget {
       for (var i = 0; i < seated.length; i++)
         PortionSeat(
           id: seated[i].userId,
+          profile: seated[i],
           initials: initialsOf(seated[i]),
           label: seated[i].label,
           parts: parts[i + 1],

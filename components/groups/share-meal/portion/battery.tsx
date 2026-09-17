@@ -8,6 +8,8 @@ import { partsAfterDrag } from '@/lib/domain/social/splits/parts';
 /** One seat at the table: who, and how many parts they hold. */
 export interface PortionSeat {
   id: string;
+  /** Their photo, drawn inside the pin. Null falls back to initials. */
+  avatarUrl: string | null;
   initials: string;
   label: string;
   parts: number;
@@ -96,6 +98,7 @@ export function PortionBattery({
         {seats.map((seat, i) => (
           <PortionPin
             key={seat.id}
+            avatarUrl={seat.avatarUrl}
             flex={seat.parts}
             initials={seat.initials}
             label={seat.label}

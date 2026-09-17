@@ -13,9 +13,8 @@ export function labelFor(profile: Identity): string {
 }
 
 /**
- * Up to two initials for a glyph too small to hold a photo — the portion
- * meter's 30px pin. Everything larger uses `ProfileAvatar`, which shows the
- * person's real picture.
+ * Up to two initials, for the portion meter's pin when the person has no photo.
+ * Everywhere a picture exists — including that pin — `ProfileAvatar` shows it.
  */
 export function initialsFor(profile: Identity): string {
   const label = labelFor(profile);

@@ -35,15 +35,7 @@ class WholePortionBatteries extends StatelessWidget {
             child: PortionBattery(
               key: ValueKey('whole-${seats[seat].id}'),
               // A party of one, holding the whole of its own battery.
-              seats: [
-                PortionSeat(
-                  id: seats[seat].id,
-                  initials: seats[seat].initials,
-                  label: seats[seat].label,
-                  parts: per,
-                  colorIndex: seat,
-                ),
-              ],
+              seats: [seats[seat].copyWith(parts: per, colorIndex: seat)],
               totalKcal: totalKcal,
               interactive: false,
               // Each battery holds one seat, so map its local index back.
