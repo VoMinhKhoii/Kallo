@@ -41,7 +41,7 @@ class KalloAlertSurface extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
+  Widget build(BuildContext context) => ClipRSuperellipse(
     key: kKalloConfirmSurface,
     borderRadius: BorderRadius.circular(kKalloAlertRadius),
     child: ColoredBox(color: kCardSurface, child: child),

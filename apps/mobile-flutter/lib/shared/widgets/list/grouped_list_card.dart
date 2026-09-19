@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_shapes.dart';
 
 /// A grouped list card — the Settings anchor anatomy generalized app-wide
 /// (native pass, 2026-08-31): solid white, radius 22, NO border/shadow,
@@ -42,10 +43,7 @@ class GroupedListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-      decoration: BoxDecoration(
-        color: kCardSurface,
-        borderRadius: BorderRadius.circular(KalloRadii.card),
-      ),
+      decoration: KalloShapes.card(color: kCardSurface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

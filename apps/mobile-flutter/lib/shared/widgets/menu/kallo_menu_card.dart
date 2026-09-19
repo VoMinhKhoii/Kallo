@@ -4,6 +4,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../surface/kallo_pressable.dart';
+import '../../../theme/kallo_shapes.dart';
 
 /// The popover's fixed width. Wide enough for a two-word label plus its glyph,
 /// narrow enough that the card still reads as hanging off the control it was
@@ -87,12 +88,12 @@ class KalloMenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(KalloRadii.xl);
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: KalloColors.elev,
-        borderRadius: radius,
-        boxShadow: const [KalloShadows.md],
+        shape: KalloShapes.squircle(KalloRadii.xl),
+        shadows: const [KalloShadows.md],
       ),
-      child: ClipRRect(
+      child: ClipRSuperellipse(
         borderRadius: radius,
         child: Column(
           mainAxisSize: MainAxisSize.min,

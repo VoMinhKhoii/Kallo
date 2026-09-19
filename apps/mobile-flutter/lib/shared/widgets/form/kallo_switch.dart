@@ -1,20 +1,24 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../theme/kallo_colors.dart';
 
-/// The app's one switch — umber when on, native geometry throughout.
+/// The app's one switch — umber when on, iOS geometry and feel throughout.
 ///
-/// [Switch.adaptive] is kept so the control keeps each platform's own size,
-/// animation and drag behaviour. The colour, however, CANNOT come from
-/// `ThemeData.switchTheme`: on iOS and macOS Flutter's `_SwitchThemeAdaptation`
-/// discards the ambient theme outright (`material/switch.dart` — its `adapt()`
-/// returns `const SwitchThemeData()` for those platforms), so a `switchTheme`
-/// would quietly fix Android and leave iOS on the Cupertino default green.
+/// [CupertinoSwitch] directly, not `Switch.adaptive`. The adaptive switch got
+/// the right shape on iOS but needed a workaround to get the right colour:
+/// `ThemeData.switchTheme` never reaches it, because Flutter's
+/// `_SwitchThemeAdaptation.adapt()` returns a bare `const SwitchThemeData()`
+/// on iOS and macOS (`material/switch.dart`), so a theme would quietly fix
+/// Android and leave iOS on the Cupertino default green. That forced a
+/// widget-level `trackColor` resolver whose only job was to be the one entry
+/// in the fallback chain that lands. [CupertinoSwitch.activeTrackColor] is
+/// simply the colour, and the resolver is gone.
 ///
-/// The widget-level [Switch.trackColor] is the first entry in the resolver's
-/// fallback chain on every platform, so it is the one override that actually
-/// lands. Resolving to `null` while unselected falls through to the platform
-/// default track, which means only the checked state is themed.
+/// The thumb's press behaviour comes with it rather than being rebuilt: the
+/// thumb stretches while a finger is down (`_kThumbExtensionFactor = 7.0` in
+/// `cupertino/switch.dart`) and settles on release. That is the expand the
+/// hand-rolled controls in this app imitate by hand, here for free and at the
+/// platform's own timing.
 ///
 /// Umber ([KalloColors.btn]) is web parity: the shadcn switch there is
 /// `data-[state=checked]:bg-primary`, and `--primary` is `--kallo-btn`.
@@ -37,13 +41,13 @@ class KalloSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final switchWidget = Switch.adaptive(
+    // Only the ON track is themed. Leaving `inactiveTrackColor` alone keeps the
+    // platform's own off state, which is what the `trackColor` resolver was
+    // doing by resolving to null while unselected.
+    final switchWidget = CupertinoSwitch(
       value: value,
       onChanged: onChanged,
-      trackColor: WidgetStateProperty.resolveWith<Color?>(
-        (states) =>
-            states.contains(WidgetState.selected) ? KalloColors.btn : null,
-      ),
+      activeTrackColor: KalloColors.btn,
     );
 
     if (semanticLabel == null) return switchWidget;
