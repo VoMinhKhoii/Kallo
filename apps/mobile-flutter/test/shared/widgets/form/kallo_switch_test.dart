@@ -178,6 +178,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a tap elsewhere in the row does NOT reach the switch', (
+    tester,
+  ) async {
+    // The production shape: the switch as the trailing child of a Row. This is
+    // the regression a hand-written hitTest invites and the analyzer cannot
+    // see. `RenderFlex` hands EVERY child the row-local position and relies on
+    // the child to reject what is not its own (`defaultHitTestChildren`), and
+    // trailing children are tested first — so a redirect that clamps without
+    // first checking its own bounds takes a tap on the label and flips the
+    // setting. Verified by probe before the guard existed: tapping the label
+    // toggled the switch.
+    var toggles = 0;
+    await tester.pumpWidget(
+      host(
+        child: Row(
+          children: [
+            const Expanded(child: Text('Tự động chia sẻ')),
+            KalloSwitch(value: false, onChanged: (_) => toggles++),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tự động chia sẻ'));
+    await tester.pumpAndSettle();
+    expect(toggles, 0, reason: 'the label tap leaked into the switch');
+
+    // ...and the switch itself still works, so the guard did not simply kill
+    // the target it was added to protect.
+    final rect = targetOf(tester);
+    await tester.tapAt(Offset(rect.center.dx, rect.top + 1));
+    await tester.pumpAndSettle();
+    expect(toggles, 1);
+  });
+
+  testWidgets('the 44pt floor survives an IntrinsicHeight parent', (
+    tester,
+  ) async {
+    // `RenderShiftedBox` delegates all four intrinsics straight to the child,
+    // and overriding computeDryLayout does not cover them: the wrapper reported
+    // the switch's 39, the parent handed back a tight 39, and
+    // `constraints.constrain` collapsed the target. A layout widget silently
+    // undoing the floor is the same failure as never having had one.
+    await tester.pumpWidget(
+      host(
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              const Text('x'),
+              KalloSwitch(value: false, onChanged: (_) {}),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(targetOf(tester).height, greaterThanOrEqualTo(KalloIcons.hit));
+  });
+
   testWidgets('semanticLabel names the control', (tester) async {
     await tester.pumpWidget(
       host(
