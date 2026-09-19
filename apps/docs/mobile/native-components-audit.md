@@ -4,6 +4,27 @@ Audit of hand-built Flutter components in `apps/mobile-flutter` that have a nati
 (Cupertino) equivalent. Each row gets a verdict so the team can pick it up as a follow-up.
 Refs are `file:line` at HEAD; spot-checked with grep against the tree on this date.
 
+> **Superseded in part (2026-09-19).** This audit predates the platform rule in
+> `.agents/skills/kallo-design/mobile.md` (*Platform — Cupertino wherever it exists*),
+> which is now canonical and where the live backlog is tracked. Four rows below have
+> since been decided the other way:
+>
+> - **Route transitions → `CupertinoPage`** — reversed 2026-09-10. The Cupertino
+>   transition moved into `pageTransitionsTheme`, and a `CupertinoPage` never reads it,
+>   so `MaterialPage`/`MaterialPageRoute` is now the correct type app-wide. The
+>   `email_auth_form.dart` "swap to `CupertinoPageRoute`" row is likewise void; the four
+>   `CupertinoPageRoute` pushes in `features/settings/screens/` are being converted the
+>   other way.
+> - **Message long-press menu → `CupertinoContextMenu`** — rejected 2026-09-08. It
+>   relocates the pressed widget into its own preview slot and scales it 1.15x, so the
+>   bubble slides out from under the finger, and it holds 800ms. `showKalloAnchoredMenu`
+>   is a cited exception under boundary 3.
+> - **`CupertinoSwitch`** — correct, and adopted 2026-09-19 (the audit's "swap" verdict
+>   stands; it was `Switch.adaptive` in the interim).
+>
+> Everything else here still reads true; the counts are as of 2026-09-03 and several are
+> now stale (spinners are 13, not 17; sliders are 2, not 3).
+
 ## 1. Context
 
 The app is iOS-first: `MaterialApp.router` at the root, but each pushed screen (Log,
