@@ -80,6 +80,5 @@ ${occasionLines.length > 0 ? `${occasionLines.join('\n')}` : '  description: (no
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  sugar_braised: ${cookingHabits.sugarBraised}
 </user_context>`;
 }

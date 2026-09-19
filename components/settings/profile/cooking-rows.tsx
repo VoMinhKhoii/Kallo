@@ -11,7 +11,6 @@ type CookingField = Extract<
   keyof ProfileFormValues,
   | 'oilUsage'
   | 'defaultRicePortion'
-  | 'sugarBraised'
   | 'defaultProteinPortion'
   | 'brothConsumption'
 >;
@@ -45,15 +44,6 @@ const ROWS: CookingRowConfig[] = [
       { value: 'small', labelKey: 'riceSmall', hintKey: 'riceSmallHint' },
       { value: 'medium', labelKey: 'riceMedium', hintKey: 'riceMediumHint' },
       { value: 'large', labelKey: 'riceLarge', hintKey: 'riceLargeHint' },
-    ],
-  },
-  {
-    name: 'sugarBraised',
-    labelKey: 'sugar',
-    options: [
-      { value: 'low', labelKey: 'sugarLow' },
-      { value: 'medium', labelKey: 'sugarMedium' },
-      { value: 'high', labelKey: 'sugarHigh' },
     ],
   },
   {

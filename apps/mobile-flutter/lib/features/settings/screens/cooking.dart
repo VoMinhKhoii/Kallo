@@ -69,19 +69,6 @@ class Cooking extends StatelessWidget {
             ),
       ),
       _CookingField(
-        label: t('sugar'),
-        value: v.sugarBraised.name,
-        options: [
-          OptionStripItem(value: 'low', label: t('sugarLow')),
-          OptionStripItem(value: 'medium', label: t('sugarMedium')),
-          OptionStripItem(value: 'high', label: t('sugarHigh')),
-        ],
-        onChange:
-            (s) => form.update(
-              (f) => f.sugarBraised = SugarBraised.values.byName(s),
-            ),
-      ),
-      _CookingField(
         label: t('proteinPortion'),
         value: v.defaultProteinPortion.name,
         options: [

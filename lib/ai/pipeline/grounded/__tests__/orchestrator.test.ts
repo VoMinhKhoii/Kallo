@@ -24,7 +24,6 @@ const userContext: UserContext = {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'medium',
     brothConsumption: 'some',
   },
 };

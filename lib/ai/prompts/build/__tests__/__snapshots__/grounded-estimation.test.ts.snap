@@ -70,7 +70,6 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
   Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (~1 small bowl (~140–160g cooked rice); ~1 bowl (~200g cooked rice); ~1.5–2 bowls (~300–400g cooked rice)); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)
   When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.
-  For kho/braised/caramelized dishes, added sugar follows sugar_braised in <user_context> (low ≈ 5g, medium ≈ 10–15g, high ≈ 20–25g carbs from sugar per serving).
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — emit normal best-effort fields (grossG must be > 0 and refusePct is required) and never treat the zero as one standard serving in meal-level reasoning.
   Server scales DB per_100g × edible mass / 100 after applying the accepted candidate override / refuse clamp — no further yield conversion happens server-side.
 </grams_rule>

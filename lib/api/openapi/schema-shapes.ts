@@ -140,7 +140,6 @@ const onboardingProfile = object(
     preferredLocale: nullableString,
     oilUsage: nullableString,
     defaultRicePortion: nullableString,
-    sugarBraised: nullableString,
     defaultProteinPortion: nullableString,
     brothConsumption: nullableString,
     onboardingStep: { type: 'integer' },

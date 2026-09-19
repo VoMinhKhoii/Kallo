@@ -214,9 +214,6 @@ export function WizardShell({
         defaultRicePortion:
           (screenData[3].defaultRicePortion as 'small' | 'medium' | 'large') ??
           undefined,
-        sugarBraised:
-          (screenData[3].sugarBraised as 'low' | 'medium' | 'high') ??
-          undefined,
         defaultProteinPortion:
           (screenData[3].defaultProteinPortion as
             | 'small'
@@ -237,9 +234,6 @@ export function WizardShell({
             | 'small'
             | 'medium'
             | 'large') ?? undefined,
-        sugarBraised:
-          (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ??
-          undefined,
         defaultProteinPortion:
           (initialProfile?.defaultProteinPortion as
             | 'small'

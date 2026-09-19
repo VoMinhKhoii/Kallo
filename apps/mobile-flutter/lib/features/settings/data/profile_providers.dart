@@ -52,7 +52,6 @@ class ProfileRow {
   String? get countryOfResidence => raw['countryOfResidence'] as String?;
   String? get oilUsage => _str('oilUsage');
   String? get defaultRicePortion => _str('defaultRicePortion');
-  String? get sugarBraised => _str('sugarBraised');
   String? get defaultProteinPortion => _str('defaultProteinPortion');
   String? get brothConsumption => _str('brothConsumption');
   bool get autoShareToCircle => (raw['autoShareToCircle'] as bool?) ?? true;
@@ -99,7 +98,6 @@ class ProfileSavePayload {
   final String preferredLocale;
   final OilUsage oilUsage;
   final RicePortion defaultRicePortion;
-  final SugarBraised sugarBraised;
   final ProteinPortion defaultProteinPortion;
   final BrothConsumption brothConsumption;
 
@@ -122,7 +120,6 @@ class ProfileSavePayload {
     required this.preferredLocale,
     required this.oilUsage,
     required this.defaultRicePortion,
-    required this.sugarBraised,
     required this.defaultProteinPortion,
     required this.brothConsumption,
   });
@@ -146,7 +143,6 @@ class ProfileSavePayload {
     'preferredLocale': preferredLocale,
     'oilUsage': oilUsage.name,
     'defaultRicePortion': defaultRicePortion.name,
-    'sugarBraised': sugarBraised.name,
     'defaultProteinPortion': defaultProteinPortion.name,
     'brothConsumption': brothConsumptionToString(brothConsumption),
   };

@@ -21,7 +21,6 @@ const int kOnboardingScreenCount = 6;
 const CookingHabits kNeutralCookingDefaults = CookingHabits(
   oilUsage: OilUsage.normal,
   defaultRicePortion: RicePortion.medium,
-  sugarBraised: SugarBraised.medium,
   defaultProteinPortion: ProteinPortion.medium,
   brothConsumption: BrothConsumption.some,
 );

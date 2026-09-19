@@ -697,10 +697,6 @@
       "riceMediumHint": "~1–1.5 bowls",
       "riceLarge": "Large",
       "riceLargeHint": "~2+ bowls",
-      "sugar": "Sugar in braised dishes",
-      "sugarLow": "Low",
-      "sugarMedium": "Medium",
-      "sugarHigh": "High",
       "proteinPortion": "Default protein portion",
       "proteinSmall": "Small",
       "proteinSmallHint": "Smaller than your palm, e.g. ~2-3 eggs",
@@ -718,7 +714,6 @@
       "stepLabels": {
         "oil": "Oil",
         "rice": "Rice, noodles or bread per meal",
-        "sugar": "Sugar in braises",
         "protein": "Protein per meal",
         "broth": "Broth"
       }
@@ -937,7 +932,7 @@
       "feature1Title": "Vietnamese-first ingredient matching",
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
       "feature2Title": "Context-aware estimation",
-      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
+      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or your usual rice portion.",
       "feature3Title": "Useful uncertainty, not fake certainty",
       "feature3Text": "Returns bounded estimates so you can make better decisions without pretending the data is perfect.",
       "profile": {
@@ -1768,7 +1763,7 @@
     "profilePanel": {
       "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
       "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
+      "cookingSubtitle": "Oil usage, rice, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics.",
       "retry": "Try again",

@@ -69,8 +69,7 @@ function buildUserContextBlock(
 
   return `<user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-${ricePortionLine}${proteinPortionLine}  sugar_braised: ${cookingHabits.sugarBraised}
-  broth_consumption: ${cookingHabits.brothConsumption}
+${ricePortionLine}${proteinPortionLine}  broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
 }
 

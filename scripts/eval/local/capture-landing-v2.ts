@@ -23,7 +23,6 @@ const NEUTRAL: UserContext = {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'medium',
     brothConsumption: 'some',
   },
 };
@@ -152,7 +151,7 @@ const SAMPLES: Sample[] = [
     text: 'two cups of rice with braised pork and egg',
   },
 
-  // 5 — braising sugar
+  // 5 — braised dishes (explicit sugar modifiers)
   {
     category: 'kho',
     locale: 'vi',

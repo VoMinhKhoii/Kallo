@@ -18,7 +18,6 @@ import type {
   OilUsage,
   ProteinPortion,
   RicePortion,
-  SugarBraised,
 } from '@/lib/domain/onboarding/types';
 import type { SUBSECTION_ANCHOR } from './anchors';
 
@@ -54,7 +53,6 @@ export const SECTION_FOR_FIELD: Partial<
   countryOfResidence: 'regional',
   oilUsage: 'cooking',
   defaultRicePortion: 'cooking',
-  sugarBraised: 'cooking',
   defaultProteinPortion: 'cooking',
   brothConsumption: 'cooking',
 };
@@ -77,7 +75,6 @@ export interface ProfileInput {
   countryOfResidence: string | null;
   oilUsage: string | null;
   defaultRicePortion: string | null;
-  sugarBraised: string | null;
   defaultProteinPortion: string | null;
   brothConsumption: string | null;
 }
@@ -112,7 +109,6 @@ export function buildDefaultValues(
     countryOfResidence: profile.countryOfResidence ?? null,
     oilUsage: (profile.oilUsage as OilUsage) ?? 'normal',
     defaultRicePortion: (profile.defaultRicePortion as RicePortion) ?? 'medium',
-    sugarBraised: (profile.sugarBraised as SugarBraised) ?? 'medium',
     defaultProteinPortion:
       (profile.defaultProteinPortion as ProteinPortion) ?? 'medium',
     brothConsumption: (profile.brothConsumption as BrothConsumption) ?? 'some',

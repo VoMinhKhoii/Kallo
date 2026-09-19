@@ -24,7 +24,6 @@ const baseUserContext: PromptPersonalizationContext = {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'medium',
     brothConsumption: 'some',
   },
 };
@@ -366,7 +365,6 @@ describe('grounded-estimation prompt structure', () => {
       expect(disabled).toContain('BASIS RULE');
       expect(disabled).toContain('Absorbed cooking fat:');
       expect(disabled).toContain('broth_consumption:');
-      expect(disabled).toContain('sugar_braised:');
       expect(disabled).toContain('resolved_grams="180.0"');
       expect(disabled).toContain('user_count="2" user_unit="miếng"');
 

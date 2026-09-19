@@ -23,7 +23,6 @@ class ProfileFormValues {
   String? countryOfResidence;
   OilUsage oilUsage;
   RicePortion defaultRicePortion;
-  SugarBraised sugarBraised;
   ProteinPortion defaultProteinPortion;
   BrothConsumption brothConsumption;
 
@@ -40,7 +39,6 @@ class ProfileFormValues {
     required this.countryOfResidence,
     required this.oilUsage,
     required this.defaultRicePortion,
-    required this.sugarBraised,
     required this.defaultProteinPortion,
     required this.brothConsumption,
   });
@@ -58,7 +56,6 @@ class ProfileFormValues {
     countryOfResidence: countryOfResidence,
     oilUsage: oilUsage,
     defaultRicePortion: defaultRicePortion,
-    sugarBraised: sugarBraised,
     defaultProteinPortion: defaultProteinPortion,
     brothConsumption: brothConsumption,
   );
@@ -76,7 +73,6 @@ class ProfileFormValues {
       countryOfResidence == o.countryOfResidence &&
       oilUsage == o.oilUsage &&
       defaultRicePortion == o.defaultRicePortion &&
-      sugarBraised == o.sugarBraised &&
       defaultProteinPortion == o.defaultProteinPortion &&
       brothConsumption == o.brothConsumption;
 
@@ -108,7 +104,6 @@ class ProfileFormValues {
       countryOfResidence: p.countryOfResidence,
       oilUsage: _oilFrom(p.oilUsage) ?? OilUsage.normal,
       defaultRicePortion: _riceFrom(p.defaultRicePortion) ?? RicePortion.medium,
-      sugarBraised: _sugarFrom(p.sugarBraised) ?? SugarBraised.medium,
       defaultProteinPortion:
           _proteinFrom(p.defaultProteinPortion) ?? ProteinPortion.medium,
       brothConsumption: _brothFrom(p.brothConsumption) ?? BrothConsumption.some,
@@ -157,13 +152,6 @@ RicePortion? _riceFrom(String? s) => switch (s) {
   'small' => RicePortion.small,
   'medium' => RicePortion.medium,
   'large' => RicePortion.large,
-  _ => null,
-};
-
-SugarBraised? _sugarFrom(String? s) => switch (s) {
-  'low' => SugarBraised.low,
-  'medium' => SugarBraised.medium,
-  'high' => SugarBraised.high,
   _ => null,
 };
 

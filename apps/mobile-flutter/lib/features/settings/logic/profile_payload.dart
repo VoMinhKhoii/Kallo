@@ -43,7 +43,6 @@ ProfileSavePayload buildProfilePayload(
     preferredLocale: preferredLocale,
     oilUsage: v.oilUsage,
     defaultRicePortion: v.defaultRicePortion,
-    sugarBraised: v.sugarBraised,
     defaultProteinPortion: v.defaultProteinPortion,
     brothConsumption: v.brothConsumption,
   );

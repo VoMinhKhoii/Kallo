@@ -37,7 +37,6 @@ export const AGGRESSION_KCAL_PER_KG = 1100;
 export const NEUTRAL_COOKING_DEFAULTS: CookingHabits = {
   oilUsage: 'normal',
   defaultRicePortion: 'medium',
-  sugarBraised: 'medium',
   defaultProteinPortion: 'medium',
   brothConsumption: 'some',
 };

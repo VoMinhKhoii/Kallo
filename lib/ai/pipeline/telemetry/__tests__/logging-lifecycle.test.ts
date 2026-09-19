@@ -39,7 +39,6 @@ const MOCK_USER_CONTEXT: UserContext = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'finish_it',
   },

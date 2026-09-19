@@ -18,7 +18,6 @@ const USER_CONTEXT: UserContext = {
   countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
-    sugarBraised: 'high',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
