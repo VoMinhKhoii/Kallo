@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/data/countries.dart';
+import 'country_row.dart';
 
 /// Port of the web inline `CountrySelect` (regional.tsx). A searchable,
 /// inline-anchored dropdown over [kCountries], filtering on English +
@@ -311,16 +311,11 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                                   itemCount: filtered.length,
                                   itemBuilder: (_, i) {
                                     final c = filtered[i];
-                                    return _CountryRow(
+                                    return CountryRow(
                                       label: countryLabel(c, language),
                                       vi: countryAlias(c, language),
                                       selected: widget.selectedValue == c.value,
-                                      onTap: () {
-                                        if (widget.selectedValue != c.value) {
-                                          HapticFeedback.selectionClick();
-                                        }
-                                        widget.onPick(c.value);
-                                      },
+                                      onTap: () => widget.onPick(c.value),
                                     );
                                   },
                                 ),
@@ -340,68 +335,6 @@ class _CountryDropdownState extends State<_CountryDropdown> {
     borderRadius: BorderRadius.circular(KalloRadii.lg), // rounded-lg = 10
     borderSide: BorderSide.none,
   );
-}
-
-class _CountryRow extends StatefulWidget {
-  const _CountryRow({
-    required this.label,
-    required this.vi,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String vi;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  State<_CountryRow> createState() => _CountryRowState();
-}
-
-class _CountryRowState extends State<_CountryRow> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color? bg =
-        widget.selected
-            ? KalloColors.accent10
-            : (_pressed ? KalloColors.track : null);
-
-    return Semantics(
-      button: true,
-      selected: widget.selected,
-      excludeSemantics: true,
-      label: '${widget.label}, ${widget.vi}',
-      onTap: widget.onTap,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(
-              KalloRadii.lg,
-            ), // rounded-lg = 10
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp3,
-            vertical: KalloSpacing.sp2,
-          ),
-          child: Row(
-            children: [
-              Expanded(child: Text(widget.label, style: dashBody())),
-              Text(widget.vi, style: dashMeta()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 extension on Border {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
+import 'dropdown_row.dart';
 
 /// A single option for [CustomSelect].
 class CustomSelectOption {
@@ -270,15 +270,10 @@ class _DropdownOverlay extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         for (final opt in options)
-                          _DropdownRow(
+                          DropdownRow(
                             option: opt,
                             selected: value == opt.value,
-                            onTap: () {
-                              if (value != opt.value) {
-                                HapticFeedback.selectionClick();
-                              }
-                              onPick(opt.value);
-                            },
+                            onTap: () => onPick(opt.value),
                           ),
                       ],
                     ),
@@ -289,63 +284,6 @@ class _DropdownOverlay extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _DropdownRow extends StatefulWidget {
-  const _DropdownRow({
-    required this.option,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final CustomSelectOption option;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  State<_DropdownRow> createState() => _DropdownRowState();
-}
-
-class _DropdownRowState extends State<_DropdownRow> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: widget.selected,
-      excludeSemantics: true,
-      label: widget.option.label,
-      onTap: widget.onTap,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150), // transition-colors
-          color: _pressed ? KalloColors.track : Colors.transparent,
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp3,
-            vertical: KalloSpacing.sp2 + 2, // py-2.5 = 10
-          ),
-          child: Row(
-            children: [
-              Expanded(child: Text(widget.option.label, style: dashBody())),
-              if (widget.selected)
-                const Icon(
-                  LucideIcons.check300,
-                  size: 16,
-                  color: KalloColors.text,
-                )
-              else
-                const SizedBox(width: 16, height: 16),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
