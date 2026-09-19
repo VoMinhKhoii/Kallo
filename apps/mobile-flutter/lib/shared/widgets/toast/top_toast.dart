@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../theme/kallo_motion.dart';
 import 'top_toast_pill.dart';
 
 // The tone enum lives with the pill that renders it; re-exported so callers
@@ -70,16 +71,31 @@ class _TopToast extends StatefulWidget {
   State<_TopToast> createState() => _TopToastState();
 }
 
+/// Upward flick velocity, in logical px/s, that counts as "throw it away".
+const double _kFlickAway = 320;
+
 class _TopToastState extends State<_TopToast>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 260),
+    duration: KalloMotion.banner,
   );
+
+  /// [KalloEase.exit] as the `reverseCurve` is not decoration. Without it the
+  /// close runs [KalloEase.enter] backwards, which holds the pill near its
+  /// resting position for the first half of the dismissal — the exact lag
+  /// `KalloEase.exit` was written to remove, in the one widget that had been
+  /// ignoring it.
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: const Offset(0, -0.4),
     end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+  ).animate(
+    CurvedAnimation(
+      parent: _c,
+      curve: KalloEase.enter,
+      reverseCurve: KalloEase.exit,
+    ),
+  );
 
   Timer? _hold;
 
@@ -100,6 +116,24 @@ class _TopToastState extends State<_TopToast>
   void _onAction() {
     widget.onAction?.call();
     _dismiss();
+  }
+
+  /// iOS banners pause their countdown while a finger is on them, so a toast
+  /// cannot expire out from under someone who is reaching for its action.
+  void _holdFor(PointerDownEvent _) => _hold?.cancel();
+
+  void _resumeAfter(PointerUpEvent _) {
+    if (mounted) _hold = Timer(widget.duration, _dismiss);
+  }
+
+  /// Upward flick dismisses, the way a notification banner does. Downward is
+  /// ignored: there is nothing below the pill to pull into view, and a
+  /// downward drag here is much more likely to be a page scroll that started
+  /// slightly too high.
+  void _onDragEnd(DragEndDetails d) {
+    if (d.primaryVelocity != null && d.primaryVelocity! < -_kFlickAway) {
+      _dismiss();
+    }
   }
 
   @override
@@ -135,7 +169,23 @@ class _TopToastState extends State<_TopToast>
       right: 0,
       child: SafeArea(
         // Non-action toasts never eat taps; action toasts must be tappable.
-        child: hasAction ? content : IgnorePointer(child: content),
+        //
+        // Which is also why swipe-to-dismiss and hold-to-pause are fitted to
+        // the action variant ONLY. Giving them to a passive toast would mean
+        // the pill accepting pointers, and the whole point of the
+        // `IgnorePointer` is that a toast appearing over a button never steals
+        // the press meant for it. A passive toast leaves on its own anyway.
+        child:
+            hasAction
+                ? Listener(
+                  onPointerDown: _holdFor,
+                  onPointerUp: _resumeAfter,
+                  child: GestureDetector(
+                    onVerticalDragEnd: _onDragEnd,
+                    child: content,
+                  ),
+                )
+                : IgnorePointer(child: content),
       ),
     );
   }

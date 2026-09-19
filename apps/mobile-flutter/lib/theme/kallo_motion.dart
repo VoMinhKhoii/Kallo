@@ -62,6 +62,14 @@ abstract final class KalloMotion {
 
   /// Between one item of a staggered entrance and the next.
   static const Duration stagger = Duration(milliseconds: 50);
+
+  /// A banner arriving at or leaving the top edge — [TopToast].
+  ///
+  /// Deliberately between [quick] and [emphasis]: a banner is smaller than a
+  /// panel and travels a shorter distance, so [entrance]'s 350 reads as slow
+  /// on it. The number is the one the toast already used; naming it is what
+  /// stops the next toast-shaped surface re-deciding from scratch.
+  static const Duration banner = Duration(milliseconds: 260);
 }
 
 /// The curves those durations run on. A separate class so a duration and a
