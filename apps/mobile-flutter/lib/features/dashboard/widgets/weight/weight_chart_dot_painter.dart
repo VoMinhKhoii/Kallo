@@ -1,8 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-/// The most-recent-weight dot: a faint accent halo behind a white-ringed accent
-/// dot (mirrors the web chart's emphasized "today" point).
+import '../../../../theme/calm_tokens.dart';
+
+/// The most-recent-weight dot: a faint accent halo behind an accent dot ringed
+/// in the card it sits on (mirrors the web chart's emphasized "today" point).
 class TodayDotPainter extends FlDotPainter {
   const TodayDotPainter({required this.color});
 
@@ -15,12 +17,12 @@ class TodayDotPainter extends FlDotPainter {
       9,
       Paint()..color = color.withValues(alpha: 0.18),
     );
-    canvas.drawCircle(offset, 4.5, Paint()..color = color);
+    canvas.drawCircle(offset, 5, Paint()..color = color);
     canvas.drawCircle(
       offset,
-      4.5,
+      5,
       Paint()
-        ..color = Colors.white
+        ..color = kCardSurface
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );

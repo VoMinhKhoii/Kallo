@@ -2,7 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart_canvas.dart';
 
 import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart';
@@ -66,7 +68,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('with nothing logged the card is ONLY the empty state', (
+  testWidgets('with nothing logged the card is the empty PLOT, and no hero', (
     tester,
   ) async {
     await tester.pumpWidget(_app(_summary(weights: const [])));
@@ -76,6 +78,13 @@ void main() {
       find.text('Log your first weight to start tracking your trend.'),
       findsOneWidget,
     );
+    // The frame still draws — an empty chart reads as "nothing logged yet",
+    // where a bare sentence read as a component that failed to render.
+    expect(find.byType(WeightChartCanvas), findsOneWidget);
+    expect(find.byType(LineChart), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Now'), findsOneWidget);
+
     expect(
       find.text('65.9'),
       findsNothing,
