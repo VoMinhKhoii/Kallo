@@ -932,7 +932,7 @@
       "feature1Title": "Vietnamese-first ingredient matching",
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
       "feature2Title": "Context-aware estimation",
-      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
+      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or your usual rice portion.",
       "feature3Title": "Useful uncertainty, not fake certainty",
       "feature3Text": "Returns bounded estimates so you can make better decisions without pretending the data is perfect.",
       "profile": {

@@ -33,11 +33,21 @@ deployment at once. Nothing blocks one — this is a judgement call, not a gate:
 
 - prefer append-only migrations for normal feature work; they are always safe
 - a `DROP TABLE`, `DROP COLUMN`, `RENAME COLUMN` or `ALTER COLUMN TYPE` is
-  allowed, but **ship the application code that stops using the column first**.
-  Any still-running deployment that still reads or writes it starts erroring the
-  moment the migration is applied.
-- when that ordering is not practical, add the new shape first, migrate the
-  code, and defer the cleanup to a later maintenance pass
+  allowed, but **it needs its own PR, merged only after the release that
+  stopped using the column has been deployed.** A single PR carrying both the
+  code change and the drop cannot work: `cloud-run-prod.yml` runs *Apply
+  pending migrations to prod DB* well before *Promote candidate after smoke
+  pass*, so the old revision is still serving while the column disappears —
+  and Drizzle's `db.select()` expands to an explicit column list, so every
+  read of that table errors until the promote lands (indefinitely, if a step
+  in between fails).
+- so the sequence is: PR 1 stops reading and writing the column (leave it in
+  `schema.ts` marked deprecated so no migration is generated) → deploy → PR 2
+  drops it → deploy. Reversing that order is a production outage, not a
+  style preference.
+- the same reasoning is why additive migrations must go the *other* way: a new
+  column has to exist before the revision that uses it is promoted, which is
+  exactly what the current step order gives you.
 
 If shared staging gets into a bad state, recover it with the manual
 `Reset Staging Database` GitHub Actions workflow. That reset replays the current
