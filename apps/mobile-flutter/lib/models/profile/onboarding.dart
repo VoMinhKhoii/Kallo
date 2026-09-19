@@ -36,7 +36,6 @@ enum OilUsage { minimal, normal, heavy }
 
 enum RicePortion { small, medium, large }
 
-
 enum ProteinPortion { small, medium, large }
 
 enum BrothConsumption { leaveIt, some, finishIt }
@@ -76,7 +75,6 @@ OilUsage? tryParseOilUsage(String? s) => _byNameOrNull(OilUsage.values, s);
 
 RicePortion? tryParseRicePortion(String? s) =>
     _byNameOrNull(RicePortion.values, s);
-
 
 ProteinPortion? tryParseProteinPortion(String? s) =>
     _byNameOrNull(ProteinPortion.values, s);
