@@ -7,7 +7,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../../../theme/kallo_motion.dart';
@@ -92,8 +91,14 @@ class DayPagerState extends State<DayPager> {
           clipBehavior: Clip.none,
           controller: widget.controller,
           itemCount: kDayPageBase + 1,
+          // No haptic here. `DashboardContent._onPageChanged` — the one thing
+          // this callback ever reaches — already fires `selectionClick()`, and
+          // adding a second at this layer made every swipe tick twice. The
+          // tick belongs where the SELECTION is owned, not where the page
+          // index happens to change: a `WeekDayCell` tap drives this pager
+          // programmatically, so a haptic here would have fired for a gesture
+          // that already ticked somewhere else.
           onPageChanged: (p) {
-            HapticFeedback.selectionClick();
             setState(() => _active = p);
             widget.onPageChanged(p);
           },

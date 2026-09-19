@@ -51,15 +51,35 @@ class KalloSwitch extends StatelessWidget {
     // the Cupertino widget directly gives up that padding, so the floor is
     // restored here rather than silently lost. The constraint is on the TARGET,
     // not the control, so the switch itself is unchanged.
-    final switchWidget = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: KalloIcons.hit),
-      child: Center(
-        widthFactor: 1,
-        heightFactor: 1,
-        child: CupertinoSwitch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: KalloColors.btn,
+    //
+    // The `GestureDetector` is the half that was missing: `ConstrainedBox` and
+    // `Center` lay out to 44 but neither claims a hit, so a finger landing in
+    // the 2.5pt band above or below the track fell straight through them —
+    // and the one production caller is a `ListRow` with no row-level `onTap`,
+    // so nothing beneath caught it either. The floor was 44pt on paper and
+    // 39pt under the thumb. `opaque` makes the whole box answer; the tap is
+    // forwarded by hand because the switch cannot hear a press outside itself.
+    //
+    // A tap that lands ON the switch is not doubled: both recognisers enter
+    // the arena, hit-test entries are ordered deepest-first, and the sweep
+    // awards the pointer to the first member — the switch — leaving this one
+    // cancelled. Semantics are excluded for the same reason the label wraps
+    // the whole thing: `CupertinoSwitch` already publishes the toggle action,
+    // and a second one would be announced as a separate button.
+    final switchWidget = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: onChanged == null ? null : () => onChanged!(!value),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+        child: Center(
+          widthFactor: 1,
+          heightFactor: 1,
+          child: CupertinoSwitch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: KalloColors.btn,
+          ),
         ),
       ),
     );

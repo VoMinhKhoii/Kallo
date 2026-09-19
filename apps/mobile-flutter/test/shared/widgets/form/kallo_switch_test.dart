@@ -82,6 +82,74 @@ void main() {
     expect(tester.getSize(find.byType(CupertinoSwitch)).height, lessThan(44));
   });
 
+  testWidgets('a tap in the 44pt band toggles, and only once', (tester) async {
+    // The other half of the floor, which the size assertion above did NOT
+    // cover: `ConstrainedBox` and `Center` lay out to 44 but claim no hits, so
+    // before the GestureDetector a finger in the 2.5pt band above the track
+    // fell through to nothing. Tapping 1pt from the top edge is inside the
+    // target and outside the 39pt switch — the exact band that was dead.
+    var toggles = 0;
+    bool? last;
+    await tester.pumpWidget(
+      host(
+        child: KalloSwitch(
+          value: false,
+          onChanged: (v) {
+            toggles++;
+            last = v;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final target =
+        find
+            .ancestor(
+              of: find.byType(CupertinoSwitch),
+              matching: find.byType(ConstrainedBox),
+            )
+            .first;
+    final rect = tester.getRect(target);
+    expect(
+      rect.height - tester.getSize(find.byType(CupertinoSwitch)).height,
+      greaterThan(2),
+      reason: 'there has to BE a band for this test to mean anything',
+    );
+
+    await tester.tap(target, warnIfMissed: false);
+    await tester.tapAt(Offset(rect.center.dx, rect.top + 1));
+    await tester.pumpAndSettle();
+
+    // Two taps, two toggles — not three or four. A tap that lands on the
+    // switch must be claimed by the switch alone: both recognisers enter the
+    // arena and the deeper one wins the sweep, so this detector is cancelled
+    // rather than firing alongside it.
+    expect(toggles, 2);
+    expect(last, isTrue);
+  });
+
+  testWidgets('a disabled switch ignores the band too', (tester) async {
+    // `onTap: null` rather than a forwarded call that dereferences a null
+    // callback — the band must be inert, not crash.
+    await tester.pumpWidget(
+      host(child: const KalloSwitch(value: true, onChanged: null)),
+    );
+    await tester.pumpAndSettle();
+
+    final rect = tester.getRect(
+      find
+          .ancestor(
+            of: find.byType(CupertinoSwitch),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
+    );
+    await tester.tapAt(Offset(rect.center.dx, rect.top + 1));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('semanticLabel names the control', (tester) async {
     await tester.pumpWidget(
       host(

@@ -66,10 +66,16 @@ class _SelectRowState extends State<SelectRow> {
 
   @override
   Widget build(BuildContext context) {
-    final Color? bg =
-        widget.selected
-            ? widget.selectedColor
-            : (_pressed ? KalloColors.track : null);
+    // A supplied selected wash wins; otherwise the row still answers the
+    // finger. `_DropdownRow` washed on press REGARDLESS of selection, because
+    // its selection is a check glyph and not a fill — and collapsing the two
+    // rows quietly dropped that: `selected ? selectedColor : ...` returned null
+    // for the currently-selected option, which passes no wash, so pressing or
+    // holding the option you already have gave no feedback at all. `_CountryRow`
+    // is unchanged by this: it always supplies a wash, and that wash still wins
+    // over the press, exactly as before.
+    final Color? selectedWash = widget.selected ? widget.selectedColor : null;
+    final Color? bg = selectedWash ?? (_pressed ? KalloColors.track : null);
 
     return Semantics(
       button: true,
