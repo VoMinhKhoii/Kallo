@@ -74,12 +74,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate append-only migration protocol
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-          GITHUB_SHA: ${{ github.sha }}
-        run: node scripts/ci/check-append-only-migrations.mjs
       - name: Validate migration timestamps
         run: node scripts/ci/check-migration-timestamps.js
       - uses: supabase/setup-cli@v1

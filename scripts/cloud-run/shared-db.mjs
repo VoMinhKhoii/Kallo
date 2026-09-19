@@ -352,9 +352,9 @@ export function selectMigrationFilesForVersions(versions, migrationsDir) {
 
 // The migration files present locally but not yet applied to the target DB —
 // i.e. exactly what `supabase db push` will apply. Returned as repo-relative
-// paths so the append-only validator can be scoped to just these files; the
-// historical, already-applied migrations are immutable and must not be
-// re-flagged at deploy time.
+// paths so a caller can scope per-file checks to just these; the historical,
+// already-applied migrations are immutable and must not be re-flagged at
+// deploy time.
 function listPendingMigrationFiles(databaseUrl, migrationsDir) {
   const localVersions = readLocalMigrationVersions(migrationsDir);
   const appliedVersions = runPsqlMigrationsCheck(databaseUrl);
@@ -412,7 +412,7 @@ function main() {
     const migrationsDir = getRequiredFlag('--migrations-dir');
     const files = listPendingMigrationFiles(databaseUrl, migrationsDir);
     // Emit one path per line (nothing when there are no pending migrations) so
-    // a workflow can `mapfile` the result and scope the append-only check.
+    // a workflow can `mapfile` the result and scope a per-file check.
     if (files.length > 0) {
       console.log(files.join('\n'));
     }

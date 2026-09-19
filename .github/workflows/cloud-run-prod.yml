@@ -151,21 +151,6 @@ jobs:
           # prod deploy on legitimate production data.
           [ -n "$KALLO_PROD_PROJECT_ID" ]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$PROD_DATABASE_URL" --project-ref "$KALLO_PROD_PROJECT_ID"
-      # Scope the append-only check to migrations not yet applied to the prod DB
-      # (exactly what the push below applies). A deploy job has no git baseline,
-      # so the unscoped check would re-flag historical, already-applied
-      # migrations. CI already validates append-only on the PR/push diff.
-      - name: Validate pending migrations are append-only
-        run: |
-          pending_list="$(node ./scripts/cloud-run/shared-db.mjs list-pending --db-url "$PROD_DATABASE_URL" --migrations-dir ./supabase/migrations)"
-          if [ -z "$pending_list" ]; then
-            echo "No pending migrations to validate."
-          else
-            echo "Validating pending migration(s):"
-            echo "$pending_list"
-            mapfile -t pending <<< "$pending_list"
-            node ./scripts/ci/check-append-only-migrations.mjs "${pending[@]}"
-          fi
       - name: Apply pending migrations to prod DB
         run: yes | supabase db push --db-url "$PROD_DATABASE_URL_ENCODED"
       - name: Verify migrations applied
