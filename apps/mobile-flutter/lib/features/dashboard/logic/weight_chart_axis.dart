@@ -55,7 +55,43 @@ import '../../../theme/text_metrics.dart';
   return (min: min, max: max, step: step);
 }
 
-/// Short numeric x tick labels keyed by point index — e.g. `6/7` … `Now`.
+/// `YYYY-MM-DD` at UTC midnight, so a day difference is never 23 or 25 hours.
+DateTime? _utcDay(String iso) {
+  final parsed = DateTime.tryParse(iso);
+  return parsed == null
+      ? null
+      : DateTime.utc(parsed.year, parsed.month, parsed.day);
+}
+
+/// Calendar-day offsets of each logged date from the first one — the chart's x
+/// values.
+///
+/// Plotting by offset rather than by list position is what makes a gap in
+/// logging read as a gap: three readings on the 1st, the 12th and the 23rd sit
+/// where they fall instead of being spread evenly across the plot. Falls back
+/// to positions when the server sent no dates (see
+/// `WeightSummaryData.weightDates`), which is the older behaviour rather than
+/// no chart.
+List<int> weightDayOffsets(List<String> dates, int count) {
+  final positions = [for (var i = 0; i < count; i++) i];
+  if (dates.length != count || count == 0) return positions;
+  final days = [for (final iso in dates) _utcDay(iso)];
+  // All or nothing, and only for a series that actually runs forwards.
+  // Falling back per-element would mix day offsets with list positions in one
+  // list; an out-of-order series gives negative offsets. Either way the x
+  // values stop being monotonic, which draws a silently wrong chart — the
+  // newest reading outside the plot, an older one labelled "Now" — rather than
+  // a degraded one. Matches the web `toDayOffsets`.
+  if (days.any((day) => day == null)) return positions;
+  final first = days.first!;
+  final offsets = [for (final day in days) day!.difference(first).inDays];
+  for (var i = 1; i < offsets.length; i++) {
+    if (offsets[i] < offsets[i - 1]) return positions;
+  }
+  return offsets;
+}
+
+/// Short numeric x tick labels keyed by DAY OFFSET — e.g. `6/7` … `Now`.
 ///
 /// [dates] are the `YYYY-MM-DD` strings parallel to the plotted weights; when
 /// they are missing (older server, see `WeightSummaryData.weightDates`) the
@@ -64,6 +100,7 @@ import '../../../theme/text_metrics.dart';
 /// fits [plotWidth] at every remaining tick.
 Map<int, String> weightXTickLabels({
   required int pointCount,
+  required List<int> offsets,
   required List<String> dates,
   required String locale,
   required double plotWidth,
@@ -81,18 +118,26 @@ Map<int, String> weightXTickLabels({
   // in every language.
   final format = DateFormat('d/M', locale);
 
+  final span = offsets[lastIndex];
+  final firstDay = hasDates ? _utcDay(dates.first) : null;
+
+  // Ticks are spaced evenly across the DAY SPAN, not across the list of
+  // readings — which is exactly what [fits] assumes when it divides the plot
+  // by the tick count. Keying them to the readings instead put four weigh-ins
+  // on the 28th, 29th, 30th and the 19th under three labels sharing 23px.
+  // A tick therefore names a date, which may be a day with no reading; the
+  // dots carry where the readings are. Mirrors the web `buildXTicks`.
   Map<int, String> labelsFor(int wanted) {
     final labels = <int, String>{};
     for (var i = 0; i < wanted; i++) {
-      final index = (lastIndex * i / (wanted - 1)).round();
-      if (labels.containsKey(index)) continue;
-      if (index == lastIndex) {
-        labels[index] = tr('dashboard.now');
-      } else if (!hasDates) {
-        if (index == 0) labels[index] = tr('dashboard.start');
+      final key = (span * i / (wanted - 1)).round();
+      if (labels.containsKey(key)) continue;
+      if (key == span) {
+        labels[key] = tr('dashboard.now');
+      } else if (firstDay == null) {
+        if (key == 0) labels[key] = tr('dashboard.start');
       } else {
-        final parsed = DateTime.tryParse(dates[index]);
-        if (parsed != null) labels[index] = format.format(parsed);
+        labels[key] = format.format(firstDay.add(Duration(days: key)));
       }
     }
     return labels;
@@ -114,7 +159,7 @@ Map<int, String> weightXTickLabels({
   if (pointCount == 1) {
     final parsed = hasDates ? DateTime.tryParse(dates[0]) : null;
     final labels = {
-      0: parsed != null ? format.format(parsed) : tr('dashboard.now'),
+      offsets[0]: parsed != null ? format.format(parsed) : tr('dashboard.now'),
     };
     return fits(labels) ? labels : const {};
   }
@@ -122,7 +167,7 @@ Map<int, String> weightXTickLabels({
   // Without dates there is nothing to tick but the two ends.
   if (!hasDates) {
     final ends = labelsFor(2);
-    return ends.length >= 2 ? ends : {lastIndex: tr('dashboard.now')};
+    return ends.length >= 2 ? ends : {span: tr('dashboard.now')};
   }
 
   // Aim for 5, thin only when the labels genuinely will not fit.
@@ -131,7 +176,7 @@ Map<int, String> weightXTickLabels({
     if (labels.length < 2) continue;
     if (fits(labels) || labels.length == 2) return labels;
   }
-  return {lastIndex: tr('dashboard.now')};
+  return {span: tr('dashboard.now')};
 }
 
 /// Between a Y bound label and the plot it scales — the same breathing room

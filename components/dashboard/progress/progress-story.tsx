@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { WeightChart } from '@/components/dashboard/progress/weight-chart';
+import { WeightChart } from '@/components/dashboard/progress/weight-chart/weight-chart';
 import { WeightLogPopover } from '@/components/dashboard/progress/weight-log-popover';
 import type { TimeRange } from '@/lib/core/types/dashboard';
 import type { WeightSummaryData } from '@/lib/core/types/weight';
@@ -66,10 +66,12 @@ export function ProgressStory({
       <div className="h-[220px] shrink-0 xl:h-auto xl:min-h-0 xl:flex-1">
         <WeightChart
           data={weightSummary.weights}
+          weightDates={weightSummary.weightDates}
           range={range}
           projectedEndWeight={weightSummary.projectedEndWeight}
           canProject={weightSummary.canProject}
           periodElapsedDays={weightSummary.periodElapsedDays}
+          weightPlaceholder={weightSummary.weightPlaceholder}
         />
       </div>
     </section>

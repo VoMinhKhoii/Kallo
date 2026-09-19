@@ -83,22 +83,22 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final kg = tr('dashboard.units.kg');
 
-    // Nothing LOGGED yet: the empty state and nothing else.
+    // Nothing LOGGED yet: the empty chart and its prompt, but NO hero.
     //
     // `currentWeight` is non-null from the onboarding profile even when the
     // user has never weighed in, so the card used to headline "65.9 kg" over
     // the words "Log your first weight to start tracking your trend" — a
     // number and a denial that there is one, on the same card. The profile
-    // weight still prefills the log sheet; it just isn't a reading.
+    // weight still prefills the log sheet and now also centres the empty
+    // plot's band; it just isn't a reading, so it is never the hero.
     if (data.weights.isEmpty) {
-      return Container(
-        constraints: const BoxConstraints(minHeight: 200),
-        alignment: Alignment.center,
-        child: Text(
-          tr('dashboard.noWeightData'),
-          textAlign: TextAlign.center,
-          style: dashMeta(color: kInkMuted),
-        ),
+      return WeightChartCanvas(
+        weights: const [],
+        weightDates: const [],
+        periodElapsedDays: null,
+        projectedEndWeight: 0,
+        canProject: false,
+        emptyAnchor: data.weightPlaceholder,
       );
     }
 

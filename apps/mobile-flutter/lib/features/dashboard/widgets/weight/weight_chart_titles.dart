@@ -19,8 +19,9 @@ import '../../logic/weight_chart_axis.dart';
 
 /// The chart's titles: the date row, and three suppressed sides.
 ///
-/// [labels] is keyed by point index (from `weightXTickLabels`); an index with
-/// no entry draws nothing rather than an invented tick.
+/// [labels] is keyed by DAY OFFSET from the first reading (from
+/// `weightXTickLabels`), matching the chart's x values; an offset with no
+/// entry draws nothing rather than an invented tick.
 FlTitlesData weightChartTitles({
   required Map<int, String> labels,
   required TextStyle style,
