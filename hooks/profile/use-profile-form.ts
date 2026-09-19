@@ -111,7 +111,6 @@ export function useProfileForm(profile: ProfileInput) {
           preferredLocale: locale,
           oilUsage: values.oilUsage,
           defaultRicePortion: values.defaultRicePortion,
-          sugarBraised: values.sugarBraised,
           defaultProteinPortion: values.defaultProteinPortion,
           brothConsumption: values.brothConsumption,
         });

@@ -69,7 +69,6 @@ export async function saveOnboardingScreen(
   } else if (step === 3 && hasData) {
     updateObj.oilUsage = data.oilUsage;
     updateObj.defaultRicePortion = data.defaultRicePortion;
-    updateObj.sugarBraised = data.sugarBraised;
     updateObj.defaultProteinPortion = data.defaultProteinPortion;
     updateObj.brothConsumption = data.brothConsumption;
   }
@@ -118,7 +117,6 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     preferredLocale: (data.preferredLocale as string) ?? 'en',
     oilUsage: data.oilUsage as string,
     defaultRicePortion: data.defaultRicePortion as string,
-    sugarBraised: data.sugarBraised as string,
     defaultProteinPortion: data.defaultProteinPortion as string,
     brothConsumption: data.brothConsumption as string,
   };

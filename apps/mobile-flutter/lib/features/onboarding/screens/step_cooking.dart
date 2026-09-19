@@ -22,7 +22,7 @@ typedef CookingHabit =
       CookingHabits Function(CookingHabits, Enum) write,
     });
 
-/// Screen 5 — "Your cooking habits": five strips, every one opening on its
+/// Screen 5 — "Your cooking habits": four strips, every one opening on its
 /// middle answer. It is a calibration, not an interview.
 class StepCooking extends StatelessWidget {
   const StepCooking({
@@ -56,17 +56,6 @@ class StepCooking extends StatelessWidget {
       ],
       read: (c) => c.defaultRicePortion,
       write: (c, v) => c.copyWith(defaultRicePortion: v as RicePortion),
-    ),
-    (
-      label: 'onboarding.cooking.stepLabels.sugar',
-      values: SugarBraised.values,
-      optionLabels: const [
-        'onboarding.cooking.sugarLow',
-        'onboarding.cooking.sugarMedium',
-        'onboarding.cooking.sugarHigh',
-      ],
-      read: (c) => c.sugarBraised,
-      write: (c, v) => c.copyWith(sugarBraised: v as SugarBraised),
     ),
     (
       label: 'onboarding.cooking.stepLabels.protein',

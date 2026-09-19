@@ -26,7 +26,6 @@ const _profile = ProfileRow({
   'deficitOverride': 300,
   'oilUsage': 'heavy',
   'defaultRicePortion': 'large',
-  'sugarBraised': 'low',
   'defaultProteinPortion': 'small',
   'brothConsumption': 'finish_it',
 });
@@ -51,7 +50,6 @@ const _draft = OnboardingDraft(
   step3: {
     'oilUsage': 'minimal',
     'defaultRicePortion': 'small',
-    'sugarBraised': 'high',
     'defaultProteinPortion': 'large',
     'brothConsumption': 'leave_it',
   },
@@ -103,7 +101,6 @@ void main() {
       expect(answers.cooking.toJson(), {
         'oilUsage': 'heavy',
         'defaultRicePortion': 'large',
-        'sugarBraised': 'low',
         'defaultProteinPortion': 'small',
         'brothConsumption': 'finish_it',
       });
@@ -151,7 +148,6 @@ void main() {
         expect(answers.cooking.toJson(), {
           'oilUsage': 'normal',
           'defaultRicePortion': 'medium',
-          'sugarBraised': 'medium',
           'defaultProteinPortion': 'medium',
           'brothConsumption': 'some',
         });
@@ -231,16 +227,16 @@ void main() {
   group('cooking', () {
     test('falls back field by field: profile, then draft, then the middle', () {
       const half = ProfileRow({'oilUsage': 'heavy'});
-      const draft = OnboardingDraft(step3: {'sugarBraised': 'high'});
+      const draft = OnboardingDraft(step3: {'defaultProteinPortion': 'small'});
       final cooking = _answers(profile: half, draft: draft).cooking;
 
       expect(cooking.oilUsage, OilUsage.heavy);
-      expect(cooking.sugarBraised, SugarBraised.high);
+      expect(cooking.defaultProteinPortion, ProteinPortion.small);
       expect(cooking.defaultRicePortion, RicePortion.medium);
       expect(
         cooking.toJson().keys,
-        hasLength(5),
-        reason: 'screen 5 opens pre-answered, so all five are always set',
+        hasLength(4),
+        reason: 'screen 5 opens pre-answered, so all four are always set',
       );
     });
   });

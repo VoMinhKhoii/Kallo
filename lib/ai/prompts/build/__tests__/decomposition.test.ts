@@ -11,7 +11,6 @@ const USER_CONTEXT: PromptPersonalizationContext = {
   countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
-    sugarBraised: 'high',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',

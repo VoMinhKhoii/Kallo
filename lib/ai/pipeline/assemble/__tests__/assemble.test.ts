@@ -15,7 +15,6 @@ const userContext: UserContext = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
   },

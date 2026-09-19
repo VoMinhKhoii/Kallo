@@ -697,10 +697,6 @@
       "riceMediumHint": "~1–1.5 bowls",
       "riceLarge": "Large",
       "riceLargeHint": "~2+ bowls",
-      "sugar": "Sugar in braised dishes",
-      "sugarLow": "Low",
-      "sugarMedium": "Medium",
-      "sugarHigh": "High",
       "proteinPortion": "Default protein portion",
       "proteinSmall": "Small",
       "proteinSmallHint": "Smaller than your palm, e.g. ~2-3 eggs",
@@ -718,7 +714,6 @@
       "stepLabels": {
         "oil": "Oil",
         "rice": "Rice, noodles or bread per meal",
-        "sugar": "Sugar in braises",
         "protein": "Protein per meal",
         "broth": "Broth"
       }
@@ -1768,7 +1763,7 @@
     "profilePanel": {
       "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
       "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
+      "cookingSubtitle": "Oil usage, rice, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics.",
       "retry": "Try again",

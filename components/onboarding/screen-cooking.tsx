@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,7 +28,6 @@ function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
   return (
     !values.oilUsage &&
     !values.defaultRicePortion &&
-    !values.sugarBraised &&
     !values.defaultProteinPortion &&
     !values.brothConsumption
   );
@@ -186,36 +184,6 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                         label: t('cooking.riceLarge'),
                         hint: t('cooking.riceLargeHint'),
                       },
-                    ]}
-                    value={field.value}
-                    onChange={(v) => {
-                      field.onChange(v);
-                      reportChange();
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Sugar in braised */}
-          <FormField
-            control={form.control}
-            name="sugarBraised"
-            render={({ field }) => (
-              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[13px] text-kallo-text">
-                  {t('cooking.sugar')}
-                </FormLabel>
-                <FormDescription className="-mt-1 mb-3 text-[#8B8682] text-[12px] leading-relaxed">
-                  {t('cooking.sugarHint')}
-                </FormDescription>
-                <FormControl>
-                  <OptionStrip
-                    options={[
-                      { value: 'low', label: t('cooking.sugarLow') },
-                      { value: 'medium', label: t('cooking.sugarMedium') },
-                      { value: 'high', label: t('cooking.sugarHigh') },
                     ]}
                     value={field.value}
                     onChange={(v) => {

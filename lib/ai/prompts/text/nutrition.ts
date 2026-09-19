@@ -80,7 +80,6 @@ export function compressedNutritionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  sugar_braised: ${cookingHabits.sugarBraised}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
@@ -180,7 +179,6 @@ export function nutritionPromptText(parts: NutritionPromptParts): string {
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  sugar_braised: ${cookingHabits.sugarBraised}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}

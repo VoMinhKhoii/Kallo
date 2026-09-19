@@ -62,7 +62,6 @@ export const userProfiles = pgTable(
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
     defaultRicePortion: text('default_rice_portion'),
-    sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
     brothConsumption: text('broth_consumption'),
 
@@ -115,10 +114,6 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_default_rice_portion_check',
       sql`${table.defaultRicePortion} IN ('small', 'medium', 'large')`
-    ),
-    check(
-      'user_profiles_sugar_braised_check',
-      sql`${table.sugarBraised} IN ('low', 'medium', 'high')`
     ),
     check(
       'user_profiles_carb_split_check',

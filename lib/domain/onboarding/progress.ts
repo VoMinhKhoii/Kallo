@@ -18,7 +18,6 @@ const PERSONALIZATION_FIELDS = [
   'countryOfResidence',
   'oilUsage',
   'defaultRicePortion',
-  'sugarBraised',
   'defaultProteinPortion',
   'brothConsumption',
 ];

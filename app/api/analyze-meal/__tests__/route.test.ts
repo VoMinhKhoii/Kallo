@@ -268,7 +268,6 @@ const mockProfile = {
   countryOfResidence: 'Vietnam',
   oilUsage: 'normal',
   defaultRicePortion: 'medium',
-  sugarBraised: 'medium',
   defaultProteinPortion: 'medium',
   brothConsumption: 'some',
   preferredLocale: 'en',
@@ -333,7 +332,6 @@ describe('POST /api/analyze-meal', () => {
       cookingHabits: {
         oilUsage: profile.oilUsage,
         defaultRicePortion: profile.defaultRicePortion,
-        sugarBraised: profile.sugarBraised,
         defaultProteinPortion: profile.defaultProteinPortion,
         brothConsumption: profile.brothConsumption,
       },

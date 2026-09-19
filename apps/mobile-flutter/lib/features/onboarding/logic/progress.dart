@@ -27,7 +27,6 @@ const List<String> _personalizationFields = [
   'countryOfResidence',
   'oilUsage',
   'defaultRicePortion',
-  'sugarBraised',
   'defaultProteinPortion',
   'brothConsumption',
 ];

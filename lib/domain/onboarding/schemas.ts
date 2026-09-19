@@ -19,7 +19,6 @@ export const carbSplitSchema = z.enum([
 ]);
 export const oilUsageSchema = z.enum(['minimal', 'normal', 'heavy']);
 export const ricePortionSchema = z.enum(['small', 'medium', 'large']);
-export const sugarBraisedSchema = z.enum(['low', 'medium', 'high']);
 export const proteinPortionSchema = z.enum(['small', 'medium', 'large']);
 export const brothConsumptionSchema = z.enum(['leave_it', 'some', 'finish_it']);
 
@@ -33,7 +32,6 @@ export const GOAL_VALUES = goalEnumSchema.options;
 export const CARB_SPLIT_VALUES = carbSplitSchema.options;
 export const OIL_USAGE_VALUES = oilUsageSchema.options;
 export const RICE_PORTION_VALUES = ricePortionSchema.options;
-export const SUGAR_BRAISED_VALUES = sugarBraisedSchema.options;
 export const PROTEIN_PORTION_VALUES = proteinPortionSchema.options;
 export const BROTH_CONSUMPTION_VALUES = brothConsumptionSchema.options;
 
@@ -141,7 +139,6 @@ export const countrySchema = z.object({
 export const cookingHabitsSchema = z.object({
   oilUsage: oilUsageSchema,
   defaultRicePortion: ricePortionSchema,
-  sugarBraised: sugarBraisedSchema,
   defaultProteinPortion: proteinPortionSchema,
   brothConsumption: brothConsumptionSchema,
 });

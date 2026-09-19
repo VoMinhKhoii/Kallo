@@ -491,6 +491,13 @@
       "when": 1789621811822,
       "tag": "20260917051011_add_meal_share_invites_copy_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1789782911386,
+      "tag": "20260919015511_drop_user_profiles_sugar_braised",
+      "breakpoints": true
     }
   ]
 }

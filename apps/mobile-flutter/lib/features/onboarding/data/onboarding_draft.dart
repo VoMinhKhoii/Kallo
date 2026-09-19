@@ -145,7 +145,6 @@ const Map<String, Object? Function(String?)> _enumFields = {
   'carbSplit': tryParseCarbSplit,
   'oilUsage': tryParseOilUsage,
   'defaultRicePortion': tryParseRicePortion,
-  'sugarBraised': tryParseSugarBraised,
   'defaultProteinPortion': tryParseProteinPortion,
   'brothConsumption': tryParseBrothConsumption,
 };

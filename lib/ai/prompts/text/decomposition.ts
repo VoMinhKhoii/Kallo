@@ -80,7 +80,6 @@ export function compressedDecompositionPromptText(
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
-  sugar_braised: ${cookingHabits.sugarBraised}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
 }
@@ -245,7 +244,6 @@ export function decompositionPromptText(
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
-  sugar_braised: ${cookingHabits.sugarBraised}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>
 

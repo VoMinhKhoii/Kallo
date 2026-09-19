@@ -36,7 +36,6 @@ enum OilUsage { minimal, normal, heavy }
 
 enum RicePortion { small, medium, large }
 
-enum SugarBraised { low, medium, high }
 
 enum ProteinPortion { small, medium, large }
 
@@ -78,8 +77,6 @@ OilUsage? tryParseOilUsage(String? s) => _byNameOrNull(OilUsage.values, s);
 RicePortion? tryParseRicePortion(String? s) =>
     _byNameOrNull(RicePortion.values, s);
 
-SugarBraised? tryParseSugarBraised(String? s) =>
-    _byNameOrNull(SugarBraised.values, s);
 
 ProteinPortion? tryParseProteinPortion(String? s) =>
     _byNameOrNull(ProteinPortion.values, s);
@@ -157,14 +154,12 @@ class BodyMetrics {
 class CookingHabits {
   final OilUsage oilUsage;
   final RicePortion defaultRicePortion;
-  final SugarBraised sugarBraised;
   final ProteinPortion defaultProteinPortion;
   final BrothConsumption brothConsumption;
 
   const CookingHabits({
     required this.oilUsage,
     required this.defaultRicePortion,
-    required this.sugarBraised,
     required this.defaultProteinPortion,
     required this.brothConsumption,
   });
@@ -174,7 +169,6 @@ class CookingHabits {
     defaultRicePortion: RicePortion.values.byName(
       json['defaultRicePortion'] as String,
     ),
-    sugarBraised: SugarBraised.values.byName(json['sugarBraised'] as String),
     defaultProteinPortion: ProteinPortion.values.byName(
       json['defaultProteinPortion'] as String,
     ),
@@ -186,7 +180,6 @@ class CookingHabits {
   Map<String, dynamic> toJson() => {
     'oilUsage': oilUsage.name,
     'defaultRicePortion': defaultRicePortion.name,
-    'sugarBraised': sugarBraised.name,
     'defaultProteinPortion': defaultProteinPortion.name,
     'brothConsumption': brothConsumptionToString(brothConsumption),
   };
@@ -194,13 +187,11 @@ class CookingHabits {
   CookingHabits copyWith({
     OilUsage? oilUsage,
     RicePortion? defaultRicePortion,
-    SugarBraised? sugarBraised,
     ProteinPortion? defaultProteinPortion,
     BrothConsumption? brothConsumption,
   }) => CookingHabits(
     oilUsage: oilUsage ?? this.oilUsage,
     defaultRicePortion: defaultRicePortion ?? this.defaultRicePortion,
-    sugarBraised: sugarBraised ?? this.sugarBraised,
     defaultProteinPortion: defaultProteinPortion ?? this.defaultProteinPortion,
     brothConsumption: brothConsumption ?? this.brothConsumption,
   );
