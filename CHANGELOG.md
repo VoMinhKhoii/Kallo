@@ -1,5 +1,76 @@
 # Changelog
 
+## [1.16.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.15.0...v1.16.0) (2026-09-19)
+
+
+### Features
+
+* **db:** meal_share_invites.copy_factor ([656bf4d](https://github.com/VoMinhKhoii/Kallo/commit/656bf4de8bab4524cdbdc09f6bdb4d40da793014))
+* **mobile:** portion battery ([610ebc2](https://github.com/VoMinhKhoii/Kallo/commit/610ebc2eaecfbd03b246f177f3eebe8074fbc5bf))
+* **mobile:** rewrite the share sheet around the portion battery ([f4fdc1f](https://github.com/VoMinhKhoii/Kallo/commit/f4fdc1f3ec75521356b94f4fb95a2f8fc3f62f93))
+* **mobile:** split parts logic ([8baab2d](https://github.com/VoMinhKhoii/Kallo/commit/8baab2d881ec111c4522b329ea65b290369e2dab))
+* **mobile:** splits on the wire, and the undo mutation ([a01bc6c](https://github.com/VoMinhKhoii/Kallo/commit/a01bc6cc80eb99161495a73d7b9ce60fa81a3cf7))
+* **mobile:** Threads-shaped invite card, no status chips ([108e08d](https://github.com/VoMinhKhoii/Kallo/commit/108e08d271330c4d18e580445c8b91e3b4645d2c))
+* remove the sugar-in-braised-dishes cooking preference ([167d7b8](https://github.com/VoMinhKhoii/Kallo/commit/167d7b88974fe9f1dcf7ac0caf61d983fd3eae29))
+* remove the sugar-in-braised-dishes cooking preference ([b5c09a8](https://github.com/VoMinhKhoii/Kallo/commit/b5c09a88d560ffd0a790e4388f46afa5a1141f5d))
+* **social:** accept honours copy_factor ([044d71f](https://github.com/VoMinhKhoii/Kallo/commit/044d71f89361c4fc1484e3920a35365ef68dc587))
+* **social:** split parts maths ([777772e](https://github.com/VoMinhKhoii/Kallo/commit/777772e11efdeec81e548041b8d5f404eae79c52))
+* **social:** undo a meal share ([12a50ab](https://github.com/VoMinhKhoii/Kallo/commit/12a50abcc79a8a3c9fb8483a44eaf5e7f380bce5))
+* **social:** uneven meal splits ([8433ac1](https://github.com/VoMinhKhoii/Kallo/commit/8433ac1cafaa5bda469d436e38d3329a086d9efc))
+* **social:** uneven meal splits on the portion battery ([4ed1807](https://github.com/VoMinhKhoii/Kallo/commit/4ed180773a3d7233aa7602f736ddaad1ccdf1882))
+* **web:** share dialog and activity row on the portion battery ([e23d047](https://github.com/VoMinhKhoii/Kallo/commit/e23d0477ecb2700d09faea939f4b4caf82327e93))
+
+
+### Bug Fixes
+
+* defer the sugar_braised column drop to a follow-up deploy ([e9a8ab7](https://github.com/VoMinhKhoii/Kallo/commit/e9a8ab77a1e2ced749ed68cf60e6222aeb7ee478))
+* generate the copy_factor migration through Drizzle; restore mobile docs ([430cfc4](https://github.com/VoMinhKhoii/Kallo/commit/430cfc46ae1e362aac1306cb0053ad68dcb5df12))
+* **mobile,social:** the confirmation toast never rendered; scope undo's delete ([0bc8652](https://github.com/VoMinhKhoii/Kallo/commit/0bc865213f7c166fb82841020558e383ce79d5ab))
+* **mobile:** battery cells rendered at zero height; use the app's icon set ([565c8c8](https://github.com/VoMinhKhoii/Kallo/commit/565c8c879f2e109bd4303093349037e21a63db67))
+* **mobile:** format onboarding.dart after the sugar_braised removal ([5163ac1](https://github.com/VoMinhKhoii/Kallo/commit/5163ac1a7101b401bb80eb914e4145f00928d97b))
+* **mobile:** toast is a squircle, not a stadium ([11f7ba9](https://github.com/VoMinhKhoii/Kallo/commit/11f7ba9b62b4f85e1b6cb66f2673380ea4ac62a0))
+* **share:** keep the dialog inside its card, and put faces on the pins ([779ad72](https://github.com/VoMinhKhoii/Kallo/commit/779ad722e72830f97a245a1ccdbf79eb08d5518f))
+* **share:** keep the dialog inside its card, and put faces on the pins ([a5c5bec](https://github.com/VoMinhKhoii/Kallo/commit/a5c5bec709baa21663e97f641c7867b5c9c1afcf))
+* **share:** keep the pin's own glyph when a photo is loading or gone ([f9d324c](https://github.com/VoMinhKhoii/Kallo/commit/f9d324c0c01535b0d377eed439c8cf01b985a459))
+* **share:** whole-portion meter, removal, retry, and the add-friends CTA ([a1d8e8f](https://github.com/VoMinhKhoii/Kallo/commit/a1d8e8f2dbe59ecbbfa7f7d8b90331e70e3ac0ee))
+* **social:** close the undo bypass and the dead-ref undo ([740eb2f](https://github.com/VoMinhKhoii/Kallo/commit/740eb2f96ac26b27fcff2837c757b47215ab167f))
+* **social:** five correctness bugs codex found in adversarial review ([01e6c65](https://github.com/VoMinhKhoii/Kallo/commit/01e6c6523f77acc46bf8bcbfae923fd7504dac73))
+* **ui:** put dialog footer buttons side by side at every width ([ed3c723](https://github.com/VoMinhKhoii/Kallo/commit/ed3c7235da97be5ec658ef9fb608cc3ffccb0f28))
+
+
+### Refactor
+
+* **meals:** copyMealVerbatim takes any positive factor ([c36bfd8](https://github.com/VoMinhKhoii/Kallo/commit/c36bfd8b3b5334af65f23d0af96a413a6fd7e191))
+* **mobile:** KalloButton into its own file, per the size gate ([c8dc84d](https://github.com/VoMinhKhoii/Kallo/commit/c8dc84d8e3e00c0467045e79f291ae546e21219b))
+* **mobile:** shared portion primitives, and break the import cycle ([d2f9234](https://github.com/VoMinhKhoii/Kallo/commit/d2f9234e17fe3839e4e1e6e7fde2bd21ab725d47))
+* **mobile:** the invite action is a KalloButton, not a bespoke pill ([e17f7bd](https://github.com/VoMinhKhoii/Kallo/commit/e17f7bd44c51c5dd1c5c43ba19032b079170a825))
+* **social:** allocation is domain logic, not transaction orchestration ([9fd17fb](https://github.com/VoMinhKhoii/Kallo/commit/9fd17fb482d40879f1eafefb35258b0cca2fc896))
+* **social:** undo a meal share by not sending it yet ([ca6ddb9](https://github.com/VoMinhKhoii/Kallo/commit/ca6ddb97d7ffdaff1b9a2fdfb3ac02c3518c8ebd))
+* split the share surfaces into focused units ([5893912](https://github.com/VoMinhKhoii/Kallo/commit/589391267d47536a16bcf70eeb4e53d8f5b67f58))
+* **web:** hooks into hooks/, and stop repeating the folder name ([cfae28d](https://github.com/VoMinhKhoii/Kallo/commit/cfae28dcf55ed16214ce9c33623192003242713f))
+* **web:** partsAfterDrag belongs in the splits module, not a component ([310c4cd](https://github.com/VoMinhKhoii/Kallo/commit/310c4cd7c4df9f7fd9207a3b5c0e71105e82336f))
+* **web:** the draft owns the wire format, the submit hook coordinates ([d26cfb6](https://github.com/VoMinhKhoii/Kallo/commit/d26cfb6bf79795442cfe5708ac4461e09e539dc7))
+* **web:** use the primitives that already exist ([5ab2534](https://github.com/VoMinhKhoii/Kallo/commit/5ab2534a4f27f5417ffbb36df50939d00df236dc))
+
+
+### Documentation
+
+* **design:** bright seats, removable faces, add-only friend list ([5a75157](https://github.com/VoMinhKhoii/Kallo/commit/5a75157f9623118c7970b350239f2c8861dafcaf))
+* **design:** four native directions for the share sheet, plus chip removal ([8f6cd35](https://github.com/VoMinhKhoii/Kallo/commit/8f6cd35c43ce15b1283e9e8279022d3bf477bd6b))
+* **design:** full state matrix for the share flow, mobile and web ([caf896a](https://github.com/VoMinhKhoii/Kallo/commit/caf896a106018d1ff76ef143dc5b1cd771413a39))
+* **design:** grip rest/hold/drag states, and the surface-state adoption audit ([a2f2c77](https://github.com/VoMinhKhoii/Kallo/commit/a2f2c77c558315ccc6b46635d61c6511c02d3faa))
+* **design:** meal-share flow board — current vs proposed, mobile + web ([8e96147](https://github.com/VoMinhKhoii/Kallo/commit/8e9614709c3398343eeaa2b9218bc68a6c74f758))
+* **design:** native pass — pill notch, lifted pins, house error states, squircle audit ([13f121f](https://github.com/VoMinhKhoii/Kallo/commit/13f121fa438ad61fead7e3100d60bb03fc897800))
+* **design:** notched 20-part meter with per-person avatars, plus colour studies ([c8309ac](https://github.com/VoMinhKhoii/Kallo/commit/c8309ac9c92b6f792df2566cb23f19e5ca06772b))
+* **design:** six seats, pin faces, pill notches, renamed whole-portion tab ([877273b](https://github.com/VoMinhKhoii/Kallo/commit/877273b21d45f3a4147093efbb2febefb42e221a))
+* **design:** strip the sheet, adopt the app's real sheet header, add the tab morph ([6987544](https://github.com/VoMinhKhoii/Kallo/commit/69875442245bfee68c8e17cc78a6e5d1b26e86e3))
+* **design:** the portion control as a battery, four readings plus states ([bcf45a2](https://github.com/VoMinhKhoii/Kallo/commit/bcf45a205a0e087b02d399a570896a305e7b9089))
+* **design:** unit count and the four-friend case ([c190e22](https://github.com/VoMinhKhoii/Kallo/commit/c190e2282644c00d99b841f71477bc24065f0b8b))
+* drop the design boards, keep the spec and the renders ([1190577](https://github.com/VoMinhKhoii/Kallo/commit/11905778dbbf3d249e1a0f2cf23e7c3e73648260))
+* **plan:** meal share redesign implementation plan ([85d1f0f](https://github.com/VoMinhKhoii/Kallo/commit/85d1f0f8c78eba645e599701ce278287868dd76f))
+* **share:** record why a failed avatar &lt;img&gt; must be removed, not covered ([c88b9ac](https://github.com/VoMinhKhoii/Kallo/commit/c88b9ac6be1bd94a57d9169abe8d47b3d86ea09a))
+* **spec:** meal-share redesign and uneven splits ([0898b99](https://github.com/VoMinhKhoii/Kallo/commit/0898b99e25c9784883c2c861d6c664c984893fcc))
+
 ## [1.15.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.14.0...v1.15.0) (2026-09-13)
 
 
