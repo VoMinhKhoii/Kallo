@@ -43,7 +43,10 @@ class GroupedListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-      decoration: KalloShapes.card(color: kCardSurface),
+      decoration: ShapeDecoration(
+        color: kCardSurface,
+        shape: KalloShapes.squircle(KalloRadii.card),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

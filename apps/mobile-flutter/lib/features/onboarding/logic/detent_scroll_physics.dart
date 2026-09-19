@@ -10,6 +10,14 @@ import 'package:flutter/widgets.dart';
 /// pickers never do this — the deceleration curve itself terminates on the
 /// detent, so there is one motion, not two.
 ///
+/// Lives under `onboarding/logic/` rather than `shared/`, because `shared/`
+/// asks for a second consumer and this has one consumer — and its own doc,
+/// below, explains why a second is structurally EXCLUDED. Advertising it as
+/// cross-feature while documenting that nothing else may use it would be a
+/// promotion that can never be earned. It was also sitting under a
+/// `widgets/` path while being a `ScrollPhysics`, which quietly billed it
+/// against the 200-line widget budget instead of the 400-line source one.
+///
 /// Only `pace_ruler` gets these physics. The portion strip is NOT a detented
 /// control despite looking like one: its value is grams off the piecewise
 /// scale in `ruler_scale.dart` at 1 g resolution, which does not line up with
@@ -26,9 +34,16 @@ import 'package:flutter/widgets.dart';
 /// preserved — a hard fling still travels a long way — it just arrives
 /// somewhere meaningful.
 class DetentScrollPhysics extends ScrollPhysics {
-  const DetentScrollPhysics({required this.pitch, super.parent});
+  const DetentScrollPhysics({required this.pitch, super.parent})
+    : assert(pitch > 0, 'pitch is the distance between graduations');
 
-  /// Logical pixels between two graduations. Must be > 0.
+  /// Logical pixels between two graduations, measured from pixel 0.
+  ///
+  /// The detents are assumed to be multiples of this from the scrollable's
+  /// origin, and the last one to coincide with `maxScrollExtent` — true for
+  /// `pace_ruler`, whose content width IS `pitch * (count - 1)`. A consumer
+  /// whose extent is not a whole multiple would have its final landing
+  /// clamped to a non-graduation.
   final double pitch;
 
   /// The drag constant `BouncingScrollSimulation` uses for the iOS fling
@@ -41,8 +56,7 @@ class DetentScrollPhysics extends ScrollPhysics {
       DetentScrollPhysics(pitch: pitch, parent: buildParent(ancestor));
 
   /// Nearest graduation to [pixels], clamped into the scrollable's range.
-  double detentFor(ScrollMetrics position, double pixels) {
-    if (pitch <= 0) return pixels;
+  double _detentFor(ScrollMetrics position, double pixels) {
     final snapped = (pixels / pitch).roundToDouble() * pitch;
     return snapped.clamp(position.minScrollExtent, position.maxScrollExtent);
   }
@@ -71,7 +85,7 @@ class DetentScrollPhysics extends ScrollPhysics {
               velocity,
             ).finalX;
 
-    final target = detentFor(position, natural);
+    final target = _detentFor(position, natural);
 
     // Already on a graduation and not going anywhere: no simulation at all,
     // so the position rests exactly rather than creeping.
@@ -89,8 +103,18 @@ class DetentScrollPhysics extends ScrollPhysics {
     );
   }
 
-  /// Rulers are dragged, not paged, and a fling that leaves the finger should
-  /// keep travelling — so an implicit scroll is never suppressed.
+  /// Suppresses the viewport's implicit `showOnScreen` scroll.
+  ///
+  /// Nothing to do with paging or flings — `createBallisticSimulation` owns
+  /// those. This is the hook `RenderViewportBase.showOnScreen` consults when
+  /// something asks to be scrolled into view (focus, accessibility). Allowing
+  /// it would move the strip with no ballistic behind it, parking the needle
+  /// off-graduation with nothing to snap it back.
+  ///
+  /// (An earlier version of this comment described the property as being
+  /// about paging, and ended "so an implicit scroll is never suppressed"
+  /// while returning the value that suppresses it. Both halves were wrong;
+  /// anyone "fixing" the code to match would have flipped it.)
   @override
   bool get allowImplicitScrolling => false;
 }

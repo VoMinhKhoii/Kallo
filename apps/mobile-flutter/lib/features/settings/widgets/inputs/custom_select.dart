@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import 'dropdown_row.dart';
+import 'select_row.dart';
 
 /// A single option for [CustomSelect].
 class CustomSelectOption {
@@ -270,8 +270,20 @@ class _DropdownOverlay extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         for (final opt in options)
-                          DropdownRow(
-                            option: opt,
+                          SelectRow(
+                            label: opt.label,
+                            // Selection is the glyph here, not a wash: the
+                            // popover is a menu, and a filled row would read
+                            // as a pressed state.
+                            trailing:
+                                value == opt.value
+                                    ? const Icon(
+                                      LucideIcons.check300,
+                                      size: 16,
+                                      color: KalloColors.text,
+                                    )
+                                    : const SizedBox(width: 16, height: 16),
+                            verticalPadding: KalloSpacing.sp2 + 2, // py-2.5
                             selected: value == opt.value,
                             onTap: () => onPick(opt.value),
                           ),

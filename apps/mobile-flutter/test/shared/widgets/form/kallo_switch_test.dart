@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shared/widgets/form/kallo_switch.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 /// [KalloSwitch] is now a thin skin on [CupertinoSwitch]: one colour, and the
 /// platform's own geometry, drag and press-stretch underneath.
@@ -56,6 +57,30 @@ void main() {
   // as `reaction.value * _kThumbExtensionFactor` — but it belongs to the SDK,
   // and a brittle paint assertion here would fail on an SDK retune while
   // catching nothing we own.
+
+  testWidgets('the tap target clears the 44pt floor', (tester) async {
+    // CupertinoSwitch renders at 59x39 — 5pt under the floor. Switch.adaptive
+    // hid that behind Material's `padded` tap target (>=48); taking the
+    // Cupertino widget directly gives that up. Nothing caught the regression
+    // when this file only asserted colour and semantics, so it asserts size
+    // now. Its sibling commit spends a whole ConstrainedBox reaching 44 on the
+    // cheat chips — the same floor has to hold here.
+    await tester.pumpWidget(
+      host(child: KalloSwitch(value: true, onChanged: (_) {})),
+    );
+    await tester.pumpAndSettle();
+
+    final target = find.ancestor(
+      of: find.byType(CupertinoSwitch),
+      matching: find.byType(ConstrainedBox),
+    );
+    expect(
+      tester.getSize(target.first).height,
+      greaterThanOrEqualTo(KalloIcons.hit),
+    );
+    // And the control itself must NOT have grown to get there.
+    expect(tester.getSize(find.byType(CupertinoSwitch)).height, lessThan(44));
+  });
 
   testWidgets('semanticLabel names the control', (tester) async {
     await tester.pumpWidget(

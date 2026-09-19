@@ -120,7 +120,7 @@ void main() {
           'Deleted',
           actionLabel: 'Undo',
           onAction: () {},
-          duration: const Duration(seconds: 1),
+          duration: const Duration(seconds: 2),
         ),
       ),
     );
@@ -131,7 +131,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Hold well past the 1s dwell without lifting.
+    // Hold well past the 2s dwell without lifting.
     final gesture = await tester.startGesture(
       tester.getCenter(find.text('Deleted')),
     );
@@ -146,6 +146,74 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(find.text('Deleted'), findsNothing);
+  });
+
+  testWidgets('a CANCELLED pointer still lets the toast leave', (tester) async {
+    // The regression this file exists for. A cancelled pointer delivers no
+    // PointerUpEvent, so routing only `up` left the dwell timer cancelled
+    // forever: the toast pinned to the top of the screen and the future it
+    // completes never resolved — and `meal_actions.dart` awaits that future
+    // before deleting a meal on the server.
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(milliseconds: 800),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Deleted')),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await gesture.cancel();
+
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Deleted'),
+      findsNothing,
+      reason: 'a cancelled pointer must not strand the dwell timer',
+    );
+  });
+
+  testWidgets('a gentle upward drag is below the flick threshold', (
+    tester,
+  ) async {
+    // Pins the 320 px/s constant. Without this, changing the test to `< 0`
+    // would delete the threshold entirely and every other test still passes.
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(seconds: 30),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.text('Deleted'), const Offset(0, -30), 120);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Deleted'),
+      findsOneWidget,
+      reason: '120 px/s is well under the 320 px/s flick threshold',
+    );
+
+    await tester.pump(const Duration(seconds: 31));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('a passive toast stays untouchable', (tester) async {

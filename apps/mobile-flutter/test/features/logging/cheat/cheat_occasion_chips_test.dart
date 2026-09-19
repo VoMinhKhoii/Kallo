@@ -58,10 +58,18 @@ void main() {
         matching: find.byType(GestureDetector),
       );
       expect(box, findsWidgets, reason: 'chip "$label" has a gesture box');
+      final size = tester.getSize(box.first);
       expect(
-        tester.getSize(box.first).height,
+        size.height,
         greaterThanOrEqualTo(KalloIcons.hit),
         reason: 'chip "$label" is below the 44pt tap floor',
+      );
+      // Both axes: `ConstrainedBox` only pins minHeight, so a short label
+      // could sit under 44 wide and the height assertion would not notice.
+      expect(
+        size.width,
+        greaterThanOrEqualTo(KalloIcons.hit),
+        reason: 'chip "$label" is narrower than the 44pt tap floor',
       );
     }
   });

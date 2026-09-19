@@ -5,7 +5,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/data/countries.dart';
-import 'country_row.dart';
+import 'select_row.dart';
 
 /// Port of the web inline `CountrySelect` (regional.tsx). A searchable,
 /// inline-anchored dropdown over [kCountries], filtering on English +
@@ -311,9 +311,13 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                                   itemCount: filtered.length,
                                   itemBuilder: (_, i) {
                                     final c = filtered[i];
-                                    return CountryRow(
-                                      label: countryLabel(c, language),
-                                      vi: countryAlias(c, language),
+                                    final label = countryLabel(c, language);
+                                    final vi = countryAlias(c, language);
+                                    return SelectRow(
+                                      label: label,
+                                      trailing: Text(vi, style: dashMeta()),
+                                      semanticsLabel: '$label, $vi',
+                                      selectedColor: KalloColors.accent10,
                                       selected: widget.selectedValue == c.value,
                                       onTap: () => widget.onPick(c.value),
                                     );

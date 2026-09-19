@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The app's one switch — umber when on, iOS geometry and feel throughout.
 ///
@@ -44,10 +45,23 @@ class KalloSwitch extends StatelessWidget {
     // Only the ON track is themed. Leaving `inactiveTrackColor` alone keeps the
     // platform's own off state, which is what the `trackColor` resolver was
     // doing by resolving to null while unselected.
-    final switchWidget = CupertinoSwitch(
-      value: value,
-      onChanged: onChanged,
-      activeTrackColor: KalloColors.btn,
+    // `CupertinoSwitch` renders at 59x39 (`_kSwitchSize`, cupertino/switch.dart)
+    // — 5pt under the app's 44pt floor. `Switch.adaptive` used to hide that:
+    // Material wraps its switch in a `padded` tap target of at least 48. Taking
+    // the Cupertino widget directly gives up that padding, so the floor is
+    // restored here rather than silently lost. The constraint is on the TARGET,
+    // not the control, so the switch itself is unchanged.
+    final switchWidget = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: CupertinoSwitch(
+          value: value,
+          onChanged: onChanged,
+          activeTrackColor: KalloColors.btn,
+        ),
+      ),
     );
 
     if (semanticLabel == null) return switchWidget;

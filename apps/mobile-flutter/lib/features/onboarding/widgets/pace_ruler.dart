@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../shared/widgets/gauge/ruler/detent_scroll_physics.dart';
+import '../logic/detent_scroll_physics.dart';
 
 import '../../../shared/logic/display_format.dart'
     show formatOneDecimal, localeOf;

@@ -48,46 +48,4 @@ abstract final class KalloShapes {
     borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
     side: side,
   );
-
-  /// The app's card: squircle at [KalloRadii.card], no border, no shadow.
-  ///
-  /// [ShapeDecoration] rather than [BoxDecoration] because only the former
-  /// takes a [ShapeBorder]; note it spells shadows `shadows`, not `boxShadow`,
-  /// and takes the border through the shape's `side` rather than a `border`.
-  static ShapeDecoration card({
-    required Color color,
-    double radius = KalloRadii.card,
-    BorderSide side = BorderSide.none,
-    List<BoxShadow> shadows = const [],
-  }) => ShapeDecoration(
-    color: color,
-    shape: squircle(radius, side: side),
-    shadows: shadows,
-  );
-}
-
-/// Clips [child] to a squircle — the [ClipRRect] of this file.
-///
-/// Use where content must be cut to the corner (an image, a camera frame, a
-/// list section whose rows paint their own background to the edge). Where the
-/// surface merely paints a rounded fill, [KalloShapes.card] is cheaper: it has
-/// no clip layer at all.
-class KalloSquircle extends StatelessWidget {
-  const KalloSquircle({
-    super.key,
-    required this.child,
-    this.radius = KalloRadii.card,
-    this.clipBehavior = Clip.antiAlias,
-  });
-
-  final Widget child;
-  final double radius;
-  final Clip clipBehavior;
-
-  @override
-  Widget build(BuildContext context) => ClipRSuperellipse(
-    borderRadius: BorderRadius.circular(radius),
-    clipBehavior: clipBehavior,
-    child: child,
-  );
 }

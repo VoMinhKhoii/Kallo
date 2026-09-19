@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_motion.dart';
+import 'toast_dismiss_gestures.dart';
 import 'top_toast_pill.dart';
 
 // The tone enum lives with the pill that renders it; re-exported so callers
@@ -71,11 +72,7 @@ class _TopToast extends StatefulWidget {
   State<_TopToast> createState() => _TopToastState();
 }
 
-/// Upward flick velocity, in logical px/s, that counts as "throw it away".
-const double _kFlickAway = 320;
-
-class _TopToastState extends State<_TopToast>
-    with SingleTickerProviderStateMixin {
+class _TopToastState extends State<_TopToast> with TickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: KalloMotion.banner,
@@ -99,6 +96,8 @@ class _TopToastState extends State<_TopToast>
 
   Timer? _hold;
 
+  /// Fingers currently on the pill. A second finger lifting must not restart
+  /// the countdown while the first is still down.
   @override
   void initState() {
     super.initState();
@@ -118,22 +117,23 @@ class _TopToastState extends State<_TopToast>
     _dismiss();
   }
 
-  /// iOS banners pause their countdown while a finger is on them, so a toast
-  /// cannot expire out from under someone who is reaching for its action.
-  void _holdFor(PointerDownEvent _) => _hold?.cancel();
+  /// Stop the dwell while a finger is on the pill, so a toast cannot expire
+  /// out from under someone reaching for its action.
+  void _holdFor() => _hold?.cancel();
 
-  void _resumeAfter(PointerUpEvent _) {
+  /// Release RE-ARMS the full dwell rather than resuming the remainder.
+  ///
+  /// The remainder is the nicer behaviour and it was built twice; both
+  /// mechanisms cost more than the nicety is worth. A `Stopwatch` beside the
+  /// `Timer` reads the WALL clock while the timer runs on fake-async under
+  /// test, so the remainder computes as the whole duration and the
+  /// distinction is untestable. Driving the dwell from an
+  /// `AnimationController` shares the scheduler's clock and fixes that — at
+  /// the cost of a frame every vsync for the whole dwell, to animate nothing
+  /// visible, and of `pumpAndSettle` never settling while it runs. A re-arm
+  /// costs nothing and is wrong only for someone who keeps brushing the pill.
+  void _resume() {
     if (mounted) _hold = Timer(widget.duration, _dismiss);
-  }
-
-  /// Upward flick dismisses, the way a notification banner does. Downward is
-  /// ignored: there is nothing below the pill to pull into view, and a
-  /// downward drag here is much more likely to be a page scroll that started
-  /// slightly too high.
-  void _onDragEnd(DragEndDetails d) {
-    if (d.primaryVelocity != null && d.primaryVelocity! < -_kFlickAway) {
-      _dismiss();
-    }
   }
 
   @override
@@ -170,20 +170,17 @@ class _TopToastState extends State<_TopToast>
       child: SafeArea(
         // Non-action toasts never eat taps; action toasts must be tappable.
         //
-        // Which is also why swipe-to-dismiss and hold-to-pause are fitted to
-        // the action variant ONLY. Giving them to a passive toast would mean
-        // the pill accepting pointers, and the whole point of the
-        // `IgnorePointer` is that a toast appearing over a button never steals
-        // the press meant for it. A passive toast leaves on its own anyway.
+        // Which is also why [ToastDismissGestures] is fitted to the action
+        // variant ONLY: giving it to a passive toast would mean the pill
+        // accepting pointers, and the whole point of the `IgnorePointer` is
+        // that a toast over a button never steals the press meant for it.
         child:
             hasAction
-                ? Listener(
-                  onPointerDown: _holdFor,
-                  onPointerUp: _resumeAfter,
-                  child: GestureDetector(
-                    onVerticalDragEnd: _onDragEnd,
-                    child: content,
-                  ),
+                ? ToastDismissGestures(
+                  onHold: _holdFor,
+                  onRelease: _resume,
+                  onFlickAway: _dismiss,
+                  child: content,
                 )
                 : IgnorePointer(child: content),
       ),

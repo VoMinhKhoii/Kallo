@@ -49,7 +49,11 @@ class CheatOccasionChips extends ConsumerWidget {
           ),
           Wrap(
             spacing: KalloSpacing.sp2,
-            runSpacing: KalloSpacing.sp2,
+            // 0, not sp2: each chip's 44pt target already carries ~7pt of
+            // clear space above and below its 30pt pill, so the VISIBLE gutter
+            // between rows is ~14 without any runSpacing at all. Adding 8 on
+            // top would read as ~22 — nearly three times the rhythm.
+            runSpacing: 0,
             children: [
               for (final occasion in occasions)
                 _OccasionChip(
@@ -106,11 +110,16 @@ class _OccasionChipState extends State<_OccasionChip> {
                     widget.onTap();
                   },
           // The painted pill is ~30pt tall — right for its tier, and 14 short
-          // of the 44pt floor every other target in the app honours
-          // (`KalloIcons.hit`). The CONSTRAINT goes on the gesture box, not on
-          // the pill, so the chip looks identical and only the reachable area
-          // grows. `opaque` so the padding either side of the pill is live
-          // rather than a hole in the middle of the target.
+          // of the 44pt floor every other target honours (`KalloIcons.hit`).
+          // The constraint goes on the gesture box rather than the pill, so
+          // the PILL is unchanged — but the surface is not, and the first
+          // version of this comment wrongly claimed otherwise: `Wrap` measures
+          // each run at its tallest child, so the run pitch goes 30 -> 44 and
+          // every row after the first drops 14pt. `runSpacing` below absorbs
+          // exactly that, keeping the visible gutter on the 8pt rhythm.
+          //
+          // `opaque` so the 7pt band above and below the pill is live rather
+          // than a dead ring inside the target.
           behavior: HitTestBehavior.opaque,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: KalloIcons.hit),
