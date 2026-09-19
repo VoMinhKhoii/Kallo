@@ -86,9 +86,4 @@ abstract final class KalloEase {
   /// The app's long decelerating tail, already spelled inline at the feed's
   /// scroll-to and the week pager.
   static const Curve decelerate = Cubic(0.16, 1, 0.3, 1);
-
-  /// Panels that slide in from an edge — Material's own drawer curve. The
-  /// drawer itself retired with the pill nav (native pass, 2026-08-31);
-  /// kept for any edge-sliding surface.
-  static const Curve drawer = Curves.fastOutSlowIn;
 }

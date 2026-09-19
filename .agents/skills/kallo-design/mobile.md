@@ -449,7 +449,7 @@ so there is nothing to prefer over it.
 
 | Instead of | Use | State |
 |------------|-----|-------|
-| `CircularProgressIndicator` | `CupertinoActivityIndicator` | **13 sites to migrate** (the doc said 17 until 2026-09-19; the real count is 13). `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
+| `CircularProgressIndicator` | `CupertinoActivityIndicator` | ✅ done 2026-09-19, all 13 sites (the doc claimed 17; the real count was 13). `CupertinoActivityIndicator` builds its own `SizedBox.square(dimension: radius * 2)`, so `radius` N/2 replaced each `SizedBox(N)` + `strokeWidth: 2` pair at identical dimensions and the wrapper went away with it. Seven of the 13 files stopped importing `material.dart` entirely |
 | a bottom-up Material page transition | `KalloSwipeBackTransitionsBuilder` in the theme (`shell/nav/swipe_back/`) — Cupertino's slide plus a back drag that starts anywhere, not on a 20pt edge | ✅ done 2026-09-10, app-wide. **See *Routes* below — this is the one row where `Material*` is the Cupertino answer.** |
 | `showModalBottomSheet` | `showSheet` → `SheetRoute extends CupertinoSheetRoute` (`shared/widgets/sheet/sheet_route.dart`) | **migrating 2026-09-19.** Do NOT call `showCupertinoSheet`: it never forwards `showDragHandle` (`sheet.dart:202,241`), and a custom `topGap` nulls `delegatedTransition` (`:819`) — which, since `barrierColor` is a hardcoded transparent (`:777`), is the only thing that dims the screen behind a sheet |
 | `InkWell` / `InkResponse` ripple | `CupertinoButton`, or `KalloPressable` where the press must survive the gesture arena | **2 sites** (`quiet_action_button.dart`, `meal_action_icon_button.dart`) |
@@ -579,7 +579,7 @@ back into backlog: only a cited defect keeps a hand-rolled widget now.
 | Item | Sites | Notes |
 |------|-------|-------|
 | `showModalBottomSheet` → `SheetRoute` | 15 | the largest item. `showNhamSheet` → `showSheet`; height becomes a `SheetHeight` tier because `CupertinoSheetRoute` has no content-hugging mode; the keyboard inset moves into `SheetSurface`. Known regressions recorded at the call site: the scrim drops from Material's 54% to the SDK's 10% (`_kOpacityTween`, `sheet.dart:74`), and `country_sheet`'s custom barrier colour is un-preservable |
-| `CircularProgressIndicator` → `CupertinoActivityIndicator` | 13 | mechanical; the most visible of the three tells, since every button's loading state shows one. (Counted as 17 until 2026-09-19 — the doc was stale) |
+| ~~`CircularProgressIndicator` → `CupertinoActivityIndicator`~~ | 0 | **Done 2026-09-19.** All 13 sites; `lib/` now has zero. Was the most visible of the three tells, since every button's loading state showed one |
 | `TextField` → `CupertinoTextField` | 18 | re-express `inputDecorationTheme` (`kallo_theme.dart:274`) as a `BoxDecoration` on the wrapper, then delete the theme entry rather than leaving it dead like `snackBarTheme` and `appBarTheme` already are |
 | `Scaffold` → `CupertinoPageScaffold` | 8 | auth ×3, onboarding ×4. `tab_scaffold.dart` stays — see the table above |
 | a segmented control → `CupertinoSlidingSegmentedControl` | 7 + `OptionStrip.segmented` | loses the pop-then-travel thumb and `HapticFeedback.selectionClick()` |
