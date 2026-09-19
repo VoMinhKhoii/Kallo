@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -88,14 +89,12 @@ class MealActionIconButton extends StatelessWidget {
                   child: Center(
                     child:
                         pending
-                            ? SizedBox.square(
+                            ? CupertinoActivityIndicator(
                               // Sits in the glyph's own footprint, so the row
-                              // doesn't jump when an action goes pending.
-                              dimension: LoggingIcons.action - 6,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: foreground,
-                              ),
+                              // doesn't jump when an action goes pending: the
+                              // indicator is a square of radius * 2.
+                              radius: (LoggingIcons.action - 6) / 2,
+                              color: foreground,
                             )
                             : Icon(
                               icon,

@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -10,14 +10,8 @@ class PaywallSpinner extends StatelessWidget {
   const PaywallSpinner({super.key});
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
-    width: 22,
-    height: 22,
-    child: CircularProgressIndicator(
-      strokeWidth: 2,
-      valueColor: AlwaysStoppedAnimation(KalloColors.accent),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      const CupertinoActivityIndicator(radius: 11, color: KalloColors.accent);
 }
 
 class PaywallCenteredNote extends StatelessWidget {

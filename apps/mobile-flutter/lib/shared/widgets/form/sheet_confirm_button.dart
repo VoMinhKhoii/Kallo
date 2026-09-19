@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/kallo_colors.dart';
@@ -67,13 +67,9 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
             ),
             child:
                 widget.saving
-                    ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: KalloColors.text,
-                      ),
+                    ? const CupertinoActivityIndicator(
+                      radius: 9,
+                      color: KalloColors.text,
                     )
                     : Text(
                       widget.label,
