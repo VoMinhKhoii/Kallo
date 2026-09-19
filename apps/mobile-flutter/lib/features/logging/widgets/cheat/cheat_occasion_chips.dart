@@ -105,38 +105,55 @@ class _OccasionChipState extends State<_OccasionChip> {
                     HapticFeedback.selectionClick();
                     widget.onTap();
                   },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            constraints: const BoxConstraints(maxWidth: 224),
-            padding: const EdgeInsets.symmetric(
-              horizontal: KalloSpacing.sp3,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: _pressed ? KalloColors.hover40 : KalloColors.elev,
-              borderRadius: BorderRadius.circular(KalloRadii.pill),
-              border: Border.all(
-                color: _pressed ? KalloColors.accent60 : KalloColors.borderSoft,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  LucideIcons.cookie300,
-                  size: 12,
-                  color: KalloColors.textMuted,
+          // The painted pill is ~30pt tall — right for its tier, and 14 short
+          // of the 44pt floor every other target in the app honours
+          // (`KalloIcons.hit`). The CONSTRAINT goes on the gesture box, not on
+          // the pill, so the chip looks identical and only the reachable area
+          // grows. `opaque` so the padding either side of the pill is live
+          // rather than a hole in the middle of the target.
+          behavior: HitTestBehavior.opaque,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                constraints: const BoxConstraints(maxWidth: 224),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KalloSpacing.sp3,
+                  vertical: 6,
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    widget.occasion.rawInput,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashMeta(color: kInk),
+                decoration: BoxDecoration(
+                  color: _pressed ? KalloColors.hover40 : KalloColors.elev,
+                  borderRadius: BorderRadius.circular(KalloRadii.pill),
+                  border: Border.all(
+                    color:
+                        _pressed
+                            ? KalloColors.accent60
+                            : KalloColors.borderSoft,
                   ),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      LucideIcons.cookie300,
+                      size: 12,
+                      color: KalloColors.textMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        widget.occasion.rawInput,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: dashMeta(color: kInk),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

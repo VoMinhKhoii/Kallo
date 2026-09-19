@@ -69,7 +69,11 @@ class KalloRefreshableScroll extends StatelessWidget {
     required this.onRefresh,
     required this.slivers,
     this.controller,
-    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+    // onDrag, not manual: dragging a list with the keyboard up dismisses it
+    // on iOS, and only `feed_list` had opted in — so every other refreshable
+    // page kept the keyboard over the content the drag was trying to reveal.
+    // A page that wants the keyboard to survive a drag can still say so.
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.onDrag,
   });
 
   final Future<void> Function() onRefresh;
