@@ -106,7 +106,6 @@ OnboardingAnswers testAnswers({
   cooking: const CookingHabits(
     oilUsage: OilUsage.normal,
     defaultRicePortion: RicePortion.medium,
-    sugarBraised: SugarBraised.medium,
     defaultProteinPortion: ProteinPortion.medium,
     brothConsumption: BrothConsumption.some,
   ),

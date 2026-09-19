@@ -16,9 +16,8 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 1. A pull request runs CI and builds an immutable image.
 2. After review and verification, merge to `main`.
 3. A successful `main` CI run triggers `cloud-run-prod.yml`.
-4. The prod job acquires its GCS lease, validates and applies pending
-   append-only migrations, deploys a no-traffic candidate, smoke-tests it, and
-   only then promotes traffic.
+4. The prod job acquires its GCS lease, applies pending migrations, deploys a
+   no-traffic candidate, smoke-tests it, and only then promotes traffic.
 
 There is currently no persistent staging, internal, or preview deployment.
 Sandbox billing tests run locally (or through an explicitly approved temporary

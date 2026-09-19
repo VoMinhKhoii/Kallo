@@ -98,7 +98,6 @@ export const baseArgs = {
       oilUsage: 'normal' as const,
       defaultRicePortion: 'medium' as const,
       defaultProteinPortion: 'medium' as const,
-      sugarBraised: 'medium' as const,
       brothConsumption: 'some' as const,
     },
   },

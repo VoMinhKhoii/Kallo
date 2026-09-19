@@ -70,7 +70,6 @@ class ProfileRow {
   // ── Cooking habits ─────────────────────────────────────────────────────
   String? get oilUsage => _string('oilUsage');
   String? get defaultRicePortion => _string('defaultRicePortion');
-  String? get sugarBraised => _string('sugarBraised');
   String? get defaultProteinPortion => _string('defaultProteinPortion');
   String? get brothConsumption => _string('brothConsumption');
 

@@ -214,7 +214,6 @@ void main() {
     expect(step3, {
       'oilUsage': 'normal',
       'defaultRicePortion': 'medium',
-      'sugarBraised': 'medium',
       'defaultProteinPortion': 'medium',
       'brothConsumption': 'some',
     });

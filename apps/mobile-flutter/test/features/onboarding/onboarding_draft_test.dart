@@ -219,7 +219,6 @@ void main() {
       for (final field in [
         'oilUsage',
         'defaultRicePortion',
-        'sugarBraised',
         'defaultProteinPortion',
         'brothConsumption',
       ]) {

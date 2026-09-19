@@ -128,10 +128,6 @@ buildOnboardingAnswers({
           tryParseRicePortion(profile?.defaultRicePortion) ??
           tryParseRicePortion(_str(step3, 'defaultRicePortion')) ??
           kNeutralCookingDefaults.defaultRicePortion,
-      sugarBraised:
-          tryParseSugarBraised(profile?.sugarBraised) ??
-          tryParseSugarBraised(_str(step3, 'sugarBraised')) ??
-          kNeutralCookingDefaults.sugarBraised,
       defaultProteinPortion:
           tryParseProteinPortion(profile?.defaultProteinPortion) ??
           tryParseProteinPortion(_str(step3, 'defaultProteinPortion')) ??

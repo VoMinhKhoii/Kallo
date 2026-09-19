@@ -24,7 +24,6 @@ const PROMPT_CONTEXT_VI: PromptPersonalizationContext = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
   },

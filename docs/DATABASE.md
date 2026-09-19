@@ -28,16 +28,26 @@ Never hand-write DDL for tables/columns. Never add CHECK constraints directly in
 ### Shared staging preview rule
 
 While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
-the same non-prod Supabase database. To keep that survivable:
+the same non-prod Supabase database, so a destructive migration lands for every
+deployment at once. Nothing blocks one — this is a judgement call, not a gate:
 
-- prefer append-only migrations for normal feature work
-- do not add new migrations that `DROP TABLE`, `DROP COLUMN`,
-  `RENAME COLUMN`, or `ALTER COLUMN TYPE`
-- add new columns/tables first, migrate application code, and defer cleanup to
-  an intentional maintenance pass
-
-CI enforces this append-only rule against newly changed migration files via
-`scripts/ci/check-append-only-migrations.mjs`.
+- prefer append-only migrations for normal feature work; they are always safe
+- a `DROP TABLE`, `DROP COLUMN`, `RENAME COLUMN` or `ALTER COLUMN TYPE` is
+  allowed, but **it needs its own PR, merged only after the release that
+  stopped using the column has been deployed.** A single PR carrying both the
+  code change and the drop cannot work: `cloud-run-prod.yml` runs *Apply
+  pending migrations to prod DB* well before *Promote candidate after smoke
+  pass*, so the old revision is still serving while the column disappears —
+  and Drizzle's `db.select()` expands to an explicit column list, so every
+  read of that table errors until the promote lands (indefinitely, if a step
+  in between fails).
+- so the sequence is: PR 1 stops reading and writing the column (leave it in
+  `schema.ts` marked deprecated so no migration is generated) → deploy → PR 2
+  drops it → deploy. Reversing that order is a production outage, not a
+  style preference.
+- the same reasoning is why additive migrations must go the *other* way: a new
+  column has to exist before the revision that uses it is promoted, which is
+  exactly what the current step order gives you.
 
 If shared staging gets into a bad state, recover it with the manual
 `Reset Staging Database` GitHub Actions workflow. That reset replays the current

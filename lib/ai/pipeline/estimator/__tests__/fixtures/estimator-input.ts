@@ -46,7 +46,6 @@ export const input: GroundedEstimatorInput = {
       oilUsage: 'normal',
       defaultRicePortion: 'medium',
       defaultProteinPortion: 'medium',
-      sugarBraised: 'medium',
       brothConsumption: 'some',
     },
   },

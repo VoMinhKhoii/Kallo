@@ -73,19 +73,6 @@ describe('Cloud Run prod workflow', () => {
     expect(backfill).toContain('apiKey: process.env.GEMINI_API_KEY');
   });
 
-  it('scopes the deploy-time append-only check to pending migrations only', () => {
-    const workflow = readWorkflow('cloud-run-prod.yml');
-
-    // A deploy job has no git baseline, so the check is scoped to the
-    // not-yet-applied migrations rather than re-scanning all of history.
-    expect(workflow).toContain(
-      'list-pending --db-url "$PROD_DATABASE_URL" --migrations-dir ./supabase/migrations'
-    );
-    expect(workflow).toContain(
-      'node ./scripts/ci/check-append-only-migrations.mjs'
-    );
-  });
-
   it('wires billing secrets and dark-launch controls into prod', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 

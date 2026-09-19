@@ -55,8 +55,6 @@ export function buildUserContext(profile: ProfileRow): UserContext {
         NEUTRAL_COOKING_DEFAULTS.oilUsage) as UserContext['cookingHabits']['oilUsage'],
       defaultRicePortion: (profile.defaultRicePortion ??
         NEUTRAL_COOKING_DEFAULTS.defaultRicePortion) as UserContext['cookingHabits']['defaultRicePortion'],
-      sugarBraised: (profile.sugarBraised ??
-        NEUTRAL_COOKING_DEFAULTS.sugarBraised) as UserContext['cookingHabits']['sugarBraised'],
       defaultProteinPortion: (profile.defaultProteinPortion ??
         NEUTRAL_COOKING_DEFAULTS.defaultProteinPortion) as UserContext['cookingHabits']['defaultProteinPortion'],
       brothConsumption: (profile.brothConsumption ??

@@ -14,7 +14,6 @@ const baseUserContext: PromptPersonalizationContext = {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'medium',
     brothConsumption: 'some',
   },
 };
@@ -95,7 +94,6 @@ describe('decomposition-v2 prompt', () => {
     expect(out).not.toMatch(/oil_usage/);
     expect(out).not.toMatch(/default_rice_portion/);
     expect(out).not.toMatch(/default_protein_portion/);
-    expect(out).not.toMatch(/sugar_braised/);
     expect(out).not.toMatch(/broth_consumption/);
   });
 

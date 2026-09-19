@@ -83,7 +83,6 @@ export const profileSettingsSchema = z.object({
   // cooking habits (lib/onboarding/schemas.ts → cookingHabitsSchema)
   oilUsage: cookingHabitsSchema.shape.oilUsage,
   defaultRicePortion: cookingHabitsSchema.shape.defaultRicePortion,
-  sugarBraised: cookingHabitsSchema.shape.sugarBraised,
   defaultProteinPortion: cookingHabitsSchema.shape.defaultProteinPortion,
   brothConsumption: cookingHabitsSchema.shape.brothConsumption,
 });

@@ -80,7 +80,6 @@ const USER_CONTEXT: UserContext = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
   },

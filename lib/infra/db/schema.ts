@@ -62,6 +62,11 @@ export const userProfiles = pgTable(
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
     defaultRicePortion: text('default_rice_portion'),
+    // DEPRECATED: the sugar-in-braised-dishes preference was removed; no
+    // code reads or writes this. The column and its CHECK stay until a
+    // follow-up PR drops them, because the prod workflow applies
+    // migrations before promoting the new revision — dropping it in the
+    // same release would break the still-serving revision's SELECT.
     sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
     brothConsumption: text('broth_consumption'),

@@ -697,10 +697,6 @@
       "riceMediumHint": "~1–1,5 chén",
       "riceLarge": "Nhiều",
       "riceLargeHint": "~2 chén trở lên",
-      "sugar": "Đường trong món kho",
-      "sugarLow": "Ít",
-      "sugarMedium": "Vừa",
-      "sugarHigh": "Nhiều",
       "proteinPortion": "Phần thịt/cá mặc định",
       "proteinSmall": "Ít",
       "proteinSmallHint": "Nhỏ hơn lòng bàn tay, ví dụ ~2-3 quả trứng",
@@ -718,7 +714,6 @@
       "stepLabels": {
         "oil": "Dầu mỡ",
         "rice": "Cơm, bún hoặc bánh mì mỗi bữa",
-        "sugar": "Đường trong món kho",
         "protein": "Đạm mỗi bữa",
         "broth": "Nước canh"
       }
@@ -937,7 +932,7 @@
       "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
       "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
       "feature2Title": "Ước tính có ngữ cảnh",
-      "feature2Text": "Hiểu các chi tiết như ít mỡ hành, thêm nước canh, hay thói quen kho kiểu nhà.",
+      "feature2Text": "Hiểu các chi tiết như ít mỡ hành, thêm nước canh, hay khẩu phần cơm quen thuộc.",
       "feature3Title": "Biết nói thật về độ không chắc chắn",
       "feature3Text": "Trả về ước tính có biên độ để bạn dùng được, thay vì giả vờ dữ liệu chính xác tuyệt đối.",
       "profile": {
@@ -1765,7 +1760,7 @@
     "profilePanel": {
       "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
       "regionalSubtitle": "Quê quán và nơi ở hiện tại",
-      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
+      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
       "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể.",
       "retry": "Thử lại",

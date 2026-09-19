@@ -10,7 +10,6 @@ import type {
   oilUsageSchema,
   proteinPortionSchema,
   ricePortionSchema,
-  sugarBraisedSchema,
 } from './schemas';
 
 // ---------------------------------------------------------------------------
@@ -25,7 +24,6 @@ export type Aggression = number;
 export type CarbSplit = z.infer<typeof carbSplitSchema>;
 export type OilUsage = z.infer<typeof oilUsageSchema>;
 export type RicePortion = z.infer<typeof ricePortionSchema>;
-export type SugarBraised = z.infer<typeof sugarBraisedSchema>;
 export type ProteinPortion = z.infer<typeof proteinPortionSchema>;
 export type BrothConsumption = z.infer<typeof brothConsumptionSchema>;
 

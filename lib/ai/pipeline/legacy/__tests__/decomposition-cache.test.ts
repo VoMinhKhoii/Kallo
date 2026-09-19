@@ -11,7 +11,6 @@ const ctx = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
   },
@@ -69,7 +68,6 @@ describe('decompositionContextHash', () => {
         defaultProteinPortion: 'medium',
         defaultRicePortion: 'medium',
         oilUsage: 'normal',
-        sugarBraised: 'medium',
       },
       countryOfResidence: 'VN',
       countryOfOrigin: 'VN',

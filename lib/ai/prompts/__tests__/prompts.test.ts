@@ -21,7 +21,6 @@ const sampleUserContext: UserContext = {
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'finish_it',
   },
@@ -36,7 +35,6 @@ describe('buildDecompositionPrompt', () => {
   it('includes cooking habits in system prompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('oil_usage: normal');
-    expect(prompt).toContain('sugar_braised: medium');
     expect(prompt).toContain('broth_consumption: finish_it');
   });
 

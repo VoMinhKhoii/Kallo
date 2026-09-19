@@ -153,7 +153,6 @@ function pickProfileExport(row: typeof userProfiles.$inferSelect) {
     // Cooking habits
     oilUsage: row.oilUsage,
     defaultRicePortion: row.defaultRicePortion,
-    sugarBraised: row.sugarBraised,
     defaultProteinPortion: row.defaultProteinPortion,
     brothConsumption: row.brothConsumption,
     // Onboarding progress
