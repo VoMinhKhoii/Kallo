@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_shapes.dart';
 
 /// A top-toast's tone — sets the leading icon + its color.
 enum TopToastVariant { success, error }
@@ -53,19 +54,23 @@ class TopToastPill extends StatelessWidget {
           _hasAction ? KalloSpacing.sp2 : KalloSpacing.sp4,
           KalloSpacing.sp3,
         ),
-        decoration: BoxDecoration(
+        // A real squircle now, not a rounded rect. The comment here always
+        // said "squircle"; `BorderRadius.circular` could not draw one.
+        //
+        // The toast is a floating SURFACE, and the app gives surfaces a
+        // squircle (card 22, container 16) while the pill is reserved for
+        // buttons. `card` would not read as one here: the toast stands ~45pt
+        // tall, so 22 is half its height and renders as a stadium anyway. 18
+        // is the first step down that keeps a visible flat edge.
+        decoration: ShapeDecoration(
           // Solid white, not the retired cream — #FFFCF8 read yellow against
           // the neutral canvas.
           color: kCardSurface,
-          // Squircle, not a stadium. The toast is a floating SURFACE, and the
-          // app gives surfaces a squircle (card 22, container 16) while the
-          // pill is reserved for buttons. `card` would not read as one here:
-          // the toast stands ~45pt tall, so 22 is half its height and renders
-          // as a stadium anyway. 18 is the first step down that keeps a
-          // visible flat edge at this height.
-          borderRadius: BorderRadius.circular(KalloRadii.xxl),
-          border: Border.all(color: kHairline),
-          boxShadow: kCardShadows,
+          shape: KalloShapes.squircle(
+            KalloRadii.xxl,
+            side: const BorderSide(color: kHairline),
+          ),
+          shadows: kCardShadows,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

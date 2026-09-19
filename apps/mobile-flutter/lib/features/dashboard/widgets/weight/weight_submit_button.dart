@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -58,13 +58,9 @@ class WeightSubmitButton extends StatelessWidget {
           ),
           child:
               pending
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: KalloColors.text,
-                    ),
+                  ? const CupertinoActivityIndicator(
+                    radius: 8,
+                    color: KalloColors.text,
                   )
                   : Text(
                     label,

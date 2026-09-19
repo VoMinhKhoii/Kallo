@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_shapes.dart';
 
 /// The line every sheet's content starts on, header and body alike.
 const double kSheetContentInset = KalloSpacing.sp4; // 16
@@ -147,13 +148,14 @@ class KalloSheetSurface extends StatelessWidget {
         constraints: effective,
         padding: padding,
         clipBehavior: clipBehavior,
-        decoration: const BoxDecoration(
+        // A squircle, not a rounded rect: the top corners ramp their
+        // curvature the way every iOS sheet's do. `ShapeDecoration` is what
+        // takes a `ShapeBorder` — note it spells shadows `shadows`.
+        decoration: ShapeDecoration(
           color: kCardSurface,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(kCardRadius),
-          ),
+          shape: KalloShapes.squircleTop(kCardRadius),
           // Sheets are TRUE elevation on the borderless-card canvas.
-          boxShadow: kSheetShadows,
+          shadows: kSheetShadows,
         ),
         // Published INSIDE the padding, so the header it reaches is measuring
         // the same content column its neighbours sit in.

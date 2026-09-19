@@ -60,6 +60,32 @@ void main() {
       );
     });
 
+    test('no glyph comes from the Material icon font either', () {
+      // Lucide is the app's ONE icon set (AGENTS.md). `Icons.` does not paint
+      // tofu the way `CupertinoIcons.` does — MaterialIcons ships with Flutter
+      // — which is exactly why it needs a gate: a stray `Icons.search` renders
+      // perfectly and reads as Android forever. Two of them sat in the group
+      // pickers until 2026-09-19 with nothing to catch them.
+      //
+      // Scoped to `lib/` on purpose: a handful of widget tests legitimately
+      // use `Icons.chevron_right` / `Icons.star` as throwaway fixtures.
+      final offenders = [
+        for (final file in sources)
+          if (RegExp(
+            r'(?<![A-Za-z0-9_])Icons\.',
+          ).hasMatch(_code(file.readAsStringSync())))
+            file.path,
+      ]..sort();
+
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            'MaterialIcons is not the app\'s icon set. Use the Lucide 300 '
+            'equivalent (AGENTS.md: Lucide is the one icon set).',
+      );
+    });
+
     test('cupertino_icons is still absent, so the gate above still bites', () {
       // If it is ever added as a real dependency this test is the place to
       // decide that deliberately, rather than discovering it in a screenshot.

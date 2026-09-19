@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -73,13 +73,9 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.loading) ...[
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: KalloColors.elev,
-                    ),
+                  const CupertinoActivityIndicator(
+                    radius: 8,
+                    color: KalloColors.elev,
                   ),
                   const SizedBox(width: KalloSpacing.sp2),
                 ],

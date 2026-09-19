@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -156,11 +157,7 @@ class _ListRowState extends State<ListRow> {
     // A row waiting on its own action shows the spinner INSTEAD of its
     // value/chevron — the affordance it replaces is exactly what is pending.
     if (widget.busy) {
-      return const SizedBox(
-        width: 14,
-        height: 14,
-        child: CircularProgressIndicator(strokeWidth: 2, color: kInkMuted),
-      );
+      return const CupertinoActivityIndicator(radius: 7, color: kInkMuted);
     }
     final List<Widget> parts = [
       if (widget.value != null)

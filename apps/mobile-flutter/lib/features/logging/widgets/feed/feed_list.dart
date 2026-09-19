@@ -123,7 +123,6 @@ class FeedList extends StatelessWidget {
       builder:
           (context, tailRoom) => KalloRefreshableScroll(
             controller: scrollController,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             onRefresh: onRefresh,
             // Log is a pushed route, not a shell branch: no floating nav
             // reports itself here, and the composer dock the feed scrolls

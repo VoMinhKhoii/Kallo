@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
@@ -93,7 +94,13 @@ class KalloSheetHeader extends StatelessWidget {
               IconButton(
                 onPressed:
                     closeEnabled
-                        ? (onClose ?? () => Navigator.of(context).pop())
+                        ? () {
+                          // `AppHeaderBackButton` ticks on the page-level
+                          // equivalent; the X on every sheet in the app did
+                          // not.
+                          HapticFeedback.lightImpact();
+                          (onClose ?? () => Navigator.of(context).pop())();
+                        }
                         : null,
                 icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
                 color: KalloColors.textMuted,

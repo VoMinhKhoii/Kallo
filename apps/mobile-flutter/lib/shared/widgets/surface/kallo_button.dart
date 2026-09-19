@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -95,16 +96,12 @@ class _NhamButtonState extends State<KalloButton> {
 
     final Widget content =
         widget.loading
-            ? SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color:
-                    variant == KalloButtonVariant.cta
-                        ? KalloColors.elev
-                        : KalloColors.text,
-              ),
+            ? CupertinoActivityIndicator(
+              radius: 10,
+              color:
+                  variant == KalloButtonVariant.cta
+                      ? KalloColors.elev
+                      : KalloColors.text,
             )
             : _label(labelColor);
 
