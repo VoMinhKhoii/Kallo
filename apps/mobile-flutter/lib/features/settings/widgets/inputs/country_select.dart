@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -314,7 +315,12 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                                       label: countryLabel(c, language),
                                       vi: countryAlias(c, language),
                                       selected: widget.selectedValue == c.value,
-                                      onTap: () => widget.onPick(c.value),
+                                      onTap: () {
+                                        if (widget.selectedValue != c.value) {
+                                          HapticFeedback.selectionClick();
+                                        }
+                                        widget.onPick(c.value);
+                                      },
                                     );
                                   },
                                 ),

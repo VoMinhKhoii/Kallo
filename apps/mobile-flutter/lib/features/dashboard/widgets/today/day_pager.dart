@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../../../theme/kallo_motion.dart';
@@ -92,6 +93,7 @@ class DayPagerState extends State<DayPager> {
           controller: widget.controller,
           itemCount: kDayPageBase + 1,
           onPageChanged: (p) {
+            HapticFeedback.selectionClick();
             setState(() => _active = p);
             widget.onPageChanged(p);
           },

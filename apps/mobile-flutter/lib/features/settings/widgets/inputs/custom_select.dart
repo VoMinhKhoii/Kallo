@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -272,7 +273,12 @@ class _DropdownOverlay extends StatelessWidget {
                           _DropdownRow(
                             option: opt,
                             selected: value == opt.value,
-                            onTap: () => onPick(opt.value),
+                            onTap: () {
+                              if (value != opt.value) {
+                                HapticFeedback.selectionClick();
+                              }
+                              onPick(opt.value);
+                            },
                           ),
                       ],
                     ),
