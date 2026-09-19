@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -45,46 +48,132 @@ class KalloSwitch extends StatelessWidget {
     // Only the ON track is themed. Leaving `inactiveTrackColor` alone keeps the
     // platform's own off state, which is what the `trackColor` resolver was
     // doing by resolving to null while unselected.
-    // `CupertinoSwitch` renders at 59x39 (`_kSwitchSize`, cupertino/switch.dart)
-    // — 5pt under the app's 44pt floor. `Switch.adaptive` used to hide that:
-    // Material wraps its switch in a `padded` tap target of at least 48. Taking
-    // the Cupertino widget directly gives up that padding, so the floor is
-    // restored here rather than silently lost. The constraint is on the TARGET,
-    // not the control, so the switch itself is unchanged.
-    //
-    // The `GestureDetector` is the half that was missing: `ConstrainedBox` and
-    // `Center` lay out to 44 but neither claims a hit, so a finger landing in
-    // the 2.5pt band above or below the track fell straight through them —
-    // and the one production caller is a `ListRow` with no row-level `onTap`,
-    // so nothing beneath caught it either. The floor was 44pt on paper and
-    // 39pt under the thumb. `opaque` makes the whole box answer; the tap is
-    // forwarded by hand because the switch cannot hear a press outside itself.
-    //
-    // A tap that lands ON the switch is not doubled: both recognisers enter
-    // the arena, hit-test entries are ordered deepest-first, and the sweep
-    // awards the pointer to the first member — the switch — leaving this one
-    // cancelled. Semantics are excluded for the same reason the label wraps
-    // the whole thing: `CupertinoSwitch` already publishes the toggle action,
-    // and a second one would be announced as a separate button.
-    final switchWidget = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      excludeFromSemantics: true,
-      onTap: onChanged == null ? null : () => onChanged!(!value),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: KalloIcons.hit),
-        child: Center(
-          widthFactor: 1,
-          heightFactor: 1,
-          child: CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: KalloColors.btn,
-          ),
-        ),
+    final switchWidget = _TapTargetPadding(
+      minSize: const Size.square(KalloIcons.hit),
+      child: CupertinoSwitch(
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: KalloColors.btn,
       ),
     );
 
     if (semanticLabel == null) return switchWidget;
     return Semantics(label: semanticLabel, child: switchWidget);
+  }
+}
+
+/// Grows the TARGET to [minSize] without growing the child, and sends a touch
+/// anywhere inside it to the child's own hit test.
+///
+/// `CupertinoSwitch` renders at 59x39 (`_kSwitchSize`, cupertino/switch.dart)
+/// — 5pt under the app's 44pt floor. `Switch.adaptive` used to hide that:
+/// Material wraps its switch in exactly this, `_RenderInputPadding`
+/// (`material/button_style_button.dart`), and taking the Cupertino widget
+/// directly gave it up. This is that mechanism, not an approximation of it.
+///
+/// A `ConstrainedBox` around a `Center` was the first attempt and was only
+/// half a fix: it laid out to 44 and a size assertion was satisfied, but
+/// neither render object claims a hit, so the band fell through to nothing.
+/// The second attempt wrapped an opaque `GestureDetector` that forwarded
+/// `onTap` by hand — which cured taps and left DRAGS dead, because the switch
+/// cannot join a gesture arena it was never hit-tested into, and a hand-rolled
+/// tap forwarder cancels the moment the finger travels past slop. Redirecting
+/// the hit is the only version where the platform's own recognisers — tap and
+/// horizontal drag alike — get the pointer, so nothing about the switch's
+/// behaviour is reimplemented here.
+///
+/// The redirect is a TRANSLATION to the nearest point inside the child, not
+/// Material's `MatrixUtils.forceToPoint(centre)`. That distinction is the
+/// whole reason drags work here and do not in Material's version: a
+/// force-to-point transform maps every position to one point, so
+/// `PointerMoveEvent.localDelta` is zero for the entire gesture and
+/// `DragUpdateDetails.primaryDelta` never moves `_dragDelta`
+/// (`cupertino/switch.dart:603`). The recogniser joins the arena, wins it,
+/// and reports a drag that never travels. A translation carries the deltas
+/// through untouched.
+///
+class _TapTargetPadding extends SingleChildRenderObjectWidget {
+  const _TapTargetPadding({required this.minSize, required super.child});
+
+  final Size minSize;
+
+  @override
+  _RenderTapTargetPadding createRenderObject(BuildContext context) =>
+      _RenderTapTargetPadding(minSize);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderTapTargetPadding renderObject,
+  ) {
+    renderObject.minSize = minSize;
+  }
+}
+
+class _RenderTapTargetPadding extends RenderShiftedBox {
+  _RenderTapTargetPadding(this._minSize) : super(null);
+
+  Size get minSize => _minSize;
+  Size _minSize;
+  set minSize(Size value) {
+    if (_minSize == value) return;
+    _minSize = value;
+    markNeedsLayout();
+  }
+
+  Size _sizeFor(BoxConstraints constraints, ChildLayouter layoutChild) {
+    final child = this.child;
+    if (child == null) return Size.zero;
+    final Size childSize = layoutChild(child, constraints);
+    return constraints.constrain(
+      Size(
+        math.max(childSize.width, minSize.width),
+        math.max(childSize.height, minSize.height),
+      ),
+    );
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      _sizeFor(constraints, ChildLayoutHelper.dryLayoutChild);
+
+  @override
+  void performLayout() {
+    size = _sizeFor(constraints, ChildLayoutHelper.layoutChild);
+    final child = this.child;
+    if (child == null) return;
+    (child.parentData! as BoxParentData).offset = Alignment.center.alongOffset(
+      size - child.size as Offset,
+    );
+  }
+
+  /// `Size.contains` is half-open on the far edges (`dy < height`), so a point
+  /// landed exactly on them would not count as a hit.
+  static const double _justInside = 0.01;
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    // The child first, at its real position, so a touch on the track behaves
+    // exactly as it always did. Only the band falls through to the redirect.
+    if (super.hitTest(result, position: position)) return true;
+    final child = this.child;
+    if (child == null) return false;
+
+    final Offset childOffset = (child.parentData! as BoxParentData).offset;
+    final Offset local = position - childOffset;
+    final Offset inside = Offset(
+      local.dx.clamp(0.0, math.max(0.0, child.size.width - _justInside)),
+      local.dy.clamp(0.0, math.max(0.0, child.size.height - _justInside)),
+    );
+
+    // Offsetting by the shortfall as well as the child's own position is what
+    // keeps this a translation: the child is entered at the edge the finger
+    // came from, and every later move arrives with its true delta.
+    return result.addWithPaintOffset(
+      offset: childOffset + (local - inside),
+      position: position,
+      hitTest:
+          (result, transformed) => child.hitTest(result, position: transformed),
+    );
   }
 }

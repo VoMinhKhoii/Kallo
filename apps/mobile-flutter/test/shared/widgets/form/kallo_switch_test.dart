@@ -58,9 +58,15 @@ void main() {
   // and a brittle paint assertion here would fail on an SDK retune while
   // catching nothing we own.
 
+  /// The target is [KalloSwitch]'s own box: the private `_TapTargetPadding`
+  /// inside it is what grows to 44, and the widget under test is the honest
+  /// public handle on it.
+  Rect targetOf(WidgetTester tester) =>
+      tester.getRect(find.byType(KalloSwitch));
+
   testWidgets('the tap target clears the 44pt floor', (tester) async {
     // CupertinoSwitch renders at 59x39 — 5pt under the floor. Switch.adaptive
-    // hid that behind Material's `padded` tap target (>=48); taking the
+    // hid that behind Material's padded tap target (>=48); taking the
     // Cupertino widget directly gives that up. Nothing caught the regression
     // when this file only asserted colour and semantics, so it asserts size
     // now. Its sibling commit spends a whole ConstrainedBox reaching 44 on the
@@ -70,24 +76,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final target = find.ancestor(
-      of: find.byType(CupertinoSwitch),
-      matching: find.byType(ConstrainedBox),
-    );
-    expect(
-      tester.getSize(target.first).height,
-      greaterThanOrEqualTo(KalloIcons.hit),
-    );
+    expect(targetOf(tester).height, greaterThanOrEqualTo(KalloIcons.hit));
     // And the control itself must NOT have grown to get there.
     expect(tester.getSize(find.byType(CupertinoSwitch)).height, lessThan(44));
   });
 
   testWidgets('a tap in the 44pt band toggles, and only once', (tester) async {
-    // The other half of the floor, which the size assertion above did NOT
-    // cover: `ConstrainedBox` and `Center` lay out to 44 but claim no hits, so
-    // before the GestureDetector a finger in the 2.5pt band above the track
-    // fell through to nothing. Tapping 1pt from the top edge is inside the
-    // target and outside the 39pt switch — the exact band that was dead.
+    // Size is only half the floor. The first attempt at this laid out to 44
+    // through a ConstrainedBox and a Center, neither of which claims a hit, so
+    // a finger 1pt from the top edge — inside the target, outside the 39pt
+    // switch — fell through to nothing, and the size assertion above was
+    // perfectly satisfied.
     var toggles = 0;
     bool? last;
     await tester.pumpWidget(
@@ -103,48 +102,77 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final target =
-        find
-            .ancestor(
-              of: find.byType(CupertinoSwitch),
-              matching: find.byType(ConstrainedBox),
-            )
-            .first;
-    final rect = tester.getRect(target);
+    final rect = targetOf(tester);
     expect(
       rect.height - tester.getSize(find.byType(CupertinoSwitch)).height,
       greaterThan(2),
       reason: 'there has to BE a band for this test to mean anything',
     );
 
-    await tester.tap(target, warnIfMissed: false);
+    await tester.tapAt(rect.center);
     await tester.tapAt(Offset(rect.center.dx, rect.top + 1));
     await tester.pumpAndSettle();
 
-    // Two taps, two toggles — not three or four. A tap that lands on the
-    // switch must be claimed by the switch alone: both recognisers enter the
-    // arena and the deeper one wins the sweep, so this detector is cancelled
-    // rather than firing alongside it.
+    // Two taps, two toggles — not three. The redirect hands the pointer to the
+    // switch's own recogniser rather than adding a second one beside it.
     expect(toggles, 2);
     expect(last, isTrue);
   });
 
+  testWidgets('a DRAG starting in the band still throws the switch', (
+    tester,
+  ) async {
+    // What the tap-forwarding version got wrong, and what a tap test cannot
+    // see. `CupertinoSwitch` is draggable; a forwarded `onTap` cancels the
+    // moment the finger passes slop, so the band was dead to the one gesture
+    // the control is actually built around. Redirecting the hit puts the
+    // switch's own HorizontalDragGestureRecognizer in the arena instead.
+    bool? last;
+    await tester.pumpWidget(
+      host(child: KalloSwitch(value: false, onChanged: (v) => last = v)),
+    );
+    await tester.pumpAndSettle();
+
+    final rect = targetOf(tester);
+    // The BOTTOM band, deliberately: `Size.contains` is half-open on the far
+    // edges, so a redirect that lands a point exactly on `height` reports no
+    // hit and kills this edge while the top one keeps working.
+    final gesture = await tester.startGesture(
+      Offset(rect.left + 12, rect.bottom - 0.5),
+    );
+    await tester.pump();
+    // In steps, not one jump. `DragStartBehavior.start` consumes the first
+    // movement as the drag's own start, so a single `moveBy` fires
+    // `_handleDragStart` and NO `_handleDragUpdate` — leaving `_dragValue`
+    // equal to `widget.value`, which makes `_handleDragEnd` skip `onChanged`
+    // (`cupertino/switch.dart:633`). That is a harness artefact, not the
+    // switch declining the gesture; the first version of this test read it as
+    // a failure of the fix.
+    // Six steps of 12, and the magnitude is not arbitrary: the switch commits
+    // at `_kDragCommitThreshold = 0.7` of `_kTrackWidth = 51`, so roughly 36pt
+    // must arrive as drag UPDATES — and the recogniser eats the first ~18pt as
+    // touch slop. 50pt of travel sits just under the line and reads as a
+    // failure of the fix rather than of the arithmetic.
+    for (var i = 0; i < 6; i++) {
+      await gesture.moveBy(const Offset(12, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(last, isTrue, reason: 'the drag never reached the switch');
+  });
+
   testWidgets('a disabled switch ignores the band too', (tester) async {
-    // `onTap: null` rather than a forwarded call that dereferences a null
-    // callback — the band must be inert, not crash.
+    // The redirect runs whether or not the switch accepts input, so the
+    // disabled control has to swallow the band press without toggling or
+    // throwing.
     await tester.pumpWidget(
       host(child: const KalloSwitch(value: true, onChanged: null)),
     );
     await tester.pumpAndSettle();
 
-    final rect = tester.getRect(
-      find
-          .ancestor(
-            of: find.byType(CupertinoSwitch),
-            matching: find.byType(ConstrainedBox),
-          )
-          .first,
-    );
+    final rect = targetOf(tester);
     await tester.tapAt(Offset(rect.center.dx, rect.top + 1));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
