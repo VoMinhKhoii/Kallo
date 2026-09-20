@@ -1,14 +1,11 @@
 ---
 name: grill-your-own-work
 description: |
-  Adversarial self-review closer — run AFTER a feature is "complete and verified" and
-  BEFORE declaring done, /ship, or opening a PR; also when asked to review another
-  session's/model's/agent's work ("grill this", "audit this", "check Opus's work").
-  Encodes the exact protocol the user repeatedly switches models to get: independent
-  gates first, suspicion-driven probes, defect-preexists-on-base checks, REPORT-ONLY
-  subagents, self-verified headline findings, severity-ordered graded verdicts. In the
-  one recorded direct A/B, this pass turned a green-gated "complete" feature port into
-  a one-go merge by finding 9 logic bugs and 4 missing parity features first.
+  Adversarial closer — invoke AFTER work is "complete and verified" and BEFORE saying
+  done, /ship, or opening a PR, on any diff spanning 2+ files or platforms; also when
+  asked to "grill", "audit", "self grill" or "adversarially review" anyone's work.
+  Fresh gates, mandate-vs-reality, the design as well as the diff, suspicion-driven
+  probes, REPORT-ONLY reviewers, a graded verdict.
 allowed-tools:
   - Bash
   - Read
@@ -16,89 +13,71 @@ allowed-tools:
   - Glob
   - Agent
 metadata:
-  author: distilled-from-fable-5-sessions
-  version: "0.1.0-candidate"
+  author: distilled-from-kallo-sessions
+  version: "0.2.0"
 ---
 
 # Grill Your Own Work
 
-**Why this exists:** the user manually flips models and types "grill this work from
-opus" — verbatim, in three separate recorded sessions (`83d4b9bf` L880, `bf4eb0ac`
-L899, `8c0bed51` L2871) — because a "complete and verified... All gates green" claim
-(`932ee514` L945) once concealed 9 logic bugs, 4 skipped parity features, and an
-entirely unported widget (`932ee514` L1052, L1371). This skill makes that closer a
-standard step instead of a manual rescue.
+Run it on your own finished work exactly as you would on someone else's. On record it
+found nine migrations that existed in no repo (`5182cdc4` L5953), a "decorative" DB gate
+that silently skipped and a P1 letting one account burn the global OCR budget
+(`4b54de9b` L616, L1527). Where it was skipped, "Done" was followed by a P0, a P1 and a
+browser infinite loop found by others (`82d805ca` L1117→L1291→L1456). Judge size by
+`git diff --stat`, never by your edit count.
 
-Run it on your own just-finished work exactly as you would on someone else's. Your
-attachment to the code is the bias being corrected.
+## 1. Fresh gates first — before re-reading the diff
+Run the verify-before-done §1 gate list now, from the right root. Build-phase results
+are stale. Add any cheap invariant you can script on the spot (locale-key parity,
+`schema_migrations` vs `supabase/migrations/` files).
 
----
+## 2. Mandate vs reality
+Re-read the ORIGINAL ask and every later steer. List each promised behavior and check
+it exists. The worst misses on record are structural, not subtle: a widget never ported
+under a full-parity mandate (`932ee514` L1371); approved design elements dropped from
+the spec (`f3074584` L5108).
 
-## The protocol
+## 3. Grill the design, not only the diff
+Read the design doc / spec / state machine and attack it: lifecycle, concurrency, failure
+modes, what happens on retry. Two diff-scoped reviewers found 2 issues where a
+design-level pass then found 17 (`cc03e22b` L306 vs L447, L635). For anything touching
+security, billing or RLS, a single in-house reviewer is not a closer — "no server-side
+bypasses" was contradicted by the next independent pass (`f6072383` L303→L533).
 
-### 1. Independent gates first — before re-reading the diff
-Run the full repo gates fresh (`bunx tsc --noEmit`, `biome ci .`, `bun vitest run`;
-mobile: `flutter analyze`, `flutter test`) plus any cheap domain invariants you can
-script on the spot (e.g. the hand-written en/vi locale-key parity script at `8c0bed51`
-L2874-75). Do not trust the gate results from the build phase — they may be stale, or
-run from the wrong directory (`932ee514` L872).
+## 4. Suspicion-driven probes
+List the 3–6 places you'd bet a bug hides — cross-layer contracts, cache/query keys,
+state after mutation, auth boundaries, gates that can skip — and probe each directly:
+trace a key end-to-end, grep both sides of a contract, run one real request, compare the
+doc-comment to the implementation.
 
-### 2. Enumerate the mandate, then diff reality against it
-Re-read the ORIGINAL ask (full parity? all paths? which platforms?). List every
-promised behavior and check each exists. The worst recorded miss was structural, not
-subtle: "CirclePresenceStrip — not ported at all... blockCircleFriend mutation was
-never actually written" under an explicit full-parity mandate (`932ee514` L1371).
-
-### 3. Suspicion-driven probes on the risky spots
-Before writing any verdict, list the 3-6 places you'd bet a bug hides — cross-layer
-contracts, cache/query keys, state after mutations, auth boundaries — and probe each
-directly. This is what landed the critical bug in `bf4eb0ac` L902→L934: "Wrong query
-key: the logging feed never refreshes after split or accept." Typical probes: trace a
-query key end-to-end, grep both sides of a contract, run one real request, check the
-doc-comment against the implementation (an endpoint once returned `status: 'blocked'`
-while its own comment said "never reveals a block", `932ee514` L1052 A2).
-
-### 4. Does the defect pre-exist on the base?
-Before blaming the diff for anything you find:
+## 5. Pre-existing or introduced?
 ```bash
 git show origin/main:<file> | grep -n <suspect>
 ```
-so review findings are attributed correctly (`8c0bed51` L2886). Pre-existing issues get
-reported separately, not fixed silently in this pass.
+Attribute correctly; report pre-existing defects separately, do not fix them here.
+"Failures are the user's WIP" needs a base-branch run, not `git status`
+(`f3074584` L5794).
 
-### 5. Subagents are REPORT-ONLY
-If you fan out review subagents, every prompt includes: **"REPORT ONLY. DO NOT EDIT ANY
-FILES."** (`8c0bed51` L2912-18). The recorded counter-case: review agents dispatched
-with edit access auto-applied conflicting fixes and regressed `flutter analyze` from
-clean to failing (`47ea3a99` L339→L349). Fixing happens after the verdict, deliberately.
+## 6. Reviewers are REPORT-ONLY — and so is the grill
+Every reviewer prompt contains **"REPORT ONLY. DO NOT EDIT ANY FILES."** Fixing happens
+after the verdict, deliberately — one grill applied migrations and code fixes mid-pass
+and blurred what it had and hadn't reviewed (`5182cdc4` L5770).
 
-### 6. Self-verify the headline finding before reporting it
-Reproduce your worst finding directly before it goes in the report ("Quick self-check
-on the alleged mobile blocker before reporting... The grill caught a genuine functional
-bug", `83d4b9bf` L932). Also re-verify subagent claims independently — grep for what
-they say they removed, run what they say passes (`8c0bed51` L3013). Do NOT relay a
-fix-agent's self-reported test counts as fact (the one recorded lapse: `8c0bed51`
-L3012→L3023).
+## 7. Self-verify the headline before reporting it
+Reproduce your worst finding yourself. Re-verify reviewer and fix-agent claims — grep
+for what they say they removed, run what they say passes; prove a regression test by
+reintroducing the bug (`56cfd62e` L2322). Reject findings that don't hold
+(`f6072383` L545).
 
-### 7. Verdict format
-- **Severity-ordered, worst first** ("Here's the case against this PR, worst first",
-  `bf4eb0ac` L934).
-- **Graded, not binary**: "yes-with-fixes — the overhaul is real and mostly excellent,
-  but it is not yet at your bar" (`8c0bed51` L2986).
-- **Honest negatives**: include a "Non-issues verified (no action)" section
-  (`932ee514` L1052) so cleared suspicions aren't re-litigated.
-- **Escalations**: findings needing a human decision are marked "need your decision"
-  (`83d4b9bf`), not silently resolved.
-- When fixes follow, prescribe the fix design for the tricky ones "so nothing gets
-  improvised badly" (`8c0bed51` L2992), then re-run step 1.
+## 8. Verdict
+Severity-ordered, worst first · graded, not binary ("yes-with-fixes — not yet at your
+bar") · a "Non-issues verified" section · "need your decision" for human calls · fix
+designs prescribed for the tricky ones, then re-run §1.
 
 ---
 
-**Status: VALIDATED 2-0 (blind A/B on Opus, 2026-07-05).** Both control arms also found
-the planted bugs — the wins came from the protocol's artifacts: a self-verified
-regression test, fresh full-repo gates, and empirical base-vs-diff attribution decided
-both blind verdicts. Details: `.claude/skills/_evidence/validation/results.md`.
-Evidence: `.claude/skills/_evidence/findings.md` §D2 vs §F1. Externally corroborated:
-Anthropic's Fable 5 guide — "separate, fresh-context verifier subagents tend to
-outperform self-critique."
-Last verified: 2026-07-04. Drift re-check: `ls .claude/commands/review-before-pr.md && grep -rn 'REPORT ONLY' .claude/skills/grill-your-own-work/`
+**Status:** §1, 2, 4–8 VALIDATED 2-0 (blind A/B, 2026-07-05, under the 0.1.0 wording —
+`_evidence/validation/results.md`). Condensed 2026-09-20; §3 and the size trigger are
+round-2, transcript-derived, NOT blind-validated.
+Evidence: `_evidence/findings.md` §D2, `_evidence/findings-r2.md` §4.
+Drift re-check: `grep -c 'REPORT ONLY' .claude/skills/grill-your-own-work/SKILL.md`

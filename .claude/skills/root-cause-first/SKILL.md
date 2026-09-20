@@ -1,104 +1,91 @@
 ---
 name: root-cause-first
 description: |
-  Trigger discipline for bugs, failures, and anomalies: invoke on ANY unexpected
-  behavior — a test failure, a broken feature, a retry, a "still broken" report, OR an
-  anomaly during your own QA (a tap that doesn't land, output that looks off). Forbids
-  a second patch on the same symptom until the mechanism of the failure is stated;
-  forbids rationalizing away anomalies; requires checking memory/docs for known fixes
-  before improvising. Complements superpowers:systematic-debugging (the full protocol —
-  load it for any nontrivial bug); this skill encodes when to trigger it and the
-  repo-specific failure patterns recorded in this project's session history.
+  Invoke on ANY unexpected behavior: a test or CI failure, a second identical
+  timeout/hang, a third-party API error, a "still broken" / "it still does X" report, or
+  an anomaly during your own QA. No second patch until the mechanism is stated from
+  something observed; no negative claim from a probe that could not have said yes.
 allowed-tools:
   - Bash
   - Read
   - Grep
 metadata:
-  author: distilled-from-fable-5-sessions
-  version: "0.1.0-candidate"
+  author: distilled-from-kallo-sessions
+  version: "0.2.0"
 ---
 
 # Root Cause First
 
-**The recorded failures this prevents:**
-- A fix prescribed without checking the mechanism (Supabase Client-ID ordering, without
-  reading how GoTrue consumes the field) **manufactured a production bug**, was then
-  mis-diagnosed twice, and was solved only by finally reading the source: "ClientID[0]
-  ... My earlier ordering advice was backwards" (`47ea3a99` L2010→L2094).
-- An anomaly during self-QA (back-button taps failing 3×) was rationalized as bad aim
-  ("Navigation back is fighting me") right up to the "Done" claim; the user then
-  reported that exact bug, which was real and already diagnosable (`8a61a242`
-  L2477/2492/2506→L2533).
-- "fix with words" was patched twice over 12 days before anyone asked what it actually
-  was — a full AI-pipeline re-run masquerading as an edit (`8c0bed51` L4250); it was
-  then hidden, not fixed. Three similar re-fix chains in the same session.
-- A known fix already in memory (iCloud→/tmp codesign) was bypassed for two failed
-  workarounds (`f56af273` L148-172).
+Guessed mechanisms appeared in 7 of the last 14 recorded sessions. The costliest: two
+guesses at a payment error, **each costing a production purchase-window cycle**, then
+"let me get the actual error text instead of guessing" — solved in one step
+(`67ee41da` L5175→L5218).
+
+## 1. Observe the failure before proposing a cause
+
+- **Third-party / API error:** reproduce the failing request and read the error body
+  first. Before trusting a probe, run it on a known-negative — "My 400/403 probe was a bad
+  oracle" (`67ee41da` L2366). Never test a guess against production.
+- **CI failure:** read the failing job's log and reproduce locally before any patch. A
+  theory patch was pushed, the same job failed again, and only then did a root-cause
+  pass find the real segfault (`4b54de9b` L803→L826→L994). If the cause is external,
+  push nothing — no placebo commits.
+- **Second identical timeout or hang:** stop retrying with longer timeouts; probe the
+  mechanism (CPU%, `GIT_TRACE=1`, what the process is waiting on). Thirteen git timeouts
+  across two sessions preceded the actual diagnosis (`5182cdc4` L5417–L6066; `4b54de9b`
+  L476–L1476, which also `rm`'d other worktrees' lock files on a guess, L683).
+
+## 2. An anomaly during your own QA is a lead, not noise
+
+You may not blame tooling, flakiness, a stale cache, or the simulator without one direct
+check. "Found a real bug… Tailwind v4 didn't emit" was patched into code, then retracted:
+a stale dev stylesheet (`586b1841` L1195→L1224). Never carry an unexplained anomaly — or
+failures dismissed as "flaky" without their names captured (`f6072383` L2264) — across
+a done-claim.
+
+## 3. No second patch on the same symptom without a stated mechanism
+
+Before attempt #2 write one line: `Mechanism: <why #1 failed / why the bug exists>`,
+grounded in a log, the source, or a probe. If you cannot, you are guessing — stop and
+diagnose. Third fix on the same behavior → the model of the feature is wrong; state what
+it does end-to-end and check how established implementations solve it (Context7).
+
+## 4. "Still broken" after "fixed, tests green" → the test is wrong too
+
+Reproduce from a **rendered** frame before touching code, and make the test measure real
+rects in the real container — not the constant the code sets. A gauge clamp was "fixed"
+twice with green tests while the user still saw it; only the third dispatch demanded
+evidence first (`21d1773a` L1343→L1875→L2330→L2380). Do not relay a worker's "already
+correct" you have not seen yourself (L2560).
+
+## 5. A negative claim needs a probe that could have returned a positive
+
+"No trigger", "no callers", "only check", "CI is done":
+- one SQL statement per probe — MCP `execute_sql` returns only the last; a false P0 was
+  announced and retracted on that artifact (`f6072383` L655→L804);
+- searches unfiltered and un-`head`ed, with quoted globs (`f6072383` L617→L1934);
+- "no checks reported" is not "checks passed" (`21d1773a` L2914→L2946).
+Signals that look like regressions but are infra: uniform ~10s eval failures = DB
+timeouts / pool exhaustion, not the prompt change (`346d3ece` L418→L491, L1847→L1967).
+
+## 6. Known fix first; new fix into memory the same turn
+
+Before improvising around an infra failure spend 30 seconds on `MEMORY.md`, AGENTS.md
+§8 Gotchas, `docs/` (`TASK_BOARD.md` for `ttr`, `apps/docs/mobile/` for Flutter builds).
+When you do find a recipe, write it to memory **in that turn** — the costliest
+workarounds on record recurred across sessions because nobody did. Never put secrets in
+memory or inline a pasted key into commands (`06199779` L415; `67ee41da` L1018).
+
+## 7. Reports end with a falsification test
+
+If you cannot fully confirm from your seat, give the user one concrete disconfirmation
+step with the alternative pre-registered ("if it still fails on cellular, that points
+back at the signing key"). If the deliverable is a diagnosis, fix nothing unasked.
 
 ---
 
-## Rule 1 — An anomaly during QA is a lead, not noise
-
-If something behaves unexpectedly while YOU are testing — a tap that doesn't register,
-a screen that doesn't update, output that looks slightly wrong — it is evidence about
-the system until proven otherwise. You may not attribute it to tooling, aim, flakiness,
-or the simulator without one direct check (read the code path / add a log / try the
-programmatic equivalent). Never carry an unexplained anomaly across a "Done" claim.
-
-## Rule 2 — No second patch on the same symptom without a stated mechanism
-
-Before fix attempt #2 on anything, write one sentence in your output:
-`Mechanism: <why attempt #1 failed / why the bug exists>` — grounded in something you
-observed (log, source, probe), not something you assumed. The recorded contrast:
-two blind relaunch patches vs the eventual real cause "`grep | head` is fragile under
-`set -o pipefail` in a non-TTY" (`47ea3a99` L895→L910). If you cannot state the
-mechanism, you are not fixing — you are guessing. Stop and diagnose (load
-superpowers:systematic-debugging).
-
-## Rule 3 — Check for a known fix before improvising
-
-Before working around any infra/tooling failure, spend 30 seconds:
-- memory files (`MEMORY.md` — this repo's history has entries for iCloud codesign→/tmp,
-  Cloud Run URL aliases, l10n >50KiB test stalls, middleware auth-route exclusions),
-- `AGENTS.md` §9 Gotchas,
-- `apps/docs/mobile/` for Flutter build issues.
-The `/tmp` fix was IN memory and even cited in-session before two workarounds were
-attempted anyway (`f56af273` L112 vs L148-172).
-
-## Rule 4 — Evidence before blame; prove external causes before pushing anything
-
-When CI or prod fails: read the actual logs before touching the repo. The recorded
-standard: "Following the systematic-debugging discipline — root cause from the actual
-logs before any fix" → diagnosis that Docker Hub returned a 502, "Nothing to fix in the
-repo" — and **no placebo commit was pushed** (`ad88fbba` L2459→L2494). Corollaries:
-- Reproduce a failure (or its absence) more than once before believing it — three
-  consistent timeouts, not one (`42e3116a` L83-84).
-- Verify from the **shipped artifact**, not the source that generated it: the build's
-  `--dart-define`/Fastfile values, the installed `node_modules/*.d.ts`, the deployed
-  config (`42e3116a` L43-47; `ad88fbba` L469→479).
-
-## Rule 5 — When the same feature needs its 3rd fix, question the design
-
-A re-fix chain (same behavior touched ≥3×) means the model of the feature is wrong, not
-the edges. Stop patching; state what the feature actually does end-to-end, compare with
-what it should do, and check how established implementations solve it (AGENTS.md
-mandates Context7 for exactly this — it was used 0 times in the 16-day session whose
-feature had to be rebuilt, `8c0bed51` findings §F5).
-
-## Rule 6 — Reports end with a falsification test
-
-When you diagnose something you can't fully confirm from your seat, give the user a
-concrete disconfirmation step WITH the alternative pre-registered: "turn off Wi-Fi and
-try cellular... If it still fails, tell me — that would point back at a JWT signing-key
-change" (`42e3116a` L119). And if the deliverable is a diagnosis, do not fix anything
-unasked — that session ended with zero file edits.
-
----
-
-**Status: VALIDATED 2-0 (blind A/B on Opus, 2026-07-05).** Clearest win: the control's
-mechanism description of a prior failed fix contained two factual inaccuracies ("partially
-assumed rather than carefully traced" — blind grader), while the skill arm reproduced
-before touching anything. Second win was thin (both arms solved the singleton-cache
-trap; rigor delta decided it). Details: `.claude/skills/_evidence/validation/results.md`.
-Evidence: `.claude/skills/_evidence/findings.md` §F3 vs §D3/D4.
-Last verified: 2026-07-04. Drift re-check: `find ~/.claude/projects -maxdepth 2 -name MEMORY.md | head -1 && grep -n 'Gotchas' AGENTS.md` (memory path varies per machine)
+**Status:** rules 2, 3, 6 (known-fix half), 7 VALIDATED 2-0 (blind A/B, 2026-07-05, under
+the 0.1.0 wording — `_evidence/validation/results.md`). Condensed 2026-09-20; rules 1,
+4, 5 and the memory-write half of 6 are round-2, transcript-derived, NOT blind-validated.
+Evidence: `_evidence/findings.md` §F3/§D3, `_evidence/findings-r2.md` §R5/§R7.
+Drift re-check: `grep -n 'Gotchas' AGENTS.md && ls docs/TASK_BOARD.md`
