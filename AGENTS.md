@@ -4,7 +4,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 ## 1. Hard Prohibitions (NEVER DO)
 
-- **Long-running commands**: never run `bun dev` / `bun run build` / `bun start` unless the user explicitly asks. Exception: `bun dev` while actively testing via Chrome DevTools MCP.
+- **Long-running commands**: never run `bun dev` / `bun run build` / `bun start` unless the user explicitly asks. Exception: `bun dev` while actively testing in a browser via Chrome DevTools MCP or Playwright MCP (routing in §2).
 - **Remote DB pushes**: never run `bun dbr:push`, `bun dbr:reset`, or `bun dbr:reset:nobackfill`. Prepare migrations; the user applies them.
 - **Secrets**: never commit API keys/tokens/credentials; reference env vars by name only.
 - **`package.json` dependencies**: never hand-edit; use `bun add <package>`. (Editing `scripts` is fine.)
@@ -31,6 +31,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 - **Zod validation** for all external inputs (API params, form data, URL params); React Hook Form + `@hookform/resolvers` for forms.
 - **Pre-read docs**: `docs/DATABASE.md` before DB/migration work; `docs/DATA.md` before food-data work; `docs/EMAIL.md` before touching anything that sends email (auth emails run through our own Supabase hook, not Supabase's mailer); `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` before touching `analyzeMeal`, the matching cascade, or the Gemini wrapper.
 - **Context7 MCP** for up-to-date library docs — required research before locking designs around third-party behavior (state ownership, routing, persistence).
+- **Browser tools — route by job**: performance traces, Lighthouse audits, network/console debugging and heap snapshots → **Chrome DevTools MCP**; click-through flow and form testing → **Playwright MCP**.
 - **Conventional Commits** (`feat:`, `fix:`, `chore:`, …) drive [release-please](https://github.com/googleapis/release-please) version bumps: `feat!:`/`BREAKING CHANGE` = major (rare — when unsure, downgrade), `feat:` = minor, everything else = patch. Override with a `Release-As: x.y.z` footer or by editing the Release PR. Never hand-edit `CHANGELOG.md` or the version.
 - **Branches**: `<type>/<short-kebab-slug>` (≤40 chars), e.g. `feat/jwt-user-auth`. When `EnterWorktree` creates a branch, pass an explicit conforming `name`.
 - **Keep docs current**: change a workflow/command/architecture → update the doc that describes it in the same change (web docs in `docs/`, mobile in `apps/docs/mobile/`). Verify every path/command before writing it.
@@ -38,29 +39,12 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 ## 3. Commands
 
-- Dev: `bun dev` · Build: `bun run build` · Start: `bun start`
 - Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate, all blocking) · `bun run test` / `bun run test:watch` (**`bun test` runs Bun's own runner, not Vitest** — it collects different files and fails)
 - DB: `bun db:generate` (Drizzle migration from schema) · `bun db:migrate` (apply locally) · `bun db:studio` · `bun dbr:status` · `bun dbr:push` / `bun dbr:reset` (**user only**)
 - DB search tests (remote DB): `bun --env-file=.env.local run test -- lib/infra/db/__tests__/`
 - **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Kallo**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
 
 ## 4. Architecture
-
-```
-/app                    — Next.js App Router: [locale] pages, /auth, /api routes
-/components/<feature>   — feature UI (admin, auth, dashboard, groups, landing-page,
-                          logging/{feed,input,sidebar}, nutrition, onboarding,
-                          providers, settings, shared, …)
-/components/ui          — shadcn/ui (CLI-managed, do not edit)
-/lib/<feature>          — domain/data logic (ai, actions/<feature>, db, nutrition,
-                          groups, logging, supabase, rate-limit, security, types, …)
-/hooks/<feature>        — custom React hooks
-/i18n, /messages        — next-intl locales
-/scripts                — one-off + CI scripts (gate: ci/check-structure/)
-/supabase/migrations    — all SQL migrations (Drizzle-generated + manual)
-/docs                   — project docs (ARCHITECTURE, DATABASE, DATA, specs)
-/apps/mobile-flutter    — Flutter app (own AGENTS.md; docs in /apps/docs/mobile)
-```
 
 Key files: `lib/infra/db/schema.ts` (schema source of truth) · `lib/infra/db/client.ts` (client + `encodeDbUrl()`) · `middleware.ts` (auth/session + origin lock) · `drizzle.config.ts` · `biome.json` (disabled rules documented there) · `lib/infra/rate-limit/limiter/limiter.ts` (the generic rate limiter — `assertRateLimit`; see `docs/RATE_LIMITING.md`) · `lib/infra/rate-limit/ocr-guard.ts` (`withOcrGuard`, the OCR spend guard) · `lib/api/route-inventory.ts` (the checked-in map of every route handler under `app/**` — auth / body-bound / rate-limit posture — enforced by `route-inventory.test.ts`, which also checks the body-bound and policy claims against the route source).
 
@@ -93,7 +77,6 @@ The full module map — one line per folder stating its single concern — is `d
 
 ### Styling & UI
 - Tailwind CSS 4 + CSS variables; merge classes with `cn()` from `@/lib/core/ui/cn`; `next-themes` for dark/light — never hard-code colors.
-- Biome formatting: 80-char lines, 2-space indent, single quotes (JS/TS) / double (JSX), semicolons, ES5 trailing commas.
 - `motion` for entrance/exit + complex animations; CSS transitions for simple hover/focus. Skeletons for page loads, spinners for action loads. Semantic HTML, ARIA labels, focus management. `next/image` with explicit dimensions.
 
 ## 6. Non-Obvious Library Choices (do not substitute)
@@ -114,6 +97,8 @@ The full module map — one line per folder stating its single concern — is `d
 - **OG images** (`app/api/og/macro-card/[shareId]/` renders via Satori — not a browser): every element with 2+ children needs explicit `display: 'flex'`; literal hex colors only (no `var(--kallo-*)`) — they live in `lib/seo/og/palette.ts`, geometry in `card-geometry.ts`, `_fonts/*.ttf` loading in `fonts.ts`. The card itself is `_components/macro-card.tsx`; the route only reads the DB and maps rows to its props.
 - **New `/auth/*` routes** must be handled in the `middleware.ts` matcher/origin-lock flow, or next-intl rewrites them to `/{locale}/auth/...` and 404s — tests don't catch this (they call handlers directly).
 - Check `package.json` scripts before assuming a command exists; run tests immediately after editing test files (don't batch edits, then debug multiple failures).
+- **Agent shell recipes** (each rediscovered in 3–9 recorded sessions — `.claude/skills/_evidence/findings-r2.md` §2): foreground `sleep N; cmd` is blocked → `gh pr checks --watch` in the background, a Monitor, or the task notification · zsh: quote globs (`--include='*.ts'`) and brace vars (`${VAR}`) · absolute paths — cwd resets to the main checkout after a restart · stage explicit paths, never `git add -A`, never `git stash` (the stack is shared across worktrees) · edit with the Edit tool, not `python -c "s.replace"`/`sed -i` (silent no-op on a missing target) · temp files in the session scratchpad, `mktemp` X's last · send test-suite output to a file once and grep the file · one heavy toolchain job at a time (full suite, `flutter run`, sim build, a worker running either).
+- **Screenshots are the largest context cost on record** (168 `.png` reads = 85% of all tool-result bytes; oversized boards caused "Prompt is too long" 4× in one session): viewport ≤1280px, element-scoped not `fullPage`, downscale before Read (`sips -Z 1000 in.png --out out.png`), and use a DOM `evaluate` when a number answers the question. Playwright blocks `file:` URLs — `python3 -m http.server` and save under `.playwright-mcp/`.
 
 ## 9. Decision Log (context → decision; all Active)
 

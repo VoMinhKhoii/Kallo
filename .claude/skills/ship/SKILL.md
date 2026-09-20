@@ -63,9 +63,13 @@ git diff --stat
 git diff --cached --stat
 ```
 
-Run `git add -A` to stage everything unless the user has already partially staged
-changes (check `git status`). If partially staged, confirm with the user whether
-to add the unstaged files too before proceeding.
+Stage **explicit paths** — the files this session changed — never `git add -A` /
+`git add .`. The checkout is shared: a blanket add once swept 67 of the user's untracked
+files into a pushed commit (`f6072383` L961-969) and another silently deleted
+`apps/docs/mobile/` (`56cfd62e` L3942). If the user has already partially staged changes
+(check `git status`), or untracked files exist that you did not create, confirm with the
+user before adding them. Then check `git diff --cached --stat` and
+`git diff --cached --diff-filter=D --name-only` — every staged deletion is one you meant.
 
 ---
 
@@ -290,7 +294,7 @@ Pick the better one, fix it, dismiss the other with a comment explaining the tra
 Fix the code, then stage and push:
 
 ```bash
-git add -A
+git add <the files you fixed>      # explicit paths, never -A
 git commit -m "fix: address CodeRabbit review comments"
 git push
 ```

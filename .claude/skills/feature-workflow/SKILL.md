@@ -1,88 +1,54 @@
 ---
 name: feature-workflow
 description: |
-  The umbrella dev loop for any non-trivial feature, fix, or refactor in this repo —
-  invoke at TASK START, before exploring or editing. It does not add new rules; it
-  sequences the validated discipline skills at the phase boundaries where the recorded
-  Opus sessions put them in the wrong order (gates at the end instead of per phase,
-  review after merge instead of before done, decisions locked before the user saw
-  them). Routes to: decision-gate → probe-state-before-acting → implement with
-  per-phase verification → verify-before-done → grill-your-own-work → /ship.
+  Invoke FIRST, at task start, for any non-trivial feature, fix, refactor, design-to-code
+  port or multi-PR job in this repo — before exploring, planning, brainstorming or
+  editing — and again when resuming after a compaction. A one-page router: which
+  discipline skill to load at which phase boundary. Adds no rules of its own.
 allowed-tools:
   - Skill
   - Read
   - Bash
 metadata:
-  author: distilled-from-fable-5-sessions
-  version: "0.1.0-composition"
+  author: distilled-from-kallo-sessions
+  version: "0.2.0"
 ---
 
 # Feature Workflow
 
-**Why a router:** the evidence shows Opus has every individual discipline — it runs
-gates, reviews, plans well — but sequences them wrong. The Circle port ran ALL its
-verification once, at the end (`932ee514` L945 → 9 bugs found post-"done"); the
-meal-card sessions reviewed after shipping (`8c0bed51`, 3-surface revert); the barcode
-session locked a schema design before the user saw it (`8013b7ec` L66). Right pieces,
-wrong order. This skill is the order.
+The pieces work — every discipline skill that fired on record changed behavior. The
+failures come from the ones that never fired: in 14 recorded sessions this router,
+`decision-gate`, `probe-state-before-acting` and `verify-before-done` were invoked zero
+times, and the two costliest failure classes (done-claims nobody observed; actions on a
+shared or stale checkout) map exactly onto them. This page is the order. Load each skill
+with the Skill tool — do not `cat` it.
 
----
-
-## Phase 0 — Orient (before ANY edit)
-
-1. AGENTS.md §2.2 preflight: invoke the matching stack skills (vercel-react-best-practices
-   / kallo-design / mobile docs) — the most-skipped mandatory step on record.
-2. Load **probe-state-before-acting**: fetch, check whether the branch/work already
-   exists, confirm the worktree root. (Worktree from latest main per repo convention.)
-3. Restate the ask. If it's multi-part feedback, produce a numbered parse of every
-   distinct ask first, and close each explicitly in your wrap. (A dedicated
-   absorb-steering skill FAILED blind validation — its deferral framing correlated with
-   under-delivery — so this router keeps only the parse/close mechanic, which tied, and
-   drops the rest.)
-
-## Phase 1 — Decide (before building)
-
-Load **decision-gate**. Split forks from implementation. Surface forks as ONE
-decision-table question (or the top of your report if non-interactive). Schema/auth/
-export-semantics/UX-paradigm forks are always gated. Only then plan the build — plan
-depth itself is your call; the evidence shows no planning-quality gap, so don't
-over-ceremonialize small tasks.
-
-## Phase 2 — Implement (verification per phase, not terminal)
-
-- After each coherent chunk: targeted tests + analyze/tsc on the touched area. Do NOT
-  save all verification for the end — terminal-only verification is the single
-  costliest recorded pattern.
-- Unfamiliar library → read `node_modules/**/*.d.ts` + Context7 before coding against it.
-- Anything unexpected during your own QA → load **root-cause-first** before continuing.
-- Delegating? Load **delegate-and-verify** first (REPORT-ONLY reviewers, prescribed fix
-  designs, never relay self-reports).
-
-## Phase 3 — Close (before saying "done")
-
-1. Load **verify-before-done**: full gates from the right root + behavior-altitude
-   observation + evidence-audited report.
-2. For features beyond a trivial patch, load **grill-your-own-work**: adversarial pass
-   on your own diff before the user sees it. This is the step the user used to trigger
-   manually by switching models — make it automatic.
-3. Ship via **/ship** only when the user asks; branch naming + conventional commits per
-   AGENTS.md.
+| Phase | Do | Load |
+|---|---|---|
+| **0. Orient** — before any edit | AGENTS.md §2 preflight for the stack you'll touch (`kallo-design` for ANY UI, `vercel-react-best-practices`, mobile docs; the pre-read docs for DB / email / pipeline work). Where am I, is the branch already there, is the tree mine? | **probe-state-before-acting** |
+| **1. Decide** — before a plan or code | Reconcile scope against the source of truth; reuse probe; surface forks as ONE decision table. Plan depth is your call — small tasks need no ceremony. | **decision-gate** |
+| **2. Build** — per chunk, not at the end | Targeted tests + tsc/analyze on the touched area after each coherent chunk. UI work: render it as you go, not at PR time. | — |
+| ↳ anything unexpected | a failure, a second identical hang, a "still broken" | **root-cause-first** |
+| ↳ dispatching any subagent | brief file, REPORT-ONLY reviewers, no relayed claims | **delegate-and-verify** |
+| ↳ restart / compaction / resume | re-probe cwd + branch before reading a file as evidence | **probe-state-before-acting** |
+| **3. Close** — before "done" | CI-equivalent gates, behavior observed, diff composition, evidence-audited report | **verify-before-done** |
+| ↳ diff spans 2+ files or platforms | adversarial pass on the design and the diff — before the user has to ask for one | **grill-your-own-work** |
+| **4. Ship** | only when the user asks; `<type>/<slug>` branch, conventional commits | `/ship` |
 
 ## Session-long invariants
 
-- Steering arrives → parse it into numbered asks, act, close item-by-item in the wrap.
-- Context pressure rising → verify FIRST, then summarize; externalize state (plan file,
-  tasks, memory) instead of holding it in context.
+- Steering arrives → parse it into numbered asks, act, close each one in the wrap.
+- A recipe or preference learned → memory in the same turn; check memory before choosing
+  a tool or model.
+- Context pressure → verify FIRST, then summarize; externalize state to a plan file or
+  memory rather than holding it in context.
+- Environment quirks and image hygiene: AGENTS.md §8.
 - End of session → AGENTS.md retrospective + memory write for durable lessons.
 
 ---
 
-**Status: COMPOSITION — not independently validated.** The four routed discipline
-skills were blind-validated 8-0 individually (batch 1) and the routed batch-2 skills
-carry their own validation records; this router itself is ordering logic distilled from
-the recorded sequencing failures, and a router cannot be trap-tested in a single-shot
-arm. Treat its value claim as: "the pieces are proven; the order is evidence-derived
-but unproven as a bundle."
-Evidence: `.claude/skills/_evidence/findings.md`; validation:
-`.claude/skills/_evidence/validation/results.md`.
-Last verified: 2026-07-09. Drift re-check: `ls .claude/skills/{verify-before-done,grill-your-own-work,root-cause-first,probe-state-before-acting,decision-gate,delegate-and-verify}/SKILL.md`
+**Status: COMPOSITION — not independently validated**; a router cannot be trap-tested in
+a single-shot arm. The routed skills carry their own validation records. Rewritten
+2026-09-20 after round 2 showed the ordering was never exercised in practice.
+Evidence: `_evidence/findings.md`, `_evidence/findings-r2.md` §4, `_evidence/sessions-r2.md`.
+Drift re-check: `ls .claude/skills/{verify-before-done,grill-your-own-work,root-cause-first,probe-state-before-acting,decision-gate,delegate-and-verify,kallo-design}/SKILL.md`
