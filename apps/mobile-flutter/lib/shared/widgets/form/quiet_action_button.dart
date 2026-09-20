@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
@@ -54,14 +55,7 @@ class QuietActionButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (busy) ...[
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: kInk,
-                    ),
-                  ),
+                  const CupertinoActivityIndicator(radius: 7, color: kInk),
                   const SizedBox(width: 6),
                 ],
                 Text(

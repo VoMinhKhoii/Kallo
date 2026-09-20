@@ -16,6 +16,7 @@ Builds run from a `/tmp` mirror (iCloud file-provider breaks codesigning) and sh
 - `flutter analyze` and `flutter test` — after each coherent chunk, and always before signing off.
 - `bun check:structure` (from the repo root) — the 400/200 LOC ratchet covers `.dart` files: 400 per source file, 200 per widget file (`lib/**/widgets/**`, `lib/shell/`).
 - Design/UI work requires the `kallo-design` skill (mobile platform: `mobile.md` — Be Vietnam Pro, calm Threads-tuned type scale), same as the root rule.
+- **Cupertino wins by default.** Where Flutter ships a Cupertino widget for what you are building, use it. A hand-rolled widget is only allowed where its own doc comment cites a specific defect in the Cupertino equivalent — a measured number, a reproduced bug, or a system rule the platform breaks — plus the trigger that retires the exception. "We already have one" is not a defect. Full rule and conversion table: `.agents/skills/kallo-design/mobile.md`, *Platform — Cupertino wherever it exists*. The one exception running the other way is routes: `MaterialPage`/`MaterialPageRoute` is correct app-wide, because a `CupertinoPage` opts the route out of the theme's full-width back drag.
 
 ## 3. Structure Conventions
 

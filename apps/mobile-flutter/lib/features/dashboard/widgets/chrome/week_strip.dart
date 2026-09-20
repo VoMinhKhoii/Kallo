@@ -15,6 +15,7 @@ library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/profile/dashboard.dart';
@@ -89,6 +90,9 @@ class _WeekStripState extends ConsumerState<WeekStrip> {
         child: PageView.builder(
           controller: _controller,
           physics: const PageScrollPhysics(),
+          // Paging a week is a selection change — `timeline_strip.dart:80`
+          // ticks on exactly this and the two strips sit a tap apart.
+          onPageChanged: (_) => HapticFeedback.selectionClick(),
           itemCount: kWeekPageBase + 1, // page kWeekPageBase == today's week
           itemBuilder: (context, page) {
             final days =

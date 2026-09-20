@@ -16,6 +16,7 @@
 library;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 /// The physics a scroll view needs for [KalloRefresh] to work at all.
 ///
@@ -37,8 +38,16 @@ class KalloRefresh extends StatelessWidget {
   final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) =>
-      CupertinoSliverRefreshControl(onRefresh: onRefresh);
+  Widget build(BuildContext context) => CupertinoSliverRefreshControl(
+    // `CupertinoSliverRefreshControl` fires no haptic of its own, so the
+    // refresh committed with nothing to feel. iOS Mail and Messages both tick
+    // at the instant the pull crosses the trigger — this callback IS that
+    // instant, so the impact belongs here rather than around [onRefresh].
+    onRefresh: () {
+      HapticFeedback.lightImpact();
+      return onRefresh();
+    },
+  );
 }
 
 /// A refreshable page scroll: the three things above, assembled.
@@ -60,7 +69,11 @@ class KalloRefreshableScroll extends StatelessWidget {
     required this.onRefresh,
     required this.slivers,
     this.controller,
-    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+    // onDrag, not manual: dragging a list with the keyboard up dismisses it
+    // on iOS, and only `feed_list` had opted in — so every other refreshable
+    // page kept the keyboard over the content the drag was trying to reveal.
+    // A page that wants the keyboard to survive a drag can still say so.
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.onDrag,
   });
 
   final Future<void> Function() onRefresh;

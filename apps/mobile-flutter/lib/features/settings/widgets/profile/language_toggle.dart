@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -37,7 +38,12 @@ class LanguageToggle extends StatelessWidget {
             child: _LangButton(
               label: _languages[i].label,
               selected: value == _languages[i].code,
-              onTap: () => onChange(_languages[i].code),
+              onTap: () {
+                if (value != _languages[i].code) {
+                  HapticFeedback.selectionClick();
+                }
+                onChange(_languages[i].code);
+              },
             ),
           ),
         ],

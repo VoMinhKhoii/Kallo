@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -76,7 +77,16 @@ class AggressionSlider extends StatelessWidget {
               max: 0.8,
               divisions: 14, // (0.8 - 0.1) / 0.05
               value: aggressionKg.clamp(0.1, 0.8),
-              onChanged: onChange,
+              onChanged: (value) {
+                // A detent crossed is a selection change, the same contract
+                // `cheat_slider_card.dart` already honours. Compared in STEPS,
+                // not raw kg: 0.05 apart in value, so a float compare would
+                // fire on every pixel of travel.
+                if ((value / 0.05).round() != (aggressionKg / 0.05).round()) {
+                  HapticFeedback.selectionClick();
+                }
+                onChange(value);
+              },
             ),
           ),
           const SizedBox(height: KalloSpacing.sp3),

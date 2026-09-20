@@ -61,4 +61,207 @@ void main() {
 
     await tester.pumpAndSettle(const Duration(seconds: 3));
   });
+
+  testWidgets('an action toast leaves on an upward flick', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          // Long, so anything that dismisses inside the test is the GESTURE
+          // and not the countdown quietly expiring.
+          duration: const Duration(seconds: 30),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+    expect(find.text('Deleted'), findsOneWidget);
+
+    await tester.fling(find.text('Deleted'), const Offset(0, -60), 900);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deleted'), findsNothing);
+  });
+
+  testWidgets('a downward drag does NOT dismiss it', (tester) async {
+    // Downward is far more likely to be a page scroll that started slightly
+    // too high than an intent to dismiss, so only the upward flick counts.
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(seconds: 30),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.text('Deleted'), const Offset(0, 60), 900);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deleted'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 31));
+  });
+
+  testWidgets('a finger on an action toast pauses its countdown', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(seconds: 2),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    // NOT pumpAndSettle: the TextButton's own splash keeps frames scheduled
+    // long enough to run the dwell out before the hold starts. Pump just past
+    // the 260ms entrance instead.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Hold well past the 2s dwell without lifting.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Deleted')),
+    );
+    await tester.pump(const Duration(seconds: 3));
+    expect(
+      find.text('Deleted'),
+      findsOneWidget,
+      reason: 'the countdown must not expire under a finger',
+    );
+
+    // Lifting restarts it, so it still leaves on its own afterwards.
+    await gesture.up();
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    expect(find.text('Deleted'), findsNothing);
+  });
+
+  testWidgets('a CANCELLED pointer still lets the toast leave', (tester) async {
+    // The regression this file exists for. A cancelled pointer delivers no
+    // PointerUpEvent, so routing only `up` left the dwell timer cancelled
+    // forever: the toast pinned to the top of the screen and the future it
+    // completes never resolved — and `meal_actions.dart` awaits that future
+    // before deleting a meal on the server.
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(milliseconds: 800),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Deleted')),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await gesture.cancel();
+
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Deleted'),
+      findsNothing,
+      reason: 'a cancelled pointer must not strand the dwell timer',
+    );
+  });
+
+  testWidgets('a gentle upward drag is below the flick threshold', (
+    tester,
+  ) async {
+    // Pins the 320 px/s constant. Without this, changing the test to `< 0`
+    // would delete the threshold entirely and every other test still passes.
+    await tester.pumpWidget(
+      _host(
+        (c) => showTopToast(
+          c,
+          'Deleted',
+          actionLabel: 'Undo',
+          onAction: () {},
+          duration: const Duration(seconds: 30),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.text('Deleted'), const Offset(0, -30), 120);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Deleted'),
+      findsOneWidget,
+      reason: '120 px/s is well under the 320 px/s flick threshold',
+    );
+
+    await tester.pump(const Duration(seconds: 31));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a passive toast stays untouchable', (tester) async {
+    // The IgnorePointer contract: a toast over a button must never eat the
+    // press meant for it. This is why swipe-to-dismiss and hold-to-pause are
+    // fitted to the ACTION variant only.
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          // SizedBox.expand, and every child positioned: a bare Stack sizes to
+          // its largest NON-positioned child, and StackFit.expand instead makes
+          // the button fill and swallow everything. Both were wrong before this
+          // shape, and both failed in a way that looked like a product bug.
+          body: SizedBox.expand(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => taps++,
+                    behavior: HitTestBehavior.opaque,
+                  ),
+                ),
+                Positioned(
+                  bottom: 24,
+                  left: 24,
+                  child: Builder(
+                    builder:
+                        (context) => TextButton(
+                          onPressed: () => showTopToast(context, 'Saved'),
+                          child: const Text('go'),
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved'), findsOneWidget);
+
+    await tester.tapAt(tester.getCenter(find.text('Saved')));
+    await tester.pump();
+    expect(taps, 1, reason: 'the tap must pass through the passive toast');
+
+    await tester.pumpAndSettle(const Duration(seconds: 3));
+  });
 }
