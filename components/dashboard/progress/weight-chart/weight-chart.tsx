@@ -102,7 +102,7 @@ export function WeightChart({
   const animate = !reduceMotion;
 
   return (
-    <div className="relative flex h-full min-h-[200px] flex-col xl:min-h-0">
+    <div className="flex h-full min-h-[200px] flex-col xl:min-h-0">
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -110,11 +110,11 @@ export function WeightChart({
             // Numbers live in the YAxis gutter on the left; the plot fills to the
             // right edge (small right margin so the last label isn't clipped).
             margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
-            // When empty, the paragraph below carries the message — announcing
-            // the chart too would say it twice.
-            role={isEmpty ? undefined : 'img'}
-            aria-hidden={isEmpty || undefined}
-            aria-label={isEmpty ? undefined : t('weightChartAria')}
+            role="img"
+            // Nothing is logged: the bare frame says so on sight, but a screen
+            // reader gets no frame — so the prompt lives here rather than as
+            // visible copy over the plot.
+            aria-label={isEmpty ? t('noWeightData') : t('weightChartAria')}
           >
             <CartesianGrid
               vertical={false}
@@ -181,12 +181,6 @@ export function WeightChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-
-      {isEmpty && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center font-light font-serif text-kallo-text-muted text-sm italic">
-          {t('noWeightData')}
-        </p>
-      )}
     </div>
   );
 }

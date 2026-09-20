@@ -208,7 +208,7 @@ class WeightChartCanvas extends StatelessWidget {
 
           // The bounds sit in the gutter, level with the plot's top and
           // bottom; plot, gridlines and date row share one left edge.
-          return Stack(
+          final plot = Stack(
             children: [
               Positioned.fill(left: gutter, child: chart),
               Positioned(
@@ -221,22 +221,20 @@ class WeightChartCanvas extends StatelessWidget {
                 left: 0,
                 child: Text(minLabel, style: axisLabel),
               ),
-              if (isEmpty)
-                Positioned(
-                  left: gutter,
-                  right: 0,
-                  top: 0,
-                  bottom: dateAxisHeight,
-                  child: Center(
-                    child: Text(
-                      tr('dashboard.noWeightData'),
-                      textAlign: TextAlign.center,
-                      style: dashMeta(color: kInkMuted),
-                    ),
-                  ),
-                ),
             ],
           );
+
+          // The bare frame reads as "nothing logged yet" on sight. A screen
+          // reader gets no frame, so the prompt becomes the plot's label
+          // rather than a line of copy over it. `container` is what makes the
+          // node exist — a label alone on non-semantic children is dropped.
+          return isEmpty
+              ? Semantics(
+                container: true,
+                label: tr('dashboard.noWeightData'),
+                child: plot,
+              )
+              : plot;
         },
       ),
     );
