@@ -24,10 +24,10 @@
   "loadingWeightTrend": "Loading weight trend…",
   "now": "Now",
   "start": "Start",
-  "weekPrefix": "W",
   "projected": "Projected",
   "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
   "noWeightData": "Log your first weight to start tracking your trend.",
+  "weightChartAria": "Weight trend over the selected period, with a dotted projection when there is enough data.",
   "offTrack": "Off track",
   "mealsLogged": "{count} logged",
   "ranges": {

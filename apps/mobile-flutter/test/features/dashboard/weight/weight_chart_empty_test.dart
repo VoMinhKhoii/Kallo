@@ -2,7 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart_canvas.dart';
 
 import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart';
@@ -66,16 +68,34 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('with nothing logged the card is ONLY the empty state', (
+  testWidgets('with nothing logged the card is the empty PLOT, and no hero', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
+
     await tester.pumpWidget(_app(_summary(weights: const [])));
     await tester.pumpAndSettle();
 
+    // The bare frame IS the empty state — gridlines, both bounds and the two
+    // end ticks. No sentence over the plot: an empty chart already reads as
+    // "nothing logged yet".
+    expect(find.byType(WeightChartCanvas), findsOneWidget);
+    expect(find.byType(LineChart), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Now'), findsOneWidget);
     expect(
       find.text('Log your first weight to start tracking your trend.'),
+      findsNothing,
+      reason: 'the empty plot carries this, not a line of copy',
+    );
+
+    // A screen reader gets no frame, so the prompt is the chart's label.
+    expect(
+      find.bySemanticsLabel(RegExp('Log your first weight')),
       findsOneWidget,
     );
+    semanticsHandle.dispose();
+
     expect(
       find.text('65.9'),
       findsNothing,
@@ -91,6 +111,8 @@ void main() {
   testWidgets('once something is logged the hero number comes back', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
+
     await tester.pumpWidget(_app(_summary(weights: const [67.0, 65.9])));
     await tester.pumpAndSettle();
 
@@ -99,5 +121,11 @@ void main() {
       find.text('Log your first weight to start tracking your trend.'),
       findsNothing,
     );
+    expect(
+      find.bySemanticsLabel(RegExp('Log your first weight')),
+      findsNothing,
+      reason: 'the prompt is only for the empty plot',
+    );
+    semanticsHandle.dispose();
   });
 }
