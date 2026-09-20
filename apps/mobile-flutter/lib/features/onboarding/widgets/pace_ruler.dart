@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../logic/detent_scroll_physics.dart';
+
 import '../../../shared/logic/display_format.dart'
     show formatOneDecimal, localeOf;
 import '../../../shared/widgets/gauge/ruler/ruler_marks.dart';
@@ -103,6 +105,7 @@ class _PaceRulerState extends State<PaceRuler> {
 
   void _nudge(int delta) => _moveTo(_index + delta, settle: true);
 
+  /// [settle] is for the +/- buttons only — a drag now lands itself.
   void _moveTo(int raw, {required bool settle}) {
     final int i = raw.clamp(0, _count - 1);
     if (i == _index) return;
@@ -175,20 +178,15 @@ class _PaceRulerState extends State<PaceRuler> {
           alignment: Alignment.topCenter,
           clipBehavior: Clip.none, // The needle's cap rides above the hairline.
           children: [
-            NotificationListener<ScrollEndNotification>(
-              // Deferred to a microtask: beginning an activity from inside
-              // the notification that ENDED the last one re-enters the position.
-              onNotification: (_) {
-                if (!_selfDriven) Future.microtask(_settle);
-                return false;
-              },
-              child: SingleChildScrollView(
-                controller: _controller,
-                scrollDirection: Axis.horizontal,
-                // Half a viewport of lead-in, so the ends reach the needle.
-                padding: EdgeInsets.symmetric(horizontal: box.maxWidth / 2),
-                child: SizedBox(width: _contentWidth, child: _face(context)),
-              ),
+            SingleChildScrollView(
+              controller: _controller,
+              scrollDirection: Axis.horizontal,
+              // The fling terminates on a graduation, so the old
+              // ScrollEndNotification -> animateTo second stage is gone.
+              physics: DetentScrollPhysics(pitch: _pitch),
+              // Half a viewport of lead-in, so the ends reach the needle.
+              padding: EdgeInsets.symmetric(horizontal: box.maxWidth / 2),
+              child: SizedBox(width: _contentWidth, child: _face(context)),
             ),
             Transform.translate(
               offset: Offset(0, -rulerNeedleCap.height),

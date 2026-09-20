@@ -2,7 +2,7 @@
 /// row and the glyph action that sits at its right edge.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -110,13 +110,9 @@ class InviteGlyphAction extends StatelessWidget {
             child: Center(
               child:
                   loading
-                      ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: KalloColors.textMuted,
-                        ),
+                      ? const CupertinoActivityIndicator(
+                        radius: 9,
+                        color: KalloColors.textMuted,
                       )
                       : Icon(
                         icon,

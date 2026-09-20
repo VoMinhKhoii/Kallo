@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -141,11 +141,7 @@ class _PlanCtaState extends State<PlanCta> {
 
   Widget _content() =>
       widget.loading
-          ? SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(strokeWidth: 2, color: _ink()),
-          )
+          ? CupertinoActivityIndicator(radius: 10, color: _ink())
           : Text(
             widget.label,
             style: dashBody(color: _ink(), weight: FontWeight.w600),

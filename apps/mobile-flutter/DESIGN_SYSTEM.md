@@ -77,33 +77,47 @@ glyphs at 18 beside a third at 21 reads as a misaligned row, not a quieter one.
 targets are unchanged. Stroke stays 1.5 (the Lucide `300` constants). Non-action
 DATA glyphs (the 14pt macro-legend food icons) are outside the tiers.
 
-## Platform — Cupertino wherever it exists (2026-09-07)
+## Platform — Cupertino wherever it exists (2026-09-07, inverted 2026-09-19)
 
 Where Flutter ships a Cupertino widget or behaviour for the thing you are
 building, **use it**. Material's ink ripple, spinning arc and bottom-up page
 transition are the three things that make an app read as "a Flutter app"; this
 one is iOS-first, and none of them is a per-surface taste call.
 
-The rule mostly describes what the app already did — `CupertinoPage` routes,
-`CupertinoSliverRefreshControl`, a Cupertino confirm alert, `Switch.adaptive`,
-and a long-press menu the app owns outright, `showKalloAnchoredMenu`
-(exception recorded 2026-09-08) — but it had never been written down,
-so each surface re-decided and 17 Material spinners piled up under a Cupertino
-navigation stack.
+**What changed on 2026-09-19.** The rule used to end with an escape hatch — "a
+widget the app already owns beats both" — and it was read as standing
+permission, so the hand-rolled version won by default and nobody had to say
+why. 387 of 598 Dart files import `material.dart`; seven import
+`cupertino.dart`. The burden of proof is now inverted: **Cupertino wins unless
+the app's own widget cites a specific defect** — a measured number, a
+reproduced bug, or a system rule the platform breaks — **plus the trigger that
+retires the exception.** "We already have one" is not a defect.
 
 Three boundaries, spelled out with the full table in `mobile.md`:
 
 - **The app stays on `MaterialApp`.** Every token hangs off `ThemeData`, and
   `TextField`/`InkWell` need a `Material` ancestor. Cupertino is a **widget**
-  level choice, not an app-level one.
+  level choice, not an app-level one. Corollary: a Cupertino *route* gives its
+  content no `Material` ancestor at all, so wrap it once at the opener or every
+  `IconButton` inside throws at runtime.
 - **The design system wins on look; the platform wins on behaviour.** Take the
   anatomy, gestures and timing; override SF Pro, system blue and frosted
-  surfaces. `kallo_confirm.dart` is the worked example — an iOS alert wearing
-  Be Vietnam Pro on a solid card, because "solid surfaces, no stacked
-  translucency" outranks `CupertinoPopupSurface`'s default.
-- **A widget the app already owns beats both.** `TopToast`, `KalloSheet` and
-  `KalloConfirmActions` are not up for replacement by their Cupertino
-  equivalents. Reach for Cupertino where the app has no answer of its own.
+  surfaces. `kallo_confirm.dart` is the worked example — an iOS alert wearing Be
+  Vietnam Pro on a solid card, because "solid surfaces, no stacked
+  translucency" outranks `CupertinoPopupSurface`'s default. This licenses
+  overriding a widget's paint, not declining the widget.
+- **A widget the app owns needs a cited defect.** Three qualify today, each
+  re-verified on Flutter 3.44.1: `showKalloAnchoredMenu` (`CupertinoContextMenu`
+  relocates and scales the pressed widget 1.15x, and holds 800ms),
+  `KalloAlertSurface` (`CupertinoPopupSurface` is translucent) and
+  `KalloConfirmActions` (side-by-side actions make two short Vietnamese verbs
+  ambiguous). `TopToast` is not an exception — Cupertino ships no toast.
+
+**Routes are the exception that runs the other way.** A `CupertinoPage` builds
+its own transition and never reads `pageTransitionsTheme`, so it opts a route
+*out* of the app's full-width back drag. Since 2026-09-10 the Cupertino
+transition is installed in the theme, which makes `MaterialPage` /
+`MaterialPageRoute` the correct type app-wide. Do not "fix" this back.
 
 ## Grid cells are not cards (2026-09-07)
 

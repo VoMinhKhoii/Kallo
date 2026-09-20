@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../auth_controls.dart' show kAuthButtonHeight;
@@ -66,13 +66,9 @@ class _GoogleButtonState extends State<GoogleButton> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.loading)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: KalloColors.text,
-                  ),
+                const CupertinoActivityIndicator(
+                  radius: 8,
+                  color: KalloColors.text,
                 )
               else
                 const GoogleLogo(),

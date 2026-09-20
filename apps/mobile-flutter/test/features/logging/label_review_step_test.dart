@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,7 +77,7 @@ void main() {
         ),
       ),
     );
-    // A save in flight spins a CircularProgressIndicator forever, so
+    // A save in flight spins a CupertinoActivityIndicator forever, so
     // pumpAndSettle would never return.
     if (saving) {
       await tester.pump();
@@ -228,6 +229,6 @@ void main() {
     await pumpStep(tester, saving: true);
 
     expect(find.text('Back'), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
   });
 }

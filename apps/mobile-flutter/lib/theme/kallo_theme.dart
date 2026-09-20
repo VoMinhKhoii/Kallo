@@ -177,8 +177,6 @@ abstract final class KalloTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: KalloColors.surface,
-      cardColor: KalloColors.elev,
-      dividerColor: KalloColors.border,
       textTheme: TextTheme(
         displayLarge: KalloTextStyles.displayLarge().copyWith(
           color: KalloColors.text,
@@ -209,12 +207,6 @@ abstract final class KalloTheme {
           color: KalloColors.textMuted,
         ),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: KalloColors.surface,
-        foregroundColor: KalloColors.text,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
       // No `pageTransitionsTheme` here on purpose: the page transition is the
       // NAV layer's (`shell/nav/swipe_back/kKalloPageTransitions`), and
       // `lib/theme/` is the bottom layer — every widget in the app imports it
@@ -222,53 +214,6 @@ abstract final class KalloTheme {
       // gesture stack behind `KalloSpacing` and left `theme -> shell -> theme`
       // one tidy-up away (sourcing the duration from `KalloMotion` would do
       // it). `app.dart` composes the two instead, where both are in view.
-      // Cards separate by surface alone on the #F8F7F4 canvas: solid white,
-      // radius 22, NO border, NO shadow (native pass, 2026-08-31).
-      cardTheme: CardThemeData(
-        color: KalloColors.elev,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.card),
-        ),
-      ),
-      // Dialogs are sheets that happen to be centred, so they wear the sheet's
-      // surface and the one card radius. Without this M3 supplies a 28pt
-      // radius, an elevation tint over the warm palette and a 40/24 inset —
-      // the stock chrome that made the delete confirm look foreign.
-      dialogTheme: DialogThemeData(
-        backgroundColor: KalloColors.elev,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.xxxl),
-        ),
-        insetPadding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp6,
-          vertical: KalloSpacing.sp6,
-        ),
-        // The same black/50 scrim the nav drawer and the web dialog use.
-        barrierColor: KalloColors.scrim,
-      ),
-      // In-app primary: beige + ink, fully rounded (auth/paywall CTAs use
-      // [KalloColors.btnPrimary] black-and-white explicitly at call sites).
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: KalloColors.btnPrimarySoft,
-          foregroundColor: KalloColors.text,
-          shape: const StadiumBorder(),
-          textStyle: KalloTextStyles.buttonLabel(),
-        ),
-      ),
-      // Quiet: white + hairline, fully rounded.
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: KalloColors.elev,
-          foregroundColor: KalloColors.text,
-          side: const BorderSide(color: KalloColors.border),
-          shape: const StadiumBorder(),
-          textStyle: KalloTextStyles.buttonLabel(),
-        ),
-      ),
       // Full-width fields are full-round pills: 52pt, radius 26, 18 left
       // inset, 2px tan focus border (native pass, 2026-08-31).
       inputDecorationTheme: InputDecorationTheme(
@@ -314,21 +259,6 @@ abstract final class KalloTheme {
         preferBelow: true,
         triggerMode: TooltipTriggerMode.longPress,
         waitDuration: Duration.zero,
-      ),
-      // Branded toasts: espresso pill, cream text, soft radius — not the stock
-      // dark-gray Material pill (sign-out errors, the undo toast, etc.).
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: KalloColors.text, // espresso
-        contentTextStyle: KalloTextStyles.body().copyWith(
-          fontSize: KalloFontSize.sm,
-          color: KalloColors.surface, // cream
-        ),
-        actionTextColor: KalloColors.accent,
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.xl),
-        ),
       ),
     );
   }

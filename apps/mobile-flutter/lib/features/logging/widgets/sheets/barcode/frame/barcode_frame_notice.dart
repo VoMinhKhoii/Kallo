@@ -5,6 +5,7 @@
 /// it.
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -72,13 +73,9 @@ class BarcodeFrameNotice extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (busy) ...[
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: KalloColors.bandForeground,
-                  ),
+                const CupertinoActivityIndicator(
+                  radius: 9,
+                  color: KalloColors.bandForeground,
                 ),
                 const SizedBox(height: KalloSpacing.sp2),
               ],

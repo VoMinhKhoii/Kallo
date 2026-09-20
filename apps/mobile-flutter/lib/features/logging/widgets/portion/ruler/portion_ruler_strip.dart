@@ -86,17 +86,16 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
   void _onScroll() {
     final c = _controller;
     if (c == null || !c.hasClients || _selfDriven) return;
-    final fraction = (c.offset / _contentWidth).clamp(0.0, 1.0);
-    final graduation = (fraction * widget.graduations).round();
+    final raw = (c.offset / _contentWidth).clamp(0.0, 1.0);
+    final graduation = (raw * widget.graduations).round();
     if (graduation != _lastGraduation) {
       _lastGraduation = graduation;
-      // Haptic AND the platform click: the system selection sound is what makes
-      // a picker read as a physical detent rather than a silent slide, and it
-      // is the only cue a user with haptics disabled gets.
+      // `SystemSound.play(SystemSoundType.click)` sat here too, billed as the
+      // cue for a user with haptics off. It has no iOS implementation, so on
+      // the only platform this ships to it was silent.
       HapticFeedback.selectionClick();
-      SystemSound.play(SystemSoundType.click);
     }
-    widget.onChanged(fraction);
+    widget.onChanged(raw);
   }
 
   @override
@@ -139,6 +138,7 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
             SingleChildScrollView(
               controller: _controller,
               scrollDirection: Axis.horizontal,
+              // No `DetentScrollPhysics` here on purpose — see its doc.
               // Half a viewport of lead-in each side so the first and last
               // graduations can both reach the centre needle.
               padding: EdgeInsets.symmetric(horizontal: viewport / 2),

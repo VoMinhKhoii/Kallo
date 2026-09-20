@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../theme/kallo_motion.dart';
+import 'toast_dismiss_gestures.dart';
 import 'top_toast_pill.dart';
 
 // The tone enum lives with the pill that renders it; re-exported so callers
@@ -70,19 +72,32 @@ class _TopToast extends StatefulWidget {
   State<_TopToast> createState() => _TopToastState();
 }
 
-class _TopToastState extends State<_TopToast>
-    with SingleTickerProviderStateMixin {
+class _TopToastState extends State<_TopToast> with TickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 260),
+    duration: KalloMotion.banner,
   );
+
+  /// [KalloEase.exit] as the `reverseCurve` is not decoration. Without it the
+  /// close runs [KalloEase.enter] backwards, which holds the pill near its
+  /// resting position for the first half of the dismissal — the exact lag
+  /// `KalloEase.exit` was written to remove, in the one widget that had been
+  /// ignoring it.
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: const Offset(0, -0.4),
     end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+  ).animate(
+    CurvedAnimation(
+      parent: _c,
+      curve: KalloEase.enter,
+      reverseCurve: KalloEase.exit,
+    ),
+  );
 
   Timer? _hold;
 
+  /// Fingers currently on the pill. A second finger lifting must not restart
+  /// the countdown while the first is still down.
   @override
   void initState() {
     super.initState();
@@ -100,6 +115,25 @@ class _TopToastState extends State<_TopToast>
   void _onAction() {
     widget.onAction?.call();
     _dismiss();
+  }
+
+  /// Stop the dwell while a finger is on the pill, so a toast cannot expire
+  /// out from under someone reaching for its action.
+  void _holdFor() => _hold?.cancel();
+
+  /// Release RE-ARMS the full dwell rather than resuming the remainder.
+  ///
+  /// The remainder is the nicer behaviour and it was built twice; both
+  /// mechanisms cost more than the nicety is worth. A `Stopwatch` beside the
+  /// `Timer` reads the WALL clock while the timer runs on fake-async under
+  /// test, so the remainder computes as the whole duration and the
+  /// distinction is untestable. Driving the dwell from an
+  /// `AnimationController` shares the scheduler's clock and fixes that — at
+  /// the cost of a frame every vsync for the whole dwell, to animate nothing
+  /// visible, and of `pumpAndSettle` never settling while it runs. A re-arm
+  /// costs nothing and is wrong only for someone who keeps brushing the pill.
+  void _resume() {
+    if (mounted) _hold = Timer(widget.duration, _dismiss);
   }
 
   @override
@@ -135,7 +169,20 @@ class _TopToastState extends State<_TopToast>
       right: 0,
       child: SafeArea(
         // Non-action toasts never eat taps; action toasts must be tappable.
-        child: hasAction ? content : IgnorePointer(child: content),
+        //
+        // Which is also why [ToastDismissGestures] is fitted to the action
+        // variant ONLY: giving it to a passive toast would mean the pill
+        // accepting pointers, and the whole point of the `IgnorePointer` is
+        // that a toast over a button never steals the press meant for it.
+        child:
+            hasAction
+                ? ToastDismissGestures(
+                  onHold: _holdFor,
+                  onRelease: _resume,
+                  onFlickAway: _dismiss,
+                  child: content,
+                )
+                : IgnorePointer(child: content),
       ),
     );
   }

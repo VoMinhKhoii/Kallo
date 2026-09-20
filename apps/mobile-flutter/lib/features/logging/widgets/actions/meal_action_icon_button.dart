@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -42,67 +43,65 @@ class MealActionIconButton extends StatelessWidget {
             : KalloColors.textMuted;
     final enabled = onTap != null && !pending;
 
-    return Tooltip(
-      message: label,
-      // The inner Semantics already names the button — without this, iOS
-      // appends the tooltip text to the accessibility label a second time.
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        toggled: toggled,
-        label: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkResponse(
-            onTap:
-                enabled
-                    ? () {
-                      HapticFeedback.selectionClick();
-                      onTap!();
-                    }
-                    : null,
-            // Both washes — the selected fill and the pressed splash — hug the
-            // glyph rather than filling the hit box. The tap target stays
-            // [LoggingIcons.hit] for accessibility; a selected action reads as
-            // a small chip around its icon, not a 36pt block under the card.
-            radius: LoggingIcons.wash / 2,
-            containedInkWell: true,
-            highlightShape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(KalloRadii.md),
-            child: SizedBox.square(
-              dimension: LoggingIcons.hit,
-              child: Center(
-                // [Ink], not a Container: ink reactions paint onto the ancestor
-                // Material, so an opaque Container here would sit ON TOP of the
-                // splash and swallow the press feedback on a selected action.
-                // Ink paints its decoration into that same Material, below the
-                // splash.
-                child: Ink(
-                  width: LoggingIcons.wash,
-                  height: LoggingIcons.wash,
-                  decoration: BoxDecoration(
-                    color: active ? KalloColors.hover : Colors.transparent,
-                    borderRadius: BorderRadius.circular(KalloRadii.md),
-                  ),
-                  child: Center(
-                    child:
-                        pending
-                            ? SizedBox.square(
-                              // Sits in the glyph's own footprint, so the row
-                              // doesn't jump when an action goes pending.
-                              dimension: LoggingIcons.action - 6,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: foreground,
-                              ),
-                            )
-                            : Icon(
-                              icon,
-                              size: LoggingIcons.action,
-                              color: foreground,
-                            ),
-                  ),
+    // No `Tooltip` here any more. iOS has no tooltips, and a dark label
+    // appearing under the thumb after a hold is a distinctly Android
+    // affordance — one that also collides with `showKalloAnchoredMenu`, the
+    // app's real long-press gesture. It cost nothing to remove: it already
+    // carried `excludeFromSemantics: true` because the Semantics below
+    // names the button, so the label is unchanged for VoiceOver.
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      toggled: toggled,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkResponse(
+          onTap:
+              enabled
+                  ? () {
+                    HapticFeedback.selectionClick();
+                    onTap!();
+                  }
+                  : null,
+          // Both washes — the selected fill and the pressed splash — hug the
+          // glyph rather than filling the hit box. The tap target stays
+          // [LoggingIcons.hit] for accessibility; a selected action reads as
+          // a small chip around its icon, not a 36pt block under the card.
+          radius: LoggingIcons.wash / 2,
+          containedInkWell: true,
+          highlightShape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(KalloRadii.md),
+          child: SizedBox.square(
+            dimension: LoggingIcons.hit,
+            child: Center(
+              // [Ink], not a Container: ink reactions paint onto the ancestor
+              // Material, so an opaque Container here would sit ON TOP of the
+              // splash and swallow the press feedback on a selected action.
+              // Ink paints its decoration into that same Material, below the
+              // splash.
+              child: Ink(
+                width: LoggingIcons.wash,
+                height: LoggingIcons.wash,
+                decoration: BoxDecoration(
+                  color: active ? KalloColors.hover : Colors.transparent,
+                  borderRadius: BorderRadius.circular(KalloRadii.md),
+                ),
+                child: Center(
+                  child:
+                      pending
+                          ? CupertinoActivityIndicator(
+                            // Sits in the glyph's own footprint, so the row
+                            // doesn't jump when an action goes pending: the
+                            // indicator is a square of radius * 2.
+                            radius: (LoggingIcons.action - 6) / 2,
+                            color: foreground,
+                          )
+                          : Icon(
+                            icon,
+                            size: LoggingIcons.action,
+                            color: foreground,
+                          ),
                 ),
               ),
             ),

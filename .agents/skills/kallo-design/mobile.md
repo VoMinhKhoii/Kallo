@@ -428,31 +428,56 @@ the ink ripple, the spinning arc, the bottom-up page transition — are what mak
 an app read as "a Flutter app" rather than as an app. None of them is a taste
 call the design system gets to make differently per surface.
 
-This rule mostly *describes* what the app already does: routes slide the
-Cupertino way, pull-to-refresh is `CupertinoSliverRefreshControl`, the confirm
-is a Cupertino alert, the switch is `Switch.adaptive`. Note *how* the routes do
-it since 2026-09-10 — the `Page` type is `MaterialPage`, and the Cupertino
-transition (plus a widened back drag) is installed once in the theme's
-`pageTransitionsTheme`. That is boundary 2 in action: the platform's anatomy
-and timing, reached through the seam that lets us change one thing about it. The long-press menu was
-on that list until 2026-09-08 and is now the rule's one documented exception —
-the app owns it (boundary 3, below). It had never been written down, so every
-new surface re-decided from scratch — which is how 17 Material spinners
-accumulated under a Cupertino navigation stack.
+**The burden of proof inverted, 2026-09-19.** The rule used to carry an escape
+hatch wide enough to park the whole app in — *"a widget the app already owns
+beats both"* — and it was read as standing permission: the hand-rolled version
+won by default and nobody had to say why. The measurement that settled it: 387
+of 598 Dart files import `material.dart`, seven import `cupertino.dart`.
+
+So it is now the other way round. **Cupertino wins by default. A widget the app
+owns survives only where its own doc comment names a specific defect in the
+Cupertino equivalent — a measured number, a reproduced bug, or a system rule it
+breaks — and names the trigger that retires the exception.** "We already have
+one", "ours is themed to the app" and "it works today" are not defects. An
+exception with no citation is a bug, and the next person to touch the file
+deletes the wrapper.
+
+Three survive that test today, each re-verified against Flutter 3.44.1:
+`showKalloAnchoredMenu`, `KalloAlertSurface` and `KalloConfirmActions` (see
+boundary 3). `TopToast` is not an exception at all — Cupertino ships no toast,
+so there is nothing to prefer over it.
 
 | Instead of | Use | State |
 |------------|-----|-------|
-| `CircularProgressIndicator` | `CupertinoActivityIndicator` | **17 sites to migrate.** `color` carries over; `radius` replaces the `SizedBox` + `strokeWidth` pair (radius 10 ≈ today's 20pt box) |
-| a bottom-up Material page transition | `KalloSwipeBackTransitionsBuilder` in the theme (`shell/nav/swipe_back/`) — Cupertino's slide plus a back drag that starts anywhere, not on a 20pt edge | ✅ done 2026-09-10, app-wide. `MaterialPage`/`MaterialPageRoute` is now the RIGHT type: a `CupertinoPage` builds its own transition and never reads the theme, so it opts a route OUT of the app's gesture. 1 site left that pushes no route at all (`auth/widgets/email_auth_form.dart`) |
-| `InkWell` / `InkResponse` ripple | `KalloPressable` (`shared/widgets/surface/kallo_pressable.dart`) — a Listener-driven wash that survives the gesture arena and fires on release, SHRINK-WRAPS its child in both axes (a parent that wants it wider hands it tight constraints), and owns its pointer even when disabled, so a nested target never lights the row behind it | **2 sites to migrate** (`feed_action_button.dart` and the confirm dialog's rows migrated 2026-09-07 — they are the worked examples) |
+| `CircularProgressIndicator` | `CupertinoActivityIndicator` | ✅ done 2026-09-19, all 13 sites (the doc claimed 17; the real count was 13). `CupertinoActivityIndicator` builds its own `SizedBox.square(dimension: radius * 2)`, so `radius` N/2 replaced each `SizedBox(N)` + `strokeWidth: 2` pair at identical dimensions and the wrapper went away with it. Seven of the 13 files stopped importing `material.dart` entirely |
+| a bottom-up Material page transition | `KalloSwipeBackTransitionsBuilder` in the theme (`shell/nav/swipe_back/`) — Cupertino's slide plus a back drag that starts anywhere, not on a 20pt edge | ✅ done 2026-09-10, app-wide. **See *Routes* below — this is the one row where `Material*` is the Cupertino answer.** |
+| `showModalBottomSheet` | `showSheet` → `SheetRoute extends CupertinoSheetRoute` (`shared/widgets/sheet/sheet_route.dart`) | **migrating 2026-09-19.** Do NOT call `showCupertinoSheet`: it never forwards `showDragHandle` (`sheet.dart:202,241`), and a custom `topGap` nulls `delegatedTransition` (`:819`) — which, since `barrierColor` is a hardcoded transparent (`:777`), is the only thing that dims the screen behind a sheet |
+| `InkWell` / `InkResponse` ripple | `CupertinoButton`, or `KalloPressable` where the press must survive the gesture arena | **2 sites** (`quiet_action_button.dart`, `meal_action_icon_button.dart`) |
 | `RefreshIndicator` | `CupertinoSliverRefreshControl`, via `KalloRefreshableScroll` | ✅ done |
-| `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert) | ✅ done |
-| `CupertinoActionSheet` / `showModalBottomSheet` | `showNhamSheet` | ✅ done — and the one row that goes the OTHER way: `showNhamSheet` wraps Material's `showModalBottomSheet`, because it owns the keyboard inset once for every sheet in the app. Boundary 3. |
-| `Switch` | `Switch.adaptive`, via `KalloSwitch` | ✅ done |
-| long-press menu | `showKalloAnchoredMenu` (`shared/widgets/menu/kallo_anchored_menu.dart`, with `AnchoredMenuLayer` and `KalloMenuCard` behind it) | exception, 2026-09-08 — see boundary 3 |
-| `Slider` | `CupertinoSlider` | 3 sites — but see *the design system wins*, below |
+| `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert route) | ✅ done |
+| `Switch` / `Switch.adaptive` | `CupertinoSwitch` | **migrating 2026-09-19.** Retires the `trackColor` workaround `Switch.adaptive` needed, since `_SwitchThemeAdaptation.adapt()` discards the ambient theme on iOS |
+| `TextField` | `CupertinoTextField` (`CupertinoSearchTextField` for a search row) | **18 sites.** The decoration currently comes from `inputDecorationTheme`; it is a flat map and re-expresses as one `BoxDecoration` |
+| a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` + `OptionStrip.segmented`. `OptionStrip.onboarding`/`.settings` draw multi-line hint sub-labels no Cupertino control supports — those two skins stay and cite it |
+| `Slider` | `CupertinoSlider` | **2 sites** (the doc said 3; `body_metrics.dart` only *uses* `AggressionSlider`). No `SliderTheme` — the 4pt track and 9pt thumb are not expressible |
+| `Scaffold` | `CupertinoPageScaffold` | 8 sites. `tab_scaffold.dart` stays on `Scaffold`: `extendBody` + the `MediaQuery.padding.bottom` rewrite that lets the pill nav overlap content has no Cupertino analogue |
+| long-press menu | `showKalloAnchoredMenu` | **exception** — cites `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`, boundary 3 |
+| `SnackBar` | `TopToast` | not an exception — Cupertino ships no toast |
 | `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
 | a date/time picker | `CupertinoDatePicker` | none in the app yet; use it when one is needed |
+
+### Routes — the one place more Cupertino is less iOS
+
+`CupertinoPage` and `CupertinoPageRoute` build their own transition and never
+read `pageTransitionsTheme`, so using one opts that route **out** of
+`KalloSwipeBackTransitionsBuilder` and back onto iOS's 20pt edge drag. Since
+2026-09-10 the transition lives in the theme, which makes `MaterialPage` /
+`MaterialPageRoute` the *correct* type app-wide — the Cupertino anatomy and
+timing arrive through the theme instead of through the route class.
+
+This is not a hole in the rule; it is boundary 2 working. Take the platform's
+behaviour, through whichever seam lets the app keep one thing about it. Do not
+"fix" a `MaterialPageRoute` into a `CupertinoPageRoute` here.
+`test/shell/swipe_back_test.dart` will catch you.
 
 ### Where Cupertino stops
 
@@ -467,6 +492,14 @@ boundaries, each of which has already cost a bug when crossed:
    the widget-level choice does not already give. Cupertino is used at the
    **widget** level.
 
+   The corollary bites when you leave Material: a Cupertino *route* gives its
+   content no `Material` ancestor (`CupertinoSheetRoute.buildContent` is
+   `removePadding` → clip → your builder, and nothing else), so every
+   `IconButton`, `TextField` and `Divider` inside throws *"No Material widget
+   found"* — at runtime, never at `flutter analyze` — and bare `Text` falls back
+   to `WidgetsApp`'s red-and-yellow debug style. Wrap the route's content in
+   `Material(type: MaterialType.transparency)` once, at the opener.
+
 2. **The design system wins on look; the platform wins on behaviour.** Take
    Cupertino's anatomy, gestures and timing — then override anything that
    carries SF Pro, system blue, or a frosted surface. The type is always Be
@@ -475,26 +508,39 @@ boundaries, each of which has already cost a bug when crossed:
    0.5pt hairlines, wearing the app's type, the app's scrim, and — since
    2026-09-07 — a **solid** card in place of `CupertinoPopupSurface`'s
    translucent one, because "solid surfaces, no stacked translucency" is a
-   system rule that outranks the platform default. The same reasoning is why
-   the three `Slider`s are a *maybe*: `CupertinoSlider` has no themable track,
-   so adopting it would trade a themed control for a system-blue one.
+   system rule that outranks the platform default.
 
-3. **A widget the app already owns beats both.** `TopToast` over `SnackBar`
-   *and* over anything Cupertino; `KalloSheet` over `showModalBottomSheet` and
-   `CupertinoActionSheet` alike; `KalloConfirmActions` over
-   `CupertinoAlertDialog`'s side-by-side buttons. Reach for Cupertino when the
-   app has no answer of its own — never to replace one it has already made.
+   Note what this boundary is *not*. It licenses overriding a Cupertino widget's
+   paint; it does not license declining the widget. `CupertinoSlider` has no
+   themable track, and the answer is to adopt it and accept the track, not to
+   keep Material's.
 
-   The long-press menu is the newest entry and the one that cost the most to
-   learn (2026-09-08). `CupertinoContextMenu` RELOCATES the pressed widget into
-   a preview slot of its own and SCALES it 1.15x, so a sent message slid out
-   from under the finger holding it; it also dresses the action rows in system
-   chrome rather than Be Vietnam Pro, and stretches the hold to iOS's 800ms
-   preview timeout. `showKalloAnchoredMenu` keeps the message exactly where it
-   is — a still copy pinned at its own rect above the blur — anchors the card
-   to the message's trailing edge, prints the sent time as a header, and wears
-   the app's type. It is the app's ONE popup menu: the Circle header's "+"
-   popover had hand-rolled the same route and is now its other consumer.
+3. **A widget the app owns needs a cited defect.** Not "we own one" — a named
+   failure in the Cupertino equivalent, with the trigger that retires the
+   exception. Three qualify, all re-verified on Flutter 3.44.1:
+
+   - **`showKalloAnchoredMenu`** over `CupertinoContextMenu`.
+     `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`
+     (`src/cupertino/context_menu.dart:23,41`): the context menu RELOCATES the
+     pressed widget into a preview slot of its own and scales it, so a sent
+     message slid out from under the finger holding it, and it dresses the
+     action rows in system chrome rather than Be Vietnam Pro. Cost the most to
+     learn (2026-09-08). *Retire when `CupertinoContextMenu` can present
+     in place.* Guarded by `test/features/logging/user_message_bubble_test.dart`.
+   - **`KalloAlertSurface`** over `CupertinoPopupSurface`. Translucent by
+     default; "solid surfaces, no stacked translucency" is a system rule.
+     *Retire if that rule changes, not if the SDK does.*
+   - **`KalloConfirmActions`** over `CupertinoAlertDialog`'s action layout.
+     Side-by-side buttons make two short Vietnamese verbs ("Xoá" / "Huỷ") read
+     as one ambiguous pair. *Retire when the platform stacks short labels.*
+
+   `KalloPressable` is the fourth, and its defect is the gesture arena:
+   `CupertinoButton` resolves through it, so a competing long-press recognizer
+   cancels the press wash with the finger still down — the bug
+   `test/shared/widgets/dialog/kallo_confirm_hold_test.dart` exists to catch.
+   Use `CupertinoButton` where no such recognizer competes.
+
+   Everything else that used to shelter here lost its exemption on 2026-09-19.
 
 ## Reference implementation (source of truth)
 
@@ -524,19 +570,24 @@ mobile UI — no longer provisional.
 only on the light-touch narrative surfaces (auth, onboarding, paywall) and in
 a few shared form internals; do not add new call sites.
 
-### Cupertino migration (open, 2026-09-07)
+### Cupertino migration (open, 2026-09-07; re-scoped 2026-09-19)
 
 The platform rule above was written down after the fact, so it starts with a
-backlog. None of it is blocking — every item renders correctly today, it just
-renders as Material.
+backlog. The 2026-09-19 inversion turned most of the "documented exceptions"
+back into backlog: only a cited defect keeps a hand-rolled widget now.
 
 | Item | Sites | Notes |
 |------|-------|-------|
-| `CircularProgressIndicator` → `CupertinoActivityIndicator` | 17 | mechanical; the most visible of the three tells, since every button's loading state shows one |
-| `InkWell`/`InkResponse` ripple → `KalloPressable` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. `feed_action_button.dart` and `KalloAlertAction` migrated 2026-09-07 and are the pattern: wrap the child in `KalloPressable(onTap:, height:/constraints:/padding:/alignment:)`. The feed button's ripple had been unbounded — it spread over the full 44pt box and persisted for a hold. `KalloMenuActionRow` (`shared/widgets/menu/kallo_menu_card.dart`) was built on it from the start — the long-press menu's rows never wore a ripple |
+| `showModalBottomSheet` → `SheetRoute` | 15 | the largest item. `showNhamSheet` → `showSheet`; height becomes a `SheetHeight` tier because `CupertinoSheetRoute` has no content-hugging mode; the keyboard inset moves into `SheetSurface`. Known regressions recorded at the call site: the scrim drops from Material's 54% to the SDK's 10% (`_kOpacityTween`, `sheet.dart:74`), and `country_sheet`'s custom barrier colour is un-preservable |
+| ~~`CircularProgressIndicator` → `CupertinoActivityIndicator`~~ | 0 | **Done 2026-09-19.** All 13 sites; `lib/` now has zero. Was the most visible of the three tells, since every button's loading state showed one |
+| `TextField` → `CupertinoTextField` | 18 | re-express `inputDecorationTheme` (`kallo_theme.dart:274`) as a `BoxDecoration` on the wrapper, then delete the theme entry rather than leaving it dead like `snackBarTheme` and `appBarTheme` already are |
+| `Scaffold` → `CupertinoPageScaffold` | 8 | auth ×3, onboarding ×4. `tab_scaffold.dart` stays — see the table above |
+| a segmented control → `CupertinoSlidingSegmentedControl` | 7 + `OptionStrip.segmented` | loses the pop-then-travel thumb and `HapticFeedback.selectionClick()` |
+| `Switch.adaptive` → `CupertinoSwitch` | 1 file | deletes the `trackColor` workaround it needed |
+| `InkWell`/`InkResponse` → `CupertinoButton` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. Both also drop a `Material(` wrapper; the `Ink` decoration must become a plain `Container` when the Material ancestor goes |
+| `Slider` → `CupertinoSlider` | 2 | no longer "decide first" — boundary 2 says adopt it and accept the track. (Counted as 3 until 2026-09-19; `body_metrics.dart` only *uses* `AggressionSlider`) |
 | arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
-| ~~`MaterialPageRoute` → `CupertinoPageRoute`~~ | 0 | **Reversed 2026-09-10.** The transition moved into the theme, so `MaterialPageRoute` is what the app wants everywhere and the four `CupertinoPage` routes were converted TO it. Converting the other way now silently drops a route out of the full-width back gesture |
-| `Slider` → `CupertinoSlider` | 3 | **decide first.** `CupertinoSlider` has no themable track, so this trades a themed control for a system-blue one; boundary 2 may say keep Material here |
+| ~~`MaterialPageRoute` → `CupertinoPageRoute`~~ | 4, the OTHER way | **Reversed 2026-09-10, and reaffirmed 2026-09-19.** The transition lives in the theme, so `MaterialPageRoute` is what the app wants everywhere. The four remaining `CupertinoPageRoute` pushes in `features/settings/screens/` are being converted TO it. See *Routes* above |
 
 ### Two app-wide changes worth remembering
 

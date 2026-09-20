@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -58,7 +59,11 @@ class CreateGroupMemberPicker extends StatelessWidget {
               onChanged: (_) => onChanged(),
               decoration: InputDecoration(
                 hintText: tr('groups.createGroup.searchPlaceholder'),
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(
+                  LucideIcons.search300,
+                  size: KalloIcons.tertiary,
+                  color: kInkMuted,
+                ),
               ),
             ),
             Align(

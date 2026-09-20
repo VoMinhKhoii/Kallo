@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -94,7 +95,13 @@ class OptionStrip extends StatelessWidget {
             child: OptionStripSegment(
               item: opt,
               active: value == opt.value,
-              onTap: () => onChange(opt.value),
+              onTap: () {
+                // `SegmentedStrip` (the `.segmented` skin) already ticks. Two
+                // segmented controls in one app, one of them silent, is the
+                // kind of gap nobody reports and everybody feels.
+                if (value != opt.value) HapticFeedback.selectionClick();
+                onChange(opt.value);
+              },
               skin: s,
             ),
           ),

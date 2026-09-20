@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/chat_group.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
 import '../states/circle_error.dart';
@@ -103,7 +105,11 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: tr('groups.info.searchPlaceholder'),
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: const Icon(
+              LucideIcons.search300,
+              size: KalloIcons.tertiary,
+              color: kInkMuted,
+            ),
           ),
         ),
         if (filtered.isEmpty)
