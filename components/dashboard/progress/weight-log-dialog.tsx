@@ -6,35 +6,36 @@ import { useState } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { Button } from '@/components/ui/button';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
-interface WeightLogPopoverProps {
+interface WeightLogDialogProps {
   currentWeight: number;
   todayWeight: number | null | undefined;
   todayDate: string;
 }
 
 /**
- * The Progress card's log affordance — a filled button opening a focused
- * popover with the weight form (the web analogue of the Flutter card's
- * "Log weight" bottom sheet; the card itself stays a clean data surface).
- * Reads "Log weight" until today has an entry, then "Update" for clarity.
+ * The Progress card's log affordance. It follows the established web dialog
+ * anatomy used by Share Meal: editorial title, top-right close, focused body,
+ * and a separated action footer. Flutter keeps its native bottom sheet.
  */
-export function WeightLogPopover({
+export function WeightLogDialog({
   currentWeight,
   todayWeight,
   todayDate,
-}: WeightLogPopoverProps) {
+}: WeightLogDialogProps) {
   const t = useTranslations('dashboard');
   const [open, setOpen] = useState(false);
   const hasTodayWeight = typeof todayWeight === 'number';
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button
           size="xs"
           className="h-9 shrink-0 gap-1.5 rounded-xl bg-kallo-btn px-3 text-white hover:bg-kallo-btn-hover"
@@ -42,20 +43,25 @@ export function WeightLogPopover({
           <Plus aria-hidden className="h-4 w-4" />
           {hasTodayWeight ? t('weightCard.update') : t('weightCard.logWeight')}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-72 rounded-xl border-kallo-border/60 bg-card p-3 text-kallo-text shadow-kallo-text/[0.06] shadow-lg"
+      </DialogTrigger>
+      <DialogContent
+        aria-describedby={undefined}
+        className="flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0 sm:max-w-md"
       >
+        <DialogHeader className="shrink-0 px-[22px] pt-5">
+          <DialogTitle className="font-serif text-[22px] text-kallo-text">
+            {t('weightCard.logWeight')}
+          </DialogTitle>
+        </DialogHeader>
         <CompactWeightLog
           currentWeight={currentWeight}
           todayWeight={todayWeight}
           todayDate={todayDate}
           autoFocus
+          onCancel={() => setOpen(false)}
           onSaved={() => setOpen(false)}
         />
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }

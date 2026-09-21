@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart/weight-chart';
-import { WeightLogPopover } from '@/components/dashboard/progress/weight-log-popover';
+import { WeightLogDialog } from '@/components/dashboard/progress/weight-log-dialog';
 import type { TimeRange } from '@/lib/core/types/dashboard';
 import type { WeightSummaryData } from '@/lib/core/types/weight';
 
@@ -35,7 +35,7 @@ export function ProgressStory({
   const hasTrend = weightSummary.weights.length > 1 && Math.abs(delta) >= 0.05;
 
   // ONE flat solid card (the Flutter WeightChart redesign): the current weight
-  // as the hero with a small net-change badge and a "Log weight" popover
+  // as the hero with a small net-change badge and a "Log weight" dialog
   // affordance, then the full-width chart. No resident form, no status copy —
   // the chart itself carries the story.
   return (
@@ -52,7 +52,7 @@ export function ProgressStory({
             </span>
           )}
         </div>
-        <WeightLogPopover
+        <WeightLogDialog
           currentWeight={weightSummary.currentWeight}
           todayWeight={weightSummary.todayWeight}
           todayDate={todayDate}

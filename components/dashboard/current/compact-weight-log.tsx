@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useLogWeight } from '@/hooks/weight/use-weight-mutations';
 import { parseDecimalInput } from '@/lib/core/text/parse-decimal';
@@ -19,10 +20,12 @@ interface CompactWeightLogProps {
   currentWeight: number;
   todayWeight: number | null | undefined;
   todayDate: string;
-  /** Focus the weight input on mount (e.g. when opened inside a popover). */
+  /** Focus the weight input on mount when its dialog opens. */
   autoFocus?: boolean;
-  /** Called after a successful save (e.g. to close a hosting popover). */
+  /** Called after a successful save to close the hosting dialog. */
   onSaved?: () => void;
+  /** Closes the hosting dialog without saving. */
+  onCancel: () => void;
 }
 
 export function CompactWeightLog({
@@ -31,8 +34,10 @@ export function CompactWeightLog({
   todayDate,
   autoFocus = false,
   onSaved,
+  onCancel,
 }: CompactWeightLogProps) {
   const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const logWeightMutation = useLogWeight();
   const hasTodayWeight = typeof todayWeight === 'number';
   const {
@@ -89,20 +94,13 @@ export function CompactWeightLog({
         toast.error(t('weightCard.invalidValue'));
       })}
       aria-busy={logWeightMutation.isPending}
-      className="flex flex-col"
+      className="flex min-h-0 flex-col"
     >
-      <div className="mb-1.5 flex items-center gap-2">
-        <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
-          {hasTodayWeight
-            ? t('weightCard.todaysWeight')
-            : t('weightCard.logWeight')}
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
+      <div className="px-[22px] pt-4">
         <label htmlFor="compact-weight-kg" className="sr-only">
           {t('weightCard.inputLabel')}
         </label>
-        <div className="relative flex-1">
+        <div className="relative">
           <Input
             id="compact-weight-kg"
             {...register('weightKg', { setValueAs: parseDecimalInput })}
@@ -112,7 +110,7 @@ export function CompactWeightLog({
             aria-invalid={Boolean(errors.weightKg)}
             aria-describedby={errorId}
             className={cn(
-              'h-9 rounded-xl border-kallo-border bg-card pr-8 font-mono text-sm shadow-none transition-colors hover:border-kallo-accent/50',
+              'h-11 rounded-xl border-kallo-border bg-card pr-10 font-mono text-base shadow-none transition-colors hover:border-kallo-accent/50',
               errors.weightKg && 'border-kallo-danger hover:border-kallo-danger'
             )}
           />
@@ -121,12 +119,30 @@ export function CompactWeightLog({
           </span>
         </div>
         <input type="hidden" {...register('loggedDate')} />
+        {hasTodayWeight && !errorMessage && (
+          <p className="mt-1.5 text-kallo-text-muted text-xs">
+            {t('weightCard.editHint')}
+          </p>
+        )}
+        {errorMessage && (
+          <p
+            id="compact-weight-error"
+            role="alert"
+            className="mt-1.5 text-kallo-danger text-xs"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
+      <DialogFooter className="mt-4 shrink-0 items-center border-kallo-border/60 border-t px-[22px] py-3.5">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          {tCommon('cancel')}
+        </Button>
         <Button
           type="submit"
-          size="xs"
           disabled={logWeightMutation.isPending}
           aria-busy={logWeightMutation.isPending}
-          className="h-9 rounded-xl bg-kallo-btn px-3 text-white hover:bg-kallo-btn-hover"
+          className="bg-kallo-btn text-white hover:bg-kallo-btn-hover"
         >
           {logWeightMutation.isPending
             ? t('saving')
@@ -134,21 +150,7 @@ export function CompactWeightLog({
               ? t('weightCard.update')
               : t('save')}
         </Button>
-      </div>
-      {hasTodayWeight && !errorMessage && (
-        <p className="mt-1.5 text-kallo-text-muted text-xs">
-          {t('weightCard.editHint')}
-        </p>
-      )}
-      {errorMessage && (
-        <p
-          id="compact-weight-error"
-          role="alert"
-          className="mt-1.5 text-kallo-danger text-xs"
-        >
-          {errorMessage}
-        </p>
-      )}
+      </DialogFooter>
     </form>
   );
 }

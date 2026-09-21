@@ -5,9 +5,9 @@
 /// drawn inside it. They changed for different reasons and the file had
 /// outgrown its budget.
 ///
-/// The look follows the web chart: a rounded monotone spline at 3px with round
-/// caps and joins, a dashed tail for the projection, and a dot at every reading
-/// ringed in the card it sits on.
+/// The look follows the web chart: straight 3px segments with round caps and
+/// joins, a dashed tail for the projection, and a dot at every reading ringed
+/// in the card it sits on.
 library;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -17,10 +17,6 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'weight_chart_dot_painter.dart';
-
-/// Rounder than fl_chart's 0.35 default would draw it: weight moves slowly, and
-/// a loose spline through closely spaced readings overshoots into wobble.
-const double _curveSmoothness = 0.2;
 
 class WeightSeries {
   const WeightSeries({required this.bars, required this.touch});
@@ -59,9 +55,7 @@ WeightSeries buildWeightSeries({
     if (forecastBar != null) forecastBar,
     LineChartBarData(
       spots: spots,
-      isCurved: true,
-      curveSmoothness: _curveSmoothness,
-      preventCurveOverShooting: true,
+      isCurved: false,
       color: KalloColors.accent,
       barWidth: 3,
       isStrokeCapRound: true,
