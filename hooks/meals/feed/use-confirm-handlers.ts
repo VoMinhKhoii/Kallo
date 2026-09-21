@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner';
 import type { useStreamAnalysis } from '@/hooks/meals/analysis/use-stream-analysis';
 import type { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
-import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat';
+import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat/occasions';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 import type { CheatSliderLevels } from '@/lib/core/types/cheat';
 import type {

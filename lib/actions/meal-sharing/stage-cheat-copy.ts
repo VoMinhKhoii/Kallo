@@ -14,11 +14,12 @@
 // it. Adjusting and confirming then runs the untouched confirmAndSaveMealAction
 // -> confirmCheatMeal path, so nothing about how a cheat meal is saved changes.
 //
-// Structurally this is stageCheatRepeatAction (lib/actions/meals/cheat.ts) with
+// Structurally this is stageCheatRepeatAction (meals/cheat/occasions.ts) with
 // a different source of authority: that one re-opens MY past occasion, this one
 // re-opens a friend's, authorized solely by a pending invite addressed to me.
 
-import { and, eq, or } from 'drizzle-orm';
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
+import { stageCheatSliders } from '@/lib/actions/meals/cheat/stage-sliders';
 import { Errors } from '@/lib/core/errors/catalog';
 import type {
   CheatSlidersPersisted,
@@ -26,21 +27,10 @@ import type {
 } from '@/lib/core/types/cheat';
 import { stageCheatInviteSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import { withLevelsAsDefaults } from '@/lib/domain/cheat/slider-nutrition';
-import {
-  shareInviteAcceptedKey,
-  shareInviteKey,
-} from '@/lib/domain/notifications/group-keys';
-import { closeAggregates } from '@/lib/domain/notifications/notify';
+import { shareInviteAcceptedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import {
-  friendships,
-  mealShareInvites,
-  meals,
-  pendingAnalyses,
-} from '@/lib/infra/db/schema';
 
 export async function stageCheatInviteAction(input: {
   inviteId: string;
@@ -58,146 +48,64 @@ export async function stageCheatInviteAction(input: {
   //
   // Outside the transaction on purpose: DB_POOL_MAX defaults to 2, so an
   // entitlement read inside an open transaction can deadlock the pool (the
-  // same reason documented in confirm-cheat.ts).
+  // same reason documented in cheat/confirm.ts).
   await assertFeatureAccess(
     { userId: user.id, profileCreatedAt: profile.createdAt },
     'cheat_meal'
   );
 
   return withNotifications(db, async (tx, notify) => {
-    // Actor-scoped discovery before any cross-user read: this row is the whole
-    // authorization for reading someone else's meal below.
-    const [invite] = await tx
-      .select({
-        sourceMealId: mealShareInvites.sourceMealId,
-        fromUserId: mealShareInvites.fromUserId,
-      })
-      .from(mealShareInvites)
-      .where(
-        and(
-          eq(mealShareInvites.id, parsed.inviteId),
-          eq(mealShareInvites.toUserId, user.id),
-          eq(mealShareInvites.status, 'pending')
-        )
-      )
-      .limit(1);
-    if (!invite) {
-      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-    }
-
-    // Lock the source BEFORE claiming the invite. Same meal -> invite order as
-    // acceptMealShareInviteAction and shareMealWithFriendsAction, which is what
-    // keeps a stage racing a concurrent split from deadlocking.
-    const [source] = await tx
-      .select()
-      .from(meals)
-      .where(
-        and(
-          eq(meals.id, invite.sourceMealId),
-          eq(meals.userId, invite.fromUserId)
-        )
-      )
-      .limit(1)
-      .for('update');
-    if (!source) {
-      throw Errors.notFound('Bữa ăn không còn tồn tại.');
-    }
-    // Shape-checked, not just non-null: a legacy row can carry `{spec}` with
-    // no `levels`, and `withLevelsAsDefaults` would then throw a TypeError
-    // AFTER the claim — a 500 where the honest answer is a refusal. Checked
-    // here, before anything is written, so the invite survives.
-    const sliders = source.cheatSliders as CheatSlidersPersisted | null;
-    if (
-      source.entryMode !== 'cheat' ||
-      !Array.isArray(sliders?.spec?.sliders) ||
-      typeof sliders.levels !== 'object' ||
-      sliders.levels === null
-    ) {
-      throw Errors.validationFailed('Bữa ăn này không phải bữa xả.');
-    }
-
-    // Claim atomically. This is the double-tap guard: a second tap finds no
-    // pending row and 404s, having staged nothing, so one invite can never
-    // produce two slider cards and therefore never two logged meals.
-    //
-    // Claiming here rather than at confirm is deliberate. Confirm is the
-    // generic save path and knows nothing about invites; leaving the invite
-    // pending until then would let the inbox stage the same offer repeatedly.
-    // The cost is that abandoning the card consumes the offer — but the staged
-    // row is not lost: loadPendingAnalyses returns it for its day and the feed
-    // renders it as a live card for about a week.
+    // Everything up to and including the claim is shared with the precise
+    // accept path — see `claimPendingInvite` for the ordering rules it
+    // enforces. Claiming at STAGE rather than at confirm is this path's own
+    // decision: confirm is the generic save path and knows nothing about
+    // invites, so leaving the invite pending until then would let the inbox
+    // stage the same offer repeatedly. The cost is that abandoning the slider
+    // card consumes the offer — but the staged row is not lost:
+    // loadPendingAnalyses returns it for its day and the feed renders it as a
+    // live card for about a week.
     //
     // `accepted_meal_id` stays NULL on this path. There is no meal yet, the
     // column is an FK so it cannot be pre-filled with an id the client has not
     // written, and nothing in the codebase reads it.
-    const claimed = await tx
-      .update(mealShareInvites)
-      .set({ status: 'accepted', respondedAt: new Date() })
-      .where(
-        and(
-          eq(mealShareInvites.id, parsed.inviteId),
-          eq(mealShareInvites.toUserId, user.id),
-          eq(mealShareInvites.status, 'pending')
-        )
-      )
-      .returning({ id: mealShareInvites.id });
-    if (!claimed[0]) {
-      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-    }
-
-    // Close my own invite notification in the tx that resolved the offer, so a
-    // later re-offer inserts fresh history instead of rewriting this row.
-    await closeAggregates(tx, {
-      recipientIds: [user.id],
-      groupKey: shareInviteKey(invite.sourceMealId),
+    const { invite, source, checked } = await claimPendingInvite(tx, {
+      inviteId: parsed.inviteId,
+      userId: user.id,
+      // Shape-checked, not just non-null: a legacy row can carry `{spec}` with
+      // no `levels`, and `withLevelsAsDefaults` would then throw a TypeError
+      // AFTER the claim — a 500 where the honest answer is a refusal. Checked
+      // here, before anything is written, so the invite survives.
+      assertSource: (row) => {
+        const persisted = row.cheatSliders as CheatSlidersPersisted | null;
+        if (
+          row.entryMode !== 'cheat' ||
+          !Array.isArray(persisted?.spec?.sliders) ||
+          typeof persisted.levels !== 'object' ||
+          persisted.levels === null
+        ) {
+          throw Errors.validationFailed('Bữa ăn này không phải bữa xả.');
+        }
+        // Handed back as `checked`, already narrowed — the claim cannot
+        // return without this having run.
+        return persisted;
+      },
     });
-
-    // The offer was made under an accepted friendship — re-check it still
-    // holds. Throwing rolls back the claim along with everything else.
-    const [friend] = await tx
-      .select({ id: friendships.id })
-      .from(friendships)
-      .where(
-        and(
-          eq(friendships.status, 'accepted'),
-          or(
-            and(
-              eq(friendships.userLow, user.id),
-              eq(friendships.userHigh, invite.fromUserId)
-            ),
-            and(
-              eq(friendships.userHigh, user.id),
-              eq(friendships.userLow, invite.fromUserId)
-            )
-          )
-        )
-      )
-      .limit(1);
-    if (!friend) {
-      throw Errors.validationFailed('Bạn không còn là bạn bè với người này.');
-    }
 
     // Their levels become MY defaults — the card opens where they landed, and
     // I move it from there rather than starting from the model's guess.
-    const repeatSpec = withLevelsAsDefaults(sliders.spec, sliders.levels);
-
+    //
     // Stamped at the SOURCE meal's instant, matching what an accepted precise
     // copy now does: this is the same eating event, seen from my diary. It also
     // keeps the staged row's time consistent with `spec.mealSlot`, which
     // withLevelsAsDefaults carried over from the sender and confirmCheatMeal
     // prefers over inference.
-    const loggedAt = source.loggedAt;
-
-    const [inserted] = await tx
-      .insert(pendingAnalyses)
-      .values({
-        userId: user.id,
-        pipelineResult: { entryMode: 'cheat', spec: repeatSpec },
-        rawInput: source.rawInput,
-        entryMode: 'cheat',
-        loggedAt,
-      })
-      .returning({ id: pendingAnalyses.id });
+    const staged = await stageCheatSliders(tx, {
+      userId: user.id,
+      spec: checked.spec,
+      levels: checked.levels,
+      rawInput: source.rawInput,
+      loggedAt: source.loggedAt,
+    });
 
     // Tell the sender their offer landed. Fired now, when I TAKE the offer,
     // rather than when I finish dialing it — the offer is spent at this point
@@ -214,11 +122,6 @@ export async function stageCheatInviteAction(input: {
       },
     ]);
 
-    return {
-      analysisId: inserted.id,
-      spec: repeatSpec,
-      rawInput: source.rawInput,
-      loggedAt: loggedAt.toISOString(),
-    };
+    return staged;
   });
 }

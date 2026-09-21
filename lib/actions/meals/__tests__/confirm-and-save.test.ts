@@ -35,13 +35,13 @@ const { mockTxDelete, mockTxInsert, mockTxUpdate, mockTxSelect, mockTx } =
     };
   });
 
-// Only the premium gate is stubbed out of confirm-cheat; `confirmCheatMeal`
+// Only the premium gate is stubbed out of cheat/confirm; `confirmCheatMeal`
 // itself stays real so the cheat branch keeps being exercised for what it
 // writes. Its own behaviour (kill-switch, entry-mode resolution) is covered in
-// confirm-cheat-gate.test.ts.
+// cheat/__tests__/confirm-gate.test.ts.
 const assertCheatConfirmAllowed = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/actions/meals/confirm-cheat', async (importActual) => ({
-  ...(await importActual<typeof import('@/lib/actions/meals/confirm-cheat')>()),
+vi.mock('@/lib/actions/meals/cheat/confirm', async (importActual) => ({
+  ...(await importActual<typeof import('@/lib/actions/meals/cheat/confirm')>()),
   assertCheatConfirmAllowed,
 }));
 

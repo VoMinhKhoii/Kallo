@@ -32,12 +32,17 @@ vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 vi.mock('@/lib/infra/db/client', () => ({ db: { select: mockDbSelect } }));
 vi.mock(
   '@/lib/infra/db/schema',
-  async () => (await import('./meal-doubles')).schema
+  async () =>
+    (await import('@/lib/actions/meals/__tests__/meal-doubles')).schema
 );
 
-import { assertCheatConfirmAllowed } from '@/lib/actions/meals/confirm-cheat';
+import {
+  MOCK_PROFILE,
+  MOCK_USER,
+  UUID_1,
+} from '@/lib/actions/meals/__tests__/meal-doubles';
+import { assertCheatConfirmAllowed } from '@/lib/actions/meals/cheat/confirm';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
-import { MOCK_PROFILE, MOCK_USER, UUID_1 } from './meal-doubles';
 
 function queuePending(rows: unknown[]) {
   mockDbSelect.mockReturnValueOnce({

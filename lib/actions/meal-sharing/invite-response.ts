@@ -10,7 +10,8 @@
 // re-applying portion_factor here would double-scale. Broadcast copies use the
 // separate canViewShare-gated log-shared action instead.
 
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
@@ -26,12 +27,7 @@ import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import {
-  friendships,
-  mealItems,
-  mealShareInvites,
-  meals,
-} from '@/lib/infra/db/schema';
+import { mealItems, mealShareInvites } from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------
 // S3: Accept an invite — materialize the meal in my own diary
@@ -49,119 +45,25 @@ export async function acceptMealShareInviteAction(input: {
   // exists a split has already halved the sender's meal, so refusing the
   // recipient would strand that half against an offer they can never take.
   return withNotifications(db, async (tx, notify) => {
-    // Discover the actor-scoped pending invite before touching cross-user data.
-    // The source meal is then locked BEFORE the invite is claimed, matching the
-    // split path's meal -> invite lock order and avoiding an accept/split
-    // deadlock while still keeping the final claim atomic.
-    const [invite] = await tx
-      .select({
-        sourceMealId: mealShareInvites.sourceMealId,
-        fromUserId: mealShareInvites.fromUserId,
-      })
-      .from(mealShareInvites)
-      .where(
-        and(
-          eq(mealShareInvites.id, parsed.inviteId),
-          eq(mealShareInvites.toUserId, user.id),
-          eq(mealShareInvites.status, 'pending')
-        )
-      )
-      .limit(1);
-    if (!invite) {
-      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-    }
-
-    // Authorized cross-user read: the actor-scoped invite above grants this
-    // single source read. FOR UPDATE serializes it against split/edit, so meal
-    // totals and item rows come from one coherent portion.
-    const [source] = await tx
-      .select()
-      .from(meals)
-      .where(
-        and(
-          eq(meals.id, invite.sourceMealId),
-          eq(meals.userId, invite.fromUserId)
-        )
-      )
-      .limit(1)
-      .for('update');
-    if (!source) {
-      throw Errors.notFound('Bữa ăn không còn tồn tại.');
-    }
-
-    // A cheat invite is not accepted here — it reopens the sender's sliders so
-    // I can set my own amounts (stageCheatInviteAction). Refuse BEFORE the
-    // claim below, so a client on an old build that routes here leaves the
-    // invite pending and can still take it properly after updating. Without
-    // this the cheat source would fall through to the item-count check further
-    // down and blame "no items", which is true but useless.
-    if (source.entryMode === 'cheat') {
-      throw Errors.validationFailed(
-        'Bữa xả cần bạn tự đặt mức — hãy mở thẻ thanh trượt.'
-      );
-    }
-
-    // Atomically claim after the source lock. A concurrent accept loses this
-    // guarded update after waiting and cannot materialize a second copy.
-    const claimed = await tx
-      .update(mealShareInvites)
-      .set({ status: 'accepted', respondedAt: new Date() })
-      .where(
-        and(
-          eq(mealShareInvites.id, parsed.inviteId),
-          eq(mealShareInvites.toUserId, user.id),
-          eq(mealShareInvites.status, 'pending')
-        )
-      )
-      // `copy_factor` comes back from the CLAIM, not from the discovery read
-      // above. That read happens before the source meal is locked, so a
-      // concurrent re-share can take the lock, rescale the meal and upsert a
-      // new factor while this accept waits — and the pre-lock value would then
-      // scale the new source by the old ratio. RETURNING is the only read that
-      // is atomic with the transition, so it is the only one that can be
-      // trusted to match the source we just locked.
-      .returning({
-        id: mealShareInvites.id,
-        copyFactor: mealShareInvites.copyFactor,
-      });
-    if (!claimed[0]) {
-      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-    }
-
-    // Close my own invite notification here, in the tx that resolved the offer,
-    // so EVERY resolution path closes the aggregate — this card, the Circle
-    // page, another device, or the sender's split auto-dismiss. A fresh
-    // re-offer then INSERTs new history instead of rewriting this row. The
-    // Activity card's markRead is a harmless second close (read_at IS NULL).
-    await closeAggregates(tx, {
-      recipientIds: [user.id],
-      groupKey: shareInviteKey(invite.sourceMealId),
+    // Everything up to and including the claim is shared with the cheat path —
+    // see `claimPendingInvite` for the ordering rules it enforces.
+    const { invite, source, copyFactor } = await claimPendingInvite(tx, {
+      inviteId: parsed.inviteId,
+      userId: user.id,
+      // A cheat invite is not accepted here — it reopens the sender's sliders
+      // so I can set my own amounts (stageCheatInviteAction). Refused BEFORE
+      // the claim, so a client on an old build that routes here leaves the
+      // invite pending and can still take it properly after updating. Without
+      // this the cheat source would fall through to the item-count check below
+      // and blame "no items", which is true but useless.
+      assertSource: (row) => {
+        if (row.entryMode === 'cheat') {
+          throw Errors.validationFailed(
+            'Bữa xả cần bạn tự đặt mức — hãy mở thẻ thanh trượt.'
+          );
+        }
+      },
     });
-
-    // The offer was created under an accepted friendship — re-check it still
-    // holds (the sender may have been unfriended or blocked since). Rolls back.
-    const [friend] = await tx
-      .select({ id: friendships.id })
-      .from(friendships)
-      .where(
-        and(
-          eq(friendships.status, 'accepted'),
-          or(
-            and(
-              eq(friendships.userLow, user.id),
-              eq(friendships.userHigh, invite.fromUserId)
-            ),
-            and(
-              eq(friendships.userHigh, user.id),
-              eq(friendships.userLow, invite.fromUserId)
-            )
-          )
-        )
-      )
-      .limit(1);
-    if (!friend) {
-      throw Errors.validationFailed('Bạn không còn là bạn bè với người này.');
-    }
 
     const sourceItems = await tx
       .select()
@@ -203,7 +105,6 @@ export async function acceptMealShareInviteAction(input: {
     // and corrupt every total that day — silently, and unrecoverably. The
     // column is NOT NULL with a `> 0` check, so this can only fire on a schema
     // drift, which is exactly when you want a refusal instead of a write.
-    const copyFactor = Number(claimed[0].copyFactor);
     if (!Number.isFinite(copyFactor) || copyFactor <= 0) {
       throw Errors.validationFailed('Phần được chia không hợp lệ.');
     }

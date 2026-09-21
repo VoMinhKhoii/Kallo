@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat';
+import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat/occasions';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 import { recentCheatOccasionsKeys } from '@/lib/domain/meals/query-keys';
 

@@ -13,9 +13,9 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
 import { type AppDb, db } from '@/lib/infra/db/client';
 import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
-import { insertDefaultCircleShare } from './insert-default-share';
-import { EMPTY_NUTRITION } from './shared';
-import type { ConfirmMealResponse } from './types';
+import { insertDefaultCircleShare } from '../insert-default-share';
+import { EMPTY_NUTRITION } from '../shared';
+import type { ConfirmMealResponse } from '../types';
 
 type DbTransaction = Parameters<Parameters<AppDb['transaction']>[0]>[0];
 

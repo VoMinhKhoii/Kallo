@@ -13,7 +13,9 @@ const { mockDbSelect, mockDbInsert, assertFeatureAccess } = vi.hoisted(() => ({
 vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 
 vi.mock('@/lib/infra/auth/session', async () => {
-  const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
+  const { MOCK_USER, MOCK_PROFILE } = await import(
+    '@/lib/actions/meals/__tests__/meal-doubles'
+  );
   return {
     requireAuthAndProfile: vi
       .fn()
@@ -27,7 +29,8 @@ vi.mock('@/lib/infra/db/client', () => ({
 
 vi.mock(
   '@/lib/infra/db/schema',
-  async () => (await import('./meal-doubles')).schema
+  async () =>
+    (await import('@/lib/actions/meals/__tests__/meal-doubles')).schema
 );
 
 // ---------------------------------------------------------------------------
@@ -35,11 +38,16 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import {
+  LOGGED_AT,
+  MOCK_PROFILE,
+  MOCK_USER,
+  UUID_MEAL,
+} from '@/lib/actions/meals/__tests__/meal-doubles';
+import {
   loadRecentCheatOccasionsAction,
   stageCheatRepeatAction,
-} from '@/lib/actions/meals/cheat';
+} from '@/lib/actions/meals/cheat/occasions';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
-import { LOGGED_AT, MOCK_PROFILE, MOCK_USER, UUID_MEAL } from './meal-doubles';
 
 /** select ... where ... orderBy ... limit — the occasions history read. */
 function queueHistorySelect(rows: unknown[]) {
