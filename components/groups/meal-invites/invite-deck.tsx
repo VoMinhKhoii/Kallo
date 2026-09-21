@@ -59,8 +59,23 @@ export function InviteDeck({ invites }: { invites: MealShareInvite[] }) {
         <motion.div
           animate={{ opacity: 1, y: 0 }}
           className="relative"
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+          // `pointerEvents: 'none'` is applied on the first exit frame, not at
+          // the end: by the time a card exits its mutation has already settled,
+          // so its buttons are enabled again and a second click would re-dismiss
+          // an id the server has already resolved — an error toast for an action
+          // that did work. It does not take the card out of the tab order —
+          // motion cannot set `aria-hidden` from a variant — so a keyboard user
+          // can still reach the exiting buttons for the length of the spring;
+          // the click, at least, can no longer land.
+          exit={
+            reduceMotion
+              ? { opacity: 0, pointerEvents: 'none' }
+              : { opacity: 0, y: -8, pointerEvents: 'none' }
+          }
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          // Keyed on the offer, so the front changing is a remount: the rising
+          // card is a fresh card, never the old one with new text poured into
+          // it mid-animation.
           key={front.id}
           transition={{ type: 'spring', stiffness: 320, damping: 34 }}
         >

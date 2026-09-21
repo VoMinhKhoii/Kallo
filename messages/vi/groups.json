@@ -113,7 +113,7 @@
     "loadError": "Không tải được lời mời. Chạm để thử lại.",
     "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
     "acceptCheat": "Tự chọn mức",
-    "waiting": "· {count} lời mời"
+    "waiting": "· {count} đang chờ"
   },
   "invite": {
     "title": "Mời vào vòng kết nối",

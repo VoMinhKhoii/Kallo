@@ -1,4 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 
@@ -74,13 +79,36 @@ describe('InviteDeck', () => {
     expect(screen.queryByText('Meal 3')).not.toBeInTheDocument();
   });
 
-  it('keeps exactly one card actionable', () => {
+  it('keeps every control on the front card and none behind it', () => {
     render(<InviteDeck invites={deck(4)} />);
 
-    // Two buttons — accept and dismiss — for the front card and nothing else.
-    // A layer that leaked a button would put a tab stop on a meal the user
-    // cannot see.
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    // Counted against a ONE-offer deck rather than against a literal, so this
+    // keeps meaning what it says the day InviteCard gains or loses a button:
+    // what must hold is that three extra offers add no extra controls.
+    const four = screen.getAllByRole('button').length;
+    cleanup();
+    render(<InviteDeck invites={deck(1)} />);
+    expect(four).toBe(screen.getAllByRole('button').length);
+  });
+
+  it('reveals the next offer when the front one is acted on', async () => {
+    // The feature's own name. The deck does not mutate anything itself — the
+    // caller's query cache drops the resolved offer and re-renders — so the
+    // behaviour under test is that a shorter list fronts the NEXT invite and
+    // sheds one layer with it.
+    const { rerender } = render(<InviteDeck invites={deck(3)} />);
+    expect(screen.getByText('Meal 0')).toBeInTheDocument();
+    expect(screen.getAllByTestId('invite-deck-layer')).toHaveLength(2);
+
+    rerender(<InviteDeck invites={deck(3).slice(1)} />);
+
+    expect(screen.getByText('Meal 1')).toBeInTheDocument();
+    expect(screen.getAllByTestId('invite-deck-layer')).toHaveLength(1);
+    // The resolved offer is still mounted for the length of its exit — that is
+    // AnimatePresence doing its job — but it must actually leave. A card that
+    // never unmounts would keep a second set of accept/dismiss buttons in the
+    // tree pointing at an invite the server has already resolved.
+    await waitForElementToBeRemoved(() => screen.queryByText('Meal 0'));
   });
 
   it('caps the peek at two layers', () => {

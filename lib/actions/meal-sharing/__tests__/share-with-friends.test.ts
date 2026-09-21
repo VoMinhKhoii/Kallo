@@ -141,6 +141,30 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
+  it('reports nobody offered when every invite was skipped', async () => {
+    // The upsert's `setWhere` refuses to re-pend an invite that is already
+    // ACCEPTED, so a re-share to that friend writes nothing and RETURNING comes
+    // back empty. Counting the named recipients instead of the written rows
+    // told the sender "sent to 1 friend" for a share that reached nobody —
+    // indistinguishable from success, so they never try another way.
+    queueLimitSelect([cheatSourceMeal()]);
+    queueWhereSelect([friendEdge]);
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(
+      routeInserts(captured, {
+        invitesWritten: () => [],
+      })
+    );
+
+    const result = await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(result.invitedCount).toBe(0);
+  });
+
   it('shares a cheat meal as a copy, without reading item rows', async () => {
     queueLimitSelect([cheatSourceMeal()]);
     // Exactly ONE queued where-select, for the friendship check. The precise

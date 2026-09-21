@@ -85,6 +85,13 @@ export async function claimPendingInvite<TChecked = void>(
      * and BEFORE the claim, so a refusal leaves the offer takeable — a client
      * on an old build that routes to the wrong action must not burn the
      * invite. Throw from here; whatever it returns comes back as `checked`.
+     *
+     * MUST be synchronous. An `async` callback type-checks fine — `TChecked`
+     * just infers as a Promise — and then its throw becomes an unawaited
+     * rejection: the claim below runs anyway and burns an invite this path
+     * already knows it cannot handle. TypeScript cannot express "not a
+     * thenable" in a position it still has to infer from, so the rule is
+     * enforced at runtime instead, immediately below.
      */
     assertSource: (source: MealRow) => TChecked;
   }
@@ -127,6 +134,15 @@ export async function claimPendingInvite<TChecked = void>(
   }
 
   const checked = assertSource(source);
+  // The whole point of running the check here is that a refusal happens before
+  // anything is written. A thenable means the refusal has not happened yet, so
+  // refuse on its behalf rather than claiming the invite and finding out later.
+  if (typeof (checked as { then?: unknown } | null)?.then === 'function') {
+    throw new Error(
+      'claimPendingInvite: assertSource must be synchronous — an async check ' +
+        'resolves after the invite has already been claimed.'
+    );
+  }
 
   const [claimed] = await tx
     .update(mealShareInvites)

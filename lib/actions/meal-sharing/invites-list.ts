@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, or } from 'drizzle-orm';
+import { and, asc, eq, or } from 'drizzle-orm';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -69,7 +69,13 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
         eq(mealShareInvites.status, 'pending')
       )
     )
-    .orderBy(desc(mealShareInvites.createdAt));
+    // OLDEST first. The inbox renders as a deck: only the front offer is on
+    // screen, and the only way past it is to take it or dismiss it. Newest
+    // first made that a LIFO — a steady trickle of new offers would keep
+    // burying the oldest one, and each arrival replaced the card the reader
+    // was about to act on. Oldest first drains the queue and puts new arrivals
+    // at the BACK, where they cannot move what is under the thumb.
+    .orderBy(asc(mealShareInvites.createdAt));
 
   return rows.map((row) => {
     // The joined meal is the SENDER's row, which a split already scaled down to

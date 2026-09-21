@@ -104,11 +104,13 @@ vi.mock(
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
 import {
   acceptMealShareInviteAction,
   dismissMealShareInviteAction,
 } from '@/lib/actions/meal-sharing/invite-response';
 import {
+  cheatSourceMeal,
   MOCK_USER as mockUser,
   routeInserts,
   sourceItem,
@@ -142,6 +144,102 @@ describe('acceptMealShareInviteAction', () => {
         timezoneOffset: -420,
       })
     ).rejects.toThrow('Lời mời');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cheat source BEFORE claiming, so the offer survives', async () => {
+    // A cheat meal has no item rows to copy — taking it reopens the sender's
+    // sliders through stageCheatInviteAction instead. A client on an old build
+    // still routes here, and the refusal has to land before the claim or the
+    // invite is burned on an action that can never work: the user would be left
+    // with no meal, no offer, and no way to ask for it again.
+    queueLimitSelect([
+      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
+    ]);
+    queueLimitSelect([cheatSourceMeal()]);
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
+
+    await expect(
+      acceptMealShareInviteAction({
+        inviteId: UUID_INVITE,
+        loggedDate: '2026-04-05',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('thanh trượt');
+
+    // The claim is what proves "before": no UPDATE ran at all, so the invite
+    // is still pending. Asserting only on the message would pass just as well
+    // if the refusal had moved below the claim.
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses an async source check instead of claiming behind its back', async () => {
+    // `assertSource` is typed as returning TChecked, and an async callback
+    // satisfies that — TChecked just infers as a Promise. Its throw would then
+    // be an unawaited rejection, the claim would run anyway, and the invite
+    // would be spent on a source the caller had already decided to refuse.
+    // Reached through the shared helper directly: no caller writes an async
+    // check today, and the guard exists so none ever can.
+    const tx = {
+      select: mockTxSelect,
+      update: mockTxUpdate,
+    } as unknown as Parameters<typeof claimPendingInvite>[0];
+    queueLimitSelect([
+      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
+    ]);
+    queueLimitSelect([sourceMeal()]);
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
+
+    await expect(
+      claimPendingInvite(tx, {
+        inviteId: UUID_INVITE,
+        userId: mockUser.id,
+        assertSource: async () => 'too late',
+      })
+    ).rejects.toThrow('must be synchronous');
+
+    // The claim never ran, so the offer is still takeable.
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the invite is not mine, not pending, or gone', async () => {
+    // The discovery read is scoped to the actor and to `status = 'pending'`.
+    // It returning nothing is the only thing standing between someone else's
+    // invite id and their friend's meal, so it must refuse before the
+    // cross-user source read below it ever runs.
+    queueLimitSelect([]);
+
+    await expect(
+      acceptMealShareInviteAction({
+        inviteId: UUID_INVITE,
+        loggedDate: '2026-04-05',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('Lời mời');
+
+    // One select — the discovery. The source meal was never read.
+    expect(mockTxSelect).toHaveBeenCalledTimes(1);
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the source meal was deleted after the offer was made', async () => {
+    // The sender can delete the meal between the offer and my tap. Without
+    // this the copy would be built from `undefined` and write a row of nulls.
+    queueLimitSelect([
+      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
+    ]);
+    queueLimitSelect([]); // the locked source read finds nothing
+
+    await expect(
+      acceptMealShareInviteAction({
+        inviteId: UUID_INVITE,
+        loggedDate: '2026-04-05',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('Bữa ăn không còn tồn tại');
+
+    expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 

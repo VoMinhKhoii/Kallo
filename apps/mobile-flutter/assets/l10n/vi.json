@@ -1647,7 +1647,7 @@
       "restShare": "Đã chia {percent}%",
       "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
       "acceptCheat": "Chọn mức",
-      "waiting": "· {count} lời mời"
+      "waiting": "· {count} đang chờ"
     },
     "invite": {
       "title": "Mời vào vòng kết nối",

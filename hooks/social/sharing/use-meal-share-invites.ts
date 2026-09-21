@@ -59,6 +59,11 @@ export function useAcceptMealShareInvite() {
       queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+      // The copy lands on the SOURCE meal's day, which is usually not today,
+      // so the timeline needs a new dot on a day it has already cached. Its
+      // staleTime is 60s, and without this the user is sent to a date the
+      // picker still shows as empty.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }
@@ -79,6 +84,10 @@ export function useStageCheatMealShareInvite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
+      // Same reason as accept, and it matters more here: taking a cheat offer
+      // spends it, and the staged card on its own past day is the ONLY way
+      // back to it. A timeline with no dot on that day hides the way back.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }

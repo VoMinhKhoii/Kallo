@@ -49,9 +49,16 @@ export function MealInvites() {
       <h2 className="font-medium font-sans-display text-[11px] text-kallo-text-muted uppercase tracking-[0.08em]">
         {t('title')}
         {invites.length > 1 && (
-          <span className="ml-1.5 tabular-nums">
-            {t('waiting', { count: invites.length })}
-          </span>
+          // The leading space is a real `{' '}`, not the newline above it —
+          // JSX drops whitespace between adjacent expressions, and an
+          // accessible name computed from these children would otherwise come
+          // out glued: "Shared with you· 3 waiting". `ml-1.5` is visual only.
+          <>
+            {' '}
+            <span className="tabular-nums">
+              {t('waiting', { count: invites.length })}
+            </span>
+          </>
         )}
       </h2>
       <InviteDeck invites={invites} />

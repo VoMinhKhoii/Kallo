@@ -61,8 +61,21 @@ class InviteDeck extends StatelessWidget {
           padding: EdgeInsets.only(bottom: reach),
           child: AnimatedSwitcher(
             duration: KalloMotion.disclosure,
-            // The outgoing card is gone the moment it is acted on; only the
-            // one rising behind it should animate.
+            // Both cards are mounted while this runs — AnimatedSwitcher fades
+            // the outgoing one out as the next rises. The default layout
+            // centres them in a Stack sized to the TALLER, so a split card
+            // (which carries a PortionReadout) handing over to a plain copy
+            // left the deck tall for 180ms, floated the short card in the
+            // middle of it, then snapped. Top-left pins both to the same
+            // origin, so only the height settles and it settles downward.
+            layoutBuilder:
+                (currentChild, previousChildren) => Stack(
+                  alignment: Alignment.topLeft,
+                  children: <Widget>[
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                ),
             transitionBuilder:
                 (child, animation) => FadeTransition(
                   opacity: animation,

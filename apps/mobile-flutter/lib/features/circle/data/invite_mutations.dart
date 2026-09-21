@@ -15,7 +15,8 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardBundleProvider,
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
-import '../../logging/data/logging_providers.dart' show loggingDayProvider;
+import '../../logging/data/logging_providers.dart'
+    show loggingDayProvider, mealDatesProvider;
 import 'circle_providers.dart'
     show circleFeedProvider, mealShareInvitesProvider;
 
@@ -46,6 +47,10 @@ Future<String> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
       });
   ref.invalidate(mealShareInvitesProvider);
   ref.invalidate(loggingDayProvider);
+  // The copy lands on the SOURCE meal's day, usually not today, so the
+  // timeline needs a dot on a day it has already cached — without this the
+  // caller navigates to a date the picker still shows as empty.
+  ref.invalidate(mealDatesProvider);
   // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
   // which read off a separate bundle/day cache.
   ref.invalidate(dashboardBundleProvider);
@@ -76,6 +81,9 @@ Future<String> stageCheatMealShareInvite(WidgetRef ref, String inviteId) async {
   // dashboard invalidation: nothing has been logged yet, and the ring must not
   // move until the recipient confirms their own amounts.
   ref.invalidate(loggingDayProvider);
+  // The timeline dot matters more here than on accept: taking a cheat offer
+  // spends it, and the staged card on its own past day is the only way back.
+  ref.invalidate(mealDatesProvider);
   return json['loggedAt'] as String? ?? '';
 }
 

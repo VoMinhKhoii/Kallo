@@ -130,17 +130,21 @@ void main() {
     expect(many, one + 12);
   });
 
-  testWidgets('keeps the layers out of the semantics tree', (tester) async {
+  testWidgets('exposes one card to assistive tech, not the whole stack', (
+    tester,
+  ) async {
+    // Read from the rendered SEMANTICS, not from the widget tree. Asserting
+    // that an `ExcludeSemantics` widget exists proves nothing — it passes just
+    // as well with `excluding: false` — and here it would prove nothing twice
+    // over, because the peek layers are empty boxes with no label to exclude.
+    // The guarantee worth pinning is the one above it: the offers behind the
+    // front are never built, so a screen reader cannot land on a meal the user
+    // has no way to act on.
+    final handle = tester.ensureSemantics();
     await _pumpDeck(tester, 3);
 
-    // Every layer is an ExcludeSemantics at its root. A layer that leaked into
-    // the tree would put a focus stop on a meal the user cannot see.
-    expect(
-      find.descendant(
-        of: find.byType(InvitePeekLayer),
-        matching: find.byType(ExcludeSemantics),
-      ),
-      findsNWidgets(2),
-    );
+    expect(find.bySemanticsLabel('Meal 0'), findsOneWidget);
+    expect(find.bySemanticsLabel('Meal 1'), findsNothing);
+    handle.dispose();
   });
 }

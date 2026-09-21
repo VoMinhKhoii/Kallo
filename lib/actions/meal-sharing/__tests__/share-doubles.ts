@@ -210,7 +210,18 @@ export const friendEdge = { userLow: MOCK_USER.id, userHigh: UUID_FRIEND };
 
 // Route tx.insert by table: meals → returning [{id}], mealShares → the default
 // circle-share chain, meal_share_invites / mealItems → capture the values.
-export function routeInserts(captured: Record<string, { vals: unknown }>) {
+export function routeInserts(
+  captured: Record<string, { vals: unknown }>,
+  opts: {
+    /**
+     * What the invite upsert's RETURNING yields, given the rows it was handed.
+     * Defaults to all of them. Pass `() => []` to model Postgres skipping every
+     * row via `setWhere` — the already-accepted case, where the sender offered
+     * nothing even though they named recipients.
+     */
+    invitesWritten?: (rows: { toUserId: string }[]) => unknown[];
+  } = {}
+) {
   return (table: { id?: string; sourceMealId?: string }) => {
     if (table?.id === 'mealShares.id') {
       return {
@@ -230,9 +241,13 @@ export function routeInserts(captured: Record<string, { vals: unknown }>) {
           // RETURNING yields the rows the upsert actually wrote — the set the
           // producer notifies. Accepted invites are filtered out by setWhere
           // in Postgres, so a test models that by omitting them here.
-          const written = (vals as { toUserId: string }[]).map(
-            (row, index) => ({ id: `invite-${index}`, toUserId: row.toUserId })
-          );
+          const rows = vals as { toUserId: string }[];
+          const written = opts.invitesWritten
+            ? opts.invitesWritten(rows)
+            : rows.map((row, index) => ({
+                id: `invite-${index}`,
+                toUserId: row.toUserId,
+              }));
           return {
             onConflictDoUpdate: vi.fn().mockReturnValue({
               returning: vi.fn().mockResolvedValue(written),

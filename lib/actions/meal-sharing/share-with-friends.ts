@@ -285,6 +285,11 @@ export async function shareMealWithFriendsAction(input: {
       });
     }
 
-    return { invitedCount: recipientIds.length, portionFactor, meal };
+    // `offered`, not `recipientIds`: the upsert's `setWhere` skips anyone whose
+    // invite is already ACCEPTED, and RETURNING yields only the rows it really
+    // wrote. Counting the intended recipients instead told the sender "sent to
+    // 1 friend" for a share that reached nobody — the worst possible answer,
+    // because it is indistinguishable from success and they stop trying.
+    return { invitedCount: offered.length, portionFactor, meal };
   });
 }
