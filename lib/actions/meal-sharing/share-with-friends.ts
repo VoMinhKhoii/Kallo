@@ -72,10 +72,9 @@ export async function shareMealWithFriendsAction(input: {
   }
 
   return withNotifications(db, async (tx, notify) => {
-    // Ownership + precise gate (mirrors duplicateMealAction). Cheat meals carry
-    // no item rows, so there is nothing to copy or split. Locked FOR UPDATE so
-    // two concurrent splits can't both read portionFactor = 1 and each scale
-    // the same meal from the stale full portion.
+    // Ownership gate (mirrors duplicateMealAction). Locked FOR UPDATE so two
+    // concurrent splits can't both read portionFactor = 1 and each scale the
+    // same meal from the stale full portion.
     const [source] = await tx
       .select()
       .from(meals)
@@ -85,17 +84,34 @@ export async function shareMealWithFriendsAction(input: {
     if (!source) {
       throw Errors.notFound('Bữa ăn không tồn tại hoặc không thuộc về bạn.');
     }
-    if (source.entryMode === 'cheat') {
-      throw Errors.validationFailed('Không thể chia sẻ bữa xả theo cách này.');
+    // A cheat meal shares as a COPY only. There is no dish to divide: its
+    // numbers come from slider positions, not from item rows, and scaling those
+    // by a fraction would invent a portion nobody chose. The recipient instead
+    // reopens the sliders and sets their own amounts — two people at the same
+    // buffet rarely ate the same quantity (see stage-cheat-copy.ts).
+    const isCheat = source.entryMode === 'cheat';
+    if (isCheat && parsed.mode === 'split') {
+      throw Errors.validationFailed(
+        'Không thể chia phần bữa xả — hãy gửi nguyên phần để bạn tự đặt mức.'
+      );
+    }
+    if (isCheat && !source.cheatSliders) {
+      throw Errors.validationFailed(
+        'Bữa xả này không còn dữ liệu thanh trượt để chia sẻ.'
+      );
     }
 
-    // Copy/split reproduce the item rows — a meal with none has nothing to give
-    // (mirrors the client gate; the API is the mobile contract, so enforce here).
-    const sourceItems = await tx
-      .select()
-      .from(mealItems)
-      .where(eq(mealItems.mealId, source.id));
-    if (sourceItems.length === 0) {
+    // A precise copy/split reproduces the item rows, so a meal with none has
+    // nothing to give (mirrors the client gate; the API is the mobile contract,
+    // so enforce here). A cheat meal never has them — skip the read entirely
+    // rather than round-trip for a result we know is empty.
+    const sourceItems = isCheat
+      ? []
+      : await tx
+          .select()
+          .from(mealItems)
+          .where(eq(mealItems.mealId, source.id));
+    if (!isCheat && sourceItems.length === 0) {
       throw Errors.validationFailed('Bữa ăn này không có món để chia sẻ.');
     }
 

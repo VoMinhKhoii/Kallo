@@ -56,6 +56,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     carbohydrateG: 50,
     fatG: 15,
     portionFactor: 1,
+    entryMode: 'precise',
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,

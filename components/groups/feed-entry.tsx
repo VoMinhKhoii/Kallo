@@ -158,8 +158,12 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             <MessageCircle className="size-[15px]" />
             {entry.repliesTotal > 0 && <span>{entry.repliesTotal}</span>}
           </Link>
-          {/* Split half is still deferred — it needs a confirmation step. */}
-          {!entry.isSelf && (
+          {/* Split half is still deferred — it needs a confirmation step.
+              Hidden for a cheat post: it has no item rows to reproduce, so the
+              server refuses it (log-shared.ts) and the button was a guaranteed
+              error. A cheat meal travels as a directed invite instead, where
+              the recipient can set their own amounts. */}
+          {!(entry.isSelf || meal.entryMode === 'cheat') && (
             <>
               <button
                 type="button"

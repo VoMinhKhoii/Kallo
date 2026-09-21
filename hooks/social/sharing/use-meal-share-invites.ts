@@ -7,6 +7,7 @@ import {
   acceptMealShareInvite,
   dismissMealShareInvite,
   fetchMealShareInvites,
+  stageCheatMealShareInvite,
 } from '@/lib/domain/social/circle-client';
 import {
   circleFeedKeys,
@@ -58,6 +59,26 @@ export function useAcceptMealShareInvite() {
       queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+    },
+  });
+}
+
+/**
+ * Take a CHEAT invite: reopen the sender's sliders instead of logging their
+ * numbers. Nothing lands in the diary here — the caller routes to the logging
+ * feed, where the staged card waits on the day the meal was eaten, and the
+ * meal is created only when the recipient confirms their own amounts.
+ *
+ * Invalidates the day queries so the staged card is already in cache when
+ * `/logging` mounts, rather than appearing a beat later.
+ */
+export function useStageCheatMealShareInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => stageCheatMealShareInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
+      queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
     },
   });
 }

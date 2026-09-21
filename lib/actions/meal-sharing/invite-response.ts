@@ -89,6 +89,18 @@ export async function acceptMealShareInviteAction(input: {
       throw Errors.notFound('Bữa ăn không còn tồn tại.');
     }
 
+    // A cheat invite is not accepted here — it reopens the sender's sliders so
+    // I can set my own amounts (stageCheatInviteAction). Refuse BEFORE the
+    // claim below, so a client on an old build that routes here leaves the
+    // invite pending and can still take it properly after updating. Without
+    // this the cheat source would fall through to the item-count check further
+    // down and blame "no items", which is true but useless.
+    if (source.entryMode === 'cheat') {
+      throw Errors.validationFailed(
+        'Bữa xả cần bạn tự đặt mức — hãy mở thẻ thanh trượt.'
+      );
+    }
+
     // Atomically claim after the source lock. A concurrent accept loses this
     // guarded update after waiting and cannot materialize a second copy.
     const claimed = await tx

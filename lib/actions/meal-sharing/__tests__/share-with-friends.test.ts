@@ -108,6 +108,7 @@ vi.mock(
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing/share-with-friends';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
+  cheatSourceMeal,
   friendEdge,
   MOCK_USER as mockUser,
   PROFILE_CREATED_AT,
@@ -140,15 +141,58 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
-  it('refuses to share a cheat meal', async () => {
-    queueLimitSelect([sourceMeal({ entryMode: 'cheat' })]);
+  it('shares a cheat meal as a copy, without reading item rows', async () => {
+    queueLimitSelect([cheatSourceMeal()]);
+    // Exactly ONE queued where-select, for the friendship check. The precise
+    // path consumes two here (items, then friendships), so if this ever starts
+    // reading item rows for a cheat meal it will eat the friendship's slot and
+    // fail — which is the assertion in the test's name.
+    queueWhereSelect([friendEdge]);
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    const result = await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(result.invitedCount).toBe(1);
+    // A copy leaves the sender's own meal alone — nothing to rescale.
+    expect(result.meal).toBeNull();
+    const invites = captured.invites.vals as Array<Record<string, unknown>>;
+    expect(invites[0]).toMatchObject({
+      mode: 'copy',
+      toUserId: UUID_FRIEND,
+      copyFactor: 1,
+    });
+    expect(mockNotify).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to SPLIT a cheat meal', async () => {
+    // Slider positions are not a dish you can divide: scaling them by a
+    // fraction would invent a portion nobody chose. Copy, and let the
+    // recipient set their own amounts.
+    queueLimitSelect([cheatSourceMeal()]);
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+      })
+    ).rejects.toThrow('chia phần bữa xả');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cheat meal whose slider data is gone', async () => {
+    queueLimitSelect([cheatSourceMeal({ cheatSliders: null })]);
     await expect(
       shareMealWithFriendsAction({
         mealId: UUID_MEAL,
         friendUserIds: [UUID_FRIEND],
         mode: 'copy',
       })
-    ).rejects.toThrow('bữa xả');
+    ).rejects.toThrow('thanh trượt');
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 

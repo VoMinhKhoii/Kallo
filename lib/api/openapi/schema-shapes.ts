@@ -267,6 +267,12 @@ const sharedMealEntry = object({
     carbohydrateG: nullableNumber,
     fatG: nullableNumber,
     portionFactor: { type: 'number' },
+    entryMode: {
+      type: 'string',
+      enum: ['precise', 'cheat'],
+      description:
+        'A cheat meal has no item rows, so it cannot be copied off the wall; clients hide the copy action for these.',
+    },
     sharedAt: { type: 'string', format: 'date-time' },
     isBackfilled: { type: 'boolean' },
   }),
@@ -347,6 +353,16 @@ export const RESPONSE_SCHEMAS: Record<string, JsonSchema> = {
     parsedMeal: {
       type: 'object',
       description: 'Parsed precise-meal payload ready for user review.',
+    },
+    rawInput: { type: 'string' },
+    loggedAt: { type: 'string', format: 'date-time' },
+  }),
+  StagedCheatAnalysis: object({
+    analysisId: uuid,
+    spec: {
+      type: 'object',
+      description:
+        'Cheat slider spec, with each slider pre-set to the amount the source logger chose.',
     },
     rawInput: { type: 'string' },
     loggedAt: { type: 'string', format: 'date-time' },

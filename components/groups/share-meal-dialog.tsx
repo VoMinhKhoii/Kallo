@@ -19,7 +19,7 @@ import { useFriends } from '@/hooks/social/circle/use-friends';
 import { useShareDraft } from '@/hooks/social/sharing/use-share-draft';
 import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
 import { useShareSubmit } from '@/hooks/social/sharing/use-share-submit';
-import { TOTAL_PARTS } from '@/lib/domain/social/splits/parts';
+import { keptKcal } from '@/lib/domain/social/splits/kept-kcal';
 
 type Mode = 'whole' | 'split';
 
@@ -28,6 +28,8 @@ interface ShareMealDialogProps {
   mealName: string;
   totalKcal: number | null;
   trigger: ReactNode;
+  /** A cheat meal shares whole only — see ShareMealTabs.allowSplit. */
+  copyOnly?: boolean;
 }
 
 /**
@@ -43,6 +45,7 @@ export function ShareMealDialog({
   mealName,
   totalKcal,
   trigger,
+  copyOnly = false,
 }: ShareMealDialogProps) {
   const t = useTranslations('groups.shareMeal');
   const [open, setOpen] = useState(false);
@@ -97,11 +100,7 @@ export function ShareMealDialog({
     [friends, seated]
   );
 
-  const keptParts = draft.keptParts(mode === 'split');
-  const kept =
-    totalKcal == null
-      ? null
-      : Math.round((totalKcal * keptParts) / TOTAL_PARTS);
+  const kept = keptKcal(totalKcal, draft.keptParts(mode === 'split'));
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -134,10 +133,12 @@ export function ShareMealDialog({
             primary action, and neither can be scrolled out of reach. */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[22px]">
           <ShareMealTabs
+            allowSplit={!copyOnly}
             mode={mode}
             onChange={setMode}
             splitLabel={t('mode.split')}
             wholeLabel={t('mode.whole')}
+            wholeOnlyLabel={t('cheatWholeOnly')}
           />
 
           <ShareMealDialogStates

@@ -96,7 +96,8 @@
     "errorBody": "Check your connection and try again.",
     "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
     "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
-    "error": "Couldn't share the meal. Try again."
+    "error": "Couldn't share the meal. Try again.",
+    "cheatWholeOnly": "Cheat meals share whole — your friend sets their own amounts."
   },
   "invites": {
     "title": "Shared with you",
@@ -108,7 +109,9 @@
     "dismiss": "Dismiss",
     "accepted": "Added to your diary",
     "error": "That didn't work — try again.",
-    "loadError": "Couldn't load your invites. Tap to retry."
+    "loadError": "Couldn't load your invites. Tap to retry.",
+    "sharedCheat": "{name} shared their cheat meal with you",
+    "acceptCheat": "Set my amounts"
   },
   "invite": {
     "title": "Invite to your circle",

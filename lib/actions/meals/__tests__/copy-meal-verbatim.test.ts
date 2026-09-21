@@ -35,7 +35,12 @@ const USER_ID = '9d1f2c44-7b3e-4a55-9c22-1aa2bb334455';
  *  copied one — see the `expect(...).not.toBe` in the inference case. */
 const SOURCE_LOGGED_AT = new Date('2026-04-05T00:30:00.000Z');
 
-function sourceMeal(overrides: Record<string, unknown> = {}) {
+/** The columns copyMealVerbatim actually reads. The cast keeps the fixture
+ *  readable — spelling out all 40-odd meal columns would bury what is under
+ *  test — and a missing column would surface immediately as undefined. */
+type SourceMeal = Parameters<typeof copyMealVerbatim>[1];
+
+function sourceMeal(overrides: Record<string, unknown> = {}): SourceMeal {
   return {
     id: SOURCE_MEAL_ID,
     userId: 'someone-else',
@@ -51,10 +56,12 @@ function sourceMeal(overrides: Record<string, unknown> = {}) {
     carbohydrateG: 70,
     fatG: 20,
     ...overrides,
-  };
+  } as unknown as SourceMeal;
 }
 
-function sourceItem() {
+type SourceItem = Parameters<typeof copyMealVerbatim>[2][number];
+
+function sourceItem(): SourceItem {
   return {
     id: 'd3bbef22-cf3e-4bb1-9e90-9eecef613d44',
     mealId: SOURCE_MEAL_ID,
@@ -70,7 +77,7 @@ function sourceItem() {
     proteinG: 30,
     carbohydrateG: 70,
     fatG: 20,
-  };
+  } as unknown as SourceItem;
 }
 
 /** Captures what the copy would have written, and hands `meals` an id back. */

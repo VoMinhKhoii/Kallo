@@ -121,6 +121,18 @@ export const dismissMealShareInviteSchema = z.object({
   inviteId: uuidSchema,
 });
 
+/**
+ * Take a CHEAT invite by reopening the sender's sliders.
+ *
+ * No `loggedDate`/`timezoneOffset`, unlike accept above: nothing is logged by
+ * this call. The staged card inherits the source meal's instant, and the
+ * recipient sets their own amounts before confirming through the ordinary
+ * cheat path. No `newMealId` either — the meal id is minted at confirm time.
+ */
+export const stageCheatInviteSchema = z.object({
+  inviteId: uuidSchema,
+});
+
 /** Read one shared meal (the per-post thread page) by its share id. */
 export const shareThreadSchema = z.object({
   shareId: uuidSchema,

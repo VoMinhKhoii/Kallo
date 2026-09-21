@@ -45,6 +45,10 @@ export const schema = {
     userHigh: 'friendships.userHigh',
     status: 'friendships.status',
   },
+  pendingAnalyses: {
+    id: 'pendingAnalyses.id',
+    userId: 'pendingAnalyses.userId',
+  },
   publicProfiles: { userId: 'publicProfiles.userId' },
   userProfiles: {
     userId: 'userProfiles.userId',
@@ -118,6 +122,42 @@ export function sourceMeal(overrides: Record<string, unknown> = {}) {
     fatG: 5,
     ...overrides,
   };
+}
+
+/**
+ * A cheat occasion: zero item rows, nutrition on the meal row itself, and the
+ * slider spec + the levels the logger chose in `cheatSliders`. Shares as a COPY
+ * only, and taking that copy reopens these sliders rather than duplicating the
+ * numbers — see stage-cheat-copy.ts.
+ */
+export function cheatSourceMeal(overrides: Record<string, unknown> = {}) {
+  return sourceMeal({
+    rawInput: 'Buffet nướng',
+    entryMode: 'cheat',
+    mealSlot: 'dinner',
+    caloriesKcal: 1400,
+    cheatSliders: {
+      spec: {
+        sliders: [
+          {
+            key: 'protein',
+            label: 'Đạm',
+            defaultLevel: 4,
+            anchors: [
+              { level: 0, label: 'ít', proteinG: 0 },
+              { level: 10, label: 'nhiều', proteinG: 80 },
+            ],
+          },
+        ],
+        mealSlot: 'dinner',
+        confidence: 'medium',
+      },
+      // The sender ended up at 8, not the model's default of 4 — the seam the
+      // staging path has to carry across into MY card's starting position.
+      levels: { protein: 8 },
+    },
+    ...overrides,
+  });
 }
 
 export function sourceItem(overrides: Record<string, unknown> = {}) {

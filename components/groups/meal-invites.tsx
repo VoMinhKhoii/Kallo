@@ -9,8 +9,11 @@ import {
   useAcceptMealShareInvite,
   useDismissMealShareInvite,
   useMealShareInvites,
+  useStageCheatMealShareInvite,
 } from '@/hooks/social/sharing/use-meal-share-invites';
+import { useRouter } from '@/i18n/navigation';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
+import { toLocalDayKey } from '@/lib/core/date/day-key';
 
 function formatKcal(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)} kcal`;
@@ -30,15 +33,35 @@ function portionLabel(factor: number): string {
 
 function InviteCard({ invite }: { invite: MealShareInvite }) {
   const t = useTranslations('groups.invites');
+  const router = useRouter();
   const accept = useAcceptMealShareInvite();
+  const stageCheat = useStageCheatMealShareInvite();
   const dismiss = useDismissMealShareInvite();
   const na = t('na');
   const senderLabel = labelFor(invite.from);
-  const busy = accept.isPending || dismiss.isPending;
+  const isCheat = invite.meal.entryMode === 'cheat';
+  const busy = accept.isPending || stageCheat.isPending || dismiss.isPending;
   const portion = portionLabel(invite.portionFactor);
 
   const handleAccept = () => {
     if (busy) {
+      return;
+    }
+    // A cheat offer is not "add this meal" — nobody can say what I ate from
+    // where THEY put the sliders. Taking it reopens their spec on my own
+    // logging feed, on the day the meal was eaten, and I set my amounts there.
+    if (isCheat) {
+      stageCheat.mutate(invite.id, {
+        onSuccess: (staged) => {
+          router.push(
+            `/logging?date=${toLocalDayKey(
+              Date.parse(staged.loggedAt),
+              new Date().getTimezoneOffset()
+            )}`
+          );
+        },
+        onError: () => toast.error(t('error')),
+      });
       return;
     }
     accept.mutate(invite.id, {
@@ -63,9 +86,11 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
           className="size-6"
         />
         <p className="font-sans-display text-[12px] text-kallo-text">
-          {invite.mode === 'split'
-            ? t('sharedSplit', { name: senderLabel })
-            : t('sharedCopy', { name: senderLabel })}
+          {isCheat
+            ? t('sharedCheat', { name: senderLabel })
+            : invite.mode === 'split'
+              ? t('sharedSplit', { name: senderLabel })
+              : t('sharedCopy', { name: senderLabel })}
         </p>
       </div>
 
@@ -105,15 +130,15 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
           type="button"
           onClick={handleAccept}
           disabled={busy}
-          aria-busy={accept.isPending}
+          aria-busy={accept.isPending || stageCheat.isPending}
           className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {accept.isPending ? (
+          {accept.isPending || stageCheat.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Check className="h-3.5 w-3.5" />
           )}
-          {t('accept')}
+          {isCheat ? t('acceptCheat') : t('accept')}
         </button>
       </div>
     </div>

@@ -139,4 +139,26 @@ describe('FeedEntry', () => {
     const heart = screen.getByRole('button', { name: 'heart' });
     expect(heart).not.toHaveTextContent(/\d/);
   });
+
+  it("offers to copy someone else's precise post", () => {
+    render(<FeedEntry entry={entryFixture()} />);
+
+    expect(screen.getByRole('button', { name: 'logCopy' })).toBeInTheDocument();
+  });
+
+  it('hides the copy action on a cheat post', () => {
+    // It has no item rows to reproduce, so the server refuses it — the button
+    // was a guaranteed error. Cheat meals travel as a directed invite, where
+    // the recipient reopens the sliders and sets their own amounts.
+    const entry = entryFixture();
+    render(
+      <FeedEntry
+        entry={{ ...entry, meal: { ...entry.meal, entryMode: 'cheat' } }}
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'logCopy' })
+    ).not.toBeInTheDocument();
+  });
 });

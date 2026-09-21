@@ -47,6 +47,7 @@ export function sharedMealEntryFixture(
     meal: {
       mealId: 'meal-1',
       shareId: SHARE_ID,
+      entryMode: 'precise',
       rawInput: 'bún chả',
       caloriesKcal: 420,
       proteinG: 38,

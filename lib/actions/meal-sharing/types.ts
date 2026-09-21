@@ -18,5 +18,7 @@ export interface MealShareInvite {
     proteinG: number | null;
     carbohydrateG: number | null;
     fatG: number | null;
+    /** A cheat invite is not accepted, it reopens the sender's sliders. */
+    entryMode: 'precise' | 'cheat';
   };
 }

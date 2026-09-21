@@ -19,12 +19,30 @@ export function ShareMealTabs({
   wholeLabel,
   splitLabel,
   onChange,
+  allowSplit = true,
+  wholeOnlyLabel,
 }: {
   mode: 'whole' | 'split';
   wholeLabel: string;
   splitLabel: string;
   onChange: (mode: 'whole' | 'split') => void;
+  /** False for a cheat meal: its numbers are slider positions, not a dish that
+   *  can be divided. The recipient sets their own amounts instead. */
+  allowSplit?: boolean;
+  /** Shown in place of the tabs when `allowSplit` is false. */
+  wholeOnlyLabel?: string;
 }) {
+  // A sentence, not a disabled tab. A greyed-out "Chia phần" invites a tap and
+  // then explains nothing; this says what will happen instead, which also
+  // pre-frames the slider card the recipient is about to meet.
+  if (!allowSplit) {
+    return (
+      <p className="mt-3.5 rounded-xl bg-kallo-hover/40 px-3 py-2 font-sans-display text-[12px] text-kallo-text-muted leading-relaxed">
+        {wholeOnlyLabel}
+      </p>
+    );
+  }
+
   return (
     <Tabs
       className="mt-3.5"

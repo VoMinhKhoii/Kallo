@@ -5,8 +5,8 @@ import { z } from 'zod';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import type {
-  CheatSliderSpec,
   CheatSlidersPersisted,
+  StagedCheatAnalysis,
 } from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
@@ -76,12 +76,7 @@ export async function stageCheatRepeatAction(input: {
   sourceMealId: string;
   loggedDate: string;
   timezoneOffset: number;
-}): Promise<{
-  analysisId: string;
-  spec: CheatSliderSpec;
-  rawInput: string;
-  loggedAt: string;
-}> {
+}): Promise<StagedCheatAnalysis> {
   const parsed = stageCheatRepeatSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
   // Premium: cheat meals are a Premium-card feature. Only the WRITE path is

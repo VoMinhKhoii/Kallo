@@ -28,6 +28,7 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       proteinG: meals.proteinG,
       carbohydrateG: meals.carbohydrateG,
       fatG: meals.fatG,
+      entryMode: meals.entryMode,
       handle: publicProfiles.handle,
       displayName: publicProfiles.displayName,
       avatarSeed: publicProfiles.avatarSeed,
@@ -101,6 +102,11 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
         proteinG: times(row.proteinG),
         carbohydrateG: times(row.carbohydrateG),
         fatG: times(row.fatG),
+        // Decides which action the card offers: a precise invite is accepted
+        // outright, a cheat one reopens the sender's sliders so the reader can
+        // set their own amounts. Also what lets the card show the cheat
+        // paywall BEFORE the tap spends the offer.
+        entryMode: row.entryMode === 'cheat' ? 'cheat' : 'precise',
       },
     };
   });
