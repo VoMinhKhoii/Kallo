@@ -15,6 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/logging/cheat.dart';
+import '../../circle/data/circle_providers.dart'
+    show refreshInvitesAfterRelease;
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../nutrition/providers/nutrition_overview_provider.dart';
@@ -54,7 +56,9 @@ class LoggingDayNotifier
     final path =
         '/api/v1/logging/day?date=${Uri.encodeComponent(arg.date)}&tz=$tz';
     final json = await api.get<Map<String, dynamic>>(path);
-    return LoggingDayData.fromJson(json);
+    final day = LoggingDayData.fromJson(json);
+    refreshInvitesAfterRelease(ref, released: day.releasedInvites);
+    return day;
   }
 
   /// Replace a persisted meal in place by id from an authoritative server

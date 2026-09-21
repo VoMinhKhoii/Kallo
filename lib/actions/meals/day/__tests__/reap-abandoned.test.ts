@@ -38,6 +38,13 @@ vi.mock('@/lib/actions/meal-sharing/invite-lifecycle', () => ({
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
 import { MOCK_USER, UUID_1, UUID_2 } from '../../__tests__/meal-doubles';
 
+// Staged-card ids, deliberately distinct from the invite ids above: a card and
+// the offer it was staged from are different rows, and a test that reused one
+// id for both could not tell `reapedIds` from the ids passed to releaseInvite.
+const CARD_A = 'd3bbce22-cf3e-4bb1-9e90-9eecef613d44';
+const CARD_B = 'e4ccdf33-d04f-4cc2-af01-affdfa724e55';
+const CARD_C = 'f5ddea44-e15a-4dd3-b012-b00e0b835f66';
+
 /** The sweep resolves through .where().returning(). */
 function queueReap(rows: unknown[]) {
   const captured: { where?: unknown } = {};
@@ -58,9 +65,9 @@ describe('reapAbandonedPendingAnalyses', () => {
 
   it('hands back every offer whose card it reaped', async () => {
     queueReap([
-      { sourceInviteId: UUID_1 },
-      { sourceInviteId: null },
-      { sourceInviteId: UUID_2 },
+      { id: CARD_A, sourceInviteId: UUID_1 },
+      { id: CARD_B, sourceInviteId: null },
+      { id: CARD_C, sourceInviteId: UUID_2 },
     ]);
 
     await reapAbandonedPendingAnalyses(MOCK_USER.id);
@@ -72,11 +79,47 @@ describe('reapAbandonedPendingAnalyses', () => {
     ).toEqual([UUID_1, UUID_2]);
   });
 
+  it('reports every id it deleted, so the day load can subtract them', async () => {
+    // `loadLoggingDay` reads pending cards CONCURRENTLY with this sweep and
+    // does not filter on expiry, so it can hold a row this sweep is deleting.
+    // Without these ids it renders a card that no longer exists, and every
+    // confirm or discard on it fails as "already saved / not found".
+    queueReap([
+      { id: CARD_A, sourceInviteId: UUID_1 },
+      { id: CARD_B, sourceInviteId: null },
+    ]);
+
+    const outcome = await reapAbandonedPendingAnalyses(MOCK_USER.id);
+
+    // Every reaped id, not just the ones that owed an invite.
+    expect(outcome.reapedIds).toEqual([CARD_A, CARD_B]);
+  });
+
+  it('reports a release so the caller can refresh the inbox', async () => {
+    queueReap([{ id: CARD_A, sourceInviteId: UUID_1 }]);
+
+    const outcome = await reapAbandonedPendingAnalyses(MOCK_USER.id);
+
+    expect(outcome.releasedInvites).toBe(true);
+  });
+
+  it('reports no release when the reaped cards owed nothing', async () => {
+    // The flag drives a cache invalidation on both clients. Setting it for a
+    // sweep that released nothing spends a request on every day load that
+    // happens to reap an ordinary abandoned card.
+    queueReap([{ id: CARD_A, sourceInviteId: null }]);
+
+    const outcome = await reapAbandonedPendingAnalyses(MOCK_USER.id);
+
+    expect(outcome.releasedInvites).toBe(false);
+    expect(mockReleaseInvite).not.toHaveBeenCalled();
+  });
+
   it('releases as the card owner, inside the sweep transaction', async () => {
     // The release is scoped to the actor, and it has to run on the SAME tx as
     // the delete — an offer handed back after the delete committed, by a call
     // that then failed, would spend the card and the offer both.
-    queueReap([{ sourceInviteId: UUID_1 }]);
+    queueReap([{ id: CARD_A, sourceInviteId: UUID_1 }]);
 
     await reapAbandonedPendingAnalyses(MOCK_USER.id);
 
@@ -114,17 +157,22 @@ describe('reapAbandonedPendingAnalyses', () => {
     // asked for.
     mockTransaction.mockRejectedValueOnce(new Error('connection lost'));
 
-    await expect(
-      reapAbandonedPendingAnalyses(MOCK_USER.id)
-    ).resolves.toBeUndefined();
+    // Reports nothing reaped, which is the TRUTHFUL answer and not merely a
+    // safe one: the rows are still there, so the day must still show them.
+    // Claiming ids here would blank live cards out of the feed.
+    await expect(reapAbandonedPendingAnalyses(MOCK_USER.id)).resolves.toEqual({
+      reapedIds: [],
+      releasedInvites: false,
+    });
   });
 
   it('swallows a failing release the same way', async () => {
-    queueReap([{ sourceInviteId: UUID_1 }]);
+    queueReap([{ id: CARD_A, sourceInviteId: UUID_1 }]);
     mockReleaseInvite.mockRejectedValueOnce(new Error('deadlock'));
 
-    await expect(
-      reapAbandonedPendingAnalyses(MOCK_USER.id)
-    ).resolves.toBeUndefined();
+    await expect(reapAbandonedPendingAnalyses(MOCK_USER.id)).resolves.toEqual({
+      reapedIds: [],
+      releasedInvites: false,
+    });
   });
 });

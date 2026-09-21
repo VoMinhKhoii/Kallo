@@ -70,6 +70,17 @@ export interface LoggingDayData {
    * real calories. One-way: there is no un-marking.
    */
   markedComplete: boolean;
+  /**
+   * The day load's staging-row sweep handed at least one meal-share offer back
+   * to this user's inbox. Optional because only the server ever sets it: the
+   * optimistic client-side constructions of this shape (save choreography, the
+   * delete rollback, the day cache) release nothing, and absent reads as false.
+   *
+   * Clients invalidate their invite caches on it. Without that the offer comes
+   * back server-side and stays invisible — the inbox query is watched
+   * continuously by the nav badge, so it never expires on its own.
+   */
+  releasedInvites?: boolean;
 }
 
 /**

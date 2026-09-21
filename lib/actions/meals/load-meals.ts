@@ -239,38 +239,58 @@ export async function loadLoggingDay(input: {
 }): Promise<LoggingDayData> {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  const [persistedMeals, pendingConfirmations, marks] = await Promise.all([
-    loadMealsByDateForUser(user.id, parsed),
-    loadPendingAnalysesByDateForUser(user.id, parsed),
-    db
-      .select({ id: dayCompletionMarks.id })
-      .from(dayCompletionMarks)
-      .where(
-        and(
-          eq(dayCompletionMarks.userId, user.id),
-          eq(dayCompletionMarks.localDate, parsed.date)
+  const [persistedMeals, pendingConfirmations, marks, reaped] =
+    await Promise.all([
+      loadMealsByDateForUser(user.id, parsed),
+      loadPendingAnalysesByDateForUser(user.id, parsed),
+      db
+        .select({ id: dayCompletionMarks.id })
+        .from(dayCompletionMarks)
+        .where(
+          and(
+            eq(dayCompletionMarks.userId, user.id),
+            eq(dayCompletionMarks.localDate, parsed.date)
+          )
         )
-      )
-      .limit(1),
-    // Hygiene: reap this user's long-abandoned staging rows so the table doesn't
-    // grow unbounded. Best-effort:
-    //  - swallow its own errors: a failed DELETE (lock/pooler hiccup) must not
-    //    reject the whole day load and 500 the logging page.
-    //  - only delete rows a full WEEK past expiry, never merely-expired ones.
-    //    Since the load above no longer hides expired rows, this reaper IS the
-    //    lifetime of an unconfirmed card: it stays visible and confirmable until
-    //    reaped, roughly a week after staging. Anything shorter would take a
-    //    card off screen while the user still meant to save it, which is exactly
-    //    what the old 30-minute display window did.
-    //    A pg_cron purge would be the tidier long-term home, but this keeps the
-    //    fix self-contained.
-    reapAbandonedPendingAnalyses(user.id),
-  ]);
+        .limit(1),
+      // Hygiene: reap this user's long-abandoned staging rows so the table doesn't
+      // grow unbounded. Best-effort:
+      //  - swallow its own errors: a failed DELETE (lock/pooler hiccup) must not
+      //    reject the whole day load and 500 the logging page.
+      //  - only delete rows a full WEEK past expiry, never merely-expired ones.
+      //    Since the load above no longer hides expired rows, this reaper IS the
+      //    lifetime of an unconfirmed card: it stays visible and confirmable until
+      //    reaped, roughly a week after staging. Anything shorter would take a
+      //    card off screen while the user still meant to save it, which is exactly
+      //    what the old 30-minute display window did.
+      //    A pg_cron purge would be the tidier long-term home, but this keeps
+      //    the fix self-contained.
+      //  - runs CONCURRENTLY with the reads above, which is why its outcome is
+      //    reconciled below rather than ignored.
+      reapAbandonedPendingAnalyses(user.id),
+    ]);
 
   return {
     persistedMeals,
-    pendingConfirmations,
+    // Subtract what the sweep just deleted. The pending read does not filter on
+    // `expiresAt` at all (deliberately — see `loadPendingAnalysesByDateForUser`),
+    // so a row a full week past expiry is returned by the SELECT while the sweep
+    // in the same `Promise.all` is deleting it. Whichever query reaches the pool
+    // first decides, and when the SELECT wins, the day resolves with a card that
+    // no longer exists: it renders, and every confirm or discard on it fails as
+    // "already saved / not found". Filtering here costs nothing and is exact in
+    // both orderings — if the DELETE won, these ids were never in the rows.
+    pendingConfirmations: reaped.reapedIds.length
+      ? pendingConfirmations.filter(
+          (pending) => !reaped.reapedIds.includes(pending.id)
+        )
+      : pendingConfirmations,
     markedComplete: marks.length > 0,
+    // The sweep hands back the offers behind the cards it reaped, so loading a
+    // day can silently repopulate the meal-share inbox. Nothing else will tell
+    // the clients that: the inbox query is watched continuously by the nav badge
+    // and only refetches on an explicit invalidation. Callers invalidate on this.
+    releasedInvites: reaped.releasedInvites,
   };
 }
 

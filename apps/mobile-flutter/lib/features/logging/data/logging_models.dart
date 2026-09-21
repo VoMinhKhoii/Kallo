@@ -236,10 +236,20 @@ class LoggingDayData {
   /// real calories. One-way — there is no un-marking.
   final bool markedComplete;
 
+  /// The server's staging-row sweep handed at least one meal-share offer back
+  /// to this user's inbox while serving this day. Defaults false: only the
+  /// server ever sets it, and the optimistic local constructions of this shape
+  /// (confirm, delete rollback) release nothing.
+  ///
+  /// See `refreshInvitesAfterRelease` — the provider that reads this has to
+  /// refresh the inbox, because nothing else will.
+  final bool releasedInvites;
+
   const LoggingDayData({
     required this.persistedMeals,
     required this.pendingConfirmations,
     this.markedComplete = false,
+    this.releasedInvites = false,
   });
 
   factory LoggingDayData.fromJson(Map<String, dynamic> json) => LoggingDayData(
@@ -255,6 +265,7 @@ class LoggingDayData {
             )
             .toList(),
     markedComplete: json['markedComplete'] as bool? ?? false,
+    releasedInvites: json['releasedInvites'] as bool? ?? false,
   );
 
   LoggingDayData copyWith({
@@ -265,6 +276,10 @@ class LoggingDayData {
     persistedMeals: persistedMeals ?? this.persistedMeals,
     pendingConfirmations: pendingConfirmations ?? this.pendingConfirmations,
     markedComplete: markedComplete ?? this.markedComplete,
+    // Deliberately dropped, not carried. This flag describes one server
+    // response, and the refresh it asks for has already been scheduled by the
+    // time any copy is made. Carrying it would let a local edit of the cache
+    // re-assert a release that happened once, and re-refresh the inbox for it.
   );
 }
 

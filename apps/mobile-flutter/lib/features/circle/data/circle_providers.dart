@@ -282,6 +282,30 @@ final mealShareInvitesProvider =
       });
     });
 
+/// Refresh the meal-share inbox after a day read that handed offers back.
+///
+/// Loading a day sweeps that user's week-abandoned staging cards, and a card
+/// staged from a friend's cheat offer releases that offer when it goes — so an
+/// ordinary read can repopulate the inbox. Nothing else says so:
+/// [mealShareInvitesProvider] is watched continuously by the nav badge, so it
+/// never auto-disposes and never refetches on its own. It would keep serving
+/// the empty list it cached before the offer came back, which is the reversible
+/// "not now" looking like it did nothing — the same bug the explicit discard
+/// path was fixed for, arriving by a different door.
+///
+/// Deferred to a microtask rather than invalidated inline because every caller
+/// is a provider body, and a provider must not modify another provider while it
+/// is still building. The disposal guard covers the caller's family entry being
+/// torn down (a date swiped past) before the microtask runs.
+void refreshInvitesAfterRelease(Ref<Object?> ref, {required bool released}) {
+  if (!released) return;
+  var disposed = false;
+  ref.onDispose(() => disposed = true);
+  Future.microtask(() {
+    if (!disposed) ref.invalidate(mealShareInvitesProvider);
+  });
+}
+
 /// Offer a saved meal to specific friends as a full copy or an even split
 /// (`POST /api/v1/groups/meal-share`). A split rescales the logger's own meal
 /// down to their share, so the day + wall are invalidated. Throws [ApiError].

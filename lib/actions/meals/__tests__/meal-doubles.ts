@@ -56,6 +56,11 @@ export const schema = {
     acceptedMealId: 'mealShareInvites.acceptedMealId',
     respondedAt: 'mealShareInvites.respondedAt',
   },
+  dayCompletionMarks: {
+    id: 'dayCompletionMarks.id',
+    userId: 'dayCompletionMarks.userId',
+    localDate: 'dayCompletionMarks.localDate',
+  },
   unmatchedIngredients: {
     queryText: 'unmatchedIngredients.queryText',
     mealId: 'unmatchedIngredients.mealId',

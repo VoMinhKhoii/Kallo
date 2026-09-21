@@ -22,6 +22,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
+import '../../circle/data/circle_providers.dart'
+    show refreshInvitesAfterRelease;
 import '../../../services/http/query.dart';
 import '../../../models/profile/dashboard.dart';
 import '../../../models/profile/weight.dart';
@@ -80,7 +82,9 @@ final dashboardBundleProvider =
         final json = await api.get<Map<String, dynamic>>(
           '/api/v1/dashboard?date=$date&tz=$tz',
         );
-        return DashboardBundle.fromJson(json);
+        final bundle = DashboardBundle.fromJson(json);
+        refreshInvitesAfterRelease(ref, released: bundle.day.releasedInvites);
+        return bundle;
       });
     });
 
@@ -116,7 +120,9 @@ final dashboardDayProvider =
         final json = await api.get<Map<String, dynamic>>(
           '/api/v1/logging/day?date=$date&tz=$tz',
         );
-        return LoggingDayData.fromJson(json);
+        final day = LoggingDayData.fromJson(json);
+        refreshInvitesAfterRelease(ref, released: day.releasedInvites);
+        return day;
       });
     });
 
