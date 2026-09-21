@@ -97,7 +97,7 @@
     "copySuccess": "Đã gửi cho {count} người bạn",
     "splitSuccess": "Đã chia phần với {count} người bạn",
     "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại.",
-    "cheatWholeOnly": "Bữa xả được gửi nguyên phần — bạn của bạn sẽ tự đặt mức."
+    "cheatWholeOnly": "Bữa xả được gửi nguyên phần — người nhận sẽ tự chọn mức."
   },
   "invites": {
     "title": "Được chia sẻ với bạn",
@@ -111,7 +111,7 @@
     "error": "Chưa được — vui lòng thử lại.",
     "loadError": "Không tải được lời mời. Chạm để thử lại.",
     "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
-    "acceptCheat": "Tự đặt mức"
+    "acceptCheat": "Tự chọn mức"
   },
   "invite": {
     "title": "Mời vào vòng kết nối",

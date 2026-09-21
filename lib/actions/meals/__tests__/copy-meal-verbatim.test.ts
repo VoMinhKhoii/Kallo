@@ -38,6 +38,7 @@ const SOURCE_LOGGED_AT = new Date('2026-04-05T00:30:00.000Z');
 /** The columns copyMealVerbatim actually reads. The cast keeps the fixture
  *  readable — spelling out all 40-odd meal columns would bury what is under
  *  test — and a missing column would surface immediately as undefined. */
+type TxHandle = Parameters<typeof copyMealVerbatim>[0];
 type SourceMeal = Parameters<typeof copyMealVerbatim>[1];
 
 function sourceMeal(overrides: Record<string, unknown> = {}): SourceMeal {
@@ -96,8 +97,9 @@ function fakeTx() {
       }),
     })),
   };
-  // biome-ignore lint/suspicious/noExplicitAny: a hand-rolled transaction double
-  return { tx: tx as any, captured };
+  // The double implements only the two calls copyMealVerbatim makes, so it is
+  // cast to the transaction shape rather than satisfying all of Drizzle's.
+  return { tx: tx as unknown as TxHandle, captured };
 }
 
 describe('copyMealVerbatim', () => {

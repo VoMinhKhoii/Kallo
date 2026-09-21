@@ -88,8 +88,10 @@ vi.mock(
 import { stageCheatInviteAction } from '@/lib/actions/meal-sharing/stage-cheat-copy';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
+  capturedPredicates,
   cheatSourceMeal,
   LOGGED_AT,
+  MOCK_USER,
   txQueues,
   UUID_FRIEND,
   UUID_INVITE,
@@ -130,6 +132,33 @@ function queueHappyPath() {
 describe('stageCheatInviteAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedPredicates.length = 0;
+  });
+
+  it('scopes every read and write to the actor', async () => {
+    // Drizzle bypasses RLS, so these predicates ARE the authorization. Drop
+    // `toUserId = me` from the discovery select or the claim, or
+    // `meals.userId = sender` from the source read, and this is the only
+    // thing standing between a stranger and someone else's meal.
+    queueHappyPath();
+    captureStage();
+
+    await stageCheatInviteAction({ inviteId: UUID_INVITE });
+
+    const [discovery, source, claim, friendship] = capturedPredicates;
+    // The invite must be MINE and still pending.
+    expect(discovery).toContain('mealShareInvites.toUserId');
+    expect(discovery).toContain(MOCK_USER.id);
+    expect(discovery).toContain('mealShareInvites.status');
+    // The cross-user meal read is bounded to the invite's sender.
+    expect(source).toContain('meals.userId');
+    expect(source).toContain(UUID_FRIEND);
+    // The claim re-scopes rather than trusting the discovery read.
+    expect(claim).toContain('mealShareInvites.toUserId');
+    expect(claim).toContain(MOCK_USER.id);
+    // The friendship is re-checked against me, in both edge orderings.
+    expect(friendship).toContain(MOCK_USER.id);
+    expect(friendship).toContain('friendships.status');
   });
 
   it("opens the card on the sender's amounts, not the model's defaults", async () => {

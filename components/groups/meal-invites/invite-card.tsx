@@ -3,12 +3,13 @@
 import { Check, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   useAcceptMealShareInvite,
   useDismissMealShareInvite,
-  useMealShareInvites,
   useStageCheatMealShareInvite,
 } from '@/hooks/social/sharing/use-meal-share-invites';
 import { useRouter } from '@/i18n/navigation';
@@ -31,7 +32,7 @@ function portionLabel(factor: number): string {
   return `1/${Math.round(1 / factor)}`;
 }
 
-function InviteCard({ invite }: { invite: MealShareInvite }) {
+export function InviteCard({ invite }: { invite: MealShareInvite }) {
   const t = useTranslations('groups.invites');
   const router = useRouter();
   const accept = useAcceptMealShareInvite();
@@ -39,9 +40,25 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
   const dismiss = useDismissMealShareInvite();
   const na = t('na');
   const senderLabel = labelFor(invite.from);
+  const { locked, requirePremium } = usePremiumGuard();
   const isCheat = invite.meal.entryMode === 'cheat';
-  const busy = accept.isPending || stageCheat.isPending || dismiss.isPending;
+  const accepting = accept.isPending || stageCheat.isPending;
+  const busy = accepting || dismiss.isPending;
   const portion = portionLabel(invite.portionFactor);
+  // Taking a cheat offer is a cheat WRITE, which is gated. Chip it before the
+  // tap, so a free user meets the paywall instead of an error toast telling
+  // them to try again at something that can never work.
+  const cheatLocked = isCheat && locked('cheat_meal');
+
+  /** Land on the day the meal actually arrived on, which is the day it was
+   *  EATEN and usually not today — see copy-meal-verbatim's mealSlot option. */
+  const openLandedDay = (isoInstant: string) => {
+    const day = toLocalDayKey(
+      Date.parse(isoInstant),
+      new Date().getTimezoneOffset()
+    );
+    router.push(`/logging?date=${day}`);
+  };
 
   const handleAccept = () => {
     if (busy) {
@@ -51,21 +68,21 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
     // where THEY put the sliders. Taking it reopens their spec on my own
     // logging feed, on the day the meal was eaten, and I set my amounts there.
     if (isCheat) {
+      if (!requirePremium('cheat_meal')) return;
       stageCheat.mutate(invite.id, {
-        onSuccess: (staged) => {
-          router.push(
-            `/logging?date=${toLocalDayKey(
-              Date.parse(staged.loggedAt),
-              new Date().getTimezoneOffset()
-            )}`
-          );
-        },
+        onSuccess: (staged) => openLandedDay(staged.loggedAt),
         onError: () => toast.error(t('error')),
       });
       return;
     }
     accept.mutate(invite.id, {
-      onSuccess: () => toast.success(t('accepted')),
+      // The copy lands at the SOURCE meal's instant, so "added to your diary"
+      // used to point at a day the user was not on and would not find. Take
+      // them there, the way the cheat path does.
+      onSuccess: (saved) => {
+        toast.success(t('accepted'));
+        openLandedDay(saved.meal.loggedAt);
+      },
       onError: () => toast.error(t('error')),
     });
   };
@@ -130,66 +147,18 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
           type="button"
           onClick={handleAccept}
           disabled={busy}
-          aria-busy={accept.isPending || stageCheat.isPending}
+          aria-busy={accepting}
           className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {accept.isPending || stageCheat.isPending ? (
+          {accepting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Check className="h-3.5 w-3.5" />
           )}
           {isCheat ? t('acceptCheat') : t('accept')}
         </button>
+        {cheatLocked && <PremiumChip className="px-1.5 py-0" />}
       </div>
     </div>
-  );
-}
-
-/**
- * The Circle inbox: pending copy/split offers addressed to me. Renders nothing
- * when empty (no empty-state chrome above the wall). Accepting drops the meal
- * into today's diary; dismissing clears the offer.
- */
-export function MealInvites() {
-  const t = useTranslations('groups.invites');
-  const {
-    data: invites = [],
-    isError,
-    isFetching,
-    refetch,
-  } = useMealShareInvites();
-
-  // Distinguish a failed fetch from "no invites" — silence here would hide
-  // meals a friend actually sent. A quiet retry line, never a heavy card.
-  if (isError) {
-    return (
-      <section>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          disabled={isFetching}
-          className="font-sans-display text-[12px] text-kallo-text-muted underline-offset-2 transition-colors hover:text-kallo-text hover:underline disabled:opacity-60"
-        >
-          {t('loadError')}
-        </button>
-      </section>
-    );
-  }
-
-  if (invites.length === 0) {
-    return null;
-  }
-
-  return (
-    <section className="space-y-3">
-      <h2 className="font-medium font-sans-display text-[11px] text-kallo-text-muted uppercase tracking-[0.08em]">
-        {t('title')}
-      </h2>
-      <div className="space-y-3">
-        {invites.map((invite) => (
-          <InviteCard key={invite.id} invite={invite} />
-        ))}
-      </div>
-    </section>
   );
 }

@@ -35,13 +35,15 @@ String _todayLocalDate() {
 /// sent for wire compatibility and ignored by the server. Invalidating the
 /// `loggingDayProvider` FAMILY (rather than one day's instance) is what makes
 /// the meal appear wherever it actually landed.
-Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
+/// Returns the instant the copy landed on, so the caller can show that day.
+Future<String> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   final api = ref.read(apiClientProvider);
-  await api.post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {
-    'inviteId': inviteId,
-    'loggedDate': _todayLocalDate(),
-    'timezoneOffset': localTimezoneOffsetMinutes(),
-  });
+  final json = await api
+      .post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {
+        'inviteId': inviteId,
+        'loggedDate': _todayLocalDate(),
+        'timezoneOffset': localTimezoneOffsetMinutes(),
+      });
   ref.invalidate(mealShareInvitesProvider);
   ref.invalidate(loggingDayProvider);
   // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
@@ -49,6 +51,8 @@ Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
   ref.invalidate(circleFeedProvider);
+  final meal = json['meal'] as Map<String, dynamic>?;
+  return meal?['loggedAt'] as String? ?? '';
 }
 
 /// Take a CHEAT invite (`POST /api/v1/groups/invites/accept-cheat`).

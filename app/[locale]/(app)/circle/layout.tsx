@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
-import { MealInvites } from '@/components/groups/meal-invites';
+import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
 import { ViewSwitcher } from '@/components/groups/view-switcher';
 
 /**

@@ -2,20 +2,28 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
+import { toLocalDayKey } from '@/lib/core/date/day-key';
+
+/** A source meal eaten well before "now", so landing on today is detectable. */
+const SOURCE_INSTANT = '2026-04-05T00:30:00.000Z';
+
+/** The local day SOURCE_INSTANT falls on, in whatever zone the suite runs in. */
+const expectedDay = () =>
+  toLocalDayKey(Date.parse(SOURCE_INSTANT), new Date().getTimezoneOffset());
 
 // The inbox is where the two kinds of offer part ways: a precise invite is
 // accepted outright, a cheat one reopens the sender's sliders somewhere else
 // entirely. Getting that branch wrong is not a cosmetic bug — accepting a
 // cheat invite hits a server refusal, and the offer is spent either way.
 
-const { mockAccept, mockStageCheat, mockDismiss, mockPush } = vi.hoisted(
-  () => ({
+const { mockAccept, mockStageCheat, mockDismiss, mockPush, mockLocked } =
+  vi.hoisted(() => ({
     mockAccept: vi.fn(),
     mockStageCheat: vi.fn(),
     mockDismiss: vi.fn(),
     mockPush: vi.fn(),
-  })
-);
+    mockLocked: vi.fn((_feature: string) => false),
+  }));
 
 const invites: { current: MealShareInvite[] } = { current: [] };
 
@@ -42,7 +50,19 @@ vi.mock('@/components/shared/profile-avatar', () => ({
   ProfileAvatar: () => null,
 }));
 
-import { MealInvites } from '@/components/groups/meal-invites';
+vi.mock('@/components/billing/premium-guard-provider', () => ({
+  usePremiumGuard: () => ({
+    locked: mockLocked,
+    // Mirrors the real guard: false means it opened the paywall and the
+    // caller must NOT proceed.
+    requirePremium: (feature: string) => !mockLocked(feature),
+  }),
+}));
+vi.mock('@/components/billing/premium-chip', () => ({
+  PremiumChip: () => <span data-testid="premium-chip" />,
+}));
+
+import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
 
 function inviteFixture(
   overrides: Partial<MealShareInvite['meal']> = {}
@@ -74,11 +94,21 @@ function inviteFixture(
 describe('MealInvites', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLocked.mockReturnValue(false);
     invites.current = [];
   });
 
-  it('accepts a precise invite in place', async () => {
+  it('accepts a precise invite, then shows the day it landed on', async () => {
+    // The copy is stamped at the SOURCE meal's instant, so "Added to your
+    // diary" alone used to point at a day the user was not on and would never
+    // think to open.
     invites.current = [inviteFixture()];
+    mockAccept.mockImplementation((_id, opts) => {
+      opts.onSuccess({
+        mealId: 'new-meal',
+        meal: { loggedAt: SOURCE_INSTANT },
+      });
+    });
     render(<MealInvites />);
 
     await userEvent.click(screen.getByRole('button', { name: /accept/ }));
@@ -88,7 +118,23 @@ describe('MealInvites', () => {
       expect.anything()
     );
     expect(mockStageCheat).not.toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith(`/logging?date=${expectedDay()}`);
+  });
+
+  it('sends a free user to the paywall instead of a doomed request', async () => {
+    // Taking a cheat offer is a gated cheat write. Without the pre-tap guard
+    // the server 402s and the card says "that didn't work — try again", which
+    // is advice for something that can never succeed.
+    mockLocked.mockImplementation(
+      (feature: string) => feature === 'cheat_meal'
+    );
+    invites.current = [inviteFixture({ entryMode: 'cheat' })];
+    render(<MealInvites />);
+
+    expect(screen.getByTestId('premium-chip')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'acceptCheat' }));
+
+    expect(mockStageCheat).not.toHaveBeenCalled();
   });
 
   it('sends a cheat invite to the slider card instead of accepting it', async () => {
@@ -112,16 +158,19 @@ describe('MealInvites', () => {
         analysisId: 'aa11bb22-cc33-4dd4-8ee5-ff6677889900',
         spec: { sliders: [], mealSlot: null, confidence: 'medium' },
         rawInput: 'Buffet nướng',
-        loggedAt: '2026-04-05T00:30:00.000Z',
+        loggedAt: SOURCE_INSTANT,
       });
     });
     render(<MealInvites />);
 
     await userEvent.click(screen.getByRole('button', { name: 'acceptCheat' }));
 
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    const target = mockPush.mock.lastCall?.[0] as string;
-    expect(target).toMatch(/^\/logging\?date=\d{4}-\d{2}-\d{2}$/);
+    // The EXACT day, computed independently of the component: a regression
+    // that pushed today's date would satisfy a date-shaped pattern.
+    expect(mockPush).toHaveBeenCalledWith(`/logging?date=${expectedDay()}`);
+    expect(expectedDay()).not.toBe(
+      toLocalDayKey(Date.now(), new Date().getTimezoneOffset())
+    );
   });
 
   it('renders nothing when there are no offers', () => {

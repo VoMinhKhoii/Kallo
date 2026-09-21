@@ -56,6 +56,21 @@ export const schema = {
   },
 };
 
+/**
+ * Every WHERE predicate the queued selects/updates were handed, serialized.
+ *
+ * Without this the doubles accept any predicate at all, so deleting the
+ * actor-scoping from a query — `toUserId = me`, `meals.userId = sender` —
+ * still passed every test in these suites. Authorization here is entirely a
+ * matter of predicates (Drizzle bypasses RLS), so the predicates have to be
+ * something a test can actually look at.
+ */
+export const capturedPredicates: string[] = [];
+
+function recordPredicate(predicate: unknown): void {
+  capturedPredicates.push(JSON.stringify(predicate) ?? '');
+}
+
 /** Queue helpers bound to one suite's tx.select / tx.update mocks. */
 export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
   // select ending in .limit(1) — meal / friendship / source / share lookups.
@@ -64,12 +79,15 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
   function queueLimitSelect(rows: unknown[]) {
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue(
-            Object.assign(Promise.resolve(rows), {
-              for: vi.fn().mockResolvedValue(rows),
-            })
-          ),
+        where: vi.fn().mockImplementation((predicate: unknown) => {
+          recordPredicate(predicate);
+          return {
+            limit: vi.fn().mockReturnValue(
+              Object.assign(Promise.resolve(rows), {
+                for: vi.fn().mockResolvedValue(rows),
+              })
+            ),
+          };
         }),
       }),
     });
@@ -79,7 +97,10 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
   function queueWhereSelect(rows: unknown[]) {
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(rows),
+        where: vi.fn().mockImplementation((predicate: unknown) => {
+          recordPredicate(predicate);
+          return Promise.resolve(rows);
+        }),
       }),
     });
   }
@@ -97,7 +118,12 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
         const where = Object.assign(Promise.resolve(undefined), {
           returning: () => Promise.resolve(opts.returning ?? []),
         });
-        return { where: () => where };
+        return {
+          where: (predicate: unknown) => {
+            recordPredicate(predicate);
+            return where;
+          },
+        };
       },
     }));
   }

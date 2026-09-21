@@ -8,13 +8,10 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../services/billing/feature_lock.dart';
-import '../../../logging/logic/open_logging_day.dart';
-import '../../data/invite_mutations.dart';
+import '../../logic/invite_actions.dart';
 import '../portion/portion_seats.dart' show kSeatColors;
 import 'invite_card_parts.dart';
 import 'portion_readout.dart';
@@ -42,52 +39,19 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     if (_busy) return;
     setState(() => _busy = true);
     HapticFeedback.selectionClick();
-    try {
-      // A cheat offer is not "add this meal": nobody can say what I ate from
-      // where THEY put the sliders. Taking it reopens their spec on my own
-      // logging feed, on the day the meal was eaten, and I set my amounts
-      // there — so this navigates instead of toasting.
-      if (widget.invite.isCheat) {
-        final loggedAt = await stageCheatMealShareInvite(ref, widget.invite.id);
-        if (!mounted) return;
-        goToLoggingDay(context, ref, loggedAt);
-        return;
-      }
-      await acceptMealShareInvite(ref, widget.invite.id);
-      if (!mounted) return;
-      showTopToast(context, tr('groups.invites.accepted'));
-    } catch (error) {
-      if (!mounted) return;
+    if (!await takeInviteOffer(context, ref, widget.invite) && mounted) {
       setState(() => _busy = false);
-      // Taking a cheat offer is gated (confirming a cheat meal always was), so
-      // route a 402 to the paywall rather than a dead-end error toast.
-      if (handledFeatureLock(context, error)) return;
-      showTopToast(
-        context,
-        tr('groups.invites.error'),
-        variant: TopToastVariant.error,
-      );
     }
   }
 
   Future<void> _dismiss() async {
     if (_busy) return;
     setState(() => _busy = true);
-    try {
-      await dismissMealShareInvite(ref, widget.invite.id);
-    } catch (_) {
-      if (!mounted) return;
+    if (!await dismissInviteOffer(context, ref, widget.invite.id) && mounted) {
       setState(() => _busy = false);
-      showTopToast(
-        context,
-        tr('groups.invites.error'),
-        variant: TopToastVariant.error,
-      );
     }
   }
 
-  /// The overflow. One entry today, but it is the slot every later "mute this
-  /// person", "report" and "why am I seeing this" belongs in.
   Future<void> _openOverflow() async {
     await showNhamSheet<void>(
       context,

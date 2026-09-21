@@ -1631,7 +1631,7 @@
         "other": "Split with {count} friends"
       },
       "error": "Couldn't share the meal. Try again.",
-      "cheatWholeOnly": "Cheat meals share whole — your friend sets their own amounts."
+      "cheatWholeOnly": "A cheat meal is sent as a full portion — your friend sets their own amounts."
     },
     "invites": {
       "title": "Shared with you",
@@ -1648,7 +1648,7 @@
       "yourShare": "You {percent}%",
       "restShare": "Shared out {percent}%",
       "sharedCheat": "{name} shared their cheat meal with you",
-      "acceptCheat": "Set my amounts"
+      "acceptCheat": "Set amounts"
     },
     "invite": {
       "title": "Invite to your circle",

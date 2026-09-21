@@ -102,7 +102,17 @@ export async function stageCheatInviteAction(input: {
     if (!source) {
       throw Errors.notFound('Bữa ăn không còn tồn tại.');
     }
-    if (source.entryMode !== 'cheat' || !source.cheatSliders) {
+    // Shape-checked, not just non-null: a legacy row can carry `{spec}` with
+    // no `levels`, and `withLevelsAsDefaults` would then throw a TypeError
+    // AFTER the claim — a 500 where the honest answer is a refusal. Checked
+    // here, before anything is written, so the invite survives.
+    const sliders = source.cheatSliders as CheatSlidersPersisted | null;
+    if (
+      source.entryMode !== 'cheat' ||
+      !Array.isArray(sliders?.spec?.sliders) ||
+      typeof sliders.levels !== 'object' ||
+      sliders.levels === null
+    ) {
       throw Errors.validationFailed('Bữa ăn này không phải bữa xả.');
     }
 
@@ -169,8 +179,7 @@ export async function stageCheatInviteAction(input: {
 
     // Their levels become MY defaults — the card opens where they landed, and
     // I move it from there rather than starting from the model's guess.
-    const { spec, levels } = source.cheatSliders as CheatSlidersPersisted;
-    const repeatSpec = withLevelsAsDefaults(spec, levels);
+    const repeatSpec = withLevelsAsDefaults(sliders.spec, sliders.levels);
 
     // Stamped at the SOURCE meal's instant, matching what an accepted precise
     // copy now does: this is the same eating event, seen from my diary. It also

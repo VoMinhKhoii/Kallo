@@ -104,8 +104,8 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
         fatG: times(row.fatG),
         // Decides which action the card offers: a precise invite is accepted
         // outright, a cheat one reopens the sender's sliders so the reader can
-        // set their own amounts. Also what lets the card show the cheat
-        // paywall BEFORE the tap spends the offer.
+        // set their own amounts. It is also what lets the card chip the cheat
+        // paywall before the tap rather than after a 402.
         entryMode: row.entryMode === 'cheat' ? 'cheat' : 'precise',
       },
     };

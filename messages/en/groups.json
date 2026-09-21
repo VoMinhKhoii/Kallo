@@ -97,7 +97,7 @@
     "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
     "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
     "error": "Couldn't share the meal. Try again.",
-    "cheatWholeOnly": "Cheat meals share whole — your friend sets their own amounts."
+    "cheatWholeOnly": "A cheat meal is sent as a full portion — your friend sets their own amounts."
   },
   "invites": {
     "title": "Shared with you",
