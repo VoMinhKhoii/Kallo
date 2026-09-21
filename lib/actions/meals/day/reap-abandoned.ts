@@ -1,5 +1,6 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
+import { isAbandoned } from '@/lib/actions/meals/day/abandoned';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -55,12 +56,7 @@ export async function reapAbandonedPendingAnalyses(
     return await db.transaction(async (tx) => {
       const reaped = await tx
         .delete(pendingAnalyses)
-        .where(
-          and(
-            eq(pendingAnalyses.userId, userId),
-            sql`${pendingAnalyses.expiresAt} < now() - interval '7 days'`
-          )
-        )
+        .where(and(eq(pendingAnalyses.userId, userId), isAbandoned()))
         .returning({
           id: pendingAnalyses.id,
           sourceInviteId: pendingAnalyses.sourceInviteId,

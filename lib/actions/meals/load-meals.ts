@@ -7,6 +7,7 @@ import {
   buildPersistedMeal,
   extractNutritionValues,
 } from '@/lib/actions/logging/persisted-meal';
+import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import type { PipelineResult } from '@/lib/ai/types/result';
@@ -163,7 +164,22 @@ async function loadPendingAnalysesByDateForUser(
       and(
         eq(pendingAnalyses.userId, userId),
         gte(pendingAnalyses.loggedAt, dayStart),
-        lt(pendingAnalyses.loggedAt, dayEnd)
+        lt(pendingAnalyses.loggedAt, dayEnd),
+        // Past the REAPING horizon, not past `expiresAt`. Those are different
+        // lines and only the second one was ever wrong to draw here (see the
+        // note below). This one excludes rows that are about to stop existing:
+        // the sweep in `loadLoggingDay` deletes exactly these, it runs
+        // concurrently with this read, and a second overlapping day load for
+        // the same user (the dashboard route calls `loadLoggingDay` too) can be
+        // the one that deletes them — so no after-the-fact reconciliation
+        // between one read and one sweep can cover it. Agreeing on the line up
+        // front can. Without this, whether a user sees a card that no longer
+        // exists comes down to which query reached the connection pool first,
+        // and the card renders but fails every confirm and discard on it.
+        //
+        // Safe because `expires_at` is NOT NULL, so this and the sweep's
+        // predicate partition the table with no row falling through both.
+        isStillStaged()
         // NOT filtered on `expiresAt > now()` any more. That filter hid an
         // unconfirmed meal 30 minutes after it was staged, so a card the user
         // fully intended to save just disappeared out from under them.

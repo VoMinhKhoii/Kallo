@@ -181,12 +181,51 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.parsedMeal?.items[0]?.vessel).toBeUndefined();
   });
 
+  it('hides a card already past the reaping horizon', async () => {
+    // The read and the sweep have to agree on where "abandoned" starts, and
+    // agreeing AFTER the fact is not enough: two day loads can overlap for one
+    // user (the dashboard route calls loadLoggingDay too), so load B can read a
+    // row that load A's sweep deletes — and B's own sweep then reports nothing,
+    // because A already took it. B would hand back a card that cannot be
+    // confirmed or discarded. Drawing the same line in the read is what closes
+    // that; no reconciliation between one read and one sweep can.
+    const where = vi.fn().mockReturnValue({
+      orderBy: vi.fn().mockResolvedValue([]),
+    });
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({ where }),
+    });
+
+    await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    const predicate = JSON.stringify(where.mock.calls[0]?.[0]);
+    expect(predicate).toContain("interval '7 days'");
+    // Pinned to the operator on the expiresAt clause SPECIFICALLY, not to a
+    // `>=` anywhere in the predicate: `loggedAt >= dayStart` sits right beside
+    // it and satisfies the loose version, so `<` here — the read keeping the
+    // doomed rows and discarding the live ones, which empties the feed and
+    // shows only cards that cannot be confirmed — passed it.
+    const operator = predicate.match(
+      /pendingAnalyses\.expiresAt",\{"value":\["([^"]*)"\]/
+    )?.[1];
+    expect(operator).toBe(' >= now() - ');
+  });
+
   it('does not hide a staged meal once its expiry has passed', async () => {
     // The 30-minute window used to take an unconfirmed card off screen while
     // the user still meant to save it. It never gated confirmability —
     // confirmAndSaveMealAction deletes by (id, userId) and never reads
     // expiresAt — and it is not what dedupes re-analysis either: that is the
-    // (user_id, attempt_id) upsert. So the day query must not mention it.
+    // (user_id, attempt_id) upsert.
+    //
+    // The read compares `expiresAt` again now, so "must not mention expiresAt"
+    // would be a wrong reading of that: it draws the REAPING line, a week out,
+    // and hides only rows that are about to stop existing. What must never
+    // come back is a comparison against a bare `now()`, which is the 30-minute
+    // window — so that is what this asserts, not the column's absence.
     const where = vi.fn().mockReturnValue({
       orderBy: vi.fn().mockResolvedValue([]),
     });
@@ -201,7 +240,13 @@ describe('loadPendingAnalysesByDate', () => {
 
     const predicate = JSON.stringify(where.mock.calls[0]?.[0]);
     expect(predicate).toContain('pendingAnalyses.loggedAt');
-    expect(predicate).not.toContain('expiresAt');
+    // Every `now()` in the predicate is offset by the horizon. A bare
+    // `> now()` or `>= now()` chunk is the old window returning.
+    const nowChunks = predicate.match(/now\(\)[^"]*/g) ?? [];
+    expect(nowChunks.length).toBeGreaterThan(0);
+    for (const chunk of nowChunks) {
+      expect(chunk).toContain('-');
+    }
   });
 
   it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {

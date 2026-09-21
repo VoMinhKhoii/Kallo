@@ -177,11 +177,15 @@ final cheatIntensityProvider = StateProvider<CheatIntensity>(
 
 /// Drops the composer state belonging to an account that is leaving.
 ///
-/// The four providers above are the only user-content-bearing state in the
-/// app that is NOT `autoDispose` — they have to survive a navigation, because
-/// one surface writes them and another reads them. That also means they
-/// survive a sign-out unless something clears them, which would hand user A's
-/// parked meal to whoever signs in next.
+/// The providers below are the only user-content-bearing state in the app that
+/// is NOT `autoDispose` — they have to survive a navigation, because one
+/// surface writes them and another reads them. That also means they survive a
+/// sign-out unless something clears them, which would hand user A's parked
+/// meal to whoever signs in next.
+///
+/// Every handoff slot in `handoff_slots.dart` belongs in this list. They are
+/// session-scoped by construction, so one left out is not a smaller version of
+/// this bug — it is the whole bug, for that slot.
 ///
 /// Lives here rather than inline in the session listener so the identity rule
 /// — the part that actually decides whether to clear — is testable without
@@ -198,6 +202,10 @@ bool resetComposerStateForAccountChange(
   if (previousUserId == nextUserId) return false;
   ref.invalidate(pendingMealProvider);
   ref.invalidate(composerRefillProvider);
+  // The third handoff slot. Without it, A taking a cheat share and signing out
+  // before the feed claims the parked date sends B's first logging build to a
+  // day A picked — B's own feed, on a date that means nothing to them.
+  ref.invalidate(pendingLoggingDayProvider);
   ref.invalidate(mealLogModeProvider);
   ref.invalidate(cheatIntensityProvider);
   return true;
