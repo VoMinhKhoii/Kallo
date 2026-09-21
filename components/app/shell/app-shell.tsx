@@ -120,6 +120,11 @@ export function AppShell({
     }
   };
 
+  // Pin the authenticated shell to the viewport. A document-flow `h-dvh`
+  // shell still let the document itself scroll beneath Settings on some
+  // browsers, exposing a blank page below the sidebar. Public routes remain
+  // ordinary document scrollers because this component only wraps app routes.
+  //
   // CLIP, not hidden, on the three boxes below. `overflow: hidden` still
   // creates a scroll container: it chains wheel momentum from a page scroller
   // that has hit its end, and `scrollIntoView` will scroll it programmatically
@@ -130,7 +135,7 @@ export function AppShell({
   // axis to `auto`. Everything in the row must also size off this box (the
   // sidebar uses h-full, not a vh literal) so it can never overflow it.
   return (
-    <div className="flex h-dvh min-w-0 overflow-clip bg-kallo-surface">
+    <div className="fixed inset-0 flex min-w-0 overflow-clip bg-kallo-surface">
       <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip p-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">

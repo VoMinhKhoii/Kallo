@@ -12,9 +12,17 @@ import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 import { cn } from '@/lib/core/ui/cn';
 
 /** Messenger-style collapsible section: bold heading row with a chevron that
- * flips as it opens. Sections default open — the chevron is for tidying up. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const [open, setOpen] = useState(true);
+ * flips as it opens. Sections default open unless their task is secondary. */
+function Section({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div>
       <button
@@ -115,7 +123,7 @@ export function GroupInfoPanel({ group }: { group: ChatGroupDetail }) {
         <GroupMembersList group={group} />
       </Section>
 
-      <Section title={t('addPeople')}>
+      <Section title={t('addPeople')} defaultOpen={false}>
         <GroupAddPeople group={group} />
       </Section>
 
