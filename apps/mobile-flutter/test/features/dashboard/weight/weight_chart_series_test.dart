@@ -41,20 +41,23 @@ void main() {
   });
 
   group('bars', () {
-    test('the logged line is a rounded spline, the forecast a dashed tail', () {
-      final series = _series(forecast: _forecast);
-      final forecastBar = series.bars.first;
-      final loggedBar = series.bars.last;
+    test(
+      'the logged line uses straight segments, the forecast a dashed tail',
+      () {
+        final series = _series(forecast: _forecast);
+        final forecastBar = series.bars.first;
+        final loggedBar = series.bars.last;
 
-      expect(forecastBar.dashArray, isNotNull);
-      expect(forecastBar.dotData.show, isFalse);
+        expect(forecastBar.dashArray, isNotNull);
+        expect(forecastBar.dotData.show, isFalse);
 
-      expect(loggedBar.isCurved, isTrue);
-      expect(loggedBar.isStrokeCapRound, isTrue);
-      expect(loggedBar.isStrokeJoinRound, isTrue);
-      expect(loggedBar.barWidth, 3);
-      expect(loggedBar.dashArray, isNull);
-    });
+        expect(loggedBar.isCurved, isFalse);
+        expect(loggedBar.isStrokeCapRound, isTrue);
+        expect(loggedBar.isStrokeJoinRound, isTrue);
+        expect(loggedBar.barWidth, 3);
+        expect(loggedBar.dashArray, isNull);
+      },
+    );
 
     test('nothing logged means nothing to draw or touch', () {
       final series = buildWeightSeries(

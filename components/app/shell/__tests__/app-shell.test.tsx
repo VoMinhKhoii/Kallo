@@ -132,6 +132,18 @@ describe('AppShell', () => {
     );
   });
 
+  it('pins the authenticated shell to the viewport', () => {
+    const { container } = render(
+      <AppShell onboardingStep={2} initialProfile={null} isFirstSession={false}>
+        <div>Content</div>
+      </AppShell>
+    );
+
+    const shell = container.firstElementChild;
+    expect(shell).toHaveClass('fixed', 'inset-0', 'overflow-clip');
+    expect(shell).not.toHaveClass('h-dvh');
+  });
+
   it('rolls the minimized nudge back when restore persistence fails', async () => {
     const user = userEvent.setup();
     restoreOnboardingNudgeMock.mockRejectedValue(new Error('network'));

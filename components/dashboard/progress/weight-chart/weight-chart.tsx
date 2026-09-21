@@ -164,9 +164,9 @@ export function WeightChart({
               />
             )}
 
-            {/* Logged weight — a rounded spline with a dot at every reading */}
+            {/* Logged weight — straight segments with a dot at every reading */}
             <Line
-              type="monotone"
+              type="linear"
               dataKey="actual"
               stroke={ACCENT}
               strokeWidth={3}
