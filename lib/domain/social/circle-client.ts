@@ -16,6 +16,7 @@ import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { postJson, request } from '@/lib/api/client-fetch';
 import { ApiError } from '@/lib/core/errors/client';
+import type { StagedCheatAnalysis } from '@/lib/core/types/cheat';
 import type { SharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
@@ -180,6 +181,19 @@ export function acceptMealShareInvite(input: {
   timezoneOffset: number;
 }): Promise<ConfirmMealResponse> {
   return postJson<ConfirmMealResponse>('/api/v1/groups/invites/accept', input);
+}
+
+/**
+ * Take a CHEAT invite. Logs nothing: it returns a staged analysis for the
+ * slider card to open on, seeded with the sender's chosen amounts, and the
+ * recipient confirms their own through the ordinary cheat path.
+ */
+export function stageCheatMealShareInvite(
+  inviteId: string
+): Promise<StagedCheatAnalysis> {
+  return postJson<StagedCheatAnalysis>('/api/v1/groups/invites/accept-cheat', {
+    inviteId,
+  });
 }
 
 export function dismissMealShareInvite(inviteId: string) {

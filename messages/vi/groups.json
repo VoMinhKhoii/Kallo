@@ -96,7 +96,8 @@
     "errorBody": "Kiểm tra kết nối rồi thử lại nhé.",
     "copySuccess": "Đã gửi cho {count} người bạn",
     "splitSuccess": "Đã chia phần với {count} người bạn",
-    "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại."
+    "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại.",
+    "cheatWholeOnly": "Bữa xả được gửi nguyên phần — người nhận sẽ tự chọn mức."
   },
   "invites": {
     "title": "Được chia sẻ với bạn",
@@ -104,11 +105,14 @@
     "sharedCopy": "{name} đã chia sẻ một bữa ăn với bạn",
     "sharedSplit": "{name} đã chia phần một bữa ăn với bạn",
     "portion": "{portion} phần",
-    "accept": "Thêm vào nhật ký",
+    "accept": "Nhận",
     "dismiss": "Bỏ qua",
     "accepted": "Đã thêm vào nhật ký",
     "error": "Chưa được — vui lòng thử lại.",
-    "loadError": "Không tải được lời mời. Chạm để thử lại."
+    "loadError": "Không tải được lời mời. Chạm để thử lại.",
+    "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
+    "acceptCheat": "Tự chọn mức",
+    "waiting": "· {count} đang chờ"
   },
   "invite": {
     "title": "Mời vào vòng kết nối",

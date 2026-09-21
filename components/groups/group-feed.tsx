@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { FeedEntry } from '@/components/groups/feed-entry';
+import { FeedEntry } from '@/components/groups/feed/feed-entry';
 import { GroupInfo } from '@/components/groups/info/group-info';
 import { ThreadFeed } from '@/components/groups/thread-feed';
 import {

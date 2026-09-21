@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/models/logging/cheat.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 /// The composer's cross-surface state must not outlive the account that wrote
 /// it.
@@ -59,6 +60,46 @@ void main() {
       );
 
       expect(container.read(composerRefillProvider), isNull);
+    });
+
+    test('signing out drops a parked logging day', () {
+      // The third handoff slot, and the one this PR added. A takes a cheat
+      // share, which parks the SOURCE meal's date so the feed lands where the
+      // staged card actually is; A signs out before the feed claims it. Left
+      // set, B's very first logging build consumes it and jumps B's own feed to
+      // a day A picked — the slot is session-scoped and not autoDispose, so
+      // nothing else would ever clear it.
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(pendingLoggingDayProvider.notifier).state = '2026-04-06';
+
+      resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: null,
+      );
+
+      expect(container.read(pendingLoggingDayProvider), isNull);
+    });
+
+    test('a parked logging day survives a token refresh', () {
+      // Same account re-emitting its id. Clearing here would drop the date
+      // mid-handoff and land the taker on today with an empty feed — the exact
+      // thing the slot exists to prevent.
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(pendingLoggingDayProvider.notifier).state = '2026-04-06';
+
+      final cleared = resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: 'user-a',
+      );
+
+      expect(cleared, isFalse);
+      expect(container.read(pendingLoggingDayProvider), '2026-04-06');
     });
 
     test('switching accounts resets mode and intensity to their defaults', () {

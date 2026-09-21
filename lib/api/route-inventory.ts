@@ -120,6 +120,11 @@ export const routeInventory = {
   'api/v1/groups/friends/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/invite/[slug]/route.ts': ['none', false, 'inviteLookupIp'],
   'api/v1/groups/invite/accept/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/groups/invites/accept-cheat/route.ts': [
+    'session',
+    false,
+    'none-cheap',
+  ],
   'api/v1/groups/invites/accept/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/invites/dismiss/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/invites/route.ts': ['session', false, 'none-cheap'],

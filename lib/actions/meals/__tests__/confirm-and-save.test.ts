@@ -35,13 +35,13 @@ const { mockTxDelete, mockTxInsert, mockTxUpdate, mockTxSelect, mockTx } =
     };
   });
 
-// Only the premium gate is stubbed out of confirm-cheat; `confirmCheatMeal`
+// Only the premium gate is stubbed out of cheat/confirm; `confirmCheatMeal`
 // itself stays real so the cheat branch keeps being exercised for what it
 // writes. Its own behaviour (kill-switch, entry-mode resolution) is covered in
-// confirm-cheat-gate.test.ts.
+// cheat/__tests__/confirm-gate.test.ts.
 const assertCheatConfirmAllowed = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/actions/meals/confirm-cheat', async (importActual) => ({
-  ...(await importActual<typeof import('@/lib/actions/meals/confirm-cheat')>()),
+vi.mock('@/lib/actions/meals/cheat/confirm', async (importActual) => ({
+  ...(await importActual<typeof import('@/lib/actions/meals/cheat/confirm')>()),
   assertCheatConfirmAllowed,
 }));
 
@@ -303,6 +303,73 @@ describe('confirmAndSaveMealAction', () => {
     // 4*120 + 9*40 + 7*40 = 480 + 360 + 280 = 1120
     expect(mealRow.caloriesKcal).toBe(1120);
     expect(mealRow.mealSlot).toBe('dinner');
+  });
+
+  it.each([
+    [
+      "binds a card staged from a friend's offer to the meal it became",
+      UUID_2,
+      1,
+    ],
+    ['writes no invite at all for an ordinary cheat re-log', null, 0],
+  ])('%s', async (_name, sourceInviteId, expectedUpdates) => {
+    // `accepted_meal_id` is what separates "took the offer and ate it" from
+    // "took the offer and walked away". The precise accept writes it inline;
+    // a cheat offer has no meal at the moment it is taken, so the binding has
+    // to happen here. Get this wrong and `releaseInvite` starts handing back
+    // offers the recipient already has in their diary.
+    const capturedValues: Record<string, unknown>[] = [];
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Buffet nướng',
+            entryMode: 'cheat',
+            pipelineResult: {
+              entryMode: 'cheat',
+              spec: {
+                mealSlot: 'dinner' as const,
+                confidence: 'medium' as const,
+                sliders: [],
+              },
+            },
+            loggedAt: LOGGED_AT,
+            sourceInviteId,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(
+      mockInsertRouting(capturedValues as unknown[])
+    );
+    const boundTo: Record<string, unknown>[] = [];
+    const targets: unknown[] = [];
+    mockTxUpdate.mockReturnValue({
+      set: vi.fn((vals: Record<string, unknown>) => {
+        boundTo.push(vals);
+        return {
+          where: vi.fn((predicate: unknown) => {
+            targets.push(predicate);
+            return Promise.resolve(undefined);
+          }),
+        };
+      }),
+    });
+
+    await confirmAndSaveMealAction({ analysisId: UUID_1, levels: {} });
+
+    expect(boundTo).toHaveLength(expectedUpdates);
+    if (expectedUpdates > 0) {
+      expect(boundTo[0]).toEqual({ acceptedMealId: UUID_MEAL });
+      // WHICH invite, not just that one was written. Binding the analysis id
+      // (they are both uuids in scope here) would satisfy every other
+      // assertion in this test and point the offer at nothing.
+      const target = JSON.stringify(targets[0]);
+      expect(target).toContain(sourceInviteId as string);
+      expect(target).not.toContain(UUID_1);
+    }
   });
 
   it('should reject invalid UUID', async () => {

@@ -63,8 +63,14 @@ class FeedNutrition extends StatelessWidget {
         for (final key in kCompositionKeys)
           key: '${_prefixes[key]} ${_grams(grams[key])}',
       },
+      // `≈` on a cheat occasion: the figure is where the logger put four
+      // sliders, not something anyone weighed. The chip in the post header
+      // says the same about the post; the rest of the anatomy is the ordinary
+      // one, because it is still a meal someone ate.
       kcalLabel:
-          kcal == null ? '— kcal' : fmtKcal(kcal, locale: localeOf(context)),
+          kcal == null
+              ? '— kcal'
+              : '${meal.isCheat ? '≈ ' : ''}${fmtKcal(kcal, locale: localeOf(context))}',
       kcalPlacement: MealBlockKcal.legendLeading,
       // Four lines, not the block's default two: a Circle post carries text
       // somebody TYPED, in their own words, while Recent meals shows a name

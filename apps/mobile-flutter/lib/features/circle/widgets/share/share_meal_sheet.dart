@@ -109,6 +109,11 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
                   }
                   return ShareMealBody(
                     mode: _draft.mode,
+                    // Derived here rather than threaded in from every call
+                    // site: the sheet already holds the meal, and whether it
+                    // can be split is a fact about the meal, not a caller's
+                    // choice.
+                    allowSplit: !widget.meal.isCheat,
                     seated: _draft.seated,
                     parts: _draft.parts,
                     totalKcal: _totalKcal,

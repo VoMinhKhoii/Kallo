@@ -164,7 +164,7 @@ vi.mock('@/hooks/meals/relog/use-relog-composer', () => ({
   }),
 }));
 
-vi.mock('@/lib/actions/meals/cheat', () => ({
+vi.mock('@/lib/actions/meals/cheat/occasions', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));
 

@@ -29,7 +29,7 @@ import {
   pendingAnalyses,
   unmatchedIngredients,
 } from '@/lib/infra/db/schema';
-import { assertCheatConfirmAllowed, confirmCheatMeal } from './confirm-cheat';
+import { assertCheatConfirmAllowed, confirmCheatMeal } from './cheat/confirm';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
 

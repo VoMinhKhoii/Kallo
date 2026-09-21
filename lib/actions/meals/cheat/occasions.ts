@@ -5,8 +5,8 @@ import { z } from 'zod';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import type {
-  CheatSliderSpec,
   CheatSlidersPersisted,
+  StagedCheatAnalysis,
 } from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
@@ -14,11 +14,11 @@ import {
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { groupOccasions } from '@/lib/domain/cheat/occasion-grouping';
-import { withLevelsAsDefaults } from '@/lib/domain/cheat/slider-nutrition';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
-import type { RecentCheatOccasion } from './types';
+import { meals } from '@/lib/infra/db/schema';
+import type { RecentCheatOccasion } from '../types';
+import { stageCheatSliders } from './stage-sliders';
 
 // ---------------------------------------------------------------------------
 // Repeat a previous cheat occasion (no AI call)
@@ -76,12 +76,7 @@ export async function stageCheatRepeatAction(input: {
   sourceMealId: string;
   loggedDate: string;
   timezoneOffset: number;
-}): Promise<{
-  analysisId: string;
-  spec: CheatSliderSpec;
-  rawInput: string;
-  loggedAt: string;
-}> {
+}): Promise<StagedCheatAnalysis> {
   const parsed = stageCheatRepeatSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
   // Premium: cheat meals are a Premium-card feature. Only the WRITE path is
@@ -107,28 +102,17 @@ export async function stageCheatRepeatAction(input: {
   }
 
   const { spec, levels } = source.cheatSliders as CheatSlidersPersisted;
-  const repeatSpec = withLevelsAsDefaults(spec, levels);
 
-  const loggedAt = getUtcInstantForLocalDate(
-    parsed.loggedDate,
-    parsed.timezoneOffset
-  );
-
-  const [inserted] = await db
-    .insert(pendingAnalyses)
-    .values({
-      userId: user.id,
-      pipelineResult: { entryMode: 'cheat', spec: repeatSpec },
-      rawInput: source.rawInput,
-      entryMode: 'cheat',
-      loggedAt,
-    })
-    .returning({ id: pendingAnalyses.id });
-
-  return {
-    analysisId: inserted.id,
-    spec: repeatSpec,
+  // A re-log is a NEW eating event happening on the day I picked — unlike the
+  // invite path, which re-opens a friend's occasion and keeps their instant.
+  return stageCheatSliders(db, {
+    userId: user.id,
+    spec,
+    levels,
     rawInput: source.rawInput,
-    loggedAt: loggedAt.toISOString(),
-  };
+    loggedAt: getUtcInstantForLocalDate(
+      parsed.loggedDate,
+      parsed.timezoneOffset
+    ),
+  });
 }

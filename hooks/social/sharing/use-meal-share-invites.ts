@@ -7,6 +7,7 @@ import {
   acceptMealShareInvite,
   dismissMealShareInvite,
   fetchMealShareInvites,
+  stageCheatMealShareInvite,
 } from '@/lib/domain/social/circle-client';
 import {
   circleFeedKeys,
@@ -37,7 +38,14 @@ export function useMealShareInviteCount(): number {
   return data?.length ?? 0;
 }
 
-/** Accept an offer — it lands in today's diary; refresh the day + wall. */
+/**
+ * Accept an offer. The copy lands at the SOURCE meal's instant, not today — the
+ * same eating event seen from my diary — so it can land on an earlier day.
+ * `loggedDate`/`timezoneOffset` are still sent for shipped clients and ignored
+ * by the server. That is why the invalidation below targets `loggingDayKeys.all`
+ * rather than today's key: `.all` is a prefix, so every cached day refetches and
+ * the meal shows up wherever it actually landed.
+ */
 export function useAcceptMealShareInvite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -51,6 +59,35 @@ export function useAcceptMealShareInvite() {
       queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+      // The copy lands on the SOURCE meal's day, which is usually not today,
+      // so the timeline needs a new dot on a day it has already cached. Its
+      // staleTime is 60s, and without this the user is sent to a date the
+      // picker still shows as empty.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    },
+  });
+}
+
+/**
+ * Take a CHEAT invite: reopen the sender's sliders instead of logging their
+ * numbers. Nothing lands in the diary here — the caller routes to the logging
+ * feed, where the staged card waits on the day the meal was eaten, and the
+ * meal is created only when the recipient confirms their own amounts.
+ *
+ * Invalidates the day queries so the staged card is already in cache when
+ * `/logging` mounts, rather than appearing a beat later.
+ */
+export function useStageCheatMealShareInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => stageCheatMealShareInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });
+      queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
+      // Same reason as accept, and it matters more here: taking a cheat offer
+      // spends it, and the staged card on its own past day is the ONLY way
+      // back to it. A timeline with no dot on that day hides the way back.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }

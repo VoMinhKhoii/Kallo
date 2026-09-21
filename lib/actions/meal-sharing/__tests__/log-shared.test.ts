@@ -228,6 +228,25 @@ describe('logSharedMealAction', () => {
     expect(result.meal.portionFactor).toBe(0.5);
   });
 
+  it('stamps the copy with the source meal, not the moment I tapped', async () => {
+    // `log()` sends loggedDate 2026-07-17, a week after the source was eaten,
+    // and it must not move the copy: the same eating event belongs at the same
+    // instant, under the same slot. Before the fix the day came from that
+    // parameter and the clock from `new Date()`, with the slot re-inferred.
+    queueSource([sourceMeal()]);
+    queueItems([sourceItem()]);
+    const captured = captureCopies();
+
+    const result = await log(1);
+
+    expect(captured.meal).toMatchObject({
+      loggedAt: new Date('2026-07-10T05:00:00.000Z'),
+      mealSlot: 'lunch',
+    });
+    expect(result.meal.loggedAt).toBe('2026-07-10T05:00:00.000Z');
+    expect(result.meal.mealSlot).toBe('lunch');
+  });
+
   it('schedules the owner push once the copy commits', async () => {
     const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
     queueSource([{ ...sourceMeal(), shareActorId: OWNER }]);

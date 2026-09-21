@@ -41,10 +41,22 @@ export async function copyMealVerbatim(
     loggedAt: Date;
     /** Positive scale applied to grams, nutrition and alcohol. 1 = verbatim. */
     factor: number;
+    /**
+     * Slot to stamp on the copy. Omit — or pass null, which is what a legacy
+     * row's `meal_slot` holds — to infer it from `loggedAt` instead.
+     *
+     * Opt-in on purpose, because the two copy families disagree about what a
+     * copy *is*. A share is the SAME eating event seen from another diary, so
+     * it carries the source's slot (and `loggedAt`); inferring would relabel a
+     * friend's breakfast as whatever meal it happens to be when they accept.
+     * A re-log (duplicate-meal.ts) is a genuinely NEW eating event happening
+     * now, so it must keep inferring from the new instant.
+     */
+    mealSlot?: string | null;
   }
 ): Promise<{ mealId: string; meal: PersistedMeal }> {
   const { userId, newMealId, loggedAt, factor } = options;
-  const mealSlot = inferMealSlot(loggedAt);
+  const mealSlot = options.mealSlot ?? inferMealSlot(loggedAt);
   const mealNutrition =
     factor === 1
       ? extractNutritionValues(source)

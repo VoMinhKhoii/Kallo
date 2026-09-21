@@ -38,6 +38,7 @@ export const schema = {
     fromUserId: 'mealShareInvites.fromUserId',
     status: 'mealShareInvites.status',
     copyFactor: 'mealShareInvites.copyFactor',
+    acceptedMealId: 'mealShareInvites.acceptedMealId',
   },
   friendships: {
     id: 'friendships.id',
@@ -45,12 +46,31 @@ export const schema = {
     userHigh: 'friendships.userHigh',
     status: 'friendships.status',
   },
+  pendingAnalyses: {
+    id: 'pendingAnalyses.id',
+    userId: 'pendingAnalyses.userId',
+  },
   publicProfiles: { userId: 'publicProfiles.userId' },
   userProfiles: {
     userId: 'userProfiles.userId',
     autoShareToCircle: 'userProfiles.autoShareToCircle',
   },
 };
+
+/**
+ * Every WHERE predicate the queued selects/updates were handed, serialized.
+ *
+ * Without this the doubles accept any predicate at all, so deleting the
+ * actor-scoping from a query — `toUserId = me`, `meals.userId = sender` —
+ * still passed every test in these suites. Authorization here is entirely a
+ * matter of predicates (Drizzle bypasses RLS), so the predicates have to be
+ * something a test can actually look at.
+ */
+export const capturedPredicates: string[] = [];
+
+function recordPredicate(predicate: unknown): void {
+  capturedPredicates.push(JSON.stringify(predicate) ?? '');
+}
 
 /** Queue helpers bound to one suite's tx.select / tx.update mocks. */
 export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
@@ -60,12 +80,15 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
   function queueLimitSelect(rows: unknown[]) {
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue(
-            Object.assign(Promise.resolve(rows), {
-              for: vi.fn().mockResolvedValue(rows),
-            })
-          ),
+        where: vi.fn().mockImplementation((predicate: unknown) => {
+          recordPredicate(predicate);
+          return {
+            limit: vi.fn().mockReturnValue(
+              Object.assign(Promise.resolve(rows), {
+                for: vi.fn().mockResolvedValue(rows),
+              })
+            ),
+          };
         }),
       }),
     });
@@ -75,7 +98,10 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
   function queueWhereSelect(rows: unknown[]) {
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(rows),
+        where: vi.fn().mockImplementation((predicate: unknown) => {
+          recordPredicate(predicate);
+          return Promise.resolve(rows);
+        }),
       }),
     });
   }
@@ -93,7 +119,12 @@ export function txQueues(mockTxSelect: Mock, mockTxUpdate: Mock) {
         const where = Object.assign(Promise.resolve(undefined), {
           returning: () => Promise.resolve(opts.returning ?? []),
         });
-        return { where: () => where };
+        return {
+          where: (predicate: unknown) => {
+            recordPredicate(predicate);
+            return where;
+          },
+        };
       },
     }));
   }
@@ -120,6 +151,42 @@ export function sourceMeal(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/**
+ * A cheat occasion: zero item rows, nutrition on the meal row itself, and the
+ * slider spec + the levels the logger chose in `cheatSliders`. Shares as a COPY
+ * only, and taking that copy reopens these sliders rather than duplicating the
+ * numbers — see stage-cheat-copy.ts.
+ */
+export function cheatSourceMeal(overrides: Record<string, unknown> = {}) {
+  return sourceMeal({
+    rawInput: 'Buffet nướng',
+    entryMode: 'cheat',
+    mealSlot: 'dinner',
+    caloriesKcal: 1400,
+    cheatSliders: {
+      spec: {
+        sliders: [
+          {
+            key: 'protein',
+            label: 'Đạm',
+            defaultLevel: 4,
+            anchors: [
+              { level: 0, label: 'ít', proteinG: 0 },
+              { level: 10, label: 'nhiều', proteinG: 80 },
+            ],
+          },
+        ],
+        mealSlot: 'dinner',
+        confidence: 'medium',
+      },
+      // The sender ended up at 8, not the model's default of 4 — the seam the
+      // staging path has to carry across into MY card's starting position.
+      levels: { protein: 8 },
+    },
+    ...overrides,
+  });
+}
+
 export function sourceItem(overrides: Record<string, unknown> = {}) {
   return {
     id: UUID_ITEM,
@@ -144,7 +211,25 @@ export const friendEdge = { userLow: MOCK_USER.id, userHigh: UUID_FRIEND };
 
 // Route tx.insert by table: meals → returning [{id}], mealShares → the default
 // circle-share chain, meal_share_invites / mealItems → capture the values.
-export function routeInserts(captured: Record<string, { vals: unknown }>) {
+/** What `routeInserts` writes back: the values a statement was handed, and for
+ *  the invite upsert its conflict clause too. */
+export type InsertCaptures = Record<
+  string,
+  { vals: unknown; conflict?: unknown }
+>;
+
+export function routeInserts(
+  captured: InsertCaptures,
+  opts: {
+    /**
+     * What the invite upsert's RETURNING yields, given the rows it was handed.
+     * Defaults to all of them. Pass `() => []` to model Postgres skipping every
+     * row via `setWhere` — the already-accepted case, where the sender offered
+     * nothing even though they named recipients.
+     */
+    invitesWritten?: (rows: { toUserId: string }[]) => unknown[];
+  } = {}
+) {
   return (table: { id?: string; sourceMealId?: string }) => {
     if (table?.id === 'mealShares.id') {
       return {
@@ -164,12 +249,19 @@ export function routeInserts(captured: Record<string, { vals: unknown }>) {
           // RETURNING yields the rows the upsert actually wrote — the set the
           // producer notifies. Accepted invites are filtered out by setWhere
           // in Postgres, so a test models that by omitting them here.
-          const written = (vals as { toUserId: string }[]).map(
-            (row, index) => ({ id: `invite-${index}`, toUserId: row.toUserId })
-          );
+          const rows = vals as { toUserId: string }[];
+          const written = opts.invitesWritten
+            ? opts.invitesWritten(rows)
+            : rows.map((row, index) => ({
+                id: `invite-${index}`,
+                toUserId: row.toUserId,
+              }));
           return {
-            onConflictDoUpdate: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue(written),
+            onConflictDoUpdate: vi.fn((clause: unknown) => {
+              // The upsert's `setWhere` decides whether a re-share reaches a
+              // recipient at all, so a test has to be able to look at it.
+              captured.invites = { vals, conflict: clause };
+              return { returning: vi.fn().mockResolvedValue(written) };
             }),
           };
         }),

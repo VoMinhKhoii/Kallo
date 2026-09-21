@@ -6,19 +6,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../models/logging/cheat.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
+import '../../../../shared/logic/cheat_slider_palette.dart';
+import '../../../../shared/widgets/nutrition/cheat_badge.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/slider_nutrition.dart';
-
-/// Dot/track color per slider axis — mirrors the web `CHEAT_SLIDER_COLORS` so
-/// the live card and the persisted recap stay in lockstep. Macro axes reuse the
-/// shared macro palette; drinks borrows the warm accent.
-Color cheatSliderColor(CheatSliderKey key) => switch (key) {
-  CheatSliderKey.protein => KalloColors.macroProtein,
-  CheatSliderKey.carbs => KalloColors.macroCarbs,
-  CheatSliderKey.fat => KalloColors.macroFat,
-  CheatSliderKey.drinks => KalloColors.accent,
-};
 
 /// One food-domain icon per axis — encodes the slider's identity (and shares
 /// its accent color), matching the web `CHEAT_SLIDER_ICONS`.
@@ -437,34 +429,6 @@ class _ClarifyChipState extends State<_ClarifyChip> {
             child: Text(widget.label, style: dashBody()),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The accent-tinted "Cheat meal" badge with the PartyPopper icon (never red).
-/// Shared by the live slider card and the persisted cheat card; each passes its
-/// own localized [label].
-class CheatBadge extends StatelessWidget {
-  const CheatBadge({super.key, required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: KalloColors.accent15,
-        borderRadius: BorderRadius.circular(KalloRadii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(LucideIcons.partyPopper300, size: 12, color: kInk),
-          const SizedBox(width: 4),
-          Text(label, style: dashMeta(color: kInk)),
-        ],
       ),
     );
   }

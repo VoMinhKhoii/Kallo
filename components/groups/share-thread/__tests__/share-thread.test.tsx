@@ -8,7 +8,7 @@ vi.mock('@/hooks/social/circle/use-share-thread', () => ({ useShareThread }));
 // The post, the thread and the composer are covered by their own suites; here
 // they stand in so this one is about the page's three states, its way back,
 // and who the composer is addressed to.
-vi.mock('@/components/groups/feed-entry', () => ({
+vi.mock('@/components/groups/feed/feed-entry', () => ({
   FeedEntry: ({ entry }: { entry: SharedMealEntry }) => (
     <div data-testid="feed-entry">{entry.meal.rawInput}</div>
   ),

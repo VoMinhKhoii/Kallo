@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
-import { FeedEntry } from '@/components/groups/feed-entry';
+import { FeedEntry } from '@/components/groups/feed/feed-entry';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ReplyComposer } from '@/components/groups/share-thread/reply-composer';
 import { ShareReplies } from '@/components/groups/share-thread/share-replies';

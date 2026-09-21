@@ -2,34 +2,26 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/circle_providers.dart';
+import '../../logic/invite_actions.dart';
 import '../portion/portion_seats.dart' show kSeatColors;
 import 'invite_card_parts.dart';
 import 'portion_readout.dart';
 
-String _fmtKcal(double? value) =>
-    value == null ? tr('groups.invites.na') : '${value.round()} kcal';
-
-String _fmtG(double? value) =>
-    value == null ? tr('groups.invites.na') : '${value.round()}g';
-
-/// An offer someone made you, shaped like a Threads notification: the person,
-/// what they did, and ONE live action as a filled pill on the trailing edge.
+/// An offer someone made you: the person, what they did, the meal, and the two
+/// choices side by side at the bottom.
 ///
-/// The dismiss lives in the overflow rather than beside the accept. Two
-/// competing buttons made the primary action the smallest thing in the card and
-/// put it furthest from the thumb; one filled pill and a `⋯` is the shape every
-/// notification list converged on for a reason.
+/// The dismiss used to live in a `⋯` overflow sheet, on the reasoning that two
+/// competing buttons made the primary action the smallest thing in the card.
+/// The deck changed what that costs — the only way past an offer is to act on
+/// it, so declining one was two taps and a sheet every time, while the header
+/// carried three controls beside the sender's name. Weight separates the two
+/// now instead of position: a filled pill against a quiet one.
 class InviteCard extends ConsumerStatefulWidget {
   const InviteCard({required this.invite, super.key});
 
@@ -46,62 +38,17 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     if (_busy) return;
     setState(() => _busy = true);
     HapticFeedback.selectionClick();
-    try {
-      await acceptMealShareInvite(ref, widget.invite.id);
-      if (!mounted) return;
-      showTopToast(context, tr('groups.invites.accepted'));
-    } catch (_) {
-      if (!mounted) return;
+    if (!await takeInviteOffer(context, ref, widget.invite) && mounted) {
       setState(() => _busy = false);
-      showTopToast(
-        context,
-        tr('groups.invites.error'),
-        variant: TopToastVariant.error,
-      );
     }
   }
 
   Future<void> _dismiss() async {
     if (_busy) return;
     setState(() => _busy = true);
-    try {
-      await dismissMealShareInvite(ref, widget.invite.id);
-    } catch (_) {
-      if (!mounted) return;
+    if (!await dismissInviteOffer(context, ref, widget.invite.id) && mounted) {
       setState(() => _busy = false);
-      showTopToast(
-        context,
-        tr('groups.invites.error'),
-        variant: TopToastVariant.error,
-      );
     }
-  }
-
-  /// The overflow. One entry today, but it is the slot every later "mute this
-  /// person", "report" and "why am I seeing this" belongs in.
-  Future<void> _openOverflow() async {
-    await showNhamSheet<void>(
-      context,
-      builder:
-          (sheetContext) => KalloSheetSurface(
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                KalloSheetHeader(title: widget.invite.from.label),
-                InviteOverflowRow(
-                  icon: LucideIcons.x300,
-                  label: tr('groups.invites.dismiss'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _dismiss();
-                  },
-                ),
-                const SizedBox(height: KalloSpacing.sp5),
-              ],
-            ),
-          ),
-    );
   }
 
   @override
@@ -132,9 +79,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                     Text(invite.from.label, style: dashName()),
                     Text(
                       tr(
-                        invite.isSplit
-                            ? 'groups.invites.sharedSplit'
-                            : 'groups.invites.sharedCopy',
+                        invite.subtitleKey,
                         namedArgs: {'name': invite.from.label},
                       ),
                       style: dashMeta(),
@@ -142,15 +87,6 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                   ],
                 ),
               ),
-              const SizedBox(width: KalloSpacing.sp2),
-              KalloButton(
-                variant: KalloButtonVariant.cta,
-                compact: true,
-                title: tr('groups.invites.acceptShort'),
-                loading: _busy,
-                onPressed: _accept,
-              ),
-              InviteOverflowButton(onTap: _busy ? null : _openOverflow),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp3),
@@ -179,10 +115,44 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'P: ${_fmtG(invite.proteinG)}  C: ${_fmtG(invite.carbohydrateG)}  F: ${_fmtG(invite.fatG)}',
+                'P: ${fmtInviteG(invite.proteinG)}  C: ${fmtInviteG(invite.carbohydrateG)}  F: ${fmtInviteG(invite.fatG)}',
                 style: dashCaption(tabular: true),
               ),
-              Text(_fmtKcal(invite.caloriesKcal), style: dashValue()),
+              Text(fmtInviteKcal(invite.caloriesKcal), style: dashValue()),
+            ],
+          ),
+          const SizedBox(height: KalloSpacing.sp4),
+          // Both choices, side by side, at the bottom.
+          //
+          // The dismiss used to live in a `⋯` overflow sheet, on the reasoning
+          // that two competing buttons made the primary action the smallest
+          // thing in the card. The deck changed what that costs: the only way
+          // past an offer is to act on it, so declining one was two taps and a
+          // sheet, every time, and the card's own header was carrying three
+          // controls beside the sender's name. Side by side, the choice is one
+          // tap either way and the header goes back to being an identity line.
+          // Weight still separates them — a filled pill against a quiet one.
+          Row(
+            children: [
+              Expanded(
+                child: KalloButton(
+                  variant: KalloButtonVariant.secondary,
+                  compact: true,
+                  title: tr('groups.invites.dismiss'),
+                  disabled: _busy,
+                  onPressed: _dismiss,
+                ),
+              ),
+              const SizedBox(width: KalloSpacing.sp3),
+              Expanded(
+                child: KalloButton(
+                  variant: KalloButtonVariant.cta,
+                  compact: true,
+                  title: tr(invite.acceptLabelKey),
+                  loading: _busy,
+                  onPressed: _accept,
+                ),
+              ),
             ],
           ),
         ],

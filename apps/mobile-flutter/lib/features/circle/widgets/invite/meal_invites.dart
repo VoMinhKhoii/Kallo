@@ -6,7 +6,7 @@ import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
-import 'invite_card.dart';
+import 'deck/invite_deck.dart';
 
 /// The Circle inbox: pending copy/split offers addressed to me. Renders nothing
 /// when empty. Mirrors the web `MealInvites`.
@@ -49,12 +49,17 @@ class MealInvitesSection extends ConsumerWidget {
             // Mixed-case group label, not the retired uppercase eyebrow
             // (native pass, 2026-08-31): this reads as the quiet tier above a
             // card, the same as "Today" over the day group below it.
-            GroupLabel(tr('groups.invites.title')),
+            // The offers render as a deck, so only the front one is on screen.
+            // The label is the one place that says how many are waiting.
+            GroupLabel(
+              invites.length > 1
+                  ? '${tr('groups.invites.title')} '
+                      '${tr('groups.invites.waiting', namedArgs: {'count': '${invites.length}'})}'
+                  : tr('groups.invites.title'),
+            ),
             const SizedBox(height: KalloSpacing.sp3),
-            for (final invite in invites) ...[
-              InviteCard(invite: invite),
-              const SizedBox(height: KalloSpacing.sp3),
-            ],
+            InviteDeck(invites: invites),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
         );
       },

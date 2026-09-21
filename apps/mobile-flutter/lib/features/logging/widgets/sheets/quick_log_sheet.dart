@@ -15,6 +15,7 @@ import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_group.dart';
 import '../composer/meal_input.dart';
+import '../../data/handoff_slots.dart';
 
 /// Type a meal here, land on the logging feed with it already being analyzed.
 ///

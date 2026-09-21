@@ -53,6 +53,9 @@ export interface SharedMealRow {
   carbohydrateG: number | null;
   fatG: number | null;
   portionFactor: number;
+  /** 'precise' | 'cheat'. A cheat meal has no item rows, so it cannot be
+   *  copied off the wall — the clients read this to hide that action. */
+  entryMode: string;
   sharedAt: Date;
   /** When the meal was eaten. Differs from sharedAt for a backfilled meal
    * (logged for a past date), letting the client hide its meaningless time. */
@@ -79,6 +82,7 @@ export const sharedMealColumns = {
   carbohydrateG: meals.carbohydrateG,
   fatG: meals.fatG,
   portionFactor: meals.portionFactor,
+  entryMode: meals.entryMode,
   sharedAt: mealShares.sharedAt,
   loggedAt: meals.loggedAt,
   sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
@@ -223,6 +227,8 @@ export interface SharedMealEntry {
     carbohydrateG: number | null;
     fatG: number | null;
     portionFactor: number;
+    /** 'precise' | 'cheat' — see SharedMealRow.entryMode. */
+    entryMode: string;
     sharedAt: string;
     /** True when the meal was logged for a PAST date (backfilled), so its
      * share-time ("just now") would be misleading and the UI hides it.
@@ -276,6 +282,7 @@ export function toSharedMealEntry(
       carbohydrateG: row.carbohydrateG,
       fatG: row.fatG,
       portionFactor: row.portionFactor,
+      entryMode: row.entryMode,
       sharedAt: row.sharedAt.toISOString(),
       isBackfilled: isBackfilledShare(row.loggedAt, row.sharedAt),
     },

@@ -4,6 +4,7 @@ import { Copy, Heart, MessageCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
+import { FeedEntryIdentity } from '@/components/groups/feed/feed-entry-identity';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
@@ -13,19 +14,10 @@ import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
 import { Link } from '@/i18n/navigation';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
-import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import { cn } from '@/lib/core/ui/cn';
 import { circleThreadHref } from '@/lib/domain/social/circle-routes';
-
-/** A portion factor as the glyph people read (½, ⅓, ¼), else a percentage. */
-function fractionLabel(factor: number): string {
-  if (Math.abs(factor - 0.5) < 0.001) return '½';
-  if (Math.abs(factor - 1 / 3) < 0.001) return '⅓';
-  if (Math.abs(factor - 0.25) < 0.001) return '¼';
-  return `${Math.round(factor * 100)}%`;
-}
 
 /** A glyph's label carries its figure only when there is one. The count lives
  * IN the label because the figure beside the glyph is drawn for the eye alone:
@@ -60,10 +52,15 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
   // Same formatter the grams beside it use (MacroScale), so one legend row
   // never mixes a raw `1234` with a localised `1.234`.
+  const isCheat = meal.entryMode === 'cheat';
+  // A cheat occasion's figures were placed on a slider, not measured. The `≈`
+  // is what says so on the number itself; the chip says it about the post. The
+  // anatomy around them is the ordinary one — it is still a meal someone ate,
+  // and giving it a different shape made it harder to read, not more honest.
   const kcalLabel =
     meal.caloriesKcal == null
       ? '— kcal'
-      : `${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
+      : `${isCheat ? '≈ ' : ''}${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
   const reactionCount = entry.reactions.count;
   const heartLabel = withCount(t('heart'), reactionCount);
   const replyLabel = withCount(t('reply'), entry.repliesTotal);
@@ -72,25 +69,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
     <div className="flex gap-3">
       <ProfileAvatar avatarUrl={friend.avatarUrl} label={label} />
       <div className="min-w-0 flex-1">
-        <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
-          <b className="font-bold font-sans-display text-[15px] text-kallo-text">
-            {label}
-          </b>
-          {/* A backfilled meal (logged for a past date) is shared "now", so its
-              elapsed time would misleadingly read "just now" — hide it. */}
-          {!meal.isBackfilled && (
-            <span className="font-sans-display text-[15px] text-kallo-text-muted">
-              {formatElapsed(meal.sharedAt, locale)}
-            </span>
-          )}
-          {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-kallo-border/60 px-2 py-px font-medium font-sans-display text-[10px] text-kallo-text-muted">
-              {t('portion', {
-                portion: fractionLabel(meal.portionFactor),
-              })}
-            </span>
-          )}
-        </div>
+        <FeedEntryIdentity label={label} meal={meal} />
         <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
           {capitalizeFirst(meal.rawInput)}
         </p>
@@ -158,8 +137,12 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             <MessageCircle className="size-[15px]" />
             {entry.repliesTotal > 0 && <span>{entry.repliesTotal}</span>}
           </Link>
-          {/* Split half is still deferred — it needs a confirmation step. */}
-          {!entry.isSelf && (
+          {/* Split half is still deferred — it needs a confirmation step.
+              Hidden for a cheat post: it has no item rows to reproduce, so the
+              server refuses it (log-shared.ts) and the button was a guaranteed
+              error. A cheat meal travels as a directed invite instead, where
+              the recipient can set their own amounts. */}
+          {!(entry.isSelf || meal.entryMode === 'cheat') && (
             <>
               <button
                 type="button"

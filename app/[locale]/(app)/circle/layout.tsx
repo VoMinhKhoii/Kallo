@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
-import { MealInvites } from '@/components/groups/meal-invites';
+import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
 import { ViewSwitcher } from '@/components/groups/view-switcher';
 
 /**
@@ -47,10 +47,16 @@ export default async function GroupsLayout({
         <ViewSwitcher />
 
         {/* empty:hidden — MealInvites renders null when the inbox is empty, so
-         * the wrapper's margin doesn't become a phantom gap. max-h + scroll caps
-         * a long invite list so it can't push the feed panel off a short
-         * viewport. */}
-        <div className="mb-3 max-h-[35vh] shrink-0 overflow-y-auto empty:hidden">
+         * the wrapper's margin doesn't become a phantom gap.
+         *
+         * No max-h + overflow scroller any more. It existed to cap a long
+         * invite LIST so it could not push the feed panel off a short viewport,
+         * and the inbox is a deck now — one card tall whatever arrives, so
+         * there is nothing to cap. Worse, `overflow-y-auto` made this a scroll
+         * container, and the deck's peek layers sit outside the front card's
+         * box (~12px above it): they were clipped at rest, which hid the whole
+         * deck and left the box with 12px of phantom scroll. */}
+        <div className="mb-3 shrink-0 empty:hidden">
           <MealInvites />
         </div>
 

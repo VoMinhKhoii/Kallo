@@ -64,3 +64,17 @@ export interface CheatSlidersPersisted {
   spec: CheatSliderSpec;
   levels: CheatSliderLevels;
 }
+
+/**
+ * A cheat occasion re-staged as a fresh `pending_analyses` row, ready for the
+ * slider card to open on. Returned by every "reopen these sliders" action —
+ * `stageCheatRepeatAction` (my own past occasion) and `stageCheatInviteAction`
+ * (a friend's, offered to me) — so the two cannot drift apart and both clients
+ * render the result through one code path.
+ */
+export interface StagedCheatAnalysis {
+  analysisId: string;
+  spec: CheatSliderSpec;
+  rawInput: string;
+  loggedAt: string;
+}

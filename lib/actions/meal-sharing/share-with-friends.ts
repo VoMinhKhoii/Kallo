@@ -72,10 +72,9 @@ export async function shareMealWithFriendsAction(input: {
   }
 
   return withNotifications(db, async (tx, notify) => {
-    // Ownership + precise gate (mirrors duplicateMealAction). Cheat meals carry
-    // no item rows, so there is nothing to copy or split. Locked FOR UPDATE so
-    // two concurrent splits can't both read portionFactor = 1 and each scale
-    // the same meal from the stale full portion.
+    // Ownership gate (mirrors duplicateMealAction). Locked FOR UPDATE so two
+    // concurrent splits can't both read portionFactor = 1 and each scale the
+    // same meal from the stale full portion.
     const [source] = await tx
       .select()
       .from(meals)
@@ -85,17 +84,34 @@ export async function shareMealWithFriendsAction(input: {
     if (!source) {
       throw Errors.notFound('Bữa ăn không tồn tại hoặc không thuộc về bạn.');
     }
-    if (source.entryMode === 'cheat') {
-      throw Errors.validationFailed('Không thể chia sẻ bữa xả theo cách này.');
+    // A cheat meal shares as a COPY only. There is no dish to divide: its
+    // numbers come from slider positions, not from item rows, and scaling those
+    // by a fraction would invent a portion nobody chose. The recipient instead
+    // reopens the sliders and sets their own amounts — two people at the same
+    // buffet rarely ate the same quantity (see stage-cheat-copy.ts).
+    const isCheat = source.entryMode === 'cheat';
+    if (isCheat && parsed.mode === 'split') {
+      throw Errors.validationFailed(
+        'Không thể chia phần bữa xả — hãy gửi nguyên phần để bạn tự đặt mức.'
+      );
+    }
+    if (isCheat && !source.cheatSliders) {
+      throw Errors.validationFailed(
+        'Bữa xả này không còn dữ liệu thanh trượt để chia sẻ.'
+      );
     }
 
-    // Copy/split reproduce the item rows — a meal with none has nothing to give
-    // (mirrors the client gate; the API is the mobile contract, so enforce here).
-    const sourceItems = await tx
-      .select()
-      .from(mealItems)
-      .where(eq(mealItems.mealId, source.id));
-    if (sourceItems.length === 0) {
+    // A precise copy/split reproduces the item rows, so a meal with none has
+    // nothing to give (mirrors the client gate; the API is the mobile contract,
+    // so enforce here). A cheat meal never has them — skip the read entirely
+    // rather than round-trip for a result we know is empty.
+    const sourceItems = isCheat
+      ? []
+      : await tx
+          .select()
+          .from(mealItems)
+          .where(eq(mealItems.mealId, source.id));
+    if (!isCheat && sourceItems.length === 0) {
       throw Errors.validationFailed('Bữa ăn này không có món để chia sẻ.');
     }
 
@@ -210,6 +226,17 @@ export async function shareMealWithFriendsAction(input: {
           respondedAt: null,
           createdAt: now,
         },
+        // Never resets an ACCEPTED invite. An abandoned cheat offer gets back
+        // here by being re-pended at the moment its card dies (`releaseInvite`,
+        // called in the same transaction as the delete by both discard and the
+        // reaper) — not by this clause forgiving the accepted state.
+        //
+        // Widening it to `OR accepted_meal_id IS NULL` was tried and reverted:
+        // that is not "abandoned", it is every staged cheat card for its whole
+        // ~7-day life, because the meal does not exist until confirm. A
+        // re-share during that window re-pended a live offer, put a second card
+        // in the recipient's inbox for the same dish, and confirming both wrote
+        // two meals — exactly what this guard is here to stop.
         setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
       })
       .returning({
@@ -269,6 +296,11 @@ export async function shareMealWithFriendsAction(input: {
       });
     }
 
-    return { invitedCount: recipientIds.length, portionFactor, meal };
+    // `offered`, not `recipientIds`: the upsert's `setWhere` skips anyone whose
+    // invite is already ACCEPTED, and RETURNING yields only the rows it really
+    // wrote. Counting the intended recipients instead told the sender "sent to
+    // 1 friend" for a share that reached nobody — the worst possible answer,
+    // because it is indistinguishable from success and they stop trying.
+    return { invitedCount: offered.length, portionFactor, meal };
   });
 }

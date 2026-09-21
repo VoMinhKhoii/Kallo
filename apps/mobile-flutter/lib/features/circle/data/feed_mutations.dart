@@ -20,7 +20,8 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_keys.dart' show todayDateString;
-import '../../logging/data/logging_providers.dart' show loggingDayProvider;
+import '../../logging/data/logging_providers.dart'
+    show loggingDayProvider, mealDatesProvider;
 import '../logic/find_share_entry.dart';
 import 'chat_group_providers.dart';
 import 'feed_providers.dart';
@@ -156,10 +157,17 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
         'timezoneOffset': localTimezoneOffsetMinutes(),
       })
       .timeout(_mutationTimeout);
+  // The whole FAMILY, because the copy carries the source meal's instant and
+  // so may land on an earlier day than today (`loggedDate` is sent for wire
+  // compatibility and ignored by the server).
   ref.invalidate(loggingDayProvider);
-  // The copied meal lands in today's diary — the dashboard reads its ring off a
-  // separate bundle/day cache, so heal it too or the Today + week-strip ring
-  // keep the pre-log total.
+  // Same reason the day family goes wholesale: if that earlier day had no
+  // entries before, the timeline has no dot for it and the date picker still
+  // reads empty, so the toast says "logged" and the meal is nowhere the user
+  // thinks to look.
+  ref.invalidate(mealDatesProvider);
+  // The dashboard reads its ring off a separate bundle/day cache, so heal it
+  // too or the Today + week-strip ring keep the pre-log total.
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
 }

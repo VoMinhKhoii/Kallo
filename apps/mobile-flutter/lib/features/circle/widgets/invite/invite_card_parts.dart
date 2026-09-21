@@ -4,9 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../portion/portion_seats.dart' show kSeatColors;
 
 /// The avatar with a status badge, so the KIND of notification is readable
@@ -49,61 +47,11 @@ class InviteAvatarWithBadge extends StatelessWidget {
   }
 }
 
-class InviteOverflowButton extends StatelessWidget {
-  const InviteOverflowButton({super.key, required this.onTap});
+/// A macro figure for the invite card's nutrition line, or the N/A dash when
+/// the estimate never resolved.
+String fmtInviteG(double? value) =>
+    value == null ? tr('groups.invites.na') : '${value.round()}g';
 
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tr('common.more'),
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: const SizedBox(
-          width: KalloIcons.hit,
-          height: KalloIcons.hit,
-          child: Icon(
-            LucideIcons.ellipsis300,
-            size: KalloIcons.size,
-            color: KalloColors.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class InviteOverflowRow extends StatelessWidget {
-  const InviteOverflowRow({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: KalloIcons.hit + 8),
-        child: Row(
-          children: [
-            Icon(icon, size: KalloIcons.size, color: KalloColors.textMuted),
-            const SizedBox(width: KalloSpacing.sp3),
-            Text(label, style: dashBody()),
-          ],
-        ),
-      ),
-    );
-  }
-}
+/// The same, for the calorie figure that anchors the line's trailing edge.
+String fmtInviteKcal(double? value) =>
+    value == null ? tr('groups.invites.na') : '${value.round()} kcal';

@@ -29,11 +29,21 @@ vi.mock(
   async () => (await import('./meal-doubles')).schema
 );
 
+const { mockReap } = vi.hoisted(() => ({
+  mockReap: vi
+    .fn()
+    .mockResolvedValue({ reapedIds: [], releasedInvites: false }),
+}));
+vi.mock('@/lib/actions/meals/day/reap-abandoned', () => ({
+  reapAbandonedPendingAnalyses: mockReap,
+}));
+
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
 import {
+  loadLoggingDay,
   loadMealDates,
   loadMealsByDate,
   loadPendingAnalysesByDate,
@@ -171,12 +181,51 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.parsedMeal?.items[0]?.vessel).toBeUndefined();
   });
 
+  it('hides a card already past the reaping horizon', async () => {
+    // The read and the sweep have to agree on where "abandoned" starts, and
+    // agreeing AFTER the fact is not enough: two day loads can overlap for one
+    // user (the dashboard route calls loadLoggingDay too), so load B can read a
+    // row that load A's sweep deletes — and B's own sweep then reports nothing,
+    // because A already took it. B would hand back a card that cannot be
+    // confirmed or discarded. Drawing the same line in the read is what closes
+    // that; no reconciliation between one read and one sweep can.
+    const where = vi.fn().mockReturnValue({
+      orderBy: vi.fn().mockResolvedValue([]),
+    });
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({ where }),
+    });
+
+    await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    const predicate = JSON.stringify(where.mock.calls[0]?.[0]);
+    expect(predicate).toContain("interval '7 days'");
+    // Pinned to the operator on the expiresAt clause SPECIFICALLY, not to a
+    // `>=` anywhere in the predicate: `loggedAt >= dayStart` sits right beside
+    // it and satisfies the loose version, so `<` here — the read keeping the
+    // doomed rows and discarding the live ones, which empties the feed and
+    // shows only cards that cannot be confirmed — passed it.
+    const operator = predicate.match(
+      /pendingAnalyses\.expiresAt",\{"value":\["([^"]*)"\]/
+    )?.[1];
+    expect(operator).toBe(' >= now() - ');
+  });
+
   it('does not hide a staged meal once its expiry has passed', async () => {
     // The 30-minute window used to take an unconfirmed card off screen while
     // the user still meant to save it. It never gated confirmability —
     // confirmAndSaveMealAction deletes by (id, userId) and never reads
     // expiresAt — and it is not what dedupes re-analysis either: that is the
-    // (user_id, attempt_id) upsert. So the day query must not mention it.
+    // (user_id, attempt_id) upsert.
+    //
+    // The read compares `expiresAt` again now, so "must not mention expiresAt"
+    // would be a wrong reading of that: it draws the REAPING line, a week out,
+    // and hides only rows that are about to stop existing. What must never
+    // come back is a comparison against a bare `now()`, which is the 30-minute
+    // window — so that is what this asserts, not the column's absence.
     const where = vi.fn().mockReturnValue({
       orderBy: vi.fn().mockResolvedValue([]),
     });
@@ -191,7 +240,13 @@ describe('loadPendingAnalysesByDate', () => {
 
     const predicate = JSON.stringify(where.mock.calls[0]?.[0]);
     expect(predicate).toContain('pendingAnalyses.loggedAt');
-    expect(predicate).not.toContain('expiresAt');
+    // Every `now()` in the predicate is offset by the horizon. A bare
+    // `> now()` or `>= now()` chunk is the old window returning.
+    const nowChunks = predicate.match(/now\(\)[^"]*/g) ?? [];
+    expect(nowChunks.length).toBeGreaterThan(0);
+    for (const chunk of nowChunks) {
+      expect(chunk).toContain('-');
+    }
   });
 
   it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {
@@ -315,5 +370,127 @@ describe('loadMealDates', () => {
 
     const dates = await loadMealDates({ timezoneOffset: 0 });
     expect(dates).toEqual(['2026-04-07', '2026-04-06', '2026-04-05']);
+  });
+});
+
+describe('loadLoggingDay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReap.mockResolvedValue({ reapedIds: [], releasedInvites: false });
+  });
+
+  /**
+   * The day load fans out four calls on one `Promise.all`, in array order:
+   * meals, pending, the completion mark, then the sweep (mocked above).
+   */
+  function queueDay(pendingRows: unknown[]) {
+    mockDbSelect
+      // meals — none, so the read short-circuits before its item queries
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      })
+      // pending analyses
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue(pendingRows),
+          }),
+        }),
+      })
+      // day completion mark
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+  }
+
+  const pendingRow = (id: string) => ({
+    id,
+    rawInput: 'Phở bò',
+    loggedAt: LOGGED_AT,
+    pipelineResult: samplePipelineResult,
+  });
+
+  it('never returns a card the concurrent sweep just deleted', async () => {
+    // The pending read does NOT filter on expiresAt (deliberately), so it
+    // happily returns a row a week past expiry — exactly the rows the sweep
+    // running beside it is deleting. Whichever query reaches the pool first
+    // decides, and when the SELECT wins the day resolves with a card that no
+    // longer exists: it renders, and confirm and discard both fail on it.
+    queueDay([pendingRow(UUID_1), pendingRow(UUID_2)]);
+    mockReap.mockResolvedValue({
+      reapedIds: [UUID_1],
+      releasedInvites: false,
+    });
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_2]);
+  });
+
+  it('keeps every card when the sweep reaped nothing', async () => {
+    // The common case by far. Filtering must not cost a live card.
+    queueDay([pendingRow(UUID_1), pendingRow(UUID_2)]);
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_1, UUID_2]);
+  });
+
+  it('keeps live cards when the sweep reaped rows from OTHER days', async () => {
+    // The sweep is scoped to the user, not to the requested date, so most of
+    // what it reaps was never in this day's rows. An id-based subtraction is
+    // right; anything count-based would strip live cards.
+    queueDay([pendingRow(UUID_1)]);
+    mockReap.mockResolvedValue({
+      reapedIds: [UUID_MEAL],
+      releasedInvites: false,
+    });
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_1]);
+  });
+
+  it("passes the sweep's release signal to the caller", async () => {
+    // Both clients invalidate their invite caches on this. Drop it and the
+    // handed-back offer stays invisible: the inbox query is watched
+    // continuously by the nav badge, so it never refetches on its own.
+    queueDay([]);
+    mockReap.mockResolvedValue({ reapedIds: [], releasedInvites: true });
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.releasedInvites).toBe(true);
+  });
+
+  it('reports no release when the sweep handed nothing back', async () => {
+    queueDay([]);
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.releasedInvites).toBe(false);
   });
 });

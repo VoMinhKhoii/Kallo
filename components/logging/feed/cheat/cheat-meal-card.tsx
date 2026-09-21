@@ -4,7 +4,8 @@ import { ChevronDown, PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { RemoveMealButton } from '@/components/logging/feed/action-bar/remove-meal-button';
+import { CheatMealActions } from '@/components/logging/feed/cheat/cheat-meal-actions';
+import { StopScale } from '@/components/logging/feed/cheat/stop-scale';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
@@ -13,7 +14,6 @@ import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { formatTime } from '@/lib/core/date/format-time';
-import { cn } from '@/lib/core/ui/cn';
 import {
   activeAnchorLabel,
   CHEAT_SLIDER_COLORS,
@@ -23,25 +23,6 @@ interface CheatMealCardProps {
   meal: PersistedMeal;
   /** Remove this meal (deferred delete with undo handled by the feed). */
   onDelete?: () => void;
-}
-
-/** Six dots filled up to the chosen stop — where on the scale the user landed. */
-function StopScale({ level, color }: { level: number; color: string }) {
-  const filled = Math.min(6, Math.max(1, Math.round(level / 2) + 1));
-  return (
-    <span aria-hidden className="flex items-center gap-0.5">
-      {Array.from({ length: 6 }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            'h-1.5 w-1.5 rounded-full',
-            i >= filled && 'border border-kallo-border'
-          )}
-          style={i < filled ? { backgroundColor: color } : undefined}
-        />
-      ))}
-    </span>
-  );
 }
 
 export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
@@ -197,11 +178,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
           )}
         </AnimatePresence>
       </div>
-      {onDelete && (
-        <div className="mt-1.5 px-1">
-          <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
-        </div>
-      )}
+      <CheatMealActions meal={meal} onDelete={onDelete} />
     </motion.article>
   );
 }

@@ -53,6 +53,7 @@ void main() {
     ShareReactions reactions = const ShareReactions(),
     DateTime? sharedAt,
     bool isBackfilled = false,
+    String entryMode = 'precise',
   }) => CircleFeedEntry(
     friend: const CircleProfile(
       userId: 'u2',
@@ -72,6 +73,7 @@ void main() {
       fatG: protein == null ? null : 14,
       portionFactor: portion,
       isBackfilled: isBackfilled,
+      entryMode: entryMode,
     ),
     reactions: reactions,
     replies: replies,
@@ -264,6 +266,31 @@ void main() {
     // Disposed here rather than in a tearDown: the framework checks for live
     // handles BEFORE tear-downs run.
     handle.dispose();
+  });
+
+  testWidgets('a cheat post reads as a cheat occasion', (tester) async {
+    // It used to be indistinguishable from a weighed meal: same composition
+    // bar, same exact kcal — a precision the logger never had.
+    await pump(tester, post(entry(entryMode: 'cheat')));
+
+    // The chip and the `≈` are the whole difference. Everything else is the
+    // ordinary post anatomy — the composition bar and the macro legend stay,
+    // because it is still a meal someone ate and a different shape made it
+    // harder to read rather than more honest.
+    expect(find.text('Cheat meal'), findsOneWidget);
+    expect(find.textContaining('≈'), findsOneWidget);
+    expect(find.textContaining('P '), findsOneWidget);
+  });
+
+  testWidgets('a cheat post offers no copy action', (tester) async {
+    // It has no item rows to reproduce, so the server refuses the copy and the
+    // button was a guaranteed error. A cheat meal travels as a directed invite
+    // instead, where the recipient reopens the sliders and sets their own
+    // amounts. Heart and reply stay — reacting to a cheat meal is fine.
+    await pump(tester, post(entry(entryMode: 'cheat')));
+
+    expect(find.text('Log this too'), findsNothing);
+    expect(find.byType(FeedActionButton), findsNWidgets(2));
   });
 
   testWidgets('the three actions share one row and clear a 44pt target', (

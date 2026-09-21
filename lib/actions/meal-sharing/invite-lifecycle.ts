@@ -1,0 +1,272 @@
+// ---------------------------------------------------------------------------
+// The life of a directed meal-share offer: claimed, bound to a meal, or handed
+// back
+// ---------------------------------------------------------------------------
+// The claim, and the two writes that resolve what a claim turned into: bound to
+// a meal, or handed back. The rules for when an offer is spent live here rather
+// than at each ending.
+//
+// Not literally every status write — the guarded dismiss stays inline in
+// `invite-response.ts`, where it is the whole of its action and has no second
+// caller to share it with.
+//
+// CLAIMING is the part every taking path does identically.
+// Two actions consume a pending invite: `acceptMealShareInviteAction` copies
+// the meal into the reader's diary, and `stageCheatInviteAction` reopens the
+// sender's sliders instead. They diverge completely in what they WRITE, and
+// not at all in how they get the right to write it. That prologue is the
+// security-critical half, and it was duplicated line for line:
+//
+//   1. Discover the invite scoped to the ACTOR. This row is the entire
+//      authorization for reading another user's meal — Drizzle bypasses RLS,
+//      so nothing but this WHERE clause stands between the two diaries.
+//   2. Lock the source meal FOR UPDATE. Meal-then-invite, the same order
+//      `shareMealWithFriendsAction` takes, which is what keeps a take racing a
+//      concurrent split from deadlocking.
+//   3. Let the caller refuse the source BEFORE anything is claimed, so a
+//      refusal leaves the offer takeable.
+//   4. Claim the invite with a guarded `WHERE status = 'pending'`. This is the
+//      double-tap guard: the second tap finds no pending row and 404s, having
+//      written nothing.
+//   5. Close the reader's own invite notification in the same transaction that
+//      resolved the offer, and re-check the friendship still holds.
+//
+// Duplicated, that is five chances for the two paths to drift apart on a rule
+// where drifting means leaking one user's meal to another. Here it is one
+// function they both call, and a fix lands on both by construction.
+
+import { and, eq, isNull, or } from 'drizzle-orm';
+import { Errors } from '@/lib/core/errors/catalog';
+import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
+import { closeAggregates } from '@/lib/domain/notifications/notify';
+import type { AppTransaction } from '@/lib/infra/db/client';
+import { friendships, mealShareInvites, meals } from '@/lib/infra/db/schema';
+
+type MealRow = typeof meals.$inferSelect;
+
+export interface ClaimedInvite<TChecked> {
+  /** The sender, and which meal they offered. */
+  invite: { sourceMealId: string; fromUserId: string };
+  /** The locked source meal, read under the invite's authority. */
+  source: MealRow;
+  /**
+   * The claim's own `copy_factor`, straight from `RETURNING`.
+   *
+   * It comes from the CLAIM and never from the discovery read: that read
+   * happens before the source meal is locked, so a concurrent re-share can
+   * take the lock, rescale the meal and upsert a new factor while this take
+   * waits — and the pre-lock value would then scale the new source by the old
+   * ratio. `RETURNING` is the only read atomic with the transition, so it is
+   * the only one that can be trusted to match the source we just locked.
+   *
+   * Unvalidated. The column is NOT NULL with a `> 0` check, so only a schema
+   * drift can make it unusable — but a caller that multiplies nutrition by it
+   * must still refuse a non-finite or non-positive value rather than writing
+   * NaN kcal into a diary. The cheat path has nothing to scale and ignores it.
+   */
+  copyFactor: number;
+  /**
+   * Whatever `assertSource` returned. It is the only place that has already
+   * validated the source's shape, so handing its result back saves the caller
+   * from re-deriving — or worse, re-asserting — what it just proved.
+   */
+  checked: TChecked;
+}
+
+/**
+ * Claim a pending invite addressed to `userId`, returning the locked source.
+ *
+ * Throws — and therefore rolls the caller's transaction back — if the invite
+ * is gone, already resolved, the source meal has been deleted, `assertSource`
+ * refuses it, or the friendship no longer holds.
+ *
+ * Must run inside a transaction: the lock, the claim and the notification
+ * close are only atomic together, and the caller's own write has to be able to
+ * roll the claim back with it.
+ */
+export async function claimPendingInvite<TChecked = void>(
+  tx: AppTransaction,
+  options: {
+    inviteId: string;
+    /** The actor. Every query below is scoped to it. */
+    userId: string;
+    /**
+     * Refuse a source this path cannot handle. Runs after the source is locked
+     * and BEFORE the claim, so a refusal leaves the offer takeable — a client
+     * on an old build that routes to the wrong action must not burn the
+     * invite. Throw from here; whatever it returns comes back as `checked`.
+     *
+     * MUST be synchronous. An `async` callback type-checks fine — `TChecked`
+     * just infers as a Promise — and then its throw becomes an unawaited
+     * rejection: the claim below runs anyway and burns an invite this path
+     * already knows it cannot handle. TypeScript cannot express "not a
+     * thenable" in a position it still has to infer from, so the rule is
+     * enforced at runtime instead, immediately below.
+     */
+    assertSource: (source: MealRow) => TChecked;
+  }
+): Promise<ClaimedInvite<TChecked>> {
+  const { inviteId, userId, assertSource } = options;
+
+  const [invite] = await tx
+    .select({
+      sourceMealId: mealShareInvites.sourceMealId,
+      fromUserId: mealShareInvites.fromUserId,
+    })
+    .from(mealShareInvites)
+    .where(
+      and(
+        eq(mealShareInvites.id, inviteId),
+        eq(mealShareInvites.toUserId, userId),
+        eq(mealShareInvites.status, 'pending')
+      )
+    )
+    .limit(1);
+  if (!invite) {
+    throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
+  }
+
+  // The authorized cross-user read. FOR UPDATE serializes it against split and
+  // edit, so meal totals and item rows come from one coherent portion.
+  const [source] = await tx
+    .select()
+    .from(meals)
+    .where(
+      and(
+        eq(meals.id, invite.sourceMealId),
+        eq(meals.userId, invite.fromUserId)
+      )
+    )
+    .limit(1)
+    .for('update');
+  if (!source) {
+    throw Errors.notFound('Bữa ăn không còn tồn tại.');
+  }
+
+  const checked = assertSource(source);
+  // The whole point of running the check here is that a refusal happens before
+  // anything is written. A thenable means the refusal has not happened yet, so
+  // refuse on its behalf rather than claiming the invite and finding out later.
+  if (typeof (checked as { then?: unknown } | null)?.then === 'function') {
+    throw new Error(
+      'claimPendingInvite: assertSource must be synchronous — an async check ' +
+        'resolves after the invite has already been claimed.'
+    );
+  }
+
+  const [claimed] = await tx
+    .update(mealShareInvites)
+    .set({ status: 'accepted', respondedAt: new Date() })
+    .where(
+      and(
+        eq(mealShareInvites.id, inviteId),
+        eq(mealShareInvites.toUserId, userId),
+        eq(mealShareInvites.status, 'pending')
+      )
+    )
+    .returning({
+      id: mealShareInvites.id,
+      copyFactor: mealShareInvites.copyFactor,
+    });
+  if (!claimed) {
+    throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
+  }
+
+  // Closed here, in the tx that resolved the offer, so EVERY resolution path
+  // closes the aggregate — this card, the Circle page, another device, or the
+  // sender's split auto-dismiss. A fresh re-offer then INSERTs new history
+  // instead of rewriting this row.
+  await closeAggregates(tx, {
+    recipientIds: [userId],
+    groupKey: shareInviteKey(invite.sourceMealId),
+  });
+
+  // The offer was made under an accepted friendship — re-check it still holds
+  // (the sender may have been unfriended or blocked since). Throwing rolls the
+  // claim back along with everything else.
+  const [friend] = await tx
+    .select({ id: friendships.id })
+    .from(friendships)
+    .where(
+      and(
+        eq(friendships.status, 'accepted'),
+        or(
+          and(
+            eq(friendships.userLow, userId),
+            eq(friendships.userHigh, invite.fromUserId)
+          ),
+          and(
+            eq(friendships.userHigh, userId),
+            eq(friendships.userLow, invite.fromUserId)
+          )
+        )
+      )
+    )
+    .limit(1);
+  if (!friend) {
+    throw Errors.validationFailed('Bạn không còn là bạn bè với người này.');
+  }
+
+  return { invite, source, copyFactor: claimed.copyFactor, checked };
+}
+
+/**
+ * Hand a spent offer back, because it never produced a meal.
+ *
+ * Taking a CHEAT offer spends it at stage time: the invite flips to `accepted`
+ * and the recipient gets a slider card to set their own amounts on. Confirm is
+ * the generic save path and knows nothing about invites, so leaving the invite
+ * pending until then would let the inbox stage the same offer over and over.
+ * The cost used to be permanent — discard the card and the offer was gone, with
+ * the sender blocked from re-sending by `share-with-friends`'s `setWhere`.
+ *
+ * So the endings that destroy a staged card without producing a meal
+ * (`discardPendingAnalysisAction`, `reapAbandonedPendingAnalyses`) call this.
+ *
+ * The predicate is the whole safety. `status = 'accepted'` AND
+ * `accepted_meal_id IS NULL` is precisely "spent but nothing came of it" — an
+ * offer that became a meal is never re-opened, and `to_user_id = userId` keeps
+ * it to the person it was addressed to. Anything else matches zero rows, which
+ * is the intended no-op.
+ *
+ * Silent by design: the sender was told the offer landed and is told nothing
+ * now, the same way a dismiss says nothing (see `invite-response.ts`).
+ */
+export async function releaseInvite(
+  tx: AppTransaction,
+  options: { inviteId: string; userId: string }
+): Promise<void> {
+  await tx
+    .update(mealShareInvites)
+    .set({ status: 'pending', respondedAt: null })
+    .where(
+      and(
+        eq(mealShareInvites.id, options.inviteId),
+        eq(mealShareInvites.toUserId, options.userId),
+        eq(mealShareInvites.status, 'accepted'),
+        isNull(mealShareInvites.acceptedMealId)
+      )
+    );
+}
+
+/**
+ * Point a taken offer at the meal it became.
+ *
+ * The precise accept has always done this inline (`invite-response.ts`). The
+ * cheat path could not: at stage time there is no meal yet, only a card. So it
+ * happens at confirm instead, which is what makes `accepted_meal_id IS NULL`
+ * mean "abandoned" rather than "cheat" — the distinction `releaseInvite` above
+ * and the re-share upsert both turn on.
+ *
+ * Unguarded beyond the id: the caller reached this by consuming a staged row
+ * that carried the invite, inside the transaction that wrote the meal.
+ */
+export async function bindInviteToMeal(
+  tx: AppTransaction,
+  options: { inviteId: string; mealId: string }
+): Promise<void> {
+  await tx
+    .update(mealShareInvites)
+    .set({ acceptedMealId: options.mealId })
+    .where(eq(mealShareInvites.id, options.inviteId));
+}

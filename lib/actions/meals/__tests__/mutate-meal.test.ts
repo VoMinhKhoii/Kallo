@@ -1,3 +1,4 @@
+import { and, eq, isNull } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +70,7 @@ import {
 import {
   LOGGED_AT,
   MOCK_USER as mockUser,
+  schema,
   UUID_1,
   UUID_2,
   UUID_MEAL,
@@ -114,21 +116,95 @@ describe('discardPendingAnalysisAction', () => {
     vi.clearAllMocks();
   });
 
-  /** The delete resolves through .where().returning(), like deleteMealAction. */
+  /** The delete resolves through .where().returning(), inside the tx. */
   function queueDiscard(rows: unknown[]) {
-    mockDbDelete.mockReturnValue({
+    mockTxDelete.mockReturnValue({
       where: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue(rows),
       }),
     });
   }
 
+  /** `releaseInvite`'s guarded UPDATE — captures its SET and its predicate. */
+  function queueRelease(rows: unknown[]) {
+    const captured: { set?: unknown; where?: unknown } = {};
+    mockTxUpdate.mockReturnValue({
+      set: vi.fn((vals: unknown) => {
+        captured.set = vals;
+        return {
+          where: vi.fn((predicate: unknown) => {
+            captured.where = predicate;
+            return { returning: vi.fn().mockResolvedValue(rows) };
+          }),
+        };
+      }),
+    });
+    return captured;
+  }
+
   it('should return success when the staged analysis is discarded', async () => {
-    queueDiscard([{ id: UUID_1 }]);
+    queueDiscard([{ id: UUID_1, sourceInviteId: null }]);
 
     await expect(
       discardPendingAnalysisAction({ analysisId: UUID_1 })
     ).resolves.toEqual({ success: true });
+  });
+
+  it('leaves invites alone for a card that came from nobody', async () => {
+    // Almost every staged card is my own logging attempt. Touching
+    // meal_share_invites for one would be a write with nothing to write about.
+    queueDiscard([{ id: UUID_1, sourceInviteId: null }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it("hands a friend's offer back when its card is thrown away", async () => {
+    // Taking a cheat offer SPENDS it — the invite flips to accepted before any
+    // meal exists. Discarding the card is "not now", and "not now" must not
+    // cost the recipient that meal permanently, nor block the sender from
+    // ever offering it again.
+    queueDiscard([{ id: UUID_1, sourceInviteId: UUID_2 }]);
+    const captured = queueRelease([{ id: UUID_2 }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    expect(mockTxUpdate).toHaveBeenCalledTimes(1);
+    expect(captured.set).toEqual({ status: 'pending', respondedAt: null });
+  });
+
+  it('scopes the release to me, to a spent offer, and to one with no meal', async () => {
+    // The predicate is the entire safety of this write. Without `status =
+    // accepted` it could re-open a dismissed offer; without `accepted_meal_id
+    // IS NULL` it could re-offer a meal the recipient already has; without
+    // `to_user_id` it is someone else's invite. Drizzle bypasses RLS, so these
+    // four clauses are the only guard there is.
+    //
+    // Compared against a predicate BUILT here with the same operators, not
+    // sniffed for substrings. The substring version of this test passed with
+    // the status flipped to 'pending', with `isNull` flipped to `isNotNull`,
+    // with `ne` for `eq`, and with the wrong id in the user clause — because
+    // "accepted" is a substring of "acceptedMealId" and no bound value was
+    // ever checked. It asserted nothing it claimed to.
+    queueDiscard([{ id: UUID_1, sourceInviteId: UUID_2 }]);
+    const captured = queueRelease([{ id: UUID_2 }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    // The schema double's columns are plain strings, which is what makes the
+    // serialized predicate readable at all; Drizzle's operator signatures want
+    // a Column. The emitted SQL object is identical either way, so this cast
+    // exists only so the expectation can be written with the same operators
+    // the code under test uses.
+    const invites = schema.mealShareInvites as unknown as Record<string, never>;
+    const expected = and(
+      eq(invites.id, UUID_2),
+      eq(invites.toUserId, mockUser.id),
+      eq(invites.status, 'accepted'),
+      isNull(invites.acceptedMealId)
+    );
+    expect(JSON.stringify(captured.where)).toBe(JSON.stringify(expected));
   });
 
   it("should throw for an analysis that is gone or someone else's", async () => {

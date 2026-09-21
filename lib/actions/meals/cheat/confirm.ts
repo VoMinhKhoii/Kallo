@@ -3,6 +3,7 @@ import {
   buildPersistedMeal,
   inferMealSlot,
 } from '@/lib/actions/logging/persisted-meal';
+import { bindInviteToMeal } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import type {
   CheatSliderLevels,
   CheatSliderSpec,
@@ -13,9 +14,9 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
 import { type AppDb, db } from '@/lib/infra/db/client';
 import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
-import { insertDefaultCircleShare } from './insert-default-share';
-import { EMPTY_NUTRITION } from './shared';
-import type { ConfirmMealResponse } from './types';
+import { insertDefaultCircleShare } from '../insert-default-share';
+import { EMPTY_NUTRITION } from '../shared';
+import type { ConfirmMealResponse } from '../types';
 
 type DbTransaction = Parameters<Parameters<AppDb['transaction']>[0]>[0];
 
@@ -114,6 +115,19 @@ export async function confirmCheatMeal(args: {
     mealId: meal.id,
     actorId: userId,
   });
+
+  // A card staged from a friend's offer: point that offer at the meal it
+  // finally became. The precise accept writes this inline as it copies, but a
+  // cheat offer has no meal at the moment it is TAKEN — only a card — so the
+  // binding waits for here. It is what makes `accepted_meal_id IS NULL` mean
+  // ABANDONED rather than "cheat", which is the distinction `releaseInvite`
+  // turns on when a card is discarded or reaped.
+  if (pending.sourceInviteId) {
+    await bindInviteToMeal(tx, {
+      inviteId: pending.sourceInviteId,
+      mealId: meal.id,
+    });
+  }
 
   // Rebuild the saved cheat meal in the shape loadMealsByDate returns, so
   // the client reconciles its optimistic card from the confirm response

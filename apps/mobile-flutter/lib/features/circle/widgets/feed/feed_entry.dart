@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../shared/logic/display_format.dart';
 import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import 'feed_entry_actions.dart';
+import 'feed_entry_identity.dart';
 import 'feed_nutrition.dart';
 import 'feed_rhythm.dart';
 
@@ -49,13 +48,6 @@ class FeedEntry extends StatelessWidget {
   /// page's own copy of it, which is already the thread.
   final VoidCallback? onOpen;
 
-  String _fraction(double factor) {
-    if ((factor - 0.5).abs() < 0.001) return '½';
-    if ((factor - 1 / 3).abs() < 0.001) return '⅓';
-    if ((factor - 0.25).abs() < 0.001) return '¼';
-    return '${(factor * 100).round()}%';
-  }
-
   @override
   Widget build(BuildContext context) {
     final meal = entry.meal;
@@ -75,61 +67,7 @@ class FeedEntry extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: KalloSpacing.sp2,
-                runSpacing: 3,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: name,
-                          // 15/600 ink against the 14 muted timestamp beside
-                          // it: the Threads relationship, where a bold author
-                          // sits over regular body copy. Names are one of the
-                          // three places semibold survives — identity, not a
-                          // figure. One notch under the 16 post body so the
-                          // two do not read as a wall.
-                          style: dashName(),
-                        ),
-                        // A backfilled (past-date) meal carries a sharedAt of
-                        // "now", so its clock time describes when it was typed
-                        // up rather than when it was eaten — hide it. Mirrors
-                        // web `components/groups/feed-entry.tsx`.
-                        if (!meal.isBackfilled)
-                          TextSpan(
-                            // A plain space, no dot: the name is bold ink and
-                            // the time regular muted, so weight and colour
-                            // already part them. A separator on top of that is
-                            // punctuation doing work the type has done.
-                            text:
-                                ' ${formatLoggedTime(sharedAt, locale: context.locale.languageCode)}',
-                            style: dashMeta(),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (meal.portionFactor < 1)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: KalloSpacing.sp2,
-                        vertical: 1,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: kTrack,
-                        borderRadius: BorderRadius.all(Radius.circular(99)),
-                      ),
-                      child: Text(
-                        tr(
-                          'groups.feed.portion',
-                          namedArgs: {'portion': _fraction(meal.portionFactor)},
-                        ),
-                        style: dashMeta(),
-                      ),
-                    ),
-                ],
-              ),
+              FeedEntryIdentity(meal: meal, name: name, sharedAt: sharedAt),
               const SizedBox(height: kFeedTight),
               // Meal text, calorie-share bar and macro legend are one block
               // now — the app-wide [MealBlock] anatomy, shared with Recent

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat';
+import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat/occasions';
 import { cheatOccasionsQuerySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 

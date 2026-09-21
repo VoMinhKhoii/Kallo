@@ -27,12 +27,12 @@ vi.mock('motion/react', () => ({
   },
 }));
 
-import { FeedEntry } from '@/components/groups/feed-entry';
+import { FeedEntry } from '@/components/groups/feed/feed-entry';
 import {
   SHARE_ID,
   sharedMealEntryFixture,
   shareReplyFixture,
-} from './fixtures';
+} from '../../__tests__/fixtures';
 
 /** An answered, hearted post: this suite is about the figures the glyph row
  * carries, so the shared fixture's quiet defaults are the wrong starting
@@ -138,5 +138,63 @@ describe('FeedEntry', () => {
 
     const heart = screen.getByRole('button', { name: 'heart' });
     expect(heart).not.toHaveTextContent(/\d/);
+  });
+
+  it("offers to copy someone else's precise post", () => {
+    render(<FeedEntry entry={entryFixture()} />);
+
+    expect(screen.getByRole('button', { name: 'logCopy' })).toBeInTheDocument();
+  });
+
+  it('marks a cheat post as a cheat occasion', () => {
+    // It used to be indistinguishable from a weighed meal: same bar, same
+    // exact kcal. That claimed a precision the logger never had.
+    const entry = entryFixture();
+    render(
+      <FeedEntry
+        entry={{
+          ...entry,
+          meal: {
+            ...entry.meal,
+            entryMode: 'cheat',
+          },
+        }}
+      />
+    );
+
+    // The chip and the `≈` are the whole difference. Everything else is the
+    // ordinary post anatomy — the composition bar and the macro legend stay,
+    // because it is still a meal someone ate and a different shape made it
+    // harder to read rather than more honest.
+    expect(screen.getByText('badge')).toBeInTheDocument();
+    expect(screen.getByText(/≈/)).toBeInTheDocument();
+    // The protein figure from the fixture, proving the legend survived — the
+    // cheat branch used to replace this whole block.
+    expect(screen.getByText(/38\s*g/)).toBeInTheDocument();
+  });
+
+  it('leaves a precise post untouched', () => {
+    render(<FeedEntry entry={entryFixture()} />);
+
+    expect(screen.queryByText('badge')).not.toBeInTheDocument();
+    expect(screen.queryByText(/≈/)).not.toBeInTheDocument();
+    // The exact kcal figure, no approximation marker.
+    expect(screen.getByText('420 kcal')).toBeInTheDocument();
+  });
+
+  it('hides the copy action on a cheat post', () => {
+    // It has no item rows to reproduce, so the server refuses it — the button
+    // was a guaranteed error. Cheat meals travel as a directed invite, where
+    // the recipient reopens the sliders and sets their own amounts.
+    const entry = entryFixture();
+    render(
+      <FeedEntry
+        entry={{ ...entry, meal: { ...entry.meal, entryMode: 'cheat' } }}
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'logCopy' })
+    ).not.toBeInTheDocument();
   });
 });

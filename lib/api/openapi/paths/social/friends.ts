@@ -159,6 +159,18 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/v1/groups/invites/accept-cheat': {
+    post: authed({
+      operationId: 'stageCheatMealShareInvite',
+      summary: 'Take a cheat-meal invite by reopening its sliders',
+      description:
+        'Logs NOTHING. A cheat meal has no items to copy and its numbers are slider positions, so taking the offer re-stages the sender’s spec — seeded with their chosen amounts — as a pending analysis of the caller’s own. The caller adjusts the sliders and confirms through the ordinary cheat path. Consumes the invite.',
+      tags: TAGS,
+      body: inviteIdBody(),
+      ok: ref('StagedCheatAnalysis'),
+    }),
+  },
+
   '/api/v1/groups/invites/dismiss': {
     post: authed({
       operationId: 'dismissMealShareInvite',

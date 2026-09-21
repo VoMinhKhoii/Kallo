@@ -17,6 +17,7 @@ import '../widgets/feed/feed_area.dart';
 import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
+import '../data/handoff_slots.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
 /// strip (in the header) and the feed share one source of truth — mirrors the
@@ -91,6 +92,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     // claim the parked meal.
     if (ref.watch(pendingMealProvider) != null && _selectedDate != today) {
       _selectedDate = today;
+    }
+
+    // Someone asked for a SPECIFIC day — taking a cheat share parks the day its
+    // staged card lives on, which is the day the meal was eaten and usually not
+    // today. Same plain-assignment reasoning as above: we are inside the build
+    // this provider triggered, and the value is consumed a few lines down.
+    final pendingDay = ref.watch(pendingLoggingDayProvider);
+    if (pendingDay != null) {
+      _selectedDate = pendingDay;
+      // Claimed — clear it after this frame so a rebuild, a tab switch back or
+      // a hot reload cannot drag the user off the day they paged to next.
+      Future.microtask(
+        () => ref.read(pendingLoggingDayProvider.notifier).state = null,
+      );
     }
 
     // The date chip MORPHS in place into the week strip (fixed height, so the

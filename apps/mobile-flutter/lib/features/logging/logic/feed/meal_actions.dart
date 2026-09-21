@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../models/http/api_error.dart';
 import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../circle/data/circle_providers.dart'
+    show mealShareInvitesProvider;
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
 import '../../data/mutations/persisted_meal_mutations.dart';
@@ -126,6 +128,15 @@ class FeedMealActions {
     }
     if (!context.mounted) return;
     invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
+    // Discarding a card staged from a friend's cheat offer hands that offer
+    // back (`releaseInvite`), so it belongs in the inbox again — and the
+    // pill-nav badge watches that same auto-dispose provider, so without this
+    // both keep serving a cached empty list until a pull-to-refresh. Nothing
+    // here can tell whether THIS card owed an offer; only the server knows, so
+    // the refetch is unconditional. A discard is a rare, deliberate action —
+    // one extra request is cheaper than a reversible "not now" that silently
+    // looks like it did nothing.
+    ref.invalidate(mealShareInvitesProvider);
     try {
       await ref
           .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)

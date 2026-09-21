@@ -60,14 +60,25 @@ class PersistedMeal {
 
 /// A day's logging payload — the dashboard only reads [persistedMeals].
 class LoggingDayData {
-  const LoggingDayData({required this.persistedMeals});
+  const LoggingDayData({
+    required this.persistedMeals,
+    this.releasedInvites = false,
+  });
 
   final List<PersistedMeal> persistedMeals;
+
+  /// The server's staging-row sweep handed at least one meal-share offer back
+  /// while serving this day. The dashboard ignores everything else about the
+  /// sweep, but it cannot ignore this: `loadLoggingDay` runs the sweep whoever
+  /// asked for the day, so whichever surface loads first is the only one told,
+  /// and a dropped signal here leaves the nav badge stale for good.
+  final bool releasedInvites;
 
   factory LoggingDayData.fromJson(Map<String, dynamic> json) => LoggingDayData(
     persistedMeals:
         ((json['persistedMeals'] as List<dynamic>?) ?? const [])
             .map((e) => PersistedMeal.fromJson(e as Map<String, dynamic>))
             .toList(),
+    releasedInvites: json['releasedInvites'] as bool? ?? false,
   );
 }

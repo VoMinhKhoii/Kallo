@@ -56,6 +56,9 @@ function sharedMeal(index: number, sharedAt: Date) {
     carbohydrateG: 50,
     fatG: 15,
     portionFactor: 1,
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
@@ -141,6 +144,19 @@ describe('sharedMealsBefore', () => {
 });
 
 describe('toSharedMealEntry', () => {
+  it('marks a cheat post as one', () => {
+    // The whole difference a shared cheat meal needs on the wire. The post
+    // renders the badge and an `≈` from this and nothing else — the sliders,
+    // the alcohol figure and the P/C/F breakdown stay on the owner's own card,
+    // where someone is actually reading them.
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-01T00:00:00Z')),
+      entryMode: 'cheat',
+    };
+
+    expect(toSharedMealEntry(row, USER_A).meal.entryMode).toBe('cheat');
+  });
+
   it('tags isSelf based on the actor id', () => {
     const row = sharedMeal(1, new Date('2026-01-01T00:00:00Z'));
 
