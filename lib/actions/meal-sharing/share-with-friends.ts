@@ -226,7 +226,14 @@ export async function shareMealWithFriendsAction(input: {
           respondedAt: null,
           createdAt: now,
         },
-        setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
+        // "Accepted" alone used to block a re-share forever. It still does for
+        // an offer that became a meal — the recipient has it, sending it again
+        // would hand them a duplicate. But a cheat offer is spent the moment it
+        // is TAKEN, before any meal exists, so an accepted row with no meal is
+        // one somebody walked away from. `releaseInvite` hands those back at
+        // the two places a staged card dies; this covers the row whatever
+        // happened to the card, so an abandoned offer can always be re-sent.
+        setWhere: sql`${mealShareInvites.status} <> 'accepted' OR ${mealShareInvites.acceptedMealId} IS NULL`,
       })
       .returning({
         id: mealShareInvites.id,

@@ -733,6 +733,17 @@ export const pendingAnalyses = pgTable(
       () => pipelineRequests.id,
       { onDelete: 'set null' }
     ),
+    // The meal-share invite this card was staged from, if any — set only by
+    // stageCheatInviteAction. Taking a cheat offer SPENDS it (the invite flips
+    // to 'accepted' at stage time, because confirm is the generic save path and
+    // knows nothing about invites), so without this link discarding the card
+    // left the offer consumed with no meal to show for it and the sender
+    // permanently unable to re-send. Discard and the reaper read it back and
+    // hand the offer to the recipient again.
+    sourceInviteId: uuid('source_invite_id').references(
+      () => mealShareInvites.id,
+      { onDelete: 'set null' }
+    ),
     // Mirrors meals.entry_mode so confirmAndSaveMealAction can branch without
     // unpacking the JSONB. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
@@ -756,6 +767,9 @@ export const pendingAnalyses = pgTable(
       table.userId,
       table.loggedAt
     ),
+    // Read on every discard and on the reaper's sweep, both of which resolve a
+    // row back to the offer that produced it.
+    index('pending_analyses_source_invite_idx').on(table.sourceInviteId),
     // One live staging row per (user, attempt): the analyze insert upserts on
     // this so a re-analysis supersedes its predecessor rather than orphaning it.
     uniqueIndex('pending_analyses_user_attempt_key').on(

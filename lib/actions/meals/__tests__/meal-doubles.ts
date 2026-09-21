@@ -47,6 +47,14 @@ export const schema = {
     entryMode: 'pendingAnalyses.entryMode',
     expiresAt: 'pendingAnalyses.expiresAt',
     loggedAt: 'pendingAnalyses.loggedAt',
+    sourceInviteId: 'pendingAnalyses.sourceInviteId',
+  },
+  mealShareInvites: {
+    id: 'mealShareInvites.id',
+    toUserId: 'mealShareInvites.toUserId',
+    status: 'mealShareInvites.status',
+    acceptedMealId: 'mealShareInvites.acceptedMealId',
+    respondedAt: 'mealShareInvites.respondedAt',
   },
   unmatchedIngredients: {
     queryText: 'unmatchedIngredients.queryText',

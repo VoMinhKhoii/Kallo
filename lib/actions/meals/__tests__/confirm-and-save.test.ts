@@ -305,6 +305,61 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.mealSlot).toBe('dinner');
   });
 
+  it.each([
+    [
+      "binds a card staged from a friend's offer to the meal it became",
+      UUID_2,
+      1,
+    ],
+    ['writes no invite at all for an ordinary cheat re-log', null, 0],
+  ])('%s', async (_name, sourceInviteId, expectedUpdates) => {
+    // `accepted_meal_id` is what separates "took the offer and ate it" from
+    // "took the offer and walked away". The precise accept writes it inline;
+    // a cheat offer has no meal at the moment it is taken, so the binding has
+    // to happen here. Get this wrong and `releaseInvite` starts handing back
+    // offers the recipient already has in their diary.
+    const capturedValues: Record<string, unknown>[] = [];
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Buffet nướng',
+            entryMode: 'cheat',
+            pipelineResult: {
+              entryMode: 'cheat',
+              spec: {
+                mealSlot: 'dinner' as const,
+                confidence: 'medium' as const,
+                sliders: [],
+              },
+            },
+            loggedAt: LOGGED_AT,
+            sourceInviteId,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(
+      mockInsertRouting(capturedValues as unknown[])
+    );
+    const boundTo: Record<string, unknown>[] = [];
+    mockTxUpdate.mockReturnValue({
+      set: vi.fn((vals: Record<string, unknown>) => {
+        boundTo.push(vals);
+        return { where: vi.fn().mockResolvedValue(undefined) };
+      }),
+    });
+
+    await confirmAndSaveMealAction({ analysisId: UUID_1, levels: {} });
+
+    expect(boundTo).toHaveLength(expectedUpdates);
+    if (expectedUpdates > 0) {
+      expect(boundTo[0]).toEqual({ acceptedMealId: UUID_MEAL });
+    }
+  });
+
   it('should reject invalid UUID', async () => {
     await expect(
       confirmAndSaveMealAction({ analysisId: 'not-a-uuid' })

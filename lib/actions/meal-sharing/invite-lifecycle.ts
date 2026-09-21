@@ -1,6 +1,11 @@
 // ---------------------------------------------------------------------------
-// Taking a directed meal-share offer — the part every path does identically
+// The life of a directed meal-share offer: claimed, bound to a meal, or handed
+// back
 // ---------------------------------------------------------------------------
+// One module for every write that moves an invite's status, so the rules that
+// decide when an offer is spent live in one place rather than at each ending.
+//
+// CLAIMING is the part every taking path does identically.
 // Two actions consume a pending invite: `acceptMealShareInviteAction` copies
 // the meal into the reader's diary, and `stageCheatInviteAction` reopens the
 // sender's sliders instead. They diverge completely in what they WRITE, and
@@ -25,7 +30,7 @@
 // where drifting means leaking one user's meal to another. Here it is one
 // function they both call, and a fix lands on both by construction.
 
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
@@ -198,4 +203,68 @@ export async function claimPendingInvite<TChecked = void>(
   }
 
   return { invite, source, copyFactor: claimed.copyFactor, checked };
+}
+
+/**
+ * Hand a spent offer back, because it never produced a meal.
+ *
+ * Taking a CHEAT offer spends it at stage time: the invite flips to `accepted`
+ * and the recipient gets a slider card to set their own amounts on. Confirm is
+ * the generic save path and knows nothing about invites, so leaving the invite
+ * pending until then would let the inbox stage the same offer over and over.
+ * The cost used to be permanent — discard the card and the offer was gone, with
+ * the sender blocked from re-sending by `share-with-friends`'s `setWhere`.
+ *
+ * So the endings that destroy a staged card without producing a meal
+ * (`discardPendingAnalysisAction`, the reaper in `load-meals.ts`) call this.
+ *
+ * The predicate is the whole safety. `status = 'accepted'` AND
+ * `accepted_meal_id IS NULL` is precisely "spent but nothing came of it" — an
+ * offer that became a meal is never re-opened, and `to_user_id = userId` keeps
+ * it to the person it was addressed to. Anything else matches zero rows and
+ * this returns false.
+ *
+ * Silent by design: the sender was told the offer landed and is told nothing
+ * now, the same way a dismiss says nothing (see `invite-response.ts`).
+ */
+export async function releaseInvite(
+  tx: AppTransaction,
+  options: { inviteId: string; userId: string }
+): Promise<boolean> {
+  const released = await tx
+    .update(mealShareInvites)
+    .set({ status: 'pending', respondedAt: null })
+    .where(
+      and(
+        eq(mealShareInvites.id, options.inviteId),
+        eq(mealShareInvites.toUserId, options.userId),
+        eq(mealShareInvites.status, 'accepted'),
+        isNull(mealShareInvites.acceptedMealId)
+      )
+    )
+    .returning({ id: mealShareInvites.id });
+
+  return released.length > 0;
+}
+
+/**
+ * Point a taken offer at the meal it became.
+ *
+ * The precise accept has always done this inline (`invite-response.ts`). The
+ * cheat path could not: at stage time there is no meal yet, only a card. So it
+ * happens at confirm instead, which is what makes `accepted_meal_id IS NULL`
+ * mean "abandoned" rather than "cheat" — the distinction `releaseInvite` above
+ * and the re-share upsert both turn on.
+ *
+ * Unguarded beyond the id: the caller reached this by consuming a staged row
+ * that carried the invite, inside the transaction that wrote the meal.
+ */
+export async function bindInviteToMeal(
+  tx: AppTransaction,
+  options: { inviteId: string; mealId: string }
+): Promise<void> {
+  await tx
+    .update(mealShareInvites)
+    .set({ acceptedMealId: options.mealId })
+    .where(eq(mealShareInvites.id, options.inviteId));
 }

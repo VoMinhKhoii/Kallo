@@ -7,6 +7,7 @@ import {
   buildPersistedMeal,
   extractNutritionValues,
 } from '@/lib/actions/logging/persisted-meal';
+import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
@@ -234,16 +235,34 @@ async function loadPendingAnalysesByDateForUser(
 
 // Best-effort purge of a user's long-abandoned pending analyses. Never throws:
 // its result is discarded and its failure must not affect the day load.
+//
+// Transactional since the reap started handing invites back: a card staged from
+// a friend's cheat offer spent that offer when it was taken, and reaping the
+// card is the last moment anyone could notice. Without this the dead end was
+// not fixed by the discard path, only postponed by seven days for anyone who
+// walked away from the card instead of dismissing it.
 async function reapAbandonedPendingAnalyses(userId: string): Promise<void> {
   try {
-    await db
-      .delete(pendingAnalyses)
-      .where(
-        and(
-          eq(pendingAnalyses.userId, userId),
-          sql`${pendingAnalyses.expiresAt} < now() - interval '7 days'`
+    await db.transaction(async (tx) => {
+      const reaped = await tx
+        .delete(pendingAnalyses)
+        .where(
+          and(
+            eq(pendingAnalyses.userId, userId),
+            sql`${pendingAnalyses.expiresAt} < now() - interval '7 days'`
+          )
         )
-      );
+        .returning({ sourceInviteId: pendingAnalyses.sourceInviteId });
+
+      for (const row of reaped) {
+        if (row.sourceInviteId) {
+          await releaseInvite(tx, {
+            inviteId: row.sourceInviteId,
+            userId,
+          });
+        }
+      }
+    });
   } catch (error) {
     console.error(
       '[loadLoggingDay] failed to reap abandoned pending analyses',

@@ -32,9 +32,19 @@ export async function stageCheatSliders(
     levels: CheatSliderLevels;
     rawInput: string;
     loggedAt: Date;
+    /**
+     * The meal-share invite this card came from, when it came from one.
+     *
+     * Only `stageCheatInviteAction` passes it. Taking a cheat offer spends the
+     * invite at stage time, so the card has to remember which offer it owes —
+     * discarding it hands that offer back (`releaseInvite`) and confirming it
+     * binds the offer to the new meal (`bindInviteToMeal`). A re-log of my own
+     * past occasion has no invite and leaves this null.
+     */
+    sourceInviteId?: string;
   }
 ): Promise<StagedCheatAnalysis> {
-  const { userId, spec, levels, rawInput, loggedAt } = options;
+  const { userId, spec, levels, rawInput, loggedAt, sourceInviteId } = options;
   const repeatSpec = withLevelsAsDefaults(spec, levels);
 
   const [inserted] = await tx
@@ -45,6 +55,7 @@ export async function stageCheatSliders(
       rawInput,
       entryMode: 'cheat',
       loggedAt,
+      sourceInviteId,
     })
     .returning({ id: pendingAnalyses.id });
 

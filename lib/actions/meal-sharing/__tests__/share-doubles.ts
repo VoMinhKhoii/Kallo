@@ -38,6 +38,7 @@ export const schema = {
     fromUserId: 'mealShareInvites.fromUserId',
     status: 'mealShareInvites.status',
     copyFactor: 'mealShareInvites.copyFactor',
+    acceptedMealId: 'mealShareInvites.acceptedMealId',
   },
   friendships: {
     id: 'friendships.id',
@@ -210,8 +211,15 @@ export const friendEdge = { userLow: MOCK_USER.id, userHigh: UUID_FRIEND };
 
 // Route tx.insert by table: meals → returning [{id}], mealShares → the default
 // circle-share chain, meal_share_invites / mealItems → capture the values.
+/** What `routeInserts` writes back: the values a statement was handed, and for
+ *  the invite upsert its conflict clause too. */
+export type InsertCaptures = Record<
+  string,
+  { vals: unknown; conflict?: unknown }
+>;
+
 export function routeInserts(
-  captured: Record<string, { vals: unknown }>,
+  captured: InsertCaptures,
   opts: {
     /**
      * What the invite upsert's RETURNING yields, given the rows it was handed.
@@ -249,8 +257,11 @@ export function routeInserts(
                 toUserId: row.toUserId,
               }));
           return {
-            onConflictDoUpdate: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue(written),
+            onConflictDoUpdate: vi.fn((clause: unknown) => {
+              // The upsert's `setWhere` decides whether a re-share reaches a
+              // recipient at all, so a test has to be able to look at it.
+              captured.invites = { vals, conflict: clause };
+              return { returning: vi.fn().mockResolvedValue(written) };
             }),
           };
         }),

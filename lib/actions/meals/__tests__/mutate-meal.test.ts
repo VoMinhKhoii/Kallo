@@ -114,21 +114,80 @@ describe('discardPendingAnalysisAction', () => {
     vi.clearAllMocks();
   });
 
-  /** The delete resolves through .where().returning(), like deleteMealAction. */
+  /** The delete resolves through .where().returning(), inside the tx. */
   function queueDiscard(rows: unknown[]) {
-    mockDbDelete.mockReturnValue({
+    mockTxDelete.mockReturnValue({
       where: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue(rows),
       }),
     });
   }
 
+  /** `releaseInvite`'s guarded UPDATE — captures its SET and its predicate. */
+  function queueRelease(rows: unknown[]) {
+    const captured: { set?: unknown; where?: unknown } = {};
+    mockTxUpdate.mockReturnValue({
+      set: vi.fn((vals: unknown) => {
+        captured.set = vals;
+        return {
+          where: vi.fn((predicate: unknown) => {
+            captured.where = predicate;
+            return { returning: vi.fn().mockResolvedValue(rows) };
+          }),
+        };
+      }),
+    });
+    return captured;
+  }
+
   it('should return success when the staged analysis is discarded', async () => {
-    queueDiscard([{ id: UUID_1 }]);
+    queueDiscard([{ id: UUID_1, sourceInviteId: null }]);
 
     await expect(
       discardPendingAnalysisAction({ analysisId: UUID_1 })
     ).resolves.toEqual({ success: true });
+  });
+
+  it('leaves invites alone for a card that came from nobody', async () => {
+    // Almost every staged card is my own logging attempt. Touching
+    // meal_share_invites for one would be a write with nothing to write about.
+    queueDiscard([{ id: UUID_1, sourceInviteId: null }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it("hands a friend's offer back when its card is thrown away", async () => {
+    // Taking a cheat offer SPENDS it — the invite flips to accepted before any
+    // meal exists. Discarding the card is "not now", and "not now" must not
+    // cost the recipient that meal permanently, nor block the sender from
+    // ever offering it again.
+    queueDiscard([{ id: UUID_1, sourceInviteId: UUID_2 }]);
+    const captured = queueRelease([{ id: UUID_2 }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    expect(mockTxUpdate).toHaveBeenCalledTimes(1);
+    expect(captured.set).toEqual({ status: 'pending', respondedAt: null });
+  });
+
+  it('scopes the release to me, to a spent offer, and to one with no meal', async () => {
+    // The predicate is the entire safety of this write. Without `status =
+    // accepted` it could re-open a dismissed offer; without `accepted_meal_id
+    // IS NULL` it could re-offer a meal the recipient already has; without
+    // `to_user_id` it is someone else's invite. Serialized, because Drizzle
+    // bypasses RLS and these clauses are the only guard there is.
+    queueDiscard([{ id: UUID_1, sourceInviteId: UUID_2 }]);
+    const captured = queueRelease([{ id: UUID_2 }]);
+
+    await discardPendingAnalysisAction({ analysisId: UUID_1 });
+
+    const predicate = JSON.stringify(captured.where);
+    expect(predicate).toContain('mealShareInvites.toUserId');
+    expect(predicate).toContain('mealShareInvites.status');
+    expect(predicate).toContain('mealShareInvites.acceptedMealId');
+    expect(predicate).toContain('accepted');
   });
 
   it("should throw for an analysis that is gone or someone else's", async () => {

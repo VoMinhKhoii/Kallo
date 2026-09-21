@@ -197,6 +197,22 @@ describe('stageCheatInviteAction', () => {
     expect(result.loggedAt).toBe(LOGGED_AT.toISOString());
   });
 
+  it('remembers which offer the card owes, so discarding can hand it back', async () => {
+    // The claim above already spent the invite — confirm is the generic save
+    // path and knows nothing about invites, so leaving it pending would let the
+    // inbox stage the same offer over and over. That makes this link the only
+    // way back: discard and the reaper read it to release the offer, and
+    // confirm reads it to bind the offer to the meal it became. Without it,
+    // walking away from this card costs the recipient the meal permanently and
+    // blocks the sender from ever re-sending it.
+    queueHappyPath();
+    const captured = captureStage();
+
+    await stageCheatInviteAction({ inviteId: UUID_INVITE });
+
+    expect(captured.staged?.sourceInviteId).toBe(UUID_INVITE);
+  });
+
   it('never writes acceptedMealId — there is no meal yet', async () => {
     queueHappyPath();
     const captures: Record<string, unknown>[] = [];

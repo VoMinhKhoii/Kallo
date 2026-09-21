@@ -11,7 +11,7 @@
 // separate canViewShare-gated log-shared action instead.
 
 import { and, eq } from 'drizzle-orm';
-import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';

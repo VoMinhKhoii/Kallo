@@ -1,0 +1,3 @@
+ALTER TABLE "pending_analyses" ADD COLUMN "source_invite_id" uuid;--> statement-breakpoint
+ALTER TABLE "pending_analyses" ADD CONSTRAINT "pending_analyses_source_invite_id_meal_share_invites_id_fk" FOREIGN KEY ("source_invite_id") REFERENCES "public"."meal_share_invites"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "pending_analyses_source_invite_idx" ON "pending_analyses" USING btree ("source_invite_id");

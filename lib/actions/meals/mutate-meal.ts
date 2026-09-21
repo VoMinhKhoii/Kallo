@@ -9,6 +9,7 @@ import {
   nutritionValuesToRow,
   scaleNutritionRow,
 } from '@/lib/actions/logging/persisted-meal';
+import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import {
@@ -83,21 +84,42 @@ export async function discardPendingAnalysisAction(input: {
   const parsed = discardPendingSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  const [discarded] = await db
-    .delete(pendingAnalyses)
-    .where(
-      and(
-        eq(pendingAnalyses.id, parsed.analysisId),
-        eq(pendingAnalyses.userId, user.id)
+  // Transactional because of the release below: a delete that committed while
+  // the release failed would leave the offer spent with no card to show for it,
+  // which is the exact dead end this exists to close.
+  return db.transaction(async (tx) => {
+    const [discarded] = await tx
+      .delete(pendingAnalyses)
+      .where(
+        and(
+          eq(pendingAnalyses.id, parsed.analysisId),
+          eq(pendingAnalyses.userId, user.id)
+        )
       )
-    )
-    .returning({ id: pendingAnalyses.id });
+      .returning({
+        id: pendingAnalyses.id,
+        sourceInviteId: pendingAnalyses.sourceInviteId,
+      });
 
-  if (!discarded) {
-    throw Errors.validationFailed('Phân tích không tồn tại hoặc đã được lưu.');
-  }
+    if (!discarded) {
+      throw Errors.validationFailed(
+        'Phân tích không tồn tại hoặc đã được lưu.'
+      );
+    }
 
-  return { success: true };
+    // A card staged from a friend's cheat offer owes that offer back. Throwing
+    // this card away is the recipient saying "not now", and "not now" must not
+    // cost them the meal permanently — see `releaseInvite` for why the offer
+    // was already spent by the time they got here.
+    if (discarded.sourceInviteId) {
+      await releaseInvite(tx, {
+        inviteId: discarded.sourceInviteId,
+        userId: user.id,
+      });
+    }
+
+    return { success: true };
+  });
 }
 
 // ---------------------------------------------------------------------------

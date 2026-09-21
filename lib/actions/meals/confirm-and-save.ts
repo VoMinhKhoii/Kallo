@@ -10,6 +10,7 @@ import {
   inferMealSlot,
   nutritionValuesToRow,
 } from '@/lib/actions/logging/persisted-meal';
+import { bindInviteToMeal } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
@@ -113,13 +114,28 @@ export async function confirmAndSaveMealAction(input: {
     // user's chosen levels (server-authoritative), insert a single meal row
     // with zero meal_items, and store the spec/levels for re-edit.
     if (pending.entryMode === 'cheat') {
-      return confirmCheatMeal({
+      const saved = await confirmCheatMeal({
         tx,
         userId: user.id,
         pending,
         mealId: parsed.mealId,
         levels: parsed.levels ?? {},
       });
+
+      // A card staged from a friend's offer: point that offer at the meal it
+      // finally became. The precise accept writes this inline, but a cheat
+      // offer has no meal at the moment it is taken — only a card — so the
+      // binding has to wait for here. It is what makes `accepted_meal_id IS
+      // NULL` mean ABANDONED, which is the distinction `releaseInvite` and the
+      // re-share upsert both turn on.
+      if (pending.sourceInviteId) {
+        await bindInviteToMeal(tx, {
+          inviteId: pending.sourceInviteId,
+          mealId: saved.mealId,
+        });
+      }
+
+      return saved;
     }
 
     const pipelineResult = pending.pipelineResult as PipelineResult;

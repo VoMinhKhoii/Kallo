@@ -110,6 +110,7 @@ import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
   cheatSourceMeal,
   friendEdge,
+  type InsertCaptures,
   MOCK_USER as mockUser,
   PROFILE_CREATED_AT,
   routeInserts,
@@ -139,6 +140,34 @@ describe('shareMealWithFriendsAction', () => {
       })
     ).rejects.toThrow('không thuộc về bạn');
     expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('lets an abandoned offer be re-sent, but not one that became a meal', async () => {
+    // `setWhere` used to be `status <> 'accepted'` flat, which read "accepted"
+    // as "they have it". For a cheat offer that is wrong: it is spent the
+    // moment it is TAKEN, before any meal exists, so an accepted row with a
+    // null accepted_meal_id is one somebody walked away from. The predicate is
+    // the only thing standing between "you can send it again" and a permanent
+    // dead end — and, in the other direction, between that and handing a
+    // recipient a duplicate of a meal already in their diary.
+    queueLimitSelect([cheatSourceMeal()]);
+    queueWhereSelect([friendEdge]);
+    const captured: InsertCaptures = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    // Serialized: the doubles cannot run Postgres, so the clause itself is
+    // what gets asserted. Both halves have to be there — either one alone is a
+    // different rule.
+    const conflict = JSON.stringify(captured.invites.conflict);
+    expect(conflict).toContain("<> 'accepted' OR");
+    expect(conflict).toContain('mealShareInvites.acceptedMealId');
+    expect(conflict).toContain('IS NULL');
   });
 
   it('reports nobody offered when every invite was skipped', async () => {

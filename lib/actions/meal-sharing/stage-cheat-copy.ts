@@ -18,7 +18,7 @@
 // a different source of authority: that one re-opens MY past occasion, this one
 // re-opens a friend's, authorized solely by a pending invite addressed to me.
 
-import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { stageCheatSliders } from '@/lib/actions/meals/cheat/stage-sliders';
 import { Errors } from '@/lib/core/errors/catalog';
 import type {
@@ -105,6 +105,10 @@ export async function stageCheatInviteAction(input: {
       levels: checked.levels,
       rawInput: source.rawInput,
       loggedAt: source.loggedAt,
+      // What makes the claim above reversible. Without it, discarding this card
+      // leaves the offer spent with no meal to show for it and the sender
+      // unable to re-send — see `releaseInvite`.
+      sourceInviteId: parsed.inviteId,
     });
 
     // Tell the sender their offer landed. Fired now, when I TAKE the offer,

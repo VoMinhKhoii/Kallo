@@ -104,7 +104,7 @@ vi.mock(
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
-import { claimPendingInvite } from '@/lib/actions/meal-sharing/claim-invite';
+import { claimPendingInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import {
   acceptMealShareInviteAction,
   dismissMealShareInviteAction,
