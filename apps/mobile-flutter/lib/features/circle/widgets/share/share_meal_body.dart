@@ -20,6 +20,7 @@ class ShareMealBody extends StatelessWidget {
   const ShareMealBody({
     super.key,
     required this.mode,
+    required this.allowSplit,
     required this.seated,
     required this.parts,
     required this.totalKcal,
@@ -33,6 +34,10 @@ class ShareMealBody extends StatelessWidget {
   });
 
   final String mode;
+
+  /// False for a cheat meal: its numbers are slider positions, not a dish that
+  /// can be divided. The tabs give way to a line saying what happens instead.
+  final bool allowSplit;
   final List<CircleProfile> seated;
   final List<int> parts;
   final double? totalKcal;
@@ -54,20 +59,26 @@ class ShareMealBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SegmentedStrip(
-          options: [
-            OptionStripItem(
-              value: 'whole',
-              label: tr('groups.shareMeal.mode.whole'),
-            ),
-            OptionStripItem(
-              value: 'split',
-              label: tr('groups.shareMeal.mode.split'),
-            ),
-          ],
-          activeIndex: mode == 'whole' ? 0 : 1,
-          onChange: onModeChanged,
-        ),
+        // A sentence, not a disabled tab: a greyed-out "Chia phần" invites a
+        // tap and then explains nothing, while this says what will happen —
+        // and pre-frames the slider card the recipient is about to meet.
+        if (!allowSplit)
+          Text(tr('groups.shareMeal.cheatWholeOnly'), style: dashMeta())
+        else
+          SegmentedStrip(
+            options: [
+              OptionStripItem(
+                value: 'whole',
+                label: tr('groups.shareMeal.mode.whole'),
+              ),
+              OptionStripItem(
+                value: 'split',
+                label: tr('groups.shareMeal.mode.split'),
+              ),
+            ],
+            activeIndex: mode == 'whole' ? 0 : 1,
+            onChange: onModeChanged,
+          ),
         const SizedBox(height: KalloSpacing.sp4),
         // The meter's height differs between the two modes, so the change is
         // animated rather than a jump the eye reads as a relayout.

@@ -282,14 +282,6 @@ final mealShareInvitesProvider =
       });
     });
 
-/// Local calendar date (YYYY-MM-DD) — the day an accepted meal is stamped.
-String _todayLocalDate() {
-  final now = DateTime.now();
-  final mm = now.month.toString().padLeft(2, '0');
-  final dd = now.day.toString().padLeft(2, '0');
-  return '${now.year}-$mm-$dd';
-}
-
 /// Offer a saved meal to specific friends as a full copy or an even split
 /// (`POST /api/v1/groups/meal-share`). A split rescales the logger's own meal
 /// down to their share, so the day + wall are invalidated. Throws [ApiError].
@@ -323,37 +315,6 @@ Future<void> shareMealWithFriends(
   container.invalidate(dashboardBundleProvider);
   container.invalidate(dashboardDayProvider);
   container.invalidate(circleFeedProvider);
-}
-
-/// Accept an invite (`POST /api/v1/groups/invites/accept`) — the scaled meal
-/// lands at the SOURCE meal's instant, the same eating event seen from my
-/// diary, so it may sit on an earlier day than today. `loggedDate` is still
-/// sent for wire compatibility and ignored by the server. Invalidating the
-/// `loggingDayProvider` FAMILY (rather than one day's instance) is what makes
-/// the meal appear wherever it actually landed.
-Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
-  final api = ref.read(apiClientProvider);
-  await api.post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {
-    'inviteId': inviteId,
-    'loggedDate': _todayLocalDate(),
-    'timezoneOffset': localTimezoneOffsetMinutes(),
-  });
-  ref.invalidate(mealShareInvitesProvider);
-  ref.invalidate(loggingDayProvider);
-  // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
-  // which read off a separate bundle/day cache.
-  ref.invalidate(dashboardBundleProvider);
-  ref.invalidate(dashboardDayProvider);
-  ref.invalidate(circleFeedProvider);
-}
-
-/// Dismiss an invite (`POST /api/v1/groups/invites/dismiss`).
-Future<void> dismissMealShareInvite(WidgetRef ref, String inviteId) async {
-  final api = ref.read(apiClientProvider);
-  await api.post<dynamic>('/api/v1/groups/invites/dismiss', {
-    'inviteId': inviteId,
-  });
-  ref.invalidate(mealShareInvitesProvider);
 }
 
 /// The result of toggling a meal's circle visibility.

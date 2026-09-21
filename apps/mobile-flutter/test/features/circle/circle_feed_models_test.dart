@@ -85,6 +85,19 @@ void main() {
       expect(entry.meal.isBackfilled, isTrue);
     });
 
+    test('reads entryMode, defaulting to precise for an older server', () {
+      // Drives whether the post offers a copy action. A cheat meal has no item
+      // rows to reproduce, so the server refuses the copy — defaulting the
+      // other way would put a guaranteed error back on the card.
+      final entry = CircleFeedEntry.fromJson(_feedEntryJson());
+      expect(entry.meal.isCheat, isFalse);
+      expect(entry.meal.entryMode, 'precise');
+
+      final json = _feedEntryJson();
+      (json['meal'] as Map<String, dynamic>)['entryMode'] = 'cheat';
+      expect(CircleFeedEntry.fromJson(json).meal.isCheat, isTrue);
+    });
+
     test('parses reactions, replies, and a feed page cursor', () {
       final json = _feedEntryJson(avatarUrl: 'https://cdn.example/ha.jpg')
         ..addAll({

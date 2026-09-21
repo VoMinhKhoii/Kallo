@@ -7,14 +7,13 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
+import 'cheat_meal_actions.dart';
 import '../../logic/format.dart';
 import '../../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
-import '../actions/confirm_meal_removal.dart';
 import '../actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
-import '../actions/meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
 /// PartyPopper badge, an `≈`-prefixed calorie total, and an expandable
@@ -197,23 +196,8 @@ class _CheatMealCardState extends State<CheatMealCard>
                 ),
               ),
         ),
-        if (widget.onRemove != null) ...[
-          const SizedBox(height: LoggingSpacing.actions),
-          Align(
-            alignment: Alignment.centerRight,
-            child: MealActionIconButton(
-              icon: LucideIcons.trash2300,
-              label: 'logging.remove'.tr(),
-              danger: true,
-              onTap: () async {
-                if (await confirmMealRemoval(context)) {
-                  if (!context.mounted) return;
-                  widget.onRemove?.call();
-                }
-              },
-            ),
-          ),
-        ],
+        const SizedBox(height: LoggingSpacing.actions),
+        CheatMealActions(meal: widget.meal, onRemove: widget.onRemove),
       ],
     );
   }

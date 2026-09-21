@@ -107,3 +107,12 @@ class InviteOverflowRow extends StatelessWidget {
     );
   }
 }
+
+/// A macro figure for the invite card's nutrition line, or the N/A dash when
+/// the estimate never resolved.
+String fmtInviteG(double? value) =>
+    value == null ? tr('groups.invites.na') : '${value.round()}g';
+
+/// The same, for the calorie figure that anchors the line's trailing edge.
+String fmtInviteKcal(double? value) =>
+    value == null ? tr('groups.invites.na') : '${value.round()} kcal';

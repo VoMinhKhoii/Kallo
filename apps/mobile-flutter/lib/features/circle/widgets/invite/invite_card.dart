@@ -12,16 +12,12 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/circle_providers.dart';
+import '../../../../services/billing/feature_lock.dart';
+import '../../../logging/logic/open_logging_day.dart';
+import '../../data/invite_mutations.dart';
 import '../portion/portion_seats.dart' show kSeatColors;
 import 'invite_card_parts.dart';
 import 'portion_readout.dart';
-
-String _fmtKcal(double? value) =>
-    value == null ? tr('groups.invites.na') : '${value.round()} kcal';
-
-String _fmtG(double? value) =>
-    value == null ? tr('groups.invites.na') : '${value.round()}g';
 
 /// An offer someone made you, shaped like a Threads notification: the person,
 /// what they did, and ONE live action as a filled pill on the trailing edge.
@@ -47,12 +43,25 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     setState(() => _busy = true);
     HapticFeedback.selectionClick();
     try {
+      // A cheat offer is not "add this meal": nobody can say what I ate from
+      // where THEY put the sliders. Taking it reopens their spec on my own
+      // logging feed, on the day the meal was eaten, and I set my amounts
+      // there — so this navigates instead of toasting.
+      if (widget.invite.isCheat) {
+        final loggedAt = await stageCheatMealShareInvite(ref, widget.invite.id);
+        if (!mounted) return;
+        goToLoggingDay(context, ref, loggedAt);
+        return;
+      }
       await acceptMealShareInvite(ref, widget.invite.id);
       if (!mounted) return;
       showTopToast(context, tr('groups.invites.accepted'));
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
+      // Taking a cheat offer is gated (confirming a cheat meal always was), so
+      // route a 402 to the paywall rather than a dead-end error toast.
+      if (handledFeatureLock(context, error)) return;
       showTopToast(
         context,
         tr('groups.invites.error'),
@@ -132,9 +141,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                     Text(invite.from.label, style: dashName()),
                     Text(
                       tr(
-                        invite.isSplit
-                            ? 'groups.invites.sharedSplit'
-                            : 'groups.invites.sharedCopy',
+                        invite.subtitleKey,
                         namedArgs: {'name': invite.from.label},
                       ),
                       style: dashMeta(),
@@ -146,7 +153,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
               KalloButton(
                 variant: KalloButtonVariant.cta,
                 compact: true,
-                title: tr('groups.invites.acceptShort'),
+                title: tr(invite.acceptLabelKey),
                 loading: _busy,
                 onPressed: _accept,
               ),
@@ -179,10 +186,10 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'P: ${_fmtG(invite.proteinG)}  C: ${_fmtG(invite.carbohydrateG)}  F: ${_fmtG(invite.fatG)}',
+                'P: ${fmtInviteG(invite.proteinG)}  C: ${fmtInviteG(invite.carbohydrateG)}  F: ${fmtInviteG(invite.fatG)}',
                 style: dashCaption(tabular: true),
               ),
-              Text(_fmtKcal(invite.caloriesKcal), style: dashValue()),
+              Text(fmtInviteKcal(invite.caloriesKcal), style: dashValue()),
             ],
           ),
         ],

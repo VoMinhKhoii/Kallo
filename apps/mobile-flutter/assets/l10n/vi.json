@@ -1627,7 +1627,8 @@
         "one": "Đã chia phần với {count} người bạn",
         "other": "Đã chia phần với {count} người bạn"
       },
-      "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại."
+      "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại.",
+      "cheatWholeOnly": "Bữa xả được gửi nguyên phần — bạn của bạn sẽ tự đặt mức."
     },
     "invites": {
       "title": "Được chia sẻ với bạn",
@@ -1642,7 +1643,9 @@
       "loadError": "Không tải được lời mời. Chạm để thử lại.",
       "acceptShort": "Nhận",
       "yourShare": "Bạn {percent}%",
-      "restShare": "Đã chia {percent}%"
+      "restShare": "Đã chia {percent}%",
+      "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
+      "acceptCheat": "Tự đặt mức"
     },
     "invite": {
       "title": "Mời vào vòng kết nối",

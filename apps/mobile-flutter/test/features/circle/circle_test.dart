@@ -157,6 +157,33 @@ void main() {
       expect(invite.fatG, 2.5);
     });
 
+    test('reads a cheat offer, and picks the labels that go with it', () {
+      final invite = MealShareInvite.fromJson(const {
+        'id': 'inv-3',
+        'mode': 'copy',
+        'from': {'userId': 'u4', 'handle': 'mai'},
+        'meal': {'rawInput': 'Buffet nướng', 'entryMode': 'cheat'},
+      });
+
+      expect(invite.isCheat, isTrue);
+      // "Add to my diary" would be a lie: nothing is added until the recipient
+      // has set their own amounts on the slider card.
+      expect(invite.acceptLabelKey, 'groups.invites.acceptCheat');
+      expect(invite.subtitleKey, 'groups.invites.sharedCheat');
+    });
+
+    test('treats a missing entryMode as precise — older servers omit it', () {
+      final invite = MealShareInvite.fromJson(const {
+        'id': 'inv-4',
+        'from': {'userId': 'u5', 'handle': 'nam'},
+        'meal': {'rawInput': 'Phở bò'},
+      });
+
+      expect(invite.isCheat, isFalse);
+      expect(invite.acceptLabelKey, 'groups.invites.acceptShort');
+      expect(invite.subtitleKey, 'groups.invites.sharedCopy');
+    });
+
     test('defaults mode to copy and factor to 1, tolerates null macros', () {
       final invite = MealShareInvite.fromJson(const {
         'id': 'inv-2',

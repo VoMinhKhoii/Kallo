@@ -93,6 +93,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       _selectedDate = today;
     }
 
+    // Someone asked for a SPECIFIC day — taking a cheat share parks the day its
+    // staged card lives on, which is the day the meal was eaten and usually not
+    // today. Same plain-assignment reasoning as above: we are inside the build
+    // this provider triggered, and the value is consumed a few lines down.
+    final pendingDay = ref.watch(pendingLoggingDayProvider);
+    if (pendingDay != null) {
+      _selectedDate = pendingDay;
+      // Claimed — clear it after this frame so a rebuild, a tab switch back or
+      // a hot reload cannot drag the user off the day they paged to next.
+      Future.microtask(
+        () => ref.read(pendingLoggingDayProvider.notifier).state = null,
+      );
+    }
+
     // The date chip MORPHS in place into the week strip (fixed height, so the
     // feed never shifts) — a buttery cross-dissolve, not a panel that opens
     // below. The scrim catches outside-taps to collapse back to the chip.

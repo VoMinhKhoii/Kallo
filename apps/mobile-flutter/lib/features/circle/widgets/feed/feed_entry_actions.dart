@@ -171,7 +171,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
                   ? '${widget.entry.repliesTotal}'
                   : null,
         ),
-        if (!widget.entry.isSelf)
+        // Hidden on a cheat post: it has no item rows to reproduce, so the
+        // server refuses the copy and this button was a guaranteed error. A
+        // cheat meal travels as a directed invite instead, where the recipient
+        // reopens the sliders and sets their own amounts.
+        if (!(widget.entry.isSelf || widget.entry.meal.isCheat))
           FeedActionButton(
             onTap: _logging ? null : _log,
             icon: LucideIcons.copy300,

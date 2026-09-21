@@ -103,6 +103,7 @@ class CircleFeedMeal {
     this.fatG,
     this.portionFactor = 1,
     this.isBackfilled = false,
+    this.entryMode = 'precise',
   });
 
   final String mealId;
@@ -124,6 +125,14 @@ class CircleFeedMeal {
   /// past-date meal shared "now" would misleadingly read "just now".
   final bool isBackfilled;
 
+  /// `'precise' | 'cheat'`. A cheat meal's numbers come from slider positions
+  /// and it carries no item rows, so it cannot be copied off the wall — the
+  /// feed hides its copy action. Defaults to `'precise'` so an older server
+  /// that does not send the field keeps behaving exactly as before.
+  final String entryMode;
+
+  bool get isCheat => entryMode == 'cheat';
+
   factory CircleFeedMeal.fromJson(Map<String, dynamic> json) => CircleFeedMeal(
     mealId: json['mealId'] as String,
     shareId: json['shareId'] as String? ?? '',
@@ -135,6 +144,7 @@ class CircleFeedMeal {
     fatG: _asDouble(json['fatG']),
     portionFactor: _asDouble(json['portionFactor']) ?? 1,
     isBackfilled: json['isBackfilled'] as bool? ?? false,
+    entryMode: json['entryMode'] as String? ?? 'precise',
   );
 }
 
@@ -255,6 +265,7 @@ class MealShareInvite {
     this.proteinG,
     this.carbohydrateG,
     this.fatG,
+    this.entryMode = 'precise',
   });
 
   final String id;
@@ -271,7 +282,27 @@ class MealShareInvite {
   final double? carbohydrateG;
   final double? fatG;
 
+  /// `'precise' | 'cheat'`. A cheat offer is not accepted in place: taking it
+  /// reopens the sender's sliders on my own logging feed so I can set my own
+  /// amounts. Defaults to `'precise'` for older servers.
+  final String entryMode;
+
   bool get isSplit => mode == 'split';
+
+  bool get isCheat => entryMode == 'cheat';
+
+  /// Which action this offer presents. "Add to my diary" would be a lie on a
+  /// cheat offer — nothing is added until the amounts are set.
+  String get acceptLabelKey =>
+      isCheat ? 'groups.invites.acceptCheat' : 'groups.invites.acceptShort';
+
+  /// The line above the dish name, naming what was sent.
+  String get subtitleKey =>
+      isCheat
+          ? 'groups.invites.sharedCheat'
+          : isSplit
+          ? 'groups.invites.sharedSplit'
+          : 'groups.invites.sharedCopy';
 
   factory MealShareInvite.fromJson(Map<String, dynamic> json) {
     final meal = (json['meal'] as Map<String, dynamic>?) ?? const {};
@@ -285,6 +316,7 @@ class MealShareInvite {
       proteinG: _asDouble(meal['proteinG']),
       carbohydrateG: _asDouble(meal['carbohydrateG']),
       fatG: _asDouble(meal['fatG']),
+      entryMode: meal['entryMode'] as String? ?? 'precise',
     );
   }
 }

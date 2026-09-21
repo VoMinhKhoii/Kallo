@@ -161,6 +161,22 @@ Future<void> stageCheatRepeat(
 /// it, so a rebuild, a tab switch back or a hot reload cannot re-fire it.
 final pendingMealProvider = StateProvider<String?>((ref) => null);
 
+/// A day (YYYY-MM-DD) the feed should jump to, parked on its way in.
+///
+/// The sibling of [pendingMealProvider], and it exists for the same reason:
+/// [LoggingScreen] keeps `_selectedDate` in State so paging back to last
+/// Tuesday survives a tab switch, and `pushOverShell` early-returns when the
+/// route is already open. So "take me to the logging feed" alone can land on
+/// whatever day the user was last looking at.
+///
+/// That is fine for composing a meal, which always means today. It is wrong
+/// for taking a cheat share: the staged slider card is stamped at the SOURCE
+/// meal's instant, so landing on today would show an empty feed and a card the
+/// recipient cannot find.
+///
+/// Exactly one consumer: [LoggingScreen], which nulls the slot as it claims it.
+final pendingLoggingDayProvider = StateProvider<String?>((ref) => null);
+
 /// A message the user asked to EDIT, parked on its way back into the composer.
 ///
 /// The sibling of [pendingMealProvider], and deliberately a separate slot
