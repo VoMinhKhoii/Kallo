@@ -1,13 +1,18 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { InviteCard } from '@/components/groups/meal-invites/invite-card';
+import { InviteDeck } from '@/components/groups/meal-invites/invite-deck';
 import { useMealShareInvites } from '@/hooks/social/sharing/use-meal-share-invites';
 
 /**
  * The Circle inbox: pending copy/split offers addressed to me. Renders nothing
  * when empty (no empty-state chrome above the wall). Accepting drops the meal
- * into today's diary; dismissing clears the offer.
+ * into the day it was eaten; dismissing clears the offer.
+ *
+ * The offers render as a deck, not a list — see `InviteDeck`. Since only the
+ * front one is on screen, the heading carries the count: it is the one place
+ * that says how many are waiting, and a screen reader hears it before reaching
+ * the single set of buttons below.
  */
 export function MealInvites() {
   const t = useTranslations('groups.invites');
@@ -43,12 +48,13 @@ export function MealInvites() {
     <section className="space-y-3">
       <h2 className="font-medium font-sans-display text-[11px] text-kallo-text-muted uppercase tracking-[0.08em]">
         {t('title')}
+        {invites.length > 1 && (
+          <span className="ml-1.5 tabular-nums">
+            {t('waiting', { count: invites.length })}
+          </span>
+        )}
       </h2>
-      <div className="space-y-3">
-        {invites.map((invite) => (
-          <InviteCard key={invite.id} invite={invite} />
-        ))}
-      </div>
+      <InviteDeck invites={invites} />
     </section>
   );
 }

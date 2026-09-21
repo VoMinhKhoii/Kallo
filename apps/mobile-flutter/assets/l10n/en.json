@@ -1649,7 +1649,8 @@
       "yourShare": "You {percent}%",
       "restShare": "Shared out {percent}%",
       "sharedCheat": "{name} shared their cheat meal with you",
-      "acceptCheat": "Set amounts"
+      "acceptCheat": "Set amounts",
+      "waiting": "· {count} waiting"
     },
     "invite": {
       "title": "Invite to your circle",

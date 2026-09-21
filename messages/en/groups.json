@@ -112,7 +112,8 @@
     "error": "That didn't work — try again.",
     "loadError": "Couldn't load your invites. Tap to retry.",
     "sharedCheat": "{name} shared their cheat meal with you",
-    "acceptCheat": "Set my amounts"
+    "acceptCheat": "Set my amounts",
+    "waiting": "· {count} waiting"
   },
   "invite": {
     "title": "Invite to your circle",
