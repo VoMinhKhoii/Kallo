@@ -40,6 +40,12 @@ export function useLogSharedMeal() {
       ]);
       queryClient.invalidateQueries({ queryKey: loggingDayKeys.all });
       queryClient.invalidateQueries({ queryKey: dailyMealsKeys.all });
+      // The copy carries the SOURCE meal's instant, so scrolling back to a post
+      // from last Tuesday and tapping copy files it on last Tuesday. If that
+      // day had no entries before, the timeline has no dot for it and the
+      // picker still reads empty — the toast says "logged" and the meal is
+      // nowhere the user thinks to look.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
       toast.success(t('logSuccess'));
     },
     onError: () => toast.error(t('logError')),

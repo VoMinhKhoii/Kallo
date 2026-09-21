@@ -221,13 +221,13 @@ export async function claimPendingInvite<TChecked = void>(
  * the sender blocked from re-sending by `share-with-friends`'s `setWhere`.
  *
  * So the endings that destroy a staged card without producing a meal
- * (`discardPendingAnalysisAction`, the reaper in `load-meals.ts`) call this.
+ * (`discardPendingAnalysisAction`, `reapAbandonedPendingAnalyses`) call this.
  *
  * The predicate is the whole safety. `status = 'accepted'` AND
  * `accepted_meal_id IS NULL` is precisely "spent but nothing came of it" — an
  * offer that became a meal is never re-opened, and `to_user_id = userId` keeps
- * it to the person it was addressed to. Anything else matches zero rows and
- * this returns false.
+ * it to the person it was addressed to. Anything else matches zero rows, which
+ * is the intended no-op.
  *
  * Silent by design: the sender was told the offer landed and is told nothing
  * now, the same way a dismiss says nothing (see `invite-response.ts`).
@@ -235,8 +235,8 @@ export async function claimPendingInvite<TChecked = void>(
 export async function releaseInvite(
   tx: AppTransaction,
   options: { inviteId: string; userId: string }
-): Promise<boolean> {
-  const released = await tx
+): Promise<void> {
+  await tx
     .update(mealShareInvites)
     .set({ status: 'pending', respondedAt: null })
     .where(
@@ -246,10 +246,7 @@ export async function releaseInvite(
         eq(mealShareInvites.status, 'accepted'),
         isNull(mealShareInvites.acceptedMealId)
       )
-    )
-    .returning({ id: mealShareInvites.id });
-
-  return released.length > 0;
+    );
 }
 
 /**
