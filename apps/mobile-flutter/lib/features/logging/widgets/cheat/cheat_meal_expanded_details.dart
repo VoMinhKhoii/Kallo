@@ -8,7 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/slider_nutrition.dart';
-import 'cheat_slider_card.dart' show cheatSliderColor;
+import '../../../../shared/logic/cheat_slider_palette.dart';
 
 /// The expanded "you set" recap of a saved cheat meal: slider positions with
 /// six-dot stop scales, the macro/kcal total, and the reassurance line.

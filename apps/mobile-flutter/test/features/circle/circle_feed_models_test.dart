@@ -98,6 +98,38 @@ void main() {
       expect(CircleFeedEntry.fromJson(json).meal.isCheat, isTrue);
     });
 
+    test('reads alcohol and the slider recap on a cheat post', () {
+      final json = _feedEntryJson();
+      (json['meal'] as Map<String, dynamic>)
+        ..['entryMode'] = 'cheat'
+        ..['alcoholG'] = 28
+        ..['cheatRecap'] = [
+          {
+            'key': 'drinks',
+            'label': 'Đồ uống',
+            'level': 6,
+            'anchorLabel': 'vài ly',
+          },
+        ];
+
+      final meal = CircleFeedEntry.fromJson(json).meal;
+
+      expect(meal.isCheat, isTrue);
+      // The one calorie source the P/C/F line cannot hold.
+      expect(meal.alcoholG, 28);
+      expect(meal.cheatRecap, hasLength(1));
+      expect(meal.cheatRecap!.first.anchorLabel, 'vài ly');
+      expect(meal.cheatRecap!.first.level, 6);
+    });
+
+    test('leaves the cheat fields null when the server omits them', () {
+      // An older server sends neither; the post must still decode.
+      final meal = CircleFeedEntry.fromJson(_feedEntryJson()).meal;
+
+      expect(meal.alcoholG, isNull);
+      expect(meal.cheatRecap, isNull);
+    });
+
     test('parses reactions, replies, and a feed page cursor', () {
       final json = _feedEntryJson(avatarUrl: 'https://cdn.example/ha.jpg')
         ..addAll({

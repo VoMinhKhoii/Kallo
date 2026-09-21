@@ -1,10 +1,15 @@
 import { cn } from '@/lib/core/ui/cn';
 
 /**
- * Six dots filled up to the chosen stop — where on a slider's scale the user
- * landed, at a glance. The persisted cheat card's read-only echo of the live
- * slider, so a saved occasion still shows how much of each axis was claimed
- * without redrawing the control.
+ * Six dots filled up to the chosen stop — where on a slider's scale someone
+ * landed, at a glance. A read-only echo of the live cheat slider, so a saved
+ * occasion shows how much of each axis was claimed without redrawing the
+ * control.
+ *
+ * Shared rather than feature-private because two surfaces draw it now: the
+ * logger's own cheat card, and a friend's cheat post in the circle feed.
+ * `components/groups/*` may not import from `components/logging/*`, so this
+ * moved here instead of being reached across (AGENTS.md §5).
  */
 export function StopScale({ level, color }: { level: number; color: string }) {
   const filled = Math.min(6, Math.max(1, Math.round(level / 2) + 1));

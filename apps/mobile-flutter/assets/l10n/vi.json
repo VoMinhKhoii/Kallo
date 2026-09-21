@@ -1536,7 +1536,8 @@
       "leaveTitle": "Rời nhóm này?",
       "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
       "leaveConfirm": "Rời nhóm",
-      "leaveError": "Không thể rời nhóm. Hãy thử lại."
+      "leaveError": "Không thể rời nhóm. Hãy thử lại.",
+      "alcohol": "Cồn {grams}g"
     },
     "createGroup": {
       "title": "Tạo nhóm",

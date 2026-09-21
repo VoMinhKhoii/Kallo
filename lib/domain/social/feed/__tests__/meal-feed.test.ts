@@ -57,6 +57,8 @@ function sharedMeal(index: number, sharedAt: Date) {
     fatG: 15,
     portionFactor: 1,
     entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
@@ -142,6 +144,51 @@ describe('sharedMealsBefore', () => {
 });
 
 describe('toSharedMealEntry', () => {
+  it('carries alcohol and a slider recap for a cheat post', () => {
+    // A drink-heavy cheat occasion is mostly ethanol, which the P/C/F line
+    // cannot hold — without alcoholG the post silently loses its biggest
+    // calorie source.
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-01T00:00:00Z')),
+      entryMode: 'cheat',
+      alcoholG: 28,
+      cheatSliders: {
+        spec: {
+          sliders: [
+            {
+              key: 'drinks',
+              label: 'Đồ uống',
+              defaultLevel: 2,
+              anchors: [
+                { level: 0, label: 'không', alcoholG: 0 },
+                { level: 6, label: 'vài ly', alcoholG: 28 },
+              ],
+            },
+          ],
+        },
+        levels: { drinks: 6 },
+      },
+    };
+
+    const entry = toSharedMealEntry(row, USER_A);
+
+    expect(entry.meal.alcoholG).toBe(28);
+    expect(entry.meal.cheatRecap).toEqual([
+      { key: 'drinks', label: 'Đồ uống', level: 6, anchorLabel: 'vài ly' },
+    ]);
+  });
+
+  it('leaves the recap null on a precise post', () => {
+    // Even if a precise row somehow carried slider JSON, it is not a cheat
+    // occasion and must not grow a recap.
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-01T00:00:00Z')),
+      cheatSliders: { spec: { sliders: [] } },
+    };
+
+    expect(toSharedMealEntry(row, USER_A).meal.cheatRecap).toBeNull();
+  });
+
   it('tags isSelf based on the actor id', () => {
     const row = sharedMeal(1, new Date('2026-01-01T00:00:00Z'));
 

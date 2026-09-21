@@ -6,6 +6,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/calm_tokens.dart';
+import 'cheat/cheat_post_body.dart';
 
 /// The meal itself: its text, the calorie-share bar, and the macro legend.
 ///
@@ -47,6 +48,11 @@ class FeedNutrition extends StatelessWidget {
       'carbohydrate': macros.carbohydrate,
       'fat': macros.fat,
     };
+
+    // A cheat occasion is not a measured meal: it gets the badge, the `≈` and
+    // its slider recap instead of a composition bar that would read as
+    // measured proportions.
+    if (meal.isCheat) return CheatPostBody(meal: meal);
 
     // Nothing measured at all — the meal text alone, rather than a row of
     // dashes over an empty bar.

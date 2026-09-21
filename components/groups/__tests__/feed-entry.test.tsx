@@ -146,6 +146,48 @@ describe('FeedEntry', () => {
     expect(screen.getByRole('button', { name: 'logCopy' })).toBeInTheDocument();
   });
 
+  it('marks a cheat post as a cheat occasion', () => {
+    // It used to be indistinguishable from a weighed meal: same bar, same
+    // exact kcal. That claimed a precision the logger never had.
+    const entry = entryFixture();
+    render(
+      <FeedEntry
+        entry={{
+          ...entry,
+          meal: {
+            ...entry.meal,
+            entryMode: 'cheat',
+            alcoholG: 28,
+            cheatRecap: [
+              {
+                key: 'drinks',
+                label: 'Đồ uống',
+                level: 6,
+                anchorLabel: 'vài ly',
+              },
+            ],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText('badge')).toBeInTheDocument();
+    // The figure is a placement, not a measurement.
+    expect(screen.getByText(/≈/)).toBeInTheDocument();
+    // Alcohol is the one calorie source the P/C/F line cannot hold.
+    expect(screen.getByText(/alcohol/i)).toBeInTheDocument();
+    expect(screen.getByText('vài ly')).toBeInTheDocument();
+  });
+
+  it('leaves a precise post untouched', () => {
+    render(<FeedEntry entry={entryFixture()} />);
+
+    expect(screen.queryByText('badge')).not.toBeInTheDocument();
+    expect(screen.queryByText(/≈/)).not.toBeInTheDocument();
+    // The exact kcal figure, no approximation marker.
+    expect(screen.getByText('420 kcal')).toBeInTheDocument();
+  });
+
   it('hides the copy action on a cheat post', () => {
     // It has no item rows to reproduce, so the server refuses it — the button
     // was a guaranteed error. Cheat meals travel as a directed invite, where

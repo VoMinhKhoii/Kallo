@@ -23,6 +23,7 @@ import 'package:kallo_mobile/features/circle/widgets/feed/feed_rhythm.dart';
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
+import 'package:kallo_mobile/models/logging/cheat.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,8 @@ void main() {
     DateTime? sharedAt,
     bool isBackfilled = false,
     String entryMode = 'precise',
+    double? alcoholG,
+    List<CheatRecapRow>? cheatRecap,
   }) => CircleFeedEntry(
     friend: const CircleProfile(
       userId: 'u2',
@@ -74,6 +77,8 @@ void main() {
       portionFactor: portion,
       isBackfilled: isBackfilled,
       entryMode: entryMode,
+      alcoholG: alcoholG,
+      cheatRecap: cheatRecap,
     ),
     reactions: reactions,
     replies: replies,
@@ -266,6 +271,33 @@ void main() {
     // Disposed here rather than in a tearDown: the framework checks for live
     // handles BEFORE tear-downs run.
     handle.dispose();
+  });
+
+  testWidgets('a cheat post reads as a cheat occasion', (tester) async {
+    // It used to be indistinguishable from a weighed meal: same composition
+    // bar, same exact kcal — a precision the logger never had.
+    await pump(
+      tester,
+      post(
+        entry(
+          entryMode: 'cheat',
+          alcoholG: 28,
+          cheatRecap: const [
+            CheatRecapRow(
+              key: 'drinks',
+              label: 'Đồ uống',
+              level: 6,
+              anchorLabel: 'vài ly',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('Cheat meal'), findsOneWidget);
+    expect(find.textContaining('≈'), findsOneWidget);
+    expect(find.text('Alcohol 28g'), findsOneWidget);
+    expect(find.text('vài ly'), findsOneWidget);
   });
 
   testWidgets('a cheat post offers no copy action', (tester) async {

@@ -8,6 +8,7 @@
 library;
 
 import 'package:characters/characters.dart';
+import '../logging/cheat.dart';
 
 double? _asDouble(dynamic value) => switch (value) {
   num number => number.toDouble(),
@@ -104,6 +105,8 @@ class CircleFeedMeal {
     this.portionFactor = 1,
     this.isBackfilled = false,
     this.entryMode = 'precise',
+    this.alcoholG,
+    this.cheatRecap,
   });
 
   final String mealId;
@@ -133,6 +136,14 @@ class CircleFeedMeal {
 
   bool get isCheat => entryMode == 'cheat';
 
+  /// Ethanol grams — the one calorie source the P/C/F line cannot hold, and
+  /// most of what a drink-heavy cheat occasion actually is.
+  final double? alcoholG;
+
+  /// Where the logger put each slider, resolved server-side. Null on a precise
+  /// meal, and on a cheat meal whose stored slider payload is unusable.
+  final List<CheatRecapRow>? cheatRecap;
+
   factory CircleFeedMeal.fromJson(Map<String, dynamic> json) => CircleFeedMeal(
     mealId: json['mealId'] as String,
     shareId: json['shareId'] as String? ?? '',
@@ -145,6 +156,10 @@ class CircleFeedMeal {
     portionFactor: _asDouble(json['portionFactor']) ?? 1,
     isBackfilled: json['isBackfilled'] as bool? ?? false,
     entryMode: json['entryMode'] as String? ?? 'precise',
+    alcoholG: _asDouble(json['alcoholG']),
+    cheatRecap: (json['cheatRecap'] as List<dynamic>?)
+        ?.map((e) => CheatRecapRow.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false),
   );
 }
 

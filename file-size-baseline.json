@@ -2,7 +2,7 @@
   "note": "Ratchet baseline for scripts/ci/check-structure. Frozen legacy violations: may shrink, never grow. Do not add entries by hand — split the file or the folder instead (see AGENTS.md \"File & Folder Organization\").",
   "files": {
     "apps/mobile-flutter/lib/features/settings/screens/body_metrics.dart": 646,
-    "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_slider_card.dart": 556,
+    "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_slider_card.dart": 524,
     "components/logging/sidebar/mobile-timeline-picker.tsx": 495,
     "apps/mobile-flutter/lib/features/dashboard/widgets/heatmap/adherence_heatmap.dart": 472,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form.dart": 425,
@@ -40,7 +40,7 @@
     "apps/mobile-flutter/lib/shared/widgets/menu/anchored_menu_layer.dart": 202
   },
   "folders": {
-    "components/groups": 12,
-    "components/auth": 11
+    "components/auth": 11,
+    "components/groups": 11
   }
 }

@@ -19,6 +19,10 @@ import {
 } from 'drizzle-orm';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
 import {
+  type CheatRecapRow,
+  toCheatRecap,
+} from '@/lib/domain/cheat/feed-recap';
+import {
   encodeSharedMealCursor,
   type SharedMealCursor,
 } from '@/lib/domain/social/feed/cursor';
@@ -56,6 +60,12 @@ export interface SharedMealRow {
   /** 'precise' | 'cheat'. A cheat meal has no item rows, so it cannot be
    *  copied off the wall — the clients read this to hide that action. */
   entryMode: string;
+  /** Ethanol grams. The one calorie source the P/C/F line cannot hold, and
+   *  the figure a drink-heavy cheat occasion is mostly made of. */
+  alcoholG: number | null;
+  /** Raw `cheat_sliders` JSONB. Resolved to a compact recap by
+   *  `toSharedMealEntry` and never sent to a client as-is — see feed-recap.ts. */
+  cheatSliders: unknown;
   sharedAt: Date;
   /** When the meal was eaten. Differs from sharedAt for a backfilled meal
    * (logged for a past date), letting the client hide its meaningless time. */
@@ -83,6 +93,8 @@ export const sharedMealColumns = {
   fatG: meals.fatG,
   portionFactor: meals.portionFactor,
   entryMode: meals.entryMode,
+  alcoholG: meals.alcoholG,
+  cheatSliders: meals.cheatSliders,
   sharedAt: mealShares.sharedAt,
   loggedAt: meals.loggedAt,
   sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
@@ -229,6 +241,10 @@ export interface SharedMealEntry {
     portionFactor: number;
     /** 'precise' | 'cheat' — see SharedMealRow.entryMode. */
     entryMode: string;
+    alcoholG: number | null;
+    /** Where the logger put each slider, for a cheat post. Null on a precise
+     *  meal, and null on a cheat meal whose slider payload is unusable. */
+    cheatRecap: CheatRecapRow[] | null;
     sharedAt: string;
     /** True when the meal was logged for a PAST date (backfilled), so its
      * share-time ("just now") would be misleading and the UI hides it.
@@ -283,6 +299,12 @@ export function toSharedMealEntry(
       fatG: row.fatG,
       portionFactor: row.portionFactor,
       entryMode: row.entryMode,
+      alcoholG: row.alcoholG,
+      // Resolved here, not in the query: one place turns a stored payload into
+      // what a friend sees, so the feed, the thread page and a single-share
+      // lookup cannot drift apart.
+      cheatRecap:
+        row.entryMode === 'cheat' ? toCheatRecap(row.cheatSliders) : null,
       sharedAt: row.sharedAt.toISOString(),
       isBackfilled: isBackfilledShare(row.loggedAt, row.sharedAt),
     },

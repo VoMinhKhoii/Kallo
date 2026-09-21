@@ -4,6 +4,7 @@ import { Copy, Heart, MessageCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
+import { CheatPostBody } from '@/components/groups/cheat/cheat-post-body';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
@@ -94,27 +95,31 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
         <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
           {capitalizeFirst(meal.rawInput)}
         </p>
-        {hasNutrition && (
-          <div className="mt-2.5 flex flex-col gap-1">
-            {composition.totalKcal > 0 && (
-              <CompositionBar
-                segments={composition.segments}
-                variant="compact"
-              />
-            )}
-            {/* Meal-text size, under the bar, leading the legend — the same
+        {meal.entryMode === 'cheat' ? (
+          <CheatPostBody meal={meal} />
+        ) : (
+          hasNutrition && (
+            <div className="mt-2.5 flex flex-col gap-1">
+              {composition.totalKcal > 0 && (
+                <CompositionBar
+                  segments={composition.segments}
+                  variant="compact"
+                />
+              )}
+              {/* Meal-text size, under the bar, leading the legend — the same
                 anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
                 head of a spaceBetween row. Figure and unit are ONE string
                 (mobile's `fmtKcal`), so the two can never wrap apart. */}
-            <MacroScale
-              grams={grams}
-              leading={
-                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
-                  {kcalLabel}
-                </span>
-              }
-            />
-          </div>
+              <MacroScale
+                grams={grams}
+                leading={
+                  <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                    {kcalLabel}
+                  </span>
+                }
+              />
+            </div>
+          )
         )}
         <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-kallo-text-muted tabular-nums">
           <button

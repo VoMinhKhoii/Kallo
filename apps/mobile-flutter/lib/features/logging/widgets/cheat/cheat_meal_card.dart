@@ -11,7 +11,7 @@ import 'cheat_meal_actions.dart';
 import '../../logic/format.dart';
 import '../../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
-import 'cheat_slider_card.dart' show CheatBadge;
+import '../../../../shared/widgets/nutrition/cheat_badge.dart';
 import '../actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
 
