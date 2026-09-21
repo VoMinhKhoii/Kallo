@@ -6,7 +6,6 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/calm_tokens.dart';
-import 'cheat/cheat_post_body.dart';
 
 /// The meal itself: its text, the calorie-share bar, and the macro legend.
 ///
@@ -49,11 +48,6 @@ class FeedNutrition extends StatelessWidget {
       'fat': macros.fat,
     };
 
-    // A cheat occasion is not a measured meal: it gets the badge, the `≈` and
-    // its slider recap instead of a composition bar that would read as
-    // measured proportions.
-    if (meal.isCheat) return CheatPostBody(meal: meal);
-
     // Nothing measured at all — the meal text alone, rather than a row of
     // dashes over an empty bar.
     if (kcal == null && composition.totalKcal <= 0) {
@@ -69,8 +63,14 @@ class FeedNutrition extends StatelessWidget {
         for (final key in kCompositionKeys)
           key: '${_prefixes[key]} ${_grams(grams[key])}',
       },
+      // `≈` on a cheat occasion: the figure is where the logger put four
+      // sliders, not something anyone weighed. The chip in the post header
+      // says the same about the post; the rest of the anatomy is the ordinary
+      // one, because it is still a meal someone ate.
       kcalLabel:
-          kcal == null ? '— kcal' : fmtKcal(kcal, locale: localeOf(context)),
+          kcal == null
+              ? '— kcal'
+              : '${meal.isCheat ? '≈ ' : ''}${fmtKcal(kcal, locale: localeOf(context))}',
       kcalPlacement: MealBlockKcal.legendLeading,
       // Four lines, not the block's default two: a Circle post carries text
       // somebody TYPED, in their own words, while Recent meals shows a name

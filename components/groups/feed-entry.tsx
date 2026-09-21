@@ -4,7 +4,7 @@ import { Copy, Heart, MessageCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
-import { CheatPostBody } from '@/components/groups/cheat/cheat-post-body';
+import { CheatChip } from '@/components/groups/cheat/cheat-chip';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { compositionFromGrams } from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
@@ -61,10 +61,15 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
   // Same formatter the grams beside it use (MacroScale), so one legend row
   // never mixes a raw `1234` with a localised `1.234`.
+  const isCheat = meal.entryMode === 'cheat';
+  // A cheat occasion's figures were placed on a slider, not measured. The `≈`
+  // is what says so on the number itself; the chip says it about the post. The
+  // anatomy around them is the ordinary one — it is still a meal someone ate,
+  // and giving it a different shape made it harder to read, not more honest.
   const kcalLabel =
     meal.caloriesKcal == null
       ? '— kcal'
-      : `${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
+      : `${isCheat ? '≈ ' : ''}${formatLocalizedNumber(meal.caloriesKcal, locale)} kcal`;
   const reactionCount = entry.reactions.count;
   const heartLabel = withCount(t('heart'), reactionCount);
   const replyLabel = withCount(t('reply'), entry.repliesTotal);
@@ -91,35 +96,32 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
               })}
             </span>
           )}
+          {isCheat && <CheatChip />}
         </div>
         <p className="font-medium font-sans-display text-[15px] text-kallo-text leading-[1.45]">
           {capitalizeFirst(meal.rawInput)}
         </p>
-        {meal.entryMode === 'cheat' ? (
-          <CheatPostBody meal={meal} />
-        ) : (
-          hasNutrition && (
-            <div className="mt-2.5 flex flex-col gap-1">
-              {composition.totalKcal > 0 && (
-                <CompositionBar
-                  segments={composition.segments}
-                  variant="compact"
-                />
-              )}
-              {/* Meal-text size, under the bar, leading the legend — the same
+        {hasNutrition && (
+          <div className="mt-2.5 flex flex-col gap-1">
+            {composition.totalKcal > 0 && (
+              <CompositionBar
+                segments={composition.segments}
+                variant="compact"
+              />
+            )}
+            {/* Meal-text size, under the bar, leading the legend — the same
                 anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
                 head of a spaceBetween row. Figure and unit are ONE string
                 (mobile's `fmtKcal`), so the two can never wrap apart. */}
-              <MacroScale
-                grams={grams}
-                leading={
-                  <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
-                    {kcalLabel}
-                  </span>
-                }
-              />
-            </div>
-          )
+            <MacroScale
+              grams={grams}
+              leading={
+                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                  {kcalLabel}
+                </span>
+              }
+            />
+          </div>
         )}
         <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-kallo-text-muted tabular-nums">
           <button

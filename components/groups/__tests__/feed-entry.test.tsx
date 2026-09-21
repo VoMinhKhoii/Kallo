@@ -162,13 +162,15 @@ describe('FeedEntry', () => {
       />
     );
 
+    // The chip and the `≈` are the whole difference. Everything else is the
+    // ordinary post anatomy — the composition bar and the macro legend stay,
+    // because it is still a meal someone ate and a different shape made it
+    // harder to read rather than more honest.
     expect(screen.getByText('badge')).toBeInTheDocument();
-    // The figure is a placement, not a measurement.
     expect(screen.getByText(/≈/)).toBeInTheDocument();
-    // And nothing else. A post is read at a glance in someone else's scroll:
-    // the macro breakdown would reintroduce exactly the false precision the
-    // badge and the `≈` are there to remove.
-    expect(screen.queryByText(/P:/)).not.toBeInTheDocument();
+    // The protein figure from the fixture, proving the legend survived — the
+    // cheat branch used to replace this whole block.
+    expect(screen.getByText(/38\s*g/)).toBeInTheDocument();
   });
 
   it('leaves a precise post untouched', () => {

@@ -98,15 +98,6 @@ void main() {
       expect(CircleFeedEntry.fromJson(json).meal.isCheat, isTrue);
     });
 
-    test('reads alcohol and the slider recap on a cheat post', () {
-      final json = _feedEntryJson();
-      (json['meal'] as Map<String, dynamic>)..['entryMode'] = 'cheat';
-
-      final meal = CircleFeedEntry.fromJson(json).meal;
-
-      expect(meal.isCheat, isTrue);
-    });
-
     test('defaults to a precise meal when the server omits entryMode', () {
       // An older server sends nothing; the post must still decode, and must
       // not grow a cheat badge it was never told about.

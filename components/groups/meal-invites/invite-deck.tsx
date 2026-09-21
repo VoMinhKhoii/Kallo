@@ -4,10 +4,17 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { InviteCard } from '@/components/groups/meal-invites/invite-card';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 
-/** Peek layers drawn behind the front card, nearest first. */
+/**
+ * Peek layers drawn behind the front card, nearest first.
+ *
+ * They rise ABOVE it, not below: the offers stack downward, so the one you act
+ * on is the one nearest the thumb and the queue behind it recedes toward the
+ * section heading. Peeking downward put the depth between the card and the
+ * feed under it, where it read as a shadow on the wrong element.
+ */
 const LAYERS = [
-  'inset-x-2 translate-y-1.5 shadow-xs',
-  'inset-x-4 translate-y-3 shadow-2xs',
+  'inset-x-2 -translate-y-1.5 shadow-xs',
+  'inset-x-4 -translate-y-3 shadow-2xs',
 ] as const;
 
 /**
@@ -70,9 +77,9 @@ export function InviteDeck({ invites }: { invites: MealShareInvite[] }) {
           exit={
             reduceMotion
               ? { opacity: 0, pointerEvents: 'none' }
-              : { opacity: 0, y: -8, pointerEvents: 'none' }
+              : { opacity: 0, y: 8, pointerEvents: 'none' }
           }
-          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          initial={reduceMotion ? false : { opacity: 0, y: -8 }}
           // Keyed on the offer, so the front changing is a remount: the rising
           // card is a fresh card, never the old one with new text poured into
           // it mid-animation.

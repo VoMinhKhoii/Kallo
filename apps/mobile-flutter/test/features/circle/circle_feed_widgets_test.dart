@@ -273,13 +273,13 @@ void main() {
     // bar, same exact kcal — a precision the logger never had.
     await pump(tester, post(entry(entryMode: 'cheat')));
 
+    // The chip and the `≈` are the whole difference. Everything else is the
+    // ordinary post anatomy — the composition bar and the macro legend stay,
+    // because it is still a meal someone ate and a different shape made it
+    // harder to read rather than more honest.
     expect(find.text('Cheat meal'), findsOneWidget);
     expect(find.textContaining('≈'), findsOneWidget);
-    // And nothing else. A post is read at a glance in someone else's scroll:
-    // the macro breakdown would reintroduce exactly the false precision the
-    // badge and the `≈` are there to remove.
-    expect(find.textContaining('P '), findsNothing);
-    expect(find.textContaining('P:'), findsNothing);
+    expect(find.textContaining('P '), findsOneWidget);
   });
 
   testWidgets('a cheat post offers no copy action', (tester) async {

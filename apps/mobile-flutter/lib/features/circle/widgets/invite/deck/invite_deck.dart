@@ -6,9 +6,10 @@ import '../../../../../theme/kallo_motion.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../invite_card.dart';
 
-/// How far each peek layer's bottom edge sits below the front card's, nearest
-/// first. Two is the whole ramp: a third stops reading as depth and starts
-/// reading as a fringe.
+/// How far each peek layer's top edge sits ABOVE the front card's, nearest
+/// first. The offers stack downward, so the one you act on is nearest the
+/// thumb and the queue behind it recedes toward the section label. Two is the
+/// whole ramp: a third stops reading as depth and starts reading as a fringe.
 const List<double> _kPeekDrops = [6, 12];
 
 /// How far each layer is inset horizontally, same order.
@@ -45,20 +46,20 @@ class InviteDeck extends StatelessWidget {
     return Stack(
       children: [
         // Furthest first, so the nearer layer paints over it and each ring
-        // reads as an edge rather than a seam. Their tops sit behind the front
-        // card; only the bottom strip shows.
+        // reads as an edge rather than a seam. Their bottoms sit behind the
+        // front card; only the top strip shows.
         for (var i = layerCount - 1; i >= 0; i--)
           Positioned(
             left: _kPeekInsets[i],
             right: _kPeekInsets[i],
-            top: 0,
-            bottom: reach - _kPeekDrops[i],
+            top: reach - _kPeekDrops[i],
+            bottom: 0,
             child: const InvitePeekLayer(),
           ),
         // Non-positioned, so it sizes the Stack: card height plus the room the
         // deepest layer needs. Last, so it paints on top.
         Padding(
-          padding: EdgeInsets.only(bottom: reach),
+          padding: EdgeInsets.only(top: reach),
           child: AnimatedSwitcher(
             duration: KalloMotion.disclosure,
             // Both cards are mounted while this runs — AnimatedSwitcher fades
@@ -81,7 +82,7 @@ class InviteDeck extends StatelessWidget {
                   opacity: animation,
                   child: SlideTransition(
                     position: Tween<Offset>(
-                      begin: const Offset(0, 0.04),
+                      begin: const Offset(0, -0.04),
                       end: Offset.zero,
                     ).animate(animation),
                     child: child,
@@ -116,10 +117,7 @@ class InvitePeekLayer extends StatelessWidget {
           boxShadow: const [
             // Zero blur, 1pt spread, canvas colour: a hairline gap that
             // separates this layer from the card sitting on top of it.
-            BoxShadow(
-              color: KalloColors.surface,
-              spreadRadius: 1,
-            ),
+            BoxShadow(color: KalloColors.surface, spreadRadius: 1),
             KalloShadows.xs,
           ],
         ),

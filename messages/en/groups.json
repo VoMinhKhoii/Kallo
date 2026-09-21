@@ -106,7 +106,7 @@
     "sharedCopy": "{name} shared a meal with you",
     "sharedSplit": "{name} split a meal with you",
     "portion": "{portion} portion",
-    "accept": "Add to my diary",
+    "accept": "Accept",
     "dismiss": "Dismiss",
     "accepted": "Added to your diary",
     "error": "That didn't work — try again.",
