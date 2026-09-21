@@ -326,7 +326,11 @@ Future<void> shareMealWithFriends(
 }
 
 /// Accept an invite (`POST /api/v1/groups/invites/accept`) — the scaled meal
-/// lands in today's diary. Invalidates the inbox, the day, and the wall.
+/// lands at the SOURCE meal's instant, the same eating event seen from my
+/// diary, so it may sit on an earlier day than today. `loggedDate` is still
+/// sent for wire compatibility and ignored by the server. Invalidating the
+/// `loggingDayProvider` FAMILY (rather than one day's instance) is what makes
+/// the meal appear wherever it actually landed.
 Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   final api = ref.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {

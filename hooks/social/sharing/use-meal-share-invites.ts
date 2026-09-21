@@ -37,7 +37,14 @@ export function useMealShareInviteCount(): number {
   return data?.length ?? 0;
 }
 
-/** Accept an offer — it lands in today's diary; refresh the day + wall. */
+/**
+ * Accept an offer. The copy lands at the SOURCE meal's instant, not today — the
+ * same eating event seen from my diary — so it can land on an earlier day.
+ * `loggedDate`/`timezoneOffset` are still sent for shipped clients and ignored
+ * by the server. That is why the invalidation below targets `loggingDayKeys.all`
+ * rather than today's key: `.all` is a prefix, so every cached day refetches and
+ * the meal shows up wherever it actually landed.
+ */
 export function useAcceptMealShareInvite() {
   const queryClient = useQueryClient();
   return useMutation({

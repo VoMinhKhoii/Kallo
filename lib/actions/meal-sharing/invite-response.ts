@@ -13,7 +13,6 @@
 import { and, eq, or } from 'drizzle-orm';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptMealShareInviteSchema,
@@ -160,11 +159,23 @@ export async function acceptMealShareInviteAction(input: {
       throw Errors.validationFailed('Bữa ăn này không có món để thêm.');
     }
 
-    // A brand-new eating event "now" on my chosen day (slot inferred fresh).
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
+    // The SAME eating event, seen from my diary — so it keeps the sender's
+    // instant and their slot rather than being restamped "now".
+    //
+    // This used to be `getUtcInstantForLocalDate(loggedDate, timezoneOffset)`,
+    // which took the day from my chosen date but the CLOCK from the moment I
+    // tapped accept: a friend's 07:00 breakfast accepted at 21:00 landed in my
+    // diary as a 21:00 dinner, because the slot was then re-inferred from that
+    // instant. `loggedDate`/`timezoneOffset` are still accepted (shipped mobile
+    // builds send them) and deliberately ignored — neither client ever offered
+    // a date picker here, both hardcode today, so nothing is lost by taking the
+    // source's date too.
+    //
+    // Cross-timezone: the copy is the same INSTANT, so for a recipient far
+    // enough away it can fall on the adjacent local day. That is correct, and
+    // unavoidable — `meals` stores no sender offset to reconstruct their wall
+    // clock from.
+    const loggedAt = source.loggedAt;
     // Materialize the sender's meal in my diary, scaled by the invite's
     // `copy_factor` — the ratio between my run and the sender's REMAINING run.
     //
@@ -190,6 +201,7 @@ export async function acceptMealShareInviteAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
+      mealSlot: source.mealSlot,
     });
 
     // Point the already-claimed invite at the materialized meal.

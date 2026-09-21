@@ -14,7 +14,11 @@ function localDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Copy a visible shared meal into today's diary and refresh both day queries:
+/** Copy a visible shared meal into my diary — at the SOURCE meal's instant, so
+ * possibly on an earlier day than today (`loggedDate` is still sent for shipped
+ * clients and ignored by the server). Both invalidations below use `.all`, which
+ * is a PREFIX key, so whichever day the copy landed on refetches. Refreshes both
+ * day queries:
  * the logging-day query AND the daily-meals cache that still feeds the dashboard
  * calorie ring (use-dashboard-queries reads useDailyMeals(today)). Cancel any
  * in-flight fetches first so a pre-save read can't dedupe onto the refetch and

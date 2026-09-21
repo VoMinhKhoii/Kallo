@@ -8,7 +8,6 @@ import { and, eq, getTableColumns, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   dateStringSchema,
@@ -92,14 +91,15 @@ export async function logSharedMealAction(input: {
       throw Errors.validationFailed('Bữa ăn này không có món để thêm.');
     }
 
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
+    // The same eating event in my diary: the source's instant and slot, not
+    // the moment I tapped. See invite-response.ts for the full reasoning —
+    // `loggedDate`/`timezoneOffset` stay on the wire for shipped clients and
+    // are deliberately ignored.
     const copied = await copyMealVerbatim(tx, source, sourceItems, {
       userId: user.id,
       newMealId: parsed.newMealId,
-      loggedAt,
+      loggedAt: source.loggedAt,
+      mealSlot: source.mealSlot,
       factor: parsed.factor,
     });
 

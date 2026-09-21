@@ -156,10 +156,12 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
         'timezoneOffset': localTimezoneOffsetMinutes(),
       })
       .timeout(_mutationTimeout);
+  // The whole FAMILY, because the copy carries the source meal's instant and
+  // so may land on an earlier day than today (`loggedDate` is sent for wire
+  // compatibility and ignored by the server).
   ref.invalidate(loggingDayProvider);
-  // The copied meal lands in today's diary — the dashboard reads its ring off a
-  // separate bundle/day cache, so heal it too or the Today + week-strip ring
-  // keep the pre-log total.
+  // The dashboard reads its ring off a separate bundle/day cache, so heal it
+  // too or the Today + week-strip ring keep the pre-log total.
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
 }

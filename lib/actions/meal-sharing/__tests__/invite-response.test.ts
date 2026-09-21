@@ -200,6 +200,42 @@ describe('acceptMealShareInviteAction', () => {
     });
   });
 
+  it('stamps the copy with the source meal, not the moment I accepted', async () => {
+    // The bug this guards: the copy used to take its DAY from `loggedDate` and
+    // its CLOCK from `new Date()`, then re-infer the slot from that instant —
+    // so accepting a friend's breakfast in the evening filed it as dinner.
+    const breakfast = new Date('2026-04-05T00:30:00.000Z');
+    queueLimitSelect([
+      { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
+    ]);
+    queueLimitSelect([
+      sourceMeal({ loggedAt: breakfast, mealSlot: 'breakfast' }),
+    ]);
+    installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem()]);
+
+    const captured: Record<string, { vals: unknown }> = {};
+    mockTxInsert.mockImplementation(routeInserts(captured));
+
+    const result = await acceptMealShareInviteAction({
+      inviteId: UUID_INVITE,
+      newMealId: UUID_NEW,
+      // Deliberately a DIFFERENT day from the source's, and the value both
+      // clients hardcode. It must not move the copy off the source's instant.
+      loggedDate: '2026-06-24',
+      timezoneOffset: -420,
+    });
+
+    const mealVals = captured.meal.vals as Record<string, unknown>;
+    expect(mealVals.loggedAt).toEqual(breakfast);
+    expect(mealVals.mealSlot).toBe('breakfast');
+    // The returned card has to agree with the row, or the optimistic feed
+    // reconciles onto a meal that sits somewhere else in the day.
+    expect(result.meal.loggedAt).toBe(breakfast.toISOString());
+    expect(result.meal.mealSlot).toBe('breakfast');
+  });
+
   it('scales the copy by copy_factor on an uneven split', async () => {
     // The sender kept 13 of 20 parts and offered me 7, so their meal was
     // already scaled to 0.65 and my run is 7/13 of what they are holding.
