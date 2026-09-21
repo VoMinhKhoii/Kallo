@@ -11,7 +11,10 @@
 // separate canViewShare-gated log-shared action instead.
 
 import { and, eq } from 'drizzle-orm';
-import { claimPendingInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
+import {
+  bindInviteToMeal,
+  claimPendingInvite,
+} from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
@@ -117,11 +120,10 @@ export async function acceptMealShareInviteAction(input: {
       mealSlot: source.mealSlot,
     });
 
-    // Point the already-claimed invite at the materialized meal.
-    await tx
-      .update(mealShareInvites)
-      .set({ acceptedMealId: mealId })
-      .where(eq(mealShareInvites.id, parsed.inviteId));
+    // Point the already-claimed invite at the materialized meal — the same
+    // write the cheat path makes at confirm, so "took it and ate it" looks
+    // identical however the offer was taken.
+    await bindInviteToMeal(tx, { inviteId: parsed.inviteId, mealId });
 
     // Tell the sender their offer landed. A dismiss deliberately stays silent
     // (LinkedIn norm: no rejection signal).

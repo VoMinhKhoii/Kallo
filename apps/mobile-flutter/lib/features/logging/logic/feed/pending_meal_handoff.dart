@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/logging_providers.dart';
+import '../../data/handoff_slots.dart';
 
 /// A meal parked by an off-feed composer — the dashboard's quick-log sheet, a
 /// first-run suggestion chip — picked up by the feed and run exactly as if it

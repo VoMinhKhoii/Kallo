@@ -53,9 +53,9 @@ export default async function GroupsLayout({
          * invite LIST so it could not push the feed panel off a short viewport,
          * and the inbox is a deck now — one card tall whatever arrives, so
          * there is nothing to cap. Worse, `overflow-y-auto` made this a scroll
-         * container, and the deck's peek layers sit ~12px BELOW the front
-         * card's box: they were clipped at rest, which hid the whole deck and
-         * left the box with 12px of phantom scroll. */}
+         * container, and the deck's peek layers sit outside the front card's
+         * box (~12px above it): they were clipped at rest, which hid the whole
+         * deck and left the box with 12px of phantom scroll. */}
         <div className="mb-3 shrink-0 empty:hidden">
           <MealInvites />
         </div>

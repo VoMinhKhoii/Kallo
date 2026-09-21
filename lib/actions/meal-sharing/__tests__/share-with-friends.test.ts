@@ -142,14 +142,14 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
-  it('lets an abandoned offer be re-sent, but not one that became a meal', async () => {
-    // `setWhere` used to be `status <> 'accepted'` flat, which read "accepted"
-    // as "they have it". For a cheat offer that is wrong: it is spent the
-    // moment it is TAKEN, before any meal exists, so an accepted row with a
-    // null accepted_meal_id is one somebody walked away from. The predicate is
-    // the only thing standing between "you can send it again" and a permanent
-    // dead end — and, in the other direction, between that and handing a
-    // recipient a duplicate of a meal already in their diary.
+  it('never re-pends an accepted offer, even one with no meal yet', async () => {
+    // `accepted` + no meal is NOT "abandoned" — it is every staged cheat card
+    // for its whole ~7-day life, because a cheat offer is spent at stage time
+    // and the meal does not exist until confirm. Forgiving that state here
+    // re-pended a LIVE offer: a second card for the same dish landed in the
+    // recipient's inbox, and confirming both wrote two meals. An abandoned
+    // offer comes back a different way — `releaseInvite` re-pends it in the
+    // same transaction that destroys its card.
     queueLimitSelect([cheatSourceMeal()]);
     queueWhereSelect([friendEdge]);
     const captured: InsertCaptures = {};
@@ -162,12 +162,13 @@ describe('shareMealWithFriendsAction', () => {
     });
 
     // Serialized: the doubles cannot run Postgres, so the clause itself is
-    // what gets asserted. Both halves have to be there — either one alone is a
-    // different rule.
-    const conflict = JSON.stringify(captured.invites.conflict);
-    expect(conflict).toContain("<> 'accepted' OR");
-    expect(conflict).toContain('mealShareInvites.acceptedMealId');
-    expect(conflict).toContain('IS NULL');
+    // what gets asserted. Scoped to `setWhere` deliberately — `acceptedMealId`
+    // legitimately appears in the SET block (the reset), so asserting against
+    // the whole conflict object would pass for the wrong reason.
+    const { setWhere } = captured.invites.conflict as { setWhere: unknown };
+    const clause = JSON.stringify(setWhere);
+    expect(clause).toContain("<> 'accepted'");
+    expect(clause).not.toContain('acceptedMealId');
   });
 
   it('reports nobody offered when every invite was skipped', async () => {

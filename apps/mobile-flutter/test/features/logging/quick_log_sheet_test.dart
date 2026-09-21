@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/logic/composer/quick_log_actions.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/quick_log_sheet.dart';
@@ -16,6 +15,7 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 /// The dashboard's quick-log sheet: how it survives the keyboard coming up,
 /// where it leaves the user after Send, and what it offers besides typing.

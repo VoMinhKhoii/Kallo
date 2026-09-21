@@ -1,15 +1,14 @@
 import { cn } from '@/lib/core/ui/cn';
 
 /**
- * Six dots filled up to the chosen stop — where on a slider's scale someone
- * landed, at a glance. A read-only echo of the live cheat slider, so a saved
- * occasion shows how much of each axis was claimed without redrawing the
- * control.
+ * Six dots filled up to the chosen stop — where one cheat slider was left.
  *
- * Shared rather than feature-private because two surfaces draw it now: the
- * logger's own cheat card, and a friend's cheat post in the circle feed.
- * `components/groups/*` may not import from `components/logging/*`, so this
- * moved here instead of being reached across (AGENTS.md §5).
+ * Lived in `components/shared/nutrition/` for one commit, promoted when a
+ * friend's cheat post in the circle feed was going to draw it too. That post
+ * turned out not to need it: a cheat post is the ordinary post anatomy plus a
+ * chip and an `≈`, and the slider recap stayed on the owner's own card. One
+ * consumer again, so it is back beside it. Flutter twin: the `_Dots` row
+ * inside `cheat_meal_expanded_details.dart`.
  */
 export function StopScale({ level, color }: { level: number; color: string }) {
   const filled = Math.min(6, Math.max(1, Math.round(level / 2) + 1));

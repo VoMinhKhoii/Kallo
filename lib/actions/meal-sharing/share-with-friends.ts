@@ -226,14 +226,18 @@ export async function shareMealWithFriendsAction(input: {
           respondedAt: null,
           createdAt: now,
         },
-        // "Accepted" alone used to block a re-share forever. It still does for
-        // an offer that became a meal — the recipient has it, sending it again
-        // would hand them a duplicate. But a cheat offer is spent the moment it
-        // is TAKEN, before any meal exists, so an accepted row with no meal is
-        // one somebody walked away from. `releaseInvite` hands those back at
-        // the two places a staged card dies; this covers the row whatever
-        // happened to the card, so an abandoned offer can always be re-sent.
-        setWhere: sql`${mealShareInvites.status} <> 'accepted' OR ${mealShareInvites.acceptedMealId} IS NULL`,
+        // Never resets an ACCEPTED invite. An abandoned cheat offer gets back
+        // here by being re-pended at the moment its card dies (`releaseInvite`,
+        // called in the same transaction as the delete by both discard and the
+        // reaper) — not by this clause forgiving the accepted state.
+        //
+        // Widening it to `OR accepted_meal_id IS NULL` was tried and reverted:
+        // that is not "abandoned", it is every staged cheat card for its whole
+        // ~7-day life, because the meal does not exist until confirm. A
+        // re-share during that window re-pended a live offer, put a second card
+        // in the recipient's inbox for the same dish, and confirming both wrote
+        // two meals — exactly what this guard is here to stop.
+        setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
       })
       .returning({
         id: mealShareInvites.id,

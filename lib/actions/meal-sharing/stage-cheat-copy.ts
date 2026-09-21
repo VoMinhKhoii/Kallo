@@ -60,14 +60,11 @@ export async function stageCheatInviteAction(input: {
     // enforces. Claiming at STAGE rather than at confirm is this path's own
     // decision: confirm is the generic save path and knows nothing about
     // invites, so leaving the invite pending until then would let the inbox
-    // stage the same offer repeatedly. The cost is that abandoning the slider
-    // card consumes the offer — but the staged row is not lost:
-    // loadPendingAnalyses returns it for its day and the feed renders it as a
-    // live card for about a week.
+    // stage the same offer repeatedly. What the card owes in return is the
+    // `sourceInviteId` written below — see there.
     //
-    // `accepted_meal_id` stays NULL on this path. There is no meal yet, the
-    // column is an FK so it cannot be pre-filled with an id the client has not
-    // written, and nothing in the codebase reads it.
+    // `accepted_meal_id` stays NULL until the card is confirmed, because there
+    // is no meal to point at yet. `bindInviteToMeal` fills it at confirm.
     const { invite, source, checked } = await claimPendingInvite(tx, {
       inviteId: parsed.inviteId,
       userId: user.id,

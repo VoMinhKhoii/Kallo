@@ -7,8 +7,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../data/logging_providers.dart';
 import 'sent_bubble.dart';
+import '../../data/handoff_slots.dart';
 
 enum _Action { copy, edit }
 

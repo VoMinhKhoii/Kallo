@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/models/logging/cheat.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 /// The composer's cross-surface state must not outlive the account that wrote
 /// it.

@@ -59,8 +59,7 @@
     "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
     "leaveConfirm": "Rời nhóm",
     "leaveError": "Không thể rời nhóm. Hãy thử lại.",
-    "cancel": "Huỷ",
-    "alcohol": "Cồn {grams}g"
+    "cancel": "Huỷ"
   },
   "shareControl": {
     "share": "Chia sẻ với vòng kết nối",

@@ -14,10 +14,11 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../logging/data/logging_providers.dart' show pendingMealProvider;
+
 import '../../logic/dashboard_spacing.dart';
 import 'fade_in_down.dart';
 import '../../../../shell/nav/nav_actions.dart';
+import '../../../logging/data/handoff_slots.dart';
 
 /// First-run collapse: a single Lora question, no ring, no "% on track", plus
 /// three time-of-day-aware suggestion chips that open the meal composer

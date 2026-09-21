@@ -17,6 +17,7 @@ import '../widgets/feed/feed_area.dart';
 import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
+import '../data/handoff_slots.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
 /// strip (in the header) and the feed share one source of truth — mirrors the

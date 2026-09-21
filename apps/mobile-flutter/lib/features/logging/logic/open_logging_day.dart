@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/logic/display_format.dart' show todayDateString;
 import '../../../shell/nav/nav_actions.dart' show goToLogging;
-import '../data/logging_providers.dart' show pendingLoggingDayProvider;
+import '../data/handoff_slots.dart';
 
 /// Open the logging feed on the day [instantIso] falls on, in the viewer's zone.
 ///

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 import 'package:kallo_mobile/shared/widgets/menu/kallo_menu_card.dart';
 import 'package:kallo_mobile/theme/kallo_typography.dart';
@@ -12,6 +11,7 @@ import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 Widget _wrap(String text, {double width = 390}) => ProviderScope(
   child: MaterialApp(

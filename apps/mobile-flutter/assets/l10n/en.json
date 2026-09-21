@@ -1539,8 +1539,7 @@
       "leaveTitle": "Leave this group?",
       "leaveDescription": "You'll lose access to this group's timeline.",
       "leaveConfirm": "Leave group",
-      "leaveError": "Couldn't leave the group. Try again.",
-      "alcohol": "Alcohol {grams}g"
+      "leaveError": "Couldn't leave the group. Try again."
     },
     "createGroup": {
       "title": "Create a group",

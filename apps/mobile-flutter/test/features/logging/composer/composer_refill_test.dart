@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
-import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_area.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
 import '../../../l10n_test_loader.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 /// Long-press a sent message → Edit → its words come back to the composer.
 ///

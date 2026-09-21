@@ -5,12 +5,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CheatMealActions } from '@/components/logging/feed/cheat/cheat-meal-actions';
+import { StopScale } from '@/components/logging/feed/cheat/stop-scale';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
-import { StopScale } from '@/components/shared/nutrition/stop-scale';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { formatTime } from '@/lib/core/date/format-time';

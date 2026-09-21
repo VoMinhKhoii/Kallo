@@ -12,10 +12,6 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/slider_nutrition.dart';
 
-/// Dot/track color per slider axis — mirrors the web `CHEAT_SLIDER_COLORS` so
-/// the live card and the persisted recap stay in lockstep. Macro axes reuse the
-/// shared macro palette; drinks borrows the warm accent.
-
 /// One food-domain icon per axis — encodes the slider's identity (and shares
 /// its accent color), matching the web `CHEAT_SLIDER_ICONS`.
 IconData cheatSliderIcon(CheatSliderKey key) => switch (key) {

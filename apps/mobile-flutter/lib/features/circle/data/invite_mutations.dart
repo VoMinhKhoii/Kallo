@@ -15,20 +15,11 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardBundleProvider,
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
+import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart'
     show loggingDayProvider, mealDatesProvider;
 import 'circle_providers.dart'
     show circleFeedProvider, mealShareInvitesProvider;
-
-/// Local calendar date (YYYY-MM-DD). Still sent by [acceptMealShareInvite] for
-/// wire compatibility with older servers; the current server ignores it and
-/// stamps the copy at the source meal's instant instead.
-String _todayLocalDate() {
-  final now = DateTime.now();
-  final mm = now.month.toString().padLeft(2, '0');
-  final dd = now.day.toString().padLeft(2, '0');
-  return '${now.year}-$mm-$dd';
-}
 
 /// Accept an invite (`POST /api/v1/groups/invites/accept`) — the scaled meal
 /// lands at the SOURCE meal's instant, the same eating event seen from my
@@ -42,7 +33,7 @@ Future<String> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   final json = await api
       .post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {
         'inviteId': inviteId,
-        'loggedDate': _todayLocalDate(),
+        'loggedDate': todayDateString(),
         'timezoneOffset': localTimezoneOffsetMinutes(),
       });
   ref.invalidate(mealShareInvitesProvider);

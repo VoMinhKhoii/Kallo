@@ -27,12 +27,12 @@ vi.mock('motion/react', () => ({
   },
 }));
 
-import { FeedEntry } from '@/components/groups/feed-entry';
+import { FeedEntry } from '@/components/groups/feed/feed-entry';
 import {
   SHARE_ID,
   sharedMealEntryFixture,
   shareReplyFixture,
-} from './fixtures';
+} from '../../__tests__/fixtures';
 
 /** An answered, hearted post: this suite is about the figures the glyph row
  * carries, so the shared fixture's quiet defaults are the wrong starting

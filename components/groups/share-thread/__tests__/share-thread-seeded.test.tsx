@@ -9,7 +9,7 @@ const { fetchShareThread } = vi.hoisted(() => ({
   fetchShareThread: vi.fn(async () => null),
 }));
 vi.mock('@/lib/domain/social/circle-client', () => ({ fetchShareThread }));
-vi.mock('@/components/groups/feed-entry', () => ({
+vi.mock('@/components/groups/feed/feed-entry', () => ({
   FeedEntry: ({ entry }: { entry: SharedMealEntry }) => (
     <div data-testid="feed-entry">{entry.meal.rawInput}</div>
   ),

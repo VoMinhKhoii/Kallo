@@ -3,7 +3,7 @@
 import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
-import { FeedEntry } from '@/components/groups/feed-entry';
+import { FeedEntry } from '@/components/groups/feed/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
 import { Button } from '@/components/ui/button';
 import { useFriendsThreadFeed } from '@/hooks/social/circle/use-friend-thread-feed';

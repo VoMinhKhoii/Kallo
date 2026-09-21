@@ -345,10 +345,16 @@ describe('confirmAndSaveMealAction', () => {
       mockInsertRouting(capturedValues as unknown[])
     );
     const boundTo: Record<string, unknown>[] = [];
+    const targets: unknown[] = [];
     mockTxUpdate.mockReturnValue({
       set: vi.fn((vals: Record<string, unknown>) => {
         boundTo.push(vals);
-        return { where: vi.fn().mockResolvedValue(undefined) };
+        return {
+          where: vi.fn((predicate: unknown) => {
+            targets.push(predicate);
+            return Promise.resolve(undefined);
+          }),
+        };
       }),
     });
 
@@ -357,6 +363,12 @@ describe('confirmAndSaveMealAction', () => {
     expect(boundTo).toHaveLength(expectedUpdates);
     if (expectedUpdates > 0) {
       expect(boundTo[0]).toEqual({ acceptedMealId: UUID_MEAL });
+      // WHICH invite, not just that one was written. Binding the analysis id
+      // (they are both uuids in scope here) would satisfy every other
+      // assertion in this test and point the offer at nothing.
+      const target = JSON.stringify(targets[0]);
+      expect(target).toContain(sourceInviteId as string);
+      expect(target).not.toContain(UUID_1);
     }
   });
 

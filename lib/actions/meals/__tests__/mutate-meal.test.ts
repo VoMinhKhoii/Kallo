@@ -1,3 +1,4 @@
+import { and, eq, isNull } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +70,7 @@ import {
 import {
   LOGGED_AT,
   MOCK_USER as mockUser,
+  schema,
   UUID_1,
   UUID_2,
   UUID_MEAL,
@@ -176,18 +178,33 @@ describe('discardPendingAnalysisAction', () => {
     // The predicate is the entire safety of this write. Without `status =
     // accepted` it could re-open a dismissed offer; without `accepted_meal_id
     // IS NULL` it could re-offer a meal the recipient already has; without
-    // `to_user_id` it is someone else's invite. Serialized, because Drizzle
-    // bypasses RLS and these clauses are the only guard there is.
+    // `to_user_id` it is someone else's invite. Drizzle bypasses RLS, so these
+    // four clauses are the only guard there is.
+    //
+    // Compared against a predicate BUILT here with the same operators, not
+    // sniffed for substrings. The substring version of this test passed with
+    // the status flipped to 'pending', with `isNull` flipped to `isNotNull`,
+    // with `ne` for `eq`, and with the wrong id in the user clause — because
+    // "accepted" is a substring of "acceptedMealId" and no bound value was
+    // ever checked. It asserted nothing it claimed to.
     queueDiscard([{ id: UUID_1, sourceInviteId: UUID_2 }]);
     const captured = queueRelease([{ id: UUID_2 }]);
 
     await discardPendingAnalysisAction({ analysisId: UUID_1 });
 
-    const predicate = JSON.stringify(captured.where);
-    expect(predicate).toContain('mealShareInvites.toUserId');
-    expect(predicate).toContain('mealShareInvites.status');
-    expect(predicate).toContain('mealShareInvites.acceptedMealId');
-    expect(predicate).toContain('accepted');
+    // The schema double's columns are plain strings, which is what makes the
+    // serialized predicate readable at all; Drizzle's operator signatures want
+    // a Column. The emitted SQL object is identical either way, so this cast
+    // exists only so the expectation can be written with the same operators
+    // the code under test uses.
+    const invites = schema.mealShareInvites as unknown as Record<string, never>;
+    const expected = and(
+      eq(invites.id, UUID_2),
+      eq(invites.toUserId, mockUser.id),
+      eq(invites.status, 'accepted'),
+      isNull(invites.acceptedMealId)
+    );
+    expect(JSON.stringify(captured.where)).toBe(JSON.stringify(expected));
   });
 
   it("should throw for an analysis that is gone or someone else's", async () => {

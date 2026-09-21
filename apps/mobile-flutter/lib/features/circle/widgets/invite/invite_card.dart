@@ -13,13 +13,15 @@ import '../portion/portion_seats.dart' show kSeatColors;
 import 'invite_card_parts.dart';
 import 'portion_readout.dart';
 
-/// An offer someone made you, shaped like a Threads notification: the person,
-/// what they did, and ONE live action as a filled pill on the trailing edge.
+/// An offer someone made you: the person, what they did, the meal, and the two
+/// choices side by side at the bottom.
 ///
-/// The dismiss lives in the overflow rather than beside the accept. Two
-/// competing buttons made the primary action the smallest thing in the card and
-/// put it furthest from the thumb; one filled pill and a `⋯` is the shape every
-/// notification list converged on for a reason.
+/// The dismiss used to live in a `⋯` overflow sheet, on the reasoning that two
+/// competing buttons made the primary action the smallest thing in the card.
+/// The deck changed what that costs — the only way past an offer is to act on
+/// it, so declining one was two taps and a sheet every time, while the header
+/// carried three controls beside the sender's name. Weight separates the two
+/// now instead of position: a filled pill against a quiet one.
 class InviteCard extends ConsumerStatefulWidget {
   const InviteCard({required this.invite, super.key});
 

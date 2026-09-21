@@ -59,8 +59,7 @@
     "leaveDescription": "You'll lose access to this group's timeline.",
     "leaveConfirm": "Leave group",
     "leaveError": "Couldn't leave the group. Try again.",
-    "cancel": "Cancel",
-    "alcohol": "Alcohol {grams}g"
+    "cancel": "Cancel"
   },
   "shareControl": {
     "share": "Share to circle",

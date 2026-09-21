@@ -2,8 +2,13 @@
 // The life of a directed meal-share offer: claimed, bound to a meal, or handed
 // back
 // ---------------------------------------------------------------------------
-// One module for every write that moves an invite's status, so the rules that
-// decide when an offer is spent live in one place rather than at each ending.
+// The claim, and the two writes that resolve what a claim turned into: bound to
+// a meal, or handed back. The rules for when an offer is spent live here rather
+// than at each ending.
+//
+// Not literally every status write — the guarded dismiss stays inline in
+// `invite-response.ts`, where it is the whole of its action and has no second
+// caller to share it with.
 //
 // CLAIMING is the part every taking path does identically.
 // Two actions consume a pending invite: `acceptMealShareInviteAction` copies

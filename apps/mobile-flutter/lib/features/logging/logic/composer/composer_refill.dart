@@ -3,9 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../data/logging_providers.dart';
 import '../../widgets/composer/meal_input.dart';
 import '../../widgets/relog/mention_text_controller.dart';
+import '../../data/handoff_slots.dart';
 
 /// Long-press a sent message → Edit → its words are back in the composer.
 ///
