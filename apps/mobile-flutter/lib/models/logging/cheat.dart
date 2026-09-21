@@ -227,30 +227,3 @@ class RecentCheatOccasion {
         loggedAt: json['loggedAt'] as String,
       );
 }
-
-/// One slider on a shared cheat meal, as the feed shows it: the axis, where
-/// the logger put it, and the word sitting under that position.
-///
-/// Resolved by the server (`lib/domain/cheat/feed-recap.ts`) rather than
-/// shipping the stored spec, which is ~5x the bytes for data the post never
-/// draws — and this endpoint re-polls every 30s.
-class CheatRecapRow {
-  const CheatRecapRow({
-    required this.key,
-    required this.label,
-    required this.level,
-    required this.anchorLabel,
-  });
-
-  final String key;
-  final String label;
-  final int level;
-  final String anchorLabel;
-
-  factory CheatRecapRow.fromJson(Map<String, dynamic> json) => CheatRecapRow(
-    key: json['key'] as String? ?? '',
-    label: json['label'] as String? ?? '',
-    level: (json['level'] as num?)?.round() ?? 0,
-    anchorLabel: json['anchorLabel'] as String? ?? '',
-  );
-}

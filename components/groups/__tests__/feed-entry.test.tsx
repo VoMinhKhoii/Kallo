@@ -157,15 +157,6 @@ describe('FeedEntry', () => {
           meal: {
             ...entry.meal,
             entryMode: 'cheat',
-            alcoholG: 28,
-            cheatRecap: [
-              {
-                key: 'drinks',
-                label: 'Đồ uống',
-                level: 6,
-                anchorLabel: 'vài ly',
-              },
-            ],
           },
         }}
       />
@@ -174,9 +165,10 @@ describe('FeedEntry', () => {
     expect(screen.getByText('badge')).toBeInTheDocument();
     // The figure is a placement, not a measurement.
     expect(screen.getByText(/≈/)).toBeInTheDocument();
-    // Alcohol is the one calorie source the P/C/F line cannot hold.
-    expect(screen.getByText(/alcohol/i)).toBeInTheDocument();
-    expect(screen.getByText('vài ly')).toBeInTheDocument();
+    // And nothing else. A post is read at a glance in someone else's scroll:
+    // the macro breakdown would reintroduce exactly the false precision the
+    // badge and the `≈` are there to remove.
+    expect(screen.queryByText(/P:/)).not.toBeInTheDocument();
   });
 
   it('leaves a precise post untouched', () => {

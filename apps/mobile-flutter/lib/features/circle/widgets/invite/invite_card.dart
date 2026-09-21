@@ -2,12 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -52,31 +49,6 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     }
   }
 
-  Future<void> _openOverflow() async {
-    await showNhamSheet<void>(
-      context,
-      builder:
-          (sheetContext) => KalloSheetSurface(
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                KalloSheetHeader(title: widget.invite.from.label),
-                InviteOverflowRow(
-                  icon: LucideIcons.x300,
-                  label: tr('groups.invites.dismiss'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _dismiss();
-                  },
-                ),
-                const SizedBox(height: KalloSpacing.sp5),
-              ],
-            ),
-          ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final invite = widget.invite;
@@ -113,15 +85,6 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                   ],
                 ),
               ),
-              const SizedBox(width: KalloSpacing.sp2),
-              KalloButton(
-                variant: KalloButtonVariant.cta,
-                compact: true,
-                title: tr(invite.acceptLabelKey),
-                loading: _busy,
-                onPressed: _accept,
-              ),
-              InviteOverflowButton(onTap: _busy ? null : _openOverflow),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp3),
@@ -154,6 +117,40 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                 style: dashCaption(tabular: true),
               ),
               Text(fmtInviteKcal(invite.caloriesKcal), style: dashValue()),
+            ],
+          ),
+          const SizedBox(height: KalloSpacing.sp4),
+          // Both choices, side by side, at the bottom.
+          //
+          // The dismiss used to live in a `⋯` overflow sheet, on the reasoning
+          // that two competing buttons made the primary action the smallest
+          // thing in the card. The deck changed what that costs: the only way
+          // past an offer is to act on it, so declining one was two taps and a
+          // sheet, every time, and the card's own header was carrying three
+          // controls beside the sender's name. Side by side, the choice is one
+          // tap either way and the header goes back to being an identity line.
+          // Weight still separates them — a filled pill against a quiet one.
+          Row(
+            children: [
+              Expanded(
+                child: KalloButton(
+                  variant: KalloButtonVariant.secondary,
+                  compact: true,
+                  title: tr('groups.invites.dismiss'),
+                  disabled: _busy,
+                  onPressed: _dismiss,
+                ),
+              ),
+              const SizedBox(width: KalloSpacing.sp3),
+              Expanded(
+                child: KalloButton(
+                  variant: KalloButtonVariant.cta,
+                  compact: true,
+                  title: tr(invite.acceptLabelKey),
+                  loading: _busy,
+                  onPressed: _accept,
+                ),
+              ),
             ],
           ),
         ],

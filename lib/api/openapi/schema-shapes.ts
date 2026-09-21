@@ -273,18 +273,6 @@ const sharedMealEntry = object({
       description:
         'A cheat meal has no item rows, so it cannot be copied off the wall; clients hide the copy action for these.',
     },
-    alcoholG: nullableNumber,
-    cheatRecap: {
-      type: ['array', 'null'],
-      description:
-        'Where the logger put each cheat slider — resolved server-side, since the stored spec is ~5x the bytes for data the post never draws. Null on a precise meal.',
-      items: object({
-        key: { type: 'string' },
-        label: { type: 'string' },
-        level: { type: 'integer' },
-        anchorLabel: { type: 'string' },
-      }),
-    },
     sharedAt: { type: 'string', format: 'date-time' },
     isBackfilled: { type: 'boolean' },
   }),
