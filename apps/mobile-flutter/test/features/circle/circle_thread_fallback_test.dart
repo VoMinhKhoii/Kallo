@@ -401,6 +401,144 @@ void main() {
     expect(find.text('Phở bò tái'), findsOneWidget);
   });
 
+  testWidgets('a share swapped in under a kept state shows NEITHER old thing', (
+    tester,
+  ) async {
+    // `MaterialPage` in `router.dart` carries no key, so `Navigator` updates
+    // the existing route rather than building a new one when this page is
+    // asked for a different share — tapping a notification while already
+    // reading a thread. `shareId` changes under a [State] that is kept.
+    //
+    // Two ways that goes wrong, and this pins both (caught in review,
+    // 2026-09-22): the held post would be shown for the new thread while it
+    // loads, and the composer's own controller would carry the previous
+    // thread's draft into a field now addressed to this one. Post A on screen,
+    // A's words in the box, and the dock already posting to B.
+    Completer<void>? gate;
+    final api = FakeApiClient((request) async {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], null);
+      }
+      if (request.path == sharePath('s9')) {
+        return shareJson(fallbackEntry('s9'));
+      }
+      if (request.path == sharePath('s8')) {
+        await gate?.future;
+        return shareJson(fallbackEntry('s8', rawInput: 'Cơm tấm sườn'));
+      }
+      return readMarker(request);
+    });
+
+    final shareId = ValueNotifier('s9');
+    addTearDown(shareId.dispose);
+    await pumpCircleScreen(
+      tester,
+      ValueListenableBuilder<String>(
+        valueListenable: shareId,
+        // Same widget type, same position, no key: exactly what the router
+        // does, so the element — and its State — is reused.
+        builder: (context, id, _) => CircleThreadScreen(shareId: id),
+      ),
+      api: api,
+      expand: true,
+    );
+    expect(find.text('Phở bò tái'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'trả lời bài A',
+    );
+    await tester.pumpAndSettle();
+
+    // The second thread's read is held open, which is the whole window: this
+    // is the state the page is in while it loads a share it has never shown.
+    gate = Completer<void>();
+    shareId.value = 's8';
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      find.text('Phở bò tái'),
+      findsNothing,
+      reason: 'the previous thread may not stand in for the one being loaded',
+    );
+    final composer = find.byKey(const Key('reply-composer'));
+    if (composer.evaluate().isNotEmpty) {
+      expect(
+        tester.widget<TextField>(composer).controller?.text,
+        isEmpty,
+        reason: 'a draft written to one post may never be addressed to another',
+      );
+    }
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Cơm tấm sườn'), findsOneWidget);
+    expect(find.text('Phở bò tái'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      isEmpty,
+      reason: 'the new thread opens with an empty field, as a fresh page would',
+    );
+  });
+
+  testWidgets('a draft never follows the viewer from one thread to another', (
+    tester,
+  ) async {
+    // The other half of the kept-state swap, and the half no loading window
+    // covers: BOTH shares are already in the feed, so the new thread is
+    // `ThreadReady` on the very frame the id changes. Nothing unmounts, the
+    // composer's element is reused, and without a key on the thread its
+    // [TextEditingController] hands the previous post's words to a dock that
+    // now posts somewhere else.
+    final api = FakeApiClient(
+      (request) =>
+          request.path == '/api/v1/groups/friends/feed'
+              ? pageJson([
+                entryJson('s1'),
+                fallbackEntry('s2', rawInput: 'Cơm tấm sườn'),
+              ], null)
+              : readMarker(request),
+    );
+
+    final shareId = ValueNotifier('s1');
+    addTearDown(shareId.dispose);
+    await pumpCircleScreen(
+      tester,
+      ValueListenableBuilder<String>(
+        valueListenable: shareId,
+        builder: (context, id, _) => CircleThreadScreen(shareId: id),
+      ),
+      api: api,
+      expand: true,
+    );
+    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'trả lời bài A',
+    );
+    await tester.pumpAndSettle();
+
+    shareId.value = 's2';
+    await tester.pumpAndSettle();
+
+    // No skeleton was ever shown — this is the synchronous path.
+    expect(find.text('Cơm tấm sườn'), findsOneWidget);
+    expect(find.text('Bún chả Hà Nội'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      isEmpty,
+      reason: 'a reply half-written to one post may not arrive at another',
+    );
+  });
+
   testWidgets('a share that is gone or not ours to see stays the gone state', (
     tester,
   ) async {

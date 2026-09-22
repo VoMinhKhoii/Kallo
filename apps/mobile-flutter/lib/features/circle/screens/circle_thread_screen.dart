@@ -65,7 +65,15 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
 
   /// The last post this page actually showed, held so a refetch underneath it
   /// does not blank the page — see the rule documented in [build].
-  CircleFeedEntry? _lastReady;
+  ///
+  /// Stored WITH the thread it belongs to. `MaterialPage` in `router.dart`
+  /// carries no key, so `Navigator` updates the existing route in place when
+  /// this page is asked for a different share (a notification tapped while
+  /// already reading a thread): the widget's `shareId` changes under a state
+  /// that is kept. A bare entry would then be shown for the new thread while it
+  /// loads — post A on screen over a dock that already posts to B (caught in
+  /// review, 2026-09-22).
+  ({ThreadRef ref, CircleFeedEntry entry})? _lastReady;
 
   @override
   void dispose() {
@@ -101,6 +109,11 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   Widget _dock(CircleFeedEntry post) => Align(
     alignment: Alignment.bottomCenter,
     child: ThreadComposer(
+      // Keyed on the thread, so a share swapped in under a kept state gets a
+      // FRESH composer rather than the previous thread's draft in a field now
+      // addressed to this one. The same identity change as the held post
+      // above, from the other side.
+      key: ValueKey(_ref),
       shareId: widget.shareId,
       // `label`, not `displayName`: the field is nullable and a person with no
       // name set still has a handle to be addressed by — the same fallback
@@ -156,8 +169,12 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     // local: "there is a post to show" and "there is a state to show instead"
     // are a single decision, so they cannot drift apart, and no arm has to
     // recover the post with a `!` or the state with a cast.
-    if (view is ThreadReady) _lastReady = view.entry;
-    final held = _lastReady;
+    if (view is ThreadReady) _lastReady = (ref: _ref, entry: view.entry);
+    // Structural rather than a `didUpdateWidget` reset: a held post that does
+    // not belong to the thread being shown cannot be reached at all, whatever
+    // the lifecycle does. [ThreadRef] is a record, so this is value equality.
+    final last = _lastReady;
+    final held = last != null && last.ref == _ref ? last.entry : null;
     final (Widget body, Widget? dock) = switch (view) {
       ThreadReady(:final entry) => (_body(entry), _dock(entry)),
       // Two arms rather than `ThreadLoading() || ThreadFailed() when …`: the
