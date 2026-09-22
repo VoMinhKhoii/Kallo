@@ -37,9 +37,22 @@ describe('TimelineCalendar', () => {
     render(<TimelineCalendar {...baseProps} />);
 
     expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /openCalendar/i })
     ).toBeInTheDocument();
+  });
+
+  it('opens as a modal dialog carrying its own title and description', async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    const dialog = screen.getByRole('dialog');
+    // The heading lives on the dialog, not the panel: Radix needs a Title and
+    // a Description to label the modal, and duplicating them inside the grid
+    // would announce the same words twice.
+    expect(dialog).toHaveAccessibleName(/datePickerTitle/i);
+    expect(dialog).toHaveAccessibleDescription(/datePickerDescription/i);
   });
 
   it('reports the clicked day as a YYYY-MM-DD string', async () => {
