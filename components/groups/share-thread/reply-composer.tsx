@@ -114,7 +114,8 @@ export function ReplyComposer({
             a `size-8` disc centred in a `size-11` box, whose 6px of slack read
             as part of the gap: field-to-button measured 14 against the 8
             inside the pill. `ml-2` above is that same 8, so the two are one
-            gap. `size-6` glyph keeps the disc's proportion. */}
+            gap. The `size-5` glyph is a step under the nav 24, matching
+            mobile's `action` tier — at 24 it filled too much of the disc. */}
         <button
           aria-label={t('send')}
           className="flex size-11 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-white transition-colors hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-50"
@@ -122,7 +123,7 @@ export function ReplyComposer({
           tabIndex={hasDraft ? undefined : -1}
           type="submit"
         >
-          <ArrowUp className="size-6" />
+          <ArrowUp className="size-5" />
         </button>
       </span>
     </form>

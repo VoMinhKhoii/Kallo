@@ -105,17 +105,18 @@ class ThreadSendButton extends StatelessWidget {
             child:
                 submitting
                     ? const CupertinoActivityIndicator(
-                      // `radius * 2` is the indicator's own box, so this is the
-                      // glyph tier below in the same footprint.
-                      radius: KalloIcons.primary / 2,
+                      // `radius * 2` is the indicator's own box, so this puts
+                      // the spinner in the glyph's exact footprint.
+                      radius: KalloIcons.action / 2,
                       color: KalloColors.text,
                     )
                     : const Icon(
                       LucideIcons.arrowUp400,
-                      // `primary`: a glyph that carries the whole control,
-                      // standing alone at the full height of the row it acts
-                      // on. It was `tertiary` 18 when the disc was 32.
-                      size: KalloIcons.primary,
+                      // `action`: a glyph acting ON something, one tier under
+                      // the navigation 24 — at `primary` it filled too much of
+                      // the disc and the button out-weighed the field it sends.
+                      // (It was `tertiary` 18 back when the disc was 32.)
+                      size: KalloIcons.action,
                       color: KalloColors.text,
                     ),
           ),
