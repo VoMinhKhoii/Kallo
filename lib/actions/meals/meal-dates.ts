@@ -3,6 +3,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
+import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 import type { MealDateSummary } from '@/lib/domain/logging/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -54,8 +55,19 @@ export async function loadMealDates(input: {
       .from(meals)
       .where(eq(meals.userId, user.id))
       .groupBy(mealDateExpr),
+    // Not grouped: deciding whether a staged row is renderable needs its
+    // payload, so the rows come back whole and the dedupe happens below. The
+    // cost is bounded — staged cards are confirmed, discarded, or reaped within
+    // a week, so this is a handful of rows, not a history.
     db
-      .select({ date: pendingDateExpr.as('date') })
+      .select({
+        id: pendingAnalyses.id,
+        rawInput: pendingAnalyses.rawInput,
+        loggedAt: pendingAnalyses.loggedAt,
+        entryMode: pendingAnalyses.entryMode,
+        pipelineResult: pendingAnalyses.pipelineResult,
+        date: pendingDateExpr.as('date'),
+      })
       .from(pendingAnalyses)
       // The two queries have to agree on what counts as a live pending card,
       // or the sidebar describes a day the feed draws differently. That means
@@ -68,8 +80,7 @@ export async function loadMealDates(input: {
       //   7-day reaping horizon, so counting one here masks a real total for
       //   a card nobody can see — the sweep is best-effort and only runs on a
       //   day load, so such rows genuinely linger.
-      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
-      .groupBy(pendingDateExpr),
+      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged())),
   ]);
 
   // A staged card carries its nutrition inside pipeline_result's JSONB, not in
@@ -80,11 +91,16 @@ export async function loadMealDates(input: {
   for (const row of mealRows) {
     kcalByDate.set(row.date, toKcal(row.kcal));
   }
-  // Unconditionally, overwriting any saved-meal sum. A day holding BOTH a
-  // saved meal and a pending card knows only part of what was eaten, and a
-  // partial total is the one thing worse than none — it looks complete. Same
-  // rule as the CASE guard above, one layer up.
+  // Overwrites any saved-meal sum: a day holding BOTH a saved meal and a
+  // staged card knows only part of what was eaten, and a partial total is the
+  // one thing worse than none — it looks complete. Same rule as the CASE guard
+  // above, one layer up.
+  //
+  // `toStagedCard` is the feed's own renderability test, shared rather than
+  // restated. A row it rejects is a card nobody can see or confirm, so it must
+  // not mask a total either.
   for (const row of pendingRows) {
+    if (!toStagedCard(row)) continue;
     kcalByDate.set(row.date, null);
   }
 

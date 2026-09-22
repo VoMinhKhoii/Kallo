@@ -1,7 +1,8 @@
 'use client';
 
 import { enUS, vi as viLocale } from 'date-fns/locale';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { labelDayButton } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import { dateStringToDate, dateToDateString } from './timeline-utils';
 
@@ -46,6 +47,7 @@ export function TimelineCalendarPanel({
   dailyKcal,
   onSelectDate,
 }: TimelineCalendarPanelProps) {
+  const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
   const selected = dateStringToDate(selectedDate);
 
@@ -71,6 +73,16 @@ export function TimelineCalendarPanel({
         hasMeal: (date) => dailyKcal.has(dateToDateString(date)),
       }}
       modifiersClassNames={{ hasMeal: HAS_MEAL_MARKER_CLASS }}
+      // The marker is a CSS `after:` dot, which a screen reader cannot see.
+      // Without naming it, finding the days that hold a log means opening them
+      // one at a time — so the state goes in the button's accessible name, as
+      // the sidebar's own date buttons already do with their totals.
+      labels={{
+        labelDayButton: (date, modifiers, options, dateLib) => {
+          const base = labelDayButton(date, modifiers, options, dateLib);
+          return modifiers.hasMeal ? `${base}, ${t('hasMealIndicator')}` : base;
+        },
+      }}
     />
   );
 }

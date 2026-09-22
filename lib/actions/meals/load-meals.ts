@@ -9,13 +9,9 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
-import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
-import type { PipelineResult } from '@/lib/ai/types/result';
+import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
-import type {
-  CheatSliderSpec,
-  CheatSlidersPersisted,
-} from '@/lib/core/types/cheat';
+import type { CheatSlidersPersisted } from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
@@ -199,49 +195,12 @@ async function loadPendingAnalysesByDateForUser(
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
 
+  // The renderability test lives in `toStagedCard` because the timeline's date
+  // index has to apply the SAME one — a row this drops is a card nobody can
+  // see, and counting it there hid a real total.
   return rows.flatMap<PendingMealConfirmation>((row) => {
-    // Defensive: a row whose stored pipelineResult predates the current shape
-    // (legacy/malformed) must not throw and 500 the entire day load via the
-    // Promise.all in loadLoggingDay. Guard the whole conversion — any malformed
-    // shape is skipped (such a row is un-confirmable anyway, since confirm reads
-    // the same pipelineResult).
-    try {
-      const base = {
-        id: row.id,
-        rawInput: row.rawInput,
-        loggedAt: row.loggedAt.toISOString(),
-      };
-      // Cheat rows stage a slider spec, not a decomposition PipelineResult, so
-      // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,
-      // mirroring confirmAndSaveMealAction.
-      if (row.entryMode === 'cheat') {
-        // Validate the staged spec rather than blindly destructuring: a
-        // malformed payload (e.g. {}) wouldn't throw and would surface a card
-        // with cheatSpec: undefined. Throwing routes it through the catch below,
-        // which skips + logs it like any other malformed row.
-        const spec = (row.pipelineResult as { spec?: unknown } | null)?.spec;
-        if (
-          !spec ||
-          typeof spec !== 'object' ||
-          !Array.isArray((spec as { sliders?: unknown }).sliders)
-        ) {
-          throw new Error('Malformed cheat pending analysis payload');
-        }
-        return [{ ...base, cheatSpec: spec as CheatSliderSpec }];
-      }
-      return [
-        {
-          ...base,
-          parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
-        },
-      ];
-    } catch (error) {
-      console.error(
-        '[loadPendingAnalyses] Skipping pending analysis with malformed pipelineResult',
-        { id: row.id, error }
-      );
-      return [];
-    }
+    const card = toStagedCard(row);
+    return card ? [card] : [];
   });
 }
 

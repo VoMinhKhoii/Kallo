@@ -29,6 +29,19 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import { loadMealDates } from '@/lib/actions/meals/meal-dates';
+import { samplePipelineResult } from './meal-doubles';
+
+/** A staged row the feed would actually render. */
+function stagedRow(date: string) {
+  return {
+    id: '11111111-1111-4111-8111-111111111111',
+    rawInput: 'Phở bò',
+    loggedAt: new Date(`${date}T08:00:00.000Z`),
+    entryMode: 'precise',
+    pipelineResult: samplePipelineResult,
+    date,
+  };
+}
 
 describe('loadMealDates', () => {
   // mockReset, not clearAllMocks: the latter leaves queued `once` values in
@@ -37,22 +50,28 @@ describe('loadMealDates', () => {
     mockDbSelect.mockReset();
   });
 
-  /** Queues the two grouped reads: confirmed meals, then pending analyses. */
+  /**
+   * Queues the two reads. The meals side is grouped in SQL; the pending side
+   * is not — it needs each row's payload to decide whether the feed would
+   * render it — so their mock chains differ.
+   */
   function mockDateQueries(
     mealRows: Array<{ date: string; kcal: unknown }>,
-    pendingRows: Array<{ date: string }>
+    pendingRows: Array<Record<string, unknown> & { date: string }>
   ) {
-    const grouped = (rows: unknown) => ({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          groupBy: vi.fn().mockResolvedValue(rows),
-        }),
-      }),
-    });
-
     mockDbSelect
-      .mockReturnValueOnce(grouped(mealRows))
-      .mockReturnValueOnce(grouped(pendingRows));
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockResolvedValue(mealRows),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(pendingRows),
+        }),
+      });
   }
 
   it('ignores staged cards the feed has already stopped rendering', async () => {
@@ -60,9 +79,7 @@ describe('loadMealDates', () => {
     // (isStillStaged, load-meals.ts). This query has to draw the SAME line: an
     // abandoned row that only still exists because a best-effort sweep has not
     // run would otherwise mask a real saved total for a card nobody can see.
-    const pendingWhere = vi.fn().mockReturnValue({
-      groupBy: vi.fn().mockResolvedValue([]),
-    });
+    const pendingWhere = vi.fn().mockResolvedValue([]);
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -87,7 +104,7 @@ describe('loadMealDates', () => {
         { date: '2026-04-06', kcal: 1842 },
         { date: '2026-04-05', kcal: 2014 },
       ],
-      [{ date: '2026-04-07' }, { date: '2026-04-06' }]
+      [stagedRow('2026-04-07'), stagedRow('2026-04-06')]
     );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
@@ -135,6 +152,21 @@ describe('loadMealDates', () => {
     ]);
   });
 
+  it('keeps the total when the only pending row on the day is unrenderable', async () => {
+    // The feed drops a staged row whose pipelineResult is legacy or malformed
+    // — it is neither visible nor confirmable. Masking a real saved total for
+    // a card nobody can see hides that day's number until the row is reaped,
+    // up to seven days later.
+    mockDateQueries(
+      [{ date: '2026-04-06', kcal: 500 }],
+      [{ ...stagedRow('2026-04-06'), pipelineResult: { junk: true } }]
+    );
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-06', kcal: 500 },
+    ]);
+  });
+
   it('gives up the total on a day that also holds a pending card', async () => {
     // Same trap as the SUM guard, one layer up: a staged card's calories are
     // deliberately not counted, so a day with a saved 500 kcal meal AND a
@@ -142,7 +174,7 @@ describe('loadMealDates', () => {
     // show a subtotal wearing the face of a complete total.
     mockDateQueries(
       [{ date: '2026-04-06', kcal: 500 }],
-      [{ date: '2026-04-06' }]
+      [stagedRow('2026-04-06')]
     );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
@@ -153,7 +185,7 @@ describe('loadMealDates', () => {
   it('keeps a pending-only day in the list so the sidebar still shows it', async () => {
     // pending_analyses holds nutrition inside its JSONB pipeline_result, not in
     // a column, so a staged card contributes its DATE but no calories.
-    mockDateQueries([], [{ date: '2026-04-07' }]);
+    mockDateQueries([], [stagedRow('2026-04-07')]);
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
       { date: '2026-04-07', kcal: null },

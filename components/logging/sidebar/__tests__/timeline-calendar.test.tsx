@@ -159,6 +159,22 @@ describe('TimelineCalendar', () => {
     ).not.toBeDisabled();
   });
 
+  it('says in the accessible name which days hold a log', async () => {
+    // The marker is a CSS `after:` dot, which is invisible to a screen reader.
+    // Without this a nonvisual user has to open days one at a time to find the
+    // ones with meals on them — the sidebar's own date buttons already name
+    // their totals for the same reason.
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    expect(
+      screen.getByRole('button', { name: /September 16.*hasMealIndicator/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /September 17.*hasMealIndicator/i })
+    ).not.toBeInTheDocument();
+  });
+
   it('marks the days that already hold a log', async () => {
     const { container } = render(<TimelineCalendar {...baseProps} />);
     await openCalendar();
