@@ -242,6 +242,42 @@ describe('loadMealDates', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Skew between the two pending scans
+  //
+  // They are separate statements, so under READ COMMITTED each gets its own
+  // snapshot and a row inserted between them is seen by only one. The merge
+  // must not need them to agree: whichever scan saw a live staged card, that
+  // card's day gets the treatment it earns.
+  // -------------------------------------------------------------------------
+
+  it('lists a pending-only day only the payload scan saw', async () => {
+    // Staged between the grouped date scan and the payload scan, so the date
+    // scan has no row for it. Driving the output off the date scan alone would
+    // drop a day the feed renders — the sidebar-disagrees-with-the-feed class
+    // this file has already fixed three times.
+    mockDateQueries([], [stagedRow('2026-04-07')], []);
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-07', kcal: null },
+    ]);
+  });
+
+  it('masks a total when only the payload scan saw the staged card', async () => {
+    // Same skew, on a day that also holds a saved meal. Keeping the 500 would
+    // show a subtotal wearing the face of a complete total, which is the
+    // failure direction that matters.
+    mockDateQueries(
+      [{ date: '2026-04-06', kcal: 500 }],
+      [stagedRow('2026-04-06')],
+      []
+    );
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-06', kcal: null },
+    ]);
+  });
+
+  // -------------------------------------------------------------------------
   // The payload scan's cardinality
   // -------------------------------------------------------------------------
 

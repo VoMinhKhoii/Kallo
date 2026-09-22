@@ -129,7 +129,28 @@ export async function loadMealDates(input: {
   // and nothing is undecided.
   const undecidedFrom = scannedRows[PENDING_SCAN_LIMIT]?.date ?? null;
 
-  for (const { date } of pendingDateRows) {
+  // The union of what EITHER pending scan saw, because they are separate
+  // statements and under READ COMMITTED each gets its own snapshot: a row
+  // staged between them is seen by one and not the other.
+  //
+  // Only one direction of that skew can do harm. When the date scan alone saw
+  // the row, the payload scan simply ran before it existed, and reporting the
+  // day unmasked describes a real recent state. But when the PAYLOAD scan alone
+  // saw it, driving the output off the date scan would drop a live staged card
+  // on the floor — losing a pending-only day, or leaving a complete-looking
+  // total on a day that now has a card. Taking the union removes that case and
+  // leaves only ordinary staleness, which no read can avoid: a card staged a
+  // millisecond after any snapshot is missed by it too.
+  //
+  // Hence no transaction. A REPEATABLE READ pair would make the two scans agree
+  // with each other, but it cannot make them agree with the present, and it
+  // would cost every timeline load a BEGIN/COMMIT and serialize two reads that
+  // currently run in parallel — real latency against a stale-by-milliseconds
+  // number that the next write invalidates anyway.
+  const pendingDates = new Set(pendingDateRows.map((row) => row.date));
+  for (const date of renderableDates) pendingDates.add(date);
+
+  for (const date of pendingDates) {
     // Masking overwrites any saved-meal sum: a day holding BOTH a saved meal
     // and a staged card knows only part of what was eaten, and a partial total
     // is the one thing worse than none — it looks complete. Same rule as the
