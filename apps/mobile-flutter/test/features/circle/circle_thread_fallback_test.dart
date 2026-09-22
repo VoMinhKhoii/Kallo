@@ -294,6 +294,113 @@ void main() {
     );
   });
 
+  testWidgets('a refresh that FAILS keeps the post and the draft', (
+    tester,
+  ) async {
+    // The gap the first cut of the hold left open (found by review, 2026-09-22):
+    // masking only `ThreadLoading` still tore the page down when the cold by-id
+    // fetch that replaces a page-2 post failed. `ThreadFailed` says nothing
+    // about whether the post exists — telling someone their friend's meal is
+    // gone, and throwing away their half-typed reply, because the train went
+    // into a tunnel is a lie they cannot undo.
+    //
+    // Note what is NOT asserted away: the two cold-load tests below still get
+    // their error card and their gone state. The hold needs a post to have been
+    // shown before it does anything.
+    var shareFails = true;
+    final api = FakeApiClient((request) async {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], 'cursor-1');
+      }
+      if (request.path == '/api/v1/groups/friends/feed?before=cursor-1') {
+        return pageJson([fallbackEntry('s9')], null);
+      }
+      if (request.path == sharePath('s9')) {
+        if (shareFails) throw Exception('connection closed');
+        return shareJson(fallbackEntry('s9'));
+      }
+      return readMarker(request);
+    });
+
+    final opened = ValueNotifier(false);
+    addTearDown(opened.dispose);
+    await pumpCircleScreen(
+      tester,
+      Column(
+        children: [
+          const _FeedKeepAlive(),
+          Expanded(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: opened,
+              builder:
+                  (context, open, _) =>
+                      open
+                          ? const CircleThreadScreen(shareId: 's9')
+                          : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+      api: api,
+      expand: true,
+    );
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(_FeedKeepAlive)),
+    );
+    await container.read(sharedMealFeedProvider(null).notifier).loadMore();
+    await tester.pumpAndSettle();
+
+    opened.value = true;
+    await tester.pumpAndSettle();
+    expect(find.text('Phở bò tái'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'đang gõ dở',
+    );
+    await tester.pumpAndSettle();
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Phở bò tái')),
+    );
+    for (var i = 0; i < 15; i++) {
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // The refresh has failed and settled. The page keeps what it had and says
+    // nothing — the same answer a failed pull on the Circle feed gives
+    // (`circle_screen.dart`, `_refresh`, which swallows its error too).
+    expect(find.byType(CircleErrorCard), findsNothing);
+    expect(find.byType(CircleWallSkeleton), findsNothing);
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      'đang gõ dở',
+      reason: 'a transport failure is not a reason to throw away a draft',
+    );
+
+    // And it is still a live page, not a frozen one: a pull that succeeds
+    // afterwards brings the post back through the fallback.
+    shareFails = false;
+    final retry = await tester.startGesture(
+      tester.getCenter(find.text('Phở bò tái')),
+    );
+    for (var i = 0; i < 15; i++) {
+      await retry.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
+    await retry.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Phở bò tái'), findsOneWidget);
+  });
+
   testWidgets('a share that is gone or not ours to see stays the gone state', (
     tester,
   ) async {
@@ -458,6 +565,60 @@ void main() {
     expect(shareFetches(api, 's9').length, greaterThan(before));
     expect(find.text('Phở bò tái'), findsOneWidget);
     expect(find.byType(CircleErrorCard), findsNothing);
+  });
+
+  group('refreshThread', () {
+    test('a page-two refresh waits for the fetch it causes', () async {
+      // What the pull's inset means: "still working". `refreshThread` used to
+      // return the moment page 1 of the feed landed — but for a post that came
+      // in through `loadMore()` that response is what REMOVES the post and
+      // starts a cold by-id fetch, which has its own 15-second timeout. The
+      // control collapsed over content that had not been refreshed at all
+      // (found in review, 2026-09-22).
+      final gate = Completer<void>();
+      final api = FakeApiClient((request) async {
+        if (request.path == '/api/v1/groups/friends/feed') {
+          return pageJson([entryJson('s1')], 'cursor-1');
+        }
+        if (request.path == '/api/v1/groups/friends/feed?before=cursor-1') {
+          return pageJson([entryJson('s9')], null);
+        }
+        if (request.path == sharePath('s9')) {
+          await gate.future;
+          return shareJson(entryJson('s9'));
+        }
+        return readMarker(request);
+      });
+      final container = makeContainer(api);
+      await mountFeed(container, null);
+      await container.read(sharedMealFeedProvider(null).notifier).loadMore();
+
+      const key = (scope: null, shareId: 's9');
+      holdProvider(container, threadEntryProvider(key));
+      expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
+
+      var settled = false;
+      final pull = refreshThread(
+        ContainerWidgetRef(container),
+        key,
+      ).whenComplete(() => settled = true);
+
+      // Long enough for the feed's own page-1 request to land and for the page
+      // to fall through to the fallback — the exact moment the pull used to
+      // report itself done.
+      await pumpEventQueue();
+      expect(container.read(threadEntryProvider(key)), isA<ThreadLoading>());
+      expect(
+        settled,
+        isFalse,
+        reason: 'the pull may not collapse over a post still in flight',
+      );
+
+      gate.complete();
+      await pull;
+      expect(settled, isTrue);
+      expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
+    });
   });
 
   group('threadEntryProvider', () {

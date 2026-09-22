@@ -182,9 +182,25 @@ Future<void> refreshThread(WidgetRef ref, ThreadRef key) async {
     if (ref.exists(byId)) {
       ref.invalidate(byId);
       await ref.read(byId.future);
-    } else {
-      ref.invalidate(feed);
-      await ref.read(feed.future);
+      return;
+    }
+    ref.invalidate(feed);
+    await ref.read(feed.future);
+    // The feed can come back WITHOUT the post it was refreshed for: `build()`
+    // fetches page 1 only, so a post that arrived through `loadMore()` is gone
+    // from it, and [threadEntryProvider] answers by starting a cold by-id
+    // fetch. Returning here would collapse the pull's inset on a post that has
+    // not been refreshed yet and may not arrive for another 15 seconds — the
+    // gesture would report "done" over stale content. So the pull waits for
+    // the request its own refresh caused (found in review, 2026-09-22).
+    //
+    // `ThreadLoading` is the exact signal for that: [threadEntryProvider] only
+    // reaches the fallback once the feed has settled without the post, and the
+    // fetch it starts there is the one this is waiting on. Reading it rather
+    // than re-deriving the condition keeps one definition of "the page is
+    // still waiting".
+    if (ref.read(threadEntryProvider(key)) is ThreadLoading) {
+      await ref.read(byId.future);
     }
   } catch (_) {}
 }

@@ -136,10 +136,21 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     // third would land the same way, so the rule belongs here rather than in a
     // third branch of `refreshThread`.
     //
-    // ONLY `ThreadLoading` is masked. `ThreadMissing` and `ThreadFailed` are
-    // SETTLED answers — a deleted post still reaches the gone state, and a
-    // failed cold read still offers its retry — so this cannot turn into "the
-    // page never admits the post is gone".
+    // `ThreadMissing` is NEVER masked. It is the one settled answer ABOUT THE
+    // POST — the server said 404, which is "deleted, or not yours to see" — so
+    // a post that is genuinely gone still reaches the gone state and this
+    // cannot turn into "the page never admits the post is gone".
+    //
+    // `ThreadFailed` IS masked once a post has been shown, which the first cut
+    // of this rule got wrong (caught in review, 2026-09-22): the cold by-id
+    // fetch that replaces a page-2 post can fail with a transport error, and
+    // answering that by tearing the page down destroys a draft over a train
+    // going into a tunnel. It says nothing about whether the post exists — as
+    // `ThreadStates` itself puts it, a transport failure is not a deleted post.
+    // Keeping the content and staying quiet is also exactly what a failed pull
+    // on the Circle feed does (`circle_screen.dart`, `_refresh`), so the two
+    // surfaces answer a failed refresh the same way. With NOTHING held, it
+    // still shows its retry — that is the cold-load case the state is for.
     //
     // Page and dock come out of ONE switch, built where the post is a non-null
     // local: "there is a post to show" and "there is a state to show instead"
@@ -149,7 +160,11 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     final held = _lastReady;
     final (Widget body, Widget? dock) = switch (view) {
       ThreadReady(:final entry) => (_body(entry), _dock(entry)),
+      // Two arms rather than `ThreadLoading() || ThreadFailed() when …`: the
+      // formatter breaks that across lines so the guard reads as if it bound
+      // to the second pattern alone. `ThreadMissing` is deliberately not here.
       ThreadLoading() when held != null => (_body(held), _dock(held)),
+      ThreadFailed() when held != null => (_body(held), _dock(held)),
       // No dock in these states, so they owe the home indicator themselves —
       // `Screen(bottom: false)` below hands it to the dock.
       final ThreadNotReady notReady => (
