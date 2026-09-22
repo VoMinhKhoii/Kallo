@@ -1522,6 +1522,7 @@
       "heart": "Heart",
       "reactionError": "Couldn't update the reaction. Try again.",
       "reply": "Reply",
+      "replySend": "Send",
       "replyPlaceholder": "Reply…",
       "replyTo": "Reply to {name}…",
       "replyError": "Couldn't post your reply. Try again.",

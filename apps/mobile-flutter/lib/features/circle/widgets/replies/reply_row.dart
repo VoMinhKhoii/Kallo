@@ -6,6 +6,7 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
+import '../../logic/circle_spacing.dart';
 import '../feed/feed_rhythm.dart';
 
 /// One reply: the avatar on the left, the author line and the reply body in
@@ -36,7 +37,7 @@ class ReplyRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ProfileAvatarDisc(profile: reply.author, size: 28),
+        ProfileAvatarDisc(profile: reply.author, size: kReplyAvatar),
         const SizedBox(width: KalloSpacing.sp2),
         Expanded(
           child: Column(
