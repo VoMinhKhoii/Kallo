@@ -63,6 +63,23 @@ describe('TimelineCalendar', () => {
     expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
+  it('starts its week on Monday, like the tree above it', async () => {
+    // getWeekStart and weekOfMonth both count from Monday, so a Sunday-first
+    // grid would sit under "Week 4 · Sep 21 - Sep 27" showing a row that starts
+    // on Sep 20.
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    const weekdays = Array.from(
+      screen
+        .getByRole('grid')
+        .querySelectorAll('thead th, [role="columnheader"]')
+    ).map((cell) => cell.textContent?.trim());
+
+    expect(weekdays[0]).toMatch(/^Mo/);
+    expect(weekdays.at(-1)).toMatch(/^Su/);
+  });
+
   it('disables days after today', async () => {
     render(<TimelineCalendar {...baseProps} />);
     await openCalendar();

@@ -50,6 +50,10 @@ export function TimelineCalendarPanel({
         mode="single"
         selected={selected}
         defaultMonth={selected}
+        // Monday, to match the tree directly above it: `getWeekStart` and
+        // `weekOfMonth` both count from Monday, so a Sunday-first grid would
+        // put "Week 4 · Sep 21 - Sep 27" next to a row starting Sep 20.
+        weekStartsOn={1}
         // You cannot have eaten a day that hasn't happened. The tree clamps the
         // same way; without this the calendar would be the one way back into a
         // future date.
