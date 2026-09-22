@@ -109,11 +109,18 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   Widget _dock(CircleFeedEntry post) => Align(
     alignment: Alignment.bottomCenter,
     child: ThreadComposer(
-      // Keyed on the thread, so a share swapped in under a kept state gets a
-      // FRESH composer rather than the previous thread's draft in a field now
-      // addressed to this one. The same identity change as the held post
-      // above, from the other side.
-      key: ValueKey(_ref),
+      // Keyed so a share swapped in under a kept state gets a FRESH composer
+      // rather than the previous thread's draft in a field now addressed to
+      // this one. The same identity change as the held post above, from the
+      // other side.
+      //
+      // The SHARE, not the whole [ThreadRef]: a draft belongs to the post it
+      // answers, and `createShareReply` addresses it by `shareId` — `scope`
+      // only picks which feed cache the optimistic splice patches, and is read
+      // live at submit, so a scope change needs no fresh state. Keying on the
+      // ref would throw a draft away when the same post is opened from another
+      // feed, which is a loss with nothing bought.
+      key: ValueKey(widget.shareId),
       shareId: widget.shareId,
       // `label`, not `displayName`: the field is nullable and a person with no
       // name set still has a handle to be addressed by — the same fallback
