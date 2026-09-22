@@ -35,6 +35,7 @@ import {
   mealShareInvites,
   meals,
 } from '@/lib/infra/db/schema';
+import { inviteStillHeld } from './invite-lifecycle';
 import { scaleOwnMealInPlace } from './scale';
 
 export async function shareMealWithFriendsAction(input: {
@@ -122,10 +123,13 @@ export async function shareMealWithFriendsAction(input: {
       throw Errors.validationFailed('Bữa ăn này đã được chia phần rồi.');
     }
 
-    // A split must also be rejected when any selected friend already ACCEPTED
-    // an offer for this meal: the upsert below deliberately never resets an
-    // accepted invite (no duplicate logs), so scaling first would shrink the
-    // sender's meal while creating no pending offer for that friend.
+    // A split must also be rejected when any selected friend still HOLDS an
+    // accepted offer for this meal: the upsert below deliberately never resets
+    // a held invite (no duplicate logs), so scaling first would shrink the
+    // sender's meal while creating no pending offer for that friend. Same
+    // predicate as the upsert's `setWhere`, so the two can never disagree about
+    // who is re-offerable (a friend who deleted the copy is — see
+    // `inviteStillHeld`).
     if (parsed.mode === 'split') {
       const accepted = await tx
         .select({ toUserId: mealShareInvites.toUserId })
@@ -134,7 +138,7 @@ export async function shareMealWithFriendsAction(input: {
           and(
             eq(mealShareInvites.sourceMealId, source.id),
             inArray(mealShareInvites.toUserId, recipientIds),
-            eq(mealShareInvites.status, 'accepted')
+            inviteStillHeld()
           )
         )
         .limit(1);
@@ -194,9 +198,10 @@ export async function shareMealWithFriendsAction(input: {
         : null;
 
     // Upsert one pending invite per recipient. Re-sharing re-pends a prior
-    // DISMISSED offer, but the setWhere leaves an already-ACCEPTED invite
-    // untouched — resetting it would re-prompt the friend and let them log a
-    // second copy of the same meal.
+    // DISMISSED offer (or an accepted one whose meal was since deleted), but
+    // the setWhere leaves an invite the friend still HOLDS untouched —
+    // resetting it would re-prompt the friend and let them log a second copy
+    // of the same meal.
     const now = new Date();
     const offered = await tx
       .insert(mealShareInvites)
@@ -226,18 +231,21 @@ export async function shareMealWithFriendsAction(input: {
           respondedAt: null,
           createdAt: now,
         },
-        // Never resets an ACCEPTED invite. An abandoned cheat offer gets back
-        // here by being re-pended at the moment its card dies (`releaseInvite`,
-        // called in the same transaction as the delete by both discard and the
-        // reaper) — not by this clause forgiving the accepted state.
+        // Never resets an offer the recipient still HOLDS — bound to a meal,
+        // or a staged cheat card in flight. An abandoned cheat card re-pends
+        // its offer the moment the card dies (`releaseInvite`, called by both
+        // discard and the reaper).
         //
-        // Widening it to `OR accepted_meal_id IS NULL` was tried and reverted:
-        // that is not "abandoned", it is every staged cheat card for its whole
-        // ~7-day life, because the meal does not exist until confirm. A
-        // re-share during that window re-pended a live offer, put a second card
-        // in the recipient's inbox for the same dish, and confirming both wrote
-        // two meals — exactly what this guard is here to stop.
-        setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
+        // Widening this to `OR accepted_meal_id IS NULL` was tried and
+        // reverted: that alone is every staged cheat card for its whole ~7-day
+        // life, because the meal does not exist until confirm. A re-share
+        // during that window re-pended a live offer, put a second card in the
+        // recipient's inbox for the same dish, and confirming both wrote two
+        // meals. `inviteStillHeld` tells that card apart by its
+        // `pending_analyses` row, which is what lets an accept whose meal was
+        // later DELETED come back on a re-share instead of being skipped
+        // forever.
+        setWhere: sql`NOT ${inviteStillHeld()}`,
       })
       .returning({
         id: mealShareInvites.id,
@@ -245,7 +253,7 @@ export async function shareMealWithFriendsAction(input: {
       });
 
     // RETURNING only yields the rows the statement actually wrote, so a
-    // recipient whose invite was already ACCEPTED (skipped by setWhere above)
+    // recipient who still holds an accepted invite (skipped by setWhere above)
     // is never re-notified — exactly the set that has a live pending offer.
     await notify(
       offered.map((invite) => ({
@@ -296,8 +304,8 @@ export async function shareMealWithFriendsAction(input: {
       });
     }
 
-    // `offered`, not `recipientIds`: the upsert's `setWhere` skips anyone whose
-    // invite is already ACCEPTED, and RETURNING yields only the rows it really
+    // `offered`, not `recipientIds`: the upsert's `setWhere` skips anyone who
+    // still holds an accepted invite, and RETURNING yields only the rows it really
     // wrote. Counting the intended recipients instead told the sender "sent to
     // 1 friend" for a share that reached nobody — the worst possible answer,
     // because it is indistinguishable from success and they stop trying.
