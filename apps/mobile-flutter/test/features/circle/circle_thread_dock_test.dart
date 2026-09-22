@@ -51,7 +51,7 @@ void main() {
 
     Future<void> scrollToEnd() async {
       await tester.drag(
-        find.byType(SingleChildScrollView).first,
+        find.byType(CustomScrollView).first,
         const Offset(0, -5000),
       );
       await tester.pumpAndSettle();

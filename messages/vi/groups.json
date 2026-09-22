@@ -45,6 +45,7 @@
     "replyError": "Không thể gửi trả lời. Hãy thử lại.",
     "replyTo": "Trả lời {name}…",
     "noReplies": "Chưa có trả lời nào",
+    "noRepliesBody": "Hãy là người đầu tiên lên tiếng.",
     "portion": "{portion} phần",
     "logCopy": "Ăn theo",
     "logHalf": "Chia đôi",

@@ -45,6 +45,7 @@
     "replyError": "Couldn't post your reply. Try again.",
     "replyTo": "Reply to {name}…",
     "noReplies": "No replies yet",
+    "noRepliesBody": "Be the first to say something.",
     "portion": "{portion} portion",
     "logCopy": "Log this too",
     "logHalf": "Split half",
