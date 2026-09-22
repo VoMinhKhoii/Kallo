@@ -294,6 +294,10 @@ export async function bindInviteToMeal(
  * took this" error) and the offer never came back. Only the first two are
  * holds; the third is re-offerable exactly like a dismiss.
  *
+ * Not simply `accepted_meal_id IS NULL`, either: that was tried and reverted,
+ * because it re-pends every in-flight cheat card — a second card for the same
+ * dish, and confirming both wrote two meals.
+ *
  * Race-safe against a concurrent cheat stage: both the stage and the re-share
  * lock the SOURCE meal `FOR UPDATE` before touching the invite, so the
  * re-share's statement starts after the stage committed its card and the
