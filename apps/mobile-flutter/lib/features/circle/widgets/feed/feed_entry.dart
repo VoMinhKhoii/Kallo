@@ -57,11 +57,15 @@ class FeedEntry extends StatelessWidget {
     final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 32, TOP-aligned (native pass, 2026-08-31): inside the day card the
-        // disc is an identity marker beside the content column, not a second
-        // column of its own, so it steps down one size and the separator
-        // under the post starts where the text does.
-        ProfileAvatarDisc(profile: entry.friend, size: 32),
+        // 36, TOP-aligned: inside the day card the disc is an identity marker
+        // beside the content column, not a second column of its own, so the
+        // separator under the post starts where the text does. It stepped 32 →
+        // 36 on 2026-09-22 — the post's author is the one face on the card that
+        // has to read as the person who ate this, and at 32 it measured the
+        // same as the replies answering it. The replies stay at 28, so the two
+        // tiers are now told apart by size as well as by indent. [kContentRail]
+        // carries the gap this opens to everything that lines up with it.
+        ProfileAvatarDisc(profile: entry.friend, size: 36),
         const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(

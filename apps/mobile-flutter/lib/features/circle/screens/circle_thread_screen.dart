@@ -21,6 +21,7 @@ import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/kallo_motion.dart';
 import '../data/feed_providers.dart';
+import '../data/share_entry_provider.dart';
 import '../data/thread_providers.dart';
 import '../widgets/thread/thread_body.dart';
 import '../widgets/thread/thread_composer.dart';
@@ -66,6 +67,32 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     _scroll.dispose();
     _dockHeight.dispose();
     super.dispose();
+  }
+
+  /// Refetches the post and its replies for the pull-to-refresh control, which
+  /// holds the list open for exactly as long as this runs.
+  ///
+  /// Both of the page's sources, in the order `data/thread_providers.dart`
+  /// reads them. The by-id fallback is only touched when it is already ALIVE:
+  /// it is `autoDispose`, so reading it unconditionally would fire a request
+  /// for a post the feed already holds. `invalidate` keeps each provider's
+  /// previous value under the new `AsyncLoading`, so the post stays on screen —
+  /// and the composer, with any draft in it, stays mounted.
+  Future<void> _refresh() async {
+    final entryById = sharedMealEntryProvider(widget.shareId);
+    final fallbackAlive = ref.exists(entryById);
+    ref.invalidate(sharedMealFeedProvider(widget.scope));
+    if (fallbackAlive) ref.invalidate(entryById);
+    try {
+      // Awaited, not fired and forgotten: the held-open inset is this page's
+      // only "still loading" signal. Errors are swallowed because the page
+      // already says so — a failed refresh keeps the value it had beside the
+      // error, and `ThreadStates` owns the no-value case.
+      await Future.wait([
+        ref.read(sharedMealFeedProvider(widget.scope).future),
+        if (fallbackAlive) ref.read(entryById.future),
+      ]);
+    } catch (_) {}
   }
 
   /// Rides the new reply into view once the list has laid it out.
@@ -132,6 +159,7 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
             controller: _scroll,
             dockHeight: _dockHeight,
             onReply: _focus.requestFocus,
+            onRefresh: _refresh,
           ),
           // No dock in these states, so they owe the home indicator
           // themselves — `Screen(bottom: false)` above hands it to the dock.

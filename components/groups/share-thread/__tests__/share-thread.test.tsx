@@ -79,17 +79,41 @@ describe('ShareThread', () => {
     expect(screen.getByTestId('reply-composer')).toHaveTextContent('Phở Fan');
   });
 
-  it('keeps the thread and the composer in one spaced column', () => {
-    // The list and the field are siblings, so the gap between them and the
-    // post above belongs to their container — not to either component.
-    state({ data: { entry: sharedMealEntryFixture() } });
+  it('fills the page so the composer keeps the bottom edge', () => {
+    // A column that shrink-wraps leaves the field floating under the post with
+    // the rest of the page blank. Filling the scroll area is what pins the
+    // composer down and what gives an empty thread's state a void to centre
+    // in — the shape mobile's docked composer gives that page.
+    state({
+      data: {
+        entry: sharedMealEntryFixture({ replies: [shareReplyFixture()] }),
+      },
+    });
 
     const { container } = render(<ShareThread shareId={SHARE_ID} />);
 
-    const column = container.querySelector('.mt-3.space-y-3');
+    const column = container.querySelector('.flex.min-h-full.flex-col');
     expect(column).not.toBeNull();
+    expect(column).toContainElement(screen.getByTestId('feed-entry'));
     expect(column).toContainElement(screen.getByTestId('share-replies'));
     expect(column).toContainElement(screen.getByTestId('reply-composer'));
+  });
+
+  it('centres the empty state in the void, not under the post', () => {
+    // With nothing said yet, the state takes the spare room and sits in the
+    // middle of it. Tucked under the card it read as content that never
+    // finished drawing, which is the bug this replaces.
+    state({ data: { entry: sharedMealEntryFixture({ replies: [] }) } });
+
+    const { container } = render(<ShareThread shareId={SHARE_ID} />);
+
+    const void_ = container.querySelector(
+      '.flex-1.items-center.justify-center'
+    );
+    expect(void_).not.toBeNull();
+    expect(void_).toContainElement(screen.getByTestId('share-replies'));
+    // And the composer is NOT inside it: it keeps the foot of the page.
+    expect(void_).not.toContainElement(screen.getByTestId('reply-composer'));
   });
 
   it('names nobody on your own post — the composer must not address you', () => {

@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
+import 'package:kallo_mobile/features/circle/widgets/thread/reply_pill.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
 import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
@@ -88,7 +90,7 @@ void main() {
       'Trông ngon thật',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Reply').last);
+    await tester.tap(find.byKey(const Key('reply-send')));
     await tester.pumpAndSettle();
 
     expect(find.text('Trông ngon thật'), findsOneWidget);
@@ -128,7 +130,9 @@ void main() {
     expect(find.byType(CircleThreadScreen), findsOneWidget);
   });
 
-  testWidgets('replies start on the post\'s content rail', (tester) async {
+  testWidgets('replies line up with the post author\'s avatar', (
+    tester,
+  ) async {
     final api = FakeApiClient(
       (request) =>
           request.path == '/api/v1/groups/friends/feed'
@@ -143,12 +147,33 @@ void main() {
       api: api,
     );
 
-    // A reply's avatar sits directly under the post's first glyph: both start
-    // on the card's content rail, so the thread reads as one column rather
-    // than as a post with a second, wider column of answers beneath it.
+    // A reply's avatar sits directly under the POST AUTHOR's avatar — the
+    // same left edge, so the page is one column of faces. It used to land on
+    // the post's CONTENT rail instead (under the heart glyph), which put the
+    // people answering a post a whole avatar-rail right of the person who made
+    // it and read as a nested sub-thread.
+    final postDisc = find.descendant(
+      of: find.byType(FeedEntry),
+      matching: find.byType(ProfileAvatarDisc),
+    );
     expect(
       tester.getTopLeft(find.byType(ReplyRow).first).dx,
-      tester.getTopLeft(find.byIcon(LucideIcons.heart300)).dx,
+      tester.getTopLeft(postDisc).dx,
+    );
+    // And the post's own disc is the larger of the two: one step up (36) over
+    // the replies' 28, so the two tiers are told apart by size as well as by
+    // the card the post sits in.
+    expect(tester.widget<ProfileAvatarDisc>(postDisc).size, 36);
+    expect(
+      tester
+          .widget<ProfileAvatarDisc>(
+            find.descendant(
+              of: find.byType(ReplyRow),
+              matching: find.byType(ProfileAvatarDisc),
+            ),
+          )
+          .size,
+      28,
     );
   });
 
@@ -174,12 +199,23 @@ void main() {
     expect(line, findsOneWidget);
     expect(find.byType(KalloSurfaceState), findsOneWidget);
     expect(find.text('Be the first to say something.'), findsOneWidget);
-    // A block's gap under the card, not the line's tighter one: this is a
-    // state of its own now rather than a note belonging to the post.
+    // CENTRED in the void it is explaining, not tucked under the card. Pinned
+    // there it left the bottom two thirds of the page blank, which reads as
+    // content that never finished loading.
+    final state = tester.getRect(find.byType(KalloSurfaceState));
+    final cardBottom = tester.getBottomLeft(find.byType(GroupedListCard)).dy;
+    final dockTop = tester.getRect(find.byType(ThreadComposer)).top;
+    final above = state.top - cardBottom;
+    final below = dockTop - state.bottom;
     expect(
-      tester.getRect(find.byType(KalloSurfaceState)).top -
-          tester.getBottomLeft(find.byType(GroupedListCard)).dy,
-      closeTo(KalloSpacing.sp4, 1),
+      above,
+      greaterThan(40),
+      reason: 'the state has visibly left the card it used to sit under',
+    );
+    expect(
+      above,
+      closeTo(below, 1),
+      reason: 'equal air above and below is what "centred in the void" means',
     );
   });
 
@@ -205,12 +241,22 @@ void main() {
     );
     expect(disc, findsOneWidget);
     // The reply rows' disc — but NOT on the reply rows' rail. The dock is
-    // page chrome, so it starts at the page's own 12 of padding and the field
-    // spans the phone; leading with the replies' 60pt indent put the disc 72
-    // from the edge and left the composer reading as a reply to the last
-    // reply.
+    // page chrome, so the pill spans the phone from the page's own 12 of
+    // padding; leading with the replies' 60pt indent put the disc 72 from the
+    // edge and left the composer reading as a reply to the last reply.
     expect(tester.widget<ProfileAvatarDisc>(disc).size, 28);
-    expect(tester.getTopLeft(disc).dx, KalloSpacing.sp3);
+
+    // The pill spans the page, and the disc is INSIDE it — it used to be a
+    // bare disc sitting beside the field, which read as a person standing next
+    // to a form rather than as the author of what was being typed.
+    final pill = tester.getRect(find.byType(ReplyPill));
+    final dock = tester.getRect(find.byType(ThreadComposer));
+    final discRect = tester.getRect(disc);
+    expect(pill.left, dock.left + KalloSpacing.sp3);
+    expect(pill.right, dock.right - KalloSpacing.sp3);
+    expect(discRect.left, greaterThan(pill.left));
+    expect(discRect.right, lessThan(pill.right));
+
     expect(
       tester.getTopLeft(disc).dx,
       lessThan(
@@ -341,7 +387,7 @@ void main() {
       'Trông ngon thật',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Reply').last);
+    await tester.tap(find.byKey(const Key('reply-send')));
     await tester.pumpAndSettle();
 
     expect(find.text('Trông ngon thật'), findsOneWidget);

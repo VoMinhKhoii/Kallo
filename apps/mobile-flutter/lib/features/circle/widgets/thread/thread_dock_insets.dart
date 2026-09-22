@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// The two insets the bottom of the thread page owes: the keyboard's
@@ -32,6 +33,56 @@ class ThreadDockInsets extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: threadDockInsets(context)),
       child: child,
+    );
+  }
+}
+
+/// The room the body's last row needs to clear the dock.
+///
+/// Its own widget so the keyboard's ramp and a grown dock rebuild THIS and
+/// nothing else: the dock pays the keyboard and home-indicator insets itself
+/// and reports only its own height, so the body owes all three — read here,
+/// through the dock's own [threadDockInsets], so the two stay the same number
+/// and still move on the same frame.
+///
+/// A [Padding] inside the sliver rather than a [SliverPadding] around it: the
+/// scroll view is a [CustomScrollView] now (the pull-to-refresh control is a
+/// sliver), and a sliver's padding is a constructor argument, so paying the
+/// tail out there would rebuild the whole sliver list on every frame of the
+/// keyboard's ~250ms ramp. Inside, with [child] handed through, the post and
+/// every reply survive the ramp untouched.
+///
+/// It is also what keeps the empty state centred in the VISIBLE void: inside a
+/// [SliverCenteredState] this padding shrinks the box the state centres in, so
+/// the capybara sits in the middle of the gap above the composer rather than
+/// in the middle of the gap behind it.
+class ThreadDockTail extends StatelessWidget {
+  const ThreadDockTail({
+    required this.dockHeight,
+    required this.child,
+    this.extra = 0,
+    super.key,
+  });
+
+  /// What the docked composer currently covers, measured rather than assumed.
+  final ValueListenable<double> dockHeight;
+
+  /// The page's own break below the content, on top of the dock's own extent.
+  final double extra;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final insets = threadDockInsets(context);
+    return ValueListenableBuilder<double>(
+      valueListenable: dockHeight,
+      child: child,
+      builder:
+          (context, dock, child) => Padding(
+            padding: EdgeInsets.only(bottom: dock + insets + extra),
+            child: child,
+          ),
     );
   }
 }

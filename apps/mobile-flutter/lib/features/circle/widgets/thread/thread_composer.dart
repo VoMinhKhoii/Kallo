@@ -7,9 +7,8 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
-import 'thread_composer_avatar.dart';
+import 'reply_pill.dart';
 import 'thread_dock_insets.dart';
-import 'thread_send_button.dart';
 
 /// The thread page's docked reply composer.
 ///
@@ -137,60 +136,24 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
         child: MeasuredHeight(
           onChanged: widget.onHeightChanged,
           child: Padding(
+            // No reply rail. The dock used to lead with a 60pt spacer (card pad
+            // 16 + the old avatar rail 44) so its disc landed on the replies'
+            // indent — which left the field starting a fifth of the way across
+            // the phone and reading as a reply to the last reply. The composer
+            // is dock CHROME, not a reply in the thread: the pill spans the
+            // page and starts at the dock's own 12 of padding. The reply ROWS
+            // keep `kReplyIndent` (`thread_body.dart`), because they are the
+            // thing that owes that rail.
             padding: const EdgeInsets.symmetric(
               horizontal: KalloSpacing.sp3,
               vertical: KalloSpacing.sp2,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // No reply rail here. The dock used to lead with a 60pt spacer
-                // (card pad 16 + the avatar rail 44) so its disc landed on the
-                // replies' own indent, 72 from the screen edge — which left
-                // the field starting a fifth of the way across the phone and
-                // reading as a reply to the last reply. The composer is dock
-                // CHROME, not a reply in the thread: it spans the page and
-                // starts at the dock's own 12 of padding. The reply ROWS keep
-                // `_replyIndent` (`thread_body.dart`), because they are the
-                // thing that owes that rail.
-                //
-                // Pinned to the field's bottom line by the row's `end`
-                // alignment, in a box its minimum height, so the disc sits ON
-                // the first line rather than under a grown draft.
-                const SizedBox(
-                  height: KalloIcons.hit,
-                  child: Center(child: ThreadComposerAvatar()),
-                ),
-                const SizedBox(width: KalloSpacing.sp2),
-                Expanded(
-                  child: TextField(
-                    key: const Key('reply-composer'),
-                    controller: _controller,
-                    focusNode: widget.focusNode,
-                    // `readOnly`, not `enabled: false`: disabling the field
-                    // drops its focus, which collapses the keyboard on every
-                    // send and makes a second reply a two-tap affair.
-                    readOnly: _submitting,
-                    style: dashBody(),
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: hint,
-                      hintStyle: dashBody(color: kInkMuted),
-                    ),
-                  ),
-                ),
-                // Only the send affordance listens to the draft: a controller
-                // listener would rebuild the whole dock on every keystroke.
-                ThreadSendButton(
-                  controller: _controller,
-                  submitting: _submitting,
-                  onSubmit: _submit,
-                ),
-              ],
+            child: ReplyPill(
+              controller: _controller,
+              focusNode: widget.focusNode,
+              hintText: hint,
+              submitting: _submitting,
+              onSubmit: _submit,
             ),
           ),
         ),

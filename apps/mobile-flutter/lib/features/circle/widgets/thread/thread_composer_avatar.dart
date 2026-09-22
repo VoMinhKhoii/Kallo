@@ -19,7 +19,7 @@ class ThreadComposerAvatar extends ConsumerWidget {
   const ThreadComposerAvatar({super.key});
 
   /// The reply rows' disc (`widgets/replies/reply_row.dart`), not the post's
-  /// 32: what is being written here is a reply.
+  /// 36: what is being written here is a reply.
   static const double size = 28;
 
   @override

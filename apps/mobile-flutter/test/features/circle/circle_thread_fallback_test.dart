@@ -189,7 +189,7 @@ void main() {
       'Trông ngon thật',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Reply').last);
+    await tester.tap(find.byKey(const Key('reply-send')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ReplyRow), findsOneWidget);

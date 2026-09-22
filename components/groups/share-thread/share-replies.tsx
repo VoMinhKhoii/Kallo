@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
+import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
@@ -16,12 +17,20 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
   const locale = useLocale();
 
   if (replies.length === 0) {
-    // A thread page that renders nothing between post and composer reads as
-    // broken; one quiet line says the silence is the state, not a failure.
+    // The surface's own empty state, cast and all — the answer every other
+    // empty list in the app gives, and what mobile's thread page shows. It was
+    // one muted line for a while, which on a page with a whole blank column
+    // under it read as content that never finished drawing rather than as an
+    // empty conversation. `compact` is the size that belongs under a single
+    // post; the PAGE centres it in the void (`share-thread.tsx`).
     return (
-      <p className="font-sans-display text-[13px] text-kallo-text-muted">
-        {t('noReplies')}
-      </p>
+      <SurfaceState
+        area="circle"
+        compact
+        kind="empty"
+        subtitle={t('noRepliesBody')}
+        title={t('noReplies')}
+      />
     );
   }
 
@@ -31,7 +40,16 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
         const name = reply.isSelf ? tWall('you') : labelFor(reply.author);
         return (
           <li key={reply.id} className="flex gap-3">
-            <ProfileAvatar avatarUrl={reply.author.avatarUrl} label={name} />
+            {/* size-7 (28), a step under the post author's size-9 (36): the
+                two were the same disc, so a reply read as another post. The
+                LEFT EDGES still line up — both rows are `flex gap-3` from the
+                same container edge — which is what makes the page one column
+                of faces. Mirrors mobile's 36/28 pair. */}
+            <ProfileAvatar
+              avatarUrl={reply.author.avatarUrl}
+              className="size-7"
+              label={name}
+            />
             {/* Avatar left, name and time above the words — no pill. On a
                 page that is nothing BUT the conversation, a fill around
                 every reply draws a stack of boxes instead of a thread; the
