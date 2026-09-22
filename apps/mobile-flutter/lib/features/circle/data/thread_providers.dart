@@ -156,6 +156,14 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
 /// The feed keeps its own pull-to-refresh on the Circle tab, which is where
 /// refreshing the feed belongs.
 ///
+/// Known and accepted on the feed arm: `SharedMealFeedNotifier.build()` fetches
+/// page 1 only, so invalidating the feed drops whatever `loadMore()` had
+/// appended — including, if the post came in on a later page, this page's own
+/// post. That is what invalidating a paginated provider does, and it is no
+/// longer a draft-loss bug: `circle_thread_screen.dart` holds the post it has
+/// already shown across a transient `ThreadLoading`, so the refetch happens
+/// underneath a page that never goes blank.
+///
 /// `invalidate` keeps the provider's previous value under the new
 /// `AsyncLoading`, so the post stays on screen and the composer stays mounted.
 Future<void> refreshThread(WidgetRef ref, ThreadRef key) async {

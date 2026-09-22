@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/share_entry_provider.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
@@ -163,6 +165,132 @@ void main() {
     expect(
       api.requests.where((r) => r.path == '/api/v1/groups/friends/feed'),
       hasLength(1),
+    );
+  });
+
+  testWidgets('pulling a post from a LATER FEED PAGE keeps the draft too', (
+    tester,
+  ) async {
+    // The same loss by the one door the fix above does not cover (found by a
+    // second review pass, 2026-09-22). Here the feed DOES carry the post — it
+    // came in on page 2 — so `refreshThread` correctly refreshes the feed. But
+    // `SharedMealFeedNotifier.build()` fetches page 1 and nothing else, so the
+    // refetch REPLACES both loaded pages with the first one and the post is no
+    // longer in it. `threadEntryProvider` falls through to a cold by-id fetch
+    // and answers `ThreadLoading` — and a page that swapped in [ThreadStates]
+    // for that would take the composer, and the draft, down with it.
+    //
+    // Fixed on the SCREEN rather than in `refreshThread`: a page that has shown
+    // a post holds it while a refetch runs underneath. Both reported doors, and
+    // the third nobody has found yet, close at once.
+    Completer<void>? gate;
+    final api = FakeApiClient((request) async {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        return pageJson([entryJson('s1')], 'cursor-1');
+      }
+      if (request.path == '/api/v1/groups/friends/feed?before=cursor-1') {
+        return pageJson([fallbackEntry('s9')], null);
+      }
+      if (request.path == sharePath('s9')) {
+        await gate?.future;
+        return shareJson(fallbackEntry('s9'));
+      }
+      return readMarker(request);
+    });
+
+    // The thread page is MOUNTED SECOND, over a feed that already holds both
+    // pages — the real order, and the only one that reproduces this. A thread
+    // page mounted first would find page 1 settled without the post and go
+    // straight to the by-id fallback, which is the other test's story.
+    final opened = ValueNotifier(false);
+    addTearDown(opened.dispose);
+    await pumpCircleScreen(
+      tester,
+      Column(
+        children: [
+          const _FeedKeepAlive(),
+          Expanded(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: opened,
+              builder:
+                  (context, open, _) =>
+                      open
+                          ? const CircleThreadScreen(shareId: 's9')
+                          : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+      api: api,
+      // A tight, page-sized box: the pull is a scroll gesture, and a loose
+      // `home` lets the body shrink-wrap with nothing to overscroll.
+      expand: true,
+    );
+
+    // Scrolling the Circle tab to page 2 — where the post the user then taps
+    // lives.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(_FeedKeepAlive)),
+    );
+    await container.read(sharedMealFeedProvider(null).notifier).loadMore();
+    await tester.pumpAndSettle();
+
+    opened.value = true;
+    await tester.pumpAndSettle();
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(
+      shareFetches(api, 's9'),
+      isEmpty,
+      reason: 'the feed carries this post, so the page reads it from there',
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'đang gõ dở',
+    );
+    await tester.pumpAndSettle();
+
+    // Gated so the cold by-id fetch is genuinely in flight across a pumped
+    // frame: the fake client otherwise resolves in a microtask and the window
+    // this test is about never reaches a frame. On a device it is a round trip.
+    gate = Completer<void>();
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Phở bò tái')),
+    );
+    for (var i = 0; i < 15; i++) {
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // The feed has settled back to page 1 by now — the post is no longer in
+    // it, and the by-id fetch that replaces it is still hanging on the gate.
+    expect(
+      find.byType(CircleWallSkeleton),
+      findsNothing,
+      reason: 'the post must not leave the screen while its refresh is running',
+    );
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      'đang gõ dở',
+      reason: 'the draft has to survive a refresh of the post it answers',
+    );
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      'đang gõ dở',
     );
   });
 
@@ -361,4 +489,17 @@ void main() {
       expect(container.read(threadEntryProvider(gone)), isA<ThreadMissing>());
     });
   });
+}
+
+/// The Circle tab sitting under the thread page: something has to keep the
+/// paginated feed alive while the page reads a post out of it, and on a device
+/// that something is the tab shell the page was pushed over.
+class _FeedKeepAlive extends ConsumerWidget {
+  const _FeedKeepAlive();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(sharedMealFeedProvider(null));
+    return const SizedBox.shrink();
+  }
 }
