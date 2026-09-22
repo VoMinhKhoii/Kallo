@@ -39,66 +39,87 @@ export async function loadMealDates(input: {
   const mealDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
   const pendingDateExpr = sql<string>`DATE(${pendingAnalyses.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
 
-  const [mealRows, pendingDateRows, scannedRows] = await Promise.all([
-    // Grouped rather than DISTINCT ON so the day's calories come back from the
-    // same scan — no second query, and the same (user_id, logged_at) index.
-    db
-      .select({
-        date: mealDateExpr.as('date'),
-        // NULL unless EVERY meal on the day has calories. Postgres SUM skips
-        // NULL rows, so a 500 kcal meal beside a legacy row with unknown
-        // calories would otherwise report a clean 500 — an incomplete total
-        // wearing the face of a complete one. The comparison has to happen
-        // inside the aggregate; once the rows are summed the difference is
-        // gone.
-        kcal: sql<
-          string | number | null
-        >`CASE WHEN COUNT(*) = COUNT(${meals.caloriesKcal}) THEN SUM(${meals.caloriesKcal}) END`,
-      })
-      .from(meals)
-      .where(eq(meals.userId, user.id))
-      .groupBy(mealDateExpr),
-    // WHICH days hold a staged card. Grouped, so it costs one row per day and
-    // reads no JSONB — this is what keeps the day LIST complete however many
-    // rows the payload scan below had to leave behind.
-    //
-    // Both pending queries have to agree with the feed on what counts as a
-    // live card, or the sidebar describes a day the feed draws differently.
-    // That means BOTH halves of loadPendingAnalysesByDate's line, not one:
-    //
-    // - No `expiresAt > now()`. That 30-minute window hid a card the user
-    //   still meant to save, and the feed dropped it; keeping it here would
-    //   paint no dot for a day the feed does render.
-    // - But DO apply `isStillStaged()`. The feed hides a card past the
-    //   7-day reaping horizon, so counting one here masks a real total for
-    //   a card nobody can see — the sweep is best-effort and only runs on a
-    //   day load, so such rows genuinely linger.
-    db
-      .select({ date: pendingDateExpr.as('date') })
-      .from(pendingAnalyses)
-      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
-      .groupBy(pendingDateExpr),
-    // WHETHER those cards are renderable, which needs each row's payload and
-    // so cannot be grouped. Capped: see PENDING_SCAN_LIMIT for why an
-    // uncapped version grows without bound. Newest first, and `date` is
-    // monotonic in `logged_at`, so the scan fills whole days from the top and
-    // the shortfall — if any — lands on the oldest day it reached and older.
-    db
-      .select({
-        id: pendingAnalyses.id,
-        rawInput: pendingAnalyses.rawInput,
-        loggedAt: pendingAnalyses.loggedAt,
-        entryMode: pendingAnalyses.entryMode,
-        pipelineResult: pendingAnalyses.pipelineResult,
-        date: pendingDateExpr.as('date'),
-      })
-      .from(pendingAnalyses)
-      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
-      .orderBy(desc(pendingAnalyses.loggedAt))
-      // One past the cap, purely as a probe: coming back full is how the
-      // merge learns there was more to read.
-      .limit(PENDING_SCAN_LIMIT + 1),
-  ]);
+  // ONE snapshot across all three reads.
+  //
+  // confirmAndSaveMealAction deletes a staged row and inserts its meal inside a
+  // single transaction, so a day being confirmed never stops having content.
+  // Read separately, the meals scan can land before that commit while the
+  // pending scans land after, and the day appears in none of the three results
+  // — the timeline drops a day that existed the whole time. That is not
+  // staleness, which every read carries; it is a state the database never held,
+  // and no merge downstream can recover it.
+  //
+  // REPEATABLE READ rather than a bare transaction: under READ COMMITTED each
+  // STATEMENT takes a fresh snapshot even within one, so the BEGIN alone would
+  // change nothing. Read-only, so it cannot hit a serialization failure.
+  //
+  // The cost is a BEGIN/COMMIT pair. postgres.js pipelines statements on the
+  // transaction's reserved connection, so the three reads still go out together
+  // rather than round-tripping one at a time.
+  const [mealRows, pendingDateRows, scannedRows] = await db.transaction(
+    (tx) =>
+      Promise.all([
+        // Grouped rather than DISTINCT ON so the day's calories come back from the
+        // same scan — no second query, and the same (user_id, logged_at) index.
+        tx
+          .select({
+            date: mealDateExpr.as('date'),
+            // NULL unless EVERY meal on the day has calories. Postgres SUM skips
+            // NULL rows, so a 500 kcal meal beside a legacy row with unknown
+            // calories would otherwise report a clean 500 — an incomplete total
+            // wearing the face of a complete one. The comparison has to happen
+            // inside the aggregate; once the rows are summed the difference is
+            // gone.
+            kcal: sql<
+              string | number | null
+            >`CASE WHEN COUNT(*) = COUNT(${meals.caloriesKcal}) THEN SUM(${meals.caloriesKcal}) END`,
+          })
+          .from(meals)
+          .where(eq(meals.userId, user.id))
+          .groupBy(mealDateExpr),
+        // WHICH days hold a staged card. Grouped, so it costs one row per day and
+        // reads no JSONB — this is what keeps the day LIST complete however many
+        // rows the payload scan below had to leave behind.
+        //
+        // Both pending queries have to agree with the feed on what counts as a
+        // live card, or the sidebar describes a day the feed draws differently.
+        // That means BOTH halves of loadPendingAnalysesByDate's line, not one:
+        //
+        // - No `expiresAt > now()`. That 30-minute window hid a card the user
+        //   still meant to save, and the feed dropped it; keeping it here would
+        //   paint no dot for a day the feed does render.
+        // - But DO apply `isStillStaged()`. The feed hides a card past the
+        //   7-day reaping horizon, so counting one here masks a real total for
+        //   a card nobody can see — the sweep is best-effort and only runs on a
+        //   day load, so such rows genuinely linger.
+        tx
+          .select({ date: pendingDateExpr.as('date') })
+          .from(pendingAnalyses)
+          .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
+          .groupBy(pendingDateExpr),
+        // WHETHER those cards are renderable, which needs each row's payload and
+        // so cannot be grouped. Capped: see PENDING_SCAN_LIMIT for why an
+        // uncapped version grows without bound. Newest first, and `date` is
+        // monotonic in `logged_at`, so the scan fills whole days from the top and
+        // the shortfall — if any — lands on the oldest day it reached and older.
+        tx
+          .select({
+            id: pendingAnalyses.id,
+            rawInput: pendingAnalyses.rawInput,
+            loggedAt: pendingAnalyses.loggedAt,
+            entryMode: pendingAnalyses.entryMode,
+            pipelineResult: pendingAnalyses.pipelineResult,
+            date: pendingDateExpr.as('date'),
+          })
+          .from(pendingAnalyses)
+          .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
+          .orderBy(desc(pendingAnalyses.loggedAt))
+          // One past the cap, purely as a probe: coming back full is how the
+          // merge learns there was more to read.
+          .limit(PENDING_SCAN_LIMIT + 1),
+      ]),
+    { isolationLevel: 'repeatable read', accessMode: 'read only' }
+  );
 
   // A staged card carries its nutrition inside pipeline_result's JSONB, not in
   // a column. Reaching into that per row would cost far more than the total is
@@ -129,24 +150,15 @@ export async function loadMealDates(input: {
   // and nothing is undecided.
   const undecidedFrom = scannedRows[PENDING_SCAN_LIMIT]?.date ?? null;
 
-  // The union of what EITHER pending scan saw, because they are separate
-  // statements and under READ COMMITTED each gets its own snapshot: a row
-  // staged between them is seen by one and not the other.
+  // The union of what EITHER pending scan saw.
   //
-  // Only one direction of that skew can do harm. When the date scan alone saw
-  // the row, the payload scan simply ran before it existed, and reporting the
-  // day unmasked describes a real recent state. But when the PAYLOAD scan alone
-  // saw it, driving the output off the date scan would drop a live staged card
-  // on the floor — losing a pending-only day, or leaving a complete-looking
-  // total on a day that now has a card. Taking the union removes that case and
-  // leaves only ordinary staleness, which no read can avoid: a card staged a
-  // millisecond after any snapshot is missed by it too.
-  //
-  // Hence no transaction. A REPEATABLE READ pair would make the two scans agree
-  // with each other, but it cannot make them agree with the present, and it
-  // would cost every timeline load a BEGIN/COMMIT and serialize two reads that
-  // currently run in parallel — real latency against a stale-by-milliseconds
-  // number that the next write invalidates anyway.
+  // The shared snapshot above should make the two agree, so this is belt and
+  // braces rather than a live case — but it costs two lines and it is the
+  // difference between a merge that is correct on its own terms and one that
+  // silently depends on an isolation level set thirty lines away. If a pooler
+  // or a future refactor ever weakens that, the failure this prevents is a
+  // renderable card being dropped on the floor: a pending-only day vanishing,
+  // or a day that holds a card keeping a complete-looking total.
   const pendingDates = new Set(pendingDateRows.map((row) => row.date));
   for (const date of renderableDates) pendingDates.add(date);
 
@@ -171,7 +183,7 @@ export async function loadMealDates(input: {
 }
 
 /**
- * SUM over a `numeric` column arrives as a STRING from node-postgres, which
+ * SUM over a `numeric` column arrives as a STRING from postgres.js, which
  * hands numerics back as text so large values keep their precision. Left
  * uncoerced it reaches the sidebar as "1842.50" and renders raw.
  */

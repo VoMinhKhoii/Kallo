@@ -4,7 +4,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks — the date index reads run on the `db` singleton only.
 // ---------------------------------------------------------------------------
 
-const { mockDbSelect } = vi.hoisted(() => ({ mockDbSelect: vi.fn() }));
+const { mockDbSelect, mockTransaction } = vi.hoisted(() => {
+  const select = vi.fn();
+  return {
+    mockDbSelect: select,
+    // All three reads run inside one transaction so they share a snapshot, so
+    // the callback gets a `tx` whose `.select` is the same spy the tests queue
+    // chains onto.
+    // The second parameter is the transaction config — the isolation level is
+    // the whole point of wrapping these reads, so the mock has to accept it for
+    // a test to be able to assert on it.
+    mockTransaction: vi.fn(
+      (
+        fn: (tx: { select: typeof select }) => Promise<unknown>,
+        _config?: Record<string, unknown>
+      ) => fn({ select })
+    ),
+  };
+});
 
 vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
@@ -16,7 +33,7 @@ vi.mock('@/lib/infra/auth/session', async () => {
 });
 
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { select: mockDbSelect },
+  db: { select: mockDbSelect, transaction: mockTransaction },
 }));
 
 vi.mock(
@@ -52,6 +69,7 @@ describe('loadMealDates', () => {
   // place, so an unconsumed one would surface inside the NEXT describe.
   beforeEach(() => {
     mockDbSelect.mockReset();
+    mockTransaction.mockClear();
   });
 
   const limitSpy = vi.fn();
@@ -100,6 +118,29 @@ describe('loadMealDates', () => {
         }),
       });
   }
+
+  it('reads every table from one repeatable-read snapshot', async () => {
+    // confirmAndSaveMealAction deletes a staged row and inserts its meal in ONE
+    // transaction, so a day mid-confirm never stops having content. Under
+    // separate READ COMMITTED snapshots the meals scan can land before that
+    // commit while the pending scans land after, and the day is in none of the
+    // three results — the timeline drops a day that existed throughout. No
+    // merge can recover that: it is not staleness but a state the database
+    // never held.
+    //
+    // READ COMMITTED takes a fresh snapshot per STATEMENT even inside a
+    // transaction, so the isolation level is the part that does the work here,
+    // not the BEGIN.
+    mockDateQueries([], []);
+
+    await loadMealDates({ timezoneOffset: 0 });
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    expect(mockTransaction.mock.calls[0]?.[1]).toMatchObject({
+      isolationLevel: 'repeatable read',
+      accessMode: 'read only',
+    });
+  });
 
   it('ignores staged cards the feed has already stopped rendering', async () => {
     // The feed hides a pending card past the 7-day reaping horizon
@@ -167,7 +208,7 @@ describe('loadMealDates', () => {
   });
 
   it('coerces the numeric SUM, which the driver hands back as a string', async () => {
-    // SUM(numeric) comes off node-postgres as text to avoid float precision
+    // SUM(numeric) comes off postgres.js as text to avoid float precision
     // loss. Left alone it reaches the sidebar as "1842.50" and renders raw.
     mockDateQueries([{ date: '2026-04-06', kcal: '1842.50' }], []);
 
