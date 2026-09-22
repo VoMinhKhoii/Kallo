@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +8,7 @@ import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
+import 'package:kallo_mobile/features/circle/widgets/states/circle_skeleton.dart';
 
 import 'circle_feed_test_support.dart';
 import '../../l10n_test_loader.dart';
@@ -75,6 +78,92 @@ void main() {
     expect(find.text('Phở bò tái'), findsOneWidget);
     expect(find.text("This post isn't here any more"), findsNothing);
     expect(shareFetches(api, 's9'), hasLength(1));
+  });
+
+  testWidgets('pulling a fallback post down keeps the draft and the post', (
+    tester,
+  ) async {
+    // The regression this exists for (found by review, 2026-09-22): the page
+    // refreshed BOTH sources, and for a post the feed never carried that is
+    // actively harmful. `findShareEntry` returns null, so the invalidated
+    // feed's own `isLoading` answers `ThreadLoading` before `threadEntryProvider`
+    // reaches the fallback still holding the post — and the page drops to the
+    // skeleton, unmounting the composer and disposing the controller with the
+    // user's half-typed reply in it.
+    //
+    // The feed request is GATED so the refresh is genuinely in flight across a
+    // pumped frame. Without that this test passes against the bug: the fake
+    // client resolves inside a microtask, so the loading window never reaches
+    // a frame and nothing ever unmounts. On a device that window is a real
+    // round trip, which is the whole point.
+    Completer<void>? gate;
+    final api = FakeApiClient((request) async {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        await gate?.future;
+        return pageJson([entryJson('s1')], 'cursor-1');
+      }
+      if (request.path == sharePath('s9')) {
+        return shareJson(fallbackEntry('s9'));
+      }
+      return readMarker(request);
+    });
+    await pumpCircleScreen(
+      tester,
+      const CircleThreadScreen(shareId: 's9'),
+      api: api,
+      // A tight, page-sized box: the pull is a scroll gesture, and a loose
+      // `home` lets the body shrink-wrap with nothing to overscroll.
+      expand: true,
+    );
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(shareFetches(api, 's9'), hasLength(1));
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'đang gõ dở',
+    );
+    await tester.pumpAndSettle();
+
+    gate = Completer<void>();
+    // Past `CupertinoSliverRefreshControl.refreshTriggerPullDistance` (100),
+    // held rather than flung.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Phở bò tái')),
+    );
+    for (var i = 0; i < 15; i++) {
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Mid-refresh, with any feed request still hanging on the gate.
+    expect(
+      find.byType(CircleWallSkeleton),
+      findsNothing,
+      reason: 'the post must not leave the screen while its refresh is running',
+    );
+    expect(find.text('Phở bò tái'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      'đang gõ dở',
+      reason: 'the draft has to survive a refresh of the post it answers',
+    );
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    // The source the page actually reads was refetched; the feed, which does
+    // not carry this post, was never asked again.
+    expect(shareFetches(api, 's9'), hasLength(2));
+    expect(
+      api.requests.where((r) => r.path == '/api/v1/groups/friends/feed'),
+      hasLength(1),
+    );
   });
 
   testWidgets('a share that is gone or not ours to see stays the gone state', (

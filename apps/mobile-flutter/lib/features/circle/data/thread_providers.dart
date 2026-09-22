@@ -128,9 +128,8 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   return fetched.isLoading ? const ThreadLoading() : const ThreadFailed();
 });
 
-/// Refetch everything the thread page reads, in the order this library's doc
-/// explains: the feed first, and the by-id fallback only when it is actually
-/// ALIVE.
+/// Refetch the post, from whichever of this library's two sources the page is
+/// actually reading it out of.
 ///
 /// One function rather than a policy per caller. Pull-to-refresh and the
 /// error card's "Try again" are the same question — "get this post again" —
@@ -138,26 +137,46 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
 /// with its own paragraph justifying it. A third caller (a notification tap, a
 /// refetch after posting) would have picked one at random.
 ///
-/// The fallback is `autoDispose`, so reading its future unconditionally would
-/// fire a request for a post the feed already holds; [WidgetRef.exists] is the
-/// test for "someone is watching it". `invalidate` keeps each provider's
-/// previous value under the new `AsyncLoading`, so the post stays on screen and
-/// the composer — with any draft in it — stays mounted.
+/// **Exactly one source, never both.** `sharedMealEntryProvider` is
+/// `autoDispose` and is alive only because [threadEntryProvider] watched it,
+/// which happens only down its `ThreadMissing` branch — so [WidgetRef.exists]
+/// is an exact test for "this page is reading the fallback", and the two arms
+/// below are the two sources rather than an optimisation.
+///
+/// Refreshing the feed as WELL would be actively wrong for a fallback post.
+/// The feed does not carry it, so `findShareEntry` returns null and
+/// [threadEntryProvider] answers `ThreadLoading` from the feed's own flag —
+/// before it ever reaches the fallback still holding the post. The page drops
+/// to the skeleton, which unmounts `ThreadComposer` and disposes the controller
+/// with the user's draft in it. That is the same loss the `hasValue`-first
+/// check above is written to prevent, arriving by the one door it does not
+/// cover, and a pull-to-refresh on a notification-opened post is how you meet
+/// it (found in review, 2026-09-22; pinned by the fallback test).
+///
+/// The feed keeps its own pull-to-refresh on the Circle tab, which is where
+/// refreshing the feed belongs.
+///
+/// `invalidate` keeps the provider's previous value under the new
+/// `AsyncLoading`, so the post stays on screen and the composer stays mounted.
 Future<void> refreshThread(WidgetRef ref, ThreadRef key) async {
-  final feed = sharedMealFeedProvider(key.scope);
   final byId = sharedMealEntryProvider(key.shareId);
-  final fallbackAlive = ref.exists(byId);
-  ref.invalidate(feed);
-  if (fallbackAlive) ref.invalidate(byId);
+  final feed = sharedMealFeedProvider(key.scope);
+  // Two arms rather than one provider variable: the two have different value
+  // types, so a ternary over them widens to `Object` and neither `invalidate`
+  // nor `.future` will take it.
+  //
+  // Awaited, not fired and forgotten: a pull-to-refresh holds its inset open
+  // for exactly as long as this runs, and that inset is the page's only "still
+  // loading" signal. Errors are swallowed because the page already reports
+  // them — a failed refresh keeps the value it had beside the error, and
+  // `ThreadStates` owns the case where there is no value at all.
   try {
-    // Awaited, not fired and forgotten: a pull-to-refresh holds its inset open
-    // for exactly as long as this runs, and that inset is the page's only
-    // "still loading" signal. Errors are swallowed because the page already
-    // reports them — a failed refresh keeps the value it had beside the error,
-    // and `ThreadStates` owns the case where there is no value at all.
-    await Future.wait([
-      ref.read(feed.future),
-      if (fallbackAlive) ref.read(byId.future),
-    ]);
+    if (ref.exists(byId)) {
+      ref.invalidate(byId);
+      await ref.read(byId.future);
+    } else {
+      ref.invalidate(feed);
+      await ref.read(feed.future);
+    }
   } catch (_) {}
 }
