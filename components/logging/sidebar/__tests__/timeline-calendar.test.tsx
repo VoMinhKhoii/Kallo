@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // The panel is loaded through next/dynamic so react-day-picker stays out of the
 // logging route's bundle. In jsdom that loader resolves on its own schedule,
@@ -42,6 +42,13 @@ describe('TimelineCalendar', () => {
     ]),
     onSelectDate: vi.fn(),
   };
+
+  // The locale is module-level state, so a test that FAILS before its own
+  // cleanup line would leak Vietnamese into every test after it. Resetting
+  // here runs whether the test passed or threw.
+  afterEach(() => {
+    localeRef.current = 'en';
+  });
 
   async function openCalendar() {
     const user = userEvent.setup();
@@ -128,7 +135,41 @@ describe('TimelineCalendar', () => {
 
     expect(vietnamese).not.toMatch(/September/i);
     expect(vietnamese).not.toBe(english);
-    localeRef.current = 'en';
+  });
+
+  it('localizes the labels DayPicker writes itself, not just the dates', async () => {
+    // The grid formatting above comes from date-fns. But DayPicker has a
+    // SECOND layer of strings of its own — the month-nav buttons, and the
+    // "Today, …" / "…, selected" wrappers on each day button. A bare date-fns
+    // locale carries none of them, so a Vietnamese user got Vietnamese dates
+    // inside English scaffolding. They live on react-day-picker's OWN locale
+    // objects, which extend the date-fns ones with a `labels` bag.
+    //
+    // And `getLabels` resolves a CUSTOM label ahead of the locale's, so the
+    // hasMeal override suppresses the localized day-button label outright
+    // unless it delegates to it — which is why both halves are asserted here.
+    localeRef.current = 'vi';
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    // Nav: nothing overrides these, so they prove the locale's `labels` bag is
+    // reaching DayPicker at all.
+    expect(
+      screen.getByRole('button', { name: /tháng trước/i })
+    ).toBeInTheDocument();
+    // Day buttons: the override has to compose over the locale's wrapper, not
+    // replace it. Sep 22 is the selected day.
+    expect(
+      screen.getByRole('button', { name: /đã chọn/i })
+    ).toBeInTheDocument();
+    // …while still appending our own indicator on the days that hold a log.
+    // Named by its Vietnamese date, which is the point: the indicator has to
+    // ride ON the localized label rather than replace it.
+    expect(
+      screen.getByRole('button', {
+        name: /16 tháng 09.*hasMealIndicator/i,
+      })
+    ).toBeInTheDocument();
   });
 
   it('gives the close button a translated label', async () => {

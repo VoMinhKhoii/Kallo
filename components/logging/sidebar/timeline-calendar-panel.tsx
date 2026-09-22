@@ -1,19 +1,26 @@
 'use client';
 
-import { enUS, vi as viLocale } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { labelDayButton } from 'react-day-picker';
+import { enUS, vi as viLocale } from 'react-day-picker/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { dateStringToDate, dateToDateString } from './timeline-utils';
 
 /**
  * DayPicker formats month names, weekday headings and the day cells'
- * accessible labels itself, from a date-fns locale — next-intl does not reach
- * it. Without this the grid stays English inside an otherwise Vietnamese
- * surface. The locale data rides the dynamic import, so it costs the logging
- * route nothing until the calendar opens.
+ * accessible labels itself — next-intl does not reach it. Without this the
+ * grid stays English inside an otherwise Vietnamese surface. The locale data
+ * rides the dynamic import, so it costs the logging route nothing until the
+ * calendar opens.
+ *
+ * From `react-day-picker/locale`, NOT `date-fns/locale`. They look
+ * interchangeable and are not: DayPicker's own locales re-export the date-fns
+ * ones and add a `labels` bag holding the strings DayPicker writes rather than
+ * formats — the month-nav buttons, and the "Today, …" / "…, selected" wrappers
+ * on every day button. A bare date-fns locale carries none of those, so the
+ * dates came out Vietnamese inside English scaffolding.
  */
-function dateFnsLocale(locale: string) {
+function dayPickerLocale(locale: string) {
   return locale === 'vi' ? viLocale : enUS;
 }
 
@@ -49,6 +56,7 @@ export function TimelineCalendarPanel({
 }: TimelineCalendarPanelProps) {
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
+  const dayPicker = dayPickerLocale(locale);
   const selected = dateStringToDate(selectedDate);
 
   return (
@@ -56,7 +64,7 @@ export function TimelineCalendarPanel({
       mode="single"
       selected={selected}
       defaultMonth={selected}
-      locale={dateFnsLocale(locale)}
+      locale={dayPicker}
       className="mx-auto bg-transparent p-0"
       // Monday, to match the tree behind it: `getWeekStart` and `weekOfMonth`
       // both count from Monday, so a Sunday-first grid would put
@@ -77,9 +85,21 @@ export function TimelineCalendarPanel({
       // Without naming it, finding the days that hold a log means opening them
       // one at a time — so the state goes in the button's accessible name, as
       // the sidebar's own date buttons already do with their totals.
+      //
+      // Delegates to the LOCALE's label, not the package default: DayPicker's
+      // `getLabels` resolves a custom label ahead of the locale's, so
+      // overriding here would otherwise throw away the localized wrapper and
+      // announce a Vietnamese date as "Today, …, selected".
       labels={{
         labelDayButton: (date, modifiers, options, dateLib) => {
-          const base = labelDayButton(date, modifiers, options, dateLib);
+          // A locale's label may be a plain string for the fixed ones, so the
+          // type is `string | fn` across the bag; DayPicker's own resolveLabel
+          // branches the same way.
+          const localized = dayPicker.labels?.labelDayButton;
+          const base =
+            typeof localized === 'function'
+              ? localized(date, modifiers, options, dateLib)
+              : labelDayButton(date, modifiers, options, dateLib);
           return modifiers.hasMeal ? `${base}, ${t('hasMealIndicator')}` : base;
         },
       }}
