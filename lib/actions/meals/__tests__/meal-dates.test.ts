@@ -28,6 +28,10 @@ vi.mock(
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
+// The cap lives with the renderability decision it bounds, not with the query:
+// `meal-dates.ts` is a 'use server' module, which may export async functions
+// only.
+import { PENDING_SCAN_LIMIT } from '@/lib/actions/meals/day/staged-card';
 import { loadMealDates } from '@/lib/actions/meals/meal-dates';
 import { samplePipelineResult } from './meal-doubles';
 
@@ -50,15 +54,25 @@ describe('loadMealDates', () => {
     mockDbSelect.mockReset();
   });
 
+  const limitSpy = vi.fn();
+
   /**
-   * Queues the two reads. The meals side is grouped in SQL; the pending side
-   * is not — it needs each row's payload to decide whether the feed would
-   * render it — so their mock chains differ.
+   * Queues the three reads, in the order `loadMealDates` puts them in its
+   * `Promise.all`: the grouped meals scan, the grouped pending-DATE scan, and
+   * the capped pending-PAYLOAD scan. Only the third pulls JSONB, so only it
+   * has an `.orderBy().limit()` tail.
+   *
+   * `pendingDates` defaults to the dates the payload rows carry — the ordinary
+   * case, where the cap was never reached and the two pending scans agree. The
+   * truncation tests pass it explicitly to describe a user with staged rows
+   * the payload scan never got to.
    */
   function mockDateQueries(
     mealRows: Array<{ date: string; kcal: unknown }>,
-    pendingRows: Array<Record<string, unknown> & { date: string }>
+    pendingRows: Array<Record<string, unknown> & { date: string }>,
+    pendingDates: string[] = pendingRows.map((row) => row.date)
   ) {
+    limitSpy.mockReset().mockResolvedValue(pendingRows);
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -69,7 +83,20 @@ describe('loadMealDates', () => {
       })
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue(pendingRows),
+          where: vi.fn().mockReturnValue({
+            groupBy: vi
+              .fn()
+              .mockResolvedValue(
+                Array.from(new Set(pendingDates), (date) => ({ date }))
+              ),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({ limit: limitSpy }),
+          }),
         }),
       });
   }
@@ -79,7 +106,13 @@ describe('loadMealDates', () => {
     // (isStillStaged, load-meals.ts). This query has to draw the SAME line: an
     // abandoned row that only still exists because a best-effort sweep has not
     // run would otherwise mask a real saved total for a card nobody can see.
-    const pendingWhere = vi.fn().mockResolvedValue([]);
+    const pendingWheres: unknown[] = [];
+    const capture = (returns: unknown) =>
+      vi.fn().mockImplementation((predicate: unknown) => {
+        pendingWheres.push(predicate);
+        return returns;
+      });
+
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -89,13 +122,29 @@ describe('loadMealDates', () => {
         }),
       })
       .mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({ where: pendingWhere }),
+        from: vi.fn().mockReturnValue({
+          where: capture({ groupBy: vi.fn().mockResolvedValue([]) }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: capture({
+            orderBy: vi
+              .fn()
+              .mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
+          }),
+        }),
       });
 
     await loadMealDates({ timezoneOffset: 0 });
 
-    const predicate = JSON.stringify(pendingWhere.mock.calls[0]?.[0]);
-    expect(predicate).toContain("interval '7 days'");
+    // BOTH pending scans, not just the payload one: the date scan is what
+    // decides which days the sidebar lists at all, so an abandoned row leaking
+    // into it would paint a day the feed draws as empty.
+    expect(pendingWheres).toHaveLength(2);
+    for (const predicate of pendingWheres) {
+      expect(JSON.stringify(predicate)).toContain("interval '7 days'");
+    }
   });
 
   it('returns merged confirmed and pending dates, newest first', async () => {
@@ -189,6 +238,96 @@ describe('loadMealDates', () => {
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
       { date: '2026-04-07', kcal: null },
+    ]);
+  });
+
+  // -------------------------------------------------------------------------
+  // The payload scan's cardinality
+  // -------------------------------------------------------------------------
+
+  it('caps the staged-payload scan instead of reading every abandoned row', async () => {
+    // Deciding renderability needs each row's pipeline_result, and nothing
+    // bounds how many of those a user accumulates: barcode staging inserts
+    // with a NULL attempt_id (so the (user_id, attempt_id) unique index cannot
+    // dedupe it) and stageBarcodeMealAction runs no limiter, while the AI path
+    // allows 100 fresh attempts a day against a 7-day horizon. Unbounded, this
+    // read pulls multi-kilobyte JSONB per row on every timeline load.
+    mockDateQueries([], []);
+
+    await loadMealDates({ timezoneOffset: 0 });
+
+    // +1 is the probe: it is how the merge learns there was more to read.
+    expect(limitSpy).toHaveBeenCalledWith(PENDING_SCAN_LIMIT + 1);
+  });
+
+  it('gives up totals on the days its capped scan could not reach', async () => {
+    // DATE(logged_at + offset) is monotonic in logged_at, so a scan ordered by
+    // logged_at DESC reads whole days newest-first. Past the cap the unread
+    // rows are all on the oldest day it touched or older — and any of them may
+    // be a renderable card. Guessing "no card" there would show a subtotal
+    // wearing the face of a complete total, the bug this file already fixes
+    // twice, so an unreachable day reports an unknown total instead.
+    const overflow = Array.from({ length: PENDING_SCAN_LIMIT + 1 }, () =>
+      stagedRow('2026-04-07')
+    );
+    mockDateQueries(
+      [
+        { date: '2026-04-07', kcal: 700 },
+        { date: '2026-04-05', kcal: 2014 },
+        { date: '2026-04-03', kcal: 1500 },
+      ],
+      overflow,
+      // The date scan is grouped, so it sees every day regardless of the cap.
+      ['2026-04-07', '2026-04-05']
+    );
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-07', kcal: null },
+      // Below the boundary and never scanned, yet the grouped date scan says
+      // it holds a staged row: unknown, not 2014.
+      { date: '2026-04-05', kcal: null },
+      // No staged row at all, so the cap never touches it.
+      { date: '2026-04-03', kcal: 1500 },
+    ]);
+  });
+
+  it('still judges days above the truncation boundary from their payloads', async () => {
+    // Conservatism is for what the scan could not see. A day it read in full —
+    // anything strictly newer than the oldest day it reached — is decided the
+    // normal way, so an unrenderable-only day up there keeps its real total.
+    const overflow = [
+      { ...stagedRow('2026-04-07'), pipelineResult: { junk: true } },
+      ...Array.from({ length: PENDING_SCAN_LIMIT }, () =>
+        stagedRow('2026-04-06')
+      ),
+    ];
+    mockDateQueries(
+      [
+        { date: '2026-04-07', kcal: 700 },
+        { date: '2026-04-06', kcal: 900 },
+      ],
+      overflow,
+      ['2026-04-07', '2026-04-06']
+    );
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-07', kcal: 700 },
+      { date: '2026-04-06', kcal: null },
+    ]);
+  });
+
+  it('lists a day the capped scan never reached even with no saved meal', async () => {
+    // The grouped date scan is the only thing that knows this day exists. Drop
+    // it and the sidebar loses a day the feed would draw, which is the same
+    // disagreement the shared renderability test was added to end.
+    const overflow = Array.from({ length: PENDING_SCAN_LIMIT + 1 }, () =>
+      stagedRow('2026-04-07')
+    );
+    mockDateQueries([], overflow, ['2026-04-07', '2026-04-01']);
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-07', kcal: null },
+      { date: '2026-04-01', kcal: null },
     ]);
   });
 });

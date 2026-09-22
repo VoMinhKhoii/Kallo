@@ -1,9 +1,12 @@
 'use server';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
-import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
+import {
+  PENDING_SCAN_LIMIT,
+  toStagedCard,
+} from '@/lib/actions/meals/day/staged-card';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 import type { MealDateSummary } from '@/lib/domain/logging/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -36,7 +39,7 @@ export async function loadMealDates(input: {
   const mealDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
   const pendingDateExpr = sql<string>`DATE(${pendingAnalyses.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
 
-  const [mealRows, pendingRows] = await Promise.all([
+  const [mealRows, pendingDateRows, scannedRows] = await Promise.all([
     // Grouped rather than DISTINCT ON so the day's calories come back from the
     // same scan — no second query, and the same (user_id, logged_at) index.
     db
@@ -55,10 +58,31 @@ export async function loadMealDates(input: {
       .from(meals)
       .where(eq(meals.userId, user.id))
       .groupBy(mealDateExpr),
-    // Not grouped: deciding whether a staged row is renderable needs its
-    // payload, so the rows come back whole and the dedupe happens below. The
-    // cost is bounded — staged cards are confirmed, discarded, or reaped within
-    // a week, so this is a handful of rows, not a history.
+    // WHICH days hold a staged card. Grouped, so it costs one row per day and
+    // reads no JSONB — this is what keeps the day LIST complete however many
+    // rows the payload scan below had to leave behind.
+    //
+    // Both pending queries have to agree with the feed on what counts as a
+    // live card, or the sidebar describes a day the feed draws differently.
+    // That means BOTH halves of loadPendingAnalysesByDate's line, not one:
+    //
+    // - No `expiresAt > now()`. That 30-minute window hid a card the user
+    //   still meant to save, and the feed dropped it; keeping it here would
+    //   paint no dot for a day the feed does render.
+    // - But DO apply `isStillStaged()`. The feed hides a card past the
+    //   7-day reaping horizon, so counting one here masks a real total for
+    //   a card nobody can see — the sweep is best-effort and only runs on a
+    //   day load, so such rows genuinely linger.
+    db
+      .select({ date: pendingDateExpr.as('date') })
+      .from(pendingAnalyses)
+      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
+      .groupBy(pendingDateExpr),
+    // WHETHER those cards are renderable, which needs each row's payload and
+    // so cannot be grouped. Capped: see PENDING_SCAN_LIMIT for why an
+    // uncapped version grows without bound. Newest first, and `date` is
+    // monotonic in `logged_at`, so the scan fills whole days from the top and
+    // the shortfall — if any — lands on the oldest day it reached and older.
     db
       .select({
         id: pendingAnalyses.id,
@@ -69,18 +93,11 @@ export async function loadMealDates(input: {
         date: pendingDateExpr.as('date'),
       })
       .from(pendingAnalyses)
-      // The two queries have to agree on what counts as a live pending card,
-      // or the sidebar describes a day the feed draws differently. That means
-      // BOTH halves of loadPendingAnalysesByDate's line, not one:
-      //
-      // - No `expiresAt > now()`. That 30-minute window hid a card the user
-      //   still meant to save, and the feed dropped it; keeping it here would
-      //   paint no dot for a day the feed does render.
-      // - But DO apply `isStillStaged()`. The feed hides a card past the
-      //   7-day reaping horizon, so counting one here masks a real total for
-      //   a card nobody can see — the sweep is best-effort and only runs on a
-      //   day load, so such rows genuinely linger.
-      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged())),
+      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
+      .orderBy(desc(pendingAnalyses.loggedAt))
+      // One past the cap, purely as a probe: coming back full is how the
+      // merge learns there was more to read.
+      .limit(PENDING_SCAN_LIMIT + 1),
   ]);
 
   // A staged card carries its nutrition inside pipeline_result's JSONB, not in
@@ -91,17 +108,36 @@ export async function loadMealDates(input: {
   for (const row of mealRows) {
     kcalByDate.set(row.date, toKcal(row.kcal));
   }
-  // Overwrites any saved-meal sum: a day holding BOTH a saved meal and a
-  // staged card knows only part of what was eaten, and a partial total is the
-  // one thing worse than none — it looks complete. Same rule as the CASE guard
-  // above, one layer up.
-  //
+
   // `toStagedCard` is the feed's own renderability test, shared rather than
   // restated. A row it rejects is a card nobody can see or confirm, so it must
   // not mask a total either.
-  for (const row of pendingRows) {
-    if (!toStagedCard(row)) continue;
-    kcalByDate.set(row.date, null);
+  const scanned = scannedRows.slice(0, PENDING_SCAN_LIMIT);
+  const renderableDates = new Set<string>();
+  for (const row of scanned) {
+    if (toStagedCard(row)) renderableDates.add(row.date);
+  }
+  // The cap's blind spot, as a date. The scan came back full, so rows were
+  // left behind, and every one of them sits on the oldest day it reached or
+  // an older one — that day and everything below it went undecided.
+  const undecidedFrom =
+    scannedRows.length > PENDING_SCAN_LIMIT
+      ? (scanned.at(-1)?.date ?? null)
+      : null;
+
+  for (const { date } of pendingDateRows) {
+    // Masking overwrites any saved-meal sum: a day holding BOTH a saved meal
+    // and a staged card knows only part of what was eaten, and a partial total
+    // is the one thing worse than none — it looks complete. Same rule as the
+    // CASE guard above, one layer up.
+    //
+    // An undecided day masks too. Guessing "no renderable card down there"
+    // would be guessing in the direction that invents a complete-looking
+    // total; unknown is the honest answer and the safe one. A day the scan
+    // DID cover keeps its total when nothing on it was renderable, so the cap
+    // costs precision only where it actually ran out.
+    const undecided = undecidedFrom !== null && date <= undecidedFrom;
+    if (undecided || renderableDates.has(date)) kcalByDate.set(date, null);
   }
 
   return Array.from(kcalByDate, ([date, kcal]) => ({ date, kcal })).sort(

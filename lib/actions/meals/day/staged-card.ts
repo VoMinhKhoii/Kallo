@@ -3,6 +3,28 @@ import type { PipelineResult } from '@/lib/ai/types/result';
 import type { CheatSliderSpec } from '@/lib/core/types/cheat';
 import type { PendingMealConfirmation } from '../types';
 
+/**
+ * How many staged rows a read may pull payloads for before it stops asking.
+ *
+ * {@link toStagedCard} needs the whole `pipeline_result` JSONB — a few
+ * kilobytes a row — and nothing bounds how many of those one user can have
+ * live at once. `stageBarcodeMeal` inserts with a NULL `attempt_id`, so the
+ * `(user_id, attempt_id)` unique index cannot collapse repeated scans, and
+ * `stageBarcodeMealAction` runs no limiter of its own; the AI path allows 100
+ * fresh attempts a day against a seven-day reaping horizon. A user who stages
+ * and never confirms would otherwise make the timeline's date read grow
+ * without limit, on every logging page load.
+ *
+ * It lives here, beside the decision it bounds, because a caller that hits the
+ * cap has to fall back to something — and what that something is only makes
+ * sense next to what the payload was for. `loadMealDates` reports the days it
+ * could not reach as unknown rather than guessing they hold no card.
+ *
+ * Well clear of any ordinary user: the feed would be drawing hundreds of
+ * unconfirmed cards before this bites.
+ */
+export const PENDING_SCAN_LIMIT = 200;
+
 /** The columns any read needs before it can decide a staged row is renderable. */
 export interface StagedCardRow {
   id: string;
