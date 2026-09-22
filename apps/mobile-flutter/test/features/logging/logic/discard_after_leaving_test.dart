@@ -1,11 +1,9 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/meal_actions.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 
 import '../../../l10n_test_loader.dart';
 import '../../circle/circle_feed_test_support.dart';
@@ -62,44 +60,28 @@ _pump(WidgetTester tester) async {
   );
   final open = ValueNotifier(true);
   late FeedMealActions actions;
-  await tester.pumpWidget(
-    EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: ProviderScope(
-        overrides: [apiClientProvider.overrideWithValue(api)],
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: Scaffold(
-                  // The pill-nav badge: lives outside `/logging` and keeps the
-                  // inbox provider alive, so an invalidate means a refetch.
-                  bottomNavigationBar: Consumer(
-                    builder: (_, ref, __) {
-                      ref.watch(mealShareInvitesProvider);
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                  body: ValueListenableBuilder<bool>(
-                    valueListenable: open,
-                    builder:
-                        (_, isOpen, __) =>
-                            isOpen
-                                ? _Feed(onActions: (a) => actions = a)
-                                : const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-        ),
+  await pumpCircleScreen(
+    tester,
+    Scaffold(
+      // The pill-nav badge: lives outside `/logging` and keeps the inbox
+      // provider alive, so an invalidate means a refetch.
+      bottomNavigationBar: Consumer(
+        builder: (_, ref, __) {
+          ref.watch(mealShareInvitesProvider);
+          return const SizedBox.shrink();
+        },
+      ),
+      body: ValueListenableBuilder<bool>(
+        valueListenable: open,
+        builder:
+            (_, isOpen, __) =>
+                isOpen
+                    ? _Feed(onActions: (a) => actions = a)
+                    : const SizedBox.shrink(),
       ),
     ),
+    api: api,
   );
-  await tester.pumpAndSettle();
   return (api: api, actions: actions, open: open);
 }
 

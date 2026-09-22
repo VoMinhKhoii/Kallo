@@ -69,18 +69,8 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
   // Both buttons only ASK; the confirm dialog is what acts. A cheat offer
   // meets the paywall before the question, not after the reader has said yes.
   const requestAccept = () => {
-    if (busy) {
-      return;
-    }
     if (isCheat && !requirePremium('cheat_meal')) return;
     setConfirming(isCheat ? 'acceptCheat' : 'accept');
-  };
-
-  const requestDismiss = () => {
-    if (busy) {
-      return;
-    }
-    setConfirming('dismiss');
   };
 
   const confirm = (kind: InviteConfirmKind) => {
@@ -155,7 +145,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
       <div className="mt-3 flex items-center justify-end gap-2 border-kallo-border/40 border-t border-dashed pt-3">
         <button
           type="button"
-          onClick={requestDismiss}
+          onClick={() => setConfirming('dismiss')}
           disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted/80 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:opacity-60"
         >

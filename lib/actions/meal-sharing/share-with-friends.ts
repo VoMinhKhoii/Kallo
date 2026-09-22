@@ -127,9 +127,7 @@ export async function shareMealWithFriendsAction(input: {
     // accepted offer for this meal: the upsert below deliberately never resets
     // a held invite (no duplicate logs), so scaling first would shrink the
     // sender's meal while creating no pending offer for that friend. Same
-    // predicate as the upsert's `setWhere`, so the two can never disagree about
-    // who is re-offerable (a friend who deleted the copy is — see
-    // `inviteStillHeld`).
+    // predicate as the upsert's `setWhere`, so the two cannot disagree.
     if (parsed.mode === 'split') {
       const accepted = await tx
         .select({ toUserId: mealShareInvites.toUserId })
@@ -231,20 +229,9 @@ export async function shareMealWithFriendsAction(input: {
           respondedAt: null,
           createdAt: now,
         },
-        // Never resets an offer the recipient still HOLDS — bound to a meal,
-        // or a staged cheat card in flight. An abandoned cheat card re-pends
-        // its offer the moment the card dies (`releaseInvite`, called by both
-        // discard and the reaper).
-        //
-        // Widening this to `OR accepted_meal_id IS NULL` was tried and
-        // reverted: that alone is every staged cheat card for its whole ~7-day
-        // life, because the meal does not exist until confirm. A re-share
-        // during that window re-pended a live offer, put a second card in the
-        // recipient's inbox for the same dish, and confirming both wrote two
-        // meals. `inviteStillHeld` tells that card apart by its
-        // `pending_analyses` row, which is what lets an accept whose meal was
-        // later DELETED come back on a re-share instead of being skipped
-        // forever.
+        // Never resets an offer the recipient still HOLDS (bound to a meal, or
+        // a staged cheat card in flight) — see `inviteStillHeld` for why
+        // `accepted` alone is the wrong test, in both directions.
         setWhere: sql`NOT ${inviteStillHeld()}`,
       })
       .returning({

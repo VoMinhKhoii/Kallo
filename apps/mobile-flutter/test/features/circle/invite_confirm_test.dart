@@ -1,10 +1,7 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/invite_card.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 
 import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
@@ -28,34 +25,15 @@ const _invite = MealShareInvite(
 
 Future<FakeApiClient> _pumpCard(WidgetTester tester) async {
   final api = FakeApiClient((_) async => <String, dynamic>{});
-  await tester.pumpWidget(
-    EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: ProviderScope(
-        overrides: [apiClientProvider.overrideWithValue(api)],
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: const Scaffold(
-                  body: SingleChildScrollView(
-                    child: SizedBox(
-                      width: 390,
-                      child: InviteCard(invite: _invite),
-                    ),
-                  ),
-                ),
-              ),
-        ),
+  await pumpCircleScreen(
+    tester,
+    const Scaffold(
+      body: SingleChildScrollView(
+        child: SizedBox(width: 390, child: InviteCard(invite: _invite)),
       ),
     ),
+    api: api,
   );
-  await tester.pumpAndSettle();
   return api;
 }
 

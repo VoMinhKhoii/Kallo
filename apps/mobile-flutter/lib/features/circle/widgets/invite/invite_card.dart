@@ -36,30 +36,33 @@ class _InviteCardState extends ConsumerState<InviteCard> {
 
   // Both buttons ask first; the card goes busy only once the reader has said
   // yes, so backing out of the confirm leaves it exactly as it was.
-  Future<void> _accept() async {
+  Future<void> _respond({
+    required bool dismiss,
+    required Future<bool> Function() act,
+  }) async {
     if (_busy) return;
-    if (!await confirmInviteResponse(context, widget.invite, dismiss: false) ||
+    if (!await confirmInviteResponse(
+          context,
+          widget.invite,
+          dismiss: dismiss,
+        ) ||
         !mounted) {
       return;
     }
     setState(() => _busy = true);
-    HapticFeedback.selectionClick();
-    if (!await takeInviteOffer(context, ref, widget.invite) && mounted) {
-      setState(() => _busy = false);
-    }
+    if (!dismiss) HapticFeedback.selectionClick();
+    if (!await act() && mounted) setState(() => _busy = false);
   }
 
-  Future<void> _dismiss() async {
-    if (_busy) return;
-    if (!await confirmInviteResponse(context, widget.invite, dismiss: true) ||
-        !mounted) {
-      return;
-    }
-    setState(() => _busy = true);
-    if (!await dismissInviteOffer(context, ref, widget.invite.id) && mounted) {
-      setState(() => _busy = false);
-    }
-  }
+  Future<void> _accept() => _respond(
+    dismiss: false,
+    act: () => takeInviteOffer(context, ref, widget.invite),
+  );
+
+  Future<void> _dismiss() => _respond(
+    dismiss: true,
+    act: () => dismissInviteOffer(context, ref, widget.invite.id),
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -18,7 +18,11 @@ import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { cn } from '@/lib/core/ui/cn';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
-import { inviteMode, invitePortionPercent } from './notification-copy';
+import {
+  actorLabel,
+  inviteMode,
+  invitePortionPercent,
+} from './notification-copy';
 import { NotificationAvatars, NotificationMessage } from './notification-parts';
 
 /** The invite's terminal state, as a quiet chip. Only "accepted" names an act:
@@ -59,9 +63,7 @@ export function ShareInviteRow({
   const mode = inviteMode(item);
   const percent = invitePortionPercent(item);
   const [confirming, setConfirming] = useState<InviteConfirmKind | null>(null);
-  const sender = item.actors[0];
-  const senderLabel =
-    sender?.displayName?.trim() || sender?.handle || t('someone');
+  const senderLabel = actorLabel(item, t('someone'));
 
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
@@ -83,12 +85,8 @@ export function ShareInviteRow({
   };
 
   // The buttons only ASK — the shared confirm dialog is what acts, the same
-  // one the Circle deck card opens.
-  const request = (kind: InviteConfirmKind) => {
-    if (busy || !inviteId) return;
-    setConfirming(kind);
-  };
-
+  // one the Circle deck card opens. Busy is guarded by `disabled` on the
+  // buttons and re-checked in `confirm`.
   const confirm = (kind: InviteConfirmKind) => {
     if (busy || !inviteId) return;
     const mutation = kind === 'dismiss' ? dismiss : accept;
@@ -131,7 +129,7 @@ export function ShareInviteRow({
                 dismiss is a text action beside it, not a second button. */}
             <button
               type="button"
-              onClick={() => request('accept')}
+              onClick={() => setConfirming('accept')}
               disabled={busy}
               aria-busy={accept.isPending}
               className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
@@ -143,7 +141,7 @@ export function ShareInviteRow({
             </button>
             <button
               type="button"
-              onClick={() => request('dismiss')}
+              onClick={() => setConfirming('dismiss')}
               disabled={busy}
               className="px-2 py-1.5 font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-55"
             >
