@@ -33,7 +33,7 @@ const SWIPE_COOLDOWN_MS = 250;
 const WEEK_SLIDER_ID = 'mobile-week-slider';
 
 export interface MobileTimelinePickerProps {
-  dates: string[];
+  dates: readonly string[];
   today: string;
   selectedDate: string;
   isPending: boolean;
