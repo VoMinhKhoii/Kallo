@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 // Local next-intl double: the placeholder's whole point is the interpolated
@@ -32,6 +33,26 @@ describe('ReplyComposer', () => {
     // first, and the interpolated name says whose post you are answering.
     expect(screen.getByPlaceholderText('Reply to Minh…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'reply' })).toBeNull();
+  });
+
+  it('keeps the send button outside the pill', async () => {
+    // The button is the pill's SIBLING: at rest the capsule is unbroken across
+    // the page, and it shortens only once there is a draft. Inside the pill it
+    // had to hold a permanent hole for a button that is usually absent.
+    const { container } = render(
+      <ReplyComposer authorName="Minh" shareId={SHARE_ID} />
+    );
+
+    const pill = container.querySelector('[data-testid="reply-pill"]');
+    expect(pill).not.toBeNull();
+    expect(pill?.className).not.toContain('pr-');
+
+    await userEvent.type(screen.getByRole('textbox'), 'ngon');
+
+    const send = screen.getByRole('button', { name: 'send' });
+    expect(pill).not.toContainElement(send);
+    // Same form, so it still submits the field beside it.
+    expect(send.closest('form')).toBe(pill?.closest('form'));
   });
 
   it('drops the name on your own post — you are not replying to yourself', () => {

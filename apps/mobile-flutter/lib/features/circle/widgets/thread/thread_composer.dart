@@ -9,6 +9,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
 import 'reply_pill.dart';
 import 'thread_dock_insets.dart';
+import 'thread_send_button.dart';
 
 /// The thread page's docked reply composer.
 ///
@@ -148,12 +149,39 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
               horizontal: KalloSpacing.sp3,
               vertical: KalloSpacing.sp2,
             ),
-            child: ReplyPill(
-              controller: _controller,
-              focusNode: widget.focusNode,
-              hintText: hint,
-              submitting: _submitting,
-              onSubmit: _submit,
+            // The send button is the pill's SIBLING, not its child: a resting
+            // composer is one unbroken capsule across the page, and the pill
+            // gives room back only once there is something to send.
+            //
+            // [Expanded] is what makes that a morph. The button animates its own
+            // width 0 → 52 (its 44pt target plus the gap, both inside its
+            // animation), and the Row re-lays-out on those same frames, so the
+            // pill's right end travels left under one motion with nothing on the
+            // pill animating at all.
+            //
+            // `end`, so a draft grown to four lines keeps the disc and the
+            // button on its last line rather than centring them beside it.
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: ReplyPill(
+                    controller: _controller,
+                    focusNode: widget.focusNode,
+                    hintText: hint,
+                    submitting: _submitting,
+                    onSubmit: _submit,
+                  ),
+                ),
+                // Only the send affordance listens to the draft: a controller
+                // listener up here would rebuild the field, its decoration and
+                // the dock's fill on every keystroke.
+                ThreadSendButton(
+                  controller: _controller,
+                  submitting: _submitting,
+                  onSubmit: _submit,
+                ),
+              ],
             ),
           ),
         ),

@@ -10,8 +10,15 @@ import '../../../../theme/kallo_theme.dart';
 /// The visual disc inside the 44pt tap target — the app's send affordance.
 const double _disc = 32;
 
-/// The reply pill's send affordance: nothing at all until there is a draft,
-/// then the app's send button grows out of the pill's right edge.
+/// The reply dock's send affordance, BESIDE the pill: nothing at all until
+/// there is a draft, then the app's send button opening a space for itself.
+///
+/// Outside the capsule rather than in it (2026-09-22). Inside, the pill's right
+/// end had to hold a permanent 44pt hole for a button that is usually not
+/// there; out here a resting composer is one unbroken capsule to the dock's own
+/// edge, and the width this widget animates is width the pill gets back — the
+/// gap below is inside the animation for the same reason, so the pill reaches
+/// the edge rather than stopping 8 short of it.
 ///
 /// It was a text label ("Trả lời") sitting OUTSIDE the field until 2026-09-22.
 /// A verb in running type beside a field reads as a second placeholder, and the
@@ -62,9 +69,8 @@ class ThreadSendButton extends StatelessWidget {
       // would become the whole body and the dock's opaque fill would cover
       // every reply the moment a draft existed.
       //
-      // 44 is also what sets the pill's own minimum height, so this target is
-      // never squeezed by the pill's padding — which is why the pill carries no
-      // padding on this side: the 6pt of slack around the disc IS the inset.
+      // 44 also matches the resting pill's own height beside it, so the 32pt
+      // disc lands on the pill's centre line under the Row's `end` alignment.
       child: KalloPressable(
         // Inert, never null, while submitting: a GestureDetector with only null
         // callbacks registers no recognizer at all, so the target leaves the
@@ -100,7 +106,13 @@ class ThreadSendButton extends StatelessWidget {
     );
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      child: button,
+      // The gap belongs INSIDE the morph, so it collapses with the button: a
+      // constant gap on the Row would leave an 8pt dead strip between a resting
+      // pill and the dock's edge for a button that is not there.
+      child: Padding(
+        padding: const EdgeInsets.only(left: KalloSpacing.sp2),
+        child: button,
+      ),
       builder:
           (context, value, child) => _Morph(
             shown: value.text.trim().isNotEmpty,
@@ -113,10 +125,11 @@ class ThreadSendButton extends StatelessWidget {
 /// The draft appearing is the button appearing, animated as one move.
 ///
 /// Width, opacity and scale together, from a single `t`: width alone reads as a
-/// horizontal wipe, and opacity alone pops a full-size disc into a pill that
-/// has not made room for it yet. [Align]'s `widthFactor` is the shrink-wrap
+/// horizontal wipe, and opacity alone pops a full-size disc into a row that has
+/// not made room for it yet. [Align]'s `widthFactor` is the shrink-wrap
 /// `kallo_pressable.dart` documents — it reports `t` × the child's width to the
-/// Row, so the field beside it gives the space back as the button leaves.
+/// Row, and the `Expanded` pill beside it absorbs the difference, which is what
+/// makes the capsule shorten and lengthen as one motion with this.
 /// `heightFactor: 1` is not optional: an [Align] with no size factor on that
 /// axis grows to any finite maximum it is offered, and this one is laid out
 /// inside the page's overlay Stack, which offers it the whole body.

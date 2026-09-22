@@ -253,7 +253,14 @@ void main() {
     final dock = tester.getRect(find.byType(ThreadComposer));
     final discRect = tester.getRect(disc);
     expect(pill.left, dock.left + KalloSpacing.sp3);
-    expect(pill.right, dock.right - KalloSpacing.sp3);
+    expect(
+      pill.right,
+      dock.right - KalloSpacing.sp3,
+      reason:
+          'at rest the capsule is unbroken edge to edge — the send button is '
+          'its sibling and takes no room until there is a draft '
+          '(circle_thread_composer_send_test.dart owns that half)',
+    );
     expect(discRect.left, greaterThan(pill.left));
     expect(discRect.right, lessThan(pill.right));
 
