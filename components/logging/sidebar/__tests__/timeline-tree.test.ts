@@ -55,8 +55,9 @@ describe('buildTimelineTree', () => {
       selectedDate: TODAY,
     }).find((month) => month.month === 8);
 
-    // August 2026 starts on a Saturday: week 1 is the 1st-2nd alone.
-    expect(august?.weeks[0].days).toEqual(['2026-08-02', '2026-08-01']);
+    // August 2026 starts on a Saturday: week 1 is the 1st-2nd alone. Days come
+    // out ascending — the order the sidebar renders them in.
+    expect(august?.weeks[0].days).toEqual(['2026-08-01', '2026-08-02']);
     // ...and the month ends mid-week on the 31st.
     expect(august?.weeks.at(-1)?.days).toEqual(['2026-08-31']);
   });

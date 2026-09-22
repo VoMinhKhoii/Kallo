@@ -2,10 +2,22 @@ import {
   dateToDateString,
   getSelectedMonthKey,
   getWeekDateRange,
-  type MonthSection,
-  type WeekSection,
   weekOfMonth,
 } from './timeline-utils';
+
+export interface WeekSection {
+  key: string;
+  weekNumber: number;
+  /** Ascending, which is the order the sidebar renders them in. */
+  days: string[];
+}
+
+export interface MonthSection {
+  key: string;
+  month: number;
+  year: number;
+  weeks: WeekSection[];
+}
 
 export interface BuildTimelineTreeInput {
   /** Days the user actually logged something on. */
@@ -93,17 +105,19 @@ export function buildTimelineTree(
 
   for (const [key, parts] of collectMonthKeys(input)) {
     const weeks: WeekSection[] = [];
+    // Hoisted: in the loop condition this re-ran every iteration, and each run
+    // allocates a Date and calls weekOfMonth, which allocates two more.
+    const weekCount = weeksInMonth(parts);
 
-    for (let weekNumber = 1; weekNumber <= weeksInMonth(parts); weekNumber++) {
+    for (let weekNumber = 1; weekNumber <= weekCount; weekNumber++) {
+      // Already ascending — `daysInWeek` counts up and `filter` preserves
+      // order. The sidebar renders ascending, so emitting descending here only
+      // bought a re-sort on every render.
       const days = daysInWeek(parts, weekNumber).filter(isReachable);
 
       if (days.length === 0) continue;
 
-      weeks.push({
-        key: `${key}-w${weekNumber}`,
-        weekNumber,
-        days: days.sort((a, b) => b.localeCompare(a)),
-      });
+      weeks.push({ key: `${key}-w${weekNumber}`, weekNumber, days });
     }
 
     if (weeks.length === 0) continue;

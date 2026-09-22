@@ -13,12 +13,12 @@ import {
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { TrialBanner } from '@/components/billing/subscription/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
-import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
-import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
 import {
-  buildAllTimelineDates,
-  todayDateString,
-} from '@/components/logging/sidebar/timeline-utils';
+  MobileTimelinePicker,
+  type MobileTimelinePickerProps,
+} from '@/components/logging/sidebar/mobile-timeline-picker';
+import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
+import { todayDateString } from '@/components/logging/sidebar/timeline-utils';
 import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals/meal-dates';
@@ -92,11 +92,6 @@ export function LoggingShell({
 
   usePrefetchDates(selectedDate);
 
-  const allDates = useMemo(
-    () => buildAllTimelineDates({ dates, today, selectedDate }),
-    [dates, selectedDate, today]
-  );
-
   const updateSearchParams = useCallback(
     (nextDate: string, options?: { clearMeal?: boolean }) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -136,9 +131,11 @@ export function LoggingShell({
     setSelectedDate(urlDate);
   }, [searchParams]);
 
-  const timelineState = {
+  // Typed, not an untyped bag: the two surfaces take DIFFERENT props, and a
+  // JSX spread gets no excess-property checking — which is how an `allDates`
+  // key survived here for a while after its last reader was removed.
+  const timelineState: MobileTimelinePickerProps = {
     dates,
-    allDates,
     today,
     selectedDate,
     isPending,
@@ -160,7 +157,15 @@ export function LoggingShell({
         {...timelineState}
         isRetrying={isFetching && !isPending}
       />
-      <TimelineSidebar {...timelineState} dailyKcal={dailyKcal} />
+      <TimelineSidebar
+        dailyKcal={dailyKcal}
+        today={today}
+        selectedDate={selectedDate}
+        isPending={isPending}
+        isError={isError}
+        onRetry={timelineState.onRetry}
+        onSelectDate={handleSelectDate}
+      />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <TrialBanner userId={profile.userId} email={email} />
         <FeedArea

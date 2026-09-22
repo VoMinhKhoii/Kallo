@@ -72,17 +72,14 @@ vi.mock('@/components/logging/sidebar/mobile-timeline-picker', () => ({
     selectedDate,
     onSelectDate,
     dates,
-    allDates,
   }: {
     selectedDate: string;
     onSelectDate: (date: string) => void;
     dates: string[];
-    allDates: string[];
   }) => (
     <div data-testid="mobile-timeline-picker">
       <div data-testid="mobile-selected-date">{selectedDate}</div>
       <div data-testid="mobile-dates">{dates.join(',')}</div>
-      <div data-testid="mobile-all-dates">{allDates.join(',')}</div>
       <button
         type="button"
         data-testid="mobile-select-btn"
@@ -220,9 +217,6 @@ describe('LoggingShell', () => {
         '2026-05-01,2026-05-02,2026-05-03'
       );
     });
-    expect(screen.getByTestId('mobile-all-dates')).toHaveTextContent(
-      '2026-05-03'
-    );
   });
 
   it('updates ?date= with router.replace and scroll false when date changes', async () => {

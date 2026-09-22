@@ -12,7 +12,6 @@ import {
   getSelectedMonthKey,
   getSelectedWeekKey,
   getWeekDateRange,
-  sortTimelineDaysAscending,
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
@@ -205,7 +204,6 @@ export function TimelineSidebar({
                       weekRange,
                       locale
                     );
-                    const sortedDays = sortTimelineDaysAscending(week.days);
 
                     return (
                       <div key={week.key} className="w-full min-w-0">
@@ -246,13 +244,13 @@ export function TimelineSidebar({
                           >
                             {/* Days list */}
                             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
-                              {sortedDays.map((date, index) => (
+                              {week.days.map((date, index) => (
                                 <TimelineDayRow
                                   key={date}
                                   date={date}
                                   label={formatTimelineDayLabel(date, locale)}
                                   isFirst={index === 0}
-                                  isLast={index === sortedDays.length - 1}
+                                  isLast={index === week.days.length - 1}
                                   isActive={date === selectedDate}
                                   isToday={date === today}
                                   todayLabel={t('todayLabel')}
