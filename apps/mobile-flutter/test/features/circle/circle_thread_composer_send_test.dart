@@ -141,10 +141,29 @@ void main() {
       lessThan(dock.right - KalloSpacing.sp3),
       reason: 'the pill has to give the room back, not overlap the button',
     );
-    expect(send.left, greaterThanOrEqualTo(pill.right));
     expect(send.right, closeTo(dock.right - KalloSpacing.sp3, 0.5));
-    // Same line: the 32pt disc lands on the resting pill's centre.
-    expect(send.center.dy, closeTo(pill.center.dy, 1));
+
+    // The button stands exactly as tall as the field it sends — so it is
+    // LARGER than the disc inside the pill, not a small disc floating in a
+    // 44pt box. That box's slack used to read as extra gap.
+    expect(send.height, closeTo(pill.height, 0.5));
+    expect(send.center.dy, closeTo(pill.center.dy, 0.5));
+    final composerDisc = tester.getRect(
+      find.descendant(
+        of: find.byType(ReplyPill),
+        matching: find.byType(ProfileAvatarDisc),
+      ),
+    );
+    expect(send.height, greaterThan(composerDisc.height));
+
+    // ONE gap: field-to-button equals disc-to-border inside the pill.
+    expect(
+      send.left - pill.right,
+      closeTo(composerDisc.left - pill.left, 0.5),
+      reason:
+          'the space between the field and the button reads as the same gap '
+          'as the one around the disc, or it looks like two decisions',
+    );
   });
 
   testWidgets('pulling the thread down refetches its post', (tester) async {

@@ -108,20 +108,22 @@ export function ReplyComposer({
             : 'pointer-events-none ml-0 w-0 scale-85 opacity-0'
         }`}
       >
-        {/* A 32px disc centred in a 44px target: the target matches the
-            resting pill's height, so under `items-end` the disc lands on the
-            pill's centre line rather than 6px below it. */}
-        <span className="flex size-11 shrink-0 items-center justify-center">
-          <button
-            aria-label={t('send')}
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-white transition-colors hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-50"
-            disabled={createReply.isPending || !hasDraft}
-            tabIndex={hasDraft ? undefined : -1}
-            type="submit"
-          >
-            <ArrowUp className="size-4" />
-          </button>
-        </span>
+        {/* `size-11` (44) — the disc IS the target, and both are the resting
+            pill's height, so the button stands exactly as tall as the field it
+            sends and is therefore larger than the 28px disc inside it. It was
+            a `size-8` disc centred in a `size-11` box, whose 6px of slack read
+            as part of the gap: field-to-button measured 14 against the 8
+            inside the pill. `ml-2` above is that same 8, so the two are one
+            gap. `size-6` glyph keeps the disc's proportion. */}
+        <button
+          aria-label={t('send')}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-white transition-colors hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-50"
+          disabled={createReply.isPending || !hasDraft}
+          tabIndex={hasDraft ? undefined : -1}
+          type="submit"
+        >
+          <ArrowUp className="size-6" />
+        </button>
       </span>
     </form>
   );

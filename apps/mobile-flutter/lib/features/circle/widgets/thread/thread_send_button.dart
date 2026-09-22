@@ -7,8 +7,16 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 
-/// The visual disc inside the 44pt tap target — the app's send affordance.
-const double _disc = 32;
+/// The send disc IS the tap target, and both are the app's one hit target —
+/// which is also the resting pill's height beside it (`reply_pill.dart`:
+/// the disc plus its two [KalloSpacing.sp2] gaps), so the button stands exactly
+/// as tall as the field it sends.
+///
+/// It was a 32 disc centred in a 44 box. That box's 6pt of slack read as part
+/// of the gap, so the space between field and button measured 14 against the
+/// 8 inside the pill — two gaps that should be one number. With the disc
+/// filling its target there is no slack to read.
+const double _disc = KalloIcons.hit;
 
 /// The reply dock's send affordance, BESIDE the pill: nothing at all until
 /// there is a draft, then the app's send button opening a space for itself.
@@ -69,46 +77,58 @@ class ThreadSendButton extends StatelessWidget {
       // would become the whole body and the dock's opaque fill would cover
       // every reply the moment a draft existed.
       //
-      // 44 also matches the resting pill's own height beside it, so the 32pt
-      // disc lands on the pill's centre line under the Row's `end` alignment.
-      child: KalloPressable(
-        // Inert, never null, while submitting: a GestureDetector with only null
-        // callbacks registers no recognizer at all, so the target leaves the
-        // arena and the tap falls through — here to the field behind it, which
-        // would raise the keyboard on a send the user already made.
-        onTap: submitting ? () {} : onSubmit,
-        height: KalloIcons.hit,
-        constraints: const BoxConstraints(minWidth: KalloIcons.hit),
-        alignment: Alignment.center,
-        child: Container(
-          width: _disc,
+      // [ClipOval] so the press wash follows the disc. [KalloPressable] paints
+      // [KalloColors.pressWash] full-bleed — every other consumer is a
+      // rectangular row — and a square wash behind a disc that fills its box
+      // shows at the four corners. Clipping also narrows hit-testing to the
+      // circle, which is what a circular iOS button does anyway.
+      child: ClipOval(
+        child: KalloPressable(
+          // Inert, never null, while submitting: a GestureDetector with only
+          // null callbacks registers no recognizer at all, so the target leaves
+          // the arena and the tap falls through — here to the field behind it,
+          // which would raise the keyboard on a send the user already made.
+          onTap: submitting ? () {} : onSubmit,
           height: _disc,
+          constraints: const BoxConstraints(minWidth: _disc),
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            // The press is carried by [KalloPressable]'s wash, not by a second
-            // fill: beige has nowhere lighter to go on white.
-            color: KalloColors.btnPrimarySoft,
-            shape: BoxShape.circle,
+          child: Container(
+            width: _disc,
+            height: _disc,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              // The press is carried by [KalloPressable]'s wash over this
+              // fill, not by a second one: beige has nowhere lighter to go.
+              color: KalloColors.btnPrimarySoft,
+              shape: BoxShape.circle,
+            ),
+            child:
+                submitting
+                    ? const CupertinoActivityIndicator(
+                      // `radius * 2` is the indicator's own box, so this is the
+                      // glyph tier below in the same footprint.
+                      radius: KalloIcons.primary / 2,
+                      color: KalloColors.text,
+                    )
+                    : const Icon(
+                      LucideIcons.arrowUp400,
+                      // `primary`: a glyph that carries the whole control,
+                      // standing alone at the full height of the row it acts
+                      // on. It was `tertiary` 18 when the disc was 32.
+                      size: KalloIcons.primary,
+                      color: KalloColors.text,
+                    ),
           ),
-          child:
-              submitting
-                  ? const CupertinoActivityIndicator(
-                    radius: 8,
-                    color: KalloColors.text,
-                  )
-                  : const Icon(
-                    LucideIcons.arrowUp400,
-                    size: 18,
-                    color: KalloColors.text,
-                  ),
         ),
       ),
     );
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      // The gap belongs INSIDE the morph, so it collapses with the button: a
-      // constant gap on the Row would leave an 8pt dead strip between a resting
-      // pill and the dock's edge for a button that is not there.
+      // [KalloSpacing.sp2], the same step the pill insets its own disc by, so
+      // field-to-button reads as one gap with disc-to-border rather than as a
+      // second, wider one. It belongs INSIDE the morph so it collapses with
+      // the button: a constant gap on the Row would leave a dead strip between
+      // a resting pill and the dock's edge for a button that is not there.
       child: Padding(
         padding: const EdgeInsets.only(left: KalloSpacing.sp2),
         child: button,

@@ -7,17 +7,21 @@ import '../../../../theme/kallo_theme.dart';
 import 'thread_composer_avatar.dart';
 
 /// The uniform inset from the pill's stroke to everything inside it — the gap
-/// the eye reads as the field's padding, and the SAME on all four sides.
+/// the eye reads as the field's padding, the SAME on all four sides, and the
+/// same step the send button beside the pill is spaced by
+/// (`thread_send_button.dart`), so the two read as one gap.
 ///
 /// It was 6 on the left against 8 above and below (the disc used to sit in the
 /// send button's 44pt box), which is visible on a 28pt disc inside a 44pt
 /// capsule: the face read as sitting high in its own hole.
-const double _gap = 8;
+const double _gap = KalloSpacing.sp2;
 
 /// The viewer's disc: the reply rows' size (`widgets/replies/reply_row.dart`).
 ///
-/// It is also what sets the resting capsule's height — `_disc + 2 * _gap` = 44
-/// — because one line of the field is clamped up to it below. Pinned by
+/// It is also what sets the resting capsule's height, because one line of the
+/// field is clamped up to it below — and `_disc + 2 * _gap` lands exactly on
+/// [KalloIcons.hit], which is why the send button can be the app's one hit
+/// target and still stand the same height as the field. Pinned by
 /// `test/features/circle/circle_thread_composer_send_test.dart`.
 const double _disc = 28;
 
@@ -63,6 +67,14 @@ class ReplyPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The identity `thread_send_button.dart` sizes itself against, asserted
+    // where it is declared rather than left as a sentence in a doc comment one
+    // file away: move the disc or the gap and this trips here, instead of
+    // drifting into a send button that no longer matches the field.
+    assert(
+      _disc + 2 * _gap == KalloIcons.hit,
+      'the resting pill must be the app hit target tall — the send button is',
+    );
     final row = Row(
       // The disc pins to the field's LAST line, so it stays on the first line of
       // a one-line draft and travels down with a grown one rather than floating
