@@ -127,3 +127,37 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   }
   return fetched.isLoading ? const ThreadLoading() : const ThreadFailed();
 });
+
+/// Refetch everything the thread page reads, in the order this library's doc
+/// explains: the feed first, and the by-id fallback only when it is actually
+/// ALIVE.
+///
+/// One function rather than a policy per caller. Pull-to-refresh and the
+/// error card's "Try again" are the same question — "get this post again" —
+/// and they had drifted into two answers in `circle_thread_screen.dart`, each
+/// with its own paragraph justifying it. A third caller (a notification tap, a
+/// refetch after posting) would have picked one at random.
+///
+/// The fallback is `autoDispose`, so reading its future unconditionally would
+/// fire a request for a post the feed already holds; [WidgetRef.exists] is the
+/// test for "someone is watching it". `invalidate` keeps each provider's
+/// previous value under the new `AsyncLoading`, so the post stays on screen and
+/// the composer — with any draft in it — stays mounted.
+Future<void> refreshThread(WidgetRef ref, ThreadRef key) async {
+  final feed = sharedMealFeedProvider(key.scope);
+  final byId = sharedMealEntryProvider(key.shareId);
+  final fallbackAlive = ref.exists(byId);
+  ref.invalidate(feed);
+  if (fallbackAlive) ref.invalidate(byId);
+  try {
+    // Awaited, not fired and forgotten: a pull-to-refresh holds its inset open
+    // for exactly as long as this runs, and that inset is the page's only
+    // "still loading" signal. Errors are swallowed because the page already
+    // reports them — a failed refresh keeps the value it had beside the error,
+    // and `ThreadStates` owns the case where there is no value at all.
+    await Future.wait([
+      ref.read(feed.future),
+      if (fallbackAlive) ref.read(byId.future),
+    ]);
+  } catch (_) {}
+}

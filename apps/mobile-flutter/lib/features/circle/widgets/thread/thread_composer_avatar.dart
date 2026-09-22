@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../data/circle_providers.dart';
+import '../../logic/circle_spacing.dart';
 
 /// The viewer's own face at the head of the thread composer.
 ///
@@ -18,9 +19,9 @@ import '../../data/circle_providers.dart';
 class ThreadComposerAvatar extends ConsumerWidget {
   const ThreadComposerAvatar({super.key});
 
-  /// The reply rows' disc (`widgets/replies/reply_row.dart`), not the post's
-  /// 36: what is being written here is a reply.
-  static const double size = 28;
+  /// The reply rows' disc, not the post's: what is being written here is a
+  /// reply. One derivation for both, in `logic/circle_spacing.dart`.
+  static const double size = kReplyAvatar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

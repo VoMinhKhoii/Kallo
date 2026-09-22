@@ -1,5 +1,16 @@
+/// The thread page's four empty-ish surfaces — loading, failed, gone, and a
+/// readable post with nothing said under it yet.
+///
+/// The fourth lives here rather than in `thread_body.dart` because `states/` is
+/// this repo's word for "the loading / error / empty states of a surface"
+/// (AGENTS.md §3), and splitting it off by the accident of being the one that
+/// needs a sliver left one surface's states in two files.
+library;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import 'package:flutter/foundation.dart';
 
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
@@ -10,11 +21,12 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/thread_providers.dart';
 import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
+import 'thread_dock_insets.dart';
 
-/// The thread page's three not-ready surfaces — loading, failed, gone — in
-/// one padded scroll view. The screen keeps orchestration (focus, scroll,
-/// dock height) and hands presentation here, so the page-inset arithmetic is
-/// written once instead of once per state.
+/// The first three — loading, failed, gone — in one padded scroll view. The
+/// screen keeps orchestration (focus, scroll, dock height) and hands
+/// presentation here, so the page-inset arithmetic is written once instead of
+/// once per state.
 class ThreadStates extends StatelessWidget {
   const ThreadStates({required this.view, required this.onRetry, super.key});
 
@@ -73,4 +85,42 @@ class ThreadStates extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A thread with no replies yet, centred in what is left of the page.
+///
+/// The capybara is back (it was dropped for one muted line in `40e1cbe`). A
+/// thread with no replies is not a post with a note under it — it is a LIST
+/// with nothing in it, and the app answers an empty list with its cast
+/// everywhere else, so the one surface that answered with grey text read as the
+/// page having failed to finish drawing. It is the `compact` state, which is
+/// the size that belongs under a single post.
+///
+/// Centred rather than tucked under the card since 2026-09-22: pinned there it
+/// left the bottom two thirds of the page blank, which reads as content still
+/// loading. [SliverCenteredState] measures what the post card left over, so the
+/// state sits in the middle of the void it is explaining.
+class ThreadEmptySliver extends StatelessWidget {
+  const ThreadEmptySliver({required this.dockHeight, super.key});
+
+  final ValueListenable<double> dockHeight;
+
+  @override
+  Widget build(BuildContext context) => SliverCenteredState(
+    padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+    child: ThreadDockTail(
+      dockHeight: dockHeight,
+      // No `extra` here, unlike the replies: this state is CENTRED, and a
+      // break under it is a break the centring then has to split — the
+      // capybara would sit half of it above true middle. The gap it needs from
+      // the card is the half of the void above it.
+      child: KalloSurfaceState(
+        area: SurfaceArea.circle,
+        kind: SurfaceKind.empty,
+        compact: true,
+        title: tr('groups.feed.noReplies'),
+        subtitle: tr('groups.feed.noRepliesBody'),
+      ),
+    ),
+  );
 }

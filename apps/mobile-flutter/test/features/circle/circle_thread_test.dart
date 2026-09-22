@@ -14,7 +14,6 @@ import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/skeleton.dart';
 import 'package:kallo_mobile/shared/widgets/icons/filled_heart.dart';
 import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
-import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import 'circle_feed_test_support.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
@@ -249,18 +248,12 @@ void main() {
     // The pill spans the page, and the disc is INSIDE it — it used to be a
     // bare disc sitting beside the field, which read as a person standing next
     // to a form rather than as the author of what was being typed.
+    // Only that the disc is INSIDE the pill. How far the capsule spans, and
+    // what the button beside it does to that span, belong to
+    // `circle_thread_composer_send_test.dart` — asserting them here too meant
+    // two files failing for one change to the dock's padding.
     final pill = tester.getRect(find.byType(ReplyPill));
-    final dock = tester.getRect(find.byType(ThreadComposer));
     final discRect = tester.getRect(disc);
-    expect(pill.left, dock.left + KalloSpacing.sp3);
-    expect(
-      pill.right,
-      dock.right - KalloSpacing.sp3,
-      reason:
-          'at rest the capsule is unbroken edge to edge — the send button is '
-          'its sibling and takes no room until there is a draft '
-          '(circle_thread_composer_send_test.dart owns that half)',
-    );
     expect(discRect.left, greaterThan(pill.left));
     expect(discRect.right, lessThan(pill.right));
 

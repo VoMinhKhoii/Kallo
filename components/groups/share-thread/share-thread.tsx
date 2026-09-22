@@ -46,30 +46,25 @@ export function ShareThread({ shareId }: { shareId: string }) {
           <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : data ? (
           // A column that FILLS the scroll area rather than one that
-          // shrink-wraps: it is what lets an empty thread's state centre in
-          // the void between the post and the field, and it pins the composer
-          // to the bottom edge while it does (the same shape mobile's docked
-          // composer gives that page). With replies, nothing takes the spare
-          // room and the composer follows the conversation as before.
-          <div className="flex min-h-full flex-col p-4">
+          // shrink-wraps: it is what gives an empty thread's state room to
+          // centre in, and it pins the composer to the bottom edge while it
+          // does (the same shape mobile's docked composer gives that page).
+          // With replies, nothing takes the spare room and the composer
+          // follows the conversation as before.
+          //
+          // The page does NOT branch on how many replies there are — that is
+          // `ShareReplies`' own question, and asking it here too meant one
+          // predicate in two files kept in sync by comments. It takes the
+          // spare room itself when it has nothing to list.
+          <div className="flex min-h-full flex-col gap-3 p-4">
             <FeedEntry entry={data.entry} />
-            {data.entry.replies.length > 0 ? (
-              <div className="mt-3">
-                <ShareReplies replies={data.entry.replies} />
-              </div>
-            ) : (
-              <div className="flex flex-1 items-center justify-center">
-                <ShareReplies replies={data.entry.replies} />
-              </div>
-            )}
-            <div className="mt-3">
-              <ReplyComposer
-                authorName={
-                  data.entry.isSelf ? undefined : labelFor(data.entry.friend)
-                }
-                shareId={shareId}
-              />
-            </div>
+            <ShareReplies replies={data.entry.replies} />
+            <ReplyComposer
+              authorName={
+                data.entry.isSelf ? undefined : labelFor(data.entry.friend)
+              }
+              shareId={shareId}
+            />
           </div>
         ) : (
           <SurfaceState

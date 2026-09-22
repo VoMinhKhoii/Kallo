@@ -20,8 +20,6 @@ import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/kallo_motion.dart';
-import '../data/feed_providers.dart';
-import '../data/share_entry_provider.dart';
 import '../data/thread_providers.dart';
 import '../widgets/thread/thread_body.dart';
 import '../widgets/thread/thread_composer.dart';
@@ -54,6 +52,9 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   final _focus = FocusNode();
   final _scroll = ScrollController();
 
+  /// Which post, in which feed — the key both the view and the refetch read.
+  ThreadRef get _ref => (scope: widget.scope, shareId: widget.shareId);
+
   /// What the dock currently covers, measured rather than assumed: the field
   /// grows to four lines with the draft, and a constant would leave the last
   /// reply behind it with no way to scroll it clear. A notifier, not state on
@@ -67,32 +68,6 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     _scroll.dispose();
     _dockHeight.dispose();
     super.dispose();
-  }
-
-  /// Refetches the post and its replies for the pull-to-refresh control, which
-  /// holds the list open for exactly as long as this runs.
-  ///
-  /// Both of the page's sources, in the order `data/thread_providers.dart`
-  /// reads them. The by-id fallback is only touched when it is already ALIVE:
-  /// it is `autoDispose`, so reading it unconditionally would fire a request
-  /// for a post the feed already holds. `invalidate` keeps each provider's
-  /// previous value under the new `AsyncLoading`, so the post stays on screen —
-  /// and the composer, with any draft in it, stays mounted.
-  Future<void> _refresh() async {
-    final entryById = sharedMealEntryProvider(widget.shareId);
-    final fallbackAlive = ref.exists(entryById);
-    ref.invalidate(sharedMealFeedProvider(widget.scope));
-    if (fallbackAlive) ref.invalidate(entryById);
-    try {
-      // Awaited, not fired and forgotten: the held-open inset is this page's
-      // only "still loading" signal. Errors are swallowed because the page
-      // already says so — a failed refresh keeps the value it had beside the
-      // error, and `ThreadStates` owns the no-value case.
-      await Future.wait([
-        ref.read(sharedMealFeedProvider(widget.scope).future),
-        if (fallbackAlive) ref.read(entryById.future),
-      ]);
-    } catch (_) {}
   }
 
   /// Rides the new reply into view once the list has laid it out.
@@ -109,9 +84,7 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final view = ref.watch(
-      threadEntryProvider((scope: widget.scope, shareId: widget.shareId)),
-    );
+    final view = ref.watch(threadEntryProvider(_ref));
     return Screen(
       // The dock pays the home indicator itself, so the page must not also
       // reserve it — that would float the composer above the edge.
@@ -159,16 +132,16 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
             controller: _scroll,
             dockHeight: _dockHeight,
             onReply: _focus.requestFocus,
-            onRefresh: _refresh,
+            onRefresh: () => refreshThread(ref, _ref),
           ),
           // No dock in these states, so they owe the home indicator
           // themselves — `Screen(bottom: false)` above hands it to the dock.
           final ThreadNotReady notReady => ThreadStates(
             view: notReady,
-            // The feed invalidate is enough: the page drops to loading, which
-            // releases the autoDispose fallback, and it refetches when the
-            // page comes back (pinned by the fallback test).
-            onRetry: () => ref.invalidate(sharedMealFeedProvider(widget.scope)),
+            // The same refetch the pull uses: "Try again" and a pull down are
+            // one question, and two policies for it had already drifted apart
+            // here. `refreshThread` owns both.
+            onRetry: () => refreshThread(ref, _ref),
           ),
         },
       ),

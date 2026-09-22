@@ -7,10 +7,10 @@ import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
-/** Every reply we hold under one meal post, and nothing else — the composer is
- * its own sibling, so this stays a pure list of what has been said. Stage-1
- * conversation lives here (no universal group chat): you reply to the meal
- * itself, on the meal's own page. */
+/** The conversation under one meal post and nothing else — no composer, no
+ * page chrome. It owns its own empty state, so the page above never has to ask
+ * how many replies there are. Stage-1 conversation lives here (no universal
+ * group chat): you reply to the meal itself, on the meal's own page. */
 export function ShareReplies({ replies }: { replies: ShareReply[] }) {
   const t = useTranslations('groups.feed');
   const tWall = useTranslations('groups.wall');
@@ -22,10 +22,16 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
     // one muted line for a while, which on a page with a whole blank column
     // under it read as content that never finished drawing rather than as an
     // empty conversation. `compact` is the size that belongs under a single
-    // post; the PAGE centres it in the void (`share-thread.tsx`).
+    // post.
+    //
+    // `flex-1` and nothing else: [SurfaceState] already centres its own
+    // content, so taking the column's spare room is all it needs to sit in the
+    // middle of the void. The page does not get to know we are empty —
+    // `thread-feed.tsx` owns its empty state the same way.
     return (
       <SurfaceState
         area="circle"
+        className="flex-1"
         compact
         kind="empty"
         subtitle={t('noRepliesBody')}

@@ -137,27 +137,27 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
         child: MeasuredHeight(
           onChanged: widget.onHeightChanged,
           child: Padding(
-            // No reply rail. The dock used to lead with a 60pt spacer (card pad
-            // 16 + the old avatar rail 44) so its disc landed on the replies'
-            // indent — which left the field starting a fifth of the way across
-            // the phone and reading as a reply to the last reply. The composer
-            // is dock CHROME, not a reply in the thread: the pill spans the
-            // page and starts at the dock's own 12 of padding. The reply ROWS
-            // keep `kReplyIndent` (`thread_body.dart`), because they are the
-            // thing that owes that rail.
+            // No reply rail: the composer is dock CHROME, not a reply in the
+            // thread, so the pill spans the page from the dock's own padding.
+            // Only the reply ROWS owe that rail (`thread_body.dart`) — leading
+            // with it here read as a reply to the last reply.
             padding: const EdgeInsets.symmetric(
               horizontal: KalloSpacing.sp3,
               vertical: KalloSpacing.sp2,
             ),
-            // The send button is the pill's SIBLING, not its child: a resting
-            // composer is one unbroken capsule across the page, and the pill
-            // gives room back only once there is something to send.
+            // THE DOCK'S ANATOMY, stated here and nowhere else — the two
+            // leaves used to tell this story again, each slightly differently.
             //
-            // [Expanded] is what makes that a morph. The button animates its own
-            // width 0 → 52 (its 44pt target plus the gap, both inside its
-            // animation), and the Row re-lays-out on those same frames, so the
-            // pill's right end travels left under one motion with nothing on the
-            // pill animating at all.
+            // The send button is the pill's SIBLING, not its child: a resting
+            // composer is one unbroken capsule across the page, where a button
+            // inside it would hold a permanent hole open for something that is
+            // usually not there.
+            //
+            // [Expanded] is what makes that a morph. The button animates its
+            // own width from nothing to its disc plus the dock's gap (both
+            // named in `logic/circle_spacing.dart`), and the Row re-lays-out on
+            // those same frames, so the pill's right end travels left under one
+            // motion with nothing on the pill animating at all.
             //
             // `end`, so a draft grown to four lines keeps the disc and the
             // button on its last line rather than centring them beside it.

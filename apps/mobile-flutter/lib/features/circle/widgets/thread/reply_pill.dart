@@ -4,36 +4,22 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../logic/circle_spacing.dart';
 import 'thread_composer_avatar.dart';
 
-/// The uniform inset from the pill's stroke to everything inside it — the gap
-/// the eye reads as the field's padding, the SAME on all four sides, and the
-/// same step the send button beside the pill is spaced by
-/// (`thread_send_button.dart`), so the two read as one gap.
-///
-/// It was 6 on the left against 8 above and below (the disc used to sit in the
-/// send button's 44pt box), which is visible on a 28pt disc inside a 44pt
-/// capsule: the face read as sitting high in its own hole.
-const double _gap = KalloSpacing.sp2;
-
-/// The viewer's disc: the reply rows' size (`widgets/replies/reply_row.dart`).
-///
-/// It is also what sets the resting capsule's height, because one line of the
-/// field is clamped up to it below — and `_disc + 2 * _gap` lands exactly on
-/// [KalloIcons.hit], which is why the send button can be the app's one hit
-/// target and still stand the same height as the field. Pinned by
-/// `test/features/circle/circle_thread_composer_send_test.dart`.
-const double _disc = 28;
-
 /// One capsule holding what you are writing and who is writing it: the viewer's
-/// face and the field (2026-09-22).
+/// face and the field.
 ///
 /// It was two things in a row before — a bare disc, then a theme-decorated
 /// field — and the disc read as a person standing next to a form rather than as
-/// the author of what was being typed. The send button is NOT in here: it sits
-/// beside the pill (`thread_composer.dart`), so a resting composer is one
-/// unbroken capsule across the page and the pill shortens to make room for the
-/// button only once there is something to send.
+/// the author of what was being typed. The send button's placement beside it,
+/// and the morph that follows, are documented where the Row is
+/// (`thread_composer.dart`).
+///
+/// [kReplyDockGap] insets everything by the same step on all four sides. It was
+/// 6 on the left against 8 above and below (the disc sat in the send button's
+/// 44pt box), which shows on a 28pt disc inside a 44pt capsule: the face read
+/// as sitting high in its own hole.
 ///
 /// The pill paints the box, so the field must not. The app theme sets
 /// `filled: true` and an [OutlineInputBorder] on four border slots; clearing
@@ -41,9 +27,8 @@ const double _disc = 28;
 /// nested-card look `DESIGN_SYSTEM.md` warns about. All four, plus
 /// `filled: false` and an explicit `contentPadding`, are cleared below.
 ///
-/// Its own file: `thread_composer.dart` sits near the 200-line cap for
-/// `lib/**/widgets/**`, and the split falls where the seam already was — the
-/// composer owns the dock, the draft and the mutation, and this owns the shape.
+/// Its own file rather than the composer's: the composer owns the dock, the
+/// draft and the mutation; this owns the shape.
 class ReplyPill extends StatelessWidget {
   const ReplyPill({
     required this.controller,
@@ -67,14 +52,6 @@ class ReplyPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The identity `thread_send_button.dart` sizes itself against, asserted
-    // where it is declared rather than left as a sentence in a doc comment one
-    // file away: move the disc or the gap and this trips here, instead of
-    // drifting into a send button that no longer matches the field.
-    assert(
-      _disc + 2 * _gap == KalloIcons.hit,
-      'the resting pill must be the app hit target tall — the send button is',
-    );
     final row = Row(
       // The disc pins to the field's LAST line, so it stays on the first line of
       // a one-line draft and travels down with a grown one rather than floating
@@ -82,18 +59,18 @@ class ReplyPill extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         const ThreadComposerAvatar(),
-        const SizedBox(width: _gap),
+        const SizedBox(width: kReplyDockGap),
         Expanded(
           // One line of the field is a couple of points SHORTER than the disc,
-          // so clamping the single-line case up to [_disc] is what makes the
-          // disc set the resting height and keeps its four gaps equal. Padding
+          // so clamping the single-line case up to it is what makes the disc
+          // set the resting height and keeps its four gaps equal. Padding
           // the field to match instead means hard-coding the rendered line box
           // (16 at leading 1.3 does not measure 20.8 once the strut and the
           // decorator have had their say — that arithmetic was 2.2 out, and it
           // would go out again the day the type scale moves). More than one
           // line grows past the clamp as usual.
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: _disc),
+            constraints: const BoxConstraints(minHeight: kReplyAvatar),
             child: TextField(
               key: const Key('reply-composer'),
               controller: controller,
@@ -122,7 +99,7 @@ class ReplyPill extends StatelessWidget {
                 focusedBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
                 // Zero: the pill's own padding owns every inset, which is the
-                // whole point of [_gap]. Anything here would double one side.
+                // point of [kReplyDockGap]. Anything here doubles one side.
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -144,18 +121,18 @@ class ReplyPill extends StatelessWidget {
           // The stroke, SUBTRACTED. A [Container] adds `decoration.padding` —
           // for a [BoxDecoration] that is the border's own dimensions — on top
           // of its `padding`, so taking the stroke out of the padding holds the
-          // visible inset at [_gap] on every side AND pins the pill's outer
-          // height while the ring thickens. Without it, focusing grew the pill
-          // by a point on each side and shifted the disc with it — and
+          // visible inset at [kReplyDockGap] on every side AND pins the pill's
+          // outer height while the ring thickens. Without it, focusing grew the
+          // pill by a point on each side and shifted the disc with it — and
           // [AnimatedContainer] interpolates padding and decoration over the
-          // same duration and curve, so the sum stays [_gap] for every frame of
-          // the transition, not just at its ends.
-          padding: EdgeInsets.all(_gap - stroke),
+          // same duration and curve, so the sum holds for every frame of the
+          // transition, not just at its ends.
+          padding: EdgeInsets.all(kReplyDockGap - stroke),
           decoration: BoxDecoration(
             color: kFieldFill,
-            // 26 is the app's input radius; at 44 tall it clamps to a capsule
-            // and at four lines it is the same full-round field every other
-            // surface uses.
+            // The app's input radius; at [kReplyDockHeight] it clamps to a
+            // capsule, and at four lines it is the same full-round field every
+            // other surface uses.
             borderRadius: BorderRadius.circular(KalloRadii.input),
             // The focus ring the app theme used to paint on the field itself
             // (`kallo_theme.dart`, `focusedBorder`), moved out to the shell

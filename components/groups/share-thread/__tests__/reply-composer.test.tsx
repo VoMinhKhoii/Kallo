@@ -32,7 +32,11 @@ describe('ReplyComposer', () => {
     // The placeholder IS the affordance: there is no "Reply" link to press
     // first, and the interpolated name says whose post you are answering.
     expect(screen.getByPlaceholderText('Reply to Minh…')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'reply' })).toBeNull();
+    // `queryByRole` honours `aria-hidden`, so this proves the collapsed send
+    // button is not exposed — not merely that it is styled away. It was
+    // querying the label 'reply', which the button stopped using, so it could
+    // no longer fail.
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
   });
 
   it('keeps the send button outside the pill', async () => {
@@ -45,7 +49,6 @@ describe('ReplyComposer', () => {
 
     const pill = container.querySelector('[data-testid="reply-pill"]');
     expect(pill).not.toBeNull();
-    expect(pill?.className).not.toContain('pr-');
 
     await userEvent.type(screen.getByRole('textbox'), 'ngon');
 

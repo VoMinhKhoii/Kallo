@@ -5,6 +5,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/surface/kallo_pressable.dart';
+import '../../logic/circle_spacing.dart';
 import 'feed_entry_actions.dart';
 import 'feed_entry_identity.dart';
 import 'feed_nutrition.dart';
@@ -57,15 +58,11 @@ class FeedEntry extends StatelessWidget {
     final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 36, TOP-aligned: inside the day card the disc is an identity marker
+        // TOP-aligned: inside the day card the disc is an identity marker
         // beside the content column, not a second column of its own, so the
-        // separator under the post starts where the text does. It stepped 32 →
-        // 36 on 2026-09-22 — the post's author is the one face on the card that
-        // has to read as the person who ate this, and at 32 it measured the
-        // same as the replies answering it. The replies stay at 28, so the two
-        // tiers are now told apart by size as well as by indent. [kContentRail]
-        // carries the gap this opens to everything that lines up with it.
-        ProfileAvatarDisc(profile: entry.friend, size: 36),
+        // separator under the post starts where the text does. The size and the
+        // rail it opens are one derivation in `logic/circle_spacing.dart`.
+        ProfileAvatarDisc(profile: entry.friend, size: kPostAvatar),
         const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(

@@ -79,11 +79,11 @@ describe('ShareThread', () => {
     expect(screen.getByTestId('reply-composer')).toHaveTextContent('Phở Fan');
   });
 
-  it('fills the page so the composer keeps the bottom edge', () => {
-    // A column that shrink-wraps leaves the field floating under the post with
-    // the rest of the page blank. Filling the scroll area is what pins the
-    // composer down and what gives an empty thread's state a void to centre
-    // in — the shape mobile's docked composer gives that page.
+  it('hands the post, the thread and the composer to one column', () => {
+    // The order and the ownership, not the class string: the page puts all
+    // three in one column and leaves the spacing to it. How that column is
+    // styled is a visual decision the test should not freeze — this suite had
+    // to be rewritten once already because the classes moved.
     state({
       data: {
         entry: sharedMealEntryFixture({ replies: [shareReplyFixture()] }),
@@ -92,28 +92,25 @@ describe('ShareThread', () => {
 
     const { container } = render(<ShareThread shareId={SHARE_ID} />);
 
-    const column = container.querySelector('.flex.min-h-full.flex-col');
-    expect(column).not.toBeNull();
-    expect(column).toContainElement(screen.getByTestId('feed-entry'));
+    const column = screen.getByTestId('feed-entry').parentElement;
     expect(column).toContainElement(screen.getByTestId('share-replies'));
     expect(column).toContainElement(screen.getByTestId('reply-composer'));
+    // No wrapper between them: the column owns the gaps.
+    expect(screen.getByTestId('share-replies').parentElement).toBe(column);
+    expect(container.querySelector('.mt-3')).toBeNull();
   });
 
-  it('centres the empty state in the void, not under the post', () => {
-    // With nothing said yet, the state takes the spare room and sits in the
-    // middle of it. Tucked under the card it read as content that never
-    // finished drawing, which is the bug this replaces.
+  it('never asks how many replies there are', () => {
+    // Emptiness is `ShareReplies`' own question. The page rendered it in both
+    // arms of a ternary, which put one predicate in two files kept in sync by
+    // comments — so the same tree has to come out either way.
     state({ data: { entry: sharedMealEntryFixture({ replies: [] }) } });
 
-    const { container } = render(<ShareThread shareId={SHARE_ID} />);
+    render(<ShareThread shareId={SHARE_ID} />);
 
-    const void_ = container.querySelector(
-      '.flex-1.items-center.justify-center'
-    );
-    expect(void_).not.toBeNull();
-    expect(void_).toContainElement(screen.getByTestId('share-replies'));
-    // And the composer is NOT inside it: it keeps the foot of the page.
-    expect(void_).not.toContainElement(screen.getByTestId('reply-composer'));
+    const column = screen.getByTestId('feed-entry').parentElement;
+    expect(column).toContainElement(screen.getByTestId('share-replies'));
+    expect(column).toContainElement(screen.getByTestId('reply-composer'));
   });
 
   it('names nobody on your own post — the composer must not address you', () => {

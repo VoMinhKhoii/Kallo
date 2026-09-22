@@ -6,44 +6,26 @@ import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../logic/circle_spacing.dart';
 
-/// The send disc IS the tap target, and both are the app's one hit target —
-/// which is also the resting pill's height beside it (`reply_pill.dart`:
-/// the disc plus its two [KalloSpacing.sp2] gaps), so the button stands exactly
-/// as tall as the field it sends.
+/// The reply dock's send affordance — the arrow-up beside the pill. Its
+/// placement, and the morph it drives, are documented at the Row
+/// (`thread_composer.dart`).
 ///
-/// It was a 32 disc centred in a 44 box. That box's 6pt of slack read as part
-/// of the gap, so the space between field and button measured 14 against the
-/// 8 inside the pill — two gaps that should be one number. With the disc
-/// filling its target there is no slack to read.
-const double _disc = KalloIcons.hit;
-
-/// The reply dock's send affordance, BESIDE the pill: nothing at all until
-/// there is a draft, then the app's send button opening a space for itself.
-///
-/// Outside the capsule rather than in it (2026-09-22). Inside, the pill's right
-/// end had to hold a permanent 44pt hole for a button that is usually not
-/// there; out here a resting composer is one unbroken capsule to the dock's own
-/// edge, and the width this widget animates is width the pill gets back — the
-/// gap below is inside the animation for the same reason, so the pill reaches
-/// the edge rather than stopping 8 short of it.
-///
-/// It was a text label ("Trả lời") sitting OUTSIDE the field until 2026-09-22.
-/// A verb in running type beside a field reads as a second placeholder, and the
-/// app already has one send button — the 32pt beige circle with an ink arrow-up
-/// on the logging composer. This is that anatomy
-/// (`features/logging/widgets/composer/meal_input_controls.dart`), rebuilt here
-/// rather than imported: cross-feature imports are out (AGENTS.md §3), and the
-/// two differ where it matters — the logging button has an unarmed grey state
-/// and a stop mode because it is always on screen, and this one is simply
+/// It was a text label ("Trả lời") beside the field: a verb in running type
+/// there reads as a second placeholder. The glyph and the beige disc are the
+/// logging composer's send button
+/// (`features/logging/widgets/composer/meal_input_controls.dart`), rebuilt
+/// rather than imported — cross-feature imports are out (AGENTS.md §3), and
+/// the two differ where it matters: the logging button is always on screen, so
+/// it has an unarmed grey state and a stop mode, while this one is simply
 /// absent until it has something to send.
 ///
-/// Split out of `thread_composer.dart` for the file's 200-line budget, and
-/// because it is the one part of the dock that redraws as the user types: it
-/// listens to the controller ITSELF rather than making the composer rebuild the
-/// field, its decoration and the pill on every keystroke. Even then the button
-/// is built once and handed to the listener as its `child` — a keystroke
-/// decides only how much of it shows.
+/// Its own file because it is the one part of the dock that redraws as the user
+/// types: it listens to the controller ITSELF rather than making the composer
+/// rebuild the field, its decoration and the pill on every keystroke. Even then
+/// the button is built once and handed to the listener as its `child` — a
+/// keystroke decides only how much of it shows.
 class ThreadSendButton extends StatelessWidget {
   const ThreadSendButton({
     required this.controller,
@@ -84,17 +66,20 @@ class ThreadSendButton extends StatelessWidget {
       // circle, which is what a circular iOS button does anyway.
       child: ClipOval(
         child: KalloPressable(
-          // Inert, never null, while submitting: a GestureDetector with only
-          // null callbacks registers no recognizer at all, so the target leaves
-          // the arena and the tap falls through — here to the field behind it,
-          // which would raise the keyboard on a send the user already made.
-          onTap: submitting ? () {} : onSubmit,
-          height: _disc,
-          constraints: const BoxConstraints(minWidth: _disc),
+          // `null` while submitting, which is [KalloPressable]'s own disabled
+          // contract: it claims the pointer up the chain BEFORE it checks
+          // `enabled`, so the tap is swallowed rather than falling through to
+          // the field behind it, and no wash paints. An inert `() {}` was
+          // strictly worse — it reports the target as enabled, so the disc
+          // washed under the finger while a reply was in flight, contradicting
+          // the `enabled: !submitting` two lines up.
+          onTap: submitting ? null : onSubmit,
+          height: kReplyDockHeight,
+          constraints: const BoxConstraints(minWidth: kReplyDockHeight),
           alignment: Alignment.center,
           child: Container(
-            width: _disc,
-            height: _disc,
+            width: kReplyDockHeight,
+            height: kReplyDockHeight,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               // The press is carried by [KalloPressable]'s wash over this
@@ -125,13 +110,13 @@ class ThreadSendButton extends StatelessWidget {
     );
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      // [KalloSpacing.sp2], the same step the pill insets its own disc by, so
-      // field-to-button reads as one gap with disc-to-border rather than as a
-      // second, wider one. It belongs INSIDE the morph so it collapses with
-      // the button: a constant gap on the Row would leave a dead strip between
-      // a resting pill and the dock's edge for a button that is not there.
+      // The same step the pill insets its own disc by, so field-to-button reads
+      // as one gap with disc-to-border rather than as a second, wider one. It
+      // belongs INSIDE the morph so it collapses with the button: a constant
+      // gap on the Row would leave a dead strip between a resting pill and the
+      // dock's edge for a button that is not there.
       child: Padding(
-        padding: const EdgeInsets.only(left: KalloSpacing.sp2),
+        padding: const EdgeInsets.only(left: kReplyDockGap),
         child: button,
       ),
       builder:
@@ -149,8 +134,7 @@ class ThreadSendButton extends StatelessWidget {
 /// horizontal wipe, and opacity alone pops a full-size disc into a row that has
 /// not made room for it yet. [Align]'s `widthFactor` is the shrink-wrap
 /// `kallo_pressable.dart` documents — it reports `t` × the child's width to the
-/// Row, and the `Expanded` pill beside it absorbs the difference, which is what
-/// makes the capsule shorten and lengthen as one motion with this.
+/// Row, which is the half of the morph that happens here.
 /// `heightFactor: 1` is not optional: an [Align] with no size factor on that
 /// axis grows to any finite maximum it is offered, and this one is laid out
 /// inside the page's overlay Stack, which offers it the whole body.
