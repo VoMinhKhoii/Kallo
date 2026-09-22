@@ -11,6 +11,7 @@ interface TimelineDayRowProps {
   isToday: boolean;
   todayLabel: string;
   hasMeal: boolean;
+  kcal: number | null;
   onSelectDate: (date: string) => void;
 }
 
@@ -31,6 +32,7 @@ export function TimelineDayRow({
   isToday,
   todayLabel,
   hasMeal,
+  kcal,
   onSelectDate,
 }: TimelineDayRowProps) {
   return (
@@ -81,6 +83,7 @@ export function TimelineDayRow({
         isToday={isToday}
         todayLabel={todayLabel}
         hasMeal={hasMeal}
+        kcal={kcal}
         variant="desktop"
         onSelectDate={onSelectDate}
       />

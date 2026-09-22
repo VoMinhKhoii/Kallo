@@ -15,8 +15,13 @@ import {
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
-  /** Days that actually hold a log. Every other day renders, but reads quieter. */
-  dates: string[];
+  /**
+   * Every day that holds a log, mapped to its calories (null when nothing is
+   * countable). Days outside it still render — they are what you click to
+   * backfill — they just read quieter and carry no number. Membership and the
+   * total come from this one map so the two can never disagree.
+   */
+  dailyKcal: Map<string, number | null>;
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -26,7 +31,7 @@ interface TimelineSidebarProps {
 }
 
 export function TimelineSidebar({
-  dates,
+  dailyKcal,
   today,
   selectedDate,
   isPending,
@@ -38,13 +43,14 @@ export function TimelineSidebar({
   const locale = useLocale();
 
   const months = useMemo(
-    () => buildTimelineTree({ dates, today, selectedDate }),
-    [dates, selectedDate, today]
+    () =>
+      buildTimelineTree({
+        dates: Array.from(dailyKcal.keys()),
+        today,
+        selectedDate,
+      }),
+    [dailyKcal, selectedDate, today]
   );
-
-  // Every day of every covered week renders now, so membership is asked far
-  // more often than it used to be.
-  const loggedDates = useMemo(() => new Set(dates), [dates]);
 
   const selectedMonth = useMemo(
     () => getSelectedMonthKey(selectedDate),
@@ -87,13 +93,13 @@ export function TimelineSidebar({
     });
   }, []);
 
-  const hasSavedMeals = dates.length > 0;
+  const hasSavedMeals = dailyKcal.size > 0;
 
   // Loading state
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
+        className="hidden h-full w-72 shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
         aria-label={t('navigationLabel')}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
@@ -111,7 +117,7 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
+      className="hidden h-full w-72 shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
       aria-label={t('navigationLabel')}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
@@ -237,7 +243,8 @@ export function TimelineSidebar({
                                   isActive={date === selectedDate}
                                   isToday={date === today}
                                   todayLabel={t('todayLabel')}
-                                  hasMeal={loggedDates.has(date)}
+                                  hasMeal={dailyKcal.has(date)}
+                                  kcal={dailyKcal.get(date) ?? null}
                                   onSelectDate={onSelectDate}
                                 />
                               ))}

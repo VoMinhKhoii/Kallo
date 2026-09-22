@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/core/ui/cn';
+import { formatKcal } from '@/lib/domain/logging/manual-logging';
 
 interface TimelineDateButtonProps {
   date: string;
@@ -9,6 +10,8 @@ interface TimelineDateButtonProps {
   isToday?: boolean;
   todayLabel?: string;
   hasMeal?: boolean;
+  /** The day's calories. Null or absent renders nothing — never a 0 or a dash. */
+  kcal?: number | null;
   variant: 'desktop' | 'mobile';
   onSelectDate: (date: string) => void;
 }
@@ -20,9 +23,12 @@ export function TimelineDateButton({
   isToday = false,
   todayLabel,
   hasMeal = false,
+  kcal = null,
   variant,
   onSelectDate,
 }: TimelineDateButtonProps) {
+  // Mobile's 4.5rem chip has no room for a number, so it keeps the dot.
+  const total = variant === 'desktop' && kcal != null ? formatKcal(kcal) : null;
   // The desktop tree now lists every day of the week, logged or not, so the two
   // have to read apart. A logged day steps up to primary ink and medium weight
   // against the muted resting tone — the neutral pair doing the work, with no
@@ -51,7 +57,7 @@ export function TimelineDateButton({
           : cn(restingTone, 'hover:bg-kallo-hover/50 hover:text-kallo-text')
       )}
     >
-      <span className="min-w-0 truncate">
+      <span className="min-w-0 flex-1 truncate text-left">
         {label}
         {isToday && variant === 'desktop' && (
           <span className="ml-1 font-normal text-[11px] text-kallo-text-muted/70">
@@ -60,6 +66,20 @@ export function TimelineDateButton({
           </span>
         )}
       </span>
+      {total && (
+        <>
+          {/* The number is decoration to a screen reader, which would otherwise
+              announce a bare "2014" trailing the date. The unit goes in the
+              accessible name instead, so the row reads as one thing. */}
+          <span
+            aria-hidden="true"
+            className="ml-2 shrink-0 font-normal text-[11px] text-kallo-text-muted tabular-nums"
+          >
+            {total}
+          </span>
+          <span className="sr-only">{`, ${total} kcal`}</span>
+        </>
+      )}
       {hasMeal && variant === 'mobile' && (
         <span
           aria-hidden="true"

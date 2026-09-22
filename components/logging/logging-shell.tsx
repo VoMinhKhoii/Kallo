@@ -67,7 +67,7 @@ export function LoggingShell({
   const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
 
   const {
-    data: dates = [],
+    data: summaries = [],
     isPending,
     isError,
     isFetching,
@@ -77,6 +77,18 @@ export function LoggingShell({
     queryFn: () => loadMealDates({ timezoneOffset }),
     staleTime: 60_000,
   });
+
+  // One pass over the summaries feeds both surfaces: the mobile strip wants
+  // the bare dates it already had, and the desktop tree reads membership AND
+  // the day's total off a single Map. Between them they used to build two Sets.
+  const dates = useMemo(
+    () => summaries.map((summary) => summary.date),
+    [summaries]
+  );
+  const dailyKcal = useMemo(
+    () => new Map(summaries.map((summary) => [summary.date, summary.kcal])),
+    [summaries]
+  );
 
   usePrefetchDates(selectedDate);
 
@@ -148,7 +160,7 @@ export function LoggingShell({
         {...timelineState}
         isRetrying={isFetching && !isPending}
       />
-      <TimelineSidebar {...timelineState} />
+      <TimelineSidebar {...timelineState} dailyKcal={dailyKcal} />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <TrialBanner userId={profile.userId} email={email} />
         <FeedArea
