@@ -1,7 +1,20 @@
 'use client';
 
+import { enUS, vi as viLocale } from 'date-fns/locale';
+import { useLocale } from 'next-intl';
 import { Calendar } from '@/components/ui/calendar';
 import { dateStringToDate, dateToDateString } from './timeline-utils';
+
+/**
+ * DayPicker formats month names, weekday headings and the day cells'
+ * accessible labels itself, from a date-fns locale — next-intl does not reach
+ * it. Without this the grid stays English inside an otherwise Vietnamese
+ * surface. The locale data rides the dynamic import, so it costs the logging
+ * route nothing until the calendar opens.
+ */
+function dateFnsLocale(locale: string) {
+  return locale === 'vi' ? viLocale : enUS;
+}
 
 /**
  * The tan dot under a day that already holds a log. Exported because
@@ -33,6 +46,7 @@ export function TimelineCalendarPanel({
   dailyKcal,
   onSelectDate,
 }: TimelineCalendarPanelProps) {
+  const locale = useLocale();
   const selected = dateStringToDate(selectedDate);
 
   return (
@@ -40,6 +54,7 @@ export function TimelineCalendarPanel({
       mode="single"
       selected={selected}
       defaultMonth={selected}
+      locale={dateFnsLocale(locale)}
       className="mx-auto bg-transparent p-0"
       // Monday, to match the tree behind it: `getWeekStart` and `weekOfMonth`
       // both count from Monday, so a Sunday-first grid would put

@@ -59,6 +59,12 @@ export function useUpdateMeal(userId: string, originDate: string) {
       queryClient.invalidateQueries({
         queryKey: dailyMealsKeys.byDate(originDate),
       });
+      // The edit recomputed meals.calories_kcal, and the timeline sidebar's
+      // per-day total reads off this cache. Without it the card shows the new
+      // calories while the sidebar keeps the old ones until an unrelated
+      // refetch. The save and delete paths already do this; an edit only
+      // started mattering once the summaries carried totals as well as dates.
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }

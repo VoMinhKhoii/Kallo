@@ -12,6 +12,23 @@ vi.mock('next/dynamic', async () => {
   return { default: () => mod.TimelineCalendarPanel };
 });
 
+// Overrides the global next-intl mock, which pins useLocale to 'en'. The grid
+// is formatted by date-fns inside DayPicker, not by next-intl, so the only way
+// to see it localize is to drive the locale.
+const { localeRef } = vi.hoisted(() => ({ localeRef: { current: 'en' } }));
+vi.mock('next-intl', () => ({
+  useTranslations: () =>
+    Object.assign((key: string) => key, {
+      rich: (key: string) => key,
+      raw: (key: string) => key,
+      has: () => false,
+    }),
+  useLocale: () => localeRef.current,
+  useMessages: () => ({}),
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+}));
+
 const { TimelineCalendar } = await import('../timeline-calendar');
 const { HAS_MEAL_MARKER_CLASS } = await import('../timeline-calendar-panel');
 
@@ -91,6 +108,27 @@ describe('TimelineCalendar', () => {
 
     expect(weekdays[0]).toMatch(/^Mo/);
     expect(weekdays.at(-1)).toMatch(/^Su/);
+  });
+
+  it('formats the grid in the active locale, not always English', async () => {
+    // DayPicker renders month names, weekday headings and the day cells'
+    // accessible labels from a date-fns locale of its own. Left unset, a
+    // Vietnamese surface got an English calendar under a translated title.
+    localeRef.current = 'en';
+    const { unmount } = render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+    const english = screen.getByRole('dialog').textContent;
+    expect(english).toMatch(/September/i);
+    unmount();
+
+    localeRef.current = 'vi';
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+    const vietnamese = screen.getByRole('dialog').textContent;
+
+    expect(vietnamese).not.toMatch(/September/i);
+    expect(vietnamese).not.toBe(english);
+    localeRef.current = 'en';
   });
 
   it('disables days after today', async () => {
