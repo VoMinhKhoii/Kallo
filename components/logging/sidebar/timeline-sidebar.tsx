@@ -3,20 +3,20 @@
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TimelineDateButton } from './timeline-date-button';
+import { TimelineDayRow } from './timeline-day-row';
+import { buildTimelineTree } from './timeline-tree';
 import {
   formatTimelineDayLabel,
   formatWeekDateRange,
   getSelectedMonthKey,
   getSelectedWeekKey,
   getWeekDateRange,
-  groupByMonth,
   sortTimelineDaysAscending,
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
+  /** Days that actually hold a log. Every other day renders, but reads quieter. */
   dates: string[];
-  allDates: string[];
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -27,7 +27,6 @@ interface TimelineSidebarProps {
 
 export function TimelineSidebar({
   dates,
-  allDates,
   today,
   selectedDate,
   isPending,
@@ -38,7 +37,14 @@ export function TimelineSidebar({
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
 
-  const months = useMemo(() => groupByMonth(allDates), [allDates]);
+  const months = useMemo(
+    () => buildTimelineTree({ dates, today, selectedDate }),
+    [dates, selectedDate, today]
+  );
+
+  // Every day of every covered week renders now, so membership is asked far
+  // more often than it used to be.
+  const loggedDates = useMemo(() => new Set(dates), [dates]);
 
   const selectedMonth = useMemo(
     () => getSelectedMonthKey(selectedDate),
@@ -221,79 +227,20 @@ export function TimelineSidebar({
                           >
                             {/* Days list */}
                             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
-                              {sortedDays.map((date, index) => {
-                                const isFirst = index === 0;
-                                const isLast = index === sortedDays.length - 1;
-                                const isActive = date === selectedDate;
-                                const isToday = date === today;
-                                const hasMeal = dates.includes(date);
-                                const label = formatTimelineDayLabel(
-                                  date,
-                                  locale
-                                );
-
-                                return (
-                                  <li
-                                    key={date}
-                                    className="relative flex w-full min-w-0 items-center"
-                                  >
-                                    {/* Upper vertical segment: for the first item it
-                                        reaches up to the vertical midpoint of the Week
-                                        row above (row height ~32px + mt-1 gap = ~20px). */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
-                                      style={{
-                                        left: '-15px',
-                                        top: isFirst ? '-0.25rem' : '-3px',
-                                        height: isFirst
-                                          ? 'calc(50% - 10px + 0.25rem)'
-                                          : 'calc(50% - 7px)',
-                                      }}
-                                    />
-
-                                    {/* Lower vertical segment: connects this item to
-                                        the next (omitted on the last item so the line
-                                        ends exactly at the final L-connector) */}
-                                    {!isLast && (
-                                      <div
-                                        aria-hidden="true"
-                                        className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
-                                        style={{
-                                          left: '-15px',
-                                          top: '50%',
-                                          height: 'calc(50% + 3px)',
-                                        }}
-                                      />
-                                    )}
-
-                                    {/* L-shaped connector curving from the vertical
-                                        line into the day button */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-kallo-accent border-b-2 border-l-2"
-                                      style={{
-                                        left: '-15px',
-                                        top: '50%',
-                                        height: '10px',
-                                        width: '15px',
-                                      }}
-                                    />
-
-                                    {/* Date button */}
-                                    <TimelineDateButton
-                                      date={date}
-                                      label={label}
-                                      isActive={isActive}
-                                      isToday={isToday}
-                                      todayLabel={t('todayLabel')}
-                                      hasMeal={hasMeal}
-                                      variant="desktop"
-                                      onSelectDate={onSelectDate}
-                                    />
-                                  </li>
-                                );
-                              })}
+                              {sortedDays.map((date, index) => (
+                                <TimelineDayRow
+                                  key={date}
+                                  date={date}
+                                  label={formatTimelineDayLabel(date, locale)}
+                                  isFirst={index === 0}
+                                  isLast={index === sortedDays.length - 1}
+                                  isActive={date === selectedDate}
+                                  isToday={date === today}
+                                  todayLabel={t('todayLabel')}
+                                  hasMeal={loggedDates.has(date)}
+                                  onSelectDate={onSelectDate}
+                                />
+                              ))}
                             </ul>
                           </div>
                         )}
