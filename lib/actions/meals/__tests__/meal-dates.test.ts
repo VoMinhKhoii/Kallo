@@ -66,7 +66,10 @@ describe('loadMealDates', () => {
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
       { date: '2026-04-07', kcal: null },
-      { date: '2026-04-06', kcal: 1842 },
+      // Apr 6 has a saved meal AND a pending card, so its total is unknown —
+      // 1842 is only the part that has been confirmed. See the overlap case
+      // below; this expectation used to say 1842 and was wrong.
+      { date: '2026-04-06', kcal: null },
       { date: '2026-04-05', kcal: 2014 },
     ]);
   });
@@ -100,6 +103,21 @@ describe('loadMealDates', () => {
     // A day whose meals all carry NULL calories sums to NULL. Zero would read
     // as "you ate nothing", which is a different claim from "we don't know".
     mockDateQueries([{ date: '2026-04-06', kcal: null }], []);
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      { date: '2026-04-06', kcal: null },
+    ]);
+  });
+
+  it('gives up the total on a day that also holds a pending card', async () => {
+    // Same trap as the SUM guard, one layer up: a staged card's calories are
+    // deliberately not counted, so a day with a saved 500 kcal meal AND a
+    // pending card knows only part of what was eaten. Keeping the 500 would
+    // show a subtotal wearing the face of a complete total.
+    mockDateQueries(
+      [{ date: '2026-04-06', kcal: 500 }],
+      [{ date: '2026-04-06' }]
+    );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
       { date: '2026-04-06', kcal: null },

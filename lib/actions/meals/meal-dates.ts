@@ -73,8 +73,12 @@ export async function loadMealDates(input: {
   for (const row of mealRows) {
     kcalByDate.set(row.date, toKcal(row.kcal));
   }
+  // Unconditionally, overwriting any saved-meal sum. A day holding BOTH a
+  // saved meal and a pending card knows only part of what was eaten, and a
+  // partial total is the one thing worse than none — it looks complete. Same
+  // rule as the CASE guard above, one layer up.
   for (const row of pendingRows) {
-    if (!kcalByDate.has(row.date)) kcalByDate.set(row.date, null);
+    kcalByDate.set(row.date, null);
   }
 
   return Array.from(kcalByDate, ([date, kcal]) => ({ date, kcal })).sort(
