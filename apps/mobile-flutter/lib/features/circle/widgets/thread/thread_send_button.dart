@@ -52,6 +52,17 @@ class ThreadSendButton extends StatelessWidget {
       button: true,
       enabled: !submitting,
       label: tr('groups.feed.replySend'),
+      // The action goes on the ANNOTATED node, and `excludeSemantics` is
+      // exactly why: it drops the [KalloPressable]'s own tap action, so
+      // without this the node a screen reader announces as "Send, button" is
+      // one a double-tap cannot fire. `feed_entry.dart` documents fixing this
+      // same defect on its post row in 2026-09-08 — VoiceOver reading a button
+      // it could not activate — and this button reintroduced it.
+      //
+      // ONE callback behind both the annotation and the target, null on both
+      // while submitting, so what the screen reader can do never diverges from
+      // what the finger can.
+      onTap: submitting ? null : onSubmit,
       excludeSemantics: true,
       // A TIGHT height, not a minHeight: the dock is laid out in the page's
       // overlay Stack, where the slot is loose and `alignment` makes a

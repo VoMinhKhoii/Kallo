@@ -28,15 +28,22 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
     // content, so taking the column's spare room is all it needs to sit in the
     // middle of the void. The page does not get to know we are empty —
     // `thread-feed.tsx` owns its empty state the same way.
+    // `role="status"` because this arrives dynamically: the page renders a
+    // skeleton while the thread query is pending and swaps to content when it
+    // resolves, so a screen reader that has already settled on the page never
+    // hears "No replies yet" unless it is a polite live region. `SurfaceState`
+    // announces itself only for `kind="error"`, which is the loud one.
     return (
-      <SurfaceState
-        area="circle"
-        className="flex-1"
-        compact
-        kind="empty"
-        subtitle={t('noRepliesBody')}
-        title={t('noReplies')}
-      />
+      <div className="flex flex-1" role="status">
+        <SurfaceState
+          area="circle"
+          className="flex-1"
+          compact
+          kind="empty"
+          subtitle={t('noRepliesBody')}
+          title={t('noReplies')}
+        />
+      </div>
     );
   }
 

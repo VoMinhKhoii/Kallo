@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -40,6 +40,12 @@ void main() {
 
   final sendButton = find.byKey(const Key('reply-send'));
 
+  // Semantics are off by default in widget tests; the send button's whole job
+  // for a screen reader is asserted below, so this suite turns them on.
+  late SemanticsHandle semantics;
+  setUp(() => semantics = TestWidgetsFlutterBinding.instance.ensureSemantics());
+  tearDown(() => semantics.dispose());
+
   testWidgets('the send button arrives with the draft and leaves with it', (
     tester,
   ) async {
@@ -56,6 +62,24 @@ void main() {
     await tester.enterText(find.byKey(const Key('reply-composer')), 'k');
     await tester.pumpAndSettle();
     expect(sendButton, findsOneWidget);
+
+    // Not just "a widget with that key exists": the node a screen reader
+    // announces has to be the node it can ACTIVATE. `excludeSemantics: true`
+    // drops the KalloPressable's own tap action, so without an `onTap` on the
+    // annotation VoiceOver reads "Send, button" over something double-tapping
+    // cannot fire — the defect `feed_entry.dart` documents fixing in 2026-09-08
+    // and this button reintroduced (caught in review, 2026-09-22).
+    final node = tester.getSemantics(sendButton).getSemanticsData();
+    expect(node.label, 'Send');
+    expect(node.flagsCollection.isButton, isTrue);
+    // The tap action IS the enabled check as a screen reader experiences it:
+    // `enabled: !submitting` only changes a trait, while this is what a
+    // double-tap actually fires.
+    expect(
+      node.hasAction(SemanticsAction.tap),
+      isTrue,
+      reason: 'a button a screen reader cannot activate is not a button',
+    );
 
     // Whitespace is not a draft — the button has to go back where it came
     // from, or the field reads as armed with nothing in it.
