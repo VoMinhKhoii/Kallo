@@ -155,11 +155,13 @@ describe('LoggingShell', () => {
       },
     });
 
-    // Default mock implementations
+    // Default mock implementations. The action returns one summary per day;
+    // the shell is what splits that into the bare dates the mobile strip takes
+    // and the calorie map the desktop tree reads.
     mockLoadMealDates.mockResolvedValue([
-      '2026-05-01',
-      '2026-05-02',
-      '2026-05-03',
+      { date: '2026-05-01', kcal: 1842 },
+      { date: '2026-05-02', kcal: null },
+      { date: '2026-05-03', kcal: 2014 },
     ]);
     mockUsePrefetchDates.mockReturnValue(undefined);
   });

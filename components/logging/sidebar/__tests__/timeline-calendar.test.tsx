@@ -1,0 +1,91 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+
+// The panel is loaded through next/dynamic so react-day-picker stays out of the
+// logging route's bundle. In jsdom that loader resolves on its own schedule,
+// which turns every assertion below into a race, so swap it for the panel
+// itself. What the split buys is a bundle claim, and the build output is what
+// should prove it — not a timer in a unit test.
+vi.mock('next/dynamic', async () => {
+  const mod = await import('../timeline-calendar-panel');
+  return { default: () => mod.TimelineCalendarPanel };
+});
+
+const { TimelineCalendar } = await import('../timeline-calendar');
+const { HAS_MEAL_MARKER_CLASS } = await import('../timeline-calendar-panel');
+
+describe('TimelineCalendar', () => {
+  const baseProps = {
+    today: '2026-09-22',
+    selectedDate: '2026-09-22',
+    dailyKcal: new Map<string, number | null>([
+      ['2026-09-16', 2014],
+      ['2026-09-21', 1842],
+    ]),
+    onSelectDate: vi.fn(),
+  };
+
+  async function openCalendar() {
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /openCalendar/i }));
+    await screen.findByRole('grid');
+    return user;
+  }
+
+  it('renders no month grid until the trigger is used', () => {
+    render(<TimelineCalendar {...baseProps} />);
+
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /openCalendar/i })
+    ).toBeInTheDocument();
+  });
+
+  it('reports the clicked day as a YYYY-MM-DD string', async () => {
+    const onSelectDate = vi.fn();
+    render(<TimelineCalendar {...baseProps} onSelectDate={onSelectDate} />);
+    const user = await openCalendar();
+
+    await user.click(screen.getByRole('button', { name: /September 17/i }));
+
+    // Not an ISO timestamp: everything downstream keys off the local calendar
+    // day, and toISOString() would shift it for anyone east of UTC.
+    expect(onSelectDate).toHaveBeenCalledWith('2026-09-17');
+  });
+
+  it('closes itself once a day is chosen', async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    const user = await openCalendar();
+
+    await user.click(screen.getByRole('button', { name: /September 17/i }));
+
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+  });
+
+  it('disables days after today', async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    expect(
+      screen.getByRole('button', { name: /September 23/i })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /September 21/i })
+    ).not.toBeDisabled();
+  });
+
+  it('marks the days that already hold a log', async () => {
+    const { container } = render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    // A modifier arrives as a CLASS on the day cell, not an attribute, so the
+    // marker is read off the cell that `data-day` identifies.
+    const cellFor = (date: string) =>
+      container.ownerDocument.querySelector(`td[data-day="${date}"]`);
+    const marker = HAS_MEAL_MARKER_CLASS.split(' ')[0];
+
+    expect(cellFor('2026-09-16')?.className).toContain(marker);
+    expect(cellFor('2026-09-17')?.className).not.toContain(marker);
+  });
+});

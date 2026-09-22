@@ -3,6 +3,7 @@
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { TimelineCalendar } from './timeline-calendar';
 import { TimelineDayRow } from './timeline-day-row';
 import { buildTimelineTree } from './timeline-tree';
 import {
@@ -120,6 +121,18 @@ export function TimelineSidebar({
       className="hidden h-full w-72 shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
       aria-label={t('navigationLabel')}
     >
+      {/* Outside the scroller: the tree only covers months that hold a log, so
+          the way to every other month has to stay reachable however far down
+          the history you have scrolled. */}
+      <div className="mb-3 shrink-0">
+        <TimelineCalendar
+          today={today}
+          selectedDate={selectedDate}
+          dailyKcal={dailyKcal}
+          onSelectDate={onSelectDate}
+        />
+      </div>
+
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
         {/* Error state */}
         {isError && (
