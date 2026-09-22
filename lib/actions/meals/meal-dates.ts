@@ -117,13 +117,17 @@ export async function loadMealDates(input: {
   for (const row of scanned) {
     if (toStagedCard(row)) renderableDates.add(row.date);
   }
-  // The cap's blind spot, as a date. The scan came back full, so rows were
-  // left behind, and every one of them sits on the oldest day it reached or
-  // an older one — that day and everything below it went undecided.
-  const undecidedFrom =
-    scannedRows.length > PENDING_SCAN_LIMIT
-      ? (scanned.at(-1)?.date ?? null)
-      : null;
+  // The cap's blind spot, as a date: the probe row's day, and everything
+  // below it.
+  //
+  // The probe is the FIRST row the scan did not inspect, which makes its day
+  // the first one anything is unknown about — not the last day the scan
+  // touched. Those differ exactly when the probe falls on an older day, which
+  // means the day above it ended inside the scan and every row on it was
+  // seen. Reading the boundary off `scanned.at(-1)` instead would give up that
+  // day's real total for nothing. Absent a probe row, the scan read everything
+  // and nothing is undecided.
+  const undecidedFrom = scannedRows[PENDING_SCAN_LIMIT]?.date ?? null;
 
   for (const { date } of pendingDateRows) {
     // Masking overwrites any saved-meal sum: a day holding BOTH a saved meal

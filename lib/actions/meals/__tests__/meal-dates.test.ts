@@ -316,6 +316,36 @@ describe('loadMealDates', () => {
     ]);
   });
 
+  it('keeps the total on the boundary day when the probe row proves it complete', async () => {
+    // The probe row is the first one the scan did NOT inspect, so it — not the
+    // last row the scan DID inspect — is where the blind spot starts. When the
+    // probe lands on an older day, every row on the day above it was seen, and
+    // that day is fully decided: masking it would give up a real total for a
+    // day nothing was actually unknown about.
+    const overflow = [
+      ...Array.from({ length: PENDING_SCAN_LIMIT }, () => ({
+        ...stagedRow('2026-04-07'),
+        pipelineResult: { junk: true },
+      })),
+      stagedRow('2026-04-05'),
+    ];
+    mockDateQueries(
+      [
+        { date: '2026-04-07', kcal: 700 },
+        { date: '2026-04-05', kcal: 500 },
+      ],
+      overflow,
+      ['2026-04-07', '2026-04-05']
+    );
+
+    expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
+      // Every staged row on it was scanned and none was renderable.
+      { date: '2026-04-07', kcal: 700 },
+      // The probe's own day: at least one row on it went uninspected.
+      { date: '2026-04-05', kcal: null },
+    ]);
+  });
+
   it('lists a day the capped scan never reached even with no saved meal', async () => {
     // The grouped date scan is the only thing that knows this day exists. Drop
     // it and the sidebar loses a day the feed would draw, which is the same
