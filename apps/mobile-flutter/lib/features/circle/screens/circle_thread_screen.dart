@@ -66,14 +66,21 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   /// The last post this page actually showed, held so a refetch underneath it
   /// does not blank the page — see the rule documented in [build].
   ///
-  /// Stored WITH the thread it belongs to. `MaterialPage` in `router.dart`
+  /// Stored WITH the share it belongs to. `MaterialPage` in `router.dart`
   /// carries no key, so `Navigator` updates the existing route in place when
   /// this page is asked for a different share (a notification tapped while
   /// already reading a thread): the widget's `shareId` changes under a state
   /// that is kept. A bare entry would then be shown for the new thread while it
   /// loads — post A on screen over a dock that already posts to B (caught in
   /// review, 2026-09-22).
-  ({ThreadRef ref, CircleFeedEntry entry})? _lastReady;
+  ///
+  /// The SHARE, not the whole [ThreadRef]. `scope` picks which feed the post is
+  /// read out of and which cache the optimistic splice patches; it does not
+  /// change WHICH POST this is. Holding on the ref would drop the entry when
+  /// the same post is opened from another feed, unmounting the composer and its
+  /// draft over a source change the reader never asked about — a loss with
+  /// nothing bought, since the hazard is only ever a different `shareId`.
+  ({String shareId, CircleFeedEntry entry})? _lastReady;
 
   @override
   void dispose() {
@@ -100,13 +107,14 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
   /// Only the synchronous swap needs this. When the new thread has to load, the
   /// page shows [ThreadStates] first, which has no scrollable at all — the
   /// controller detaches and the next one starts at zero on its own.
+  ///
+  /// On the SHARE again, not the ref: the same post reached through another
+  /// feed is the same conversation, and throwing the reader back to the top of
+  /// it would be a jump they did not ask for.
   @override
   void didUpdateWidget(CircleThreadScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.shareId == widget.shareId &&
-        oldWidget.scope == widget.scope) {
-      return;
-    }
+    if (oldWidget.shareId == widget.shareId) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scroll.hasClients && _scroll.offset != 0) {
         _scroll.jumpTo(0);
@@ -145,12 +153,11 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
       // this one. The same identity change as the held post above, from the
       // other side.
       //
-      // The SHARE, not the whole [ThreadRef]: a draft belongs to the post it
-      // answers, and `createShareReply` addresses it by `shareId` — `scope`
-      // only picks which feed cache the optimistic splice patches, and is read
-      // live at submit, so a scope change needs no fresh state. Keying on the
-      // ref would throw a draft away when the same post is opened from another
-      // feed, which is a loss with nothing bought.
+      // The share, for the same reason the held post is keyed on it: a draft
+      // belongs to the post it answers. `createShareReply` addresses the reply
+      // by `shareId` and reads `widget.scope` LIVE at submit, so a scope change
+      // needs no fresh state — and [_ThreadComposerState] holds nothing else
+      // but the draft and an in-flight flag.
       key: ValueKey(widget.shareId),
       shareId: widget.shareId,
       // `label`, not `displayName`: the field is nullable and a person with no
@@ -207,12 +214,14 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     // local: "there is a post to show" and "there is a state to show instead"
     // are a single decision, so they cannot drift apart, and no arm has to
     // recover the post with a `!` or the state with a cast.
-    if (view is ThreadReady) _lastReady = (ref: _ref, entry: view.entry);
+    if (view is ThreadReady) {
+      _lastReady = (shareId: widget.shareId, entry: view.entry);
+    }
     // Structural rather than a `didUpdateWidget` reset: a held post that does
-    // not belong to the thread being shown cannot be reached at all, whatever
-    // the lifecycle does. [ThreadRef] is a record, so this is value equality.
+    // not belong to the share being shown cannot be reached at all, whatever
+    // the lifecycle does.
     final last = _lastReady;
-    final held = last != null && last.ref == _ref ? last.entry : null;
+    final held = last?.shareId == widget.shareId ? last?.entry : null;
     final (Widget body, Widget? dock) = switch (view) {
       ThreadReady(:final entry) => (_body(entry), _dock(entry)),
       // Two arms rather than `ThreadLoading() || ThreadFailed() when …`: the

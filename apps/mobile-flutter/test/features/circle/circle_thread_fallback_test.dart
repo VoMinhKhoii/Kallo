@@ -603,6 +603,63 @@ void main() {
     );
   });
 
+  testWidgets('the SAME post reached from another feed keeps its draft', (
+    tester,
+  ) async {
+    // The other edge of "what counts as a different conversation". `scope`
+    // picks which feed the post is read out of and which cache the optimistic
+    // splice patches — it does not change which POST this is. Keying the held
+    // entry and the dock on the whole [ThreadRef] treated a scope change as a
+    // new thread and threw the draft away over a source change the reader never
+    // asked about (caught in review, 2026-09-22 — both reviewers, independently).
+    //
+    // The hazard is only ever a different `shareId`, which the two tests above
+    // pin. This pins the cost of overreaching for it.
+    final api = FakeApiClient((request) {
+      if (request.path == '/api/v1/groups/friends/feed' ||
+          request.path == '/api/v1/chat-groups/g1/feed') {
+        return pageJson([entryJson('s1')], null);
+      }
+      return readMarker(request);
+    });
+
+    final scope = ValueNotifier<String?>(null);
+    addTearDown(scope.dispose);
+    await pumpCircleScreen(
+      tester,
+      ValueListenableBuilder<String?>(
+        valueListenable: scope,
+        builder:
+            (context, value, _) =>
+                CircleThreadScreen(shareId: 's1', scope: value),
+      ),
+      api: api,
+      expand: true,
+    );
+    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('reply-composer')),
+      'đang gõ dở',
+    );
+    await tester.pumpAndSettle();
+
+    // Same share, different feed — a group's copy of a post also on the
+    // friends feed.
+    scope.value = 'g1';
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('reply-composer')))
+          .controller
+          ?.text,
+      'đang gõ dở',
+      reason: 'it is the same conversation, so the half-written reply survives',
+    );
+  });
+
   testWidgets('a share that is gone or not ours to see stays the gone state', (
     tester,
   ) async {
