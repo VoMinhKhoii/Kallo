@@ -21,7 +21,7 @@ import {
 } from '@/components/logging/sidebar/timeline-utils';
 import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
-import { loadMealDates } from '@/lib/actions/meals/load-meals';
+import { loadMealDates } from '@/lib/actions/meals/meal-dates';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface LoggingShellProps {

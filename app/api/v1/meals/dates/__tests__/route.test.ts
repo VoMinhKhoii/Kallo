@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadMealDates = vi.fn();
 
-vi.mock('@/lib/actions/meals/load-meals', () => ({ loadMealDates }));
+vi.mock('@/lib/actions/meals/meal-dates', () => ({ loadMealDates }));
 
 const { GET } = await import('@/app/api/v1/meals/dates/route');
 

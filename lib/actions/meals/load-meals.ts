@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   buildMealItemGroupsFromRows,
@@ -20,7 +20,6 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
-import type { MealDateSummary } from '@/lib/domain/logging/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -41,10 +40,6 @@ const loadMealsByDateSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 type LoadMealsByDateInput = z.infer<typeof loadMealsByDateSchema>;
-const loadMealDatesSchema = z.object({
-  timezoneOffset: timezoneOffsetSchema,
-});
-
 // ---------------------------------------------------------------------------
 // C2: Load Meals by Date
 // ---------------------------------------------------------------------------
@@ -309,76 +304,4 @@ export async function loadLoggingDay(input: {
     // and only refetches on an explicit invalidation. Callers invalidate on this.
     releasedInvites: reaped.releasedInvites,
   };
-}
-
-// ---------------------------------------------------------------------------
-// C9: Load distinct meal dates for timeline sidebar
-// ---------------------------------------------------------------------------
-
-export async function loadMealDates(input: {
-  timezoneOffset: number;
-}): Promise<MealDateSummary[]> {
-  const parsed = loadMealDatesSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
-
-  // Use offset (opposite sign from JS getTimezoneOffset) to compute local date
-  // JS getTimezoneOffset(): UTC+7 = -420, UTC-5 = +300
-  // To convert UTC → local: UTC + offsetMins = local
-  // sql.raw() inlines the integer so the GROUP BY matches the projected
-  // expression as SQL TEXT — Drizzle re-parameterizes the same sql`` object,
-  // and a $1 in one place and $2 in the other is not the same expression to
-  // PostgreSQL.
-  const offsetMins = -parsed.timezoneOffset;
-  const mealDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
-  const pendingDateExpr = sql<string>`DATE(${pendingAnalyses.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
-
-  const [mealRows, pendingRows] = await Promise.all([
-    // Grouped rather than DISTINCT ON so the day's calories come back from the
-    // same scan — no second query, and the same (user_id, logged_at) index.
-    db
-      .select({
-        date: mealDateExpr.as('date'),
-        kcal: sql<string | number | null>`SUM(${meals.caloriesKcal})`,
-      })
-      .from(meals)
-      .where(eq(meals.userId, user.id))
-      .groupBy(mealDateExpr),
-    db
-      .select({ date: pendingDateExpr.as('date') })
-      .from(pendingAnalyses)
-      // Match loadPendingAnalysesByDate, which no longer hides rows by
-      // `expiresAt`. Keeping the window here would paint NO timeline dot for a
-      // day whose only content is a pending card older than 30 minutes — a day
-      // the feed does render. The two queries have to agree on what counts as a
-      // live pending card or the sidebar lies about which days have anything.
-      .where(eq(pendingAnalyses.userId, user.id))
-      .groupBy(pendingDateExpr),
-  ]);
-
-  // A staged card carries its nutrition inside pipeline_result's JSONB, not in
-  // a column. Reaching into that per row would cost far more than the total is
-  // worth, so a pending day contributes its DATE and leaves the calories
-  // unknown until it is confirmed.
-  const kcalByDate = new Map<string, number | null>();
-  for (const row of mealRows) {
-    kcalByDate.set(row.date, toKcal(row.kcal));
-  }
-  for (const row of pendingRows) {
-    if (!kcalByDate.has(row.date)) kcalByDate.set(row.date, null);
-  }
-
-  return Array.from(kcalByDate, ([date, kcal]) => ({ date, kcal })).sort(
-    (a, b) => b.date.localeCompare(a.date)
-  );
-}
-
-/**
- * SUM over a `numeric` column arrives as a STRING from node-postgres, which
- * hands numerics back as text so large values keep their precision. Left
- * uncoerced it reaches the sidebar as "1842.50" and renders raw.
- */
-function toKcal(value: string | number | null): number | null {
-  if (value == null) return null;
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
