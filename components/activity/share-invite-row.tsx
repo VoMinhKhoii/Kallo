@@ -3,7 +3,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  InviteConfirmDialog,
+  type InviteConfirmKind,
+} from '@/components/groups/meal-invites/invite-confirm-dialog';
 import { useMarkNotificationRead } from '@/hooks/notifications/use-notification-state';
 import {
   useAcceptMealShareInvite,
@@ -53,6 +58,10 @@ export function ShareInviteRow({
   const busy = accept.isPending || dismiss.isPending;
   const mode = inviteMode(item);
   const percent = invitePortionPercent(item);
+  const [confirming, setConfirming] = useState<InviteConfirmKind | null>(null);
+  const sender = item.actors[0];
+  const senderLabel =
+    sender?.displayName?.trim() || sender?.handle || t('someone');
 
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
@@ -73,17 +82,17 @@ export function ShareInviteRow({
     });
   };
 
-  const handleAccept = () => {
+  // The buttons only ASK — the shared confirm dialog is what acts, the same
+  // one the Circle deck card opens.
+  const request = (kind: InviteConfirmKind) => {
     if (busy || !inviteId) return;
-    accept.mutate(inviteId, {
-      onSuccess: settleActivity,
-      onError: () => toast.error(t('invite.error')),
-    });
+    setConfirming(kind);
   };
 
-  const handleDismiss = () => {
+  const confirm = (kind: InviteConfirmKind) => {
     if (busy || !inviteId) return;
-    dismiss.mutate(inviteId, {
+    const mutation = kind === 'dismiss' ? dismiss : accept;
+    mutation.mutate(inviteId, {
       onSuccess: settleActivity,
       onError: () => toast.error(t('invite.error')),
     });
@@ -122,7 +131,7 @@ export function ShareInviteRow({
                 dismiss is a text action beside it, not a second button. */}
             <button
               type="button"
-              onClick={handleAccept}
+              onClick={() => request('accept')}
               disabled={busy}
               aria-busy={accept.isPending}
               className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
@@ -134,7 +143,7 @@ export function ShareInviteRow({
             </button>
             <button
               type="button"
-              onClick={handleDismiss}
+              onClick={() => request('dismiss')}
               disabled={busy}
               className="px-2 py-1.5 font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-55"
             >
@@ -147,6 +156,16 @@ export function ShareInviteRow({
           </span>
         )}
       </div>
+      {pending && (
+        <InviteConfirmDialog
+          kind={confirming}
+          senderLabel={senderLabel}
+          onOpenChange={(open) => {
+            if (!open) setConfirming(null);
+          }}
+          onConfirm={confirm}
+        />
+      )}
     </div>
   );
 }

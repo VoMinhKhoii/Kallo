@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/circle.dart';
 import '../../../services/billing/feature_lock.dart';
+import '../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../logging/logic/open_logging_day.dart';
 import '../data/invite_mutations.dart';
@@ -68,6 +69,38 @@ Future<bool> dismissInviteOffer(
     if (context.mounted) _reportFailure(context);
     return false;
   }
+}
+
+/// Ask before acting on an offer. Both answers are hard to take back from the
+/// reader's side: accepting writes a meal into their diary (on the day it was
+/// EATEN, usually not today) or spends a cheat offer on a slider card, and
+/// dismissing removes it until the sender shares it again. The dismiss copy
+/// says exactly that, so the reader knows the sender is not told and that it
+/// is not permanent. The web twin is `invite-confirm-dialog.tsx`.
+///
+/// Returns false for every way out that is not the affirmative.
+Future<bool> confirmInviteResponse(
+  BuildContext context,
+  MealShareInvite invite, {
+  required bool dismiss,
+}) {
+  final kind =
+      dismiss
+          ? 'dismiss'
+          : invite.isCheat
+          ? 'acceptCheat'
+          : 'accept';
+  return showKalloConfirm(
+    context,
+    title: tr('groups.invites.confirm.${kind}Title'),
+    description: tr(
+      'groups.invites.confirm.${kind}Description',
+      namedArgs: {'name': invite.from.label},
+    ),
+    confirmLabel: tr('groups.invites.confirm.${kind}Action'),
+    cancelLabel: tr('groups.invites.confirm.cancel'),
+    destructive: dismiss,
+  );
 }
 
 void _reportFailure(BuildContext context) => showTopToast(

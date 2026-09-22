@@ -112,6 +112,7 @@ describe('MealInvites', () => {
     render(<MealInvites />);
 
     await userEvent.click(screen.getByRole('button', { name: /accept/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'acceptAction' }));
 
     expect(mockAccept).toHaveBeenCalledWith(
       'e4ccff33-d04f-4cc2-af01-affdf0724e55',
@@ -135,6 +136,8 @@ describe('MealInvites', () => {
     await userEvent.click(screen.getByRole('button', { name: 'acceptCheat' }));
 
     expect(mockStageCheat).not.toHaveBeenCalled();
+    // The paywall answers instead of the confirm — never both.
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('sends a cheat invite to the slider card instead of accepting it', async () => {
@@ -144,6 +147,9 @@ describe('MealInvites', () => {
     // The label changes too: "Add to my diary" would be a lie — nothing is
     // added until I have set my own amounts.
     await userEvent.click(screen.getByRole('button', { name: 'acceptCheat' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'acceptCheatAction' })
+    );
 
     expect(mockStageCheat).toHaveBeenCalledTimes(1);
     expect(mockAccept).not.toHaveBeenCalled();
@@ -164,6 +170,9 @@ describe('MealInvites', () => {
     render(<MealInvites />);
 
     await userEvent.click(screen.getByRole('button', { name: 'acceptCheat' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'acceptCheatAction' })
+    );
 
     // The EXACT day, computed independently of the component: a regression
     // that pushed today's date would satisfy a date-shaped pattern.
@@ -171,6 +180,38 @@ describe('MealInvites', () => {
     expect(expectedDay()).not.toBe(
       toLocalDayKey(Date.now(), new Date().getTimezoneOffset())
     );
+  });
+
+  it('asks before acting, and backing out sends nothing', async () => {
+    invites.current = [inviteFixture()];
+    render(<MealInvites />);
+
+    await userEvent.click(screen.getByRole('button', { name: /accept/ }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'dismiss' }));
+    expect(screen.getByText('dismissTitle')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
+
+    expect(mockAccept).not.toHaveBeenCalled();
+    expect(mockDismiss).not.toHaveBeenCalled();
+  });
+
+  it('dismisses only once the confirm says so', async () => {
+    invites.current = [inviteFixture()];
+    render(<MealInvites />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'dismiss' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'dismissAction' })
+    );
+
+    expect(mockDismiss).toHaveBeenCalledWith(
+      'e4ccff33-d04f-4cc2-af01-affdf0724e55',
+      expect.anything()
+    );
+    expect(mockAccept).not.toHaveBeenCalled();
   });
 
   it('renders nothing when there are no offers', () => {

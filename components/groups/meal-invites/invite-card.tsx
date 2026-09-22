@@ -2,10 +2,15 @@
 
 import { Check, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import {
+  InviteConfirmDialog,
+  type InviteConfirmKind,
+} from '@/components/groups/meal-invites/invite-confirm-dialog';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   useAcceptMealShareInvite,
@@ -49,6 +54,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
   // tap, so a free user meets the paywall instead of an error toast telling
   // them to try again at something that can never work.
   const cheatLocked = isCheat && locked('cheat_meal');
+  const [confirming, setConfirming] = useState<InviteConfirmKind | null>(null);
 
   /** Land on the day the meal actually arrived on, which is the day it was
    *  EATEN and usually not today — see copy-meal-verbatim's mealSlot option. */
@@ -60,19 +66,39 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
     router.push(`/logging?date=${day}`);
   };
 
-  const handleAccept = () => {
+  // Both buttons only ASK; the confirm dialog is what acts. A cheat offer
+  // meets the paywall before the question, not after the reader has said yes.
+  const requestAccept = () => {
+    if (busy) {
+      return;
+    }
+    if (isCheat && !requirePremium('cheat_meal')) return;
+    setConfirming(isCheat ? 'acceptCheat' : 'accept');
+  };
+
+  const requestDismiss = () => {
+    if (busy) {
+      return;
+    }
+    setConfirming('dismiss');
+  };
+
+  const confirm = (kind: InviteConfirmKind) => {
     if (busy) {
       return;
     }
     // A cheat offer is not "add this meal" — nobody can say what I ate from
     // where THEY put the sliders. Taking it reopens their spec on my own
     // logging feed, on the day the meal was eaten, and I set my amounts there.
-    if (isCheat) {
-      if (!requirePremium('cheat_meal')) return;
+    if (kind === 'acceptCheat') {
       stageCheat.mutate(invite.id, {
         onSuccess: (staged) => openLandedDay(staged.loggedAt),
         onError: () => toast.error(t('error')),
       });
+      return;
+    }
+    if (kind === 'dismiss') {
+      dismiss.mutate(invite.id, { onError: () => toast.error(t('error')) });
       return;
     }
     accept.mutate(invite.id, {
@@ -85,13 +111,6 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
       },
       onError: () => toast.error(t('error')),
     });
-  };
-
-  const handleDismiss = () => {
-    if (busy) {
-      return;
-    }
-    dismiss.mutate(invite.id, { onError: () => toast.error(t('error')) });
   };
 
   return (
@@ -136,7 +155,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
       <div className="mt-3 flex items-center justify-end gap-2 border-kallo-border/40 border-t border-dashed pt-3">
         <button
           type="button"
-          onClick={handleDismiss}
+          onClick={requestDismiss}
           disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted/80 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:opacity-60"
         >
@@ -145,7 +164,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
         </button>
         <button
           type="button"
-          onClick={handleAccept}
+          onClick={requestAccept}
           disabled={busy}
           aria-busy={accepting}
           className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
@@ -159,6 +178,15 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
         </button>
         {cheatLocked && <PremiumChip className="px-1.5 py-0" />}
       </div>
+
+      <InviteConfirmDialog
+        kind={confirming}
+        senderLabel={senderLabel}
+        onOpenChange={(open) => {
+          if (!open) setConfirming(null);
+        }}
+        onConfirm={confirm}
+      />
     </div>
   );
 }
