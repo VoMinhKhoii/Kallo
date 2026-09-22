@@ -29,6 +29,9 @@ vi.mock('next-intl', () => ({
     children,
 }));
 
+const { buildMealDateIndex } = await import(
+  '@/lib/domain/logging/meal-date-index'
+);
 const { TimelineCalendar } = await import('../timeline-calendar');
 const { HAS_MEAL_MARKER_CLASS } = await import('../timeline-calendar-panel');
 
@@ -36,9 +39,9 @@ describe('TimelineCalendar', () => {
   const baseProps = {
     today: '2026-09-22',
     selectedDate: '2026-09-22',
-    dailyKcal: new Map<string, number | null>([
-      ['2026-09-16', 2014],
-      ['2026-09-21', 1842],
+    mealDates: buildMealDateIndex([
+      { date: '2026-09-16', kcal: 2014 },
+      { date: '2026-09-21', kcal: 1842 },
     ]),
     onSelectDate: vi.fn(),
   };

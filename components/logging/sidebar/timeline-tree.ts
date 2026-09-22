@@ -20,8 +20,12 @@ export interface MonthSection {
 }
 
 export interface BuildTimelineTreeInput {
-  /** Days the user actually logged something on. */
-  dates: string[];
+  /**
+   * Days the user actually logged something on. Readonly because this only
+   * spreads and reads it, and callers now hand it straight off a shared index
+   * — copying to satisfy a mutable signature would be pure ceremony.
+   */
+  dates: readonly string[];
   today: string;
   selectedDate: string;
 }

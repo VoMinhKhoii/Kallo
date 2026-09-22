@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { labelDayButton } from 'react-day-picker';
 import { enUS, vi as viLocale } from 'react-day-picker/locale';
 import { Calendar } from '@/components/ui/calendar';
+import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
 import { dateStringToDate, dateToDateString } from './timeline-utils';
 
 /**
@@ -36,7 +37,7 @@ export const HAS_MEAL_MARKER_CLASS =
 export interface TimelineCalendarPanelProps {
   today: string;
   selectedDate: string;
-  dailyKcal: Map<string, number | null>;
+  mealDates: MealDateIndex;
   onSelectDate: (date: string) => void;
 }
 
@@ -51,7 +52,7 @@ export interface TimelineCalendarPanelProps {
 export function TimelineCalendarPanel({
   today,
   selectedDate,
-  dailyKcal,
+  mealDates,
   onSelectDate,
 }: TimelineCalendarPanelProps) {
   const t = useTranslations('logging.timelineSidebar');
@@ -78,7 +79,7 @@ export function TimelineCalendarPanel({
         if (date) onSelectDate(dateToDateString(date));
       }}
       modifiers={{
-        hasMeal: (date) => dailyKcal.has(dateToDateString(date)),
+        hasMeal: (date) => mealDates.has(dateToDateString(date)),
       }}
       modifiersClassNames={{ hasMeal: HAS_MEAL_MARKER_CLASS }}
       // The marker is a CSS `after:` dot, which a screen reader cannot see.

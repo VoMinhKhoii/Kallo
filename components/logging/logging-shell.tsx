@@ -22,6 +22,7 @@ import { todayDateString } from '@/components/logging/sidebar/timeline-utils';
 import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals/meal-dates';
+import { buildMealDateIndex } from '@/lib/domain/logging/meal-date-index';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface LoggingShellProps {
@@ -78,17 +79,11 @@ export function LoggingShell({
     staleTime: 60_000,
   });
 
-  // One pass over the summaries feeds both surfaces: the mobile strip wants
-  // the bare dates it already had, and the desktop tree reads membership AND
-  // the day's total off a single Map. Between them they used to build two Sets.
-  const dates = useMemo(
-    () => summaries.map((summary) => summary.date),
-    [summaries]
-  );
-  const dailyKcal = useMemo(
-    () => new Map(summaries.map((summary) => [summary.date, summary.kcal])),
-    [summaries]
-  );
+  // One index, built once, for both surfaces. This used to be two derivations
+  // over the same rows — a `dates` array for the mobile strip and a
+  // `Map<string, number | null>` for the desktop tree — which meant the two
+  // could in principle disagree about which days exist.
+  const mealDates = useMemo(() => buildMealDateIndex(summaries), [summaries]);
 
   usePrefetchDates(selectedDate);
 
@@ -135,7 +130,7 @@ export function LoggingShell({
   // JSX spread gets no excess-property checking — which is how an `allDates`
   // key survived here for a while after its last reader was removed.
   const timelineState: MobileTimelinePickerProps = {
-    dates,
+    dates: mealDates.dates,
     today,
     selectedDate,
     isPending,
@@ -158,7 +153,7 @@ export function LoggingShell({
         isRetrying={isFetching && !isPending}
       />
       <TimelineSidebar
-        dailyKcal={dailyKcal}
+        mealDates={mealDates}
         today={today}
         selectedDate={selectedDate}
         isPending={isPending}

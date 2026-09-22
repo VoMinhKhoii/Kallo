@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { buildMealDateIndex } from '@/lib/domain/logging/meal-date-index';
 import { TimelineSidebar } from '../timeline-sidebar';
 
 describe('TimelineSidebar', () => {
@@ -20,9 +21,11 @@ describe('TimelineSidebar', () => {
   }
 
   const baseProps = {
-    dailyKcal: new Map<string, number | null>([
-      ['2026-05-03', 1842],
-      ['2026-05-01', null],
+    // Built through the real factory rather than hand-rolled, so the test
+    // exercises the same index the shell hands down.
+    mealDates: buildMealDateIndex([
+      { date: '2026-05-03', kcal: 1842 },
+      { date: '2026-05-01', kcal: null },
     ]),
     today: '2026-05-03',
     selectedDate: '2026-05-02',
@@ -121,7 +124,9 @@ describe('TimelineSidebar', () => {
   });
 
   it('renders noPreviousMeals message when dates is empty while keeping selected date usable', () => {
-    render(<TimelineSidebar {...baseProps} dailyKcal={new Map()} />);
+    render(
+      <TimelineSidebar {...baseProps} mealDates={buildMealDateIndex([])} />
+    );
 
     // Empty history message should appear
     const emptyMessage = screen.getByText(/noPreviousMeals/i);
@@ -236,13 +241,13 @@ describe('TimelineSidebar', () => {
     // May 2026: week 1 = May 1–3, week 2 = May 4–10, week 3 = May 11–17, week 4 = May 18–24
     const multiWeekProps = {
       ...baseProps,
-      dailyKcal: new Map<string, number | null>([
-        ['2026-05-24', 2260],
-        ['2026-05-20', 1980],
-        ['2026-05-14', 2014],
-        ['2026-05-10', 1842],
-        ['2026-05-03', 1700],
-        ['2026-05-01', null],
+      mealDates: buildMealDateIndex([
+        { date: '2026-05-24', kcal: 2260 },
+        { date: '2026-05-20', kcal: 1980 },
+        { date: '2026-05-14', kcal: 2014 },
+        { date: '2026-05-10', kcal: 1842 },
+        { date: '2026-05-03', kcal: 1700 },
+        { date: '2026-05-01', kcal: null },
       ]),
       selectedDate: '2026-05-10',
     };

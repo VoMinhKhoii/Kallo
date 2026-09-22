@@ -3,6 +3,7 @@
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
 import { TimelineCalendar } from './timeline-calendar';
 import { TimelineDayRow } from './timeline-day-row';
 import { buildTimelineTree } from './timeline-tree';
@@ -16,12 +17,15 @@ import {
 
 interface TimelineSidebarProps {
   /**
-   * Every day that holds a log, mapped to its calories (null when nothing is
-   * countable). Days outside it still render — they are what you click to
-   * backfill — they just read quieter and carry no number. Membership and the
-   * total come from this one map so the two can never disagree.
+   * What the timeline knows about the user's days. Days it does not list still
+   * render — they are what you click to backfill — they just read quieter and
+   * carry no number.
+   *
+   * `has(date)` and `kcal(date)` are deliberately separate questions: a day
+   * can hold a staged card and still have no total worth showing, and a bare
+   * map conflated that with holding nothing at all.
    */
-  dailyKcal: Map<string, number | null>;
+  mealDates: MealDateIndex;
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -31,7 +35,7 @@ interface TimelineSidebarProps {
 }
 
 export function TimelineSidebar({
-  dailyKcal,
+  mealDates,
   today,
   selectedDate,
   isPending,
@@ -45,11 +49,11 @@ export function TimelineSidebar({
   const months = useMemo(
     () =>
       buildTimelineTree({
-        dates: Array.from(dailyKcal.keys()),
+        dates: mealDates.dates,
         today,
         selectedDate,
       }),
-    [dailyKcal, selectedDate, today]
+    [mealDates, selectedDate, today]
   );
 
   const selectedMonth = useMemo(
@@ -93,7 +97,7 @@ export function TimelineSidebar({
     });
   }, []);
 
-  const hasSavedMeals = dailyKcal.size > 0;
+  const hasSavedMeals = mealDates.size > 0;
 
   // Loading state
   if (isPending) {
@@ -127,7 +131,7 @@ export function TimelineSidebar({
         <TimelineCalendar
           today={today}
           selectedDate={selectedDate}
-          dailyKcal={dailyKcal}
+          mealDates={mealDates}
           onSelectDate={onSelectDate}
         />
       </div>
@@ -254,8 +258,8 @@ export function TimelineSidebar({
                                   isActive={date === selectedDate}
                                   isToday={date === today}
                                   todayLabel={t('todayLabel')}
-                                  hasMeal={dailyKcal.has(date)}
-                                  kcal={dailyKcal.get(date) ?? null}
+                                  hasMeal={mealDates.has(date)}
+                                  kcal={mealDates.kcal(date)}
                                   onSelectDate={onSelectDate}
                                 />
                               ))}

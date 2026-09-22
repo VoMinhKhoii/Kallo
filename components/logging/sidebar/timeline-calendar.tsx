@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
 
 /**
  * react-day-picker is the one heavy thing on this page, and most sessions
@@ -41,7 +42,7 @@ const TimelineCalendarPanel = dynamic(
 interface TimelineCalendarProps {
   today: string;
   selectedDate: string;
-  dailyKcal: Map<string, number | null>;
+  mealDates: MealDateIndex;
   onSelectDate: (date: string) => void;
 }
 
@@ -54,7 +55,7 @@ interface TimelineCalendarProps {
 export function TimelineCalendar({
   today,
   selectedDate,
-  dailyKcal,
+  mealDates,
   onSelectDate,
 }: TimelineCalendarProps) {
   const t = useTranslations('logging.timelineSidebar');
@@ -90,7 +91,7 @@ export function TimelineCalendar({
         <TimelineCalendarPanel
           today={today}
           selectedDate={selectedDate}
-          dailyKcal={dailyKcal}
+          mealDates={mealDates}
           onSelectDate={(date) => {
             onSelectDate(date);
             setIsOpen(false);
