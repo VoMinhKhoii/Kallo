@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronDown, PartyPopper } from 'lucide-react';
+import { PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { CardDisclosureButton } from '@/components/logging/feed/card-disclosure-button';
 import { CheatMealActions } from '@/components/logging/feed/cheat/cheat-meal-actions';
 import { StopScale } from '@/components/logging/feed/cheat/stop-scale';
 import {
@@ -64,17 +65,11 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
               {meal.rawInput}
             </p>
           </div>
-          <button
-            type="button"
-            aria-label={t('toggleDetails')}
-            aria-expanded={!isCollapsed}
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            className="rounded-full p-1 text-kallo-text-muted/60 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text"
-          >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
-            />
-          </button>
+          <CardDisclosureButton
+            label={t('toggleDetails')}
+            isExpanded={!isCollapsed}
+            onToggle={() => setIsCollapsed((prev) => !prev)}
+          />
         </div>
 
         {/* Collapsed summary */}
