@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MealCardActionBar } from '@/components/logging/feed/action-bar/meal-card-action-bar';
+import { CardDisclosureButton } from '@/components/logging/feed/card-disclosure-button';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
@@ -75,20 +75,14 @@ export function PrecisePersistedMealCard({
       <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+          <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
             {meal.rawInput}
           </p>
-          <button
-            type="button"
-            aria-label={t('toggleDetails')}
-            aria-expanded={!isCollapsed}
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            className="rounded-full p-1 text-kallo-text-muted/60 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text"
-          >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
-            />
-          </button>
+          <CardDisclosureButton
+            label={t('toggleDetails')}
+            isExpanded={!isCollapsed}
+            onToggle={() => setIsCollapsed((prev) => !prev)}
+          />
         </div>
 
         {/* Edit mode swaps the read-only body for the amount editor IN PLACE

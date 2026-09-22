@@ -3,20 +3,25 @@
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TimelineDateButton } from './timeline-date-button';
+import { TimelineCalendar } from './timeline-calendar';
+import { TimelineDayRow } from './timeline-day-row';
+import { buildTimelineTree } from './timeline-tree';
 import {
   formatTimelineDayLabel,
   formatWeekDateRange,
   getSelectedMonthKey,
   getSelectedWeekKey,
   getWeekDateRange,
-  groupByMonth,
-  sortTimelineDaysAscending,
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
-  dates: string[];
-  allDates: string[];
+  /**
+   * Every day that holds a log, mapped to its calories (null when nothing is
+   * countable). Days outside it still render — they are what you click to
+   * backfill — they just read quieter and carry no number. Membership and the
+   * total come from this one map so the two can never disagree.
+   */
+  dailyKcal: Map<string, number | null>;
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -26,8 +31,7 @@ interface TimelineSidebarProps {
 }
 
 export function TimelineSidebar({
-  dates,
-  allDates,
+  dailyKcal,
   today,
   selectedDate,
   isPending,
@@ -38,7 +42,15 @@ export function TimelineSidebar({
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
 
-  const months = useMemo(() => groupByMonth(allDates), [allDates]);
+  const months = useMemo(
+    () =>
+      buildTimelineTree({
+        dates: Array.from(dailyKcal.keys()),
+        today,
+        selectedDate,
+      }),
+    [dailyKcal, selectedDate, today]
+  );
 
   const selectedMonth = useMemo(
     () => getSelectedMonthKey(selectedDate),
@@ -81,13 +93,13 @@ export function TimelineSidebar({
     });
   }, []);
 
-  const hasSavedMeals = dates.length > 0;
+  const hasSavedMeals = dailyKcal.size > 0;
 
   // Loading state
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
+        className="hidden h-full w-72 shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
         aria-label={t('navigationLabel')}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
@@ -105,9 +117,21 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
+      className="hidden h-full w-72 shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
       aria-label={t('navigationLabel')}
     >
+      {/* Outside the scroller: the tree only covers months that hold a log, so
+          the way to every other month has to stay reachable however far down
+          the history you have scrolled. */}
+      <div className="mb-3 shrink-0">
+        <TimelineCalendar
+          today={today}
+          selectedDate={selectedDate}
+          dailyKcal={dailyKcal}
+          onSelectDate={onSelectDate}
+        />
+      </div>
+
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
         {/* Error state */}
         {isError && (
@@ -180,7 +204,6 @@ export function TimelineSidebar({
                       weekRange,
                       locale
                     );
-                    const sortedDays = sortTimelineDaysAscending(week.days);
 
                     return (
                       <div key={week.key} className="w-full min-w-0">
@@ -221,79 +244,21 @@ export function TimelineSidebar({
                           >
                             {/* Days list */}
                             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
-                              {sortedDays.map((date, index) => {
-                                const isFirst = index === 0;
-                                const isLast = index === sortedDays.length - 1;
-                                const isActive = date === selectedDate;
-                                const isToday = date === today;
-                                const hasMeal = dates.includes(date);
-                                const label = formatTimelineDayLabel(
-                                  date,
-                                  locale
-                                );
-
-                                return (
-                                  <li
-                                    key={date}
-                                    className="relative flex w-full min-w-0 items-center"
-                                  >
-                                    {/* Upper vertical segment: for the first item it
-                                        reaches up to the vertical midpoint of the Week
-                                        row above (row height ~32px + mt-1 gap = ~20px). */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
-                                      style={{
-                                        left: '-15px',
-                                        top: isFirst ? '-0.25rem' : '-3px',
-                                        height: isFirst
-                                          ? 'calc(50% - 10px + 0.25rem)'
-                                          : 'calc(50% - 7px)',
-                                      }}
-                                    />
-
-                                    {/* Lower vertical segment: connects this item to
-                                        the next (omitted on the last item so the line
-                                        ends exactly at the final L-connector) */}
-                                    {!isLast && (
-                                      <div
-                                        aria-hidden="true"
-                                        className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
-                                        style={{
-                                          left: '-15px',
-                                          top: '50%',
-                                          height: 'calc(50% + 3px)',
-                                        }}
-                                      />
-                                    )}
-
-                                    {/* L-shaped connector curving from the vertical
-                                        line into the day button */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-kallo-accent border-b-2 border-l-2"
-                                      style={{
-                                        left: '-15px',
-                                        top: '50%',
-                                        height: '10px',
-                                        width: '15px',
-                                      }}
-                                    />
-
-                                    {/* Date button */}
-                                    <TimelineDateButton
-                                      date={date}
-                                      label={label}
-                                      isActive={isActive}
-                                      isToday={isToday}
-                                      todayLabel={t('todayLabel')}
-                                      hasMeal={hasMeal}
-                                      variant="desktop"
-                                      onSelectDate={onSelectDate}
-                                    />
-                                  </li>
-                                );
-                              })}
+                              {week.days.map((date, index) => (
+                                <TimelineDayRow
+                                  key={date}
+                                  date={date}
+                                  label={formatTimelineDayLabel(date, locale)}
+                                  isFirst={index === 0}
+                                  isLast={index === week.days.length - 1}
+                                  isActive={date === selectedDate}
+                                  isToday={date === today}
+                                  todayLabel={t('todayLabel')}
+                                  hasMeal={dailyKcal.has(date)}
+                                  kcal={dailyKcal.get(date) ?? null}
+                                  onSelectDate={onSelectDate}
+                                />
+                              ))}
                             </ul>
                           </div>
                         )}

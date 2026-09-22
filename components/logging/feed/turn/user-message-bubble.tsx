@@ -9,7 +9,7 @@
 export function UserMessageBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <p className="max-w-[85%] rounded-[18px] rounded-br-md bg-kallo-btn px-3.5 py-2.5 font-sans-display text-[13px] text-kallo-surface leading-relaxed">
+      <p className="max-w-[85%] rounded-[18px] rounded-br-md bg-kallo-btn px-3.5 py-2.5 font-sans-display text-kallo-surface text-sm leading-relaxed">
         {text}
       </p>
     </div>

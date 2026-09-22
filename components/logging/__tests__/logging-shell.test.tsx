@@ -72,17 +72,14 @@ vi.mock('@/components/logging/sidebar/mobile-timeline-picker', () => ({
     selectedDate,
     onSelectDate,
     dates,
-    allDates,
   }: {
     selectedDate: string;
     onSelectDate: (date: string) => void;
     dates: string[];
-    allDates: string[];
   }) => (
     <div data-testid="mobile-timeline-picker">
       <div data-testid="mobile-selected-date">{selectedDate}</div>
       <div data-testid="mobile-dates">{dates.join(',')}</div>
-      <div data-testid="mobile-all-dates">{allDates.join(',')}</div>
       <button
         type="button"
         data-testid="mobile-select-btn"
@@ -95,7 +92,7 @@ vi.mock('@/components/logging/sidebar/mobile-timeline-picker', () => ({
 }));
 
 // Mock actions
-vi.mock('@/lib/actions/meals/load-meals', () => ({
+vi.mock('@/lib/actions/meals/meal-dates', () => ({
   loadMealDates: vi.fn(),
 }));
 
@@ -126,7 +123,7 @@ vi.mock('@/i18n/navigation', () => ({
   usePathname: () => '/logging',
 }));
 
-const { loadMealDates } = await import('@/lib/actions/meals/load-meals');
+const { loadMealDates } = await import('@/lib/actions/meals/meal-dates');
 const { usePrefetchDates } = await import(
   '@/hooks/meals/queries/use-prefetch-dates'
 );
@@ -155,11 +152,13 @@ describe('LoggingShell', () => {
       },
     });
 
-    // Default mock implementations
+    // Default mock implementations. The action returns one summary per day;
+    // the shell is what splits that into the bare dates the mobile strip takes
+    // and the calorie map the desktop tree reads.
     mockLoadMealDates.mockResolvedValue([
-      '2026-05-01',
-      '2026-05-02',
-      '2026-05-03',
+      { date: '2026-05-01', kcal: 1842 },
+      { date: '2026-05-02', kcal: null },
+      { date: '2026-05-03', kcal: 2014 },
     ]);
     mockUsePrefetchDates.mockReturnValue(undefined);
   });
@@ -218,9 +217,6 @@ describe('LoggingShell', () => {
         '2026-05-01,2026-05-02,2026-05-03'
       );
     });
-    expect(screen.getByTestId('mobile-all-dates')).toHaveTextContent(
-      '2026-05-03'
-    );
   });
 
   it('updates ?date= with router.replace and scroll false when date changes', async () => {

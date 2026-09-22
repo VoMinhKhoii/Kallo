@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   buildMealItemGroupsFromRows,
@@ -9,13 +9,9 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
-import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
-import type { PipelineResult } from '@/lib/ai/types/result';
+import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
-import type {
-  CheatSliderSpec,
-  CheatSlidersPersisted,
-} from '@/lib/core/types/cheat';
+import type { CheatSlidersPersisted } from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
@@ -40,10 +36,6 @@ const loadMealsByDateSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 type LoadMealsByDateInput = z.infer<typeof loadMealsByDateSchema>;
-const loadMealDatesSchema = z.object({
-  timezoneOffset: timezoneOffsetSchema,
-});
-
 // ---------------------------------------------------------------------------
 // C2: Load Meals by Date
 // ---------------------------------------------------------------------------
@@ -203,49 +195,12 @@ async function loadPendingAnalysesByDateForUser(
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
 
+  // The renderability test lives in `toStagedCard` because the timeline's date
+  // index has to apply the SAME one — a row this drops is a card nobody can
+  // see, and counting it there hid a real total.
   return rows.flatMap<PendingMealConfirmation>((row) => {
-    // Defensive: a row whose stored pipelineResult predates the current shape
-    // (legacy/malformed) must not throw and 500 the entire day load via the
-    // Promise.all in loadLoggingDay. Guard the whole conversion — any malformed
-    // shape is skipped (such a row is un-confirmable anyway, since confirm reads
-    // the same pipelineResult).
-    try {
-      const base = {
-        id: row.id,
-        rawInput: row.rawInput,
-        loggedAt: row.loggedAt.toISOString(),
-      };
-      // Cheat rows stage a slider spec, not a decomposition PipelineResult, so
-      // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,
-      // mirroring confirmAndSaveMealAction.
-      if (row.entryMode === 'cheat') {
-        // Validate the staged spec rather than blindly destructuring: a
-        // malformed payload (e.g. {}) wouldn't throw and would surface a card
-        // with cheatSpec: undefined. Throwing routes it through the catch below,
-        // which skips + logs it like any other malformed row.
-        const spec = (row.pipelineResult as { spec?: unknown } | null)?.spec;
-        if (
-          !spec ||
-          typeof spec !== 'object' ||
-          !Array.isArray((spec as { sliders?: unknown }).sliders)
-        ) {
-          throw new Error('Malformed cheat pending analysis payload');
-        }
-        return [{ ...base, cheatSpec: spec as CheatSliderSpec }];
-      }
-      return [
-        {
-          ...base,
-          parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
-        },
-      ];
-    } catch (error) {
-      console.error(
-        '[loadPendingAnalyses] Skipping pending analysis with malformed pipelineResult',
-        { id: row.id, error }
-      );
-      return [];
-    }
+    const card = toStagedCard(row);
+    return card ? [card] : [];
   });
 }
 
@@ -308,54 +263,4 @@ export async function loadLoggingDay(input: {
     // and only refetches on an explicit invalidation. Callers invalidate on this.
     releasedInvites: reaped.releasedInvites,
   };
-}
-
-// ---------------------------------------------------------------------------
-// C9: Load distinct meal dates for timeline sidebar
-// ---------------------------------------------------------------------------
-
-export async function loadMealDates(input: {
-  timezoneOffset: number;
-}): Promise<string[]> {
-  const parsed = loadMealDatesSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
-
-  // Use offset (opposite sign from JS getTimezoneOffset) to compute local date
-  // JS getTimezoneOffset(): UTC+7 = -420, UTC-5 = +300
-  // To convert UTC → local: UTC + offsetMins = local
-  // Use sql.raw() to inline the integer so DISTINCT ON and ORDER BY produce
-  // the same SQL text (Drizzle re-parameterizes the same sql`` object which
-  // causes PostgreSQL 42P10: "DISTINCT ON expressions must match ORDER BY").
-  const offsetMins = -parsed.timezoneOffset;
-  const mealDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
-  const pendingDateExpr = sql<string>`DATE(${pendingAnalyses.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
-
-  const [mealRows, pendingRows] = await Promise.all([
-    db
-      .selectDistinctOn([mealDateExpr], {
-        date: mealDateExpr.as('date'),
-      })
-      .from(meals)
-      .where(eq(meals.userId, user.id))
-      .orderBy(desc(mealDateExpr)),
-    db
-      .selectDistinctOn([pendingDateExpr], {
-        date: pendingDateExpr.as('date'),
-      })
-      .from(pendingAnalyses)
-      // Match loadPendingAnalysesByDate, which no longer hides rows by
-      // `expiresAt`. Keeping the window here would paint NO timeline dot for a
-      // day whose only content is a pending card older than 30 minutes — a day
-      // the feed does render. The two queries have to agree on what counts as a
-      // live pending card or the sidebar lies about which days have anything.
-      .where(eq(pendingAnalyses.userId, user.id))
-      .orderBy(desc(pendingDateExpr)),
-  ]);
-
-  return Array.from(
-    new Set([
-      ...mealRows.map((row) => row.date),
-      ...pendingRows.map((row) => row.date),
-    ])
-  ).sort((a, b) => b.localeCompare(a));
 }

@@ -19,8 +19,9 @@ interface TurnHeaderProps {
  *
  * Every meal wears this — saved, staged, or still analysing — so the day reads
  * as one conversation rather than as a chat that turns into a list the moment
- * something is saved. The card below keeps its own serif quote; the repetition
- * is a deliberate, temporary choice, matching the Flutter app.
+ * something is saved. The card below restates the same words, now in the body
+ * face rather than a serif quote: one voice per turn, so the card's numbers
+ * carry it instead of a second typeface.
  */
 export function TurnHeader({ timeLabel, message, children }: TurnHeaderProps) {
   const text = message?.trim();

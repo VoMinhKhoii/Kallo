@@ -1,9 +1,10 @@
 'use client';
 
-import { Check, ChevronDown, Pencil } from 'lucide-react';
+import { Check, Pencil } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { CardDisclosureButton } from '@/components/logging/feed/card-disclosure-button';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
@@ -99,23 +100,17 @@ export function MealEntry({
         {/* Header: quoted input + controls */}
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (
-            <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+            <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
               {message.userInput}
             </p>
           )}
           <div className="flex shrink-0 items-center gap-2">
             {confirmed && (
-              <button
-                type="button"
-                aria-label={t('toggleDetails')}
-                aria-expanded={!isCollapsed}
-                onClick={() => setIsCollapsed((prev) => !prev)}
-                className="rounded-full p-1 text-kallo-text-muted/60 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text"
-              >
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
-                />
-              </button>
+              <CardDisclosureButton
+                label={t('toggleDetails')}
+                isExpanded={!isCollapsed}
+                onToggle={() => setIsCollapsed((prev) => !prev)}
+              />
             )}
             {/* One button whose face swaps in place — a mode="wait" morph here
                 left a beat with no button at all. */}

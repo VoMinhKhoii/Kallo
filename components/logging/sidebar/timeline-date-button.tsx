@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/core/ui/cn';
+import { formatKcal } from '@/lib/domain/logging/manual-logging';
 
 interface TimelineDateButtonProps {
   date: string;
@@ -9,6 +10,8 @@ interface TimelineDateButtonProps {
   isToday?: boolean;
   todayLabel?: string;
   hasMeal?: boolean;
+  /** The day's calories. Null or absent renders nothing — never a 0 or a dash. */
+  kcal?: number | null;
   variant: 'desktop' | 'mobile';
   onSelectDate: (date: string) => void;
 }
@@ -20,9 +23,23 @@ export function TimelineDateButton({
   isToday = false,
   todayLabel,
   hasMeal = false,
+  kcal = null,
   variant,
   onSelectDate,
 }: TimelineDateButtonProps) {
+  // Mobile's 4.5rem chip has no room for a number, so it keeps the dot.
+  const total = variant === 'desktop' && kcal != null ? formatKcal(kcal) : null;
+  // The desktop tree now lists every day of the week, logged or not, so the two
+  // have to read apart. A logged day steps up to primary ink and medium weight
+  // against the muted resting tone — the neutral pair doing the work, with no
+  // dot or badge added to a list that is already dense. Mobile keeps its dot.
+  const restingTone = (() => {
+    if (variant === 'mobile') return 'font-medium text-kallo-text-muted';
+    return hasMeal
+      ? 'font-medium text-kallo-text'
+      : 'font-normal text-kallo-text-muted';
+  })();
+
   return (
     <button
       type="button"
@@ -31,16 +48,16 @@ export function TimelineDateButton({
       data-today={isToday ? 'true' : 'false'}
       data-has-meal={hasMeal ? 'true' : 'false'}
       className={cn(
-        'group/date relative touch-manipulation rounded-xl font-medium font-sans-display tracking-tight transition-[background-color,color,transform,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface active:scale-[0.98]',
+        'group/date relative touch-manipulation rounded-xl font-sans-display tracking-tight transition-[background-color,color,transform,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface active:scale-[0.98]',
         variant === 'mobile'
           ? 'flex min-h-11 min-w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 px-3 py-2 text-[11px]'
           : 'ml-2 flex min-h-9 min-w-0 flex-1 items-center px-2.5 py-1.5 text-sm',
         isActive
           ? 'bg-kallo-hover font-semibold text-kallo-text hover:bg-kallo-hover/70'
-          : 'text-kallo-text-muted hover:bg-kallo-hover/50 hover:text-kallo-text'
+          : cn(restingTone, 'hover:bg-kallo-hover/50 hover:text-kallo-text')
       )}
     >
-      <span className="min-w-0 truncate">
+      <span className="min-w-0 flex-1 truncate text-left">
         {label}
         {isToday && variant === 'desktop' && (
           <span className="ml-1 font-normal text-[11px] text-kallo-text-muted/70">
@@ -49,6 +66,20 @@ export function TimelineDateButton({
           </span>
         )}
       </span>
+      {total && (
+        <>
+          {/* The number is decoration to a screen reader, which would otherwise
+              announce a bare "2014" trailing the date. The unit goes in the
+              accessible name instead, so the row reads as one thing. */}
+          <span
+            aria-hidden="true"
+            className="ml-2 shrink-0 font-normal text-[11px] text-kallo-text-muted tabular-nums"
+          >
+            {total}
+          </span>
+          <span className="sr-only">{`, ${total} kcal`}</span>
+        </>
+      )}
       {hasMeal && variant === 'mobile' && (
         <span
           aria-hidden="true"

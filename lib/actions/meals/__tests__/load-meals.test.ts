@@ -44,7 +44,6 @@ vi.mock('@/lib/actions/meals/day/reap-abandoned', () => ({
 
 import {
   loadLoggingDay,
-  loadMealDates,
   loadMealsByDate,
   loadPendingAnalysesByDate,
 } from '@/lib/actions/meals/load-meals';
@@ -336,40 +335,6 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.id).toBe(UUID_2);
     expect(errorSpy).toHaveBeenCalledTimes(2);
     errorSpy.mockRestore();
-  });
-});
-
-describe('loadMealDates', () => {
-  it('returns merged confirmed and pending dates', async () => {
-    const { db } = await import('@/lib/infra/db/client');
-    (db.selectDistinctOn as ReturnType<typeof vi.fn>)
-      .mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi
-              .fn()
-              .mockResolvedValue([
-                { date: '2026-04-06' },
-                { date: '2026-04-05' },
-              ]),
-          }),
-        }),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi
-              .fn()
-              .mockResolvedValue([
-                { date: '2026-04-07' },
-                { date: '2026-04-06' },
-              ]),
-          }),
-        }),
-      });
-
-    const dates = await loadMealDates({ timezoneOffset: 0 });
-    expect(dates).toEqual(['2026-04-07', '2026-04-06', '2026-04-05']);
   });
 });
 

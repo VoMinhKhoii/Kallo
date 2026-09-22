@@ -2,25 +2,6 @@ export interface WeekStrip {
   days: string[];
 }
 
-export interface WeekSection {
-  key: string;
-  weekNumber: number;
-  days: string[];
-}
-
-export interface MonthSection {
-  key: string;
-  month: number;
-  year: number;
-  weeks: WeekSection[];
-}
-
-export interface BuildAllTimelineDatesInput {
-  dates: string[];
-  today: string;
-  selectedDate: string;
-}
-
 export type MobileChipRelativeLabel =
   | { kind: 'today' }
   | { kind: 'yesterday' }
@@ -192,10 +173,6 @@ export function formatWeekDateRange(
   )}`;
 }
 
-export function sortTimelineDaysAscending(days: string[]): string[] {
-  return [...days].sort((a, b) => a.localeCompare(b));
-}
-
 export function getWeekStart(dateStr: string): string {
   const date = dateStringToDate(dateStr);
   const dayOfWeek = date.getDay();
@@ -254,22 +231,6 @@ export function buildCenteredStripFromAnchor(anchor: string): WeekStrip {
 }
 
 /**
- * Builds a de-duplicated, descending-sorted list of all timeline dates,
- * including saved dates, today, and selected date.
- */
-export function buildAllTimelineDates(
-  input: BuildAllTimelineDatesInput
-): string[] {
-  const uniqueDates = new Set<string>([
-    ...input.dates,
-    input.today,
-    input.selectedDate,
-  ]);
-
-  return Array.from(uniqueDates).sort((a, b) => b.localeCompare(a));
-}
-
-/**
  * Builds consecutive Monday–Sunday week strips spanning the full range of the
  * provided dates. The returned strips are sorted oldest-first.
  */
@@ -287,57 +248,6 @@ export function buildWeekStrips(allDates: string[]): WeekStrip[] {
   }
 
   return strips;
-}
-
-/**
- * Groups dates by month and week, sorted descending by month.
- */
-export function groupByMonth(dates: string[]): MonthSection[] {
-  const monthMap = new Map<string, MonthSection>();
-
-  for (const dateStr of dates) {
-    const monthKey = getSelectedMonthKey(dateStr);
-    const weekKey = getSelectedWeekKey(dateStr);
-    const date = dateStringToDate(dateStr);
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-    const week = weekOfMonth(dateStr);
-
-    if (!monthMap.has(monthKey)) {
-      monthMap.set(monthKey, {
-        key: monthKey,
-        month,
-        year,
-        weeks: [],
-      });
-    }
-
-    const monthSection = monthMap.get(monthKey)!;
-    let weekSection = monthSection.weeks.find((w) => w.key === weekKey);
-
-    if (!weekSection) {
-      weekSection = {
-        key: weekKey,
-        weekNumber: week,
-        days: [],
-      };
-      monthSection.weeks.push(weekSection);
-    }
-
-    weekSection.days.push(dateStr);
-  }
-
-  const sections = Array.from(monthMap.values());
-  sections.sort((a, b) => b.year - a.year || b.month - a.month);
-
-  for (const section of sections) {
-    section.weeks.sort((a, b) => a.weekNumber - b.weekNumber);
-    for (const week of section.weeks) {
-      week.days.sort((a, b) => b.localeCompare(a));
-    }
-  }
-
-  return sections;
 }
 
 /**

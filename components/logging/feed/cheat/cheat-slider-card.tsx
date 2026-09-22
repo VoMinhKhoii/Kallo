@@ -80,7 +80,7 @@ export function CheatSliderCard({
         <TurnHeader timeLabel={timeLabel} message={userInput} />
         <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
-            <p className="mb-3 font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+            <p className="mb-3 font-sans-display text-kallo-text text-sm leading-relaxed">
               {userInput}
             </p>
           )}
@@ -119,7 +119,7 @@ export function CheatSliderCard({
       <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           {userInput && (
-            <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+            <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
               {userInput}
             </p>
           )}

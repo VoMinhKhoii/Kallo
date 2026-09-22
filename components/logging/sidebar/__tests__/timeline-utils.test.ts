@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   addWeeks,
-  buildAllTimelineDates,
   buildWeekStripFromStart,
   buildWeekStrips,
   clampWeekStartToCurrent,
@@ -16,8 +15,6 @@ import {
   getSelectedWeekKey,
   getWeekDateRange,
   getWeekStart,
-  groupByMonth,
-  sortTimelineDaysAscending,
   todayDateString,
   weekDistanceInWeeks,
   weekOfMonth,
@@ -284,112 +281,6 @@ describe('timeline-utils', () => {
       expect(
         formatWeekDateRange({ start: '2026-05-08', end: '2026-05-14' }, 'en')
       ).toBe('May 8 - May 14');
-    });
-  });
-
-  describe('sortTimelineDaysAscending', () => {
-    it('sorts less recent days before more recent days', () => {
-      expect(
-        sortTimelineDaysAscending(['2026-05-05', '2026-05-01', '2026-05-03'])
-      ).toEqual(['2026-05-01', '2026-05-03', '2026-05-05']);
-    });
-  });
-
-  describe('groupByMonth', () => {
-    it('groups dates into month sections with weeks', () => {
-      const dates = ['2026-05-03', '2026-05-10'];
-      const result = groupByMonth(dates);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].key).toBe('05-2026');
-      expect(result[0].month).toBe(5);
-      expect(result[0].year).toBe(2026);
-      expect(result[0].weeks).toHaveLength(2);
-      expect(result[0].weeks[0].weekNumber).toBe(1);
-      expect(result[0].weeks[0].days).toContain('2026-05-03');
-      expect(result[0].weeks[1].weekNumber).toBe(2);
-      expect(result[0].weeks[1].days).toContain('2026-05-10');
-    });
-
-    it('handles multiple months', () => {
-      const dates = ['2026-05-03', '2026-04-15', '2026-05-10'];
-      const result = groupByMonth(dates);
-
-      expect(result).toHaveLength(2);
-      expect(result[0].key).toBe('05-2026');
-      expect(result[1].key).toBe('04-2026');
-    });
-
-    it('sorts months chronologically descending across year boundaries', () => {
-      const result = groupByMonth(['2026-01-02', '2025-12-31']);
-
-      expect(result.map((section) => section.key)).toEqual([
-        '01-2026',
-        '12-2025',
-      ]);
-    });
-
-    it('groups multiple dates in the same week', () => {
-      // May 4, 7, 9 all fall in week 2 of May 2026 (Mon 4 – Sun 10)
-      const dates = ['2026-05-04', '2026-05-07', '2026-05-09'];
-      const result = groupByMonth(dates);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].weeks).toHaveLength(1);
-      expect(result[0].weeks[0].days).toHaveLength(3);
-    });
-
-    it('sorts days within each week in descending order regardless of input order', () => {
-      // All in week 2 of May 2026 (May 4–10)
-      const dates = ['2026-05-04', '2026-05-08', '2026-05-06', '2026-05-05'];
-      const result = groupByMonth(dates);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].weeks).toHaveLength(1);
-      expect(result[0].weeks[0].days).toEqual([
-        '2026-05-08',
-        '2026-05-06',
-        '2026-05-05',
-        '2026-05-04',
-      ]);
-    });
-  });
-
-  describe('buildAllTimelineDates', () => {
-    it('de-duplicates dates and includes today and selectedDate', () => {
-      const result = buildAllTimelineDates({
-        dates: ['2026-05-01', '2026-05-03', '2026-05-01'],
-        today: '2026-05-02',
-        selectedDate: '2026-04-29',
-      });
-
-      expect(result).toEqual([
-        '2026-05-03',
-        '2026-05-02',
-        '2026-05-01',
-        '2026-04-29',
-      ]);
-    });
-
-    it('sorts dates in descending order', () => {
-      const result = buildAllTimelineDates({
-        dates: ['2026-05-01', '2026-05-10', '2026-05-05'],
-        today: '2026-05-02',
-        selectedDate: '2026-05-03',
-      });
-
-      expect(result[0]).toBe('2026-05-10');
-      expect(result[result.length - 1]).toBe('2026-05-01');
-    });
-
-    it('handles empty dates array', () => {
-      const result = buildAllTimelineDates({
-        dates: [],
-        today: '2026-05-02',
-        selectedDate: '2026-05-01',
-      });
-
-      expect(result).toEqual(['2026-05-02', '2026-05-01']);
     });
   });
 

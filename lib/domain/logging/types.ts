@@ -21,3 +21,18 @@ export interface LoggingProfile {
  * (`cheat`).
  */
 export type InputMode = 'normal' | 'manual' | 'cheat';
+
+/**
+ * One day the timeline knows about, and what it came to.
+ *
+ * `kcal` is null when the day holds nothing countable — a staged card whose
+ * nutrition is still inside its JSONB, or meals saved without calorie data.
+ * Null is not zero: the sidebar shows nothing rather than claiming an empty
+ * day. Note the public `/api/v1/meals/dates` route flattens this back to bare
+ * date strings for the Flutter client.
+ */
+export interface MealDateSummary {
+  /** YYYY-MM-DD, in the timezone the caller asked for. */
+  date: string;
+  kcal: number | null;
+}
