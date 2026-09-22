@@ -120,10 +120,8 @@ class ThreadSendButton extends StatelessWidget {
         child: button,
       ),
       builder:
-          (context, value, child) => _Morph(
-            shown: value.text.trim().isNotEmpty,
-            child: child!,
-          ),
+          (context, value, child) =>
+              _Morph(shown: value.text.trim().isNotEmpty, child: child!),
     );
   }
 }

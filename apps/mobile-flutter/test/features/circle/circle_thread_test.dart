@@ -129,9 +129,7 @@ void main() {
     expect(find.byType(CircleThreadScreen), findsOneWidget);
   });
 
-  testWidgets('replies line up with the post author\'s avatar', (
-    tester,
-  ) async {
+  testWidgets('replies line up with the post author\'s avatar', (tester) async {
     final api = FakeApiClient(
       (request) =>
           request.path == '/api/v1/groups/friends/feed'
