@@ -45,19 +45,26 @@ export function ShareThread({ shareId }: { shareId: string }) {
         ) : isError ? (
           <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : data ? (
-          <div className="p-4">
+          // A column that FILLS the scroll area rather than one that
+          // shrink-wraps: it is what gives an empty thread's state room to
+          // centre in, and it pins the composer to the bottom edge while it
+          // does (the same shape mobile's docked composer gives that page).
+          // With replies, nothing takes the spare room and the composer
+          // follows the conversation as before.
+          //
+          // The page does NOT branch on how many replies there are — that is
+          // `ShareReplies`' own question, and asking it here too meant one
+          // predicate in two files kept in sync by comments. It takes the
+          // spare room itself when it has nothing to list.
+          <div className="flex min-h-full flex-col gap-3 p-4">
             <FeedEntry entry={data.entry} />
-            {/* The conversation and the field you answer it in are siblings,
-                so the spacing between them lives on this one container. */}
-            <div className="mt-3 space-y-3">
-              <ShareReplies replies={data.entry.replies} />
-              <ReplyComposer
-                authorName={
-                  data.entry.isSelf ? undefined : labelFor(data.entry.friend)
-                }
-                shareId={shareId}
-              />
-            </div>
+            <ShareReplies replies={data.entry.replies} />
+            <ReplyComposer
+              authorName={
+                data.entry.isSelf ? undefined : labelFor(data.entry.friend)
+              }
+              shareId={shareId}
+            />
           </div>
         ) : (
           <SurfaceState

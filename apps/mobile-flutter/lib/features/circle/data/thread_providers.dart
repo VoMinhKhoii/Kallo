@@ -127,3 +127,80 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   }
   return fetched.isLoading ? const ThreadLoading() : const ThreadFailed();
 });
+
+/// Refetch the post, from whichever of this library's two sources the page is
+/// actually reading it out of.
+///
+/// One function rather than a policy per caller. Pull-to-refresh and the
+/// error card's "Try again" are the same question — "get this post again" —
+/// and they had drifted into two answers in `circle_thread_screen.dart`, each
+/// with its own paragraph justifying it. A third caller (a notification tap, a
+/// refetch after posting) would have picked one at random.
+///
+/// **Exactly one source, never both.** `sharedMealEntryProvider` is
+/// `autoDispose` and is alive only because [threadEntryProvider] watched it,
+/// which happens only down its `ThreadMissing` branch — so [WidgetRef.exists]
+/// is an exact test for "this page is reading the fallback", and the two arms
+/// below are the two sources rather than an optimisation.
+///
+/// Refreshing the feed as WELL would be actively wrong for a fallback post.
+/// The feed does not carry it, so `findShareEntry` returns null and
+/// [threadEntryProvider] answers `ThreadLoading` from the feed's own flag —
+/// before it ever reaches the fallback still holding the post. The page drops
+/// to the skeleton, which unmounts `ThreadComposer` and disposes the controller
+/// with the user's draft in it. That is the same loss the `hasValue`-first
+/// check above is written to prevent, arriving by the one door it does not
+/// cover, and a pull-to-refresh on a notification-opened post is how you meet
+/// it (found in review, 2026-09-22; pinned by the fallback test).
+///
+/// The feed keeps its own pull-to-refresh on the Circle tab, which is where
+/// refreshing the feed belongs.
+///
+/// Known and accepted on the feed arm: `SharedMealFeedNotifier.build()` fetches
+/// page 1 only, so invalidating the feed drops whatever `loadMore()` had
+/// appended — including, if the post came in on a later page, this page's own
+/// post. That is what invalidating a paginated provider does, and it is no
+/// longer a draft-loss bug: `circle_thread_screen.dart` holds the post it has
+/// already shown across a transient `ThreadLoading`, so the refetch happens
+/// underneath a page that never goes blank.
+///
+/// `invalidate` keeps the provider's previous value under the new
+/// `AsyncLoading`, so the post stays on screen and the composer stays mounted.
+Future<void> refreshThread(WidgetRef ref, ThreadRef key) async {
+  final byId = sharedMealEntryProvider(key.shareId);
+  final feed = sharedMealFeedProvider(key.scope);
+  // Two arms rather than one provider variable: the two have different value
+  // types, so a ternary over them widens to `Object` and neither `invalidate`
+  // nor `.future` will take it.
+  //
+  // Awaited, not fired and forgotten: a pull-to-refresh holds its inset open
+  // for exactly as long as this runs, and that inset is the page's only "still
+  // loading" signal. Errors are swallowed because the page already reports
+  // them — a failed refresh keeps the value it had beside the error, and
+  // `ThreadStates` owns the case where there is no value at all.
+  try {
+    if (ref.exists(byId)) {
+      ref.invalidate(byId);
+      await ref.read(byId.future);
+      return;
+    }
+    ref.invalidate(feed);
+    await ref.read(feed.future);
+    // The feed can come back WITHOUT the post it was refreshed for: `build()`
+    // fetches page 1 only, so a post that arrived through `loadMore()` is gone
+    // from it, and [threadEntryProvider] answers by starting a cold by-id
+    // fetch. Returning here would collapse the pull's inset on a post that has
+    // not been refreshed yet and may not arrive for another 15 seconds — the
+    // gesture would report "done" over stale content. So the pull waits for
+    // the request its own refresh caused (found in review, 2026-09-22).
+    //
+    // `ThreadLoading` is the exact signal for that: [threadEntryProvider] only
+    // reaches the fallback once the feed has settled without the post, and the
+    // fetch it starts there is the one this is waiting on. Reading it rather
+    // than re-deriving the condition keeps one definition of "the page is
+    // still waiting".
+    if (ref.read(threadEntryProvider(key)) is ThreadLoading) {
+      await ref.read(byId.future);
+    }
+  } catch (_) {}
+}

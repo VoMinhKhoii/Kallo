@@ -5,6 +5,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/surface/kallo_pressable.dart';
+import '../../logic/circle_spacing.dart';
 import 'feed_entry_actions.dart';
 import 'feed_entry_identity.dart';
 import 'feed_nutrition.dart';
@@ -57,11 +58,11 @@ class FeedEntry extends StatelessWidget {
     final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 32, TOP-aligned (native pass, 2026-08-31): inside the day card the
-        // disc is an identity marker beside the content column, not a second
-        // column of its own, so it steps down one size and the separator
-        // under the post starts where the text does.
-        ProfileAvatarDisc(profile: entry.friend, size: 32),
+        // TOP-aligned: inside the day card the disc is an identity marker
+        // beside the content column, not a second column of its own, so the
+        // separator under the post starts where the text does. The size and the
+        // rail it opens are one derivation in `logic/circle_spacing.dart`.
+        ProfileAvatarDisc(profile: entry.friend, size: kPostAvatar),
         const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(

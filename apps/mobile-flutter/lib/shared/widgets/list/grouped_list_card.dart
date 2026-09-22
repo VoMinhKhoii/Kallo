@@ -20,6 +20,17 @@ class GroupedListCard extends StatelessWidget {
     this.showSeparators = true,
   });
 
+  /// Where a row's content starts, measured from the card's edge.
+  ///
+  /// Public because the card is not always the only thing that has to line up
+  /// with its own column: the Circle thread page indents its replies by exactly
+  /// this, so a reply's avatar lands under the post author's avatar inside the
+  /// card above it (`features/circle/widgets/thread/thread_body.dart`). That
+  /// used to be a second `sp4` in the thread page plus a sentence promising the
+  /// two were the same number — which would have quietly stopped being true the
+  /// day this padding moved.
+  static const double contentInset = KalloSpacing.sp4;
+
   final List<Widget> children;
 
   /// Left inset of the separator, aligning it with the text column — 36 when
@@ -42,7 +53,7 @@ class GroupedListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+      padding: const EdgeInsets.symmetric(horizontal: contentInset),
       decoration: ShapeDecoration(
         color: kCardSurface,
         shape: KalloShapes.squircle(KalloRadii.card),

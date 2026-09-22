@@ -79,15 +79,36 @@ describe('ShareThread', () => {
     expect(screen.getByTestId('reply-composer')).toHaveTextContent('Phở Fan');
   });
 
-  it('keeps the thread and the composer in one spaced column', () => {
-    // The list and the field are siblings, so the gap between them and the
-    // post above belongs to their container — not to either component.
-    state({ data: { entry: sharedMealEntryFixture() } });
+  it('hands the post, the thread and the composer to one column', () => {
+    // The order and the ownership, not the class string: the page puts all
+    // three in one column and leaves the spacing to it. How that column is
+    // styled is a visual decision the test should not freeze — this suite had
+    // to be rewritten once already because the classes moved.
+    state({
+      data: {
+        entry: sharedMealEntryFixture({ replies: [shareReplyFixture()] }),
+      },
+    });
 
     const { container } = render(<ShareThread shareId={SHARE_ID} />);
 
-    const column = container.querySelector('.mt-3.space-y-3');
-    expect(column).not.toBeNull();
+    const column = screen.getByTestId('feed-entry').parentElement;
+    expect(column).toContainElement(screen.getByTestId('share-replies'));
+    expect(column).toContainElement(screen.getByTestId('reply-composer'));
+    // No wrapper between them: the column owns the gaps.
+    expect(screen.getByTestId('share-replies').parentElement).toBe(column);
+    expect(container.querySelector('.mt-3')).toBeNull();
+  });
+
+  it('never asks how many replies there are', () => {
+    // Emptiness is `ShareReplies`' own question. The page rendered it in both
+    // arms of a ternary, which put one predicate in two files kept in sync by
+    // comments — so the same tree has to come out either way.
+    state({ data: { entry: sharedMealEntryFixture({ replies: [] }) } });
+
+    render(<ShareThread shareId={SHARE_ID} />);
+
+    const column = screen.getByTestId('feed-entry').parentElement;
     expect(column).toContainElement(screen.getByTestId('share-replies'));
     expect(column).toContainElement(screen.getByTestId('reply-composer'));
   });
