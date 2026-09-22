@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Figma__use_figma",
+      "mcp__Figma__get_screenshot",
+      "mcp__Figma__get_metadata",
+      "mcp__Figma__get_libraries",
+      "mcp__Figma__search_design_system",
+      "mcp__Figma__create_new_file",
+      "mcp__Figma__get_figma_skill",
+      "mcp__Figma__whoami",
+      "mcp__Figma__get_design_context",
+      "mcp__Figma__upload_assets",
+      "mcp__Figma__get_variable_defs"
+    ]
+  }
+}
