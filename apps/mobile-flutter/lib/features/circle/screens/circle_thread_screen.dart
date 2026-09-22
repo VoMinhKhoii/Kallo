@@ -83,6 +83,37 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
     super.dispose();
   }
 
+  /// A share swapped in under a kept state starts at the top of ITS thread.
+  ///
+  /// `router.dart` builds this page without a key, so a new share arrives into
+  /// a kept [State] — and a kept [ScrollController] with it. Thread B would
+  /// then open at however far down thread A the viewer had read, with its post
+  /// header off screen, whenever B has enough replies to hold that offset
+  /// (caught in review, 2026-09-22).
+  ///
+  /// POST-FRAME rather than here and now: [ScrollSeparator] drives its hairline
+  /// off a `ScrollNotification` and calls `setState` when the boolean flips, and
+  /// `jumpTo` dispatches that notification synchronously — during build, which
+  /// is where `didUpdateWidget` runs. The cost is one painted frame at the old
+  /// offset, against an offset that otherwise just stays wrong.
+  ///
+  /// Only the synchronous swap needs this. When the new thread has to load, the
+  /// page shows [ThreadStates] first, which has no scrollable at all — the
+  /// controller detaches and the next one starts at zero on its own.
+  @override
+  void didUpdateWidget(CircleThreadScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.shareId == widget.shareId &&
+        oldWidget.scope == widget.scope) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients && _scroll.offset != 0) {
+        _scroll.jumpTo(0);
+      }
+    });
+  }
+
   /// Rides the new reply into view once the list has laid it out.
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

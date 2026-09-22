@@ -8,6 +8,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/share_entry_provider.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/replies/reply_row.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/circle_error.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/circle_skeleton.dart';
@@ -536,6 +537,69 @@ void main() {
           ?.text,
       isEmpty,
       reason: 'a reply half-written to one post may not arrive at another',
+    );
+  });
+
+  testWidgets('a thread swapped in under a kept state opens at ITS top', (
+    tester,
+  ) async {
+    // The kept [ScrollController], third of the things a keyless `MaterialPage`
+    // hands from one thread to the next. Read halfway down thread A, tap a
+    // notification for B, and B opened at A's offset with its post header off
+    // screen (caught in review, 2026-09-22).
+    //
+    // Both shares are in the feed so the swap is synchronous — the case that
+    // needs the reset. A thread that has to load shows [ThreadStates] first,
+    // which has no scrollable, so the controller detaches and starts at zero.
+    List<Map<String, dynamic>> replies(String prefix) => [
+      for (var i = 0; i < 12; i++) replyJson('$prefix-r$i'),
+    ];
+    final api = FakeApiClient(
+      (request) =>
+          request.path == '/api/v1/groups/friends/feed'
+              ? pageJson([
+                entryJson('s1', replies: replies('a')),
+                fallbackEntry(
+                  's2',
+                  rawInput: 'Cơm tấm sườn',
+                  replies: replies('b'),
+                ),
+              ], null)
+              : readMarker(request),
+    );
+
+    final shareId = ValueNotifier('s1');
+    addTearDown(shareId.dispose);
+    await pumpCircleScreen(
+      tester,
+      ValueListenableBuilder<String>(
+        valueListenable: shareId,
+        builder: (context, id, _) => CircleThreadScreen(shareId: id),
+      ),
+      api: api,
+      expand: true,
+    );
+
+    await tester.drag(find.byType(FeedEntry), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    final scrolled = tester.widget<Scrollable>(find.byType(Scrollable).first);
+    expect(
+      scrolled.controller?.offset,
+      greaterThan(0),
+      reason: 'the test has to actually leave the top of thread A',
+    );
+
+    shareId.value = 's2';
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cơm tấm sườn'), findsOneWidget);
+    expect(
+      tester
+          .widget<Scrollable>(find.byType(Scrollable).first)
+          .controller
+          ?.offset,
+      0,
+      reason: 'a thread opens at its own beginning, not where the last one was',
     );
   });
 
