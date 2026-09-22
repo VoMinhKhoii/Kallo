@@ -55,6 +55,32 @@ describe('loadMealDates', () => {
       .mockReturnValueOnce(grouped(pendingRows));
   }
 
+  it('ignores staged cards the feed has already stopped rendering', async () => {
+    // The feed hides a pending card past the 7-day reaping horizon
+    // (isStillStaged, load-meals.ts). This query has to draw the SAME line: an
+    // abandoned row that only still exists because a best-effort sweep has not
+    // run would otherwise mask a real saved total for a card nobody can see.
+    const pendingWhere = vi.fn().mockReturnValue({
+      groupBy: vi.fn().mockResolvedValue([]),
+    });
+    mockDbSelect
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({ where: pendingWhere }),
+      });
+
+    await loadMealDates({ timezoneOffset: 0 });
+
+    const predicate = JSON.stringify(pendingWhere.mock.calls[0]?.[0]);
+    expect(predicate).toContain("interval '7 days'");
+  });
+
   it('returns merged confirmed and pending dates, newest first', async () => {
     mockDateQueries(
       [

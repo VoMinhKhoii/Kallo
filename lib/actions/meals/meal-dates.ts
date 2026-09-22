@@ -1,7 +1,8 @@
 'use server';
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 import type { MealDateSummary } from '@/lib/domain/logging/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -56,12 +57,18 @@ export async function loadMealDates(input: {
     db
       .select({ date: pendingDateExpr.as('date') })
       .from(pendingAnalyses)
-      // Match loadPendingAnalysesByDate, which no longer hides rows by
-      // `expiresAt`. Keeping the window here would paint NO timeline dot for a
-      // day whose only content is a pending card older than 30 minutes — a day
-      // the feed does render. The two queries have to agree on what counts as a
-      // live pending card or the sidebar lies about which days have anything.
-      .where(eq(pendingAnalyses.userId, user.id))
+      // The two queries have to agree on what counts as a live pending card,
+      // or the sidebar describes a day the feed draws differently. That means
+      // BOTH halves of loadPendingAnalysesByDate's line, not one:
+      //
+      // - No `expiresAt > now()`. That 30-minute window hid a card the user
+      //   still meant to save, and the feed dropped it; keeping it here would
+      //   paint no dot for a day the feed does render.
+      // - But DO apply `isStillStaged()`. The feed hides a card past the
+      //   7-day reaping horizon, so counting one here masks a real total for
+      //   a card nobody can see — the sweep is best-effort and only runs on a
+      //   day load, so such rows genuinely linger.
+      .where(and(eq(pendingAnalyses.userId, user.id), isStillStaged()))
       .groupBy(pendingDateExpr),
   ]);
 
