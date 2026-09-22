@@ -1,11 +1,12 @@
 'use client';
 
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -57,6 +58,7 @@ export function TimelineCalendar({
   onSelectDate,
 }: TimelineCalendarProps) {
   const t = useTranslations('logging.timelineSidebar');
+  const tCommon = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -70,11 +72,21 @@ export function TimelineCalendar({
           {t('openCalendar')}
         </span>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
+      {/* The shared close button's screen-reader text is hard-coded English in
+          components/ui/dialog.tsx, which would put a "Close" inside an
+          otherwise Vietnamese dialog. Opt out and supply a translated one, the
+          way responsive-sheet and mobile-nav already do. (The shadcn file is
+          CLI-managed — every other dialog in the app has the same gap, and
+          fixing it at the source is its own change.) */}
+      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{t('datePickerTitle')}</DialogTitle>
           <DialogDescription>{t('datePickerDescription')}</DialogDescription>
         </DialogHeader>
+        <DialogClose className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full text-kallo-text-muted opacity-70 transition-opacity hover:bg-kallo-hover/40 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2">
+          <X className="size-4" aria-hidden="true" />
+          <span className="sr-only">{tCommon('close')}</span>
+        </DialogClose>
         <TimelineCalendarPanel
           today={today}
           selectedDate={selectedDate}

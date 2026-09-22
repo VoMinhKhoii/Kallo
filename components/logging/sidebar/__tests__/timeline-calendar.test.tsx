@@ -131,6 +131,22 @@ describe('TimelineCalendar', () => {
     localeRef.current = 'en';
   });
 
+  it('gives the close button a translated label', async () => {
+    // The shared dialog close hard-codes an English "Close" in its sr-only
+    // text, which would sit inside an otherwise Vietnamese dialog.
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    // 'close' is the key; the global next-intl mock echoes keys back, so
+    // seeing it proves the label comes from the message catalogue and not
+    // from the hard-coded string in components/ui/dialog.tsx.
+    const closers = screen
+      .getAllByRole('button')
+      .filter((b) => b.textContent === 'close');
+    expect(closers).toHaveLength(1);
+    expect(screen.queryByText('Close')).not.toBeInTheDocument();
+  });
+
   it('disables days after today', async () => {
     render(<TimelineCalendar {...baseProps} />);
     await openCalendar();

@@ -40,7 +40,15 @@ export async function loadMealDates(input: {
     db
       .select({
         date: mealDateExpr.as('date'),
-        kcal: sql<string | number | null>`SUM(${meals.caloriesKcal})`,
+        // NULL unless EVERY meal on the day has calories. Postgres SUM skips
+        // NULL rows, so a 500 kcal meal beside a legacy row with unknown
+        // calories would otherwise report a clean 500 — an incomplete total
+        // wearing the face of a complete one. The comparison has to happen
+        // inside the aggregate; once the rows are summed the difference is
+        // gone.
+        kcal: sql<
+          string | number | null
+        >`CASE WHEN COUNT(*) = COUNT(${meals.caloriesKcal}) THEN SUM(${meals.caloriesKcal}) END`,
       })
       .from(meals)
       .where(eq(meals.userId, user.id))

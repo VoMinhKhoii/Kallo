@@ -81,6 +81,21 @@ describe('loadMealDates', () => {
     expect(typeof day.kcal).toBe('number');
   });
 
+  it('asks the DB for null when ANY meal on the day lacks calories', async () => {
+    // Postgres SUM skips NULL rows, so a 500 kcal meal beside a legacy meal
+    // with unknown calories came back as a clean 500 — an incomplete total
+    // presented as a complete one, which is the fake precision the contract
+    // (and the design system) say not to show. The guard has to live in the
+    // aggregate: once the rows are summed, nothing downstream can tell a
+    // complete total from a partial one.
+    mockDateQueries([], []);
+
+    await loadMealDates({ timezoneOffset: 0 });
+
+    const projection = JSON.stringify(mockDbSelect.mock.calls[0]?.[0]);
+    expect(projection).toContain('COUNT');
+  });
+
   it('reports a day with no calorie data as null, never 0', async () => {
     // A day whose meals all carry NULL calories sums to NULL. Zero would read
     // as "you ate nothing", which is a different claim from "we don't know".
