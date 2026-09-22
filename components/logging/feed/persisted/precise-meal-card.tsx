@@ -75,7 +75,7 @@ export function PrecisePersistedMealCard({
       <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+          <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
             {meal.rawInput}
           </p>
           <button

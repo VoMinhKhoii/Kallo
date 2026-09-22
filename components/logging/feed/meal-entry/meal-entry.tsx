@@ -99,7 +99,7 @@ export function MealEntry({
         {/* Header: quoted input + controls */}
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (
-            <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
+            <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
               {message.userInput}
             </p>
           )}
