@@ -1,4 +1,5 @@
 import type { JsonSchema } from '@/lib/api/openapi/components';
+import { EXPORT_SCHEMAS } from '@/lib/api/openapi/export-shapes';
 import { RESPONSE_SCHEMAS } from '@/lib/api/openapi/schema-shapes';
 
 /**
@@ -226,6 +227,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     },
   },
   ...RESPONSE_SCHEMAS,
+  ...EXPORT_SCHEMAS,
   MealList: {
     type: 'array',
     items: { $ref: '#/components/schemas/Meal' },

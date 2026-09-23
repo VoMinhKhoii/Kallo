@@ -25,6 +25,16 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 Never hand-write DDL for tables/columns. Never add CHECK constraints directly in SQL files.
 
+**New table → decide its export fate.** Every table must appear in
+`EXPORT_COVERAGE` (`lib/domain/account-export/coverage.ts`) as either exported
+(with the key it lands under in the user's "Export my data" file) or excluded
+with a stated reason. `coverage.test.ts` introspects this schema and fails on
+any table left out, loudest for tables with a user-linked column (`user_id`,
+`actor_id`, `recipient_id`, …). A new column on a table exported whole (meals,
+meal items, weights, entitlement grants, user profiles) changes the
+`DataExport` OpenAPI schema (`lib/api/openapi/export-shapes.ts`) with it;
+`export-shapes.test.ts` checks a built export against that schema.
+
 ### Shared staging preview rule
 
 While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
