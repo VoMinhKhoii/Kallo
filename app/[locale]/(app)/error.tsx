@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { reportError } from '@/lib/infra/monitoring/report-error';
 
 /**
  * Route-group error boundary for every authenticated surface. Without this, a
@@ -22,6 +23,7 @@ export default function AppError({
 
   useEffect(() => {
     console.error('[app] route error', error);
+    reportError(error, '[app]');
   }, [error]);
 
   return (

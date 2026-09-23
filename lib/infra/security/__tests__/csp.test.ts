@@ -68,6 +68,24 @@ describe('buildCsp', () => {
     expect(directive('frame-src')).not.toContain('https://api.revenuecat.com');
   });
 
+  it('lets Sentry and PostHog (EU) ingest through connect-src only', async () => {
+    const csp = await build('n', false);
+    const directive = (name: string) =>
+      (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
+        .split(' ')
+        .slice(1);
+
+    expect(directive('connect-src')).toEqual(
+      expect.arrayContaining([
+        'https://*.ingest.de.sentry.io',
+        'https://eu.i.posthog.com',
+        'https://eu-assets.i.posthog.com',
+      ])
+    );
+    expect(csp).not.toContain('us.i.posthog.com');
+    expect(directive('script-src').join(' ')).not.toContain('posthog');
+  });
+
   it('keeps host allowlists out of script-src, which strict-dynamic ignores', async () => {
     const csp = await build('n', false);
     const scriptSrc = csp

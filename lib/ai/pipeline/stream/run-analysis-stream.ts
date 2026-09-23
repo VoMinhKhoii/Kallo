@@ -18,6 +18,7 @@
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { createGeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
+import { reportError } from '@/lib/infra/monitoring/report-error';
 import { runCheatBranch } from './cheat-branch';
 import { runPreciseBranch } from './precise-branch';
 import { toStreamErrorEvent } from './stream-errors';
@@ -49,6 +50,7 @@ export async function runAnalysisStream({
     await (ctx.mode === 'cheat' ? runCheatBranch(run) : runPreciseBranch(run));
   } catch (error) {
     console.error('[analyze-meal] Stream error:', error);
+    reportError(error, '[analyze-meal]');
     const pvu =
       promptVersionsUsed.size > 0
         ? Object.fromEntries(promptVersionsUsed)

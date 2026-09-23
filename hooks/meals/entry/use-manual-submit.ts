@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import type { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import { rowIsComplete } from '@/lib/domain/logging/manual-logging';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
+import { track } from '@/lib/infra/analytics/track';
 
 /**
  * Manual (Cronometer-style) submit: ingredient ids + grams straight to the
@@ -41,6 +42,7 @@ export function useManualSubmit(args: {
           // recover the rows they typed.
           inputRef.current?.clear();
           toast.success(t('savedMeal'));
+          track('meal_logged', { method: 'manual' });
         },
         onError: (error) => {
           toast.error(error instanceof Error ? error.message : t('saveError'));
