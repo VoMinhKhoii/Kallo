@@ -90,8 +90,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
         'Saves a barcode match as a meal. Figures come straight from the product label, so no estimation is involved.',
       tags: TAGS,
       body: fromZod(logBarcodeMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 };

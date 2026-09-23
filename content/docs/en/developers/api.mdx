@@ -1,7 +1,7 @@
 ---
 title: The Kallo API
 description: What the HTTP API is, how it authenticates, what it returns when something goes wrong, and what you may and may not rely on.
-lastUpdated: '2026-08-23'
+lastUpdated: '2026-09-23'
 ---
 
 Kallo has an HTTP API. It is the same API the web app and the mobile app use —
@@ -10,9 +10,11 @@ the parts that are not ready for you to build on.
 
 The machine-readable description is at
 [https://kallo.fit/openapi.json](https://kallo.fit/openapi.json). It is OpenAPI
-3.1, every operation has a unique `operationId` and a description, and request
-bodies are generated from the same schemas the server validates against, so they
-cannot drift from what the endpoints actually accept.
+3.1, and every operation has a unique `operationId` and a description. Where a
+route validates its request body with a schema, the documented body is generated
+from that same schema. A CI test also compares the spec with the route handlers,
+so it fails if a documented body, success status or query parameter disagrees
+with what the handler actually parses and returns.
 
 ## Base URL
 
@@ -20,8 +22,31 @@ cannot drift from what the endpoints actually accept.
 https://kallo.fit
 ```
 
-Endpoints live under `/api/v1/`. The one exception is `/api/healthz`, which is
-unversioned because it is a liveness probe rather than part of the surface.
+Endpoints live under `/api/v1/`. The exceptions are `/api/healthz`, which is
+unversioned because it is a liveness probe rather than part of the surface, and
+two authenticated routes the apps call directly: `POST /api/analyze-meal` and
+`GET /api/og/macro-card/{shareId}` (both described below).
+
+Successful responses are `200` (the waitlist confirmation link is a `307`
+redirect). No endpoint answers `201`, including the ones that create something.
+Date-bucketed reads take a required `tz` query parameter: the offset in minutes
+as `Date.getTimezoneOffset()` reports it, from `-840` to `720`. If it is missing,
+you get a `400`; the server never falls back to a stored timezone.
+
+## Meal analysis and the macro card
+
+`POST /api/analyze-meal` turns a sentence into an estimate. It answers with a
+`text/event-stream` of server-sent events: `stage` progress, `item_name` and
+`item_macros` as dishes are found, then `result` (or `cheat_estimate`). The
+stream ends with `analysis_complete`, which carries an `analysisId`, or with
+`error`. Nothing is saved until you pass that id to `POST /api/v1/meals/confirm`.
+Authentication, body validation, plan and rate-limit checks all run before the
+stream opens and return the ordinary JSON error below. Once the stream is open, a
+failure can only arrive as an `error` event.
+
+`GET /api/og/macro-card/{shareId}` renders a shared meal as a PNG card. It needs
+a session and applies the same visibility rule as reading the shared meal, so a
+share you cannot see returns `404`, the same as one that does not exist.
 
 ## Authentication
 

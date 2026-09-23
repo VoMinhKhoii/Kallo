@@ -1,10 +1,17 @@
 import {
+  addChatGroupMembersBodySchema,
+  createChatGroupBodySchema,
+} from '@/lib/api/contracts/social/chat-groups';
+import {
   authed,
+  fromZod,
+  type JsonSchema,
   type Parameter,
   type PathItem,
   pathParam,
   ref,
 } from '@/lib/api/openapi/components';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 const TAGS = ['Circle'];
 
@@ -19,14 +26,33 @@ const beforeParam: Parameter = {
   schema: { type: 'string' },
 };
 
+/**
+ * Unlike `tz` elsewhere, this one is genuinely optional: these two routes
+ * `safeParse` it and fall back to UTC (0) on a missing or out-of-range value.
+ */
 const tzQuery: Parameter = {
   name: 'timezoneOffset',
   in: 'query',
   required: false,
   description:
-    'Timezone offset in minutes, as `Date.getTimezoneOffset()` reports it. Decides which meals fall on which day in the feed.',
-  schema: { type: 'integer', minimum: -840, maximum: 840 },
+    'Timezone offset in minutes, as `Date.getTimezoneOffset()` reports it (UTC+7 is `-420`). Decides which meals fall on "today". Missing or out of range falls back to UTC.',
+  schema: fromZod(timezoneOffsetSchema),
 };
+
+/** `{ key: schema }`, all keys required — the wrapper objects these routes return. */
+const wrap = (properties: Record<string, JsonSchema>): JsonSchema => ({
+  type: 'object',
+  required: Object.keys(properties),
+  properties,
+});
+
+const chatGroupMessage: JsonSchema = wrap({
+  id: { type: 'string', format: 'uuid' },
+  groupId: { type: 'string', format: 'uuid' },
+  senderId: { type: 'string', format: 'uuid' },
+  body: { type: 'string' },
+  createdAt: { type: 'string', format: 'date-time' },
+});
 
 /** Chat groups — the small shared spaces, and who is in them. */
 export const GROUP_PATHS: Record<string, PathItem> = {
@@ -37,20 +63,17 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       description: 'Every group the caller is a member of, with unread state.',
       tags: TAGS,
       parameters: [tzQuery],
-      ok: { type: 'array', items: ref('ChatGroup') },
+      ok: wrap({ groups: { type: 'array', items: ref('ChatGroupIdentity') } }),
     }),
     post: authed({
       operationId: 'createChatGroup',
       summary: 'Create a group',
-      description: 'Creates a group with the caller as its first member.',
+      description:
+        'Creates a named group with the caller as owner and the listed friends as members. Every id must be an accepted connection of the caller; repeated ids are collapsed and the caller’s own id is ignored. Creating a group is a premium feature (402 otherwise), and each member must have room for another group (409).',
       tags: TAGS,
-      body: {
-        type: 'object',
-        required: ['name'],
-        properties: { name: { type: 'string', description: 'Display name.' } },
-      },
-      ok: ref('ChatGroup'),
-      okStatus: '201',
+      body: fromZod(createChatGroupBodySchema),
+      ok: wrap({ group: wrap({ id: { type: 'string', format: 'uuid' } }) }),
+      okDescription: 'The new group’s id.',
     }),
   },
 
@@ -62,7 +85,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         'The group and its members. 404 if the caller is not a member.',
       tags: TAGS,
       parameters: [groupId],
-      ok: ref('ChatGroup'),
+      ok: wrap({ group: ref('ChatGroupDetail') }),
     }),
     patch: authed({
       operationId: 'updateChatGroup',
@@ -74,10 +97,16 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         type: 'object',
         required: ['name'],
         properties: {
-          name: { type: 'string', description: 'New display name.' },
+          name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 60,
+            description: 'New display name, trimmed.',
+          },
         },
       },
-      ok: ref('ChatGroup'),
+      ok: wrap({ name: { type: 'string' } }),
+      okDescription: 'The name as stored.',
     }),
   },
 
@@ -85,22 +114,12 @@ export const GROUP_PATHS: Record<string, PathItem> = {
     post: authed({
       operationId: 'addChatGroupMember',
       summary: 'Add someone to a group',
-      description: 'Adds an existing friend to the group.',
+      description:
+        'Adds one or more of the caller’s accepted friends to the group. Repeated ids are collapsed; people already in the group are skipped, and `added` counts only the new members.',
       tags: TAGS,
       parameters: [groupId],
-      body: {
-        type: 'object',
-        required: ['userId'],
-        properties: {
-          userId: {
-            type: 'string',
-            format: 'uuid',
-            description: 'Who to add.',
-          },
-        },
-      },
-      ok: ref('Acknowledgement'),
-      okStatus: '201',
+      body: fromZod(addChatGroupMembersBodySchema),
+      ok: wrap({ added: { type: 'integer', minimum: 0 } }),
     }),
   },
 
@@ -114,7 +133,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         groupId,
         pathParam('userId', 'UUID of the member to remove.'),
       ],
-      ok: ref('Acknowledgement'),
+      ok: wrap({ removed: { type: 'boolean', enum: [true] } }),
     }),
   },
 
@@ -125,12 +144,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       description: 'The group’s messages, newest last.',
       tags: TAGS,
       parameters: [groupId],
-      ok: {
-        type: 'object',
-        properties: {
-          messages: { type: 'array', items: ref('Acknowledgement') },
-        },
-      },
+      ok: wrap({ messages: { type: 'array', items: chatGroupMessage } }),
     }),
     post: authed({
       operationId: 'sendChatGroupMessage',
@@ -141,10 +155,16 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       body: {
         type: 'object',
         required: ['body'],
-        properties: { body: { type: 'string', description: 'Message text.' } },
+        properties: {
+          body: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 2000,
+            description: 'Message text, trimmed.',
+          },
+        },
       },
-      ok: ref('Acknowledgement'),
-      okStatus: '201',
+      ok: wrap({ message: chatGroupMessage }),
     }),
   },
 
@@ -166,7 +186,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       description: 'Removes the caller from the group.',
       tags: TAGS,
       parameters: [groupId],
-      ok: ref('Acknowledgement'),
+      ok: wrap({ left: { type: 'boolean', enum: [true] } }),
     }),
   },
 
@@ -178,7 +198,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         'Meals shared by everyone the caller is connected to, across friends and groups.',
       tags: TAGS,
       parameters: [tzQuery],
-      ok: ref('Feed'),
+      ok: wrap({ feed: { type: 'array', items: ref('SharedMealEntry') } }),
     }),
   },
 };

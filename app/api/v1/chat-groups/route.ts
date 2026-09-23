@@ -4,6 +4,7 @@ import {
   listMyChatGroups,
 } from '@/lib/actions/chat-groups/create-and-list';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
+import { createChatGroupBodySchema } from '@/lib/api/contracts/social/chat-groups';
 import { handleRouteError } from '@/lib/api/respond';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
@@ -28,11 +29,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireUserId();
-    const body = await readJsonBody(request);
-    const group = await createChatGroup(
-      actorId,
-      body as { name: string; memberUserIds: string[] }
-    );
+    const body = createChatGroupBodySchema.parse(await readJsonBody(request));
+    const group = await createChatGroup(actorId, body);
     return NextResponse.json({ group });
   } catch (error) {
     return handleRouteError(error);

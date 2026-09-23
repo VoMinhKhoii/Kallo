@@ -43,7 +43,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       parameters: [pathParam('mealId', 'UUID of the meal to edit.')],
       body: fromZod(updateMealBodySchema),
-      ok: ref('Meal'),
+      ok: ref('MealWriteResult'),
     }),
     delete: authed({
       operationId: 'deleteMeal',
@@ -64,8 +64,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       parameters: [pathParam('mealId', 'UUID of the meal to copy.')],
       body: fromZod(duplicateMealBodySchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
       okDescription: 'The new meal.',
     }),
   },
@@ -78,8 +77,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
         'Turns a staged analysis into a saved meal. This is the write step of the describe-a-meal flow: `POST /api/analyze-meal` produces the estimate, the user corrects it, and this commits it.',
       tags: TAGS,
       body: fromZod(confirmMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -91,8 +89,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
         'Deterministic logging with no AI in the path: the client sends food-composition ids and gram weights, the server computes nutrition from per-100g data and saves the meal. Use this when the caller already knows exactly what was eaten.',
       tags: TAGS,
       body: fromZod(saveManualMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -154,11 +151,12 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       operationId: 'repeatCheatOccasion',
       summary: 'Repeat a cheat-mode entry',
       description:
-        'Logs a previous cheat occasion again on a new date. For meals that cannot be itemised — a buffet, a barbecue, a box of pastries.',
+        'Re-stages a previous cheat occasion on a new date as a pending slider card, seeded with the levels chosen last time; the caller confirms it through the ordinary cheat path. For meals that cannot be itemised — a buffet, a barbecue, a box of pastries.',
       tags: TAGS,
       body: fromZod(cheatRepeatSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('StagedCheatAnalysis'),
+      okDescription:
+        'The re-staged slider card. Nothing is logged until it is confirmed.',
     }),
   },
 
@@ -170,8 +168,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
         'Every entry is a reference, never a payload: no names, grams or nutrition cross the wire. The server re-resolves each reference against the caller’s own rows, so a stale or tampered client can only ever point at its own data.',
       tags: TAGS,
       body: fromZod(relogItemsSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 

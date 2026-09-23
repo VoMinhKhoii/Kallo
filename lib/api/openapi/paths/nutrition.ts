@@ -85,8 +85,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
         'Saves the result of a label scan — after the user has confirmed or corrected it — as a meal.',
       tags: TAGS,
       body: fromZod(logNutritionLabelMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 };

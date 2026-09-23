@@ -70,6 +70,20 @@ export const SHARE_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/og/macro-card/{shareId}': {
+    get: authed({
+      operationId: 'getMacroCardImage',
+      summary: 'Render a shared meal as a PNG card',
+      description:
+        'The shareable macro card for a shared meal: dish name, calories and a macro bar, rendered server-side as a 1080×1920 PNG. Needs a session, and applies the same visibility rule as `getSharedMeal` — your own share, or a non-private one from someone in your circle — so a share you cannot see answers 404, exactly like one that does not exist. Rate limited per user (the render is CPU-heavy). The image is cached privately, per viewer.',
+      tags: TAGS,
+      parameters: [pathParam('shareId', 'UUID of the shared meal.')],
+      ok: { type: 'string', contentMediaType: 'image/png' },
+      okMedia: 'image/png',
+      okDescription: 'The rendered card.',
+    }),
+  },
+
   '/api/v1/groups/shares/log': {
     post: authed({
       operationId: 'logSharedMeal',
@@ -95,8 +109,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
         ['factor', 'loggedDate', 'timezoneOffset']
       ),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -129,8 +142,18 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
         ['body']
       ),
-      ok: ref('Acknowledgement'),
-      okStatus: '201',
+      ok: {
+        type: 'object',
+        required: ['id', 'author', 'isSelf', 'body', 'createdAt'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          author: ref('PublicProfile'),
+          isSelf: { type: 'boolean' },
+          body: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      okDescription: 'The stored reply.',
     }),
   },
 
@@ -175,7 +198,6 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
-      okStatus: '201',
     }),
   },
 

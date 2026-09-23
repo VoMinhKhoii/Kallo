@@ -1,7 +1,7 @@
 ---
 title: API của Kallo
 description: HTTP API là gì, xác thực ra sao, trả về gì khi có lỗi, và bạn được phép — hoặc không được phép — dựa vào điều gì.
-lastUpdated: '2026-08-23'
+lastUpdated: '2026-09-23'
 ---
 
 Kallo có một HTTP API. Nó chính là API mà ứng dụng web và ứng dụng di động đang
@@ -10,9 +10,11 @@ thật, kể cả những phần chưa sẵn sàng để bạn xây dựng lên 
 
 Bản mô tả máy đọc được nằm ở
 [https://kallo.fit/openapi.json](https://kallo.fit/openapi.json). Đó là OpenAPI
-3.1, mỗi thao tác đều có `operationId` duy nhất và phần mô tả, và thân yêu cầu
-được sinh ra từ chính các schema mà máy chủ dùng để kiểm tra, nên chúng không thể
-lệch khỏi thứ các endpoint thực sự chấp nhận.
+3.1, và mỗi thao tác đều có `operationId` duy nhất cùng phần mô tả. Với route
+kiểm tra thân yêu cầu bằng một schema, thân yêu cầu trong tài liệu được sinh ra
+từ chính schema đó. Một bài kiểm thử CI cũng so đặc tả với các route handler, nên
+nó sẽ báo lỗi nếu thân yêu cầu, mã trạng thái thành công hay tham số truy vấn
+trong tài liệu khác với những gì handler thực sự đọc và trả về.
 
 ## Địa chỉ gốc
 
@@ -20,8 +22,32 @@ lệch khỏi thứ các endpoint thực sự chấp nhận.
 https://kallo.fit
 ```
 
-Các endpoint nằm dưới `/api/v1/`. Ngoại lệ duy nhất là `/api/healthz`, không đánh
-phiên bản vì nó là kiểm tra sống chứ không phải một phần của bề mặt API.
+Các endpoint nằm dưới `/api/v1/`. Ngoại lệ là `/api/healthz`, không đánh phiên
+bản vì nó là kiểm tra sống chứ không phải một phần của bề mặt API, và hai route
+cần xác thực mà ứng dụng gọi trực tiếp: `POST /api/analyze-meal` và
+`GET /api/og/macro-card/{shareId}` (mô tả bên dưới).
+
+Phản hồi thành công là `200` (riêng liên kết xác nhận danh sách chờ là chuyển
+hướng `307`). Không endpoint nào trả `201`, kể cả những cái tạo ra dữ liệu mới.
+Các lệnh đọc chia theo ngày đều cần tham số truy vấn `tz` bắt buộc: độ lệch tính
+bằng phút như `Date.getTimezoneOffset()` trả về, từ `-840` đến `720`. Nếu thiếu,
+bạn nhận `400`; máy chủ không bao giờ tự lấy múi giờ đã lưu.
+
+## Phân tích bữa ăn và thẻ macro
+
+`POST /api/analyze-meal` biến một câu mô tả thành bản ước tính. Nó trả về một
+luồng `text/event-stream` gồm các sự kiện server-sent: `stage` báo tiến độ,
+`item_name` và `item_macros` khi tìm thấy từng món, rồi `result` (hoặc
+`cheat_estimate`). Luồng kết thúc bằng `analysis_complete`, kèm một `analysisId`,
+hoặc bằng `error`. Chưa có gì được lưu cho đến khi bạn gửi id đó tới
+`POST /api/v1/meals/confirm`. Xác thực, kiểm tra thân yêu cầu, gói dịch vụ và giới
+hạn tần suất đều chạy trước khi luồng mở và trả về lỗi JSON thông thường bên dưới.
+Khi luồng đã mở, lỗi chỉ có thể đến dưới dạng sự kiện `error`.
+
+`GET /api/og/macro-card/{shareId}` vẽ một bữa ăn được chia sẻ thành thẻ PNG. Nó
+cần phiên đăng nhập và áp dụng cùng quy tắc hiển thị như khi đọc bữa ăn được chia
+sẻ, nên một lượt chia sẻ bạn không được xem sẽ trả `404`, giống hệt một lượt không
+tồn tại.
 
 ## Xác thực
 

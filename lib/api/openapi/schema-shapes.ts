@@ -338,6 +338,10 @@ export const RESPONSE_SCHEMAS: Record<string, JsonSchema> = {
     pendingConfirmations: array(pendingMeal),
   }),
   Meal: meal,
+  MealWriteResult: object({
+    mealId: uuid,
+    meal: { $ref: '#/components/schemas/Meal' },
+  }),
   PendingMeal: pendingMeal,
   RecentCheatOccasion: object({
     mealId: uuid,
@@ -370,7 +374,8 @@ export const RESPONSE_SCHEMAS: Record<string, JsonSchema> = {
   OnboardingProfile: onboardingProfile,
   NutritionOverview: nutritionOverview,
   Entitlements: entitlements,
-  ChatGroup: { oneOf: [chatGroupIdentity, chatGroupDetail] },
+  ChatGroupIdentity: chatGroupIdentity,
+  ChatGroupDetail: chatGroupDetail,
   Feed: object({ entries: array(sharedMealEntry), nextCursor: nullableString }),
   SharedMealEntry: sharedMealEntry,
   Acknowledgement: acknowledgement,

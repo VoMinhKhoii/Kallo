@@ -1,5 +1,6 @@
 import type { ZodType } from 'zod';
 import { z } from 'zod';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 /**
  * The building blocks every path file uses.
@@ -192,13 +193,18 @@ export const dateParam: Parameter = {
   schema: { type: 'string', format: 'date' },
 };
 
+/**
+ * Required: every route that reads `tz` passes it through `parseTzParam` into
+ * `timezoneOffsetSchema`, which rejects a missing value with a 400 rather than
+ * silently bucketing days in UTC. The bounds come from that same schema.
+ */
 export const tzParam: Parameter = {
   name: 'tz',
   in: 'query',
-  required: false,
+  required: true,
   description:
-    "Timezone offset in minutes, as JavaScript's `Date.getTimezoneOffset()` reports it (UTC minus local). Omit to use the stored profile timezone.",
-  schema: { type: 'integer', minimum: -840, maximum: 840 },
+    "Timezone offset in minutes, as JavaScript's `Date.getTimezoneOffset()` reports it (UTC minus local, so UTC+7 is `-420`). Decides which instants fall on which calendar day. Missing or non-numeric is a 400 — there is no fallback to a stored timezone.",
+  schema: fromZod(timezoneOffsetSchema),
 };
 
 export const limitParam = (max: number, note: string): Parameter => ({
