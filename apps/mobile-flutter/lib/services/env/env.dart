@@ -10,7 +10,7 @@
 ///   --dart-define=API_BASE_URL=http://localhost:3000 \
 ///   --dart-define=POSTHOG_KEY=phc_... \
 ///   --dart-define=POSTHOG_HOST=https://eu.i.posthog.com \
-///   --dart-define=SENTRY_DSN=https://...@o0.ingest.de.sentry.io/0
+///   --dart-define=SENTRY_DSN=https://...@o0.ingest.us.sentry.io/0
 /// ```
 ///
 /// Keep the dart-define keys aligned (sans `EXPO_PUBLIC_` prefix) with the RN

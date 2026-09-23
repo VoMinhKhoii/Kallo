@@ -1,4 +1,4 @@
-/// Crash + error reporting (Sentry, EU region).
+/// Crash + error reporting (Sentry, US region).
 ///
 /// Env-gated like analytics: with no `SENTRY_DSN` dart-define the app runs
 /// exactly as before — no SDK init, no platform channels, no network. That is

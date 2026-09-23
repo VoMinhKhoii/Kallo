@@ -68,7 +68,7 @@ describe('buildCsp', () => {
     expect(directive('frame-src')).not.toContain('https://api.revenuecat.com');
   });
 
-  it('lets Sentry and PostHog (EU) ingest through connect-src only', async () => {
+  it('lets Sentry (US) and PostHog (EU) ingest through connect-src only', async () => {
     const csp = await build('n', false);
     const directive = (name: string) =>
       (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
@@ -77,7 +77,7 @@ describe('buildCsp', () => {
 
     expect(directive('connect-src')).toEqual(
       expect.arrayContaining([
-        'https://*.ingest.de.sentry.io',
+        'https://*.ingest.us.sentry.io',
         'https://eu.i.posthog.com',
         'https://eu-assets.i.posthog.com',
       ])

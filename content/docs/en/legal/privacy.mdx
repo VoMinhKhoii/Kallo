@@ -186,7 +186,7 @@ advertising.
 | Stripe (via RevenueCat Billing) | Web payments | Payment details |
 | Paddle | Web payments (merchant of record) | Payment details, invoice and tax data |
 | Open Food Facts | Packaged product lookup | The barcode you scan |
-| Sentry (EU region) | Error reporting | Error reports, device and app details, account identifier |
+| Sentry (US region) | Error reporting | Error reports, device and app details, account identifier |
 | PostHog (EU region) | Product usage analytics | Usage events, device and app details, account identifier |
 
 This list changes as our infrastructure changes; updates are reflected here.
@@ -262,8 +262,8 @@ you live. Specifically:
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
   the four fields listed in section 3 travel this path.
-- **Error reports and usage events** (Sentry, PostHog) are stored in the
-  European Union.
+- **Error reports** (Sentry) are stored in the United States, and **usage
+  events** (PostHog) in the European Union.
 - **Every other provider** processes data in the regions it operates.
 
 Where data leaves Vietnam, we do so in line with personal data protection law,

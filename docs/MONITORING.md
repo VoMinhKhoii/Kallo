@@ -1,6 +1,8 @@
 # Monitoring: Sentry (errors) + PostHog (product analytics)
 
-Two tools, both on their **EU cloud**, both on the web app and the Flutter app:
+Two tools, both on the web app and the Flutter app. Sentry is in its **US region** (the
+existing `vo-minh-khoi` organisation, which cannot change region); PostHog is on its
+**EU cloud**:
 
 | | Sentry | PostHog |
 |---|---|---|
@@ -15,8 +17,11 @@ They are listed as providers in the privacy policy (`content/docs/{en,vi}/legal/
 
 ## Setup (one-time, by a person)
 
-1. **Sentry**: sign up at sentry.io, choose the **EU (Frankfurt)** data region. Create two
-   projects: `kallo-web` (Next.js) and `kallo-flutter` (Flutter). Copy each project's DSN.
+1. **Sentry**: done. The `vo-minh-khoi` organisation (US region) already has two projects,
+   `kallo-web` (Next.js) and `kallo-mobile` (Flutter). Each DSN is under Settings →
+   Projects → *project* → Client Keys (DSN). A region is fixed when an organisation is
+   created; moving to the EU means a new organisation plus changing the `connect-src`
+   host in `lib/infra/security/csp.ts` and §5/§9 of the privacy policy.
    - Settings → Subscription → set the on-demand / pay-as-you-go budget to **$0** so the
      free tier can never bill.
    - Optional, for readable web stack traces: create an Organization Auth Token.
@@ -34,7 +39,7 @@ They are listed as providers in the privacy policy (`content/docs/{en,vi}/legal/
    | Variable | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog key |
    | Variable | `SENTRY_ORG` / `SENTRY_PROJECT` | org slug / `kallo-web` (source maps only) |
    | Secret | `SENTRY_AUTH_TOKEN` | org auth token (source maps only) |
-   | Variable | `KALLO_SENTRY_DSN` | `kallo-flutter` DSN (iOS TestFlight lane) |
+   | Variable | `KALLO_SENTRY_DSN` | `kallo-mobile` DSN (iOS TestFlight lane) |
    | Variable | `KALLO_POSTHOG_KEY` | PostHog key (iOS TestFlight lane) |
 
    DSNs and PostHog keys can only *submit* data, which is why they are variables and are
@@ -62,7 +67,7 @@ before `bun dev:mobile` (Flutter).
 - `components/providers/analytics-identity.tsx`: one Supabase auth listener → PostHog
   identify/reset + Sentry user (opaque account id only).
 - `app/global-error.tsx`: catches errors in the root layout itself.
-- `lib/infra/security/csp.ts`: `connect-src` allows `*.ingest.de.sentry.io`,
+- `lib/infra/security/csp.ts`: `connect-src` allows `*.ingest.us.sentry.io`,
   `eu.i.posthog.com`, `eu-assets.i.posthog.com`.
 
 **Flutter** (`apps/mobile-flutter/lib/`)

@@ -95,7 +95,7 @@ describe('sharedSentryOptions', () => {
   });
 
   it('is enabled with a DSN and never sends default PII', () => {
-    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://k@o1.ingest.de.sentry.io/2');
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://k@o1.ingest.us.sentry.io/2');
     const options = sharedSentryOptions('test');
     expect(options.enabled).toBe(true);
     expect(options.sendDefaultPii).toBe(false);
