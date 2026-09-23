@@ -17,6 +17,11 @@ two stop drifting apart.
 | Secure password change | **On**: changing a password needs a session under 24 hours old, or a reauthentication nonce. The reset-password flow is unaffected because the recovery link mints a fresh session. | `supabase/config.toml` |
 | Leaked password protection | **Turn on** (Pro plan). Checks new passwords against HaveIBeenPwned. | `lib/infra/auth/weak-password.ts` and the Flutter `authErrorMessage` show a "choose a different one" line when the server rejects a password as `pwned`. |
 
+Both limits are UTF-8 bytes, but the user-facing copy (web `auth.passwordRules`,
+Flutter l10n, the account docs, en and vi) never says "bytes". It says
+"characters" and adds that an accented letter counts as 2–3, which is exactly
+how a byte count behaves for Vietnamese. Keep that wording if the copy changes.
+
 The form checks exist only to say what the server will say before the round
 trip. **Change the dashboard and all three mirrors together.** If you change
 the dashboard alone, users see the old rule in the form and then get rejected

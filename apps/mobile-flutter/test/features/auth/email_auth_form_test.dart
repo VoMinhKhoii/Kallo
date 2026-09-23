@@ -110,7 +110,10 @@ void main() {
     await tester.tap(find.text('Create Account'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Use at least 8 characters, including a letter and a number.'),
+      find.text(
+        'Use at least 8 characters (accented letters count as 2–3), '
+        'including a letter and a number.',
+      ),
       findsOneWidget,
     );
   });
