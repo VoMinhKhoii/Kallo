@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from '@/i18n/navigation';
 import type {
   FEEDBACK_TYPES,
@@ -38,11 +38,31 @@ export function useFeedbackForm() {
   // Cache the uploaded screenshot per file so a failed submit retry reuses the
   // object instead of uploading a new orphan each attempt.
   const uploaded = useRef<{ file: File; path: string } | null>(null);
+  // Set once a submit lands; see the layout effect below.
+  const resetWhenHidden = useRef(false);
 
   // Move focus to the confirmation so screen-reader + keyboard users land on it.
   useEffect(() => {
     if (sent) sentHeading.current?.focus();
   }, [sent]);
+
+  // Cache Components keeps Settings alive (hidden with React <Activity>) when
+  // the user navigates away, so state survives the round trip. An unsent draft
+  // should — that is the point. The "thanks" screen should not: coming back to
+  // Settings later must show a fresh form, not a confirmation for a message
+  // sent minutes ago. The cleanup runs as the page is hidden.
+  useLayoutEffect(() => {
+    return () => {
+      if (!resetWhenHidden.current) return;
+      resetWhenHidden.current = false;
+      setSent(false);
+      setMessage('');
+      setSubmitError(null);
+      setFile(null);
+      setFileError(null);
+      uploaded.current = null;
+    };
+  }, []);
 
   const canSubmit = message.trim().length > 0 && !pending;
 
@@ -117,6 +137,7 @@ export function useFeedbackForm() {
         return;
       }
       setSent(true);
+      resetWhenHidden.current = true;
     } catch (error) {
       console.error('Failed to submit feedback:', error);
       setSubmitError(t('error'));
@@ -126,6 +147,7 @@ export function useFeedbackForm() {
   };
 
   const reset = () => {
+    resetWhenHidden.current = false;
     setSent(false);
     // Keep the last-selected type — a follow-up is often the same kind.
     setMessage('');

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
+import { Suspense } from 'react';
 import { DocsBreadcrumbs } from '@/components/docs/docs-breadcrumbs';
 import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
@@ -68,11 +69,45 @@ export async function generateMetadata({
   };
 }
 
-export default async function DocPage({
-  params,
-}: {
+interface DocPageProps {
   params: Promise<{ locale: string; slug: string[] }>;
-}) {
+}
+
+/**
+ * Every doc is prerendered (`generateStaticParams`), so a direct visit gets
+ * the whole page as static HTML — the boundary below resolves at build time.
+ * It exists for client navigations: docs links share one prefetched App Shell
+ * per route (Partial Prefetching), which cannot know the slug, so the
+ * skeleton shows the instant a link is clicked and the page streams in.
+ */
+export default function DocPage({ params }: DocPageProps) {
+  return (
+    <Suspense fallback={<DocSkeleton />}>
+      <DocContent params={params} />
+    </Suspense>
+  );
+}
+
+function DocSkeleton() {
+  return (
+    <div className="xl:grid xl:grid-cols-[14rem_minmax(0,40rem)_14rem] xl:justify-center xl:gap-10">
+      <div aria-hidden="true" className="hidden xl:block" />
+      <div
+        className="mx-auto w-full min-w-0 max-w-[40rem] space-y-4 py-10 motion-safe:animate-pulse xl:mx-0"
+        aria-busy="true"
+      >
+        <div className="mx-auto h-9 w-2/3 rounded-md bg-kallo-track" />
+        <div className="mx-auto h-3 w-40 rounded-full bg-kallo-track" />
+        <hr className="mt-8 border-kallo-text border-t" />
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="h-4 w-full rounded-full bg-kallo-track" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function DocContent({ params }: DocPageProps) {
   const { locale, slug } = await params;
   // Narrow the URL segment once. Every downstream call wants the union, and
   // three separate `as Locale` casts would each be an unchecked promise that

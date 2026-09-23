@@ -36,7 +36,13 @@ export async function updateFeedbackStatus(input: {
     throw Errors.notFound('Feedback not found.');
   }
 
-  revalidatePath(`/admin/feedback/${id}`);
-  revalidatePath('/admin/feedback');
+  // The route patterns, not literal URLs: every admin URL carries a locale
+  // prefix (`/en/admin/feedback`), so the bare `/admin/feedback` this used to
+  // pass matched no page at all. `'layout'` on the list covers each detail
+  // page beneath it. The admin reads are not `'use cache'`d, so there is no
+  // tag to `updateTag`; what this buys is the client router dropping its
+  // copies of these pages, so the list and the detail show the new status on
+  // the next visit instead of a kept-alive render.
+  revalidatePath('/[locale]/admin/feedback', 'layout');
   return { success: true };
 }

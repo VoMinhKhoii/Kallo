@@ -3,6 +3,7 @@
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Activity } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Radix Select drives its trigger through Pointer Events APIs that jsdom
@@ -68,6 +69,26 @@ describe('StatusForm', () => {
 
     await userEvent.click(screen.getByRole('combobox'));
     await userEvent.click(screen.getByRole('option', { name: "Won't fix" }));
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+  });
+
+  // Cache Components hides the page with <Activity> on navigation instead of
+  // unmounting it; a "Saved" from an earlier visit must not greet the return.
+  it('drops the saved confirmation when the page is hidden and shown again', async () => {
+    const page = (mode: 'visible' | 'hidden') => (
+      <Activity mode={mode}>
+        <StatusForm id="fb-1" current="open" />
+      </Activity>
+    );
+    const view = render(page('visible'));
+    await userEvent.click(screen.getByRole('combobox'));
+    await userEvent.click(screen.getByRole('option', { name: 'Resolved' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+    expect(await screen.findByText('Saved')).toBeInTheDocument();
+
+    view.rerender(page('hidden'));
+    view.rerender(page('visible'));
+
     expect(screen.queryByText('Saved')).not.toBeInTheDocument();
   });
 });

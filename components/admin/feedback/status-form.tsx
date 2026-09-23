@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useLayoutEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -20,6 +20,16 @@ export function StatusForm({ id, current }: { id: string; current: string }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The page is kept alive (hidden) across navigations under Cache
+  // Components; a "Saved" or error note from an earlier visit is stale by the
+  // time the admin comes back, so clear both as the page is hidden.
+  useLayoutEffect(() => {
+    return () => {
+      setSaved(false);
+      setError(null);
+    };
+  }, []);
 
   const save = () => {
     setSaved(false);
