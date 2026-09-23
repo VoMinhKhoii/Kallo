@@ -57,7 +57,14 @@ export const userProfiles = pgTable(
     countryOfOrigin: text('country_of_origin'),
     countryOfResidence: text('country_of_residence'),
     preferredLocale: text('preferred_locale').default('en'),
-    autoShareToCircle: boolean('auto_share_to_circle').notNull().default(true),
+    // Off by default: a new account's meals stay private until the user turns
+    // Circle auto-share on in Settings (KALLO-03). auto_share_updated_at is the
+    // consent record — set on every change through setAutoShareToCircle, NULL
+    // for an account that never touched the preference.
+    autoShareToCircle: boolean('auto_share_to_circle').notNull().default(false),
+    autoShareUpdatedAt: timestamp('auto_share_updated_at', {
+      withTimezone: true,
+    }),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
@@ -1146,6 +1153,12 @@ export const friendships = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When the edge became 'accepted'. A friend sees only shares made at or
+    // after this instant (shared_at >= accepted_at) — never the backlog from
+    // before they connected. NULL until accepted. Written only by the
+    // friendships_set_accepted_at trigger (clock_timestamp() at the status
+    // flip — see 20260923051230 for why that clock); the app never sets it.
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
@@ -1167,10 +1180,12 @@ export const friendships = pgTable(
 // ---------------------------------------------------------------------------
 // Group Tracking — Meal Shares
 // ---------------------------------------------------------------------------
-// One opt-in row per shared meal. visibility defaults to 'private' — a meal is
-// invisible to friends until an explicit 'circle' (or 'public') row exists. The
-// partial-unique on meal_id keeps it one-row-per-meal. meals itself is left
-// untouched (still private-by-default).
+// At most one row per meal (unique on meal_id). A meal with no row, or a
+// 'private' row, is invisible to friends. A 'circle' row is written either by
+// the per-meal share toggle or, on every meal save, by insertDefaultCircleShare
+// when the owner has turned user_profiles.auto_share_to_circle on (off by
+// default). An accepted friend sees a 'circle' row only when shared_at is at or
+// after friendships.accepted_at; see share-visibility.ts.
 
 export const mealShares = pgTable(
   'meal_shares',

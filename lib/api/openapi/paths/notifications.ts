@@ -2,6 +2,7 @@ import {
   authed,
   fromZod,
   type JsonSchema,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   ref,
@@ -115,6 +116,7 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
         type: 'object',
         properties: { seen: { type: 'integer' } },
       },
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -130,6 +132,7 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
         type: 'object',
         properties: { read: { type: 'integer' } },
       },
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -145,6 +148,7 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
         type: 'object',
         properties: { registered: { type: 'boolean' } },
       },
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
     delete: authed({
       operationId: 'unregisterPushToken',
@@ -157,6 +161,7 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
         type: 'object',
         properties: { removed: { type: 'integer' } },
       },
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 };

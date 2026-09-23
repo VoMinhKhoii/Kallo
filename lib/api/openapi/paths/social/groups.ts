@@ -6,6 +6,7 @@ import {
   authed,
   fromZod,
   type JsonSchema,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   pathParam,
@@ -74,6 +75,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       body: fromZod(createChatGroupBodySchema),
       ok: wrap({ group: wrap({ id: { type: 'string', format: 'uuid' } }) }),
       okDescription: 'The new group’s id.',
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -107,6 +109,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       },
       ok: wrap({ name: { type: 'string' } }),
       okDescription: 'The name as stored.',
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -120,6 +123,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       parameters: [groupId],
       body: fromZod(addChatGroupMembersBodySchema),
       ok: wrap({ added: { type: 'integer', minimum: 0 } }),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -165,6 +169,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         },
       },
       ok: wrap({ message: chatGroupMessage }),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

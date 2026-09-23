@@ -147,8 +147,10 @@ export async function listCircleFeed(
   // Most-recent shared ('circle' or 'public') meal per user within today —
   // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
   // a user only ever sees their own meal and meals of users they are accepted
-  // friends with (the friendIds set is derived from accepted edges above).
+  // friends with (the friendIds set is derived from accepted edges above), and
+  // only meals those friends shared after the friendship was accepted.
   const rows = await mostRecentSharedMealsToday(
+    actorId,
     queryUserIds,
     dayStart,
     dayEnd,

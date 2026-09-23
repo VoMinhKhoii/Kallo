@@ -28,6 +28,7 @@ import {
   meals,
   vietnameseFoodComposition,
 } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 
 // Only the columns the save needs — the composition table also carries the
 // 768-dim embedding (~15-20KB serialized) and search-text blobs, which
@@ -101,20 +102,22 @@ export async function saveManualMealAction(
     .join(', ');
 
   const { mealId, share } = await db.transaction(async (tx) => {
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.mealId ? { id: parsed.mealId } : {}),
-        userId: user.id,
-        rawInput,
-        mealSlot,
-        // User-entered exact grams from verified DB entries — no estimation.
-        confidenceOverall: 'high',
-        loggedAt,
-        entryMode: 'precise',
-        ...nutritionValuesToRow(mealNutrition),
-      })
-      .returning({ id: meals.id });
+    const [meal] = await guardClientMealId(() =>
+      tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput,
+          mealSlot,
+          // User-entered exact grams from verified DB entries — no estimation.
+          confidenceOverall: 'high',
+          loggedAt,
+          entryMode: 'precise',
+          ...nutritionValuesToRow(mealNutrition),
+        })
+        .returning({ id: meals.id })
+    );
 
     await tx.insert(mealItems).values(
       items.map((item) => ({
@@ -132,8 +135,8 @@ export async function saveManualMealAction(
       }))
     );
 
-    // Share to circle by default unless the profile-level opt-out is set (the
-    // AFTER INSERT trigger fans out the meal_shared circle event). The user
+    // Share to circle only when the owner has turned Circle auto-share on (off
+    // by default; the AFTER INSERT trigger fans out the meal_shared event). The user
     // can still opt this meal back out via the per-meal toggle, while
     // onConflictDoNothing preserves a prior explicit choice on the
     // re-confirm/edit path (existing meal id).
@@ -174,7 +177,7 @@ export async function saveManualMealAction(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    // Shared to circle by default (see the meal_shares insert above).
+    // Null (private) unless auto-share inserted a row above.
     share,
   });
 

@@ -104,7 +104,7 @@ probe mô tả cấu trúc phản hồi riêng trong OpenAPI.
 
 | Mã | Trạng thái | Thử lại được | Nghĩa là |
 | --- | --- | --- | --- |
-| `VALIDATION_FAILED` | 400 | không | Thân yêu cầu hoặc query sai. Hãy sửa. |
+| `VALIDATION_FAILED` | 400 | không | Thân yêu cầu hoặc query sai, kể cả thân yêu cầu không phải JSON hợp lệ. Hãy sửa. |
 | `NOT_AUTHENTICATED` | 401 | không | Thiếu token, token hết hạn hoặc không hợp lệ. |
 | `feature_locked` | 402 | không | Gói của tài khoản không bao gồm tính năng này. |
 | `NOT_FOUND` | 404 | không | Không có tài nguyên đó, hoặc nó không phải của bạn. Hai trường hợp này cố ý không phân biệt được. |
@@ -113,13 +113,20 @@ probe mô tả cấu trúc phản hồi riêng trong OpenAPI.
 | `BARCODE_NOT_CACHED` | 404 | không | Mã vạch chưa từng được tra cứu trước khi ghi. Hãy quét lại. |
 | `OCR_INVALID_IMAGE` | 400 | không | Không đọc được ảnh như một ảnh nhãn dinh dưỡng. |
 | `OCR_NO_LABEL_DETECTED` | 422 | không | Không tìm thấy bảng dinh dưỡng trong ảnh. |
-| `CONFLICT` | 409 | không | Tài nguyên đã thay đổi trong lúc bạn thao tác. |
+| `CONFLICT` | 409 | không | Tài nguyên đã thay đổi trong lúc bạn thao tác, hoặc id do client tạo mà bạn gửi (ví dụ `mealId` / `newMealId` của bữa ăn) đã được dùng. Hãy tạo id mới. |
 | `CIRCLE_LIMIT_REACHED` | 409 | không | Nhóm hoặc danh sách bạn bè của người khác đã đầy. |
-| `PAYLOAD_TOO_LARGE` | 413 | không | Thân yêu cầu vượt giới hạn kích thước của route. Hãy gửi ít hơn. |
+| `PAYLOAD_TOO_LARGE` | 413 | không | Thân yêu cầu vượt giới hạn của endpoint (64 KB với phần lớn endpoint JSON). Hãy gửi ít hơn. |
 | `RATE_LIMITED` | 429 | có | Hãy giãn nhịp. Tôn trọng `Retry-After` khi có. |
 | `RATE_LIMITER_UNAVAILABLE` | 503 | có | Bộ giới hạn không đưa ra được quyết định trên một route tốn phí. Tôn trọng `Retry-After`. |
 | `PIPELINE_TIMEOUT` | 504 | có | Phân tích bữa ăn quá lâu. |
 | `INTERNAL` | 500 | có | Lỗi của chúng tôi. |
+
+Xác thực được kiểm tra trước khi đọc thân yêu cầu. Yêu cầu không có token hợp lệ
+nhận `NOT_AUTHENTICATED` dù thân yêu cầu thế nào, nên 400 hoặc 413 nghĩa là token
+đã được chấp nhận. Trùng id do client tạo luôn trả cùng một `CONFLICT`, dù id đó
+là của bạn hay của tài khoản khác; thử lại với cùng id sẽ không bao giờ thành
+công. Nếu một lần lưu bị hết thời gian chờ và bạn không chắc nó đã ghi hay chưa,
+hãy tải lại ngày đó trước khi thử lại với id mới.
 
 Bất kỳ đường dẫn `/api/` nào không có handler đều trả 404 với cùng cấu trúc JSON
 này, không bao giờ là trang HTML — nên một endpoint gõ sai là thứ client của bạn

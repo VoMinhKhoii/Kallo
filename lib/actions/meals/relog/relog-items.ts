@@ -24,6 +24,7 @@ import {
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,
@@ -113,21 +114,23 @@ export async function relogMealItemsAction(
       // A composed meal is no more confident than its least confident part.
       const confidenceOverall = weakestConfidence(sourceConfidences);
 
-      const [meal] = await tx
-        .insert(meals)
-        .values({
-          ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
-          userId: user.id,
-          rawInput,
-          mealSlot,
-          confidenceOverall,
-          loggedAt,
-          entryMode: 'precise',
-          alcoholG: null,
-          portionFactor: 1,
-          ...nutritionValuesToRow(mealNutrition),
-        })
-        .returning({ id: meals.id });
+      const [meal] = await guardClientMealId(() =>
+        tx
+          .insert(meals)
+          .values({
+            ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
+            userId: user.id,
+            rawInput,
+            mealSlot,
+            confidenceOverall,
+            loggedAt,
+            entryMode: 'precise',
+            alcoholG: null,
+            portionFactor: 1,
+            ...nutritionValuesToRow(mealNutrition),
+          })
+          .returning({ id: meals.id })
+      );
 
       const share = await insertDefaultCircleShare(tx, {
         mealId: meal.id,

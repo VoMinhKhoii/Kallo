@@ -28,6 +28,13 @@ const MAX_BODY_BYTES = 8 * 1024;
  * cooldown inside `signUpForWaitlist` is the mail-bombing control for one
  * address. Global first, then IP: cheapest rejection first.
  *
+ * The body is read BEFORE the limiters, deliberately. It is capped at 8 KB and
+ * parsed in memory, while each limiter charge is a database round trip, so a
+ * junk or oversized body is refused (400 / 413) without touching the database
+ * at all. A valid body then pays the limiters before any real work. On a
+ * protected route the analogue is "authenticate first"; here there is no
+ * identity to check, so the cheapest refusal goes first instead.
+ *
  * The success body is always the same. Whether the address was new, already
  * pending, or already confirmed is not something a stranger gets to learn.
  */

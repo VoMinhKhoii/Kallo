@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -12,7 +13,8 @@ const { mockUser, mockTxInsert, mockDbSelect, mockTx } = vi.hoisted(() => {
     select: vi.fn(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
           })
@@ -262,7 +264,7 @@ describe('saveManualMealAction', () => {
       entryMode: 'precise',
       alcoholG: null,
       cheatSliders: null,
-      // Shared to circle by default, like every other meal-creation path.
+      // Auto-shared for an opted-in owner, like every other creation path.
       share: { shareId: 'share-1', visibility: 'circle' },
       confidenceOverall: 'high',
     });
@@ -288,7 +290,8 @@ describe('saveManualMealAction', () => {
     mockTx.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: false }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
           })
@@ -306,6 +309,35 @@ describe('saveManualMealAction', () => {
     );
     expect(insertedIntoMealShares).toBe(false);
     expect(result.meal.share).toBeNull();
+  });
+
+  // KALLO-08: an occupied client-supplied mealId (the caller's own row from a
+  // timed-out first attempt, or another account's) used to escape as a
+  // retryable 500. It is a 409 now, with one message whoever owns the row.
+  it('maps a mealId primary-key collision to a non-retryable 409', async () => {
+    mockCompositionRows([riceRow]);
+    const collision = new DrizzleQueryError(
+      'insert into "meals"',
+      [],
+      Object.assign(new Error('duplicate key'), {
+        code: '23505',
+        constraint_name: 'meals_pkey',
+      })
+    );
+    mockTxInsert.mockReturnValue({
+      values: () => ({ returning: () => Promise.reject(collision) }),
+    });
+
+    await expect(
+      saveManualMealAction({
+        ...baseInput,
+        items: [{ foodCompositionId: 'fct-rice', grams: 150 }],
+      })
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      status: 409,
+      retryable: false,
+    });
   });
 
   it('rejects invalid input (no items, non-positive grams)', async () => {

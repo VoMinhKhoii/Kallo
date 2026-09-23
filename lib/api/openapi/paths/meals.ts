@@ -12,6 +12,8 @@ import {
   dateParam,
   fromZod,
   limitParam,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
   ref,
@@ -41,6 +43,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Adjusts the grams of individual items, or removes them. Nutrition is recomputed server-side from composition data — the client never sends calorie or macro figures.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       parameters: [pathParam('mealId', 'UUID of the meal to edit.')],
       body: fromZod(updateMealBodySchema),
       ok: ref('MealWriteResult'),
@@ -62,6 +65,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Copies an existing meal, items and all, onto the given date. `newMealId` is a client-generated UUID so an optimistic card and the persisted row share a key.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       parameters: [pathParam('mealId', 'UUID of the meal to copy.')],
       body: fromZod(duplicateMealBodySchema),
       ok: ref('MealWriteResult'),
@@ -76,6 +80,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Turns a staged analysis into a saved meal. This is the write step of the describe-a-meal flow: `POST /api/analyze-meal` produces the estimate, the user corrects it, and this commits it.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(confirmMealSchema),
       ok: ref('MealWriteResult'),
     }),
@@ -88,6 +93,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Deterministic logging with no AI in the path: the client sends food-composition ids and gram weights, the server computes nutrition from per-100g data and saves the meal. Use this when the caller already knows exactly what was eaten.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(saveManualMealSchema),
       ok: ref('MealWriteResult'),
     }),
@@ -153,6 +159,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Re-stages a previous cheat occasion on a new date as a pending slider card, seeded with the levels chosen last time; the caller confirms it through the ordinary cheat path. For meals that cannot be itemised — a buffet, a barbecue, a box of pastries.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(cheatRepeatSchema),
       ok: ref('StagedCheatAnalysis'),
       okDescription:
@@ -167,6 +174,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Every entry is a reference, never a payload: no names, grams or nutrition cross the wire. The server re-resolves each reference against the caller’s own rows, so a stale or tampered client can only ever point at its own data.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(relogItemsSchema),
       ok: ref('MealWriteResult'),
     }),
@@ -179,6 +187,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       description:
         'Stages everything the composer picked — past dishes, past meals, or scanned products — as a pending analysis, so they land in the same editable review card an AI-analysed meal does instead of being written immediately. Every entry is a reference the server re-resolves: a dish or meal from the caller’s own history, or a barcode from the product cache (a barcode never searched is a 404 `BARCODE_NOT_CACHED` — rescan it). `displayText` is what the meal is LABELLED with, the sentence as it reads in the composer; omitted, the label is the resolved names joined in staged order. `attemptId` is required — it is the upsert key that stops repeated staging accumulating rows.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(stageRelogAnalysisSchema),
       ok: ref('StagedRelogAnalysis'),
       okDescription: 'The staged pending analysis.',

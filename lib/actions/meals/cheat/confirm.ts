@@ -14,6 +14,7 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
 import { type AppDb, db } from '@/lib/infra/db/client';
 import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 import { insertDefaultCircleShare } from '../insert-default-share';
 import { EMPTY_NUTRITION } from '../shared';
 import type { ConfirmMealResponse } from '../types';
@@ -87,27 +88,29 @@ export async function confirmCheatMeal(args: {
   const mealSlot = spec.mealSlot ?? inferMealSlot(loggedAt);
   const persisted: CheatSlidersPersisted = { spec, levels };
 
-  const [meal] = await tx
-    .insert(meals)
-    .values({
-      ...(mealId ? { id: mealId } : {}),
-      userId,
-      rawInput: pending.rawInput,
-      mealSlot,
-      confidenceOverall: spec.confidence,
-      loggedAt,
-      entryMode: 'cheat',
-      caloriesKcal: resolved.caloriesKcal,
-      proteinG: resolved.proteinG,
-      carbohydrateG: resolved.carbohydrateG,
-      fatG: resolved.fatG,
-      alcoholG: resolved.alcoholG,
-      cheatSliders: persisted,
-    })
-    .returning({ id: meals.id });
+  const [meal] = await guardClientMealId(() =>
+    tx
+      .insert(meals)
+      .values({
+        ...(mealId ? { id: mealId } : {}),
+        userId,
+        rawInput: pending.rawInput,
+        mealSlot,
+        confidenceOverall: spec.confidence,
+        loggedAt,
+        entryMode: 'cheat',
+        caloriesKcal: resolved.caloriesKcal,
+        proteinG: resolved.proteinG,
+        carbohydrateG: resolved.carbohydrateG,
+        fatG: resolved.fatG,
+        alcoholG: resolved.alcoholG,
+        cheatSliders: persisted,
+      })
+      .returning({ id: meals.id })
+  );
 
-  // Share to circle by default unless the profile-level opt-out is set (the
-  // AFTER INSERT trigger fans out the meal_shared circle event). The user can
+  // Share to circle only when the owner has turned Circle auto-share on (off
+  // by default; the AFTER INSERT trigger fans out the meal_shared event). The user can
   // still opt this meal back out via the per-meal toggle, while
   // onConflictDoNothing preserves a prior explicit choice on the
   // re-confirm/edit path (existing meal id).

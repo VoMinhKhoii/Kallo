@@ -116,4 +116,25 @@ describe('POST /api/v1/waitlist', () => {
     expect((await res.json()).error.code).toBe('VALIDATION_FAILED');
     expect(signUpForWaitlist).not.toHaveBeenCalled();
   });
+  // KALLO-08: malformed JSON surfaced as a retryable 500 INTERNAL. It is a
+  // client error, refused before any limiter or database work.
+  it('answers malformed JSON with a non-retryable 400', async () => {
+    const res = await POST(makeRequest('{"email":'));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error: { code: 'VALIDATION_FAILED', retryable: false },
+    });
+    expect(assertRateLimit).not.toHaveBeenCalled();
+    expect(signUpForWaitlist).not.toHaveBeenCalled();
+  });
+
+  it('refuses an oversized body with a 413', async () => {
+    const res = await POST(
+      makeRequest(JSON.stringify({ email: `${'a'.repeat(9000)}@b.co` }))
+    );
+
+    expect(res.status).toBe(413);
+    expect(assertRateLimit).not.toHaveBeenCalled();
+  });
 });

@@ -84,6 +84,17 @@ export const PAYLOAD_TOO_LARGE_ERROR: JsonSchema = {
 };
 
 /**
+ * The 409 an insert with a client-generated meal id can produce when that id
+ * is already taken. One message whoever owns the existing row, so the response
+ * reveals nothing about other accounts. Retrying the same id cannot succeed.
+ */
+export const MEAL_ID_CONFLICT_ERROR: JsonSchema = {
+  '409': errorResponse(
+    'The client-generated meal id is already in use (`CONFLICT`). Not retryable — generate a new id.'
+  ),
+};
+
+/**
  * The 503 a fail-closed spend route can produce. Not in COMMON_ERRORS: only a
  * route whose rate-limit policy has `failMode: 'closed'` (today, OCR alone via
  * `withOcrGuard`) answers it — when the limiter itself cannot reach a verdict,
