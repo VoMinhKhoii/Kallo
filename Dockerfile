@@ -20,7 +20,7 @@ RUN bun run build
 RUN cp -r public .next/standalone/public && \
     cp -r .next/static .next/standalone/.next/static
 
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 ARG NEXT_PUBLIC_SUPABASE_URL
