@@ -143,6 +143,18 @@ Left sidebar **SSL/TLS**:
 - **Edge Certificates** → turn on **Always Use HTTPS**, set **Minimum TLS Version
   1.2**, enable **HSTS** (accept the warning — only do this once you're happy the
   site loads on HTTPS).
+  - The Supabase session cookie's lifetime is tied to this setting.
+    `lib/infra/supabase/cookie-options.ts` sets it to 90 days, under the 6-month
+    (15552000 s) HSTS max-age recorded there as `EXPECTED_HSTS_MAX_AGE_SECONDS`.
+    A cookie that outlives the browser's HSTS entry can be sent over plain HTTP
+    on the next typed visit, before the HTTPS redirect (pentest KALLO-06). If you
+    ever **shorten** HSTS here, lower that constant too; its test then forces the
+    cookie lifetime back under it.
+  - Recommended once HTTPS is stable everywhere: raise HSTS to **12 months**, turn
+    on **Include subdomains** and **Preload**, then submit `kallo.fit` at
+    https://hstspreload.org. Preloaded domains are HTTPS-only in browsers even on
+    the first visit, which closes the gap HSTS alone leaves. Preload is hard to
+    undo, so every subdomain must serve HTTPS first.
 
 Left sidebar **Security**:
 - **WAF** → **Managed rules** → deploy the **Cloudflare Managed Ruleset**.
