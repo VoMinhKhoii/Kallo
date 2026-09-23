@@ -10,8 +10,6 @@ import {
 } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /**
  * The signed-in user's own profile. Auto-provisions a shareable invite link on
  * first access (no claim step), so the response is always a profile.

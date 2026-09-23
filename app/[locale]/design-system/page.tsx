@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
 import { ButtonsSection } from '@/components/design-system/buttons-section';
 import { ColorsSection } from '@/components/design-system/colors-section';
 import { ElevationSection } from '@/components/design-system/elevation-section';
@@ -29,15 +28,8 @@ const TOC = [
  * only — it 404s in production builds. The full brand guide lives in
  * .agents/skills/kallo-design/.
  */
-export default async function DesignSystemPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+export default function DesignSystemPage() {
   if (process.env.NODE_ENV === 'production') notFound();
-
-  const { locale } = await params;
-  setRequestLocale(locale);
 
   return (
     <main className="min-h-dvh bg-kallo-surface">

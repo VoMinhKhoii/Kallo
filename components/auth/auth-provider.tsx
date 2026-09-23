@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from 'react';
 
 export type AuthTab = 'sign-in' | 'sign-up';
 
@@ -38,6 +44,21 @@ interface AuthDialogContextValue {
   showAuth: () => void;
   showForgot: () => void;
   showCheckEmail: (email: string, mode: CheckEmailMode) => void;
+  /** Applies the request-time values; see `AuthRequestConfig`. */
+  applyRequestConfig: (config: AuthRequestValues) => void;
+}
+
+/**
+ * The parts of the provider's state that depend on the request: the Google
+ * client ID (a runtime env var) and, on the landing page, the `?auth=` /
+ * `?next=` intent. A prerendered page cannot know them, so they arrive after
+ * the static shell from `AuthRequestConfig`, streamed behind `<Suspense>`.
+ */
+export interface AuthRequestValues {
+  googleClientId: string | null;
+  next?: string | null;
+  /** Open the dialog on this tab, e.g. arriving from an invite link. */
+  openTab?: AuthTab | null;
 }
 
 const AuthDialogContext = createContext<AuthDialogContextValue | null>(null);
@@ -67,19 +88,35 @@ export function AuthProvider({
 }) {
   const [open, setOpen] = useState(initialOpen);
   const [tab, setTab] = useState<AuthTab>(initialTab);
+  const [nextPath, setNextPath] = useState(next);
+  const [clientId, setClientId] = useState(googleClientId);
   const [panel, setPanel] = useState<AuthPanel>('auth');
   const [checkEmail, setCheckEmail] = useState<{
     email: string;
     mode: CheckEmailMode;
   } | null>(null);
 
-  const openDialog = useCallback((t: AuthTab = 'sign-up') => {
+  // Whether the dialog is open because the URL asked for it (`?auth=` /
+  // `?next=`), as opposed to the reader pressing a button. Only a URL-driven
+  // dialog may be closed by the URL losing that intent.
+  const openedByRequest = useRef(false);
+
+  const showDialog = useCallback((t: AuthTab) => {
     setTab(t);
     setPanel('auth');
     setOpen(true);
   }, []);
 
+  const openDialog = useCallback(
+    (t: AuthTab = 'sign-up') => {
+      openedByRequest.current = false;
+      showDialog(t);
+    },
+    [showDialog]
+  );
+
   const closeDialog = useCallback(() => {
+    openedByRequest.current = false;
     setOpen(false);
     // Reset the flow so the next open starts on the credentials screen.
     setPanel('auth');
@@ -93,6 +130,24 @@ export function AuthProvider({
     setPanel('check-email');
   }, []);
 
+  const applyRequestConfig = useCallback(
+    ({ googleClientId: id, next: path, openTab }: AuthRequestValues) => {
+      setClientId(id);
+      if (path !== undefined) setNextPath(path);
+      if (openTab) {
+        openedByRequest.current = true;
+        showDialog(openTab);
+      } else if (openTab === null && openedByRequest.current) {
+        // Under Cache Components the page — and this provider — survive a
+        // navigation from `/en?auth=sign-in` back to `/en` (history, or a
+        // link), so the new URL's missing intent has to close the dialog
+        // the old URL opened. A dialog the reader opened is left alone.
+        closeDialog();
+      }
+    },
+    [showDialog, closeDialog]
+  );
+
   return (
     <AuthDialogContext.Provider
       value={{
@@ -100,14 +155,15 @@ export function AuthProvider({
         tab,
         panel,
         checkEmail,
-        next,
-        googleClientId,
+        next: nextPath,
+        googleClientId: clientId,
         openDialog,
         closeDialog,
         setTab,
         showAuth,
         showForgot,
         showCheckEmail,
+        applyRequestConfig,
       }}
     >
       {children}

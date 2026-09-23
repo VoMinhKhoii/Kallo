@@ -4,6 +4,7 @@ import {
   authed,
   dateParam,
   fromZod,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
   ref,
@@ -54,6 +55,7 @@ export const TRACKING_PATHS: Record<string, PathItem> = {
       description:
         'Records a weight for a date. Logging the same date twice replaces the earlier value rather than adding a second one.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(weightLogSchema),
       ok: ref('WeightSummary'),
       okDescription: 'The refreshed summary, so a client need not re-fetch.',

@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { AppShell } from '@/components/app/shell/app-shell';
+import { AppShellSkeleton } from '@/components/app/shell/app-shell-skeleton';
 import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
 import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
@@ -15,11 +17,32 @@ import {
   SIDEBAR_STATE_COOKIE,
 } from '@/lib/sidebar/cookies';
 
-export default async function AppLayout({
-  children,
-}: Readonly<{
+interface AppLayoutProps {
   children: React.ReactNode;
-}>) {
+}
+
+/**
+ * Every authenticated route renders inside this layout, and everything it
+ * shows depends on the session. Under Cache Components a session read cannot
+ * be part of the prerendered static shell, so it lives behind a `<Suspense>`
+ * boundary: a direct visit paints `AppShellSkeleton` from static HTML at once
+ * and the real shell + page stream in. Client navigations between app routes
+ * never re-render this layout; each page's `loading.tsx` (or its own boundary)
+ * is what shows while that page's data streams.
+ *
+ * Side effect of streaming: a signed-out visitor now gets the static skeleton
+ * followed by a client-side redirect to `/`, where it used to be an HTTP 307.
+ * Nothing user-specific is in the skeleton, so nothing leaks.
+ */
+export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
+  return (
+    <Suspense fallback={<AppShellSkeleton />}>
+      <SessionAppShell>{children}</SessionAppShell>
+    </Suspense>
+  );
+}
+
+async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
   const supabase = await createClient();
   const {
     data: { user },

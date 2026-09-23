@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  AUTH_PATH_PREFIX,
+  canonicalAuthPath,
+} from '@/app/api/supabase-proxy/_lib/canonical-auth-path';
 import { payloadTooLargeResponse } from '@/app/api/supabase-proxy/_lib/gotrue-error';
 import { guardAuthRequest } from '@/app/api/supabase-proxy/_lib/guard-auth-request';
+import { rewriteUpstreamLocation } from '@/app/api/supabase-proxy/_lib/upstream-location';
 import { PayloadTooLargeError } from '@/lib/core/errors/app-error';
 import { readBoundedBody } from '@/lib/infra/http/bounded-body';
-
-export const runtime = 'nodejs';
 
 /**
  * Reverse proxy for Supabase Auth (`auth/v1/*` only).
@@ -29,16 +32,6 @@ export const runtime = 'nodejs';
  * and supabase-flutter show their existing rate-limited copy.
  */
 
-const ALLOWED_PATH_PREFIX = '/auth/v1/';
-/**
- * Admin-only surfaces, refused with the same 404 as anything outside
- * `auth/v1/`. `/admin/*` and `/invite` both require the service key, which no
- * client of this proxy holds — auth-js reaches `/invite` only through
- * `GoTrueAdminApi.inviteUserByEmail`. Forwarding them would mean an anonymous
- * caller gets to ask Supabase to mail an invitation, on a path with no
- * caller-supplied recipient budget behind it.
- */
-const BLOCKED_PATHS = ['/auth/v1/admin', '/auth/v1/invite'];
 const UPSTREAM_TIMEOUT_MS = 15_000;
 
 /**
@@ -72,6 +65,11 @@ const RESPONSE_HEADERS = [
 
 const BODYLESS_METHODS = new Set(['GET', 'HEAD', 'DELETE', 'OPTIONS']);
 
+/** One generic refusal for every path outside the forwarded surface. */
+function notFound(): Response {
+  return NextResponse.json({ error: 'Not found' }, { status: 404 });
+}
+
 async function proxy(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -83,32 +81,34 @@ async function proxy(
   }
 
   const base = supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`;
-  const path = (await params).path.join('/');
 
-  // Validate the RESOLVED URL, not the raw `path` string. A prefix check on
-  // the joined segments is escapable: `new URL()` collapses `..` segments
-  // (`auth/v1/../../rest/v1/x` → `/rest/v1/x`) and honours protocol-relative
-  // references (`//evil.example/auth/v1/x` → a foreign host). Resolving first
-  // and then asserting origin + pathname keeps the proxy pinned to
-  // `<supabase>/auth/v1/*`, so it can never reach /rest, /storage, /realtime,
-  // the admin API, or an attacker-chosen origin.
+  // Layer 1 — canonicalize once, then validate exact segments (KALLO-11).
+  // The segments are checked as Next decoded them and the upstream path is
+  // REBUILT from the validated tokens, so a double-encoded `%252F` (seen here
+  // as `%2F`, which Supabase's gateway would decode into a separator) never
+  // reaches the network. See `_lib/canonical-auth-path.ts`.
+  const canonicalPath = canonicalAuthPath((await params).path);
+  if (!canonicalPath) return notFound();
+
   let upstreamUrl: URL;
   try {
-    upstreamUrl = new URL(`${path}${req.nextUrl.search}`, base);
+    upstreamUrl = new URL(`${canonicalPath}${req.nextUrl.search}`, base);
   } catch {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return notFound();
   }
 
-  // `base` comes from env-validated supabaseUrl; Next's [...path] segments
-  // are never absolute URLs, so new URL(base) cannot be reached via a path
-  // that bypassed the try/catch above.
+  // Layer 2 — validate the RESOLVED URL too. Layer 1 already rules out `..`
+  // and protocol-relative (`//evil.example`) escapes, but `new URL()` is where
+  // those would take effect, so asserting origin + pathname after resolution
+  // keeps the proxy pinned to `<supabase>/auth/v1/*` even if the segment rules
+  // are ever loosened.
   const baseOrigin = new URL(base).origin;
   if (
     upstreamUrl.origin !== baseOrigin ||
-    !upstreamUrl.pathname.startsWith(ALLOWED_PATH_PREFIX) ||
-    BLOCKED_PATHS.some((blocked) => upstreamUrl.pathname.startsWith(blocked))
+    upstreamUrl.pathname !== canonicalPath ||
+    !upstreamUrl.pathname.startsWith(AUTH_PATH_PREFIX)
   ) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return notFound();
   }
 
   // Read the body BEFORE anything else touches it, and only up to the cap:
@@ -130,7 +130,7 @@ async function proxy(
   // but `null` is a refusal already spoken in GoTrue's dialect.
   const refusal = await guardAuthRequest(req, {
     method: req.method,
-    path: upstreamUrl.pathname.slice(ALLOWED_PATH_PREFIX.length),
+    path: upstreamUrl.pathname.slice(AUTH_PATH_PREFIX.length),
     grantType: upstreamUrl.searchParams.get('grant_type'),
     body,
   });
@@ -148,8 +148,8 @@ async function proxy(
       method: req.method,
       headers,
       body,
-      // /authorize and /verify answer 302; the location header must reach the
-      // client untouched, not be followed here.
+      // /authorize and /verify answer 302; the redirect must reach the client
+      // (after `rewriteUpstreamLocation`), not be followed here.
       redirect: 'manual',
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       cache: 'no-store',
@@ -168,6 +168,28 @@ async function proxy(
   for (const name of RESPONSE_HEADERS) {
     const value = upstream.headers.get(name);
     if (value !== null) responseHeaders.set(name, value);
+  }
+
+  // Never let the upstream choose which hosts our origin advertises: Supabase
+  // targets are moved onto this proxy's path, internal hosts are refused.
+  const location = upstream.headers.get('location');
+  if (location !== null) {
+    const rewritten = rewriteUpstreamLocation(location, upstreamUrl);
+    if (rewritten === null) {
+      console.error('[supabase-proxy] refused an upstream Location header');
+      // A redirect with its target stripped is a dead end, so answer as the
+      // gateway that refused it. A non-redirect just loses the header.
+      if (upstream.status >= 300 && upstream.status < 400) {
+        await upstream.body?.cancel();
+        return NextResponse.json(
+          { error: 'upstream_redirect_refused' },
+          { status: 502 }
+        );
+      }
+      responseHeaders.delete('location');
+    } else {
+      responseHeaders.set('location', rewritten);
+    }
   }
 
   return new Response(upstream.body, {

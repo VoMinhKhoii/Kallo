@@ -9,8 +9,6 @@ import {
 import { db } from '@/lib/infra/db/client';
 import { pushTokens } from '@/lib/infra/db/schema';
 
-export const runtime = 'nodejs';
-
 /**
  * Register (or refresh) this device. The APNs token is unique across the
  * table because the OS hands the same string to whoever signs in on that

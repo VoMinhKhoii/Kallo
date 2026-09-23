@@ -9,8 +9,6 @@ import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
-export const runtime = 'nodejs';
-
 /** An address, a locale and a source. 8 KB is already absurdly generous. */
 const MAX_BODY_BYTES = 8 * 1024;
 
@@ -27,6 +25,13 @@ const MAX_BODY_BYTES = 8 * 1024;
  * returns `null` whenever `cf-connecting-ip` is absent). The per-address
  * cooldown inside `signUpForWaitlist` is the mail-bombing control for one
  * address. Global first, then IP: cheapest rejection first.
+ *
+ * The body is read BEFORE the limiters, deliberately. It is capped at 8 KB and
+ * parsed in memory, while each limiter charge is a database round trip, so a
+ * junk or oversized body is refused (400 / 413) without touching the database
+ * at all. A valid body then pays the limiters before any real work. On a
+ * protected route the analogue is "authenticate first"; here there is no
+ * identity to check, so the cheapest refusal goes first instead.
  *
  * The success body is always the same. Whether the address was new, already
  * pending, or already confirmed is not something a stranger gets to learn.

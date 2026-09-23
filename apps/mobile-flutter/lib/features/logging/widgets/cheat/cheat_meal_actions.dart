@@ -40,9 +40,9 @@ class CheatMealActions extends StatelessWidget {
             onTap: () => showShareMealSheet(context, meal),
           ),
         const Spacer(),
-        // Unconditional, exactly as the precise row does it. Cheat meals are
-        // already auto-shared to the circle on save, so without this toggle
-        // the owner had no way to see that — or undo it.
+        // Unconditional, exactly as the precise row does it. With Circle
+        // auto-share on, cheat meals are shared on save, so without this
+        // toggle the owner had no way to see that — or undo it.
         PersistedMealShareToCircleButton(mealId: meal.id, share: meal.share),
         if (onRemove != null)
           MealActionIconButton(

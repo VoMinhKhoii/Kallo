@@ -7,8 +7,6 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { createClient } from '@/lib/infra/supabase/server';
 
-export const runtime = 'nodejs';
-
 /**
  * Re-exported for the migration-contract test in `route.test.ts`. The constant
  * itself lives in `lib/auth/duplicate-email.ts` so the browser ID-token flow

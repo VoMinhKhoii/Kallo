@@ -7,8 +7,6 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { createClient } from '@/lib/infra/supabase/server';
 
-export const runtime = 'nodejs';
-
 /**
  * Read-only invite preview for the mobile connect screen. Resolves the inviter
  * from their link slug and reports the viewer's relationship to them WITHOUT

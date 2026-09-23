@@ -29,6 +29,7 @@ import {
   pendingAnalyses,
   unmatchedIngredients,
 } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 import { assertCheatConfirmAllowed, confirmCheatMeal } from './cheat/confirm';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
@@ -243,22 +244,24 @@ export async function confirmAndSaveMealAction(input: {
     const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
 
     // Insert meal
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.mealId ? { id: parsed.mealId } : {}),
-        userId: user.id,
-        rawInput: pending.rawInput,
-        mealSlot,
-        confidenceOverall: pipelineResult.confidenceOverall,
-        loggedAt,
-        ...nutritionValuesToRow(mealDisplayed),
-      })
-      .returning({ id: meals.id });
+    const [meal] = await guardClientMealId(() =>
+      tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput: pending.rawInput,
+          mealSlot,
+          confidenceOverall: pipelineResult.confidenceOverall,
+          loggedAt,
+          ...nutritionValuesToRow(mealDisplayed),
+        })
+        .returning({ id: meals.id })
+    );
 
-    // Share to circle by default when the profile-level opt-out is disabled.
-    // The AFTER INSERT trigger fans out the meal_shared circle event. The user
-    // can still opt this meal back out via the per-meal toggle, while
+    // Share to circle only when the owner has turned Circle auto-share on (off
+    // by default). The AFTER INSERT trigger fans out the meal_shared circle
+    // event. The user can still opt this meal back out via the per-meal toggle, while
     // onConflictDoNothing preserves a prior explicit choice on the
     // re-confirm/edit path (existing meal id). The helper reads the preference
     // inside the transaction — the profile row loaded at auth time could be
@@ -357,7 +360,7 @@ export async function confirmAndSaveMealAction(input: {
       entryMode: 'precise',
       alcoholG: null,
       cheatSliders: null,
-      // Shared to circle by default (see the meal_shares insert above).
+      // Null (private) unless auto-share inserted a row above.
       share,
     });
 

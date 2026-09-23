@@ -12,7 +12,7 @@ describe('negotiate', () => {
     // RSC fetches advertise `text/x-component` and nothing else, so without
     // this they land in the 406 branch and every client-side navigation on the
     // site breaks. Detected from Accept, not the `RSC` header — Next strips
-    // that before middleware ever sees it.
+    // that before the proxy ever sees it.
     for (const accept of [
       'text/x-component',
       'text/x-component;q=1, */*;q=0.1',

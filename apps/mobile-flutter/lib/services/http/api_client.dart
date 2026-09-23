@@ -146,7 +146,9 @@ class ApiClient {
   Future<void> deleteAccount() => delete<dynamic>('/api/v1/account');
 
   /// Fetch a complete JSON snapshot of the user's data
-  /// (`GET /api/v1/account`): profile, meals (with items), and weights.
+  /// (`GET /api/v1/account`): profile, meals (with items), weights, Circle,
+  /// chats, notifications, feedback, billing and app activity. Treated as
+  /// opaque JSON — the server only ever adds keys (see `formatVersion`).
   Future<Map<String, dynamic>> exportMyData() =>
       get<Map<String, dynamic>>('/api/v1/account');
 

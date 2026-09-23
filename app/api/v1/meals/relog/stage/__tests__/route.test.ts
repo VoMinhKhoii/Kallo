@@ -17,8 +17,14 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
 
 const { POST } = await import('@/app/api/v1/meals/relog/stage/route');
 
+// A real Request: the route reads the body through the byte-capped reader,
+// which streams `request.body` rather than calling `json()`.
 function makeRequest(body: unknown): NextRequest {
-  return { json: async () => body } as unknown as NextRequest;
+  return new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }) as unknown as NextRequest;
 }
 
 const SOURCE_MEAL_ID = '2b8e2f6a-4f9f-4d38-9f6e-1a2b3c4d5e6f';

@@ -1,6 +1,10 @@
 import GithubSlugger from 'github-slugger';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getToc } from '@/lib/domain/docs/toc';
+
+// `cacheLife()` only works inside a Next render; the caching itself is Next's
+// concern, so here it is a no-op and the function runs as plain code.
+vi.mock('next/cache', () => ({ cacheLife: () => undefined }));
 
 describe('getToc', () => {
   it('extracts h2 and h3 from a real page', async () => {

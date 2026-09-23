@@ -50,10 +50,14 @@ describe('updateFeedbackStatus', () => {
     expect(values.updatedAt).toBeInstanceOf(Date);
   });
 
-  it('revalidates both the detail and list routes', async () => {
+  // A bare '/admin/feedback' matches no page: every admin URL is locale-
+  // prefixed. The route pattern + 'layout' covers the list and every detail.
+  it('revalidates the list and every detail page under it', async () => {
     await updateFeedbackStatus({ id: ID, status: 'wontfix' });
-    expect(revalidateSpy).toHaveBeenCalledWith(`/admin/feedback/${ID}`);
-    expect(revalidateSpy).toHaveBeenCalledWith('/admin/feedback');
+    expect(revalidateSpy).toHaveBeenCalledWith(
+      '/[locale]/admin/feedback',
+      'layout'
+    );
   });
 
   it('rejects a non-uuid id', async () => {

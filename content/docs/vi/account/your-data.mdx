@@ -1,7 +1,7 @@
 ---
 title: Dữ liệu của bạn
 description: Kallo lưu gì, gửi gì cho mô hình AI, và cách bạn lấy lại hoặc xóa đi.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 Đây là bản tóm tắt dễ đọc. Bản đầy đủ, có tính pháp lý, nằm ở
@@ -54,8 +54,43 @@ bộ lọc an toàn đánh dấu một yêu cầu là đáng ngờ — chi tiế
 
 ## Lấy dữ liệu ra
 
-Bạn có thể yêu cầu bản sao dữ liệu của mình qua
-[support@kallo.fit](mailto:support@kallo.fit).
+**Cài đặt → Tài khoản → Xuất dữ liệu của tôi** tải về ngay một tệp JSON, trên
+web và trong ứng dụng di động. Tệp gồm:
+
+- **Tài khoản** — mã người dùng, email, thời điểm đăng ký và lần đăng nhập gần
+  nhất, cùng các phương thức đăng nhập: từng danh tính Google, Apple hoặc email
+  đã liên kết kèm các mốc thời gian, và thông tin hồ sơ mà nó lưu (tên, liên kết
+  ảnh, email và email đã được xác minh hay chưa). Mã thông báo đăng nhập không
+  bao giờ được đưa vào.
+- **Hồ sơ** — chỉ số cơ thể, mục tiêu và chỉ tiêu, quốc gia, ngôn ngữ, thói quen
+  nấu ăn, tiến độ thiết lập ban đầu, và việc bữa ăn mới có tự động chia sẻ lên
+  Vòng kết nối hay không.
+- **Hồ sơ Vòng kết nối** — tên người dùng (handle), tên hiển thị và thiết lập
+  ảnh đại diện.
+- **Nhật ký bữa ăn** — mọi bữa ăn kèm các món và chỉ số dinh dưỡng, lịch sử cân
+  nặng, và những ngày bạn đánh dấu đã ghi đủ.
+- **Vòng kết nối** — bạn bè (theo handle, kèm thời điểm kết bạn được chấp
+  nhận), các bữa ăn bạn chia sẻ, lượt thả cảm xúc và trả lời bạn để lại, các
+  bữa ăn bạn gửi hoặc nhận để sao chép hay chia phần, và hoạt động Vòng kết nối
+  của chính bạn.
+- **Trò chuyện** — các cuộc trò chuyện bạn tham gia hoặc tạo, thành viên (theo
+  mã người dùng), và mọi tin nhắn bạn đã gửi.
+- **Thông báo** và các thiết bị đăng ký nhận thông báo đẩy. Mã thiết bị chỉ giữ
+  vài ký tự cuối.
+- **Góp ý** bạn đã gửi, kèm trạng thái xử lý.
+- **Thanh toán** — quyền Premium của bạn và trạng thái đồng bộ.
+- **Hoạt động trong ứng dụng** — các yêu cầu phân tích bữa ăn còn lưu (giữ
+  khoảng một tuần), các phân tích chưa lưu, nguyên liệu mà cơ sở dữ liệu thực
+  phẩm không khớp được, và sự kiện phân tích sản phẩm gắn với tài khoản.
+- **Tệp** — ảnh đại diện bạn tải lên và ảnh chụp màn hình trong góp ý, được liệt
+  kê theo vị trí lưu trữ. Bản thân hình ảnh không nằm trong tệp.
+
+Nội dung của người khác không nằm trong tệp: bạn nhận tin nhắn, trả lời và cảm
+xúc của chính mình, không phải của họ. Các quan hệ bạn bè đã bị chặn cũng không
+có, vì bản ghi không cho biết ai đã chặn ai. Các bản ghi nội bộ như bộ đếm giới
+hạn tần suất, dấu vết gỡ lỗi mô hình và webhook thô từ nhà cung cấp thanh toán
+cũng không được đưa vào. Với những gì không có trong tệp, kể cả bản sao ảnh chụp
+màn hình, hãy viết tới [support@kallo.fit](mailto:support@kallo.fit).
 
 ## Xóa dữ liệu
 

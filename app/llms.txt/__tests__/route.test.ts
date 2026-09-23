@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseFrontmatter } from '@/lib/domain/docs/markdown/to-markdown';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 
+// `cacheLife()` only works inside a Next render; the caching itself is Next's
+// concern, so here it is a no-op and the function runs as plain code.
+vi.mock('next/cache', () => ({ cacheLife: () => undefined }));
+
 // The route reads frontmatter through the loader, which imports the compiled
 // `.mdx` — and vitest has no MDX pipeline. Read the same frontmatter off the
 // same files instead, so the assertions below run against the real titles and

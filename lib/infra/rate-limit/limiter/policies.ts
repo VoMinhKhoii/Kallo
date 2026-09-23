@@ -206,6 +206,20 @@ export const rateLimitPolicies = {
     failMode: 'memory',
   },
 
+  /**
+   * CSP violation reports (`/api/csp-report`) — an anonymous write into the
+   * logs, sent by browsers on their own schedule. Memory-only: a report must
+   * never cost a database round trip, and losing some under a flood loses
+   * nothing but log lines. A browser batches its reports, so one real visitor
+   * rarely sends more than a few a minute; 30 is room for a busy NAT.
+   */
+  cspReportIp: {
+    route: 'csp:report:ip',
+    limits: { perMinute: 30 },
+    keyKinds: ['ip'],
+    failMode: 'memory',
+  },
+
   // ---------------------------------------------------------------------
   // Authenticated surfaces (wired in PR 3)
   // ---------------------------------------------------------------------

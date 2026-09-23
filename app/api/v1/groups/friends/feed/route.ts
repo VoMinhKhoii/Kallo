@@ -3,8 +3,6 @@ import { listFriendsThreadFeed } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function GET(request: NextRequest) {
   try {
     const actorId = await requireUserId();

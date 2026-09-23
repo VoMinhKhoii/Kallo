@@ -1,44 +1,17 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockDbSelect } = vi.hoisted(() => ({ mockDbSelect: vi.fn() }));
 
 vi.mock('@/lib/infra/db/client', () => ({ db: { select: mockDbSelect } }));
 
-vi.mock('@/lib/infra/db/schema', () => ({
-  mealShares: {
-    id: 'ms.id',
-    mealId: 'ms.mealId',
-    actorId: 'ms.actorId',
-    visibility: 'ms.visibility',
-    sharedAt: 'ms.sharedAt',
-  },
-  meals: {
-    id: 'm.id',
-    userId: 'm.userId',
-    rawInput: 'm.rawInput',
-    caloriesKcal: 'm.caloriesKcal',
-    proteinG: 'm.proteinG',
-    carbohydrateG: 'm.carbohydrateG',
-    fatG: 'm.fatG',
-  },
-  publicProfiles: {
-    userId: 'pp.userId',
-    handle: 'pp.handle',
-    displayName: 'pp.displayName',
-    avatarSeed: 'pp.avatarSeed',
-    avatarUrl: 'pp.avatarUrl',
-    avatarPath: 'pp.avatarPath',
-  },
-  friendships: {
-    id: 'f.id',
-    userLow: 'f.userLow',
-    userHigh: 'f.userHigh',
-    status: 'f.status',
-  },
-}));
+// The real schema: the friend-visibility predicate is asserted on the SQL it
+// renders, which needs real column objects rather than string stand-ins.
 
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
+  mostRecentSharedMealsToday,
   sharedMealsBefore,
   toSharedMealEntry,
 } from '@/lib/domain/social/feed/meal-feed';
@@ -85,7 +58,19 @@ function sharedMealsQuery(rows: unknown[]) {
   query.where.mockReturnValue(query);
   query.orderBy.mockReturnValue(query);
   mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
+  return query;
 }
+
+/** Render the WHERE clause a query double received, as Postgres would see it. */
+function renderedWhere(where: ReturnType<typeof vi.fn>) {
+  return new PgDialect().sqlToQuery(where.mock.calls[0][0] as SQL);
+}
+
+// The pre-connection backlog rule (KALLO-03): a friend's share is visible only
+// when shared_at >= friendships.accepted_at; the viewer's own shares are not
+// bounded. The comparison runs in Postgres, so what can be pinned here is that
+// every friend-feed query carries it — and carries it for the right viewer.
+const FRIEND_SINCE = '"friendships"."accepted_at" <= "meal_shares"."shared_at"';
 
 describe('sharedMealsBefore', () => {
   beforeEach(() => {
@@ -140,6 +125,67 @@ describe('sharedMealsBefore', () => {
     const page = await sharedMealsBefore(USER_A, null, undefined, 20);
 
     expect(page.rows).toHaveLength(2);
+  });
+});
+
+describe('friend feeds hide shares made before the friendship', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sharedMealsBefore admits the viewer or a friend connected before the share', async () => {
+    const query = sharedMealsQuery([]);
+
+    await sharedMealsBefore(USER_A, null);
+
+    const { sql, params } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."actor_id" = $1');
+    expect(sql).toContain(FRIEND_SINCE);
+    expect(sql).toContain(`"friendships"."status" = 'accepted'`);
+    // Every bound id is the viewer's — never an unscoped friendship.
+    expect(params.slice(0, 3)).toEqual([USER_A, USER_A, USER_A]);
+    // The unbounded left join is gone: authorization lives in the WHERE.
+    expect(query.leftJoin).not.toHaveBeenCalled();
+  });
+
+  it('mostRecentSharedMealsToday applies the same bound for the viewer', async () => {
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn().mockResolvedValue([]),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    const selectDistinctOn = vi.fn(() => ({
+      from: vi.fn().mockReturnValue(query),
+    }));
+    const db = { selectDistinctOn } as never;
+    const friend = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
+
+    await mostRecentSharedMealsToday(
+      USER_A,
+      [USER_A, friend],
+      new Date('2026-01-01T00:00:00Z'),
+      new Date('2026-01-02T00:00:00Z'),
+      db
+    );
+
+    const { sql, params } = renderedWhere(query.where);
+    expect(sql).toContain(FRIEND_SINCE);
+    expect(params).toContain(friend);
+    // The self branch and both friendship legs are keyed to the viewer.
+    expect(params.filter((p) => p === USER_A).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('skips the query entirely for an empty user list', async () => {
+    const selectDistinctOn = vi.fn();
+
+    await expect(
+      mostRecentSharedMealsToday(USER_A, [], new Date(), new Date(), {
+        selectDistinctOn,
+      } as never)
+    ).resolves.toEqual([]);
+    expect(selectDistinctOn).not.toHaveBeenCalled();
   });
 });
 

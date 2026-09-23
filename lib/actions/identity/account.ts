@@ -1,6 +1,6 @@
 'use server';
 
-import { eq, inArray, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
@@ -10,15 +10,12 @@ import {
   prepareAccountDeletion,
   processAccountDeletionJob,
 } from '@/lib/domain/account-deletion/jobs';
-import { db } from '@/lib/infra/db/client';
 import {
-  billingWebhookEvents,
-  bodyWeightLog,
-  entitlementGrants,
-  mealItems,
-  meals,
-  userProfiles,
-} from '@/lib/infra/db/schema';
+  buildDataExport,
+  type DataExport,
+} from '@/lib/domain/account-export/build-export';
+import { db } from '@/lib/infra/db/client';
+import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 import { createClient } from '@/lib/infra/supabase/server';
 
@@ -121,63 +118,6 @@ async function purgeAvatarObjects(
   }
 }
 
-/**
- * Explicit field-by-field pick of the user's profile row for the export.
- * Spelled out (rather than passing `$inferSelect` through) so a future
- * column must be consciously added here before it ships in the export —
- * nothing auto-leaks. Covers everything the user owns today: body metrics,
- * goal + targets, origin/locale, cooking habits, and onboarding progress.
- */
-function pickProfileExport(row: typeof userProfiles.$inferSelect) {
-  return {
-    userId: row.userId,
-    // Body metrics
-    weightKg: row.weightKg,
-    heightCm: row.heightCm,
-    age: row.age,
-    biologicalSex: row.biologicalSex,
-    activityLevel: row.activityLevel,
-    tdeeKcal: row.tdeeKcal,
-    // Goal & targets
-    goal: row.goal,
-    aggression: row.aggression,
-    calorieTarget: row.calorieTarget,
-    proteinTargetG: row.proteinTargetG,
-    carbsTargetG: row.carbsTargetG,
-    fatTargetG: row.fatTargetG,
-    carbSplit: row.carbSplit,
-    // Origin & language
-    countryOfOrigin: row.countryOfOrigin,
-    countryOfResidence: row.countryOfResidence,
-    preferredLocale: row.preferredLocale,
-    // Cooking habits
-    oilUsage: row.oilUsage,
-    defaultRicePortion: row.defaultRicePortion,
-    defaultProteinPortion: row.defaultProteinPortion,
-    brothConsumption: row.brothConsumption,
-    // Onboarding progress
-    onboardingStep: row.onboardingStep,
-    onboardingCompletedAt: row.onboardingCompletedAt,
-    onboardingMinimizedAt: row.onboardingMinimizedAt,
-    // Record timestamps
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-}
-
-export type ProfileExport = ReturnType<typeof pickProfileExport>;
-
-export interface DataExport {
-  exportedAt: string;
-  account: { id: string; email: string | null };
-  profile: ProfileExport | null;
-  meals: Array<
-    typeof meals.$inferSelect & { items: (typeof mealItems.$inferSelect)[] }
-  >;
-  weights: (typeof bodyWeightLog.$inferSelect)[];
-  billingGrants: (typeof entitlementGrants.$inferSelect)[];
-}
-
 async function deleteBillingAuditRowsForUser(userId: string): Promise<void> {
   await db.delete(billingWebhookEvents).where(sql`
     ${billingWebhookEvents.userId} = ${userId}::uuid
@@ -192,57 +132,15 @@ async function deleteBillingAuditRowsForUser(userId: string): Promise<void> {
 }
 
 /**
- * Build a complete JSON snapshot of everything we hold for the current user:
- * profile, every meal (with its items), and every weight entry. Returned to
- * the caller for download — App Store / GDPR-grade data portability.
+ * Build a complete JSON snapshot of everything we hold for the current user —
+ * profile, diary, Circle, chats, notifications, feedback, billing and app
+ * activity — for download (the right of access and data portability). The
+ * document is assembled by `lib/domain/account-export/`, whose coverage
+ * registry records where every table goes or why it is excluded.
  */
 export async function exportMyDataAction(input: unknown): Promise<DataExport> {
   const { user } = await requireExpectedUser(input);
-
-  const [profileRows, mealRows, weightRows, billingGrantRows] =
-    await Promise.all([
-      db
-        .select()
-        .from(userProfiles)
-        .where(eq(userProfiles.userId, user.id))
-        .limit(1),
-      db.select().from(meals).where(eq(meals.userId, user.id)),
-      db.select().from(bodyWeightLog).where(eq(bodyWeightLog.userId, user.id)),
-      db
-        .select()
-        .from(entitlementGrants)
-        .where(eq(entitlementGrants.userId, user.id)),
-    ]);
-
-  const mealIds = mealRows.map((m) => m.id);
-  const itemRows = mealIds.length
-    ? await db
-        .select()
-        .from(mealItems)
-        .where(inArray(mealItems.mealId, mealIds))
-    : [];
-
-  const itemsByMeal = new Map<string, (typeof mealItems.$inferSelect)[]>();
-  for (const item of itemRows) {
-    const bucket = itemsByMeal.get(item.mealId);
-    if (bucket) {
-      bucket.push(item);
-    } else {
-      itemsByMeal.set(item.mealId, [item]);
-    }
-  }
-
-  return {
-    exportedAt: new Date().toISOString(),
-    account: { id: user.id, email: user.email ?? null },
-    profile: profileRows[0] ? pickProfileExport(profileRows[0]) : null,
-    meals: mealRows.map((meal) => ({
-      ...meal,
-      items: itemsByMeal.get(meal.id) ?? [],
-    })),
-    weights: weightRows,
-    billingGrants: billingGrantRows,
-  };
+  return buildDataExport(db, user);
 }
 
 /**

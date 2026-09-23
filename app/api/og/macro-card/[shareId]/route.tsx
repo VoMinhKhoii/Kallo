@@ -22,10 +22,6 @@ import { loadOgFonts } from '@/lib/seo/og/fonts';
 import { dishColorFromSeed, OG_COLORS } from '@/lib/seo/og/palette';
 import { type MacroBar, MacroCard } from './_components/macro-card';
 
-// Node runtime: the route reads the DB over the Drizzle owner connection and
-// the vendored font binaries off disk.
-export const runtime = 'nodejs';
-
 const ogRoute = '/api/og/macro-card';
 
 // Per-user OG render guard. The card is CPU-heavy, so reuse the existing

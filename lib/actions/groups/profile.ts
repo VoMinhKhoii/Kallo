@@ -21,7 +21,7 @@ import {
 } from '@/lib/domain/social/identity/public-identity';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
-
+import { isUniqueViolation } from '@/lib/infra/db/unique-violation';
 import type { Db, PublicProfile } from './types';
 
 // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@ export async function upsertPublicProfile(
     // same handle by a different user (which the pre-check above can race past)
     // surfaces as a Postgres 23505 unique violation. Map it to a clean 409
     // instead of leaking a raw 500.
-    if ((error as { code?: string } | null)?.code === '23505') {
+    if (isUniqueViolation(error)) {
       throw Errors.conflict('Handle này đã được sử dụng.');
     }
     throw error;
@@ -176,7 +176,7 @@ export async function getOrCreateMyProfile(
         .returning();
       return toPublicIdentity(row);
     } catch (error) {
-      if ((error as { code?: string } | null)?.code === '23505') {
+      if (isUniqueViolation(error)) {
         // Either a concurrent provision for this user, or a slug clash.
         const now = await getMyPublicProfile(actorId, db);
         if (now) return now;
@@ -267,7 +267,7 @@ export async function renameMyProfile(
       if (!row) throw Errors.internal(null, 'Profile disappeared mid-rename.');
       return toPublicIdentity(row);
     } catch (error) {
-      if ((error as { code?: string } | null)?.code === '23505') {
+      if (isUniqueViolation(error)) {
         continue; // handle collision — retry with a fresh suffix
       }
       throw error;

@@ -5,8 +5,6 @@ import {
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /** Full data export for the authenticated user (mobile "Export my data"). */
 export async function GET() {
   try {

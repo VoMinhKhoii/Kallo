@@ -1,15 +1,18 @@
 // ---------------------------------------------------------------------------
 // Group tracking — meal share visibility toggle
 // ---------------------------------------------------------------------------
-// The per-meal share control. Meals are shared to the circle by default — every
-// meal-creation path (confirm, manual log, re-log) inserts a 'circle'
-// meal_shares row on creation — so this toggle is the per-meal opt-out (and
-// re-opt-in). Toggling upserts a single row on the partial-unique meal_id, and
+// The per-meal share control. Meals are private unless the owner turned Circle
+// auto-share on (off by default), in which case every meal-creation path
+// (confirm, manual log, re-log) inserts a 'circle' meal_shares row — so this
+// toggle is the per-meal opt-in, or the opt-out for an auto-shared meal. A
+// re-share bumps shared_at, so a friend who connected after the meal was first
+// logged sees it only once it is deliberately shared again. Toggling upserts a
+// single row on the partial-unique meal_id, and
 // the DB AFTER INSERT OR UPDATE trigger on meal_shares writes the meal_shared
 // circle_event on the private -> non-private transition (so re-shares fan out
 // too).
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { setMealShareVisibilitySchema } from '@/lib/core/validation/social';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -50,7 +53,9 @@ export async function setMealShareVisibility(
     })
     .onConflictDoUpdate({
       target: mealShares.mealId,
-      set: { visibility: parsed.visibility, sharedAt: new Date() },
+      // The database clock, not the app server's: shared_at is compared with
+      // friendships.accepted_at, which the DB stamps (20260923051230).
+      set: { visibility: parsed.visibility, sharedAt: sql`now()` },
     })
     .returning({ id: mealShares.id });
 

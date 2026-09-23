@@ -1,11 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
+import { readJsonBody } from '@/lib/api/auth';
 import { stageRelogAnalysisSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-
-export const runtime = 'nodejs';
 
 /** `POST /api/v1/meals/relog/stage` — stage the picked references as a pending
  *  analysis so they surface in the ordinary editable review card. Exists for
@@ -25,7 +24,7 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   try {
     await requireAuthAndProfile();
-    const body = stageRelogAnalysisSchema.parse(await req.json());
+    const body = stageRelogAnalysisSchema.parse(await readJsonBody(req));
     const result = await stageRelogAnalysisAction(body);
     return Response.json(result);
   } catch (error) {

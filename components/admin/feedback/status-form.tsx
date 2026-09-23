@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import {
   FEEDBACK_STATUS_LABELS,
   FEEDBACK_STATUSES,
@@ -17,9 +18,26 @@ import { updateFeedbackStatus } from '@/lib/admin/triage/update-feedback-status'
 
 export function StatusForm({ id, current }: { id: string; current: string }) {
   const [status, setStatus] = useState(current);
+  // Kept alive across navigations under Cache Components: when the page comes
+  // back with a different stored status (changed in another tab or by another
+  // admin), show it instead of the selection from the earlier visit.
+  const [seenCurrent, setSeenCurrent] = useState(current);
+  if (current !== seenCurrent) {
+    setSeenCurrent(current);
+    setStatus(current);
+  }
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The page is kept alive (hidden) across navigations under Cache
+  // Components; a "Saved" or error note from an earlier visit — or from an
+  // update that finished after the admin left — is stale by the time they
+  // come back, so clear both when the page is shown again.
+  useResetOnReveal(() => {
+    setSaved(false);
+    setError(null);
+  });
 
   const save = () => {
     setSaved(false);

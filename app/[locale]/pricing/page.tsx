@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { hasLocale } from 'next-intl';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { Header } from '@/components/landing-page/header';
 import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
-import { routing } from '@/i18n/navigation';
-import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { routing } from '@/i18n/routing';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
@@ -67,22 +68,19 @@ export async function generateMetadata({
   };
 }
 
-export default async function PricingPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+export default function PricingPage() {
   return (
-    <AuthProvider googleClientId={googleWebClientId()}>
+    <AuthProvider>
       <Header standalone />
       {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
       <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
         <PricingSection />
       </main>
       <AuthDialog />
+      {/* The runtime Google client ID; the rest of the page is prerendered. */}
+      <Suspense fallback={null}>
+        <AuthRequestConfig />
+      </Suspense>
     </AuthProvider>
   );
 }

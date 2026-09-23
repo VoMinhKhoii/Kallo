@@ -11,8 +11,6 @@ import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 
-export const runtime = 'nodejs';
-
 /**
  * Aggregate dashboard endpoint. Collapses the mobile dashboard's four-way
  * fan-out (`/onboarding/profile`, `/logging/day`, `/weight/summary`,

@@ -4,8 +4,6 @@ import { timezoneOffsetSchema } from '@/lib/api/contracts/meals';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function GET(req: NextRequest) {
   try {
     const timezoneOffset = timezoneOffsetSchema.parse(
