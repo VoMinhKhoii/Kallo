@@ -2,14 +2,18 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing/share-with-friends';
 import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
-
-export const runtime = 'nodejs';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 // The action self-authenticates via requireAuthAndProfile (unified Supabase
 // client — Bearer for mobile, cookie for web), so the route stays a thin body
 // pass-through; the Zod schema inside the action validates the shape.
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate before touching the body: an anonymous caller gets a 401
+    // without the server reading or parsing a byte (KALLO-08). The action
+    // keeps its own check as the authoritative boundary.
+    await requireAuthAndProfile();
+
     const body = await readJsonBody(request);
     const result = await shareMealWithFriendsAction(
       body as {

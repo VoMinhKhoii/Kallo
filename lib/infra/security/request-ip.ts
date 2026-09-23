@@ -10,7 +10,7 @@ import { isIP } from 'node:net';
  * two modes:
  *
  *  - **Production** (`ORIGIN_SHARED_SECRET` set ⇒ the origin lock in
- *    `middleware.ts` is active ⇒ traffic reaches us through Cloudflare):
+ *    `proxy.ts` is active ⇒ traffic reaches us through Cloudflare):
  *    `cf-connecting-ip` ONLY. Cloudflare strips and re-writes that header on
  *    every proxied request, so it cannot be forged from outside. If it is
  *    absent, the answer is `null` — never a fallback to XFF, because a request

@@ -204,7 +204,7 @@ jobs:
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
-      # The origin lock is the app's only trust boundary, and middleware.ts now
+      # The origin lock is the app's only trust boundary, and proxy.ts now
       # fails CLOSED when it is missing (503 on every request of a Cloud Run
       # revision with no ORIGIN_SHARED_SECRET). That in-process check is
       # per-isolate and only fires once traffic arrives; THIS is the
@@ -242,7 +242,7 @@ jobs:
           # ingress=all because Cloudflare reaches the run.app origin over the
           # public internet (proxied CNAME + an Origin Rule that rewrites the Host
           # header — no Cloud Run domain mapping needed). The origin is sealed at
-          # the app layer instead: ORIGIN_SHARED_SECRET + middleware.ts reject
+          # the app layer instead: ORIGIN_SHARED_SECRET + proxy.ts reject
           # anything not proxied by Cloudflare.
           #
           # --no-traffic + --tag=candidate deploy the new revision WITHOUT shifting
@@ -315,7 +315,7 @@ jobs:
           echo "SMOKE_URL=$smoke_url" >> "$GITHUB_ENV"
       - id: smoke
         # Smoke the resolved URL. It bypasses Cloudflare, so it must present the
-        # origin secret or middleware.ts 403s it. SMOKE_URL is passed via env, not
+        # origin secret or proxy.ts 403s it. SMOKE_URL is passed via env, not
         # template interpolation, to keep workflow-output text off the command line.
         env:
           SMOKE_URL: ${{ env.SMOKE_URL }}

@@ -3,6 +3,7 @@ import {
   authed,
   fromZod,
   type JsonSchema,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   ref,
 } from '@/lib/api/openapi/components';
@@ -25,9 +26,10 @@ export const SUPPORT_PATHS: Record<string, PathItem> = {
       description:
         'Files a report against the running app version. Optionally references a screenshot uploaded first via `uploadFeedbackScreenshot`.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(submitFeedbackSchema),
       ok: ref('Acknowledgement'),
-      okStatus: '201',
+      okDescription: 'The new report’s `id`.',
     }),
   },
 
@@ -41,7 +43,6 @@ export const SUPPORT_PATHS: Record<string, PathItem> = {
       body: fileUploadBody('The screenshot image.'),
       bodyMedia: 'multipart/form-data',
       ok: ref('Acknowledgement'),
-      okStatus: '201',
       okDescription: 'The stored path.',
     }),
   },

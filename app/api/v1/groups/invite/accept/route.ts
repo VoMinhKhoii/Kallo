@@ -3,8 +3,6 @@ import { acceptInvite } from '@/lib/actions/groups/friendship';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /** Accept a link invite (the recipient's tap connects them to the inviter). */
 export async function POST(request: NextRequest) {
   try {

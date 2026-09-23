@@ -32,7 +32,7 @@ RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
 RUN cp -r public .next/standalone/public && \
     cp -r .next/static .next/standalone/.next/static
 
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 ARG NEXT_PUBLIC_SUPABASE_URL

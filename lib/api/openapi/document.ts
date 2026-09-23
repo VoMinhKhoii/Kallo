@@ -1,5 +1,9 @@
 import type { PathItem } from '@/lib/api/openapi/components';
 import { ACCOUNT_PATHS } from '@/lib/api/openapi/paths/account';
+import {
+  ANALYSIS_PATHS,
+  ANALYSIS_SCHEMAS,
+} from '@/lib/api/openapi/paths/analysis';
 import { LOGGING_PATHS } from '@/lib/api/openapi/paths/logging';
 import { MEAL_PATHS } from '@/lib/api/openapi/paths/meals';
 import { NOTIFICATION_PATHS } from '@/lib/api/openapi/paths/notifications';
@@ -17,13 +21,17 @@ import { SITE_URL } from '@/lib/seo/site';
 /**
  * The published OpenAPI 3.1 description of Kallo's HTTP API.
  *
- * Scope is deliberate. It covers `/api/v1/*` and `/api/healthz` — the surface
- * the web and mobile clients use — and omits four route families on purpose:
- * the RevenueCat and Supabase-Auth webhooks (signature-verified provider
- * callbacks that no caller should ever invoke), the Supabase auth proxy
- * (internal plumbing), and the admin-only analyse-meal debug endpoint (which
- * answers 404 rather than 403 to non-admins, and documenting it would undo
- * that). `openapi.test.ts` enforces that list rather than leaving it to memory.
+ * Scope is deliberate. It covers every route a web or mobile client calls —
+ * `/api/v1/*`, `/api/healthz`, the `/api/analyze-meal` SSE stream and the
+ * `/api/og/macro-card/{shareId}` image — and omits the rest on purpose: the
+ * RevenueCat and Supabase-Auth webhooks (signature-verified provider callbacks
+ * that no caller should ever invoke), the Supabase auth proxy (internal
+ * plumbing), the admin-only analyse-meal debug endpoint (which answers 404
+ * rather than 403 to non-admins, and documenting it would undo that), and the
+ * `/api/{unmatched}` catch-all. `__tests__/drift.test.ts` enforces that list
+ * rather than leaving it to memory, and `__tests__/contract.test.ts` holds
+ * each documented request body, success status and query parameter to what
+ * the route handler actually parses and returns.
  *
  * Almost every operation is marked `x-internal: true`. That is honest, not
  * defensive: these endpoints exist to serve Kallo's own clients, there is no
@@ -34,6 +42,7 @@ import { SITE_URL } from '@/lib/seo/site';
 const PATHS: Record<string, PathItem> = {
   ...PUBLIC_PATHS,
   ...MEAL_PATHS,
+  ...ANALYSIS_PATHS,
   ...LOGGING_PATHS,
   ...NUTRITION_PATHS,
   ...TRACKING_PATHS,
@@ -123,7 +132,7 @@ export function openApiDocument() {
             'A Supabase Auth access token for a Kallo user. The token carries no scopes — it grants whatever that user can do — so an agent acting on someone’s behalf holds their full account authority. Treat it accordingly.',
         },
       },
-      schemas: SCHEMAS,
+      schemas: { ...SCHEMAS, ...ANALYSIS_SCHEMAS },
     },
     security: [],
     paths: PATHS,

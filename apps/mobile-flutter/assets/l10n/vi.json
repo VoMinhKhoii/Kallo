@@ -774,7 +774,7 @@
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+      "passwordError": "Vui lòng nhập mật khẩu"
     },
     "signUp": {
       "title": "Tạo tài khoản",
@@ -788,7 +788,7 @@
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+      "passwordError": "Mật khẩu cần ít nhất 8 ký tự (mỗi chữ có dấu tính là 2–3 ký tự), gồm cả chữ cái và chữ số."
     },
     "dialog": {
       "signInTitle": "Chào mừng trở lại",
@@ -848,6 +848,9 @@
       "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
       "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
+      "weakPassword": "Mật khẩu này chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự (mỗi chữ có dấu tính là 2–3 ký tự), gồm cả chữ cái và chữ số nhé.",
+      "pwnedPassword": "Mật khẩu này đã xuất hiện trong một vụ lộ dữ liệu. Bạn chọn mật khẩu khác nhé.",
+      "passwordTooLong": "Mật khẩu quá dài. Vui lòng dùng tối đa 72 ký tự, và mỗi chữ có dấu tính là 2–3 ký tự.",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     },
     "showPassword": "Hiện mật khẩu",
@@ -1647,7 +1650,19 @@
       "restShare": "Đã chia {percent}%",
       "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
       "acceptCheat": "Chọn mức",
-      "waiting": "· {count} đang chờ"
+      "waiting": "· {count} đang chờ",
+      "confirm": {
+        "cancel": "Để sau",
+        "acceptTitle": "Thêm bữa này vào nhật ký?",
+        "acceptDescription": "Bữa ăn của {name} sẽ được ghi vào đúng ngày đã ăn.",
+        "acceptAction": "Thêm bữa",
+        "acceptCheatTitle": "Tự chọn mức của bạn?",
+        "acceptCheatDescription": "Bữa xả của {name} sẽ mở trong nhật ký để bạn chọn mức mình đã ăn. Chưa có gì được ghi cho đến khi bạn lưu.",
+        "acceptCheatAction": "Mở thanh trượt",
+        "dismissTitle": "Bỏ qua bữa này?",
+        "dismissDescription": "{name} sẽ không nhận được thông báo. Bữa này sẽ hiện lại nếu họ chia sẻ lại với bạn.",
+        "dismissAction": "Bỏ qua"
+      }
     },
     "invite": {
       "title": "Mời vào vòng kết nối",

@@ -3,6 +3,7 @@ import {
   classifyDayCompleteness,
   isLikelyPartialDay,
   medianOf,
+  meetsCompletenessFloor,
   PARTIAL_DAY_FRACTION,
 } from '@/lib/domain/nutrition/pattern/completeness';
 
@@ -194,5 +195,30 @@ describe('marked days', () => {
     // own calories. Guarding that it is reported as complete is what lets the
     // real 400 flow through instead of being dropped.
     expect(completeDates).toEqual(new Set(['a']));
+  });
+});
+
+describe('meetsCompletenessFloor', () => {
+  it('is reached exactly at the partial-day fraction of the target', () => {
+    const floor = PARTIAL_DAY_FRACTION * 2000;
+    expect(meetsCompletenessFloor(floor, 2000)).toBe(true);
+    expect(meetsCompletenessFloor(floor - 1, 2000)).toBe(false);
+  });
+
+  it('counts a day over target as met', () => {
+    expect(meetsCompletenessFloor(2600, 2000)).toBe(true);
+  });
+
+  it('is never met without a usable target', () => {
+    expect(meetsCompletenessFloor(2000, null)).toBe(false);
+    expect(meetsCompletenessFloor(2000, 0)).toBe(false);
+  });
+
+  it('agrees with isLikelyPartialDay on every logged day', () => {
+    for (const calories of [1, 1000, 1699, 1700, 1701, 2400]) {
+      expect(meetsCompletenessFloor(calories, 2000)).toBe(
+        !isLikelyPartialDay(calories, 2000)
+      );
+    }
   });
 });

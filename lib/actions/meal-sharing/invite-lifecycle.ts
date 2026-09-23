@@ -35,12 +35,17 @@
 // where drifting means leaking one user's meal to another. Here it is one
 // function they both call, and a fix lands on both by construction.
 
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { and, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import type { AppTransaction } from '@/lib/infra/db/client';
-import { friendships, mealShareInvites, meals } from '@/lib/infra/db/schema';
+import {
+  friendships,
+  mealShareInvites,
+  meals,
+  pendingAnalyses,
+} from '@/lib/infra/db/schema';
 
 type MealRow = typeof meals.$inferSelect;
 
@@ -269,4 +274,35 @@ export async function bindInviteToMeal(
     .update(mealShareInvites)
     .set({ acceptedMealId: options.mealId })
     .where(eq(mealShareInvites.id, options.inviteId));
+}
+
+/**
+ * An accepted offer the recipient still HOLDS — one a re-share must not reset.
+ *
+ * `status = 'accepted'` alone is not that. It has two live meanings and one
+ * dead one:
+ *   - bound to a meal (`accepted_meal_id` set) — they took it and ate it;
+ *   - a staged cheat card in flight — spent at stage time, no meal until
+ *     confirm, but a `pending_analyses` row still carries `source_invite_id`;
+ *   - neither — the meal it became was DELETED. `accepted_meal_id` is
+ *     `ON DELETE SET NULL`, so deleting an accepted copy (precise or a
+ *     confirmed cheat) leaves `accepted` + NULL with no card behind it.
+ *
+ * The third state used to be treated as held forever: the re-share upsert
+ * skipped it and the split pre-check refused it, so a sender re-offering a
+ * meal their friend had deleted got "sent to 0 friends" (or a "friend already
+ * took this" error) and the offer never came back. Only the first two are
+ * holds; the third is re-offerable exactly like a dismiss.
+ *
+ * Not simply `accepted_meal_id IS NULL`, either: that was tried and reverted,
+ * because it re-pends every in-flight cheat card — a second card for the same
+ * dish, and confirming both wrote two meals.
+ *
+ * Race-safe against a concurrent cheat stage: both the stage and the re-share
+ * lock the SOURCE meal `FOR UPDATE` before touching the invite, so the
+ * re-share's statement starts after the stage committed its card and the
+ * `EXISTS` below sees it.
+ */
+export function inviteStillHeld(): SQL {
+  return sql`(${mealShareInvites.status} = 'accepted' AND (${mealShareInvites.acceptedMealId} IS NOT NULL OR EXISTS (SELECT 1 FROM ${pendingAnalyses} WHERE ${pendingAnalyses.sourceInviteId} = ${mealShareInvites.id})))`;
 }

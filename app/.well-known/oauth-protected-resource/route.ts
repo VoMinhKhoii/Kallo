@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -15,8 +16,11 @@ import { SITE_URL } from '@/lib/seo/site';
  * There is likewise no `/.well-known/oauth-authorization-server` here: Kallo is
  * not an authorization server. The issuer named below is, and it publishes its
  * own metadata at `<issuer>/.well-known/openid-configuration`.
+ *
+ * Static: the document depends only on build-time config, so it is built in a
+ * `'use cache'` function (Cache Components' replacement for
+ * `dynamic = 'force-static'`) and the handler prerenders.
  */
-export const dynamic = 'force-static';
 
 /**
  * The Supabase Auth issuer. Read from the public env var the browser client
@@ -27,7 +31,10 @@ function authorizationServer(): string | null {
   return url ? `${url.replace(/\/+$/, '')}/auth/v1` : null;
 }
 
-export function GET(): Response {
+async function protectedResourceMetadata(): Promise<string> {
+  'use cache';
+  cacheLife('max');
+
   const issuer = authorizationServer();
 
   const metadata = {
@@ -40,7 +47,11 @@ export function GET(): Response {
     resource_tos_uri: `${SITE_URL}/en/docs/legal/terms`,
   };
 
-  return new Response(JSON.stringify(metadata, null, 2), {
+  return JSON.stringify(metadata, null, 2);
+}
+
+export async function GET(): Promise<Response> {
+  return new Response(await protectedResourceMetadata(), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'public, max-age=0, must-revalidate',

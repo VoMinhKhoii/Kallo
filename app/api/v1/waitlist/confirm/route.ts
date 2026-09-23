@@ -5,8 +5,6 @@ import { publicUrl } from '@/lib/infra/auth/redirects';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
-export const runtime = 'nodejs';
-
 /**
  * Confirm a waitlist signup from the emailed link.
  *
@@ -23,7 +21,7 @@ export const runtime = 'nodejs';
  * but `waitlistGlobal` runs ALWAYS, so a null-IP guessing flood is still capped
  * app-wide. Global first, then IP.
  *
- * Lives under `/api` so `middleware.ts` skips the next-intl locale rewrite; the
+ * Lives under `/api` so `proxy.ts` skips the next-intl locale rewrite; the
  * locale for the redirect comes from the stored row instead.
  */
 export async function GET(request: NextRequest) {

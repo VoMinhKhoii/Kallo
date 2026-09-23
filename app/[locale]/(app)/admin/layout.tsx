@@ -1,6 +1,12 @@
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 
-export const dynamic = 'force-dynamic';
+// Deliberately blocking (`instant = false`): an internal, low-traffic area
+// whose layout gates on `requireAdmin()` (a session read) before anything
+// renders. Navigating INTO /admin may wait on that check; navigations between
+// admin pages are still validated and show admin/loading.tsx while the page's
+// database reads stream. Replaces `dynamic = 'force-dynamic'`, which Cache
+// Components rejects — pages behind a session read are request-time anyway.
+export const instant = false;
 
 export const metadata = {
   title: 'Kallo Admin',

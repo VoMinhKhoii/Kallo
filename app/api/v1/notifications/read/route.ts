@@ -4,8 +4,6 @@ import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { markReadBodySchema } from '@/lib/domain/notifications/contracts';
 
-export const runtime = 'nodejs';
-
 /** Per-row dim on tap. Ids the caller does not own are silently no-ops — the
  *  action scopes every write to the recipient. */
 export async function POST(request: NextRequest) {

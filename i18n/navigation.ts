@@ -1,8 +1,5 @@
 import { createNavigation } from 'next-intl/navigation';
-import { defineRouting } from 'next-intl/routing';
-import { routingConfig } from './config';
-
-export const routing = defineRouting(routingConfig);
+import { routing } from './routing';
 
 export const {
   Link,

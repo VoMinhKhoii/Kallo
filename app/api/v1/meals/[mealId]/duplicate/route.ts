@@ -1,9 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
+import { readJsonBody } from '@/lib/api/auth';
 import { duplicateMealBodySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
-
-export const runtime = 'nodejs';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 /**
  * "Log again": duplicate a saved meal verbatim onto the chosen day (a
@@ -20,7 +20,12 @@ export async function POST(
 ) {
   try {
     const { mealId } = await params;
-    const body = duplicateMealBodySchema.parse(await req.json());
+    // Authenticate before touching the body: an anonymous caller gets a 401
+    // without the server reading or parsing a byte (KALLO-08). The action
+    // keeps its own check as the authoritative boundary.
+    await requireAuthAndProfile();
+
+    const body = duplicateMealBodySchema.parse(await readJsonBody(req));
     const result = await duplicateMealAction({ mealId, ...body });
     return Response.json(result);
   } catch (error) {

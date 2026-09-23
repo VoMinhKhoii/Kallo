@@ -1,22 +1,13 @@
 // ---------------------------------------------------------------------------
 // Shared "most-recent shared meal per user, today" query
 // ---------------------------------------------------------------------------
-// Used by both lib/actions/groups.ts (listCircleFeed — scoped to the actor's
-// friend graph) and lib/actions/chat-groups.ts (listGroupMealFeed — scoped to
-// a chat group's membership). Lives in neither action module so both can
-// import it without creating a circular dependency between them.
+// Used by lib/actions/groups/feed.ts (listCircleFeed and listFriendsThreadFeed,
+// both scoped to the actor's friend graph). The group feeds build on the shared
+// projection below from group-meals.ts. A friend's share is visible only when
+// it was made at or after the friendship was accepted — friendSinceSql, the
+// same predicate the share-by-id gate uses.
 
-import {
-  and,
-  desc,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  lt,
-  or,
-  sql,
-} from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
 import {
   encodeSharedMealCursor,
@@ -32,14 +23,10 @@ import type {
   ShareRepliesSummary,
   ShareReply,
 } from '@/lib/domain/social/shares/replies';
+import { friendSinceSql } from '@/lib/domain/social/shares/share-visibility';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
-import {
-  friendships,
-  mealShares,
-  meals,
-  publicProfiles,
-} from '@/lib/infra/db/schema';
+import { mealShares, meals, publicProfiles } from '@/lib/infra/db/schema';
 
 type Db = AppDb | AppTransaction;
 
@@ -94,13 +81,24 @@ export function todayLocalDate(timezoneOffset: number): string {
   return toLocalDayKey(Date.now(), timezoneOffset);
 }
 
+/** The viewer's own shares, or a friend's share made after the two connected.
+ * Folded into every friend-feed query so a newly accepted friend never sees the
+ * backlog shared before the friendship existed. */
+function visibleToViewer(viewerId: string) {
+  return or(
+    eq(mealShares.actorId, viewerId),
+    friendSinceSql(viewerId, mealShares.actorId, mealShares.sharedAt)
+  );
+}
+
 /**
  * Most-recent non-private shared meal per user, within [dayStart, dayEnd).
- * Callers are responsible for their own authorization scoping — this just
- * runs the query over whichever `userIds` they've already validated the
- * viewer is allowed to see.
+ * Callers scope `userIds` to the viewer plus their accepted friends; the query
+ * additionally drops any friend share made before that friendship was
+ * accepted, so "most recent" means most recent the viewer may see.
  */
 export async function mostRecentSharedMealsToday(
+  viewerId: string,
   userIds: string[],
   dayStart: Date,
   dayEnd: Date,
@@ -124,6 +122,7 @@ export async function mostRecentSharedMealsToday(
         and(
           inArray(mealShares.actorId, userIds),
           sql`${mealShares.visibility} <> 'private'`,
+          visibleToViewer(viewerId),
           gte(mealShares.sharedAt, dayStart),
           lt(mealShares.sharedAt, dayEnd)
         )
@@ -148,9 +147,10 @@ export interface SharedMealPage {
 const THREAD_PAGE_SIZE = 20;
 
 /**
- * Seek-paginated Friends history: every non-private share from the actor or a
- * live accepted friend, newest-first. Friendship authorization is joined into
- * this query so the owner-role connection never fetches an unscoped share.
+ * Seek-paginated Friends history: every non-private share from the actor, or
+ * from a live accepted friend made after the friendship was accepted,
+ * newest-first. Friendship authorization is part of this query so the
+ * owner-role connection never fetches an unscoped share.
  */
 export async function sharedMealsBefore(
   actorId: string,
@@ -168,25 +168,9 @@ export async function sharedMealsBefore(
       and(eq(meals.id, mealShares.mealId), eq(meals.userId, mealShares.actorId))
     )
     .innerJoin(publicProfiles, eq(publicProfiles.userId, mealShares.actorId))
-    .leftJoin(
-      friendships,
-      and(
-        eq(friendships.status, 'accepted'),
-        or(
-          and(
-            eq(friendships.userLow, actorId),
-            eq(friendships.userHigh, mealShares.actorId)
-          ),
-          and(
-            eq(friendships.userHigh, actorId),
-            eq(friendships.userLow, mealShares.actorId)
-          )
-        )
-      )
-    )
     .where(
       and(
-        or(eq(mealShares.actorId, actorId), isNotNull(friendships.id)),
+        visibleToViewer(actorId),
         sql`${mealShares.visibility} <> 'private'`,
         before
           ? or(

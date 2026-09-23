@@ -16,8 +16,10 @@ import { serializeError } from '@/lib/core/errors/serialize';
  *
  * The envelope is the one every `/api/v1` route already returns
  * (`lib/core/errors/app-error.ts`), so a client needs no second parser.
+ *
+ * Always request-time: it reads `request.url`, which is all Cache Components
+ * needs to keep it out of prerendering (no `dynamic` export).
  */
-export const dynamic = 'force-dynamic';
 
 function notFound(request: Request) {
   const { pathname } = new URL(request.url);

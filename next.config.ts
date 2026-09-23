@@ -2,10 +2,41 @@ import createMDX from '@next/mdx';
 import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+// Relative, not `@/`: next.config is compiled outside the app bundle, so it
+// does not lean on the tsconfig path aliases.
+import { cspHeaders } from './lib/infra/security/csp';
 import pkg from './package.json';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Instant Navigations (Next 16.3). Cache Components prerenders a static shell
+  // for every route — request-time data (cookies, the Supabase session, search
+  // params) streams in behind <Suspense> — and keeps visited routes alive with
+  // React <Activity> instead of unmounting them. Nothing is cached unless it is
+  // marked `'use cache'`. Partial Prefetching then prefetches one reusable
+  // App Shell per route instead of one prefetch per visible link. See
+  // docs/ARCHITECTURE.md ("Rendering and caching").
+  cacheComponents: true,
+  partialPrefetching: true,
+  cacheLife: {
+    // For `'use cache'` results computed from the build's own files — the docs
+    // sources under content/, which the standalone image does NOT ship. They
+    // must never be recomputed at runtime (it would ENOENT), so they never
+    // revalidate or expire while a deployment runs; a new deploy rebuilds
+    // them. This is the Cache Components equivalent of `force-static`.
+    deployment: { stale: 300, revalidate: Infinity, expire: Infinity },
+  },
+  typescript: {
+    // Next 16.3 type-checks the build with the TypeScript CLI by default
+    // (`experimental.useTypeScriptCli`), which checks every file the tsconfig
+    // includes. The old in-process checker skipped `__tests__/` and `*.test.*`
+    // diagnostics; the CLI does not, and in the Docker build — whose context
+    // drops `vitest.setup.ts`, where the jest-dom matcher types come from —
+    // every test using those matchers fails the build. `tsconfig.build.json`
+    // leaves the tests out, so the build checks what ships. CI's Type Check
+    // job still runs `tsc` over everything with `tsconfig.json`.
+    tsconfigPath: 'tsconfig.build.json',
+  },
   experimental: {
     // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
     serverActions: { bodySizeLimit: '6mb' },
@@ -31,11 +62,9 @@ const nextConfig: NextConfig = {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
-          // Enforces what the CSP already DECLARES (`frame-ancestors 'none'`),
-          // which is worth having separately because the CSP still ships as
-          // Report-Only — it reports clickjacking rather than preventing it.
-          // Nothing here frames our own pages: we embed Paddle and Google
-          // Identity, never the reverse.
+          // The legacy twin of the CSP's `frame-ancestors 'none'`, for
+          // browsers that predate it. Nothing frames our own pages: we embed
+          // Paddle and Google Identity, never the reverse.
           { key: 'X-Frame-Options', value: 'DENY' },
           // `camera=(self)`, not `()`: the OCR label scanner calls
           // `getUserMedia` from our own page (hooks/meals/entry/
@@ -45,6 +74,12 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(), geolocation=()',
           },
+          // The ENFORCED Content-Security-Policy + its Reporting-Endpoints.
+          // Static and nonce-free on purpose, and set here rather than in
+          // proxy.ts so it also covers prerendered shells and every path the
+          // proxy matcher skips. Why it has no nonce, and what that costs:
+          // lib/infra/security/csp.ts.
+          ...cspHeaders(process.env.NODE_ENV === 'development'),
           // NO Strict-Transport-Security here on purpose. Cloudflare owns HSTS
           // for kallo.fit and is the single authority for it: a two-year
           // `includeSubDomains` policy emitted by the app would be pinned in

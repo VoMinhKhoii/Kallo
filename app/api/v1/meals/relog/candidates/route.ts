@@ -4,8 +4,6 @@ import { relogCandidatesQuerySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /** `GET /api/v1/meals/relog/candidates` — the `/`-picker search. Exists for the
  *  Flutter client; the web composer calls the Server Action directly. */
 export async function GET(req: NextRequest) {

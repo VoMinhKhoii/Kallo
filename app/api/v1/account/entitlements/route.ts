@@ -6,8 +6,6 @@ import {
 } from '@/lib/domain/billing/billing';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /** Derived entitlement/trial view for the authenticated user. */
 export async function GET() {
   try {

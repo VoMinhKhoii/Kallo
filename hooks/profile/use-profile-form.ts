@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useTransition } from 'react';
+import { useEffect, useMemo, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { saveProfileSettings } from '@/lib/domain/onboarding/actions';
@@ -51,6 +51,14 @@ export function useProfileForm(profile: ProfileInput) {
     defaultValues,
     mode: 'onBlur',
   });
+
+  // Settings stays mounted (hidden) across navigations under Cache
+  // Components, so a profile changed elsewhere arrives as new props instead of
+  // a fresh mount. Adopt it, keeping any field the user has edited but not
+  // saved.
+  useEffect(() => {
+    form.reset(defaultValues, { keepDirtyValues: true });
+  }, [form, defaultValues]);
 
   function handleCancel() {
     form.reset(defaultValues);

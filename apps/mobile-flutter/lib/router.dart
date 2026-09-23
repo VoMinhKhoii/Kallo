@@ -56,7 +56,7 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// builds its own transition without ever consulting the theme. So a route
 /// added here inherits the gesture by doing nothing.
 ///
-/// The redirect diverges from the web auth gate in `middleware.ts` from Phase
+/// The redirect diverges from the web auth gate in `proxy.ts` from Phase
 /// C2 on: mobile runs onboarding BEFORE sign-in, so a signed-out user is not
 /// bounced to `/sign-in` but to wherever their LOCAL DRAFT says they are. The
 /// rules are quoted, in order, on [resolveRedirect] — one copy, in the file

@@ -4,8 +4,6 @@ import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { Errors } from '@/lib/core/errors/catalog';
 
-export const runtime = 'nodejs';
-
 /** One shared meal, for the per-post thread page. A share the caller may not
  * see answers 404 exactly as a deleted one does — the two must stay
  * indistinguishable, or the endpoint becomes a share-existence oracle. */

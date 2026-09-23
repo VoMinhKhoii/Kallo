@@ -48,6 +48,24 @@ export function isLikelyPartialDay(
   return calories < PARTIAL_DAY_FRACTION * calorieTarget;
 }
 
+/**
+ * Whether a day's calories reach the completeness floor — the same
+ * `PARTIAL_DAY_FRACTION` line `isLikelyPartialDay` draws, read from the other
+ * side. The logging calendar paints a day's ring green on this, so a green day
+ * and a day the feed calls "fully logged" can never disagree.
+ *
+ * No target means no line to reach: false, and the ring stays in ink.
+ */
+export function meetsCompletenessFloor(
+  calories: number,
+  calorieTarget: number | null
+): boolean {
+  if (calorieTarget === null || calorieTarget <= 0) {
+    return false;
+  }
+  return calories >= PARTIAL_DAY_FRACTION * calorieTarget;
+}
+
 export function medianOf(values: number[]): number {
   if (values.length === 0) {
     return 0;

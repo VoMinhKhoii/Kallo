@@ -20,9 +20,9 @@ import { SITE_URL } from '@/lib/seo/site';
  * `loadFrontmatter` and pulling the MDX compiler in to read three strings.
  *
  * This is BUILD-TIME ONLY. `content/` is not copied into the standalone Docker
- * image (see the Dockerfile), so the route that calls this must be
- * `force-static` with `generateStaticParams` covering every slug — a runtime
- * call would ENOENT in production.
+ * image (see the Dockerfile), so the route that calls this must call it from a
+ * `'use cache'` function with `generateStaticParams` covering every slug — a
+ * runtime call would ENOENT in production.
  */
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content', 'docs');

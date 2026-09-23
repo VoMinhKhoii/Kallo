@@ -31,6 +31,62 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ---
 
+## Rendering and caching
+
+Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
+together give Instant Navigations. The rules the build enforces, and the choices made here:
+
+- **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
+  first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
+  session refresh.
+- **Content-Security-Policy — enforced, static, no nonce.** Set in `next.config.ts` `headers()`
+  from `lib/infra/security/csp.ts`, so it also covers prerendered shells and paths outside the
+  proxy matcher. A nonce is per-request and a build-time shell cannot carry one (Next documents
+  nonces as incompatible with prerendered shells), and the inline RSC payload scripts differ per
+  request, so neither nonces nor `experimental.sri` hashes work here: `script-src` has
+  `'unsafe-inline'`. That is the price of instant navigation. Everything else stays strict
+  (`connect-src`/`frame-src`/`img-src` allowlists, `object-src 'none'`, `base-uri`,
+  `form-action`, `frame-ancestors`). Violations go to `/api/csp-report` (`report-to` +
+  `report-uri`). Adding a third-party script, iframe or API host means adding it there first —
+  the browser will refuse it otherwise. To remove `'unsafe-inline'` later, render the
+  authenticated app dynamically and give those routes a nonce policy minted in `proxy.ts`.
+  `instrumentation-client.ts` turns off Zod's `new Function` JIT probe, which the policy would
+  otherwise report on every page.
+- **Static shell first.** Every page is prerendered to a static shell at build time. Anything that
+  reads the request — `cookies()`, `headers()`, `searchParams`, unknown `params`, the Supabase
+  session, `connection()` — must sit inside a `<Suspense>` boundary, or the build fails. Push the
+  read down to the smallest component; the rest of the page stays static. The `(app)` layout reads
+  the session behind one boundary whose fallback is `components/app/shell/app-shell-skeleton.tsx`;
+  each app page's `loading.tsx` is what shows during a client navigation into it.
+- **Nothing is cached unless marked.** `'use cache'` + `cacheLife` is only for data that is the
+  same for every visitor: docs content (`lib/domain/docs/`), `/md`, `/llms.txt`, the OAuth
+  resource metadata. Never put per-user data in a shared `'use cache'` scope. Results built from
+  `content/` use the custom `deployment` profile (never revalidates while a deployment runs),
+  because the standalone image does not ship `content/` and a runtime recompute would ENOENT.
+- **No route segment configs.** `dynamic`, `revalidate`, `fetchCache`, `dynamicParams` and
+  `runtime` are build errors under Cache Components (Node.js is the only runtime anyway). A `GET`
+  route handler prerenders when it reads nothing from the request; read the request, or call a
+  `'use cache'` helper, to choose.
+- **`instant = false`** marks a segment that is allowed to block. Used only where that is the
+  point, each with a comment: `app/page.tsx` (a pure locale redirect, kept a real HTTP redirect)
+  and the admin layout (gated on `requireAdmin()`).
+- **Locale.** `[locale]` is the root param. `i18n/request.ts` reads it through `next/root-params`,
+  so there is no `setRequestLocale`; Server Actions and Route Handlers, where root params are not
+  supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
+  `i18n/routing.ts`, never `i18n/navigation.ts` (which drags in the request config).
+- **Runtime env in prerendered pages.** A `process.env` read during prerender is baked into the
+  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) must be read
+  after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
+- **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
+  (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
+  transient results (a "sent" confirmation, a "Saved" note, an error) with
+  `hooks/ui/use-reset-on-reveal.ts`, which runs when the page is shown again — not in a hide-time
+  cleanup, which misses a submission that settles after the user left. State seeded once from props
+  or the URL (`useState(initialX)`) must re-sync when new values arrive, as `SharingRow` and
+  `AuthProvider` do. Sign-out is a hard navigation, which drops all of it.
+
+---
+
 ## `lib/` — domain, data, infrastructure
 
 Twelve top-level entries, grouped by what a thing *is* rather than what feature it serves.
@@ -47,7 +103,7 @@ another domain module is a smell worth a second look.
 | `text/` | string shaping for display and input parsing |
 | `types/` | cross-cutting DTOs |
 | `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
-| `validation/` | Zod request schemas: primitives (incl. the shared gram cap) plus one file per domain |
+| `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, see `docs/AUTH_SECURITY.md`), plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
 
@@ -61,8 +117,8 @@ another domain module is a smell worth a second look.
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
-| `security/` | webhook signatures, CSP, request IP |
-| `supabase/` | client factories (browser, server, admin, middleware) |
+| `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
+| `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
 | `uploads/` | image and avatar file handling |
 
 ### `lib/domain/` — the product's nouns
@@ -70,6 +126,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `account-deletion/` | queued deletion jobs and their retry |
+| `account-export/` | the self-service data export: per-area loaders (profile, meals, social, chat, notifications, support, billing, activity) composed by `build-export.ts`, and `coverage.ts` — the table-by-table personal-data inventory a test holds against the schema |
 | `barcode/` | Open Food Facts lookup and decode, plus `amount.ts` — the gram clamp, per-100g scaling and mode→grams resolution the quantity picker runs on — `meal-item.ts`, the one builder both the one-shot scan and a composer barcode pick produce their frozen meal item with, and `errors.ts`, the `BarcodeServiceError` + `BARCODE_*` envelope mapping every surface refuses an uncached scan through |
 | `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake), `entitlement/` (the grant side) and `activation/` (the browser's bounded recovery loops for a purchase the server has not projected); `entitlements-client.ts` is the browser's read of the contract |
 | `cheat/` | cheat-meal slider math |
@@ -133,6 +190,7 @@ another domain module is a smell worth a second look.
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
+| `auth/request-config/` | the auth dialog's request-time inputs (runtime Google client ID, `?auth=`/`?next=` intent) streamed into prerendered pages | ok |
 | `billing/` | `paywall/` (the offer surface), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
 | `dashboard/` | dashboard sections and charts | split |
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
@@ -141,12 +199,14 @@ another domain module is a smell worth a second look.
 | `landing-page/` | marketing page | split |
 | `logging/` | meal logging surface | split |
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup, quantity), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
+| `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
 | `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step | split |
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
+| `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |
 
 ## `hooks/` — client state
 
@@ -179,6 +239,7 @@ proved to be one hook.
 | `api/analyze-meal/` | SSE meal-analysis stream — the machine is `lib/ai/pipeline/stream/`; `_lib/` holds the pre-stream guards | ok |
 | `api/webhooks/` | inbound provider webhooks — thin delegators to `lib/` | ok |
 | `api/og/` | Satori-rendered share cards — card in `_components/`, tokens in `lib/seo/og/` | ok |
+| `api/csp-report/` | anonymous CSP violation collector — parsing and sanitizing in `lib/infra/security/csp-report.ts` | ok |
 | `auth/` | OAuth callback and verify routes | ok |
 
 ## `apps/mobile-flutter/lib/` — Flutter

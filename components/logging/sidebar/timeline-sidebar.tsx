@@ -4,7 +4,7 @@ import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
-import { TimelineCalendar } from './timeline-calendar';
+import { TimelineCalendar } from './calendar/timeline-calendar';
 import { TimelineDayRow } from './timeline-day-row';
 import { buildTimelineTree } from './timeline-tree';
 import {
@@ -26,6 +26,8 @@ interface TimelineSidebarProps {
    * map conflated that with holding nothing at all.
    */
   mealDates: MealDateIndex;
+  /** The daily kcal goal the calendar's rings fill toward. */
+  calorieTarget: number | null;
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -36,6 +38,7 @@ interface TimelineSidebarProps {
 
 export function TimelineSidebar({
   mealDates,
+  calorieTarget,
   today,
   selectedDate,
   isPending,
@@ -132,6 +135,7 @@ export function TimelineSidebar({
           today={today}
           selectedDate={selectedDate}
           mealDates={mealDates}
+          calorieTarget={calorieTarget}
           onSelectDate={onSelectDate}
         />
       </div>

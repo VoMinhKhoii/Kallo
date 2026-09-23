@@ -3,8 +3,6 @@ import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat/occasi
 import { cheatOccasionsQuerySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function GET(req: NextRequest) {
   try {
     const { limit } = cheatOccasionsQuerySchema.parse({

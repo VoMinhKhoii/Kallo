@@ -457,9 +457,12 @@ does, and approval has lead time — start it early.
   customer to cancel first and promises nothing — a customer who deletes
   without cancelling keeps getting charged with no account left to see it
   from. Re-measure before changing that copy.
-- **CSP**: with `Content-Security-Policy-Report-Only` active, run a checkout and
-  read the violation reports. Narrow `BILLING_FRAME_ORIGINS` /
-  `BILLING_CONNECT_ORIGINS` in `lib/infra/security/csp.ts` to the hosts they name.
+- **CSP**: the Content-Security-Policy is ENFORCED, so a checkout host missing
+  from it is refused, not merely reported. Run a sandbox checkout end to end and
+  watch the browser console and the `[csp-report]` log lines from
+  `/api/csp-report`: any violation names the host to add. Once clean, narrow the
+  `https://*.paddle.com` wildcard in `lib/infra/security/csp.ts` to the hosts
+  the checkout actually used.
 - **Account isolation**: on one device/store account, buy as app account A,
   sign out, sign in as B, and restore. With **Keep with original App User ID**,
   B must not acquire A's entitlement or management URL.

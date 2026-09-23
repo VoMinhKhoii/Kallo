@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { routing } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { ROBOTS_DISALLOWED_PREFIXES } from '@/lib/seo/private-paths';
 import { SITE_URL } from '@/lib/seo/site';
 

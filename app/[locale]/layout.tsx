@@ -8,17 +8,14 @@ import {
   Lora,
 } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import { locale as localeParam } from 'next/root-params';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import {
-  getMessages,
-  getTranslations,
-  setRequestLocale,
-} from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
 import { AnalyticsIdentity } from '@/components/providers/analytics-identity';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
-import { routing } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
@@ -75,12 +72,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await localeParam();
 
   if (!hasLocale(routing.locales, locale)) {
     return {};
@@ -127,25 +120,26 @@ export async function generateMetadata({
   };
 }
 
+// Required under Cache Components: every root param needs at least one value
+// at build time. Listing both prerenders the static shell of every page once
+// per locale; any other first segment still reaches the layout and 404s below.
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  // `[locale]` is the root param, so next-intl reads it the same way in
+  // i18n/request.ts — no `setRequestLocale` call is needed for static
+  // rendering any more.
+  const locale = await localeParam();
 
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
-
-  // Enable static rendering for this locale
-  setRequestLocale(locale);
 
   const messages = await getMessages();
 

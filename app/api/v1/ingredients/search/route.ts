@@ -4,8 +4,6 @@ import { handleRouteError } from '@/lib/api/respond';
 import { searchIngredients } from '@/lib/domain/ingredients/search/ingredient-search';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 export async function GET(req: NextRequest) {
   try {
     const { user } = await requireAuthAndProfile();

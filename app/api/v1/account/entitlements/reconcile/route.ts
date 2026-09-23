@@ -11,8 +11,6 @@ import {
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { checkAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
 
-export const runtime = 'nodejs';
-
 /**
  * Authenticated recovery path for delayed/missed webhooks. Clients call this
  * after purchase/restore and before offering another purchase; it never trusts

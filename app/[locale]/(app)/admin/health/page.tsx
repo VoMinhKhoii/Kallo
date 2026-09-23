@@ -3,8 +3,6 @@ import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { healthAggregates } from '@/lib/admin/queries/health';
 import { db } from '@/lib/infra/db/client';
 
-export const dynamic = 'force-dynamic';
-
 function pct(rate: number | null) {
   if (rate === null) return '—';
   return `${(rate * 100).toFixed(1)}%`;

@@ -49,6 +49,7 @@ export const schema = {
   pendingAnalyses: {
     id: 'pendingAnalyses.id',
     userId: 'pendingAnalyses.userId',
+    sourceInviteId: 'pendingAnalyses.sourceInviteId',
   },
   publicProfiles: { userId: 'publicProfiles.userId' },
   userProfiles: {

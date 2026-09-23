@@ -16,8 +16,6 @@ import {
   WebhookPayloadTooLargeError,
 } from '@/lib/infra/security/webhook-request';
 
-export const runtime = 'nodejs';
-
 /**
  * Supabase "Send Email" auth hook.
  *
@@ -36,7 +34,7 @@ export const runtime = 'nodejs';
  *    problem must surface as 503, never as a 4xx.
  * 3. **It authenticates itself.** No session exists yet, so the only proof of
  *    origin is the Standard Webhooks signature. The Cloudflare origin-lock in
- *    `middleware.ts` still applies on top (Supabase reaches us through the
+ *    `proxy.ts` still applies on top (Supabase reaches us through the
  *    public hostname), but the signature is what actually gates this handler.
  */
 
