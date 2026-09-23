@@ -81,7 +81,9 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         'The shareable macro card for a shared meal: dish name, calories and a macro bar, rendered server-side as a 1080×1920 PNG. Needs a session, and applies the same visibility rule as `getSharedMeal` — your own share, or a non-private one from someone in your circle — so a share you cannot see answers 404, exactly like one that does not exist. Rate limited per user (the render is CPU-heavy). The image is cached privately, per viewer.',
       tags: TAGS,
       parameters: [pathParam('shareId', 'UUID of the shared meal.')],
-      ok: { type: 'string', contentMediaType: 'image/png' },
+      // `format: binary` is the signal generators use to hand back raw bytes
+      // rather than decode the body as text.
+      ok: { type: 'string', format: 'binary', contentMediaType: 'image/png' },
       okMedia: 'image/png',
       okDescription: 'The rendered card.',
     }),

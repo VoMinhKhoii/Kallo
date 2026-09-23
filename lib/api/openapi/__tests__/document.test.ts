@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Operation, PathItem } from '@/lib/api/openapi/components';
+import type {
+  JsonSchema,
+  Operation,
+  PathItem,
+} from '@/lib/api/openapi/components';
 import { openApiDocument } from '@/lib/api/openapi/document';
 import { ERROR_CODES } from '@/lib/core/errors/codes';
 
@@ -204,6 +208,29 @@ describe('the published OpenAPI document', () => {
       .schemas;
     const frame = schemas.AnalyzeMealStreamEvent as { oneOf: unknown[] };
     expect(frame.oneOf.length).toBeGreaterThan(0);
+  });
+
+  it('marks every binary response body as `format: binary`', () => {
+    // Without it, generated clients treat the body as text and corrupt it.
+    const textual = /^(application\/json|text\/)/;
+    const wrong: string[] = [];
+    let binary = 0;
+    for (const { path, method, op } of everyOperation()) {
+      for (const [status, response] of Object.entries(op.responses)) {
+        const content = (response as { content?: Record<string, JsonSchema> })
+          .content;
+        for (const [media, entry] of Object.entries(content ?? {})) {
+          if (textual.test(media)) continue;
+          binary += 1;
+          const schema = (entry as { schema?: JsonSchema }).schema;
+          if (schema?.type !== 'string' || schema.format !== 'binary') {
+            wrong.push(`${method.toUpperCase()} ${path} ${status} ${media}`);
+          }
+        }
+      }
+    }
+    expect(binary).toBeGreaterThan(0);
+    expect(wrong).toEqual([]);
   });
 
   it('names the four public operations', () => {
