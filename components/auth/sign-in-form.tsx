@@ -9,12 +9,14 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { existingPasswordSchema } from '@/lib/core/validation/password';
 import { isRateLimitedAuthError } from '@/lib/infra/auth/rate-limited';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { createClient } from '@/lib/infra/supabase/client';
 
 export function SignInForm() {
   const t = useTranslations('auth.signIn');
+  const tRules = useTranslations('auth.passwordRules');
   const router = useRouter();
   const { closeDialog, next, showForgot } = useAuthDialog();
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,9 @@ export function SignInForm() {
 
   const signInSchema = z.object({
     email: z.email(t('emailError')),
-    password: z.string().min(6, t('passwordError')),
+    // Only "not empty": an existing password is never judged against today's
+    // policy (see existingPasswordSchema).
+    password: existingPasswordSchema,
   });
 
   type SignInValues = z.infer<typeof signInSchema>;
@@ -92,7 +96,12 @@ export function SignInForm() {
           label={t('password')}
           type="password"
           placeholder={t('passwordPlaceholder')}
-          error={errors.password?.message}
+          error={
+            errors.password &&
+            (errors.password.message === 'too_long'
+              ? tRules('tooLong')
+              : t('passwordError'))
+          }
           {...register('password')}
         />
         <div className="flex justify-end">

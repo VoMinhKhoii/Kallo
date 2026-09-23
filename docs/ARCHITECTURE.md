@@ -47,7 +47,7 @@ another domain module is a smell worth a second look.
 | `text/` | string shaping for display and input parsing |
 | `types/` | cross-cutting DTOs |
 | `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
-| `validation/` | Zod request schemas: primitives (incl. the shared gram cap) plus one file per domain |
+| `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, see `docs/AUTH_SECURITY.md`), plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
 
