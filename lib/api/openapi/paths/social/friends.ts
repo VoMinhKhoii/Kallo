@@ -87,6 +87,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -99,6 +100,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -116,6 +118,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

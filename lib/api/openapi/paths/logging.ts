@@ -46,6 +46,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: fromZod(markDayCompleteSchema),
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

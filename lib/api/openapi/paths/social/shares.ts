@@ -54,6 +54,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -216,6 +217,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -232,6 +234,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         properties: { displayName: { type: 'string' } },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

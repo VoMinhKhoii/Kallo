@@ -76,7 +76,10 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       // OCR is spend-gated (`withOcrGuard`): the global Gemini budget fails
       // closed, so this op alone can answer 503 when the limiter is down. The
       // shared 429 (per-user / concurrency block) is already in COMMON_ERRORS.
-      extraErrors: RATE_LIMITER_UNAVAILABLE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...RATE_LIMITER_UNAVAILABLE_ERROR,
+      },
     }),
   },
 
