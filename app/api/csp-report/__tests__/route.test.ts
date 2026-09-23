@@ -52,10 +52,35 @@ describe('POST /api/csp-report', () => {
       disposition: 'enforce',
       directive: 'connect-src',
       document: 'https://kallo.fit/en/waitlist/confirm',
-      blocked: 'https://evil.example/x',
+      blocked: 'https://evil.example/:param',
     });
     // The query strings — where tokens live — never reach the log.
     expect(line).not.toContain('tok_secret');
+  });
+
+  // A CSP violation on an invite page must not log the invite slug — it is
+  // the credential that accepts the invite (Codex review on #382).
+  it('logs the route template, never an invite slug from the path', async () => {
+    const res = await POST(
+      makeRequest(
+        JSON.stringify({
+          'csp-report': {
+            'document-uri': 'https://kallo.fit/en/invite/inv_Zq81sLkP',
+            'source-file': 'https://kallo.fit/en/invite/inv_Zq81sLkP',
+            'blocked-uri': 'inline',
+            'effective-directive': 'script-src-elem',
+            disposition: 'enforce',
+          },
+        })
+      )
+    );
+
+    expect(res.status).toBe(204);
+    const line = String(warn.mock.calls[0][1]);
+    expect(line).not.toContain('inv_Zq81sLkP');
+    expect(JSON.parse(line).document).toBe(
+      'https://kallo.fit/en/invite/:param'
+    );
   });
 
   it('accepts a Reporting API batch', async () => {

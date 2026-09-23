@@ -20,9 +20,21 @@ describe('stripUrl', () => {
     expect(stripUrl('data:text/html;base64,PHNjcmlwdD4=')).toBe('data:');
   });
 
+  // Codex review on #382: an invite slug in the PATH is a usable capability.
+  it('templates capability-bearing path segments', () => {
+    expect(stripUrl('https://kallo.fit/en/invite/Xk9pQ2rT?utm=1')).toBe(
+      'https://kallo.fit/en/invite/:param'
+    );
+    expect(stripUrl('/vi/circle/0b6f0a4e-8c1f-4d7b-9a55-3f1e2d4c5b6a')).toBe(
+      '/vi/circle/:param'
+    );
+  });
+
   it('strips a relative path too, and caps the length', () => {
     expect(stripUrl('/auth/callback?code=abc')).toBe('/auth/callback');
-    expect(stripUrl(`https://kallo.fit/${'a'.repeat(1000)}`)).toHaveLength(256);
+    expect(
+      stripUrl(`https://kallo.fit/_next/static/chunks/${'a'.repeat(1000)}.js`)
+    ).toHaveLength(256);
   });
 });
 
@@ -61,7 +73,7 @@ describe('parseCspReport', () => {
       disposition: 'enforce',
       directive: 'connect-src',
       document: 'https://kallo.fit/en/auth/callback',
-      blocked: 'https://evil.example/steal',
+      blocked: 'https://evil.example/:param',
       source: 'https://kallo.fit/_next/static/chunks/a.js',
       line: 3,
       column: 14,

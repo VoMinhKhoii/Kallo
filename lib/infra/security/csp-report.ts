@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { routeTemplate } from '@/lib/infra/security/csp-report-path';
 
 /**
  * Parsing and sanitizing for browser CSP violation reports
@@ -12,9 +13,10 @@ import { z } from 'zod';
  *    … } }`. Firefox and Safari still send this one.
  *
  * Both are normalized to one compact `CspViolation`. Every URL is cut to
- * origin + path: the document URL of a Kallo page can carry a waitlist
- * confirmation token or an auth `code` in its query string, and a blocked URL
- * can carry anything a third party put in its own. A report is written by the
+ * origin + route template: the document URL of a Kallo page can carry a
+ * waitlist token or an auth `code` in its query string, or an invite slug in
+ * its path, and a blocked URL can carry anything a third party put in its
+ * own. A report is written by the
  * browser of whoever loaded the page — which includes an attacker — so nothing
  * here is trusted beyond "a string of bounded length".
  */
@@ -76,23 +78,29 @@ export interface CspViolation {
 }
 
 /**
- * Origin + path of a URL, with query string, fragment and credentials gone.
- * Non-URL values (`inline`, `eval`, `data`, `wasm-eval`, a bare scheme) are
- * CSP keywords for what was blocked and pass through; a relative path is
- * stripped the same way. Always capped at `MAX_FIELD`.
+ * Origin + route template of a URL: query string, fragment and credentials
+ * gone, and every path segment that is not a known static route word replaced
+ * with `:param` (`routeTemplate`) — some Kallo paths carry a capability, such
+ * as an invite slug. Non-URL values (`inline`, `eval`, `wasm-eval`) are CSP
+ * keywords for what was blocked and pass through; a relative path is
+ * templated the same way. Always capped at `MAX_FIELD`.
  */
 export function stripUrl(value: string | undefined): string {
   if (!value) return '';
   try {
     const url = new URL(value);
     if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return `${url.origin}${url.pathname}`.slice(0, MAX_FIELD);
+      return `${url.origin}${routeTemplate(url.pathname)}`.slice(0, MAX_FIELD);
     }
     // `data:`, `blob:`, `chrome-extension:` … — the scheme is the signal; the
     // rest can be a whole payload.
     return url.protocol;
   } catch {
-    return value.split(/[?#]/, 1)[0].slice(0, MAX_FIELD);
+    const bare = value.split(/[?#]/, 1)[0];
+    return (bare.startsWith('/') ? routeTemplate(bare) : bare).slice(
+      0,
+      MAX_FIELD
+    );
   }
 }
 
