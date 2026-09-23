@@ -65,7 +65,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Enter a valid email address'), findsOneWidget);
     // Sign-in only asks for a password; no length rule for an existing one.
-    expect(find.text('Enter your password'), findsOneWidget);
+    expect(find.text('Please enter your password'), findsOneWidget);
 
     // Flip to sign-up.
     await tester.tap(find.text('Sign up'));
@@ -83,7 +83,7 @@ void main() {
       reason: 'the email validation error carried over the mode switch',
     );
     expect(
-      find.text('Enter your password'),
+      find.text('Please enter your password'),
       findsNothing,
       reason: 'the password validation error carried over',
     );

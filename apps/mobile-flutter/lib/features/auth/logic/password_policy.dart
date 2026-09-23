@@ -21,7 +21,8 @@ enum PasswordIssue { required, tooShort, tooLong, needsLetter, needsDigit }
 final _hasLetter = RegExp('[A-Za-z]');
 final _hasDigit = RegExp(r'\d');
 
-bool _fitsBcrypt(String value) => utf8.encode(value).length <= kPasswordMaxBytes;
+bool _fitsBcrypt(String value) =>
+    utf8.encode(value).length <= kPasswordMaxBytes;
 
 /// A password being CREATED (sign-up). `null` when it meets the policy.
 PasswordIssue? newPasswordIssue(String value) {

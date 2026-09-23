@@ -774,7 +774,7 @@
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
       "emailError": "Enter a valid email address",
-      "passwordError": "Enter your password"
+      "passwordError": "Please enter your password"
     },
     "signUp": {
       "title": "Create your account",
