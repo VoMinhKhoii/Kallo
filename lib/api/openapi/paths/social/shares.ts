@@ -1,6 +1,8 @@
 import {
   authed,
   type JsonSchema,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
   ref,
@@ -52,6 +54,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -77,6 +80,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         'Logs someone else’s shared meal as your own. `factor` is 1 to copy the whole thing or 0.5 to take half — the case where two people ate one dish.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: shareIdBody(
         {
           factor: {
@@ -107,6 +111,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         'Toggles the caller’s reaction on or off. There is one reaction type.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: shareIdBody(),
       ok: ref('Acknowledgement'),
     }),
@@ -118,6 +123,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       summary: 'Comment on a shared meal',
       description: 'Adds a reply, optionally threaded under an existing one.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: shareIdBody(
         {
           body: { type: 'string', description: 'Reply text.' },
@@ -141,6 +147,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         '`copy` sends the meal for them to log as-is. `split` sends an invite for each recipient to log exactly their own portion of it — the shared-dish case.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: {
         type: 'object',
         required: ['mealId', 'friendUserIds', 'mode'],
@@ -210,6 +217,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -226,6 +234,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         properties: { displayName: { type: 'string' } },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

@@ -5,6 +5,8 @@ import {
   dateParam,
   fromZod,
   limitParam,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   ref,
@@ -44,6 +46,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: fromZod(markDayCompleteSchema),
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -89,6 +92,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       description:
         'Saves a barcode match as a meal. Figures come straight from the product label, so no estimation is involved.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(logBarcodeMealSchema),
       ok: ref('Meal'),
       okStatus: '201',

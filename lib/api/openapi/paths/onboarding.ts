@@ -2,6 +2,7 @@ import { onboardingScreenSchema } from '@/lib/api/contracts/onboarding';
 import {
   authed,
   fromZod,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   ref,
 } from '@/lib/api/openapi/components';
@@ -28,6 +29,7 @@ export const ONBOARDING_PATHS: Record<string, PathItem> = {
       description:
         'Onboarding is saved a screen at a time so a user who abandons halfway keeps what they entered.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(onboardingScreenSchema),
       ok: ref('OnboardingProfile'),
     }),

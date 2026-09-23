@@ -74,14 +74,22 @@ own response shapes in OpenAPI.
 
 | Code | Status | Retryable | Means |
 | --- | --- | --- | --- |
-| `VALIDATION_FAILED` | 400 | no | The request body or query is wrong. Fix it. |
+| `VALIDATION_FAILED` | 400 | no | The request body or query is wrong, including a body that is not valid JSON. Fix it. |
 | `NOT_AUTHENTICATED` | 401 | no | Missing, expired or invalid token. |
 | `feature_locked` | 402 | no | The account's plan does not include this. |
 | `NOT_FOUND` | 404 | no | No such resource, or it is not yours. The two are deliberately indistinguishable. |
-| `CONFLICT` | 409 | no | The resource changed under you. |
+| `CONFLICT` | 409 | no | The resource changed under you, or a client-generated id you sent (for example a meal's `mealId` / `newMealId`) is already taken. Generate a new id. |
+| `PAYLOAD_TOO_LARGE` | 413 | no | The body is over the endpoint's cap (64 KB for most JSON endpoints). Send less. |
 | `RATE_LIMITED` | 429 | yes | Back off. Honour `Retry-After` when it is present. |
 | `PIPELINE_TIMEOUT` | 504 | yes | Meal analysis took too long. |
 | `INTERNAL` | 500 | yes | Our fault. |
+
+Authentication is checked before the body is read. A request without a valid
+token gets `NOT_AUTHENTICATED`, whatever its body looks like, so a 400 or 413
+means the token was accepted. A collision on a client-generated id is always
+the same `CONFLICT`, whether the id is yours or another account's; retrying the
+same id will never succeed. If a save timed out and you are unsure whether it
+landed, refetch the day before retrying with a fresh id.
 
 Any `/api/` path with no handler returns a 404 in this same JSON shape, never an
 HTML page — so a mistyped endpoint is something your client can parse rather

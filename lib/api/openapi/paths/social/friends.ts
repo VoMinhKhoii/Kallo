@@ -1,6 +1,8 @@
 import {
   authed,
   type JsonSchema,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   ref,
@@ -85,6 +87,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -97,6 +100,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -114,6 +118,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -135,6 +140,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Logs the caller’s share of the shared meal onto the given date, as their own meal.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: inviteIdBody({
         properties: {
           newMealId: {
@@ -166,6 +172,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Logs NOTHING. A cheat meal has no items to copy and its numbers are slider positions, so taking the offer re-stages the sender’s spec — seeded with their chosen amounts — as a pending analysis of the caller’s own. The caller adjusts the sliders and confirms through the ordinary cheat path. Consumes the invite.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: inviteIdBody(),
       ok: ref('StagedCheatAnalysis'),
     }),
@@ -177,6 +184,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       summary: 'Dismiss a meal-split invite',
       description: 'Declines the invite without logging anything.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: inviteIdBody(),
       ok: ref('Acknowledgement'),
     }),
