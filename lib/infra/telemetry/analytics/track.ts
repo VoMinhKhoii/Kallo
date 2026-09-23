@@ -14,6 +14,12 @@ export function track<E extends AnalyticsEventName>(
   posthog.capture(event, properties);
 }
 
+/** A `$pageview` for the current URL (`before_send` reduces it). */
+export function trackPageview(): void {
+  if (!analyticsEnabled()) return;
+  posthog.capture('$pageview');
+}
+
 /** Tie this browser to the signed-in account (opaque Supabase user id only). */
 export function identifyUser(userId: string): void {
   if (!analyticsEnabled()) return;

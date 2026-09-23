@@ -36,7 +36,32 @@ describe('scrubEvent', () => {
   });
 });
 
+describe('scrubEvent contexts', () => {
+  it('reduces URL-shaped keys in every context (Next.js request_path)', () => {
+    const event = scrubEvent({
+      contexts: {
+        nextjs: { request_path: '/en/circle/share-9', route_type: 'render' },
+        os: { name: 'macOS' },
+      },
+    });
+    expect(event.contexts).toEqual({
+      nextjs: { request_path: '/en/circle/:param', route_type: 'render' },
+      os: { name: 'macOS' },
+    });
+  });
+});
+
 describe('scrubBreadcrumb', () => {
+  it('drops ui click / input breadcrumbs, whose selector carries aria-label', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'ui.click',
+        data: {},
+      })
+    ).toBeNull();
+    expect(scrubBreadcrumb({ category: 'ui.input' })).toBeNull();
+  });
+
   it('drops console breadcrumbs, whose raw arguments can hold meal text', () => {
     expect(
       scrubBreadcrumb({

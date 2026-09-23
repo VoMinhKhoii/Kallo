@@ -51,7 +51,15 @@ class Analytics {
           ..captureApplicationLifecycleEvents = false
           ..personProfiles = PostHogPersonProfiles.identifiedOnly
           ..sessionReplay = false
-          ..surveys = false;
+          ..surveys = false
+          // Off: `/flags` at setup would go out under the PERSISTED identity,
+          // before the reconciliation below. No feature flags are used.
+          ..preloadFeatureFlags = false
+          // Off: push capture sends the APNs token and notification payloads
+          // (meal previews, ids) outside the typed event list. The opened-push
+          // opt-out is also in Info.plist, for cold starts before Dart runs.
+          ..capturePushNotificationSubscriptions = false
+          ..capturePushNotificationOpened = false;
     // On by default (iOS): `$rageclick` carries element-chain labels, which
     // can be on-screen meal text.
     config.rageClickConfig.enabled = false;

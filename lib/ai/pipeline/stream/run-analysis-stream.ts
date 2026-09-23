@@ -15,6 +15,8 @@
  * The ordering rules WITHIN an outcome live with that outcome, in
  * `cheat-branch.ts` and `precise-branch.ts`.
  */
+
+import { isNonFoodError } from '@/lib/ai/pipeline/contracts/failure';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { createGeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
@@ -50,7 +52,12 @@ export async function runAnalysisStream({
     await (ctx.mode === 'cheat' ? runCheatBranch(run) : runPreciseBranch(run));
   } catch (error) {
     console.error('[analyze-meal] Stream error:', error);
-    reportError(error, '[analyze-meal]');
+    // A non-food submission is the pipeline working, not failing — and its
+    // message names the user's ingredient. Everything else is reported
+    // with its message redacted: this code handles meal text.
+    if (!isNonFoodError(error)) {
+      reportError(error, '[analyze-meal]', { redactMessage: true });
+    }
     const pvu =
       promptVersionsUsed.size > 0
         ? Object.fromEntries(promptVersionsUsed)

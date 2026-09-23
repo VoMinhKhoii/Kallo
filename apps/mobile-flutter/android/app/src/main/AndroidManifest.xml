@@ -59,6 +59,14 @@
         <meta-data
             android:name="com.posthog.posthog.AUTO_INIT"
             android:value="false" />
+        <!-- No push capture: tokens and payloads (meal previews) stay out of
+             PostHog, including a push opened on a cold start. -->
+        <meta-data
+            android:name="com.posthog.posthog.CAPTURE_PUSH_NOTIFICATION_OPENED"
+            android:value="false" />
+        <meta-data
+            android:name="com.posthog.posthog.CAPTURE_PUSH_NOTIFICATION_SUBSCRIPTIONS"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -9,7 +9,7 @@
  *   • every URL — the request, tags, breadcrumbs, span attributes, span and
  *     transaction names — is reduced by `telemetryUrl` (origin + route
  *     template);
- *   • console breadcrumbs are dropped outright (raw log arguments).
+ *   • console and ui (click / input) breadcrumbs are dropped outright.
  */
 import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
@@ -46,6 +46,7 @@ interface ScrubbableEvent {
   };
   user?: { id?: string | number } & Data;
   tags?: Data;
+  contexts?: Record<string, Data | undefined>;
 }
 
 /** Error events (and the shared part of transactions). */
@@ -61,6 +62,11 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
     event.user = event.user.id == null ? {} : { id: event.user.id };
   }
   scrubUrlData(event.tags);
+  // Every context, not a known list: `captureRequestError` stores the raw
+  // path as `contexts.nextjs.request_path`, and integrations add more.
+  for (const context of Object.values(event.contexts ?? {})) {
+    scrubUrlData(context);
+  }
   return event;
 }
 
@@ -72,7 +78,7 @@ interface ScrubbableSpan {
 
 interface ScrubbableTransaction extends ScrubbableEvent {
   transaction?: string;
-  contexts?: { trace?: ScrubbableSpan };
+  contexts?: Record<string, Data | undefined> & { trace?: ScrubbableSpan };
   spans?: ScrubbableSpan[];
 }
 
@@ -119,13 +125,18 @@ interface ScrubbableBreadcrumb {
  *     stores every `console.*` call's raw arguments, and our logs (the
  *     analyze-meal pipeline above all) can carry meal text. The Flutter app
  *     drops its print breadcrumbs for the same reason;
+ *   • `ui.*` breadcrumbs (click, input) are dropped — their message is the
+ *     target's selector, which includes `aria-label`, and several controls
+ *     interpolate meal names into theirs;
  *   • `data` is an allowlist: URLs reduced, a few status fields kept,
  *     anything else removed.
  */
 export function scrubBreadcrumb<T extends ScrubbableBreadcrumb>(
   crumb: T
 ): T | null {
-  if (crumb.category === 'console') return null;
+  if (crumb.category === 'console' || crumb.category?.startsWith('ui.')) {
+    return null;
+  }
   if (!crumb.data) return crumb;
   const data: Data = {};
   for (const [key, value] of Object.entries(crumb.data)) {

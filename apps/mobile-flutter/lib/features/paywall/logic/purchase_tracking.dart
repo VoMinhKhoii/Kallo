@@ -11,7 +11,8 @@ void trackCheckoutStarted(Analytics analytics, String packageId) {
 }
 
 /// One analytics event per store outcome. A user cancel sends nothing: the
-/// funnel reads it as "checkout started, never completed".
+/// funnel reads it as "checkout started, never completed". Neither does
+/// `alreadyOwned` — no transaction happened, so it is not a purchase.
 void trackPurchaseResult(
   Analytics analytics,
   PurchaseAttempt result,
@@ -19,7 +20,7 @@ void trackPurchaseResult(
 ) {
   final props = <String, Object>{'package_id': packageId};
   switch (result.outcome) {
-    case PurchaseOutcome.success || PurchaseOutcome.alreadyOwned:
+    case PurchaseOutcome.success:
       analytics.capture(
         AnalyticsEvents.purchaseCompleted,
         properties: {...props, 'status': 'paid'},
@@ -31,7 +32,7 @@ void trackPurchaseResult(
       );
     case PurchaseOutcome.error || PurchaseOutcome.accountConflict:
       analytics.capture(AnalyticsEvents.purchaseFailed, properties: props);
-    case PurchaseOutcome.userCancelled:
+    case PurchaseOutcome.userCancelled || PurchaseOutcome.alreadyOwned:
       break;
   }
 }

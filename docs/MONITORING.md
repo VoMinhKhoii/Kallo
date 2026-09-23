@@ -66,13 +66,15 @@ before `bun dev:mobile` (Flutter).
 - `lib/infra/telemetry/monitoring/`: `sentry-options.ts` (config shared by every runtime)
   and `scrub.ts`: `scrubEvent`, `scrubTransaction` (span attributes, span and transaction
   names) and `scrubBreadcrumb` (drops console breadcrumbs; allowlists data),
-  `reportError(error, scope)` for errors that are caught (error boundaries, the
-  analyze-meal stream). `lib/core/errors/serialize.ts` reports unknown 500s directly.
+  `reportError(error, scope, { redactMessage })` for errors that are caught (error
+  boundaries; the analyze-meal stream, which skips expected `NonFoodError`s and redacts
+  messages, since they can quote meal text). `lib/core/errors/serialize.ts` reports unknown 500s directly.
 - `lib/infra/telemetry/analytics/`: PostHog init (`before_send` rewrites every property
   whose name ends in url / referrer / pathname; `/flags` requests off), `events.ts` (the
   event list), `track()`.
 - `components/providers/telemetry-identity.tsx`: one Supabase auth listener → PostHog
-  identify/reset + Sentry user (opaque account id only).
+  identify/reset + Sentry user (opaque account id only), and the `$pageview`s, sent only
+  after that first identify/reset (PostHog's own init-time pageview is off).
 - `app/global-error.tsx`: catches errors in the root layout itself.
 - `lib/infra/security/csp.ts`: `connect-src` allows `*.ingest.us.sentry.io`,
   `eu.i.posthog.com`, `eu-assets.i.posthog.com`.
@@ -81,7 +83,8 @@ before `bun dev:mobile` (Flutter).
 - `main.dart`: boots inside `runWithMonitoring` (Sentry catches startup crashes), then
   `Analytics.setup(signedInUserId:)`, which reconciles PostHog's persisted identity with
   the restored Supabase session (identify or reset) before anything is captured.
-  Lifecycle events and iOS rage-click capture are off.
+  Lifecycle events, iOS rage-click capture, push capture (also opted out in
+  `Info.plist` / `AndroidManifest.xml` for cold starts) and flag preloading are off.
 - `services/monitoring/monitoring.dart`: Sentry init (no tracing; print, tap, HTTP and
   native auto-breadcrumbs all off), `scrubEvent`, `setMonitoringUser`.
 - `services/analytics/`: the PostHog facade, `analytics_events.dart`, and
@@ -115,10 +118,11 @@ using up the error quota.
 
 ## Known gaps / follow-ups
 
-- **Exception messages are sent as written.** The scrubbers remove request payloads,
-  URLs' identifying parts and console breadcrumbs, but an `Error`'s own `message` goes to
-  Sentry verbatim. Never interpolate meal text, body metrics or email into an error
-  message; log it separately (console output is not sent) if you need it.
+- **Exception messages are sent as written**, except where `reportError` is called with
+  `redactMessage` (the analyze-meal stream). The scrubbers remove request payloads, URLs'
+  identifying parts, console and click breadcrumbs, but no scrubber can tell which words
+  in a message are the user's. Never interpolate meal text, body metrics or email into
+  an error message; log it separately (console output is not sent) if you need it.
 - **Account deletion** does not yet delete the PostHog person or Sentry user data for the
   account. Events carry only the opaque id, but a full erasure should call PostHog's
   person-delete API from the deletion job (`lib/domain/account-deletion/`).

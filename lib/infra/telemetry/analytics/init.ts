@@ -56,9 +56,10 @@ export function initAnalytics(): void {
   posthog.init(key, {
     api_host: POSTHOG_HOST,
     autocapture: false,
-    // App Router navigations are client-side; this hooks `history` so each
-    // one is a `$pageview`, then `before_send` reduces its URL.
-    capture_pageview: 'history_change',
+    // Off: PostHog's own first `$pageview` fires at init, under whatever
+    // identity it persisted — before the auth session is known. Pageviews are
+    // sent by `TelemetryIdentity` once identity is reconciled.
+    capture_pageview: false,
     capture_pageleave: true,
     disable_session_recording: true,
     capture_heatmaps: false,

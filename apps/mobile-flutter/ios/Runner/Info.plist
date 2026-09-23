@@ -4,6 +4,10 @@
 <dict>
 	<key>com.posthog.posthog.AUTO_INIT</key>
 	<false/>
+	<key>com.posthog.posthog.CAPTURE_PUSH_NOTIFICATION_OPENED</key>
+	<false/>
+	<key>com.posthog.posthog.CAPTURE_PUSH_NOTIFICATION_SUBSCRIPTIONS</key>
+	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

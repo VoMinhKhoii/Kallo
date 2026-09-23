@@ -254,8 +254,10 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       final analytics = ref.read(analyticsProvider);
       trackCheckoutStarted(analytics, package.identifier);
       final result = await _purchases.purchasePackage(userId, package);
-      trackPurchaseResult(analytics, result, package.identifier);
+      // Guard first: an account switch while the store sheet was open has
+      // already moved PostHog's identity, and the result is not theirs.
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
+      trackPurchaseResult(analytics, result, package.identifier);
       if (result.isCancelled) {
         // Explicitly dismissed, so no money moved and nothing needs healing.
         await pendingStore.clear(userId);
