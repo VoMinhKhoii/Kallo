@@ -118,7 +118,7 @@ jobs:
           note=""
           if [ "$(wc -l < recent.diff)" -gt "$MAX_DIFF_LINES" ]; then
             git diff "$base"..HEAD -- \
-              middleware.ts instrumentation.ts app lib supabase/migrations > recent.diff
+              proxy.ts instrumentation.ts app lib supabase/migrations > recent.diff
             note=" — narrowed to middleware/app/lib/migrations (full diff exceeded ${MAX_DIFF_LINES} lines)"
           fi
           if [ "$(wc -l < recent.diff)" -gt "$MAX_DIFF_LINES" ]; then

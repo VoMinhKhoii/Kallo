@@ -8,15 +8,17 @@
  * calling `linkIdentity` to plant a persistent backdoor login.
  *
  * Rollout: shipped as `Content-Security-Policy-Report-Only` first (see
- * `middleware.ts`). Report-Only blocks nothing and keeps static rendering, so
+ * `proxy.ts`). Report-Only blocks nothing and keeps static rendering, so
  * there is zero white-screen risk; the browser just reports what *would* break.
  *
- * To ENFORCE later: (1) change the response header name from
- * `content-security-policy-report-only` to `content-security-policy`, and
- * (2) force dynamic rendering app-wide — statically pre-rendered pages bake
+ * To ENFORCE later, changing the response header name from
+ * `content-security-policy-report-only` to `content-security-policy` is not
+ * enough: pre-rendered static shells (Cache Components, `next.config.ts`) bake
  * their inline framework scripts at build time with no request-time nonce, so
- * under an enforced strict `script-src` they would be blocked. Nonce + static
- * generation are mutually exclusive (a documented Next.js constraint).
+ * an enforced strict `script-src` would block them. Nonce + static generation
+ * are mutually exclusive (a documented Next.js constraint), and there is no
+ * longer a `force-dynamic` escape hatch, so the enforced policy has to be one
+ * that works without a nonce.
  *
  * Third-party origins are intentionally tiny: the browser talks to Supabase
  * (auth/REST over https + realtime over wss), to Google Identity Services on

@@ -7,7 +7,7 @@ import { renderNotFoundMarkdown } from '@/lib/seo/markdown/not-found';
 /**
  * Every `text/markdown` representation the site serves.
  *
- * Not linked from anywhere and not in the sitemap: `middleware.ts` rewrites
+ * Not linked from anywhere and not in the sitemap: `proxy.ts` rewrites
  * here when a client asks for Markdown (or appends `.md` to a page URL), so the
  * canonical URL never changes and there is no second indexable copy of the docs.
  *
@@ -37,9 +37,9 @@ function markdown(body: string, status: number): Response {
       'Content-Type': 'text/markdown; charset=utf-8',
       // The canonical URL serves HTML to browsers and this to agents, so a
       // cache that keys on the URL alone would hand one audience the other's
-      // bytes. `middleware.ts` sets the same header on the HTML side.
+      // bytes. `proxy.ts` sets the same header on the HTML side.
       Vary: 'Accept, Accept-Encoding',
-      // The canonical URL for this content is the HTML page; middleware rewrites
+      // The canonical URL for this content is the HTML page; the proxy rewrites
       // here rather than redirecting, so /md/* is an implementation detail that
       // happens to be reachable. Keep it out of the index so it can never
       // compete with the page it represents.

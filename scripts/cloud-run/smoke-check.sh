@@ -18,7 +18,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Deploy smoke checks hit the raw *.run.app URL directly, bypassing Cloudflare.
-# When the service enforces the origin-lock (middleware.ts, prod), that request
+# When the service enforces the origin-lock (proxy.ts, prod), that request
 # is missing the X-Origin-Verify header Cloudflare injects and would 403. Send
 # the same shared secret here when it is available — via a 0600 curl config file
 # (mktemp default perms) rather than --header, so the secret never lands in the

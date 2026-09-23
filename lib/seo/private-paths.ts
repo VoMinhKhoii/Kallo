@@ -3,7 +3,7 @@
  *
  * Two consumers need the same list and must never disagree: `app/robots.ts`
  * (which tells crawlers not to index them) and the markdown content
- * negotiation in `middleware.ts` (which must let them fall through to the
+ * negotiation in `proxy.ts` (which must let them fall through to the
  * normal HTML pipeline rather than answering with a markdown 404). A second
  * hand-maintained copy would drift the first time a surface is added.
  *

@@ -25,7 +25,7 @@ const Set<String> _preAuthRoutes = {
 /// Where the router should send a user standing at [location], or `null` to
 /// leave them there.
 ///
-/// Mobile diverges from the web auth gate in `middleware.ts` from Phase C2 on,
+/// Mobile diverges from the web auth gate in `proxy.ts` from Phase C2 on,
 /// because onboarding runs BEFORE sign-in. The rules, in order:
 ///
 ///   1. session loading → stay on `/` (the splash).

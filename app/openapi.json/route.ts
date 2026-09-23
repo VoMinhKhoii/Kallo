@@ -4,7 +4,7 @@ import { openApiDocument } from '@/lib/api/openapi/document';
  * `/openapi.json` — the machine-readable description of the HTTP API.
  *
  * A fixed root path, like `/llms.txt` and `/robots.txt`: it is what an agent
- * guesses first, and `/en/openapi.json` is not a thing. `middleware.ts` lists
+ * guesses first, and `/en/openapi.json` is not a thing. `proxy.ts` lists
  * `/openapi.json` in `SKIP_INTL_PREFIXES` so next-intl does not rewrite it into
  * a locale that has no such route.
  *
