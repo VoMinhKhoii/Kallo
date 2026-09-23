@@ -1,5 +1,5 @@
 import posthog, { type CaptureResult } from 'posthog-js';
-import { routePattern, sanitizeUrl } from './route-pattern';
+import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
 /**
  * PostHog, EU cloud. OFF unless `NEXT_PUBLIC_POSTHOG_KEY` was set at build
@@ -10,44 +10,39 @@ import { routePattern, sanitizeUrl } from './route-pattern';
  *     click on a meal row can ship its text;
  *   • no session recording, heatmaps or surveys;
  *   • person profiles only for signed-in users;
- *   • every URL property is reduced to origin + route pattern (`before_send`).
+ *   • every URL property is reduced to origin + route template (`before_send`).
  */
 export const POSTHOG_HOST = 'https://eu.i.posthog.com';
 
+/** Every PostHog property that holds a URL or a path. */
 const URL_PROPERTIES = [
   '$current_url',
   '$referrer',
   '$initial_current_url',
   '$initial_referrer',
   '$prev_pageview_url',
+  '$pathname',
+  '$prev_pageview_pathname',
 ] as const;
-const PATH_PROPERTIES = ['$pathname', '$prev_pageview_pathname'] as const;
 
 type Props = Record<string, unknown> | undefined;
 
-function sanitizeProps(props: Props, origin: string): void {
+function sanitizeProps(props: Props): void {
   if (!props) return;
   for (const key of URL_PROPERTIES) {
-    if (typeof props[key] === 'string') {
-      props[key] = sanitizeUrl(props[key] as string, origin);
-    }
-  }
-  for (const key of PATH_PROPERTIES) {
-    if (typeof props[key] === 'string') {
-      props[key] = routePattern(props[key] as string);
-    }
+    const value = props[key];
+    if (typeof value === 'string') props[key] = telemetryUrl(value);
   }
 }
 
 /** Exported for tests: strips identifiers out of every URL-shaped property. */
 export function sanitizeCapture(
-  event: CaptureResult | null,
-  origin: string
+  event: CaptureResult | null
 ): CaptureResult | null {
   if (!event) return event;
-  sanitizeProps(event.properties, origin);
-  sanitizeProps(event.$set as Props, origin);
-  sanitizeProps(event.$set_once as Props, origin);
+  sanitizeProps(event.properties);
+  sanitizeProps(event.$set);
+  sanitizeProps(event.$set_once);
   return event;
 }
 
@@ -59,7 +54,6 @@ export function initAnalytics(): void {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key || typeof window === 'undefined') return;
 
-  const origin = window.location.origin;
   posthog.init(key, {
     api_host: POSTHOG_HOST,
     autocapture: false,
@@ -81,7 +75,7 @@ export function initAnalytics(): void {
     disable_external_dependency_loading: true,
     person_profiles: 'identified_only',
     persistence: 'localStorage',
-    before_send: (event) => sanitizeCapture(event, origin),
+    before_send: sanitizeCapture,
   });
   posthog.register({ app_version: process.env.NEXT_PUBLIC_APP_VERSION });
 }

@@ -18,20 +18,20 @@ describe('sanitizeCapture', () => {
       },
     } as unknown as CaptureResult;
 
-    const out = sanitizeCapture(event, 'https://kallo.fit');
+    const out = sanitizeCapture(event);
 
     expect(out?.properties).toMatchObject({
-      $current_url: 'https://kallo.fit/circle/[shareId]',
-      $pathname: '/circle/[shareId]',
-      $referrer: 'https://mail.example.com',
+      $current_url: 'https://kallo.fit/en/circle/:param',
+      $pathname: '/en/circle/:param',
+      $referrer: 'https://mail.example.com/:param/:param',
       method: 'ai',
     });
     expect(out?.$set_once).toEqual({
-      $initial_current_url: 'https://kallo.fit/invite/[slug]',
+      $initial_current_url: 'https://kallo.fit/vi/invite/:param',
     });
   });
 
   it('passes a dropped (null) event through', () => {
-    expect(sanitizeCapture(null, 'https://kallo.fit')).toBeNull();
+    expect(sanitizeCapture(null)).toBeNull();
   });
 });

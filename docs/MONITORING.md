@@ -24,7 +24,8 @@ They are listed as providers in the privacy policy (`content/docs/{en,vi}/legal/
    host in `lib/infra/security/csp.ts` and §5/§9 of the privacy policy.
    - Settings → Subscription → set the on-demand / pay-as-you-go budget to **$0** so the
      free tier can never bill.
-   - Optional, for readable web stack traces: create an Organization Auth Token.
+   - Done: an Organization Auth Token `kallo-ci-sourcemaps` (scope `org:ci` — source-map
+     upload and releases only) is stored as the `SENTRY_AUTH_TOKEN` secret.
 2. **PostHog**: done. The `Kallo` organisation on eu.posthog.com (**EU cloud**) has one
    project ("Default project") for both clients; its key (`phc_…`) is under Settings →
    Project → General. Autocapture and exception autocapture are off; session replay
@@ -33,8 +34,7 @@ They are listed as providers in the privacy policy (`content/docs/{en,vi}/legal/
      **Exception autocapture OFF** (the code pins these off too; this keeps the dashboard
      honest).
    - Billing → set a billing limit of **$0** per product.
-3. **GitHub → Settings → Secrets and variables → Actions** (the four DSN/key variables
-   are set; the source-map rows are still optional and unset):
+3. **GitHub → Settings → Secrets and variables → Actions** (all of these are set):
 
    | Kind | Name | Value |
    |---|---|---|
@@ -60,14 +60,15 @@ before `bun dev:mobile` (Flutter).
 - `instrumentation.ts`: server + Edge Sentry init, `onRequestError` (uncaught route /
   Server Component / Server Action errors).
 - `instrumentation-client.ts`: browser Sentry init + `initAnalytics()`.
-- `lib/infra/monitoring/`: shared Sentry options, `scrubEvent` / `scrubBreadcrumb`
+- `lib/infra/telemetry/telemetry-url.ts`: every outgoing URL → origin + route template
+  (`/vi/invite/abc?ref=x` → `/vi/invite/:param`), built on `routeTemplate`
+  (`lib/infra/route-template/`), the same position-based redaction CSP reports use.
+- `lib/infra/telemetry/monitoring/`: shared Sentry options, `scrubEvent` / `scrubBreadcrumb`
   (drops console breadcrumbs; allowlists breadcrumb data),
   `reportError(error, scope)` for errors that are caught (error boundaries, the
   analyze-meal stream). `lib/core/errors/serialize.ts` reports unknown 500s directly.
-- `lib/infra/analytics/`: PostHog init, `events.ts` (the event list), `track()`,
-  `route-pattern.ts` (every URL → origin + route pattern: `/vi/invite/abc` →
-  `/invite/[slug]`).
-- `components/providers/analytics-identity.tsx`: one Supabase auth listener → PostHog
+- `lib/infra/telemetry/analytics/`: PostHog init, `events.ts` (the event list), `track()`.
+- `components/providers/telemetry-identity.tsx`: one Supabase auth listener → PostHog
   identify/reset + Sentry user (opaque account id only).
 - `app/global-error.tsx`: catches errors in the root layout itself.
 - `lib/infra/security/csp.ts`: `connect-src` allows `*.ingest.us.sentry.io`,
@@ -91,9 +92,9 @@ before `bun dev:mobile` (Flutter).
 | `checkout_started` | `package_id` | package picked | package picked |
 | `purchase_completed` | `package_id`, `status` (`paid` \| `payment_pending`) | ✓ | ✓ |
 | `purchase_failed` | `package_id` | ✓ | ✓ |
-| `$pageview` / `$screen` | route pattern | automatic | automatic |
+| `$pageview` / `$screen` | route template (web) / go_router pattern (Flutter) | automatic | automatic |
 
-**Adding one:** add it to `lib/infra/analytics/events.ts` (web; the type makes `track()`
+**Adding one:** add it to `lib/infra/telemetry/analytics/events.ts` (web; the type makes `track()`
 reject anything else) and `services/analytics/analytics_events.dart` (Flutter) with the
 **same name**, then call `track(...)` / `analytics.capture(...)`. Properties must be
 enums, counts or ids of *our* catalogue (package ids): never free text the user typed.

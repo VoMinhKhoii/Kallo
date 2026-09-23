@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { usePaywallOfferings } from '@/hooks/billing/use-paywall-offerings';
 import { usePaywallPurchase } from '@/hooks/billing/use-paywall-purchase';
-import { track } from '@/lib/infra/analytics/track';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 import { PaywallOffer } from './paywall-offer';
 
 interface PaywallDialogProps {

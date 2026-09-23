@@ -14,7 +14,7 @@ import {
   type Package,
   purchasePackage,
 } from '@/lib/domain/billing/web-purchases';
-import { track } from '@/lib/infra/analytics/track';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 
 /**
  * The paywall's purchase and activation state machine, kept apart from the

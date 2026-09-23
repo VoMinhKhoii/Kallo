@@ -11,17 +11,17 @@
  * changes except the noise.
  *
  * Also starts error reporting (Sentry) and product analytics (PostHog —
- * `lib/infra/analytics/init.ts`). Both are off unless their public key is set
+ * `lib/infra/telemetry/analytics/init.ts`). Both are off unless their public key is set
  * at build time, so local dev and CI ship nothing.
  */
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
-import { initAnalytics } from '@/lib/infra/analytics/init';
+import { initAnalytics } from '@/lib/infra/telemetry/analytics/init';
 import {
   clientSentryEnvironment,
   DENIED_URLS,
   sharedSentryOptions,
-} from '@/lib/infra/monitoring/sentry-options';
+} from '@/lib/infra/telemetry/monitoring/sentry-options';
 
 z.config({ jitless: true });
 

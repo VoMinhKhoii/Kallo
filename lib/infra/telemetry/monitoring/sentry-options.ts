@@ -17,7 +17,7 @@
  *     keeps only allowlisted, non-free-text breadcrumb data;
  *   • no Session Replay integration is ever added.
  */
-import { patternUrl, routePattern } from '@/lib/infra/analytics/route-pattern';
+import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 import { SITE_URL } from '@/lib/seo/site';
 
 const PRODUCTION_HOST = new URL(SITE_URL).hostname;
@@ -41,7 +41,7 @@ interface ScrubbableEvent {
  */
 export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
   if (event.request) {
-    if (event.request.url) event.request.url = patternUrl(event.request.url);
+    if (event.request.url) event.request.url = telemetryUrl(event.request.url);
     delete event.request.data;
     delete event.request.cookies;
     delete event.request.headers;
@@ -81,9 +81,7 @@ export function scrubBreadcrumb<T extends ScrubbableBreadcrumb>(
   const data: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(crumb.data)) {
     if (BREADCRUMB_URL_KEYS.has(key) && typeof value === 'string') {
-      data[key] = value.startsWith('/')
-        ? routePattern(value.split(/[?#]/)[0])
-        : patternUrl(value);
+      data[key] = telemetryUrl(value);
     } else if (BREADCRUMB_SAFE_KEYS.has(key)) {
       data[key] = value;
     }

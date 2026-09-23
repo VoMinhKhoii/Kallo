@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
-import { reportError } from '@/lib/infra/monitoring/report-error';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 
 export default function AdminError({
   error,

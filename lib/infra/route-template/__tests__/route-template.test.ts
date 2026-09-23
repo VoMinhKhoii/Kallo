@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { APP_ROUTE_PATTERNS } from '@/lib/infra/security/app-route-patterns';
-import { routeTemplate } from '@/lib/infra/security/csp-report-path';
+import { APP_ROUTE_PATTERNS } from '@/lib/infra/route-template/app-route-patterns';
+import { routeTemplate } from '@/lib/infra/route-template/route-template';
 
 const APP_ROOT = path.join(process.cwd(), 'app');
 const ROUTE_FILE = /^(?:page\.tsx|route\.tsx?)$/;

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import { rowIsComplete } from '@/lib/domain/logging/manual-logging';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
-import { track } from '@/lib/infra/analytics/track';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 
 /**
  * Manual (Cronometer-style) submit: ingredient ids + grams straight to the

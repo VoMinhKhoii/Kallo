@@ -12,8 +12,8 @@ import { locale as localeParam } from 'next/root-params';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
-import { AnalyticsIdentity } from '@/components/providers/analytics-identity';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { TelemetryIdentity } from '@/components/providers/telemetry-identity';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/routing';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
@@ -153,7 +153,7 @@ export default async function LocaleLayout({
           <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
         <Toaster />
-        <AnalyticsIdentity />
+        <TelemetryIdentity />
         {/* Registers the offline SW only when NEXT_PUBLIC_ENABLE_SW=true;
             defaults off so it can never white-screen production. */}
         <ServiceWorkerRegister />

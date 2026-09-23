@@ -27,7 +27,7 @@ describe('scrubEvent', () => {
     const event = scrubEvent({
       request: { url: 'https://kallo.fit/vi/invite/secret-slug?ref=x' },
     });
-    expect(event.request?.url).toBe('https://kallo.fit/invite/[slug]');
+    expect(event.request?.url).toBe('https://kallo.fit/vi/invite/:param');
   });
 
   it('keeps only the opaque user id', () => {
@@ -75,7 +75,7 @@ describe('scrubBreadcrumb', () => {
       scrubBreadcrumb({
         data: { from: '/en/circle/share-1', to: '/en/circle/g/group-2?tab=x' },
       })?.data
-    ).toEqual({ from: '/circle/[shareId]', to: '/circle/g/[groupId]' });
+    ).toEqual({ from: '/en/circle/:param', to: '/en/circle/g/:param' });
     expect(
       scrubBreadcrumb({
         data: { url: 'https://kallo.fit/api/v1/meals?date=2026-09-01' },

@@ -109,15 +109,15 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern |
 |---|---|
-| `analytics/` | PostHog product analytics: EU init, the typed event list, `track`/identify/reset, and the route-pattern URL reduction every telemetry URL goes through (`docs/MONITORING.md`) |
 | `auth/` | session/profile guard, redirect and next-param safety |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
-| `monitoring/` | Sentry: options shared by the browser, Node and Edge inits, the payload scrubber, and `reportError` for caught errors (`docs/MONITORING.md`) |
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
+| `route-template/` | the app's route tree as data (`app-route-patterns.ts`, checked against `app/` by a test) and `routeTemplate`, which redacts a URL path by segment position — shared by CSP reports and telemetry |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
+| `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
 | `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
 | `uploads/` | image and avatar file handling |
 

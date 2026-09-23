@@ -24,11 +24,15 @@ class Analytics {
   /// True only when a PostHog key is configured.
   final bool enabled;
 
+  /// Whether this build carries a PostHog key — the one place that decides
+  /// analytics is on, for both [setup] and [analyticsProvider].
+  static bool get configured => Env.posthogKey.isNotEmpty;
+
   /// Start the SDK. Call once at boot, before `runApp`; a no-op without a key.
   /// The native auto-init is switched off in `AndroidManifest.xml` and
   /// `Info.plist` so this is the only place PostHog starts.
   static Future<void> setup() async {
-    if (Env.posthogKey.isEmpty) return;
+    if (!configured) return;
     final config =
         PostHogConfig(Env.posthogKey)
           ..host = Env.posthogHost
@@ -67,5 +71,5 @@ class Analytics {
 
 /// Singleton [Analytics]. No-op unless [Env.posthogKey] is set.
 final analyticsProvider = Provider<Analytics>((ref) {
-  return Analytics._(enabled: Env.posthogKey.isNotEmpty);
+  return Analytics._(enabled: Analytics.configured);
 });

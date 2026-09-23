@@ -13,7 +13,7 @@ import {
   rollbackOptimisticMeal,
   settleMealSave,
 } from '@/lib/domain/meals/save/save-choreography';
-import { track } from '@/lib/infra/analytics/track';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 
 export function useConfirmMeal(userId: string) {
   const queryClient = useQueryClient();

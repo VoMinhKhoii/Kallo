@@ -1,11 +1,11 @@
 /**
  * Every page and route handler under `app/`, as the URL pattern Next serves
  * it at: route groups `(…)` dropped, dynamic segments kept as `[name]` /
- * `[...name]`. DATA ONLY — `csp-report-path.ts` matches reported URLs against
+ * `[...name]`. DATA ONLY — `route-template.ts` matches outgoing URLs against
  * it so a segment in a dynamic position is always redacted, whatever it
  * happens to be spelled like.
  *
- * Checked against the filesystem by `__tests__/csp-report-path.test.ts`: add
+ * Checked against the filesystem by `__tests__/route-template.test.ts`: add
  * or remove a `page.tsx` / `route.ts` and that test fails until this list is
  * updated. (The standalone image does not ship `app/`, so it cannot be read
  * at runtime.)

@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   serverSentryEnvironment,
   sharedSentryOptions,
-} from '@/lib/infra/monitoring/sentry-options';
+} from '@/lib/infra/telemetry/monitoring/sentry-options';
 
 /** Uncaught route / Server Component / Server Action errors → Sentry. */
 export const onRequestError = Sentry.captureRequestError;
@@ -30,7 +30,7 @@ export const onRequestError = Sentry.captureRequestError;
  * a failure while warming caches is itself reported. `onRequestError` hands
  * every uncaught route / Server Component / Server Action error to Sentry.
  * Both are no-ops without `NEXT_PUBLIC_SENTRY_DSN` (see
- * `lib/infra/monitoring/sentry-options.ts`).
+ * `lib/infra/telemetry/monitoring/sentry-options.ts`).
  */
 export async function register() {
   if (

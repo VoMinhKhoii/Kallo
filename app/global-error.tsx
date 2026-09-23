@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
-import { reportError } from '@/lib/infra/monitoring/report-error';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import en from '@/messages/en/errors.json';
 import vi from '@/messages/vi/errors.json';
 import './globals.css';

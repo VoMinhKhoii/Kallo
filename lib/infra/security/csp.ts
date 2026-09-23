@@ -85,7 +85,7 @@ const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com';
 
 /**
  * Error reporting (Sentry, US region) and product analytics (PostHog, EU
- * cloud) — see `lib/infra/monitoring/` and `lib/infra/analytics/`. Sentry's US
+ * cloud) — see `lib/infra/telemetry/monitoring/` and `lib/infra/telemetry/analytics/`. Sentry's US
  * DSNs name a per-organisation `o<id>.ingest.us.sentry.io` host, hence the
  * wildcard. PostHog sends events to `eu.i` and fetches its remote config from
  * `eu-assets.i`. Browser → these hosts only; no script is loaded from them

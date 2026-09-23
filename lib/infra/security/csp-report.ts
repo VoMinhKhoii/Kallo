@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { routeTemplate } from '@/lib/infra/security/csp-report-path';
+import { routeTemplate } from '@/lib/infra/route-template/route-template';
 
 /**
  * Parsing and sanitizing for browser CSP violation reports

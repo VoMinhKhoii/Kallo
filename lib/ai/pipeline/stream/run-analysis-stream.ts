@@ -18,7 +18,7 @@
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { createGeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import { reportError } from '@/lib/infra/monitoring/report-error';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { runCheatBranch } from './cheat-branch';
 import { runPreciseBranch } from './precise-branch';
 import { toStreamErrorEvent } from './stream-errors';
