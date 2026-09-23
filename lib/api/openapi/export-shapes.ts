@@ -181,7 +181,12 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
             id: uuid,
             friendUserId: uuid,
             friendHandle: nullable({ type: 'string' }),
-            ...columns(friendships, ['status', 'createdAt', 'updatedAt']),
+            ...columns(friendships, [
+              'status',
+              'acceptedAt',
+              'createdAt',
+              'updatedAt',
+            ]),
             requestedByMe: { type: 'boolean' },
           }),
           'Pending and accepted connections. Blocked edges are not exported.'

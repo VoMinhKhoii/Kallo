@@ -60,6 +60,9 @@ export async function loadSocialExport(db: AppDb, userId: string) {
         friendHandle: publicProfiles.handle,
         status: friendships.status,
         requestedBy: friendships.requestedBy,
+        // When the request was accepted: only meals shared after it are
+        // visible across the edge (share-visibility.ts). Null while pending.
+        acceptedAt: friendships.acceptedAt,
         createdAt: friendships.createdAt,
         updatedAt: friendships.updatedAt,
       })

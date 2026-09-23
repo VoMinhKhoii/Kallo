@@ -30,10 +30,14 @@ Never hand-write DDL for tables/columns. Never add CHECK constraints directly in
 (with the key it lands under in the user's "Export my data" file) or excluded
 with a stated reason. `coverage.test.ts` introspects this schema and fails on
 any table left out, loudest for tables with a user-linked column (`user_id`,
-`actor_id`, `recipient_id`, …). A new column on a table exported whole (meals,
-meal items, weights, entitlement grants, user profiles) changes the
-`DataExport` OpenAPI schema (`lib/api/openapi/export-shapes.ts`) with it;
-`export-shapes.test.ts` checks a built export against that schema.
+`actor_id`, `recipient_id`, …). **New column → same decision.** For every
+exported table, `column-coverage.test.ts` changes each column's value in turn
+and fails if the export document doesn't change and the column is not listed in
+that table's `excludedColumns` with a reason. So a column added to a table the
+export picks field by field (profile, friendships, invites…) must be added to
+its loader or excluded on purpose. Either way, update the `DataExport` OpenAPI
+schema (`lib/api/openapi/export-shapes.ts`) with it; `export-shapes.test.ts`
+checks a built export against that schema.
 
 ### Shared staging preview rule
 
