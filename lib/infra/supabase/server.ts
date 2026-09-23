@@ -1,5 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
+import {
+  sessionCookieOptions,
+  sessionCookieWriteOptions,
+} from '@/lib/infra/supabase/cookie-options';
 
 export async function createClient() {
   // Bearer-token path (mobile / REST API clients). When an `Authorization:
@@ -35,12 +39,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
-      cookieOptions: {
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: 'lax',
-        secure: true,
-        path: '/',
-      },
+      cookieOptions: sessionCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -48,7 +47,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, sessionCookieWriteOptions(options));
             }
           } catch {
             // setAll called from Server Component — ignore
