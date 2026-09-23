@@ -80,11 +80,11 @@ ALTER TABLE public.friendships ENABLE TRIGGER on_friendships_updated;
 -- became accepted is always hidden: its shared_at <= its commit < the
 -- transition = accepted_at. A share whose transaction merely overlaps the
 -- transition is hidden too (it started earlier); the owner can re-share it,
--- which bumps shared_at. The one share that becomes visible without being
--- committed after the acceptance COMMIT is one whose transaction STARTED after
--- the status flip, inside the few statements acceptInvite runs before
--- committing (event + direct chat) — made after the accept was already
--- decided, not backlog, and invisible to everyone until the accept commits.
+-- which bumps shared_at. The only share that can be visible yet committed
+-- before the acceptance transaction COMMITs is one whose transaction STARTED
+-- after the status flip, inside the few statements acceptInvite runs before
+-- committing (event + direct chat): made after the accept was already decided,
+-- not backlog, and no friend can see it until the accept commits.
 -- Closing even that would need a commit timestamp, which Postgres does not
 -- expose to a trigger. Both clocks are the database's, never an app server's.
 CREATE OR REPLACE FUNCTION public.friendships_set_accepted_at()
