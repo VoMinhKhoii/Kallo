@@ -1,6 +1,8 @@
 import {
   authed,
   type JsonSchema,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   ref,
@@ -50,7 +52,28 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       summary: 'People the caller is connected to',
       description: 'Accepted connections only. Blocked edges are not listed.',
       tags: TAGS,
-      ok: { type: 'array', items: ref('PublicProfile') },
+      ok: {
+        type: 'object',
+        required: ['circle'],
+        properties: {
+          circle: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['friendshipId', 'status', 'direction', 'profile'],
+              properties: {
+                friendshipId: { type: 'string', format: 'uuid' },
+                status: { type: 'string' },
+                direction: {
+                  type: ['string', 'null'],
+                  enum: ['incoming', 'outgoing', null],
+                },
+                profile: ref('PublicProfile'),
+              },
+            },
+          },
+        },
+      },
     }),
   },
 
@@ -85,6 +108,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -97,6 +121,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -114,6 +139,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -124,7 +150,20 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Invitations to log your own share of a meal someone else logged — the split flow, not the friend flow.',
       tags: TAGS,
-      ok: { type: 'array', items: ref('Acknowledgement') },
+      ok: {
+        type: 'object',
+        required: ['invites'],
+        properties: {
+          invites: {
+            type: 'array',
+            items: {
+              type: 'object',
+              description:
+                'One pending offer: `id`, `mode` (`copy` or `split`), `portionFactor`, `createdAt`, the sender (`from`) and the portion on offer (`meal`).',
+            },
+          },
+        },
+      },
     }),
   },
 
@@ -135,6 +174,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Logs the caller’s share of the shared meal onto the given date, as their own meal.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: inviteIdBody({
         properties: {
           newMealId: {
@@ -154,8 +194,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
           },
         },
       }),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -166,6 +205,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Logs NOTHING. A cheat meal has no items to copy and its numbers are slider positions, so taking the offer re-stages the sender’s spec — seeded with their chosen amounts — as a pending analysis of the caller’s own. The caller adjusts the sliders and confirms through the ordinary cheat path. Consumes the invite.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: inviteIdBody(),
       ok: ref('StagedCheatAnalysis'),
     }),
@@ -177,6 +217,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       summary: 'Dismiss a meal-split invite',
       description: 'Declines the invite without logging anything.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: inviteIdBody(),
       ok: ref('Acknowledgement'),
     }),

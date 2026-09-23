@@ -17,6 +17,8 @@ export const MOCK_USER = { id: 'user-123', email: 'test@example.com' };
 export const MOCK_PROFILE = {
   goal: 'cutting',
   aggression: '0.5',
+  // Opted in, so the save paths exercise the share insert. The column
+  // default is false — see insert-default-share.test.ts for that path.
   autoShareToCircle: true,
   // The premium gates key their trial window off the profile's creation date.
   createdAt: new Date('2026-01-01T00:00:00.000Z'),

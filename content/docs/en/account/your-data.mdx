@@ -1,7 +1,7 @@
 ---
 title: Your data
 description: What Kallo stores, what reaches the AI model, and how to get it back or delete it.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 This is the readable summary. The full, legally operative version is the
@@ -54,8 +54,40 @@ safety classifier flags it as suspicious — detail in the
 
 ## Getting your data out
 
-You can request a copy of your data at
-[support@kallo.fit](mailto:support@kallo.fit).
+**Settings → Account → Export my data** downloads a JSON file straight away, on
+the web and in the mobile app. It contains:
+
+- **Account** — your id, email, when you signed up and last signed in, and your
+  sign-in methods: each linked Google, Apple or email identity with its dates,
+  plus the profile details it holds (name, photo link, email and whether it is
+  verified). Sign-in tokens are never included.
+- **Profile** — body metrics, goal and targets, countries, language, cooking
+  habits, onboarding progress, and whether new meals are shared to your Circle
+  automatically.
+- **Circle profile** — your handle, display name and avatar settings.
+- **Meal log** — every meal with its dishes and nutrients, your weight history,
+  and the days you marked as fully logged.
+- **Circle** — your friends (by handle, with when each friendship was
+  accepted), the meals you shared, the reactions and replies you left, meal
+  copies and splits you sent or received, and your own Circle activity.
+- **Chats** — the chats you are in or created, who is in them (by user id), and
+  every message you sent.
+- **Notifications** and the devices registered for push notifications. Device
+  tokens are cut down to their last few characters.
+- **Feedback** you sent, with its status.
+- **Billing** — your Premium grants and their sync state.
+- **App activity** — meal-analysis requests still held (kept for about a week),
+  analyses not yet saved, ingredients the food database could not match, and
+  product analytics events linked to your account.
+- **Files** — your uploaded profile photo and any feedback screenshots, listed
+  by storage location. The images themselves are not inside the file.
+
+Other people's content stays out: the export has your own messages, replies and
+reactions, not theirs. Friendships you have blocked are left out too, because
+the record does not show who blocked whom. Internal records such as rate-limit
+counters, model-debugging traces and raw billing-provider webhooks are not
+included. For anything not in the file, including a copy of a screenshot, write
+to [support@kallo.fit](mailto:support@kallo.fit).
 
 ## Deleting data
 

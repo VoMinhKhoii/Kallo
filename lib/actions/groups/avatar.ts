@@ -1,16 +1,18 @@
-// Avatar photo upload/removal. The upload runs server-side through the user's
-// OWN session Supabase client (the browser/mobile client rides the auth-only
-// `/api/supabase-proxy` origin, which rejects `/storage/v1/*`), so the
-// `avatars_insert_own` / `avatars_delete_own` RLS policies enforce that
-// objects live under the uploader's `{userId}/…` prefix. The bucket is public
-// for reads (avatars render on the anonymous invite page and in feeds).
+// Avatar photo upload/removal. Storage writes run through the SERVICE-ROLE
+// client, and only after the type/size/magic-byte checks and the sharp
+// re-encode: users hold no write policy on the `avatars` bucket (migration
+// 20260923034000), so this function is the ONLY way bytes land there and a
+// direct Storage upload can no longer skip the processing (KALLO-05). The
+// object path is built here from the authenticated actor id + a random UUID —
+// nothing caller-supplied reaches it. The bucket is public for reads (avatars
+// render on the anonymous invite page and in feeds).
 
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
-import type { createClient } from '@/lib/infra/supabase/server';
+import { createAdminClient } from '@/lib/infra/supabase/admin';
 import { processAvatarImage } from '@/lib/infra/uploads/avatar-image';
 import {
   IMAGE_TYPES,
@@ -23,16 +25,41 @@ import type { Db, PublicProfile } from './types';
 
 const AVATAR_BUCKET = 'avatars';
 
-type ScopedClient = Awaited<ReturnType<typeof createClient>>;
+/** CDN/browser freshness for a stored avatar, in seconds. Each upload gets a
+ * fresh random filename, so a replaced avatar's NEW url is never stale; the
+ * short TTL only bounds how long a deleted/replaced object keeps being served
+ * from edge caches (Supabase's default is 3600). */
+export const AVATAR_CACHE_CONTROL_SECONDS = '300';
+
+type AdminClient = ReturnType<typeof createAdminClient>;
 
 /** Best-effort delete of a replaced/removed avatar object — a stale orphan in
- * the bucket is harmless, so a storage error never fails the mutation. */
-async function removeObject(supabase: ScopedClient, path: string | null) {
+ * the bucket is harmless, so a storage error never fails the mutation. The
+ * service-role client ignores RLS, so the owner-prefix check that the old
+ * `avatars_delete_own` policy did is re-done here: a path outside
+ * `{actorId}/` (a corrupted or tampered row) is refused, never deleted. */
+async function removeObject(
+  admin: AdminClient,
+  actorId: string,
+  path: string | null
+) {
   if (!path) return;
-  const { error } = await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+  if (!isOwnAvatarPath(actorId, path)) {
+    console.error('[avatar] refused to remove an object outside the prefix');
+    return;
+  }
+  const { error } = await admin.storage.from(AVATAR_BUCKET).remove([path]);
   if (error) {
     console.error('[avatar] cleanup of old object failed:', error.message);
   }
+}
+
+/** `{actorId}/{single segment}` only — no nested folders, no traversal. */
+export function isOwnAvatarPath(actorId: string, path: string): boolean {
+  const prefix = `${actorId}/`;
+  if (!actorId || !path.startsWith(prefix)) return false;
+  const name = path.slice(prefix.length);
+  return name.length > 0 && !name.includes('/') && !name.includes('..');
 }
 
 async function currentAvatarPath(
@@ -56,7 +83,6 @@ async function currentAvatarPath(
 export async function uploadMyAvatar(
   actorId: string,
   file: File,
-  supabase: ScopedClient,
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   if (!IMAGE_TYPES[file.type]) {
@@ -82,10 +108,15 @@ export async function uploadMyAvatar(
   await getOrCreateMyProfile(actorId, null, db);
   const previous = await currentAvatarPath(actorId, db);
 
+  // Server-built path: the authenticated id + a random name. The bytes are the
+  // sharp output, never the caller's upload.
   const path = `${actorId}/${randomUUID()}.webp`;
-  const { error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .upload(path, webp, { contentType: 'image/webp', upsert: false });
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from(AVATAR_BUCKET).upload(path, webp, {
+    contentType: 'image/webp',
+    cacheControl: AVATAR_CACHE_CONTROL_SECONDS,
+    upsert: false,
+  });
   if (error) {
     throw Errors.internal(error, 'Could not upload the avatar.');
   }
@@ -95,7 +126,7 @@ export async function uploadMyAvatar(
     .set({ avatarPath: path, updatedAt: new Date() })
     .where(eq(publicProfiles.userId, actorId));
 
-  await removeObject(supabase, previous);
+  await removeObject(admin, actorId, previous);
 
   const profile = await getMyPublicProfile(actorId, db);
   if (!profile) throw Errors.internal(null, 'Profile disappeared mid-update.');
@@ -105,17 +136,19 @@ export async function uploadMyAvatar(
 /** Clear the actor's avatar photo (falls back to the initials disc). */
 export async function removeMyAvatar(
   actorId: string,
-  supabase: ScopedClient,
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   const previous = await currentAvatarPath(actorId, db);
+  // Built before the write so a missing service-role secret fails the request
+  // cleanly instead of clearing the row and orphaning the object.
+  const admin = previous ? createAdminClient() : null;
 
   await db
     .update(publicProfiles)
     .set({ avatarPath: null, updatedAt: new Date() })
     .where(eq(publicProfiles.userId, actorId));
 
-  await removeObject(supabase, previous);
+  if (admin) await removeObject(admin, actorId, previous);
 
   return getOrCreateMyProfile(actorId, null, db);
 }

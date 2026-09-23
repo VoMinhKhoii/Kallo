@@ -9,13 +9,17 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
+import { NewPasswordField } from '@/components/auth/new-password/new-password-field';
 import { useRouter } from '@/i18n/navigation';
+import { newPasswordSchema } from '@/lib/core/validation/password';
 import { isRateLimitedAuthError } from '@/lib/infra/auth/rate-limited';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { weakPasswordReason } from '@/lib/infra/auth/weak-password';
 import { createClient } from '@/lib/infra/supabase/client';
 
 export function SignUpForm() {
   const t = useTranslations('auth.signUp');
+  const tRules = useTranslations('auth.passwordRules');
   const locale = useLocale();
   const router = useRouter();
   const { closeDialog, next, showCheckEmail } = useAuthDialog();
@@ -24,7 +28,7 @@ export function SignUpForm() {
 
   const signUpSchema = z.object({
     email: z.email(t('emailError')),
-    password: z.string().min(6, t('passwordError')),
+    password: newPasswordSchema,
   });
 
   type SignUpValues = z.infer<typeof signUpSchema>;
@@ -32,9 +36,11 @@ export function SignUpForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async (data: SignUpValues) => {
@@ -55,8 +61,14 @@ export function SignUpForm() {
     if (error) {
       // A throttled signup is not a failed signup: "Could not create account"
       // sends the user straight back to the button that is being throttled.
+      // Neither is a refused password — say what to change instead.
+      const weak = weakPasswordReason(error);
       setFormError(
-        isRateLimitedAuthError(error) ? t('errors.rateLimited') : t('error')
+        isRateLimitedAuthError(error)
+          ? t('errors.rateLimited')
+          : weak
+            ? tRules(weak)
+            : t('error')
       );
       setLoading(false);
       return;
@@ -95,11 +107,11 @@ export function SignUpForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormInput
+      <NewPasswordField
         label={t('password')}
-        type="password"
         placeholder={t('passwordPlaceholder')}
-        error={errors.password?.message}
+        current={watch('password')}
+        issue={errors.password?.message}
         {...register('password')}
       />
 

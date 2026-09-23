@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import '../logic/password_policy.dart';
 import '../providers/auth_form_controller.dart';
 import '../screens/forgot_password_screen.dart';
 import 'auth_controls.dart';
@@ -64,13 +65,24 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
   bool _validate() {
     final email = _email.text.trim();
     final emailOk = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-    final passOk = _password.text.length >= 6;
+    // New passwords meet today's policy; existing ones are only required.
+    final issue =
+        _createMode
+            ? newPasswordIssue(_password.text)
+            : existingPasswordIssue(_password.text);
     setState(() {
       _emailError = emailOk ? null : tr('auth.signIn.emailError');
-      _passwordError = passOk ? null : tr('auth.signIn.passwordError');
+      _passwordError = _passwordMessage(issue);
     });
-    return emailOk && passOk;
+    return emailOk && issue == null;
   }
+
+  String? _passwordMessage(PasswordIssue? issue) => switch (issue) {
+    null => null,
+    PasswordIssue.tooLong => tr('auth.errors.passwordTooLong'),
+    PasswordIssue.required => tr('auth.signIn.passwordError'),
+    _ => tr('auth.signUp.passwordError'),
+  };
 
   /// Flip sign-in ↔ sign-up in place.
   ///

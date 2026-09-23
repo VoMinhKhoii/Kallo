@@ -134,6 +134,17 @@ Left sidebar **Rules** → **Transform Rules** → **Modify Request Header** →
 > Use **Set static**, not **Add** — "Set" overwrites any `X-Origin-Verify` a visitor
 > tries to send in, so the origin only ever trusts Cloudflare's value.
 
+**Same rule, second header — pin the public host.** Add another operation to
+`origin-lock`: **Set dynamic** → **Header name:** `X-Forwarded-Host` →
+**Value:** `http.host`. Step 4 rewrites `Host` to the run.app hostname, so that
+hostname is what the app sees as its own origin. `lib/infra/auth/redirects.ts`
+(`publicUrl`, used by `/auth/callback`, `/auth/verify` and the waitlist confirm
+link) builds redirect targets from `X-Forwarded-Host`; setting it here — and
+*Set*, so a visitor-supplied value is overwritten — keeps those redirects on
+`kallo.fit`. The code already refuses to emit a `*.run.app` origin and falls
+back to `https://kallo.fit` (KALLO-11), so this header is what keeps `www` and
+staging hosts correct rather than the only thing hiding the origin.
+
 ---
 
 ## 6. SSL + security hardening
@@ -143,6 +154,18 @@ Left sidebar **SSL/TLS**:
 - **Edge Certificates** → turn on **Always Use HTTPS**, set **Minimum TLS Version
   1.2**, enable **HSTS** (accept the warning — only do this once you're happy the
   site loads on HTTPS).
+  - The Supabase session cookie's lifetime is tied to this setting.
+    `lib/infra/supabase/cookie-options.ts` sets it to 90 days, under the 6-month
+    (15552000 s) HSTS max-age recorded there as `EXPECTED_HSTS_MAX_AGE_SECONDS`.
+    A cookie that outlives the browser's HSTS entry can be sent over plain HTTP
+    on the next typed visit, before the HTTPS redirect (pentest KALLO-06). If you
+    ever **shorten** HSTS here, lower that constant too; its test then forces the
+    cookie lifetime back under it.
+  - Recommended once HTTPS is stable everywhere: raise HSTS to **12 months**, turn
+    on **Include subdomains** and **Preload**, then submit `kallo.fit` at
+    https://hstspreload.org. Preloaded domains are HTTPS-only in browsers even on
+    the first visit, which closes the gap HSTS alone leaves. Preload is hard to
+    undo, so every subdomain must serve HTTPS first.
 
 Left sidebar **Security**:
 - **WAF** → **Managed rules** → deploy the **Cloudflare Managed Ruleset**.
@@ -203,7 +226,8 @@ curl -sSI -H 'Accept: text/markdown' https://kallo.fit/en | grep -Ei '^(content-
 ## 7. Email — inbound support@kallo.fit (free)
 
 Left sidebar **Email** → **Email Routing** → **Get started** → enable. Cloudflare
-adds the needed MX + SPF/DKIM/DMARC DNS records automatically. Then **Create
+adds the needed MX, SPF and DKIM DNS records automatically (Email Routing does
+not add DMARC — see §7c). Then **Create
 address** → `support@kallo.fit` → **Send to** your personal inbox → verify that
 inbox via the email Cloudflare sends. (Used by the OpenFoodFacts contact + the
 legal-page mailto links.)
@@ -251,13 +275,37 @@ reverts auth email to Supabase's own sender — no deploy required.
 
 ---
 
+## 7c. Email — anti-spoofing enforcement (SPF / DMARC)
+
+§7 and §7b leave the domain in **monitoring** mode: apex SPF ends in `~all`
+(soft fail) and `_dmarc.kallo.fit` is `p=none`, so receivers report forged
+`@kallo.fit` mail but still deliver it (pentest finding KALLO-04). Moving to
+enforcement is DNS-only and staged over a few weeks:
+
+1. Confirm the sender inventory — only Resend sends, as `mail.kallo.fit`; the
+   apex sends nothing.
+2. **Email** → **DMARC Management** → enable, then read 1–2 weeks of aggregate
+   reports.
+3. Apex SPF `~all` → `-all`; DMARC `p=none` → `quarantine` → `reject`, with
+   `sp=`/`np=` for subdomains.
+
+The full runbook — exact record values, why each stage exists, verification and
+rollback — is **`docs/EMAIL_AUTHENTICATION.md`**. Do not skip its staging:
+jumping straight to `p=reject` bounces any legitimate sender you forgot.
+
+---
+
 ## 8. Supabase (the current project = prod)
 
 Supabase dashboard → the current dogfood project → **Authentication** → **URL
 Configuration**:
 - **Site URL:** `https://kallo.fit`
 - **Redirect URLs:** add `https://kallo.fit/**` and `https://www.kallo.fit/**`
-  (keep the existing localhost / run.app entries).
+  (keep the localhost entries for development). **Remove any `*.run.app`
+  entries**: the raw origin is sealed, so no real sign-in lands there, and an
+  allow-listed run.app `redirect_to` is a way to make GoTrue print the origin
+  hostname in a `Location` header (KALLO-11). The auth proxy now refuses to
+  relay such a redirect, but the allow-list should not offer it either.
 
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
@@ -389,3 +437,6 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
 - **Rotating the origin secret** means updating BOTH
   `kallo-prod-origin-shared-secret` (Secret Manager, then redeploy) and the
   Cloudflare Transform Rule value.
+- **Email anti-spoofing (KALLO-04).** Stage DMARC to `p=reject` and apex SPF to
+  `-all` per §7c / `docs/EMAIL_AUTHENTICATION.md`. Optional hardening flagged
+  by the same pentest: CAA, DNSSEC, MTA-STS/TLS-RPT (all in that doc).

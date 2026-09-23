@@ -117,11 +117,24 @@ describe('readBoundedJson', () => {
     );
   });
 
-  it('throws SyntaxError on a malformed body, as request.json() does', async () => {
+  // A bare SyntaxError reached serializeError as an unknown error: a
+  // retryable 500 for bytes the client itself got wrong (KALLO-08).
+  it('maps a malformed body to a non-retryable 400, not a SyntaxError', async () => {
     const request = streamingRequest(['not json']);
 
-    await expect(readBoundedJson(request, 1024)).rejects.toBeInstanceOf(
-      SyntaxError
-    );
+    await expect(readBoundedJson(request, 1024)).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+      status: 400,
+      retryable: false,
+      message: 'Invalid JSON in request body',
+    });
+  });
+
+  it('maps an empty body to a 400 too', async () => {
+    const request = new Request('http://localhost/', { method: 'POST' });
+
+    await expect(readBoundedJson(request, 1024)).rejects.toMatchObject({
+      status: 400,
+    });
   });
 });

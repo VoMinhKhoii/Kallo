@@ -14,7 +14,8 @@ const { mockTxDelete, mockTxInsert, mockTxUpdate, mockTxSelect, mockTx } =
     const mockTxSelect = vi.fn(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
           })
@@ -145,7 +146,7 @@ describe('confirmAndSaveMealAction', () => {
     expect(result).toMatchObject({ mealId: UUID_MEAL });
     expect(result.meal.id).toBe(UUID_MEAL);
     expect(result.meal.nutrition).toBeDefined();
-    // Shared to circle by default — the confirm response carries the share.
+    // Auto-shared (this owner opted in) — the confirm response carries it.
     expect(result.meal.share).toEqual({
       shareId: 'share-1',
       visibility: 'circle',
@@ -163,7 +164,8 @@ describe('confirmAndSaveMealAction', () => {
     mockTxSelect.mockImplementationOnce(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: false }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
           })
@@ -287,7 +289,7 @@ describe('confirmAndSaveMealAction', () => {
     expect(result.meal.alcoholG).toBe(40);
     expect(result.meal.nutrition.caloriesKcal).toBe(1120);
     expect(result.meal.mealItemGroups).toEqual([]);
-    // Shared to circle by default, just like a precise meal.
+    // Auto-shared for an opted-in owner, just like a precise meal.
     expect(result.meal.share).toEqual({
       shareId: 'share-1',
       visibility: 'circle',

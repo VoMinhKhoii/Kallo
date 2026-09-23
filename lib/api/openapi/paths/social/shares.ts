@@ -1,6 +1,8 @@
 import {
   authed,
   type JsonSchema,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
   ref,
@@ -52,6 +54,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -70,6 +73,22 @@ export const SHARE_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/og/macro-card/{shareId}': {
+    get: authed({
+      operationId: 'getMacroCardImage',
+      summary: 'Render a shared meal as a PNG card',
+      description:
+        'The shareable macro card for a shared meal: dish name, calories and a macro bar, rendered server-side as a 1080×1920 PNG. Needs a session, and applies the same visibility rule as `getSharedMeal` — your own share, or a non-private one from someone in your circle — so a share you cannot see answers 404, exactly like one that does not exist. Rate limited per user (the render is CPU-heavy). The image is cached privately, per viewer.',
+      tags: TAGS,
+      parameters: [pathParam('shareId', 'UUID of the shared meal.')],
+      // `format: binary` is the signal generators use to hand back raw bytes
+      // rather than decode the body as text.
+      ok: { type: 'string', format: 'binary', contentMediaType: 'image/png' },
+      okMedia: 'image/png',
+      okDescription: 'The rendered card.',
+    }),
+  },
+
   '/api/v1/groups/shares/log': {
     post: authed({
       operationId: 'logSharedMeal',
@@ -77,6 +96,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         'Logs someone else’s shared meal as your own. `factor` is 1 to copy the whole thing or 0.5 to take half — the case where two people ate one dish.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: shareIdBody(
         {
           factor: {
@@ -95,8 +115,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
         ['factor', 'loggedDate', 'timezoneOffset']
       ),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -107,6 +126,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         'Toggles the caller’s reaction on or off. There is one reaction type.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: shareIdBody(),
       ok: ref('Acknowledgement'),
     }),
@@ -118,6 +138,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       summary: 'Comment on a shared meal',
       description: 'Adds a reply, optionally threaded under an existing one.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: shareIdBody(
         {
           body: { type: 'string', description: 'Reply text.' },
@@ -129,8 +150,18 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
         ['body']
       ),
-      ok: ref('Acknowledgement'),
-      okStatus: '201',
+      ok: {
+        type: 'object',
+        required: ['id', 'author', 'isSelf', 'body', 'createdAt'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          author: ref('PublicProfile'),
+          isSelf: { type: 'boolean' },
+          body: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      okDescription: 'The stored reply.',
     }),
   },
 
@@ -141,6 +172,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       description:
         '`copy` sends the meal for them to log as-is. `split` sends an invite for each recipient to log exactly their own portion of it — the shared-dish case.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: {
         type: 'object',
         required: ['mealId', 'friendUserIds', 'mode'],
@@ -175,7 +207,6 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('Acknowledgement'),
-      okStatus: '201',
     }),
   },
 
@@ -210,6 +241,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -226,6 +258,7 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         properties: { displayName: { type: 'string' } },
       },
       ok: profileResponse,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

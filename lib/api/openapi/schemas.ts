@@ -1,5 +1,7 @@
 import type { JsonSchema } from '@/lib/api/openapi/components';
+import { EXPORT_SCHEMAS } from '@/lib/api/openapi/export-shapes';
 import { RESPONSE_SCHEMAS } from '@/lib/api/openapi/schema-shapes';
+import { ERROR_CODES } from '@/lib/core/errors/codes';
 
 /**
  * Named response schemas.
@@ -33,17 +35,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
           code: {
             type: 'string',
             description: 'Stable error identifier.',
-            enum: [
-              'NOT_AUTHENTICATED',
-              'PROFILE_NOT_FOUND',
-              'VALIDATION_FAILED',
-              'NOT_FOUND',
-              'CONFLICT',
-              'RATE_LIMITED',
-              'PIPELINE_TIMEOUT',
-              'feature_locked',
-              'INTERNAL',
-            ],
+            enum: [...ERROR_CODES],
           },
           status: { type: 'integer', description: 'Mirrors the HTTP status.' },
           retryable: {
@@ -226,6 +218,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     },
   },
   ...RESPONSE_SCHEMAS,
+  ...EXPORT_SCHEMAS,
   MealList: {
     type: 'array',
     items: { $ref: '#/components/schemas/Meal' },

@@ -83,3 +83,12 @@ on — that is the proof GoTrue stopped sending and the hook took over.
 (`kallo-prod-resend-api-key`, `kallo-prod-send-email-hook-secret`) — see
 `docs/GOOGLE_CLOUD_RUN.md`. Domain verification, the hook URI, and the required
 Cloudflare WAF skip rule are in `docs/PROD_DOMAIN_SETUP.md` §7b.
+
+## Sender domain and anti-spoofing
+
+Every sender must stay on `mail.kallo.fit`: Resend's DKIM signature for that
+domain is what makes our mail pass DMARC. Nothing sends as the apex
+`@kallo.fit`, and the DMARC policy is being staged to `p=reject` on that
+assumption. Before adding a new sender or pointing `EMAIL_FROM` at another
+domain, read `docs/EMAIL_AUTHENTICATION.md` (sender inventory, SPF/DKIM/DMARC
+records, rollback).

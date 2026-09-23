@@ -22,7 +22,9 @@ export async function setAutoShareToCircle(enabled: boolean) {
 
   const updated = await db
     .update(userProfiles)
-    .set({ autoShareToCircle })
+    // autoShareUpdatedAt is the consent record: stamped each time the user sets
+    // the preference, so an opt-in is always attributable to a moment.
+    .set({ autoShareToCircle, autoShareUpdatedAt: new Date() })
     .where(eq(userProfiles.userId, user.id))
     .returning({ userId: userProfiles.userId });
 

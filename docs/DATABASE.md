@@ -25,6 +25,20 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 Never hand-write DDL for tables/columns. Never add CHECK constraints directly in SQL files.
 
+**New table → decide its export fate.** Every table must appear in
+`EXPORT_COVERAGE` (`lib/domain/account-export/coverage.ts`) as either exported
+(with the key it lands under in the user's "Export my data" file) or excluded
+with a stated reason. `coverage.test.ts` introspects this schema and fails on
+any table left out, loudest for tables with a user-linked column (`user_id`,
+`actor_id`, `recipient_id`, …). **New column → same decision.** For every
+exported table, `column-coverage.test.ts` changes each column's value in turn
+and fails if the export document doesn't change and the column is not listed in
+that table's `excludedColumns` with a reason. So a column added to a table the
+export picks field by field (profile, friendships, invites…) must be added to
+its loader or excluded on purpose. Either way, update the `DataExport` OpenAPI
+schema (`lib/api/openapi/export-shapes.ts`) with it; `export-shapes.test.ts`
+checks a built export against that schema.
+
 ### Shared staging preview rule
 
 While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
@@ -130,6 +144,10 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260909071500_trace_stage_outputs.sql` | B (Manual) | Add recursively sanitized, bounded stage outputs to meal-analysis traces |
 | `20260912172822_add_day_completion_marks.sql` | A (Drizzle) | `day_completion_marks` — days the user attested were fully logged |
 | `20260912172830_rls_day_completion_marks.sql` | B (Manual) | RLS for `day_completion_marks`; SELECT + INSERT only, since the mark is one-way |
+| `20260923034000_avatars_server_only_writes.sql` | B (Manual, journaled) | Drop every user-JWT policy on the public `avatars` bucket: only the server (service role, after the sharp re-encode) writes or deletes avatar objects; reads stay public |
+| `20260923051200_circle_share_default_off.sql` | A (Drizzle) | `user_profiles.auto_share_to_circle` default → `false`; `user_profiles.auto_share_updated_at` (consent record); `friendships.accepted_at` |
+| `20260923051230_friendships_accepted_at_visibility.sql` | B (Manual) | Backfill `accepted_at` from `updated_at`; trigger keeping it authoritative; `is_friend_since()`; friend SELECT policies on `meal_shares`/`meals`/`meal_items`/`circle_events` bounded to shares made after acceptance |
+| `20260923053541_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat groups and messages, meal-share reactions/replies/invites, coach assignments); plain `CREATE INDEX`, since migrations run in a transaction |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

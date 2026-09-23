@@ -774,7 +774,7 @@
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
       "emailError": "Enter a valid email address",
-      "passwordError": "Password must be at least 6 characters"
+      "passwordError": "Please enter your password"
     },
     "signUp": {
       "title": "Create your account",
@@ -788,7 +788,7 @@
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Create a password",
       "emailError": "Enter a valid email address",
-      "passwordError": "Password must be at least 6 characters"
+      "passwordError": "Use at least 8 characters (accented letters count as 2–3), including a letter and a number."
     },
     "dialog": {
       "signInTitle": "Welcome back",
@@ -848,6 +848,9 @@
       "network": "Couldn't reach the server — check your connection and try again.",
       "rateLimited": "Too many attempts — give it a moment, then try again.",
       "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
+      "weakPassword": "That password is too weak. Use at least 8 characters (accented letters count as 2–3), including a letter and a number.",
+      "pwnedPassword": "This password has shown up in a known data breach. Please choose a different one.",
+      "passwordTooLong": "That password is too long. Keep it to 72 characters or fewer, and accented letters count as 2–3.",
       "generic": "Something went wrong — please try again."
     },
     "showPassword": "Show password",
