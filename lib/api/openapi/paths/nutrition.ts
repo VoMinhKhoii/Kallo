@@ -6,10 +6,10 @@ import {
 import {
   authed,
   fromZod,
+  optionalTzParam,
   type PathItem,
   RATE_LIMITER_UNAVAILABLE_ERROR,
   ref,
-  tzParam,
 } from '@/lib/api/openapi/components';
 
 const TAGS = ['Nutrition'];
@@ -32,7 +32,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
             '`auto` picks the widest range with enough data. The rest are fixed windows.',
           schema: { type: 'string', enum: ['auto', '7d', '30d', '90d'] },
         },
-        tzParam,
+        optionalTzParam,
         {
           name: 'days',
           in: 'query',

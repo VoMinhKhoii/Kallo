@@ -31,7 +31,9 @@ Successful responses are `200` (the waitlist confirmation link is a `307`
 redirect). No endpoint answers `201`, including the ones that create something.
 Date-bucketed reads take a required `tz` query parameter: the offset in minutes
 as `Date.getTimezoneOffset()` reports it, from `-840` to `720`. If it is missing,
-you get a `400`; the server never falls back to a stored timezone.
+you get a `400`; the server never falls back to a stored timezone. The one
+exception is the nutrition overview, where `tz` is optional and a missing value
+buckets days in UTC.
 
 ## Meal analysis and the macro card
 

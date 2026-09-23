@@ -26,7 +26,30 @@ export const maxDuration = 60;
 // `controller.close()`.
 const GUARD_RELEASE_DEADLINE_MS = 5_000;
 
+/** A taken concurrency guard the stream has not yet taken ownership of. */
+interface PendingGuard {
+  release?: () => Promise<void>;
+}
+
 export async function POST(request: NextRequest) {
+  // Anything before the stream opens can throw: the billing and guard checks
+  // and the trace insert all hit the database. Answer such a throw with the
+  // JSON error envelope the contract documents, not Next's bare 500, and hand
+  // back a guard that was already taken.
+  const pending: PendingGuard = {};
+  try {
+    return await startAnalysis(request, pending);
+  } catch (error) {
+    await pending.release?.();
+    console.error('[analyze-meal] Pre-stream failure:', error);
+    return serializeError(error);
+  }
+}
+
+async function startAnalysis(
+  request: NextRequest,
+  pending: PendingGuard
+): Promise<Response> {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
@@ -69,23 +92,18 @@ export async function POST(request: NextRequest) {
   );
   if (!guard.allowed) return guard.error;
   const releaseGuard = createGuardRelease(guard.release);
+  pending.release = releaseGuard;
 
   // Awaited so child trace inserts have a parent row to FK against
-  let requestId: string;
-  try {
-    requestId = await logPipelineStart({
-      userId,
-      rawInput: message,
-      userContext,
-      db,
-    });
-  } catch (error) {
-    // Still pre-stream, so answer with the JSON error envelope the contract
-    // documents rather than letting Next render its own bare 500.
-    await releaseGuard();
-    console.error('[analyze-meal] Pipeline start logging failed:', error);
-    return serializeError(error);
-  }
+  const requestId = await logPipelineStart({
+    userId,
+    rawInput: message,
+    userContext,
+    db,
+  });
+
+  // From here the stream owns the guard and releases it when it closes.
+  pending.release = undefined;
 
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();

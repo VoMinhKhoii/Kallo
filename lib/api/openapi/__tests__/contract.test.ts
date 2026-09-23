@@ -29,8 +29,8 @@ import { openApiDocument } from '@/lib/api/openapi/document';
  *  2. Success statuses. Every documented 2xx/3xx must be one the handler can
  *     return. (Sixteen operations advertised a 201 no route ever sends.)
  *  3. Query parameters. The documented names must be exactly the ones the
- *     handler reads, and a `tz` the handler rejects when missing must be
- *     documented as required.
+ *     handler reads, and `tz` is documented as required exactly when the
+ *     schema the handler feeds it to rejects a missing value.
  *
  * All three read the route source rather than an explicit table, so a new
  * route is covered the day it is added, with nothing to remember to update.
@@ -259,6 +259,29 @@ const readQueryNames = (handler: string) =>
 const documentedQuery = (op: Operation): Parameter[] =>
   (op.parameters ?? []).filter((parameter) => parameter.in === 'query');
 
+/**
+ * Does the schema the handler feeds `parseTzParam(...)` into accept null?
+ * Handles `schema.parse(parseTzParam(...))` and
+ * `schema.parse({ key: parseTzParam(...), ... })`.
+ */
+async function tzAcceptsNull(entry: DocumentedOperation): Promise<boolean> {
+  const direct = entry.handler.match(/(\w+)\.parse\(\s*parseTzParam\(/);
+  const keyed = entry.handler.match(
+    /(\w+)\.parse\(\{[^}]*?(\w+):\s*parseTzParam\(/
+  );
+  const name = direct?.[1] ?? keyed?.[1];
+  expect(name, `${entry.where}: schema fed by parseTzParam`).toBeDefined();
+  const from = importSource(entry.source, name as string) ?? '';
+  expect(from, `${entry.where}: import of ${name}`).not.toBe('');
+  const mod = (await import(from)) as Record<string, ZodType>;
+  const schema = mod[name as string] as ZodType & {
+    shape?: Record<string, ZodType>;
+  };
+  const target = direct ? schema : schema.shape?.[keyed?.[2] as string];
+  expect(target, `${entry.where}: tz schema`).toBeDefined();
+  return (target as ZodType).safeParse(null).success;
+}
+
 describe('documented query parameters match what the handler reads', () => {
   it('documents exactly the query names the handler reads', () => {
     const drift: string[] = [];
@@ -277,15 +300,25 @@ describe('documented query parameters match what the handler reads', () => {
     expect(drift).toEqual([]);
   });
 
-  it('marks `tz` required wherever a missing value is a 400', () => {
-    // `parseTzParam` turns a missing `tz` into null precisely so the schema
-    // rejects it — the route has no stored-timezone fallback.
+  it('marks `tz` required exactly where a missing value is a 400', async () => {
+    // `parseTzParam` turns a missing `tz` into null. Whether that null is a
+    // 400 depends on the schema it is fed to: most reject it (no fallback),
+    // the nutrition overview's is nullable and buckets in UTC. So load that
+    // schema and ask it.
     const wrong: string[] = [];
-    for (const { where, op, handler } of operations) {
-      if (!handler.includes('parseTzParam(')) continue;
-      const tz = documentedQuery(op).find((p) => p.name === 'tz');
-      if (!tz?.required) wrong.push(where);
+    let checked = 0;
+    for (const entry of operations) {
+      if (!entry.handler.includes('parseTzParam(')) continue;
+      const acceptsNull = await tzAcceptsNull(entry);
+      checked += 1;
+      const tz = documentedQuery(entry.op).find((p) => p.name === 'tz');
+      if (Boolean(tz?.required) === acceptsNull) {
+        wrong.push(
+          `${entry.where}: documents tz ${tz?.required ? 'required' : 'optional'}, schema ${acceptsNull ? 'accepts' : 'rejects'} a missing tz`
+        );
+      }
     }
+    expect(checked).toBeGreaterThan(5);
     expect(wrong).toEqual([]);
   });
 });

@@ -31,7 +31,9 @@ Phản hồi thành công là `200` (riêng liên kết xác nhận danh sách c
 hướng `307`). Không endpoint nào trả `201`, kể cả những cái tạo ra dữ liệu mới.
 Các lệnh đọc chia theo ngày đều cần tham số truy vấn `tz` bắt buộc: độ lệch tính
 bằng phút như `Date.getTimezoneOffset()` trả về, từ `-840` đến `720`. Nếu thiếu,
-bạn nhận `400`; máy chủ không bao giờ tự lấy múi giờ đã lưu.
+bạn nhận `400`; máy chủ không bao giờ tự lấy múi giờ đã lưu. Ngoại lệ duy nhất
+là tổng quan dinh dưỡng: ở đó `tz` là tùy chọn, và khi thiếu thì ngày được chia
+theo UTC.
 
 ## Phân tích bữa ăn và thẻ macro
 
