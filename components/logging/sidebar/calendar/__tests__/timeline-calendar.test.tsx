@@ -33,7 +33,6 @@ const { buildMealDateIndex } = await import(
   '@/lib/domain/logging/meal-date-index'
 );
 const { TimelineCalendar } = await import('../timeline-calendar');
-const { HAS_MEAL_MARKER_CLASS } = await import('../timeline-calendar-panel');
 
 describe('TimelineCalendar', () => {
   const baseProps = {
@@ -41,8 +40,10 @@ describe('TimelineCalendar', () => {
     selectedDate: '2026-09-22',
     mealDates: buildMealDateIndex([
       { date: '2026-09-16', kcal: 2014 },
-      { date: '2026-09-21', kcal: 1842 },
+      { date: '2026-09-21', kcal: 1100 },
+      { date: '2026-09-19', kcal: null },
     ]),
+    calorieTarget: 2000,
     onSelectDate: vi.fn(),
   };
 
@@ -116,8 +117,9 @@ describe('TimelineCalendar', () => {
         .querySelectorAll('thead th, [role="columnheader"]')
     ).map((cell) => cell.textContent?.trim());
 
-    expect(weekdays[0]).toMatch(/^Mo/);
-    expect(weekdays.at(-1)).toMatch(/^Su/);
+    // Three letters, not DayPicker's default two: "Mon", never "Mo".
+    expect(weekdays[0]).toBe('Mon');
+    expect(weekdays.at(-1)).toBe('Sun');
   });
 
   it('formats the grid in the active locale, not always English', async () => {
@@ -138,6 +140,9 @@ describe('TimelineCalendar', () => {
 
     expect(vietnamese).not.toMatch(/September/i);
     expect(vietnamese).not.toBe(english);
+    // A numbered month, as the rest of the app writes it — not "Tháng Chín".
+    expect(vietnamese).toMatch(/Tháng 9, 2026/);
+    expect(vietnamese).not.toMatch(/Tháng Chín/i);
   });
 
   it('localizes the labels DayPicker writes itself, not just the dates', async () => {
@@ -219,17 +224,79 @@ describe('TimelineCalendar', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('marks the days that already hold a log', async () => {
-    const { container } = render(<TimelineCalendar {...baseProps} />);
+  it("names the day's calories against the target, and whether it was met", async () => {
+    // The ring is an SVG a screen reader cannot read, so its numbers ride in
+    // the button's name. 2014 of 2000 clears the 85% floor; 1100 does not.
+    render(<TimelineCalendar {...baseProps} />);
     await openCalendar();
 
-    // A modifier arrives as a CLASS on the day cell, not an attribute, so the
-    // marker is read off the cell that `data-day` identifies.
-    const cellFor = (date: string) =>
-      container.ownerDocument.querySelector(`td[data-day="${date}"]`);
-    const marker = HAS_MEAL_MARKER_CLASS.split(' ')[0];
+    expect(
+      screen.getByRole('button', {
+        name: /September 16.*calendarDayKcal.*targetMet/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /September 21.*calendarDayKcal.*belowTarget/i,
+      })
+    ).toBeInTheDocument();
+    // A day holding a log with no known total says it holds one, and invents
+    // no progress for it.
+    const unknown = screen.getByRole('button', {
+      name: /September 19.*hasMealIndicator/i,
+    });
+    expect(unknown).not.toHaveAccessibleName(/calendarDayKcal/i);
+  });
 
-    expect(cellFor('2026-09-16')?.className).toContain(marker);
-    expect(cellFor('2026-09-17')?.className).not.toContain(marker);
+  it('rings each past day green once it clears the floor, ink below it', async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    const progressOf = (name: RegExp) =>
+      screen.getByRole('button', { name }).getAttribute('data-progress');
+
+    expect(progressOf(/September 16/i)).toBe('met');
+    expect(progressOf(/September 21/i)).toBe('below');
+    // Unknown total and an empty day: a bare track, no arc.
+    expect(progressOf(/September 19/i)).toBeNull();
+    expect(progressOf(/September 17/i)).toBeNull();
+  });
+
+  it('draws no ring on days that have not happened yet', async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    const future = screen.getByRole('button', { name: /September 23/i });
+    const past = screen.getByRole('button', { name: /September 17/i });
+    expect(future.querySelector('svg')).toBeNull();
+    expect(past.querySelector('svg')).not.toBeNull();
+  });
+
+  it("hides the neighbouring months' days", async () => {
+    render(<TimelineCalendar {...baseProps} />);
+    await openCalendar();
+
+    // September 2026 opens on a Tuesday, so a Monday-first grid would lead
+    // with August 31 if outside days were shown.
+    expect(
+      screen.queryByRole('button', { name: /August 31/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('jumps to today from the footer and closes', async () => {
+    const onSelectDate = vi.fn();
+    render(
+      <TimelineCalendar
+        {...baseProps}
+        selectedDate="2026-09-10"
+        onSelectDate={onSelectDate}
+      />
+    );
+    const user = await openCalendar();
+
+    await user.click(screen.getByRole('button', { name: 'todayLabel' }));
+
+    expect(onSelectDate).toHaveBeenCalledWith('2026-09-22');
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 });

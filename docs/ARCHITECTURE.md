@@ -197,6 +197,7 @@ another domain module is a smell worth a second look.
 | `landing-page/` | marketing page | split |
 | `logging/` | meal logging surface | split |
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup, quantity), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
+| `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
 | `providers/` | TanStack provider (single file) | split |
