@@ -6,6 +6,7 @@
 // route's serializeError() catch turns into the right HTTP status.
 
 import { Errors } from '@/lib/core/errors/catalog';
+import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export async function requireUserId(): Promise<string> {
@@ -38,14 +39,27 @@ export async function requireUserWithAvatar(): Promise<{
 }
 
 /**
- * Parse a request's JSON body, mapping a malformed payload to a structured
- * validation error (the route's serializeError() catch turns it into a 400).
- * The schema/service-fn validates the shape, so this returns `unknown`.
+ * Default ceiling for an `/api/v1` JSON body. The largest legitimate payloads
+ * (a 100-row meal edit, a 4000-character feedback message with metadata) stay
+ * well under 32 KB; 64 KB leaves headroom without letting one request buffer
+ * megabytes. Routes with a different shape pass their own `maxBytes`.
  */
-export async function readJsonBody(request: Request): Promise<unknown> {
-  try {
-    return await request.json();
-  } catch {
-    throw Errors.validationFailed('Invalid JSON in request body');
-  }
+export const DEFAULT_JSON_BODY_MAX_BYTES = 64 * 1024;
+
+/**
+ * Parse a request's JSON body under a byte ceiling. A malformed payload is a
+ * 400 `VALIDATION_FAILED`, an oversized one a 413 `PAYLOAD_TOO_LARGE` -- both
+ * structured, neither retryable. The schema/service-fn validates the shape, so
+ * this returns `unknown`.
+ *
+ * Call it AFTER the route's auth check: an anonymous caller must learn nothing
+ * but 401, and must not be able to make the server read and parse a body.
+ * (`/api/analyze-meal` is the one deliberate exception: it reads the capped
+ * body alongside `getUser()` for latency, and still answers 401 first.)
+ */
+export async function readJsonBody(
+  request: Request,
+  maxBytes: number = DEFAULT_JSON_BODY_MAX_BYTES
+): Promise<unknown> {
+  return readBoundedJson(request, maxBytes);
 }

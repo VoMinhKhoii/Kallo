@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The copy seam shared by accept-a-share, duplicate, and "log this too". Its
@@ -157,5 +158,37 @@ describe('copyMealVerbatim', () => {
     });
 
     expect(captured.meal?.mealSlot).toBe('dinner');
+  });
+
+  // KALLO-08: a reused `newMealId` (duplicate / accept / log-shared) used to
+  // surface as a retryable 500. It is a 409, and nothing else is written.
+  it('maps an occupied newMealId to a non-retryable 409', async () => {
+    const collision = new DrizzleQueryError(
+      'insert into "meals"',
+      [],
+      Object.assign(new Error('duplicate key'), {
+        code: '23505',
+        constraint_name: 'meals_pkey',
+      })
+    );
+    const tx = {
+      insert: vi.fn(() => ({
+        values: () => ({ returning: () => Promise.reject(collision) }),
+      })),
+    } as unknown as TxHandle;
+
+    await expect(
+      copyMealVerbatim(tx, sourceMeal(), [sourceItem()], {
+        userId: USER_ID,
+        newMealId: NEW_MEAL_ID,
+        loggedAt: SOURCE_LOGGED_AT,
+        factor: 1,
+      })
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      status: 409,
+      retryable: false,
+    });
+    expect(mockInsertDefaultCircleShare).not.toHaveBeenCalled();
   });
 });

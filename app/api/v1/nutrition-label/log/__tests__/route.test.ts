@@ -22,8 +22,14 @@ vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
 
 const { POST } = await import('@/app/api/v1/nutrition-label/log/route');
 
+// A real Request: the route reads the body through the byte-capped reader,
+// which streams `request.body` rather than calling `json()`.
 function makeRequest(body: unknown): NextRequest {
-  return { json: async () => body } as unknown as NextRequest;
+  return new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }) as unknown as NextRequest;
 }
 
 const validBody = {

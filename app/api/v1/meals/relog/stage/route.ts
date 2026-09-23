@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
+import { readJsonBody } from '@/lib/api/auth';
 import { stageRelogAnalysisSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
@@ -25,7 +26,7 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   try {
     await requireAuthAndProfile();
-    const body = stageRelogAnalysisSchema.parse(await req.json());
+    const body = stageRelogAnalysisSchema.parse(await readJsonBody(req));
     const result = await stageRelogAnalysisAction(body);
     return Response.json(result);
   } catch (error) {

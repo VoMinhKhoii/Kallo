@@ -38,7 +38,15 @@ String authErrorMessage(AuthException e) {
   if (e.message.toLowerCase().contains(kDuplicateEmailMarker)) {
     return tr('auth.errors.accountExists');
   }
+  // A refused NEW password. `pwned` comes from Supabase's "Leaked password
+  // protection" (a HaveIBeenPwned check) — the form cannot know it, and "pick a
+  // different one" is advice where a generic error is a dead end.
+  if (e is AuthWeakPasswordException && e.reasons.contains('pwned')) {
+    return tr('auth.errors.pwnedPassword');
+  }
   switch (e.code) {
+    case 'weak_password':
+      return tr('auth.errors.weakPassword');
     case 'invalid_credentials':
       return tr('auth.errors.invalidCredentials');
     case 'email_not_confirmed':

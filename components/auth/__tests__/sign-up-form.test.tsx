@@ -130,3 +130,61 @@ describe('SignUpForm', () => {
     });
   });
 });
+
+describe('SignUpForm password policy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function fill(password: string) {
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByPlaceholderText('emailPlaceholder'),
+      'new@example.com'
+    );
+    await user.type(
+      screen.getByPlaceholderText('passwordPlaceholder'),
+      password
+    );
+    await user.click(screen.getByRole('button', { name: 'submit' }));
+  }
+
+  it.each([
+    ['a 6-character password', 'hunt3r'],
+    ['a letters-only password', 'hunterhunter'],
+    ['a digits-only password', '12345678'],
+  ])('refuses %s before calling Supabase', async (_name, password) => {
+    render(<SignUpForm />);
+    await fill(password);
+
+    await waitFor(() => {
+      expect(screen.getByText('error')).toBeInTheDocument();
+    });
+    expect(signUpMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the requirements up front', () => {
+    render(<SignUpForm />);
+    expect(screen.getByText('length')).toBeInTheDocument();
+    expect(screen.getByText('letter')).toBeInTheDocument();
+    expect(screen.getByText('digit')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['a policy refusal', ['length'], 'weak'],
+    ['a breached password', ['pwned'], 'pwned'],
+  ])('maps a server weak_password for %s', async (_name, reasons, line) => {
+    signUpMock.mockResolvedValue({
+      data: null,
+      error: { message: 'Password is known', code: 'weak_password', reasons },
+    });
+
+    render(<SignUpForm />);
+    await fill('hunter22');
+
+    await waitFor(() => {
+      expect(screen.getByText(line)).toBeInTheDocument();
+    });
+    expect(showCheckEmailMock).not.toHaveBeenCalled();
+  });
+});

@@ -1,5 +1,6 @@
 import {
   authed,
+  PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
   pathParam,
@@ -51,6 +52,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       },
       ok: ref('ChatGroup'),
       okStatus: '201',
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -78,6 +80,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         },
       },
       ok: ref('ChatGroup'),
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -101,6 +104,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       },
       ok: ref('Acknowledgement'),
       okStatus: '201',
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 
@@ -145,6 +149,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       },
       ok: ref('Acknowledgement'),
       okStatus: '201',
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
     }),
   },
 

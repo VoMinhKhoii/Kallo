@@ -5,6 +5,7 @@ import {
 import {
   authed,
   fromZod,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   ref,
 } from '@/lib/api/openapi/components';
@@ -73,6 +74,7 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       description:
         'Height, weight, activity, goal, region and cooking habits. These are the inputs every calorie and macro target is derived from, so a change here re-derives the numbers the app shows.',
       tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(profileSettingsSchema),
       ok: ref('OnboardingProfile'),
     }),
@@ -85,6 +87,7 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       description:
         'Controls the default visibility of newly logged meals. Existing meals keep the visibility they were saved with.',
       tags: [...TAGS, 'Circle'],
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(sharingPreferencesSchema),
       ok: ref('Acknowledgement'),
     }),

@@ -22,6 +22,7 @@ import { Errors } from '@/lib/core/errors/catalog';
  */
 
 const TOO_LARGE_MESSAGE = 'Request body is too large.';
+export const INVALID_JSON_MESSAGE = 'Invalid JSON in request body';
 
 /**
  * Read at most `maxBytes` of the body. Throws `PayloadTooLargeError` (413) the
@@ -73,13 +74,19 @@ export async function readBoundedBody(
  * `readBoundedBody`, then UTF-8 decode and `JSON.parse`.
  *
  * Returns `unknown` on purpose — the caller validates with its Zod contract.
- * A malformed body throws `SyntaxError`, exactly as `request.json()` does, so
- * swapping this in changes nothing but the ceiling.
+ * A malformed body throws `VALIDATION_FAILED` (400, not retryable) rather than
+ * the bare `SyntaxError` that `request.json()` throws: an unmapped
+ * `SyntaxError` reaches `serializeError` as an unknown error and becomes a
+ * retryable 500, which tells a client to resend the same broken bytes.
  */
 export async function readBoundedJson(
   request: Request,
   maxBytes: number
 ): Promise<unknown> {
   const body = await readBoundedBody(request, maxBytes);
-  return JSON.parse(new TextDecoder().decode(body)) as unknown;
+  try {
+    return JSON.parse(new TextDecoder().decode(body)) as unknown;
+  } catch {
+    throw Errors.validationFailed(INVALID_JSON_MESSAGE);
+  }
 }

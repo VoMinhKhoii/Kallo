@@ -7,7 +7,10 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { FormInput } from '@/components/auth/form-input';
+import { NewPasswordField } from '@/components/auth/new-password/new-password-field';
 import { Link } from '@/i18n/navigation';
+import { newPasswordSchema } from '@/lib/core/validation/password';
+import { weakPasswordReason } from '@/lib/infra/auth/weak-password';
 import { createClient } from '@/lib/infra/supabase/client';
 
 /**
@@ -16,9 +19,15 @@ import { createClient } from '@/lib/infra/supabase/client';
  * the user here. With that session active, `updateUser` sets the new password.
  * If there's no session (link expired or opened directly), we say so plainly
  * and point back home to request a fresh link.
+ *
+ * `secure_password_change` is on (a password change needs a login within the
+ * last 24 hours, or a reauthentication nonce). A recovery session satisfies it:
+ * /auth/verify (or /auth/callback) mints that session from the emailed link
+ * moments before this page runs, and the link expires long before 24 hours.
  */
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.reset');
+  const tRules = useTranslations('auth.passwordRules');
   const locale = useLocale();
   const [status, setStatus] = useState<'checking' | 'ready' | 'expired'>(
     'checking'
@@ -36,7 +45,7 @@ export default function ResetPasswordPage() {
 
   const schema = z
     .object({
-      password: z.string().min(6, t('passwordError')),
+      password: newPasswordSchema,
       confirm: z.string(),
     })
     .refine((v) => v.password === v.confirm, {
@@ -48,8 +57,12 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema) });
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { password: '', confirm: '' },
+  });
 
   const onSubmit = async (data: Values) => {
     setLoading(true);
@@ -59,7 +72,8 @@ export default function ResetPasswordPage() {
       password: data.password,
     });
     if (error) {
-      setFormError(t('error'));
+      const weak = weakPasswordReason(error);
+      setFormError(weak ? tRules(weak) : t('error'));
       setLoading(false);
       return;
     }
@@ -96,17 +110,18 @@ export default function ResetPasswordPage() {
 
         {status === 'ready' && (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <FormInput
+            <NewPasswordField
               label={t('password')}
-              type="password"
               placeholder={t('passwordPlaceholder')}
-              error={errors.password?.message}
+              current={watch('password')}
+              issue={errors.password?.message}
               {...register('password')}
             />
             <FormInput
               label={t('confirm')}
               type="password"
               placeholder={t('confirmPlaceholder')}
+              autoComplete="new-password"
               error={errors.confirm?.message}
               {...register('confirm')}
             />
