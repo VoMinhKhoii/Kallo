@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockAuthUserIsConfirmedAbsent,
+  mockBuildDataExport,
   mockCreateAdminClient,
   mockDeleteUser,
   mockDbDelete,
@@ -19,6 +20,7 @@ const {
   mockStorageRemove,
 } = vi.hoisted(() => ({
   mockAuthUserIsConfirmedAbsent: vi.fn(),
+  mockBuildDataExport: vi.fn(),
   mockCreateAdminClient: vi.fn(),
   mockDeleteUser: vi.fn(),
   mockDbDelete: vi.fn(),
@@ -59,6 +61,10 @@ vi.mock('@/lib/domain/account-deletion/jobs', () => ({
   claimAccountDeletionJob: mockClaimDeletionJob,
   prepareAccountDeletion: mockPrepareDeletion,
   processAccountDeletionJob: mockProcessDeletion,
+}));
+
+vi.mock('@/lib/domain/account-export/build-export', () => ({
+  buildDataExport: mockBuildDataExport,
 }));
 
 vi.mock('@/lib/infra/db/client', () => ({
@@ -289,6 +295,15 @@ describe('deleteAccountAction', () => {
 
     expect(mockGetClaims).toHaveBeenCalledWith(undefined);
   });
+});
+
+describe('exportMyDataAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockHeaders.mockResolvedValue(new Headers());
+    mockGetUser.mockResolvedValue({ data: { user }, error: null });
+    mockBuildDataExport.mockResolvedValue({ exportedAt: 'now' });
+  });
 
   it('rejects stale-tab data export before reading another account', async () => {
     await expect(
@@ -297,7 +312,28 @@ describe('deleteAccountAction', () => {
       })
     ).rejects.toMatchObject({ code: 'CONFLICT' });
 
+    expect(mockBuildDataExport).not.toHaveBeenCalled();
     expect(mockDbSelect).not.toHaveBeenCalled();
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed input before resolving the session', async () => {
+    await expect(
+      exportMyDataAction({ expectedUserId: 'nope' })
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockBuildDataExport).not.toHaveBeenCalled();
+  });
+
+  it('builds the export for the verified session user only', async () => {
+    await expect(exportMyDataAction(input)).resolves.toEqual({
+      exportedAt: 'now',
+    });
+
+    expect(mockBuildDataExport).toHaveBeenCalledTimes(1);
+    expect(mockBuildDataExport.mock.calls[0]?.[1]).toBe(user);
+    // Export is read-only and needs no privileged client.
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(mockGetClaims).not.toHaveBeenCalled();
   });
 });

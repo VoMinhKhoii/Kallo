@@ -19,9 +19,9 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       operationId: 'exportAccount',
       summary: 'Export everything stored about the caller',
       description:
-        'The full data export: profile, meals, weights, and circle activity. This is the machine-readable half of the data rights described in the privacy policy.',
+        'The self-service data export: account and sign-in metadata, profile and Circle profile, meals with their items, weights, day marks, friendships, shares, reactions and replies you wrote, share invites, chats you are in and the messages you sent, notifications, registered push devices (token redacted), feedback, billing grants and sync state, recent analysis requests, and product telemetry. Uploaded files are listed by Storage path, not inlined. This is the machine-readable half of the right of access and data portability described in the privacy policy.',
       tags: TAGS,
-      ok: ref('Acknowledgement'),
+      ok: ref('DataExport'),
       okDescription: 'The complete export document.',
     }),
     delete: authed({

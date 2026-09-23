@@ -472,20 +472,25 @@ export const dayCompletionMarks = pgTable(
 // Unmatched Ingredients
 // ---------------------------------------------------------------------------
 
-export const unmatchedIngredients = pgTable('unmatched_ingredients', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid('user_id').references(() => authUsers.id, {
-    onDelete: 'cascade',
-  }),
-  mealId: uuid('meal_id').references(() => meals.id, {
-    onDelete: 'set null',
-  }),
-  queryText: text('query_text').notNull(),
-  mealContext: text('meal_context'),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const unmatchedIngredients = pgTable(
+  'unmatched_ingredients',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    queryText: text('query_text').notNull(),
+    mealContext: text('meal_context'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // The account export reads every row by owner; Postgres does not index FKs.
+  (table) => [index('unmatched_ingredients_user_idx').on(table.userId)]
+);
 
 // ---------------------------------------------------------------------------
 // Precomputed query embeddings cache
@@ -849,6 +854,11 @@ export const productTelemetryEvents = pgTable(
     index('product_telemetry_events_occurred_at_idx').on(table.occurredAt),
     index('product_telemetry_events_name_occurred_at_idx').on(
       table.eventName,
+      table.occurredAt
+    ),
+    // The account export reads a user's events; Postgres does not index FKs.
+    index('product_telemetry_events_user_occurred_at_idx').on(
+      table.userId,
       table.occurredAt
     ),
   ]
@@ -1248,6 +1258,8 @@ export const mealShareReactions = pgTable(
       table.shareId,
       table.userId
     ),
+    // The unique leads with share_id; the account export reads by user.
+    index('meal_share_reactions_user_idx').on(table.userId),
     check(
       'meal_share_reactions_kind_check',
       sql`${table.kind} IN ('yum', 'cheer', 'strong', 'wow', 'heart')`
@@ -1282,6 +1294,8 @@ export const mealShareReplies = pgTable(
       table.createdAt,
       table.id
     ),
+    // The account export reads every reply a user wrote.
+    index('meal_share_replies_user_idx').on(table.userId),
   ]
 );
 
@@ -1323,6 +1337,11 @@ export const coachAssignments = pgTable(
     uniqueIndex('coach_assignments_one_active_primary_idx')
       .on(table.clientId)
       .where(sql`rank = 'primary' AND status = 'active'`),
+    // The account export reads assignments on either side in any status (the
+    // partial index above cannot serve that), and both FKs cascade on account
+    // deletion. Assignments change rarely, so the write cost is negligible.
+    index('coach_assignments_coach_idx').on(table.coachId),
+    index('coach_assignments_client_idx').on(table.clientId),
   ]
 );
 
@@ -1423,6 +1442,10 @@ export const mealShareInvites = pgTable(
     index('meal_share_invites_recipient_status_idx')
       .on(table.toUserId, sql`${table.createdAt} DESC`)
       .where(sql`status = 'pending'`),
+    // The account export reads sent OR received invites in any status; the
+    // partial inbox index above cannot serve that, so each side gets its own.
+    index('meal_share_invites_from_user_idx').on(table.fromUserId),
+    index('meal_share_invites_to_user_idx').on(table.toUserId),
     check(
       'meal_share_invites_mode_check',
       sql`${table.mode} IN ('copy', 'split')`
@@ -1477,6 +1500,8 @@ export const chatGroups = pgTable(
       table.directUserLow,
       table.directUserHigh
     ),
+    // The account export reads every group a user created.
+    index('chat_groups_created_by_idx').on(table.createdBy),
     check('chat_groups_kind_check', sql`${table.kind} IN ('direct', 'group')`),
     check(
       'chat_groups_direct_shape_check',
@@ -1547,6 +1572,8 @@ export const chatGroupMessages = pgTable(
       table.groupId,
       sql`${table.createdAt} DESC`
     ),
+    // The account export reads every message a user sent.
+    index('chat_group_messages_sender_idx').on(table.senderId),
   ]
 );
 
@@ -1957,6 +1984,9 @@ export const notifications = pgTable(
     uniqueIndex('notifications_open_aggregate_idx')
       .on(table.recipientId, table.groupKey)
       .where(sql`read_at IS NULL AND dismissed_at IS NULL`),
+    // Every row a recipient has, dismissed or not: the account export. The
+    // partial indexes above only serve queries that repeat their predicate.
+    index('notifications_recipient_idx').on(table.recipientId),
     check(
       'notifications_type_check',
       sql`${table.type} IN ('friend.joined', 'group.added', 'share.invite', 'share.invite_accepted', 'share.reaction', 'share.reply', 'share.logged', 'chat.message', 'coach.nudge', 'streak.milestone', 'recap.ready')`
