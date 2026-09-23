@@ -34,6 +34,8 @@ function pickProfileExport(row: typeof userProfiles.$inferSelect) {
     preferredLocale: row.preferredLocale,
     // Circle sharing preference
     autoShareToCircle: row.autoShareToCircle,
+    // When the user last changed it (the consent record); null if never.
+    autoShareUpdatedAt: row.autoShareUpdatedAt,
     // Cooking habits
     oilUsage: row.oilUsage,
     defaultRicePortion: row.defaultRicePortion,
