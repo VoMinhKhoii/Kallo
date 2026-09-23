@@ -29,7 +29,7 @@ export const SUPPORT_PATHS: Record<string, PathItem> = {
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(submitFeedbackSchema),
       ok: ref('Acknowledgement'),
-      okStatus: '201',
+      okDescription: 'The new report’s `id`.',
     }),
   },
 
@@ -43,7 +43,6 @@ export const SUPPORT_PATHS: Record<string, PathItem> = {
       body: fileUploadBody('The screenshot image.'),
       bodyMedia: 'multipart/form-data',
       ok: ref('Acknowledgement'),
-      okStatus: '201',
       okDescription: 'The stored path.',
     }),
   },

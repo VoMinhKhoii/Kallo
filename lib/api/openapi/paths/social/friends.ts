@@ -52,7 +52,28 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       summary: 'People the caller is connected to',
       description: 'Accepted connections only. Blocked edges are not listed.',
       tags: TAGS,
-      ok: { type: 'array', items: ref('PublicProfile') },
+      ok: {
+        type: 'object',
+        required: ['circle'],
+        properties: {
+          circle: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['friendshipId', 'status', 'direction', 'profile'],
+              properties: {
+                friendshipId: { type: 'string', format: 'uuid' },
+                status: { type: 'string' },
+                direction: {
+                  type: ['string', 'null'],
+                  enum: ['incoming', 'outgoing', null],
+                },
+                profile: ref('PublicProfile'),
+              },
+            },
+          },
+        },
+      },
     }),
   },
 
@@ -129,7 +150,20 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       description:
         'Invitations to log your own share of a meal someone else logged — the split flow, not the friend flow.',
       tags: TAGS,
-      ok: { type: 'array', items: ref('Acknowledgement') },
+      ok: {
+        type: 'object',
+        required: ['invites'],
+        properties: {
+          invites: {
+            type: 'array',
+            items: {
+              type: 'object',
+              description:
+                'One pending offer: `id`, `mode` (`copy` or `split`), `portionFactor`, `createdAt`, the sender (`from`) and the portion on offer (`meal`).',
+            },
+          },
+        },
+      },
     }),
   },
 
@@ -160,8 +194,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
           },
         },
       }),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 

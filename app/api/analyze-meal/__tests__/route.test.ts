@@ -565,17 +565,70 @@ describe('POST /api/analyze-meal', () => {
     expect(release).toHaveBeenCalledTimes(1);
   });
 
-  it('releases an allowed guard when pipeline logging fails before SSE starts', async () => {
+  it('answers a pre-stream logging failure with the JSON 500 envelope and releases the guard', async () => {
     const release = vi.fn();
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
     mockLogPipelineStart.mockRejectedValue(new Error('log start failed'));
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
 
-    await expect(
-      POST(createRequest(mealRequestBody('phở bò')))
-    ).rejects.toThrow('log start failed');
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
 
+    expect(res.status).toBe(500);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const json = await res.json();
+    expect(json.error).toMatchObject({
+      code: 'INTERNAL',
+      status: 500,
+      retryable: true,
+    });
+    expect(JSON.stringify(json)).not.toContain('log start failed');
     expect(release).toHaveBeenCalledTimes(1);
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('answers a rejected billing check with the JSON 500 envelope', async () => {
+    mockGetBillingConfig.mockReturnValue({
+      launchDate: new Date('2026-01-01T00:00:00Z'),
+      trialDays: 7,
+      enforcementEnabled: true,
+    });
+    mockCheckFeatureAccess.mockRejectedValue(new Error('entitlement db down'));
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const json = await res.json();
+    expect(json.error).toMatchObject({ code: 'INTERNAL', status: 500 });
+    expect(JSON.stringify(json)).not.toContain('entitlement db down');
+    // Failed before the guard, so there is nothing to release.
+    expect(mockCheckAnalysisGuards).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('answers a rejected guard acquisition with the JSON 500 envelope', async () => {
+    mockCheckAnalysisGuards.mockRejectedValue(new Error('rate-limit db down'));
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const json = await res.json();
+    expect(json.error).toMatchObject({ code: 'INTERNAL', status: 500 });
+    expect(JSON.stringify(json)).not.toContain('rate-limit db down');
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it('awaits an abort-started guard release during stream cleanup', async () => {

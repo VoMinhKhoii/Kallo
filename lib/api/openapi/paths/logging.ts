@@ -94,8 +94,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(logBarcodeMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 };

@@ -1,5 +1,6 @@
 import type { ZodType } from 'zod';
 import { z } from 'zod';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 /**
  * The building blocks every path file uses.
@@ -203,13 +204,31 @@ export const dateParam: Parameter = {
   schema: { type: 'string', format: 'date' },
 };
 
+/**
+ * Required: a route that passes `tz` through `parseTzParam` into
+ * `timezoneOffsetSchema` rejects a missing value with a 400 rather than
+ * silently bucketing days in UTC. The bounds come from that same schema. A
+ * route whose schema accepts the null uses {@link optionalTzParam} instead.
+ */
 export const tzParam: Parameter = {
   name: 'tz',
   in: 'query',
+  required: true,
+  description:
+    "Timezone offset in minutes, as JavaScript's `Date.getTimezoneOffset()` reports it (UTC minus local, so UTC+7 is `-420`). Decides which instants fall on which calendar day. Missing or non-numeric is a 400 — there is no fallback to a stored timezone.",
+  schema: fromZod(timezoneOffsetSchema),
+};
+
+/**
+ * For a route whose tz schema is nullable (today, only the nutrition
+ * overview): a missing or non-numeric `tz` becomes null, which selects UTC
+ * day bucketing rather than a 400.
+ */
+export const optionalTzParam: Parameter = {
+  ...tzParam,
   required: false,
   description:
-    "Timezone offset in minutes, as JavaScript's `Date.getTimezoneOffset()` reports it (UTC minus local). Omit to use the stored profile timezone.",
-  schema: { type: 'integer', minimum: -840, maximum: 840 },
+    "Timezone offset in minutes, as JavaScript's `Date.getTimezoneOffset()` reports it (UTC minus local, so UTC+7 is `-420`). Decides which instants fall on which calendar day. Optional: missing or non-numeric buckets days in UTC.",
 };
 
 export const limitParam = (max: number, note: string): Parameter => ({

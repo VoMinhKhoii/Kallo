@@ -46,7 +46,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       parameters: [pathParam('mealId', 'UUID of the meal to edit.')],
       body: fromZod(updateMealBodySchema),
-      ok: ref('Meal'),
+      ok: ref('MealWriteResult'),
     }),
     delete: authed({
       operationId: 'deleteMeal',
@@ -68,8 +68,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       parameters: [pathParam('mealId', 'UUID of the meal to copy.')],
       body: fromZod(duplicateMealBodySchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
       okDescription: 'The new meal.',
     }),
   },
@@ -83,8 +82,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(confirmMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -97,8 +95,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(saveManualMealSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
@@ -160,12 +157,13 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       operationId: 'repeatCheatOccasion',
       summary: 'Repeat a cheat-mode entry',
       description:
-        'Logs a previous cheat occasion again on a new date. For meals that cannot be itemised — a buffet, a barbecue, a box of pastries.',
+        'Re-stages a previous cheat occasion on a new date as a pending slider card, seeded with the levels chosen last time; the caller confirms it through the ordinary cheat path. For meals that cannot be itemised — a buffet, a barbecue, a box of pastries.',
       tags: TAGS,
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(cheatRepeatSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('StagedCheatAnalysis'),
+      okDescription:
+        'The re-staged slider card. Nothing is logged until it is confirmed.',
     }),
   },
 
@@ -178,8 +176,7 @@ export const MEAL_PATHS: Record<string, PathItem> = {
       tags: TAGS,
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(relogItemsSchema),
-      ok: ref('Meal'),
-      okStatus: '201',
+      ok: ref('MealWriteResult'),
     }),
   },
 
