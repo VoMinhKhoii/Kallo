@@ -87,40 +87,43 @@ describe('origin lock', () => {
   });
 });
 
-// The rename from middleware.ts to proxy.ts (Next 16) must not change what a
-// page response carries. The CSP stays Report-Only until it is enforced in a
-// separate change, and the nonce still reaches the render on the request.
+// The CSP is enforced statically from next.config.ts `headers()` (see
+// __tests__/next-config.test.ts), not here: prerendered shells cannot carry a
+// per-request nonce, so the proxy no longer mints one or sets any CSP.
 describe('page responses', () => {
   function pageRequest(path: string) {
     return request(path, { accept: 'text/html' });
   }
 
-  it('sends the CSP as Report-Only, never enforced', async () => {
+  it('sets no CSP of its own and leaves no nonce on the request', async () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', '');
     vi.stubEnv('K_SERVICE', '');
-
-    const res = await proxy(pageRequest('/en/docs/overview'));
-
-    const csp = res.headers.get('content-security-policy-report-only');
-    expect(csp).toMatch(/script-src [^;]*'nonce-[A-Za-z0-9+/=]+'/);
-    expect(res.headers.get('content-security-policy')).toBeNull();
-  });
-
-  it('puts the same nonce on the request the render reads', async () => {
-    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
-    vi.stubEnv('K_SERVICE', '');
-    const req = pageRequest('/en');
+    const req = pageRequest('/en/docs/overview');
 
     const res = await proxy(req);
 
-    const nonce = req.headers.get('x-nonce');
-    expect(nonce).toBeTruthy();
-    expect(req.headers.get('content-security-policy')).toContain(
-      `'nonce-${nonce}'`
+    expect(res.status).toBe(200);
+    // A proxy-set header would sit beside the next.config one and the
+    // browser would enforce BOTH — the stricter nonce one refusing every
+    // framework chunk of the static shell.
+    expect(res.headers.get('content-security-policy')).toBeNull();
+    expect(res.headers.get('content-security-policy-report-only')).toBeNull();
+    expect(req.headers.get('x-nonce')).toBeNull();
+    expect(req.headers.get('content-security-policy')).toBeNull();
+  });
+
+  // Browsers POST violation reports without cookies; the collector must get
+  // through the proxy like any other /api route — no locale rewrite, no
+  // session work — and stay behind the origin lock.
+  it('passes CSP reports straight through, still origin-locked', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', 'topsecret');
+
+    expect((await proxy(request('/api/csp-report'))).status).toBe(403);
+    const res = await proxy(
+      request('/api/csp-report', { 'x-origin-verify': 'topsecret' })
     );
-    expect(res.headers.get('content-security-policy-report-only')).toContain(
-      `'nonce-${nonce}'`
-    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
   });
 
   it('advertises the Markdown sibling of a docs page', async () => {
@@ -132,13 +135,13 @@ describe('page responses', () => {
     expect(res.headers.get('link')).toContain('type="text/markdown"');
   });
 
-  it('leaves skip-listed paths without a CSP or locale handling', async () => {
+  it('leaves skip-listed paths without locale handling', async () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', '');
     vi.stubEnv('K_SERVICE', '');
 
     const res = await proxy(pageRequest('/openapi.json'));
 
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-security-policy-report-only')).toBeNull();
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
   });
 });

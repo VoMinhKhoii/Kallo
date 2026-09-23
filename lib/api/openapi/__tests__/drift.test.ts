@@ -36,6 +36,10 @@ const EXCLUDED = new Map([
     'server-sent events, not a request/response operation the spec models',
   ],
   ['/api/og/macro-card/{shareId}', 'internal Open Graph image renderer'],
+  [
+    '/api/csp-report',
+    'browser-invoked CSP violation collector — no client calls it by hand',
+  ],
   ['/api/{unmatched}', 'the catch-all that JSON-404s every unhandled path'],
 ]);
 
