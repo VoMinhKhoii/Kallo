@@ -2,14 +2,13 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { DateLib, labelDayButton } from 'react-day-picker';
+import { DateLib, type Formatters, labelDayButton } from 'react-day-picker';
 import { enUS, vi as viLocale } from 'react-day-picker/locale';
 import { Calendar } from '@/components/ui/calendar';
 import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
-import { meetsCompletenessFloor } from '@/lib/domain/nutrition/pattern/completeness';
 import { dateStringToDate, dateToDateString } from '../timeline-utils';
 import { CalendarDayButton } from './calendar-day-button';
-import { DayProgressContext } from './day-progress-context';
+import { DayProgressContext, measureDay } from './day-progress-context';
 
 /**
  * DayPicker formats month names, weekday headings and the day cells'
@@ -27,6 +26,29 @@ import { DayProgressContext } from './day-progress-context';
  */
 function dayPickerLocale(locale: string) {
   return locale === 'vi' ? viLocale : enUS;
+}
+
+/** "Mon" rather than DayPicker's two-letter "Mo"; "Thứ 2" in Vietnamese. */
+const formatWeekdayName: Formatters['formatWeekdayName'] = (
+  weekday,
+  options,
+  dateLib
+) => (dateLib ?? new DateLib(options)).format(weekday, 'EEE');
+
+/**
+ * date-fns spells the Vietnamese month out ("Tháng Chín 2026"); the app writes
+ * months as numbers everywhere else ("Tháng 9").
+ */
+const formatViCaption: Formatters['formatCaption'] = (
+  month,
+  options,
+  dateLib
+) => (dateLib ?? new DateLib(options)).format(month, "'Tháng' M, y");
+
+function dayPickerFormatters(locale: string): Partial<Formatters> {
+  return locale === 'vi'
+    ? { formatWeekdayName, formatCaption: formatViCaption }
+    : { formatWeekdayName };
 }
 
 export interface TimelineCalendarPanelProps {
@@ -91,17 +113,7 @@ export function TimelineCalendarPanel({
         onSelect={(date) => {
           if (date) onSelectDate(dateToDateString(date));
         }}
-        formatters={{
-          // date-fns spells the Vietnamese month out ("Tháng Chín 2026"); the
-          // app writes months as numbers everywhere else ("Tháng 9").
-          ...(locale === 'vi' && {
-            formatCaption: (month, options, dateLib) =>
-              (dateLib ?? new DateLib(options)).format(month, "'Tháng' M, y"),
-          }),
-          // "Mon" rather than DayPicker's two-letter "Mo"; "Thứ 2" in Vietnamese.
-          formatWeekdayName: (weekday, options, dateLib) =>
-            (dateLib ?? new DateLib(options)).format(weekday, 'EEE'),
-        }}
+        formatters={dayPickerFormatters(locale)}
         classNames={CALENDAR_CLASS_NAMES}
         components={{ DayButton: CalendarDayButton }}
         modifiers={{
@@ -127,16 +139,14 @@ export function TimelineCalendarPanel({
             if (!modifiers.hasMeal) return base;
 
             const parts = [base, t('hasMealIndicator')];
-            const kcal = mealDates.kcal(dateToDateString(date));
-            if (kcal !== null && calorieTarget !== null && calorieTarget > 0) {
+            const measured = measureDay(progressSource, dateToDateString(date));
+            if (measured) {
               parts.push(
                 t('calendarDayKcal', {
-                  kcal: Math.round(kcal),
-                  target: calorieTarget,
+                  kcal: Math.round(measured.kcal),
+                  target: measured.target,
                 }),
-                meetsCompletenessFloor(kcal, calorieTarget)
-                  ? t('targetMet')
-                  : t('belowTarget')
+                measured.met ? t('targetMet') : t('belowTarget')
               );
             }
             return parts.join(', ');

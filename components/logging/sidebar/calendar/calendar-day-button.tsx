@@ -5,7 +5,7 @@ import type { DayButton } from 'react-day-picker';
 import { cn } from '@/lib/core/ui/cn';
 import { dateToDateString } from '../timeline-utils';
 import { CalorieRing } from './calorie-ring';
-import { useDayProgress } from './day-progress-context';
+import { useMeasuredDay } from './day-progress-context';
 
 /**
  * One day of the logging calendar: a 46px hit target holding the date inside
@@ -26,7 +26,9 @@ export function CalendarDayButton({
 }: React.ComponentProps<typeof DayButton>) {
   const ref = useRef<HTMLButtonElement>(null);
   const date = dateToDateString(day.date);
-  const progress = useDayProgress(date);
+  const measured = useMeasuredDay(date);
+  // A zero-kcal day has nothing to sweep: it reads as a bare track, not "below".
+  const arc = measured && measured.fraction > 0 ? measured : null;
 
   // DayPicker moves focus by flagging the day, not by focusing it — the shadcn
   // button does the same, and without it arrow keys would move nothing.
@@ -34,21 +36,11 @@ export function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus();
   }, [modifiers.focused]);
 
-  // Future days are disabled, and go bare like the Flutter strip's: a track
-  // would suggest there is something there to fill.
-  const showRing = progress !== null && !modifiers.disabled;
-
   return (
     <button
       ref={ref}
       type="button"
-      data-progress={
-        showRing && progress.fraction > 0
-          ? progress.met
-            ? 'met'
-            : 'below'
-          : undefined
-      }
+      data-progress={arc ? (arc.met ? 'met' : 'below') : undefined}
       className={cn(
         'relative flex size-[46px] items-center justify-center rounded-xl font-sans-display text-kallo-text text-sm tabular-nums transition-colors',
         'hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
@@ -60,15 +52,17 @@ export function CalendarDayButton({
       )}
       {...props}
     >
-      {showRing ? (
+      {/* Future days are disabled, and go bare like the Flutter strip's: a
+          track would suggest there is something there to fill. */}
+      {modifiers.disabled ? null : (
         <CalorieRing
-          fraction={progress.fraction}
-          met={progress.met}
+          fraction={arc?.fraction ?? 0}
+          met={arc?.met ?? false}
           size={34}
           strokeWidth={2.25}
           className="absolute inset-0 m-auto"
         />
-      ) : null}
+      )}
       <span className="relative">{children}</span>
     </button>
   );

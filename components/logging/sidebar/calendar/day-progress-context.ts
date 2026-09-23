@@ -1,5 +1,8 @@
 import { createContext, useContext } from 'react';
-import type { MealDateIndex } from '@/lib/domain/logging/meal-date-index';
+import {
+  buildMealDateIndex,
+  type MealDateIndex,
+} from '@/lib/domain/logging/meal-date-index';
 import { meetsCompletenessFloor } from '@/lib/domain/nutrition/pattern/completeness';
 
 export interface DayProgressSource {
@@ -7,10 +10,37 @@ export interface DayProgressSource {
   calorieTarget: number | null;
 }
 
-export interface DayProgress {
-  /** Share of the target eaten; 0 for a day with nothing countable. */
+/** A day with a known total, measured against a usable target. */
+export interface MeasuredDay {
+  kcal: number;
+  target: number;
+  /** Share of the target eaten; over target runs past 1. */
   fraction: number;
   met: boolean;
+}
+
+/**
+ * The one reading of a day's progress, shared by the ring (drawn) and the day
+ * button's accessible name (spoken), so the two cannot disagree.
+ *
+ * Null when there is nothing to measure: no target, or a day whose total is
+ * unknown — a staged card, a legacy meal without calories, an empty day.
+ * Drawing an arc for those would be inventing a number.
+ */
+export function measureDay(
+  { mealDates, calorieTarget }: DayProgressSource,
+  date: string
+): MeasuredDay | null {
+  const kcal = mealDates.kcal(date);
+  if (kcal === null || calorieTarget === null || calorieTarget <= 0) {
+    return null;
+  }
+  return {
+    kcal,
+    target: calorieTarget,
+    fraction: kcal / calorieTarget,
+    met: meetsCompletenessFloor(kcal, calorieTarget),
+  };
 }
 
 /**
@@ -20,24 +50,14 @@ export interface DayProgress {
  * component TYPE, so building one per render around the panel's props would
  * hand React a new type every time and remount all ~35 buttons — focus
  * included, which is the one thing a keyboard user cannot afford to lose.
+ * The default measures nothing, so a button rendered outside the panel draws
+ * bare tracks rather than needing a branch of its own.
  */
-export const DayProgressContext = createContext<DayProgressSource | null>(null);
+export const DayProgressContext = createContext<DayProgressSource>({
+  mealDates: buildMealDateIndex([]),
+  calorieTarget: null,
+});
 
-/** A day's ring, or null outside a provider (no ring is drawn then). */
-export function useDayProgress(date: string): DayProgress | null {
-  const source = useContext(DayProgressContext);
-  if (!source) return null;
-
-  const kcal = source.mealDates.kcal(date);
-  const target = source.calorieTarget;
-  // A day whose total is unknown (a staged card, a legacy meal without
-  // calories) still gets its track: it is a past day like any other, and
-  // drawing an arc for it would be inventing a number.
-  if (kcal === null || target === null || target <= 0) {
-    return { fraction: 0, met: false };
-  }
-  return {
-    fraction: kcal / target,
-    met: meetsCompletenessFloor(kcal, target),
-  };
+export function useMeasuredDay(date: string): MeasuredDay | null {
+  return measureDay(useContext(DayProgressContext), date);
 }
