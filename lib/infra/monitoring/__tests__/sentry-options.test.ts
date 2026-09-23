@@ -43,16 +43,43 @@ describe('scrubEvent', () => {
 });
 
 describe('scrubBreadcrumb', () => {
+  it('drops console breadcrumbs, whose raw arguments can hold meal text', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'console',
+        data: { arguments: ['[analyze-meal] failed for', 'phở bò 2 bowls'] },
+      })
+    ).toBeNull();
+  });
+
+  it('keeps only allowlisted data keys', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'fetch',
+        data: {
+          url: 'https://kallo.fit/api/v1/meals',
+          method: 'POST',
+          status_code: 500,
+          body: 'phở bò',
+        },
+      })?.data
+    ).toEqual({
+      url: 'https://kallo.fit/api/v1/meals',
+      method: 'POST',
+      status_code: 500,
+    });
+  });
+
   it('patterns navigation paths and strips fetch query strings', () => {
     expect(
       scrubBreadcrumb({
         data: { from: '/en/circle/share-1', to: '/en/circle/g/group-2?tab=x' },
-      }).data
+      })?.data
     ).toEqual({ from: '/circle/[shareId]', to: '/circle/g/[groupId]' });
     expect(
       scrubBreadcrumb({
         data: { url: 'https://kallo.fit/api/v1/meals?date=2026-09-01' },
-      }).data
+      })?.data
     ).toEqual({ url: 'https://kallo.fit/api/v1/meals' });
   });
 });

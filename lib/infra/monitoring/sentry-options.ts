@@ -13,7 +13,8 @@
  *   • `scrubEvent` strips request bodies, cookies, query strings and any
  *     user field other than the opaque account id, and reduces the URL to its
  *     route pattern (no invite slug, share id or group id);
- *   • `scrubBreadcrumb` does the same to navigation / fetch breadcrumb URLs;
+ *   • `scrubBreadcrumb` drops console breadcrumbs (raw log arguments) and
+ *     keeps only allowlisted, non-free-text breadcrumb data;
  *   • no Session Replay integration is ever added.
  */
 import { patternUrl, routePattern } from '@/lib/infra/analytics/route-pattern';
@@ -53,22 +54,41 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
 }
 
 /** Breadcrumb data keys that hold a URL (navigation, fetch, xhr). */
-const BREADCRUMB_URL_KEYS = ['url', 'from', 'to'] as const;
+const BREADCRUMB_URL_KEYS = new Set(['url', 'from', 'to']);
+/** Every other breadcrumb data key allowed through — all non-free-text. */
+const BREADCRUMB_SAFE_KEYS = new Set(['method', 'status_code', 'reason']);
 
 interface ScrubbableBreadcrumb {
+  category?: string;
   data?: Record<string, unknown>;
 }
 
-/** Reduce every URL a breadcrumb carries to origin + route pattern. */
-export function scrubBreadcrumb<T extends ScrubbableBreadcrumb>(crumb: T): T {
+/**
+ * Breadcrumbs are the trail attached to the NEXT error, so they are scrubbed
+ * as strictly as the error itself:
+ *   • `console` breadcrumbs are dropped outright — the default Console
+ *     integration stores every `console.*` call's raw arguments, and our logs
+ *     (the analyze-meal pipeline above all) can carry meal text. The Flutter
+ *     app drops its print breadcrumbs for the same reason;
+ *   • `data` is an allowlist: URLs reduced to origin + route pattern, a few
+ *     status fields kept, anything else removed.
+ */
+export function scrubBreadcrumb<T extends ScrubbableBreadcrumb>(
+  crumb: T
+): T | null {
+  if (crumb.category === 'console') return null;
   if (!crumb.data) return crumb;
-  for (const key of BREADCRUMB_URL_KEYS) {
-    const value = crumb.data[key];
-    if (typeof value !== 'string') continue;
-    crumb.data[key] = value.startsWith('/')
-      ? routePattern(value.split(/[?#]/)[0])
-      : patternUrl(value);
+  const data: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(crumb.data)) {
+    if (BREADCRUMB_URL_KEYS.has(key) && typeof value === 'string') {
+      data[key] = value.startsWith('/')
+        ? routePattern(value.split(/[?#]/)[0])
+        : patternUrl(value);
+    } else if (BREADCRUMB_SAFE_KEYS.has(key)) {
+      data[key] = value;
+    }
   }
+  crumb.data = data;
   return crumb;
 }
 

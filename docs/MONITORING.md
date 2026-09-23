@@ -52,7 +52,8 @@ before `bun dev:mobile` (Flutter).
 - `instrumentation.ts`: server + Edge Sentry init, `onRequestError` (uncaught route /
   Server Component / Server Action errors).
 - `instrumentation-client.ts`: browser Sentry init + `initAnalytics()`.
-- `lib/infra/monitoring/`: shared Sentry options, `scrubEvent` / `scrubBreadcrumb`,
+- `lib/infra/monitoring/`: shared Sentry options, `scrubEvent` / `scrubBreadcrumb`
+  (drops console breadcrumbs; allowlists breadcrumb data),
   `reportError(error, scope)` for errors that are caught (error boundaries, the
   analyze-meal stream). `lib/core/errors/serialize.ts` reports unknown 500s directly.
 - `lib/infra/analytics/`: PostHog init, `events.ts` (the event list), `track()`,
@@ -99,6 +100,10 @@ using up the error quota.
 
 ## Known gaps / follow-ups
 
+- **Exception messages are sent as written.** The scrubbers remove request payloads,
+  URLs' identifying parts and console breadcrumbs, but an `Error`'s own `message` goes to
+  Sentry verbatim. Never interpolate meal text, body metrics or email into an error
+  message; log it separately (console output is not sent) if you need it.
 - **Account deletion** does not yet delete the PostHog person or Sentry user data for the
   account. Events carry only the opaque id, but a full erasure should call PostHog's
   person-delete API from the deletion job (`lib/domain/account-deletion/`).
