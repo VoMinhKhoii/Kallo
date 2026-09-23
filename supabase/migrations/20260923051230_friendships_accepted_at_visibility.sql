@@ -4,7 +4,7 @@
 --
 -- KALLO-03. Accepting a friend used to expose every 'circle' share the other
 -- person had ever made, including the backlog from before the two connected.
--- friendships.accepted_at (added by 20260923031030_circle_share_default_off)
+-- friendships.accepted_at (added by 20260923051200_circle_share_default_off)
 -- now bounds that: a friend sees a share only when shared_at >= accepted_at.
 -- The server enforces the same rule (friendSinceSql in
 -- lib/domain/social/shares/share-visibility.ts);

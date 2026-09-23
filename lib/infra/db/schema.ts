@@ -1157,7 +1157,7 @@ export const friendships = pgTable(
     // after this instant (shared_at >= accepted_at) — never the backlog from
     // before they connected. NULL until accepted. Written only by the
     // friendships_set_accepted_at trigger (clock_timestamp() at the status
-    // flip — see 20260923031100 for why that clock); the app never sets it.
+    // flip — see 20260923051230 for why that clock); the app never sets it.
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   },
   (table) => [

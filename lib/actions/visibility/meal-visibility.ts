@@ -54,7 +54,7 @@ export async function setMealShareVisibility(
     .onConflictDoUpdate({
       target: mealShares.mealId,
       // The database clock, not the app server's: shared_at is compared with
-      // friendships.accepted_at, which the DB stamps (20260923031100).
+      // friendships.accepted_at, which the DB stamps (20260923051230).
       set: { visibility: parsed.visibility, sharedAt: sql`now()` },
     })
     .returning({ id: mealShares.id });
