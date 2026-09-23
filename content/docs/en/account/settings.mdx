@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Profile, body metrics, region, cooking habits, sharing and feedback — all on one page.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 Settings is a single page, divided into sections you can jump to with the
@@ -10,8 +10,13 @@ in-page navigation.
 ## Profile
 
 Display name and avatar — this is what friends in
-[Circle](/docs/circle/friends-and-feed) see. Avatars are kept in private
-storage, not a public bucket.
+[Circle](/docs/circle/friends-and-feed) see. Your avatar photo is public so it
+can appear on your invite link and in friends' feeds: it is stored under a
+random, unguessable file name, and anyone who has that link can view it. Kallo
+resizes and re-encodes every photo on its servers before storing it, which also
+strips location and other metadata. Removing or replacing it deletes the old
+file from storage, though copies cached along the way may keep loading for a
+few minutes.
 
 ## Body metrics and goal
 
