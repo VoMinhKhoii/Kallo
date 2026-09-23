@@ -12,7 +12,8 @@ const { mockUser, mockTxInsert, mockDbSelect, mockTx } = vi.hoisted(() => {
     select: vi.fn(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
           })
@@ -262,7 +263,7 @@ describe('saveManualMealAction', () => {
       entryMode: 'precise',
       alcoholG: null,
       cheatSliders: null,
-      // Shared to circle by default, like every other meal-creation path.
+      // Auto-shared for an opted-in owner, like every other creation path.
       share: { shareId: 'share-1', visibility: 'circle' },
       confidenceOverall: 'high',
     });
@@ -288,7 +289,8 @@ describe('saveManualMealAction', () => {
     mockTx.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
+          // Thenable + .for('update') — the share helper locks the row. The owner
+          // has opted in to auto-share (the column default is off).
           Object.assign(Promise.resolve([{ autoShareToCircle: false }]), {
             for: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
           })

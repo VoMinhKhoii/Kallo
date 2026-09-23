@@ -17,6 +17,9 @@
 --   (e) any peer/coach query touching body_weight_log returns ZERO.
 --   (f) cross-user public_profiles SELECT returns handle/display_name, but
 --       cross-user user_profiles SELECT of weight_kg / tdee_kcal returns ZERO.
+--   (g) a friend sees only shares made at or after friendships.accepted_at
+--       (KALLO-03): a share from before the two connected stays hidden, the
+--       trigger stamps accepted_at, and it cannot be moved back.
 --
 -- How auth.uid() is simulated: Supabase's auth.uid() reads the 'sub' claim from
 -- current_setting('request.jwt.claims'). The helper authenticate_as(uuid) sets
@@ -28,7 +31,7 @@
 
 BEGIN;
 
-SELECT plan(20);
+SELECT plan(27);
 
 -- -----------------------------------------------------------------------------
 -- Fixtures (planted as the privileged test role, bypassing RLS)
@@ -101,6 +104,20 @@ VALUES
 -- The explicit opt-in share row for shared_meal (fires the fanout trigger).
 INSERT INTO public.meal_shares (meal_id, actor_id, visibility)
 VALUES (:'shared_meal_id', :'owner_id', 'circle');
+
+-- A circle share made a day BEFORE owner and friend connected (the friendship
+-- above was accepted at now(), the transaction start). (g) proves the friend
+-- never sees it — the latent backlog stays hidden after connecting.
+\set early_meal_id '99999999-0000-0000-0000-000000000003'
+
+INSERT INTO public.meals (id, user_id, raw_input, calories_kcal, protein_g, carbohydrate_g, fat_g)
+VALUES (:'early_meal_id', :'owner_id', 'cơm tấm', 700, 30, 90, 20);
+
+INSERT INTO public.meal_items (meal_id, ingredient_name, meal_item_name)
+VALUES (:'early_meal_id', 'broken rice', 'com tam');
+
+INSERT INTO public.meal_shares (meal_id, actor_id, visibility, shared_at)
+VALUES (:'early_meal_id', :'owner_id', 'circle', now() - interval '1 day');
 
 -- Body weight entry for owner — must NEVER be visible to any peer/coach.
 INSERT INTO public.body_weight_log (user_id, logged_date, weight_kg)
@@ -356,6 +373,68 @@ SELECT is(
 );
 
 RESET ROLE;
+
+-- =============================================================================
+-- (g) Friends see only shares made after the friendship was accepted.
+-- =============================================================================
+
+-- The trigger stamped accepted_at on the accepted insert above.
+SELECT isnt(
+  (SELECT accepted_at FROM public.friendships
+     WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
+       AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid)),
+  NULL,
+  '(g) the trigger stamps accepted_at when an edge is inserted as accepted'
+);
+
+-- The helper itself, both directions of the time bound.
+SELECT ok(
+  public.is_friend_since(:'friend_id', :'owner_id', now()),
+  '(g) is_friend_since is TRUE for a share made at the moment of acceptance'
+);
+
+SELECT ok(
+  NOT public.is_friend_since(:'friend_id', :'owner_id', now() - interval '1 day'),
+  '(g) is_friend_since is FALSE for a share made before acceptance'
+);
+
+SELECT ok(
+  NOT public.is_friend_since(:'stranger_id', :'owner_id', now()),
+  '(g) is_friend_since is FALSE with no friendship at all'
+);
+
+SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'request.jwt.claims',
+  json_build_object('sub', :'friend_id', 'role', 'authenticated')::text,
+  true
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM public.meals WHERE id = :'early_meal_id'),
+  0,
+  '(g) an accepted friend sees ZERO for a circle share made before connecting'
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM public.meal_shares WHERE meal_id = :'early_meal_id'),
+  0,
+  '(g) an accepted friend sees ZERO of the pre-connection meal_shares row'
+);
+
+RESET ROLE;
+
+-- accepted_at is immutable while the edge stays accepted, so it can never be
+-- rewound to re-expose the backlog.
+UPDATE public.friendships
+SET accepted_at = now() - interval '1 year'
+WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
+  AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid);
+
+SELECT ok(
+  NOT public.is_friend_since(:'friend_id', :'owner_id', now() - interval '1 day'),
+  '(g) rewinding accepted_at is ignored — the backlog stays hidden'
+);
 
 SELECT * FROM finish();
 

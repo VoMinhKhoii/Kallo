@@ -26,7 +26,9 @@ import type { Db, PublicProfile } from './types';
 // acceptInvite — the recipient taps Accept on a link; connect directly
 // ---------------------------------------------------------------------------
 // The recipient's tap IS the accept (Locket model): no separate inviter
-// approval. Creates an accepted edge, or promotes a pre-existing pending one.
+// approval. Creates an accepted edge, or promotes a pre-existing pending one,
+// stamping accepted_at — each side then sees only the other's shares made from
+// that moment on, never the history from before they connected.
 // The friendship write + event + direct chat group are all transactional so
 // none of the three can end up orphaned relative to the others. A pair whose
 // edge was already accepted before this call (the early return below) is
@@ -93,10 +95,13 @@ export async function acceptInvite(
 
     if (existing[0]) {
       // Promote a pending edge (either direction) to accepted. The row is
-      // locked above; the status guard is defence-in-depth.
+      // locked above; the status guard is defence-in-depth. acceptedAt starts
+      // the friend's view of this user's shares: nothing shared before it is
+      // visible to them (the DB trigger re-stamps it with now() regardless).
+      const now = new Date();
       await tx
         .update(friendships)
-        .set({ status: 'accepted', updatedAt: new Date() })
+        .set({ status: 'accepted', updatedAt: now, acceptedAt: now })
         .where(
           and(
             eq(friendships.id, existing[0].id),
@@ -126,6 +131,7 @@ export async function acceptInvite(
           // The inviter initiated by sharing the link; the recipient accepted.
           requestedBy: inviter.userId,
           status: 'accepted',
+          acceptedAt: new Date(),
         })
         .onConflictDoNothing({
           target: [friendships.userLow, friendships.userHigh],

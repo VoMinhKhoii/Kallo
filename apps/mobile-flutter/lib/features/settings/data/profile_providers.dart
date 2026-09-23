@@ -54,7 +54,8 @@ class ProfileRow {
   String? get defaultRicePortion => _str('defaultRicePortion');
   String? get defaultProteinPortion => _str('defaultProteinPortion');
   String? get brothConsumption => _str('brothConsumption');
-  bool get autoShareToCircle => (raw['autoShareToCircle'] as bool?) ?? true;
+  // Mirrors the server default (off): a missing field never reads as opted in.
+  bool get autoShareToCircle => (raw['autoShareToCircle'] as bool?) ?? false;
 }
 
 /// Loads the user's profile row (or null if onboarding never ran). Shares the

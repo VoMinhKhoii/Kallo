@@ -7,7 +7,10 @@ vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 import {
   canViewShare,
   canViewShareOwnedBy,
+  friendSinceSql,
+  shareAccessSql,
 } from '@/lib/domain/social/shares/share-visibility';
+import { mealShares } from '@/lib/infra/db/schema';
 
 const VIEWER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OWNER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -157,15 +160,74 @@ describe('canViewShareOwnedBy', () => {
     // The same bound values as before — the access contract is unchanged.
     // `sharedAt` arrives as encoder-mapped text: a raw Date in a raw fragment
     // reaches the driver unserialized and throws.
+    // `sharedAt` now also bounds the friendship branch (accepted_at), so it is
+    // bound three times: friendship, then both group memberships.
     expect(params).toEqual([
       VIEWER_ID,
       OWNER_ID,
       VIEWER_ID,
       OWNER_ID,
+      sharedAt.toISOString(),
       VIEWER_ID,
       OWNER_ID,
       sharedAt.toISOString(),
       sharedAt.toISOString(),
     ]);
+  });
+
+  // KALLO-03: a friend who connected after the share was made must not see it.
+  it('bounds the friendship branch by accepted_at <= the share time', async () => {
+    const db = fakeDb([{ visible: true }]);
+
+    await canViewShareOwnedBy(
+      VIEWER_ID,
+      { actorId: OWNER_ID, sharedAt, visibility: 'circle' },
+      db as never
+    );
+
+    const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
+    expect(sql).toContain('"friendships"."accepted_at" <= $5');
+  });
+});
+
+describe('friend-since bound on share-id reads', () => {
+  it('canViewShare compares accepted_at against the share row itself', async () => {
+    const db = fakeDb([{ visible: false }]);
+
+    await canViewShare(VIEWER_ID, SHARE_ID, db as never);
+
+    const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
+    expect(sql).toContain(
+      '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
+    );
+  });
+
+  it('shareAccessSql (the share-lookup and copy predicate) carries the bound', () => {
+    const { sql } = new PgDialect().sqlToQuery(
+      shareAccessSql(
+        VIEWER_ID,
+        mealShares.actorId,
+        mealShares.sharedAt,
+        mealShares.visibility
+      )
+    );
+    // Owner short-circuit first, then the time-bounded friendship.
+    expect(sql).toMatch(/^\s*"meal_shares"\."actor_id" = \$1/);
+    expect(sql).toContain(
+      '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
+    );
+  });
+
+  it('friendSinceSql requires an accepted edge in either direction', () => {
+    const { sql, params } = new PgDialect().sqlToQuery(
+      friendSinceSql(VIEWER_ID, mealShares.actorId, mealShares.sharedAt)
+    );
+    expect(sql).toContain(`"friendships"."status" = 'accepted'`);
+    expect(sql).toContain('"friendships"."user_low" = $1');
+    expect(sql).toContain('"friendships"."user_high" = $2');
+    expect(sql).toContain(
+      '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
+    );
+    expect(params).toEqual([VIEWER_ID, VIEWER_ID]);
   });
 });
