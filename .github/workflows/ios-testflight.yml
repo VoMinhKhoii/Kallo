@@ -32,6 +32,9 @@ jobs:
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
       NHAM_KEYCHAIN_PASSWORD: ${{ secrets.NHAM_KEYCHAIN_PASSWORD }}
       KALLO_REVENUECAT_APPLE_API_KEY: ${{ secrets.KALLO_REVENUECAT_APPLE_API_KEY }}
+      # Optional (empty → analytics / crash reporting off). Public ingest keys.
+      KALLO_POSTHOG_KEY: ${{ vars.KALLO_POSTHOG_KEY }}
+      KALLO_SENTRY_DSN: ${{ vars.KALLO_SENTRY_DSN }}
       KALLO_BUILD_PROFILE: app_store_release
       # Mobile must traverse Cloudflare; the raw run.app origin rejects requests
       # without the private origin header, and the old internal service is retired.

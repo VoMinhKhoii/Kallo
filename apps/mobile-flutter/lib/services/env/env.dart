@@ -9,7 +9,8 @@
 ///   --dart-define=SUPABASE_ANON_KEY=sb_publishable_... \
 ///   --dart-define=API_BASE_URL=http://localhost:3000 \
 ///   --dart-define=POSTHOG_KEY=phc_... \
-///   --dart-define=POSTHOG_HOST=https://us.i.posthog.com
+///   --dart-define=POSTHOG_HOST=https://eu.i.posthog.com \
+///   --dart-define=SENTRY_DSN=https://...@o0.ingest.de.sentry.io/0
 /// ```
 ///
 /// Keep the dart-define keys aligned (sans `EXPO_PUBLIC_` prefix) with the RN
@@ -74,11 +75,16 @@ abstract final class Env {
   /// PostHog project key. Empty => analytics is a complete no-op (RN parity).
   static const String posthogKey = String.fromEnvironment('POSTHOG_KEY');
 
-  /// PostHog host. Defaults to the US cloud (RN parity).
+  /// PostHog host. Defaults to the EU cloud — the same region the web app
+  /// sends to, so both clients land in one project.
   static const String posthogHost = String.fromEnvironment(
     'POSTHOG_HOST',
-    defaultValue: 'https://us.i.posthog.com',
+    defaultValue: 'https://eu.i.posthog.com',
   );
+
+  /// Sentry DSN (public, ingest-only). Empty => crash reporting is a complete
+  /// no-op — see `lib/services/monitoring/monitoring.dart`.
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 
   /// Throws if a required var is missing, mirroring the RN `throw new Error(...)`
   /// guards in `supabase.ts` / `api-client.ts`. Call once at startup.

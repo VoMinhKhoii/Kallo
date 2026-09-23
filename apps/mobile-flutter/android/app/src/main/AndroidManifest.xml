@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Declared here, not left to a plugin's manifest merge: every network
+         call (Supabase, the API, PostHog, Sentry) depends on it in release. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Kallo"
         android:name="${applicationName}"
@@ -51,6 +54,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- PostHog starts from Dart (Analytics.setup) and only with a key;
+             never let the native SDK self-start from manifest config. -->
+        <meta-data
+            android:name="com.posthog.posthog.AUTO_INIT"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import 'services/analytics/analytics.dart';
 import 'services/billing/entitlement_lifecycle_sync.dart';
+import 'services/monitoring/monitoring.dart';
 import 'services/billing/purchases_service.dart';
 import 'services/auth/session_provider.dart';
 import 'features/circle/logic/circle_deep_links.dart';
@@ -59,7 +60,7 @@ class _NhamAppState extends ConsumerState<KalloApp>
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
 
-    // Tie PostHog identity + the RevenueCat customer to the auth session:
+    // Tie PostHog + Sentry identity and the RevenueCat customer to the auth session:
     // identify / logIn on sign-in (email, Google, sign-up, restore). On
     // sign-out we deliberately keep the identified SDK customer instead of
     // creating an anonymous RevenueCat alias; the next authenticated UUID is
@@ -138,6 +139,7 @@ void _syncSession(
 }) {
   final analytics = ref.read(analyticsProvider);
   final purchases = ref.read(purchasesServiceProvider);
+  setMonitoringUser(session?.user.id);
   if (session != null) {
     analytics.identify(session.user.id);
     unawaited(

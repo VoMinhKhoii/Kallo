@@ -11,7 +11,9 @@ import 'app.dart';
 import 'shared/widgets/icons/brush_check.dart';
 import 'shell/kallo_error_widget.dart';
 import 'shared/widgets/icons/filled_heart.dart';
+import 'services/analytics/analytics.dart';
 import 'services/env/env.dart';
+import 'services/monitoring/monitoring.dart';
 import 'services/auth/supabase_service.dart';
 
 /// Supabase connection, supplied at build/run time via `--dart-define`
@@ -23,7 +25,11 @@ import 'services/auth/supabase_service.dart';
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-Future<void> main() async {
+/// Everything boots inside [runWithMonitoring], so a throw during startup
+/// (Supabase, Google sign-in) is a reported crash, not a silent grey screen.
+Future<void> main() => runWithMonitoring(_boot);
+
+Future<void> _boot() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   // `DateFormat.MMMd('vi')` and friends read locale symbols that easy_localization
@@ -89,6 +95,8 @@ Future<void> main() async {
   // Before anything can build: a widget that throws must not leave the user
   // on Flutter's release-mode grey rectangle with no way out and no cause.
   installKalloErrorWidget();
+
+  await Analytics.setup();
 
   precacheFilledHeart();
   precacheBrushCheck();

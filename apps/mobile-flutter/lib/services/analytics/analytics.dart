@@ -1,65 +1,71 @@
-/// PostHog analytics — thin, no-op-safe stub.
+/// PostHog product analytics (EU cloud), behind a thin no-op-safe facade.
 ///
-/// No web counterpart — the web app ships no analytics client. This stub is
-/// env-gated: with no PostHog key it constructs nothing and every call is a
-/// complete no-op (no network, no storage).
+/// Env-gated: with no `POSTHOG_KEY` dart-define nothing is constructed and
+/// every call is a complete no-op (no platform channel, no network, no
+/// storage) — which is also what keeps widget tests channel-free.
 ///
-/// NOTE: there is no `posthog_flutter` dependency wired in yet. This is a
-/// deliberate STUB — when [Env.posthogKey] is empty (the default) it does
-/// nothing. When a key IS present it currently only logs in debug, so callsites
-/// can be written today; swapping in the real PostHog SDK later is a localized
-/// change inside [Analytics] with no callsite churn.
+/// Deliberately narrow, matching the web client (`lib/infra/analytics/` at the
+/// repo root): no session replay, no surveys, person profiles only for
+/// signed-in users, and only the typed events in `analytics_events.dart` —
+/// never meal text or body metrics.
 library;
 
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:posthog_flutter/posthog_flutter.dart';
 
 import '../env/env.dart';
 
-/// Analytics facade. Mirror of the events the RN app emits (`screen`, plus
-/// `capture`/`identify` for product events). All methods are safe no-ops when
-/// analytics is disabled.
+/// Analytics facade. All methods are safe no-ops when analytics is disabled.
 class Analytics {
   Analytics._({required this.enabled});
 
-  /// True only when a PostHog key is configured (RN parity: key present).
+  /// True only when a PostHog key is configured.
   final bool enabled;
 
-  /// Manual screen tracking, mirroring the RN `ScreenTracker` that emitted
-  /// `posthog.screen(pathname)` on every route change. Wire this to the
-  /// go_router observer when a screen changes.
-  void screen(String name, {Map<String, Object?>? properties}) {
+  /// Start the SDK. Call once at boot, before `runApp`; a no-op without a key.
+  /// The native auto-init is switched off in `AndroidManifest.xml` and
+  /// `Info.plist` so this is the only place PostHog starts.
+  static Future<void> setup() async {
+    if (Env.posthogKey.isEmpty) return;
+    final config =
+        PostHogConfig(Env.posthogKey)
+          ..host = Env.posthogHost
+          ..captureApplicationLifecycleEvents = true
+          ..personProfiles = PostHogPersonProfiles.identifiedOnly
+          ..sessionReplay = false
+          ..surveys = false;
+    await Posthog().setup(config);
+  }
+
+  /// Screen view. [name] is a route PATTERN (`/circle/:shareId`), never a
+  /// concrete location — see `screen_tracking.dart`.
+  void screen(String name) {
     if (!enabled) return;
-    _debugLog('screen', {'name': name, ...?properties});
+    unawaited(Posthog().screen(screenName: name));
   }
 
   /// Product event capture.
-  void capture(String event, {Map<String, Object?>? properties}) {
+  void capture(String event, {Map<String, Object>? properties}) {
     if (!enabled) return;
-    _debugLog('capture', {'event': event, ...?properties});
+    unawaited(Posthog().capture(eventName: event, properties: properties));
   }
 
-  /// Associate subsequent events with a user (e.g. after sign-in).
-  void identify(String distinctId, {Map<String, Object?>? properties}) {
+  /// Associate subsequent events with a user (opaque Supabase id only).
+  void identify(String distinctId) {
     if (!enabled) return;
-    _debugLog('identify', {'distinctId': distinctId, ...?properties});
+    unawaited(Posthog().identify(userId: distinctId));
   }
 
   /// Clear identity on sign-out.
   void reset() {
     if (!enabled) return;
-    _debugLog('reset', const {});
-  }
-
-  void _debugLog(String op, Map<String, Object?> data) {
-    if (kDebugMode) {
-      debugPrint('[analytics:$op] $data');
-    }
+    unawaited(Posthog().reset());
   }
 }
 
-/// Singleton [Analytics]. No-op unless [Env.posthogKey] is set — exactly the
-/// RN behavior where an absent key means the provider renders children unchanged.
+/// Singleton [Analytics]. No-op unless [Env.posthogKey] is set.
 final analyticsProvider = Provider<Analytics>((ref) {
   return Analytics._(enabled: Env.posthogKey.isNotEmpty);
 });

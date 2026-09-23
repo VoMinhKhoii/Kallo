@@ -48,6 +48,8 @@ dependencies:
   cached_network_image: ^4.0.0
   camera: ^0.12.0+2
   image: ^4.9.2
+  sentry_flutter: ^9.30.1
+  posthog_flutter: ^5.46.0
 
 dev_dependencies:
   flutter_test:

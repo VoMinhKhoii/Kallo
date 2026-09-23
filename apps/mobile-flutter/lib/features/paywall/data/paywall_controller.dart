@@ -9,6 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../../services/analytics/analytics.dart';
+import '../logic/purchase_tracking.dart';
+import '../../../services/analytics/analytics_events.dart';
 import '../../../services/billing/activation_pending.dart';
 import '../../../services/billing/entitlement_state.dart';
 import '../../../services/billing/entitlements_provider.dart';
@@ -146,6 +149,7 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     ref.onDispose(() => _disposed = true);
     // Kick off the offerings load once when the paywall mounts.
     Future.microtask(loadOfferings);
+    ref.read(analyticsProvider).capture(AnalyticsEvents.paywallViewed);
     return const PaywallState();
   }
 
@@ -247,7 +251,10 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       // one wasted reconcile; a lost one costs a customer their money.
       final pendingStore = ref.read(activationPendingStoreProvider);
       await pendingStore.mark(userId);
+      final analytics = ref.read(analyticsProvider);
+      trackCheckoutStarted(analytics, package.identifier);
       final result = await _purchases.purchasePackage(userId, package);
+      trackPurchaseResult(analytics, result, package.identifier);
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
       if (result.isCancelled) {
         // Explicitly dismissed, so no money moved and nothing needs healing.
