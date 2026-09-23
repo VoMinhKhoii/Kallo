@@ -73,8 +73,8 @@ export function CheatMealActions({
           <RemoveMealButton label={tRemove('remove')} onConfirm={onDelete} />
         )}
       </div>
-      {/* Rendered unconditionally, exactly as the precise bar does. Cheat meals
-          are already auto-shared to the circle on save (confirmCheatMeal calls
+      {/* Rendered unconditionally, exactly as the precise bar does. With Circle
+          auto-share on, cheat meals are shared on save (confirmCheatMeal calls
           insertDefaultCircleShare), so without this toggle the owner had no way
           to see that — or undo it. */}
       <ShareToCircleButton mealId={meal.id} share={meal.share} />

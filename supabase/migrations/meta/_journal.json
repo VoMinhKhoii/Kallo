@@ -505,6 +505,13 @@
       "when": 1790134800000,
       "tag": "20260923034000_avatars_server_only_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790140320000,
+      "tag": "20260923051200_circle_share_default_off",
+      "breakpoints": true
     }
   ]
 }

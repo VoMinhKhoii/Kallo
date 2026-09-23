@@ -45,10 +45,10 @@ export function useDuplicateMeal(userId: string) {
         ...v.source,
         id: v.newMealId,
         loggedAt: v.loggedAt,
-        // A re-log is a brand-new meal, shared to circle by default — not a
-        // carry-over of the source's share state. shareId is empty until the
-        // save response brings the real one.
-        share: { shareId: '', visibility: 'circle' },
+        // A re-log is a brand-new meal — not a carry-over of the source's share
+        // state. Private until the save response says auto-share (off by
+        // default, a server-side preference) shared it.
+        share: null,
       }),
     onSuccess: (data, v, context) =>
       reconcileSavedMeal(

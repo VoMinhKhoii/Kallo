@@ -160,11 +160,35 @@ async function itemRows(mealId: string) {
   return rows;
 }
 
+/** Run `fn` with the borrowed owner's auto-share preference set to `value`,
+ *  then restore whatever it was — the seed user is a real account. */
+async function withAutoShare(
+  value: boolean,
+  fn: () => Promise<void>
+): Promise<void> {
+  const [prior] = (await db.execute(sql`
+    SELECT auto_share_to_circle FROM user_profiles WHERE user_id = ${OWNER}
+  `)) as unknown as Array<{ auto_share_to_circle: boolean }>;
+  await db.execute(sql`
+    UPDATE user_profiles SET auto_share_to_circle = ${value}
+    WHERE user_id = ${OWNER}
+  `);
+  try {
+    await fn();
+  } finally {
+    await db.execute(sql`
+      UPDATE user_profiles
+      SET auto_share_to_circle = ${prior?.auto_share_to_circle ?? false}
+      WHERE user_id = ${OWNER}
+    `);
+  }
+}
+
 if (seedUserId) {
   beforeAll(async () => {
     await db.execute(sql`
-      INSERT INTO user_profiles (user_id, auto_share_to_circle)
-      VALUES (${OWNER}, true)
+      INSERT INTO user_profiles (user_id)
+      VALUES (${OWNER})
       ON CONFLICT (user_id) DO NOTHING
     `);
   });
@@ -539,24 +563,22 @@ describe('relogMealItemsAction', () => {
     expect(Number(row.calories_kcal)).toBeCloseTo(123, 5);
   });
 
-  it('shares to circle by default and reports the share', async () => {
-    const source = await seedMeal({
-      rawInput: 'nguồn',
-      dishes: [
-        { name: 'A', ingredients: [{ name: 'a', grams: 10, kcal: 10 }] },
-      ],
+  it('shares to circle when the owner opted in, and reports the share', async () => {
+    await withAutoShare(true, async () => {
+      const source = await seedMeal({
+        rawInput: 'nguồn',
+        dishes: [
+          { name: 'A', ingredients: [{ name: 'a', grams: 10, kcal: 10 }] },
+        ],
+      });
+      const result = await commit([{ kind: 'meal', sourceMealId: source }]);
+      createdMealIds.push(result.mealId);
+      expect(result.meal.share?.visibility).toBe('circle');
     });
-    const result = await commit([{ kind: 'meal', sourceMealId: source }]);
-    createdMealIds.push(result.mealId);
-    expect(result.meal.share?.visibility).toBe('circle');
   });
 
-  it('respects the auto-share opt-out', async () => {
-    await db.execute(sql`
-      UPDATE user_profiles SET auto_share_to_circle = false
-      WHERE user_id = ${OWNER}
-    `);
-    try {
+  it('stays private when auto-share is off (the default)', async () => {
+    await withAutoShare(false, async () => {
       const source = await seedMeal({
         rawInput: 'nguồn',
         dishes: [
@@ -566,12 +588,7 @@ describe('relogMealItemsAction', () => {
       const result = await commit([{ kind: 'meal', sourceMealId: source }]);
       createdMealIds.push(result.mealId);
       expect(result.meal.share).toBeNull();
-    } finally {
-      await db.execute(sql`
-        UPDATE user_profiles SET auto_share_to_circle = true
-        WHERE user_id = ${OWNER}
-      `);
-    }
+    });
   });
 
   it('returns groups whose nutrition is the sum of their ingredients', async () => {
