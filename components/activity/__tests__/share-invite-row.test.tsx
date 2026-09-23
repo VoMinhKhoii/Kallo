@@ -68,6 +68,20 @@ function renderRow(notification: NotificationItem) {
   };
 }
 
+/** The row's buttons only open the confirm; this answers it. */
+const CONFIRM_ACTION: Record<string, string> = {
+  'invite.accept': 'acceptAction',
+  'invite.dismiss': 'dismissAction',
+};
+
+async function respond(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string
+) {
+  await user.click(screen.getByRole('button', { name: label }));
+  await user.click(screen.getByRole('button', { name: CONFIRM_ACTION[label] }));
+}
+
 describe('ShareInviteRow', () => {
   beforeEach(() => {
     acceptMock.mockReset();
@@ -114,7 +128,7 @@ describe('ShareInviteRow', () => {
     const { client } = renderRow(item());
     const invalidate = vi.spyOn(client, 'invalidateQueries');
 
-    await user.click(screen.getByRole('button', { name: 'invite.accept' }));
+    await respond(user, 'invite.accept');
 
     expect(acceptMock).toHaveBeenCalledWith(
       'invite-1',
@@ -132,7 +146,7 @@ describe('ShareInviteRow', () => {
     const { client } = renderRow(item());
     const invalidate = vi.spyOn(client, 'invalidateQueries');
 
-    await user.click(screen.getByRole('button', { name: 'invite.dismiss' }));
+    await respond(user, 'invite.dismiss');
 
     expect(dismissMock).toHaveBeenCalledWith(
       'invite-1',
@@ -156,7 +170,7 @@ describe('ShareInviteRow', () => {
     const user = userEvent.setup();
     renderRow(item());
 
-    await user.click(screen.getByRole('button', { name: label }));
+    await respond(user, label);
     getMock().mock.calls[0][1].onSuccess();
 
     expect(markReadMock).toHaveBeenCalledWith(
@@ -165,11 +179,23 @@ describe('ShareInviteRow', () => {
     );
   });
 
+  it('asks before acting, and backing out sends nothing', async () => {
+    const user = userEvent.setup();
+    renderRow(item());
+
+    await user.click(screen.getByRole('button', { name: 'invite.dismiss' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'cancel' }));
+
+    expect(dismissMock).not.toHaveBeenCalled();
+    expect(acceptMock).not.toHaveBeenCalled();
+  });
+
   it('does not mark the row read when the mutation fails', async () => {
     const user = userEvent.setup();
     renderRow(item());
 
-    await user.click(screen.getByRole('button', { name: 'invite.accept' }));
+    await respond(user, 'invite.accept');
     acceptMock.mock.calls[0][1].onError();
 
     expect(markReadMock).not.toHaveBeenCalled();

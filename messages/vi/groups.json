@@ -113,7 +113,19 @@
     "loadError": "Không tải được lời mời. Chạm để thử lại.",
     "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
     "acceptCheat": "Tự chọn mức",
-    "waiting": "· {count} đang chờ"
+    "waiting": "· {count} đang chờ",
+    "confirm": {
+      "cancel": "Để sau",
+      "acceptTitle": "Thêm bữa này vào nhật ký?",
+      "acceptDescription": "Bữa ăn của {name} sẽ được ghi vào đúng ngày đã ăn.",
+      "acceptAction": "Thêm bữa",
+      "acceptCheatTitle": "Tự chọn mức của bạn?",
+      "acceptCheatDescription": "Bữa xả của {name} sẽ mở trong nhật ký để bạn chọn mức mình đã ăn. Chưa có gì được ghi cho đến khi bạn lưu.",
+      "acceptCheatAction": "Mở thanh trượt",
+      "dismissTitle": "Bỏ qua bữa này?",
+      "dismissDescription": "{name} sẽ không nhận được thông báo. Bữa này sẽ hiện lại nếu họ chia sẻ lại với bạn.",
+      "dismissAction": "Bỏ qua"
+    }
   },
   "invite": {
     "title": "Mời vào vòng kết nối",

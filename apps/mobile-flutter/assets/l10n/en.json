@@ -1650,7 +1650,19 @@
       "restShare": "Shared out {percent}%",
       "sharedCheat": "{name} shared their cheat meal with you",
       "acceptCheat": "Set amounts",
-      "waiting": "· {count} waiting"
+      "waiting": "· {count} waiting",
+      "confirm": {
+        "cancel": "Not now",
+        "acceptTitle": "Add this meal to your diary?",
+        "acceptDescription": "{name}'s meal will be logged on the day it was eaten.",
+        "acceptAction": "Add meal",
+        "acceptCheatTitle": "Set your own amounts?",
+        "acceptCheatDescription": "{name}'s cheat meal opens on your logging feed so you can set what you ate. Nothing is logged until you save it.",
+        "acceptCheatAction": "Open sliders",
+        "dismissTitle": "Dismiss this meal?",
+        "dismissDescription": "{name} won't be notified. It will come back if they share it with you again.",
+        "dismissAction": "Dismiss"
+      }
     },
     "invite": {
       "title": "Invite to your circle",

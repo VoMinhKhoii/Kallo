@@ -108,6 +108,7 @@ vi.mock(
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing/share-with-friends';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
+  capturedPredicates,
   cheatSourceMeal,
   friendEdge,
   type InsertCaptures,
@@ -142,14 +143,14 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
-  it('never re-pends an accepted offer, even one with no meal yet', async () => {
-    // `accepted` + no meal is NOT "abandoned" — it is every staged cheat card
-    // for its whole ~7-day life, because a cheat offer is spent at stage time
-    // and the meal does not exist until confirm. Forgiving that state here
-    // re-pended a LIVE offer: a second card for the same dish landed in the
-    // recipient's inbox, and confirming both wrote two meals. An abandoned
-    // offer comes back a different way — `releaseInvite` re-pends it in the
-    // same transaction that destroys its card.
+  it('re-pends only offers the friend no longer holds', async () => {
+    // `accepted` alone is not "held". A staged cheat card is accepted with no
+    // meal for its whole ~7-day life — re-pending THAT put a second card in the
+    // inbox and let both be confirmed — so the card's `pending_analyses` row
+    // must keep it held. But an accepted copy whose meal the friend DELETED is
+    // also accepted + no meal (`accepted_meal_id` is ON DELETE SET NULL), with
+    // no card behind it; skipping that one meant a re-share could never reach
+    // them again. The clause has to tell those two apart.
     queueLimitSelect([cheatSourceMeal()]);
     queueWhereSelect([friendEdge]);
     const captured: InsertCaptures = {};
@@ -162,13 +163,15 @@ describe('shareMealWithFriendsAction', () => {
     });
 
     // Serialized: the doubles cannot run Postgres, so the clause itself is
-    // what gets asserted. Scoped to `setWhere` deliberately — `acceptedMealId`
-    // legitimately appears in the SET block (the reset), so asserting against
-    // the whole conflict object would pass for the wrong reason.
+    // what gets asserted (its behaviour was checked against a real database
+    // when it was written — see `inviteStillHeld`).
     const { setWhere } = captured.invites.conflict as { setWhere: unknown };
     const clause = JSON.stringify(setWhere);
-    expect(clause).toContain("<> 'accepted'");
-    expect(clause).not.toContain('acceptedMealId');
+    expect(clause).toContain('NOT ');
+    expect(clause).toContain("= 'accepted'");
+    expect(clause).toContain('mealShareInvites.acceptedMealId');
+    expect(clause).toContain('IS NOT NULL OR EXISTS');
+    expect(clause).toContain('pendingAnalyses.sourceInviteId');
   });
 
   it('reports nobody offered when every invite was skipped', async () => {
@@ -600,6 +603,7 @@ describe('shareMealWithFriendsAction', () => {
   it('rejects a split when a selected friend already accepted this meal', async () => {
     // Copy-then-split path: the friend accepted a copy earlier; a split would
     // scale the sender's meal while the protected upsert creates no new offer.
+    capturedPredicates.length = 0;
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);
     queueLimitSelect([{ toUserId: UUID_FRIEND }]); // accepted invite exists
@@ -610,6 +614,13 @@ describe('shareMealWithFriendsAction', () => {
         mode: 'split',
       })
     ).rejects.toThrow('đã nhận phần');
+    // "Accepted" here means still HELD — the same predicate as the upsert, so
+    // a friend who deleted their copy is not wrongly counted as having it.
+    expect(
+      capturedPredicates.some((p) =>
+        p.includes('pendingAnalyses.sourceInviteId')
+      )
+    ).toBe(true);
     // The sender's meal must NOT be scaled and no invite rows written.
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();

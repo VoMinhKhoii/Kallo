@@ -3,7 +3,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  InviteConfirmDialog,
+  type InviteConfirmKind,
+} from '@/components/shared/invite-confirm/invite-confirm-dialog';
 import { useMarkNotificationRead } from '@/hooks/notifications/use-notification-state';
 import {
   useAcceptMealShareInvite,
@@ -13,7 +18,11 @@ import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { cn } from '@/lib/core/ui/cn';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
-import { inviteMode, invitePortionPercent } from './notification-copy';
+import {
+  actorLabel,
+  inviteMode,
+  invitePortionPercent,
+} from './notification-copy';
 import { NotificationAvatars, NotificationMessage } from './notification-parts';
 
 /** The invite's terminal state, as a quiet chip. Only "accepted" names an act:
@@ -53,6 +62,8 @@ export function ShareInviteRow({
   const busy = accept.isPending || dismiss.isPending;
   const mode = inviteMode(item);
   const percent = invitePortionPercent(item);
+  const [confirming, setConfirming] = useState<InviteConfirmKind | null>(null);
+  const senderLabel = actorLabel(item, t('someone'));
 
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
@@ -73,17 +84,13 @@ export function ShareInviteRow({
     });
   };
 
-  const handleAccept = () => {
+  // The buttons only ASK — the shared confirm dialog is what acts, the same
+  // one the Circle deck card opens. Busy is guarded by `disabled` on the
+  // buttons and re-checked in `confirm`.
+  const confirm = (kind: InviteConfirmKind) => {
     if (busy || !inviteId) return;
-    accept.mutate(inviteId, {
-      onSuccess: settleActivity,
-      onError: () => toast.error(t('invite.error')),
-    });
-  };
-
-  const handleDismiss = () => {
-    if (busy || !inviteId) return;
-    dismiss.mutate(inviteId, {
+    const mutation = kind === 'dismiss' ? dismiss : accept;
+    mutation.mutate(inviteId, {
       onSuccess: settleActivity,
       onError: () => toast.error(t('invite.error')),
     });
@@ -122,7 +129,7 @@ export function ShareInviteRow({
                 dismiss is a text action beside it, not a second button. */}
             <button
               type="button"
-              onClick={handleAccept}
+              onClick={() => setConfirming('accept')}
               disabled={busy}
               aria-busy={accept.isPending}
               className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
@@ -134,7 +141,7 @@ export function ShareInviteRow({
             </button>
             <button
               type="button"
-              onClick={handleDismiss}
+              onClick={() => setConfirming('dismiss')}
               disabled={busy}
               className="px-2 py-1.5 font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-55"
             >
@@ -147,6 +154,16 @@ export function ShareInviteRow({
           </span>
         )}
       </div>
+      {pending && (
+        <InviteConfirmDialog
+          kind={confirming}
+          senderLabel={senderLabel}
+          onOpenChange={(open) => {
+            if (!open) setConfirming(null);
+          }}
+          onConfirm={confirm}
+        />
+      )}
     </div>
   );
 }

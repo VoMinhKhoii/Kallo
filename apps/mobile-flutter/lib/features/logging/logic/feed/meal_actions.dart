@@ -93,103 +93,91 @@ class FeedMealActions {
         .refresh();
   }
 
-  Future<void> _finalizeDiscard(PendingMealConfirmation pending) async {
+  Future<void> _finalizeDiscard(PendingMealConfirmation pending) =>
+      _deleteAfterUndoWindow(
+        id: pending.id,
+        toast: 'logging.pendingDiscarded'.tr(),
+        path: '/api/v1/meals/pending/${Uri.encodeComponent(pending.id)}',
+        // A staged row expires on its own, and confirming it consumes it.
+        // Either way the server says "not found" — and either way it IS gone,
+        // so the card must stay gone. Only a real failure puts it back.
+        goneMeansDeleted: true,
+        // Discarding a card staged from a friend's cheat offer hands that offer
+        // back (`releaseInvite`), so it belongs in the inbox again — and the
+        // pill-nav badge keeps that provider alive, so without this both serve
+        // a cached empty list until a pull-to-refresh. Only the server knows
+        // whether THIS card owed an offer, so the refetch is unconditional.
+        onDeleted: (scope) => scope.invalidate(mealShareInvitesProvider),
+      );
+
+  Future<void> _finalizeRemoval(PersistedMeal meal) => _deleteAfterUndoWindow(
+    id: meal.id,
+    toast: 'logging.mealRemoved'.tr(),
+    path: '/api/v1/meals/${Uri.encodeComponent(meal.id)}',
+  );
+
+  /// Show the undo toast, then — unless Undo was tapped — DELETE [path].
+  ///
+  /// The day cache is never locally mutated: the card is hidden by its id in
+  /// the pending-removal set, so undo, a failed delete and the refetch all
+  /// resolve by releasing that id.
+  ///
+  /// Runs against the ProviderScope container captured up front, not `ref`:
+  /// `/logging` is a route pushed over the shell, so leaving it inside the
+  /// window disposes this feed (and `ref` throws once disposed). Gating the
+  /// DELETE on `mounted` used to drop it silently. Only UI callbacks check it.
+  Future<void> _deleteAfterUndoWindow({
+    required String id,
+    required String toast,
+    required String path,
+    bool goneMeansDeleted = false,
+    void Function(ProviderContainer scope)? onDeleted,
+  }) async {
+    final scope = ProviderScope.containerOf(context, listen: false);
     var undone = false;
+    // Top-anchored undo toast. Its future resolves on dismissal — by Undo,
+    // tap, or timeout — so the delete finalizes only after the window.
     await showTopToast(
       context,
-      'logging.pendingDiscarded'.tr(),
+      toast,
       actionLabel: 'logging.undo'.tr(),
       duration: const Duration(seconds: 5),
       onAction: () {
         undone = true;
-        if (context.mounted) onReleaseRemoval(pending.id);
+        if (context.mounted) onReleaseRemoval(id);
       },
     );
-    if (undone || !context.mounted) return;
+    if (undone) return;
     try {
-      await ref
-          .read(apiClientProvider)
-          .delete<void>(
-            '/api/v1/meals/pending/${Uri.encodeComponent(pending.id)}',
-          );
-    } on ApiError catch (error) {
-      // A staged row expires on its own after 30 minutes, and confirming it
-      // consumes it. Either way the server says "not found" — and either way it
-      // IS gone, so the card must stay gone. Only a real failure puts it back.
-      if (error.status != 400 && error.status != 404) {
-        invalidateMealSurfaces(ref.invalidate, userId, date);
-        if (context.mounted) onRemovalFailed(pending.id);
+      await scope.read(apiClientProvider).delete<void>(path);
+    } catch (error) {
+      final gone =
+          goneMeansDeleted &&
+          error is ApiError &&
+          (error.status == 400 || error.status == 404);
+      if (!gone) {
+        // Releasing the id makes the card reappear, keeping the feed truthful.
+        invalidateMealSurfaces(scope.invalidate, userId, date);
+        if (context.mounted) onRemovalFailed(id);
         return;
       }
-    } catch (_) {
-      invalidateMealSurfaces(ref.invalidate, userId, date);
-      if (context.mounted) onRemovalFailed(pending.id);
-      return;
     }
-    if (!context.mounted) return;
-    invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
-    // Discarding a card staged from a friend's cheat offer hands that offer
-    // back (`releaseInvite`), so it belongs in the inbox again — and the
-    // pill-nav badge watches that same auto-dispose provider, so without this
-    // both keep serving a cached empty list until a pull-to-refresh. Nothing
-    // here can tell whether THIS card owed an offer; only the server knows, so
-    // the refetch is unconditional. A discard is a rare, deliberate action —
-    // one extra request is cheaper than a reversible "not now" that silently
-    // looks like it did nothing.
-    ref.invalidate(mealShareInvitesProvider);
+    onDeleted?.call(scope);
+    // Heal every date-keyed surface. With the feed still open the refresh
+    // below owns the day, so the refetched day (sans card) is what renders;
+    // with nobody on this day it is just marked stale.
+    final open = context.mounted;
+    invalidateMealSurfaces(scope.invalidate, userId, date, includeDay: !open);
+    if (!open) return;
     try {
-      await ref
+      await scope
           .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
           .refresh();
     } catch (_) {
+      // A failed refetch doesn't un-delete it — keep the id filtered (a
+      // harmless no-op once a later fetch succeeds).
       return;
     }
-    if (context.mounted) onReleaseRemoval(pending.id);
-  }
-
-  Future<void> _finalizeRemoval(PersistedMeal meal) async {
-    var undone = false;
-    // Top-anchored undo toast (every toast lives at the top now). Its future
-    // resolves on dismissal — by Undo, tap, or timeout — mirroring the old
-    // SnackBar.closed, so the delete still finalizes only after the window.
-    await showTopToast(
-      context,
-      'logging.mealRemoved'.tr(),
-      actionLabel: 'logging.undo'.tr(),
-      duration: const Duration(seconds: 5),
-      onAction: () {
-        undone = true;
-        if (context.mounted) onReleaseRemoval(meal.id);
-      },
-    );
-    if (undone || !context.mounted) return;
-    try {
-      await ref
-          .read(apiClientProvider)
-          .delete<void>('/api/v1/meals/${Uri.encodeComponent(meal.id)}');
-    } catch (_) {
-      // The server rejected the delete — releasing the id makes the card
-      // reappear (the cache was never mutated), keeping the feed truthful.
-      // Heal the day here (nothing refetches it after) plus the rest of the
-      // canonical meal surfaces.
-      invalidateMealSurfaces(ref.invalidate, userId, date);
-      if (context.mounted) onRemovalFailed(meal.id);
-      return;
-    }
-    if (!context.mounted) return;
-    // The delete landed — heal every date-keyed surface before releasing the
-    // id, then refetch the day itself (includeDay:false — the refresh below
-    // owns it) so the refetched day (sans meal) is what renders.
-    invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
-    try {
-      await ref
-          .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
-          .refresh();
-    } catch (_) {
-      // The refetch failing doesn't un-delete the meal — keep the id
-      // filtered (a harmless no-op once a later fetch succeeds).
-      return;
-    }
-    if (context.mounted) onReleaseRemoval(meal.id);
+    if (context.mounted) onReleaseRemoval(id);
   }
 }
