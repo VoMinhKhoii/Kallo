@@ -31,6 +31,47 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ---
 
+## Rendering and caching
+
+Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
+together give Instant Navigations. The rules the build enforces, and the choices made here:
+
+- **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
+  first on every matched request: origin lock, markdown negotiation, per-request CSP nonce
+  (Report-Only), next-intl, and the Supabase session refresh.
+- **Static shell first.** Every page is prerendered to a static shell at build time. Anything that
+  reads the request — `cookies()`, `headers()`, `searchParams`, unknown `params`, the Supabase
+  session, `connection()` — must sit inside a `<Suspense>` boundary, or the build fails. Push the
+  read down to the smallest component; the rest of the page stays static. The `(app)` layout reads
+  the session behind one boundary whose fallback is `components/app/shell/app-shell-skeleton.tsx`;
+  each app page's `loading.tsx` is what shows during a client navigation into it.
+- **Nothing is cached unless marked.** `'use cache'` + `cacheLife` is only for data that is the
+  same for every visitor: docs content (`lib/domain/docs/`), `/md`, `/llms.txt`, the OAuth
+  resource metadata. Never put per-user data in a shared `'use cache'` scope. Results built from
+  `content/` use the custom `deployment` profile (never revalidates while a deployment runs),
+  because the standalone image does not ship `content/` and a runtime recompute would ENOENT.
+- **No route segment configs.** `dynamic`, `revalidate`, `fetchCache`, `dynamicParams` and
+  `runtime` are build errors under Cache Components (Node.js is the only runtime anyway). A `GET`
+  route handler prerenders when it reads nothing from the request; read the request, or call a
+  `'use cache'` helper, to choose.
+- **`instant = false`** marks a segment that is allowed to block. Used only where that is the
+  point, each with a comment: `app/page.tsx` (a pure locale redirect, kept a real HTTP redirect)
+  and the admin layout (gated on `requireAdmin()`).
+- **Locale.** `[locale]` is the root param. `i18n/request.ts` reads it through `next/root-params`,
+  so there is no `setRequestLocale`; Server Actions and Route Handlers, where root params are not
+  supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
+  `i18n/routing.ts`, never `i18n/navigation.ts` (which drags in the request config).
+- **Runtime env in prerendered pages.** A `process.env` read during prerender is baked into the
+  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) must be read
+  after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
+- **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
+  (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
+  transient state (a "sent" confirmation, an open popover) in a `useLayoutEffect` cleanup, as
+  `components/settings/feedback/use-feedback-form.ts` does. Sign-out is a hard navigation, which
+  drops all of it.
+
+---
+
 ## `lib/` — domain, data, infrastructure
 
 Twelve top-level entries, grouped by what a thing *is* rather than what feature it serves.
@@ -131,6 +172,7 @@ another domain module is a smell worth a second look.
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
+| `auth/request-config/` | the auth dialog's request-time inputs (runtime Google client ID, `?auth=`/`?next=` intent) streamed into prerendered pages | ok |
 | `billing/` | `paywall/` (the offer surface), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
 | `dashboard/` | dashboard sections and charts | split |
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
