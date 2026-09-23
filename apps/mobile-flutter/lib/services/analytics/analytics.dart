@@ -28,19 +28,39 @@ class Analytics {
   /// analytics is on, for both [setup] and [analyticsProvider].
   static bool get configured => Env.posthogKey.isNotEmpty;
 
-  /// Start the SDK. Call once at boot, before `runApp`; a no-op without a key.
-  /// The native auto-init is switched off in `AndroidManifest.xml` and
-  /// `Info.plist` so this is the only place PostHog starts.
-  static Future<void> setup() async {
+  /// Start the SDK. Call once at boot, before `runApp`, AFTER the Supabase
+  /// session is restored; a no-op without a key. The native auto-init is
+  /// switched off in `AndroidManifest.xml` and `Info.plist` so this is the
+  /// only place PostHog starts.
+  ///
+  /// [signedInUserId] is the restored session's user (null when signed out).
+  /// PostHog restores its OWN persisted identity on setup, which may belong to
+  /// an account whose session expired or was revoked while the app was
+  /// closed — and the SDK cannot tell us whether it is identified. So identity
+  /// is reconciled here, before anything is captured: identify the current
+  /// user, or reset. The cost of the reset is a fresh anonymous id per
+  /// signed-out launch; with `identifiedOnly` person profiles that creates no
+  /// person, only a new anonymous distinct id.
+  static Future<void> setup({required String? signedInUserId}) async {
     if (!configured) return;
     final config =
         PostHogConfig(Env.posthogKey)
           ..host = Env.posthogHost
-          ..captureApplicationLifecycleEvents = true
+          // Off: "Application Opened" would fire during setup, under whatever
+          // identity was persisted, before the reconciliation below.
+          ..captureApplicationLifecycleEvents = false
           ..personProfiles = PostHogPersonProfiles.identifiedOnly
           ..sessionReplay = false
           ..surveys = false;
+    // On by default (iOS): `$rageclick` carries element-chain labels, which
+    // can be on-screen meal text.
+    config.rageClickConfig.enabled = false;
     await Posthog().setup(config);
+    if (signedInUserId != null) {
+      await Posthog().identify(userId: signedInUserId);
+    } else {
+      await Posthog().reset();
+    }
   }
 
   /// Screen view. [name] is a route PATTERN (`/circle/:shareId`), never a

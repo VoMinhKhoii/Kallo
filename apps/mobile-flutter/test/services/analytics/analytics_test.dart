@@ -10,7 +10,8 @@ void main() {
 
     expect(analytics.enabled, isFalse);
     // Would throw MissingPluginException if any reached the platform channel.
-    await Analytics.setup();
+    await Analytics.setup(signedInUserId: 'uuid-1');
+    await Analytics.setup(signedInUserId: null);
     analytics
       ..screen('/dashboard')
       ..capture('meal_logged', properties: {'method': 'ai'})

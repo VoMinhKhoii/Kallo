@@ -32,12 +32,19 @@ Future<void> runWithMonitoring(FutureOr<void> Function() appRunner) async {
     options
       ..dsn = Env.sentryDsn
       ..sendDefaultPii = false
-      // 10% of sessions traced: enough to spot slow screens, far inside the
-      // free tier.
-      ..tracesSampleRate = 0.1
-      // `debugPrint` lines can carry meal text; never turn them into
-      // breadcrumbs.
+      // No tracing on mobile: spans carry request URLs in attributes and
+      // descriptions that `beforeSend` never sees. Errors and crashes only.
+      ..tracesSampleRate = null
+      ..enableAutoPerformanceTracing = false
+      // Every automatic breadcrumb source that can carry user text or
+      // identifier-bearing URLs is off: `debugPrint` lines (meal text), taps
+      // (widget labels), HTTP calls (paths, queries — Dart and native), and
+      // the native SDK's own auto-breadcrumbs, which bypass the Dart scrubber.
       ..enablePrintBreadcrumbs = false
+      ..enableUserInteractionBreadcrumbs = false
+      ..enableUserInteractionTracing = false
+      ..recordHttpBreadcrumbs = false
+      ..enableAutoNativeBreadcrumbs = false
       ..beforeSend = (event, hint) => scrubEvent(event);
   }, appRunner: appRunner);
 }

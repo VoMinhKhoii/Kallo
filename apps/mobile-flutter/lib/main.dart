@@ -96,7 +96,11 @@ Future<void> _boot() async {
   // on Flutter's release-mode grey rectangle with no way out and no cause.
   installKalloErrorWidget();
 
-  await Analytics.setup();
+  // After SupabaseService.initialize: PostHog's persisted identity is
+  // reconciled against the session that init just restored.
+  await Analytics.setup(
+    signedInUserId: SupabaseService.client.auth.currentSession?.user.id,
+  );
 
   precacheFilledHeart();
   precacheBrushCheck();

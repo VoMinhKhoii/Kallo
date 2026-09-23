@@ -6,89 +6,18 @@
  * public ingest address (it can only submit events), which is why it rides a
  * `NEXT_PUBLIC_` build arg like the Supabase publishable key.
  *
- * Privacy posture — the privacy policy treats meal text and body metrics as
- * sensitive personal data, so an error report carries the stack and the
- * request's route, never its payload:
- *   • `sendDefaultPii: false` — no IP, no cookies, no request headers;
- *   • `scrubEvent` strips request bodies, cookies, query strings and any
- *     user field other than the opaque account id, and reduces the URL to its
- *     route pattern (no invite slug, share id or group id);
- *   • `scrubBreadcrumb` drops console breadcrumbs (raw log arguments) and
- *     keeps only allowlisted, non-free-text breadcrumb data;
- *   • no Session Replay integration is ever added.
+ * Privacy posture: `sendDefaultPii: false` (no IP, cookies or request
+ * headers), every payload through the scrubbers in `scrub.ts` (errors,
+ * transactions and breadcrumbs), and no Session Replay integration, ever.
  */
-import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
+import {
+  scrubBreadcrumb,
+  scrubEvent,
+  scrubTransaction,
+} from '@/lib/infra/telemetry/monitoring/scrub';
 import { SITE_URL } from '@/lib/seo/site';
 
 const PRODUCTION_HOST = new URL(SITE_URL).hostname;
-
-/** The subset of a Sentry event `scrubEvent` touches. */
-interface ScrubbableEvent {
-  request?: {
-    url?: string;
-    data?: unknown;
-    cookies?: unknown;
-    headers?: unknown;
-    query_string?: unknown;
-  };
-  user?: { id?: string | number } & Record<string, unknown>;
-}
-
-/**
- * Remove anything that could carry user-entered content from an event before
- * it leaves the process. Pure and synchronous so it can be unit-tested and run
- * as `beforeSend` in every runtime.
- */
-export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
-  if (event.request) {
-    if (event.request.url) event.request.url = telemetryUrl(event.request.url);
-    delete event.request.data;
-    delete event.request.cookies;
-    delete event.request.headers;
-    delete event.request.query_string;
-  }
-  if (event.user) {
-    event.user = event.user.id == null ? {} : { id: event.user.id };
-  }
-  return event;
-}
-
-/** Breadcrumb data keys that hold a URL (navigation, fetch, xhr). */
-const BREADCRUMB_URL_KEYS = new Set(['url', 'from', 'to']);
-/** Every other breadcrumb data key allowed through — all non-free-text. */
-const BREADCRUMB_SAFE_KEYS = new Set(['method', 'status_code', 'reason']);
-
-interface ScrubbableBreadcrumb {
-  category?: string;
-  data?: Record<string, unknown>;
-}
-
-/**
- * Breadcrumbs are the trail attached to the NEXT error, so they are scrubbed
- * as strictly as the error itself:
- *   • `console` breadcrumbs are dropped outright — the default Console
- *     integration stores every `console.*` call's raw arguments, and our logs
- *     (the analyze-meal pipeline above all) can carry meal text. The Flutter
- *     app drops its print breadcrumbs for the same reason;
- *   • `data` is an allowlist: URLs reduced to origin + route pattern, a few
- *     status fields kept, anything else removed.
- */
-export function scrubBreadcrumb<T extends ScrubbableBreadcrumb>(
-  crumb: T
-): T | null {
-  if (crumb.category === 'console') return null;
-  if (!crumb.data) return crumb;
-  const data: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(crumb.data)) {
-    if (BREADCRUMB_URL_KEYS.has(key) && typeof value === 'string') {
-      data[key] = telemetryUrl(value);
-    } else if (BREADCRUMB_SAFE_KEYS.has(key)) {
-      data[key] = value;
-    }
-  }
-  crumb.data = data;
-  return crumb;
-}
 
 /**
  * Errors that are not ours to fix: a user cancelling a request, a flaky
@@ -148,6 +77,6 @@ export function sharedSentryOptions(environment: string) {
     ignoreErrors: IGNORED_ERRORS,
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
-    beforeSendTransaction: scrubEvent,
+    beforeSendTransaction: scrubTransaction,
   };
 }

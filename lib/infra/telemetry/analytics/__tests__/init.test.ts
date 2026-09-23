@@ -31,6 +31,26 @@ describe('sanitizeCapture', () => {
     });
   });
 
+  it('reduces PostHog-derived keys too, e.g. $session_entry_*', () => {
+    const event = {
+      uuid: 'u',
+      event: '$pageview',
+      properties: {
+        $session_entry_url: 'https://kallo.fit/vi/invite/abc?ref=z',
+        $session_entry_referrer: 'https://mail.example.com/inbox/1',
+        $session_entry_pathname: '/vi/invite/abc',
+        $session_entry_utm_source: 'newsletter',
+      },
+    } as unknown as CaptureResult;
+
+    expect(sanitizeCapture(event)?.properties).toEqual({
+      $session_entry_url: 'https://kallo.fit/vi/invite/:param',
+      $session_entry_referrer: 'https://mail.example.com/:param/:param',
+      $session_entry_pathname: '/vi/invite/:param',
+      $session_entry_utm_source: 'newsletter',
+    });
+  });
+
   it('passes a dropped (null) event through', () => {
     expect(sanitizeCapture(null)).toBeNull();
   });

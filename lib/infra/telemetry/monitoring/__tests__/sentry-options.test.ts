@@ -1,88 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { scrubTransaction } from '../scrub';
 import {
   clientSentryEnvironment,
-  scrubBreadcrumb,
-  scrubEvent,
   serverSentryEnvironment,
   sharedSentryOptions,
 } from '../sentry-options';
-
-describe('scrubEvent', () => {
-  it('strips request payload, cookies, headers and query string', () => {
-    const event = scrubEvent({
-      request: {
-        url: 'https://kallo.fit/api/analyze-meal',
-        data: { message: 'phở bò 2 bowls' },
-        cookies: { 'sb-auth': 'x' },
-        headers: { authorization: 'Bearer y' },
-        query_string: 'token=z',
-      },
-    });
-    expect(event.request).toEqual({
-      url: 'https://kallo.fit/api/analyze-meal',
-    });
-  });
-
-  it('reduces the request URL to its route pattern', () => {
-    const event = scrubEvent({
-      request: { url: 'https://kallo.fit/vi/invite/secret-slug?ref=x' },
-    });
-    expect(event.request?.url).toBe('https://kallo.fit/vi/invite/:param');
-  });
-
-  it('keeps only the opaque user id', () => {
-    const event = scrubEvent({
-      user: { id: 'uuid-1', email: 'a@b.c', ip_address: '1.2.3.4' },
-    });
-    expect(event.user).toEqual({ id: 'uuid-1' });
-  });
-
-  it('empties a user without an id', () => {
-    expect(scrubEvent({ user: { email: 'a@b.c' } }).user).toEqual({});
-  });
-});
-
-describe('scrubBreadcrumb', () => {
-  it('drops console breadcrumbs, whose raw arguments can hold meal text', () => {
-    expect(
-      scrubBreadcrumb({
-        category: 'console',
-        data: { arguments: ['[analyze-meal] failed for', 'phở bò 2 bowls'] },
-      })
-    ).toBeNull();
-  });
-
-  it('keeps only allowlisted data keys', () => {
-    expect(
-      scrubBreadcrumb({
-        category: 'fetch',
-        data: {
-          url: 'https://kallo.fit/api/v1/meals',
-          method: 'POST',
-          status_code: 500,
-          body: 'phở bò',
-        },
-      })?.data
-    ).toEqual({
-      url: 'https://kallo.fit/api/v1/meals',
-      method: 'POST',
-      status_code: 500,
-    });
-  });
-
-  it('patterns navigation paths and strips fetch query strings', () => {
-    expect(
-      scrubBreadcrumb({
-        data: { from: '/en/circle/share-1', to: '/en/circle/g/group-2?tab=x' },
-      })?.data
-    ).toEqual({ from: '/en/circle/:param', to: '/en/circle/g/:param' });
-    expect(
-      scrubBreadcrumb({
-        data: { url: 'https://kallo.fit/api/v1/meals?date=2026-09-01' },
-      })?.data
-    ).toEqual({ url: 'https://kallo.fit/api/v1/meals' });
-  });
-});
 
 describe('sharedSentryOptions', () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -99,6 +21,7 @@ describe('sharedSentryOptions', () => {
     const options = sharedSentryOptions('test');
     expect(options.enabled).toBe(true);
     expect(options.sendDefaultPii).toBe(false);
+    expect(options.beforeSendTransaction).toBe(scrubTransaction);
   });
 });
 

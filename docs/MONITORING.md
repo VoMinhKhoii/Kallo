@@ -7,7 +7,7 @@ existing `vo-minh-khoi` organisation, which cannot change region); PostHog is on
 | | Sentry | PostHog |
 |---|---|---|
 | Answers | "What broke, for whom, since which release?" | "What do people do, and where do they drop off?" |
-| Sends | Unhandled + reported errors, 10% of traces | The typed events below, plus page/screen views |
+| Sends | Unhandled + reported errors; 10% of web traces (URLs scrubbed); no mobile tracing | The typed events below, plus page/screen views |
 | Never sends | Request bodies, cookies, headers, query strings, email, IP, screen recordings | Meal text, body metrics, email, clicks (no autocapture), screen recordings |
 | Off when | `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` is empty | `NEXT_PUBLIC_POSTHOG_KEY` / `POSTHOG_KEY` is empty |
 
@@ -63,11 +63,14 @@ before `bun dev:mobile` (Flutter).
 - `lib/infra/telemetry/telemetry-url.ts`: every outgoing URL → origin + route template
   (`/vi/invite/abc?ref=x` → `/vi/invite/:param`), built on `routeTemplate`
   (`lib/infra/route-template/`), the same position-based redaction CSP reports use.
-- `lib/infra/telemetry/monitoring/`: shared Sentry options, `scrubEvent` / `scrubBreadcrumb`
-  (drops console breadcrumbs; allowlists breadcrumb data),
+- `lib/infra/telemetry/monitoring/`: `sentry-options.ts` (config shared by every runtime)
+  and `scrub.ts`: `scrubEvent`, `scrubTransaction` (span attributes, span and transaction
+  names) and `scrubBreadcrumb` (drops console breadcrumbs; allowlists data),
   `reportError(error, scope)` for errors that are caught (error boundaries, the
   analyze-meal stream). `lib/core/errors/serialize.ts` reports unknown 500s directly.
-- `lib/infra/telemetry/analytics/`: PostHog init, `events.ts` (the event list), `track()`.
+- `lib/infra/telemetry/analytics/`: PostHog init (`before_send` rewrites every property
+  whose name ends in url / referrer / pathname; `/flags` requests off), `events.ts` (the
+  event list), `track()`.
 - `components/providers/telemetry-identity.tsx`: one Supabase auth listener → PostHog
   identify/reset + Sentry user (opaque account id only).
 - `app/global-error.tsx`: catches errors in the root layout itself.
@@ -76,8 +79,11 @@ before `bun dev:mobile` (Flutter).
 
 **Flutter** (`apps/mobile-flutter/lib/`)
 - `main.dart`: boots inside `runWithMonitoring` (Sentry catches startup crashes), then
-  `Analytics.setup()`.
-- `services/monitoring/monitoring.dart`: Sentry init, `scrubEvent`, `setMonitoringUser`.
+  `Analytics.setup(signedInUserId:)`, which reconciles PostHog's persisted identity with
+  the restored Supabase session (identify or reset) before anything is captured.
+  Lifecycle events and iOS rage-click capture are off.
+- `services/monitoring/monitoring.dart`: Sentry init (no tracing; print, tap, HTTP and
+  native auto-breadcrumbs all off), `scrubEvent`, `setMonitoringUser`.
 - `services/analytics/`: the PostHog facade, `analytics_events.dart`, and
   `screen_tracking.dart` (one screen view per go_router route PATTERN).
 - `app.dart` `_syncSession`: identity for PostHog + Sentry on sign-in / sign-out.

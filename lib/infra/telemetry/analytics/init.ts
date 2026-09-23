@@ -14,24 +14,23 @@ import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
  */
 export const POSTHOG_HOST = 'https://eu.i.posthog.com';
 
-/** Every PostHog property that holds a URL or a path. */
-const URL_PROPERTIES = [
-  '$current_url',
-  '$referrer',
-  '$initial_current_url',
-  '$initial_referrer',
-  '$prev_pageview_url',
-  '$pathname',
-  '$prev_pageview_pathname',
-] as const;
+/**
+ * A property holding a URL or a path, matched by NAME SHAPE rather than a
+ * fixed list: PostHog derives new keys from existing ones (`$initial_*`,
+ * `$prev_pageview_*`, and `$session_entry_url` / `_referrer` / `_pathname`,
+ * built at runtime from the first pageview), so an allowlist of names goes
+ * stale silently while this does not.
+ */
+const URL_PROPERTY = /(?:url|referrer|pathname)$/i;
 
 type Props = Record<string, unknown> | undefined;
 
 function sanitizeProps(props: Props): void {
   if (!props) return;
-  for (const key of URL_PROPERTIES) {
-    const value = props[key];
-    if (typeof value === 'string') props[key] = telemetryUrl(value);
+  for (const [key, value] of Object.entries(props)) {
+    if (URL_PROPERTY.test(key) && typeof value === 'string') {
+      props[key] = telemetryUrl(value);
+    }
   }
 }
 
@@ -73,6 +72,10 @@ export function initAnalytics(): void {
     // Never inject a PostHog-hosted <script> (recorder, surveys, toolbar):
     // everything we use is in the bundle.
     disable_external_dependency_loading: true,
+    // No `/flags` requests. We use no feature flags, and that request carries
+    // the stored initial person properties — the RAW first URL — straight to
+    // PostHog without passing through `before_send`.
+    advanced_disable_flags: true,
     person_profiles: 'identified_only',
     persistence: 'localStorage',
     before_send: sanitizeCapture,
