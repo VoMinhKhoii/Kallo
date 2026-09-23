@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { Operation, PathItem } from '@/lib/api/openapi/components';
+import type {
+  JsonSchema,
+  Operation,
+  PathItem,
+} from '@/lib/api/openapi/components';
 import { openApiDocument } from '@/lib/api/openapi/document';
+import { ERROR_CODES } from '@/lib/core/errors/codes';
 
 const doc = openApiDocument();
 const paths = doc.paths as Record<string, PathItem>;
@@ -176,6 +181,56 @@ describe('the published OpenAPI document', () => {
 
     expect(detail.required).toContain('resolution');
     expect(detail.properties).toHaveProperty('resolution');
+  });
+
+  it('documents every error code the server can emit', () => {
+    const schemas = (doc.components as { schemas: Record<string, unknown> })
+      .schemas;
+    const error = schemas.Error as {
+      properties: { error: { properties: { code: { enum: string[] } } } };
+    };
+    expect(error.properties.error.properties.code.enum).toEqual([
+      ...ERROR_CODES,
+    ]);
+  });
+
+  it('documents the analysis stream body as SSE text with a named frame schema', () => {
+    const ok = paths['/api/analyze-meal'].post?.responses['200'] as {
+      content: Record<string, { schema: Record<string, unknown> }>;
+    };
+    const body = ok.content['text/event-stream'].schema;
+    expect(body.type).toBe('string');
+    expect(body['x-sse-event-data']).toEqual({
+      $ref: '#/components/schemas/AnalyzeMealStreamEvent',
+    });
+
+    const schemas = (doc.components as { schemas: Record<string, unknown> })
+      .schemas;
+    const frame = schemas.AnalyzeMealStreamEvent as { oneOf: unknown[] };
+    expect(frame.oneOf.length).toBeGreaterThan(0);
+  });
+
+  it('marks every binary response body as `format: binary`', () => {
+    // Without it, generated clients treat the body as text and corrupt it.
+    const textual = /^(application\/json|text\/)/;
+    const wrong: string[] = [];
+    let binary = 0;
+    for (const { path, method, op } of everyOperation()) {
+      for (const [status, response] of Object.entries(op.responses)) {
+        const content = (response as { content?: Record<string, JsonSchema> })
+          .content;
+        for (const [media, entry] of Object.entries(content ?? {})) {
+          if (textual.test(media)) continue;
+          binary += 1;
+          const schema = (entry as { schema?: JsonSchema }).schema;
+          if (schema?.type !== 'string' || schema.format !== 'binary') {
+            wrong.push(`${method.toUpperCase()} ${path} ${status} ${media}`);
+          }
+        }
+      }
+    }
+    expect(binary).toBeGreaterThan(0);
+    expect(wrong).toEqual([]);
   });
 
   it('names the four public operations', () => {

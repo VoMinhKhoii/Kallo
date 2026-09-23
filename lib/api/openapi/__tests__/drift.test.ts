@@ -1,6 +1,10 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  exportedMethods,
+  HTTP_METHODS,
+  toSpecPath,
+  walkRoutes,
+} from '@/lib/api/openapi/__tests__/route-files';
 import type { PathItem } from '@/lib/api/openapi/components';
 import { openApiDocument } from '@/lib/api/openapi/document';
 
@@ -10,8 +14,6 @@ import { openApiDocument } from '@/lib/api/openapi/document';
  * documenting one that no longer exists — fails here rather than shipping a
  * spec an agent will act on and be wrong about.
  */
-
-const API_ROOT = path.join(process.cwd(), 'app', 'api');
 
 /**
  * Route families excluded from the published spec, each for a stated reason.
@@ -31,51 +33,10 @@ const EXCLUDED = new Map([
     '/api/analyze-meal/debug',
     'admin-only, and answers 404 rather than 403 to everyone else — documenting it would undo that',
   ],
-  [
-    '/api/analyze-meal',
-    'server-sent events, not a request/response operation the spec models',
-  ],
-  ['/api/og/macro-card/{shareId}', 'internal Open Graph image renderer'],
   ['/api/{unmatched}', 'the catch-all that JSON-404s every unhandled path'],
 ]);
 
-const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
-
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (/^route\.tsx?$/.test(entry.name)) out.push(full);
-  }
-  return out;
-}
-
-/** `app/api/v1/meals/[mealId]/route.ts` → `/api/v1/meals/{mealId}`. */
-function toSpecPath(file: string): string {
-  const rel = path.relative(process.cwd(), file);
-  return `/${rel
-    .replace(/^app\//, '')
-    .replace(/\/route\.tsx?$/, '')
-    .split('/')
-    .map((segment) =>
-      segment.startsWith('[')
-        ? `{${segment.replace(/[[\]]|\.\.\./g, '')}}`
-        : segment
-    )
-    .join('/')}`;
-}
-
-function exportedMethods(file: string): string[] {
-  const source = readFileSync(file, 'utf8');
-  const declared = [
-    ...source.matchAll(
-      /export\s+(?:async\s+)?(?:function|const)\s+(GET|POST|PUT|PATCH|DELETE)\b/g
-    ),
-  ].map((match) => match[1].toLowerCase());
-  return [...new Set(declared)].sort();
-}
-
-const routes = walk(API_ROOT)
+const routes = walkRoutes()
   .map((file) => ({ path: toSpecPath(file), methods: exportedMethods(file) }))
   .filter((route) => !EXCLUDED.has(route.path));
 
@@ -128,7 +89,7 @@ describe('the spec matches the routes on disk', () => {
   it('excludes exactly the route families it claims to', () => {
     // Every exclusion must still exist on disk. A stale entry would silently
     // start hiding a route that was later added at that path.
-    const onDisk = new Set(walk(API_ROOT).map(toSpecPath));
+    const onDisk = new Set(walkRoutes().map(toSpecPath));
     const stale = [...EXCLUDED.keys()].filter((route) => !onDisk.has(route));
     expect(stale).toEqual([]);
   });

@@ -62,7 +62,7 @@
     "linkedLoading": "Loading sign-in methods…",
     "linkedRetry": "Try again",
     "exportTitle": "Export my data",
-    "exportDescription": "Download everything Kallo holds for you, as a JSON file.",
+    "exportDescription": "A JSON file of your account, profile, meals, weights, Circle, chats, notifications, feedback, billing and app activity. Uploaded photos are listed by file path.",
     "exportAction": "Export",
     "exporting": "Preparing your data…",
     "exportError": "Could not export your data. Please try again.",
@@ -117,7 +117,7 @@
   },
   "sharing": {
     "autoShareLabel": "Share new meals with your circle",
-    "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+    "autoShareHint": "Off unless you turn it on. When on, each new meal is shared with your circle as you save it. Friends only see meals shared after you connected.",
     "error": "Couldn't update your sharing preference. Please try again."
   }
 }

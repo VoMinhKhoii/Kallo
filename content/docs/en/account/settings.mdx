@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Profile, body metrics, region, cooking habits, sharing and feedback — all on one page.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 Settings is a single page, divided into sections you can jump to with the
@@ -10,8 +10,13 @@ in-page navigation.
 ## Profile
 
 Display name and avatar — this is what friends in
-[Circle](/docs/circle/friends-and-feed) see. Avatars are kept in private
-storage, not a public bucket.
+[Circle](/docs/circle/friends-and-feed) see. Your avatar photo is public so it
+can appear on your invite link and in friends' feeds: it is stored under a
+random, unguessable file name, and anyone who has that link can view it. Kallo
+resizes and re-encodes every photo on its servers before storing it, which also
+strips location and other metadata. Removing or replacing it deletes the old
+file from storage, though copies cached along the way may keep loading for a
+few minutes.
 
 ## Body metrics and goal
 
@@ -37,7 +42,8 @@ is the first place to look.
 
 ## Sharing
 
-Turn automatic sharing to Circle on or off. See
+Turn automatic sharing to Circle on or off. It is off for a new account, so your
+meals stay private until you choose otherwise. See
 [Sharing and splits](/docs/circle/sharing-and-splits).
 
 ## Subscription
@@ -57,6 +63,15 @@ getting it fixed.
 ## Account
 
 Change your password, sign out, and delete your account.
+
+A new password needs at least 8 characters, including a letter and a number.
+Length does more than symbols: a few unrelated words with a number beats a
+short word with letters swapped for symbols. Passwords can be up to 72
+characters. Both limits count an accented letter (such as ă or ế) as 2 or 3
+characters, so a password with accents reaches 8 sooner and 72 sooner. The
+letter must be one without an accent. Use one you do not use anywhere else.
+If you signed up with a shorter password, it still works; the new rule applies
+the next time you set one.
 
 <Callout label="Before deleting your account" tone="caution">
 Deleting your Kallo account does **not** cancel a subscription bought through

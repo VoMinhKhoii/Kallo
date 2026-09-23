@@ -10,6 +10,7 @@ import {
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import type { AppTransaction } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 import { insertDefaultCircleShare } from './insert-default-share';
 
 type MealRow = typeof meals.$inferSelect;
@@ -64,21 +65,23 @@ export async function copyMealVerbatim(
   const alcoholG = source.alcoholG == null ? null : source.alcoholG * factor;
   const portionFactor = source.portionFactor * factor;
 
-  const [meal] = await tx
-    .insert(meals)
-    .values({
-      ...(newMealId ? { id: newMealId } : {}),
-      userId,
-      rawInput: source.rawInput,
-      mealSlot,
-      confidenceOverall: source.confidenceOverall,
-      loggedAt,
-      entryMode: 'precise',
-      alcoholG,
-      portionFactor,
-      ...nutritionValuesToRow(mealNutrition),
-    })
-    .returning({ id: meals.id });
+  const [meal] = await guardClientMealId(() =>
+    tx
+      .insert(meals)
+      .values({
+        ...(newMealId ? { id: newMealId } : {}),
+        userId,
+        rawInput: source.rawInput,
+        mealSlot,
+        confidenceOverall: source.confidenceOverall,
+        loggedAt,
+        entryMode: 'precise',
+        alcoholG,
+        portionFactor,
+        ...nutritionValuesToRow(mealNutrition),
+      })
+      .returning({ id: meals.id })
+  );
 
   const share = await insertDefaultCircleShare(tx, {
     mealId: meal.id,

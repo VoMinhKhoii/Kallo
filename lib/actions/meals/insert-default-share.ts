@@ -3,8 +3,8 @@ import type { AppTransaction } from '@/lib/infra/db/client';
 import { mealShares, userProfiles } from '@/lib/infra/db/schema';
 
 /**
- * Insert the default circle share for a meal, respecting the actor's
- * autoShareToCircle preference. Returns the response `share` shape, or null
+ * Insert the default circle share for a meal when the actor has opted in via
+ * autoShareToCircle (off by default). Returns the response `share` shape, or null
  * when the insert is skipped (opt-out) or produces no row (onConflictDoNothing).
  *
  * The preference is read inside the caller's transaction WITH a row lock —
@@ -20,8 +20,9 @@ export async function insertDefaultCircleShare(
     .from(userProfiles)
     .where(eq(userProfiles.userId, opts.actorId))
     .for('update');
-  // Missing profile rows retain the existing opt-in behaviour.
-  const share = profile?.autoShareToCircle ?? true;
+  // Private by default: only an explicit opt-in shares. A missing profile row
+  // never counts as consent (KALLO-03).
+  const share = profile?.autoShareToCircle ?? false;
 
   if (!share) {
     // No row means private; the per-meal toggle can create one from scratch.

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
+import { INVALID_JSON_MESSAGE } from '@/lib/infra/http/bounded-body';
 
 /**
  * Convert a thrown value into an API error response for `/api/v1/*` route
@@ -8,6 +9,11 @@ import { serializeError } from '@/lib/core/errors/serialize';
  *
  * - `ZodError` (request body / query validation) → 400 `VALIDATION_FAILED`
  *   so malformed mobile requests surface as a client error, not a 500.
+ * - `SyntaxError` (a body parsed with a bare `request.json()` /
+ *   `JSON.parse`) → 400 `VALIDATION_FAILED`. The readers in
+ *   `lib/infra/http/bounded-body.ts` already map it; this is the safety net
+ *   for a route that parses on its own, so malformed input can never become a
+ *   retryable 500 that invites the client to resend the same bytes.
  * - `AppError` / anything else → delegated to `serializeError`
  *   (structured JSON for known errors, generic 500 otherwise).
  *
@@ -18,6 +24,9 @@ export function handleRouteError(error: unknown) {
   if (error instanceof z.ZodError) {
     const message = error.issues[0]?.message ?? 'Invalid request.';
     return serializeError(Errors.validationFailed(message));
+  }
+  if (error instanceof SyntaxError) {
+    return serializeError(Errors.validationFailed(INVALID_JSON_MESSAGE));
   }
   return serializeError(error);
 }

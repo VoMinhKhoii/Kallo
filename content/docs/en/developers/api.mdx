@@ -1,7 +1,7 @@
 ---
 title: The Kallo API
 description: What the HTTP API is, how it authenticates, what it returns when something goes wrong, and what you may and may not rely on.
-lastUpdated: '2026-08-23'
+lastUpdated: '2026-09-23'
 ---
 
 Kallo has an HTTP API. It is the same API the web app and the mobile app use —
@@ -10,9 +10,11 @@ the parts that are not ready for you to build on.
 
 The machine-readable description is at
 [https://kallo.fit/openapi.json](https://kallo.fit/openapi.json). It is OpenAPI
-3.1, every operation has a unique `operationId` and a description, and request
-bodies are generated from the same schemas the server validates against, so they
-cannot drift from what the endpoints actually accept.
+3.1, and every operation has a unique `operationId` and a description. Where a
+route validates its request body with a schema, the documented body is generated
+from that same schema. A CI test also compares the spec with the route handlers,
+so it fails if a documented body, success status or query parameter disagrees
+with what the handler actually parses and returns.
 
 ## Base URL
 
@@ -20,8 +22,35 @@ cannot drift from what the endpoints actually accept.
 https://kallo.fit
 ```
 
-Endpoints live under `/api/v1/`. The one exception is `/api/healthz`, which is
-unversioned because it is a liveness probe rather than part of the surface.
+Endpoints live under `/api/v1/`. The exceptions are `/api/healthz`, which is
+unversioned because it is a liveness probe rather than part of the surface, and
+two authenticated routes the apps call directly: `POST /api/analyze-meal` and
+`GET /api/og/macro-card/{shareId}` (both described below).
+
+Successful responses are `200` (the waitlist confirmation link is a `307`
+redirect). No endpoint answers `201`, including the ones that create something.
+Date-bucketed reads take a required `tz` query parameter: the offset in minutes
+as `Date.getTimezoneOffset()` reports it, from `-840` to `720`. If it is missing,
+you get a `400`; the server never falls back to a stored timezone. The one
+exception is the nutrition overview, where `tz` is optional and a missing value
+buckets days in UTC.
+
+## Meal analysis and the macro card
+
+`POST /api/analyze-meal` turns a sentence into an estimate. It answers with a
+`text/event-stream` of server-sent events: `stage` progress, `item_name` and
+`item_macros` as dishes are found, then `result` (or `cheat_estimate`). The
+stream ends with `analysis_complete`, which carries an `analysisId`, or with
+`error`. Nothing is saved until you pass that id to `POST /api/v1/meals/confirm`.
+Authentication, body validation, plan and rate-limit checks all run before the
+stream opens and return the ordinary JSON error below. Once the stream is open, a
+failure can only arrive as an `error` event. The body is plain text made of
+frames (`event: <type>`, then `data: <json>`); the OpenAPI component
+`AnalyzeMealStreamEvent` describes one `data` payload.
+
+`GET /api/og/macro-card/{shareId}` renders a shared meal as a PNG card. It needs
+a session and applies the same visibility rule as reading the shared meal, so a
+share you cannot see returns `404`, the same as one that does not exist.
 
 ## Authentication
 
@@ -74,14 +103,29 @@ own response shapes in OpenAPI.
 
 | Code | Status | Retryable | Means |
 | --- | --- | --- | --- |
-| `VALIDATION_FAILED` | 400 | no | The request body or query is wrong. Fix it. |
+| `VALIDATION_FAILED` | 400 | no | The request body or query is wrong, including a body that is not valid JSON. Fix it. |
 | `NOT_AUTHENTICATED` | 401 | no | Missing, expired or invalid token. |
 | `feature_locked` | 402 | no | The account's plan does not include this. |
 | `NOT_FOUND` | 404 | no | No such resource, or it is not yours. The two are deliberately indistinguishable. |
-| `CONFLICT` | 409 | no | The resource changed under you. |
+| `PROFILE_NOT_FOUND` | 404 | no | The signed-in user has no profile yet. Sign in again or finish onboarding. |
+| `BARCODE_NOT_FOUND` | 404 | no | No product is known for this barcode. |
+| `BARCODE_NOT_CACHED` | 404 | no | The barcode was never looked up before being logged. Rescan it. |
+| `OCR_INVALID_IMAGE` | 400 | no | The image could not be read as a label photo. |
+| `OCR_NO_LABEL_DETECTED` | 422 | no | No nutrition table was found in the photo. |
+| `CONFLICT` | 409 | no | The resource changed under you, or a client-generated id you sent (for example a meal's `mealId` / `newMealId`) is already taken. Generate a new id. |
+| `CIRCLE_LIMIT_REACHED` | 409 | no | Someone else's group or friend limit is full. |
+| `PAYLOAD_TOO_LARGE` | 413 | no | The body is over the endpoint's cap (64 KB for most JSON endpoints). Send less. |
 | `RATE_LIMITED` | 429 | yes | Back off. Honour `Retry-After` when it is present. |
+| `RATE_LIMITER_UNAVAILABLE` | 503 | yes | The limiter could not decide on a paid route. Honour `Retry-After`. |
 | `PIPELINE_TIMEOUT` | 504 | yes | Meal analysis took too long. |
 | `INTERNAL` | 500 | yes | Our fault. |
+
+Authentication is checked before the body is read. A request without a valid
+token gets `NOT_AUTHENTICATED`, whatever its body looks like, so a 400 or 413
+means the token was accepted. A collision on a client-generated id is always
+the same `CONFLICT`, whether the id is yours or another account's; retrying the
+same id will never succeed. If a save timed out and you are unsure whether it
+landed, refetch the day before retrying with a fresh id.
 
 Any `/api/` path with no handler returns a 404 in this same JSON shape, never an
 HTML page — so a mistyped endpoint is something your client can parse rather

@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
@@ -33,6 +33,14 @@ Tên hiển thị, tên định danh, ảnh đại diện, ngôn ngữ bạn ch�
 cao, tuổi, giới tính sinh học và mức vận động; mục tiêu giảm, tăng hay giữ cân,
 nhịp độ bạn đặt cho mục tiêu đó, cùng các chỉ tiêu calo và đa lượng suy ra từ
 chúng; quốc gia bạn lớn lên và quốc gia bạn đang sống.
+
+Ảnh đại diện, nếu bạn tải lên, là **công khai**: ảnh được lưu trong một kho lưu
+trữ công khai dưới tên tệp ngẫu nhiên, không đoán được, để có thể hiện trên
+đường dẫn mời và trong bảng tin của bạn bè, và ai có đường dẫn đều xem được.
+Chúng tôi thu nhỏ và mã hóa lại mọi ảnh trên máy chủ trước khi lưu, nhờ đó xóa
+siêu dữ liệu đi kèm như vị trí. Khi bạn gỡ hoặc thay ảnh đại diện, tệp bị xóa
+khỏi kho lưu trữ; các bản đã được trình duyệt hoặc mạng phân phối nội dung (CDN)
+lưu đệm có thể vẫn tải được thêm vài phút.
 
 Hai quốc gia này là do **bạn tự chọn** trong phần thiết lập hồ sơ, từ một danh
 sách có sẵn. Kallo **không** đọc vị trí thiết bị của bạn: ứng dụng không xin
@@ -198,10 +206,15 @@ Bữa ăn bạn chia sẻ sẽ hiện ra với đúng những người trong ph�
 thể là bạn bè, một nhóm, hoặc một cuộc trò chuyện riêng, kèm câu mô tả, các món
 và số liệu dinh dưỡng.
 
-Lời mời kết bạn đi qua đường liên kết, nên ai cầm được liên kết cũng có thể gửi
-yêu cầu. Bạn có thể hủy kết bạn bất cứ lúc nào. Nếu bạn bật tự động chia sẻ
-trong **Cài đặt**, bữa ăn mới sẽ được chia sẻ mà bạn không cần làm gì thêm, nên
-hãy xem lại thiết lập này nếu muốn giữ nhật ký cho riêng mình.
+Lời mời kết bạn đi qua đường liên kết: ai cầm được liên kết của bạn cũng có thể
+kết nối với bạn bằng cách chấp nhận nó, mà bạn không cần duyệt thêm. Bạn có thể
+hủy kết bạn bất cứ lúc nào. Một người bạn chỉ thấy những gì bạn chia sẻ sau khi
+hai người kết nối, không thấy các bữa bạn đã chia sẻ trước đó.
+
+Tự động chia sẻ **tắt** với tài khoản mới. Nếu bạn bật trong **Cài đặt**, bữa ăn
+mới sẽ được chia sẻ với bạn bè mà bạn không cần làm gì thêm, và chúng tôi ghi lại
+thời điểm bạn thay đổi thiết lập này. Bạn có thể tắt bất cứ lúc nào để giữ các
+bữa mới ở chế độ riêng tư.
 
 Nội dung người khác đã xem hoặc đã sao chép vào nhật ký của họ có thể vẫn còn
 sau khi bạn xóa bản gốc.
@@ -239,7 +252,9 @@ Chúng tôi bảo vệ dữ liệu bằng nhiều lớp:
   trong Vòng kết nối.
 - Chỉ nhận lưu lượng đi qua lớp bảo vệ phía trước, chặn truy cập thẳng vào máy
   chủ.
-- Kho lưu trữ riêng tư cho ảnh đại diện và ảnh chụp màn hình gửi kèm góp ý.
+- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý. Ảnh đại diện công
+  khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
+  chủ của chúng tôi mới ghi được, sau khi mã hóa lại từng ảnh.
 - Siết chặt quyền dùng khóa và mật khẩu hệ thống.
 
 Không hệ thống nào an toàn tuyệt đối. Nếu xảy ra sự cố ảnh hưởng tới dữ liệu cá
@@ -285,6 +300,18 @@ danh tính trước khi xử lý, và sẽ phản hồi trong thời hạn luậ
 
 Phần lớn yêu cầu bạn làm được ngay trong **Cài đặt**: sửa hồ sơ, xóa từng bữa
 ăn, hoặc xóa cả tài khoản.
+
+**Truy cập và mang dữ liệu đi.** **Cài đặt → Tài khoản → Xuất dữ liệu của tôi**
+cho bạn ngay một bản sao JSON máy đọc được: thông tin tài khoản và đăng nhập,
+hồ sơ, lịch sử bữa ăn và cân nặng, hồ sơ Vòng kết nối, quan hệ bạn bè, nội dung
+bạn chia sẻ hoặc viết trong Vòng kết nối và trò chuyện, thông báo, thiết bị đã
+đăng ký (mã thiết bị được rút gọn), góp ý, hồ sơ thanh toán, và hoạt động gần
+đây trong ứng dụng. Các tệp bạn tải lên, như ảnh đại diện hay ảnh chụp màn hình
+trong góp ý, được liệt kê theo vị trí lưu trữ thay vì đính kèm. Tin nhắn và cảm
+xúc của người khác, cùng các bản ghi nội bộ về bảo mật và gỡ lỗi, không nằm
+trong tệp; [Dữ liệu của bạn](/docs/account/your-data) liệt kê những gì không có
+và lý do. Muốn nhận bản sao của bất cứ thứ gì không có trong tệp, hãy gửi email
+như trên.
 
 ## 11. Trẻ em
 
@@ -396,7 +423,8 @@ Tùy theo bang nơi bạn cư trú, bạn có thể có các quyền sau:
 ### Cách thực hiện quyền
 
 Gửi email tới [support@kallo.fit](mailto:support@kallo.fit). Phần lớn thao tác
-bạn cũng có thể tự thực hiện ngay trong **Cài đặt**.
+bạn cũng có thể tự thực hiện ngay trong **Cài đặt**, kể cả tải về bản sao dữ
+liệu có thể mang đi bằng **Xuất dữ liệu của tôi**.
 
 **Xác minh yêu cầu.** Khi nhận được yêu cầu, chúng tôi cần xác minh rằng bạn
 chính là chủ thể dữ liệu. Chúng tôi chỉ sử dụng thông tin trong yêu cầu cho mục

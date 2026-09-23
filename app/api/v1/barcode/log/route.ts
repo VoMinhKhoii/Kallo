@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
+import { readJsonBody } from '@/lib/api/auth';
 import { logBarcodeMealSchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
 import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     // wider /api/v1 convention: unauthenticated callers get a 401, not a
     // validation-shaped 400.
     const { user } = await requireAuthAndProfile();
-    const body = logBarcodeMealSchema.parse(await req.json());
+    const body = logBarcodeMealSchema.parse(await readJsonBody(req));
 
     const { analysisId } = await stageBarcodeMeal(user.id, body);
     const result = await confirmAndSaveMealAction({

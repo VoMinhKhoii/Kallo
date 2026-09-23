@@ -57,7 +57,14 @@ export const userProfiles = pgTable(
     countryOfOrigin: text('country_of_origin'),
     countryOfResidence: text('country_of_residence'),
     preferredLocale: text('preferred_locale').default('en'),
-    autoShareToCircle: boolean('auto_share_to_circle').notNull().default(true),
+    // Off by default: a new account's meals stay private until the user turns
+    // Circle auto-share on in Settings (KALLO-03). auto_share_updated_at is the
+    // consent record — set on every change through setAutoShareToCircle, NULL
+    // for an account that never touched the preference.
+    autoShareToCircle: boolean('auto_share_to_circle').notNull().default(false),
+    autoShareUpdatedAt: timestamp('auto_share_updated_at', {
+      withTimezone: true,
+    }),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
@@ -465,20 +472,25 @@ export const dayCompletionMarks = pgTable(
 // Unmatched Ingredients
 // ---------------------------------------------------------------------------
 
-export const unmatchedIngredients = pgTable('unmatched_ingredients', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid('user_id').references(() => authUsers.id, {
-    onDelete: 'cascade',
-  }),
-  mealId: uuid('meal_id').references(() => meals.id, {
-    onDelete: 'set null',
-  }),
-  queryText: text('query_text').notNull(),
-  mealContext: text('meal_context'),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const unmatchedIngredients = pgTable(
+  'unmatched_ingredients',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    queryText: text('query_text').notNull(),
+    mealContext: text('meal_context'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // The account export reads every row by owner; Postgres does not index FKs.
+  (table) => [index('unmatched_ingredients_user_idx').on(table.userId)]
+);
 
 // ---------------------------------------------------------------------------
 // Precomputed query embeddings cache
@@ -844,6 +856,11 @@ export const productTelemetryEvents = pgTable(
       table.eventName,
       table.occurredAt
     ),
+    // The account export reads a user's events; Postgres does not index FKs.
+    index('product_telemetry_events_user_occurred_at_idx').on(
+      table.userId,
+      table.occurredAt
+    ),
   ]
 );
 
@@ -1146,6 +1163,12 @@ export const friendships = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When the edge became 'accepted'. A friend sees only shares made at or
+    // after this instant (shared_at >= accepted_at) — never the backlog from
+    // before they connected. NULL until accepted. Written only by the
+    // friendships_set_accepted_at trigger (clock_timestamp() at the status
+    // flip — see 20260923051230 for why that clock); the app never sets it.
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
@@ -1167,10 +1190,12 @@ export const friendships = pgTable(
 // ---------------------------------------------------------------------------
 // Group Tracking — Meal Shares
 // ---------------------------------------------------------------------------
-// One opt-in row per shared meal. visibility defaults to 'private' — a meal is
-// invisible to friends until an explicit 'circle' (or 'public') row exists. The
-// partial-unique on meal_id keeps it one-row-per-meal. meals itself is left
-// untouched (still private-by-default).
+// At most one row per meal (unique on meal_id). A meal with no row, or a
+// 'private' row, is invisible to friends. A 'circle' row is written either by
+// the per-meal share toggle or, on every meal save, by insertDefaultCircleShare
+// when the owner has turned user_profiles.auto_share_to_circle on (off by
+// default). An accepted friend sees a 'circle' row only when shared_at is at or
+// after friendships.accepted_at; see share-visibility.ts.
 
 export const mealShares = pgTable(
   'meal_shares',
@@ -1233,6 +1258,8 @@ export const mealShareReactions = pgTable(
       table.shareId,
       table.userId
     ),
+    // The unique leads with share_id; the account export reads by user.
+    index('meal_share_reactions_user_idx').on(table.userId),
     check(
       'meal_share_reactions_kind_check',
       sql`${table.kind} IN ('yum', 'cheer', 'strong', 'wow', 'heart')`
@@ -1267,6 +1294,8 @@ export const mealShareReplies = pgTable(
       table.createdAt,
       table.id
     ),
+    // The account export reads every reply a user wrote.
+    index('meal_share_replies_user_idx').on(table.userId),
   ]
 );
 
@@ -1308,6 +1337,11 @@ export const coachAssignments = pgTable(
     uniqueIndex('coach_assignments_one_active_primary_idx')
       .on(table.clientId)
       .where(sql`rank = 'primary' AND status = 'active'`),
+    // The account export reads assignments on either side in any status (the
+    // partial index above cannot serve that), and both FKs cascade on account
+    // deletion. Assignments change rarely, so the write cost is negligible.
+    index('coach_assignments_coach_idx').on(table.coachId),
+    index('coach_assignments_client_idx').on(table.clientId),
   ]
 );
 
@@ -1408,6 +1442,10 @@ export const mealShareInvites = pgTable(
     index('meal_share_invites_recipient_status_idx')
       .on(table.toUserId, sql`${table.createdAt} DESC`)
       .where(sql`status = 'pending'`),
+    // The account export reads sent OR received invites in any status; the
+    // partial inbox index above cannot serve that, so each side gets its own.
+    index('meal_share_invites_from_user_idx').on(table.fromUserId),
+    index('meal_share_invites_to_user_idx').on(table.toUserId),
     check(
       'meal_share_invites_mode_check',
       sql`${table.mode} IN ('copy', 'split')`
@@ -1462,6 +1500,8 @@ export const chatGroups = pgTable(
       table.directUserLow,
       table.directUserHigh
     ),
+    // The account export reads every group a user created.
+    index('chat_groups_created_by_idx').on(table.createdBy),
     check('chat_groups_kind_check', sql`${table.kind} IN ('direct', 'group')`),
     check(
       'chat_groups_direct_shape_check',
@@ -1532,6 +1572,8 @@ export const chatGroupMessages = pgTable(
       table.groupId,
       sql`${table.createdAt} DESC`
     ),
+    // The account export reads every message a user sent.
+    index('chat_group_messages_sender_idx').on(table.senderId),
   ]
 );
 
@@ -1942,6 +1984,9 @@ export const notifications = pgTable(
     uniqueIndex('notifications_open_aggregate_idx')
       .on(table.recipientId, table.groupKey)
       .where(sql`read_at IS NULL AND dismissed_at IS NULL`),
+    // Every row a recipient has, dismissed or not: the account export. The
+    // partial indexes above only serve queries that repeat their predicate.
+    index('notifications_recipient_idx').on(table.recipientId),
     check(
       'notifications_type_check',
       sql`${table.type} IN ('friend.joined', 'group.added', 'share.invite', 'share.invite_accepted', 'share.reaction', 'share.reply', 'share.logged', 'chat.message', 'coach.nudge', 'streak.milestone', 'recap.ready')`

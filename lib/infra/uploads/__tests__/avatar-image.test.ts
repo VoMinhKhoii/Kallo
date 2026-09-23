@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { processAvatarImage } from '../avatar-image';
@@ -36,6 +37,21 @@ describe('processAvatarImage', () => {
     const meta = await sharp(out).metadata();
     expect(meta.width).toBe(100);
     expect(meta.height).toBe(100);
+  });
+
+  // The `avatars` bucket's 500 KB file_size_limit is the storage-side backstop
+  // (migration 20260923034000 relies on it): even full-entropy RGBA noise — the
+  // worst case for a lossy encoder — must re-encode under it, or a valid upload
+  // would 500 at the Storage write.
+  it('keeps the worst-case output under the bucket size cap', async () => {
+    const edge = 1024;
+    const noise = await sharp(randomBytes(edge * edge * 4), {
+      raw: { width: edge, height: edge, channels: 4 },
+    })
+      .png()
+      .toBuffer();
+    const out = await processAvatarImage(new Uint8Array(noise));
+    expect(out.length).toBeLessThan(512_000);
   });
 
   it('throws on undecodable bytes', async () => {

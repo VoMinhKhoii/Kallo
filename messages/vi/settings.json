@@ -62,7 +62,7 @@
     "linkedLoading": "Đang tải phương thức đăng nhập…",
     "linkedRetry": "Thử lại",
     "exportTitle": "Xuất dữ liệu của tôi",
-    "exportDescription": "Tải về mọi thứ Kallo đang lưu cho bạn, dưới dạng tệp JSON.",
+    "exportDescription": "Tệp JSON gồm tài khoản, hồ sơ, bữa ăn, cân nặng, Vòng kết nối, trò chuyện, thông báo, góp ý, thanh toán và hoạt động trong ứng dụng. Ảnh đã tải lên được liệt kê theo đường dẫn tệp.",
     "exportAction": "Xuất",
     "exporting": "Đang chuẩn bị dữ liệu…",
     "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
@@ -117,7 +117,7 @@
   },
   "sharing": {
     "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
-    "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+    "autoShareHint": "Tắt cho đến khi bạn tự bật. Khi bật, mỗi bữa ăn mới sẽ được chia sẻ với vòng kết nối ngay lúc bạn lưu. Bạn bè chỉ thấy các bữa được chia sẻ sau khi đã kết nối.",
     "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
   }
 }
