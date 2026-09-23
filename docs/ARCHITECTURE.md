@@ -66,9 +66,11 @@ together give Instant Navigations. The rules the build enforces, and the choices
   after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
 - **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
   (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
-  transient state (a "sent" confirmation, an open popover) in a `useLayoutEffect` cleanup, as
-  `components/settings/feedback/use-feedback-form.ts` does. Sign-out is a hard navigation, which
-  drops all of it.
+  transient results (a "sent" confirmation, a "Saved" note, an error) with
+  `hooks/ui/use-reset-on-reveal.ts`, which runs when the page is shown again — not in a hide-time
+  cleanup, which misses a submission that settles after the user left. State seeded once from props
+  or the URL (`useState(initialX)`) must re-sync when new values arrive, as `SharingRow` and
+  `AuthProvider` do. Sign-out is a hard navigation, which drops all of it.
 
 ---
 

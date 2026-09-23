@@ -93,4 +93,31 @@ describe('useFeedbackForm across a kept-alive navigation', () => {
     // A full typed-and-uploaded flow twice over; the default 5s is tight on a
     // loaded CI runner.
   }, 20_000);
+
+  // The submit can still be in flight when the user leaves; its success then
+  // lands while the page is hidden, after any hide-time cleanup has run.
+  it('drops a confirmation that arrived while the page was hidden', async () => {
+    let finish: (res: Response) => void = () => undefined;
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        })
+    );
+    const view = render(<Page mode="visible" />);
+    act(() => form.setMessage('left before it finished'));
+    let submitted: Promise<void> = Promise.resolve();
+    act(() => {
+      submitted = form.handleSubmit();
+    });
+
+    view.rerender(<Page mode="hidden" />);
+    await act(async () => {
+      finish(new Response('{}', { status: 201 }));
+      await submitted;
+    });
+    view.rerender(<Page mode="visible" />);
+
+    expect(screen.getByText('draft:')).toBeTruthy();
+  });
 });

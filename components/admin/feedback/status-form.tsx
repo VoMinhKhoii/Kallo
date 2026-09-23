@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import {
   FEEDBACK_STATUS_LABELS,
   FEEDBACK_STATUSES,
@@ -30,14 +31,13 @@ export function StatusForm({ id, current }: { id: string; current: string }) {
   const [error, setError] = useState<string | null>(null);
 
   // The page is kept alive (hidden) across navigations under Cache
-  // Components; a "Saved" or error note from an earlier visit is stale by the
-  // time the admin comes back, so clear both as the page is hidden.
-  useLayoutEffect(() => {
-    return () => {
-      setSaved(false);
-      setError(null);
-    };
-  }, []);
+  // Components; a "Saved" or error note from an earlier visit — or from an
+  // update that finished after the admin left — is stale by the time they
+  // come back, so clear both when the page is shown again.
+  useResetOnReveal(() => {
+    setSaved(false);
+    setError(null);
+  });
 
   const save = () => {
     setSaved(false);

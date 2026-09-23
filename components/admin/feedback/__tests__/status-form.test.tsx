@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Activity } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -99,5 +99,34 @@ describe('StatusForm', () => {
 
     expect(screen.getByRole('combobox')).toHaveTextContent('Resolved');
     expect(screen.getByRole('button', { name: 'Update' })).toBeDisabled();
+  });
+
+  // An update still running when the admin leaves settles while the page is
+  // hidden; its "Saved" must not greet them when they come back.
+  it('drops a result that arrived while the page was hidden', async () => {
+    let finish: () => void = () => undefined;
+    updateSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = () => resolve({ success: true });
+        })
+    );
+    const page = (mode: 'visible' | 'hidden') => (
+      <Activity mode={mode}>
+        <StatusForm id="fb-1" current="open" />
+      </Activity>
+    );
+    const view = render(page('visible'));
+    await userEvent.click(screen.getByRole('combobox'));
+    await userEvent.click(screen.getByRole('option', { name: 'Resolved' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+
+    view.rerender(page('hidden'));
+    await act(async () => {
+      finish();
+    });
+    view.rerender(page('visible'));
+
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument();
   });
 });
