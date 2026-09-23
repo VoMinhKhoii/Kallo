@@ -3,7 +3,6 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 import { appendVaryAccept } from '@/lib/infra/http/accept';
 import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
-import { buildCsp } from '@/lib/infra/security/csp';
 import { updateSession } from '@/lib/infra/supabase/middleware';
 
 const intlMiddleware = createMiddleware(routing);
@@ -115,28 +114,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // Per-request CSP nonce. Set it on the *request* headers BEFORE next-intl
-  // runs: next-intl forwards a clone of request.headers, so the nonce (and the
-  // CSP it lives in) reach the RSC render, where Next extracts `nonce-…` and
-  // stamps its own inline scripts. The per-request nonce only works on routes
-  // rendered at request time; prerendered static shells carry no nonce, which
-  // is fine while the header below stays Report-Only.
-  const nonce = btoa(crypto.randomUUID());
-  // `reportOnly: true` matches the header actually sent below. Flip both
-  // together when enforcing.
-  const csp = buildCsp(nonce, process.env.NODE_ENV === 'development', true);
-  request.headers.set('x-nonce', nonce);
-  request.headers.set('content-security-policy', csp);
-
+  // No CSP work here. The Content-Security-Policy is static and enforced from
+  // `next.config.ts` `headers()` (lib/infra/security/csp.ts): pages are
+  // prerendered shells that cannot carry a per-request nonce, so generating
+  // one here was dead weight — it never reached the static HTML, and the
+  // nonce-strict Report-Only policy it fed flagged every framework chunk on
+  // every page view. If the authenticated app is ever rendered dynamically to
+  // get a nonce policy, this is where that nonce would be minted again.
   const intlResponse = intlMiddleware(request);
   const response = await updateSession(request, intlResponse);
-
-  // Report-Only for now: the browser reports violations but blocks nothing, so
-  // static rendering is preserved and there is no white-screen risk. Flip this
-  // header name to `content-security-policy` only together with the policy
-  // change lib/infra/security/csp.ts describes — prerendered shells carry no
-  // nonce.
-  response.headers.set('content-security-policy-report-only', csp);
 
   // Advertise the Markdown sibling on the pages that have one, so a client that
   // reads headers but never parses the HTML can still find it. The docs pages

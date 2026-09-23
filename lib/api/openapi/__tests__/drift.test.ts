@@ -33,6 +33,10 @@ const EXCLUDED = new Map([
     '/api/analyze-meal/debug',
     'admin-only, and answers 404 rather than 403 to everyone else — documenting it would undo that',
   ],
+  [
+    '/api/csp-report',
+    'browser-invoked CSP violation collector — no client calls it by hand',
+  ],
   ['/api/{unmatched}', 'the catch-all that JSON-404s every unhandled path'],
 ]);
 

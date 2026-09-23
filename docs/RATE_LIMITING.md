@@ -71,6 +71,7 @@ code.
 | `waitlistGlobal` (app-wide backstop for both waitlist surfaces — runs even with a null IP) | global | 30 / 300 / — | degraded |
 | `healthzIp` | ip | 30 / — / — | memory |
 | `inviteLookupIp` | ip | 30 / — / — | memory |
+| `cspReportIp` | ip | 30 / — / — | memory |
 | `chatMessageSend` | user | 30 / 600 / 3000 | degraded |
 | `shareReply` | user | 20 / 300 / 1500 | degraded |
 | `shareReaction` | user | 60 / 600 / — | degraded |
@@ -117,6 +118,7 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 | `POST /api/v1/waitlist` | — | `waitlistGlobal` → `waitlistSignupIp` | `global:'waitlist'`, `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
 | `GET /api/v1/waitlist/confirm` | — | `waitlistGlobal` → `waitlistConfirmIp` | `global:'waitlist-confirm'`, `ip` | same |
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
+| `POST /api/csp-report` | — | `cspReportIp` (skipped when the IP is null) | `ip` | app envelope + `Retry-After`; browsers ignore it. Memory-only: a violation report never costs a DB round trip |
 
 Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
 covered by an exhaustive test table; body reading in `_lib/auth-body.ts`, target
@@ -260,6 +262,7 @@ the server reading or parsing a byte. `handleRouteError` also maps any stray
 |---|---|---|
 | `/api/supabase-proxy/auth/v1/*` | 64 KB | GoTrue `{code:413, error_code:'payload_too_large', msg}` |
 | `POST /api/v1/waitlist` | 8 KB, read before the limiters (an in-memory refusal is cheaper than a limiter round trip) | app envelope, via `handleRouteError` |
+| `POST /api/csp-report` | 32 KB | app envelope, via `handleRouteError` |
 | Protected `/api/v1` JSON routes and `/api/analyze-meal`, via `readJsonBody` | 64 KB | app envelope, via `handleRouteError` / `serializeError` |
 | `POST /api/v1/nutrition-label/scan` | `ceil(OCR_MAX_IMAGE_BYTES × 4/3) + 4 KB` (base64 inflation + JSON framing), derived from the image cap so the two cannot drift | app envelope, via `mapNutritionLabelError`'s pass-through → `handleRouteError` |
 | RevenueCat + Supabase auth-hook webhooks | unchanged | `readBoundedWebhookBody`, now a thin adapter over the same reader, still throwing `WebhookPayloadTooLargeError` so each handler answers in its provider's shape |

@@ -59,6 +59,7 @@ export const routeInventory = {
   'api/analyze-meal/debug/route.ts': ['admin', false, 'adminDebugAnalysis'],
   'api/analyze-meal/route.ts': ['session', true, 'analysis-guard'],
   'api/auth/send-email/route.ts': ['webhook-sig', true, 'webhook-sig'],
+  'api/csp-report/route.ts': ['none', true, 'cspReportIp'],
   'api/healthz/route.ts': ['none', false, 'healthzIp'],
   'api/og/macro-card/[shareId]/route.tsx': ['session', false, 'analysis-guard'],
   'api/supabase-proxy/[...path]/route.ts': ['none', true, 'auth-proxy'],

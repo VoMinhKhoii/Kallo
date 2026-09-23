@@ -37,8 +37,21 @@ Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.con
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
-  first on every matched request: origin lock, markdown negotiation, per-request CSP nonce
-  (Report-Only), next-intl, and the Supabase session refresh.
+  first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
+  session refresh.
+- **Content-Security-Policy — enforced, static, no nonce.** Set in `next.config.ts` `headers()`
+  from `lib/infra/security/csp.ts`, so it also covers prerendered shells and paths outside the
+  proxy matcher. A nonce is per-request and a build-time shell cannot carry one (Next documents
+  nonces as incompatible with prerendered shells), and the inline RSC payload scripts differ per
+  request, so neither nonces nor `experimental.sri` hashes work here: `script-src` has
+  `'unsafe-inline'`. That is the price of instant navigation. Everything else stays strict
+  (`connect-src`/`frame-src`/`img-src` allowlists, `object-src 'none'`, `base-uri`,
+  `form-action`, `frame-ancestors`). Violations go to `/api/csp-report` (`report-to` +
+  `report-uri`). Adding a third-party script, iframe or API host means adding it there first —
+  the browser will refuse it otherwise. To remove `'unsafe-inline'` later, render the
+  authenticated app dynamically and give those routes a nonce policy minted in `proxy.ts`.
+  `instrumentation-client.ts` turns off Zod's `new Function` JIT probe, which the policy would
+  otherwise report on every page.
 - **Static shell first.** Every page is prerendered to a static shell at build time. Anything that
   reads the request — `cookies()`, `headers()`, `searchParams`, unknown `params`, the Supabase
   session, `connection()` — must sit inside a `<Suspense>` boundary, or the build fails. Push the
@@ -102,7 +115,7 @@ another domain module is a smell worth a second look.
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
-| `security/` | webhook signatures, CSP, request IP |
+| `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
 | `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
 | `uploads/` | image and avatar file handling |
 
@@ -223,6 +236,7 @@ proved to be one hook.
 | `api/analyze-meal/` | SSE meal-analysis stream — the machine is `lib/ai/pipeline/stream/`; `_lib/` holds the pre-stream guards | ok |
 | `api/webhooks/` | inbound provider webhooks — thin delegators to `lib/` | ok |
 | `api/og/` | Satori-rendered share cards — card in `_components/`, tokens in `lib/seo/og/` | ok |
+| `api/csp-report/` | anonymous CSP violation collector — parsing and sanitizing in `lib/infra/security/csp-report.ts` | ok |
 | `auth/` | OAuth callback and verify routes | ok |
 
 ## `apps/mobile-flutter/lib/` — Flutter

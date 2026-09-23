@@ -1,6 +1,9 @@
 import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+// Relative, not `@/`: next.config is compiled outside the app bundle, so it
+// does not lean on the tsconfig path aliases.
+import { cspHeaders } from './lib/infra/security/csp';
 import pkg from './package.json';
 
 const nextConfig: NextConfig = {
@@ -58,11 +61,9 @@ const nextConfig: NextConfig = {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
-          // Enforces what the CSP already DECLARES (`frame-ancestors 'none'`),
-          // which is worth having separately because the CSP still ships as
-          // Report-Only — it reports clickjacking rather than preventing it.
-          // Nothing here frames our own pages: we embed Paddle and Google
-          // Identity, never the reverse.
+          // The legacy twin of the CSP's `frame-ancestors 'none'`, for
+          // browsers that predate it. Nothing frames our own pages: we embed
+          // Paddle and Google Identity, never the reverse.
           { key: 'X-Frame-Options', value: 'DENY' },
           // `camera=(self)`, not `()`: the OCR label scanner calls
           // `getUserMedia` from our own page (hooks/meals/entry/
@@ -72,6 +73,12 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(), geolocation=()',
           },
+          // The ENFORCED Content-Security-Policy + its Reporting-Endpoints.
+          // Static and nonce-free on purpose, and set here rather than in
+          // proxy.ts so it also covers prerendered shells and every path the
+          // proxy matcher skips. Why it has no nonce, and what that costs:
+          // lib/infra/security/csp.ts.
+          ...cspHeaders(process.env.NODE_ENV === 'development'),
           // NO Strict-Transport-Security here on purpose. Cloudflare owns HSTS
           // for kallo.fit and is the single authority for it: a two-year
           // `includeSubDomains` policy emitted by the app would be pinned in
