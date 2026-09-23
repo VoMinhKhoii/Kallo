@@ -22,6 +22,17 @@ const nextConfig: NextConfig = {
     // them. This is the Cache Components equivalent of `force-static`.
     deployment: { stale: 300, revalidate: Infinity, expire: Infinity },
   },
+  typescript: {
+    // Next 16.3 type-checks the build with the TypeScript CLI by default
+    // (`experimental.useTypeScriptCli`), which checks every file the tsconfig
+    // includes. The old in-process checker skipped `__tests__/` and `*.test.*`
+    // diagnostics; the CLI does not, and in the Docker build — whose context
+    // drops `vitest.setup.ts`, where the jest-dom matcher types come from —
+    // every test using those matchers fails the build. `tsconfig.build.json`
+    // leaves the tests out, so the build checks what ships. CI's Type Check
+    // job still runs `tsc` over everything with `tsconfig.json`.
+    tsconfigPath: 'tsconfig.build.json',
+  },
   experimental: {
     // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
     serverActions: { bodySizeLimit: '6mb' },

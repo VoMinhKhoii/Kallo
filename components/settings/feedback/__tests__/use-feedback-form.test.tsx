@@ -1,6 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Activity } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FeedbackPanel } from '../feedback-panel';
 import { useFeedbackForm } from '../use-feedback-form';
 
 /**
@@ -55,5 +57,38 @@ describe('useFeedbackForm across a kept-alive navigation', () => {
     view.rerender(<Page mode="visible" />);
 
     expect(screen.getByText('draft:')).toBeTruthy();
+  });
+
+  // The same screenshot must still attach to the next report: a native file
+  // input that kept the old FileList would fire no `change` for it.
+  it('attaches the same screenshot again to the next report', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.mocked(fetch);
+    const shot = new File(['png'], 'bug.png', { type: 'image/png' });
+    const panel = (mode: 'visible' | 'hidden') => (
+      <Activity mode={mode}>
+        <FeedbackPanel />
+      </Activity>
+    );
+    const fileInput = () =>
+      document.querySelector<HTMLInputElement>('input[type="file"]');
+
+    const view = render(panel('visible'));
+    await user.type(screen.getByRole('textbox'), 'first');
+    await user.upload(fileInput() as HTMLInputElement, shot);
+    await user.click(screen.getByRole('button', { name: 'submit' }));
+    expect(await screen.findByText('successTitle')).toBeTruthy();
+
+    view.rerender(panel('hidden'));
+    view.rerender(panel('visible'));
+
+    expect(fileInput()?.files).toHaveLength(0);
+    fetchMock.mockClear();
+    await user.type(screen.getByRole('textbox'), 'second');
+    await user.upload(fileInput() as HTMLInputElement, shot);
+    await user.click(screen.getByRole('button', { name: 'submit' }));
+
+    const urls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(urls).toContain('/api/v1/feedback/screenshot');
   });
 });

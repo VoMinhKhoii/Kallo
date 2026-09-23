@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "apps/mobile-flutter",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "lib/__test-utils__/**",
+    "vitest.config.ts",
+    "vitest.setup.ts"
+  ]
+}
