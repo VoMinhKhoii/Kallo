@@ -145,6 +145,7 @@ another domain module is a smell worth a second look.
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
+| `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |
 
 ## `hooks/` — client state
 

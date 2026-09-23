@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   InviteConfirmDialog,
   type InviteConfirmKind,
-} from '@/components/groups/meal-invites/invite-confirm-dialog';
+} from '@/components/shared/invite-confirm/invite-confirm-dialog';
 import { useMarkNotificationRead } from '@/hooks/notifications/use-notification-state';
 import {
   useAcceptMealShareInvite,

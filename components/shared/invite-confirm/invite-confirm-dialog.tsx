@@ -50,12 +50,12 @@ export function InviteConfirmDialog({
 
   return (
     <AlertDialog open={kind !== null} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
+      <AlertDialogContent className="border-kallo-border bg-card text-kallo-text">
         <AlertDialogHeader>
           <AlertDialogTitle className="font-normal font-sans-display text-[18px]">
             {t(`${shown}Title`)}
           </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
+          <AlertDialogDescription className="font-sans-display text-[13px] text-kallo-text-muted">
             {t(`${shown}Description`, { name: senderLabel })}
           </AlertDialogDescription>
         </AlertDialogHeader>

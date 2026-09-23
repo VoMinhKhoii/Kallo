@@ -10,7 +10,7 @@ import { labelFor } from '@/components/groups/invite/profile-identity';
 import {
   InviteConfirmDialog,
   type InviteConfirmKind,
-} from '@/components/groups/meal-invites/invite-confirm-dialog';
+} from '@/components/shared/invite-confirm/invite-confirm-dialog';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   useAcceptMealShareInvite,
