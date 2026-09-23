@@ -113,7 +113,7 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 | `POST .../token?grant_type=password\|pkce\|id_token`, `POST .../verify`, `POST .../factors/{id}/{verify,challenge}` | `login` | `authGlobal` → `authLoginIp` → `authLoginAccount` | `global:'auth'`, `ip`, `account` (canonical target account) | same |
 | `POST .../token?grant_type=refresh_token` | `refresh` | `authRefreshGlobal` → `authRefresh` | `global:'auth:refresh'`, `ip` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
 | everything else under `auth/v1/` (`GET /user`, `logout`, `settings`, `authorize`, `callback`, unknown paths) | `other` | `authOther` | `ip` only | 429, as above |
-| `auth/v1/admin/*` and `auth/v1/invite` | — | none (never forwarded) | — | `404 {"error":"Not found"}` — both are service-key surfaces no client of this proxy holds a key for |
+| `auth/v1/admin/*` and `auth/v1/invite` (any letter case), and any path that fails canonicalization (see below) | — | none (never forwarded) | — | `404 {"error":"Not found"}` — admin and invite are service-key surfaces no client of this proxy holds a key for |
 | `POST /api/v1/waitlist` | — | `waitlistGlobal` → `waitlistSignupIp` | `global:'waitlist'`, `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
 | `GET /api/v1/waitlist/confirm` | — | `waitlistGlobal` → `waitlistConfirmIp` | `global:'waitlist-confirm'`, `ip` | same |
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
@@ -122,6 +122,19 @@ Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
 covered by an exhaustive test table; body reading in `_lib/auth-body.ts`, target
 extraction in `_lib/auth-target.ts`, enforcement order in `_lib/enforce-limits.ts`,
 and the whole pre-forward sequence in `_lib/guard-auth-request.ts`.
+
+**Before any of that, the path is canonicalized** (`_lib/canonical-auth-path.ts`,
+KALLO-11). Each catch-all segment, as Next decoded it once, must match
+`^[A-Za-z0-9._~-]+$` and not be all dots; the first two must be exactly `auth`
+and `v1`. Anything else — a leftover `%` (double encoding), `;`, `\`, an empty
+segment, whitespace or a control byte — is the same generic 404, with no limiter
+call and no upstream fetch. The upstream URL is then rebuilt from those segments
+rather than resolved from the caller's string, and the resolved origin and
+pathname are re-checked as a second layer. On the way back, a `Location` header
+is rewritten by `_lib/upstream-location.ts`: Supabase `auth/v1` targets move onto
+`/api/supabase-proxy/…`, other Supabase paths and `*.run.app` hosts are refused
+(a redirect becomes `502 {"error":"upstream_redirect_refused"}`), and external
+targets such as `accounts.google.com` pass through untouched.
 
 ### What a target key is, and why a request without one is refused
 

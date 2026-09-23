@@ -9,7 +9,8 @@ const { mockTxInsert, mockTxSelect, mockTx } = vi.hoisted(() => {
   const mockTxSelect = vi.fn(() => ({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue(
-        // Thenable + .for('update') — the share helper locks the row.
+        // Thenable + .for('update') — the share helper locks the row. The owner
+        // has opted in to auto-share (the column default is off).
         Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
           for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
         })
@@ -220,7 +221,7 @@ describe('duplicateMealAction', () => {
     expect(result.meal.id).toBe(UUID_2);
     expect(result.meal.nutrition.caloriesKcal).toBe(520);
     expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
-    // A re-log is a brand-new meal, shared to circle by default.
+    // A re-log is a brand-new meal, auto-shared because this owner opted in.
     expect(result.meal.share).toEqual({
       shareId: 'share-1',
       visibility: 'circle',

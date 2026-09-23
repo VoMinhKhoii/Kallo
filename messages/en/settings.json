@@ -117,7 +117,7 @@
   },
   "sharing": {
     "autoShareLabel": "Share new meals with your circle",
-    "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+    "autoShareHint": "Off unless you turn it on. When on, each new meal is shared with your circle as you save it. Friends only see meals shared after you connected.",
     "error": "Couldn't update your sharing preference. Please try again."
   }
 }

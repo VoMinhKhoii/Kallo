@@ -21,7 +21,15 @@ type Db = AppDb | AppTransaction;
 const viewerMembership = alias(chatGroupMembers, 'share_viewer_membership');
 const ownerMembership = alias(chatGroupMembers, 'share_owner_membership');
 
-function relationshipAccessSql(
+/**
+ * The friend half of the access contract: an accepted friendship between the
+ * two users that was accepted at or before `sharedAt`. A friend sees what was
+ * shared after they connected, never the backlog from before (KALLO-03) — the
+ * same rule `public.is_friend_since` applies at the RLS layer. Exported so the
+ * feed queries, which read many shares at once, fold in the identical
+ * predicate rather than restating it.
+ */
+export function friendSinceSql(
   viewerId: string,
   ownerId: SQLWrapper | string,
   sharedAt: SQLWrapper | Date
@@ -37,7 +45,18 @@ function relationshipAccessSql(
           OR (${friendships.userHigh} = ${viewerId}
             AND ${friendships.userLow} = ${ownerId})
         )
+        AND ${friendships.acceptedAt} <= ${sharedAt}
     )
+  `;
+}
+
+function relationshipAccessSql(
+  viewerId: string,
+  ownerId: SQLWrapper | string,
+  sharedAt: SQLWrapper | Date
+): SQL<boolean> {
+  return sql<boolean>`
+    ${friendSinceSql(viewerId, ownerId, sharedAt)}
     OR EXISTS (
       SELECT 1
       -- Base table + alias spelled out: Drizzle renders an alias object inside
@@ -102,8 +121,9 @@ async function readVisible(db: Db, statement: SQL): Promise<boolean> {
 }
 
 /** Authorize a share id in exactly one statement. Owners retain access to
- * private shares; cross-user reads require a live friendship or a named-group
- * membership that predates the share for both people. */
+ * private shares; cross-user reads require a live friendship accepted before
+ * the share, or a named-group membership that predates the share for both
+ * people. */
 export async function canViewShare(
   viewerId: string,
   shareId: string,

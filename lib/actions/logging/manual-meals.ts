@@ -132,8 +132,8 @@ export async function saveManualMealAction(
       }))
     );
 
-    // Share to circle by default unless the profile-level opt-out is set (the
-    // AFTER INSERT trigger fans out the meal_shared circle event). The user
+    // Share to circle only when the owner has turned Circle auto-share on (off
+    // by default; the AFTER INSERT trigger fans out the meal_shared event). The user
     // can still opt this meal back out via the per-meal toggle, while
     // onConflictDoNothing preserves a prior explicit choice on the
     // re-confirm/edit path (existing meal id).
@@ -174,7 +174,7 @@ export async function saveManualMealAction(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    // Shared to circle by default (see the meal_shares insert above).
+    // Null (private) unless auto-share inserted a row above.
     share,
   });
 

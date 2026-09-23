@@ -9,15 +9,16 @@ import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
 export const runtime = 'nodejs';
 
-/** Session client + user id — the avatar upload goes through the user's OWN
- * session storage client so the `avatars_*_own` RLS policies apply. */
+/** Authenticated user id from the session. The storage write itself runs as
+ * service role inside the action (users hold no write policy on the bucket),
+ * so this verified id is the only thing that scopes the object path. */
 async function requireSessionUser() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     throw Errors.notAuthenticated();
   }
-  return { supabase, userId: data.user.id };
+  return { userId: data.user.id };
 }
 
 /**
@@ -26,7 +27,7 @@ async function requireSessionUser() {
  */
 export async function POST(req: NextRequest) {
   try {
-    const { supabase, userId } = await requireSessionUser();
+    const { userId } = await requireSessionUser();
     // Per-user cap after auth, before the body is buffered: uploads are low-
     // limit because each costs storage plus image processing.
     await assertRateLimit('avatarUpload', { kind: 'user', value: userId });
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) {
       throw Errors.validationFailed('Expected a `file` upload.');
     }
-    const profile = await uploadMyAvatar(userId, file, supabase);
+    const profile = await uploadMyAvatar(userId, file);
     return NextResponse.json({ profile });
   } catch (error) {
     return serializeError(error);
@@ -59,12 +60,12 @@ export async function POST(req: NextRequest) {
 /** Remove the avatar photo (the UI falls back to the initials disc). */
 export async function DELETE() {
   try {
-    const { supabase, userId } = await requireSessionUser();
+    const { userId } = await requireSessionUser();
     // Same per-user cap as the upload: a delete still writes storage and the
     // profile row, and the inventory declares ONE policy for this file — a
     // method that skipped it made that declaration false.
     await assertRateLimit('avatarUpload', { kind: 'user', value: userId });
-    const profile = await removeMyAvatar(userId, supabase);
+    const profile = await removeMyAvatar(userId);
     return NextResponse.json({ profile });
   } catch (error) {
     return serializeError(error);
