@@ -154,6 +154,7 @@ export function LoggingShell({
       />
       <TimelineSidebar
         mealDates={mealDates}
+        calorieTarget={profile.calorieTarget}
         today={today}
         selectedDate={selectedDate}
         isPending={isPending}

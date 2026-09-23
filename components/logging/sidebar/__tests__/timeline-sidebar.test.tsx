@@ -27,6 +27,7 @@ describe('TimelineSidebar', () => {
       { date: '2026-05-03', kcal: 1842 },
       { date: '2026-05-01', kcal: null },
     ]),
+    calorieTarget: 2000,
     today: '2026-05-03',
     selectedDate: '2026-05-02',
     isPending: false,
