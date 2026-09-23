@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
@@ -88,6 +88,21 @@ Nhật ký kỹ thuật của mỗi lần phân tích: các bước xử lý, th
 token, và lỗi nếu có. Các sự kiện chống lạm dụng được ghi kèm **mã định danh đã
 băm bằng HMAC** chứ không phải mã tài khoản nguyên bản.
 
+### Sự kiện sử dụng và báo cáo lỗi
+
+Khi ứng dụng hoặc trang web gặp lỗi, chúng tôi ghi lại một **báo cáo chẩn
+đoán**: phần mã nào bị lỗi, màn hình hoặc địa chỉ nơi lỗi xảy ra, phiên bản ứng
+dụng, loại thiết bị, hệ điều hành và mã định danh tài khoản của bạn.
+
+Chúng tôi cũng ghi lại một số ít **sự kiện sử dụng**, ví dụ "đã lưu một bữa ăn"
+hay "đã mở màn hình Premium", kèm các thông tin kỹ thuật tương tự, để hiểu tính
+năng nào được dùng và người dùng hay vướng ở đâu.
+
+Cả hai đều không bao giờ chứa mô tả bữa ăn, số đo cơ thể, tên hay email của bạn,
+và địa chỉ trang được lược bỏ mọi phần có thể nhận diện một bữa ăn được chia sẻ,
+một nhóm hay một lời mời. Chúng tôi không ghi lại màn hình hay thao tác gõ phím
+của bạn.
+
 ## 3. Dữ liệu nào thực sự được gửi tới mô hình AI
 
 Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận được:
@@ -146,7 +161,8 @@ bạn.
 | Hiển thị nội dung bạn chia sẻ | Vòng kết nối, bữa ăn được chia sẻ |
 | Duy trì quyền Premium | Dữ liệu thanh toán từ đơn vị cung cấp |
 | Chống lạm dụng, gian lận, quá tải | Sự kiện giới hạn tần suất, mã băm |
-| Khắc phục sự cố, cải thiện độ tin cậy | Nhật ký vận hành, góp ý |
+| Khắc phục sự cố, cải thiện độ tin cậy | Nhật ký vận hành, báo cáo lỗi, góp ý |
+| Hiểu cách các tính năng được sử dụng | Sự kiện sử dụng, thiết bị và phiên bản ứng dụng |
 | Trả lời hỗ trợ | Nội dung bạn liên hệ, tài khoản |
 | Tuân thủ nghĩa vụ pháp lý | Theo yêu cầu áp dụng |
 
@@ -178,6 +194,8 @@ thứ ba làm quảng cáo.
 | Stripe (qua RevenueCat Billing) | Thanh toán trên web | Thông tin thanh toán |
 | Paddle | Thanh toán trên web (đơn vị bán hàng chính danh) | Thông tin thanh toán, dữ liệu hóa đơn và thuế |
 | Open Food Facts | Tra cứu sản phẩm đóng gói | Mã vạch bạn quét |
+| Sentry (khu vực EU) | Báo cáo lỗi | Báo cáo lỗi, thông tin thiết bị và ứng dụng, mã định danh tài khoản |
+| PostHog (khu vực EU) | Phân tích mức độ sử dụng sản phẩm | Sự kiện sử dụng, thông tin thiết bị và ứng dụng, mã định danh tài khoản |
 
 Danh sách này thay đổi khi hạ tầng thay đổi, và bản mới nhất luôn nằm ở đây.
 
@@ -258,6 +276,8 @@ Cụ thể:
 - **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
   thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ bốn
   thông tin nêu ở mục 3 đi theo đường này.
+- **Báo cáo lỗi và sự kiện sử dụng** (Sentry, PostHog) được lưu tại Liên minh
+  châu Âu.
 - **Các nhà cung cấp còn lại** xử lý dữ liệu ở những vùng họ vận hành.
 
 Khi dữ liệu ra khỏi Việt Nam, chúng tôi làm theo quy định của pháp luật về bảo
@@ -303,6 +323,9 @@ Chúng tôi chỉ dùng cookie và bộ nhớ trên thiết bị ở mức tối
 - Giữ bạn ở trạng thái đã đăng nhập.
 - Nhớ ngôn ngữ bạn chọn.
 - Nhớ trạng thái giao diện, ví dụ thanh bên đang mở hay đã thu gọn.
+- Lưu một mã ngẫu nhiên trong bộ nhớ trình duyệt để các sự kiện sử dụng từ cùng
+  một trình duyệt được tính là một người truy cập. Mã này không được chia sẻ với
+  bên quảng cáo.
 
 Chúng tôi không dùng cookie quảng cáo và không gắn mã theo dõi của bất kỳ mạng
 quảng cáo nào.

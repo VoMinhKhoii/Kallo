@@ -57,6 +57,7 @@ git status                    # review, then commit
 | `NHAM_ENV_FILE` | auto-discovered | path to a `.env.local` with the Supabase creds |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | from `.env.local` | set to skip the `.env.local` lookup |
 | `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` | from `.env.local`, else empty | native Google sign-in client IDs (empty ⇒ Google button disabled, app still boots) |
+| `POSTHOG_KEY` / `SENTRY_DSN` | empty | product analytics / crash reporting (empty ⇒ both are no-ops); see [`docs/MONITORING.md`](../../../docs/MONITORING.md) |
 | `SIM_UDID` | a booted sim, else auto | target simulator |
 
 ## The iCloud codesign caveat
@@ -77,7 +78,8 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 Runtime config comes from compile-time `--dart-define`s, read in
 [`lib/services/env/env.dart`](../../mobile-flutter/lib/services/env/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
-`POSTHOG_KEY`, `POSTHOG_HOST`, `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
+`POSTHOG_KEY`, `POSTHOG_HOST` (defaults to the EU cloud), `SENTRY_DSN` (crash reporting — see
+[`docs/MONITORING.md`](../../../docs/MONITORING.md); empty ⇒ off), `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
 Google sign-in — empty disables the Google button without blocking startup), and
 `REVENUECAT_APPLE_API_KEY` / `REVENUECAT_GOOGLE_API_KEY` (RevenueCat public SDK keys for
 in-app subscriptions — the platform key is picked per-OS in

@@ -53,9 +53,11 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern |
 |---|---|
+| `analytics/` | PostHog product analytics: EU init, the typed event list, `track`/identify/reset, and the route-pattern URL reduction every telemetry URL goes through (`docs/MONITORING.md`) |
 | `auth/` | session/profile guard, redirect and next-param safety |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
+| `monitoring/` | Sentry: options shared by the browser, Node and Edge inits, the payload scrubber, and `reportError` for caught errors (`docs/MONITORING.md`) |
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
@@ -141,7 +143,7 @@ another domain module is a smell worth a second look.
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup, quantity), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
-| `providers/` | TanStack provider (single file) | split |
+| `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step | split |
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
@@ -185,7 +187,7 @@ proved to be one hook.
 |---|---|---|
 | `theme/` | design tokens | **reference shape** |
 | `models/` | DTOs mirrored from the web contracts, grouped by domain: `nutrition/` `logging/` `social/` `profile/` | ok |
-| `services/` | infrastructure edges: `http/` (API client, uploads, cache policy) · `auth/` (Supabase client, session) · `billing/` · `analytics/` · `env/` | ok |
+| `services/` | infrastructure edges: `http/` (API client, uploads, cache policy) · `auth/` (Supabase client, session) · `billing/` · `analytics/` (PostHog + route-pattern screen tracking) · `monitoring/` (Sentry) · `env/` | ok |
 | `shared/widgets/` | cross-feature widget primitives, one folder per primitive: `avatar/` `brand/` `calorie_ring/` `feedback/` (skeleton, empty, refresh, progress) `form/` `motion/` `sheet/` `surface/` (the screen frame, the card/button, the scroll hairline) `toast/` `typography/` | ok |
 | `shared/logic/` | pure functions more than one feature reads — `tdee.dart`, `display_format.dart` | ok |
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |

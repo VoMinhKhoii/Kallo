@@ -413,6 +413,9 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `TRIAL_DAYS` | Positive integer; defaults to `7` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional. Sentry DSN baked into the CI image; empty → error reporting off (`docs/MONITORING.md`) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Optional. PostHog project key baked into the CI image; empty → analytics off |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | Optional. Source-map upload target, used only when the `SENTRY_AUTH_TOKEN` secret is set |
 | `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
 | `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
 | `GCS_STAGING_LEASE_BUCKET` | GCS bucket used for staging/lease.json atomic lock |

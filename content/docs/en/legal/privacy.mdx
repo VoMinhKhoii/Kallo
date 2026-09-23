@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-23'
 ---
 
 This policy describes how VÕ MINH KHÔI ("Kallo", "we") collects, uses,
@@ -85,6 +85,20 @@ Technical records of each analysis: processing stages, timings, token counts and
 errors. Anti-abuse events are recorded against **HMAC-hashed identifiers**
 rather than raw account identifiers.
 
+### Usage events and error reports
+
+When the app or website runs into an error, we record a **diagnostic report**:
+what went wrong in our code, the screen or address it happened on, your app
+version, device type and operating system, and your account identifier.
+
+We also record a small set of **usage events**, such as "a meal was saved" or
+"the Premium screen was opened", with the same technical details, to understand
+which features people use and where they get stuck.
+
+Neither ever contains your meal descriptions, body measurements, name or email,
+and the addresses are stripped of anything that identifies a shared meal, group
+or invite. We do not record your screen or your keystrokes.
+
 ## 3. What actually reaches the AI model
 
 When you request a meal analysis, the AI model receives **only**:
@@ -139,7 +153,8 @@ Studio) with test data, not your account data.
 | Show content you share | Circle, shared meals |
 | Maintain Premium access | Billing data from the provider |
 | Prevent abuse, fraud and overload | Rate-limit events, hashed identifiers |
-| Troubleshoot and improve reliability | Operational logs, feedback |
+| Troubleshoot and improve reliability | Operational logs, error reports, feedback |
+| Understand how features are used | Usage events, device and app version |
 | Respond to support | Your message, account |
 | Meet legal obligations | As applicable |
 
@@ -171,6 +186,8 @@ advertising.
 | Stripe (via RevenueCat Billing) | Web payments | Payment details |
 | Paddle | Web payments (merchant of record) | Payment details, invoice and tax data |
 | Open Food Facts | Packaged product lookup | The barcode you scan |
+| Sentry (EU region) | Error reporting | Error reports, device and app details, account identifier |
+| PostHog (EU region) | Product usage analytics | Usage events, device and app details, account identifier |
 
 This list changes as our infrastructure changes; updates are reflected here.
 
@@ -245,6 +262,8 @@ you live. Specifically:
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
   the four fields listed in section 3 travel this path.
+- **Error reports and usage events** (Sentry, PostHog) are stored in the
+  European Union.
 - **Every other provider** processes data in the regions it operates.
 
 Where data leaves Vietnam, we do so in line with personal data protection law,
@@ -287,6 +306,8 @@ We use cookies and local storage only as far as necessary:
 - Keeping you signed in.
 - Remembering your chosen language.
 - Remembering interface state, such as whether the sidebar is open or collapsed.
+- Keeping a random identifier in local storage so usage events from the same
+  browser can be counted as one visitor. It is not shared with advertisers.
 
 We use no advertising cookies and embed no third-party ad-network trackers.
 
