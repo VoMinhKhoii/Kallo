@@ -65,7 +65,7 @@ const LINK_CLASS =
  * MDX writes internal links as plain `/docs/…`, with no locale prefix — that is
  * what keeps a page's source identical in both languages. Rendering those
  * through next-intl's `Link` is what puts the prefix back: a bare `<a>` would
- * send a reader on `/vi/docs/…` to `/docs/…`, which the middleware then
+ * send a reader on `/vi/docs/…` to `/docs/…`, which the proxy then
  * resolves by *detection*, quietly dropping them into English mid-document.
  *
  * Hash links stay plain anchors — that includes the `#` affordance

@@ -5,8 +5,6 @@ import { handleRouteError } from '@/lib/api/respond';
 import { getFoodSourceCandidates } from '@/lib/domain/nutrition/actions/candidates';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     // Authenticate before touching the body: an anonymous caller gets a 401

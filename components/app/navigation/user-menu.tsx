@@ -45,7 +45,7 @@ function deriveLabel(user: UserMenuUser): string {
  * - On mobile: rendered as a list of action rows inside the bottom Sheet.
  *
  * Sign-out flow mirrors the previous behavior: clear locale cookie, hard-nav
- * to "/" so middleware re-evaluates auth state.
+ * to "/" so the proxy re-evaluates auth state.
  */
 export function UserMenu({
   user,

@@ -3,8 +3,6 @@ import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { listPrompts } from '@/lib/admin/queries/prompts';
 import { db } from '@/lib/infra/db/client';
 
-export const dynamic = 'force-dynamic';
-
 export default async function PromptsPage() {
   await requireAdmin();
   const prompts = await listPrompts(db);

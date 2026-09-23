@@ -8,8 +8,6 @@ import { createChatGroupBodySchema } from '@/lib/api/contracts/social/chat-group
 import { handleRouteError } from '@/lib/api/respond';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
-export const runtime = 'nodejs';
-
 export async function GET(request: NextRequest) {
   try {
     const actorId = await requireUserId();

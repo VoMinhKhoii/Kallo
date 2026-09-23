@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next-intl/middleware', () => ({
   default: () => () => NextResponse.next(),
 }));
-vi.mock('@/i18n/navigation', () => ({ routing: { locales: ['en'] } }));
+vi.mock('@/i18n/routing', () => ({ routing: { locales: ['en'] } }));
 vi.mock('@/lib/infra/supabase/middleware', () => ({
   updateSession: async (_request: NextRequest, response: NextResponse) =>
     response,
@@ -24,7 +24,7 @@ const consoleError = vi
   .spyOn(console, 'error')
   .mockImplementation(() => undefined);
 
-const { middleware } = await import('@/middleware');
+const { proxy } = await import('@/proxy');
 
 function request(path = '/api/healthz', headers: Record<string, string> = {}) {
   const url = new URL(`https://kallo.fit${path}`);
@@ -42,7 +42,7 @@ describe('origin lock', () => {
   it('passes a request carrying the shared secret', async () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', 'topsecret');
 
-    const res = await middleware(
+    const res = await proxy(
       request('/api/healthz', {
         'x-origin-verify': 'topsecret',
       })
@@ -54,13 +54,10 @@ describe('origin lock', () => {
   it('rejects a request that did not come through Cloudflare', async () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', 'topsecret');
 
-    expect((await middleware(request())).status).toBe(403);
+    expect((await proxy(request())).status).toBe(403);
     expect(
-      (
-        await middleware(
-          request('/api/healthz', { 'x-origin-verify': 'wrong' })
-        )
-      ).status
+      (await proxy(request('/api/healthz', { 'x-origin-verify': 'wrong' })))
+        .status
     ).toBe(403);
   });
 
@@ -70,7 +67,7 @@ describe('origin lock', () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', '');
     vi.stubEnv('K_SERVICE', 'kallo-prod');
 
-    const res = await middleware(request());
+    const res = await proxy(request());
 
     expect(res.status).toBe(503);
     expect(await res.text()).toBe('Origin lock misconfigured');
@@ -83,9 +80,65 @@ describe('origin lock', () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', '');
     vi.stubEnv('K_SERVICE', '');
 
-    const res = await middleware(request());
+    const res = await proxy(request());
 
     expect(res.status).toBe(200);
     expect(consoleError).not.toHaveBeenCalled();
+  });
+});
+
+// The rename from middleware.ts to proxy.ts (Next 16) must not change what a
+// page response carries. The CSP stays Report-Only until it is enforced in a
+// separate change, and the nonce still reaches the render on the request.
+describe('page responses', () => {
+  function pageRequest(path: string) {
+    return request(path, { accept: 'text/html' });
+  }
+
+  it('sends the CSP as Report-Only, never enforced', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+
+    const res = await proxy(pageRequest('/en/docs/overview'));
+
+    const csp = res.headers.get('content-security-policy-report-only');
+    expect(csp).toMatch(/script-src [^;]*'nonce-[A-Za-z0-9+/=]+'/);
+    expect(res.headers.get('content-security-policy')).toBeNull();
+  });
+
+  it('puts the same nonce on the request the render reads', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+    const req = pageRequest('/en');
+
+    const res = await proxy(req);
+
+    const nonce = req.headers.get('x-nonce');
+    expect(nonce).toBeTruthy();
+    expect(req.headers.get('content-security-policy')).toContain(
+      `'nonce-${nonce}'`
+    );
+    expect(res.headers.get('content-security-policy-report-only')).toContain(
+      `'nonce-${nonce}'`
+    );
+  });
+
+  it('advertises the Markdown sibling of a docs page', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+
+    const res = await proxy(pageRequest('/en/docs/overview'));
+
+    expect(res.headers.get('link')).toContain('type="text/markdown"');
+  });
+
+  it('leaves skip-listed paths without a CSP or locale handling', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+
+    const res = await proxy(pageRequest('/openapi.json'));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-security-policy-report-only')).toBeNull();
   });
 });

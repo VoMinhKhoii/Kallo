@@ -7,7 +7,7 @@ import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
  * Which representation a request should get — decided as a pure function so
  * the rules are testable without standing up a middleware runtime.
  *
- * `middleware.ts` owns the transport (rewrite, 406, `Vary`); this owns the
+ * `proxy.ts` owns the transport (rewrite, 406, `Vary`); this owns the
  * decision. Anything that reads a request or writes a response belongs there,
  * not here.
  */
@@ -84,7 +84,7 @@ export interface NegotiationInput {
  *
  * Detected from the Accept header rather than the `RSC` request header, which
  * would be the obvious signal but never arrives: Next strips it before
- * middleware runs (verified against the standalone server — middleware sees
+ * the proxy runs (verified against the standalone server — the proxy sees
  * only `accept, host, user-agent, x-forwarded-*`). Getting this wrong answers
  * every client-side navigation with a 406.
  */

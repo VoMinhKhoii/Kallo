@@ -7,8 +7,6 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { createClient } from '@/lib/infra/supabase/server';
 
-export const runtime = 'nodejs';
-
 /**
  * Server-side handler for emailed auth links (signup confirmation, password
  * recovery, magic link, email change).

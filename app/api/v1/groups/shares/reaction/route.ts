@@ -4,8 +4,6 @@ import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 export async function POST(request: NextRequest) {
   try {
     // Authenticate before touching the body: an anonymous caller gets a 401

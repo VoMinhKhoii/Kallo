@@ -5,8 +5,6 @@ import { handleRouteError } from '@/lib/api/respond';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
-export const runtime = 'nodejs';
-
 /**
  * Liveness probe. `{ ok, service }` and nothing else.
  *

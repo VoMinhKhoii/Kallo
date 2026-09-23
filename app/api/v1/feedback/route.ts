@@ -4,8 +4,6 @@ import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /** Submit in-app feedback (bug report, ingredient request, or idea). */
 export async function POST(req: NextRequest) {
   try {

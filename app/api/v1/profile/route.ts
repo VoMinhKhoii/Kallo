@@ -4,8 +4,6 @@ import { profileSettingsSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
 import { saveProfileSettings } from '@/lib/domain/onboarding/actions';
 
-export const runtime = 'nodejs';
-
 export async function PUT(req: NextRequest) {
   try {
     // Authenticate before touching the body: an anonymous caller gets a 401

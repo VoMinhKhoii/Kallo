@@ -5,7 +5,13 @@ import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { resolveRootLocale } from '@/lib/i18n/root-locale';
 import { createClient } from '@/lib/infra/supabase/server';
 
-export const dynamic = 'force-dynamic';
+// Deliberately blocking (`instant = false`): this page renders nothing — it
+// only answers `/` with a redirect to the right locale, chosen from the
+// session, the profile and the NEXT_LOCALE cookie. Blocking keeps that a real
+// HTTP redirect instead of a static shell followed by a client-side one, and
+// it sits outside the locale root layout, so there is no shell to show anyway.
+// Replaces `dynamic = 'force-dynamic'`, which Cache Components rejects.
+export const instant = false;
 
 export default async function RootPage() {
   const cookieStore = await cookies();

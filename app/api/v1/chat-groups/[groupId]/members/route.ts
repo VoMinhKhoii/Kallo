@@ -4,8 +4,6 @@ import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { addChatGroupMembersBodySchema } from '@/lib/api/contracts/social/chat-groups';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }

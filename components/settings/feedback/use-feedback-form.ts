@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import { usePathname } from '@/i18n/navigation';
 import type {
   FEEDBACK_TYPES,
@@ -133,6 +134,16 @@ export function useFeedbackForm() {
     uploaded.current = null;
     clearFile();
   };
+
+  // Cache Components keeps Settings alive (hidden with React <Activity>) when
+  // the user navigates away, so state survives the round trip. An unsent draft
+  // should — that is the point. The "thanks" screen and a failed-submit error
+  // should not: coming back later must show a fresh form, including when the
+  // submission only settled after the user left.
+  useResetOnReveal(() => {
+    if (sent) reset();
+    else setSubmitError(null);
+  });
 
   return {
     type,

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
-import { routing } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { appendVaryAccept } from '@/lib/infra/http/accept';
 import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
 import { buildCsp } from '@/lib/infra/security/csp';
@@ -23,7 +23,7 @@ const SKIP_INTL_PREFIXES = [
   // are excluded from it) so the origin-lock still covers them.
   '/openapi.json',
   '/.well-known',
-  // The markdown variants middleware rewrites TO. A direct request must not be
+  // The markdown variants the proxy rewrites TO. A direct request must not be
   // locale-rewritten into a path that does not exist.
   '/md',
 ];
@@ -35,8 +35,9 @@ function shouldSkipIntl(pathname: string) {
 }
 
 // Constant-time compare — the origin-lock is the app's sole trust boundary, so
-// avoid the first-differing-byte timing signal of `!==`. Edge-runtime safe (no
-// Node crypto); only the secret's length leaks, which is not sensitive.
+// avoid the first-differing-byte timing signal of `!==`. Pure string math, so
+// it runs the same in the proxy's Node.js runtime and in the unit tests; only
+// the secret's length leaks, which is not sensitive.
 function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) {
     return false;
@@ -48,7 +49,7 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Origin-lock. In production the service sits behind Cloudflare, which injects
   // a shared secret header (X-Origin-Verify) on every proxied request via a
   // Transform Rule. Reject anything that did not arrive through Cloudflare so
@@ -75,7 +76,7 @@ export async function middleware(request: NextRequest) {
     // will 503 loudly on its first request, which is the correct way to find
     // out.
     console.error(
-      '[middleware] ORIGIN_SHARED_SECRET is unset on Cloud Run — refusing to serve with the origin lock disabled.'
+      '[proxy] ORIGIN_SHARED_SECRET is unset on Cloud Run — refusing to serve with the origin lock disabled.'
     );
     return new NextResponse('Origin lock misconfigured', { status: 503 });
   }
@@ -117,7 +118,9 @@ export async function middleware(request: NextRequest) {
   // Per-request CSP nonce. Set it on the *request* headers BEFORE next-intl
   // runs: next-intl forwards a clone of request.headers, so the nonce (and the
   // CSP it lives in) reach the RSC render, where Next extracts `nonce-…` and
-  // stamps its own inline scripts. btoa (not Buffer) keeps this Edge-safe.
+  // stamps its own inline scripts. The per-request nonce only works on routes
+  // rendered at request time; prerendered static shells carry no nonce, which
+  // is fine while the header below stays Report-Only.
   const nonce = btoa(crypto.randomUUID());
   // `reportOnly: true` matches the header actually sent below. Flip both
   // together when enforcing.
@@ -130,8 +133,9 @@ export async function middleware(request: NextRequest) {
 
   // Report-Only for now: the browser reports violations but blocks nothing, so
   // static rendering is preserved and there is no white-screen risk. Flip this
-  // header name to `content-security-policy` to enforce (see lib/security/csp.ts
-  // for the additional force-dynamic step enforcing requires).
+  // header name to `content-security-policy` only together with the policy
+  // change lib/infra/security/csp.ts describes — prerendered shells carry no
+  // nonce.
   response.headers.set('content-security-policy-report-only', csp);
 
   // Advertise the Markdown sibling on the pages that have one, so a client that
@@ -141,9 +145,9 @@ export async function middleware(request: NextRequest) {
   // `Vary: Accept` is deliberately NOT set on this half of the pair, and not
   // because it is unwanted. Next owns `vary` on an app-router page render
   // (`setVaryHeader`, next/dist/server/base-server.js) and discards whatever
-  // middleware or `next.config.headers()` put there — verified against the
+  // the proxy or `next.config.headers()` put there — verified against the
   // standalone production server, where the value was confirmed present on the
-  // middleware response object and absent from the wire, for both `set` and
+  // proxy response object and absent from the wire, for both `set` and
   // `append`. `Link` merges; `vary` does not. The Markdown and 406 responses,
   // which the /md route handler and this file own outright, DO carry it — and
   // those are the ones the acceptmarkdown convention asks for. Covering the

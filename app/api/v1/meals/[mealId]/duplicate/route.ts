@@ -5,8 +5,6 @@ import { duplicateMealBodySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /**
  * "Log again": duplicate a saved meal verbatim onto the chosen day (a
  * deterministic server-side copy of its item rows — no AI re-run). The source

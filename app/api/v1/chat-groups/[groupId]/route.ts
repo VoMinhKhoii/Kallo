@@ -6,8 +6,6 @@ import {
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }

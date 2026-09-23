@@ -9,8 +9,6 @@ import { rewriteUpstreamLocation } from '@/app/api/supabase-proxy/_lib/upstream-
 import { PayloadTooLargeError } from '@/lib/core/errors/app-error';
 import { readBoundedBody } from '@/lib/infra/http/bounded-body';
 
-export const runtime = 'nodejs';
-
 /**
  * Reverse proxy for Supabase Auth (`auth/v1/*` only).
  *

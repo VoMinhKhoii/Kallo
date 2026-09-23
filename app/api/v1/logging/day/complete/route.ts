@@ -5,8 +5,6 @@ import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 
-export const runtime = 'nodejs';
-
 /** `{ date, timezoneOffset }` and nothing else — a generous ceiling for two fields. */
 const MAX_BODY_BYTES = 1024;
 

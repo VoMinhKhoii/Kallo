@@ -8,8 +8,6 @@ import {
 } from '@/lib/admin/queries/requests';
 import { db } from '@/lib/infra/db/client';
 
-export const dynamic = 'force-dynamic';
-
 export default async function RequestsPage({
   searchParams,
 }: {

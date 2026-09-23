@@ -7,8 +7,6 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { createClient } from '@/lib/infra/supabase/server';
 import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
-export const runtime = 'nodejs';
-
 /** Authenticated user id from the session. The storage write itself runs as
  * service role inside the action (users hold no write policy on the bucket),
  * so this verified id is the only thing that scopes the object path. */

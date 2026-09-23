@@ -8,8 +8,6 @@ import { updateMealBodySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ mealId: string }> }

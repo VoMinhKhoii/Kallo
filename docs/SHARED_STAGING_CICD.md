@@ -218,7 +218,7 @@ domain (the app is rebranding Kallo → Kallo). Deploy pipeline:
   `--ingress=all` (Cloudflare reaches the run.app origin over the public internet —
   no Cloud Run domain mapping; Cloudflare proxies to run.app and rewrites the Host
   header with an Origin Rule). The origin is sealed at the app layer instead:
-  Cloudflare injects an `X-Origin-Verify` secret and `middleware.ts` (via
+  Cloudflare injects an `X-Origin-Verify` secret and `proxy.ts` (via
   `ORIGIN_SHARED_SECRET`) 403s anything that did not arrive through Cloudflare. The
   deploy smoke-check sends the same secret so it can reach the raw run.app URL.
 - **Secrets (Secret Manager):** `kallo-prod-database-url`,

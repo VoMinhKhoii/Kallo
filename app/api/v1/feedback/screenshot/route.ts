@@ -6,8 +6,6 @@ import { Errors } from '@/lib/core/errors/catalog';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
-export const runtime = 'nodejs';
-
 /**
  * Upload an optional feedback screenshot as multipart form-data (field `file`).
  * Returns `{ path }` to send as `screenshotPath` on `POST /api/v1/feedback`.

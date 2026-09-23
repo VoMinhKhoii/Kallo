@@ -4,8 +4,6 @@ import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /**
  * Take a cheat invite. Unlike its precise twin at `../accept`, this logs
  * nothing: it returns a staged analysis for the slider card to open on, and

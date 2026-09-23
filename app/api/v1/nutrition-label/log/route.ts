@@ -8,8 +8,6 @@ import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapNutritionLabelError } from '../_errors';
 
-export const runtime = 'nodejs';
-
 /**
  * `POST /api/v1/nutrition-label/log` — stage the user-reviewed values from a
  * scanned label AND confirm them, in one call. The review step is the last

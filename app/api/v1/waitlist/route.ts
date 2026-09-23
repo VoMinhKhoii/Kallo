@@ -9,8 +9,6 @@ import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
-export const runtime = 'nodejs';
-
 /** An address, a locale and a source. 8 KB is already absurdly generous. */
 const MAX_BODY_BYTES = 8 * 1024;
 

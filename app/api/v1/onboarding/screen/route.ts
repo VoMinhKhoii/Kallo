@@ -4,8 +4,6 @@ import { onboardingScreenSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
 import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     // Authenticate before touching the body: an anonymous caller gets a 401

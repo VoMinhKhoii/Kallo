@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache';
 import type { Locale } from '@/i18n/config';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
@@ -24,6 +25,10 @@ export interface DocsSearchEntry {
 export async function getSearchIndex(
   locale: Locale
 ): Promise<DocsSearchEntry[]> {
+  // Same inputs for every docs page of a locale, so built once per locale.
+  'use cache';
+  cacheLife('deployment');
+
   const perSection = await Promise.all(
     DOCS_SECTIONS.map(async (section) =>
       Promise.all(

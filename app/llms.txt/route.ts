@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { defaultLocale } from '@/i18n/config';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
@@ -19,10 +20,15 @@ import { SITE_URL } from '@/lib/seo/site';
  * be missing here. English only: it is one file at a fixed path, and the `en`
  * tree is complete by construction (`navigation.test.ts` fails the build if a
  * locale is missing a page). The Vietnamese tree is linked at the bottom.
+ *
+ * Built in a `'use cache'` function so it prerenders at build time (Cache
+ * Components' replacement for `dynamic = 'force-static'`): the frontmatter
+ * comes from `content/`, which the standalone image does not ship.
  */
-export const dynamic = 'force-static';
+async function buildIndex(): Promise<string> {
+  'use cache';
+  cacheLife('deployment');
 
-export async function GET(): Promise<Response> {
   const t = await getTranslations({
     locale: defaultLocale,
     namespace: 'metadata.root',
@@ -71,7 +77,11 @@ export async function GET(): Promise<Response> {
     ''
   );
 
-  return new Response(lines.join('\n'), {
+  return lines.join('\n');
+}
+
+export async function GET(): Promise<Response> {
+  return new Response(await buildIndex(), {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'public, max-age=0, must-revalidate',

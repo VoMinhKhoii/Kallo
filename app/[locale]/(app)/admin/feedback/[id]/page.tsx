@@ -12,8 +12,6 @@ import { cn } from '@/lib/core/ui/cn';
 import { db } from '@/lib/infra/db/client';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 
-export const dynamic = 'force-dynamic';
-
 export const metadata = {
   title: 'Feedback · Kallo Admin',
   robots: { index: false, follow: false },

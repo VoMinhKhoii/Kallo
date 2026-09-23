@@ -4,8 +4,6 @@ import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 // The action self-authenticates via requireAuthAndProfile (unified Supabase
 // client — Bearer for mobile, cookie for web), so the route stays a thin body
 // pass-through; the Zod schema inside the action validates the shape.

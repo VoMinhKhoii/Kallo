@@ -7,8 +7,6 @@ import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { stageBarcodeMeal } from '@/lib/domain/barcode/service';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /**
  * `POST /api/v1/barcode/log` — stage a previously searched barcode product at
  * the given grams AND confirm it, in one call. The barcode flow has no user

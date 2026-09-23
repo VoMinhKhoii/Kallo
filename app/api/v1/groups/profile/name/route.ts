@@ -3,8 +3,6 @@ import { renameMyProfile } from '@/lib/actions/groups/profile';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/core/errors/serialize';
 
-export const runtime = 'nodejs';
-
 /**
  * Rename the signed-in user ("what should we call you"). The invite handle is
  * re-derived from the name server-side, so outstanding invite links change —

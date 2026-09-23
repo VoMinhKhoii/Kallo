@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// `cacheLife()` only works inside a Next render; the caching itself is Next's
+// concern, so here it is a no-op and the function runs as plain code.
+vi.mock('next/cache', () => ({ cacheLife: () => undefined }));
+
 const SUPABASE_URL = 'https://project-ref.supabase.co';
 
 async function fetchMetadata() {
@@ -7,7 +11,7 @@ async function fetchMetadata() {
   const { GET } = await import(
     '@/app/.well-known/oauth-protected-resource/route'
   );
-  const response = GET();
+  const response = await GET();
   return { response, body: await response.json() };
 }
 

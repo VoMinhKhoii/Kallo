@@ -13,7 +13,7 @@ Browser ──HTTPS──▶ Cloudflare  (WAF, DDoS, rate-limit, edge TLS for ka
                  Cloud Run  kallo-prod  (Singapore / asia-southeast1)
                       │  serves on its *.run.app URL over Google's own TLS cert
                       ▼
-                 middleware.ts  → 403s anything missing X-Origin-Verify
+                 proxy.ts       → 403s anything missing X-Origin-Verify
                                    (so the raw run.app URL is sealed)
 ```
 
@@ -121,7 +121,7 @@ Left sidebar **Rules** → **Origin Rules** → **Create rule**:
 
 ## 5. Transform Rule — inject the origin-lock secret
 
-This is the header `middleware.ts` checks so the raw run.app URL stays sealed.
+This is the header `proxy.ts` checks so the raw run.app URL stays sealed.
 
 Left sidebar **Rules** → **Transform Rules** → **Modify Request Header** →
 **Create rule**:
@@ -197,7 +197,7 @@ Left sidebar **Redirect Rules** (under Rules):
 ### Response-header rule for Markdown negotiation
 
 Next.js owns the `Vary` header on App Router HTML responses and replaces values
-set by middleware. The Markdown response already sends
+set by the proxy. The Markdown response already sends
 `Vary: Accept, Accept-Encoding`; add the matching cache signal to HTML at the
 edge so Cloudflare never serves a cached HTML variant to an agent requesting
 Markdown (or the reverse).

@@ -5,8 +5,6 @@ import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { notificationsListQuerySchema } from '@/lib/domain/notifications/contracts';
 
-export const runtime = 'nodejs';
-
 /** One page of the activity feed, plus the badge count so opening Activity
  *  costs a single round trip. */
 export async function GET(request: NextRequest) {
