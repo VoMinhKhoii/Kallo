@@ -6,6 +6,8 @@ import {
 import {
   authed,
   fromZod,
+  MEAL_ID_CONFLICT_ERROR,
+  PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   RATE_LIMITER_UNAVAILABLE_ERROR,
   ref,
@@ -53,6 +55,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       description:
         'Suggests foods high in one nutrient, drawn from the composition tables, with the per-100g amount for each. Answers "what should I eat more of" without inventing a recommendation.',
       tags: [...TAGS, 'Reference data'],
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(candidatesSchema),
       ok: ref('Acknowledgement'),
       okDescription: 'Candidate foods, each with its per-100g amount and unit.',
@@ -84,6 +87,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       description:
         'Saves the result of a label scan — after the user has confirmed or corrected it — as a meal.',
       tags: TAGS,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(logNutritionLabelMealSchema),
       ok: ref('Meal'),
       okStatus: '201',

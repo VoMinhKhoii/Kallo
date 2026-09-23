@@ -29,6 +29,7 @@ import {
   pendingAnalyses,
   unmatchedIngredients,
 } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 import { assertCheatConfirmAllowed, confirmCheatMeal } from './cheat/confirm';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
@@ -243,18 +244,20 @@ export async function confirmAndSaveMealAction(input: {
     const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
 
     // Insert meal
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.mealId ? { id: parsed.mealId } : {}),
-        userId: user.id,
-        rawInput: pending.rawInput,
-        mealSlot,
-        confidenceOverall: pipelineResult.confidenceOverall,
-        loggedAt,
-        ...nutritionValuesToRow(mealDisplayed),
-      })
-      .returning({ id: meals.id });
+    const [meal] = await guardClientMealId(() =>
+      tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput: pending.rawInput,
+          mealSlot,
+          confidenceOverall: pipelineResult.confidenceOverall,
+          loggedAt,
+          ...nutritionValuesToRow(mealDisplayed),
+        })
+        .returning({ id: meals.id })
+    );
 
     // Share to circle by default when the profile-level opt-out is disabled.
     // The AFTER INSERT trigger fans out the meal_shared circle event. The user

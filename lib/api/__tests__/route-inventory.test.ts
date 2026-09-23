@@ -35,13 +35,14 @@ const APP_ROOT = path.join(process.cwd(), 'app');
 const REPO_ROOT = process.cwd();
 
 /**
- * A body read with no ceiling on it. `readJsonBody` (lib/api/auth.ts) is a thin
- * `request.json()` wrapper that maps malformed JSON to a 400 -- it adds no cap,
- * so it counts as a read, not as a bound.
+ * A body read with no ceiling on it, versus one through a byte-capped reader.
+ * `readJsonBody` (lib/api/auth.ts) delegates to `readBoundedJson` with a
+ * default cap, so it counts as a bound (it used to be a bare `request.json()`
+ * wrapper, which is why the protected routes were once all `false` here).
  */
-const BODY_READ =
-  /\breq(uest)?\.(json|formData|text|arrayBuffer)\(|readJsonBody\(/;
-const BOUNDED = /readBounded(Json|Body|WebhookBody)|['"]content-length['"]/;
+const BODY_READ = /\breq(uest)?\.(json|formData|text|arrayBuffer)\(/;
+const BOUNDED =
+  /readBounded(Json|Body|WebhookBody)|readJsonBody\(|['"]content-length['"]/;
 
 /** Every `route.ts`/`route.tsx` under `app`, as `app`-relative POSIX paths --
  *  the same key shape `route-inventory.ts` uses. */

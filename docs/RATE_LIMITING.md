@@ -230,13 +230,24 @@ each client; it does not by itself make it correct there. Builder + test:
 
 `lib/infra/http/bounded-body.ts` — `content-length` prefilter plus a streaming
 cap, so a lying or absent header buys nothing. `readBoundedJson` layers
-`JSON.parse` on top. Over the cap is **413 `PAYLOAD_TOO_LARGE`**, not 400, and
-not retryable: the same bytes will be refused again.
+`JSON.parse` on top; a body that is not valid JSON is **400
+`VALIDATION_FAILED`**, never the bare `SyntaxError` that used to reach
+`serializeError` as a retryable 500 (KALLO-08). Over the cap is **413
+`PAYLOAD_TOO_LARGE`**, not 400, and not retryable: the same bytes will be
+refused again.
+
+`readJsonBody` (`lib/api/auth.ts`) is `readBoundedJson` with a default
+`DEFAULT_JSON_BODY_MAX_BYTES` (64 KB) cap, and is how every protected `/api/v1`
+JSON route reads its body. Those routes authenticate (`requireAuthAndProfile` /
+`requireUserId`) BEFORE calling it, so an anonymous caller gets a 401 without
+the server reading or parsing a byte. `handleRouteError` also maps any stray
+`SyntaxError` to 400, as a safety net for code that parses on its own.
 
 | Reader | Cap | Refusal |
 |---|---|---|
 | `/api/supabase-proxy/auth/v1/*` | 64 KB | GoTrue `{code:413, error_code:'payload_too_large', msg}` |
-| `POST /api/v1/waitlist` | 8 KB | app envelope, via `handleRouteError` |
+| `POST /api/v1/waitlist` | 8 KB, read before the limiters (an in-memory refusal is cheaper than a limiter round trip) | app envelope, via `handleRouteError` |
+| Protected `/api/v1` JSON routes and `/api/analyze-meal`, via `readJsonBody` | 64 KB | app envelope, via `handleRouteError` / `serializeError` |
 | `POST /api/v1/nutrition-label/scan` | `ceil(OCR_MAX_IMAGE_BYTES × 4/3) + 4 KB` (base64 inflation + JSON framing), derived from the image cap so the two cannot drift | app envelope, via `mapNutritionLabelError`'s pass-through → `handleRouteError` |
 | RevenueCat + Supabase auth-hook webhooks | unchanged | `readBoundedWebhookBody`, now a thin adapter over the same reader, still throwing `WebhookPayloadTooLargeError` so each handler answers in its provider's shape |
 
@@ -358,7 +369,7 @@ What the test actually proves:
 | Check | What fails it |
 |---|---|
 | Coverage | A `route.ts(x)` on disk with no entry, or an entry with no file. |
-| `bodyBound: true` | The file reads a body (`req.json()`, `formData()`, `text()`, `arrayBuffer()`, `readJsonBody()`) with no cap in sight (`readBounded*`, or an explicit `content-length` guard). |
+| `bodyBound: true` | The file reads a body (`req.json()`, `formData()`, `text()`, `arrayBuffer()`) with no cap in sight (`readBounded*`, `readJsonBody()`, or an explicit `content-length` guard). |
 | `bodyBound: false` | The file DOES bound its body — the map claims a hole that is not there. |
 | A named policy | Neither the route nor its `guardedIn` file contains an `assertRateLimit(` call. |
 

@@ -4,6 +4,7 @@ import {
   type GeminiProviderConfig,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
+import { readJsonBody } from '@/lib/api/auth';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
@@ -87,10 +88,13 @@ export async function validateRequest(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Parallelize auth and body parsing — independent operations
+    // Parallelize auth and body parsing — independent operations. The body
+    // read is byte-capped so an anonymous caller cannot make the server buffer
+    // an arbitrarily large payload while `getUser()` is in flight, and the auth
+    // verdict below is still checked first: a stranger only ever sees a 401.
     const [authResult, bodyResult] = await Promise.allSettled([
       supabase.auth.getUser(),
-      request.json() as Promise<unknown>,
+      readJsonBody(request),
     ]);
 
     // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
@@ -103,9 +107,10 @@ export async function validateRequest(request: NextRequest) {
     }
     const user = authResult.value.data.user;
 
-    // Validate body parse
+    // Validate body parse: a malformed body is a 400, an oversized one the
+    // reader's 413.
     if (bodyResult.status === 'rejected') {
-      throw Errors.validationFailed('Invalid JSON in request body');
+      throw bodyResult.reason;
     }
     const body = bodyResult.value;
 

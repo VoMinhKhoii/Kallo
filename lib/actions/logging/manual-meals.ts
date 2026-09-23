@@ -28,6 +28,7 @@ import {
   meals,
   vietnameseFoodComposition,
 } from '@/lib/infra/db/schema';
+import { guardClientMealId } from '@/lib/infra/db/unique-violation';
 
 // Only the columns the save needs — the composition table also carries the
 // 768-dim embedding (~15-20KB serialized) and search-text blobs, which
@@ -101,20 +102,22 @@ export async function saveManualMealAction(
     .join(', ');
 
   const { mealId, share } = await db.transaction(async (tx) => {
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.mealId ? { id: parsed.mealId } : {}),
-        userId: user.id,
-        rawInput,
-        mealSlot,
-        // User-entered exact grams from verified DB entries — no estimation.
-        confidenceOverall: 'high',
-        loggedAt,
-        entryMode: 'precise',
-        ...nutritionValuesToRow(mealNutrition),
-      })
-      .returning({ id: meals.id });
+    const [meal] = await guardClientMealId(() =>
+      tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput,
+          mealSlot,
+          // User-entered exact grams from verified DB entries — no estimation.
+          confidenceOverall: 'high',
+          loggedAt,
+          entryMode: 'precise',
+          ...nutritionValuesToRow(mealNutrition),
+        })
+        .returning({ id: meals.id })
+    );
 
     await tx.insert(mealItems).values(
       items.map((item) => ({

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
+import { readJsonBody } from '@/lib/api/auth';
 import { logNutritionLabelMealSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
@@ -25,7 +26,7 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   try {
     const { user, profile } = await requireAuthAndProfile();
-    const body = logNutritionLabelMealSchema.parse(await req.json());
+    const body = logNutritionLabelMealSchema.parse(await readJsonBody(req));
 
     // Label scanning is premium: the throw is a 402 envelope via
     // `mapNutritionLabelError`'s pass-through default → `handleRouteError`.
