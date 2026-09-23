@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuthDialog } from '@/components/auth/auth-provider';
 import { ApplyAuthRequestConfig } from '../apply-auth-request-config';
@@ -32,8 +32,11 @@ describe('authIntent', () => {
   });
 });
 
+let openByHand: (() => void) | undefined;
+
 function Probe() {
-  const { open, tab, next, googleClientId } = useAuthDialog();
+  const { open, tab, next, googleClientId, openDialog } = useAuthDialog();
+  openByHand = () => openDialog('sign-in');
   return <output>{JSON.stringify({ open, tab, next, googleClientId })}</output>;
 }
 
@@ -86,5 +89,42 @@ describe('ApplyAuthRequestConfig', () => {
     );
 
     expect(state().next).toBe('/en/invite/khoi');
+  });
+
+  // The page is kept alive across `/en?auth=sign-in` → `/en` (history or a
+  // link), so the provider sees the intent go away rather than remounting.
+  it('closes a dialog the URL opened once the URL drops the intent', () => {
+    const page = (openTab: 'sign-in' | null) => (
+      <AuthProvider>
+        <ApplyAuthRequestConfig googleClientId="id" openTab={openTab} />
+        <Probe />
+      </AuthProvider>
+    );
+    const view = render(page('sign-in'));
+    expect(state().open).toBe(true);
+
+    view.rerender(page(null));
+
+    expect(state().open).toBe(false);
+  });
+
+  it('leaves a dialog the reader opened alone', () => {
+    const page = (googleClientId: string) => (
+      <AuthProvider>
+        <ApplyAuthRequestConfig
+          googleClientId={googleClientId}
+          openTab={null}
+        />
+        <Probe />
+      </AuthProvider>
+    );
+    const view = render(page('id'));
+    act(() => openByHand?.());
+    expect(state().open).toBe(true);
+
+    // A later request-time update with no intent must not shut it.
+    view.rerender(page('id-2'));
+
+    expect(state()).toMatchObject({ open: true, googleClientId: 'id-2' });
   });
 });

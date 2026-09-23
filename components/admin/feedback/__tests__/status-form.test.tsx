@@ -91,4 +91,13 @@ describe('StatusForm', () => {
 
     expect(screen.queryByText('Saved')).not.toBeInTheDocument();
   });
+
+  it('shows a status changed elsewhere when the page comes back', () => {
+    const view = render(<StatusForm id="fb-1" current="open" />);
+
+    view.rerender(<StatusForm id="fb-1" current="resolved" />);
+
+    expect(screen.getByRole('combobox')).toHaveTextContent('Resolved');
+    expect(screen.getByRole('button', { name: 'Update' })).toBeDisabled();
+  });
 });
