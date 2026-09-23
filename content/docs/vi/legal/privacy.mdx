@@ -34,6 +34,14 @@ cao, tuổi, giới tính sinh học và mức vận động; mục tiêu giảm
 nhịp độ bạn đặt cho mục tiêu đó, cùng các chỉ tiêu calo và đa lượng suy ra từ
 chúng; quốc gia bạn lớn lên và quốc gia bạn đang sống.
 
+Ảnh đại diện, nếu bạn tải lên, là **công khai**: ảnh được lưu trong một kho lưu
+trữ công khai dưới tên tệp ngẫu nhiên, không đoán được, để có thể hiện trên
+đường dẫn mời và trong bảng tin của bạn bè, và ai có đường dẫn đều xem được.
+Chúng tôi thu nhỏ và mã hóa lại mọi ảnh trên máy chủ trước khi lưu, nhờ đó xóa
+siêu dữ liệu đi kèm như vị trí. Khi bạn gỡ hoặc thay ảnh đại diện, tệp bị xóa
+khỏi kho lưu trữ; các bản đã được trình duyệt hoặc mạng phân phối nội dung (CDN)
+lưu đệm có thể vẫn tải được thêm vài phút.
+
 Hai quốc gia này là do **bạn tự chọn** trong phần thiết lập hồ sơ, từ một danh
 sách có sẵn. Kallo **không** đọc vị trí thiết bị của bạn: ứng dụng không xin
 quyền truy cập vị trí, không dùng GPS, và không suy ra nơi bạn đang đứng từ địa
@@ -244,7 +252,9 @@ Chúng tôi bảo vệ dữ liệu bằng nhiều lớp:
   trong Vòng kết nối.
 - Chỉ nhận lưu lượng đi qua lớp bảo vệ phía trước, chặn truy cập thẳng vào máy
   chủ.
-- Kho lưu trữ riêng tư cho ảnh đại diện và ảnh chụp màn hình gửi kèm góp ý.
+- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý. Ảnh đại diện công
+  khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
+  chủ của chúng tôi mới ghi được, sau khi mã hóa lại từng ảnh.
 - Siết chặt quyền dùng khóa và mật khẩu hệ thống.
 
 Không hệ thống nào an toàn tuyệt đối. Nếu xảy ra sự cố ảnh hưởng tới dữ liệu cá
