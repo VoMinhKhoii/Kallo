@@ -60,6 +60,10 @@ export function useFeedbackForm() {
       setSubmitError(null);
       setFile(null);
       setFileError(null);
+      // The hidden page keeps its DOM, so the native input still holds the
+      // submitted file. Left there, picking the same file again fires no
+      // `change` event and the next report would go out without it.
+      if (fileInput.current) fileInput.current.value = '';
       uploaded.current = null;
     };
   }, []);
