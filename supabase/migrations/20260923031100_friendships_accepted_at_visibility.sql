@@ -25,11 +25,13 @@
 --
 -- 2. friendships_set_accepted_at trigger. Runs AFTER the backfill (its UPDATE
 --    would otherwise be pinned to OLD). It makes the column authoritative in
---    the database: stamped with now() whenever an edge becomes 'accepted',
---    immutable while it stays accepted (so it can never be moved back to
---    re-expose history), and cleared when it leaves 'accepted'. This also
---    covers the still-serving previous app revision during a deploy, which
---    inserts accepted edges without knowing the column exists.
+--    the database: stamped with clock_timestamp() at the instant an edge
+--    becomes 'accepted' (see the timestamp note on the function), immutable
+--    while it stays accepted (so it can never be moved back to re-expose
+--    history), and cleared when it leaves 'accepted'. The trigger is the only
+--    writer — acceptInvite leaves the column to it — and it also covers the
+--    still-serving previous app revision during a deploy, which inserts
+--    accepted edges without knowing the column exists.
 --
 -- 3. public.is_friend_since(viewer, owner, ts) — is_accepted_friend plus the
 --    time bound. SECURITY DEFINER + pinned search_path, same pattern and same
@@ -58,6 +60,33 @@ ALTER TABLE public.friendships ENABLE TRIGGER on_friendships_updated;
 -- -----------------------------------------------------------------------------
 -- 2. Keep accepted_at authoritative
 -- -----------------------------------------------------------------------------
+-- Which clock. A friend sees a share when shared_at >= accepted_at, and the
+-- two values come from different transactions:
+--
+--   * meal_shares.shared_at defaults to now() — the share transaction's START
+--     (the re-share path in meal-visibility.ts also writes now()). That is the
+--     earliest instant attributable to the share, so the comparison can only
+--     err towards hiding it. clock_timestamp() there would make shares look
+--     later than they are and widen what a new friend sees.
+--   * accepted_at must be the latest instant attributable to the acceptance:
+--     the moment this trigger flips the status. now() is the acceptance
+--     transaction's START, so a share made after that transaction began but
+--     committed before the edge flipped would satisfy shared_at >= accepted_at
+--     and leak a pre-connection share. statement_timestamp() has the same hole
+--     when the UPDATE waits on a row lock before this trigger runs.
+--     clock_timestamp() is read here, after any lock wait, at the transition.
+--
+-- With that pairing, a share whose transaction committed before the edge
+-- became accepted is always hidden: its shared_at <= its commit < the
+-- transition = accepted_at. A share whose transaction merely overlaps the
+-- transition is hidden too (it started earlier); the owner can re-share it,
+-- which bumps shared_at. The one share that becomes visible without being
+-- committed after the acceptance COMMIT is one whose transaction STARTED after
+-- the status flip, inside the few statements acceptInvite runs before
+-- committing (event + direct chat) — made after the accept was already
+-- decided, not backlog, and invisible to everyone until the accept commits.
+-- Closing even that would need a commit timestamp, which Postgres does not
+-- expose to a trigger. Both clocks are the database's, never an app server's.
 CREATE OR REPLACE FUNCTION public.friendships_set_accepted_at()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -67,7 +96,7 @@ BEGIN
   IF NEW.status <> 'accepted' THEN
     NEW.accepted_at := NULL;
   ELSIF TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'accepted' THEN
-    NEW.accepted_at := now();
+    NEW.accepted_at := clock_timestamp();
   ELSE
     NEW.accepted_at := OLD.accepted_at;
   END IF;

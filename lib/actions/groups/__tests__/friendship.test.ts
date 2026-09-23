@@ -201,8 +201,9 @@ describe('acceptInvite', () => {
     const friendship = inserts.find((v) => 'status' in v);
     expect(friendship?.status).toBe('accepted');
     expect(friendship?.requestedBy).toBe(INVITER); // inviter initiated the link
-    // accepted_at starts the friend's view of each other's shares (KALLO-03).
-    expect(friendship?.acceptedAt).toBeInstanceOf(Date);
+    // accepted_at is the DB trigger's to stamp at the status flip (KALLO-03):
+    // an app-clock value would not compare cleanly with shared_at.
+    expect(friendship).not.toHaveProperty('acceptedAt');
 
     const event = inserts.find((v) => v.type === 'friend_accepted');
     expect(event?.refId).toBe(FRIENDSHIP_ID);
@@ -264,14 +265,11 @@ describe('acceptInvite', () => {
 
     expect(result.status).toBe('accepted');
     expect(mockTxUpdate).toHaveBeenCalledTimes(1);
-    // The promote stamps accepted_at: shares from before this moment stay
-    // hidden from the new friend (KALLO-03).
-    const promoted = set.mock.calls[0][0] as {
-      status: string;
-      acceptedAt: Date;
-    };
+    // The promote leaves accepted_at to the DB trigger, which stamps it at
+    // this status flip (KALLO-03).
+    const promoted = set.mock.calls[0][0] as Record<string, unknown>;
     expect(promoted.status).toBe('accepted');
-    expect(promoted.acceptedAt).toBeInstanceOf(Date);
+    expect(promoted).not.toHaveProperty('acceptedAt');
     // event + chat_groups + chat_group_members
     expect(mockTxInsert).toHaveBeenCalledTimes(3);
     expect(inserts[0]?.type).toBe('friend_accepted');

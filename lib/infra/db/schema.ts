@@ -1155,8 +1155,9 @@ export const friendships = pgTable(
       .defaultNow(),
     // When the edge became 'accepted'. A friend sees only shares made at or
     // after this instant (shared_at >= accepted_at) — never the backlog from
-    // before they connected. NULL until accepted; set by acceptInvite and, as a
-    // backstop, by the friendships_set_accepted_at trigger.
+    // before they connected. NULL until accepted. Written only by the
+    // friendships_set_accepted_at trigger (clock_timestamp() at the status
+    // flip — see 20260923031100 for why that clock); the app never sets it.
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   },
   (table) => [

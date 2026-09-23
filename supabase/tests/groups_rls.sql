@@ -31,7 +31,7 @@
 
 BEGIN;
 
-SELECT plan(27);
+SELECT plan(28);
 
 -- -----------------------------------------------------------------------------
 -- Fixtures (planted as the privileged test role, bypassing RLS)
@@ -102,12 +102,15 @@ VALUES
   (:'private_meal_id', 'beef broth', 'pho broth');
 
 -- The explicit opt-in share row for shared_meal (fires the fanout trigger).
-INSERT INTO public.meal_shares (meal_id, actor_id, visibility)
-VALUES (:'shared_meal_id', :'owner_id', 'circle');
+-- This whole suite is one transaction, so the default shared_at (now(), the
+-- transaction start) would PRECEDE the friendship above, whose trigger stamps
+-- accepted_at with clock_timestamp() at the insert. clock_timestamp() here
+-- models a share made after the two connected, as it would be in production.
+INSERT INTO public.meal_shares (meal_id, actor_id, visibility, shared_at)
+VALUES (:'shared_meal_id', :'owner_id', 'circle', clock_timestamp());
 
--- A circle share made a day BEFORE owner and friend connected (the friendship
--- above was accepted at now(), the transaction start). (g) proves the friend
--- never sees it — the latent backlog stays hidden after connecting.
+-- A circle share made a day BEFORE owner and friend connected. (g) proves the
+-- friend never sees it — the latent backlog stays hidden after connecting.
 \set early_meal_id '99999999-0000-0000-0000-000000000003'
 
 INSERT INTO public.meals (id, user_id, raw_input, calories_kcal, protein_g, carbohydrate_g, fat_g)
@@ -387,10 +390,22 @@ SELECT isnt(
   '(g) the trigger stamps accepted_at when an edge is inserted as accepted'
 );
 
--- The helper itself, both directions of the time bound.
+-- The helper itself, both directions of the time bound. The bound is
+-- inclusive: a share stamped at the acceptance instant itself is visible.
 SELECT ok(
-  public.is_friend_since(:'friend_id', :'owner_id', now()),
+  public.is_friend_since(:'friend_id', :'owner_id',
+    (SELECT accepted_at FROM public.friendships
+       WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
+         AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid))),
   '(g) is_friend_since is TRUE for a share made at the moment of acceptance'
+);
+
+-- accepted_at is the instant the status flipped, not the accepting
+-- transaction's start: a share whose shared_at is that start (i.e. made by a
+-- transaction that began before the flip) stays hidden.
+SELECT ok(
+  NOT public.is_friend_since(:'friend_id', :'owner_id', now()),
+  '(g) accepted_at is stamped at the status flip, after the transaction start'
 );
 
 SELECT ok(
