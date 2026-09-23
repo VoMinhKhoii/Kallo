@@ -134,6 +134,17 @@ Left sidebar **Rules** → **Transform Rules** → **Modify Request Header** →
 > Use **Set static**, not **Add** — "Set" overwrites any `X-Origin-Verify` a visitor
 > tries to send in, so the origin only ever trusts Cloudflare's value.
 
+**Same rule, second header — pin the public host.** Add another operation to
+`origin-lock`: **Set dynamic** → **Header name:** `X-Forwarded-Host` →
+**Value:** `http.host`. Step 4 rewrites `Host` to the run.app hostname, so that
+hostname is what the app sees as its own origin. `lib/infra/auth/redirects.ts`
+(`publicUrl`, used by `/auth/callback`, `/auth/verify` and the waitlist confirm
+link) builds redirect targets from `X-Forwarded-Host`; setting it here — and
+*Set*, so a visitor-supplied value is overwritten — keeps those redirects on
+`kallo.fit`. The code already refuses to emit a `*.run.app` origin and falls
+back to `https://kallo.fit` (KALLO-11), so this header is what keeps `www` and
+staging hosts correct rather than the only thing hiding the origin.
+
 ---
 
 ## 6. SSL + security hardening
@@ -269,7 +280,11 @@ Supabase dashboard → the current dogfood project → **Authentication** → **
 Configuration**:
 - **Site URL:** `https://kallo.fit`
 - **Redirect URLs:** add `https://kallo.fit/**` and `https://www.kallo.fit/**`
-  (keep the existing localhost / run.app entries).
+  (keep the localhost entries for development). **Remove any `*.run.app`
+  entries**: the raw origin is sealed, so no real sign-in lands there, and an
+  allow-listed run.app `redirect_to` is a way to make GoTrue print the origin
+  hostname in a `Location` header (KALLO-11). The auth proxy now refuses to
+  relay such a redirect, but the allow-list should not offer it either.
 
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
