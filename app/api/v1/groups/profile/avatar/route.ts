@@ -7,8 +7,6 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { createClient } from '@/lib/infra/supabase/server';
 import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
-export const runtime = 'nodejs';
-
 /** Session client + user id — the avatar upload goes through the user's OWN
  * session storage client so the `avatars_*_own` RLS policies apply. */
 async function requireSessionUser() {

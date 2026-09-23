@@ -1,7 +1,5 @@
 import { handleRevenueCatWebhook } from '@/lib/domain/billing/billing';
 
-export const runtime = 'nodejs';
-
 /**
  * Next.js route entrypoint. The handler lives in
  * `lib/domain/billing/revenuecat/webhook/` because App Router reserves the

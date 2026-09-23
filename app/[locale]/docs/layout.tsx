@@ -1,4 +1,3 @@
-import { setRequestLocale } from 'next-intl/server';
 import { DocsFooter } from '@/components/docs/docs-footer';
 import { DocsHeader } from '@/components/docs/docs-header';
 import type { Locale } from '@/i18n/config';
@@ -30,7 +29,6 @@ export default async function DocsLayout({
   params,
 }: DocsLayoutProps) {
   const { locale } = await params;
-  setRequestLocale(locale);
 
   const sections = await getDocsTree(locale as Locale);
   const searchEntries = await getSearchIndex(locale as Locale);

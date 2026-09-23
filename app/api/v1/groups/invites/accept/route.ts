@@ -3,8 +3,6 @@ import { acceptMealShareInviteAction } from '@/lib/actions/meal-sharing/invite-r
 import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await readJsonBody(request);

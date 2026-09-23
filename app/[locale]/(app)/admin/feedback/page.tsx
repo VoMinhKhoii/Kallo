@@ -8,8 +8,6 @@ import {
 } from '@/lib/admin/queries/feedback';
 import { db } from '@/lib/infra/db/client';
 
-export const dynamic = 'force-dynamic';
-
 export const metadata = {
   title: 'Feedback · Kallo Admin',
   robots: { index: false, follow: false },

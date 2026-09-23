@@ -4,8 +4,6 @@ import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { markSeenBodySchema } from '@/lib/domain/notifications/contracts';
 
-export const runtime = 'nodejs';
-
 /** Bulk badge clear, fired once when the Activity page has its first page. */
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import GithubSlugger from 'github-slugger';
+import { cacheLife } from 'next/cache';
 import type { Locale } from '@/i18n/config';
 
 export interface TocEntry {
@@ -38,12 +39,17 @@ function toPlainText(markdown: string): string {
  * slugging, so `## Ước tính` and `## Ước lượng` stay distinct.
  *
  * Reads the source file rather than the compiled module: every docs page is
- * prerendered by `generateStaticParams`, so this runs at build time only.
+ * prerendered by `generateStaticParams`, so this runs at build time only. The
+ * `deployment` cache profile (next.config.ts) keeps it that way under Cache
+ * Components — a runtime re-read would find no content/ in the image.
  */
 export async function getToc(
   locale: Locale,
   slug: string
 ): Promise<TocEntry[]> {
+  'use cache';
+  cacheLife('deployment');
+
   const filePath = path.join(CONTENT_ROOT, locale, `${slug}.mdx`);
 
   let source: string;

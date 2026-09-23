@@ -3,8 +3,6 @@ import { onboardingScreenSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
 import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     const { step, data } = onboardingScreenSchema.parse(await req.json());

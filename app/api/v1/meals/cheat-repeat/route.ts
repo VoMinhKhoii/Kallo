@@ -3,8 +3,6 @@ import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat/occasions';
 import { cheatRepeatSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     const body = cheatRepeatSchema.parse(await req.json());

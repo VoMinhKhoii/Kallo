@@ -3,8 +3,6 @@ import { setMealShareVisibility } from '@/lib/actions/visibility/meal-visibility
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireUserId();

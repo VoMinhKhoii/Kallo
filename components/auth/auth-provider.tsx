@@ -38,6 +38,21 @@ interface AuthDialogContextValue {
   showAuth: () => void;
   showForgot: () => void;
   showCheckEmail: (email: string, mode: CheckEmailMode) => void;
+  /** Applies the request-time values; see `AuthRequestConfig`. */
+  applyRequestConfig: (config: AuthRequestValues) => void;
+}
+
+/**
+ * The parts of the provider's state that depend on the request: the Google
+ * client ID (a runtime env var) and, on the landing page, the `?auth=` /
+ * `?next=` intent. A prerendered page cannot know them, so they arrive after
+ * the static shell from `AuthRequestConfig`, streamed behind `<Suspense>`.
+ */
+export interface AuthRequestValues {
+  googleClientId: string | null;
+  next?: string | null;
+  /** Open the dialog on this tab, e.g. arriving from an invite link. */
+  openTab?: AuthTab | null;
 }
 
 const AuthDialogContext = createContext<AuthDialogContextValue | null>(null);
@@ -67,6 +82,8 @@ export function AuthProvider({
 }) {
   const [open, setOpen] = useState(initialOpen);
   const [tab, setTab] = useState<AuthTab>(initialTab);
+  const [nextPath, setNextPath] = useState(next);
+  const [clientId, setClientId] = useState(googleClientId);
   const [panel, setPanel] = useState<AuthPanel>('auth');
   const [checkEmail, setCheckEmail] = useState<{
     email: string;
@@ -93,6 +110,15 @@ export function AuthProvider({
     setPanel('check-email');
   }, []);
 
+  const applyRequestConfig = useCallback(
+    ({ googleClientId: id, next: path, openTab }: AuthRequestValues) => {
+      setClientId(id);
+      if (path !== undefined) setNextPath(path);
+      if (openTab) openDialog(openTab);
+    },
+    [openDialog]
+  );
+
   return (
     <AuthDialogContext.Provider
       value={{
@@ -100,14 +126,15 @@ export function AuthProvider({
         tab,
         panel,
         checkEmail,
-        next,
-        googleClientId,
+        next: nextPath,
+        googleClientId: clientId,
         openDialog,
         closeDialog,
         setTab,
         showAuth,
         showForgot,
         showCheckEmail,
+        applyRequestConfig,
       }}
     >
       {children}

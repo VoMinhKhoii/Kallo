@@ -2,8 +2,6 @@ import type { NextRequest } from 'next/server';
 import { deleteWeightLogAction } from '@/lib/actions/tracking/weight';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ loggedDate: string }> }

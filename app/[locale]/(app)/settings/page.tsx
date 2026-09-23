@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { SubscriptionSettings } from '@/components/billing/subscription/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
 import { SettingsAnchorNav } from '@/components/settings/chrome/anchor-nav';
@@ -18,13 +18,7 @@ import {
 } from '@/lib/domain/settings/anchors';
 import { createClient } from '@/lib/infra/supabase/server';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  setRequestLocale(locale);
+export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('settings');
 
   return {

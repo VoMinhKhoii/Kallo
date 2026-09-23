@@ -5,8 +5,6 @@ import { publicUrl } from '@/lib/infra/auth/redirects';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
-export const runtime = 'nodejs';
-
 /**
  * Confirm a waitlist signup from the emailed link.
  *

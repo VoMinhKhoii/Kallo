@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GET, generateStaticParams } from '@/app/md/[locale]/[...slug]/route';
 import { locales } from '@/i18n/config';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
+
+// `cacheLife()` only works inside a Next render; the caching itself is Next's
+// concern, so here it is a no-op and the function runs as plain code.
+vi.mock('next/cache', () => ({ cacheLife: () => undefined }));
 
 function call(locale: string, slug: string[]) {
   return GET(new Request('https://kallo.fit/md'), {

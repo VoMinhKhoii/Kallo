@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { ConnectPanel } from '@/components/groups/invite/connect-panel';
 import { InviteAuthCta } from '@/components/groups/invite/invite-auth-cta';
 import { Link } from '@/i18n/navigation';
@@ -11,8 +11,6 @@ import {
 import type { PublicProfile } from '@/lib/actions/groups/types';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
 import { createClient } from '@/lib/infra/supabase/server';
-
-export const runtime = 'nodejs';
 
 /** Centered cream card shared by every invite state. */
 function Shell({
@@ -51,11 +49,40 @@ function Shell({
   );
 }
 
-export default async function InvitePage({
-  params,
-}: {
+interface InvitePageProps {
   params: Promise<{ locale: string; slug: string }>;
-}) {
+}
+
+/**
+ * Every state of this page depends on the slug and on who is signed in, so it
+ * all streams behind one boundary; the static shell is an empty card. The
+ * invite is a link opened from outside the app, so there is no in-app
+ * navigation into it to make instant beyond that shell.
+ */
+export default function InvitePage({ params }: InvitePageProps) {
+  return (
+    <Suspense fallback={<InviteSkeleton />}>
+      <InviteContent params={params} />
+    </Suspense>
+  );
+}
+
+function InviteSkeleton() {
+  return (
+    <main
+      className="flex min-h-dvh items-center justify-center bg-kallo-surface px-5 py-12"
+      aria-busy="true"
+    >
+      <div className="flex w-full max-w-sm flex-col items-center gap-5 motion-safe:animate-pulse">
+        <span className="size-16 rounded-full bg-kallo-track" />
+        <span className="h-6 w-48 rounded-md bg-kallo-track" />
+        <span className="h-4 w-64 rounded-md bg-kallo-track" />
+      </div>
+    </main>
+  );
+}
+
+async function InviteContent({ params }: InvitePageProps) {
   const { locale, slug } = await params;
   const t = await getTranslations('groups.connect');
 

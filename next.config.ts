@@ -5,6 +5,23 @@ import pkg from './package.json';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Instant Navigations (Next 16.3). Cache Components prerenders a static shell
+  // for every route — request-time data (cookies, the Supabase session, search
+  // params) streams in behind <Suspense> — and keeps visited routes alive with
+  // React <Activity> instead of unmounting them. Nothing is cached unless it is
+  // marked `'use cache'`. Partial Prefetching then prefetches one reusable
+  // App Shell per route instead of one prefetch per visible link. See
+  // docs/ARCHITECTURE.md ("Rendering and caching").
+  cacheComponents: true,
+  partialPrefetching: true,
+  cacheLife: {
+    // For `'use cache'` results computed from the build's own files — the docs
+    // sources under content/, which the standalone image does NOT ship. They
+    // must never be recomputed at runtime (it would ENOENT), so they never
+    // revalidate or expire while a deployment runs; a new deploy rebuilds
+    // them. This is the Cache Components equivalent of `force-static`.
+    deployment: { stale: 300, revalidate: Infinity, expire: Infinity },
+  },
   experimental: {
     // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
     serverActions: { bodySizeLimit: '6mb' },

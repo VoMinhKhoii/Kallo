@@ -3,8 +3,6 @@ import { stageCheatInviteAction } from '@/lib/actions/meal-sharing/stage-cheat-c
 import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /**
  * Take a cheat invite. Unlike its precise twin at `../accept`, this logs
  * nothing: it returns a staged analysis for the slider card to open on, and

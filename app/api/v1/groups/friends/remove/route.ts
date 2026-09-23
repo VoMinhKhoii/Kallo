@@ -3,8 +3,6 @@ import { removeFriend } from '@/lib/actions/groups/friendship';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 /** Remove a connection (deletes the edge; the pair can re-invite later). */
 export async function DELETE(request: NextRequest) {
   try {

@@ -4,8 +4,6 @@ import { relogItemsSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export const runtime = 'nodejs';
-
 /** `POST /api/v1/meals/relog` — commit staged relog references as one meal.
  *  Exists for the Flutter client; the web composer calls the Server Action
  *  directly. The body carries only references, never nutrition. */

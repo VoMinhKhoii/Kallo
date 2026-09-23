@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
-import { routing } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { appendVaryAccept } from '@/lib/infra/http/accept';
 import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
 import { buildCsp } from '@/lib/infra/security/csp';

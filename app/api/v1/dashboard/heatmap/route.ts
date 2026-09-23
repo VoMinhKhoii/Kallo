@@ -4,8 +4,6 @@ import { heatmapQuerySchema } from '@/lib/api/contracts/dashboard';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;

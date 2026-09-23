@@ -3,8 +3,6 @@ import { addChatGroupMembers } from '@/lib/actions/chat-groups/membership';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }

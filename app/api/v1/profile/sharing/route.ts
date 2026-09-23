@@ -4,8 +4,6 @@ import { readJsonBody } from '@/lib/api/auth';
 import { sharingPreferencesSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function PUT(req: NextRequest) {
   try {
     // Auth lives in the action (mirrors PUT /api/v1/profile) — no separate

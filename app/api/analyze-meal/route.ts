@@ -18,7 +18,6 @@ import {
   validateRequest,
 } from './_lib/request-validation';
 
-export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 // The guard release in `finally` is DB-backed; bound it so it can never block

@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
 import { DocsBreadcrumbs } from '@/components/docs/docs-breadcrumbs';
 import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
 import { LastUpdated } from '@/components/docs/last-updated';
-import { routing } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { loadDoc } from '@/lib/domain/docs/loader';
 import {
   DOCS_SLUGS,
@@ -81,7 +80,6 @@ export default async function DocPage({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
-  setRequestLocale(locale);
 
   const path = slug.join('/');
   const doc = await loadDoc(locale, path);

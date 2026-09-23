@@ -16,8 +16,6 @@ import { getRequestDetail } from '@/lib/admin/queries/requests';
 import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
 import { db } from '@/lib/infra/db/client';
 
-export const dynamic = 'force-dynamic';
-
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;

@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { locales } from '@/i18n/config';
 
-// The global setup mocks `@/i18n/navigation` for component tests and does not
-// export `routing`, which `app/robots.ts` reads. Importing the real module here
-// is not an option either — it builds next-intl's navigation helpers, which
-// pull in `next/navigation`. The locale list is the only piece robots needs.
-vi.mock('@/i18n/navigation', () => ({
+// `app/robots.ts` reads `routing` from `@/i18n/routing`, which holds nothing but
+// the locale config — unlike `@/i18n/navigation`, which the global setup mocks —
+// so it is stubbed to the same locale list rather than pulled in for real.
+vi.mock('@/i18n/routing', () => ({
   routing: { locales, defaultLocale: 'en' },
 }));
 

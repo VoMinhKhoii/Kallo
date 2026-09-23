@@ -6,8 +6,6 @@ import { searchBarcodeProduct } from '@/lib/domain/barcode/service';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
-export const runtime = 'nodejs';
-
 /**
  * `GET /api/v1/barcode/search?code=<digits>` — look up a product by barcode
  * (local cache first, then Open Food Facts, caching the result). Returns

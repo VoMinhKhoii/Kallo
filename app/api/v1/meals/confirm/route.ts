@@ -3,8 +3,6 @@ import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { confirmMealSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     const body = confirmMealSchema.parse(await req.json());

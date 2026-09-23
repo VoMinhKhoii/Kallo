@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next-intl/middleware', () => ({
   default: () => () => NextResponse.next(),
 }));
-vi.mock('@/i18n/navigation', () => ({ routing: { locales: ['en'] } }));
+vi.mock('@/i18n/routing', () => ({ routing: { locales: ['en'] } }));
 vi.mock('@/lib/infra/supabase/middleware', () => ({
   updateSession: async (_request: NextRequest, response: NextResponse) =>
     response,

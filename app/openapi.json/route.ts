@@ -8,10 +8,11 @@ import { openApiDocument } from '@/lib/api/openapi/document';
  * `/openapi.json` in `SKIP_INTL_PREFIXES` so next-intl does not rewrite it into
  * a locale that has no such route.
  *
- * Static: the document is assembled from source at build time and has no
- * per-request input.
+ * Static: the document is assembled from source and has no per-request input,
+ * so under Cache Components the handler prerenders at build time on its own —
+ * no `dynamic = 'force-static'` (which Cache Components rejects) needed. It
+ * must stay free of request reads (`request`, `headers()`) to keep it that way.
  */
-export const dynamic = 'force-static';
 
 export function GET(): Response {
   return new Response(JSON.stringify(openApiDocument(), null, 2), {

@@ -6,8 +6,6 @@ import {
 import { updateMealBodySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ mealId: string }> }

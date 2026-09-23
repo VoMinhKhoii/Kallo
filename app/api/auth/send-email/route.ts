@@ -16,8 +16,6 @@ import {
   WebhookPayloadTooLargeError,
 } from '@/lib/infra/security/webhook-request';
 
-export const runtime = 'nodejs';
-
 /**
  * Supabase "Send Email" auth hook.
  *

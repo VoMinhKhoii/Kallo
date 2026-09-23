@@ -3,8 +3,6 @@ import { logWeightAction } from '@/lib/actions/tracking/weight';
 import { weightLogSchema } from '@/lib/api/contracts/weight';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     const body = weightLogSchema.parse(await req.json());

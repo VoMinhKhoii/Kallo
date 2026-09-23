@@ -10,9 +10,6 @@ import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { withOcrGuard } from '@/lib/infra/rate-limit/ocr-guard';
 import { mapNutritionLabelError } from '../_errors';
 
-// `sharp` decodes the image in validateNutritionLabelImage — Node runtime only.
-export const runtime = 'nodejs';
-
 /**
  * `POST /api/v1/nutrition-label/scan` — read a packaged product's Nutrition
  * Facts table out of a photo. Body is `{ imageBase64, mimeType }`; the reply is

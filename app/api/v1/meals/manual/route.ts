@@ -3,8 +3,6 @@ import { saveManualMealAction } from '@/lib/actions/logging/manual-meals';
 import { saveManualMealSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 
-export const runtime = 'nodejs';
-
 export async function POST(req: NextRequest) {
   try {
     const body = saveManualMealSchema.parse(await req.json());
