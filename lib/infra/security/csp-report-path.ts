@@ -1,3 +1,8 @@
+import {
+  APP_METADATA_PATHS,
+  APP_ROUTE_PATTERNS,
+} from '@/lib/infra/security/app-route-patterns';
+
 /**
  * Reduce a URL path from a CSP report to a route template before it is
  * logged.
@@ -5,172 +10,92 @@
  * Stripping the query string is not enough: some Kallo URLs carry a
  * capability IN THE PATH. `/en/invite/<slug>` is the credential that resolves
  * and accepts a friend invite, `/en/circle/<shareId>` names a private share,
- * and other routes embed ids (`/circle/g/<groupId>`, `/admin/feedback/<id>`,
- * `/api/v1/meals/<mealId>`, …). A violation on any of those pages would copy
+ * and other routes embed ids. A violation on any of those pages would copy
  * the value into the logs.
  *
- * So the rule is an allowlist, not a blocklist: a segment survives only if it
- * is a known static route word (below) or a build asset filename; everything
- * else becomes `:param`. A dynamic route added later is redacted by default;
- * a static route missing from the list merely logs as `:param` too, which is
- * the safe direction to be wrong in.
- */
-
-/**
- * Static path segments of the app's own routes (the non-dynamic folder names
- * under `app/`), the locales, the Next asset prefix, and the handful of
- * third-party path words the policy allowlists (Supabase's REST/auth/realtime
- * prefixes, Google Identity's `gsi/client|style`). Words only — no ids.
- */
-const STATIC_SEGMENTS = new Set([
-  // Locales and Next assets.
-  'en',
-  'vi',
-  '_next',
-  'static',
-  'chunks',
-  'media',
-  'css',
-  'image',
-  // app/ route folders.
-  '.well-known',
-  'oauth-protected-resource',
-  'about',
-  'accept',
-  'accept-cheat',
-  'account',
-  'activity',
-  'admin',
-  'analyze-meal',
-  'api',
-  'app',
-  'auth',
-  'avatar',
-  'badge',
-  'barcode',
-  'billing-config',
-  'block',
-  'callback',
-  'candidates',
-  'chat-groups',
-  'cheat-occasions',
-  'cheat-repeat',
-  'circle',
-  'complete',
-  'confirm',
-  'contact',
-  'csp-report',
-  'dashboard',
-  'dates',
-  'day',
-  'debug',
-  'design-system',
-  'dismiss',
-  'docs',
-  'duplicate',
-  'entitlements',
-  'feed',
-  'feedback',
-  'friends',
-  'g',
-  'groups',
-  'health',
-  'healthz',
-  'heatmap',
-  'ingredients',
-  'invite',
-  'invites',
-  'leave',
-  'llms.txt',
-  'log',
-  'logging',
-  'macro-card',
-  'manual',
-  'md',
-  'meal-share',
-  'meals',
-  'members',
-  'messages',
-  'minimize',
-  'name',
-  'notifications',
-  'nudge',
-  'nutrition',
-  'nutrition-label',
-  'og',
-  'onboarding',
-  'openapi.json',
-  'overview',
-  'pending',
-  'pricing',
-  'privacy',
-  'profile',
-  'prompts',
-  'push-tokens',
-  'reaction',
-  'read',
-  'read-marker',
-  'reconcile',
-  'relog',
-  'remove',
-  'reply',
-  'requests',
-  'reset-password',
-  'restore',
-  'revenuecat',
-  'scan',
-  'screen',
-  'screenshot',
-  'search',
-  'seen',
-  'send-email',
-  'settings',
-  'shares',
-  'sharing',
-  'stage',
-  'summary',
-  'supabase-proxy',
-  'terms',
-  'v1',
-  'verify',
-  'waitlist',
-  'webhooks',
-  'weight',
-  // Allowlisted third-party path words.
-  'rest',
-  'realtime',
-  'storage',
-  'object',
-  'public',
-  'token',
-  'user',
-  'gsi',
-  'client',
-  'style',
-]);
-
-/**
- * A build asset: a content-hashed chunk, stylesheet or font. Its name is a
- * hash of public code, never a credential, and it is what makes a script-src
+ * Redaction is by POSITION in the real route tree, never by spelling. The
+ * path is matched against `APP_ROUTE_PATTERNS` (every page and route handler
+ * under `app/`, checked against the filesystem by a test), and whatever sits
+ * in a `[param]` or `[...catchAll]` position becomes `:param` — so an invite
+ * handle that happens to be `settings` is still redacted. Static positions
+ * keep their literal word. An unknown or third-party path falls into the
+ * `[locale]` / `[locale]/[...rest]` patterns, where every segment is dynamic,
+ * so only its shape survives; the origin in front of it is the useful part.
+ * A path matching no pattern at all is redacted whole to `/:redacted`.
+ *
+ * Two exceptions, both public by construction: a `[locale]` value that is one
+ * of our locales, and a Next build asset under `/_next/static/`, whose
+ * filename is a content hash of public code and is what makes a `script-src`
  * report actionable.
  */
-const ASSET_FILE = /^[\w.-]+\.(?:js|mjs|css|map|woff2?)$/;
 
-function templateSegment(segment: string): string {
-  if (segment === '') return segment;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(segment);
-  } catch {
-    return ':param';
-  }
-  const word = decoded.toLowerCase();
-  if (STATIC_SEGMENTS.has(word)) return word;
-  if (ASSET_FILE.test(decoded)) return decoded;
-  return ':param';
+const LOCALES = new Set(['en', 'vi']);
+const REDACTED = '/:redacted';
+const NEXT_ASSET =
+  /^\/_next\/static\/(?:[\w.-]+\/)*[\w.-]+\.(?:js|mjs|css|map|woff2?)$/;
+const METADATA = new Set<string>(APP_METADATA_PATHS);
+
+type PatternSegment =
+  | { kind: 'static'; value: string }
+  | { kind: 'param'; name: string }
+  | { kind: 'catchAll' };
+
+function compile(pattern: string): PatternSegment[] {
+  return pattern
+    .split('/')
+    .filter(Boolean)
+    .map((segment): PatternSegment => {
+      if (segment.startsWith('[...')) return { kind: 'catchAll' };
+      if (segment.startsWith('[')) {
+        return { kind: 'param', name: segment.slice(1, -1) };
+      }
+      return { kind: 'static', value: segment };
+    });
 }
 
-/** `/en/invite/Ab3xYz` → `/en/invite/:param`. Query and fragment dropped. */
+const ROUTES = APP_ROUTE_PATTERNS.map(compile);
+
+interface Match {
+  template: string[];
+  /** Literal segments matched: the most specific route wins, as in Next. */
+  statics: number;
+}
+
+function matchRoute(route: PatternSegment[], path: string[]): Match | null {
+  const template: string[] = [];
+  let statics = 0;
+  for (let i = 0; i < route.length; i++) {
+    const segment = route[i];
+    if (segment.kind === 'catchAll') {
+      // `[...x]` needs at least one segment and swallows the rest.
+      if (i >= path.length) return null;
+      template.push(...path.slice(i).map(() => ':param'));
+      return { template, statics };
+    }
+    if (i >= path.length) return null;
+    if (segment.kind === 'static') {
+      if (path[i] !== segment.value) return null;
+      template.push(segment.value);
+      statics++;
+    } else {
+      template.push(
+        segment.name === 'locale' && LOCALES.has(path[i]) ? path[i] : ':param'
+      );
+    }
+  }
+  return route.length === path.length ? { template, statics } : null;
+}
+
+/** `/en/invite/settings?x=1` → `/en/invite/:param`. */
 export function routeTemplate(pathname: string): string {
-  return pathname.split(/[?#]/, 1)[0].split('/').map(templateSegment).join('/');
+  const path = pathname.split(/[?#]/, 1)[0];
+  if (NEXT_ASSET.test(path) || METADATA.has(path)) return path;
+
+  const segments = path.split('/').filter(Boolean);
+  let best: Match | null = null;
+  for (const route of ROUTES) {
+    const match = matchRoute(route, segments);
+    if (match && (!best || match.statics > best.statics)) best = match;
+  }
+  return best ? `/${best.template.join('/')}` : REDACTED;
 }

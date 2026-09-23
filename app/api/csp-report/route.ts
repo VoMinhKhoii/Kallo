@@ -27,8 +27,8 @@ const MAX_BODY_BYTES = 32 * 1024;
  * a `memory` policy — a report must never cost a database round trip.
  *
  * The log line is compact and sanitized (`parseCspReport`): origin + route
- * template only — no query string, and dynamic path segments such as an
- * invite slug become `:param` — so a report cannot copy a token from the page
+ * template only — no query string, and any segment in a dynamic route
+ * position (an invite slug, a share id) becomes `:param` — so a report cannot copy a token from the page
  * URL into the logs. The sample of the blocked script is not kept.
  *
  * Success is 204 with no body; nothing reads it.

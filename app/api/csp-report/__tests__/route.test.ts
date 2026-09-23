@@ -25,7 +25,8 @@ function makeRequest(
 
 const legacyReport = JSON.stringify({
   'csp-report': {
-    'document-uri': 'https://kallo.fit/en/waitlist/confirm?token=tok_secret',
+    'document-uri':
+      'https://kallo.fit/api/v1/waitlist/confirm?token=tok_secret',
     'blocked-uri': 'https://evil.example/x?leak=tok_secret',
     'effective-directive': 'connect-src',
     disposition: 'enforce',
@@ -51,7 +52,7 @@ describe('POST /api/csp-report', () => {
     expect(JSON.parse(line)).toEqual({
       disposition: 'enforce',
       directive: 'connect-src',
-      document: 'https://kallo.fit/en/waitlist/confirm',
+      document: 'https://kallo.fit/api/v1/waitlist/confirm',
       blocked: 'https://evil.example/:param',
     });
     // The query strings — where tokens live — never reach the log.

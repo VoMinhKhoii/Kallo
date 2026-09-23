@@ -79,9 +79,10 @@ export interface CspViolation {
 
 /**
  * Origin + route template of a URL: query string, fragment and credentials
- * gone, and every path segment that is not a known static route word replaced
- * with `:param` (`routeTemplate`) — some Kallo paths carry a capability, such
- * as an invite slug. Non-URL values (`inline`, `eval`, `wasm-eval`) are CSP
+ * gone, and the path matched against the app's route tree (`routeTemplate`):
+ * every segment in a dynamic position becomes `:param` and an unknown path
+ * becomes `/:redacted` — some Kallo paths carry a capability, such as an
+ * invite slug. Non-URL values (`inline`, `eval`, `wasm-eval`) are CSP
  * keywords for what was blocked and pass through; a relative path is
  * templated the same way. Always capped at `MAX_FIELD`.
  */

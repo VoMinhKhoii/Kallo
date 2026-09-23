@@ -10,8 +10,8 @@ import {
 describe('stripUrl', () => {
   it('drops the query string, fragment and credentials', () => {
     expect(
-      stripUrl('https://u:p@kallo.fit/en/waitlist/confirm?token=secret#x')
-    ).toBe('https://kallo.fit/en/waitlist/confirm');
+      stripUrl('https://u:p@kallo.fit/api/v1/waitlist/confirm?token=secret#x')
+    ).toBe('https://kallo.fit/api/v1/waitlist/confirm');
   });
 
   it('keeps CSP keywords and reduces opaque schemes to the scheme', () => {
@@ -56,7 +56,7 @@ describe('parseCspReport', () => {
   it('normalizes a legacy report-uri body', () => {
     const [violation] = parseCspReport('legacy', {
       'csp-report': {
-        'document-uri': 'https://kallo.fit/en/auth/callback?code=secret',
+        'document-uri': 'https://kallo.fit/auth/callback?code=secret',
         'blocked-uri': 'https://evil.example/steal?c=abc',
         'violated-directive': "connect-src 'self' https://abc.supabase.co",
         'original-policy': "default-src 'self'; …",
@@ -72,7 +72,7 @@ describe('parseCspReport', () => {
     expect(violation).toEqual({
       disposition: 'enforce',
       directive: 'connect-src',
-      document: 'https://kallo.fit/en/auth/callback',
+      document: 'https://kallo.fit/auth/callback',
       blocked: 'https://evil.example/:param',
       source: 'https://kallo.fit/_next/static/chunks/a.js',
       line: 3,
