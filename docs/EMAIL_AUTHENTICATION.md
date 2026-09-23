@@ -31,8 +31,9 @@ and the code path is `docs/EMAIL.md`.
 - **DMARC** (TXT at `_dmarc.<domain>`): the policy for the domain in the visible
   `From:` header. A message passes DMARC if **either** SPF or DKIM passes **and
   is aligned** with the `From:` domain. `p=` tells receivers what to do when
-  both fail: `none` (report only), `quarantine` (spam folder), `reject`
-  (bounce).
+  both fail: `none` (report only), `quarantine` (treat as suspicious —
+  usually the spam folder, but a receiver may hold, drop or bounce it),
+  `reject` (bounce).
 
 **Alignment** is what stops an attacker passing SPF for `evil.example` while
 showing `From: billing@kallo.fit`:
@@ -138,6 +139,15 @@ DMARC pass here; the aligned DKIM signature is.
 
 `<rua>` is whatever the record has after §3 (Cloudflare's address, plus yours).
 
+**Every stage from 1 onward can stop legitimate mail from reaching users.**
+`p=quarantine` only asks receivers to treat failing mail as suspicious; it does
+not promise a visible spam folder. Some receivers (and many corporate gateways)
+hold it in an admin quarantine the user never sees, drop it, or bounce it. A
+sender you forgot in §2 means missing sign-up and password-reset emails at
+stage 1 just as it would at stage 3. So give quarantine the same care as
+reject: only advance when §3 is clean, run the whole §5 checklist right after
+each change, and have the §6 rollback value ready to paste before you edit.
+
 | Stage | Record value | Hold for |
 |---|---|---|
 | 0 (today) | `v=DMARC1; p=none; rua=<rua>` | until §3 is clean |
@@ -151,8 +161,9 @@ Notes on the tags:
   (May 2026), removed it and added `t=y` ("testing, don't apply") instead
   ([RFC 9989][rfc9989]). Receivers that still honor `pct` sample 25%; ones that
   follow RFC 9989 ignore it and quarantine everything. So treat stage 1 as "full
-  quarantine for some receivers" — safe only because quarantine is the spam
-  folder, not a bounce. You can skip straight to stage 2 if reports are clean.
+  quarantine for some receivers", not as a 25% sample — it can already block
+  real mail (see above). It is still worth a week because it is the smallest
+  step up from `p=none` and the reports show the effect before `p=reject`.
 - **`sp=`** covers every *existing* subdomain that has no `_dmarc` record of its
   own, including `mail.kallo.fit` (unless §3 step 3 found one). **`np=`**
   (RFC 9989) covers subdomains that don't exist at all, e.g.
@@ -217,9 +228,9 @@ dig +short MX kallo.fit                   # route1-3.mx.cloudflare.net unchanged
 
 DNS edits in Cloudflare take effect within minutes (record TTL `Auto`).
 
-- **Legit mail landing in spam or bouncing**: set `_dmarc.kallo.fit` back one
-  stage (worst case to stage 0, `p=none`), and put the SPF qualifier back to
-  `~all`. Then find the failing source in the reports and fix *it* (add its
+- **Legit mail landing in spam, going missing or bouncing**: set
+  `_dmarc.kallo.fit` back one stage (worst case to stage 0, `p=none`), and put
+  the SPF qualifier back to `~all`. Then find the failing source in the reports and fix *it* (add its
   DKIM, or move it onto `mail.kallo.fit`) before re-tightening.
 - **Resend mail failing only**: check the Resend dashboard shows the domain as
   **Verified** and every record green; a proxied (orange) record or a changed
