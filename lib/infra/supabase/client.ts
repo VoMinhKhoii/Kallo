@@ -1,4 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr';
+import {
+  createBrowserClient,
+  parseCookieHeader,
+  serializeCookieHeader,
+} from '@supabase/ssr';
+import {
+  sessionCookieOptions,
+  sessionCookieWriteOptions,
+} from '@/lib/infra/supabase/cookie-options';
 
 export function createClient() {
   // Browser auth rides the app's own origin (see app/api/supabase-proxy) so
@@ -13,14 +21,38 @@ export function createClient() {
   // proxy origin while the server/middleware clients stay on the real Supabase
   // URL, that derivation would diverge — and signOut() (which only clears its
   // own key's cookie) could never clear the cookie the middleware authenticates
-  // against, so users get bounced straight back in. Pin the name to the key the
-  // server derives so both sides read, write, and clear the same cookie.
-  const ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(
-    '.'
-  )[0];
+  // against, so users get bounced straight back in. sessionCookieOptions()
+  // pins the name to the key the server derives so both sides read, write, and
+  // clear the same cookie, with the same Secure/SameSite/Max-Age attributes.
   return createBrowserClient(
     url,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookieOptions: { name: `sb-${ref}-auth-token` } }
+    {
+      cookieOptions: sessionCookieOptions(),
+      // Same document.cookie plumbing @supabase/ssr uses by default, except
+      // every write goes through sessionCookieWriteOptions(): the library
+      // replaces cookieOptions.maxAge with its 400-day default on each write,
+      // including each `.0`/`.1` chunk. Without a document (a server render)
+      // there is no cookie jar, matching the library's own fallback.
+      cookies: {
+        getAll() {
+          if (typeof document === 'undefined') return [];
+          return parseCookieHeader(document.cookie).map(({ name, value }) => ({
+            name,
+            value: value ?? '',
+          }));
+        },
+        setAll(cookiesToSet) {
+          if (typeof document === 'undefined') return;
+          for (const { name, value, options } of cookiesToSet) {
+            document.cookie = serializeCookieHeader(
+              name,
+              value,
+              sessionCookieWriteOptions(options)
+            );
+          }
+        },
+      },
+    }
   );
 }

@@ -1,5 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  sessionCookieOptions,
+  sessionCookieWriteOptions,
+} from '@/lib/infra/supabase/cookie-options';
 
 export async function updateSession(
   request: NextRequest,
@@ -11,12 +15,7 @@ export async function updateSession(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
-      cookieOptions: {
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: 'lax',
-        secure: true,
-        path: '/',
-      },
+      cookieOptions: sessionCookieOptions(),
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -27,7 +26,11 @@ export async function updateSession(
           }
           supabaseResponse = response ?? NextResponse.next({ request });
           for (const { name, value, options } of cookiesToSet) {
-            supabaseResponse.cookies.set(name, value, options);
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              sessionCookieWriteOptions(options)
+            );
           }
         },
       },

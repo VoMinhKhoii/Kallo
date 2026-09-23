@@ -33,6 +33,14 @@ biological sex and activity level; your goal of cutting, bulking or maintaining,
 the pace you set for it, and the calorie and macro targets derived from those;
 the country you grew up in and the country you live in.
 
+Your avatar photo, if you upload one, is **public**: it is stored in a public
+storage bucket under a random, unguessable file name so it can appear on your
+invite link and in friends' feeds, and anyone who has the link can view it. We
+resize and re-encode every photo on our servers before storing it, which strips
+embedded metadata such as location. Removing or replacing your avatar deletes
+the file from storage; copies already cached by browsers or our content delivery
+network may keep loading for a few minutes afterwards.
+
 Both countries are ones **you pick yourself** during onboarding, from a list.
 Kallo does **not** read your device location: the app requests no location
 permission, uses no GPS, and does not infer where you are from your IP address.
@@ -226,7 +234,9 @@ We apply several layers of protection:
   from another.
 - Server-side permission checks on every cross-account read in Circle.
 - An origin lock that only accepts traffic arriving through our edge layer.
-- Private storage buckets for avatars and feedback screenshots.
+- A private storage bucket for feedback screenshots. Avatars are public by
+  design (see section 2), stored under unguessable file names, and only our
+  servers can write them, after re-encoding each image.
 - Tightly restricted access to server credentials.
 
 No system is perfectly secure. If an incident affects your personal data, we
