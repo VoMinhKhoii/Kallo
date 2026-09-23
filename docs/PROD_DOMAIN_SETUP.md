@@ -226,7 +226,8 @@ curl -sSI -H 'Accept: text/markdown' https://kallo.fit/en | grep -Ei '^(content-
 ## 7. Email — inbound support@kallo.fit (free)
 
 Left sidebar **Email** → **Email Routing** → **Get started** → enable. Cloudflare
-adds the needed MX + SPF/DKIM/DMARC DNS records automatically. Then **Create
+adds the needed MX, SPF and DKIM DNS records automatically (Email Routing does
+not add DMARC — see §7c). Then **Create
 address** → `support@kallo.fit` → **Send to** your personal inbox → verify that
 inbox via the email Cloudflare sends. (Used by the OpenFoodFacts contact + the
 legal-page mailto links.)
@@ -271,6 +272,26 @@ nobody can confirm an account.
 
 **Rollback.** Turning the Send Email hook off in the dashboard immediately
 reverts auth email to Supabase's own sender — no deploy required.
+
+---
+
+## 7c. Email — anti-spoofing enforcement (SPF / DMARC)
+
+§7 and §7b leave the domain in **monitoring** mode: apex SPF ends in `~all`
+(soft fail) and `_dmarc.kallo.fit` is `p=none`, so receivers report forged
+`@kallo.fit` mail but still deliver it (pentest finding KALLO-04). Moving to
+enforcement is DNS-only and staged over a few weeks:
+
+1. Confirm the sender inventory — only Resend sends, as `mail.kallo.fit`; the
+   apex sends nothing.
+2. **Email** → **DMARC Management** → enable, then read 1–2 weeks of aggregate
+   reports.
+3. Apex SPF `~all` → `-all`; DMARC `p=none` → `quarantine` → `reject`, with
+   `sp=`/`np=` for subdomains.
+
+The full runbook — exact record values, why each stage exists, verification and
+rollback — is **`docs/EMAIL_AUTHENTICATION.md`**. Do not skip its staging:
+jumping straight to `p=reject` bounces any legitimate sender you forgot.
 
 ---
 
@@ -416,3 +437,6 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
 - **Rotating the origin secret** means updating BOTH
   `kallo-prod-origin-shared-secret` (Secret Manager, then redeploy) and the
   Cloudflare Transform Rule value.
+- **Email anti-spoofing (KALLO-04).** Stage DMARC to `p=reject` and apex SPF to
+  `-all` per §7c / `docs/EMAIL_AUTHENTICATION.md`. Optional hardening flagged
+  by the same pentest: CAA, DNSSEC, MTA-STS/TLS-RPT (all in that doc).
