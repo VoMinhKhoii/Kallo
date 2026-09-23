@@ -1,7 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import { usePathname } from '@/i18n/navigation';
 import type {
   FEEDBACK_TYPES,
@@ -38,35 +39,11 @@ export function useFeedbackForm() {
   // Cache the uploaded screenshot per file so a failed submit retry reuses the
   // object instead of uploading a new orphan each attempt.
   const uploaded = useRef<{ file: File; path: string } | null>(null);
-  // Set once a submit lands; see the layout effect below.
-  const resetWhenHidden = useRef(false);
 
   // Move focus to the confirmation so screen-reader + keyboard users land on it.
   useEffect(() => {
     if (sent) sentHeading.current?.focus();
   }, [sent]);
-
-  // Cache Components keeps Settings alive (hidden with React <Activity>) when
-  // the user navigates away, so state survives the round trip. An unsent draft
-  // should — that is the point. The "thanks" screen should not: coming back to
-  // Settings later must show a fresh form, not a confirmation for a message
-  // sent minutes ago. The cleanup runs as the page is hidden.
-  useLayoutEffect(() => {
-    return () => {
-      if (!resetWhenHidden.current) return;
-      resetWhenHidden.current = false;
-      setSent(false);
-      setMessage('');
-      setSubmitError(null);
-      setFile(null);
-      setFileError(null);
-      // The hidden page keeps its DOM, so the native input still holds the
-      // submitted file. Left there, picking the same file again fires no
-      // `change` event and the next report would go out without it.
-      if (fileInput.current) fileInput.current.value = '';
-      uploaded.current = null;
-    };
-  }, []);
 
   const canSubmit = message.trim().length > 0 && !pending;
 
@@ -141,7 +118,6 @@ export function useFeedbackForm() {
         return;
       }
       setSent(true);
-      resetWhenHidden.current = true;
     } catch (error) {
       console.error('Failed to submit feedback:', error);
       setSubmitError(t('error'));
@@ -151,7 +127,6 @@ export function useFeedbackForm() {
   };
 
   const reset = () => {
-    resetWhenHidden.current = false;
     setSent(false);
     // Keep the last-selected type — a follow-up is often the same kind.
     setMessage('');
@@ -159,6 +134,16 @@ export function useFeedbackForm() {
     uploaded.current = null;
     clearFile();
   };
+
+  // Cache Components keeps Settings alive (hidden with React <Activity>) when
+  // the user navigates away, so state survives the round trip. An unsent draft
+  // should — that is the point. The "thanks" screen and a failed-submit error
+  // should not: coming back later must show a fresh form, including when the
+  // submission only settled after the user left.
+  useResetOnReveal(() => {
+    if (sent) reset();
+    else setSubmitError(null);
+  });
 
   return {
     type,
