@@ -1,5 +1,6 @@
 import { type Column, getTableColumns, type Table } from 'drizzle-orm';
 import type { JsonSchema } from '@/lib/api/openapi/components';
+import { AUTH_CLAIM_KEYS } from '@/lib/domain/account-export/build-export';
 import {
   billingProviderSyncs,
   bodyWeightLog,
@@ -108,6 +109,17 @@ const list = (items: JsonSchema, description?: string): JsonSchema => ({
   ...(description ? { description } : {}),
 });
 
+/** Allowlisted Supabase Auth profile claims; each appears only when stored. */
+const authClaims: JsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: Object.fromEntries(
+    AUTH_CLAIM_KEYS.map((key) => [key, { type: ['string', 'boolean'] }])
+  ),
+  description:
+    'Profile claims from Supabase Auth (sign-up form, Google, Apple), limited to an allowlist. Tokens and app_metadata are never included.',
+};
+
 export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
   DataExport: object(
     {
@@ -118,6 +130,19 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
         createdAt: nullable(dateTime),
         lastSignInAt: nullable(dateTime),
         signInProviders: list({ type: 'string' }),
+        profileClaims: authClaims,
+        identities: list(
+          object({
+            provider: nullable({ type: 'string' }),
+            identityId: nullable(uuid),
+            providerUserId: nullable({ type: 'string' }),
+            createdAt: nullable(dateTime),
+            lastSignInAt: nullable(dateTime),
+            updatedAt: nullable(dateTime),
+            claims: authClaims,
+          }),
+          'Linked sign-in identities (email, Google, Apple).'
+        ),
       }),
       profile: nullable(object(columns(userProfiles))),
       meals: list(

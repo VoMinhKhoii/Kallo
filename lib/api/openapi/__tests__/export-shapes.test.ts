@@ -74,6 +74,18 @@ const user = {
   created_at: '2026-01-02T03:04:05.000Z',
   last_sign_in_at: '2026-09-20T10:00:00.000Z',
   app_metadata: { providers: ['google'] },
+  user_metadata: { full_name: 'Owner', email_verified: true },
+  identities: [
+    {
+      id: '109876543210',
+      identity_id: '33333333-3333-4333-8333-333333333333',
+      provider: 'google',
+      identity_data: { sub: '109876543210', picture: 'https://x.test/p' },
+      created_at: '2026-01-02T03:04:05.000Z',
+      last_sign_in_at: '2026-09-20T10:00:00.000Z',
+      updated_at: '2026-09-20T10:00:00.000Z',
+    },
+  ],
 };
 
 async function exportAsJson(rows?: () => unknown[]) {

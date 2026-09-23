@@ -1322,6 +1322,11 @@ export const coachAssignments = pgTable(
     uniqueIndex('coach_assignments_one_active_primary_idx')
       .on(table.clientId)
       .where(sql`rank = 'primary' AND status = 'active'`),
+    // The account export reads assignments on either side in any status (the
+    // partial index above cannot serve that), and both FKs cascade on account
+    // deletion. Assignments change rarely, so the write cost is negligible.
+    index('coach_assignments_coach_idx').on(table.coachId),
+    index('coach_assignments_client_idx').on(table.clientId),
   ]
 );
 
@@ -1480,6 +1485,8 @@ export const chatGroups = pgTable(
       table.directUserLow,
       table.directUserHigh
     ),
+    // The account export reads every group a user created.
+    index('chat_groups_created_by_idx').on(table.createdBy),
     check('chat_groups_kind_check', sql`${table.kind} IN ('direct', 'group')`),
     check(
       'chat_groups_direct_shape_check',

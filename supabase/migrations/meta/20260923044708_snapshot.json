@@ -1,5 +1,5 @@
 {
-  "id": "ad82e0b3-6d4b-42e1-a497-43ef8263ab83",
+  "id": "6745846b-b490-4f7a-91fd-2a10fce4c7e4",
   "prevId": "d5aa9b6c-df6e-4aea-b75a-16b52ee0d470",
   "version": "7",
   "dialect": "postgresql",
@@ -1129,7 +1129,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "chat_groups_created_by_idx": {
+          "name": "chat_groups_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "chat_groups_created_by_users_id_fk": {
           "name": "chat_groups_created_by_users_id_fk",
@@ -1376,6 +1392,36 @@
           ],
           "isUnique": true,
           "where": "rank = 'primary' AND status = 'active'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coach_assignments_coach_idx": {
+          "name": "coach_assignments_coach_idx",
+          "columns": [
+            {
+              "expression": "coach_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coach_assignments_client_idx": {
+          "name": "coach_assignments_client_idx",
+          "columns": [
+            {
+              "expression": "client_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

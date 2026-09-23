@@ -141,7 +141,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260912172822_add_day_completion_marks.sql` | A (Drizzle) | `day_completion_marks` — days the user attested were fully logged |
 | `20260912172830_rls_day_completion_marks.sql` | B (Manual) | RLS for `day_completion_marks`; SELECT + INSERT only, since the mark is one-way |
 | `20260923034000_avatars_server_only_writes.sql` | B (Manual, journaled) | Drop every user-JWT policy on the public `avatars` bucket: only the server (service role, after the sharp re-encode) writes or deletes avatar objects; reads stay public |
-| `20260923044708_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat messages, meal-share reactions/replies/invites); plain `CREATE INDEX`, since migrations run in a transaction |
+| `20260923044708_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat groups and messages, meal-share reactions/replies/invites, coach assignments); plain `CREATE INDEX`, since migrations run in a transaction |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

@@ -14,9 +14,11 @@
  * someone deciding, in review, whether the user gets it back.
  *
  * Outside Postgres-via-Drizzle, the export also covers:
- *   - Supabase Auth: user id, email, sign-up and last sign-in times, and the
- *     linked sign-in providers → `account`. Sessions and refresh tokens are
- *     live credentials and are never exported.
+ *   - Supabase Auth: user id, email, sign-up and last sign-in times, the
+ *     linked sign-in providers, and the allowlisted profile claims
+ *     (`AUTH_CLAIM_KEYS`) of `user_metadata` and each linked identity →
+ *     `account`. Sessions, refresh and provider tokens are live credentials
+ *     and are never exported; neither is `app_metadata` beyond the providers.
  *   - Storage: the uploaded avatar (`avatars` bucket) and feedback screenshots
  *     (`feedback-screenshots` bucket) → `files`, as bucket + object path. The
  *     bytes are not inlined; the avatar is also visible in the app, and support

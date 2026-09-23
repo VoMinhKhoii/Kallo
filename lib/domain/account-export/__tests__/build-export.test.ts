@@ -18,7 +18,38 @@ const user = {
   email: 'owner@kallo.fit',
   created_at: '2026-01-02T03:04:05.000Z',
   last_sign_in_at: '2026-09-20T10:00:00.000Z',
-  app_metadata: { providers: ['email', 'google', 42] },
+  app_metadata: { providers: ['email', 'google', 42], role: 'admin' },
+  user_metadata: {
+    display_name: 'Khoa',
+    full_name: 'Khoa Pham',
+    avatar_url: 'https://lh3.googleusercontent.com/a/photo',
+    email_verified: true,
+    // Not on the allowlist: credential-like, unknown, or not a scalar.
+    provider_token: 'ya29.secret',
+    provider_refresh_token: 'refresh-secret',
+    custom_claims: { hd: 'kallo.fit' },
+    iss: 'https://accounts.google.com',
+  },
+  identities: [
+    {
+      id: '109876543210',
+      identity_id: '33333333-3333-4333-8333-333333333333',
+      user_id: USER,
+      provider: 'google',
+      identity_data: {
+        sub: '109876543210',
+        email: 'owner@kallo.fit',
+        name: 'Khoa Pham',
+        picture: 'https://lh3.googleusercontent.com/a/photo',
+        access_token: 'ya29.secret',
+        id_token: 'eyJ.secret',
+        aud: 'client-id',
+      },
+      created_at: '2026-01-02T03:04:05.000Z',
+      last_sign_in_at: '2026-09-20T10:00:00.000Z',
+      updated_at: '2026-09-20T10:00:00.000Z',
+    },
+  ],
 };
 
 const key = (query: CapturedQuery) => [query.from, ...query.joins].join(' ⋈ ');
@@ -112,7 +143,34 @@ describe('buildDataExport — contents', () => {
       createdAt: '2026-01-02T03:04:05.000Z',
       lastSignInAt: '2026-09-20T10:00:00.000Z',
       signInProviders: ['email', 'google'],
+      profileClaims: {
+        display_name: 'Khoa',
+        full_name: 'Khoa Pham',
+        avatar_url: 'https://lh3.googleusercontent.com/a/photo',
+        email_verified: true,
+      },
+      identities: [
+        {
+          provider: 'google',
+          identityId: '33333333-3333-4333-8333-333333333333',
+          providerUserId: '109876543210',
+          createdAt: '2026-01-02T03:04:05.000Z',
+          lastSignInAt: '2026-09-20T10:00:00.000Z',
+          updatedAt: '2026-09-20T10:00:00.000Z',
+          claims: {
+            sub: '109876543210',
+            email: 'owner@kallo.fit',
+            name: 'Khoa Pham',
+            picture: 'https://lh3.googleusercontent.com/a/photo',
+          },
+        },
+      ],
     });
+    // Belt and braces: no credential or app_metadata value anywhere in the file.
+    const serialized = JSON.stringify(document);
+    for (const secret of ['secret', 'admin', 'client-id', 'accounts.google']) {
+      expect(serialized).not.toContain(secret);
+    }
     expect(document.profile).toHaveProperty('autoShareToCircle', true);
     expect(document.meals[0]?.items).toHaveLength(1);
     expect(document.social.reactions).toHaveLength(1);
@@ -320,5 +378,7 @@ describe('buildDataExport — contents', () => {
     expect(document.chat.groups).toEqual([]);
     expect(document.files).toEqual([]);
     expect(document.account.signInProviders).toEqual([]);
+    expect(document.account.profileClaims).toEqual({});
+    expect(document.account.identities).toEqual([]);
   });
 });

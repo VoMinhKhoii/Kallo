@@ -10,8 +10,8 @@ import * as schema from '@/lib/infra/db/schema';
 // ---------------------------------------------------------------------------
 // Every "Export my data" query filters a table by a user column. Postgres does
 // not index foreign keys on its own, so without an index leading with that
-// column each export is a sequential scan of the whole table — tolerable on a
-// small table, not on telemetry, messages or meal-share activity. This holds
+// column each export is a sequential scan of the whole table — and the same
+// columns drive the ON DELETE CASCADE when an account is deleted. This holds
 // each lookup in lib/domain/account-export/ against the Drizzle schema.
 // ---------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ const EXPORT_LOOKUPS: ReadonlyArray<readonly [PgTable, string]> = [
   [schema.entitlementGrants, 'user_id'],
   [schema.billingProviderSyncs, 'user_id'],
   [schema.chatGroupMembers, 'user_id'],
+  [schema.chatGroups, 'created_by'],
   [schema.chatGroupMessages, 'sender_id'],
   [schema.meals, 'user_id'],
   [schema.bodyWeightLog, 'user_id'],
@@ -42,15 +43,6 @@ const EXPORT_LOOKUPS: ReadonlyArray<readonly [PgTable, string]> = [
   [schema.circleEvents, 'actor_id'],
   [schema.friendsFeedReadMarkers, 'user_id'],
   [schema.userFeedback, 'user_id'],
-];
-
-/**
- * Lookups deliberately left unindexed: tables that stay small (a row per
- * conversation or per coaching relationship), where an extra index costs every
- * write more than the scan it would save on a rare export.
- */
-const SMALL_TABLE_LOOKUPS: ReadonlyArray<readonly [PgTable, string]> = [
-  [schema.chatGroups, 'created_by'],
   [schema.coachAssignments, 'coach_id'],
   [schema.coachAssignments, 'client_id'],
 ];
@@ -81,14 +73,5 @@ describe('account export lookups', () => {
     )
   )('%s is indexed by %s', (_name, column, table) => {
     expect(leadingColumns(table)).toContain(column);
-  });
-
-  it.each(
-    SMALL_TABLE_LOOKUPS.map(
-      ([table, column]) => [getTableName(table), column, table] as const
-    )
-  )('%s.%s is a deliberate small-table exemption', (_name, column, table) => {
-    // Drop the entry once the table gains an index on this column.
-    expect(leadingColumns(table)).not.toContain(column);
   });
 });

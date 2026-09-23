@@ -16,6 +16,17 @@ import type { AppDb } from '@/lib/infra/db/client';
  */
 export const DATA_EXPORT_FORMAT_VERSION = 2;
 
+/** A linked sign-in identity, as Supabase Auth's `getUser()` returns it. */
+export interface ExportIdentitySource {
+  id?: string;
+  identity_id?: string;
+  provider?: string;
+  identity_data?: Record<string, unknown>;
+  created_at?: string;
+  last_sign_in_at?: string;
+  updated_at?: string;
+}
+
 /** The Supabase Auth fields the export reports about the account itself. */
 export interface ExportAccountSource {
   id: string;
@@ -23,6 +34,61 @@ export interface ExportAccountSource {
   created_at?: string;
   last_sign_in_at?: string | null;
   app_metadata?: { providers?: unknown };
+  user_metadata?: Record<string, unknown>;
+  identities?: ExportIdentitySource[];
+}
+
+/**
+ * The profile claims Supabase Auth stores about the person, in
+ * `user_metadata` and each identity's `identity_data`: what they typed at
+ * sign-up (`display_name`) and what Google or Apple asserted about them. An
+ * allowlist, not a denylist: provider tokens, `app_metadata` and any claim not
+ * named here never reach the download, whatever a provider starts sending.
+ */
+export const AUTH_CLAIM_KEYS = [
+  'display_name',
+  'full_name',
+  'name',
+  'given_name',
+  'family_name',
+  'nickname',
+  'preferred_username',
+  'avatar_url',
+  'picture',
+  'email',
+  'email_verified',
+  'phone_verified',
+  'is_private_email',
+  'locale',
+  'sub',
+  'provider_id',
+] as const;
+
+export type AuthClaims = Partial<
+  Record<(typeof AUTH_CLAIM_KEYS)[number], string | boolean>
+>;
+
+function authClaims(source: Record<string, unknown> | undefined): AuthClaims {
+  const claims: AuthClaims = {};
+  for (const key of AUTH_CLAIM_KEYS) {
+    const value = source?.[key];
+    if (typeof value === 'string' || typeof value === 'boolean') {
+      claims[key] = value;
+    }
+  }
+  return claims;
+}
+
+function identitiesOf(user: ExportAccountSource) {
+  return (user.identities ?? []).map((identity) => ({
+    provider: identity.provider ?? null,
+    identityId: identity.identity_id ?? null,
+    providerUserId: identity.id ?? null,
+    createdAt: identity.created_at ?? null,
+    lastSignInAt: identity.last_sign_in_at ?? null,
+    updatedAt: identity.updated_at ?? null,
+    claims: authClaims(identity.identity_data),
+  }));
 }
 
 export interface ExportedFile {
@@ -90,6 +156,9 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
       createdAt: user.created_at ?? null,
       lastSignInAt: user.last_sign_in_at ?? null,
       signInProviders: providersOf(user),
+      // Added in format version 2.
+      profileClaims: authClaims(user.user_metadata),
+      identities: identitiesOf(user),
     },
     profile: profile.profile,
     meals: diary.meals,
