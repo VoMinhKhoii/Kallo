@@ -45,6 +45,9 @@ vi.mock('@/lib/actions/meals/confirm-and-save', () =>
 vi.mock('@/lib/actions/meals/relog/relog-items', () =>
   stub('relogMealItemsAction')
 );
+vi.mock('@/lib/actions/meals/day/mark-day-complete', () =>
+  stub('markDayCompleteAction')
+);
 vi.mock('@/lib/actions/tracking/weight', () => stub('logWeightAction'));
 vi.mock('@/lib/domain/nutrition/actions/candidates', () =>
   stub('getFoodSourceCandidates')
@@ -137,6 +140,12 @@ const routes: [
     'POST',
     'profile',
     () => import('@/app/api/v1/meals/relog/route'),
+  ],
+  [
+    'logging/day/complete',
+    'POST',
+    'profile',
+    () => import('@/app/api/v1/logging/day/complete/route'),
   ],
   ['weight', 'POST', 'profile', () => import('@/app/api/v1/weight/route')],
   [
