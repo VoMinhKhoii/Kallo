@@ -64,7 +64,8 @@ void main() {
     await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
     expect(find.text('Enter a valid email address'), findsOneWidget);
-    expect(find.text('Password must be at least 6 characters'), findsOneWidget);
+    // Sign-in only asks for a password; no length rule for an existing one.
+    expect(find.text('Enter your password'), findsOneWidget);
 
     // Flip to sign-up.
     await tester.tap(find.text('Sign up'));
@@ -82,7 +83,7 @@ void main() {
       reason: 'the email validation error carried over the mode switch',
     );
     expect(
-      find.text('Password must be at least 6 characters'),
+      find.text('Enter your password'),
       findsNothing,
       reason: 'the password validation error carried over',
     );
@@ -91,6 +92,26 @@ void main() {
     expect(
       tester.widget<TextField>(find.byType(TextField).first).controller?.text,
       'not-an-email',
+    );
+  });
+
+  testWidgets('sign-up holds a new password to the 8+ letters-and-digits '
+      'policy', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sign up'));
+    await tester.pumpAndSettle();
+
+    // A letters-only password — fine under the old 6-character rule — is
+    // refused before any network call.
+    await tester.enterText(find.byType(TextField).first, 'new@example.com');
+    await tester.enterText(find.byType(TextField).last, 'hunterhunter');
+    await tester.tap(find.text('Create Account'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Use at least 8 characters, including a letter and a number.'),
+      findsOneWidget,
     );
   });
 }

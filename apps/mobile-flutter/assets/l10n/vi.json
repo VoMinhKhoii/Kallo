@@ -774,7 +774,7 @@
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+      "passwordError": "Vui lòng nhập mật khẩu"
     },
     "signUp": {
       "title": "Tạo tài khoản",
@@ -788,7 +788,7 @@
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+      "passwordError": "Mật khẩu cần ít nhất 8 ký tự, gồm cả chữ cái và chữ số."
     },
     "dialog": {
       "signInTitle": "Chào mừng trở lại",
@@ -848,6 +848,9 @@
       "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
       "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
+      "weakPassword": "Mật khẩu này chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự, gồm cả chữ cái và chữ số nhé.",
+      "pwnedPassword": "Mật khẩu này đã xuất hiện trong một vụ lộ dữ liệu. Bạn chọn mật khẩu khác nhé.",
+      "passwordTooLong": "Mật khẩu quá dài. Vui lòng dùng tối đa 72 ký tự (mỗi chữ có dấu tính là 2–3 ký tự).",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     },
     "showPassword": "Hiện mật khẩu",
