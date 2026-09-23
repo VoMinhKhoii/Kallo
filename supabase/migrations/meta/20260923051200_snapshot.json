@@ -1,5 +1,5 @@
 {
-  "id": "6745846b-b490-4f7a-91fd-2a10fce4c7e4",
+  "id": "01b8ab9f-77cb-46d4-92a8-1972dc1125a1",
   "prevId": "d5aa9b6c-df6e-4aea-b75a-16b52ee0d470",
   "version": "7",
   "dialect": "postgresql",
@@ -1015,21 +1015,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "chat_group_messages_sender_idx": {
-          "name": "chat_group_messages_sender_idx",
-          "columns": [
-            {
-              "expression": "sender_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -1129,23 +1114,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "chat_groups_created_by_idx": {
-          "name": "chat_groups_created_by_idx",
-          "columns": [
-            {
-              "expression": "created_by",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "chat_groups_created_by_users_id_fk": {
           "name": "chat_groups_created_by_users_id_fk",
@@ -1392,36 +1361,6 @@
           ],
           "isUnique": true,
           "where": "rank = 'primary' AND status = 'active'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coach_assignments_coach_idx": {
-          "name": "coach_assignments_coach_idx",
-          "columns": [
-            {
-              "expression": "coach_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coach_assignments_client_idx": {
-          "name": "coach_assignments_client_idx",
-          "columns": [
-            {
-              "expression": "client_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1800,6 +1739,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2361,36 +2306,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "meal_share_invites_from_user_idx": {
-          "name": "meal_share_invites_from_user_idx",
-          "columns": [
-            {
-              "expression": "from_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "meal_share_invites_to_user_idx": {
-          "name": "meal_share_invites_to_user_idx",
-          "columns": [
-            {
-              "expression": "to_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -2515,23 +2430,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "meal_share_reactions_user_idx": {
-          "name": "meal_share_reactions_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "meal_share_reactions_share_id_meal_shares_id_fk": {
           "name": "meal_share_reactions_share_id_meal_shares_id_fk",
@@ -2636,21 +2535,6 @@
             },
             {
               "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "meal_share_replies_user_idx": {
-          "name": "meal_share_replies_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3365,21 +3249,6 @@
           ],
           "isUnique": true,
           "where": "read_at IS NULL AND dismissed_at IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notifications_recipient_idx": {
-          "name": "notifications_recipient_idx",
-          "columns": [
-            {
-              "expression": "recipient_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4744,27 +4613,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "product_telemetry_events_user_occurred_at_idx": {
-          "name": "product_telemetry_events_user_occurred_at_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -5421,23 +5269,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "unmatched_ingredients_user_idx": {
-          "name": "unmatched_ingredients_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "unmatched_ingredients_user_id_users_id_fk": {
           "name": "unmatched_ingredients_user_id_users_id_fk",
@@ -5772,7 +5604,13 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": false
+        },
+        "auto_share_updated_at": {
+          "name": "auto_share_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "oil_usage": {
           "name": "oil_usage",

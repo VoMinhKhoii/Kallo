@@ -27,6 +27,10 @@ import type { Db, PublicProfile } from './types';
 // ---------------------------------------------------------------------------
 // The recipient's tap IS the accept (Locket model): no separate inviter
 // approval. Creates an accepted edge, or promotes a pre-existing pending one.
+// The friendships_set_accepted_at trigger stamps accepted_at at that status
+// flip (database clock, so it compares cleanly with meal_shares.shared_at) —
+// each side then sees only the other's shares made from that moment on, never
+// the history from before they connected. The app never writes the column.
 // The friendship write + event + direct chat group are all transactional so
 // none of the three can end up orphaned relative to the others. A pair whose
 // edge was already accepted before this call (the early return below) is
@@ -93,7 +97,8 @@ export async function acceptInvite(
 
     if (existing[0]) {
       // Promote a pending edge (either direction) to accepted. The row is
-      // locked above; the status guard is defence-in-depth.
+      // locked above; the status guard is defence-in-depth. The trigger stamps
+      // accepted_at on this flip.
       await tx
         .update(friendships)
         .set({ status: 'accepted', updatedAt: new Date() })
