@@ -25,13 +25,16 @@ They are listed as providers in the privacy policy (`content/docs/{en,vi}/legal/
    - Settings → Subscription → set the on-demand / pay-as-you-go budget to **$0** so the
      free tier can never bill.
    - Optional, for readable web stack traces: create an Organization Auth Token.
-2. **PostHog**: sign up at eu.posthog.com (**EU cloud**). One project for both clients.
-   Copy the project API key (`phc_…`).
+2. **PostHog**: done. The `Kallo` organisation on eu.posthog.com (**EU cloud**) has one
+   project ("Default project") for both clients; its key (`phc_…`) is under Settings →
+   Project → General. Autocapture and exception autocapture are off; session replay
+   was never on.
    - Settings → Project → turn **Session replay OFF**, **Autocapture OFF**,
      **Exception autocapture OFF** (the code pins these off too; this keeps the dashboard
      honest).
    - Billing → set a billing limit of **$0** per product.
-3. **GitHub → Settings → Secrets and variables → Actions**:
+3. **GitHub → Settings → Secrets and variables → Actions** (the four DSN/key variables
+   are set; the source-map rows are still optional and unset):
 
    | Kind | Name | Value |
    |---|---|---|
