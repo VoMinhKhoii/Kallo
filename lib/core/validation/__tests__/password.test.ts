@@ -54,6 +54,16 @@ describe('newPasswordSchema', () => {
     expect(issues(accented)).toContain('too_long');
   });
 
+  // GoTrue's minimum is Go's `len(password)`, which counts bytes too: `a1ăăă`
+  // is five characters but eight bytes, and the server accepts it.
+  it('counts the minimum in UTF-8 bytes, not characters', () => {
+    expect('a1ăăă'.length).toBe(5);
+    expect(issues('a1ăăă')).toEqual([]);
+    expect(issues('mật khẩu 1')).toEqual([]);
+    // 'a1ăă' is six bytes, still short.
+    expect(issues('a1ăă')).toEqual(['too_short']);
+  });
+
   // GoTrue's letters_digits rule matches ASCII letters only; an accented
   // letter alone does not satisfy it there, so it must not here either.
   it('needs an ASCII letter, like the server', () => {
@@ -97,5 +107,10 @@ describe('passwordRequirements', () => {
       letter: true,
       digit: true,
     });
+  });
+
+  it('measures the length hint in UTF-8 bytes, like the server', () => {
+    expect(passwordRequirements('a1ăăă').length).toBe(true);
+    expect(passwordRequirements('a1ăă').length).toBe(false);
   });
 });

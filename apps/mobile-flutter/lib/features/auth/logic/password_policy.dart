@@ -24,9 +24,13 @@ final _hasDigit = RegExp(r'\d');
 bool _fitsBcrypt(String value) =>
     utf8.encode(value).length <= kPasswordMaxBytes;
 
+/// GoTrue's minimum is Go's `len(password)`: bytes, not characters.
+bool _meetsMinimum(String value) =>
+    utf8.encode(value).length >= kPasswordMinLength;
+
 /// A password being CREATED (sign-up). `null` when it meets the policy.
 PasswordIssue? newPasswordIssue(String value) {
-  if (value.length < kPasswordMinLength) return PasswordIssue.tooShort;
+  if (!_meetsMinimum(value)) return PasswordIssue.tooShort;
   if (!_fitsBcrypt(value)) return PasswordIssue.tooLong;
   if (!_hasLetter.hasMatch(value)) return PasswordIssue.needsLetter;
   if (!_hasDigit.hasMatch(value)) return PasswordIssue.needsDigit;

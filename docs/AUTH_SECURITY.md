@@ -11,7 +11,7 @@ two stop drifting apart.
 
 | Setting | Production value | Mirrored in |
 |---|---|---|
-| Minimum password length | **8** | `lib/core/validation/password.ts` (web), `apps/mobile-flutter/lib/features/auth/logic/password_policy.dart`, `supabase/config.toml` |
+| Minimum password length | **8** (UTF-8 bytes, as GoTrue counts it; an accented letter counts as two or three) | `lib/core/validation/password.ts` (web), `apps/mobile-flutter/lib/features/auth/logic/password_policy.dart`, `supabase/config.toml` |
 | Password requirements | **Letters and digits** (`letters_digits`) | same three |
 | Maximum length | 72 bytes (fixed by GoTrue; bcrypt ignores anything past 72 bytes) | same three |
 | Secure password change | **On**: changing a password needs a session under 24 hours old, or a reauthentication nonce. The reset-password flow is unaffected because the recovery link mints a fresh session. | `supabase/config.toml` |

@@ -45,10 +45,14 @@ export function passwordByteLength(value: string): number {
 const fitsBcrypt = (value: string) =>
   passwordByteLength(value) <= PASSWORD_MAX_BYTES;
 
+/** GoTrue's minimum is `len(password)` in Go, so bytes, not characters. */
+const meetsMinimum = (value: string) =>
+  passwordByteLength(value) >= PASSWORD_MIN_LENGTH;
+
 /** Each requirement a new password must meet, for live hints under a field. */
 export function passwordRequirements(value: string) {
   return {
-    length: value.length >= PASSWORD_MIN_LENGTH,
+    length: meetsMinimum(value),
     letter: HAS_LETTER.test(value),
     digit: HAS_DIGIT.test(value),
   };
@@ -60,7 +64,7 @@ export function passwordRequirements(value: string) {
  */
 export const newPasswordSchema = z
   .string()
-  .min(PASSWORD_MIN_LENGTH, 'too_short' satisfies PasswordIssue)
+  .refine(meetsMinimum, 'too_short' satisfies PasswordIssue)
   .refine(fitsBcrypt, 'too_long' satisfies PasswordIssue)
   .regex(HAS_LETTER, 'needs_letter' satisfies PasswordIssue)
   .regex(HAS_DIGIT, 'needs_digit' satisfies PasswordIssue);

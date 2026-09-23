@@ -20,6 +20,14 @@ void main() {
       expect(newPasswordIssue('correct horse battery staple 42'), isNull);
     });
 
+    test('measures the minimum in UTF-8 bytes, like GoTrue', () {
+      // Five characters, eight bytes: the server accepts it.
+      expect(newPasswordIssue('a1ăăă'), isNull);
+      expect(newPasswordIssue('mật khẩu 1'), isNull);
+      // Four characters, six bytes: still short.
+      expect(newPasswordIssue('a1ăă'), PasswordIssue.tooShort);
+    });
+
     test('caps at 72 UTF-8 bytes, not characters', () {
       final at = '${'a' * 71}1';
       expect(newPasswordIssue(at), isNull);
