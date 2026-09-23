@@ -17,6 +17,14 @@ import { updateFeedbackStatus } from '@/lib/admin/triage/update-feedback-status'
 
 export function StatusForm({ id, current }: { id: string; current: string }) {
   const [status, setStatus] = useState(current);
+  // Kept alive across navigations under Cache Components: when the page comes
+  // back with a different stored status (changed in another tab or by another
+  // admin), show it instead of the selection from the earlier visit.
+  const [seenCurrent, setSeenCurrent] = useState(current);
+  if (current !== seenCurrent) {
+    setSeenCurrent(current);
+    setStatus(current);
+  }
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);

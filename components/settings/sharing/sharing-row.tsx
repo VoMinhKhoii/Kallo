@@ -18,6 +18,17 @@ export function SharingRow({ initialValue }: { initialValue: boolean }) {
   const [enabled, setEnabled] = useState(initialValue);
   const [isPending, startTransition] = useTransition();
 
+  // Settings stays mounted (hidden) across navigations under Cache
+  // Components, so `useState(initialValue)` alone would keep showing the value
+  // from the first visit after it changed elsewhere (another device, the
+  // app). Adopt a new server value when one arrives, unless a toggle of ours
+  // is still in flight.
+  const [seenValue, setSeenValue] = useState(initialValue);
+  if (initialValue !== seenValue && !isPending) {
+    setSeenValue(initialValue);
+    setEnabled(initialValue);
+  }
+
   const handleChange = (checked: boolean) => {
     const previous = enabled;
     setEnabled(checked);

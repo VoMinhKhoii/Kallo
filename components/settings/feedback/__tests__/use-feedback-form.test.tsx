@@ -90,5 +90,7 @@ describe('useFeedbackForm across a kept-alive navigation', () => {
 
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
     expect(urls).toContain('/api/v1/feedback/screenshot');
-  });
+    // A full typed-and-uploaded flow twice over; the default 5s is tight on a
+    // loaded CI runner.
+  }, 20_000);
 });
