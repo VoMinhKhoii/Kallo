@@ -8,6 +8,7 @@ import { logPipelineStart } from '@/lib/ai/pipeline/telemetry/logging';
 import { encodeSSE } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import { withDeadline } from '@/lib/core/async/with-deadline';
+import { serializeError } from '@/lib/core/errors/serialize';
 import { db } from '@/lib/infra/db/client';
 import { acquireAnalysisGuard } from './_lib/analysis-guard';
 import { applyRelogRefs } from './_lib/apply-relog-refs';
@@ -79,8 +80,11 @@ export async function POST(request: NextRequest) {
       db,
     });
   } catch (error) {
+    // Still pre-stream, so answer with the JSON error envelope the contract
+    // documents rather than letting Next render its own bare 500.
     await releaseGuard();
-    throw error;
+    console.error('[analyze-meal] Pipeline start logging failed:', error);
+    return serializeError(error);
   }
 
   // Phase 2: Stream pipeline results as SSE

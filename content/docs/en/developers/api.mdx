@@ -42,7 +42,9 @@ stream ends with `analysis_complete`, which carries an `analysisId`, or with
 `error`. Nothing is saved until you pass that id to `POST /api/v1/meals/confirm`.
 Authentication, body validation, plan and rate-limit checks all run before the
 stream opens and return the ordinary JSON error below. Once the stream is open, a
-failure can only arrive as an `error` event.
+failure can only arrive as an `error` event. The body is plain text made of
+frames (`event: <type>`, then `data: <json>`); the OpenAPI component
+`AnalyzeMealStreamEvent` describes one `data` payload.
 
 `GET /api/og/macro-card/{shareId}` renders a shared meal as a PNG card. It needs
 a session and applies the same visibility rule as reading the shared meal, so a
@@ -103,8 +105,16 @@ own response shapes in OpenAPI.
 | `NOT_AUTHENTICATED` | 401 | no | Missing, expired or invalid token. |
 | `feature_locked` | 402 | no | The account's plan does not include this. |
 | `NOT_FOUND` | 404 | no | No such resource, or it is not yours. The two are deliberately indistinguishable. |
+| `PROFILE_NOT_FOUND` | 404 | no | The signed-in user has no profile yet. Sign in again or finish onboarding. |
+| `BARCODE_NOT_FOUND` | 404 | no | No product is known for this barcode. |
+| `BARCODE_NOT_CACHED` | 404 | no | The barcode was never looked up before being logged. Rescan it. |
+| `OCR_INVALID_IMAGE` | 400 | no | The image could not be read as a label photo. |
+| `OCR_NO_LABEL_DETECTED` | 422 | no | No nutrition table was found in the photo. |
 | `CONFLICT` | 409 | no | The resource changed under you. |
+| `CIRCLE_LIMIT_REACHED` | 409 | no | Someone else's group or friend limit is full. |
+| `PAYLOAD_TOO_LARGE` | 413 | no | The body is over the route's size cap. Send less. |
 | `RATE_LIMITED` | 429 | yes | Back off. Honour `Retry-After` when it is present. |
+| `RATE_LIMITER_UNAVAILABLE` | 503 | yes | The limiter could not decide on a paid route. Honour `Retry-After`. |
 | `PIPELINE_TIMEOUT` | 504 | yes | Meal analysis took too long. |
 | `INTERNAL` | 500 | yes | Our fault. |
 

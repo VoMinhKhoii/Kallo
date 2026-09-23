@@ -3,6 +3,7 @@ import {
   fromZod,
   type JsonSchema,
   type PathItem,
+  ref,
 } from '@/lib/api/openapi/components';
 import { mealMessageSchema } from '@/lib/core/validation/meal';
 
@@ -69,6 +70,22 @@ const STREAM_EVENT: JsonSchema = {
   ],
 };
 
+/**
+ * Published as a named component so a client can generate the frame type. The
+ * response body itself is framed text holding many of these, not one of them,
+ * so it is documented as a string that points here.
+ */
+export const ANALYSIS_SCHEMAS: Record<string, JsonSchema> = {
+  AnalyzeMealStreamEvent: STREAM_EVENT,
+};
+
+const SSE_BODY: JsonSchema = {
+  type: 'string',
+  description:
+    'Server-sent events text: a sequence of frames, each `event: <type>\\ndata: <json>\\n\\n`. Every `data` line is one `AnalyzeMealStreamEvent` (see `#/components/schemas/AnalyzeMealStreamEvent`).',
+  'x-sse-event-data': ref('AnalyzeMealStreamEvent'),
+};
+
 /** The describe-a-meal analysis stream — the read step before `confirmMeal`. */
 export const ANALYSIS_PATHS: Record<string, PathItem> = {
   '/api/analyze-meal': {
@@ -79,10 +96,10 @@ export const ANALYSIS_PATHS: Record<string, PathItem> = {
         'Runs the analysis pipeline on a free-text meal description and streams progress as server-sent events (`text/event-stream`), ending in `analysis_complete` with the id of a staged analysis, or in `error`. Nothing is logged: confirm the staged analysis with `confirmMeal`. Auth, body validation, billing (402), the per-user concurrency guard (429) and a scanned pick that was never cached (404 `BARCODE_NOT_CACHED`) are all checked BEFORE the stream opens and answer with the ordinary JSON error envelope; once the stream has started, a failure can only arrive as an `error` frame.',
       tags: ['Meals'],
       body: fromZod(mealMessageSchema),
-      ok: STREAM_EVENT,
+      ok: SSE_BODY,
       okMedia: 'text/event-stream',
       okDescription:
-        'An SSE stream. Each frame is `event: <type>` followed by `data: <json>`; the JSON schema below describes one `data` payload.',
+        'An SSE stream. Each frame is `event: <type>` followed by `data: <json>`; the body is text, and each `data` payload is an `AnalyzeMealStreamEvent`.',
     }),
   },
 };

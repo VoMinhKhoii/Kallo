@@ -1,6 +1,9 @@
 import type { PathItem } from '@/lib/api/openapi/components';
 import { ACCOUNT_PATHS } from '@/lib/api/openapi/paths/account';
-import { ANALYSIS_PATHS } from '@/lib/api/openapi/paths/analysis';
+import {
+  ANALYSIS_PATHS,
+  ANALYSIS_SCHEMAS,
+} from '@/lib/api/openapi/paths/analysis';
 import { LOGGING_PATHS } from '@/lib/api/openapi/paths/logging';
 import { MEAL_PATHS } from '@/lib/api/openapi/paths/meals';
 import { NOTIFICATION_PATHS } from '@/lib/api/openapi/paths/notifications';
@@ -129,7 +132,7 @@ export function openApiDocument() {
             'A Supabase Auth access token for a Kallo user. The token carries no scopes — it grants whatever that user can do — so an agent acting on someone’s behalf holds their full account authority. Treat it accordingly.',
         },
       },
-      schemas: SCHEMAS,
+      schemas: { ...SCHEMAS, ...ANALYSIS_SCHEMAS },
     },
     security: [],
     paths: PATHS,

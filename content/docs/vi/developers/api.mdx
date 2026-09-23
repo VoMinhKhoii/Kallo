@@ -42,7 +42,9 @@ luồng `text/event-stream` gồm các sự kiện server-sent: `stage` báo ti�
 hoặc bằng `error`. Chưa có gì được lưu cho đến khi bạn gửi id đó tới
 `POST /api/v1/meals/confirm`. Xác thực, kiểm tra thân yêu cầu, gói dịch vụ và giới
 hạn tần suất đều chạy trước khi luồng mở và trả về lỗi JSON thông thường bên dưới.
-Khi luồng đã mở, lỗi chỉ có thể đến dưới dạng sự kiện `error`.
+Khi luồng đã mở, lỗi chỉ có thể đến dưới dạng sự kiện `error`. Thân phản hồi là
+văn bản gồm các frame (`event: <type>`, rồi `data: <json>`); component OpenAPI
+`AnalyzeMealStreamEvent` mô tả một payload `data`.
 
 `GET /api/og/macro-card/{shareId}` vẽ một bữa ăn được chia sẻ thành thẻ PNG. Nó
 cần phiên đăng nhập và áp dụng cùng quy tắc hiển thị như khi đọc bữa ăn được chia
@@ -104,8 +106,16 @@ probe mô tả cấu trúc phản hồi riêng trong OpenAPI.
 | `NOT_AUTHENTICATED` | 401 | không | Thiếu token, token hết hạn hoặc không hợp lệ. |
 | `feature_locked` | 402 | không | Gói của tài khoản không bao gồm tính năng này. |
 | `NOT_FOUND` | 404 | không | Không có tài nguyên đó, hoặc nó không phải của bạn. Hai trường hợp này cố ý không phân biệt được. |
+| `PROFILE_NOT_FOUND` | 404 | không | Người dùng đã đăng nhập chưa có hồ sơ. Hãy đăng nhập lại hoặc hoàn tất onboarding. |
+| `BARCODE_NOT_FOUND` | 404 | không | Không có sản phẩm nào ứng với mã vạch này. |
+| `BARCODE_NOT_CACHED` | 404 | không | Mã vạch chưa từng được tra cứu trước khi ghi. Hãy quét lại. |
+| `OCR_INVALID_IMAGE` | 400 | không | Không đọc được ảnh như một ảnh nhãn dinh dưỡng. |
+| `OCR_NO_LABEL_DETECTED` | 422 | không | Không tìm thấy bảng dinh dưỡng trong ảnh. |
 | `CONFLICT` | 409 | không | Tài nguyên đã thay đổi trong lúc bạn thao tác. |
+| `CIRCLE_LIMIT_REACHED` | 409 | không | Nhóm hoặc danh sách bạn bè của người khác đã đầy. |
+| `PAYLOAD_TOO_LARGE` | 413 | không | Thân yêu cầu vượt giới hạn kích thước của route. Hãy gửi ít hơn. |
 | `RATE_LIMITED` | 429 | có | Hãy giãn nhịp. Tôn trọng `Retry-After` khi có. |
+| `RATE_LIMITER_UNAVAILABLE` | 503 | có | Bộ giới hạn không đưa ra được quyết định trên một route tốn phí. Tôn trọng `Retry-After`. |
 | `PIPELINE_TIMEOUT` | 504 | có | Phân tích bữa ăn quá lâu. |
 | `INTERNAL` | 500 | có | Lỗi của chúng tôi. |
 
