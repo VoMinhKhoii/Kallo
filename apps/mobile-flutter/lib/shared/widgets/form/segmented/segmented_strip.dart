@@ -18,6 +18,16 @@ class OptionStripItem {
 
 /// The one mode-switch primitive — every segmented control draws through it.
 ///
+/// **Not `CupertinoSlidingSegmentedControl`** (`kallo-design/mobile.md`,
+/// *Cupertino wherever it exists*). The SDK control draws a rounded
+/// superellipse with a FIXED 9pt track radius and 7pt thumb radius
+/// (`_kCornerRadius` / `_kThumbRadius`, `cupertino/sliding_segmented_control.dart`
+/// lines 28 and 31, Flutter 3.44) — the iOS 13–18 shape. Both are private and
+/// the widget takes no shape or radius, so it cannot draw iOS 26's capsule,
+/// the shape the app's 52pt fields and full-width buttons already share.
+/// Retire this primitive when the SDK control draws the capsule or exposes
+/// its radius.
+///
 /// ONE documented exception, and the bar for adding another is this high: the
 /// paywall's `PlanToggle` has a permanently-gold half, which this model cannot
 /// express — a single travelling thumb would cover the gold on arrival, and a

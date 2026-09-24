@@ -242,4 +242,23 @@ void main() {
     expect(readyToSeed(refreshing), isFalse);
     expect(readyToSeed(const AsyncLoading<ProfileRow?>()), isFalse);
   });
+
+  test('the region page shows the language the app is running in', () {
+    // A new device: the app came up in Vietnamese, the profile says English.
+    final region = StepSession.fromProfile(
+      SettingsStep.region,
+      ProfileRow(Map.of(kFullProfile)..['preferredLocale'] = 'en'),
+      activeLocale: 'vi',
+    );
+    expect(region.payload!['preferredLocale'], 'vi');
+    // Stored is still 'en', so the page offers to store the language in use.
+    expect(region.dirty, isTrue);
+
+    final agreed = StepSession.fromProfile(
+      SettingsStep.region,
+      const ProfileRow(kFullProfile),
+      activeLocale: 'vi',
+    );
+    expect(agreed.dirty, isFalse);
+  });
 }

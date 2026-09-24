@@ -89,13 +89,26 @@ class StepSession extends ChangeNotifier {
 
   /// Seeds from [profile] exactly as the wizard does, minus the draft: a saved
   /// answer wins, the phone fills only what was never answered.
-  factory StepSession.fromProfile(SettingsStep step, ProfileRow? profile) {
+  ///
+  /// [activeLocale] is the language the app is running in. It wins over the
+  /// stored one for what the page SHOWS — on a new device, or after local
+  /// storage is cleared, the two differ, and a picker showing the stored
+  /// language selected would make its row a dead tap (already "picked") while
+  /// the app speaks the other. The stored value stays the baseline, so the
+  /// mismatch opens the page with "Lưu" ready to store the language in use.
+  factory StepSession.fromProfile(
+    SettingsStep step,
+    ProfileRow? profile, {
+    String? activeLocale,
+  }) {
     final seeded = buildOnboardingAnswers(
       profile: profile,
       draft: null,
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
     );
+    final active = supportedLocaleOrNull(activeLocale);
+    if (active != null) seeded.answers.preferredLocale = active;
     return StepSession(step, seeded.answers, seeded.device, stored: profile);
   }
 

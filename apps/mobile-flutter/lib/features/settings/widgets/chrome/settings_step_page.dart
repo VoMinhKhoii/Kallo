@@ -100,7 +100,11 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
     if (_session == null && readyToSeed(profile)) {
-      _session = StepSession.fromProfile(widget.step, profile.value);
+      _session = StepSession.fromProfile(
+        widget.step,
+        profile.value,
+        activeLocale: context.locale.languageCode,
+      );
     }
     final session = _session;
 
