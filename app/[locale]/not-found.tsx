@@ -6,7 +6,9 @@ import { Link } from '@/i18n/navigation';
 import { SITE_URL } from '@/lib/seo/site';
 
 export const metadata: Metadata = {
-  title: '404 — Kallo',
+  // Absolute: this file shares the locale layout's segment, where its title
+  // template may or may not apply, so spell the full title out.
+  title: { absolute: '404 / Kallo' },
   robots: { index: false, follow: true },
 };
 

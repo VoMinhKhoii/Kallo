@@ -10,7 +10,7 @@ describe('the 404 page', () => {
     // `follow: true` is the point: do not index this page, but do follow the
     // recovery links off it.
     expect(metadata.robots).toEqual({ index: false, follow: true });
-    expect(metadata.title).toContain('404');
+    expect(metadata.title).toEqual({ absolute: '404 / Kallo' });
   });
 
   it('still says what happened', () => {
