@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../shared/widgets/form/option_strip.dart';
 import '../../../shared/widgets/form/quiet_action_button.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -12,7 +13,7 @@ const int kMaxFeedbackMessageLength = 4000;
 
 /// The feedback form body.
 ///
-/// No title and no description here: the title lives in the [PageHeader] bar
+/// No title and no description here: the title lives in the inline bar
 /// and the description only restated it. The one label that survives is
 /// "What's this about?" — a question the type control answers, not a repeat of
 /// anything. The message field needs none: its placeholder already asks.
@@ -44,7 +45,7 @@ class FeedbackForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final canSubmit = message.text.trim().isNotEmpty && !busy;
     return ListView(
-      // The same shape as settings' `SettingsSpacing.page`
+      // The same shape as settings' `SettingsSpacing.rowList`
       // (`features/settings/logic/settings_spacing.dart`) — inlined rather
       // than imported, because feedback is its own feature and one page's
       // padding is not worth a cross-feature dependency. The bottom clears
@@ -59,19 +60,20 @@ class FeedbackForm extends StatelessWidget {
       children: [
         Text(tr('settings.feedback.typeLabel'), style: dashMeta()),
         const SizedBox(height: KalloSpacing.sp2),
-        Row(
-          children: [
-            for (var i = 0; i < kFeedbackTypes.length; i++) ...[
-              if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-              Expanded(
-                child: FeedbackTypeChip(
-                  type: kFeedbackTypes[i],
-                  selected: type == kFeedbackTypes[i].value,
-                  onTap: () => onTypeChanged(kFeedbackTypes[i].value),
-                ),
+        // The app's segmented control, each kind told apart by its glyph as
+        // much as its word — the pill strip onboarding uses, not a row of
+        // bordered chips.
+        OptionStrip.segmented(
+          options: [
+            for (final kind in kFeedbackTypes)
+              OptionStripItem(
+                value: kind.value,
+                label: tr('settings.feedback.types.${kind.value}'),
+                icon: kind.icon,
               ),
-            ],
           ],
+          value: type,
+          onChange: onTypeChanged,
         ),
         const SizedBox(height: KalloSpacing.sp4),
 

@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../models/http/api_error.dart';
 import '../../../services/http/api_client.dart';
-import '../../../shared/widgets/chrome/page_header.dart';
+import '../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../widgets/feedback_form.dart';
@@ -205,11 +205,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        // Flush to the screen edge, exactly as every settings sub-page mounts
-        // it: the 44pt back slot reclaims the page's own 12pt inset so the
-        // chevron is optically flush.
-        header: PageHeader(
+        // The same inline bar as every settings sub-page — this is one,
+        // pushed from the settings list; it just lives in its own feature.
+        header: InlineNavBar.page(
           title: tr('settings.feedback.title'),
+          parentTitle: tr('settings.title'),
           onBack: () => Navigator.of(context).pop(),
         ),
         child:

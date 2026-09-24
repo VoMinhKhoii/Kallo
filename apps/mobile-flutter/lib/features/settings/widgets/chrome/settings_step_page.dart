@@ -4,18 +4,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../../shared/widgets/form/save_dock.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../../onboarding/providers/onboarding_providers.dart';
 import '../../data/step_save.dart';
 import '../../logic/settings_spacing.dart';
 import '../../logic/step_session.dart';
 import '../profile/profile_status_views.dart';
 import '../profile/settings_skeleton.dart';
+import 'settings_sub_page_bar.dart';
 
 /// What a step body gets from its page: the session it edits, the callback
 /// the onboarding bodies call after every edit, and — for the one edit that
@@ -99,13 +98,7 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
-          child: InlineNavBar(
-            title: widget.title,
-            parentTitle: tr('settings.title'),
-          ),
-        ),
+        header: SettingsSubPageBar(title: widget.title),
         overlay:
             session == null
                 ? null

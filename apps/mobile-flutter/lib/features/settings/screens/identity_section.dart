@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:io' show File;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../models/social/circle.dart';
-import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/avatar/profile_avatar.dart';
@@ -19,6 +18,10 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
+import '../widgets/chrome/settings_sub_page_bar.dart';
+import '../widgets/profile/photo_action_sheet.dart';
+import '../../../shared/widgets/form/save_dock.dart';
+import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../models/http/api_error.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
@@ -136,91 +139,86 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(myCircleProfileProvider);
+    // Seed the field BEFORE anything reads it: the dock's "changed?" compares
+    // this text with the saved name, and an unseeded field reads as an edit.
+    if (!_seeded && profileAsync.hasValue) {
+      _seeded = true;
+      _name.text = profileAsync.value!.displayName?.trim() ?? '';
+    }
 
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: PageHeader(title: tr('settings.identity.title')),
+        header: SettingsSubPageBar(title: tr('settings.identity.title')),
+        overlay: profileAsync.hasValue ? _dock(profileAsync.value!) : null,
         child: profileAsync.when(
           loading: () => const _IdentitySkeleton(),
           error:
               (_, __) =>
                   Center(child: Text(tr('common.error'), style: dashBody())),
-          data: (profile) {
-            if (!_seeded) {
-              _seeded = true;
-              _name.text = profile.displayName?.trim() ?? '';
-            }
-            return _body(profile);
-          },
+          data: _body,
         ),
       ),
     );
   }
 
+  /// The name as saved, so the dock can tell an edit from a no-op.
+  bool _nameChanged(CircleProfile profile) =>
+      _name.text.trim() != (profile.displayName?.trim() ?? '');
+
+  Widget _dock(CircleProfile profile) => SaveDock(
+    visible: _nameChanged(profile),
+    loading: _busy,
+    label: tr('settings.identity.nameSave'),
+    onPressed: () => unawaited(_saveName(profile)),
+  );
+
+  Future<void> _editPhoto(CircleProfile profile) async {
+    if (_busy) return;
+    final action = await showPhotoActions(
+      context,
+      hasCustomAvatar: profile.hasCustomAvatar,
+    );
+    switch (action) {
+      case PhotoAction.pick:
+        await _pickAndUpload();
+      case PhotoAction.remove:
+        await _removeAvatar();
+      case null:
+        break;
+    }
+  }
+
   Widget _body(CircleProfile profile) {
+    final padding = SettingsSpacing.rowList(context);
     return ListView(
-      padding: SettingsSpacing.page(context),
+      padding: padding.copyWith(bottom: padding.bottom + SaveDock.clearance),
       children: [
-        // No title and no description here — the title lives in the header
-        // bar and the description only restated it.
-
-        // ── Avatar ──────────────────────────────────────────────────────
-        Row(
-          children: [
-            ProfileAvatarDisc(profile: profile, size: 64),
-            const SizedBox(width: KalloSpacing.sp4),
-            Expanded(
-              child: Wrap(
-                spacing: KalloSpacing.sp2,
-                runSpacing: KalloSpacing.sp2,
-                children: [
-                  // Quiet pair: neither picking a photo nor removing one is
-                  // THE action on this screen — saving the name is.
-                  KalloButton(
-                    title:
-                        profile.hasCustomAvatar
-                            ? tr('settings.identity.avatarChange')
-                            : tr('settings.identity.avatarUpload'),
-                    variant: KalloButtonVariant.secondary,
-                    disabled: _busy,
-                    onPressed: _pickAndUpload,
-                  ),
-                  if (profile.hasCustomAvatar)
-                    KalloButton(
-                      title: tr('settings.identity.avatarRemove'),
-                      variant: KalloButtonVariant.ghost,
-                      disabled: _busy,
-                      onPressed: _removeAvatar,
-                    ),
-                ],
-              ),
-            ),
-          ],
+        // ── Avatar — the picture, and one quiet way to change it ─────────
+        Center(child: ProfileAvatarDisc(profile: profile, size: 88)),
+        Center(
+          child: CupertinoButton(
+            minimumSize: const Size.square(KalloIcons.hit),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+            onPressed: _busy ? null : () => unawaited(_editPhoto(profile)),
+            child: Text(tr('settings.identity.avatarEdit'), style: dashBody()),
+          ),
         ),
-        const SizedBox(height: KalloSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp3),
 
-        // ── Name ────────────────────────────────────────────────────────
-        Text(tr('settings.identity.nameLabel'), style: dashBody()),
-        const SizedBox(height: KalloSpacing.sp2),
+        // ── Name — the field, and what renaming costs ────────────────────
+        GroupLabel(tr('settings.identity.nameLabel')),
+        const SizedBox(height: SettingsSpacing.label),
         KalloTextField(
           controller: _name,
           maxLength: _displayNameMax,
           hintText: tr('settings.identity.namePlaceholder'),
           textInputAction: TextInputAction.done,
+          onChanged: (_) => setState(() {}),
           onSubmitted: (_) => _saveName(profile),
         ),
-        const SizedBox(height: KalloSpacing.sp3),
-        KalloButton(
-          title: tr('settings.identity.nameSave'),
-          disabled: _busy,
-          onPressed: () => unawaited(_saveName(profile)),
-        ),
-        const SizedBox(height: KalloSpacing.sp4),
-        Text(
-          tr('settings.identity.linkWarning'),
-          style: dashBody(color: kInkMuted),
-        ),
+        const SizedBox(height: KalloSpacing.sp2),
+        Text(tr('settings.identity.linkWarning'), style: dashMeta()),
       ],
     );
   }
@@ -237,16 +235,10 @@ class _IdentitySkeleton extends StatelessWidget {
       label: tr('common.loading'),
       child: SkeletonPulse(
         child: ListView(
-          padding: SettingsSpacing.page(context),
+          padding: SettingsSpacing.rowList(context),
           children: const [
-            // Mirrors the real body, which opens on the avatar row.
-            Row(
-              children: [
-                SkeletonCircle(size: 64),
-                SizedBox(width: KalloSpacing.sp4),
-                Expanded(child: SkeletonBar(height: 14, radius: 6)),
-              ],
-            ),
+            // Mirrors the real body, which opens on the centred avatar.
+            Center(child: SkeletonCircle(size: 88)),
           ],
         ),
       ),

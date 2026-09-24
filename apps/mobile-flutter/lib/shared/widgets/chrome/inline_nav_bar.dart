@@ -29,7 +29,18 @@ class InlineNavBar extends StatelessWidget {
     required this.title,
     required this.parentTitle,
     this.onBack,
-  });
+  }) : padding = EdgeInsets.zero;
+
+  /// The bar as a PAGE's header: set in [KalloSpacing.sp2] from the screen
+  /// edges so the chevron does not sit on the glass. (A sheet's sub-header
+  /// already stands inside the sheet's content inset, so it uses the plain
+  /// constructor.)
+  const InlineNavBar.page({
+    super.key,
+    required this.title,
+    required this.parentTitle,
+    this.onBack,
+  }) : padding = const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2);
 
   /// This page's title, centred.
   final String title;
@@ -40,6 +51,8 @@ class InlineNavBar extends StatelessWidget {
   /// Defaults to `maybePop` on the nearest navigator — inside settings that is
   /// the nested one, so back goes up one level instead of closing the screen.
   final VoidCallback? onBack;
+
+  final EdgeInsetsGeometry padding;
 
   static const double height = 44;
 
@@ -73,72 +86,75 @@ class InlineNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final back = onBack ?? () => Navigator.of(context).maybePop();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final label = _back(context, constraints.maxWidth);
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              height: height,
-              child: Center(
-                child: Padding(
-                  // Keep the centred title clear of the back group on both
-                  // sides, so it truncates before it runs under it.
-                  padding: EdgeInsets.symmetric(
-                    horizontal: label.width + KalloSpacing.sp2,
-                  ),
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: kSectionHeader(),
+    return Padding(
+      padding: padding,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final label = _back(context, constraints.maxWidth);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                height: height,
+                child: Center(
+                  child: Padding(
+                    // Keep the centred title clear of the back group on both
+                    // sides, so it truncates before it runs under it.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: label.width + KalloSpacing.sp2,
+                    ),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: kSectionHeader(),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Semantics(
-                button: true,
-                label: parentTitle,
-                excludeSemantics: true,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    back();
-                  },
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * _backShare,
-                      minHeight: height,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          LucideIcons.chevronLeft300,
-                          size: KalloIcons.size,
-                          color: KalloColors.textMuted,
-                        ),
-                        Flexible(
-                          child: Text(
-                            label.text,
-                            maxLines: 1,
-                            style: dashBody(color: KalloColors.textMuted),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Semantics(
+                  button: true,
+                  label: parentTitle,
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      back();
+                    },
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * _backShare,
+                        minHeight: height,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            LucideIcons.chevronLeft300,
+                            size: KalloIcons.size,
+                            color: KalloColors.textMuted,
                           ),
-                        ),
-                      ],
+                          Flexible(
+                            child: Text(
+                              label.text,
+                              maxLines: 1,
+                              style: dashBody(color: KalloColors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }

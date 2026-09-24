@@ -37,9 +37,12 @@ class SaveDock extends StatefulWidget {
   /// range) — the dock stays, dimmed, so the page does not flicker.
   final bool enabled;
 
+  /// The primary button's height (`KalloButton`, 50pt primaries).
+  static const double buttonHeight = 50;
+
   /// Body bottom padding that keeps the last row clear of the dock (button +
   /// its 12pt frame), before the home-indicator inset.
-  static const double clearance = 50 + KalloSpacing.sp3 * 2;
+  static const double clearance = buttonHeight + KalloSpacing.sp3 * 2;
 
   @override
   State<SaveDock> createState() => _SaveDockState();
@@ -93,8 +96,12 @@ class _SaveDockState extends State<SaveDock>
                   KalloSpacing.sp3,
                   KalloSpacing.sp3 + MediaQuery.viewPaddingOf(context).bottom,
                 ),
+                // A FIXED box: KalloButton centres its label with a Container
+                // alignment, which grows to any finite height it is offered —
+                // under this Align it would take the whole page.
                 child: SizedBox(
                   width: double.infinity,
+                  height: SaveDock.buttonHeight,
                   child: KalloButton(
                     title: widget.label,
                     loading: widget.loading,
