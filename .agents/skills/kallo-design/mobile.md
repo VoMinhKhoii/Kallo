@@ -91,10 +91,13 @@ shipped a visible bug first.
 **Regular is the weight for everything but titles and names.** Be Vietnam Pro
 reads heavy — its Medium (500) is what most faces call semibold — so 500 is
 not a step, it is bold, and it is gone from every data, label, button and
-figure role (2026-09-02). 600 lives in three tokens only: page title, section
-header, name. A selected segment, today's day number, the total row, a
-primary button label: all regular, told apart by ink versus muted. Serif is
-never bold. If something needs to stand out and colour is not enough, the
+figure role (2026-09-02). 600 lives in four tokens only: page title, section
+header, name — and `kButtonLabel`, the word on a pill BUTTON (2026-09-24: at
+400 a beige pill read as a label on a swatch, and the weight had been
+re-decided per widget, so "Gửi góp ý" and "Lưu tên" two screens apart wore
+different weights; every pill label now reads it from the one token). A
+selected segment, today's day number, the total row: all regular, told apart
+by ink versus muted. Serif is never bold. If something needs to stand out and colour is not enough, the
 answer is size or position, not weight.
 
 **Body 16 vs Name 15.** Two 16s stacked — a w600 name over a w400 body — read as
@@ -457,8 +460,8 @@ so there is nothing to prefer over it.
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert route) | ✅ done |
 | `Switch` / `Switch.adaptive` | `CupertinoSwitch` | **migrating 2026-09-19.** Retires the `trackColor` workaround `Switch.adaptive` needed, since `_SwitchThemeAdaptation.adapt()` discards the ambient theme on iOS |
 | `TextField` | `CupertinoTextField` (`CupertinoSearchTextField` for a search row) | **18 sites.** The decoration currently comes from `inputDecorationTheme`; it is a flat map and re-expresses as one `BoxDecoration` |
-| a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` + `OptionStrip.segmented`. `OptionStrip.onboarding`/`.settings` draw multi-line hint sub-labels no Cupertino control supports — those two skins stay and cite it |
-| `Slider` | `CupertinoSlider` | **2 sites** (the doc said 3; `body_metrics.dart` only *uses* `AggressionSlider`). No `SliderTheme` — the 4pt track and 9pt thumb are not expressible |
+| a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` + `OptionStrip.segmented` — a **pill** track and thumb, which is the iOS 26 shape; Flutter's Cupertino control still draws the iOS 13–18 rounded rectangle. An `OptionStripItem.icon` draws inline before its label (feedback's bug / sprout / lightbulb). The `.onboarding`/`.settings` hint skins retired 2026-09-24 with their last callers: a choice that needs a hint is an `OptionRow` with a subline |
+| `Slider` | `CupertinoSlider` | **1 site** (`cheat_slider_card.dart`; Settings' `AggressionSlider` retired 2026-09-24 — the goal page uses onboarding's pace ruler). No `SliderTheme` — the 4pt track and 9pt thumb are not expressible |
 | `Scaffold` | `CupertinoPageScaffold` | 8 sites. `tab_scaffold.dart` stays on `Scaffold`: `extendBody` + the `MediaQuery.padding.bottom` rewrite that lets the pill nav overlap content has no Cupertino analogue |
 | long-press menu | `showKalloAnchoredMenu` | **exception** — cites `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`, boundary 3 |
 | `SnackBar` | `TopToast` | not an exception — Cupertino ships no toast |
@@ -558,7 +561,7 @@ mobile UI — no longer provisional.
 |---------|---------------|---------------|-------|
 | **Logging** | ✅ 16/16/14 | `logging/logic/logging_spacing.dart` (12px block) | the reference implementation |
 | **Dashboard** | ✅ 40/16/14 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
-| **Settings** | ✅ 28/16/14 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
+| **Settings** | ✅ 28/16/14 | `settings/logic/settings_spacing.dart` | root keeps the 28pt `PageHeader`; every sub-page wears `InlineNavBar` (‹ Cài đặt + centred 16/600). The nutrition-profile rows ARE the onboarding steps, hosted by `SettingsStepPage` with a `SaveDock` (2026-09-24) |
 | **Feedback** | ✅ | uses the 12px default | |
 | **Shell / pill nav** | ✅ | `KalloSpacing` + `kNav*` tokens | drawer/hamburger retired 2026-08-31; Log pushes full-screen |
 | **Circle** | ✅ (2026-09-02) | 12px root inset | feed, invite, share and group widgets all on `dash*` |
@@ -585,9 +588,9 @@ back into backlog: only a cited defect keeps a hand-rolled widget now.
 | a segmented control → `CupertinoSlidingSegmentedControl` | 7 + `OptionStrip.segmented` | loses the pop-then-travel thumb and `HapticFeedback.selectionClick()` |
 | `Switch.adaptive` → `CupertinoSwitch` | 1 file | deletes the `trackColor` workaround it needed |
 | `InkWell`/`InkResponse` → `CupertinoButton` | 2 | `quiet_action_button.dart`, `meal_action_icon_button.dart`. Both also drop a `Material(` wrapper; the `Ink` decoration must become a plain `Container` when the Material ancestor goes |
-| `Slider` → `CupertinoSlider` | 2 | no longer "decide first" — boundary 2 says adopt it and accept the track. (Counted as 3 until 2026-09-19; `body_metrics.dart` only *uses* `AggressionSlider`) |
+| `Slider` → `CupertinoSlider` | 1 | no longer "decide first" — boundary 2 says adopt it and accept the track. (3 until 2026-09-19, 2 until 2026-09-24, when `AggressionSlider` went with Settings' own goal form) |
 | arena-driven `_pressed` (`onTapDown`/`onTapUp`/`onTapCancel`) → `KalloPressable` | ~40 | `KalloButton`, `sheet_confirm_button.dart`, `app_header_back_button.dart`, the timeline cells, … Every one of these drops its wash the moment a tap recognizer loses the arena — to a long press at ~500ms, or to a scroll — with the finger still down; the confirm dialog shipped exactly that bug before it moved. Not blocking; migrate as each file is next touched |
-| ~~`MaterialPageRoute` → `CupertinoPageRoute`~~ | 4, the OTHER way | **Reversed 2026-09-10, and reaffirmed 2026-09-19.** The transition lives in the theme, so `MaterialPageRoute` is what the app wants everywhere. The four remaining `CupertinoPageRoute` pushes in `features/settings/screens/` are being converted TO it. See *Routes* above |
+| ~~`MaterialPageRoute` → `CupertinoPageRoute`~~ | 0, the OTHER way | **Reversed 2026-09-10, reaffirmed 2026-09-19, done 2026-09-24.** The transition lives in the theme, so `MaterialPageRoute` is what the app wants everywhere. The four settings pushes that were `CupertinoPageRoute` — the reason paging through Settings slid and swiped unlike every other screen — now go through `pushSettingsPage` (`settings/widgets/chrome/settings_navigator.dart`). See *Routes* above |
 
 ### Two app-wide changes worth remembering
 
@@ -605,6 +608,19 @@ numbers in `calm_tokens.dart` that move every screen at once.
 ## Shared widgets the system now owns
 
 Reach for these before writing a local variant:
+
+- **`shared/widgets/chrome/inline_nav_bar.dart`** — the bar for a page ONE
+  level down: "‹ parent" (falls back to "Back" when it would crowd the title)
+  and the title centred at `kSectionHeader`. `.page` for a pushed page, the
+  plain constructor inside a sheet (`KalloSheetSubHeader`). The large
+  left-aligned `PageHeader` is only for the root of a stack.
+- **`shared/widgets/form/save_dock.dart`** — the one "save what I changed"
+  button of an edit page, docked on the bottom edge and present only while
+  there is something to save. Hand it to `ScrollSeparator.overlay`.
+- **`shared/widgets/form/option_row.dart`** — the one-of-many pick with a
+  radio. Its height is a floor: label and subline wrap (two-line content sits
+  12pt from the edges, 4pt apart) rather than ellipsising a Vietnamese hint.
+  `trailing` takes a decoration such as the cooking step's portion drawings.
 
 - **`shared/widgets/feedback/kallo_surface_state.dart`** — the one empty /
   error / 404 anatomy: area illustration → serif title → muted line → one

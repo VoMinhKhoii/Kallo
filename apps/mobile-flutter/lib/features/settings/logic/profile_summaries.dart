@@ -17,6 +17,12 @@ import '../../onboarding/screens/step_cooking.dart';
 abstract final class ProfileSummaries {
   static const String _sep = ' · ';
 
+  /// Joins segments so a wrapped line breaks BETWEEN them, never inside one:
+  /// each segment's own spaces become no-break spaces. A two-line subline
+  /// that ended on "Uống một / ít" split the one answer that mattered.
+  static String _join(Iterable<String> segments) =>
+      segments.map((s) => s.replaceAll(' ', '\u00A0')).join(_sep);
+
   static bool _hasBody(ProfileRow p) =>
       tryParseBiologicalSex(p.biologicalSex) != null &&
       p.weightKg != null &&
@@ -28,12 +34,12 @@ abstract final class ProfileSummaries {
     if (p == null || !_hasBody(p)) return tr('settings.rows.notSet');
     final sex = tryParseBiologicalSex(p.biologicalSex)!;
     final kg = NumberFormat.decimalPattern(locale)..maximumFractionDigits = 1;
-    return [
+    return _join([
       tr('onboarding.bodyMetrics.${sex.name}'),
       '${p.age} ${tr('onboarding.bodyMetrics.ageUnit')}',
       '${p.heightCm} ${tr('onboarding.bodyMetrics.heightUnit')}',
       '${kg.format(p.weightKg)} ${tr('onboarding.bodyMetrics.weightUnit')}',
-    ].join(_sep);
+    ]);
   }
 
   /// "Giảm cân · 0,5 kg/tuần · 1.800 kcal" — or what has to come first.
@@ -65,7 +71,7 @@ abstract final class ProfileSummaries {
         '${tr('onboarding.bodyMetrics.kcal')}',
       );
     }
-    return parts.join(_sep);
+    return _join(parts);
   }
 
   /// "Dầu vừa · Cơm vừa · Đạm vừa · Uống một ít". Read through the cooking
@@ -106,12 +112,14 @@ abstract final class ProfileSummaries {
     // Every segment reads as its own item, so each opens with a capital —
     // "Normal oil · Medium rice", "Dầu vừa · … · Uống một ít" — whatever case
     // the template put the answer in.
-    return line
-        .split(_sep)
-        .map(
-          (seg) => seg.isEmpty ? seg : seg[0].toUpperCase() + seg.substring(1),
-        )
-        .join(_sep);
+    return _join(
+      line
+          .split(_sep)
+          .map(
+            (seg) =>
+                seg.isEmpty ? seg : seg[0].toUpperCase() + seg.substring(1),
+          ),
+    );
   }
 
   /// "Việt Nam · Tiếng Việt" — residence, then the app language.
@@ -120,6 +128,6 @@ abstract final class ProfileSummaries {
     final residence = p?.countryOfResidence;
     final country = residence == null ? null : countryForValue(residence);
     if (country == null) return language;
-    return '${countryLabel(country, languageCode)}$_sep$language';
+    return _join([countryLabel(country, languageCode), language]);
   }
 }

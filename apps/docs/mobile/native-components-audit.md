@@ -13,8 +13,8 @@ Refs are `file:line` at HEAD; spot-checked with grep against the tree on this da
 >   transition moved into `pageTransitionsTheme`, and a `CupertinoPage` never reads it,
 >   so `MaterialPage`/`MaterialPageRoute` is now the correct type app-wide. The
 >   `email_auth_form.dart` "swap to `CupertinoPageRoute`" row is likewise void; the four
->   `CupertinoPageRoute` pushes in `features/settings/screens/` are being converted the
->   other way.
+>   `CupertinoPageRoute` pushes in `features/settings/screens/` were converted the other
+>   way on 2026-09-24.
 > - **Message long-press menu → `CupertinoContextMenu`** — rejected 2026-09-08. It
 >   relocates the pressed widget into its own preview slot and scales it 1.15x, so the
 >   bubble slides out from under the finger, and it holds 800ms. `showKalloAnchoredMenu`
@@ -22,8 +22,12 @@ Refs are `file:line` at HEAD; spot-checked with grep against the tree on this da
 > - **`CupertinoSwitch`** — correct, and adopted 2026-09-19 (the audit's "swap" verdict
 >   stands; it was `Switch.adaptive` in the interim).
 >
+> - **Settings' dropdowns and slider** (`settings/widgets/inputs/custom_select.dart`,
+>   `country_select.dart`, `aggression_slider.dart`) — deleted 2026-09-24, not swapped:
+>   Settings' profile pages now host the onboarding step bodies, which never used them.
+>
 > Everything else here still reads true; the counts are as of 2026-09-03 and several are
-> now stale (spinners are 13, not 17; sliders are 2, not 3).
+> now stale (spinners are 13, not 17; sliders are 1, not 3).
 
 ## 1. Context
 

@@ -27,6 +27,9 @@ const _full = <String, dynamic>{
   'countryOfResidence': 'Vietnam',
 };
 
+/// Summaries keep each segment unbroken with no-break spaces; compare text.
+String _plain(String s) => s.replaceAll('\u00A0', ' ');
+
 Future<void> _in(WidgetTester tester, String lang) async {
   late BuildContext ctx;
   await tester.pumpWidget(
@@ -51,24 +54,24 @@ void main() {
     await _in(tester, 'vi');
     const p = ProfileRow(_full);
     expect(
-      ProfileSummaries.aboutYou(p, 'vi'),
+      _plain(ProfileSummaries.aboutYou(p, 'vi')),
       'Nam · 29 tuổi · 172 cm · 68,5 kg',
     );
     expect(
-      ProfileSummaries.goal(p, 'vi'),
+      _plain(ProfileSummaries.goal(p, 'vi')),
       'Giảm cân · 0,5 kg/tuần · 1.800 kcal',
     );
     expect(
-      ProfileSummaries.cooking(p),
+      _plain(ProfileSummaries.cooking(p)),
       'Dầu vừa · Cơm vừa · Đạm vừa · Uống một ít',
     );
-    expect(ProfileSummaries.region(p, 'vi'), 'Việt Nam · Tiếng Việt');
+    expect(_plain(ProfileSummaries.region(p, 'vi')), 'Việt Nam · Tiếng Việt');
   });
 
   testWidgets('English capitalises each segment', (tester) async {
     await _in(tester, 'en');
     expect(
-      ProfileSummaries.cooking(const ProfileRow(_full)),
+      _plain(ProfileSummaries.cooking(const ProfileRow(_full))),
       'Normal oil · Medium rice · Medium protein · Drink some',
     );
   });
@@ -78,22 +81,41 @@ void main() {
   ) async {
     await _in(tester, 'vi');
     const blank = ProfileRow({});
-    expect(ProfileSummaries.aboutYou(blank, 'vi'), tr('settings.rows.notSet'));
     expect(
-      ProfileSummaries.goal(blank, 'vi'),
+      _plain(ProfileSummaries.aboutYou(blank, 'vi')),
+      tr('settings.rows.notSet'),
+    );
+    expect(
+      _plain(ProfileSummaries.goal(blank, 'vi')),
       tr('settings.rows.needsBodyFirst'),
     );
-    expect(ProfileSummaries.cooking(blank), tr('settings.rows.cookingDefault'));
-    expect(ProfileSummaries.region(blank, 'vi'), 'Tiếng Việt');
+    expect(
+      _plain(ProfileSummaries.cooking(blank)),
+      tr('settings.rows.cookingDefault'),
+    );
+    expect(_plain(ProfileSummaries.region(blank, 'vi')), 'Tiếng Việt');
 
     // A body with no goal yet is "not set", not "add your body first".
     final noGoal = ProfileRow({..._full}..remove('goal'));
-    expect(ProfileSummaries.goal(noGoal, 'vi'), tr('settings.rows.notSet'));
+    expect(
+      _plain(ProfileSummaries.goal(noGoal, 'vi')),
+      tr('settings.rows.notSet'),
+    );
   });
 
   testWidgets('maintaining carries no pace', (tester) async {
     await _in(tester, 'vi');
     final p = ProfileRow(Map.of(_full)..['goal'] = 'maintaining');
-    expect(ProfileSummaries.goal(p, 'vi'), 'Duy trì · 1.800 kcal');
+    expect(_plain(ProfileSummaries.goal(p, 'vi')), 'Duy trì · 1.800 kcal');
+  });
+
+  testWidgets('a wrapped line breaks between answers, never inside one', (
+    tester,
+  ) async {
+    await _in(tester, 'vi');
+    final line = ProfileSummaries.cooking(const ProfileRow(_full));
+    // The only breakable spaces are the ones around each separator.
+    expect(line.split(' ').length - 1, 2 * ('·'.allMatches(line).length));
+    expect(line, contains('Uống\u00A0một\u00A0ít'));
   });
 }
