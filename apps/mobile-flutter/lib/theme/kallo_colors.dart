@@ -83,6 +83,15 @@ abstract final class KalloColors {
   /// token in this palette is held to.
   static const Color mention = Color(0xFF2B72C6);
 
+  // ── Premium lock marker (PremiumChip / PremiumDot) ───────────────────
+  /// A soft blue, not the paywall gold: the marker only says "this is in
+  /// Premium" beside a working option, and gold would compete with the one
+  /// gold CTA the paywall owns. Same values as web's `--kallo-premium-*`.
+  static const Color premiumChipFill = Color(0xFFF5F8FE);
+  static const Color premiumChipBorder = Color(0xFFA9C1F0);
+  static const Color premiumChipText = Color(0xFF2F5FD0);
+  static const Color premiumDot = Color(0xFF3B6FE0);
+
   // ── Borders ──────────────────────────────────────────────────────────
   static const Color border = Color(0xFFE2DFD4); // neutral hairline
   static const Color borderSoft = Color(0x99E2DFD4); // hairline @ 60%

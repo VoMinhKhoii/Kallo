@@ -20,6 +20,8 @@ interface ActionIconButtonProps {
   /** In-flight state — swaps the icon for a spinner (mirrors mobile). */
   pending?: boolean;
   disabled?: boolean;
+  /** Pinned to the icon's top-right corner — the Premium dot on a locked action. */
+  marker?: React.ReactNode;
   'aria-expanded'?: boolean;
   'aria-pressed'?: boolean;
 }
@@ -30,6 +32,7 @@ export function ActionIconButton({
   active = false,
   danger = false,
   pending = false,
+  marker,
   className,
   ...props
 }: ActionIconButtonProps & React.ComponentPropsWithRef<'button'>) {
@@ -55,7 +58,10 @@ export function ActionIconButton({
             {pending ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <IconComponent className="size-3.5" />
+              <span className="relative inline-flex">
+                <IconComponent className="size-3.5" />
+                {marker}
+              </span>
             )}
           </Button>
         </TooltipTrigger>

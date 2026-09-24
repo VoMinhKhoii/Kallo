@@ -32,11 +32,57 @@ Package? _firstOfType(List<Package> packages, PackageType type) {
   return null;
 }
 
-/// Days of FREE introductory access [package] offers, or 0 when it offers
-/// none. A paid introductory price is not a trial and returns 0.
-int freeTrialDays(Package package) {
-  final intro = package.storeProduct.introductoryPrice;
-  if (intro == null || intro.price != 0) return 0;
+/// The introductory period the sheet may promise on a plan — resolved once,
+/// because the CTA and the legal line under it are two halves of the same
+/// promise.
+sealed class IntroOffer {
+  const IntroOffer(this.days);
+
+  /// How long the introductory period runs before the full price.
+  final int days;
+}
+
+/// Free introductory access — "Start 7-day trial".
+final class FreeTrial extends IntroOffer {
+  const FreeTrial(super.days);
+}
+
+/// A PAID introductory period — "first 7 days for \$0.99". A charge today, so
+/// it is disclosed after the full price.
+final class PaidIntro extends IntroOffer {
+  const PaidIntro(super.days, this.price);
+
+  /// The store-formatted introductory price.
+  final String price;
+}
+
+/// What [plan] may promise this customer, or null for the plain full price.
+///
+/// A price of 0 is a FREE trial, offered only while the account is not already
+/// mid-trial and the STORE says this customer is still eligible — a returning
+/// subscriber's product carries `introductoryPrice` exactly like a new one's;
+/// only the store knows Apple would refuse the trial at purchase.
+///
+/// A price above 0 is a PAID intro. It needs the same store eligibility (Apple
+/// grants one intro offer per customer) but ignores [trialActive]: the store
+/// charges the intro whatever the app-level trial says, so only the store's
+/// eligibility decides whether it is disclosed.
+IntroOffer? introOffer({
+  required Package plan,
+  required bool trialActive,
+  required Set<String> eligibleProductIds,
+}) {
+  final intro = plan.storeProduct.introductoryPrice;
+  if (intro == null) return null;
+  final days = _introDays(intro);
+  final eligible = eligibleProductIds.contains(plan.storeProduct.identifier);
+  if (days <= 0 || !eligible) return null;
+  if (intro.price == 0) return trialActive ? null : FreeTrial(days);
+  if (intro.price > 0) return PaidIntro(days, intro.priceString);
+  return null;
+}
+
+int _introDays(IntroductoryPrice intro) {
   final cycles = intro.cycles <= 0 ? 1 : intro.cycles;
   final units = intro.periodNumberOfUnits * cycles;
   return switch (intro.periodUnit) {
@@ -47,36 +93,6 @@ int freeTrialDays(Package package) {
     PeriodUnit.unknown => 0,
   };
 }
-
-/// Whether the sheet may PROMISE a free trial on [plan]: the account is not
-/// already mid-trial, the product declares a free introductory period, and the
-/// STORE says this customer is still eligible. A returning subscriber's product
-/// carries `introductoryPrice` exactly like a new one's — only the store knows
-/// Apple would refuse the trial at purchase.
-bool offersTrial({
-  required Package plan,
-  required bool trialActive,
-  required Set<String> eligibleProductIds,
-}) =>
-    !trialActive &&
-    freeTrialDays(plan) > 0 &&
-    eligibleProductIds.contains(plan.storeProduct.identifier);
-
-/// Whether the sheet may promise a trial on [plan], and how long it would run
-/// — one answer, asked once, because the CTA and the legal line under it are
-/// two halves of the same promise.
-({bool trial, int days}) trialOffer({
-  required Package plan,
-  required bool trialActive,
-  required Set<String> eligibleProductIds,
-}) => (
-  trial: offersTrial(
-    plan: plan,
-    trialActive: trialActive,
-    eligibleProductIds: eligibleProductIds,
-  ),
-  days: freeTrialDays(plan),
-);
 
 /// The clock the renewal line's "from {date}" reads, behind a provider so a
 /// test can pin the date without the screen growing a parameter for it.

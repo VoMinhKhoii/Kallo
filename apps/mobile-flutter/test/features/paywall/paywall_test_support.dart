@@ -92,6 +92,16 @@ class PaywallPurchasesService extends PurchasesService {
   /// the CTA bought the row the user picked.
   Package? lastPurchased;
 
+  /// How many times the store was asked to restore — how a UI test proves the
+  /// consent line's Restore link reached the store.
+  int restoreCalls = 0;
+
+  @override
+  Future<RestoreAttempt> restorePurchases(String userId) async {
+    restoreCalls += 1;
+    return const RestoreAttempt(RestoreOutcome.nothingToRestore);
+  }
+
   @override
   bool get purchasesAvailable => available;
 
@@ -201,6 +211,49 @@ const annualNoTrialPackage = Package(
   r'$rc_annual',
   PackageType.annual,
   annualNoTrialProduct,
+  offeringContext,
+);
+
+/// The shipped iOS pricing: both plans open with a PAID first week — the
+/// store charges \$0.99 for 7 days, then the full price renews.
+const paidWeek = IntroductoryPrice(
+  0.99,
+  r'$0.99',
+  'P1W',
+  1,
+  PeriodUnit.week,
+  1,
+);
+const monthlyPaidWeekPackage = Package(
+  r'$rc_monthly',
+  PackageType.monthly,
+  StoreProduct(
+    'kallo_premium_monthly',
+    'Monthly Kallo Premium',
+    'Kallo Premium Monthly',
+    8.99,
+    r'$8.99',
+    'USD',
+    presentedOfferingContext: offeringContext,
+    subscriptionPeriod: 'P1M',
+    introductoryPrice: paidWeek,
+  ),
+  offeringContext,
+);
+const annualPaidWeekPackage = Package(
+  r'$rc_annual',
+  PackageType.annual,
+  StoreProduct(
+    'kallo_premium_annual',
+    'Annual Kallo Premium',
+    'Kallo Premium Annual',
+    34.99,
+    r'$34.99',
+    'USD',
+    presentedOfferingContext: offeringContext,
+    subscriptionPeriod: 'P1Y',
+    introductoryPrice: paidWeek,
+  ),
   offeringContext,
 );
 

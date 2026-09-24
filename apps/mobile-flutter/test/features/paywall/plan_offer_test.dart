@@ -58,6 +58,65 @@ void main() {
     expect(offer.renewalLine, contains('Sep 13'));
   });
 
+  test('a paid first week: the button and the line name the same offer', () {
+    final offer = offerFor(const [
+      annualPaidWeekPackage,
+      monthlyPaidWeekPackage,
+    ]);
+
+    expect(
+      offer.ctaLabel,
+      tr('paywall.startIntro', namedArgs: {'days': '7', 'price': r'$0.99'}),
+    );
+    // The full price still leads; the intro charge is disclosed after it,
+    // and the full price starts once the paid week is over.
+    expect(offer.renewalLine, startsWith(r'$34.99/year'));
+    expect(offer.renewalLine, contains(r'(≈$2.92/mo)'));
+    expect(offer.renewalLine, contains('Sep 13'));
+    expect(offer.renewalLine, contains(r'$0.99'));
+  });
+
+  test('the monthly half carries the same paid first week', () {
+    final offer = offerFor(const [
+      annualPaidWeekPackage,
+      monthlyPaidWeekPackage,
+    ], yearlyPicked: false);
+
+    expect(
+      offer.ctaLabel,
+      tr('paywall.startIntro', namedArgs: {'days': '7', 'price': r'$0.99'}),
+    );
+    expect(offer.renewalLine, startsWith(r'$8.99/month'));
+    expect(offer.renewalLine, contains('Sep 13'));
+    expect(offer.renewalLine, contains(r'$0.99'));
+  });
+
+  test('the paid week does not wait on an app-level trial', () {
+    // The store charges the intro whatever the server's own trial says, so the
+    // disclosure must follow the store's eligibility alone.
+    final offer = offerFor(
+      const [annualPaidWeekPackage, monthlyPaidWeekPackage],
+      trial: const TrialState(active: true, endsAt: null, daysRemaining: 3),
+    );
+
+    expect(
+      offer.ctaLabel,
+      tr('paywall.startIntro', namedArgs: {'days': '7', 'price': r'$0.99'}),
+    );
+    expect(offer.renewalLine, contains(r'$0.99'));
+  });
+
+  test('a customer who used their paid week is offered the full price', () {
+    final offer = offerFor(const [
+      annualPaidWeekPackage,
+      monthlyPaidWeekPackage,
+    ], eligible: const {});
+
+    expect(offer.ctaLabel, tr('paywall.purchase'));
+    expect(offer.renewalLine, isNot(contains(r'$0.99')));
+    expect(offer.renewalLine, isNot(contains('Sep 13')));
+  });
+
   test('a customer the store would refuse gets no trial in EITHER half', () {
     final offer = offerFor(const [
       annualPackage,

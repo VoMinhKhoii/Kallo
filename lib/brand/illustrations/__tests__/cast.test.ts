@@ -24,10 +24,19 @@ function everyRecord(): Illustration[] {
 }
 
 describe('the surface-state cast', () => {
-  it('casts eighteen distinct Koboyo illustrations', () => {
+  it('casts nineteen distinct Koboyo illustrations', () => {
     const slugs = everyRecord().map((record) => record.slug);
-    expect(slugs).toHaveLength(18);
-    expect(new Set(slugs).size).toBe(18);
+    expect(slugs).toHaveLength(19);
+    expect(new Set(slugs).size).toBe(19);
+  });
+
+  it('casts the Premium-locked pose on nutrition only', () => {
+    expect(pickIllustration('nutrition', 'locked', false).slug).toBe(
+      'sloth-telescope'
+    );
+    expect(pickIllustration('circle', 'locked', false).slug).toBe(
+      'capybara-telescope'
+    );
   });
 
   it('carries a renderable record for every pose', () => {

@@ -5,6 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/chat_group.dart';
 import '../../../../models/social/circle.dart';
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -65,6 +68,7 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
   Widget build(BuildContext context) {
     final memberIds =
         widget.group.members.map((member) => member.userId).toSet();
+    final gate = premiumGate(ref, PremiumFeature.unlimitedCircle);
     return ref
         .watch(circleFriendsProvider)
         .when(
@@ -86,11 +90,14 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
                           !memberIds.contains(friend.profile.userId),
                     )
                     .toList(),
+                gate,
               ),
         );
   }
 
-  Widget _content(List<CircleMember> candidates) {
+  /// Growing a group is `unlimited_circle`: while the plan lacks it the CTA
+  /// carries a [PremiumChip] and opens the paywall instead of adding.
+  Widget _content(List<CircleMember> candidates, PremiumGate gate) {
     if (candidates.isEmpty) {
       return Text(tr('groups.info.everyoneIn'), style: dashMeta());
     }
@@ -134,8 +141,17 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: _adding ? null : _add,
-              child: Text('${tr('groups.info.addCta')} · ${_selected.length}'),
+              onPressed: gate.tap(context, _adding ? null : _add),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${tr('groups.info.addCta')} · ${_selected.length}'),
+                  if (gate.locked) ...[
+                    const SizedBox(width: KalloSpacing.sp2),
+                    const PremiumChip(),
+                  ],
+                ],
+              ),
             ),
           ),
       ],

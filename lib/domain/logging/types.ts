@@ -1,3 +1,4 @@
+import type { FeatureKey } from '@/lib/domain/billing/entitlement/features';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
 /**
@@ -21,6 +22,16 @@ export interface LoggingProfile {
  * (`cheat`).
  */
 export type InputMode = 'normal' | 'manual' | 'cheat';
+
+/** The Premium feature behind each gated mode. Manual is free. */
+export const MODE_FEATURE: {
+  readonly normal: FeatureKey;
+  readonly cheat: FeatureKey;
+  readonly manual?: undefined;
+} = {
+  normal: 'ai_analysis',
+  cheat: 'cheat_meal',
+};
 
 /**
  * One day the timeline knows about, and what it came to.

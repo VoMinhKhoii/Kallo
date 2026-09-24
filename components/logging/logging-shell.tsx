@@ -11,7 +11,6 @@ import {
   useTransition,
 } from 'react';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
-import { TrialBanner } from '@/components/billing/subscription/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import {
   MobileTimelinePicker,
@@ -29,8 +28,6 @@ interface LoggingShellProps {
   profile: LoggingProfile;
   initialMeal?: string;
   initialDate?: string;
-  // Signed-in user's email — pre-fills the web checkout in the paywall.
-  email?: string | null;
   /**
    * The server's answer to "does the opening day hold anything?", so the
    * composer paints where it belongs instead of docking and then correcting.
@@ -43,7 +40,6 @@ export function LoggingShell({
   profile,
   initialMeal,
   initialDate,
-  email,
   initiallyHasEntries,
 }: LoggingShellProps) {
   const router = useRouter();
@@ -56,10 +52,8 @@ export function LoggingShell({
   // is a different question, and answering it with a stale hint would put the
   // composer in the middle of a day that has meals in it.
   const openingDate = useRef(selectedDate).current;
-  // A pre-stream 402 from the analyze endpoint opens the app-wide paywall
-  // hosted by PremiumGuardProvider. The TrialBanner owns its OWN paywall for
-  // the upgrade CTA; this one covers the hard-locked (trial-expired /
-  // not-entitled) case where the banner is hidden.
+  // A pre-stream 402 from the analyze endpoint sends the user to /pricing
+  // through PremiumGuardProvider.
   const { openPaywall } = usePremiumGuard();
   const lastUrlDateRef = useRef(initialDate ?? today);
   const [isDateNavigationPending, startDateNavigationTransition] =
@@ -163,7 +157,6 @@ export function LoggingShell({
         onSelectDate={handleSelectDate}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <TrialBanner userId={profile.userId} email={email} />
         <FeedArea
           selectedDate={selectedDate}
           today={today}

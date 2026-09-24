@@ -88,7 +88,7 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).toContain(
       `BILLING_ENFORCEMENT_ENABLED: \${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}`
     );
-    expect(workflow).toContain(`TRIAL_DAYS: \${{ vars.TRIAL_DAYS || '7' }}`);
+    expect(workflow).toContain(`TRIAL_DAYS: \${{ vars.TRIAL_DAYS || '0' }}`);
     expect(workflow).toContain('SUBSCRIPTION_LAUNCH_DATE');
   });
 

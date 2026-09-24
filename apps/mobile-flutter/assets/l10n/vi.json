@@ -516,9 +516,9 @@
       "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
     },
     "locked": {
-      "title": "Vi chất là tính năng Premium",
-      "description": "Calo và macro vẫn miễn phí. Nâng cấp Premium để theo dõi vitamin, khoáng chất và chất xơ so với mục tiêu của bạn.",
-      "cta": "Xem Premium"
+      "title": "Vi chất có trong gói Premium",
+      "description": "Vitamin, khoáng chất và chất xơ theo mục tiêu của bạn.",
+      "cta": "Nâng cấp"
     },
     "empty": {
       "title": "Chưa có bữa ăn trong khoảng này",
@@ -1882,7 +1882,6 @@
     "upsellEyebrow": "Kallo Pro",
     "upsellTitle": "Mô tả bữa ăn, biết ngay dinh dưỡng",
     "upsellBody": "Phân tích bữa ăn bằng AI đọc ra món ăn, khẩu phần, calo và macro từ chính lời bạn mô tả, bằng tiếng Việt hay tiếng Anh.",
-    "expiredEyebrow": "Thời gian dùng thử đã kết thúc",
     "expiredTitle": "Giữ lại phân tích AI của bạn",
     "expiredBody": "Thời gian dùng thử đã hết. Nâng cấp Premium để tiếp tục ghi bữa ăn bằng phân tích AI — không phải tính tay nữa.",
     "trialCountdown": "Còn {days} ngày dùng thử miễn phí",
@@ -1892,7 +1891,6 @@
     "feature3": "Ghi bữa ăn nhanh trong giới hạn sử dụng hợp lý",
     "purchase": "Bắt đầu Premium",
     "purchaseTrial": "Đăng ký ngay",
-    "restore": "Khôi phục giao dịch",
     "manageActive": "Quản lý gói đăng ký",
     "alreadyPremiumTitle": "Bạn đang dùng Premium",
     "alreadyPremiumBody": "Phân tích bữa ăn bằng AI đã được mở khóa. Bạn có thể quản lý gói trong cửa hàng bất cứ lúc nào.",
@@ -1934,12 +1932,20 @@
     "compareCircleFree": "2 / 10",
     "compareUnlimited": "Không giới hạn",
     "startTrialDays": "Bắt đầu dùng thử {days} ngày",
+    "startIntro": "{days} ngày đầu chỉ {price}",
+    "renewYearlyIntro": "{price}/năm (≈{perMonth}/tháng) từ {date}, sau {days} ngày đầu {intro}.",
+    "renewMonthlyIntro": "{price}/tháng từ {date}, sau {days} ngày đầu {intro}.",
     "startMonthly": "Bắt đầu Premium — {price}/tháng",
     "saveChip": "Tiết kiệm {percent}%",
     "renewYearly": "Tự động gia hạn {price}/năm (≈{perMonth}/tháng) từ {date} đến khi huỷ.",
     "renewMonthly": "Tự động gia hạn {price}/tháng đến khi huỷ.",
     "renewYearlyNow": "Tự động gia hạn {price}/năm (≈{perMonth}/tháng) đến khi huỷ.",
     "renewMonthlyFrom": "Tự động gia hạn {price}/tháng từ {date} đến khi huỷ.",
-    "consent": "Khi tiếp tục, bạn đồng ý với Điều khoản và Chính sách riêng tư, và xác nhận gói tự động gia hạn đến khi huỷ."
+    "consent": "Khi tiếp tục, bạn đồng ý với {restore}, {terms} và {privacy}, và xác nhận gói tự động gia hạn đến khi huỷ.",
+    "consentRestore": "Khôi phục",
+    "consentTerms": "Điều khoản",
+    "consentPrivacy": "Chính sách riêng tư",
+    "premiumChip": "Premium",
+    "premiumFeature": "Tính năng Premium"
   }
 }

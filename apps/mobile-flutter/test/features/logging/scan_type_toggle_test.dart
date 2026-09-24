@@ -2,9 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/scan_type_toggle.dart';
+import 'package:kallo_mobile/services/billing/entitlement_state.dart';
+import 'package:kallo_mobile/services/billing/entitlements_provider.dart';
+import 'package:kallo_mobile/services/billing/feature_lock.dart';
+import 'package:kallo_mobile/shared/widgets/badges/premium_chip.dart';
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
@@ -53,40 +58,52 @@ void main() {
     required Locale locale,
     required double scale,
     required ScanType selected,
+    bool labelLocked = false,
   }) async {
     await loadAppFonts();
     await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('vi')],
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        startLocale: locale,
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: Builder(
-                  builder:
-                      (context) => MediaQuery(
-                        data: MediaQuery.of(
-                          context,
-                        ).copyWith(textScaler: TextScaler.linear(scale)),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: screenWidth,
-                            child: ScanTypeToggle(
-                              value: selected,
-                              onChange: (_) {},
+      // Signed out: the label segment's Premium marker resolves to hidden
+      // without a network call.
+      ProviderScope(
+        overrides: [
+          entitlementsUserIdProvider.overrideWithValue(null),
+          if (labelLocked)
+            premiumLockProvider(
+              PremiumFeature.labelScan,
+            ).overrideWithValue(true),
+        ],
+        child: EasyLocalization(
+          supportedLocales: const [Locale('en'), Locale('vi')],
+          path: 'assets/l10n',
+          fallbackLocale: const Locale('en'),
+          startLocale: locale,
+          assetLoader: const FsL10nLoader(),
+          child: Builder(
+            builder:
+                (context) => MaterialApp(
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  home: Builder(
+                    builder:
+                        (context) => MediaQuery(
+                          data: MediaQuery.of(
+                            context,
+                          ).copyWith(textScaler: TextScaler.linear(scale)),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: screenWidth,
+                              child: ScanTypeToggle(
+                                value: selected,
+                                onChange: (_) {},
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                  ),
                 ),
-              ),
+          ),
         ),
       ),
     );
@@ -179,6 +196,47 @@ void main() {
       }
     }
   }
+
+  testWidgets('free user: the label segment carries the Premium chip, and '
+      'label plus chip still fit the segment (vi @ 1.3x)', (tester) async {
+    await pumpToggle(
+      tester,
+      locale: const Locale('vi'),
+      scale: 1.3,
+      selected: ScanType.barcode,
+      labelLocked: true,
+    );
+
+    expect(find.byType(PremiumChip), findsOneWidget);
+    final label = find.text('logging.scan.labelTab'.tr());
+    expect(
+      tester.renderObject<RenderParagraph>(label).didExceedMaxLines,
+      isFalse,
+    );
+    // The chip sits right of the label, inside the label's segment.
+    final chip = tester.getRect(find.byType(PremiumChip));
+    final segment = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(SegmentedStrip),
+            matching: find.byType(GestureDetector),
+          )
+          .at(1),
+    );
+    expect(chip.left, greaterThan(tester.getRect(label).right));
+    expect(chip.right, lessThanOrEqualTo(segment.right));
+  });
+
+  testWidgets('premium or unenforced: no chip', (tester) async {
+    await pumpToggle(
+      tester,
+      locale: const Locale('en'),
+      scale: 1,
+      selected: ScanType.barcode,
+    );
+
+    expect(find.byType(PremiumChip), findsNothing);
+  });
 
   testWidgets('draws the shared primitive on a pill track', (tester) async {
     await pumpToggle(

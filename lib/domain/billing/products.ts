@@ -10,25 +10,32 @@ import type { EntitlementKey } from '@/lib/domain/billing/entitlement/features';
 // RevenueCat assigned at import; if that is the Paddle price id (`pri_…`)
 // rather than a canonical id, it must be added here or a paying customer gets
 // no grant. See the Paddle checklist in docs/BILLING.md.
+/** The canonical product id of each Premium plan, the same on every store. */
+export const PRODUCT_IDS = {
+  monthly: 'kallo_premium_monthly',
+  annual: 'kallo_premium_annual',
+  lifetime: 'kallo_premium_lifetime',
+} as const;
+
+type Plan = keyof typeof PRODUCT_IDS;
+
 export const PRODUCT_ENTITLEMENTS: Record<
   string,
   { entitlementKey: EntitlementKey; lifetime: boolean }
 > = {
-  kallo_premium_monthly: { entitlementKey: 'premium', lifetime: false },
-  kallo_premium_annual: { entitlementKey: 'premium', lifetime: false },
-  kallo_premium_lifetime: { entitlementKey: 'premium', lifetime: true },
+  [PRODUCT_IDS.monthly]: { entitlementKey: 'premium', lifetime: false },
+  [PRODUCT_IDS.annual]: { entitlementKey: 'premium', lifetime: false },
+  [PRODUCT_IDS.lifetime]: { entitlementKey: 'premium', lifetime: true },
 };
 
-const CANONICAL_PRODUCT_IDS = new Set([
-  'kallo_premium_monthly',
-  'kallo_premium_annual',
-  'kallo_premium_lifetime',
-]);
+const CANONICAL_PRODUCT_IDS = new Set<string>(Object.values(PRODUCT_IDS));
 
 const GOOGLE_BASE_PLAN_PRODUCTS: Record<string, string> = {
-  'kallo_premium_monthly:monthly': 'kallo_premium_monthly',
-  'kallo_premium_annual:annual': 'kallo_premium_annual',
+  [`${PRODUCT_IDS.monthly}:monthly`]: PRODUCT_IDS.monthly,
+  [`${PRODUCT_IDS.annual}:annual`]: PRODUCT_IDS.annual,
 };
+
+export type PaddleEnvironment = 'sandbox' | 'production';
 
 // RevenueCat imports Paddle prices under their opaque Paddle price id, so the
 // web catalog cannot be keyed on our canonical names the way Apple and Google
@@ -39,16 +46,29 @@ const GOOGLE_BASE_PLAN_PRODUCTS: Record<string, string> = {
 // Sandbox and production are separate Paddle accounts and therefore have
 // SEPARATE price ids. Both belong in this map; adding the production account
 // later is a code change, not just a dashboard change.
-const PADDLE_PRICE_PRODUCTS: Record<string, string> = {
-  // Sandbox (Kallo Paddle sandbox account)
-  pri_01kyy23rh7qjch1798kfwqx8x8: 'kallo_premium_monthly',
-  pri_01kyy258p8ay94vzvyznz6k9r0: 'kallo_premium_annual',
-  pri_01kyy26yps3tt1zf1vjhhcvkp8: 'kallo_premium_lifetime',
-  // Production (Kallo Paddle live account, product pro_01kz49s9ga4n2h57k40zv88bgn)
-  pri_01kz49s9hjsmk53evgrsh55ccr: 'kallo_premium_monthly',
-  pri_01kz49s9jm5m5xhzwktnz4005q: 'kallo_premium_annual',
-  pri_01kz49s9kxp82v1r03caxc1gqh: 'kallo_premium_lifetime',
+export const PADDLE_PRICE_IDS: Record<
+  PaddleEnvironment,
+  Record<Plan, string>
+> = {
+  // Kallo Paddle sandbox account
+  sandbox: {
+    monthly: 'pri_01kyy23rh7qjch1798kfwqx8x8',
+    annual: 'pri_01kyy258p8ay94vzvyznz6k9r0',
+    lifetime: 'pri_01kyy26yps3tt1zf1vjhhcvkp8',
+  },
+  // Kallo Paddle live account, product pro_01kz49s9ga4n2h57k40zv88bgn
+  production: {
+    monthly: 'pri_01kz49s9hjsmk53evgrsh55ccr',
+    annual: 'pri_01kz49s9jm5m5xhzwktnz4005q',
+    lifetime: 'pri_01kz49s9kxp82v1r03caxc1gqh',
+  },
 };
+
+const PADDLE_PRICE_PRODUCTS: Record<string, string> = Object.fromEntries(
+  Object.values(PADDLE_PRICE_IDS).flatMap((ids) =>
+    (Object.keys(ids) as Plan[]).map((plan) => [ids[plan], PRODUCT_IDS[plan]])
+  )
+);
 
 /** Resolve only exact catalog identifiers to their canonical product id. */
 export function canonicalProductId(productId: string): string | null {
@@ -67,7 +87,7 @@ export function canonicalProductId(productId: string): string | null {
 // that leads to a dead checkout. Deliberately NOT removed from
 // PADDLE_PRICE_PRODUCTS: if a lifetime purchase somehow lands, the id must
 // still resolve so the grant projects rather than being silently dropped.
-const WEB_DEFERRED_PRODUCTS = new Set(['kallo_premium_lifetime']);
+const WEB_DEFERRED_PRODUCTS = new Set<string>([PRODUCT_IDS.lifetime]);
 
 export function isAllowedWebProduct(productId: string): boolean {
   const canonical = canonicalProductId(productId);

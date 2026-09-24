@@ -109,10 +109,10 @@ PaywallOffer paywallOffer({
       split.annual == null
           ? null
           : yearlyPricing(annual: split.annual!, monthly: split.monthly);
-  final offer =
+  final intro =
       plan == null
-          ? (trial: false, days: 0)
-          : trialOffer(
+          ? null
+          : introOffer(
             plan: plan,
             trialActive: trial.active,
             eligibleProductIds: trialEligibleProductIds,
@@ -123,11 +123,11 @@ PaywallOffer paywallOffer({
     yearly: yearly,
     showPeriodToggle:
         (split.annual != null && split.monthly != null) || packages.isEmpty,
-    ctaLabel: _ctaLabel(plan: plan, offer: offer, trialActive: trial.active),
+    ctaLabel: _ctaLabel(plan: plan, intro: intro, trialActive: trial.active),
     renewalLine: _renewalLine(
       plan: plan,
-      perMonth: pricing?.perMonth,
-      offer: offer,
+      pricing: pricing,
+      intro: intro,
       locale: locale,
       now: now,
     ),
@@ -146,20 +146,23 @@ PaywallOffer paywallOffer({
 /// yearly plan without a trial falls back to the plain "Start Premium".
 String _ctaLabel({
   required Package? plan,
-  required ({bool trial, int days}) offer,
+  required IntroOffer? intro,
   required bool trialActive,
-}) {
-  if (offer.trial) {
-    return tr('paywall.startTrialDays', namedArgs: {'days': '${offer.days}'});
-  }
-  if (plan != null && plan.packageType == PackageType.monthly) {
-    return tr(
-      'paywall.startMonthly',
-      namedArgs: {'price': plan.storeProduct.priceString},
-    );
-  }
-  return tr(trialActive ? 'paywall.purchaseTrial' : 'paywall.purchase');
-}
+}) => switch (intro) {
+  PaidIntro(:final days, :final price) => tr(
+    'paywall.startIntro',
+    namedArgs: {'days': '$days', 'price': price},
+  ),
+  FreeTrial(:final days) => tr(
+    'paywall.startTrialDays',
+    namedArgs: {'days': '$days'},
+  ),
+  null when plan != null && plan.packageType == PackageType.monthly => tr(
+    'paywall.startMonthly',
+    namedArgs: {'price': plan.storeProduct.priceString},
+  ),
+  null => tr(trialActive ? 'paywall.purchaseTrial' : 'paywall.purchase'),
+};
 
 /// What will be charged, when it starts, and that it repeats until cancelled.
 ///
@@ -168,35 +171,54 @@ String _ctaLabel({
 /// Privacy Policy and the auto-renewal — so the long legal paragraph that used
 /// to stand in here was three lines of Vietnamese fine print restating, under
 /// a dead button, something the line beneath it said again.
+///
 String _renewalLine({
   required Package? plan,
-  required String? perMonth,
-  required ({bool trial, int days}) offer,
+  required YearlyPricing? pricing,
+  required IntroOffer? intro,
   required String locale,
   required DateTime now,
 }) {
   if (plan == null) return '';
   final price = plan.storeProduct.priceString;
-  // Only a trial defers the first charge. Without one the subscription starts
-  // now, and naming a date would be an invented grace period.
-  final starts =
-      offer.trial
-          ? DateFormat.MMMd(locale).format(now.add(Duration(days: offer.days)))
-          : null;
-  if (plan.packageType == PackageType.annual && perMonth != null) {
-    return tr(
-      starts == null ? 'paywall.renewYearlyNow' : 'paywall.renewYearly',
+  // The yearly wording follows the package type; an annual plan always has
+  // its derived figures, since it is the package they are derived from.
+  final yearly = plan.packageType == PackageType.annual ? pricing : null;
+  // Only an introductory period defers the full charge. Without one the
+  // subscription starts now, and naming a date would be an invented grace
+  // period.
+  String startsAfter(int days) =>
+      DateFormat.MMMd(locale).format(now.add(Duration(days: days)));
+  return switch (intro) {
+    // A paid first week is a charge today, so it is disclosed — AFTER the full
+    // price, which stays the most prominent term. The auto-renewal itself is
+    // stated once, by the consent line under the band, not repeated here.
+    PaidIntro(:final days, price: final introPrice) => tr(
+      yearly != null ? 'paywall.renewYearlyIntro' : 'paywall.renewMonthlyIntro',
       namedArgs: {
         'price': price,
-        'perMonth': perMonth,
-        if (starts != null) 'date': starts,
+        if (yearly != null) 'perMonth': yearly.perMonth,
+        'date': startsAfter(days),
+        'days': '$days',
+        'intro': introPrice,
       },
-    );
-  }
-  return tr(
-    starts == null ? 'paywall.renewMonthly' : 'paywall.renewMonthlyFrom',
-    namedArgs: {'price': price, if (starts != null) 'date': starts},
-  );
+    ),
+    FreeTrial(:final days) => tr(
+      yearly != null ? 'paywall.renewYearly' : 'paywall.renewMonthlyFrom',
+      namedArgs: {
+        'price': price,
+        if (yearly != null) 'perMonth': yearly.perMonth,
+        'date': startsAfter(days),
+      },
+    ),
+    null => tr(
+      yearly != null ? 'paywall.renewYearlyNow' : 'paywall.renewMonthly',
+      namedArgs: {
+        'price': price,
+        if (yearly != null) 'perMonth': yearly.perMonth,
+      },
+    ),
+  };
 }
 
 String _guideLine({required TrialState trial, required int? savePercent}) {

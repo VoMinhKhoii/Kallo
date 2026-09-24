@@ -103,11 +103,7 @@ export default async function SettingsPage({
                 {tBilling('description')}
               </p>
             </div>
-            <SubscriptionSettings
-              userId={userId}
-              locale={locale}
-              email={email}
-            />
+            <SubscriptionSettings userId={userId} locale={locale} />
           </section>
         )}
 

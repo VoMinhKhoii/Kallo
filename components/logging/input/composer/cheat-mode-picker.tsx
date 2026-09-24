@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
-import type { InputMode } from '@/lib/domain/logging/types';
+import { type InputMode, MODE_FEATURE } from '@/lib/domain/logging/types';
 
 const INTENSITIES: CheatIntensity[] = ['light', 'medium', 'heavy'];
 const MODES: InputMode[] = ['normal', 'manual', 'cheat'];
@@ -40,11 +40,15 @@ export function CheatModePicker({
 }: CheatModePickerProps) {
   const t = useTranslations('logging');
   const { locked, requirePremium } = usePremiumGuard();
-  const cheatLocked = locked('cheat_meal');
+  const modeLocked = (m: InputMode) => {
+    const feature = MODE_FEATURE[m];
+    return feature != null && locked(feature);
+  };
 
   const selectMode = (next: InputMode) => {
-    // Only cheat is gated — normal/manual switch as before.
-    if (next === 'cheat' && !requirePremium('cheat_meal')) return;
+    // Instant and cheat are gated; a locked pick goes to /pricing instead.
+    const feature = MODE_FEATURE[next];
+    if (feature && !requirePremium(feature)) return;
     onChangeMode(next);
   };
 
@@ -82,9 +86,11 @@ export function CheatModePicker({
               className="items-start gap-2"
             >
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 font-medium text-kallo-text text-sm">
+                {/* The chip closes the label line at the row's right end, just
+                    left of the check — centred on the label, not the row. */}
+                <span className="flex items-center justify-between gap-2 font-medium text-kallo-text text-sm">
                   {t(`mode.${m}`)}
-                  {m === 'cheat' && cheatLocked && <PremiumChip />}
+                  {modeLocked(m) && <PremiumChip />}
                 </span>
                 <span className="mt-0.5 block text-[11px] text-kallo-text-muted leading-snug">
                   {t(`mode.${m}Description`)}

@@ -191,12 +191,13 @@ another domain module is a smell worth a second look.
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
 | `auth/request-config/` | the auth dialog's request-time inputs (runtime Google client ID, `?auth=`/`?next=` intent) streamed into prerendered pages | ok |
-| `billing/` | `paywall/` (the offer surface), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
+| `billing/` | the Premium guard (locked features link to `/pricing`), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
 | `dashboard/` | dashboard sections and charts | split |
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
 | `landing-page/` | marketing page | split |
+| `landing-page/pricing/checkout/` | /pricing as the purchase page — the signed-in checkout state, its request-time inputs (session, `?from=`) and the back link | ok |
 | `logging/` | meal logging surface | split |
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup, quantity), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |

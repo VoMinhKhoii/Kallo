@@ -1,10 +1,11 @@
 'use client';
 
-import { ExternalLink, Loader2, Sparkles } from 'lucide-react';
+import { Crown, ExternalLink, Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { PaywallDialog } from '@/components/billing/paywall/paywall-dialog';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
+import { Link } from '@/i18n/navigation';
+import { pricingHref } from '@/lib/domain/billing/pricing/pricing-href';
 import { ExpiryReminderBanner } from './expiry-reminder-banner';
 
 // App-store management deep links for grants that originate from a mobile IAP.
@@ -30,8 +31,7 @@ function formatDate(iso: string | null, locale: string): string | null {
 /**
  * Subscription section for the settings page. Reflects the user's current
  * entitlement state and offers the right next action per source:
- *  - free       → upgrade CTA into the paywall
- *  - trial      → days remaining + upgrade CTA
+ *  - free       → upgrade link to /pricing (the purchase page)
  *  - premium/web→ manage via the Paddle customer portal
  *  - premium/app→ "manage in App Store / Google Play" deep link
  *  - lifetime   → no expiry, no management
@@ -39,15 +39,14 @@ function formatDate(iso: string | null, locale: string): string | null {
 export function SubscriptionSettings({
   userId,
   locale,
-  email,
 }: {
   userId: string;
   locale: string;
-  email?: string | null;
 }) {
   const t = useTranslations('billing.settings');
   const { data, isPending, isError } = useEntitlements(userId);
-  const [paywallOpen, setPaywallOpen] = useState(false);
+  // The full, locale-prefixed path, so /pricing can link back here.
+  const pathname = usePathname();
 
   if (isPending) {
     return (
@@ -83,57 +82,37 @@ export function SubscriptionSettings({
         {data.tier === 'premium' ? (
           <PremiumState data={data} locale={locale} t={t} />
         ) : (
-          <FreeState
-            trialActive={data.trial.active}
-            daysRemaining={data.trial.daysRemaining}
-            onUpgrade={() => setPaywallOpen(true)}
-            t={t}
-          />
+          <FreeState upgradeHref={pricingHref(pathname)} t={t} />
         )}
       </div>
-
-      <PaywallDialog
-        key={userId}
-        open={paywallOpen}
-        onOpenChange={setPaywallOpen}
-        userId={userId}
-        email={email}
-      />
     </div>
   );
 }
 
 function FreeState({
-  trialActive,
-  daysRemaining,
-  onUpgrade,
+  upgradeHref,
   t,
 }: {
-  trialActive: boolean;
-  daysRemaining: number;
-  onUpgrade: () => void;
+  upgradeHref: string;
   t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
-          <Sparkles aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
-          {trialActive ? t('trialPlan') : t('freePlan')}
+          <Crown aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
+          {t('freePlan')}
         </p>
         <p className="mt-0.5 text-[13px] text-kallo-text-muted">
-          {trialActive
-            ? t('trialRemaining', { days: daysRemaining })
-            : t('freeDescription')}
+          {t('freeDescription')}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={onUpgrade}
+      <Link
+        href={upgradeHref}
         className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-kallo-ink px-4 py-2 font-medium text-[14px] text-kallo-surface transition-colors hover:bg-kallo-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
       >
         {t('upgradeCta')}
-      </button>
+      </Link>
     </div>
   );
 }
@@ -148,52 +127,55 @@ function PremiumState({
   t: ReturnType<typeof useTranslations>;
 }) {
   const renewalDate = formatDate(data.expiresAt, locale);
+  const manageUrl = data.hasActiveSubscription ? data.managementUrl : null;
 
+  // "Manage subscription" sits on the right of the plan, the way "Upgrade"
+  // does on the Free row, so both states read as one row with one action.
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
-          <Sparkles aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
-          {data.isLifetime ? t('lifetimePlan') : t('premiumPlan')}
-        </p>
-        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
-          {data.isLifetime
-            ? t('lifetimeDescription')
-            : data.willRenew && renewalDate
-              ? t('renewsOn', { date: renewalDate })
-              : renewalDate
-                ? t('expiresOn', { date: renewalDate })
-                : t('premiumDescription')}
-        </p>
-        {data.isLifetime && data.hasActiveSubscription && (
-          <p className="mt-1 text-[13px] text-kallo-danger">
-            {t('lifetimeSubscriptionWarning')}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
+            <Crown aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
+            {data.isLifetime ? t('lifetimePlan') : t('premiumPlan')}
           </p>
-        )}
-      </div>
-
-      {data.hasActiveSubscription && (
-        <div className="border-kallo-border/60 border-t pt-3">
-          {data.managementUrl ? (
-            <a
-              href={data.managementUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-kallo-border bg-kallo-surface px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-            >
-              <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-              {data.managementStore === 'app_store'
-                ? t('manageAppStore')
-                : data.managementStore === 'play_store'
-                  ? t('managePlayStore')
-                  : t('manageWeb')}
-            </a>
-          ) : (
-            <p className="text-[13px] text-kallo-text-muted leading-relaxed">
-              {t('manageUnavailable')}
+          <p className="mt-0.5 text-[13px] text-kallo-text-muted">
+            {data.isLifetime
+              ? t('lifetimeDescription')
+              : data.willRenew && renewalDate
+                ? t('renewsOn', { date: renewalDate })
+                : renewalDate
+                  ? t('expiresOn', { date: renewalDate })
+                  : t('premiumDescription')}
+          </p>
+          {data.isLifetime && data.hasActiveSubscription && (
+            <p className="mt-1 text-[13px] text-kallo-danger">
+              {t('lifetimeSubscriptionWarning')}
             </p>
           )}
         </div>
+
+        {manageUrl && (
+          <a
+            href={manageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-kallo-border bg-kallo-surface px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+          >
+            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+            {data.managementStore === 'app_store'
+              ? t('manageAppStore')
+              : data.managementStore === 'play_store'
+                ? t('managePlayStore')
+                : t('manageWeb')}
+          </a>
+        )}
+      </div>
+
+      {data.hasActiveSubscription && !manageUrl && (
+        <p className="border-kallo-border/60 border-t pt-3 text-[13px] text-kallo-text-muted leading-relaxed">
+          {t('manageUnavailable')}
+        </p>
       )}
     </div>
   );

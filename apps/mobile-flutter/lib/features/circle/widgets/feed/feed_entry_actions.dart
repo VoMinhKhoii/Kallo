@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../services/billing/entitlement_state.dart';
 import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../shared/widgets/icons/filled_heart.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -102,6 +104,8 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
   @override
   Widget build(BuildContext context) {
     final reactions = widget.entry.reactions;
+    // "Log this too" is `copy_split` — chipped and routed to the paywall.
+    final copy = premiumGate(ref, PremiumFeature.copySplit);
     // No leading inset on the first action: its 44pt box starts at the content
     // column and the glyph sits flush with the meal text above, which is what
     // the canvas' -12 left margin buys. The box still extends its full width
@@ -175,12 +179,14 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
         // server refuses the copy and this button was a guaranteed error. A
         // cheat meal travels as a directed invite instead, where the recipient
         // reopens the sliders and sets their own amounts.
-        if (!(widget.entry.isSelf || widget.entry.meal.isCheat))
+        if (!(widget.entry.isSelf || widget.entry.meal.isCheat)) ...[
           FeedActionButton(
-            onTap: _logging ? null : _log,
+            onTap: copy.tap(context, _logging ? null : _log),
             icon: LucideIcons.copy300,
             label: tr('groups.feed.logCopy'),
           ),
+          if (copy.locked) const PremiumChip(),
+        ],
       ],
     );
   }

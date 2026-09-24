@@ -54,13 +54,18 @@ class PlanToggle extends StatelessWidget {
   /// is unchosen, where that one marks a momentary press.
   static const Color _veil = Color(0x33141413); // ink @ 20%
 
+  /// The track. [kTrack] is the same warm tone as the paywall's cream
+  /// ground, so on this screen the track vanished and the raised white half
+  /// floated on nothing. An ink wash reads as a recessed track on any ground.
+  static const Color _track = Color(0x14141413); // ink @ 8%
+
   @override
   Widget build(BuildContext context) {
     return Container(
       height: height,
       padding: const EdgeInsets.all(_pad),
       decoration: BoxDecoration(
-        color: kTrack,
+        color: _track,
         borderRadius: BorderRadius.circular(KalloRadii.pill),
       ),
       child: Row(

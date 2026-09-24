@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/logging/cheat.dart';
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -16,6 +19,9 @@ import '../../data/logging_providers.dart';
 ///
 /// Ported from `components/logging/feed/cheat/cheat-occasion-chips.tsx`;
 /// renders nothing while loading, on error, or with no past occasions.
+///
+/// When the plan lacks `cheat_meal` the header carries a [PremiumChip] at its
+/// right end and a chip tap opens the paywall instead of re-staging.
 class CheatOccasionChips extends ConsumerWidget {
   const CheatOccasionChips({
     super.key,
@@ -30,6 +36,7 @@ class CheatOccasionChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final gate = premiumGate(ref, PremiumFeature.cheatMeal);
     final occasions =
         ref.watch(recentCheatOccasionsProvider(userId)).valueOrNull ??
         const <RecentCheatOccasion>[];
@@ -42,9 +49,16 @@ class CheatOccasionChips extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
-            child: Text(
-              'logging.cheatRepeat.title'.tr().toUpperCase(),
-              style: dashMeta(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'logging.cheatRepeat.title'.tr().toUpperCase(),
+                    style: dashMeta(),
+                  ),
+                ),
+                if (gate.locked) const PremiumChip(),
+              ],
             ),
           ),
           Wrap(
@@ -58,8 +72,10 @@ class CheatOccasionChips extends ConsumerWidget {
               for (final occasion in occasions)
                 _OccasionChip(
                   occasion: occasion,
-                  disabled: disabled,
-                  onTap: () => onSelect(occasion),
+                  // Locked wins: a busy composer must not swallow the
+                  // route to the paywall.
+                  disabled: disabled && !gate.locked,
+                  onTap: gate.tap(context, () => onSelect(occasion))!,
                 ),
             ],
           ),

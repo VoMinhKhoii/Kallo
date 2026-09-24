@@ -133,6 +133,40 @@ describe('getEntitlementState — trial', () => {
     expect(state.trial.daysRemaining).toBe(5);
   });
 
+  it('TRIAL_DAYS=0 → no trial at all, and a lock is never "trial expired"', async () => {
+    process.env.TRIAL_DAYS = '0';
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: new Date('2026-08-06T00:00:00.000Z') },
+      { db: makeDb([]), now }
+    );
+
+    expect(state.trial).toEqual({
+      active: false,
+      endsAt: null,
+      daysRemaining: 0,
+    });
+    // The user never had a trial, so "your trial ended" would be a lie.
+    expect(state.features.ai_analysis).toEqual({
+      allowed: false,
+      reason: 'not_entitled',
+    });
+  });
+
+  it('TRIAL_DAYS=0 with the launch date unset → still no trial', async () => {
+    process.env.TRIAL_DAYS = '0';
+    delete process.env.SUBSCRIPTION_LAUNCH_DATE;
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([]), now }
+    );
+
+    // Not "active with 0 days left" — the clients would print a last-day
+    // countdown for a trial that does not exist. Nothing is locked out:
+    // enforcement cannot be on without a launch date.
+    expect(state.trial.active).toBe(false);
+    expect(state.trial.daysRemaining).toBe(0);
+  });
+
   it('launch date unset → fail open, trial active', async () => {
     delete process.env.SUBSCRIPTION_LAUNCH_DATE;
     const state = await getEntitlementState(

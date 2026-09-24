@@ -6,14 +6,14 @@
  * three-column comparison would have repeated Free's whole list twice, because
  * Premium and Lifetime include all of it.
  *
- * Ids only. Every visible string is a message key under `landing.pricing`,
- * prices included, so each locale carries its own currency and no component
- * branches on locale to format money.
+ * Ids only. Every visible string is a message key under `landing.pricing`.
+ * Free's and Lifetime's prices are message strings; Premium's are the
+ * visitor's live prices once they load, with message-file fallbacks until
+ * then (`lib/domain/billing/pricing/premium-display.ts`).
  *
- * There is no billing-period state. Premium quotes the annual rate per month
- * and the fine print carries the rest — what is billed up front, and what the
- * monthly alternative costs — which says more than a toggle did and holds
- * still while you read it.
+ * Premium's card owns the one billing-period switch (Yearly / Monthly). Both
+ * periods quote a monthly rate, and the fine print carries what each renewal
+ * bills and the paid first week.
  *
  * Note this describes the plan Kallo is launching with, not what the code
  * enforces. The catalog in `lib/domain/billing/entitlement/features.ts` gates

@@ -17,8 +17,8 @@ vi.mock('@/components/billing/premium-guard-provider', () => ({
     requirePremium: mockRequirePremium,
   }),
 }));
-vi.mock('@/components/billing/premium-chip', () => ({
-  PremiumChip: () => <span data-testid="premium-chip" />,
+vi.mock('@/components/billing/premium-dot', () => ({
+  PremiumDot: () => <span data-testid="premium-dot" />,
 }));
 vi.mock('@/components/groups/share-meal-dialog', () => ({
   ShareMealDialog: ({
@@ -89,13 +89,13 @@ describe('CheatMealActions', () => {
     expect(screen.queryByTestId('share-dialog')).not.toBeInTheDocument();
   });
 
-  it('chips the share behind the paywall instead of opening a doomed picker', () => {
+  it('marks the share behind the paywall instead of opening a doomed picker', () => {
     mockLocked.mockImplementation(
       (feature: string) => feature === 'copy_split'
     );
     render(<CheatMealActions meal={cheatMeal()} />);
 
-    expect(screen.getByTestId('premium-chip')).toBeInTheDocument();
+    expect(screen.getByTestId('premium-dot')).toBeInTheDocument();
     // No dialog mounted at all: a picker whose only outcome is a 402 is worse
     // than no picker.
     expect(screen.queryByTestId('share-dialog')).not.toBeInTheDocument();

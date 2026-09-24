@@ -13,7 +13,15 @@ class OptionStripItem {
   final String value;
   final String label;
   final IconData? icon;
-  const OptionStripItem({required this.value, required this.label, this.icon});
+
+  /// Drawn after the label — the Premium chip on a gated segment.
+  final Widget? badge;
+  const OptionStripItem({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.badge,
+  });
 }
 
 /// The one mode-switch primitive — every segmented control draws through it.
@@ -161,6 +169,10 @@ class _SegmentedStripState extends State<SegmentedStrip> {
                   softWrap: false,
                   style: dashBody(color: color ?? kInkMuted),
                 ),
+                if (widget.options[i].badge != null) ...[
+                  const SizedBox(width: KalloSpacing.sp2),
+                  widget.options[i].badge!,
+                ],
               ],
             ),
           ),

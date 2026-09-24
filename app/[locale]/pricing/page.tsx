@@ -6,6 +6,12 @@ import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { Header } from '@/components/landing-page/header';
+import { PricingBackLink } from '@/components/landing-page/pricing/checkout/back-link';
+import { PricingCheckoutProvider } from '@/components/landing-page/pricing/checkout/pricing-checkout-provider';
+import {
+  PricingRequest,
+  type PricingSearchParams,
+} from '@/components/landing-page/pricing/checkout/pricing-request';
 import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
 import { routing } from '@/i18n/routing';
 import { alternateLanguages } from '@/lib/seo/alternates';
@@ -31,6 +37,12 @@ import { SITE_URL } from '@/lib/seo/site';
  * `AuthProvider` is here because each card's CTA opens the auth dialog. The
  * landing page mounts its own; the two never coexist, since this page is not
  * part of it.
+ *
+ * It is also the purchase page — Settings and every locked feature link here
+ * with `?from=<their path>`. `PricingCheckoutProvider` makes the cards buy for
+ * a signed-in visitor; the session and `?from=` are request reads, so they
+ * stream in behind `<Suspense>` (`PricingRequest`) and the shell stays
+ * prerendered, painting the signed-out cards first.
  */
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -68,19 +80,30 @@ export async function generateMetadata({
   };
 }
 
-export default function PricingPage() {
+export default function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<PricingSearchParams>;
+}) {
   return (
     <AuthProvider>
-      <Header standalone />
-      {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
-      <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
-        <PricingSection />
-      </main>
-      <AuthDialog />
-      {/* The runtime Google client ID; the rest of the page is prerendered. */}
-      <Suspense fallback={null}>
-        <AuthRequestConfig />
-      </Suspense>
+      <PricingCheckoutProvider>
+        <Header standalone />
+        {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
+        <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
+          <PricingBackLink />
+          <PricingSection />
+        </main>
+        <AuthDialog />
+        {/* The runtime Google client ID; the rest of the page is prerendered. */}
+        <Suspense fallback={null}>
+          <AuthRequestConfig />
+        </Suspense>
+        {/* Who is looking, and where they came from. */}
+        <Suspense fallback={null}>
+          <PricingRequest searchParams={searchParams} />
+        </Suspense>
+      </PricingCheckoutProvider>
     </AuthProvider>
   );
 }

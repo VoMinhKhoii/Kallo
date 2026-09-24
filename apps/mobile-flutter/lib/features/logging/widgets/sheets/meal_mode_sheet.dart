@@ -4,18 +4,19 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/list/list_row.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_sub_header.dart';
 import '../../../../shared/widgets/sheet/sheet_page_swap.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_group.dart';
+import 'meal_mode_row.dart';
 
 /// Opens the "select mode" chooser — the first step before the composer.
 /// Returns the picked mode (or null if dismissed).
@@ -56,6 +57,9 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Every watch up front, once — never from a tap callback or one page only.
+    final gates = _gates();
+    final intensity = ref.watch(cheatIntensityProvider);
     // Floors at sp4 for phones with no home indicator to inset against.
     final bottomInset = math.max(
       MediaQuery.viewPaddingOf(context).bottom,
@@ -79,13 +83,19 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
         },
         child: SheetPageSwap(
           isSecondLevel: _onIntensity,
-          child: _onIntensity ? _intensityPage() : _modeList(),
+          child:
+              _onIntensity
+                  ? _intensityPage(intensity)
+                  : _modeList(gates, intensity),
         ),
       ),
     );
   }
 
-  Widget _modeList() => Column(
+  Widget _modeList(
+    Map<MealLogMode, PremiumGate> gates,
+    CheatIntensity intensity,
+  ) => Column(
     key: const ValueKey('modes'),
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,12 +103,19 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
       KalloSheetHeader(title: 'logging.modeSelector.title'.tr()),
       for (final mode in MealLogMode.values)
         if (mode != MealLogMode.barcode || isBarcodeLoggingSupported)
-          _ModeRow(
+          MealModeRow(
             mode: mode,
             selected: widget.current == mode,
+            locked: gates[mode]!.locked,
             onTap: () {
               HapticFeedback.selectionClick();
-              Navigator.of(context).pop(mode);
+              // A locked mode goes straight to pricing, over the sheet: back
+              // from the paywall lands on this same choice, with the marker
+              // gone if the user just bought.
+              gates[mode]!.tap(
+                context,
+                () => Navigator.of(context).pop(mode),
+              )!();
             },
           ),
       // Cheat's magnitude is a property OF the cheat mode, so it hangs off the
@@ -107,15 +124,28 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
       // the choice survives this sheet closing.
       if (widget.current == MealLogMode.cheat) ...[
         const SizedBox(height: KalloSpacing.sp3),
-        CheatIntensityGroup(
-          value: ref.watch(cheatIntensityProvider),
-          onOpen: _open,
-        ),
+        CheatIntensityGroup(value: intensity, onOpen: _open),
       ],
     ],
   );
 
-  Widget _intensityPage() => Column(
+  /// Instant and Cheat are the gated modes; Manual and Scan are free (the
+  /// label half of Scan carries its own marker on the scan sheet's toggle).
+  Map<MealLogMode, PremiumGate> _gates() {
+    const free = PremiumGate(locked: false);
+    final instant = premiumGate(ref, PremiumFeature.aiAnalysis);
+    final cheat = premiumGate(ref, PremiumFeature.cheatMeal);
+    return {
+      for (final mode in MealLogMode.values)
+        mode: switch (mode) {
+          MealLogMode.normal => instant,
+          MealLogMode.cheat => cheat,
+          MealLogMode.manual || MealLogMode.barcode => free,
+        },
+    };
+  }
+
+  Widget _intensityPage(CheatIntensity intensity) => Column(
     key: const ValueKey('intensity'),
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,7 +157,7 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
       ),
       const SizedBox(height: KalloSpacing.sp2),
       CheatIntensityPage(
-        value: ref.watch(cheatIntensityProvider),
+        value: intensity,
         onChange: (intensity) {
           ref.read(cheatIntensityProvider.notifier).state = intensity;
           _back();
@@ -135,47 +165,4 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
       ),
     ],
   );
-}
-
-class _ModeRow extends StatelessWidget {
-  const _ModeRow({
-    required this.mode,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final MealLogMode mode;
-  final bool selected;
-  final VoidCallback onTap;
-
-  static String _key(MealLogMode mode) => switch (mode) {
-    MealLogMode.normal => 'normal',
-    MealLogMode.cheat => 'cheat',
-    MealLogMode.manual => 'manual',
-    MealLogMode.barcode => 'barcode',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final key = _key(mode);
-    // The tick alone marks the choice. The beige wash this row used to carry
-    // was the SAME colour ListRow paints while pressed, so pressing an
-    // unselected row made it look chosen for as long as the finger was down —
-    // and the wrapper the fill needed for its rounded ends pushed these rows
-    // 8pt right of every other row in the app, and of the header's X.
-    return ListRow(
-      icon: mealModeIcon(mode),
-      label: 'logging.modeSelector.$key'.tr(),
-      subline: 'logging.modeSelector.${key}Desc'.tr(),
-      onTap: onTap,
-      trailing:
-          selected
-              ? const Icon(
-                LucideIcons.check300,
-                size: KalloIcons.size,
-                color: KalloColors.text,
-              )
-              : null,
-    );
-  }
 }
