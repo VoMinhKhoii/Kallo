@@ -123,4 +123,52 @@ void main() {
     );
     expect(SettingsStep.goal.isSavedIn(maintaining), isTrue);
   });
+
+  group('body and goal share step 2 but post only what they show', () {
+    StepSession session(SettingsStep step, Set<SettingsStep> stored) =>
+        StepSession(step, testAnswers(), (
+          deviceCountry: null,
+          deviceLanguage: 'vi',
+          localeFromDevice: false,
+        ), storedSteps: stored);
+
+    test('the body page with no plan stored posts the body alone', () {
+      final keys = session(SettingsStep.aboutYou, {}).payload!.keys;
+      expect(keys, [
+        'biologicalSex',
+        'weightKg',
+        'heightCm',
+        'age',
+        'activityLevel',
+      ]);
+    });
+
+    test('with a plan stored, new metrics carry its recomputed targets', () {
+      final keys =
+          session(SettingsStep.aboutYou, {SettingsStep.goal}).payload!.keys;
+      expect(keys, containsAll(['calorieTarget', 'proteinTargetG']));
+      expect(keys, isNot(contains('goal')));
+      expect(keys, isNot(contains('carbSplit')));
+    });
+
+    test('the goal page posts the plan, never the body', () {
+      final keys =
+          session(SettingsStep.goal, {SettingsStep.aboutYou}).payload!.keys;
+      expect(keys, containsAll(['goal', 'aggression', 'carbSplit']));
+      expect(keys, containsAll(['calorieTarget', 'fatTargetG']));
+      expect(keys, isNot(contains('activityLevel')));
+      expect(keys, isNot(contains('weightKg')));
+    });
+
+    test('the goal page waits for a stored body', () {
+      final goal = session(SettingsStep.goal, {});
+      expect(goal.payload, isNull);
+      expect(goal.needsBodyFirst, isTrue);
+    });
+  });
+
+  test('a plan missing a macro target is not stored', () {
+    final noFat = ProfileRow(Map.of(kFullProfile)..remove('fatTargetG'));
+    expect(SettingsStep.goal.isSavedIn(noFat), isFalse);
+  });
 }

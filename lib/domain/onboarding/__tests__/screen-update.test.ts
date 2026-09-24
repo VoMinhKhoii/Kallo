@@ -49,4 +49,35 @@ describe('buildScreenUpdate', () => {
       buildScreenUpdate({ onboardingStep: 1 }, 2, {}, { advance: false })
     ).toEqual({});
   });
+
+  it('writes only the step fields the payload carries', () => {
+    // The Settings body page posts its own fields: no goal, no targets, and
+    // above all no 500 kcal floor written over a target it never sent.
+    const update = buildScreenUpdate(
+      { onboardingStep: 3 },
+      2,
+      { weightKg: 70, heightCm: 172, age: 29, biologicalSex: 'male' },
+      { advance: false }
+    );
+    expect(update).toEqual({
+      weightKg: 70,
+      heightCm: 172,
+      age: 29,
+      biologicalSex: 'male',
+    });
+  });
+
+  it('a full step-2 payload still maps aggression and the calorie floor', () => {
+    const update = buildScreenUpdate(
+      {},
+      2,
+      { goal: 'maintaining', aggression: null, calorieTarget: 300 },
+      { advance: false }
+    );
+    expect(update).toEqual({
+      goal: 'maintaining',
+      aggression: null,
+      calorieTarget: 500,
+    });
+  });
 });

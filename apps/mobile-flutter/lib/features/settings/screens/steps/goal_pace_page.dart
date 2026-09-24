@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../onboarding/screens/step_goal.dart';
 import '../../../onboarding/screens/step_target.dart';
@@ -36,6 +37,13 @@ class GoalPacePage extends StatelessWidget {
                     ),
                   ),
             ),
+            // A legacy body with a gap (no activity level) still draws a
+            // target, from a guess — it cannot be saved until the body is.
+            if (page.session.needsBodyFirst &&
+                page.session.answers.stepTwoValues != null) ...[
+              const SizedBox(height: KalloSpacing.sp2),
+              Text(tr('settings.rows.needsBodyFirst'), style: dashMeta()),
+            ],
             const SizedBox(height: KalloSpacing.sp3),
             StepGoal(
               answers: page.session.answers,

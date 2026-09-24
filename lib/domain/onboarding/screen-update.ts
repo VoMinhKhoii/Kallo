@@ -14,7 +14,7 @@ export interface ScreenUpdateOptions {
 
 /**
  * The column update for one `POST /api/v1/onboarding/screen`: the step's own
- * fields (none for an empty "Skip" payload), plus — when [advance] — the
+ * fields that the payload carries (none for an empty "Skip"), plus — when [advance] — the
  * progress bump and the completion stamp. Pure, so the progress rules are
  * testable without a database.
  */
@@ -25,33 +25,44 @@ export function buildScreenUpdate(
   { advance }: ScreenUpdateOptions
 ): Record<string, unknown> {
   const updateObj: Record<string, unknown> = {};
+  // Only the keys the payload CARRIES are written: the wizard posts a whole
+  // step, a Settings page posts just the fields it shows (body metrics
+  // without a goal it never asked about), and an empty "Skip" writes none.
+  const has = (key: string) => Object.hasOwn(data, key);
+  const copy = (...keys: string[]) => {
+    for (const key of keys) if (has(key)) updateObj[key] = data[key];
+  };
 
-  // Step-specific field mapping (skip when data is empty — e.g. "Skip" button)
-  const hasData = Object.keys(data).length > 0;
-  if (step === 1 && hasData) {
-    updateObj.countryOfOrigin = data.countryOfOrigin;
-    updateObj.countryOfResidence = data.countryOfResidence;
-    updateObj.preferredLocale = data.preferredLocale;
-  } else if (step === 2 && hasData) {
-    updateObj.weightKg = data.weightKg;
-    updateObj.heightCm = data.heightCm;
-    updateObj.age = data.age;
-    updateObj.biologicalSex = data.biologicalSex;
-    updateObj.activityLevel = data.activityLevel;
-    updateObj.tdeeKcal = data.tdeeKcal;
-    updateObj.goal = data.goal;
-    updateObj.aggression =
-      data.aggression != null ? String(data.aggression) : null;
-    updateObj.carbSplit = data.carbSplit;
-    updateObj.calorieTarget = Math.max(Number(data.calorieTarget) || 0, 500);
-    updateObj.proteinTargetG = data.proteinTargetG;
-    updateObj.carbsTargetG = data.carbsTargetG;
-    updateObj.fatTargetG = data.fatTargetG;
-  } else if (step === 3 && hasData) {
-    updateObj.oilUsage = data.oilUsage;
-    updateObj.defaultRicePortion = data.defaultRicePortion;
-    updateObj.defaultProteinPortion = data.defaultProteinPortion;
-    updateObj.brothConsumption = data.brothConsumption;
+  if (step === 1) {
+    copy('countryOfOrigin', 'countryOfResidence', 'preferredLocale');
+  } else if (step === 2) {
+    copy(
+      'weightKg',
+      'heightCm',
+      'age',
+      'biologicalSex',
+      'activityLevel',
+      'tdeeKcal',
+      'goal',
+      'carbSplit',
+      'proteinTargetG',
+      'carbsTargetG',
+      'fatTargetG'
+    );
+    if (has('aggression')) {
+      updateObj.aggression =
+        data.aggression != null ? String(data.aggression) : null;
+    }
+    if (has('calorieTarget')) {
+      updateObj.calorieTarget = Math.max(Number(data.calorieTarget) || 0, 500);
+    }
+  } else if (step === 3) {
+    copy(
+      'oilUsage',
+      'defaultRicePortion',
+      'defaultProteinPortion',
+      'brothConsumption'
+    );
   }
 
   if (!advance) return updateObj;
