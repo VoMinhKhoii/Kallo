@@ -51,6 +51,17 @@ int? _int(Map<String, dynamic>? map, String key) {
   return null;
 }
 
+/// Which of the four cooking answers [profile] actually stores — a value
+/// that parses, not a neutral middle filled in for it — in the cooking
+/// step's order: oil, rice, protein, broth. Legacy profiles can hold some
+/// and not others (protein and broth arrived later).
+List<bool> storedCookingAnswers(ProfileRow? profile) => [
+  tryParseOilUsage(profile?.oilUsage) != null,
+  tryParseRicePortion(profile?.defaultRicePortion) != null,
+  tryParseProteinPortion(profile?.defaultProteinPortion) != null,
+  tryParseBrothConsumption(profile?.brothConsumption) != null,
+];
+
 /// The cooking habits, per field: profile → draft → the neutral middle. Always
 /// fully populated. Its own seam because the Settings root summarises these
 /// four answers without seeding a whole wizard.

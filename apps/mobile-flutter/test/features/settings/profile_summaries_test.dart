@@ -89,6 +89,20 @@ void main() {
     );
   });
 
+  testWidgets('a legacy profile lists only the habits it stores', (
+    tester,
+  ) async {
+    await _in(tester, 'vi');
+    // Protein and broth arrived later: a profile from before them holds oil
+    // and rice only, and must not be summarised with the neutral middles.
+    final legacy = ProfileRow(
+      Map.of(kFullProfile)
+        ..remove('defaultProteinPortion')
+        ..remove('brothConsumption'),
+    );
+    expect(_plain(ProfileSummaries.cooking(legacy)), 'Dầu vừa · Cơm vừa');
+  });
+
   testWidgets('maintaining carries no pace', (tester) async {
     await _in(tester, 'vi');
     final p = ProfileRow(Map.of(kFullProfile)..['goal'] = 'maintaining');

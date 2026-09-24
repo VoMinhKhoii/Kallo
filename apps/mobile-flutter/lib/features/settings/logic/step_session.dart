@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../models/profile/onboarding.dart';
 import '../../onboarding/data/profile_row.dart';
 import '../../onboarding/logic/onboarding_answers.dart';
 import '../../onboarding/logic/onboarding_seed.dart';
@@ -29,28 +30,38 @@ enum SettingsStep {
   final int serverStep;
 
   /// Whether [profile] already STORES every answer this page shows. When it
-  /// does not, the page opens on inferred answers — the phone's region and
-  /// language, the neutral cooking middles — which the user has never saved.
+  /// does not, the page opens with inferred answers filling the gaps — the
+  /// phone's region and language, the wizard's defaults, the neutral cooking
+  /// middles — which the user has never saved. Every field the page PRESENTS
+  /// counts: one missing (a legacy profile without an activity level or a
+  /// carb split) is shown as a default the user can only accept by saving.
   bool isSavedIn(ProfileRow? profile) {
     if (profile == null) return false;
     final hasBody =
-        profile.biologicalSex != null &&
+        tryParseBiologicalSex(profile.biologicalSex) != null &&
         profile.weightKg != null &&
         profile.heightCm != null &&
-        profile.age != null;
+        profile.age != null &&
+        tryParseActivityLevel(profile.activityLevel) != null;
     return switch (this) {
       aboutYou => hasBody,
-      goal => hasBody && profile.goal != null,
-      cooking =>
-        profile.oilUsage != null &&
-            profile.defaultRicePortion != null &&
-            profile.defaultProteinPortion != null &&
-            profile.brothConsumption != null,
+      goal => hasBody && _hasPlan(profile),
+      cooking => storedCookingAnswers(profile).every((stored) => stored),
       region =>
         profile.countryOfOrigin != null &&
             profile.countryOfResidence != null &&
             profile.preferredLocale != null,
     };
+  }
+
+  /// The goal page's own answers: the goal, its pace (a maintaining plan has
+  /// none), the carb split, and the target they produce.
+  static bool _hasPlan(ProfileRow profile) {
+    final goal = tryParseGoal(profile.goal);
+    return goal != null &&
+        (goal == Goal.maintaining || profile.aggression != null) &&
+        tryParseCarbSplit(profile.carbSplit) != null &&
+        profile.field('calorieTarget') != null;
   }
 }
 

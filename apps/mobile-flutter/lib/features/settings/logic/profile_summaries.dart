@@ -76,16 +76,12 @@ abstract final class ProfileSummaries {
 
   /// "Dầu vừa · Cơm vừa · Đạm vừa · Uống một ít". Read through the cooking
   /// step's own option table, so the words are exactly the ones on its page.
+  /// Only the answers the profile STORES are listed — a legacy profile with
+  /// oil and rice but no protein or broth says just those two, not the
+  /// neutral middles the page would open on.
   static String cooking(ProfileRow? p) {
-    final saved = [
-      p?.oilUsage,
-      p?.defaultRicePortion,
-      p?.defaultProteinPortion,
-      p?.brothConsumption,
-    ];
-    if (saved.every((v) => v == null)) {
-      return tr('settings.rows.cookingDefault');
-    }
+    final stored = storedCookingAnswers(p);
+    if (!stored.contains(true)) return tr('settings.rows.cookingDefault');
 
     final habits = cookingHabitsFrom(p);
     String word(CookingHabit habit) {
@@ -103,17 +99,17 @@ abstract final class ProfileSummaries {
         'broth': word(broth),
       },
     );
-    // Every segment reads as its own item, so each opens with a capital —
-    // "Normal oil · Medium rice", "Dầu vừa · … · Uống một ít" — whatever case
-    // the template put the answer in.
-    return _join(
-      line
-          .split(_sep)
-          .map(
-            (seg) =>
-                seg.isEmpty ? seg : seg[0].toUpperCase() + seg.substring(1),
-          ),
-    );
+    // One segment per habit, in the template's order; each opens with a
+    // capital — "Normal oil · Medium rice", "Dầu vừa · … · Uống một ít" —
+    // whatever case the template put the answer in.
+    final segments = line.split(_sep);
+    return _join([
+      for (var i = 0; i < segments.length; i++)
+        if (stored[i])
+          segments[i].isEmpty
+              ? segments[i]
+              : segments[i][0].toUpperCase() + segments[i].substring(1),
+    ]);
   }
 
   /// "Việt Nam · Tiếng Việt" — residence, then the app language.

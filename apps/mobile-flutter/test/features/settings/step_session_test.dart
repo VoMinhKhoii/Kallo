@@ -97,4 +97,30 @@ void main() {
       isTrue,
     );
   });
+
+  test('a field the page shows but the profile lacks is not "stored"', () {
+    // A legacy profile: a body without an activity level, a goal without a
+    // carb split. Each page shows a default there, so it must open savable.
+    final noActivity = ProfileRow(
+      Map.of(kFullProfile)..remove('activityLevel'),
+    );
+    final noSplit = ProfileRow(Map.of(kFullProfile)..remove('carbSplit'));
+    final noProtein = ProfileRow(
+      Map.of(kFullProfile)..remove('defaultProteinPortion'),
+    );
+    expect(SettingsStep.aboutYou.isSavedIn(noActivity), isFalse);
+    expect(SettingsStep.goal.isSavedIn(noActivity), isFalse);
+    expect(SettingsStep.goal.isSavedIn(noSplit), isFalse);
+    expect(SettingsStep.aboutYou.isSavedIn(noSplit), isTrue);
+    expect(SettingsStep.cooking.isSavedIn(noProtein), isFalse);
+  });
+
+  test('a maintaining plan is stored without a pace', () {
+    final maintaining = ProfileRow(
+      Map.of(kFullProfile)
+        ..['goal'] = 'maintaining'
+        ..remove('aggression'),
+    );
+    expect(SettingsStep.goal.isSavedIn(maintaining), isTrue);
+  });
 }
