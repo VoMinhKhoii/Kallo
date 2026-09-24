@@ -1,16 +1,14 @@
-/// Profile read/write providers for the settings surface.
+/// The profile read for the settings surface (port of web
+/// `hooks/profile/use-profile.ts`).
 ///
-/// Ports web `hooks/profile/use-profile.ts` (GET) and `saveProfileSettings`
-/// from `lib/domain/onboarding/actions.ts` (PUT, driven by
-/// `hooks/profile/use-profile-form.ts`) to Riverpod. Both share the
-/// `['onboarding','profile']` cache key the dashboard/logging readers use; a
-/// save invalidates the read so every reader refreshes.
+/// Settings no longer WRITES through `PUT /api/v1/profile`: its profile pages
+/// are the onboarding steps and save through the per-step endpoint
+/// (`data/step_save.dart`), which accepts a partial profile.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
-import '../../../models/profile/onboarding.dart';
 
 /// The raw `userProfiles` row returned by `GET /api/v1/onboarding/profile`.
 ///
@@ -74,111 +72,3 @@ final profileProvider = FutureProvider.family<ProfileRow?, bool>((
   );
   return json == null ? null : ProfileRow(json);
 });
-
-/// Flat PUT payload for `PUT /api/v1/profile`.
-///
-/// The server contract (`profileSettingsSchema`) is a FLAT object — NOT the
-/// nested `ProfileSettingsInput` model shape — so this builds the wire JSON
-/// directly. The form pre-computes tdee + targets and submits them.
-class ProfileSavePayload {
-  final double weightKg;
-  final int heightCm;
-  final int age;
-  final BiologicalSex biologicalSex;
-  final ActivityLevel activityLevel;
-  final int tdeeKcal;
-  final Goal goal;
-  final double? aggression;
-  final CarbSplit carbSplit;
-  final int calorieTarget;
-  final int proteinTargetG;
-  final int carbsTargetG;
-  final int fatTargetG;
-  final String? countryOfOrigin;
-  final String? countryOfResidence;
-  final String preferredLocale;
-  final OilUsage oilUsage;
-  final RicePortion defaultRicePortion;
-  final ProteinPortion defaultProteinPortion;
-  final BrothConsumption brothConsumption;
-
-  const ProfileSavePayload({
-    required this.weightKg,
-    required this.heightCm,
-    required this.age,
-    required this.biologicalSex,
-    required this.activityLevel,
-    required this.tdeeKcal,
-    required this.goal,
-    required this.aggression,
-    required this.carbSplit,
-    required this.calorieTarget,
-    required this.proteinTargetG,
-    required this.carbsTargetG,
-    required this.fatTargetG,
-    required this.countryOfOrigin,
-    required this.countryOfResidence,
-    required this.preferredLocale,
-    required this.oilUsage,
-    required this.defaultRicePortion,
-    required this.defaultProteinPortion,
-    required this.brothConsumption,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'weightKg': weightKg,
-    'heightCm': heightCm,
-    'age': age,
-    'biologicalSex': biologicalSex.name,
-    'activityLevel': activityLevelToString(activityLevel),
-    'tdeeKcal': tdeeKcal,
-    'goal': goal.name,
-    'aggression': aggression,
-    'carbSplit': carbSplitToString(carbSplit),
-    'calorieTarget': calorieTarget,
-    'proteinTargetG': proteinTargetG,
-    'carbsTargetG': carbsTargetG,
-    'fatTargetG': fatTargetG,
-    'countryOfOrigin': countryOfOrigin,
-    'countryOfResidence': countryOfResidence,
-    'preferredLocale': preferredLocale,
-    'oilUsage': oilUsage.name,
-    'defaultRicePortion': defaultRicePortion.name,
-    'defaultProteinPortion': defaultProteinPortion.name,
-    'brothConsumption': brothConsumptionToString(brothConsumption),
-  };
-}
-
-/// Saves the profile/settings form via `PUT /api/v1/profile`. Invalidates the
-/// shared profile cache on settle so dashboard/logging targets refresh.
-///
-/// Port of RN `useSaveProfile`. State is `AsyncValue<void>`: `loading` while
-/// the request is in flight (drives the spinner + disabled buttons), `error`
-/// when it fails (drives the save-error text).
-class SaveProfileController extends AsyncNotifier<void> {
-  @override
-  Future<void> build() async {}
-
-  Future<bool> save(ProfileSavePayload payload) async {
-    state = const AsyncValue<void>.loading();
-    try {
-      final client = ref.read(apiClientProvider);
-      await client.put<Map<String, dynamic>>(
-        '/api/v1/profile',
-        payload.toJson(),
-      );
-      state = const AsyncValue<void>.data(null);
-      // Invalidate the shared profile read (prefix match) so every reader
-      // refreshes — mirrors RN `invalidateQueries(onboardingKeys.profile)`.
-      ref.invalidate(profileProvider);
-      return true;
-    } catch (e, st) {
-      state = AsyncValue<void>.error(e, st);
-      return false;
-    }
-  }
-}
-
-final saveProfileProvider = AsyncNotifierProvider<SaveProfileController, void>(
-  SaveProfileController.new,
-);

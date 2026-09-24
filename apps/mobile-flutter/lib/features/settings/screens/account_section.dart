@@ -19,6 +19,7 @@ import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_theme.dart';
 import '../widgets/list/settings_group.dart';
 import 'account_delete_screen.dart';
+import '../widgets/chrome/settings_navigator.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`
 /// deep link the app already registers (Android intent-filter + iOS URL scheme).
@@ -220,9 +221,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
   }
 
   void _openDelete() {
-    Navigator.of(context).push(
-      CupertinoPageRoute<void>(builder: (_) => const AccountDeleteScreen()),
-    );
+    pushSettingsPage(context, const AccountDeleteScreen());
   }
 
   @override

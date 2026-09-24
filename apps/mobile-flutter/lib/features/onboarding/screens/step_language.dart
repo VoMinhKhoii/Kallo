@@ -17,6 +17,7 @@ class StepLanguage extends StatelessWidget {
     required this.deviceLanguage,
     required this.localeFromDevice,
     required this.onChanged,
+    this.showSettingsNote = true,
   });
 
   final OnboardingAnswers answers;
@@ -29,6 +30,10 @@ class StepLanguage extends StatelessWidget {
   final bool localeFromDevice;
 
   final VoidCallback onChanged;
+
+  /// "You can change this any time in Settings" — reassurance in onboarding,
+  /// nonsense on the Settings page that hosts this same body.
+  final bool showSettingsNote;
 
   static const List<({String code, String key})> options = [
     (code: 'vi', key: 'onboarding.language.vietnamese'),
@@ -63,12 +68,14 @@ class StepLanguage extends StatelessWidget {
             onTap: () => _pick(context, option.code),
           ),
         ],
-        const SizedBox(height: KalloSpacing.sp3),
-        Text(
-          tr('onboarding.language.meta'),
-          textAlign: TextAlign.center,
-          style: dashMeta(),
-        ),
+        if (showSettingsNote) ...[
+          const SizedBox(height: KalloSpacing.sp3),
+          Text(
+            tr('onboarding.language.meta'),
+            textAlign: TextAlign.center,
+            style: dashMeta(),
+          ),
+        ],
       ],
     );
   }

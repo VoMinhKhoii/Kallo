@@ -1,119 +1,45 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
-import 'option_strip_segment.dart';
 import 'segmented/segmented_strip.dart';
 
-/// A single option for [OptionStrip]: a label, an optional hint sub-label, and
-/// an optional leading Lucide icon (web `size-3.5`, currentColor).
+/// A single option for an [OptionStrip] / [SegmentedStrip]: a label and an
+/// optional Lucide glyph drawn inline before it.
 class OptionStripItem {
   final String value;
   final String label;
-  final String? hint;
   final IconData? icon;
-  const OptionStripItem({
-    required this.value,
-    required this.label,
-    this.hint,
-    this.icon,
-  });
+  const OptionStripItem({required this.value, required this.label, this.icon});
 }
 
-/// Which skin to draw.
+/// The app's segmented control, addressed by VALUE rather than index — a thin
+/// front for [SegmentedStrip] (36pt pill track on a 44pt target, white thumb
+/// that pops then travels).
 ///
-/// [segmented] is the native-pass skin and **the default for new work**: a
-/// 36pt track on a 44pt tap target, 14pt labels, a sliding white thumb — the
-/// iOS segmented control the whole app's chips and range pickers are cut to.
-///
-/// [onboarding] and [settings] are the two legacy skins. Onboarding and
-/// settings each carried their own copy of this control and the copies drifted
-/// in half a dozen small, unrelated ways; both are still on screen (the
-/// onboarding wizard, the cooking-preferences screens, the cheat-intensity
-/// row) and both draw multi-line options with hint sub-labels, which the
-/// segmented skin has no room for — so they are kept until those surfaces are
-/// ported. [OptionStripSkinSpec] lists what differs between them.
-enum OptionStripSkin { segmented, onboarding, settings }
-
-/// A segmented control with equal-width buttons.
+/// It used to carry two more skins, `.onboarding` and `.settings`: legacy
+/// copies of this control that drew multi-line options with hint sub-labels.
+/// Their last callers — the onboarding and Settings cooking screens — moved
+/// to [OptionRow]s with the hint as a subline (2026-09-24), and both skins
+/// went with them.
 class OptionStrip extends StatelessWidget {
-  /// The native segmented control (native pass, 2026-08-31) — 36pt visual on a
-  /// 44pt target, 14pt labels, white thumb sliding under the active segment.
-  /// Prefer this one.
   const OptionStrip.segmented({
     super.key,
     required this.options,
     required this.value,
     required this.onChange,
-  }) : skin = OptionStripSkin.segmented;
-
-  /// The onboarding wizard's skin.
-  const OptionStrip.onboarding({
-    super.key,
-    required this.options,
-    required this.value,
-    required this.onChange,
-  }) : skin = OptionStripSkin.onboarding;
-
-  /// The settings skin, also used by the logging cheat-intensity row.
-  const OptionStrip.settings({
-    super.key,
-    required this.options,
-    required this.value,
-    required this.onChange,
-  }) : skin = OptionStripSkin.settings;
+  });
 
   final List<OptionStripItem> options;
 
   /// The selected option's value. A value matching no option leaves every
-  /// segment inactive and (on [OptionStripSkin.segmented]) hides the thumb
-  /// rather than sliding it off the end of the track.
+  /// segment inactive and hides the thumb rather than sliding it off the end
+  /// of the track.
   final String value;
   final ValueChanged<String> onChange;
-  final OptionStripSkin skin;
 
   @override
-  Widget build(BuildContext context) {
-    if (skin == OptionStripSkin.segmented) {
-      return SegmentedStrip(
-        options: options,
-        activeIndex: options.indexWhere((o) => o.value == value),
-        onChange: onChange,
-      );
-    }
-
-    final s = OptionStripSkinSpec.of(skin);
-    final row = Row(
-      crossAxisAlignment:
-          s.stretchToTallest
-              ? CrossAxisAlignment.stretch
-              : CrossAxisAlignment.center,
-      children: [
-        for (final opt in options)
-          Expanded(
-            child: OptionStripSegment(
-              item: opt,
-              active: value == opt.value,
-              onTap: () {
-                // `SegmentedStrip` (the `.segmented` skin) already ticks. Two
-                // segmented controls in one app, one of them silent, is the
-                // kind of gap nobody reports and everybody feels.
-                if (value != opt.value) HapticFeedback.selectionClick();
-                onChange(opt.value);
-              },
-              skin: s,
-            ),
-          ),
-      ],
-    );
-    return Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp1),
-      decoration: BoxDecoration(
-        color: KalloColors.track,
-        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-      ),
-      child: s.stretchToTallest ? IntrinsicHeight(child: row) : row,
-    );
-  }
+  Widget build(BuildContext context) => SegmentedStrip(
+    options: options,
+    activeIndex: options.indexWhere((o) => o.value == value),
+    onChange: onChange,
+  );
 }

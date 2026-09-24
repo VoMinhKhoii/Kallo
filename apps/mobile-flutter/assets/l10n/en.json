@@ -1794,7 +1794,11 @@
       "cooking": "Cooking habits",
       "region": "Region & language",
       "notSet": "Not set",
-      "pacePerWeek": "{pace} {unit}/wk"
+      "pacePerWeek": "{pace} {unit}/wk",
+      "aboutYou": "Body metrics",
+      "needsBodyFirst": "Add your body metrics first",
+      "cookingSummary": "{oil} oil · {rice} rice · {protein} protein · {broth}",
+      "cookingDefault": "Using medium defaults"
     },
     "feedback": {
       "rowLabel": "Send feedback",
@@ -1845,7 +1849,8 @@
       "nameSaved": "Name updated",
       "nameError": "Couldn't update your name",
       "nameRequired": "Please enter a name.",
-      "linkWarning": "Changing your name updates your invite link — old links stop working."
+      "linkWarning": "Changing your name updates your invite link — old links stop working.",
+      "avatarEdit": "Edit photo"
     },
     "subscription": {
       "groupLabel": "Subscription",
@@ -1859,6 +1864,9 @@
       "statusLifetime": "Premium · lifetime",
       "manage": "Manage subscription",
       "restore": "Restore purchases"
+    },
+    "groups": {
+      "nutritionProfile": "Nutrition profile"
     }
   },
   "errors": {
