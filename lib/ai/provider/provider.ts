@@ -17,6 +17,20 @@ export {
   type GeminiProviderConfig,
   resolveGeminiProvider,
 } from './client';
+export {
+  executeWithFailover,
+  type FallbackProvider,
+  KeyPoolExhaustedError,
+  type RouterExecutionOptions,
+} from './pool/fallback-router';
+export { createKeyPool, parseKeyList } from './pool/key-pool';
+export type {
+  AcquiredKey,
+  KeyPool,
+  KeyPoolConfig,
+  KeyPoolSnapshot,
+  KeyStatus,
+} from './pool/types';
 export type {
   GeminiAttemptMetadata,
   GeminiCallTrace,

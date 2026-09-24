@@ -1,13 +1,15 @@
 import { GoogleGenAI } from '@google/genai';
+import { parseKeyList } from './pool/key-pool';
 
 export type GeminiProviderConfig =
-  | { provider: 'ai-studio'; apiKey: string }
+  | { provider: 'ai-studio'; apiKey: string; apiKeys?: string[] }
   | { provider: 'vertex'; project: string; location: string };
 
 /**
  * Resolve the Gemini provider config from environment variables.
  *
- * - AI_PROVIDER unset or "ai-studio": uses GEMINI_API_KEY (Google AI Studio).
+ * - AI_PROVIDER unset or "ai-studio": uses GEMINI_API_KEY or GEMINI_API_KEYS (Google AI Studio).
+ *   Supports comma-separated keys for pool rotation.
  * - AI_PROVIDER="vertex": uses GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION via
  *   Application Default Credentials. On Cloud Run, ADC comes from the service
  *   account; locally it comes from `gcloud auth application-default login`.
@@ -33,11 +35,24 @@ export function resolveGeminiProvider(
   }
 
   if (provider === 'ai-studio') {
-    const apiKey = env.GEMINI_API_KEY?.trim();
-    if (!apiKey) {
-      throw new Error('AI_PROVIDER=ai-studio requires GEMINI_API_KEY');
+    const rawMultiple = env.GEMINI_API_KEYS?.trim();
+    const rawSingle = env.GEMINI_API_KEY?.trim();
+
+    if (rawMultiple) {
+      const keys = parseKeyList(rawMultiple);
+      if (keys.length > 0) {
+        return { provider: 'ai-studio', apiKey: keys[0], apiKeys: keys };
+      }
     }
-    return { provider: 'ai-studio', apiKey };
+
+    if (rawSingle) {
+      const keys = parseKeyList(rawSingle);
+      return keys.length > 1
+        ? { provider: 'ai-studio', apiKey: keys[0], apiKeys: keys }
+        : { provider: 'ai-studio', apiKey: rawSingle };
+    }
+
+    throw new Error('AI_PROVIDER=ai-studio requires GEMINI_API_KEY');
   }
 
   throw new Error(
