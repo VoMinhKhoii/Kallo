@@ -45,7 +45,7 @@ void main() {
     );
     expect(
       _plain(ProfileSummaries.goal(p, 'vi')),
-      'Giảm cân · 0,5 kg/tuần · 1.800 kcal',
+      'Giảm cân · 0,5 kg/tuần · 1.961 kcal',
     );
     expect(
       _plain(ProfileSummaries.cooking(p)),
@@ -103,10 +103,29 @@ void main() {
     expect(_plain(ProfileSummaries.cooking(legacy)), 'Dầu vừa · Cơm vừa');
   });
 
+  testWidgets('a body without its activity level is not complete', (
+    tester,
+  ) async {
+    await _in(tester, 'vi');
+    // The step pages treat this body as incomplete, so the root must not
+    // claim it is set up — or show a target resting on it.
+    final noActivity = ProfileRow(
+      Map.of(kFullProfile)..remove('activityLevel'),
+    );
+    expect(
+      _plain(ProfileSummaries.aboutYou(noActivity, 'vi')),
+      tr('settings.rows.notSet'),
+    );
+    expect(
+      _plain(ProfileSummaries.goal(noActivity, 'vi')),
+      tr('settings.rows.needsBodyFirst'),
+    );
+  });
+
   testWidgets('maintaining carries no pace', (tester) async {
     await _in(tester, 'vi');
     final p = ProfileRow(Map.of(kFullProfile)..['goal'] = 'maintaining');
-    expect(_plain(ProfileSummaries.goal(p, 'vi')), 'Duy trì · 1.800 kcal');
+    expect(_plain(ProfileSummaries.goal(p, 'vi')), 'Duy trì · 1.961 kcal');
   });
 
   testWidgets('a wrapped line breaks between answers, never inside one', (

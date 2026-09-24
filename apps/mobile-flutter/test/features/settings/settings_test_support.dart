@@ -18,11 +18,13 @@ const kFullProfile = <String, dynamic>{
   'goal': 'cutting',
   'aggression': '0.5',
   'carbSplit': 'moderate_carb',
-  'calorieTarget': 1800,
-  'proteinTargetG': 135,
-  'carbsTargetG': 158,
-  'fatTargetG': 70,
-  'tdeeKcal': 2300,
+  // The targets the calculator derives from the answers above, so a page
+  // opened on this profile matches what is stored and opens clean.
+  'tdeeKcal': 2511,
+  'calorieTarget': 1961,
+  'proteinTargetG': 147,
+  'carbsTargetG': 172,
+  'fatTargetG': 76,
   'oilUsage': 'normal',
   'defaultRicePortion': 'medium',
   'defaultProteinPortion': 'medium',

@@ -28,70 +28,63 @@ enum SettingsStep {
 
   /// The `step` posted to `/api/v1/onboarding/screen`.
   final int serverStep;
+}
 
-  /// Whether [profile] already STORES every answer this page shows. When it
-  /// does not, the page opens with inferred answers filling the gaps — the
-  /// phone's region and language, the wizard's defaults, the neutral cooking
-  /// middles — which the user has never saved. Every field the page PRESENTS
-  /// counts: one missing (a legacy profile without an activity level or a
-  /// carb split) is shown as a default the user can only accept by saving.
-  bool isSavedIn(ProfileRow? profile) {
-    if (profile == null) return false;
-    final hasBody =
-        tryParseBiologicalSex(profile.biologicalSex) != null &&
-        profile.weightKg != null &&
-        profile.heightCm != null &&
-        profile.age != null &&
-        tryParseActivityLevel(profile.activityLevel) != null;
-    return switch (this) {
-      aboutYou => hasBody,
-      goal => hasBody && _hasPlan(profile),
-      cooking => storedCookingAnswers(profile).every((stored) => stored),
-      region =>
-        profile.countryOfOrigin != null &&
-            profile.countryOfResidence != null &&
-            profile.preferredLocale != null,
-    };
-  }
+/// Whether [profile] stores the body behind every target: sex, weight,
+/// height, age AND activity level — the last is what a legacy profile tends
+/// to lack, and the target is computed from it all the same.
+bool storedBody(ProfileRow? profile) =>
+    profile != null &&
+    tryParseBiologicalSex(profile.biologicalSex) != null &&
+    profile.weightKg != null &&
+    profile.heightCm != null &&
+    profile.age != null &&
+    tryParseActivityLevel(profile.activityLevel) != null;
 
-  /// The goal page's own answers: the goal, its pace (a maintaining plan has
-  /// none), the carb split, and every target the card shows.
-  static bool _hasPlan(ProfileRow profile) {
-    final goal = tryParseGoal(profile.goal);
-    return goal != null &&
-        (goal == Goal.maintaining || profile.aggression != null) &&
-        tryParseCarbSplit(profile.carbSplit) != null &&
-        profile.field('calorieTarget') != null &&
-        profile.field('proteinTargetG') != null &&
-        profile.field('carbsTargetG') != null &&
-        profile.field('fatTargetG') != null;
-  }
+/// Whether [profile] stores a plan — goal, pace (a maintaining plan has
+/// none), carb split and every target the card shows — whether or not the
+/// body behind it is complete.
+bool storedPlan(ProfileRow? profile) {
+  final goal = tryParseGoal(profile?.goal);
+  return profile != null &&
+      goal != null &&
+      (goal == Goal.maintaining || profile.aggression != null) &&
+      tryParseCarbSplit(profile.carbSplit) != null &&
+      profile.field('calorieTarget') != null &&
+      profile.field('proteinTargetG') != null &&
+      profile.field('carbsTargetG') != null &&
+      profile.field('fatTargetG') != null;
 }
 
 /// One open Settings step page: the onboarding [answers] seeded from the saved
-/// profile, the payload as it was when the page opened, and whether the user
-/// has changed it since.
+/// profile, what the server stores for the fields this page posts, and
+/// whether the page differs from that.
 ///
 /// Settings reuses the onboarding step bodies, which edit a mutable
 /// [OnboardingAnswers] and call back; this is the host-side half of that
 /// contract — the same `applyDefaultGoal` + rebuild the wizard runs
-/// (`onboarding_wizard.dart`, `changed()`), plus the dirty snapshot the wizard
-/// never needed. Dirty is "the payload this page would post differs from the
-/// one the server holds", so a change undone by hand is not dirty — and a
-/// page opened on inferred answers the server never held is dirty from the
-/// start, or the user could never accept them.
+/// (`onboarding_wizard.dart`, `changed()`), plus the dirty check the wizard
+/// never needed.
+///
+/// Dirty is "what this page would post differs from what the server STORES
+/// for those fields", compared value by value. So a change undone by hand is
+/// not dirty; a page opened on inferred answers the server never held (the
+/// phone's region, the neutral cooking middles, a legacy gap) is dirty from
+/// the start, or they could never be accepted; and stored targets that no
+/// longer match the calculator show as a change the user can save.
 class StepSession extends ChangeNotifier {
-  /// [storedSteps] are the pages whose answers the profile holds. When it
-  /// does not include [step], the page has nothing saved behind it, so the
-  /// answers it opens on — inferred, not chosen — count as a change and can
-  /// be saved as they stand.
+  /// [stored] is the profile row as the server holds it; null means nothing
+  /// is stored.
   StepSession(
     this.step,
     this.answers,
     this.device, {
-    this.storedSteps = const {...SettingsStep.values},
-  }) {
-    _saved = storedSteps.contains(step) ? _encode(payload) : null;
+    required ProfileRow? stored,
+  }) : _bodyStored = storedBody(stored),
+       _planStored = storedPlan(stored) {
+    _saved = _canon(
+      stored == null ? null : {for (final k in _keys) k: stored.field(k)},
+    );
   }
 
   /// Seeds from [profile] exactly as the wizard does, minus the draft: a saved
@@ -103,21 +96,14 @@ class StepSession extends ChangeNotifier {
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
     );
-    return StepSession(
-      step,
-      seeded.answers,
-      seeded.device,
-      storedSteps: {
-        for (final s in SettingsStep.values)
-          if (s.isSavedIn(profile)) s,
-      },
-    );
+    return StepSession(step, seeded.answers, seeded.device, stored: profile);
   }
 
   final SettingsStep step;
   final OnboardingAnswers answers;
   final OnboardingDeviceHints device;
-  final Set<SettingsStep> storedSteps;
+  final bool _bodyStored;
+  final bool _planStored;
 
   String? _saved;
 
@@ -126,27 +112,28 @@ class StepSession extends ChangeNotifier {
   /// the body behind its target is stored).
   ///
   /// The body and goal pages share server step 2 but post only what they
-  /// SHOW: the seed fills the other page's gaps with defaults, and saving
-  /// one page must not store the other's defaults as answers. The body page
-  /// adds the targets only when a plan is already stored — new metrics move
-  /// that plan's numbers; with no plan there are no numbers to move.
+  /// SHOW ([_keys]): the seed fills the other page's gaps with defaults, and
+  /// saving one page must not store the other's defaults as answers.
   Map<String, dynamic>? get payload => switch (step) {
-    SettingsStep.aboutYou => _stepTwo([
-      ..._bodyKeys,
-      if (storedSteps.contains(SettingsStep.goal)) ..._targetKeys,
-    ]),
-    SettingsStep.goal =>
-      storedSteps.contains(SettingsStep.aboutYou)
-          ? _stepTwo([..._planKeys, ..._targetKeys])
-          : null,
+    SettingsStep.aboutYou => _stepTwo(),
+    SettingsStep.goal => _bodyStored ? _stepTwo() : null,
     SettingsStep.cooking => answers.stepThreePayload,
     SettingsStep.region => answers.stepOnePayload,
   };
 
+  /// The fields this page posts. The body page carries the targets too when
+  /// a plan is stored — new metrics move that plan's numbers — but not
+  /// otherwise: with no plan there are no numbers to move.
+  List<String> get _keys => switch (step) {
+    SettingsStep.aboutYou => [..._bodyKeys, if (_planStored) ..._targetKeys],
+    SettingsStep.goal => [..._planKeys, ..._targetKeys],
+    SettingsStep.cooking => _cookingKeys,
+    SettingsStep.region => _regionKeys,
+  };
+
   /// Whether the goal page is waiting on body metrics the profile does not
   /// store yet — its target is computed from ones the page only guessed.
-  bool get needsBodyFirst =>
-      step == SettingsStep.goal && !storedSteps.contains(SettingsStep.aboutYou);
+  bool get needsBodyFirst => step == SettingsStep.goal && !_bodyStored;
 
   static const _bodyKeys = [
     'biologicalSex',
@@ -169,13 +156,27 @@ class StepSession extends ChangeNotifier {
     'fatTargetG',
   ];
 
-  Map<String, dynamic>? _stepTwo(List<String> keys) {
+  static const _cookingKeys = [
+    'oilUsage',
+    'defaultRicePortion',
+    'defaultProteinPortion',
+    'brothConsumption',
+  ];
+  static const _regionKeys = [
+    'countryOfOrigin',
+    'countryOfResidence',
+    'preferredLocale',
+  ];
+
+  Map<String, dynamic>? _stepTwo() {
     final all = answers.stepTwoValues?.toJson();
     if (all == null) return null;
-    return {for (final key in keys) key: all[key]};
+    return {for (final key in _keys) key: all[key]};
   }
 
-  bool get dirty => _encode(payload) != _saved;
+  /// The goal page waiting on the body is not "changed" — it cannot be
+  /// saved yet, and says so instead of raising a dead save dock.
+  bool get dirty => !needsBodyFirst && _canon(payload) != _saved;
 
   /// Dirty AND postable — the save button's enabled state.
   bool get canSave => dirty && payload != null;
@@ -193,13 +194,22 @@ class StepSession extends ChangeNotifier {
   /// made while the request was in flight is not on the server, so the page
   /// must stay dirty (and the save dock up) until that edit is saved too.
   void markSaved(Map<String, dynamic> posted) {
-    _saved = _encode(posted);
+    _saved = _canon(posted);
     notifyListeners();
   }
 
-  /// Canonical text of a payload: key order is the map's insertion order and
-  /// every payload is built field by field in a fixed order, so equal answers
-  /// encode equal.
-  static String? _encode(Map<String, dynamic>? payload) =>
-      payload == null ? null : jsonEncode(payload);
+  /// Canonical text of a payload, comparable with what the server stores:
+  /// the DB hands decimals back as strings ("68.5", "0.5") and whole numbers
+  /// as ints, so every number — or numeric string — compares as a double.
+  /// Keys come in [_keys] order. All-null (nothing stored, nothing postable)
+  /// is null, so an empty profile and an unpostable page agree.
+  static String? _canon(Map<String, dynamic>? values) {
+    if (values == null || values.values.every((v) => v == null)) return null;
+    Object? norm(Object? v) => switch (v) {
+      num() => v.toDouble(),
+      String() => double.tryParse(v) ?? v,
+      _ => v,
+    };
+    return jsonEncode({for (final e in values.entries) e.key: norm(e.value)});
+  }
 }

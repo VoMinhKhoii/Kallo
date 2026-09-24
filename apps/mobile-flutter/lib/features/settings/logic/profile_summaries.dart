@@ -5,6 +5,7 @@ import '../../../shared/data/countries.dart';
 import '../../onboarding/data/profile_row.dart';
 import '../../onboarding/logic/onboarding_seed.dart';
 import '../../onboarding/screens/step_cooking.dart';
+import 'step_session.dart';
 
 /// The one-line answers under each "Hồ sơ dinh dưỡng" row on the Settings
 /// root — what the row's page holds, so a row can be found by what it says
@@ -23,15 +24,9 @@ abstract final class ProfileSummaries {
   static String _join(Iterable<String> segments) =>
       segments.map((s) => s.replaceAll(' ', '\u00A0')).join(_sep);
 
-  static bool _hasBody(ProfileRow p) =>
-      tryParseBiologicalSex(p.biologicalSex) != null &&
-      p.weightKg != null &&
-      p.heightCm != null &&
-      p.age != null;
-
   /// "Nam · 29 tuổi · 172 cm · 68,5 kg".
   static String aboutYou(ProfileRow? p, String locale) {
-    if (p == null || !_hasBody(p)) return tr('settings.rows.notSet');
+    if (p == null || !storedBody(p)) return tr('settings.rows.notSet');
     final sex = tryParseBiologicalSex(p.biologicalSex)!;
     final kg = NumberFormat.decimalPattern(locale)..maximumFractionDigits = 1;
     return _join([
@@ -44,7 +39,7 @@ abstract final class ProfileSummaries {
 
   /// "Giảm cân · 0,5 kg/tuần · 1.800 kcal" — or what has to come first.
   static String goal(ProfileRow? p, String locale) {
-    if (p == null || !_hasBody(p)) return tr('settings.rows.needsBodyFirst');
+    if (p == null || !storedBody(p)) return tr('settings.rows.needsBodyFirst');
     final goal = tryParseGoal(p.goal);
     if (goal == null) return tr('settings.rows.notSet');
     final parts = [tr('onboarding.bodyMetrics.${goal.name}')];

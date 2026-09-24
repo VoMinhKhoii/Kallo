@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
+import 'package:kallo_mobile/features/onboarding/logic/onboarding_answers.dart';
 import 'package:kallo_mobile/features/settings/logic/step_session.dart';
 import 'package:kallo_mobile/models/profile/onboarding.dart';
 
@@ -9,13 +10,30 @@ import 'settings_test_support.dart';
 
 /// The Settings step pages show their save button only while the page holds
 /// something the server does not. "Dirty" is therefore a comparison of what
-/// the page WOULD post against what the server holds — not a flag set on
+/// the page WOULD post against what the server STORES — not a flag set on
 /// edit.
-StepSession _session(SettingsStep step) => StepSession(step, testAnswers(), (
+
+const _device = (
   deviceCountry: null,
   deviceLanguage: 'vi',
   localeFromDevice: false,
-));
+);
+
+/// The row the server would hold had these exact answers been saved.
+ProfileRow _storedFrom(OnboardingAnswers a) => ProfileRow({
+  ...a.stepOnePayload,
+  ...a.stepTwoValues!.toJson(),
+  ...a.stepThreePayload,
+});
+
+/// A page over answers the server already holds, value for value.
+StepSession _session(SettingsStep step) {
+  final answers = testAnswers();
+  return StepSession(step, answers, _device, stored: _storedFrom(answers));
+}
+
+ProfileRow _without(List<String> keys) =>
+    ProfileRow(Map.of(kFullProfile)..removeWhere((k, _) => keys.contains(k)));
 
 void main() {
   // fromProfile reads the phone's region and language off the binding.
@@ -62,79 +80,89 @@ void main() {
     expect(SettingsStep.cooking.serverStep, 3);
   });
 
-  test('a page opened on answers the server never held can save them', () {
-    // Nothing saved: cooking opens on the neutral middles, which the user
-    // must be able to accept without first picking something else.
-    final session = StepSession.fromProfile(
-      SettingsStep.cooking,
-      const ProfileRow({'preferredLocale': 'vi'}),
-    );
-    expect(session.dirty, isTrue);
-    expect(session.canSave, isTrue);
-    session.markSaved(session.payload!);
-    expect(session.dirty, isFalse);
-  });
+  group('the baseline is what the server stores', () {
+    test('a fully stored profile opens every page clean', () {
+      for (final step in SettingsStep.values) {
+        final session = StepSession.fromProfile(
+          step,
+          const ProfileRow(kFullProfile),
+        );
+        expect(session.dirty, isFalse, reason: step.name);
+      }
+    });
 
-  test('a page whose answers are all stored opens clean', () {
-    for (final step in SettingsStep.values) {
+    test('answers the server never held can be saved as they stand', () {
+      // Nothing stored: cooking opens on the neutral middles, which the user
+      // must be able to accept without first picking something else.
       final session = StepSession.fromProfile(
-        step,
+        SettingsStep.cooking,
+        const ProfileRow({'preferredLocale': 'vi'}),
+      );
+      expect(session.dirty, isTrue);
+      expect(session.canSave, isTrue);
+      session.markSaved(session.payload!);
+      expect(session.dirty, isFalse);
+    });
+
+    test('a legacy gap a page shows opens that page savable', () {
+      expect(
+        StepSession.fromProfile(
+          SettingsStep.aboutYou,
+          _without(['activityLevel']),
+        ).dirty,
+        isTrue,
+      );
+      expect(
+        StepSession.fromProfile(
+          SettingsStep.goal,
+          _without(['carbSplit']),
+        ).dirty,
+        isTrue,
+      );
+      expect(
+        StepSession.fromProfile(
+          SettingsStep.cooking,
+          _without(['defaultProteinPortion']),
+        ).dirty,
+        isTrue,
+      );
+      // A gap on ANOTHER page's fields leaves this one clean.
+      expect(
+        StepSession.fromProfile(
+          SettingsStep.aboutYou,
+          _without(['carbSplit']),
+        ).dirty,
+        isFalse,
+      );
+    });
+
+    test('stored targets the calculator no longer produces can be saved', () {
+      // All present, but written by an older formula: the page shows the
+      // recomputed numbers, so it must offer to store them.
+      final stale = ProfileRow(Map.of(kFullProfile)..['proteinTargetG'] = 120);
+      final goal = StepSession.fromProfile(SettingsStep.goal, stale);
+      expect(goal.dirty, isTrue);
+      expect(goal.canSave, isTrue);
+    });
+
+    test('decimals stored as strings compare equal to the numbers shown', () {
+      // kFullProfile holds weightKg '68.5' and aggression '0.5' as the DB
+      // returns them; the page holds 68.5 and 0.5.
+      final session = StepSession.fromProfile(
+        SettingsStep.goal,
         const ProfileRow(kFullProfile),
       );
-      expect(session.dirty, isFalse, reason: step.name);
-    }
-  });
-
-  test('region counts as stored only once both countries are', () {
-    expect(
-      SettingsStep.region.isSavedIn(
-        const ProfileRow({'preferredLocale': 'vi'}),
-      ),
-      isFalse,
-    );
-    expect(
-      SettingsStep.region.isSavedIn(const ProfileRow(kFullProfile)),
-      isTrue,
-    );
-  });
-
-  test('a field the page shows but the profile lacks is not "stored"', () {
-    // A legacy profile: a body without an activity level, a goal without a
-    // carb split. Each page shows a default there, so it must open savable.
-    final noActivity = ProfileRow(
-      Map.of(kFullProfile)..remove('activityLevel'),
-    );
-    final noSplit = ProfileRow(Map.of(kFullProfile)..remove('carbSplit'));
-    final noProtein = ProfileRow(
-      Map.of(kFullProfile)..remove('defaultProteinPortion'),
-    );
-    expect(SettingsStep.aboutYou.isSavedIn(noActivity), isFalse);
-    expect(SettingsStep.goal.isSavedIn(noActivity), isFalse);
-    expect(SettingsStep.goal.isSavedIn(noSplit), isFalse);
-    expect(SettingsStep.aboutYou.isSavedIn(noSplit), isTrue);
-    expect(SettingsStep.cooking.isSavedIn(noProtein), isFalse);
-  });
-
-  test('a maintaining plan is stored without a pace', () {
-    final maintaining = ProfileRow(
-      Map.of(kFullProfile)
-        ..['goal'] = 'maintaining'
-        ..remove('aggression'),
-    );
-    expect(SettingsStep.goal.isSavedIn(maintaining), isTrue);
+      expect(session.dirty, isFalse);
+    });
   });
 
   group('body and goal share step 2 but post only what they show', () {
-    StepSession session(SettingsStep step, Set<SettingsStep> stored) =>
-        StepSession(step, testAnswers(), (
-          deviceCountry: null,
-          deviceLanguage: 'vi',
-          localeFromDevice: false,
-        ), storedSteps: stored);
-
     test('the body page with no plan stored posts the body alone', () {
-      final keys = session(SettingsStep.aboutYou, {}).payload!.keys;
-      expect(keys, [
+      final session = StepSession.fromProfile(
+        SettingsStep.aboutYou,
+        _without(['goal', 'calorieTarget']),
+      );
+      expect(session.payload!.keys, [
         'biologicalSex',
         'weightKg',
         'heightCm',
@@ -143,32 +171,59 @@ void main() {
       ]);
     });
 
-    test('with a plan stored, new metrics carry its recomputed targets', () {
-      final keys =
-          session(SettingsStep.aboutYou, {SettingsStep.goal}).payload!.keys;
+    test('a stored plan rides along with new metrics, recomputed', () {
+      // Even when the body is incomplete (a legacy row without activity),
+      // the plan is stored, so the metrics that complete it move its targets.
+      final session = StepSession.fromProfile(
+        SettingsStep.aboutYou,
+        _without(['activityLevel']),
+      );
+      final keys = session.payload!.keys;
       expect(keys, containsAll(['calorieTarget', 'proteinTargetG']));
       expect(keys, isNot(contains('goal')));
       expect(keys, isNot(contains('carbSplit')));
     });
 
     test('the goal page posts the plan, never the body', () {
-      final keys =
-          session(SettingsStep.goal, {SettingsStep.aboutYou}).payload!.keys;
+      final session = StepSession.fromProfile(
+        SettingsStep.goal,
+        const ProfileRow(kFullProfile),
+      );
+      final keys = session.payload!.keys;
       expect(keys, containsAll(['goal', 'aggression', 'carbSplit']));
       expect(keys, containsAll(['calorieTarget', 'fatTargetG']));
       expect(keys, isNot(contains('activityLevel')));
       expect(keys, isNot(contains('weightKg')));
     });
 
-    test('the goal page waits for a stored body', () {
-      final goal = session(SettingsStep.goal, {});
+    test('the goal page waits for a stored body, without a dead dock', () {
+      final goal = StepSession.fromProfile(
+        SettingsStep.goal,
+        _without(['activityLevel']),
+      );
       expect(goal.payload, isNull);
       expect(goal.needsBodyFirst, isTrue);
+      expect(goal.dirty, isFalse);
     });
   });
 
-  test('a plan missing a macro target is not stored', () {
-    final noFat = ProfileRow(Map.of(kFullProfile)..remove('fatTargetG'));
-    expect(SettingsStep.goal.isSavedIn(noFat), isFalse);
+  test('a body counts as stored only with its activity level', () {
+    expect(storedBody(const ProfileRow(kFullProfile)), isTrue);
+    expect(storedBody(_without(['activityLevel'])), isFalse);
+  });
+
+  test('a plan counts as stored with every target, whatever the body', () {
+    expect(storedPlan(_without(['activityLevel'])), isTrue);
+    expect(storedPlan(_without(['fatTargetG'])), isFalse);
+    expect(
+      storedPlan(
+        ProfileRow(
+          Map.of(kFullProfile)
+            ..['goal'] = 'maintaining'
+            ..remove('aggression'),
+        ),
+      ),
+      isTrue,
+    );
   });
 }

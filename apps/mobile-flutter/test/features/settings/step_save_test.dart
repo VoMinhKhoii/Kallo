@@ -28,11 +28,20 @@ class _FakeSaveScreen implements SaveScreenController {
   }
 }
 
-StepSession _session(SettingsStep step) => StepSession(step, testAnswers(), (
-  deviceCountry: null,
-  deviceLanguage: 'vi',
-  localeFromDevice: false,
-));
+/// A page over answers the server already holds, value for value.
+StepSession _session(SettingsStep step) {
+  final a = testAnswers();
+  return StepSession(
+    step,
+    a,
+    (deviceCountry: null, deviceLanguage: 'vi', localeFromDevice: false),
+    stored: ProfileRow({
+      ...a.stepOnePayload,
+      ...a.stepTwoValues!.toJson(),
+      ...a.stepThreePayload,
+    }),
+  );
+}
 
 /// A Settings step page saves through the onboarding step endpoint with its
 /// OWN server step, then refetches everything that reads the profile.
