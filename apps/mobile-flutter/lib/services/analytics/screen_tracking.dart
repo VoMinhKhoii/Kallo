@@ -15,11 +15,14 @@ import 'analytics.dart';
 /// Returns the disposer.
 VoidCallback trackScreens(GoRouter router, Analytics analytics) {
   if (!analytics.enabled) return () {};
-  String? last;
+  // Deduplicated on the concrete location (kept in memory only), so moving
+  // from one shared meal to another still counts as a screen view.
+  Uri? last;
   void onChange() {
-    final pattern = screenPattern(router.routerDelegate.currentConfiguration);
-    if (pattern == null || pattern == last) return;
-    last = pattern;
+    final matches = router.routerDelegate.currentConfiguration;
+    final pattern = screenPattern(matches);
+    if (pattern == null || matches.uri == last) return;
+    last = matches.uri;
     analytics.screen(pattern);
   }
 
