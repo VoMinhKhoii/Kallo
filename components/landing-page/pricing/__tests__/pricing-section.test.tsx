@@ -113,6 +113,7 @@ function purchaseState(overrides: Record<string, unknown> = {}) {
     select: mocks.select,
     confirmActivation: mocks.confirmActivation,
     reset: vi.fn(),
+    clearReceipt: vi.fn(),
     ...overrides,
   };
 }
@@ -267,22 +268,6 @@ describe('PricingSection', () => {
       await user.click(screen.getByRole('button', { name: 'successCta' }));
       expect(mocks.push).toHaveBeenCalledWith('/en/nutrition');
     });
-  });
-
-  it("clears a finished checkout when the visitor changes — never another account's receipt", async () => {
-    const reset = vi.fn();
-    mocks.purchase.mockReturnValue(purchaseState({ reset }));
-    const { rerender } = renderPricing({ userId: 'user-1', from: null });
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-    reset.mockClear();
-
-    rerender(
-      <PricingCheckoutProvider>
-        <PricingSection />
-        <ApplyPricingRequest userId={null} from={null} />
-      </PricingCheckoutProvider>
-    );
-    await waitFor(() => expect(reset).toHaveBeenCalledTimes(1));
   });
 
   it('shows a subscriber Premium as the current plan', async () => {

@@ -51,15 +51,11 @@ export function PricingCheckoutProvider({
   const entitlements = useEntitlements(userId);
   const data = entitlements.data;
   const purchase = usePaywallPurchase(userId ?? '');
-  // A finished checkout's status replaces the cards. The page stays alive
-  // under <Activity>, so clear it when the page is shown again and when the
-  // visitor changes (sign-out, another account) — never someone else's receipt.
-  const { reset: resetPurchase } = purchase;
-  useResetOnReveal(resetPurchase);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: userId is the trigger — reset whenever the visitor changes.
-  useEffect(() => {
-    resetPurchase();
-  }, [userId, resetPurchase]);
+  // The page stays alive under <Activity>: a finished checkout's receipt is
+  // cleared when the page is shown again, while unresolved state (payment
+  // pending) survives. Account changes are handled inside the hook, which
+  // drops any update that belongs to a previous user.
+  useResetOnReveal(purchase.clearReceipt);
   const offerings = usePaywallOfferings({
     userId: userId ?? '',
     enabled:
