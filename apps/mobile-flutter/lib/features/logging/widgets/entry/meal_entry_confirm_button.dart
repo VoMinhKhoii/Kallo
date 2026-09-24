@@ -5,7 +5,7 @@ import '../../logic/logging_spacing.dart';
 import '../composer/entrances.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
 
 /// "Save meal" — the FULL-WIDTH confirm pill under the staged card.
 ///
@@ -83,12 +83,7 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
               color: fill,
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
-            child: Text(
-              'logging.confirm'.tr(),
-              style: KalloTextStyles.sansSemiBold(
-                fontSize: KalloFontSize.md,
-              ).copyWith(color: fg),
-            ),
+            child: Text('logging.confirm'.tr(), style: kButtonLabel(color: fg)),
           ),
         ),
       ),

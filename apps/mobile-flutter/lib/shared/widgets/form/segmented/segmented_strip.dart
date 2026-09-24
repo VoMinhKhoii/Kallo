@@ -110,6 +110,9 @@ class _SegmentedStripState extends State<SegmentedStrip> {
     ),
   );
 
+  /// A glyph inside a segment's text run (`OptionStripItem.icon`).
+  static const double _inlineGlyph = 16;
+
   /// Ink on the active segment, muted beside it — colour marks the selection,
   /// never weight. Only the colour animates, so the paragraph repaints rather
   /// than re-measuring; [FittedBox] shrinks the longest label at the top of
@@ -122,11 +125,26 @@ class _SegmentedStripState extends State<SegmentedStrip> {
       builder:
           (context, color, child) => FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(
-              widget.options[i].label,
-              maxLines: 1,
-              softWrap: false,
-              style: dashBody(color: color ?? kInkMuted),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // An item's glyph rides inside the text run, so it takes the
+                // label's colour and the inline 16 — not a 24pt tier glyph.
+                if (widget.options[i].icon != null) ...[
+                  Icon(
+                    widget.options[i].icon,
+                    size: _inlineGlyph,
+                    color: color ?? kInkMuted,
+                  ),
+                  const SizedBox(width: KalloSpacing.sp1 + 2),
+                ],
+                Text(
+                  widget.options[i].label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: dashBody(color: color ?? kInkMuted),
+                ),
+              ],
             ),
           ),
     ),
