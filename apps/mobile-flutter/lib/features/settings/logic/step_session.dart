@@ -30,16 +30,21 @@ enum SettingsStep {
   final int serverStep;
 }
 
-/// Whether [profile] stores the body behind every target: sex, weight,
+/// Whether [profile] stores a usable body behind every target: sex, weight,
 /// height, age AND activity level — the last is what a legacy profile tends
-/// to lack, and the target is computed from it all the same.
-bool storedBody(ProfileRow? profile) =>
-    profile != null &&
-    tryParseBiologicalSex(profile.biologicalSex) != null &&
-    profile.weightKg != null &&
-    profile.heightCm != null &&
-    profile.age != null &&
-    tryParseActivityLevel(profile.activityLevel) != null;
+/// to lack — with each metric inside the range the step accepts. A stored
+/// value outside it (legacy or API-written) cannot produce a target, so it
+/// counts as missing, not as a body.
+bool storedBody(ProfileRow? profile) {
+  bool within(num? v, ({num min, num max}) range) =>
+      v != null && v >= range.min && v <= range.max;
+  return profile != null &&
+      tryParseBiologicalSex(profile.biologicalSex) != null &&
+      within(profile.weightKg, kWeightRange) &&
+      within(profile.heightCm, kHeightRange) &&
+      within(profile.age, kAgeRange) &&
+      tryParseActivityLevel(profile.activityLevel) != null;
+}
 
 /// Whether [profile] stores a plan — goal, pace (a maintaining plan has
 /// none), carb split and every target the card shows — whether or not the

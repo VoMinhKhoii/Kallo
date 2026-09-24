@@ -212,6 +212,14 @@ void main() {
   test('a body counts as stored only with its activity level', () {
     expect(storedBody(const ProfileRow(kFullProfile)), isTrue);
     expect(storedBody(_without(['activityLevel'])), isFalse);
+    // Present but out of range (legacy or API-written) is not a usable body:
+    // it cannot produce a target, so the goal page stays locked.
+    final heavy = ProfileRow(Map.of(kFullProfile)..['weightKg'] = '400');
+    expect(storedBody(heavy), isFalse);
+    expect(
+      StepSession.fromProfile(SettingsStep.goal, heavy).needsBodyFirst,
+      isTrue,
+    );
   });
 
   test('a plan counts as stored with every target, whatever the body', () {
