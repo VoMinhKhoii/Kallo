@@ -8,7 +8,7 @@ import { StatesSection } from '@/components/design-system/states-section';
 import { TypographySection } from '@/components/design-system/typography-section';
 
 export const metadata: Metadata = {
-  title: 'Kallo — design system foundations',
+  title: 'Design system',
   robots: { index: false },
 };
 

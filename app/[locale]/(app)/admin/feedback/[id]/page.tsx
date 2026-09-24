@@ -13,7 +13,7 @@ import { db } from '@/lib/infra/db/client';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 
 export const metadata = {
-  title: 'Feedback · Kallo Admin',
+  title: 'Feedback',
   robots: { index: false, follow: false },
 };
 

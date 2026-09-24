@@ -9,7 +9,7 @@ import {
 import { db } from '@/lib/infra/db/client';
 
 export const metadata = {
-  title: 'Feedback · Kallo Admin',
+  title: 'Feedback',
   robots: { index: false, follow: false },
 };
 
