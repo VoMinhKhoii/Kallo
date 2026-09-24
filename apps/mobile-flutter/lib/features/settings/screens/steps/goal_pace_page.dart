@@ -28,7 +28,7 @@ class GoalPacePage extends StatelessWidget {
           children: [
             StepTarget(
               answers: page.session.answers,
-              onChanged: page.changed,
+              onChanged: page.session.changed,
               onFillMissing:
                   () => Navigator.of(context).pushReplacement(
                     MaterialPageRoute<void>(
@@ -37,7 +37,10 @@ class GoalPacePage extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: KalloSpacing.sp3),
-            StepGoal(answers: page.session.answers, onChanged: page.changed),
+            StepGoal(
+              answers: page.session.answers,
+              onChanged: page.session.changed,
+            ),
           ],
         ),
   );

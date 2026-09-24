@@ -1,6 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
@@ -9,11 +7,10 @@ import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart
 import 'package:kallo_mobile/features/settings/screens/steps/cooking_page.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/goal_pace_page.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/region_page.dart';
-import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 
 import '../../golden_tolerance.dart';
-import '../../l10n_test_loader.dart';
 import '../onboarding/onboarding_test_support.dart';
+import 'settings_test_support.dart';
 
 /// Pixel record of the Settings pages that ARE onboarding steps, at the
 /// 390×844 phone they were designed on, in the language that exposed the
@@ -21,61 +18,19 @@ import '../onboarding/onboarding_test_support.dart';
 /// picture holds is the frame — the inline bar, the rhythm, the wrapping hint
 /// lines and the portion drawings.
 
-const _profile = <String, dynamic>{
-  'biologicalSex': 'male',
-  'weightKg': '68.5',
-  'heightCm': 172,
-  'age': 29,
-  'activityLevel': 'moderate',
-  'goal': 'cutting',
-  'aggression': '0.5',
-  'carbSplit': 'moderate_carb',
-  'calorieTarget': 1800,
-  'oilUsage': 'normal',
-  'defaultRicePortion': 'medium',
-  'defaultProteinPortion': 'medium',
-  'brothConsumption': 'some',
-  'countryOfOrigin': 'Vietnam',
-  'countryOfResidence': 'Vietnam',
-  'preferredLocale': 'vi',
-};
-
-Widget _host(Widget page, {Map<String, dynamic> profile = _profile}) =>
-    ProviderScope(
-      overrides: [
-        profileProvider.overrideWith((ref) async => ProfileRow(profile)),
-      ],
-      child: EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('vi')],
-        startLocale: const Locale('vi'),
-        path: 'assets/l10n',
-        fallbackLocale: const Locale('en'),
-        assetLoader: const FsL10nLoader(),
-        child: Builder(
-          builder:
-              (context) => MaterialApp(
-                debugShowCheckedModeBanner: false,
-                theme: kalloAppTheme(),
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: page,
-              ),
-        ),
-      ),
-    );
-
 Future<void> _shoot(
   WidgetTester tester,
   Widget page,
   String name, {
-  Map<String, dynamic> profile = _profile,
+  Map<String, dynamic> profile = kFullProfile,
 }) async {
-  tester.view.physicalSize = const Size(390, 844);
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.reset);
-  await tester.pumpWidget(_host(page, profile: profile));
-  await tester.pumpAndSettle();
+  await pumpSettingsPage(
+    tester,
+    page,
+    overrides: [
+      profileProvider.overrideWith((ref) async => ProfileRow(profile)),
+    ],
+  );
   // Decode the portion drawings for real before the frame is recorded.
   await tester.runAsync(() async {
     for (final image in tester.widgetList<Image>(find.byType(Image))) {

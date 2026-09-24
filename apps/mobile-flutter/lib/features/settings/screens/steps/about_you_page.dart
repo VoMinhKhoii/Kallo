@@ -23,7 +23,7 @@ class AboutYouPage extends StatelessWidget {
           children: [
             StepAboutYou(
               answers: page.session.answers,
-              onChanged: page.changed,
+              onChanged: page.session.changed,
             ),
             // Step 2 posts every metric at once: an edit that leaves one
             // blank is dirty but not savable, so say why the button waits.

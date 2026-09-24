@@ -256,7 +256,7 @@ proved to be one hook.
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
-| `features/settings/widgets/` | `profile/` `list/` `account/` `inputs/` `chrome/` | ok |
+| `features/settings/widgets/` | `profile/` `list/` `account/` `chrome/` | ok |
 | `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, settings | split |
 
 There is no `lib/data/`. Everything that folder held was infrastructure, so it merged into
@@ -267,12 +267,13 @@ carried the same **data** — the TDEE maths, the constant tables it reads, and 
 are now single copies in `shared/`, with `test/shared/logic/tdee_test.dart` reading the web
 TypeScript to keep the third copy honest. The rest of the fork is gone: Settings' profile pages
 now host the onboarding step bodies themselves (`settings/widgets/chrome/settings_step_page.dart`),
-so its own form, selects, slider and `option_strip` skins were deleted rather than merged.
+so its own form, selects, slider and `option_strip` skins were deleted rather than merged, and
+it reads the profile through onboarding's `profileProvider` — one fetch, one cache.
 
 Within a feature: `screens/` (routed pages) · `widgets/` (presentation) · `logic/` (pure
 functions and context helpers) · `data/` (providers and static tables) · `providers/` (Riverpod
 wiring). Widget subfolders group by sub-concern — e.g. `settings/widgets/chrome/` (the
-settings stack's navigator, sub-page bar and step-page host) and `settings/widgets/profile/`
+settings stack's navigator and step-page host) and `settings/widgets/profile/`
 (the profile card and its photo sheet). There is no `controls/` or
 `panels/`: both held widgets, and naming them otherwise hid them from the 200-line widget
 budget.

@@ -8,9 +8,15 @@ import '../onboarding/onboarding_test_support.dart';
 /// The Settings step pages show their save button only while the page holds
 /// something the server does not. "Dirty" is therefore a comparison of what
 /// the page WOULD post against what it opened with — not a flag set on edit.
+StepSession _session(SettingsStep step) => StepSession(step, testAnswers(), (
+  deviceCountry: null,
+  deviceLanguage: 'vi',
+  localeFromDevice: false,
+));
+
 void main() {
   test('opens clean; an edit dirties it; undoing the edit cleans it', () {
-    final session = StepSession.forTest(SettingsStep.cooking, testAnswers());
+    final session = _session(SettingsStep.cooking);
     expect(session.dirty, isFalse);
 
     final before = session.answers.cooking;
@@ -25,7 +31,7 @@ void main() {
   });
 
   test('a save makes what is on screen the new baseline', () {
-    final session = StepSession.forTest(SettingsStep.cooking, testAnswers());
+    final session = _session(SettingsStep.cooking);
     session.answers.cooking = session.answers.cooking.copyWith(
       oilUsage: OilUsage.minimal,
     );
@@ -35,7 +41,7 @@ void main() {
   });
 
   test('step 2 with a metric cleared is dirty but not savable', () {
-    final session = StepSession.forTest(SettingsStep.aboutYou, testAnswers());
+    final session = _session(SettingsStep.aboutYou);
     session.answers.weightKg = null;
     session.changed();
     expect(session.payload, isNull);

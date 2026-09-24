@@ -15,7 +15,9 @@ class CookingPage extends StatelessWidget {
     step: SettingsStep.cooking,
     title: tr('settings.rows.cooking'),
     builder:
-        (context, page) =>
-            StepCooking(answers: page.session.answers, onChanged: page.changed),
+        (context, page) => StepCooking(
+          answers: page.session.answers,
+          onChanged: page.session.changed,
+        ),
   );
 }

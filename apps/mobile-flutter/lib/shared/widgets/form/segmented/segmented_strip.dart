@@ -5,11 +5,18 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../option_strip.dart' show OptionStripItem;
 import 'segmented_thumb.dart';
 
-/// The one mode-switch primitive — every segmented control draws through it,
-/// via [OptionStrip.segmented] or directly.
+/// A single segment of a [SegmentedStrip]: the value it reports, its label,
+/// and an optional Lucide glyph drawn inline before the label.
+class OptionStripItem {
+  final String value;
+  final String label;
+  final IconData? icon;
+  const OptionStripItem({required this.value, required this.label, this.icon});
+}
+
+/// The one mode-switch primitive — every segmented control draws through it.
 ///
 /// ONE documented exception, and the bar for adding another is this high: the
 /// paywall's `PlanToggle` has a permanently-gold half, which this model cannot

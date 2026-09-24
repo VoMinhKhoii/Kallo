@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../shared/widgets/form/option_strip.dart';
+import '../../../shared/widgets/form/segmented/segmented_strip.dart';
 import '../../../shared/widgets/form/quiet_action_button.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -63,7 +63,7 @@ class FeedbackForm extends StatelessWidget {
         // The app's segmented control, each kind told apart by its glyph as
         // much as its word — the pill strip onboarding uses, not a row of
         // bordered chips.
-        OptionStrip.segmented(
+        SegmentedStrip(
           options: [
             for (final kind in kFeedbackTypes)
               OptionStripItem(
@@ -72,7 +72,7 @@ class FeedbackForm extends StatelessWidget {
                 icon: kind.icon,
               ),
           ],
-          value: type,
+          activeIndex: kFeedbackTypes.indexWhere((k) => k.value == type),
           onChange: onTypeChanged,
         ),
         const SizedBox(height: KalloSpacing.sp4),

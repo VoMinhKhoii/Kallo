@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../services/auth/session_provider.dart';
 import '../../../services/billing/entitlements_provider.dart';
 import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/list/grouped_list_card.dart';
@@ -12,12 +11,11 @@ import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../onboarding/data/profile_row.dart' as onboarding;
+import '../../onboarding/data/profile_row.dart';
 import '../../onboarding/providers/onboarding_providers.dart'
-    show onboardingResumeProvider;
+    show onboardingResumeProvider, profileProvider;
 import '../../onboarding/widgets/onboarding_dialog.dart';
 import '../../onboarding/widgets/onboarding_nudge.dart';
-import '../data/profile_providers.dart';
 import '../logic/profile_summaries.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
@@ -64,8 +62,7 @@ class _SettingsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(currentSessionProvider)?.user.id;
-    final profile = ref.watch(profileProvider(userId != null)).valueOrNull;
+    final profile = ref.watch(profileProvider).valueOrNull;
     final showSubscription = ref.watch(subscriptionSectionVisibleProvider);
 
     final items = <Widget>[
@@ -146,7 +143,6 @@ class _NutritionProfileGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = profile == null ? null : onboarding.ProfileRow(profile!.raw);
     final locale = context.locale.languageCode;
     return SettingsGroup(
       label: tr('settings.groups.nutritionProfile'),
@@ -154,28 +150,28 @@ class _NutritionProfileGroup extends StatelessWidget {
         ListRow(
           icon: LucideIcons.user300,
           label: tr('settings.rows.aboutYou'),
-          subline: ProfileSummaries.aboutYou(row, locale),
+          subline: ProfileSummaries.aboutYou(profile, locale),
           showChevron: true,
           onTap: () => pushSettingsPage(context, const AboutYouPage()),
         ),
         ListRow(
           icon: LucideIcons.target300,
           label: tr('settings.rows.goalPace'),
-          subline: ProfileSummaries.goal(row, locale),
+          subline: ProfileSummaries.goal(profile, locale),
           showChevron: true,
           onTap: () => pushSettingsPage(context, const GoalPacePage()),
         ),
         ListRow(
           icon: LucideIcons.utensilsCrossed300,
           label: tr('settings.rows.cooking'),
-          subline: ProfileSummaries.cooking(row),
+          subline: ProfileSummaries.cooking(profile),
           showChevron: true,
           onTap: () => pushSettingsPage(context, const CookingPage()),
         ),
         ListRow(
           icon: LucideIcons.globe300,
           label: tr('settings.rows.region'),
-          subline: ProfileSummaries.region(row, locale),
+          subline: ProfileSummaries.region(profile, locale),
           showChevron: true,
           onTap: () => pushSettingsPage(context, const RegionPage()),
         ),

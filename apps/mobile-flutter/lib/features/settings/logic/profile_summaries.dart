@@ -87,13 +87,7 @@ abstract final class ProfileSummaries {
       return tr('settings.rows.cookingDefault');
     }
 
-    final habits =
-        buildOnboardingAnswers(
-          profile: p,
-          draft: null,
-          deviceRegion: null,
-          deviceLanguage: 'vi',
-        ).answers.cooking;
+    final habits = cookingHabitsFrom(p);
     String word(CookingHabit habit) {
       final i = habit.values.indexOf(habit.read(habits));
       return tr(habit.optionLabels[i]).toLowerCase();
@@ -124,7 +118,11 @@ abstract final class ProfileSummaries {
 
   /// "Việt Nam · Tiếng Việt" — residence, then the app language.
   static String region(ProfileRow? p, String languageCode) {
-    final language = languageCode == 'vi' ? 'Tiếng Việt' : 'English';
+    final language = tr(
+      languageCode == 'vi'
+          ? 'onboarding.language.vietnamese'
+          : 'onboarding.language.english',
+    );
     final residence = p?.countryOfResidence;
     final country = residence == null ? null : countryForValue(residence);
     if (country == null) return language;

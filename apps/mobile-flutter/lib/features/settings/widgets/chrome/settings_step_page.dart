@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../../shared/widgets/form/save_dock.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/surface/scroll_separator.dart';
@@ -14,13 +15,12 @@ import '../../logic/settings_spacing.dart';
 import '../../logic/step_session.dart';
 import '../profile/profile_status_views.dart';
 import '../profile/settings_skeleton.dart';
-import 'settings_sub_page_bar.dart';
 
-/// What a step body gets from its page: the session it edits, the callback
-/// the onboarding bodies call after every edit, and — for the one edit that
-/// cannot wait for the button (the app language) — a save it can trigger.
-typedef StepPageActions =
-    ({StepSession session, VoidCallback changed, Future<void> Function() save});
+/// What a step body gets from its page: the session it edits (whose
+/// `changed` is the callback the onboarding bodies take) and — for the one
+/// edit that cannot wait for the button (the app language) — a save it can
+/// trigger.
+typedef StepPageActions = ({StepSession session, Future<void> Function() save});
 
 /// A Settings page that IS an onboarding step: the step's own body, prefilled
 /// from the saved profile, under the inline bar, with the [SaveDock] rising
@@ -68,7 +68,7 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
     if (session == null || _saving) return;
     setState(() => _saving = true);
     try {
-      final saved = await saveSettingsStep(ref, session);
+      final saved = await ref.read(settingsStepSaverProvider).save(session);
       if (saved && mounted) {
         unawaited(showTopToast(context, tr('settings.saved')));
       }
@@ -98,7 +98,10 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsSubPageBar(title: widget.title),
+        header: InlineNavBar.page(
+          title: widget.title,
+          parentTitle: tr('settings.title'),
+        ),
         overlay:
             session == null
                 ? null
@@ -133,11 +136,8 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
       child: ListenableBuilder(
         listenable: session,
         builder:
-            (context, _) => widget.builder(context, (
-              session: session,
-              changed: session.changed,
-              save: _save,
-            )),
+            (context, _) =>
+                widget.builder(context, (session: session, save: _save)),
       ),
     );
   }

@@ -6,26 +6,12 @@ import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/settings/logic/profile_summaries.dart';
 
 import '../onboarding/onboarding_test_support.dart';
+import 'settings_test_support.dart';
 
 /// The one-line answers under the Settings root's nutrition-profile rows. They
 /// are the reason a field can be found from the root at all, so they must say
 /// what the page holds in the user's language — and must say what is MISSING
 /// rather than echo the neutral defaults the pages open on.
-
-const _full = <String, dynamic>{
-  'biologicalSex': 'male',
-  'weightKg': '68.5',
-  'heightCm': 172,
-  'age': 29,
-  'goal': 'cutting',
-  'aggression': '0.5',
-  'calorieTarget': 1800,
-  'oilUsage': 'normal',
-  'defaultRicePortion': 'medium',
-  'defaultProteinPortion': 'medium',
-  'brothConsumption': 'some',
-  'countryOfResidence': 'Vietnam',
-};
 
 /// Summaries keep each segment unbroken with no-break spaces; compare text.
 String _plain(String s) => s.replaceAll('\u00A0', ' ');
@@ -52,7 +38,7 @@ void main() {
 
   testWidgets('a complete profile reads back in Vietnamese', (tester) async {
     await _in(tester, 'vi');
-    const p = ProfileRow(_full);
+    const p = ProfileRow(kFullProfile);
     expect(
       _plain(ProfileSummaries.aboutYou(p, 'vi')),
       'Nam · 29 tuổi · 172 cm · 68,5 kg',
@@ -71,7 +57,7 @@ void main() {
   testWidgets('English capitalises each segment', (tester) async {
     await _in(tester, 'en');
     expect(
-      _plain(ProfileSummaries.cooking(const ProfileRow(_full))),
+      _plain(ProfileSummaries.cooking(const ProfileRow(kFullProfile))),
       'Normal oil · Medium rice · Medium protein · Drink some',
     );
   });
@@ -96,7 +82,7 @@ void main() {
     expect(_plain(ProfileSummaries.region(blank, 'vi')), 'Tiếng Việt');
 
     // A body with no goal yet is "not set", not "add your body first".
-    final noGoal = ProfileRow({..._full}..remove('goal'));
+    final noGoal = ProfileRow({...kFullProfile}..remove('goal'));
     expect(
       _plain(ProfileSummaries.goal(noGoal, 'vi')),
       tr('settings.rows.notSet'),
@@ -105,7 +91,7 @@ void main() {
 
   testWidgets('maintaining carries no pace', (tester) async {
     await _in(tester, 'vi');
-    final p = ProfileRow(Map.of(_full)..['goal'] = 'maintaining');
+    final p = ProfileRow(Map.of(kFullProfile)..['goal'] = 'maintaining');
     expect(_plain(ProfileSummaries.goal(p, 'vi')), 'Duy trì · 1.800 kcal');
   });
 
@@ -113,7 +99,7 @@ void main() {
     tester,
   ) async {
     await _in(tester, 'vi');
-    final line = ProfileSummaries.cooking(const ProfileRow(_full));
+    final line = ProfileSummaries.cooking(const ProfileRow(kFullProfile));
     // The only breakable spaces are the ones around each separator.
     expect(line.split(' ').length - 1, 2 * ('·'.allMatches(line).length));
     expect(line, contains('Uống\u00A0một\u00A0ít'));

@@ -44,7 +44,7 @@ class _RegionPageState extends State<RegionPage> {
             localeFromDevice: page.session.device.localeFromDevice,
             showSettingsNote: false,
             onChanged: () {
-              page.changed();
+              page.session.changed();
               if (answers.preferredLocale != _savedLocale) {
                 _savedLocale = answers.preferredLocale;
                 page.save();
@@ -57,7 +57,7 @@ class _RegionPageState extends State<RegionPage> {
           StepOrigin(
             answers: answers,
             deviceCountry: page.session.device.deviceCountry,
-            onChanged: page.changed,
+            onChanged: page.session.changed,
           ),
         ],
       );

@@ -17,9 +17,9 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/chrome/settings_sub_page_bar.dart';
 import '../widgets/list/settings_group.dart';
 import '../../../shared/widgets/list/list_row.dart';
+import '../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 
 /// Pushed delete-account screen: plain-language consequences and a type-to-
@@ -88,8 +88,9 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsSubPageBar(
+        header: InlineNavBar.page(
           title: tr('settings.account.deleteScreenTitle'),
+          parentTitle: tr('settings.title'),
         ),
         child: SingleChildScrollView(
           padding: SettingsSpacing.rowList(context),

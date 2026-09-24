@@ -40,7 +40,7 @@ enum SettingsStep {
 /// never needed. Dirty is "the payload this page would post differs from the
 /// one it opened with", so a change undone by hand is not dirty.
 class StepSession extends ChangeNotifier {
-  StepSession._(this.step, this.answers, this.device) {
+  StepSession(this.step, this.answers, this.device) {
     _saved = _encode(payload);
   }
 
@@ -53,16 +53,8 @@ class StepSession extends ChangeNotifier {
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
     );
-    return StepSession._(step, seeded.answers, seeded.device);
+    return StepSession(step, seeded.answers, seeded.device);
   }
-
-  @visibleForTesting
-  factory StepSession.forTest(SettingsStep step, OnboardingAnswers answers) =>
-      StepSession._(step, answers, (
-        deviceCountry: null,
-        deviceLanguage: answers.preferredLocale,
-        localeFromDevice: false,
-      ));
 
   final SettingsStep step;
   final OnboardingAnswers answers;

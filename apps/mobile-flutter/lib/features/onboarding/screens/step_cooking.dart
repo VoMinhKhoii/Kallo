@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/profile/onboarding.dart';
-import '../../../shared/data/portion_assets.dart';
 import '../../../shared/widgets/form/option_row.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../logic/onboarding_step_spec.dart';
+import '../widgets/cooking/portion_picture.dart';
 
 /// One cooking question: its group label, its options' l10n keys (each
 /// option's hint is the same key + `Hint`), the portion drawings its rows
@@ -131,36 +131,6 @@ class StepCooking extends StatelessWidget {
       ],
     );
   }
-}
-
-/// A portion drawing on the trailing edge of a cooking row, right-aligned in
-/// a fixed box so the three rows' text columns line up. It GROWS with the
-/// answer ([rank] 0–2) — the size step is the point of the picture, so it
-/// is never scaled to fill.
-class PortionPicture extends StatelessWidget {
-  const PortionPicture({super.key, required this.file, required this.rank});
-
-  final String file;
-  final int rank;
-
-  static const double width = 72, height = 48;
-
-  /// Drawing height per rank: small, medium, large.
-  static const List<double> _heights = [30, 40, 48];
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: width,
-    height: height,
-    child: Align(
-      alignment: Alignment.centerRight,
-      child: Image.asset(
-        '$portionAssetDir/$file',
-        height: _heights[rank.clamp(0, _heights.length - 1)],
-        fit: BoxFit.contain,
-      ),
-    ),
-  );
 }
 
 /// Screen 5's contract.

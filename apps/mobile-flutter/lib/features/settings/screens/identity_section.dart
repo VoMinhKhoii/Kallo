@@ -18,9 +18,9 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/chrome/settings_sub_page_bar.dart';
 import '../widgets/profile/photo_action_sheet.dart';
 import '../../../shared/widgets/form/save_dock.dart';
+import '../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../models/http/api_error.dart';
 
@@ -149,7 +149,10 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsSubPageBar(title: tr('settings.identity.title')),
+        header: InlineNavBar.page(
+          title: tr('settings.identity.title'),
+          parentTitle: tr('settings.title'),
+        ),
         overlay: profileAsync.hasValue ? _dock(profileAsync.value!) : null,
         child: profileAsync.when(
           loading: () => const _IdentitySkeleton(),
