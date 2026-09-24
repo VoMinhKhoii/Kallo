@@ -36,7 +36,7 @@ void main() {
       oilUsage: OilUsage.minimal,
     );
     session.changed();
-    session.markSaved();
+    session.markSaved(session.payload!);
     expect(session.dirty, isFalse);
   });
 

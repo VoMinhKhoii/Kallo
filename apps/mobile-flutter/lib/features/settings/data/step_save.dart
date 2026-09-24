@@ -27,7 +27,7 @@ class SettingsStepSaver {
     await _ref
         .read(saveScreenControllerProvider)
         .save(step: session.step.serverStep, data: data);
-    session.markSaved();
+    session.markSaved(data);
     refreshProfileReaders(_ref);
     return true;
   }

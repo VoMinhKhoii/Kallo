@@ -83,9 +83,13 @@ class StepSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// The save landed — what is on screen is now what is saved.
-  void markSaved() {
-    _saved = _encode(payload);
+  /// The save of [posted] landed: that payload is now what the server holds.
+  ///
+  /// Baselined on what was POSTED, not on what the page shows now — an edit
+  /// made while the request was in flight is not on the server, so the page
+  /// must stay dirty (and the save dock up) until that edit is saved too.
+  void markSaved(Map<String, dynamic> posted) {
+    _saved = _encode(posted);
     notifyListeners();
   }
 

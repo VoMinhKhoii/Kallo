@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,11 +14,17 @@ import '../onboarding/onboarding_test_support.dart';
 class _FakeSaveScreen implements SaveScreenController {
   final posts = <({int step, Map<String, dynamic> data})>[];
 
+  /// When set, the request stays in flight until this completes.
+  Completer<void>? inFlight;
+
   @override
   Future<void> save({
     required int step,
     required Map<String, dynamic> data,
-  }) async => posts.add((step: step, data: data));
+  }) async {
+    posts.add((step: step, data: data));
+    await inFlight?.future;
+  }
 }
 
 StepSession _session(SettingsStep step) => StepSession(step, testAnswers(), (
@@ -83,5 +91,26 @@ void main() {
     expect(saved, isFalse);
     expect(api.posts, isEmpty);
     expect(session.dirty, isTrue);
+  });
+
+  test('an edit made while the save is in flight stays dirty', () async {
+    api.inFlight = Completer<void>();
+    final session = _session(SettingsStep.cooking);
+    session.answers.cooking = session.answers.cooking.copyWith(
+      oilUsage: OilUsage.heavy,
+    );
+    session.changed();
+
+    final pending = container.read(settingsStepSaverProvider).save(session);
+    session.answers.cooking = session.answers.cooking.copyWith(
+      oilUsage: OilUsage.minimal,
+    );
+    session.changed();
+    api.inFlight!.complete();
+
+    expect(await pending, isTrue);
+    expect(api.posts.single.data['oilUsage'], 'heavy');
+    expect(session.dirty, isTrue);
+    expect(session.payload!['oilUsage'], 'minimal');
   });
 }
