@@ -71,3 +71,14 @@ class _SettingsNavigatorState extends State<SettingsNavigator> {
     );
   }
 }
+
+/// Pushes [page] one level down the settings stack.
+///
+/// Always a [MaterialPageRoute]: the app's full-width back drag lives in the
+/// theme's page transition, and a `CupertinoPageRoute` builds its own and opts
+/// the page out of it (`kallo-design/mobile.md`, *Routes*). The drill-ins used
+/// to be Cupertino routes — the one reason paging through Settings slid and
+/// swiped unlike every other screen.
+void pushSettingsPage(BuildContext context, Widget page) {
+  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+}

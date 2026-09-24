@@ -73,6 +73,11 @@ class ProfileRow {
   String? get defaultProteinPortion => _string('defaultProteinPortion');
   String? get brothConsumption => _string('brothConsumption');
 
+  // ── Sharing ────────────────────────────────────────────────────────────
+  /// Mirrors the server default (off): a missing field never reads as opted
+  /// in.
+  bool get autoShareToCircle => raw['autoShareToCircle'] == true;
+
   /// Generic field read for the progress-resume heuristic.
   Object? field(String key) => _get(key);
 }

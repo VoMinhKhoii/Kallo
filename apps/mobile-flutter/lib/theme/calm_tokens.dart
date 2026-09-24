@@ -282,6 +282,25 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
   color: color,
 );
 
+/// 600 — the label on a pill BUTTON ("Lưu thay đổi", "Gửi góp ý", "Xác
+/// nhận"), 16 by default, 14 for the compact sheet buttons.
+///
+/// The fourth 600 token, and the only one that is not a title or a name: a
+/// button's word is an instruction, and at 400 a beige pill read as a label
+/// sitting on a swatch. Before this token the weight was re-decided per widget
+/// — KalloButton, the meal confirm and the auth CTA at 600, the sheet actions
+/// at 500, QuietActionButton and the weight submit at 400 — so "Gửi góp ý" and
+/// "Lưu tên" two screens apart wore different weights. Every pill label now
+/// reads its weight here; do not pass `weight:` to a button label.
+TextStyle kButtonLabel({Color color = kInk, double size = 16}) => TextStyle(
+  fontFamily: KalloTextStyles.sansFamily,
+  fontSize: size,
+  fontWeight: FontWeight.w600,
+  height: 1.3,
+  letterSpacing: -0.2,
+  color: color,
+);
+
 /// 14 / 400 muted — group labels above grouped cards ("Targets",
 /// "Preferences", "Today"). Metrically [dashMeta] in its own role: the muted
 /// colour and the 12 of air under it are what make it a label.

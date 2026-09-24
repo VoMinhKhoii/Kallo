@@ -1749,7 +1749,6 @@
     "profile": "Hồ sơ",
     "preferences": "Tùy chỉnh",
     "bodyMetrics": "Chỉ số cơ thể",
-    "goals": "Mục tiêu",
     "cooking": "Thói quen nấu ăn",
     "regional": "Khu vực",
     "save": "Lưu thay đổi",
@@ -1765,25 +1764,8 @@
       "profile": "Hồ sơ",
       "navigationLabel": "Điều hướng cài đặt"
     },
-    "regionalPanel": {
-      "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
-      "searchCountryLabel": "Tìm quốc gia",
-      "clearLabel": "Xoá lựa chọn"
-    },
-    "profilePage": {
-      "title": "Hồ sơ",
-      "description": "Quản lý chỉ số cơ thể, vùng miền và thói quen nấu ăn của bạn.",
-      "emptyTitle": "Chưa tìm thấy hồ sơ",
-      "emptyDescription": "Bạn cần hoàn tất thiết lập ban đầu trước khi chỉnh sửa cài đặt.",
-      "startSetup": "Bắt đầu thiết lập"
-    },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
-      "regionalSubtitle": "Quê quán và nơi ở hiện tại",
-      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
-      "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể.",
-      "retry": "Thử lại",
       "incompleteHint": "Chưa lưu được gì — hãy điền cân nặng, chiều cao và tuổi trước nhé."
     },
     "rows": {
@@ -1791,7 +1773,11 @@
       "cooking": "Thói quen nấu nướng",
       "region": "Khu vực & ngôn ngữ",
       "notSet": "Chưa thiết lập",
-      "pacePerWeek": "{pace} {unit}/tuần"
+      "pacePerWeek": "{pace} {unit}/tuần",
+      "aboutYou": "Chỉ số cơ thể",
+      "needsBodyFirst": "Cần chỉ số cơ thể trước",
+      "cookingSummary": "Dầu {oil} · Cơm {rice} · Đạm {protein} · {broth}",
+      "cookingDefault": "Đang dùng mức vừa"
     },
     "feedback": {
       "rowLabel": "Gửi góp ý",
@@ -1842,7 +1828,8 @@
       "nameSaved": "Đã cập nhật tên",
       "nameError": "Không thể cập nhật tên",
       "nameRequired": "Vui lòng nhập tên.",
-      "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+      "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa.",
+      "avatarEdit": "Sửa ảnh"
     },
     "subscription": {
       "groupLabel": "Gói đăng ký",
@@ -1856,6 +1843,9 @@
       "statusLifetime": "Premium · trọn đời",
       "manage": "Quản lý gói đăng ký",
       "restore": "Khôi phục giao dịch"
+    },
+    "groups": {
+      "nutritionProfile": "Hồ sơ dinh dưỡng"
     }
   },
   "errors": {

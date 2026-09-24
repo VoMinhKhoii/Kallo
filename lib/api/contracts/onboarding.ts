@@ -25,8 +25,9 @@ import {
 /**
  * Request body for `POST /api/v1/onboarding/screen` → `saveOnboardingScreen`.
  *
- * The action signature is POSITIONAL: `saveOnboardingScreen(step, data)`. The
- * route destructures `{ step, data }` and forwards them. `step` is a 1-based
+ * The action signature is POSITIONAL: `saveOnboardingScreen(step, data,
+ * { advance })`. The route destructures `{ step, data, advance }` and forwards
+ * them, defaulting `advance` to true. `step` is a 1-based
  * onboarding step (1 = region/locale, 2 = body metrics + goal + computed
  * targets, 3 = cooking habits); `ONBOARDING_TOTAL_STEPS` is 3.
  *
@@ -38,6 +39,13 @@ import {
 export const onboardingScreenSchema = z.object({
   step: z.number().int().min(1).max(ONBOARDING_TOTAL_STEPS),
   data: z.record(z.string(), z.unknown()),
+  /**
+   * `false` writes the step's fields WITHOUT moving onboarding along — no
+   * `onboardingStep` bump, no completion stamp. The mobile Settings pages
+   * edit these same fields through this route; omitted means `true`, which is
+   * the wizard.
+   */
+  advance: z.boolean().optional(),
 });
 
 export type OnboardingScreenInput = z.infer<typeof onboardingScreenSchema>;

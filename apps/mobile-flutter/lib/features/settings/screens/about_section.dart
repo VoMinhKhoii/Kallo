@@ -6,6 +6,7 @@ import '../../../shared/logic/legal_links.dart';
 import '../../../shared/widgets/list/list_row.dart';
 import '../../feedback/screens/feedback_screen.dart';
 import '../widgets/list/settings_group.dart';
+import '../widgets/chrome/settings_navigator.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).
@@ -62,8 +63,6 @@ class AboutSection extends StatelessWidget {
   }
 
   void _openFeedback(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(CupertinoPageRoute<void>(builder: (_) => const FeedbackScreen()));
+    pushSettingsPage(context, const FeedbackScreen());
   }
 }

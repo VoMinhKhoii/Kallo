@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_typography.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// The quietest of the three: no fill, no border — a muted icon and label in a
 /// 44pt-tall row. A null [onTap] renders it disabled to the semantics tree.
@@ -55,9 +56,10 @@ class QuietIconButton extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: KalloTextStyles.sansMedium(
-                  fontSize: KalloFontSize.sm,
-                ).copyWith(color: KalloColors.textMuted),
+                style: kButtonLabel(
+                  color: KalloColors.textMuted,
+                  size: KalloFontSize.sm,
+                ),
               ),
             ],
           ),

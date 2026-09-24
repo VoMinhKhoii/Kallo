@@ -1752,7 +1752,6 @@
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",
-    "goals": "Targets",
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",
@@ -1768,25 +1767,8 @@
       "profile": "Profile",
       "navigationLabel": "Settings navigation"
     },
-    "regionalPanel": {
-      "description": "AI uses your country info to understand food culture and locally available ingredients.",
-      "searchCountryLabel": "Search country",
-      "clearLabel": "Clear selection"
-    },
-    "profilePage": {
-      "title": "Profile",
-      "description": "Manage your body metrics, regional preferences, and cooking habits.",
-      "emptyTitle": "No profile found",
-      "emptyDescription": "You need to complete the initial setup before editing your settings.",
-      "startSetup": "Start setup"
-    },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
-      "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
-      "invalidError": "Some entries are invalid — please review your body metrics.",
-      "retry": "Try again",
       "incompleteHint": "Nothing saved yet — fill in weight, height, and age first."
     },
     "rows": {
@@ -1794,7 +1776,11 @@
       "cooking": "Cooking habits",
       "region": "Region & language",
       "notSet": "Not set",
-      "pacePerWeek": "{pace} {unit}/wk"
+      "pacePerWeek": "{pace} {unit}/wk",
+      "aboutYou": "Body metrics",
+      "needsBodyFirst": "Add your body metrics first",
+      "cookingSummary": "{oil} oil · {rice} rice · {protein} protein · {broth}",
+      "cookingDefault": "Using medium defaults"
     },
     "feedback": {
       "rowLabel": "Send feedback",
@@ -1845,7 +1831,8 @@
       "nameSaved": "Name updated",
       "nameError": "Couldn't update your name",
       "nameRequired": "Please enter a name.",
-      "linkWarning": "Changing your name updates your invite link — old links stop working."
+      "linkWarning": "Changing your name updates your invite link — old links stop working.",
+      "avatarEdit": "Edit photo"
     },
     "subscription": {
       "groupLabel": "Subscription",
@@ -1859,6 +1846,9 @@
       "statusLifetime": "Premium · lifetime",
       "manage": "Manage subscription",
       "restore": "Restore purchases"
+    },
+    "groups": {
+      "nutritionProfile": "Nutrition profile"
     }
   },
   "errors": {

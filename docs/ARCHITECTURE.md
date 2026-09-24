@@ -256,7 +256,7 @@ proved to be one hook.
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
-| `features/settings/widgets/` | `profile/` `list/` `account/` `inputs/` `chrome/` | ok |
+| `features/settings/widgets/` | `profile/` `list/` `account/` `chrome/` | ok |
 | `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, settings | split |
 
 There is no `lib/data/`. Everything that folder held was infrastructure, so it merged into
@@ -265,14 +265,16 @@ There is no `lib/data/`. Everything that folder held was infrastructure, so it m
 `onboarding/` and `settings/` were a copy-paste fork of six files. The three where the copies
 carried the same **data** — the TDEE maths, the constant tables it reads, and the country list —
 are now single copies in `shared/`, with `test/shared/logic/tdee_test.dart` reading the web
-TypeScript to keep the third copy honest. `option_strip` is one component with two skins. The
-remaining three (`custom_select`, `country_select`, `aggression_slider`) are genuinely different
-controls that happen to share a filename, not duplicates.
+TypeScript to keep the third copy honest. The rest of the fork is gone: Settings' profile pages
+now host the onboarding step bodies themselves (`settings/widgets/chrome/settings_step_page.dart`),
+so its own form, selects, slider and `option_strip` skins were deleted rather than merged, and
+it reads the profile through onboarding's `profileProvider` — one fetch, one cache.
 
 Within a feature: `screens/` (routed pages) · `widgets/` (presentation) · `logic/` (pure
 functions and context helpers) · `data/` (providers and static tables) · `providers/` (Riverpod
-wiring). Widget subfolders group by sub-concern — e.g. `settings/widgets/inputs/` (form
-controls) and `settings/widgets/profile/` (the profile-form module). There is no `controls/` or
+wiring). Widget subfolders group by sub-concern — e.g. `settings/widgets/chrome/` (the
+settings stack's navigator and step-page host) and `settings/widgets/profile/`
+(the profile card and its photo sheet). There is no `controls/` or
 `panels/`: both held widgets, and naming them otherwise hid them from the 200-line widget
 budget.
 

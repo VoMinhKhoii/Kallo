@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
-import 'profile_providers.dart';
+import '../../onboarding/providers/onboarding_providers.dart';
 
 /// Updates whether newly logged meals are shared to the user's circle.
 ///

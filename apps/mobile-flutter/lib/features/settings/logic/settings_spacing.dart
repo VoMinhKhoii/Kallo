@@ -18,17 +18,8 @@ abstract final class SettingsSpacing {
   /// One group ↔ the next.
   static const double group = KalloSpacing.sp3; // 12
 
-  /// The scroll padding of a settings page whose content sits directly on the
-  /// page (the sub-page editors). Horizontal 12 matches the app-wide root
-  /// inset so settings doesn't sit narrower than every other screen.
-  static EdgeInsets page(BuildContext context) => EdgeInsets.fromLTRB(
-    KalloSpacing.sp3, // 12
-    KalloSpacing.sp2, // 8 — the first item starts right under the header
-    KalloSpacing.sp3,
-    KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom, // 32 + inset
-  );
-
-  /// The scroll padding of the root list of grouped cards.
+  /// The scroll padding of every settings page — the root list of grouped
+  /// cards and each page one level under it.
   ///
   /// A card's EDGE lands on the app-wide 12 inset, so unlike the flat rows
   /// this replaced there is nothing to split: the full 12 is here, and the

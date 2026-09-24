@@ -15,6 +15,12 @@ import 'option/option_row_shell.dart';
 /// [kCardShadows] (the row lifts); idle is the 1px hairline. A tinted fill
 /// collides with the press wash: colour marks the press, geometry the choice.
 ///
+/// **Text wraps, the row grows.** [height] is a floor, not a size: a Vietnamese
+/// hint ("Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn") runs to a second
+/// line, and a fixed 64 with one-line ellipsis clipped exactly the words that
+/// explain the choice. Two-line content sits 12pt from the row's edges and
+/// 4pt apart — one step more air than the 2pt it had.
+///
 /// Callers stack rows themselves with [KalloSpacing.sp3] gaps.
 class OptionRow extends StatelessWidget {
   const OptionRow({
@@ -26,6 +32,7 @@ class OptionRow extends StatelessWidget {
     required this.onTap,
     this.height = 64,
     this.enabled = true,
+    this.trailing,
   });
 
   /// Body-size ink label — never bold. Weight is not how this row emphasises.
@@ -40,10 +47,22 @@ class OptionRow extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// 64 default; 56 and 48 are the sanctioned tighter variants.
+  /// The row's MINIMUM height — 64 default; 56 and 48 are the sanctioned
+  /// tighter variants. Wrapped text grows it.
   final double height;
 
   final bool enabled;
+
+  /// Decoration on the trailing edge, after [note] — the cooking step's
+  /// portion drawings. Not announced: [label] and [subline] already say what
+  /// the picture shows.
+  final Widget? trailing;
+
+  /// Vertical room between the row's edge and two-line content.
+  static const double verticalInset = KalloSpacing.sp3;
+
+  /// Label ↔ subline.
+  static const double lineGap = KalloSpacing.sp1;
 
   static const double selectedBorder = 2, idleBorder = 1;
   static const double selectedRing = OptionRowShell.selectedRing;
@@ -62,7 +81,7 @@ class OptionRow extends StatelessWidget {
           (context, pressed, body) => AnimatedContainer(
             duration: KalloMotion.press,
             curve: KalloEase.press,
-            height: height,
+            constraints: BoxConstraints(minHeight: height),
             decoration: BoxDecoration(
               // The press is the ink wash over white, the same one ListRow uses on
               // the canvas side — a warm wash on a white row barely registers.
@@ -80,33 +99,37 @@ class OptionRow extends StatelessWidget {
             child: body,
           ),
       children: [
-        Expanded(child: _text()),
+        Expanded(
+          child: Padding(
+            // The border is paid for out of the inset, as the shell does
+            // horizontally, so the text holds still when the row is picked.
+            padding: EdgeInsets.symmetric(vertical: verticalInset - border),
+            child: _text(),
+          ),
+        ),
         if (note != null) ...[
           const SizedBox(width: KalloSpacing.sp2),
           Text(note!, maxLines: 1, style: dashMeta()),
+        ],
+        if (trailing != null) ...[
+          const SizedBox(width: KalloSpacing.sp2),
+          ExcludeSemantics(child: trailing!),
         ],
       ],
     );
   }
 
   Widget _text() => Column(
+    // Sized to its lines: the row's floor comes from [height], and a
+    // max-size column would stretch the row to whatever height it is offered.
+    mainAxisSize: MainAxisSize.min,
     mainAxisAlignment: MainAxisAlignment.center,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: dashBody(),
-      ),
+      Text(label, style: dashBody()),
       if (subline != null) ...[
-        const SizedBox(height: 2),
-        Text(
-          subline!,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: dashMeta(),
-        ),
+        const SizedBox(height: lineGap),
+        Text(subline!, style: dashMeta()),
       ],
     ],
   );

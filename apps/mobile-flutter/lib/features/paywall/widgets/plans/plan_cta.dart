@@ -144,7 +144,7 @@ class _PlanCtaState extends State<PlanCta> {
           ? CupertinoActivityIndicator(radius: 10, color: _ink())
           : Text(
             widget.label,
-            style: dashBody(color: _ink(), weight: FontWeight.w600),
+            style: kButtonLabel(color: _ink()),
             textAlign: TextAlign.center,
           );
 }

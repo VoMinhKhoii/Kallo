@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/shared/widgets/form/option_strip.dart';
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_thumb.dart';
 import 'package:kallo_mobile/theme/kallo_motion.dart';

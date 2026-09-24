@@ -211,4 +211,45 @@ void main() {
       expect(tester.getSize(find.byType(OptionRow)).height, height);
     }
   });
+
+  testWidgets('a long subline wraps and the row grows instead of clipping', (
+    tester,
+  ) async {
+    const hint =
+        'Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn, '
+        'hoặc một miếng sườn cốt lết thật to';
+    await tester.pumpWidget(
+      _wrap(
+        OptionRow(label: 'Nhiều', subline: hint, selected: false, onTap: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final subline = tester.widget<Text>(find.text(hint));
+    expect(subline.maxLines, isNull, reason: 'the hint must not ellipsise');
+    expect(tester.getSize(find.byType(OptionRow)).height, greaterThan(64));
+  });
+
+  testWidgets('trailing sits after the text and stays out of semantics', (
+    tester,
+  ) async {
+    const key = ValueKey('picture');
+    await tester.pumpWidget(
+      _wrap(
+        OptionRow(
+          label: 'Vừa',
+          selected: false,
+          trailing: const SizedBox(key: key, width: 72, height: 48),
+          onTap: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final row = tester.getRect(find.byType(OptionRow));
+    final picture = tester.getRect(find.byKey(key));
+    final label = tester.getRect(find.text('Vừa'));
+    expect(picture.left, greaterThan(label.right));
+    expect(row.right - picture.right, lessThanOrEqualTo(16));
+  });
 }

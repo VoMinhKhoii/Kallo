@@ -17,7 +17,7 @@ class SettingsSkeleton extends StatelessWidget {
       child: SkeletonPulse(
         child: ListView(
           // Same inset as the editor it stands in for — the swap doesn't jump.
-          padding: SettingsSpacing.page(context),
+          padding: SettingsSpacing.rowList(context),
           children: [
             for (var i = 0; i < 4; i++) ...[
               if (i > 0) const SizedBox(height: KalloSpacing.sp5),

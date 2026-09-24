@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../shared/logic/display_format.dart' show localeOf;
 import '../../../../shared/widgets/form/decimal_input.dart'
     show parseDecimalInput;
 import '../../../../theme/calm_tokens.dart';
@@ -53,11 +55,18 @@ class _UnitFieldState extends State<UnitField> {
     text: _initialText(),
   );
 
+  /// The seeded figure in the reader's own decimal mark — "68,5" in
+  /// Vietnamese, not Dart's "68.5". Typing already accepts either
+  /// ([parseDecimalInput]); a Settings page reopening a saved weight was the
+  /// first place a seeded fraction showed, and it showed the wrong mark.
   String _initialText() {
     final value = widget.initialValue;
     if (value == null || value.isNaN) return '';
-    if (value == value.truncateToDouble()) return value.truncate().toString();
-    return value.toString();
+    final format =
+        NumberFormat.decimalPattern(localeOf(context))
+          ..maximumFractionDigits = 2
+          ..turnOffGrouping();
+    return format.format(value);
   }
 
   @override
