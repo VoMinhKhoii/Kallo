@@ -269,6 +269,22 @@ describe('PricingSection', () => {
     });
   });
 
+  it("clears a finished checkout when the visitor changes — never another account's receipt", async () => {
+    const reset = vi.fn();
+    mocks.purchase.mockReturnValue(purchaseState({ reset }));
+    const { rerender } = renderPricing({ userId: 'user-1', from: null });
+    await waitFor(() => expect(reset).toHaveBeenCalled());
+    reset.mockClear();
+
+    rerender(
+      <PricingCheckoutProvider>
+        <PricingSection />
+        <ApplyPricingRequest userId={null} from={null} />
+      </PricingCheckoutProvider>
+    );
+    await waitFor(() => expect(reset).toHaveBeenCalledTimes(1));
+  });
+
   it('shows a subscriber Premium as the current plan', async () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements({ tier: 'premium' }),

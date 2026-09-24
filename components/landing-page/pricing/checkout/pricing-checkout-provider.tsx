@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { usePaywallOfferings } from '@/hooks/billing/use-paywall-offerings';
 import { usePaywallPurchase } from '@/hooks/billing/use-paywall-purchase';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import {
   freeCtaState,
   packageForPeriod,
@@ -50,6 +51,15 @@ export function PricingCheckoutProvider({
   const entitlements = useEntitlements(userId);
   const data = entitlements.data;
   const purchase = usePaywallPurchase(userId ?? '');
+  // A finished checkout's status replaces the cards. The page stays alive
+  // under <Activity>, so clear it when the page is shown again and when the
+  // visitor changes (sign-out, another account) — never someone else's receipt.
+  const { reset: resetPurchase } = purchase;
+  useResetOnReveal(resetPurchase);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: userId is the trigger — reset whenever the visitor changes.
+  useEffect(() => {
+    resetPurchase();
+  }, [userId, resetPurchase]);
   const offerings = usePaywallOfferings({
     userId: userId ?? '',
     enabled:

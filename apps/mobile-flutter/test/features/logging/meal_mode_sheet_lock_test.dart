@@ -123,11 +123,7 @@ void main() {
   testWidgets('the chip sits at the row\'s right end, left of the check', (
     tester,
   ) async {
-    await openSheet(
-      tester,
-      locked: {PremiumFeature.aiAnalysis},
-      picked: [],
-    );
+    await openSheet(tester, locked: {PremiumFeature.aiAnalysis}, picked: []);
 
     final row = tester.getRect(
       find.byWidgetPredicate(
@@ -166,11 +162,7 @@ void main() {
 
   testWidgets('an unlocked mode is still picked normally', (tester) async {
     final picked = <MealLogMode?>[];
-    await openSheet(
-      tester,
-      locked: {PremiumFeature.cheatMeal},
-      picked: picked,
-    );
+    await openSheet(tester, locked: {PremiumFeature.cheatMeal}, picked: picked);
 
     await tester.tap(find.text('logging.modeSelector.normal'.tr()));
     await tester.pumpAndSettle();

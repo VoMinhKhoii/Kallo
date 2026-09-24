@@ -94,10 +94,10 @@ void main() {
   test('the paid week does not wait on an app-level trial', () {
     // The store charges the intro whatever the server's own trial says, so the
     // disclosure must follow the store's eligibility alone.
-    final offer = offerFor(
-      const [annualPaidWeekPackage, monthlyPaidWeekPackage],
-      trial: const TrialState(active: true, endsAt: null, daysRemaining: 3),
-    );
+    final offer = offerFor(const [
+      annualPaidWeekPackage,
+      monthlyPaidWeekPackage,
+    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 3));
 
     expect(
       offer.ctaLabel,
