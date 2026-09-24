@@ -267,6 +267,8 @@ describe('PricingSection', () => {
       );
       await user.click(screen.getByRole('button', { name: 'successCta' }));
       expect(mocks.push).toHaveBeenCalledWith('/en/nutrition');
+      // Just charged: the "free while in beta" note would contradict that.
+      expect(screen.queryByText('betaNote')).toBeNull();
     });
   });
 

@@ -89,12 +89,16 @@ export function PricingSection() {
           </motion.div>
         )}
 
-        <motion.p
-          {...reveal}
-          className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
-        >
-          {t('betaNote')}
-        </motion.p>
+        {/* Not beside a checkout status: "free while in beta" would
+            contradict the charge the user just made. */}
+        {!status && (
+          <motion.p
+            {...reveal}
+            className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
+          >
+            {t('betaNote')}
+          </motion.p>
+        )}
       </div>
     </section>
   );
