@@ -465,6 +465,7 @@ so there is nothing to prefer over it.
 | `Scaffold` | `CupertinoPageScaffold` | 8 sites. `tab_scaffold.dart` stays on `Scaffold`: `extendBody` + the `MediaQuery.padding.bottom` rewrite that lets the pill nav overlap content has no Cupertino analogue |
 | long-press menu | `showKalloAnchoredMenu` | **exception** — cites `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`, boundary 3 |
 | `SnackBar` | `TopToast` | not an exception — Cupertino ships no toast |
+| a pushed page's inline title bar | `CupertinoNavigationBar`, via `InlineNavBar` (`shared/widgets/chrome/`) | ✅ done 2026-09-24 — the SDK bar owns the layout; the app sets type, ink and a clear, borderless, unblurred background. **Exception inside it: the back button.** `CupertinoNavigationBarBackButton` draws its chevron from the `CupertinoIcons` font, which the app does not ship (no `cupertino_icons` dependency), so it rendered a missing-glyph box; the leading slot is a `CupertinoButton` with the Lucide chevron and the SDK's 12-character "Back" rule. Retire if `cupertino_icons` is ever bundled |
 | `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
 | a date/time picker | `CupertinoDatePicker` | none in the app yet; use it when one is needed |
 

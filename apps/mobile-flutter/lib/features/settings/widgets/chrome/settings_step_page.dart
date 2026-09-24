@@ -98,7 +98,7 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: InlineNavBar.page(
+        header: InlineNavBar(
           title: widget.title,
           parentTitle: tr('settings.title'),
         ),

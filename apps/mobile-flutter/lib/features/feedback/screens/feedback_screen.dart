@@ -207,7 +207,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       child: ScrollSeparator(
         // The same inline bar as every settings sub-page — this is one,
         // pushed from the settings list; it just lives in its own feature.
-        header: InlineNavBar.page(
+        header: InlineNavBar(
           title: tr('settings.feedback.title'),
           parentTitle: tr('settings.title'),
           onBack: () => Navigator.of(context).pop(),

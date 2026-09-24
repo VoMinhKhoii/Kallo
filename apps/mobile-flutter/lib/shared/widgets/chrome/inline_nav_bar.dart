@@ -1,46 +1,44 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/cupertino.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
-/// iOS's inline navigation bar for a page one level down: "‹ " + the page it
-/// came from on the leading edge, this page's own title centred at
-/// [kSectionHeader].
+/// iOS's inline navigation bar for a page one level down — a
+/// [CupertinoNavigationBar]: "‹ " + the page it came from on the leading edge,
+/// this page's own title centred at [kSectionHeader].
 ///
-/// The large left-aligned 28pt [PageHeader] is the ROOT of a stack; a pushed
+/// The large left-aligned 28pt `PageHeader` is the ROOT of a stack; a pushed
 /// page wearing the same headline read as another top-level screen, so nothing
 /// told the user they were one level deep. This is the bar that does.
 ///
-/// The title is centred on the BAR, not on the room the back group leaves — a
-/// title that slides sideways as the parent's name grows reads as a different
-/// header on every page. So the back group gives way instead: past ~38% of the
-/// width it reads "Back" ([_label]), iOS's own rule.
+/// The SDK bar does the layout — the title centred on the bar, nudged clear of
+/// the back button only when it would run under it. What this adds is the
+/// configuration every caller shares: the app's type and ink instead of SF
+/// Pro and system blue (the `kallo_confirm.dart` override), no fill, blur or
+/// border (the hairline under it belongs to `ScrollSeparator`, which draws it
+/// once content has scrolled), and no status-bar inset — every caller already
+/// sits below the safe area.
 ///
-/// Shared by the settings sub-pages and [KalloSheetSubHeader], which adds the
-/// grabber above it. No fill and no border: the hairline under it belongs to
-/// `ScrollSeparator`, which only draws it once content has scrolled.
+/// **One exception, the back button** (`kallo-design/mobile.md`, *Cupertino
+/// wherever it exists*). `CupertinoNavigationBarBackButton` draws its chevron
+/// from the `CupertinoIcons` font, which this app does not ship — there is no
+/// `cupertino_icons` dependency, Lucide is the icon set — so it renders a
+/// missing-glyph box (reproduced in the settings goldens, 2026-09-24). Its
+/// chevron/label parts are private, so the leading slot is a [CupertinoButton]
+/// with the Lucide chevron and the SDK's own label rule instead. Retire it if
+/// the app ever bundles `cupertino_icons`.
+///
+/// Shared by the settings sub-pages and `KalloSheetSubHeader`, which adds the
+/// grabber above it.
 class InlineNavBar extends StatelessWidget {
   const InlineNavBar({
     super.key,
     required this.title,
     required this.parentTitle,
     this.onBack,
-  }) : padding = EdgeInsets.zero;
-
-  /// The bar as a PAGE's header: set in [KalloSpacing.sp2] from the screen
-  /// edges so the chevron does not sit on the glass. (A sheet's sub-header
-  /// already stands inside the sheet's content inset, so it uses the plain
-  /// constructor.)
-  const InlineNavBar.page({
-    super.key,
-    required this.title,
-    required this.parentTitle,
-    this.onBack,
-  }) : padding = const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2);
+  });
 
   /// This page's title, centred.
   final String title;
@@ -52,108 +50,78 @@ class InlineNavBar extends StatelessWidget {
   /// the nested one, so back goes up one level instead of closing the screen.
   final VoidCallback? onBack;
 
-  final EdgeInsetsGeometry padding;
-
-  static const double height = 44;
-
-  /// Share of the bar the back group may take before it gives way.
-  static const double _backShare = 0.38;
-
-  /// The parent's title when it fits, "Back" when it does not — and the
-  /// width the back group then takes, so the centred title can keep clear of
-  /// exactly that much on both sides.
-  ///
-  /// Our parent titles are not all short nouns — the log-mode sheet's is the
-  /// question "How do you want to log?" — and ellipsising one to "How do you
-  /// wa…" would name nothing; the generic word at least says what it does.
-  ({String text, double width}) _back(BuildContext context, double available) {
-    double measure(String text) =>
-        (TextPainter(
-          text: TextSpan(text: text, style: dashBody()),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-          maxLines: 1,
-        )..layout()).width;
-    final room = available * _backShare - KalloIcons.size;
-    final parent = measure(parentTitle);
-    if (parent <= room) {
-      return (text: parentTitle, width: KalloIcons.size + parent);
-    }
-    final fallback = 'common.back'.tr();
-    return (text: fallback, width: KalloIcons.size + measure(fallback));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final back = onBack ?? () => Navigator.of(context).maybePop();
-    return Padding(
-      padding: padding,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final label = _back(context, constraints.maxWidth);
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                height: height,
-                child: Center(
-                  child: Padding(
-                    // Keep the centred title clear of the back group on both
-                    // sides, so it truncates before it runs under it.
-                    padding: EdgeInsets.symmetric(
-                      horizontal: label.width + KalloSpacing.sp2,
-                    ),
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: kSectionHeader(),
-                    ),
-                  ),
-                ),
+    return CupertinoTheme(
+      data: CupertinoThemeData(
+        brightness: Brightness.light,
+        primaryColor: KalloColors.textMuted,
+        textTheme: CupertinoTextThemeData(navTitleTextStyle: kSectionHeader()),
+      ),
+      child: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: CupertinoNavigationBar(
+          // The chevron's own inset is set in [_backButton]; the bar's
+          // default 16 would double it.
+          padding: const EdgeInsetsDirectional.only(start: 0),
+          leading: _backButton(context),
+          middle: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          // Whatever the bar sits on — the page or a sheet — shows through:
+          // a transparent bar with the blur off, not a second surface.
+          backgroundColor: const Color(0x00000000),
+          enableBackgroundFilterBlur: false,
+          // Keeps the status bar's glyphs dark on the cream page; a clear
+          // background would otherwise read as "dark" and flip them white.
+          brightness: Brightness.light,
+          border: null,
+          automaticallyImplyLeading: false,
+          automaticallyImplyMiddle: false,
+          // Every push here is a MaterialPageRoute from a root without a
+          // nav bar, so there is no bar to fly the title from.
+          transitionBetweenRoutes: false,
+        ),
+      ),
+    );
+  }
+
+  /// Parent titles longer than this read "Back" — the SDK's own threshold
+  /// (`_BackLabel` in `cupertino/nav_bar.dart`). Our parents are not all
+  /// short nouns: the log-mode sheet's is the question "How do you want to
+  /// log?", and ellipsising it would name nothing.
+  static const int _maxParentLength = 12;
+
+  Widget _backButton(BuildContext context) {
+    final label =
+        parentTitle.length > _maxParentLength
+            ? CupertinoLocalizations.of(context).backButtonLabel
+            : parentTitle;
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: CupertinoButton(
+        padding: const EdgeInsetsDirectional.only(start: KalloSpacing.sp2),
+        minimumSize: const Size(KalloIcons.hit, KalloIcons.hit),
+        onPressed: onBack ?? () => Navigator.maybePop(context),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              LucideIcons.chevronLeft300,
+              size: KalloIcons.size,
+              color: KalloColors.textMuted,
+            ),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: dashBody(color: KalloColors.textMuted),
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Semantics(
-                  button: true,
-                  label: parentTitle,
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      back();
-                    },
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: constraints.maxWidth * _backShare,
-                        minHeight: height,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            LucideIcons.chevronLeft300,
-                            size: KalloIcons.size,
-                            color: KalloColors.textMuted,
-                          ),
-                          Flexible(
-                            child: Text(
-                              label.text,
-                              maxLines: 1,
-                              style: dashBody(color: KalloColors.textMuted),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }

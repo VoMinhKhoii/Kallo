@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -157,13 +158,17 @@ void main() {
     );
 
     // The second-level chrome: back reads the parent's title, the page's own
-    // title is centred, and the card is explained by a muted line.
+    // title sits clear of it, and the card is explained by a muted line.
     expect(find.byType(KalloSheetSubHeader), findsOneWidget);
     // The mode sheet's title is a QUESTION ("How do you want to log?") and is
     // far too long to sit beside a centred title, so the back group falls back
     // to the generic word — iOS's own rule — rather than ellipsising to
     // "How do you wa…", which would name nothing.
-    expect(find.text('common.back'.tr()), findsOneWidget);
+    final back =
+        CupertinoLocalizations.of(
+          tester.element(find.byType(KalloSheetSubHeader)),
+        ).backButtonLabel;
+    expect(find.text(back), findsOneWidget);
     expect(find.text('logging.cheatIntensity.title'.tr()), findsOneWidget);
     expect(find.text('logging.cheatIntensity.helper'.tr()), findsOneWidget);
     for (final level in CheatIntensity.values) {
@@ -172,14 +177,14 @@ void main() {
     // The mode list is gone while the page is up.
     expect(find.text('logging.modeSelector.normal'.tr()), findsNothing);
 
-    final header = tester.getRect(find.byType(KalloSheetSubHeader));
+    final backButton = tester.getRect(find.byType(CupertinoButton));
     final title = tester.getRect(
       find.text('logging.cheatIntensity.title'.tr()),
     );
     expect(
-      title.center.dx,
-      closeTo(header.center.dx, 1.0),
-      reason: 'the page title is centred on the sheet, not on what is left',
+      title.left,
+      greaterThanOrEqualTo(backButton.right),
+      reason: 'the page title never runs under the back button',
     );
   });
 
@@ -190,7 +195,7 @@ void main() {
 
     await tester.tap(find.text('logging.cheatIntensity.title'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('common.back'.tr()));
+    await tester.tap(find.byType(CupertinoButton));
     await tester.pumpAndSettle();
 
     expect(find.byType(KalloSheetSubHeader), findsNothing);

@@ -88,7 +88,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: InlineNavBar.page(
+        header: InlineNavBar(
           title: tr('settings.account.deleteScreenTitle'),
           parentTitle: tr('settings.title'),
         ),

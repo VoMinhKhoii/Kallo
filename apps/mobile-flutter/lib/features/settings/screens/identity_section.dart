@@ -149,7 +149,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: InlineNavBar.page(
+        header: InlineNavBar(
           title: tr('settings.identity.title'),
           parentTitle: tr('settings.title'),
         ),
