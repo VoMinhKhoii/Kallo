@@ -27,6 +27,31 @@ enum SettingsStep {
 
   /// The `step` posted to `/api/v1/onboarding/screen`.
   final int serverStep;
+
+  /// Whether [profile] already STORES every answer this page shows. When it
+  /// does not, the page opens on inferred answers — the phone's region and
+  /// language, the neutral cooking middles — which the user has never saved.
+  bool isSavedIn(ProfileRow? profile) {
+    if (profile == null) return false;
+    final hasBody =
+        profile.biologicalSex != null &&
+        profile.weightKg != null &&
+        profile.heightCm != null &&
+        profile.age != null;
+    return switch (this) {
+      aboutYou => hasBody,
+      goal => hasBody && profile.goal != null,
+      cooking =>
+        profile.oilUsage != null &&
+            profile.defaultRicePortion != null &&
+            profile.defaultProteinPortion != null &&
+            profile.brothConsumption != null,
+      region =>
+        profile.countryOfOrigin != null &&
+            profile.countryOfResidence != null &&
+            profile.preferredLocale != null,
+    };
+  }
 }
 
 /// One open Settings step page: the onboarding [answers] seeded from the saved
@@ -38,10 +63,15 @@ enum SettingsStep {
 /// contract — the same `applyDefaultGoal` + rebuild the wizard runs
 /// (`onboarding_wizard.dart`, `changed()`), plus the dirty snapshot the wizard
 /// never needed. Dirty is "the payload this page would post differs from the
-/// one it opened with", so a change undone by hand is not dirty.
+/// one the server holds", so a change undone by hand is not dirty — and a
+/// page opened on inferred answers the server never held is dirty from the
+/// start, or the user could never accept them.
 class StepSession extends ChangeNotifier {
-  StepSession(this.step, this.answers, this.device) {
-    _saved = _encode(payload);
+  /// [stored] false opens the page with nothing saved behind it, so the
+  /// answers it opens on — inferred, not chosen — count as a change and can
+  /// be saved as they stand.
+  StepSession(this.step, this.answers, this.device, {bool stored = true}) {
+    _saved = stored ? _encode(payload) : null;
   }
 
   /// Seeds from [profile] exactly as the wizard does, minus the draft: a saved
@@ -53,7 +83,12 @@ class StepSession extends ChangeNotifier {
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
     );
-    return StepSession(step, seeded.answers, seeded.device);
+    return StepSession(
+      step,
+      seeded.answers,
+      seeded.device,
+      stored: step.isSavedIn(profile),
+    );
   }
 
   final SettingsStep step;
