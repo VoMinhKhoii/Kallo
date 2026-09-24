@@ -11,9 +11,10 @@ import '../logic/step_session.dart';
 /// metrics non-null, so a user who skipped onboarding could not save their
 /// cooking habits or region from Settings until they had filled in their
 /// body — the exact journey Settings has to serve. The step endpoint takes
-/// one step's fields, with identical wire keys, and only ever raises
-/// `onboardingStep` / sets completion (`lib/domain/onboarding/actions.ts`),
-/// so re-posting a step for a finished profile changes nothing else.
+/// one step's fields, with identical wire keys. Posted with `advance: false`,
+/// so the save writes the fields and nothing else: onboarding progress stays
+/// where it was (`lib/domain/onboarding/screen-update.ts`) — saving cooking
+/// habits here must not mark a skipped onboarding complete.
 class SettingsStepSaver {
   const SettingsStepSaver(this._ref);
 
@@ -26,7 +27,7 @@ class SettingsStepSaver {
     if (data == null) return false;
     await _ref
         .read(saveScreenControllerProvider)
-        .save(step: session.step.serverStep, data: data);
+        .save(step: session.step.serverStep, data: data, advance: false);
     session.markSaved(data);
     refreshProfileReaders(_ref);
     return true;

@@ -88,15 +88,20 @@ class SaveScreenController {
 
   final Ref _ref;
 
+  /// [advance] false writes the step's fields without moving onboarding
+  /// along — no `onboardingStep` bump, no completion stamp. Settings' edits
+  /// pass it; the wizard never does.
   Future<void> save({
     required int step,
     required Map<String, dynamic> data,
+    bool advance = true,
   }) async {
     final api = _ref.read(apiClientProvider);
     try {
       await api.post<Map<String, dynamic>>('/api/v1/onboarding/screen', {
         'step': step,
         'data': data,
+        if (!advance) 'advance': false,
       });
     } finally {
       // onSettled — refresh the shared profile cache + the heatmap.

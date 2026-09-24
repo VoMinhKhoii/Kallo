@@ -11,10 +11,12 @@ export async function POST(req: NextRequest) {
     // keeps its own check as the authoritative boundary.
     await requireUserId();
 
-    const { step, data } = onboardingScreenSchema.parse(
+    const { step, data, advance } = onboardingScreenSchema.parse(
       await readJsonBody(req)
     );
-    const result = await saveOnboardingScreen(step, data);
+    const result = await saveOnboardingScreen(step, data, {
+      advance: advance ?? true,
+    });
     return Response.json(result);
   } catch (error) {
     return handleRouteError(error);

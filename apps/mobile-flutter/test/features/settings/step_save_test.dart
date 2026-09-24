@@ -12,7 +12,7 @@ import 'package:kallo_mobile/models/profile/onboarding.dart';
 import '../onboarding/onboarding_test_support.dart';
 
 class _FakeSaveScreen implements SaveScreenController {
-  final posts = <({int step, Map<String, dynamic> data})>[];
+  final posts = <({int step, Map<String, dynamic> data, bool advance})>[];
 
   /// When set, the request stays in flight until this completes.
   Completer<void>? inFlight;
@@ -21,8 +21,9 @@ class _FakeSaveScreen implements SaveScreenController {
   Future<void> save({
     required int step,
     required Map<String, dynamic> data,
+    bool advance = true,
   }) async {
-    posts.add((step: step, data: data));
+    posts.add((step: step, data: data, advance: advance));
     await inFlight?.future;
   }
 }
@@ -74,6 +75,8 @@ void main() {
 
       expect(saved, isTrue);
       expect(api.posts.single.step, 3);
+      // An edit, not a wizard step: it must not move onboarding along.
+      expect(api.posts.single.advance, isFalse);
       expect(api.posts.single.data['oilUsage'], 'heavy');
       expect(session.dirty, isFalse);
       await container.read(profileProvider.future);
