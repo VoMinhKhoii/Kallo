@@ -87,7 +87,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: t('title'),
+    // Child pages set a bare name ("Dashboard") and the template brands it —
+    // "Dashboard / Kallo", a slash rather than a dash, one format site-wide.
+    // The landing page shares this segment, so it keeps `default` untemplated.
+    title: { default: t('title'), template: '%s / Kallo' },
     description: t('description'),
     manifest: '/manifest.webmanifest',
     openGraph: {

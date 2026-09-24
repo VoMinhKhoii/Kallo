@@ -41,7 +41,7 @@ export async function generateMetadata({
   const url = `${SITE_URL}/${locale}/docs/${path}`;
 
   return {
-    title: `${doc.frontmatter.title} — Kallo`,
+    title: doc.frontmatter.title,
     description: doc.frontmatter.description,
     // The locale layout deliberately sets no shared openGraph.url, so each
     // page has to declare its own or it inherits the locale root as canonical.

@@ -9,7 +9,7 @@ import { requireAdmin } from '@/lib/admin/authz/require-admin';
 export const instant = false;
 
 export const metadata = {
-  title: 'Kallo Admin',
+  title: { default: 'Admin', template: '%s / Admin / Kallo' },
   robots: { index: false, follow: false },
 };
 
