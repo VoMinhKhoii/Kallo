@@ -9,6 +9,7 @@ import '../../../../shared/widgets/form/save_dock.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../onboarding/data/profile_row.dart';
 import '../../../onboarding/providers/onboarding_providers.dart';
 import '../../data/step_save.dart';
 import '../../logic/settings_spacing.dart';
@@ -50,6 +51,14 @@ class SettingsStepPage extends ConsumerStatefulWidget {
   ConsumerState<SettingsStepPage> createState() => _SettingsStepPageState();
 }
 
+/// Whether [profile] is fresh enough to seed a page from. Not while it is
+/// refetching: right after a save invalidates it, Riverpod keeps the OLD row
+/// as the value, and a page seeded from it would show — and could save back —
+/// what the user just replaced. A failed refetch shows the error instead.
+@visibleForTesting
+bool readyToSeed(AsyncValue<ProfileRow?> profile) =>
+    profile.hasValue && !profile.isLoading && !profile.hasError;
+
 class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
   /// Seeded ONCE, on the first profile to arrive: a save invalidates the
   /// profile, and re-seeding from the refetch would overwrite an edit made
@@ -90,7 +99,7 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
-    if (_session == null && profile.hasValue) {
+    if (_session == null && readyToSeed(profile)) {
       _session = StepSession.fromProfile(widget.step, profile.value);
     }
     final session = _session;

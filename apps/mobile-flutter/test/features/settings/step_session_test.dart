@@ -1,8 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/logic/onboarding_answers.dart';
 import 'package:kallo_mobile/features/settings/logic/step_session.dart';
+import 'package:kallo_mobile/features/settings/widgets/chrome/settings_step_page.dart';
 import 'package:kallo_mobile/models/profile/onboarding.dart';
 
 import '../onboarding/onboarding_test_support.dart';
@@ -225,5 +227,19 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  test('a page seeds only from a settled profile, never a refetching one', () {
+    const row = ProfileRow(kFullProfile);
+    expect(readyToSeed(const AsyncData<ProfileRow?>(row)), isTrue);
+    expect(readyToSeed(const AsyncData<ProfileRow?>(null)), isTrue);
+    // Right after a save invalidates the profile, the old row is still the
+    // value while the fresh one loads.
+    final refreshing = const AsyncLoading<ProfileRow?>().copyWithPrevious(
+      const AsyncData<ProfileRow?>(row),
+    );
+    expect(refreshing.hasValue, isTrue);
+    expect(readyToSeed(refreshing), isFalse);
+    expect(readyToSeed(const AsyncLoading<ProfileRow?>()), isFalse);
   });
 }

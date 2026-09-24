@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
+import 'package:kallo_mobile/features/onboarding/screens/step_goal.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/cooking_page.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/goal_pace_page.dart';
@@ -72,4 +74,33 @@ void main() {
   testWidgets('region — vi', (tester) async {
     await _shoot(tester, const RegionPage(), 'settings_region_vi');
   }, skip: skipOffGoldenPlatform);
+
+  Finder lockedGoal() => find.ancestor(
+    of: find.byType(StepGoal),
+    matching: find.byWidgetPredicate((w) => w is IgnorePointer && w.ignoring),
+  );
+
+  Future<void> openGoal(WidgetTester tester, Map<String, dynamic> row) =>
+      pumpSettingsPage(
+        tester,
+        const GoalPacePage(),
+        overrides: [
+          profileProvider.overrideWith((ref) async => ProfileRow(row)),
+        ],
+      );
+
+  testWidgets('the goal page is inert until the body is stored', (
+    tester,
+  ) async {
+    // A legacy body with no activity level: the plan cannot be saved, so
+    // its controls must not take an edit that would be dropped.
+    await openGoal(tester, Map.of(kFullProfile)..remove('activityLevel'));
+    expect(lockedGoal(), findsOneWidget);
+    expect(find.text(tr('onboarding.target.fillMissing')), findsOneWidget);
+  });
+
+  testWidgets('with the body stored the goal page is live', (tester) async {
+    await openGoal(tester, kFullProfile);
+    expect(lockedGoal(), findsNothing);
+  });
 }
