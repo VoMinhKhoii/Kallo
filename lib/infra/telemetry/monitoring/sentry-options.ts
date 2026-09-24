@@ -13,6 +13,7 @@
 import {
   scrubBreadcrumb,
   scrubEvent,
+  scrubSpan,
   scrubTransaction,
 } from '@/lib/infra/telemetry/monitoring/scrub';
 import { SITE_URL } from '@/lib/seo/site';
@@ -78,5 +79,8 @@ export function sharedSentryOptions(environment: string) {
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
     beforeSendTransaction: scrubTransaction,
+    // Standalone spans (INP, LCP, CLS) are sent on their own, not inside a
+    // transaction, so `beforeSendTransaction` never sees them.
+    beforeSendSpan: scrubSpan,
   };
 }

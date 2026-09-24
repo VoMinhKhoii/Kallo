@@ -9,7 +9,8 @@
  *   • every URL — the request, tags, breadcrumbs, span attributes, span and
  *     transaction names — is reduced by `telemetryUrl` (origin + route
  *     template);
- *   • console and ui (click / input) breadcrumbs are dropped outright.
+ *   • console and ui (click / input) breadcrumbs are dropped outright, and
+ *     spans named after a DOM selector lose the name.
  */
 import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
@@ -89,11 +90,27 @@ interface ScrubbableTransaction extends ScrubbableEvent {
  */
 const URL_NAMED_OP = /^(?:http|navigation|pageload|resource|next)/;
 
-function scrubSpan(span: ScrubbableSpan): void {
+/**
+ * Web-vital and interaction spans (`ui.interaction.*`, `ui.webvital.*`) are
+ * named after a DOM selector, which carries `aria-label` / `title` / `alt` —
+ * and several of those interpolate meal names. The name becomes the op, and
+ * the selector attributes (`lcp.element`, `cls.source.N`, and their
+ * `browser.web_vital.*` forms) are dropped.
+ */
+const SELECTOR_NAMED_OP = /^ui\./;
+const SELECTOR_KEY = /(?:^|\.)(?:element|source\.\d+)$/;
+
+export function scrubSpan<T extends ScrubbableSpan>(span: T): T {
   scrubUrlData(span.data);
-  if (span.description && URL_NAMED_OP.test(span.op ?? '')) {
+  for (const key of Object.keys(span.data ?? {})) {
+    if (SELECTOR_KEY.test(key)) delete span.data?.[key];
+  }
+  if (!span.description) return span;
+  if (SELECTOR_NAMED_OP.test(span.op ?? '')) span.description = span.op;
+  else if (URL_NAMED_OP.test(span.op ?? '')) {
     span.description = scrubName(span.description);
   }
+  return span;
 }
 
 /**

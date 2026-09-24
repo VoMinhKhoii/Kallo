@@ -37,10 +37,10 @@ class Analytics {
   /// PostHog restores its OWN persisted identity on setup, which may belong to
   /// an account whose session expired or was revoked while the app was
   /// closed — and the SDK cannot tell us whether it is identified. So identity
-  /// is reconciled here, before anything is captured: identify the current
-  /// user, or reset. The cost of the reset is a fresh anonymous id per
-  /// signed-out launch; with `identifiedOnly` person profiles that creates no
-  /// person, only a new anonymous distinct id.
+  /// is reconciled here, before anything is captured: reset, then identify the
+  /// current user if there is one. The cost of the reset is a fresh anonymous
+  /// id per launch; with `identifiedOnly` person profiles that creates no
+  /// person, and `identify` links it to the signed-in account.
   static Future<void> setup({required String? signedInUserId}) async {
     if (!configured) return;
     final config =
@@ -64,10 +64,11 @@ class Analytics {
     // can be on-screen meal text.
     config.rageClickConfig.enabled = false;
     await Posthog().setup(config);
+    // Reset first even when signed in: `identify` does not switch an
+    // already-identified persisted user to a different account.
+    await Posthog().reset();
     if (signedInUserId != null) {
       await Posthog().identify(userId: signedInUserId);
-    } else {
-      await Posthog().reset();
     }
   }
 

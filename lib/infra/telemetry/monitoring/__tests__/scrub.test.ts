@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { scrubBreadcrumb, scrubEvent, scrubTransaction } from '../scrub';
+import {
+  scrubBreadcrumb,
+  scrubEvent,
+  scrubSpan,
+  scrubTransaction,
+} from '../scrub';
 
 describe('scrubEvent', () => {
   it('strips request payload, cookies, headers and query string', () => {
@@ -161,5 +166,40 @@ describe('scrubTransaction', () => {
     expect(event.request).toEqual({
       url: 'https://kallo.fit/api/analyze-meal',
     });
+  });
+});
+
+describe('scrubSpan', () => {
+  it('renames a selector-named web-vital span and drops its selectors', () => {
+    const selector = 'body > button[aria-label="Delete Phở bò"]';
+    const span = scrubSpan({
+      op: 'ui.webvital.lcp',
+      description: selector,
+      data: {
+        'lcp.element': selector,
+        'browser.web_vital.cls.source.1': selector,
+        'lcp.size': 1200,
+      },
+    });
+    expect(span).toEqual({
+      op: 'ui.webvital.lcp',
+      description: 'ui.webvital.lcp',
+      data: { 'lcp.size': 1200 },
+    });
+  });
+
+  it('renames an INP interaction span', () => {
+    const span = scrubSpan({
+      op: 'ui.interaction.click',
+      description: 'div > span[title="Bánh mì"]',
+    });
+    expect(span.description).toBe('ui.interaction.click');
+  });
+
+  it('is what transactions apply to their child spans', () => {
+    const event = scrubTransaction({
+      spans: [{ op: 'ui.interaction.click', description: '[alt="phở"]' }],
+    });
+    expect(event.spans?.[0].description).toBe('ui.interaction.click');
   });
 });

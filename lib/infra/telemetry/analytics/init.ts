@@ -60,7 +60,13 @@ export function initAnalytics(): void {
     // identity it persisted — before the auth session is known. Pageviews are
     // sent by `TelemetryIdentity` once identity is reconciled.
     capture_pageview: false,
-    capture_pageleave: true,
+    // Off for the same reason: its unload handler is live from init, so a tab
+    // closed before the first auth callback sends `$pageleave` as the
+    // persisted user.
+    capture_pageleave: false,
+    // Off: raw `utm_*` / `gclid` / `fbclid` query values, stored as event and
+    // initial-person properties whose names the URL rule below cannot match.
+    save_campaign_params: false,
     disable_session_recording: true,
     capture_heatmaps: false,
     capture_dead_clicks: false,
