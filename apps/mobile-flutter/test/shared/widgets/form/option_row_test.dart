@@ -215,16 +215,12 @@ void main() {
   testWidgets('a long subline wraps and the row grows instead of clipping', (
     tester,
   ) async {
-    const hint = 'Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn, '
+    const hint =
+        'Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn, '
         'hoặc một miếng sườn cốt lết thật to';
     await tester.pumpWidget(
       _wrap(
-        OptionRow(
-          label: 'Nhiều',
-          subline: hint,
-          selected: false,
-          onTap: () {},
-        ),
+        OptionRow(label: 'Nhiều', subline: hint, selected: false, onTap: () {}),
       ),
     );
     await tester.pumpAndSettle();

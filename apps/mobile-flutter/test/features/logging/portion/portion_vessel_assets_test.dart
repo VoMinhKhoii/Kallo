@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/logic/portion/portion_anchors.dart';
 import 'package:kallo_mobile/features/logging/logic/portion/vessel_data.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
+import 'package:kallo_mobile/shared/data/portion_assets.dart';
 
 /// The picker's layout math is driven entirely by the `aspect` numbers declared
 /// alongside each filename in `vessel_data.dart`. A declared asset that isn't
