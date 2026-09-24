@@ -109,4 +109,65 @@ describe('CI workflow', () => {
 
     expect(workflow).toContain('branches: [main, staging]');
   });
+
+  it('pushes images only from main, while PRs still build them', () => {
+    const workflow = readWorkflow('ci.yml');
+    const job = workflow.slice(workflow.indexOf('  container-publish:'));
+
+    // cloud-run-prod.yml deploys only main SHAs; every other pushed image is
+    // pure Artifact Registry storage cost. PRs must keep building the image so
+    // a broken Dockerfile fails before merge.
+    expect(job).toContain(
+      `PUBLISH: \${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}`
+    );
+    expect(job).toMatch(
+      /- name: Push container image\n\s+if: env\.PUBLISH == 'true'\n/
+    );
+    expect(job).toMatch(/- name: Build container image\n\s+env:/);
+  });
+});
+
+describe('Artifact Registry retention', () => {
+  it('tags the deployed image prod-<sha> before migrating', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    const tagAt = workflow.indexOf(
+      `gcloud artifacts docker tags add "$IMAGE_TAG" "\${IMAGE_TAG%:*}:prod-\${DEPLOY_SHA}"`
+    );
+
+    // The cleanup policy deletes images older than 14 days unless they carry
+    // a prod- tag, so the tag must land before anything that can fail.
+    expect(tagAt).toBeGreaterThan(-1);
+    expect(tagAt).toBeLessThan(
+      workflow.indexOf('- name: Apply pending migrations to prod DB')
+    );
+  });
+
+  it('keeps recent prod releases and pins, and never deletes young images', () => {
+    const policy = JSON.parse(
+      readFileSync(
+        resolve('scripts/cloud-run/artifact-cleanup-policy.json'),
+        'utf8'
+      )
+    ) as Array<{
+      action: { type: string };
+      condition?: {
+        tagState?: string;
+        tagPrefixes?: string[];
+        olderThan?: string;
+      };
+    }>;
+    const keepPrefixes = policy
+      .filter((rule) => rule.action.type === 'Keep')
+      .flatMap((rule) => rule.condition?.tagPrefixes ?? []);
+    const deletes = policy.filter((rule) => rule.action.type === 'Delete');
+
+    expect(keepPrefixes).toEqual(expect.arrayContaining(['prod-', 'keep-']));
+    // Nearly every image is SHA-tagged: a delete rule scoped to untagged
+    // images would silently delete nothing.
+    expect(deletes).toEqual([
+      expect.objectContaining({
+        condition: { tagState: 'any', olderThan: '14d' },
+      }),
+    ]);
+  });
 });

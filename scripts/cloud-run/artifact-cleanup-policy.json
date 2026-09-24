@@ -1,0 +1,26 @@
+[
+  {
+    "name": "keep-recent-prod-releases",
+    "action": { "type": "Keep" },
+    "condition": {
+      "tagState": "tagged",
+      "tagPrefixes": ["prod-"],
+      "newerThan": "60d"
+    }
+  },
+  {
+    "name": "keep-pinned",
+    "action": { "type": "Keep" },
+    "condition": { "tagState": "tagged", "tagPrefixes": ["keep-"] }
+  },
+  {
+    "name": "keep-latest-30",
+    "action": { "type": "Keep" },
+    "mostRecentVersions": { "keepCount": 30 }
+  },
+  {
+    "name": "delete-after-14d",
+    "action": { "type": "Delete" },
+    "condition": { "tagState": "any", "olderThan": "14d" }
+  }
+]

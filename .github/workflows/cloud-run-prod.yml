@@ -104,7 +104,13 @@ jobs:
         run: |
           [ -n "$LEASE_BUCKET" ]
           [[ "$SERVICE_NAME" = "kallo-prod" ]]
-          gcloud artifacts docker images describe "$IMAGE_TAG"
+          # The registry's cleanup policy deletes images without a prod- tag after
+          # 14 days (docs/GOOGLE_CLOUD_RUN.md → "Image retention"), so an older
+          # SHA may no longer have an image.
+          gcloud artifacts docker images describe "$IMAGE_TAG" || {
+            echo "No image for $DEPLOY_SHA — expired by the 14-day retention policy, or its main CI run never published. Ship it as a new main commit (revert/cherry-pick) so CI rebuilds the image." >&2
+            exit 1
+          }
           gcloud secrets describe kallo-prod-database-url
           gcloud secrets describe kallo-prod-gemini-api-key
           gcloud secrets describe kallo-prod-analysis-guard-hash-secret
@@ -151,6 +157,12 @@ jobs:
           # prod deploy on legitimate production data.
           [ -n "$KALLO_PROD_PROJECT_ID" ]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$PROD_DATABASE_URL" --project-ref "$KALLO_PROD_PROJECT_ID"
+      # A prod-<sha> tag exempts the image from the registry's 14-day cleanup
+      # until 60 days after the image was built, keeping recent prod releases
+      # redeployable. Tagged before migrations so nothing below runs against an
+      # unprotected image.
+      - name: Protect image from registry cleanup
+        run: gcloud artifacts docker tags add "$IMAGE_TAG" "${IMAGE_TAG%:*}:prod-${DEPLOY_SHA}"
       - name: Apply pending migrations to prod DB
         run: yes | supabase db push --db-url "$PROD_DATABASE_URL_ENCODED"
       - name: Verify migrations applied
