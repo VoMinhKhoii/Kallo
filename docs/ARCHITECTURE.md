@@ -114,8 +114,10 @@ another domain module is a smell worth a second look.
 | `email/` | transactional send + templates |
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
+| `route-template/` | the app's route tree as data (`app-route-patterns.ts`, checked against `app/` by a test) and `routeTemplate`, which redacts a URL path by segment position — shared by CSP reports and telemetry |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
+| `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
 | `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
 | `uploads/` | image and avatar file handling |
 
@@ -200,7 +202,7 @@ another domain module is a smell worth a second look.
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
-| `providers/` | TanStack provider (single file) | split |
+| `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step | split |
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
@@ -246,7 +248,7 @@ proved to be one hook.
 |---|---|---|
 | `theme/` | design tokens | **reference shape** |
 | `models/` | DTOs mirrored from the web contracts, grouped by domain: `nutrition/` `logging/` `social/` `profile/` | ok |
-| `services/` | infrastructure edges: `http/` (API client, uploads, cache policy) · `auth/` (Supabase client, session) · `billing/` · `analytics/` · `env/` | ok |
+| `services/` | infrastructure edges: `http/` (API client, uploads, cache policy) · `auth/` (Supabase client, session) · `billing/` · `analytics/` (PostHog + route-pattern screen tracking) · `monitoring/` (Sentry) · `env/` | ok |
 | `shared/widgets/` | cross-feature widget primitives, one folder per primitive: `avatar/` `brand/` `calorie_ring/` `feedback/` (skeleton, empty, refresh, progress) `form/` `motion/` `sheet/` `surface/` (the screen frame, the card/button, the scroll hairline) `toast/` `typography/` | ok |
 | `shared/logic/` | pure functions more than one feature reads — `tdee.dart`, `display_format.dart` | ok |
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |

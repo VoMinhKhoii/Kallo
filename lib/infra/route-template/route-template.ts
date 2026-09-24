@@ -1,11 +1,12 @@
 import {
   APP_METADATA_PATHS,
   APP_ROUTE_PATTERNS,
-} from '@/lib/infra/security/app-route-patterns';
+} from '@/lib/infra/route-template/app-route-patterns';
 
 /**
- * Reduce a URL path from a CSP report to a route template before it is
- * logged.
+ * Reduce a URL path to a route template before it leaves the app — in a CSP
+ * report (`lib/infra/security/csp-report.ts`) or a telemetry payload
+ * (`lib/infra/telemetry/telemetry-url.ts`).
  *
  * Stripping the query string is not enough: some Kallo URLs carry a
  * capability IN THE PATH. `/en/invite/<slug>` is the credential that resolves

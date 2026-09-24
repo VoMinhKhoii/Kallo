@@ -14,6 +14,7 @@ import {
   type Package,
   purchasePackage,
 } from '@/lib/domain/billing/web-purchases';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 
 /**
  * The paywall's purchase and activation state machine, kept apart from the
@@ -49,6 +50,7 @@ export function usePaywallPurchase(userId: string) {
       // in exactly the case it exists for. An abandoned checkout costs one
       // wasted reconcile; a lost one costs a customer their money.
       markActivationPending(userId);
+      track('checkout_started', { package_id: rcPackage.identifier });
       try {
         const result = await purchasePackage(userId, rcPackage, {
           selectedLocale: locale,
@@ -59,6 +61,11 @@ export function usePaywallPurchase(userId: string) {
           clearActivationPending(userId);
           return;
         }
+        track('purchase_completed', {
+          package_id: rcPackage.identifier,
+          status:
+            result.status === 'payment_pending' ? 'payment_pending' : 'paid',
+        });
         if (result.status === 'payment_pending') {
           setActivationPending(true);
           toast.success(t('pendingToast'));
@@ -85,6 +92,7 @@ export function usePaywallPurchase(userId: string) {
         }
       } catch (error) {
         console.error('Web purchase failed:', error);
+        track('purchase_failed', { package_id: rcPackage.identifier });
         toast.error(
           error instanceof BillingIdentityMismatchError
             ? t('sessionChangedToast')

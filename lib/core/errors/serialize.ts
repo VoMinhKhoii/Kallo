@@ -5,6 +5,7 @@
 // needs to read the resulting envelope uses `@/lib/core/errors/client` instead.
 // ---------------------------------------------------------------------------
 
+import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import {
   isAppError,
@@ -37,6 +38,10 @@ export function serializeError(e: unknown): NextResponse {
         : {}),
     });
   }
+  // An unknown error became a generic 500 — the caller caught it, so
+  // `onRequestError` never sees it. Report it here or it is invisible. Sentry
+  // directly, not `lib/infra/telemetry/monitoring` — `core` never imports `infra`.
+  Sentry.captureException(e, { tags: { scope: '[serialize-error]' } });
   const fallback = Errors.internal(e);
   return NextResponse.json(fallback.toJSON(), { status: fallback.status });
 }

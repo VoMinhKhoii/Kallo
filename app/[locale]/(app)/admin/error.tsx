@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 
 export default function AdminError({
   error,
@@ -19,6 +20,7 @@ export default function AdminError({
 
   useEffect(() => {
     console.error('[admin] route error', error);
+    reportError(error, '[admin]');
   }, [error]);
 
   return (

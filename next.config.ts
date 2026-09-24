@@ -1,4 +1,5 @@
 import createMDX from '@next/mdx';
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 // Relative, not `@/`: next.config is compiled outside the app bundle, so it
@@ -188,4 +189,19 @@ const withMDX = createMDX({
 });
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
-export default withNextIntl(withMDX(nextConfig));
+
+// Sentry wraps outermost. Source maps are uploaded (then deleted from the
+// build, so they are never served) ONLY when `SENTRY_AUTH_TOKEN` is present —
+// the CI image build passes it as a BuildKit secret. Without it the build is
+// unchanged: no upload, no network, no failure. `SENTRY_ORG` /
+// `SENTRY_PROJECT` come from the environment the same way.
+export default withSentryConfig(withNextIntl(withMDX(nextConfig)), {
+  silent: !process.env.CI,
+  telemetry: false,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  release: {
+    name: pkg.version,
+    create: Boolean(process.env.SENTRY_AUTH_TOKEN),
+  },
+  widenClientFileUpload: true,
+});

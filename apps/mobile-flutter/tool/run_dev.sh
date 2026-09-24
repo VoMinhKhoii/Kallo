@@ -115,6 +115,9 @@ run=(flutter run -d "$SIM_UDID"
   --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
   --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}")
 run+=(--dart-define=REVENUECAT_APPLE_API_KEY="${REVENUECAT_APPLE_API_KEY:-}")
+# Optional; empty keeps analytics / crash reporting a no-op in dev builds.
+run+=(--dart-define=POSTHOG_KEY="${POSTHOG_KEY:-}")
+run+=(--dart-define=SENTRY_DSN="${SENTRY_DSN:-}")
 
 # `flutter run` quits as soon as stdin hits EOF, and on quit it DETACHES the
 # engine — leaving a debug build on-screen as a blank white/black window. That's

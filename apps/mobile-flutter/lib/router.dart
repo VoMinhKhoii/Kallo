@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'services/analytics/analytics.dart';
+import 'services/analytics/screen_tracking.dart';
 import 'services/auth/session_provider.dart';
 import 'features/auth/screens/email_auth_screen.dart';
 import 'features/auth/screens/sign_in_screen.dart';
@@ -80,7 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // secure storage a beat late — same shape as the profile above, same fix.
   ref.listen(onboardingDraftProvider, (_, __) => refresh.ping());
 
-  return GoRouter(
+  final router = GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/',
     refreshListenable: refresh,
@@ -271,6 +273,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(trackScreens(router, ref.read(analyticsProvider)));
+  return router;
 });
 
 /// Gathers what [resolveRedirect] needs out of Riverpod. The rule itself is in

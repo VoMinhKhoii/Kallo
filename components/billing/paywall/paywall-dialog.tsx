@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { PaywallStatus } from '@/components/billing/activation/paywall-status';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { usePaywallOfferings } from '@/hooks/billing/use-paywall-offerings';
 import { usePaywallPurchase } from '@/hooks/billing/use-paywall-purchase';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 import { PaywallOffer } from './paywall-offer';
 
 interface PaywallDialogProps {
@@ -38,6 +39,10 @@ export function PaywallDialog({
     enabled: open && entitlements?.purchasesEnabled === true,
     reconciliationRequired: entitlements?.reconciliationRequired === true,
   });
+
+  useEffect(() => {
+    if (open) track('paywall_viewed', {});
+  }, [open]);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {

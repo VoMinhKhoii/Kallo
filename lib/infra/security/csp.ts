@@ -83,6 +83,20 @@ const GOOGLE_IDENTITY_STYLE = 'https://accounts.google.com/gsi/style';
 /** Avatars on the personalized button / One Tap card. */
 const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com';
 
+/**
+ * Error reporting (Sentry, US region) and product analytics (PostHog, EU
+ * cloud) — see `lib/infra/telemetry/monitoring/` and `lib/infra/telemetry/analytics/`. Sentry's US
+ * DSNs name a per-organisation `o<id>.ingest.us.sentry.io` host, hence the
+ * wildcard. PostHog sends events to `eu.i` and fetches its remote config from
+ * `eu-assets.i`. Browser → these hosts only; no script is loaded from them
+ * (both SDKs are bundled).
+ */
+const MONITORING_CONNECT_ORIGINS = [
+  'https://*.ingest.us.sentry.io',
+  'https://eu.i.posthog.com',
+  'https://eu-assets.i.posthog.com',
+];
+
 function supabaseOrigins(): { https: string; wss: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) return null;
@@ -117,7 +131,7 @@ export function buildCsp(isDev: boolean): string {
     `style-src ${sources("'self'", "'unsafe-inline'", GOOGLE_IDENTITY_STYLE, PADDLE_CDN)}`,
     `img-src ${sources("'self'", 'data:', 'blob:', supabase?.https, GOOGLE_AVATAR_ORIGIN, REVENUECAT_ASSETS)}`,
     `font-src ${sources("'self'", REVENUECAT_ASSETS)}`,
-    `connect-src ${sources("'self'", supabase?.https, supabase?.wss, ...BILLING_CONNECT_ORIGINS, GOOGLE_IDENTITY_ORIGIN)}`,
+    `connect-src ${sources("'self'", supabase?.https, supabase?.wss, ...BILLING_CONNECT_ORIGINS, GOOGLE_IDENTITY_ORIGIN, ...MONITORING_CONNECT_ORIGINS)}`,
     `frame-src ${sources("'self'", ...BILLING_FRAME_ORIGINS, GOOGLE_IDENTITY_ORIGIN)}`,
     `manifest-src 'self'`,
     `worker-src 'self'`,

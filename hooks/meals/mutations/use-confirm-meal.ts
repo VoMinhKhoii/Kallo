@@ -13,6 +13,7 @@ import {
   rollbackOptimisticMeal,
   settleMealSave,
 } from '@/lib/domain/meals/save/save-choreography';
+import { track } from '@/lib/infra/telemetry/analytics/track';
 
 export function useConfirmMeal(userId: string) {
   const queryClient = useQueryClient();
@@ -41,8 +42,12 @@ export function useConfirmMeal(userId: string) {
         ),
         variables.analysisId
       ),
-    onSuccess: (data, variables, context) =>
-      reconcileSavedMeal(
+    onSuccess: (data, variables, context) => {
+      track('meal_logged', {
+        method: 'ai',
+        is_cheat: Boolean(variables.cheat),
+      });
+      return reconcileSavedMeal(
         queryClient,
         userId,
         variables.originDate,
@@ -50,7 +55,8 @@ export function useConfirmMeal(userId: string) {
         variables.analysisId,
         context?.snapshots,
         context?.dayFetchCancelled
-      ),
+      );
+    },
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
     onSettled: (_data, error, variables) =>

@@ -89,6 +89,19 @@ describe('buildCsp (enforced policy)', () => {
     );
   });
 
+  it('lets Sentry (US) and PostHog (EU) ingest through connect-src only', async () => {
+    const csp = await build();
+    expect(directive(csp, 'connect-src')).toEqual(
+      expect.arrayContaining([
+        'https://*.ingest.us.sentry.io',
+        'https://eu.i.posthog.com',
+        'https://eu-assets.i.posthog.com',
+      ])
+    );
+    expect(csp).not.toContain('us.i.posthog.com');
+    expect(directive(csp, 'script-src').join(' ')).not.toContain('posthog');
+  });
+
   it('lets Google Identity Services load, style, frame and call back', async () => {
     // Without these, web Google sign-in silently drops back to the
     // Supabase-branded redirect flow.

@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/meal.dart';
+import '../../../../services/analytics/analytics.dart';
+import '../../../../services/analytics/analytics_events.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
@@ -129,6 +131,12 @@ class FeedConfirmActions {
       return false;
     }
     // Saved — a success haptic + a top toast confirm the meal landed.
+    ref
+        .read(analyticsProvider)
+        .capture(
+          AnalyticsEvents.mealLogged,
+          properties: {'method': 'ai', 'is_cheat': levels != null},
+        );
     HapticFeedback.mediumImpact();
     if (context.mounted) {
       showTopToast(context, 'logging.feedArea.savedMeal'.tr());

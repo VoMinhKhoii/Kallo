@@ -1,0 +1,205 @@
+import { describe, expect, it } from 'vitest';
+import {
+  scrubBreadcrumb,
+  scrubEvent,
+  scrubSpan,
+  scrubTransaction,
+} from '../scrub';
+
+describe('scrubEvent', () => {
+  it('strips request payload, cookies, headers and query string', () => {
+    const event = scrubEvent({
+      request: {
+        url: 'https://kallo.fit/api/analyze-meal',
+        data: { message: 'phở bò 2 bowls' },
+        cookies: { 'sb-auth': 'x' },
+        headers: { authorization: 'Bearer y' },
+        query_string: 'token=z',
+      },
+    });
+    expect(event.request).toEqual({
+      url: 'https://kallo.fit/api/analyze-meal',
+    });
+  });
+
+  it('reduces the request URL to its route pattern', () => {
+    const event = scrubEvent({
+      request: { url: 'https://kallo.fit/vi/invite/secret-slug?ref=x' },
+    });
+    expect(event.request?.url).toBe('https://kallo.fit/vi/invite/:param');
+  });
+
+  it('keeps only the opaque user id', () => {
+    const event = scrubEvent({
+      user: { id: 'uuid-1', email: 'a@b.c', ip_address: '1.2.3.4' },
+    });
+    expect(event.user).toEqual({ id: 'uuid-1' });
+  });
+
+  it('empties a user without an id', () => {
+    expect(scrubEvent({ user: { email: 'a@b.c' } }).user).toEqual({});
+  });
+});
+
+describe('scrubEvent contexts', () => {
+  it('reduces URL-shaped keys in every context (Next.js request_path)', () => {
+    const event = scrubEvent({
+      contexts: {
+        nextjs: { request_path: '/en/circle/share-9', route_type: 'render' },
+        os: { name: 'macOS' },
+      },
+    });
+    expect(event.contexts).toEqual({
+      nextjs: { request_path: '/en/circle/:param', route_type: 'render' },
+      os: { name: 'macOS' },
+    });
+  });
+});
+
+describe('scrubBreadcrumb', () => {
+  it('drops ui click / input breadcrumbs, whose selector carries aria-label', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'ui.click',
+        data: {},
+      })
+    ).toBeNull();
+    expect(scrubBreadcrumb({ category: 'ui.input' })).toBeNull();
+  });
+
+  it('drops console breadcrumbs, whose raw arguments can hold meal text', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'console',
+        data: { arguments: ['[analyze-meal] failed for', 'phở bò 2 bowls'] },
+      })
+    ).toBeNull();
+  });
+
+  it('keeps only allowlisted data keys', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'fetch',
+        data: {
+          url: 'https://kallo.fit/api/v1/meals',
+          method: 'POST',
+          status_code: 500,
+          body: 'phở bò',
+        },
+      })?.data
+    ).toEqual({
+      url: 'https://kallo.fit/api/v1/meals',
+      method: 'POST',
+      status_code: 500,
+    });
+  });
+
+  it('patterns navigation paths and strips fetch query strings', () => {
+    expect(
+      scrubBreadcrumb({
+        data: { from: '/en/circle/share-1', to: '/en/circle/g/group-2?tab=x' },
+      })?.data
+    ).toEqual({ from: '/en/circle/:param', to: '/en/circle/g/:param' });
+    expect(
+      scrubBreadcrumb({
+        data: { url: 'https://kallo.fit/api/v1/meals?date=2026-09-01' },
+      })?.data
+    ).toEqual({ url: 'https://kallo.fit/api/v1/meals' });
+  });
+});
+
+describe('scrubTransaction', () => {
+  it('reduces URLs in span attributes and drops query strings', () => {
+    const event = scrubTransaction({
+      spans: [
+        {
+          op: 'http.client',
+          description: 'GET https://kallo.fit/api/v1/groups/shares/share-1?t=x',
+          data: {
+            'url.full': 'https://kallo.fit/api/v1/groups/shares/share-1?t=x',
+            'http.url': 'https://kallo.fit/vi/invite/secret',
+            'http.target': '/vi/invite/secret?ref=y',
+            'url.query': 't=x',
+            'http.method': 'GET',
+          },
+        },
+      ],
+    });
+    expect(event.spans?.[0]).toEqual({
+      op: 'http.client',
+      description: 'GET https://kallo.fit/api/v1/groups/shares/:param',
+      data: {
+        'url.full': 'https://kallo.fit/api/v1/groups/shares/:param',
+        'http.url': 'https://kallo.fit/vi/invite/:param',
+        'http.target': '/vi/invite/:param',
+        'http.method': 'GET',
+      },
+    });
+  });
+
+  it('reduces a raw-path transaction name and the root span', () => {
+    const event = scrubTransaction({
+      transaction: '/en/circle/share-1',
+      contexts: {
+        trace: {
+          op: 'pageload',
+          data: { url: 'https://kallo.fit/en/circle/share-1?x=1' },
+        },
+      },
+    });
+    expect(event.transaction).toBe('/en/circle/:param');
+    expect(event.contexts?.trace?.data).toEqual({
+      url: 'https://kallo.fit/en/circle/:param',
+    });
+  });
+
+  it('leaves a db span description (SQL) alone', () => {
+    const sql = 'select * from meals where a / b > 1';
+    const event = scrubTransaction({ spans: [{ op: 'db', description: sql }] });
+    expect(event.spans?.[0].description).toBe(sql);
+  });
+
+  it('still scrubs the request like an error event', () => {
+    const event = scrubTransaction({
+      request: { url: 'https://kallo.fit/api/analyze-meal', data: 'phở' },
+    });
+    expect(event.request).toEqual({
+      url: 'https://kallo.fit/api/analyze-meal',
+    });
+  });
+});
+
+describe('scrubSpan', () => {
+  it('renames a selector-named web-vital span and drops its selectors', () => {
+    const selector = 'body > button[aria-label="Delete Phở bò"]';
+    const span = scrubSpan({
+      op: 'ui.webvital.lcp',
+      description: selector,
+      data: {
+        'lcp.element': selector,
+        'browser.web_vital.cls.source.1': selector,
+        'lcp.size': 1200,
+      },
+    });
+    expect(span).toEqual({
+      op: 'ui.webvital.lcp',
+      description: 'ui.webvital.lcp',
+      data: { 'lcp.size': 1200 },
+    });
+  });
+
+  it('renames an INP interaction span', () => {
+    const span = scrubSpan({
+      op: 'ui.interaction.click',
+      description: 'div > span[title="Bánh mì"]',
+    });
+    expect(span.description).toBe('ui.interaction.click');
+  });
+
+  it('is what transactions apply to their child spans', () => {
+    const event = scrubTransaction({
+      spans: [{ op: 'ui.interaction.click', description: '[alt="phở"]' }],
+    });
+    expect(event.spans?.[0].description).toBe('ui.interaction.click');
+  });
+});

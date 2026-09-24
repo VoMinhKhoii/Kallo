@@ -42,6 +42,9 @@ GOOGLE_WEB_CLIENT_ID = ENV["NHAM_GOOGLE_WEB_CLIENT_ID"] ||
 GOOGLE_IOS_CLIENT_ID = ENV["NHAM_GOOGLE_IOS_CLIENT_ID"] ||
                        "714321235532-psunb7uh1ddgm7veditd2shmbjln7m1t.apps.googleusercontent.com"
 REVENUECAT_APPLE_API_KEY = ENV["KALLO_REVENUECAT_APPLE_API_KEY"] || ""
+# Optional: empty ships a build with analytics / crash reporting switched off.
+POSTHOG_KEY = ENV["KALLO_POSTHOG_KEY"] || ""
+SENTRY_DSN  = ENV["KALLO_SENTRY_DSN"]  || ""
 
 KEYCHAIN_NAME = "nham-ci.keychain-db"
 KEYCHAIN_PASS = ENV["NHAM_KEYCHAIN_PASSWORD"] || "nham-ci"
@@ -159,7 +162,9 @@ platform :ios do
            "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}",
            "--dart-define=GOOGLE_WEB_CLIENT_ID=#{GOOGLE_WEB_CLIENT_ID}",
            "--dart-define=GOOGLE_IOS_CLIENT_ID=#{GOOGLE_IOS_CLIENT_ID}",
-           "--dart-define=REVENUECAT_APPLE_API_KEY=#{REVENUECAT_APPLE_API_KEY}")
+           "--dart-define=REVENUECAT_APPLE_API_KEY=#{REVENUECAT_APPLE_API_KEY}",
+           "--dart-define=POSTHOG_KEY=#{POSTHOG_KEY}",
+           "--dart-define=SENTRY_DSN=#{SENTRY_DSN}")
       ensure
         saved.each { |k, v| ENV[k] = v unless v.nil? }
       end
