@@ -29,12 +29,6 @@ vi.mock('@/components/logging/feed/feed-area', () => ({
   ),
 }));
 
-// The billing surfaces pull next-intl + entitlements; the shell only mounts
-// them, so stub them out to keep this test focused on date/timeline behavior.
-vi.mock('@/components/billing/subscription/trial-banner', () => ({
-  TrialBanner: () => <div data-testid="trial-banner" />,
-}));
-
 // The paywall now lives on the app-wide PremiumGuardProvider; the shell only
 // hands it the analyze-402 handler.
 const mockOpenPaywall = vi.fn();

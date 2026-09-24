@@ -1,7 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/relog.dart';
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -15,7 +18,10 @@ import 'relog_picker_group.dart';
 /// above the composer, in the slot cheat mode's controls occupy, rather than in
 /// an [Overlay]: the dock measures itself so the feed can reserve matching
 /// scroll padding, where an overlay would float over the last meal card.
-class RelogPickerPopup extends StatelessWidget {
+///
+/// When the plan lacks `relog` the close row carries a [PremiumChip] and a
+/// picked candidate opens the paywall instead of staging.
+class RelogPickerPopup extends ConsumerWidget {
   const RelogPickerPopup({
     super.key,
     required this.candidates,
@@ -51,15 +57,25 @@ class RelogPickerPopup extends StatelessWidget {
   static final _bandCopy = dashMeta(color: KalloColors.bandForeground);
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder:
-        (_, box) =>
-            box.maxHeight < _minUsableHeight
-                ? RelogPickerCollapsed(onDismiss: onDismiss)
-                : _panel(),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final relog = premiumGate(ref, PremiumFeature.relog);
+    return LayoutBuilder(
+      builder:
+          (_, box) =>
+              box.maxHeight < _minUsableHeight
+                  ? RelogPickerCollapsed(onDismiss: onDismiss)
+                  : _panel(
+                    locked: relog.locked,
+                    onPick:
+                        (pick) => relog.tap(context, () => onSelect(pick))!(),
+                  ),
+    );
+  }
 
-  Widget _panel() {
+  Widget _panel({
+    required bool locked,
+    required ValueChanged<RelogCandidate> onPick,
+  }) {
     final isEmpty = candidates.isEmpty;
     // Three different nothings, not interchangeable: the search failed, nothing
     // matched what you typed, or you have no history. Only the middle retypes.
@@ -88,7 +104,7 @@ class RelogPickerPopup extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            RelogPickerCloseRow(onDismiss: onDismiss),
+            RelogPickerCloseRow(onDismiss: onDismiss, locked: locked),
             Flexible(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: _maxHeight),
@@ -126,7 +142,7 @@ class RelogPickerPopup extends StatelessWidget {
                               RelogPickerGroup(
                                 label: group.$1.tr(),
                                 candidates: group.$2,
-                                onSelect: onSelect,
+                                onSelect: onPick,
                               ),
                           ],
                         ),

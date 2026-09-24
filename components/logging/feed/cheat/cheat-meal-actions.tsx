@@ -2,7 +2,7 @@
 
 import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { PremiumChip } from '@/components/billing/premium-chip';
+import { PremiumDot } from '@/components/billing/premium-dot';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { ShareMealDialog } from '@/components/groups/share-meal-dialog';
 import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
@@ -34,7 +34,7 @@ export function CheatMealActions({
   const tRemove = useTranslations('logging.cheatMealCard');
   const { locked, requirePremium } = usePremiumGuard();
   // Offering a meal to friends is an INITIATED copy — the billable side of the
-  // feature — so chip it before the click rather than after a 402.
+  // feature — so mark it before the click rather than after a 402.
   const shareLocked = locked('copy_split');
   // Slider data is what a recipient reopens; without it the server refuses, so
   // do not offer the action at all.
@@ -47,14 +47,12 @@ export function CheatMealActions({
           (shareLocked ? (
             // Locked: no dialog at all, so the trigger cannot open a picker
             // whose only outcome would be a 402 from the server.
-            <>
-              <ActionIconButton
-                icon={UserPlus}
-                label={t('shareWithFriends')}
-                onClick={() => requirePremium('copy_split')}
-              />
-              <PremiumChip className="mr-1 px-1.5 py-0" />
-            </>
+            <ActionIconButton
+              icon={UserPlus}
+              label={t('shareWithFriends')}
+              onClick={() => requirePremium('copy_split')}
+              marker={<PremiumDot />}
+            />
           ) : (
             <ShareMealDialog
               copyOnly

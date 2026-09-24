@@ -13,7 +13,7 @@ enum SurfaceArea { circle, logging, nutrition, dashboard, system }
 
 /// What the surface is saying. An area that has no pose for a kind falls back
 /// to its `empty` pose.
-enum SurfaceKind { error, empty, emptyAlt, notFound, offline }
+enum SurfaceKind { error, empty, emptyAlt, notFound, offline, locked }
 
 const String illustrationAssetDir = 'assets/illustrations';
 
@@ -30,6 +30,7 @@ const Map<SurfaceArea, Map<SurfaceKind, String>> _poses = {
   SurfaceArea.nutrition: {
     SurfaceKind.error: 'sloth-tangled-string',
     SurfaceKind.empty: 'sloth-peeking-out-box',
+    SurfaceKind.locked: 'sloth-telescope',
   },
   SurfaceArea.dashboard: {
     SurfaceKind.error: 'hedgehog-stuck-jar',

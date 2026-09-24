@@ -1,9 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/widgets/invite/circle_add_menu.dart';
+import 'package:kallo_mobile/services/billing/entitlements_provider.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -13,7 +15,14 @@ import '../../l10n_test_loader.dart';
 /// menu's labels fell back to the framework's un-styled default: 48px red
 /// monospace on a double YELLOW underline. A transparent Material restores the
 /// inherited app style without painting anything.
-Widget _app() => EasyLocalization(
+// Signed out: "Create a group" reads its Premium marker from the entitlement
+// snapshot, which a null user resolves without a network call.
+Widget _app() => ProviderScope(
+  overrides: [entitlementsUserIdProvider.overrideWithValue(null)],
+  child: _localized(),
+);
+
+Widget _localized() => EasyLocalization(
   supportedLocales: const [Locale('en')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),

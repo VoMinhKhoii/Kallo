@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -67,6 +70,12 @@ class _InviteCardState extends ConsumerState<InviteCard> {
   @override
   Widget build(BuildContext context) {
     final invite = widget.invite;
+    // Taking a cheat offer is a cheat WRITE (`cheat_meal`): chip it at the
+    // header's right end and send the accept straight to the paywall, rather
+    // than confirming a step whose only outcome is a 402.
+    // Watched unconditionally, then narrowed to cheat offers.
+    final cheatLock = premiumGate(ref, PremiumFeature.cheatMeal);
+    final gate = PremiumGate(locked: invite.isCheat && cheatLock.locked);
     final percent = (invite.portionFactor * 100).round();
 
     return Container(
@@ -100,6 +109,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                   ],
                 ),
               ),
+              if (gate.locked) const PremiumChip(),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp3),
@@ -163,7 +173,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                   compact: true,
                   title: tr(invite.acceptLabelKey),
                   loading: _busy,
-                  onPressed: _accept,
+                  onPressed: gate.tap(context, _accept),
                 ),
               ),
             ],

@@ -19,6 +19,11 @@ ARG NEXT_PUBLIC_SENTRY_DSN
 ARG NEXT_PUBLIC_POSTHOG_KEY
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
+# Paddle client-side token (public, price-preview only) for /pricing's live
+# per-country prices. `test_` = sandbox, `live_` = production; empty → the page
+# shows the message-file prices. See docs/BILLING.md → Pricing.
+ARG NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+ENV NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=$NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
 # Source-map upload target; the auth token itself arrives as a BuildKit secret
 # below so it never lands in an image layer.
 ARG SENTRY_ORG

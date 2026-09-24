@@ -27,7 +27,7 @@ export function CheatOccasionChips({
 
   return (
     <div className="mx-auto mb-2 flex max-w-3xl flex-col gap-1.5">
-      <div className="flex items-center gap-2 px-1">
+      <div className="flex items-center justify-between gap-2 px-1">
         <span className="font-bold font-sans-display text-[10px] text-kallo-text-muted/60 uppercase tracking-widest">
           {t('title')}
         </span>

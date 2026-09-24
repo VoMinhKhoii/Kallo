@@ -132,6 +132,16 @@
   --color-kallo-ink-hover: var(--kallo-ink-hover);
   --color-kallo-accent: var(--kallo-accent);
   --color-kallo-highlight: var(--kallo-highlight);
+  --color-kallo-gold: var(--kallo-gold);
+  --color-kallo-gold-light: var(--kallo-gold-light);
+  --color-kallo-gold-deep: var(--kallo-gold-deep);
+  --color-kallo-gold-edge: var(--kallo-gold-edge);
+  --color-kallo-gold-wash: var(--kallo-gold-wash);
+  --color-kallo-segment: var(--kallo-segment);
+  --color-kallo-premium-fill: var(--kallo-premium-fill);
+  --color-kallo-premium-edge: var(--kallo-premium-edge);
+  --color-kallo-premium-ink: var(--kallo-premium-ink);
+  --color-kallo-premium-dot: var(--kallo-premium-dot);
   --color-kallo-accent-hover: var(--kallo-accent-hover);
   --color-kallo-border: var(--kallo-border);
   --color-kallo-hover: var(--kallo-hover);
@@ -225,6 +235,24 @@
      to the accent above when it was tried here. It earns being foreign by
      being the only one, so it may mark only the thing that changed. */
   --kallo-highlight: #f8d546;
+  /* Premium gold — the /pricing Premium card and its buy button only, the
+     same fill the Flutter paywall's buy button wears. `gold-edge` is the 1px
+     card and button border, `gold-wash` the faint top of the card. */
+  --kallo-gold-light: #fbe27a;
+  --kallo-gold: #f9d447;
+  --kallo-gold-deep: #edbf2f;
+  --kallo-gold-edge: #e2a81c;
+  --kallo-gold-wash: #fffbea;
+  /* The segmented period switch's track (white thumb on it). */
+  --kallo-segment: #edece7;
+  /* The Premium marker on a locked entry point — the soft blue chip
+     (components/billing/premium-chip.tsx) and, on icon-only buttons, its dot
+     (premium-dot.tsx). Blue so it reads as a label, not a warning or a price;
+     the Flutter chip wears the same four values. Nothing else uses them. */
+  --kallo-premium-fill: #f5f8fe;
+  --kallo-premium-edge: #a9c1f0;
+  --kallo-premium-ink: #2f5fd0;
+  --kallo-premium-dot: #3b6fe0;
   --kallo-border: #e8e6dc;
   --kallo-hover: #f0eae0;
   --kallo-track: #f5f4f0;

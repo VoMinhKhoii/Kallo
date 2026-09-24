@@ -13,10 +13,13 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/http/api_error.dart';
 import '../http/api_client.dart';
+import 'entitlement_state.dart';
+import 'entitlements_provider.dart';
 
 /// The server's locale-agnostic code for a gated feature (lowercase — it comes
 /// from `lib/core/errors/app-error.ts`, not from the SCREAMING_CASE OCR codes
@@ -27,6 +30,46 @@ const String kFeatureLockedCode = 'feature_locked';
 /// feature-lock recovery, so a controller that already mapped its 402 onto an
 /// error key (the scan sheets) lands in the same place as a raw catch site.
 void openPaywall(BuildContext context) => context.push('/paywall');
+
+/// Whether a Premium marker (`PremiumChip` / `PremiumDot`) should show for
+/// [feature] — [EntitlementState.showsLockFor] on the signed-in user's
+/// snapshot. False until the snapshot loads: a marker that flashed on for a
+/// premium user while the fetch was in flight would be a false claim, while a
+/// late marker for a free user costs nothing (the server's 402 still routes a
+/// tap to the paywall).
+///
+/// UX only, like the feature map it reads — it may hide a marker, never permit
+/// an action.
+final premiumLockProvider = Provider.autoDispose.family<bool, String>((
+  ref,
+  feature,
+) {
+  final userId = ref.watch(entitlementsUserIdProvider);
+  final snapshot = ref.watch(entitlementsProvider(userId)).valueOrNull;
+  return snapshot?.showsLockFor(feature) ?? false;
+});
+
+/// One Premium feature's lock, read once at the top of a `build`: whether its
+/// marker shows, and what a tap on its affordance does.
+@immutable
+class PremiumGate {
+  const PremiumGate({required this.locked});
+
+  /// [premiumLockProvider] for the feature — show the Premium marker.
+  final bool locked;
+
+  /// The tap handler for the gated affordance: the paywall while [locked],
+  /// else [action]. Locked WINS over a null [action] — a busy flag that would
+  /// disable the button must not also swallow the route to the paywall.
+  VoidCallback? tap(BuildContext context, VoidCallback? action) =>
+      locked ? () => openPaywall(context) : action;
+}
+
+/// Watches [premiumLockProvider] for [feature] (a [PremiumFeature] name).
+/// Call it at the top of `build`, never inside a callback or after an early
+/// return.
+PremiumGate premiumGate(WidgetRef ref, String feature) =>
+    PremiumGate(locked: ref.watch(premiumLockProvider(feature)));
 
 /// Whether [error] is the server refusing a gated feature.
 bool isFeatureLocked(Object error) => error is ApiError && error.status == 402;

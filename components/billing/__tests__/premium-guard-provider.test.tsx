@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-client';
@@ -6,6 +6,7 @@ import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-cli
 const mocks = vi.hoisted(() => ({
   useEntitlements: vi.fn(),
   toastInfo: vi.fn(),
+  push: vi.fn(),
 }));
 
 vi.mock('@/hooks/billing/use-entitlements', () => ({
@@ -16,12 +17,9 @@ vi.mock('sonner', () => ({
   toast: { info: mocks.toastInfo, error: vi.fn(), success: vi.fn() },
 }));
 
-// The real dialog drags in the RevenueCat web SDK; this test only cares that
-// the provider mounts it (and with which `open`) at all.
-vi.mock('@/components/billing/paywall/paywall-dialog', () => ({
-  PaywallDialog: ({ open }: { open: boolean }) => (
-    <div data-testid="paywall" data-open={open ? 'true' : 'false'} />
-  ),
+// There is no paywall dialog: an upgrade is a navigation to /pricing.
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ push: mocks.push }),
 }));
 
 import {
@@ -87,7 +85,6 @@ function renderProvider(enforcementEnabled: boolean) {
   return render(
     <PremiumGuardProvider
       userId="user-1"
-      email="a@b.com"
       enforcementEnabled={enforcementEnabled}
     >
       <Consumer />
@@ -99,10 +96,11 @@ describe('PremiumGuardProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useEntitlements.mockReturnValue({ data: entitlements() });
+    window.history.replaceState(null, '', '/en/logging?date=2026-09-24');
   });
 
   describe('with enforcement off', () => {
-    it('never queries entitlements and never mounts the paywall', async () => {
+    it('never queries entitlements and never navigates', async () => {
       const user = userEvent.setup();
       renderProvider(false);
 
@@ -115,51 +113,61 @@ describe('PremiumGuardProvider', () => {
       expect(screen.getByTestId('require').dataset.result).toBe('true');
 
       await user.click(screen.getByTestId('open'));
-      expect(screen.queryByTestId('paywall')).toBeNull();
+      expect(mocks.push).not.toHaveBeenCalled();
       expect(mocks.toastInfo).not.toHaveBeenCalled();
     });
   });
 
   describe('with enforcement on', () => {
-    it('queries entitlements and opens the paywall for a locked feature', async () => {
+    it('sends a locked feature to /pricing with a way back', async () => {
       const user = userEvent.setup();
       renderProvider(true);
 
       expect(mocks.useEntitlements).toHaveBeenCalledWith('user-1');
       expect(screen.getByTestId('locked')).toHaveTextContent('true');
 
-      const paywall = await screen.findByTestId('paywall');
-      expect(paywall).toHaveAttribute('data-open', 'false');
-
       await user.click(screen.getByTestId('require'));
       expect(screen.getByTestId('require').dataset.result).toBe('false');
-      await waitFor(() =>
-        expect(screen.getByTestId('paywall')).toHaveAttribute(
-          'data-open',
-          'true'
-        )
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+      expect(mocks.push).toHaveBeenCalledWith(
+        `/pricing?from=${encodeURIComponent('/en/logging?date=2026-09-24')}`
       );
     });
 
-    it('toasts instead of opening a paywall that would render nothing', async () => {
+    it('lets an entitled action through without navigating', async () => {
+      const base = entitlements();
+      mocks.useEntitlements.mockReturnValue({
+        data: entitlements({
+          tier: 'premium',
+          features: {
+            ...base.features,
+            ai_analysis: { allowed: true, reason: 'entitled' },
+          },
+        }),
+      });
+      const user = userEvent.setup();
+      renderProvider(true);
+
+      await user.click(screen.getByTestId('require'));
+      expect(screen.getByTestId('require').dataset.result).toBe('true');
+      expect(mocks.push).not.toHaveBeenCalled();
+    });
+
+    it('toasts instead of sending the user to a page that cannot sell', async () => {
       mocks.useEntitlements.mockReturnValue({
         data: entitlements({ purchasesEnabled: false }),
       });
       const user = userEvent.setup();
       renderProvider(true);
 
-      await screen.findByTestId('paywall');
       await user.click(screen.getByTestId('require'));
 
-      // The action still has to be refused — only the dead-end dialog is
-      // swapped for an explanation.
+      // The action still has to be refused — only the dead end is swapped for
+      // an explanation.
       expect(screen.getByTestId('require').dataset.result).toBe('false');
       // The global next-intl stub echoes the key, namespace stripped.
       expect(mocks.toastInfo).toHaveBeenCalledWith('purchasesUnavailable');
-      expect(screen.getByTestId('paywall')).toHaveAttribute(
-        'data-open',
-        'false'
-      );
+      expect(mocks.push).not.toHaveBeenCalled();
     });
   });
 });

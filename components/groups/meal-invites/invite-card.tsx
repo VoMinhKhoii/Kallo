@@ -166,7 +166,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
           )}
           {isCheat ? t('acceptCheat') : t('accept')}
         </button>
-        {cheatLocked && <PremiumChip className="px-1.5 py-0" />}
+        {cheatLocked && <PremiumChip />}
       </div>
 
       <InviteConfirmDialog

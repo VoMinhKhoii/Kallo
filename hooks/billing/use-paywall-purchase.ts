@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   clearActivationPending,
@@ -38,6 +38,21 @@ export function usePaywallPurchase(userId: string) {
   const [checkingActivation, setCheckingActivation] = useState(false);
   const activationAttempt = useRef(0);
 
+  // Whose checkout this is. /pricing stays alive under <Activity> across a
+  // sign-out or account switch, so a promise started for one account can
+  // settle while another is on the page: every update after an await checks
+  // it still belongs to the current user.
+  const owner = useRef(userId);
+  useEffect(() => {
+    if (owner.current === userId) return;
+    owner.current = userId;
+    activationAttempt.current += 1; // cancels any poll still running
+    setPendingId(null);
+    setSucceeded(false);
+    setActivationPending(false);
+    setCheckingActivation(false);
+  }, [userId]);
+
   const purchasing = pendingId !== null;
 
   const select = useCallback(
@@ -55,6 +70,7 @@ export function usePaywallPurchase(userId: string) {
         const result = await purchasePackage(userId, rcPackage, {
           selectedLocale: locale,
         });
+        if (owner.current !== userId) return;
 
         if (result.status === 'cancelled') {
           // Explicitly dismissed, so no money moved and nothing needs healing.
@@ -99,8 +115,10 @@ export function usePaywallPurchase(userId: string) {
             : t('errorToast')
         );
       } finally {
-        setCheckingActivation(false);
-        setPendingId(null);
+        if (owner.current === userId) {
+          setCheckingActivation(false);
+          setPendingId(null);
+        }
       }
     },
     [purchasing, userId, locale, queryClient, t]
@@ -129,6 +147,14 @@ export function usePaywallPurchase(userId: string) {
     }
   }, [queryClient, userId]);
 
+  /**
+   * Clear a finished purchase's receipt, e.g. when the page is shown again.
+   * Unresolved state (payment pending, activation still being checked) is
+   * kept: money may still be moving, and dropping it would bring the buy
+   * button back while the first checkout settles.
+   */
+  const clearReceipt = useCallback(() => setSucceeded(false), []);
+
   /** Abandon any in-flight poll and clear the surface, e.g. on close. */
   const reset = useCallback(() => {
     activationAttempt.current += 1;
@@ -145,6 +171,7 @@ export function usePaywallPurchase(userId: string) {
     checkingActivation,
     select,
     confirmActivation,
+    clearReceipt,
     reset,
   };
 }

@@ -41,11 +41,15 @@ class KalloMenuAction<T> {
     required this.label,
     required this.icon,
     required this.value,
+    this.badge,
   });
 
   final String label;
   final IconData icon;
   final T value;
+
+  /// A marker drawn just left of the glyph (the Premium chip).
+  final Widget? badge;
 }
 
 /// Shows [actions] anchored to [anchor] (a GLOBAL rect in the root overlay's
@@ -94,6 +98,7 @@ Future<T?> showKalloAnchoredMenu<T>(
               KalloMenuActionRow(
                 label: action.label,
                 icon: action.icon,
+                badge: action.badge,
                 onTap: () => Navigator.of(dialogContext).pop(action.value),
               ),
           ],

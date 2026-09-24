@@ -12,6 +12,7 @@ import { useFeedDay } from '@/hooks/meals/feed/use-feed-day';
 import { useFeedInvalidation } from '@/hooks/meals/feed/use-feed-invalidation';
 import { useFeedMessages } from '@/hooks/meals/feed/use-feed-messages';
 import { useFeedSubmit } from '@/hooks/meals/feed/use-feed-submit';
+import { useLoggingMode } from '@/hooks/meals/feed/use-logging-mode';
 import { useMealCardActions } from '@/hooks/meals/feed/use-meal-card-actions';
 import { useSettledOnce } from '@/hooks/meals/feed/use-settled-once';
 import { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
@@ -23,7 +24,8 @@ import { useSubmitGuard } from '@/hooks/ui/use-submit-guard';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import type { ChatMessage } from '@/lib/core/types/meal';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
-import type { InputMode, LoggingProfile } from '@/lib/domain/logging/types';
+import { retractExchange } from '@/lib/domain/logging/retract-exchange';
+import type { LoggingProfile } from '@/lib/domain/logging/types';
 import { isLikelyPartialDay } from '@/lib/domain/nutrition/pattern/completeness';
 
 /**
@@ -74,8 +76,8 @@ export function useFeedController(args: {
   const [yesterdayPromptDismissed, setYesterdayPromptDismissed] =
     useState(false);
 
-  // Input mode: normal / manual / cheat.
-  const [loggingMode, setLoggingMode] = useState<InputMode>('normal');
+  // Input mode: normal / manual / cheat. Free users start on Manual.
+  const [loggingMode, setLoggingMode] = useLoggingMode();
   // Indulgence magnitude (like an AI "thinking" level) — scales the estimate.
   const [cheatIntensity, setCheatIntensity] =
     useState<CheatIntensity>('medium');
@@ -174,6 +176,20 @@ export function useFeedController(args: {
     streamingMsgId,
   });
 
+  // The paywall is a page, not a dialog over the feed, and the composer was
+  // cleared on submit. So the unanswered exchange leaves the feed and its
+  // words go back into the composer — whose draft storage keeps them while
+  // the user is on pricing.
+  const handlePaymentRequired = useCallback(
+    (msgId: string) => {
+      const { text } = retractExchange(messages, msgId);
+      setMessages((prev) => retractExchange(prev, msgId).messages);
+      if (text) inputRef.current?.setText(text, text.length);
+      onPaymentRequired?.();
+    },
+    [messages, onPaymentRequired]
+  );
+
   useStreamingTerminalEffects({
     stream,
     streamingMsgId,
@@ -183,7 +199,7 @@ export function useFeedController(args: {
     lastAnalysisIdRef,
     lastErrorRef,
     onAnalysisComplete: handleAnalysisComplete,
-    onPaymentRequired,
+    onPaymentRequired: handlePaymentRequired,
   });
 
   const { pendingMessages, displayMessages, unconfirmedMessages } =

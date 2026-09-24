@@ -26,6 +26,7 @@ import {
   SLOTH_PEEKING_OUT_BOX,
   SLOTH_SLEEPING_HAMMOCK,
   SLOTH_TANGLED_STRING,
+  SLOTH_TELESCOPE,
 } from '@/lib/brand/illustrations/sloth';
 
 export type SurfaceArea =
@@ -40,7 +41,8 @@ export type SurfaceKind =
   | 'empty'
   | 'emptyAlt'
   | 'notFound'
-  | 'offline';
+  | 'offline'
+  | 'locked';
 
 /**
  * One animal per area, pose per state. `empty` is the fallback pose every
@@ -53,6 +55,8 @@ interface AreaCast {
   emptyAlt?: Illustration;
   notFound?: Illustration;
   offline?: Illustration;
+  // A Premium-only surface: the animal eyeing what it cannot reach yet.
+  locked?: Illustration;
   night: Illustration;
 }
 
@@ -71,6 +75,7 @@ export const CAST: Record<SurfaceArea, AreaCast> = {
   nutrition: {
     error: SLOTH_TANGLED_STRING,
     empty: SLOTH_PEEKING_OUT_BOX,
+    locked: SLOTH_TELESCOPE,
     night: SLOTH_SLEEPING_HAMMOCK,
   },
   dashboard: {
@@ -90,7 +95,8 @@ export const CAST: Record<SurfaceArea, AreaCast> = {
 /**
  * The illustration for one surface: the sleeping pose after dark, otherwise
  * the pose for the state — falling back to `empty` for the kinds an area does
- * not cast (only `system` has a 404 and an offline pose).
+ * not cast (only `system` has a 404 and an offline pose, only `nutrition` a
+ * locked one).
  */
 export function pickIllustration(
   area: SurfaceArea,

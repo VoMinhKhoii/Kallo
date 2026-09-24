@@ -31,7 +31,7 @@ export function ScanTypeToggle({
           type="button"
           aria-pressed={scanType === st}
           onClick={() => onSelect(st)}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium text-[12px] transition-all ${
+          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium text-[12px] transition-all ${
             scanType === st
               ? 'bg-white text-kallo-text shadow-sm'
               : 'text-kallo-text-muted hover:text-kallo-text'
@@ -46,7 +46,9 @@ export function ScanTypeToggle({
             <>
               <FileText className="h-3.5 w-3.5" />
               {t('ocrTab')}
-              {ocrLocked && <PremiumChip className="px-1.5 py-0" />}
+              {/* In flow at the segment's right end (ml-auto), so on a narrow
+                  dialog it can never sit on top of the label. */}
+              {ocrLocked && <PremiumChip className="ml-auto" />}
             </>
           )}
         </button>

@@ -156,7 +156,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 <Copy className="size-[15px]" />
                 <span>{t('logCopy')}</span>
               </button>
-              {copyLocked && <PremiumChip className="px-1.5 py-0" />}
+              {copyLocked && <PremiumChip />}
             </>
           )}
         </div>

@@ -1,6 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../services/billing/entitlement_state.dart';
+import '../../../../../services/billing/feature_lock.dart';
+import '../../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../../shared/widgets/form/segmented/segmented_strip.dart';
 import '../../../../../theme/kallo_theme.dart';
 
@@ -25,7 +29,10 @@ enum ScanType { barcode, label }
 ///
 /// Shown only while a branch is still at its entry step — once a product or a
 /// scanned label is on screen, switching would throw that work away.
-class ScanTypeToggle extends StatelessWidget {
+///
+/// When the plan lacks `label_scan`, the label segment carries a
+/// [PremiumChip] and tapping it opens the paywall instead of switching.
+class ScanTypeToggle extends ConsumerWidget {
   const ScanTypeToggle({
     super.key,
     required this.value,
@@ -41,16 +48,29 @@ class ScanTypeToggle extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final label = premiumGate(ref, PremiumFeature.labelScan);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
       child: SegmentedStrip(
         options: [
           for (final type in ScanType.values)
-            OptionStripItem(value: type.name, label: _label(type)),
+            OptionStripItem(
+              value: type.name,
+              label: _label(type),
+              badge:
+                  type == ScanType.label && label.locked
+                      ? const PremiumChip()
+                      : null,
+            ),
         ],
         activeIndex: value.index,
-        onChange: (name) => onChange(ScanType.values.byName(name)),
+        onChange: (name) {
+          final type = ScanType.values.byName(name);
+          final gate =
+              type == ScanType.label ? label : const PremiumGate(locked: false);
+          gate.tap(context, () => onChange(type))!();
+        },
       ),
     );
   }

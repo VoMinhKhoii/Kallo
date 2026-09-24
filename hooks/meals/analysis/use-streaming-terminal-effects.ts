@@ -16,8 +16,9 @@ interface UseStreamingTerminalEffectsParams {
   lastErrorRef: RefObject<string | null>;
   onAnalysisComplete?: (analysisId: string) => void;
   // Pre-stream 402: AI analysis is locked. The surface opens the paywall
-  // instead of showing an error toast.
-  onPaymentRequired?: () => void;
+  // instead of showing an error toast. Gets the streaming bubble's id, and
+  // runs before the bubble is dropped, so its updates still see it.
+  onPaymentRequired?: (msgId: string) => void;
 }
 
 /**
@@ -194,9 +195,8 @@ export function useStreamingTerminalEffects({
     const msgId = streamingMsgId;
     setStreamingMsgId(null);
 
+    onPaymentRequired?.(msgId);
     setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
-
-    onPaymentRequired?.();
     reset();
   }, [
     status,

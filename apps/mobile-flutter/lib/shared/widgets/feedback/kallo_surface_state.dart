@@ -22,38 +22,21 @@ import '../brand/surface_illustration.dart';
 class KalloSurfaceState extends StatelessWidget {
   const KalloSurfaceState({
     super.key,
-    required SurfaceArea this.area,
-    required SurfaceKind this.kind,
+    required this.area,
+    required this.kind,
     required this.title,
     this.subtitle,
     this.action,
     this.compact = false,
     this.minHeight,
     this.now,
-  }) : mark = null;
+  });
 
-  /// For the one caller that brings its own glyph instead of a cast pose — the
-  /// paywall's locked card, whose padlock IS the message.
-  const KalloSurfaceState.withMark({
-    super.key,
-    required Widget this.mark,
-    required this.title,
-    this.subtitle,
-    this.action,
-    this.compact = false,
-    this.minHeight,
-  }) : area = null,
-       kind = null,
-       now = null;
-
-  /// Which animal. Null only on [KalloSurfaceState.withMark].
-  final SurfaceArea? area;
+  /// Which animal.
+  final SurfaceArea area;
 
   /// Which pose, and whether this surface is an error (it announces itself).
-  final SurfaceKind? kind;
-
-  /// A caller-supplied glyph standing in for the illustration.
-  final Widget? mark;
+  final SurfaceKind kind;
 
   final String title;
 
@@ -94,13 +77,12 @@ class KalloSurfaceState extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              mark ??
-                  SurfaceIllustration(
-                    area: area!,
-                    kind: kind!,
-                    height: compact ? 64 : 120,
-                    now: now,
-                  ),
+              SurfaceIllustration(
+                area: area,
+                kind: kind,
+                height: compact ? 64 : 120,
+                now: now,
+              ),
               SizedBox(height: compact ? 16 : 24),
               Semantics(
                 header: true,

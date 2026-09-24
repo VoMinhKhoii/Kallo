@@ -45,11 +45,16 @@ class KalloMenuActionRow extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.badge,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+
+  /// A marker at the row's right end, just left of the glyph (the Premium
+  /// chip) — the same slot a check takes on a list row.
+  final Widget? badge;
 
   @override
   Widget build(BuildContext context) => KalloPressable(
@@ -66,6 +71,7 @@ class KalloMenuActionRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (badge != null) ...[badge!, const SizedBox(width: KalloSpacing.sp2)],
         Icon(icon, size: KalloIcons.tertiary, color: KalloColors.textSoft),
       ],
     ),

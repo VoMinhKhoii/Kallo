@@ -15,10 +15,10 @@ afterEach(() => {
 });
 
 describe('getBillingConfig', () => {
-  it('defaults: launchDate null, trialDays 7, enforcement off', () => {
+  it('defaults: launchDate null, no free trial, enforcement off', () => {
     const config = getBillingConfig();
     expect(config.launchDate).toBeNull();
-    expect(config.trialDays).toBe(7);
+    expect(config.trialDays).toBe(0);
     expect(config.enforcementEnabled).toBe(false);
     expect(config.purchasesEnabled).toBe(false);
   });
@@ -41,11 +41,18 @@ describe('getBillingConfig', () => {
     expect(getBillingConfig().launchDate).toBeNull();
   });
 
-  it('non-positive / non-integer TRIAL_DAYS falls back to 7', () => {
+  it('accepts TRIAL_DAYS=0 and a positive integer', () => {
     process.env.TRIAL_DAYS = '0';
+    expect(getBillingConfig().trialDays).toBe(0);
+    process.env.TRIAL_DAYS = '7';
     expect(getBillingConfig().trialDays).toBe(7);
+  });
+
+  it('negative / non-integer TRIAL_DAYS falls back to no trial', () => {
+    process.env.TRIAL_DAYS = '-1';
+    expect(getBillingConfig().trialDays).toBe(0);
     process.env.TRIAL_DAYS = 'abc';
-    expect(getBillingConfig().trialDays).toBe(7);
+    expect(getBillingConfig().trialDays).toBe(0);
   });
 
   it('enforcement toggles via readBooleanEnv', () => {

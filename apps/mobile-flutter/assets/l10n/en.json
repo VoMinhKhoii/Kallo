@@ -516,9 +516,9 @@
       "candidatesError": "Couldn't load food ideas right now."
     },
     "locked": {
-      "title": "Micronutrients are a Premium view",
-      "description": "Calories and macros stay free. Go Premium to see vitamins, minerals and fiber tracked against your targets.",
-      "cta": "See Premium"
+      "title": "Micronutrients are in Premium plan",
+      "description": "Vitamins, minerals and fiber, tracked against your targets.",
+      "cta": "Upgrade"
     },
     "empty": {
       "title": "No meals in this range",
@@ -1885,7 +1885,6 @@
     "upsellEyebrow": "Kallo Pro",
     "upsellTitle": "Describe a meal, know the macros",
     "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from your own words, in Vietnamese or English.",
-    "expiredEyebrow": "Your free trial has ended",
     "expiredTitle": "Keep your AI analysis",
     "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
     "trialCountdown": "{days} days left in your free trial",
@@ -1895,7 +1894,6 @@
     "feature3": "Fast meal logging within fair-use limits",
     "purchase": "Start Premium",
     "purchaseTrial": "Subscribe now",
-    "restore": "Restore purchases",
     "manageActive": "Manage subscription",
     "alreadyPremiumTitle": "You're on Premium",
     "alreadyPremiumBody": "AI meal analysis is unlocked. Manage your plan in the store any time.",
@@ -1937,12 +1935,20 @@
     "compareCircleFree": "2 / 10",
     "compareUnlimited": "Unlimited",
     "startTrialDays": "Start {days}-day trial",
+    "startIntro": "Try {days} days for {price}",
+    "renewYearlyIntro": "{price}/year (≈{perMonth}/mo) from {date}, after {days} days at {intro}.",
+    "renewMonthlyIntro": "{price}/month from {date}, after {days} days at {intro}.",
     "startMonthly": "Start Premium — {price}/month",
     "saveChip": "Save {percent}%",
     "renewYearly": "Auto-renews at {price}/year (≈{perMonth}/mo) from {date} until cancelled.",
     "renewMonthly": "Auto-renews at {price}/month until cancelled.",
     "renewYearlyNow": "Auto-renews at {price}/year (≈{perMonth}/mo) until cancelled.",
     "renewMonthlyFrom": "Auto-renews at {price}/month from {date} until cancelled.",
-    "consent": "By continuing you agree to our Terms and Privacy Policy, and acknowledge it auto-renews until cancelled."
+    "consent": "By continuing you agree to our {restore}, {terms} and {privacy}, and acknowledge it auto-renews until cancelled.",
+    "consentRestore": "Restore",
+    "consentTerms": "Terms",
+    "consentPrivacy": "Privacy Policy",
+    "premiumChip": "Premium",
+    "premiumFeature": "Premium feature"
   }
 }

@@ -1,7 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/widgets/badges/premium_dot.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
@@ -16,6 +18,7 @@ class MealActionIconButton extends StatelessWidget {
     this.danger = false,
     this.pending = false,
     this.toggled,
+    this.locked = false,
   });
 
   final IconData icon;
@@ -28,6 +31,10 @@ class MealActionIconButton extends StatelessWidget {
   /// Screen-reader toggle state for on/off actions (the circle-share toggle);
   /// null for plain one-shot actions.
   final bool? toggled;
+
+  /// The user's plan lacks this action: a [PremiumDot] on the glyph's corner.
+  /// The caller routes the tap to the paywall; the glyph keeps its colour.
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +60,7 @@ class MealActionIconButton extends StatelessWidget {
       button: true,
       enabled: enabled,
       toggled: toggled,
-      label: label,
+      label: locked ? '$label, ${'paywall.premiumFeature'.tr()}' : label,
       child: Material(
         color: Colors.transparent,
         child: InkResponse(
@@ -97,10 +104,13 @@ class MealActionIconButton extends StatelessWidget {
                             radius: (LoggingIcons.action - 6) / 2,
                             color: foreground,
                           )
-                          : Icon(
-                            icon,
-                            size: LoggingIcons.action,
-                            color: foreground,
+                          : PremiumDot(
+                            show: locked,
+                            child: Icon(
+                              icon,
+                              size: LoggingIcons.action,
+                              color: foreground,
+                            ),
                           ),
                 ),
               ),

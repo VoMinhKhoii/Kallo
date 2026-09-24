@@ -158,13 +158,20 @@
       "premium": {
         "name": "Premium",
         "tagline": "For logging in your own words",
-        "priceMonthly": "$3.49",
-        "priceYearly": "$2.08",
-        "amountMonthly": 3.49,
-        "amountYearly": 24.99,
-        "fineprintMonthly": "Billed every month. Cancel any time.",
-        "fineprintYearly": "Billed $24.99 once a year. Cancel any time.",
-        "cta": "Start free trial",
+        "priceMonthly": "$7.99",
+        "priceYearly": "$2.50",
+        "billedMonthly": "$7.99",
+        "billedYearly": "$29.99",
+        "introPrice": "$0.89",
+        "introDays": 7,
+        "amountMonthly": 7.99,
+        "amountYearly": 29.99,
+        "fineprintMonthly": "{intro} for your first {days} days, then {price} billed monthly. Cancel any time. Tax calculated at checkout.",
+        "fineprintYearly": "{intro} for your first {days} days, then {price} billed yearly. Cancel any time. Tax calculated at checkout.",
+        "fineprintMonthlyNoIntro": "{price} billed monthly. Cancel any time. Tax calculated at checkout.",
+        "fineprintYearlyNoIntro": "{price} billed yearly. Cancel any time. Tax calculated at checkout.",
+        "cta": "Start for {intro}",
+        "ctaNoIntro": "Upgrade",
         "inherits": "Everything in Free, plus:"
       },
       "lifetime": {
@@ -199,7 +206,8 @@
       "yearly": "Yearly"
     },
     "discount": "Save {percent}%",
-    "perMonth": "/mo"
+    "perMonth": "/mo",
+    "currentPlan": "Current plan"
   },
   "footer": {
     "copyright": "© {year} Kallo. All rights reserved."

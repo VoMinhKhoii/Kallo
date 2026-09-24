@@ -55,7 +55,7 @@ Apple / Google / Paddle
                                      ▼
                     GET /api/v1/account/entitlements
                              │                  │
-                        web paywall        Flutter paywall
+                        web /pricing       Flutter paywall
 ```
 
 ### Source of truth: `entitlement_grants`
@@ -102,7 +102,13 @@ short-circuiting as a duplicate.
 
 ### Trial (derived, not stored)
 
-There is no trial row. The trial is computed in
+**Default: no free trial.** Kallo sells a **paid first week** instead — an
+introductory price on both the monthly and the annual plan, set in each store
+(App Store intro offer, Paddle paid trial `trial_period.unit_price`; see
+[Pricing](#pricing)). `TRIAL_DAYS` defaults to `0`, so the app-level window
+below is empty; a positive value still grants a free window if ever wanted.
+
+There is no trial row. The app-level trial is computed in
 `lib/domain/billing/entitlement/config.ts` + `service.ts` from the profile:
 
 - trial window = `[max(profile.created_at, SUBSCRIPTION_LAUNCH_DATE), +TRIAL_DAYS]`
@@ -126,6 +132,29 @@ verdict for callers that would rather degrade than fail (the nutrition overview
 strips its micronutrient sections instead of refusing the whole response). A
 blocked actor gets HTTP **402** with `code: "feature_locked"`; clients key on
 the 402 status to open the paywall.
+
+On **web** there is no paywall dialog: `usePremiumGuard()`
+(`components/billing/premium-guard-provider.tsx`) turns `openPaywall()` /
+`requirePremium()` into navigation to `/{locale}/pricing?from=<current path>`,
+and Settings' "Upgrade" links there too. `/pricing` is the purchase page — the
+same `PricingSection` cards as the landing band, with live Paddle prices
+(`hooks/billing/use-web-prices.ts`, message-file fallbacks) and, for a
+signed-in visitor, a checkout: `PricingCheckoutProvider`
+(`components/landing-page/pricing/checkout/`) reads the entitlement, loads the
+offering only while `purchasesEnabled` is on and the visitor is Free, runs the
+purchase through `usePaywallPurchase`, and swaps the cards for
+`PaywallStatus` once it completes. Free reads "Current plan"; signed out, both
+buttons open sign-up. The session and `?from=` are request reads streamed in
+behind `<Suspense>`, so the page shell stays prerendered.
+
+A locked entry point is marked before the tap, only when `locked(feature)` is
+true (enforcement on and the feature not allowed): a soft blue "Premium" chip
+(`components/billing/premium-chip.tsx`) at the right end of an option row, or
+`PremiumDot` (`premium-dot.tsx`) on an icon-only button. Colours are the
+`--kallo-premium-*` tokens; the locked option itself is never dimmed, and
+tapping it goes to `/pricing`. A free user's composer also starts on Manual
+rather than Instant (`hooks/meals/feed/use-logging-mode.ts`) until they pick
+a mode themselves.
 
 The API surface reports the flag too: the entitlements endpoint returns
 `enforcementEnabled` alongside the snapshot, so a client can tell "you are not
@@ -222,7 +251,7 @@ The 402 body:
 |---|---|---|
 | `BILLING_ENVIRONMENT` | required | `sandbox` outside production; `production` only in production. Isolates DB projections and webhook idempotency. |
 | `SUBSCRIPTION_LAUNCH_DATE` | unset → trial fails open only while enforcement is off | ISO date the paywall goes live; trial starts at `max(signup, this)` |
-| `TRIAL_DAYS` | `7` | App-level trial length (positive integer) |
+| `TRIAL_DAYS` | `0` | App-level free trial length (non-negative integer; `0` = none — the paid first week is sold by the stores) |
 | `BILLING_ENFORCEMENT_ENABLED` | `false` | Global kill-switch. Requires a valid launch date and RC app allowlist before `true`. |
 | `BILLING_PURCHASES_ENABLED` | `false` | Independent commerce switch. Hides and blocks new checkout while false. |
 | `BILLING_SANDBOX_USER_IDS` | empty | Comma-separated UUIDs for dedicated App Review accounts. On production only these users reconcile/read sandbox grants. |
@@ -271,6 +300,37 @@ leaving a live Kallo account after a later failure. RevenueCat `200`, queued
 `202`, and already-absent `404` results are idempotent successes. RevenueCat
 customer deletion does not cancel Apple/Google store subscriptions, and must not
 be assumed to cancel the Paddle subscription either — see the note above.
+
+## Pricing
+
+The stores own the numbers; the app never hardcodes a billed price (the web
+marketing page keeps display fallbacks in `messages/*/landing.json`). Current
+list prices, set 2026-09:
+
+| Plan | Intl web (Paddle) | Intl iOS (App Store) | VN web (Paddle `VN` override) | VN iOS (App Store Vietnam) |
+|---|---|---|---|---|
+| Annual | $29.99 | $34.99 | 449,000₫ | 499,000₫ |
+| Monthly | $7.99 | $8.99 | 49,000₫ | 59,000₫ |
+| Paid first week (both plans) | $0.89 | — (none) | 7,999₫ | — (none) |
+
+- **Web**: one Paddle price per plan (ids in `lib/domain/billing/products.ts`)
+  with a `VN` `unit_price_overrides` entry, plus `trial_period` = 7 days with a
+  `unit_price` (and a matching `VN` override) — Paddle's native paid trial,
+  which RevenueCat records as an introductory offer. Paddle picks the price by
+  the buyer's country, so a Vietnamese buyer pays VND whatever the site locale.
+- **iOS**: base country US; Vietnam set as a manual price; every other
+  storefront is Apple's equalized US price. **No introductory offer** — the App
+  Store cannot sell a paid 1-week intro on a monthly or annual plan (paid intro
+  durations start at 1 month; only a free intro can be a week), so iOS sells
+  the free tier or the full price and the paid first week is web-only. The
+  Flutter paywall still reads any intro the store declares (free or paid) and
+  only promises it when RevenueCat reports the customer eligible.
+- **Web live prices**: `/pricing` shows each signed-out visitor's own Paddle
+  price via `Paddle.PricePreview` (client-side token
+  `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, Paddle → Developer tools → Authentication
+  → "kallo-web-pricing"). Signed-in visitors read the RevenueCat offering their
+  checkout uses, so only one Paddle.js ever runs on the page. Note: live
+  Paddle.js leaves a price's `trialPeriod` fields snake_case.
 
 ## Owner dashboard setup checklist
 
@@ -506,12 +566,12 @@ Apply the data boundary first, then ship dark and flip switches:
    set to `true` for transfer/redemption events that omit environment.
 4. **Configure dashboards**: complete the remaining store checklists.
 5. **Set `SUBSCRIPTION_LAUNCH_DATE`**: this starts trial windows (existing users
-   get a fresh `TRIAL_DAYS` window from the launch date).
+   get a fresh `TRIAL_DAYS` window from the launch date; none at the default `0`).
 6. **Announce** the launch to users.
 7. **Open commerce**: set `BILLING_PURCHASES_ENABLED=true`, verify offerings,
    prices, and purchase activation, then set `BILLING_ENFORCEMENT_ENABLED=true`.
    Locked-out
-   users now get the paywall (web 402 → PaywallDialog; Flutter 402 → paywall).
+   users now get the paywall (web 402 → `/pricing`; Flutter 402 → paywall).
 
 Monitor `billing_webhook_events` for `processed_at IS NULL`. RevenueCat retries
 webhooks only for a bounded period; schedule the replay command below (for
@@ -572,7 +632,7 @@ independently; existing grants are untouched.
   duplicate subscriptions as a support/refund case and monitor provider data.
 - **No in-app plan switching, and on web no self-serve switching at all.** The
   paywall stops offering packages once the tier is `premium`
-  (`paywall-dialog.tsx`), so an existing subscriber cannot be charged twice by
+  (`usePaywallOfferings`, which /pricing uses), so an existing subscriber cannot be charged twice by
   accident. Apple and Google absorb this: their management surfaces let a
   customer move between plans in the same subscription group, and on mobile a
   paywall purchase *is* the upgrade because the store prorates it. Paddle does

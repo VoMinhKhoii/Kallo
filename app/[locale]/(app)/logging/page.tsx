@@ -28,13 +28,11 @@ export default async function LoggingPage({
   searchParams: Promise<{ meal?: string; date?: string }>;
 }) {
   let profile = DEFAULT_PROFILE;
-  let email: string | null = null;
   const rawParams = await searchParams;
   const { meal, date } = parseLoggingSearchParams(rawParams);
 
   try {
     const { user, profile: row } = await requireAuthAndProfile();
-    email = user.email ?? null;
     profile = {
       userId: user.id,
       goal:
@@ -66,7 +64,6 @@ export default async function LoggingPage({
         profile={profile}
         initialMeal={meal}
         initialDate={date}
-        email={email}
         initiallyHasEntries={initiallyHasEntries}
       />
     </>

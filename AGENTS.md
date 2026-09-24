@@ -39,7 +39,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 ## 3. Commands
 
-- Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate, all blocking) · `bun run test` / `bun run test:watch` (**`bun test` runs Bun's own runner, not Vitest** — it collects different files and fails)
+- Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate, all blocking) · `bun run test` / `bun run test:watch` (**`bun test` runs Bun's own runner, not Vitest** — it collects different files and fails) · `bun run test:e2e` (Playwright, `e2e/**/*.spec.ts`; boots `bun dev` on :3100 and stubs third parties per spec — `playwright.config.ts`)
 - DB: `bun db:generate` (Drizzle migration from schema) · `bun db:migrate` (apply locally) · `bun db:studio` · `bun dbr:status` · `bun dbr:push` / `bun dbr:reset` (**user only**)
 - DB search tests (remote DB): `bun --env-file=.env.local run test -- lib/infra/db/__tests__/`
 - **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Kallo**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
@@ -110,3 +110,13 @@ The full module map — one line per folder stating its single concern — is `d
 | One-shot SSE ReadableStream (no WebSocket); raw fetch for the SSE consumer (no TanStack) | Serverless-compatible; purpose-built state machine beats fighting the abstraction |
 | 768-dim `gemini-embedding-001` vectors | Better multilingual quality |
 | Locket-style link invites instead of `@handle` search | No discovery surface; forwarded-link risk mitigated by remove-friend |
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

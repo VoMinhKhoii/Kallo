@@ -52,7 +52,7 @@ export function CircleAddMenu() {
           >
             <Users2 className="h-4 w-4" />
             {t('createGroup')}
-            {locked('unlimited_circle') && <PremiumChip />}
+            {locked('unlimited_circle') && <PremiumChip className="ml-auto" />}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => setTab('friend')}
