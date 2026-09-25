@@ -16,6 +16,7 @@ import '../../paywall/logic/store_subscriptions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import '../logic/delete_subscription_warning.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/list/settings_group.dart';
 import '../../../shared/widgets/list/list_row.dart';
@@ -121,10 +122,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                 ),
                 const SizedBox(height: KalloSpacing.sp2),
               ],
-              Text(
-                tr('settings.account.deleteSubscriptionWarning'),
-                style: dashMeta(),
-              ),
+              Text(tr(deleteSubscriptionWarningKey()), style: dashMeta()),
               const SizedBox(height: KalloSpacing.sp6),
 
               // ── The gate — type the word, read what it costs ────────────
