@@ -19,6 +19,9 @@ interface UseStreamingTerminalEffectsParams {
   // instead of showing an error toast. Gets the streaming bubble's id, and
   // runs before the bubble is dropped, so its updates still see it.
   onPaymentRequired?: (msgId: string) => void;
+  // Pre-stream 403: no AI-processing consent on record. Same bubble contract
+  // as `onPaymentRequired`; the surface re-asks for consent.
+  onConsentRequired?: (msgId: string) => void;
 }
 
 /**
@@ -128,6 +131,7 @@ export function useStreamingTerminalEffects({
   lastErrorRef,
   onAnalysisComplete,
   onPaymentRequired,
+  onConsentRequired,
 }: UseStreamingTerminalEffectsParams) {
   const { status, result, cheatSpec, analysisId, error, reset } = stream;
 
@@ -186,16 +190,19 @@ export function useStreamingTerminalEffects({
     setMessages,
   ]);
 
-  // Terminal: pre-stream 402 — AI analysis is locked. Drop the in-flight
-  // streaming bubble (no error toast) and open the paywall. Mirrors the error
-  // path's cleanup but routes to the upgrade surface instead.
+  // Terminal: a pre-stream refusal — 402 (AI analysis is locked) or 403 (no
+  // AI-processing consent). Drop the in-flight streaming bubble (no error
+  // toast) and hand off to the paywall or the consent ask. Mirrors the error
+  // path's cleanup but routes to the surface that can unblock the user.
   useEffect(() => {
-    if (status !== 'paymentRequired' || !streamingMsgId) return;
+    if (status !== 'paymentRequired' && status !== 'consentRequired') return;
+    if (!streamingMsgId) return;
 
     const msgId = streamingMsgId;
     setStreamingMsgId(null);
 
-    onPaymentRequired?.(msgId);
+    if (status === 'paymentRequired') onPaymentRequired?.(msgId);
+    else onConsentRequired?.(msgId);
     setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
     reset();
   }, [
@@ -203,6 +210,7 @@ export function useStreamingTerminalEffects({
     reset,
     streamingMsgId,
     onPaymentRequired,
+    onConsentRequired,
     setStreamingMsgId,
     setMessages,
   ]);

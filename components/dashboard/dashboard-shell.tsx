@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
+import { useAiConsent } from '@/components/privacy/ai-consent-provider';
 import { useDashboardDateRefresh } from '@/hooks/dashboard/use-dashboard-date-refresh';
 import { useDashboardMealLog } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { useDashboardMeasurements } from '@/hooks/dashboard/use-dashboard-measurements';
@@ -26,11 +27,7 @@ const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   year: 'ranges.year',
 };
 
-interface DashboardShellProps {
-  profile: DashboardProfile;
-}
-
-export function DashboardShell({ profile }: DashboardShellProps) {
+export function DashboardShell({ profile }: { profile: DashboardProfile }) {
   const t = useTranslations('dashboard');
   const queryClient = useQueryClient();
   const todayDate = useDashboardDateRefresh(queryClient);
@@ -73,9 +70,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   });
   // In-place meal logging: the input streams the AI analysis into the Today
   // card and auto-saves; the other sections step back while it runs.
+  const { gate: aiConsent } = useAiConsent();
   const { submit, streaming, restoredDraft } = useDashboardMealLog({
     userId: profile.userId,
     todayDate,
+    aiConsent,
   });
   const dimClass = cn(
     'transition-[opacity,filter] duration-300',

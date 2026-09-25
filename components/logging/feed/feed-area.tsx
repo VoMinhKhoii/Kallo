@@ -10,6 +10,7 @@ import {
 import { FeedHeader } from '@/components/logging/feed/feed-header';
 import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/partial-yesterday-prompt';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
+import { useAiConsent } from '@/components/privacy/ai-consent-provider';
 import { useFeedController } from '@/hooks/meals/feed/use-feed-controller';
 import { cn } from '@/lib/core/ui/cn';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
@@ -47,6 +48,7 @@ export function FeedArea({
   onPaymentRequired,
   initiallyHasEntries,
 }: FeedAreaProps) {
+  const { gate: aiConsent } = useAiConsent();
   const feed = useFeedController({
     selectedDate,
     today,
@@ -55,6 +57,7 @@ export function FeedArea({
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    aiConsent,
     initiallyHasEntries,
   });
   const { day } = feed;

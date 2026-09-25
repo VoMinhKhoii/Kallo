@@ -11,6 +11,19 @@ const mocks = vi.hoisted(() => ({
   resetError: vi.fn(),
   scanLabel: vi.fn(),
   stopCamera: vi.fn(),
+  ensureAiConsent: vi.fn(),
+  onConsentRequired: vi.fn(),
+}));
+
+vi.mock('@/components/privacy/ai-consent-provider', () => ({
+  useAiConsent: () => ({
+    consented: true,
+    gate: {
+      ensure: mocks.ensureAiConsent,
+      onRequired: mocks.onConsentRequired,
+    },
+    setConsent: vi.fn(),
+  }),
 }));
 
 vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => ({
@@ -70,6 +83,7 @@ function selectFile(container: HTMLElement, name: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.ensureAiConsent.mockResolvedValue(true);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     value: vi
@@ -117,7 +131,9 @@ describe('OcrScannerTab lifecycle', () => {
     );
     selectFile(container, 'label.png');
 
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    });
     expect(mocks.scanLabel).toHaveBeenCalledOnce();
     unmount();
     await act(async () => {
@@ -126,5 +142,34 @@ describe('OcrScannerTab lifecycle', () => {
     });
 
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing when the user answers "Not now" to the AI consent ask', async () => {
+    mocks.ensureAiConsent.mockResolvedValueOnce(false);
+    const { container } = render(
+      <OcrScannerTab onSuccess={vi.fn()} onManualEntry={vi.fn()} />
+    );
+    selectFile(container, 'label.png');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    });
+
+    expect(mocks.ensureAiConsent).toHaveBeenCalledOnce();
+    expect(mocks.scanLabel).not.toHaveBeenCalled();
+  });
+
+  it('re-asks for consent when the server refuses with ai_consent_required', async () => {
+    mocks.scanLabel.mockRejectedValueOnce(new Error('ai_consent_required'));
+    const { container } = render(
+      <OcrScannerTab onSuccess={vi.fn()} onManualEntry={vi.fn()} />
+    );
+    selectFile(container, 'label.png');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    });
+
+    expect(mocks.onConsentRequired).toHaveBeenCalledOnce();
   });
 });

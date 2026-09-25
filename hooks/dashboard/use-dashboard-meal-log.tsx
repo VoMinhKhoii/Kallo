@@ -8,6 +8,7 @@ import {
   deriveStreamTicker,
   type StreamTickerFrame,
 } from '@/lib/domain/logging/stream-ticker';
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 import { useDashboardAutoSave } from './use-dashboard-autosave';
 
 export interface DashboardMealStream {
@@ -32,9 +33,12 @@ export interface DashboardMealStream {
 export function useDashboardMealLog({
   userId,
   todayDate,
+  aiConsent,
 }: {
   userId: string;
   todayDate: string;
+  /** Asks for AI-processing consent before the first analysis; re-asks on a 403. */
+  aiConsent: AiConsentGate;
 }) {
   const t = useTranslations('dashboard');
   const stream = useStreamAnalysis();
@@ -69,7 +73,7 @@ export function useDashboardMealLog({
     onSaved: clearSubmitted,
   });
 
-  const submit = useCallback(
+  const start = useCallback(
     (text: string, options?: { retry?: boolean }) => {
       if (stream.isAnalyzing || isSaving) return;
       setSubmittedText(text);
@@ -91,6 +95,31 @@ export function useDashboardMealLog({
     },
     [analyze, isSaving, stream.isAnalyzing, todayDate]
   );
+
+  // Nothing goes to the AI provider before the user has agreed (App Store
+  // 5.1.2(i)). "Not now" hands the text back to the input, like a dismiss.
+  const submit = useCallback(
+    (text: string, options?: { retry?: boolean }) => {
+      if (stream.isAnalyzing || isSaving) return;
+      void aiConsent.ensure().then((ok) => {
+        if (ok) start(text, options);
+        else setRestoredDraft({ text });
+      });
+    },
+    [aiConsent, isSaving, start, stream.isAnalyzing]
+  );
+
+  // The server refused for missing consent (403): nothing was analyzed. Give
+  // the text back and ask again.
+  const { status } = stream;
+  useEffect(() => {
+    if (status !== 'consentRequired') return;
+    if (submittedText) setRestoredDraft({ text: submittedText });
+    setSubmittedText(null);
+    attemptIdRef.current = null;
+    reset();
+    aiConsent.onRequired();
+  }, [status, submittedText, reset, aiConsent]);
 
   const onRetry = useCallback(() => {
     if (submittedText) submit(submittedText, { retry: true });

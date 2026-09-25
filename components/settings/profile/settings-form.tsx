@@ -5,6 +5,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { SettingsGroup } from '@/components/settings/chrome/group';
 import { SectionHeader } from '@/components/settings/chrome/section-header';
 import { IdentityRows } from '@/components/settings/identity/identity-rows';
+import { AiConsentRow } from '@/components/settings/privacy/ai-consent-row';
 import { SharingRow } from '@/components/settings/sharing/sharing-row';
 import { Form } from '@/components/ui/form';
 import { useLiveTargets } from '@/hooks/profile/use-live-targets';
@@ -120,6 +121,7 @@ function FormBody({
           <div id={SUBSECTION_ANCHOR.sharing} className="scroll-mt-20">
             <SharingRow initialValue={autoShare} />
           </div>
+          <AiConsentRow />
         </SettingsGroup>
       </section>
 

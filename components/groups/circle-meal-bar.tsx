@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { InlineMealTrigger } from '@/components/dashboard/today/meal-trigger';
+import { useAiConsent } from '@/components/privacy/ai-consent-provider';
 import { useDashboardDateRefresh } from '@/hooks/dashboard/use-dashboard-date-refresh';
 import { useDashboardMealLog } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { useMyProfile } from '@/hooks/profile/use-profile';
@@ -16,9 +17,11 @@ export function CircleMealBar() {
   const queryClient = useQueryClient();
   const todayDate = useDashboardDateRefresh(queryClient);
   const { data: profile } = useMyProfile();
+  const { gate: aiConsent } = useAiConsent();
   const { submit, streaming, restoredDraft } = useDashboardMealLog({
     userId: profile?.userId ?? '',
     todayDate,
+    aiConsent,
   });
 
   // Hold the bar until we have the real userId so a submit can never target an

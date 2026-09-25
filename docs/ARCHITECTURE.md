@@ -138,6 +138,7 @@ another domain module is a smell worth a second look.
 | `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
+| `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
 | `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/` |
 | `waitlist/` | signup, confirm, token |
@@ -203,8 +204,9 @@ another domain module is a smell worth a second look.
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
+| `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; entry points pass its `gate` to their hooks | ok |
 | `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step | split |
-| `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
+| `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
 | `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |

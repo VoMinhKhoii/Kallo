@@ -112,3 +112,32 @@ describe('useStreamingTerminalEffects — paymentRequired', () => {
     expect(onPaymentRequired).not.toHaveBeenCalled();
   });
 });
+
+describe('useStreamingTerminalEffects — consentRequired', () => {
+  it('hands off to the consent ask (not the paywall), drops the bubble, and does not toast', () => {
+    const onPaymentRequired = vi.fn();
+    const onConsentRequired = vi.fn();
+    const setStreamingMsgId = vi.fn();
+    const stream = baseStream({ status: 'consentRequired' });
+
+    renderHook(() =>
+      useStreamingTerminalEffects({
+        stream,
+        streamingMsgId: 'msg-1',
+        setStreamingMsgId,
+        setMessages: vi.fn(),
+        scrollToBottom: vi.fn(),
+        lastAnalysisIdRef: { current: null },
+        lastErrorRef: { current: null },
+        onPaymentRequired,
+        onConsentRequired,
+      })
+    );
+
+    expect(onConsentRequired).toHaveBeenCalledWith('msg-1');
+    expect(onPaymentRequired).not.toHaveBeenCalled();
+    expect(setStreamingMsgId).toHaveBeenCalledWith(null);
+    expect(stream.reset).toHaveBeenCalledTimes(1);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+});

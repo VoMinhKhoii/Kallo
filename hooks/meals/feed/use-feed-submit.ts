@@ -29,6 +29,11 @@ interface UseFeedSubmitParams {
   isCheat?: boolean;
   /** Indulgence magnitude passed to the cheat estimator. */
   cheatIntensity?: CheatIntensity;
+  /**
+   * Resolves true once AI-processing consent is on record, asking first when
+   * it is not; false means send nothing.
+   */
+  ensureAiConsent: () => Promise<boolean>;
 }
 
 function generateId() {
@@ -48,6 +53,7 @@ export function useFeedSubmit({
   lastErrorRef,
   isCheat,
   cheatIntensity,
+  ensureAiConsent,
 }: UseFeedSubmitParams) {
   /**
    * Analyze the composer's free text. `override` serves the combined-relog
@@ -84,6 +90,11 @@ export function useFeedSubmit({
     const refs = override?.refs;
     // Falls back to the analyzed text, so every non-relog submit is unchanged.
     const label = override?.label ?? text;
+
+    // Nothing goes to the AI provider before the user has agreed (App Store
+    // 5.1.2(i)). The composer still holds the text, so "Not now" loses
+    // nothing and "Continue" carries straight on with this same submit.
+    if (!(await ensureAiConsent())) return false;
 
     let durablyStaged = false;
     await guard(async () => {

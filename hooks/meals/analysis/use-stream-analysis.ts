@@ -247,6 +247,18 @@ export function useStreamAnalysis() {
           // showing a generic error toast. Keyed on the HTTP status; the body
           // (code 'feature_locked', feature, reason) is parsed defensively but
           // the status alone is authoritative.
+          // A pre-stream 403 is the AI-processing consent gate: nothing was
+          // sent to the provider. The surface re-asks instead of erroring.
+          if (response.status === 403) {
+            setState((prev) => ({
+              ...prev,
+              status: 'consentRequired',
+              error: errorMsg,
+              isAnalyzing: false,
+            }));
+            return false;
+          }
+
           if (response.status === 402) {
             setState((prev) => ({
               ...prev,
