@@ -67,13 +67,13 @@ describe('groundedIngredientEstimateSchema', () => {
     expect(parsed.selectedCandidateId).toBeUndefined();
   });
 
-  it('REJECTS missing P/C whenever no candidate is accepted (the mì gói regression)', () => {
+  it('REJECTS missing or null P/C whenever no candidate is accepted (the mì gói regression)', () => {
     // Prod incident: `carbohydrateG` was optional, Call 2 omitted it for the
     // unmatched noodles, and the absence persisted as C:0g / 412 kcal. Lean
-    // output lets an ACCEPTED match omit P/C (the DB row supplies them), but
-    // without an accepted candidate they are the only source — omitting one
-    // must fail parse, which routes into the zero-delay retry. This test is
-    // the executable guard that the unmatched optionality never returns.
+    // output lets an ACCEPTED match send null P/C (the DB row supplies them),
+    // but without an accepted candidate they are the only source — a missing
+    // key or a null must fail parse, which routes into the zero-delay retry.
+    // This test is the executable guard that the optionality never returns.
     const base = {
       ingredientName: 'mì gói',
       grossG: 80,
@@ -92,21 +92,44 @@ describe('groundedIngredientEstimateSchema', () => {
               ...verdict,
             }),
           `omitting ${field} with verdict ${JSON.stringify(verdict)} must fail parse`
+        ).toThrow();
+        expect(
+          () =>
+            groundedIngredientEstimateSchema.parse({
+              ...base,
+              [field]: null,
+              ...verdict,
+            }),
+          `null ${field} with verdict ${JSON.stringify(verdict)} must fail parse`
         ).toThrow(/required when no candidate is accepted/);
       }
     }
   });
 
-  it('lets an accepted DB match omit P/C (the server anchors them)', () => {
+  it('lets an accepted DB match send null P/C (the server anchors them)', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'cơm',
       selectedCandidateId: 'c1',
       grossG: 200,
       refusePct: 0,
+      proteinG: null,
+      carbohydrateG: null,
       fatG: { low: 0.5, mid: 0.6, high: 0.7 },
     });
-    expect(parsed.proteinG).toBeUndefined();
-    expect(parsed.carbohydrateG).toBeUndefined();
+    expect(parsed.proteinG).toBeNull();
+    expect(parsed.carbohydrateG).toBeNull();
+  });
+
+  it('requires the P/C keys even on an accepted match (an explicit decision, never a skip)', () => {
+    expect(() =>
+      groundedIngredientEstimateSchema.parse({
+        ingredientName: 'cơm',
+        selectedCandidateId: 'c1',
+        grossG: 200,
+        refusePct: 0,
+        fatG: { low: 0.5, mid: 0.6, high: 0.7 },
+      })
+    ).toThrow();
   });
 
   it('never accepts caloriesKcal — the server always derives it', () => {
@@ -117,6 +140,8 @@ describe('groundedIngredientEstimateSchema', () => {
         grossG: 200,
         refusePct: 0,
         caloriesKcal: { low: 250, mid: 260, high: 270 },
+        proteinG: null,
+        carbohydrateG: null,
         fatG: { low: 0.5, mid: 0.6, high: 0.7 },
       })
     ).toThrow();

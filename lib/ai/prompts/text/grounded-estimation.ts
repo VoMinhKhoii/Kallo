@@ -125,7 +125,7 @@ export function buildStaticPrefix(
   const serverScalingRule =
     '  The server multiplies DB per_100g × edible mass / 100 and applies NO yield conversion — the raw/cooked basis conversion is yours.';
   const outputIngredient =
-    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, proteinG?{low,mid,high}, carbohydrateG?{low,mid,high}, fatG{low,mid,high} }.';
+    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, proteinG{low,mid,high}|null, carbohydrateG{low,mid,high}|null, fatG{low,mid,high} }.';
   const finalBasisRule =
     "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG.";
   const verdictMassField = 'grossG';
@@ -184,7 +184,7 @@ ${serverScalingRule}
 <macro_rule>
   Never emit calories — the server derives them from 4P + 4C + 9F. A genuine 0 is a valid value; never invent mass to avoid a zero. base = the selected candidate's per_100g × edible mass / 100.
 
-  ACCEPTED candidate, prep_notes EMPTY — emit fatG only; OMIT proteinG and carbohydrateG (the server uses the DB row).
+  ACCEPTED candidate, prep_notes EMPTY — emit fatG; set proteinG and carbohydrateG to null (the server uses the DB row).
     - fat: reflect cooking-method effect.
         · chiên/rán/xào (oil): +30–80% over base.
         · luộc/hấp: near base.
@@ -194,7 +194,7 @@ ${serverScalingRule}
           absorbed-oil allowance above. Beyond → server clamps the whole
           triple to the nearest bound while preserving its spread.
 
-  ACCEPTED candidate, prep_notes NON-EMPTY — also emit proteinG and carbohydrateG, reflecting the user's modifier. Move only what the note physically implies.
+  ACCEPTED candidate, prep_notes NON-EMPTY — also emit proteinG and carbohydrateG as triples, reflecting the user's modifier. Move only what the note physically implies.
     Tighter prep-notes bands (server clamps to the nearest bound):
       - proteinG, carbohydrateG: 0.71× to 1.4× of base.
       - fatG floor: 0.5× base; ceiling: 2× base + the absorbed-oil allowance
@@ -207,14 +207,14 @@ ${serverScalingRule}
       - "extra sauce", "thêm đường": carb up if sweet.
       - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy"): keep ALL macros at base.
 
-  NO accepted candidate (match_status="unmatched", or selectedCandidateId="none"): you MUST emit ABSOLUTE LOW/MID/HIGH proteinG, carbohydrateG and fatG for the as-eaten portion from cuisine knowledge — they are the only source; omitting one rejects the whole response. ${DENSITY_PRIORS[locale]} Keep 4P + 4C + 9F under 900 kcal/100g.
+  NO accepted candidate (match_status="unmatched", or selectedCandidateId="none"): you MUST emit ABSOLUTE LOW/MID/HIGH proteinG, carbohydrateG and fatG for the as-eaten portion from cuisine knowledge — they are the only source; null here rejects the whole response. ${DENSITY_PRIORS[locale]} Keep 4P + 4C + 9F under 900 kcal/100g.
 </macro_rule>
 
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
 ${outputIngredient}
-  fatG is REQUIRED on every ingredient. proteinG and carbohydrateG follow <macro_rule>: required without an accepted candidate or with prep_notes, omitted otherwise. 0 is a valid value.
+  Every field is present on every ingredient. fatG is always a triple; proteinG and carbohydrateG are triples without an accepted candidate or with prep_notes, null otherwise (<macro_rule>). 0 is a valid value; null is not zero.
   Round numerical fields to 1 decimal place.
 
   FINAL CHECK before emitting, ingredient by ingredient — the BASIS RULE again, because getting it wrong is a silent 2–3× calorie error:

@@ -215,8 +215,8 @@ describe('buildFastPathEstimation — synthesized estimation shape', () => {
     expect(ing.fatG.high).toBe(ing.fatG.mid);
     // Lean output: an accepted DB match carries fat only — P/C/kcal come
     // from the same DB base downstream, never a second opinion.
-    expect(ing.proteinG).toBeUndefined();
-    expect(ing.carbohydrateG).toBeUndefined();
+    expect(ing.proteinG).toBeNull();
+    expect(ing.carbohydrateG).toBeNull();
     expect('caloriesKcal' in ing).toBe(false);
   });
 

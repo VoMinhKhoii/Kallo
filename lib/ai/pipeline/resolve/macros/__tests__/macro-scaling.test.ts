@@ -9,6 +9,8 @@ describe('resolveMacroSource', () => {
     selectedCandidateId: 'c1',
     grossG: 80,
     refusePct: 0,
+    proteinG: null,
+    carbohydrateG: null,
     fatG: triple(14),
   };
 
@@ -59,6 +61,8 @@ describe('scaleGroundedMacros', () => {
         selectedCandidateId: 'c1',
         grossG: 200,
         refusePct: 0,
+        proteinG: null,
+        carbohydrateG: null,
         fatG: triple(1),
       },
       400,

@@ -95,18 +95,22 @@ export function buildGroundedIngredientEstimateSchema() {
       // an UNMATCHED noodle at C:0g when the model omitted carbohydrateG. The
       // `superRefine` below restores that guarantee per ingredient: no accepted
       // candidate (omitted or "none") → both triples required, and a miss
-      // throws a ZodError into the zero-delay parse-retry path. An accepted
+      // throws a ZodError into the zero-delay parse-retry path. The KEYS stay
+      // required (nullable, not optional): measured 2026-09-26, optional keys
+      // let the model skip P/C on unmatched rows 39× in 182 cases (22 meals
+      // failed after 3 retries); a required key forces an explicit decision
+      // and `null` still costs ~2 tokens against ~20 for a triple. An accepted
       // candidate whose DB nutrition never loaded is caught server-side
       // (`resolveMacroSource` → no_estimate carve-out), never zero-filled.
       proteinG: boundedEstimateSchema
-        .optional()
+        .nullable()
         .describe(
-          'Protein in grams for the edible portion. REQUIRED when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise omit (the server uses the DB row).'
+          'Protein in grams for the edible portion. A triple when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise null (the server uses the DB row).'
         ),
       carbohydrateG: boundedEstimateSchema
-        .optional()
+        .nullable()
         .describe(
-          'Carbohydrates in grams for the edible portion. REQUIRED when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise omit (the server uses the DB row).'
+          'Carbohydrates in grams for the edible portion. A triple when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise null (the server uses the DB row).'
         ),
       fatG: boundedEstimateSchema.describe(
         'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'

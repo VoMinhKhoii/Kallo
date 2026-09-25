@@ -175,8 +175,8 @@ export function resolveStreamingV2MealItem(
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,
-        proteinG: rawIng.proteinG,
-        carbohydrateG: rawIng.carbohydrateG,
+        proteinG: rawIng.proteinG ?? undefined,
+        carbohydrateG: rawIng.carbohydrateG ?? undefined,
         fatG: rawIng.fatG,
       };
 

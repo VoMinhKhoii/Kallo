@@ -187,6 +187,8 @@ export function buildFastPathEstimation(args: {
           // Echo the DB-anchored fat as a flat triple: guardMacro passes it
           // through byte-identical to the reconcile path's
           // flatTriple(base.fatG). P/C/kcal come from the same base downstream.
+          proteinG: null,
+          carbohydrateG: null,
           fatG: flat(base.fatG),
         };
       }
