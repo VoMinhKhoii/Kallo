@@ -6,10 +6,8 @@ import {
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
 import { sendChatMessagePush } from '@/lib/domain/notifications/push';
-import {
-  blockedUserIds,
-  notBlockedWithSql,
-} from '@/lib/domain/social/moderation/blocks';
+import { visibleChatMessageSql } from '@/lib/domain/social/chat/message-visibility';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -49,7 +47,7 @@ export async function listChatGroupMessages(
           // In a named group both people of a block stay members; each simply
           // stops seeing the other's messages. (A direct chat is already
           // closed by requireGroupAccess once the edge is not 'accepted'.)
-          notBlockedWithSql(actorId, chatGroupMessages.senderId)
+          visibleChatMessageSql(actorId, chatGroupMessages)
         )
       )
       .orderBy(desc(chatGroupMessages.createdAt), desc(chatGroupMessages.id))
@@ -117,27 +115,30 @@ export async function sendChatGroupMessage(
       })
       .returning();
 
-    // Full member list (sender included) read under the lock: it both
+    // Member list (sender included) read under the lock: it both
     // re-verifies the sender's membership — requireGroupAccess above ran
     // before the lock, so a concurrent removal could have landed since —
-    // and derives the push audience from the same snapshot.
+    // and derives the push audience from the same snapshot. Members in a
+    // blocked relation with the sender are dropped in the query itself: the
+    // thread read hides this message from them, so its preview must not
+    // reach them either. The sender always survives the filter (no self-block).
     const members = await tx
       .select({ userId: chatGroupMembers.userId })
       .from(chatGroupMembers)
-      .where(eq(chatGroupMembers.groupId, parsed.groupId));
+      .where(
+        and(
+          eq(chatGroupMembers.groupId, parsed.groupId),
+          notBlockedWithSql(actorId, chatGroupMembers.userId)
+        )
+      );
     if (!members.some((member) => member.userId === actorId)) {
       throw Errors.notFound('Không tìm thấy nhóm chat.');
     }
 
-    // Nobody in a blocked relation with the sender gets the push preview —
-    // the thread read hides this message from them as well.
-    const blocked = await blockedUserIds(actorId, tx);
     return {
       row: message,
       recipientIds: members
-        .filter(
-          (member) => member.userId !== actorId && !blocked.has(member.userId)
-        )
+        .filter((member) => member.userId !== actorId)
         .map((member) => member.userId),
     };
   });

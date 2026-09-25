@@ -1,42 +1,42 @@
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
-
+import { describe, expect, it } from 'vitest';
 import {
   blockedBetweenSql,
-  blockedUserIds,
+  lockPairSql,
   notBlockedWithSql,
 } from '@/lib/domain/social/moderation/blocks';
 import { mealShareReplies } from '@/lib/infra/db/schema';
 
 const VIEWER = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OTHER = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
-const THIRD = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
+
+const flat = (sql: string) => sql.replace(/\s+/g, ' ');
 
 describe('blockedBetweenSql', () => {
-  it('matches a blocked edge in either direction, fully qualified', () => {
+  // Blocks are stored directed (blocker → blocked) but hide both people, so
+  // the rule must match a row in EITHER direction.
+  it('matches a user_blocks row in either direction, fully qualified', () => {
     const { sql, params } = new PgDialect().sqlToQuery(
       blockedBetweenSql(VIEWER, mealShareReplies.userId)
     );
-    const flat = sql.replace(/\s+/g, ' ');
-    expect(flat).toContain(`"friendships"."status" = 'blocked'`);
-    expect(flat).toContain(
-      '"friendships"."user_low" = $1 AND "friendships"."user_high" = "meal_share_replies"."user_id"'
+    expect(flat(sql)).toContain(
+      '("user_blocks"."blocker_id" = $1 AND "user_blocks"."blocked_id" = "meal_share_replies"."user_id")'
     );
-    expect(flat).toContain(
-      '"friendships"."user_high" = $2 AND "friendships"."user_low" = "meal_share_replies"."user_id"'
+    expect(flat(sql)).toContain(
+      'OR ("user_blocks"."blocker_id" = "meal_share_replies"."user_id" AND "user_blocks"."blocked_id" = $2)'
     );
-    // No bare column the embedding statement could find ambiguous (42702).
-    expect(sql.match(/(?<![."\w])"(?:status|user_low|user_high)"/g)).toBeNull();
+    // No bare column the embedding statement could find ambiguous (42702),
+    // and nothing left of the retired friendships-status form.
+    expect(sql.match(/(?<![."\w])"(?:blocker_id|blocked_id)"/g)).toBeNull();
+    expect(sql).not.toContain('friendships');
     expect(params).toEqual([VIEWER, VIEWER]);
   });
 
-  it('binds a literal counterpart id as a parameter', () => {
+  it('binds two literal ids as parameters', () => {
     const { params } = new PgDialect().sqlToQuery(
       blockedBetweenSql(VIEWER, OTHER)
     );
-    expect(params).toEqual([VIEWER, OTHER, VIEWER, OTHER]);
+    expect(params).toEqual([VIEWER, OTHER, OTHER, VIEWER]);
   });
 
   it('notBlockedWithSql is its negation', () => {
@@ -47,19 +47,12 @@ describe('blockedBetweenSql', () => {
   });
 });
 
-describe('blockedUserIds', () => {
-  it('returns the other side of every blocked edge touching the viewer', async () => {
-    const where = vi.fn().mockResolvedValue([
-      { userLow: VIEWER, userHigh: OTHER },
-      { userLow: THIRD, userHigh: VIEWER },
-    ]);
-    const db = { select: vi.fn(() => ({ from: vi.fn(() => ({ where })) })) };
-
-    const ids = await blockedUserIds(VIEWER, db as never);
-
-    expect([...ids].sort()).toEqual([OTHER, THIRD].sort());
-    const { sql, params } = new PgDialect().sqlToQuery(where.mock.calls[0][0]);
-    expect(sql).toContain('"friendships"."status" = $1');
-    expect(params).toEqual(['blocked', VIEWER, VIEWER]);
+describe('lockPairSql', () => {
+  it('takes one transaction-scoped advisory lock keyed on the ordered pair', () => {
+    const { sql, params } = new PgDialect().sqlToQuery(
+      lockPairSql(VIEWER, OTHER)
+    );
+    expect(sql).toContain('pg_advisory_xact_lock(hashtextextended($1, 0))');
+    expect(params).toEqual([`friend-pair:${VIEWER}:${OTHER}`]);
   });
 });

@@ -85,8 +85,9 @@ describe('createContentReport', () => {
     await expect(
       createContentReport(
         REPORTER,
-        // A client-sent targetUserId is ignored, whatever it says.
-        { ...validInput, targetUserId: REPORTER },
+        // An older client still sending targetUserId: the key is not in the
+        // contract, Zod strips it, and the owner comes from the target.
+        { ...validInput, targetUserId: REPORTER } as never,
         db as never
       )
     ).resolves.toEqual({ id: REPORT_ID });

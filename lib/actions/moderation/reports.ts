@@ -19,8 +19,8 @@ import { alertAdminsOfReport } from './report-alert';
  *
  * The target must exist and be one the reporter could have seen (else 404 —
  * the same answer as a missing id). The reported person is derived from the
- * target; a client-sent `targetUserId` is ignored. Reporting your own content
- * is a 400. One report per reporter per target: a repeat (a retry, or a second
+ * target (the body has no field for it). Reporting your own content is a
+ * 400. One report per reporter per target: a repeat (a retry, or a second
  * tap) returns the existing report's id and does not email the admins again.
  *
  * On a new report, every ADMIN_EMAILS address is emailed after the response is

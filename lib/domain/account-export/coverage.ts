@@ -109,9 +109,11 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
     excludedColumns: {
       user_low: FRIEND_PAIR,
       user_high: FRIEND_PAIR,
-      blocked_by:
-        "Who placed a block. Set only on 'blocked' edges, which the export leaves out entirely; the caller's own blocks are listed in the app (GET /api/v1/groups/friends/blocked).",
     },
+  },
+  user_blocks: {
+    excluded:
+      'Who the user blocked. Listed in the app (GET /api/v1/groups/friends/blocked) and available from support on request; rows where the user is the one blocked are never disclosed to them, so a table-level export could not include those anyway.',
   },
   meal_shares: {
     exported: 'social.mealShares',

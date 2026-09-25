@@ -16,8 +16,17 @@ CREATE TABLE "content_reports" (
 	CONSTRAINT "content_reports_note_length_check" CHECK (char_length("content_reports"."note") <= 500)
 );
 --> statement-breakpoint
-ALTER TABLE "friendships" ADD COLUMN "blocked_by" uuid;--> statement-breakpoint
+CREATE TABLE "user_blocks" (
+	"blocker_id" uuid NOT NULL,
+	"blocked_id" uuid NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_blocks_blocker_id_blocked_id_pk" PRIMARY KEY("blocker_id","blocked_id"),
+	CONSTRAINT "user_blocks_not_self_check" CHECK ("user_blocks"."blocker_id" <> "user_blocks"."blocked_id")
+);
+--> statement-breakpoint
 ALTER TABLE "content_reports" ADD CONSTRAINT "content_reports_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_reports" ADD CONSTRAINT "content_reports_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "auth"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blocker_id_users_id_fk" FOREIGN KEY ("blocker_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blocked_id_users_id_fk" FOREIGN KEY ("blocked_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "content_reports_status_created_idx" ON "content_reports" USING btree ("status","created_at" DESC);--> statement-breakpoint
-ALTER TABLE "friendships" ADD CONSTRAINT "friendships_blocked_by_users_id_fk" FOREIGN KEY ("blocked_by") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;
+CREATE INDEX "user_blocks_blocked_id_idx" ON "user_blocks" USING btree ("blocked_id");

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { blockFriend } from '@/lib/actions/groups/blocks';
+import { blockFriend } from '@/lib/actions/moderation/blocks';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listBlockedUsers } from '@/lib/actions/groups/blocks';
+import { listBlockedUsers } from '@/lib/actions/moderation/blocks';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

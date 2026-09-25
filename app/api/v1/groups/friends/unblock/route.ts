@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { unblockFriend } from '@/lib/actions/groups/blocks';
+import { unblockFriend } from '@/lib/actions/moderation/blocks';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { unblockUserBodySchema } from '@/lib/api/contracts/social/moderation';
 import { handleRouteError } from '@/lib/api/respond';

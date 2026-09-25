@@ -1169,13 +1169,6 @@ export const friendships = pgTable(
     // friendships_set_accepted_at trigger (clock_timestamp() at the status
     // flip — see 20260923051230 for why that clock); the app never sets it.
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
-    // Who placed the block, while status = 'blocked'. Only that person may
-    // unblock (lib/actions/groups/blocks.ts). NULL on every other status, and
-    // on blocks written before this column existed — re-blocking claims those.
-    // Cascade like the other party columns: a deleted account's edges go too.
-    blockedBy: uuid('blocked_by').references(() => authUsers.id, {
-      onDelete: 'cascade',
-    }),
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
@@ -1187,9 +1180,49 @@ export const friendships = pgTable(
       'friendships_user_order_check',
       sql`${table.userLow} < ${table.userHigh}`
     ),
+    // 'blocked' is retired — blocks live in user_blocks since 20260925120100,
+    // which converted and deleted every blocked edge. It stays in the CHECK on
+    // purpose: prod migrations apply before the new revision is promoted, and
+    // the revision still serving in that window writes 'blocked'; dropping the
+    // value would turn its block endpoint into a 500 until the promote lands.
+    // App code treats a stray 'blocked' row as a dead edge (never 'accepted').
     check(
       'friendships_status_check',
       sql`${table.status} IN ('pending', 'accepted', 'blocked')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// User blocks — one DIRECTED row per blocker → blocked person
+// ---------------------------------------------------------------------------
+// Directional, so A-blocks-B and B-blocks-A are two rows and lifting one
+// leaves the other in force. The READ rule is symmetric: any row in either
+// direction hides both people from each other everywhere
+// (lib/domain/social/moderation/blocks.ts). Blocking also deletes the pair's
+// friendships row in the same transaction (lib/actions/moderation/blocks.ts).
+// The primary key serves "who did I block"; the blocked_id index serves the
+// reverse direction of the symmetric check.
+
+export const userBlocks = pgTable(
+  'user_blocks',
+  {
+    blockerId: uuid('blocker_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    blockedId: uuid('blocked_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.blockerId, table.blockedId] }),
+    index('user_blocks_blocked_id_idx').on(table.blockedId),
+    check(
+      'user_blocks_not_self_check',
+      sql`${table.blockerId} <> ${table.blockedId}`
     ),
   ]
 );

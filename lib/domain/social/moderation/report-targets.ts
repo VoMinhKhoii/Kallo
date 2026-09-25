@@ -5,9 +5,12 @@
 // A report names its target by kind + id; the reported PERSON is derived here,
 // never taken from the client. Admission mirrors what the reporter could have
 // been looking at:
-//   - share / reply: the canonical share gate (canViewShareOwnedBy) — or a
-//     block between the reporter and the author, because "report, then block"
-//     and "block, then report" must both work and a block closes that gate;
+//   - share / reply: the share-visibility rule IGNORING blocks
+//     (shareVisibleIgnoringBlocksSql) — owner, else non-private and a live
+//     relationship — so "block, then report" still works while the reporter
+//     is in a group with the author. It is NOT widened for a block: blocking a
+//     stranger must never make their private share reportable (that would
+//     confirm the share exists and mail its text to the admins);
 //   - chat_message / chat_group: the reporter is a member of the chat (not
 //     the direct-chat friendship check — a block closes that too);
 //   - profile: any existing circle profile (profiles are reachable by invite
@@ -17,8 +20,7 @@
 
 import { and, eq } from 'drizzle-orm';
 import type { ReportTargetKind } from '@/lib/api/contracts/social/moderation';
-import { blockedUserIds } from '@/lib/domain/social/moderation/blocks';
-import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
+import { shareVisibleIgnoringBlocksSql } from '@/lib/domain/social/shares/share-visibility';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
@@ -45,21 +47,16 @@ const EXCERPT_MAX = 280;
 const excerptOf = (text: string | null | undefined) =>
   text ? text.slice(0, EXCERPT_MAX) : null;
 
-interface ShareRow {
-  actorId: string;
-  sharedAt: Date;
-  visibility: string;
-}
-
-async function shareAdmits(
-  reporterId: string,
-  share: ShareRow,
-  authorId: string,
-  db: Db
-): Promise<boolean> {
-  if (await canViewShareOwnedBy(reporterId, share, db)) return true;
-  return (await blockedUserIds(reporterId, db)).has(authorId);
-}
+/** Admission for a share (or a reply on one), folded into the row read's
+ * WHERE — which Drizzle renders fully qualified, and both reads join, so the
+ * single-table column-stripping hazard in share-visibility.ts cannot apply. */
+const reporterCouldSee = (reporterId: string) =>
+  shareVisibleIgnoringBlocksSql(
+    reporterId,
+    mealShares.actorId,
+    mealShares.sharedAt,
+    mealShares.visibility
+  );
 
 async function isChatMember(
   reporterId: string,
@@ -81,38 +78,23 @@ async function isChatMember(
 
 async function shareTarget(reporterId: string, shareId: string, db: Db) {
   const [row] = await db
-    .select({
-      actorId: mealShares.actorId,
-      sharedAt: mealShares.sharedAt,
-      visibility: mealShares.visibility,
-      rawInput: meals.rawInput,
-    })
+    .select({ actorId: mealShares.actorId, rawInput: meals.rawInput })
     .from(mealShares)
     .innerJoin(meals, eq(meals.id, mealShares.mealId))
-    .where(eq(mealShares.id, shareId))
+    .where(and(eq(mealShares.id, shareId), reporterCouldSee(reporterId)))
     .limit(1);
-  if (!row || !(await shareAdmits(reporterId, row, row.actorId, db))) {
-    return null;
-  }
+  if (!row) return null;
   return { ownerId: row.actorId, excerpt: excerptOf(row.rawInput) };
 }
 
 async function replyTarget(reporterId: string, replyId: string, db: Db) {
   const [row] = await db
-    .select({
-      authorId: mealShareReplies.userId,
-      body: mealShareReplies.body,
-      actorId: mealShares.actorId,
-      sharedAt: mealShares.sharedAt,
-      visibility: mealShares.visibility,
-    })
+    .select({ authorId: mealShareReplies.userId, body: mealShareReplies.body })
     .from(mealShareReplies)
     .innerJoin(mealShares, eq(mealShares.id, mealShareReplies.shareId))
-    .where(eq(mealShareReplies.id, replyId))
+    .where(and(eq(mealShareReplies.id, replyId), reporterCouldSee(reporterId)))
     .limit(1);
-  if (!row || !(await shareAdmits(reporterId, row, row.authorId, db))) {
-    return null;
-  }
+  if (!row) return null;
   return { ownerId: row.authorId, excerpt: excerptOf(row.body) };
 }
 

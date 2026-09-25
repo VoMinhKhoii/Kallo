@@ -13,7 +13,7 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
-import { blockedUserIds } from '@/lib/domain/social/moderation/blocks';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
@@ -130,20 +130,22 @@ export async function createShareReplyAction(input: {
       // content (previewBody) must never outlive the access it rode in on, so
       // an unfriended replier drops out of the audience. The owner always sees
       // their own share and skips the check.
+      // A prior replier in a blocked relation with this author never hears
+      // about — or gets a preview of — this reply (the thread read hides it
+      // from them too), so they are dropped in the query itself. The owner
+      // cannot be one: the gate above refused.
       const repliers = await tx
         .selectDistinct({ userId: mealShareReplies.userId })
         .from(mealShareReplies)
-        .where(eq(mealShareReplies.shareId, parsed.shareId));
-      // A prior replier in a blocked relation with this author never hears
-      // about — or gets a preview of — this reply (the thread read hides it
-      // from them too). The owner cannot be one: the gate above refused.
-      const blocked = await blockedUserIds(user.id, tx);
+        .where(
+          and(
+            eq(mealShareReplies.shareId, parsed.shareId),
+            notBlockedWithSql(user.id, mealShareReplies.userId)
+          )
+        );
       const candidateIds = [
         ...new Set(repliers.map((row) => row.userId)),
-      ].filter(
-        (id) =>
-          id !== user.id && id !== lockedShares[0].actorId && !blocked.has(id)
-      );
+      ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
       const visible = await Promise.all(
         candidateIds.map((candidateId) =>
           canViewShareOwnedBy(candidateId, lockedShares[0], tx)

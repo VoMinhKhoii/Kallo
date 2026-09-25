@@ -21,10 +21,10 @@ import {
  * handle. Reactions and replies other people left on the user's shares are
  * those people's content and stay out.
  *
- * Blocked edges are left out: the row does not reliably record who placed the
- * block (a re-block keeps the original requester), and the product never tells
- * a blocked person they were blocked, so exporting the edge to both sides could
- * disclose exactly that.
+ * Blocks live in user_blocks, which is not exported (see coverage.ts). A
+ * friendships row can only still read 'blocked' as a leftover of the retired
+ * status (schema.ts), and those stay out: the row does not record who blocked,
+ * and the product never tells a blocked person they were blocked.
  */
 export async function loadSocialExport(db: AppDb, userId: string) {
   const isMine = or(

@@ -50,11 +50,15 @@ const {
   mockTxSelect,
   mockTxInsert,
   mockTxUpdate,
+  mockTxExecute,
   mockTx,
 } = vi.hoisted(() => {
   const mockTxSelect = vi.fn();
   const mockTxInsert = vi.fn();
   const mockTxUpdate = vi.fn();
+  // acceptInvite's two raw statements, in order: the pair lock, then the
+  // user_blocks check. Both answer "nothing" unless a case says otherwise.
+  const mockTxExecute = vi.fn(async (..._args: unknown[]) => [] as unknown[]);
   return {
     mockDbSelect: vi.fn(),
     mockDbInsert: vi.fn(),
@@ -62,10 +66,12 @@ const {
     mockTxSelect,
     mockTxInsert,
     mockTxUpdate,
+    mockTxExecute,
     mockTx: {
       select: mockTxSelect,
       insert: mockTxInsert,
       update: mockTxUpdate,
+      execute: mockTxExecute,
     },
   };
 });
@@ -430,6 +436,44 @@ describe('acceptInvite', () => {
     );
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  // Blocks live in user_blocks, directed; accepting across one — in EITHER
+  // direction — is refused before the edge is even read, under the pair lock
+  // blockFriend also takes (so a block can't commit between check and write).
+  it('refuses to connect when either person blocked the other', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxExecute
+      .mockResolvedValueOnce([]) // pair lock
+      .mockResolvedValueOnce([{ blocked: true }]); // user_blocks check
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
+      'Không thể kết nối.'
+    );
+    expect(mockTxExecute).toHaveBeenCalledTimes(2);
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it('takes the pair lock before the block check and the edge read', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(
+      txSelect([{ id: FRIENDSHIP_ID, status: 'accepted' }])
+    );
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    const { PgDialect } = await import('drizzle-orm/pg-core');
+    const lock = new PgDialect().sqlToQuery(
+      mockTxExecute.mock.calls[0]?.[0] as never
+    );
+    expect(lock.sql).toContain('pg_advisory_xact_lock');
+    const [low, high] = ACTOR < INVITER ? [ACTOR, INVITER] : [INVITER, ACTOR];
+    expect(lock.params).toEqual([`friend-pair:${low}:${high}`]);
+    expect(mockTxExecute.mock.invocationCallOrder[1]).toBeLessThan(
+      mockTxSelect.mock.invocationCallOrder[0]
+    );
   });
 
   it('stays idempotent when a concurrent accept wins the insert race', async () => {

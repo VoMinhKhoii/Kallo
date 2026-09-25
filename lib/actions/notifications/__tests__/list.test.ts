@@ -38,8 +38,13 @@ function profile(userId = ACTOR) {
   };
 }
 
-/** db double: first select is the feed page, second the actor hydration. */
-function fakeDb(rows: unknown[], profiles: unknown[] = [profile()]) {
+/** db double: first select is the feed page, then the actor hydration —
+ *  the visible profiles, then the ids in a blocked relation with the viewer. */
+function fakeDb(
+  rows: unknown[],
+  profiles: unknown[] = [profile()],
+  blocked: string[] = []
+) {
   const captured: { where?: unknown; limit?: number } = {};
   const select = vi
     .fn()
@@ -62,6 +67,11 @@ function fakeDb(rows: unknown[], profiles: unknown[] = [profile()]) {
     })
     .mockReturnValueOnce({
       from: () => ({ where: () => Promise.resolve(profiles) }),
+    })
+    .mockReturnValueOnce({
+      from: () => ({
+        where: () => Promise.resolve(blocked.map((userId) => ({ userId }))),
+      }),
     });
   return { db: { select } as never, captured, select };
 }
@@ -99,6 +109,31 @@ describe('listNotifications', () => {
       expect.objectContaining({ userId: ACTOR, handle: 'lan' }),
     ]);
     expect(items[0].actorCount).toBe(1);
+  });
+
+  // A block (either direction) removes the person from the activity feed,
+  // including from aggregates written before the block.
+  it('removes a blocked actor from a grouped row and its count', async () => {
+    const OTHER = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
+    const { db } = fakeDb(
+      [row({ actorIds: [ACTOR, OTHER], actorCount: 2 })],
+      [profile(OTHER)],
+      [ACTOR]
+    );
+
+    const { items } = await listNotifications(USER, { limit: 25 }, db);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].actors.map((actor) => actor.userId)).toEqual([OTHER]);
+    expect(items[0].actorCount).toBe(1);
+  });
+
+  it('drops a row whose every actor is blocked', async () => {
+    const { db } = fakeDb([row()], [], [ACTOR]);
+
+    const { items } = await listNotifications(USER, { limit: 25 }, db);
+
+    expect(items).toEqual([]);
   });
 
   it('drops actors whose profile no longer exists', async () => {

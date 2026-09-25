@@ -104,7 +104,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       operationId: 'blockFriend',
       summary: 'Block someone',
       description:
-        'Blocks someone, whatever the connection was. Both people stop seeing each other’s shares, replies, reactions and group-chat messages, including inside groups they still share, and their invite link resolves for the caller exactly as an invalid slug does, so the block is never observable from the other side. Only the caller can lift it (`unblockUser`). Rate limited by `friendBlock`.',
+        'Blocks someone and ends any connection with them (the friendship is deleted, not kept). Both people stop seeing each other’s shares, replies, reactions, group-chat messages and notifications, including inside groups they still share, and their invite link resolves for the caller exactly as an invalid slug does, so the block is never observable from the other side. Blocks are per person: only the caller can lift theirs (`unblockUser`), and a block the other side placed is unaffected. Idempotent. Rate limited by `friendBlock`.',
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),

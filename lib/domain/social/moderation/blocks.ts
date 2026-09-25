@@ -1,77 +1,55 @@
 // ---------------------------------------------------------------------------
-// Blocks — who a viewer must not see, and who must not see them
+// Blocks — the read-side rule: who must not see whom
 // ---------------------------------------------------------------------------
-// A block is one `friendships` row with status 'blocked' for the canonical
-// pair; it hides BOTH directions, whoever placed it. The friend branch of
-// every visibility rule already requires status 'accepted', so a block ends
-// the friendship there by construction. What this module covers is the rest:
-// the places where two people still meet through a shared named group — the
-// group feed, share-by-id through a group, replies and reactions on a third
-// person's share, and group-chat messages.
+// A block is a DIRECTED user_blocks row (blocker → blocked), but the rule it
+// imposes is symmetric: a row in either direction hides both people from each
+// other everywhere. That symmetry lives here, once, as a SQL predicate every
+// cross-user read folds into its own WHERE — share visibility
+// (shares/share-visibility.ts), chat messages (chat/message-visibility.ts),
+// replies, reactions, reply/chat push audiences, notifications. There is
+// deliberately no in-memory form: a second shape of the rule is a second
+// thing to keep correct.
 //
-// Two forms of the same rule: a SQL predicate for queries that read many rows
-// (it folds into their WHERE), and a set of ids for callers already holding
-// rows in memory (push audiences, notification recipients).
+// Blocking also deletes the pair's friendships row (lib/actions/moderation/
+// blocks.ts), so the friend branch of every rule ends by construction; this
+// predicate is what covers the rest — named groups the two still share.
 
-import { and, eq, or, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
-import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
-import { db as defaultDb } from '@/lib/infra/db/client';
-import { friendships } from '@/lib/infra/db/schema';
+import { type SQL, type SQLWrapper, sql } from 'drizzle-orm';
+import { userBlocks } from '@/lib/infra/db/schema';
 
-type Db = AppDb | AppTransaction;
+type UserRef = SQLWrapper | string;
 
 /**
- * True when `viewerId` and `otherId` are in a blocked relation, in either
- * direction. `otherId` may be a column (the author of the row being read) or a
- * literal id. Every column is table-qualified — this predicate is embedded in
- * `db.execute` statements where a bare `status` would be ambiguous (42702).
+ * True when `a` and `b` are in a blocked relation — either one blocked the
+ * other. Each side may be a column (the author of the row being read) or a
+ * literal id. Every column is table-qualified: this is embedded in
+ * `db.execute` statements where a bare name could be ambiguous (42702).
  */
-export function blockedBetweenSql(
-  viewerId: string,
-  otherId: SQLWrapper | string
-): SQL<boolean> {
+export function blockedBetweenSql(a: UserRef, b: UserRef): SQL<boolean> {
   return sql<boolean>`
     EXISTS (
       SELECT 1
-      FROM ${friendships}
-      WHERE ${friendships.status} = 'blocked'
-        AND (
-          (${friendships.userLow} = ${viewerId}
-            AND ${friendships.userHigh} = ${otherId})
-          OR (${friendships.userHigh} = ${viewerId}
-            AND ${friendships.userLow} = ${otherId})
-        )
+      FROM ${userBlocks}
+      WHERE (${userBlocks.blockerId} = ${a} AND ${userBlocks.blockedId} = ${b})
+         OR (${userBlocks.blockerId} = ${b} AND ${userBlocks.blockedId} = ${a})
     )
   `;
 }
 
 /** The negation, for a read's WHERE: keep only rows whose author is not
- * blocked with the viewer. The viewer's own rows always pass (no self-edge). */
-export function notBlockedWithSql(
-  viewerId: string,
-  otherId: SQLWrapper | string
-): SQL<boolean> {
-  return sql<boolean>`NOT ${blockedBetweenSql(viewerId, otherId)}`;
+ * blocked with the viewer. A user is never blocked with themselves (the
+ * table's CHECK), so the viewer's own rows always pass. */
+export function notBlockedWithSql(a: UserRef, b: UserRef): SQL<boolean> {
+  return sql<boolean>`NOT ${blockedBetweenSql(a, b)}`;
 }
 
-/** Every user id in a blocked relation with `viewerId`, either direction. */
-export async function blockedUserIds(
-  viewerId: string,
-  db: Db = defaultDb
-): Promise<Set<string>> {
-  const rows = await db
-    .select({ userLow: friendships.userLow, userHigh: friendships.userHigh })
-    .from(friendships)
-    .where(
-      and(
-        eq(friendships.status, 'blocked'),
-        or(
-          eq(friendships.userLow, viewerId),
-          eq(friendships.userHigh, viewerId)
-        )
-      )
-    );
-  return new Set(
-    rows.map((row) => (row.userLow === viewerId ? row.userHigh : row.userLow))
-  );
+/**
+ * The transaction-scoped lock that serialises everything which can create or
+ * end a relationship between one pair — blocking, and accepting an invite.
+ * Without it an accept that checked "no block" could commit its friendship
+ * right after a concurrent block committed, leaving the pair friends despite
+ * the block. Keyed on the ORDERED pair so both directions take the same lock.
+ */
+export function lockPairSql(userLow: string, userHigh: string): SQL {
+  return sql`SELECT pg_advisory_xact_lock(hashtextextended(${`friend-pair:${userLow}:${userHigh}`}, 0))`;
 }

@@ -40,13 +40,13 @@ export const unblockUserBodySchema = z.object({
   targetUserId: uuidSchema,
 });
 
-/** Request body for `POST /api/v1/reports`. `targetUserId` is accepted for
- * client convenience only: the server derives the reported person from the
- * target itself and never trusts this field. */
+/** Request body for `POST /api/v1/reports`. There is no reported-person field:
+ * the server derives the person from the target itself. Unknown keys are
+ * stripped (Zod's default), so an older client still sending `targetUserId`
+ * keeps working. */
 export const createReportBodySchema = z.object({
   targetKind: z.enum(REPORT_TARGET_KINDS),
   targetId: uuidSchema,
-  targetUserId: uuidSchema.optional(),
   reason: z.enum(REPORT_REASONS),
   note: z
     .string()

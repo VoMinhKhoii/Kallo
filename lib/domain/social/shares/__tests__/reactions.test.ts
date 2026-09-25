@@ -43,7 +43,7 @@ describe('reactionsForShares', () => {
 
     const { sql, params } = new PgDialect().sqlToQuery(captured.where as SQL);
     expect(sql).toMatch(/not\s+EXISTS/i);
-    expect(sql).toContain(`"friendships"."status" = 'blocked'`);
+    expect(sql).toContain('FROM "user_blocks"');
     expect(sql).toContain('"meal_share_reactions"."user_id"');
     expect(params).toContain(ACTOR_ID);
   });

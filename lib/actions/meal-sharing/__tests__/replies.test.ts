@@ -84,12 +84,12 @@ vi.mock('@/lib/infra/db/client', () => ({
 vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
   canViewShareOwnedBy: mockCanViewShare,
 }));
-// Who the author is in a blocked relation with; empty unless a case says so.
-const { mockBlockedUserIds } = vi.hoisted(() => ({
-  mockBlockedUserIds: vi.fn(async (): Promise<Set<string>> => new Set()),
+// The block predicate, as a marker the repliers query can be checked for.
+const { mockNotBlockedWithSql } = vi.hoisted(() => ({
+  mockNotBlockedWithSql: vi.fn(() => 'not-blocked-predicate'),
 }));
 vi.mock('@/lib/domain/social/moderation/blocks', () => ({
-  blockedUserIds: mockBlockedUserIds,
+  notBlockedWithSql: mockNotBlockedWithSql,
 }));
 
 import { createShareReplyAction } from '@/lib/actions/meal-sharing/replies';
@@ -146,11 +146,15 @@ function insertReturning(
   });
 }
 
-/** The distinct prior repliers on the share (the fan-out audience). */
+/** The distinct prior repliers on the share (the fan-out audience), as the
+ *  database returns them — already filtered by the WHERE it was given. */
+const repliersWhere = vi.fn();
 function repliers(userIds: string[]) {
   mockTxSelectDistinct.mockReturnValue({
     from: vi.fn(() => ({
-      where: vi.fn().mockResolvedValue(userIds.map((userId) => ({ userId }))),
+      where: repliersWhere.mockResolvedValue(
+        userIds.map((userId) => ({ userId }))
+      ),
     })),
   });
 }
@@ -159,7 +163,6 @@ describe('createShareReplyAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanViewShare.mockResolvedValue(true);
-    mockBlockedUserIds.mockResolvedValue(new Set());
     repliers([mockUser.id]);
   });
 
@@ -216,9 +219,10 @@ describe('createShareReplyAction', () => {
         createdAt: CREATED_AT,
       },
     ]);
-    repliers([OWNER, BLOCKED, mockUser.id]);
+    // The block predicate rides in the repliers query itself, so the
+    // database never returns BLOCKED (the double returns what it would).
+    repliers([OWNER, mockUser.id]);
     selectRows([]);
-    mockBlockedUserIds.mockResolvedValueOnce(new Set([BLOCKED]));
 
     await createShareReplyAction({
       shareId: SHARE_ID,
@@ -226,10 +230,22 @@ describe('createShareReplyAction', () => {
       body: 'Ngon quá',
     });
 
-    expect(mockBlockedUserIds).toHaveBeenCalledWith(mockUser.id, mockTx);
+    const { mealShareReplies } = await import('@/lib/infra/db/schema');
+    expect(mockNotBlockedWithSql).toHaveBeenCalledWith(
+      mockUser.id,
+      mealShareReplies.userId
+    );
+    // …and that predicate is a chunk of the WHERE the query ran with.
+    const chunks = (node: unknown): unknown[] =>
+      node && typeof node === 'object' && 'queryChunks' in node
+        ? (node.queryChunks as unknown[]).flatMap(chunks)
+        : [node];
+    expect(chunks(repliersWhere.mock.calls[0]?.[0])).toContain(
+      'not-blocked-predicate'
+    );
     const inputs = mockNotify.mock.lastCall?.[1] as { recipientId: string }[];
     expect(inputs.map((input) => input.recipientId)).toEqual([OWNER]);
-    // Dropped before the visibility re-check, not by it.
+    // Never even reaches the per-replier visibility re-check.
     expect(mockCanViewShare).not.toHaveBeenCalledWith(
       BLOCKED,
       expect.anything(),

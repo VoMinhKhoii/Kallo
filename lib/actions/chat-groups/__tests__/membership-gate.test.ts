@@ -100,10 +100,9 @@ vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
   assertGroupCapacity: vi.fn(async () => undefined),
 }));
 
-// Blocks: the audience set is empty unless a case says otherwise, and the read
-// predicate is a spy so a case can assert it was folded into the query.
-const { mockBlockedUserIds, mockNotBlockedWithSql } = vi.hoisted(() => ({
-  mockBlockedUserIds: vi.fn(async (): Promise<Set<string>> => new Set()),
+// Blocks: the real predicate behind a spy, so a case can assert it was
+// folded into the query (the double db cannot evaluate it).
+const { mockNotBlockedWithSql } = vi.hoisted(() => ({
   mockNotBlockedWithSql: vi.fn(),
 }));
 vi.mock('@/lib/domain/social/moderation/blocks', async (importOriginal) => {
@@ -112,11 +111,7 @@ vi.mock('@/lib/domain/social/moderation/blocks', async (importOriginal) => {
       typeof import('@/lib/domain/social/moderation/blocks')
     >();
   mockNotBlockedWithSql.mockImplementation(actual.notBlockedWithSql);
-  return {
-    ...actual,
-    blockedUserIds: mockBlockedUserIds,
-    notBlockedWithSql: mockNotBlockedWithSql,
-  };
+  return { ...actual, notBlockedWithSql: mockNotBlockedWithSql };
 });
 
 vi.mock('@/lib/domain/social/shares/reactions', () => ({
@@ -308,15 +303,20 @@ describe('membership-gated reads', () => {
     expect(mockDbTransaction).not.toHaveBeenCalled();
   });
 
+  // The push audience is read with the block predicate in its WHERE, so a
+  // member in a blocked relation with the sender never comes back from the
+  // query (the double returns what the database would: USER_B only).
   it('sendChatGroupMessage never pushes to a member in a blocked relation with the sender', async () => {
-    const USER_C = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
     mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
-    stubSendTx(sentMessage(), [USER_B, USER_C]);
-    mockBlockedUserIds.mockResolvedValueOnce(new Set([USER_C]));
+    stubSendTx(sentMessage(), [USER_B]);
 
     await sendChatGroupMessage(USER_A, { groupId: GROUP_ID, body: 'hi' });
 
-    expect(mockBlockedUserIds).toHaveBeenCalledWith(USER_A, mockTx);
+    const schema = await import('./schema-doubles');
+    expect(mockNotBlockedWithSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroupMembers.userId
+    );
     expect(mockSendChatMessagePush).toHaveBeenCalledWith(
       expect.objectContaining({ recipientIds: [USER_B] })
     );

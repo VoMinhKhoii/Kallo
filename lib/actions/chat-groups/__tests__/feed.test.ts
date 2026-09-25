@@ -1,3 +1,5 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
@@ -25,6 +27,11 @@ vi.mock('@/lib/domain/social/shares/replies', () => ({
 
 import { listGroupMealFeed } from '@/lib/actions/chat-groups/feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
+import { groupShareVisibleSql } from '@/lib/domain/social/shares/share-visibility';
+import { mealShares } from '@/lib/infra/db/schema';
+
+// Whitespace and parameter numbers vary with where a fragment is embedded.
+const flat = (sql: string) => sql.replace(/\s+/g, ' ').replace(/\$\d+/g, '$?');
 
 const ACTOR_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OWNER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -46,10 +53,11 @@ function queuedDb(rows: unknown[]) {
   return {
     select: vi.fn(() => ({ from: vi.fn().mockReturnValue(query) })),
     update,
+    query,
   };
 }
 
-function meal(index: number, sharedAt: Date, ownerJoinedAt: Date) {
+function meal(index: number, sharedAt: Date) {
   return {
     friendUserId: OWNER_ID,
     mealId: `00000000-0000-4000-8000-${(index + 100)
@@ -71,31 +79,19 @@ function meal(index: number, sharedAt: Date, ownerJoinedAt: Date) {
     displayName: 'Owner',
     avatarSeed: 'owner',
     avatarUrl: null,
-    ownerJoinedAt,
-    visibilitySharedAt: sharedAt,
   };
 }
 
 describe('listGroupMealFeed', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('filters shares from before either the viewer or owner joined', async () => {
+  // The post-join bounds, private and block checks are ONE predicate in the
+  // read's WHERE (groupShareVisibleSql) — the database refuses the rows, so
+  // there is no in-memory second copy of the rule to drift from it.
+  it('admits shares by the group-share rule, in SQL', async () => {
     const rows = [
-      meal(
-        1,
-        new Date('2026-07-09T12:00:00.000Z'),
-        new Date('2026-07-01T00:00:00.000Z')
-      ),
-      meal(
-        2,
-        new Date('2026-07-11T12:00:00.000Z'),
-        new Date('2026-07-12T00:00:00.000Z')
-      ),
-      meal(
-        3,
-        new Date('2026-07-13T12:00:00.000Z'),
-        new Date('2026-07-12T00:00:00.000Z')
-      ),
+      meal(3, new Date('2026-07-13T12:00:00.000Z')),
+      meal(2, new Date('2026-07-11T12:00:00.000Z')),
     ];
     const db = queuedDb(rows);
 
@@ -105,8 +101,17 @@ describe('listGroupMealFeed', () => {
       db as never
     );
 
-    expect(page.entries).toHaveLength(1);
-    expect(page.entries[0]).toMatchObject({ meal: { rawInput: 'meal 3' } });
+    expect(page.entries.map((entry) => entry.meal.rawInput)).toEqual([
+      'meal 3',
+      'meal 2',
+    ]);
+    const where = new PgDialect().sqlToQuery(
+      db.query.where.mock.calls[0][0] as SQL
+    ).sql;
+    const rule = new PgDialect().sqlToQuery(
+      groupShareVisibleSql(ACTOR_ID, GROUP_ID, mealShares)
+    ).sql;
+    expect(flat(where)).toContain(flat(rule));
     expect(db.update).toHaveBeenCalledTimes(1);
   });
 
@@ -114,13 +119,7 @@ describe('listGroupMealFeed', () => {
     vi.mocked(reactionsForShares).mockRejectedValueOnce(
       new Error('reaction read failed')
     );
-    const db = queuedDb([
-      meal(
-        3,
-        new Date('2026-07-13T12:00:00.000Z'),
-        new Date('2026-07-12T00:00:00.000Z')
-      ),
-    ]);
+    const db = queuedDb([meal(3, new Date('2026-07-13T12:00:00.000Z'))]);
 
     await expect(
       listGroupMealFeed(ACTOR_ID, { groupId: GROUP_ID }, db as never)

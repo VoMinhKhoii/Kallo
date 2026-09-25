@@ -20,7 +20,7 @@ export const MODERATION_PATHS: Record<string, PathItem> = {
       operationId: 'unblockUser',
       summary: 'Lift a block',
       description:
-        'Removes a block the caller placed. The connection is deleted, not restored — the pair must re-invite each other to reconnect. 404 when the caller has not blocked this person, including when the caller is the one blocked, so the endpoint never reveals a block from the other side. Shares the `friendBlock` rate limit with blocking.',
+        'Removes the block the caller placed on this person. Blocks are per person: if the other side also blocked the caller, that block stays in force. The connection ended when the block was placed and is not restored — the pair must re-invite each other to reconnect. 404 when the caller has not blocked this person, including when the caller is the one blocked, so the endpoint never reveals a block from the other side. Shares the `friendBlock` rate limit with blocking.',
       tags: TAGS,
       body: fromZod(unblockUserBodySchema),
       ok: {
@@ -64,7 +64,7 @@ export const MODERATION_PATHS: Record<string, PathItem> = {
       operationId: 'reportContent',
       summary: 'Report objectionable content',
       description:
-        'Flags a share, reply, chat message, chat group or profile for review; the team is alerted by email. The target must exist and be visible to the caller (else 404, the same answer as a missing id). The reported person is derived from the target — `targetUserId` is accepted but ignored. Reporting your own content is a 400. Reporting the same target again returns the existing report id and sends no new alert.',
+        'Flags a share, reply, chat message, chat group or profile for review; the team is alerted by email. The target must exist and be visible to the caller (else 404, the same answer as a missing id). The reported person is derived from the target, never sent. Reporting your own content is a 400. Reporting the same target again returns the existing report id and sends no new alert.',
       tags: TAGS,
       body: fromZod(createReportBodySchema),
       ok: {

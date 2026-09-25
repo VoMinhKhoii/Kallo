@@ -22,6 +22,10 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
+import {
+  blockedBetweenSql,
+  notBlockedWithSql,
+} from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -92,18 +96,34 @@ export async function listNotifications(
       ? encodeSharedMealCursor({ ts: last.createdAtText, id: last.id })
       : null;
 
-  const actors = await hydrateActors(
+  const { actors, blocked } = await hydrateActors(
+    userId,
     page.flatMap((row) => row.actorIds),
     db
   );
 
-  const items = page.map((row) => ({
+  // A blocked person (either direction) disappears from the activity feed:
+  // out of every aggregate's actor list and its "and N others" count, and a
+  // row whose every actor is blocked is dropped whole. notify() stops new
+  // rows at the write; this covers the ones written before the block.
+  const visiblePage = page.filter(
+    (row) =>
+      row.actorIds.length === 0 ||
+      row.actorIds.some((actorId) => !blocked.has(actorId))
+  );
+
+  const items = visiblePage.map((row) => ({
     id: row.id,
     type: row.type as NotificationType,
     actors: row.actorIds
+      .filter((actorId) => !blocked.has(actorId))
       .map((actorId) => actors.get(actorId))
       .filter((actor): actor is PublicIdentity => actor !== undefined),
-    actorCount: row.actorCount,
+    actorCount: Math.max(
+      0,
+      row.actorCount -
+        row.actorIds.filter((actorId) => blocked.has(actorId)).length
+    ),
     objectType: row.objectType,
     objectId: row.objectId,
     targetType: row.targetType,
@@ -129,20 +149,44 @@ function decodeCursor(cursor: string | undefined) {
   }
 }
 
-/** One IN query across every actor id on the page. */
+/** One IN query across every actor id on the page, which also asks the
+ * shared block rule about each of them. */
 async function hydrateActors(
+  viewerId: string,
   actorIds: string[],
   db: Db
-): Promise<Map<string, PublicIdentity>> {
+): Promise<{ actors: Map<string, PublicIdentity>; blocked: Set<string> }> {
   const unique = [...new Set(actorIds)];
-  if (unique.length === 0) return new Map();
+  if (unique.length === 0) return { actors: new Map(), blocked: new Set() };
 
-  const profiles = await db
-    .select({ userId: publicProfiles.userId, ...publicProfileColumns })
-    .from(publicProfiles)
-    .where(inArray(publicProfiles.userId, unique));
+  // The predicate sits in WHERE, never in the select list: a single-table
+  // select strips table prefixes from select-list columns (the 42702 hazard
+  // documented in share-visibility.ts), while WHERE renders fully qualified.
+  const [profiles, blockedRows] = await Promise.all([
+    db
+      .select({ userId: publicProfiles.userId, ...publicProfileColumns })
+      .from(publicProfiles)
+      .where(
+        and(
+          inArray(publicProfiles.userId, unique),
+          notBlockedWithSql(viewerId, publicProfiles.userId)
+        )
+      ),
+    db
+      .select({ userId: publicProfiles.userId })
+      .from(publicProfiles)
+      .where(
+        and(
+          inArray(publicProfiles.userId, unique),
+          blockedBetweenSql(viewerId, publicProfiles.userId)
+        )
+      ),
+  ]);
 
-  return new Map(
-    profiles.map((profile) => [profile.userId, toPublicIdentity(profile)])
-  );
+  return {
+    actors: new Map(
+      profiles.map((profile) => [profile.userId, toPublicIdentity(profile)])
+    ),
+    blocked: new Set(blockedRows.map((row) => row.userId)),
+  };
 }
