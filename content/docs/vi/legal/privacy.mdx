@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-25'
 ---
 
 Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
@@ -26,6 +26,11 @@ riêng tư, hãy gửi email tới [support@kallo.fit](mailto:support@kallo.fit)
 Địa chỉ email, cách bạn đăng nhập (email kèm mật khẩu, Google, hoặc Apple), và
 mã định danh tài khoản. Chúng tôi **không** lưu mật khẩu ở dạng đọc được; phần
 xác thực do Supabase Auth đảm nhiệm.
+
+Nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, chúng tôi lưu thêm một **mã làm
+mới (refresh token) của Apple đã được mã hóa**. Mã này chỉ dùng vào một việc: thu
+hồi quyền truy cập của Kallo phía Apple khi bạn xóa tài khoản. Mã bị xóa cùng
+lúc với việc xóa tài khoản.
 
 ### Hồ sơ và mục tiêu
 
@@ -70,6 +75,11 @@ Các lần bạn ghi cân nặng, kèm ngày ghi.
 Danh sách bạn bè, bữa ăn bạn chia sẻ, biểu cảm và phản hồi, lời mời chia phần,
 các nhóm bạn tham gia, và tin nhắn bạn gửi trong nhóm hoặc trong cuộc trò chuyện
 riêng.
+
+### Danh sách chặn và báo cáo
+
+Những người bạn đã chặn, và mọi báo cáo bạn gửi về một nội dung hay một hồ sơ.
+Xem mục 6.
 
 ### Góp ý
 
@@ -120,6 +130,16 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 - Thói quen nấu ăn của bạn.
 - Ngôn ngữ bạn muốn nhận kết quả.
 
+Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Kallo
+đọc nhãn từ ảnh ngay trong bộ nhớ và **không lưu** ảnh lại; chỉ những con số bạn
+xem lại và bấm lưu mới được ghi vào nhật ký bữa ăn.
+
+Khi bạn tìm nguyên liệu lúc ghi thủ công, chữ bạn gõ có thể được gửi tới mô
+hình nhúng (embedding) của Google để tìm những nguyên liệu có nghĩa gần giống.
+Chỉ có chữ tìm kiếm được gửi đi. Chúng tôi giữ chữ tìm kiếm đó cùng kết quả
+nhúng trong một bộ nhớ đệm dùng chung, không gắn với tài khoản của bạn, để lần
+tìm sau nhanh hơn.
+
 Mô hình **không** biết mục tiêu cân nặng, nhịp độ, chỉ tiêu calo hay đa lượng,
 cân nặng, chiều cao, tuổi, giới tính, email, tên, cũng như lịch sử bữa ăn của
 bạn.
@@ -132,6 +152,14 @@ ngay trong kiểu dữ liệu của mã nguồn, chứ không phải chỉ là m
 </Callout>
 
 Chúng tôi **không** dùng nội dung của bạn để huấn luyện mô hình AI dùng chung.
+
+### Hỏi ý bạn trước
+
+Lần đầu bạn dùng tính năng phân tích bữa ăn bằng AI hoặc quét nhãn, Kallo sẽ hỏi
+ý bạn **trước khi gửi bất cứ thứ gì** tới mô hình. Bạn có thể rút lại sự đồng ý
+bất cứ lúc nào trong **Cài đặt → Tùy chỉnh → Phân tích bữa ăn bằng AI**. Khi đó,
+tính năng phân tích bằng AI và quét nhãn sẽ ngừng; ghi thủ công và quét mã vạch
+vẫn dùng bình thường.
 
 ### Điều gì xảy ra với dữ liệu đó ở phía Google
 
@@ -151,9 +179,9 @@ Có hai ngoại lệ:
   hình.
 
 Kallo gọi **điểm cuối toàn cầu** của Vertex AI, nên một yêu cầu có thể được xử
-lý ở bất kỳ vùng nào Google đang vận hành. Nói cách khác, câu mô tả bữa ăn của
-bạn cùng ba thông tin còn lại ở trên có thể rời khỏi Việt Nam trong lúc được xử
-lý. Mục 9 nói kỹ hơn.
+lý ở bất kỳ vùng nào Google đang vận hành. Nói cách khác, những dữ liệu nêu ở
+trên, và chỉ những dữ liệu đó, có thể rời khỏi Việt Nam trong lúc được xử lý.
+Mục 9 nói kỹ hơn.
 
 Khi lập trình viên chạy thử trên máy cá nhân, ứng dụng dùng một đường kết nối
 khác (Google AI Studio) với dữ liệu thử nghiệm, không phải dữ liệu tài khoản của
@@ -164,11 +192,12 @@ bạn.
 | Mục đích | Dữ liệu liên quan |
 | --- | --- |
 | Xác thực và giữ bạn ở trạng thái đã đăng nhập | Tài khoản, thiết bị |
-| Tạo ước lượng dinh dưỡng | Mô tả bữa ăn, thói quen nấu, quốc gia |
+| Tạo ước lượng dinh dưỡng | Mô tả bữa ăn, thói quen nấu, quốc gia, ảnh nhãn dinh dưỡng |
 | Cá nhân hóa chỉ tiêu và biểu đồ | Hồ sơ, chỉ số cơ thể, mục tiêu, nhật ký |
 | Hiển thị nội dung bạn chia sẻ | Vòng kết nối, bữa ăn được chia sẻ |
 | Duy trì quyền Premium | Dữ liệu thanh toán từ đơn vị cung cấp |
 | Chống lạm dụng, gian lận, quá tải | Sự kiện giới hạn tần suất, mã băm |
+| Giữ Vòng kết nối an toàn | Danh sách chặn, báo cáo và nội dung bị báo cáo |
 | Khắc phục sự cố, cải thiện độ tin cậy | Nhật ký vận hành, báo cáo lỗi, góp ý |
 | Hiểu cách các tính năng được sử dụng | Sự kiện sử dụng, thiết bị và phiên bản ứng dụng |
 | Trả lời hỗ trợ | Nội dung bạn liên hệ, tài khoản |
@@ -192,7 +221,7 @@ thứ ba làm quảng cáo.
 | Nhà cung cấp | Vai trò | Dữ liệu tiếp cận |
 | --- | --- | --- |
 | Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện và ảnh góp ý |
-| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ |
+| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI, đọc nhãn dinh dưỡng, tìm nguyên liệu | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ; ảnh nhãn dinh dưỡng; chữ tìm nguyên liệu |
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
 | Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
@@ -236,6 +265,18 @@ bữa mới ở chế độ riêng tư.
 
 Nội dung người khác đã xem hoặc đã sao chép vào nhật ký của họ có thể vẫn còn
 sau khi bạn xóa bản gốc.
+
+### Chặn và báo cáo
+
+Bạn có thể **chặn** một người: họ không còn thấy bữa ăn bạn chia sẻ, phản hồi
+hay tin nhắn của bạn, và bạn cũng không còn thấy của họ.
+
+Bạn cũng có thể **báo cáo** một nội dung hoặc một hồ sơ. Mỗi báo cáo lưu lại ai
+gửi, nội dung nào bị báo cáo (loại, mã định danh và người sở hữu nội dung đó), lý
+do, ghi chú nếu bạn thêm, và trạng thái xử lý. Đội ngũ Kallo xem xét từng báo cáo
+và cố gắng phản hồi trong vòng 24 giờ. Chúng tôi giữ báo cáo cho tới khi xử lý
+xong, và báo cáo bị xóa khi tài khoản của bạn bị xóa. Nếu muốn trao đổi thêm, hãy
+nhắn cho chúng tôi trong **Cài đặt → Góp ý**.
 
 ## 7. Lưu trữ và xóa dữ liệu
 
@@ -289,8 +330,8 @@ Cụ thể:
 - **Cơ sở dữ liệu** do Supabase vận hành cũng đặt tại Singapore, ngay cạnh máy
   chủ ứng dụng.
 - **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
-  thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ bốn
-  thông tin nêu ở mục 3 đi theo đường này.
+  thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ những
+  dữ liệu nêu ở mục 3 đi theo đường này.
 - **Báo cáo lỗi** (Sentry) được lưu tại Hoa Kỳ, còn **sự kiện sử dụng**
   (PostHog) được lưu tại Liên minh châu Âu.
 - **Các nhà cung cấp còn lại** xử lý dữ liệu ở những vùng họ vận hành.
@@ -406,7 +447,7 @@ California mà chúng tôi đã thu thập trong mười hai (12) tháng gần n
 | E. Dữ liệu sinh trắc học | Vân tay, mẫu giọng nói | Không |
 | F. Hoạt động mạng | Nhật ký máy chủ, thao tác trong ứng dụng | Có |
 | G. Dữ liệu định vị | Vị trí thiết bị | Không |
-| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý | Có |
+| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý, ảnh nhãn dinh dưỡng (chỉ đọc, không lưu) | Có |
 | I. Thông tin nghề nghiệp hoặc việc làm | Chức danh, lịch sử công việc | Không |
 | J. Thông tin giáo dục | Hồ sơ học tập | Không |
 | K. Suy luận từ dữ liệu đã thu thập | Chỉ tiêu calo và đa lượng, xu hướng dinh dưỡng | Có |

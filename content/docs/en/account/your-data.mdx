@@ -1,7 +1,7 @@
 ---
 title: Your data
 description: What Kallo stores, what reaches the AI model, and how to get it back or delete it.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-25'
 ---
 
 This is the readable summary. The full, legally operative version is the
@@ -31,6 +31,11 @@ When you request a meal analysis, the model receives only:
 - Your country of origin and country of residence
 - Your cooking habits
 - The language you want the result in
+
+When you scan a nutrition label, it receives only the photo, which Kallo does
+not store. Ingredient search text may also go to Google's embedding model to
+find similar ingredients. Kallo asks your permission before your first AI
+analysis or label scan.
 
 The model does **not** receive: your weight, height, age, sex, goal, pace,
 calorie targets, email, name, or meal history.

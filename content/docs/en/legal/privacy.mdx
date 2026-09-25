@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-25'
 ---
 
 This policy describes how VÕ MINH KHÔI ("Kallo", "we") collects, uses,
@@ -25,6 +25,10 @@ For any privacy question, access request or complaint, write to
 Your email address, sign-in method (email and password, Google, or Apple), and
 an account identifier. We do **not** store readable passwords — authentication
 is handled by Supabase Auth.
+
+If you sign in with Apple in the iOS app, we also store an **encrypted Apple
+refresh token**. We use it for one thing only: revoking Kallo's access at Apple
+when you delete your account. It is deleted as part of account deletion.
 
 ### Profile and goals
 
@@ -67,6 +71,11 @@ Your weight entries and the dates they belong to.
 
 Friendships, meals you share, reactions, replies, portion invites, the groups
 you join and the messages you send in groups or private chats.
+
+### Blocks and reports
+
+The people you block, and any report you file about content or a profile. See
+section 6.
 
 ### Feedback
 
@@ -116,6 +125,15 @@ When you request a meal analysis, the AI model receives **only**:
 - Your cooking habits.
 - The language you want the result in.
 
+When you scan a nutrition label, the model receives **only the photo** you took.
+Kallo reads the label from it in memory and does **not** store the photo; only
+the values you review and save go into your meal log.
+
+When you search for an ingredient while logging by hand, the text you type may
+be sent to Google's embedding model to find ingredients with a similar meaning.
+Only the search text is sent. We keep that text and its embedding in a shared
+cache, not linked to your account, so the same search is faster next time.
+
 The model does **not** know your weight goal, your pace, your calorie or
 macro targets, weight, height, age, sex, email, name, or meal history.
 
@@ -127,6 +145,13 @@ rather than by convention.
 </Callout>
 
 We do **not** use your content to train shared AI models.
+
+### Your permission comes first
+
+Kallo asks for your permission the first time you use AI meal analysis or label
+scanning, **before anything is sent** to the model. You can withdraw it at any
+time in **Settings → Preferences → AI meal analysis**. After that, AI analysis
+and label scanning stop; manual logging and barcode scanning keep working.
 
 ### What happens to it on Google's side
 
@@ -144,9 +169,8 @@ There are two exceptions:
   violation. That data is still **not** used to train models.
 
 Kallo calls Vertex AI's **global endpoint**, so a request may be served from any
-region Google operates in. That means your meal description — and only the meal
-description plus the four fields above — can leave Vietnam while it is being
-processed. See section 9.
+region Google operates in. That means the data listed above — and only that
+data — can leave Vietnam while it is being processed. See section 9.
 
 Developer machines and internal scripts use a different connection (Google AI
 Studio) with test data, not your account data.
@@ -156,11 +180,12 @@ Studio) with test data, not your account data.
 | Purpose | Data involved |
 | --- | --- |
 | Authenticate you and keep you signed in | Account, device |
-| Produce nutrition estimates | Meal text, cooking habits, country |
+| Produce nutrition estimates | Meal text, cooking habits, country, nutrition label photos |
 | Personalise targets and charts | Profile, body metrics, goal, meal log |
 | Show content you share | Circle, shared meals |
 | Maintain Premium access | Billing data from the provider |
 | Prevent abuse, fraud and overload | Rate-limit events, hashed identifiers |
+| Keep Circle safe | Blocks, reports and the content reported |
 | Troubleshoot and improve reliability | Operational logs, error reports, feedback |
 | Understand how features are used | Usage events, device and app version |
 | Respond to support | Your message, account |
@@ -184,7 +209,7 @@ advertising.
 | Provider | Role | Data reached |
 | --- | --- | --- |
 | Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
-| Google Cloud (Vertex AI, Gemini) | AI meal analysis | Meal text, country, cooking habits, language |
+| Google Cloud (Vertex AI, Gemini) | AI meal analysis, label reading, ingredient search | Meal text, country, cooking habits, language; nutrition label photos; ingredient search text |
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
 | Cloudflare | Content delivery, attack protection | Request metadata, IP address |
@@ -225,6 +250,18 @@ private.
 
 Content others have already viewed or copied into their own log may persist
 after you delete your original.
+
+### Blocking and reporting
+
+You can **block** someone: they no longer see your shared meals, replies or
+messages, and you no longer see theirs.
+
+You can also **report** content or a profile. A report stores who filed it, what
+was reported (its type and identifier, and the person it belongs to), the reason,
+any note you add, and its review status. The Kallo team reviews every report and
+aims to respond within 24 hours. We keep a report until it is resolved, and it is
+deleted when your account is deleted. To follow up, write to us in **Settings →
+Feedback**.
 
 ## 7. Retention and deletion
 
@@ -276,7 +313,7 @@ you live. Specifically:
   application servers.
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
-  the four fields listed in section 3 travel this path.
+  the data listed in section 3 travels this path.
 - **Error reports** (Sentry) are stored in the United States, and **usage
   events** (PostHog) in the European Union.
 - **Every other provider** processes data in the regions it operates.
@@ -385,7 +422,7 @@ California law, that we have collected in the preceding twelve (12) months.
 | E. Biometric information | Fingerprints, voiceprints | No |
 | F. Internet or network activity | Server logs, in-app actions | Yes |
 | G. Geolocation data | Device location | No |
-| H. Audio, visual and sensory information | Avatar, feedback screenshots | Yes |
+| H. Audio, visual and sensory information | Avatar, feedback screenshots, nutrition label photos (read, not stored) | Yes |
 | I. Professional or employment information | Job title, work history | No |
 | J. Education information | Student records | No |
 | K. Inferences drawn from collected data | Calorie and macro targets, nutrition trends | Yes |
