@@ -228,6 +228,31 @@ jobs:
         run: |
           gcloud secrets versions access latest \
             --secret=kallo-prod-origin-shared-secret > /dev/null
+      # Sign in with Apple token revocation (docs/GOOGLE_CLOUD_RUN.md) is
+      # OPTIONAL until its two secrets exist: naming an absent secret in
+      # --set-secrets fails the whole deploy, so they are mounted only when
+      # BOTH are present. Present-but-unreadable still fails loudly here, and so
+      # does a mounted key with no APPLE_SIGNIN_KEY_ID to sign with. Absent →
+      # the app skips storing Apple tokens (`stored: false`) and nothing else
+      # changes. Output is discarded: values must never reach the log.
+      - id: apple
+        name: Detect optional Sign in with Apple secrets
+        run: |
+          if gcloud secrets describe kallo-prod-apple-signin-key-p8 > /dev/null 2>&1 \
+            && gcloud secrets describe kallo-prod-apple-token-encryption-key > /dev/null 2>&1; then
+            gcloud secrets versions access latest \
+              --secret=kallo-prod-apple-signin-key-p8 > /dev/null
+            gcloud secrets versions access latest \
+              --secret=kallo-prod-apple-token-encryption-key > /dev/null
+            [ -n "${{ vars.APPLE_SIGNIN_KEY_ID }}" ] || {
+              echo "APPLE_SIGNIN_KEY_ID must be set once the Apple secrets exist." >&2
+              exit 1
+            }
+            echo "secrets=,APPLE_SIGNIN_KEY_P8=kallo-prod-apple-signin-key-p8:latest,APPLE_TOKEN_ENCRYPTION_KEY=kallo-prod-apple-token-encryption-key:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "secrets=" >> "$GITHUB_OUTPUT"
+            echo "::notice::Sign in with Apple secrets not found; token revocation stays off for this deploy."
+          fi
       - id: svc
         name: Check if service already exists
         # --no-traffic + --tag are only valid once a first revision exists. On the
@@ -283,7 +308,9 @@ jobs:
           # `kallo-prod-usda-api-key` is the most recent addition. Creating the
           # secret is a manual pre-merge step. The "Pre-deploy validation" step
           # above describes each one so a missing secret fails early and loudly
-          # rather than mid-deploy.
+          # rather than mid-deploy. The one exception is the optional Sign in
+          # with Apple pair, appended by the "Detect optional Sign in with Apple
+          # secrets" step only when both exist.
           #
           # Webhook signing: if signature signing is enabled in RevenueCat, the
           # server needs REVENUECAT_WEBHOOK_HMAC_SECRET or every production
@@ -304,8 +331,8 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=20
-            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest
-            --update-env-vars=^|^AI_PROVIDER=vertex|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|SUBSCRIPTION_LAUNCH_DATE=${{ vars.SUBSCRIPTION_LAUNCH_DATE }}|TRIAL_DAYS=${{ vars.TRIAL_DAYS || '0' }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true
+            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}
+            --update-env-vars=^|^AI_PROVIDER=vertex|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|SUBSCRIPTION_LAUNCH_DATE=${{ vars.SUBSCRIPTION_LAUNCH_DATE }}|TRIAL_DAYS=${{ vars.TRIAL_DAYS || '0' }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).

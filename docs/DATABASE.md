@@ -148,6 +148,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260923051200_circle_share_default_off.sql` | A (Drizzle) | `user_profiles.auto_share_to_circle` default → `false`; `user_profiles.auto_share_updated_at` (consent record); `friendships.accepted_at` |
 | `20260923051230_friendships_accepted_at_visibility.sql` | B (Manual) | Backfill `accepted_at` from `updated_at`; trigger keeping it authoritative; `is_friend_since()`; friend SELECT policies on `meal_shares`/`meals`/`meal_items`/`circle_events` bounded to shares made after acceptance |
 | `20260923053541_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat groups and messages, meal-share reactions/replies/invites, coach assignments); plain `CREATE INDEX`, since migrations run in a transaction |
+| `20260925122000_add_apple_auth_tokens.sql` | A (Drizzle) | `apple_auth_tokens` — one sealed (AES-256-GCM) Sign in with Apple refresh token per user, cascaded with the auth user, kept only so account deletion can revoke it |
+| `20260925122100_apple_auth_tokens_rls.sql` | B (Manual) | RLS enabled, no policies, explicit `REVOKE` from `anon`/`authenticated` — a credential, server-only |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

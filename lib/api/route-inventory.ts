@@ -71,6 +71,7 @@ export const routeInventory = {
   ],
   'api/v1/account/entitlements/route.ts': ['session', false, 'none-cheap'],
   'api/v1/account/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],
   'api/v1/barcode/search/route.ts': ['session', false, 'barcodeSearch'],
   'api/v1/chat-groups/[groupId]/feed/route.ts': [

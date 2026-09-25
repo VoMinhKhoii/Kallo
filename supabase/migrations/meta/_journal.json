@@ -519,6 +519,13 @@
       "when": 1790141741088,
       "tag": "20260923053541_add_account_export_user_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790338800000,
+      "tag": "20260925122000_add_apple_auth_tokens",
+      "breakpoints": true
     }
   ]
 }

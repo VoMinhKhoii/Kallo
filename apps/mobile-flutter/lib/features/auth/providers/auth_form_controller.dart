@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -11,6 +12,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/auth/supabase_service.dart';
+import '../../../services/http/api_client.dart';
+import '../logic/apple_token_link.dart';
 import '../logic/reuse_grant.dart';
 
 /// Which auth action is currently in flight. Lets the UI spin only the button
@@ -258,7 +261,9 @@ class AuthFormController extends StateNotifier<AuthFormState> {
   /// Native Sign in with Apple. Required by App Store Guideline 4.8 whenever a
   /// third-party social login (Google) is offered. Uses the native credential
   /// sheet, then hands Supabase the identity token + raw nonce so it verifies
-  /// the Apple-signed hashed nonce embedded in the token.
+  /// the Apple-signed hashed nonce embedded in the token. The credential's
+  /// authorization code then goes to the server (see [linkAppleAuthorizationCode])
+  /// so deleting the account can revoke the Apple authorization.
   Future<void> signInWithApple() async {
     state = state.copyWith(
       action: AuthAction.apple,
@@ -287,6 +292,14 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
+      );
+      // Not awaited: lets account deletion revoke this Apple authorization,
+      // and must never delay or fail the sign-in that just succeeded.
+      unawaited(
+        linkAppleAuthorizationCode(
+          _ref.read(apiClientProvider),
+          credential.authorizationCode,
+        ),
       );
       // Success: onAuthStateChange fires and the router redirect routes in.
       state = state.copyWith(clearAction: true);

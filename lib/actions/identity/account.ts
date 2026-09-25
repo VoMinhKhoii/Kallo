@@ -14,6 +14,7 @@ import {
   buildDataExport,
   type DataExport,
 } from '@/lib/domain/account-export/build-export';
+import { readSealedAppleRefreshToken } from '@/lib/domain/apple-sign-in/refresh-tokens';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
@@ -189,9 +190,14 @@ export async function deleteAccountAction(
   }
 
   // Persist the provider-erasure job before deleting Auth. RevenueCat customer
-  // erasure happens only after the local account is committed; transient
-  // provider failures are retried by the scheduled worker.
-  const deletionJob = await prepareAccountDeletion(user.id);
+  // erasure and Sign in with Apple token revocation happen only after the
+  // local account is committed; transient provider failures are retried by
+  // the scheduled worker. The sealed Apple token is read NOW because its row
+  // cascades away with the auth user.
+  const appleRefreshToken = await readSealedAppleRefreshToken(user.id);
+  const deletionJob = await prepareAccountDeletion(user.id, {
+    appleRefreshToken,
+  });
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
   const accountAlreadyDeleted =
@@ -222,7 +228,7 @@ export async function deleteAccountAction(
       await processAccountDeletionJob(deletionJob, claimedAt).catch(
         (providerError) => {
           console.error(
-            '[account-delete] RevenueCat erasure queued for retry:',
+            '[account-delete] Provider erasure queued for retry:',
             providerError
           );
         }

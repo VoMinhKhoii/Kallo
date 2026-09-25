@@ -2035,6 +2035,28 @@ export const pushTokens = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Sign in with Apple refresh tokens (lib/domain/apple-sign-in/)
+//
+// One row per user who signed in with Apple on iOS: the refresh token Apple
+// issued for their authorization code, held ONLY so account deletion can
+// revoke it (Apple's account-deletion requirement). Sealed with AES-256-GCM
+// under APPLE_TOKEN_ENCRYPTION_KEY — a DB read alone never yields a usable
+// token. Server-only: RLS on, no client policies.
+// ---------------------------------------------------------------------------
+export const appleAuthTokens = pgTable('apple_auth_tokens', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  refreshTokenCiphertext: text('refresh_token_ciphertext').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Generic rate limiter (lib/infra/rate-limit/limiter/)
 //
 // `rate_limit_counters` holds ONE row per (key_kind, key_hash, route) carrying

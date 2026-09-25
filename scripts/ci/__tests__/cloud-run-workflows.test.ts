@@ -92,6 +92,27 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).toContain('SUBSCRIPTION_LAUNCH_DATE');
   });
 
+  it('mounts the Sign in with Apple secrets only once they exist', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+
+    // Optional: an absent secret named in --set-secrets fails the deploy, so
+    // the pair is appended from a detection step, never listed literally.
+    expect(workflow).toContain(
+      `APNS_KEY_P8=kallo-prod-apns-key-p8:latest\${{ steps.apple.outputs.secrets }}`
+    );
+    expect(workflow).toContain(
+      'secrets=,APPLE_SIGNIN_KEY_P8=kallo-prod-apple-signin-key-p8:latest,APPLE_TOKEN_ENCRYPTION_KEY=kallo-prod-apple-token-encryption-key:latest'
+    );
+    expect(workflow).toContain('APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham');
+    expect(workflow).toContain(
+      `APPLE_SIGNIN_KEY_ID=\${{ vars.APPLE_SIGNIN_KEY_ID }}`
+    );
+
+    const retry = readWorkflow('account-deletion-retry.yml');
+    expect(retry).toContain('APPLE_SIGNIN_KEY_P8="$apple_key_p8"');
+    expect(retry).toContain('APPLE_TOKEN_ENCRYPTION_KEY="$apple_token_key"');
+  });
+
   it('does not resurrect retired non-production deploy workflows', () => {
     for (const name of [
       'cloud-run-internal.yml',
