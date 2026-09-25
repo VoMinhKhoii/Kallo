@@ -9,7 +9,7 @@ import '../../../services/http/api_client.dart';
 /// Never throws and never blocks sign-in: the caller does not await it. A
 /// lost code only means deletion cannot revoke this particular authorization;
 /// the next Apple sign-in posts a fresh one.
-Future<void> linkAppleAuthorizationCode(
+Future<void> postAppleCodeBestEffort(
   ApiClient api,
   String? authorizationCode,
 ) async {

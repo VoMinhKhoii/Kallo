@@ -47,8 +47,9 @@ jobs:
           echo "::add-mask::$service_key"
           echo "::add-mask::$revenuecat_key"
           # Sign in with Apple revocation is optional until its secrets exist
-          # (docs/GOOGLE_CLOUD_RUN.md). Without them a job carrying an Apple
-          # token fails and stays queued, so it is revoked once they are added.
+          # (docs/GOOGLE_CLOUD_RUN.md). Without them a pending Apple revocation
+          # fails and retries (its own outbox, never blocking RevenueCat) until
+          # the attempt cap parks it as dead.
           if gcloud secrets describe kallo-prod-apple-signin-key-p8 > /dev/null 2>&1 \
             && gcloud secrets describe kallo-prod-apple-token-encryption-key > /dev/null 2>&1; then
             apple_key_p8="$(gcloud secrets versions access latest --secret=kallo-prod-apple-signin-key-p8)"

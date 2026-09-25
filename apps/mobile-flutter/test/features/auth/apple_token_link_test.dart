@@ -23,10 +23,10 @@ class FakeApiClient extends ApiClient {
 }
 
 void main() {
-  group('linkAppleAuthorizationCode', () {
+  group('postAppleCodeBestEffort', () {
     test('posts the code to the Apple token route', () async {
       final api = FakeApiClient();
-      await linkAppleAuthorizationCode(api, 'code-123');
+      await postAppleCodeBestEffort(api, 'code-123');
       // Records compare their Map field by identity, so check field by field.
       expect(api.requests, hasLength(1));
       final request = api.requests.single;
@@ -37,14 +37,14 @@ void main() {
 
     test('swallows a server failure so sign-in is never affected', () async {
       final api = FakeApiClient(fail: true);
-      await expectLater(linkAppleAuthorizationCode(api, 'code-123'), completes);
+      await expectLater(postAppleCodeBestEffort(api, 'code-123'), completes);
       expect(api.requests, hasLength(1));
     });
 
     test('skips a missing or empty code without a request', () async {
       final api = FakeApiClient();
-      await linkAppleAuthorizationCode(api, null);
-      await linkAppleAuthorizationCode(api, '');
+      await postAppleCodeBestEffort(api, null);
+      await postAppleCodeBestEffort(api, '');
       expect(api.requests, isEmpty);
     });
   });

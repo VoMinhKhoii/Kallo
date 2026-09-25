@@ -1,4 +1,3 @@
-import type { UserIdentity } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 /**
@@ -12,13 +11,20 @@ export const appleTokenLinkBodySchema = z
   })
   .strict();
 
+/** The slice of a Supabase auth identity this module reads. */
+interface IdentityLike {
+  provider: string;
+  id: string;
+  identity_data?: Record<string, unknown> | null;
+}
+
 /**
  * The Apple `sub` of the caller's linked Apple identity, or `null` when the
  * account has none. Supabase keeps the provider's subject in
  * `identity_data.sub`; `id` is the provider id on older GoTrue versions.
  */
 export function appleSubjectOf(
-  identities: readonly UserIdentity[] | undefined
+  identities: readonly IdentityLike[] | undefined
 ): string | null {
   const apple = identities?.find((identity) => identity.provider === 'apple');
   if (!apple) return null;

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import {
-  base64url,
   loadEs256PrivateKey,
   signEs256Jwt,
 } from '@/lib/infra/crypto/es256-jwt';
@@ -43,11 +42,6 @@ describe('signEs256Jwt', () => {
         raw
       )
     ).toBe(true);
-  });
-
-  it('never emits base64 padding or the +/ alphabet', () => {
-    expect(base64url(Buffer.from([0xfb, 0xff, 0xfe]))).toBe('-__-');
-    expect(base64url('a')).toBe('YQ');
   });
 });
 

@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mockEnqueueApple, mockClaimApple, mockProcessApple } = vi.hoisted(
+  () => ({
+    mockEnqueueApple: vi.fn(),
+    mockClaimApple: vi.fn(),
+    mockProcessApple: vi.fn(),
+  })
+);
+
 const {
   mockAuthUserIsConfirmedAbsent,
   mockBuildDataExport,
@@ -14,7 +22,6 @@ const {
   mockClaimDeletionJob,
   mockPrepareDeletion,
   mockProcessDeletion,
-  mockReadSealedAppleToken,
   mockSignOut,
   mockStorageFrom,
   mockStorageList,
@@ -33,7 +40,6 @@ const {
   mockClaimDeletionJob: vi.fn(),
   mockPrepareDeletion: vi.fn(),
   mockProcessDeletion: vi.fn(),
-  mockReadSealedAppleToken: vi.fn(),
   mockSignOut: vi.fn(),
   mockStorageFrom: vi.fn(),
   mockStorageList: vi.fn(),
@@ -65,8 +71,10 @@ vi.mock('@/lib/domain/account-deletion/jobs', () => ({
   processAccountDeletionJob: mockProcessDeletion,
 }));
 
-vi.mock('@/lib/domain/apple-sign-in/refresh-tokens', () => ({
-  readSealedAppleRefreshToken: mockReadSealedAppleToken,
+vi.mock('@/lib/domain/apple-sign-in/revocation-outbox', () => ({
+  enqueueAppleRevocation: mockEnqueueApple,
+  claimAppleRevocation: mockClaimApple,
+  processAppleRevocation: mockProcessApple,
 }));
 
 vi.mock('@/lib/domain/account-export/build-export', () => ({
@@ -122,7 +130,12 @@ describe('deleteAccountAction', () => {
     mockDeleteWhere.mockResolvedValue(undefined);
     mockDeleteUser.mockResolvedValue({ error: null });
     mockPrepareDeletion.mockResolvedValue({ id: 'job-1', userId: user.id });
-    mockReadSealedAppleToken.mockResolvedValue(null);
+    mockEnqueueApple.mockResolvedValue(null);
+    mockClaimApple.mockResolvedValue({
+      row: { id: 'rev-1', userId: user.id, refreshTokenCiphertext: 'v1:s' },
+      claimedAt: new Date('2026-07-29T00:00:00.000Z'),
+    });
+    mockProcessApple.mockResolvedValue('completed');
     mockClaimDeletionJob.mockResolvedValue(
       new Date('2026-07-29T00:00:00.000Z')
     );
@@ -161,6 +174,69 @@ describe('deleteAccountAction', () => {
     );
   });
 
+  describe('Sign in with Apple revocation', () => {
+    beforeEach(() => {
+      mockEnqueueApple.mockResolvedValue({ id: 'rev-1' });
+    });
+
+    it('queues the token before Auth deletion and revokes after it', async () => {
+      await expect(deleteAccountAction(input)).resolves.toEqual({
+        success: true,
+      });
+      expect(mockEnqueueApple).toHaveBeenCalledWith(user.id);
+      expect(mockEnqueueApple.mock.invocationCallOrder[0]).toBeLessThan(
+        mockDeleteUser.mock.invocationCallOrder[0] as number
+      );
+      expect(mockClaimApple).toHaveBeenCalledWith('rev-1');
+      expect(mockProcessApple).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'rev-1' }),
+        expect.any(Date)
+      );
+      expect(mockDeleteUser.mock.invocationCallOrder[0]).toBeLessThan(
+        mockProcessApple.mock.invocationCallOrder[0] as number
+      );
+    });
+
+    it('never lets a failed revocation block RevenueCat erasure', async () => {
+      mockProcessApple.mockRejectedValue(new Error('db_down'));
+      await expect(deleteAccountAction(input)).resolves.toEqual({
+        success: true,
+      });
+      expect(mockProcessDeletion).toHaveBeenCalledTimes(1);
+    });
+
+    it('never lets a failed RevenueCat erasure block revocation', async () => {
+      mockProcessDeletion.mockRejectedValue(new Error('revenuecat_503'));
+      mockClaimDeletionJob.mockRejectedValue(new Error('claim_failed'));
+      await expect(deleteAccountAction(input)).resolves.toEqual({
+        success: true,
+      });
+      expect(mockProcessApple).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips the immediate attempt when no token was ever linked', async () => {
+      mockEnqueueApple.mockResolvedValue(null);
+      await deleteAccountAction(input);
+      expect(mockClaimApple).not.toHaveBeenCalled();
+    });
+
+    it('leaves a concurrent winner to revoke', async () => {
+      mockDeleteUser.mockResolvedValue({
+        error: { status: 404, code: 'user_not_found' },
+      });
+      await deleteAccountAction(input);
+      expect(mockClaimApple).not.toHaveBeenCalled();
+    });
+
+    it('fails closed, before deleting Auth, when the token cannot be queued', async () => {
+      mockEnqueueApple.mockRejectedValue(new Error('db_down'));
+      await expect(deleteAccountAction(input)).rejects.toMatchObject({
+        code: 'INTERNAL',
+      });
+      expect(mockDeleteUser).not.toHaveBeenCalled();
+    });
+  });
+
   it('does not delete auth when the first billing cleanup fails', async () => {
     mockDeleteWhere.mockRejectedValueOnce(new Error('cleanup_failed'));
 
@@ -179,9 +255,7 @@ describe('deleteAccountAction', () => {
       code: 'INTERNAL',
     });
     expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
-    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id, {
-      appleRefreshToken: null,
-    });
+    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id);
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 
@@ -193,9 +267,7 @@ describe('deleteAccountAction', () => {
     await expect(deleteAccountAction(input)).resolves.toEqual({
       success: true,
     });
-    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id, {
-      appleRefreshToken: null,
-    });
+    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id);
     expect(mockClaimDeletionJob).not.toHaveBeenCalled();
     expect(mockProcessDeletion).not.toHaveBeenCalled();
     expect(mockSignOut).toHaveBeenCalledTimes(1);
@@ -241,9 +313,7 @@ describe('deleteAccountAction', () => {
       success: true,
     });
     expect(mockDeleteWhere).toHaveBeenCalledTimes(2);
-    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id, {
-      appleRefreshToken: null,
-    });
+    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id);
     expect(mockDeleteUser).toHaveBeenCalledWith(user.id);
     expect(mockSignOut).toHaveBeenCalledTimes(1);
     expect(mockDeleteWhere.mock.invocationCallOrder[0]).toBeLessThan(
@@ -257,31 +327,6 @@ describe('deleteAccountAction', () => {
     );
     expect(mockDeleteUser.mock.invocationCallOrder[0]).toBeLessThan(
       mockDeleteWhere.mock.invocationCallOrder[1] as number
-    );
-  });
-
-  it('carries the sealed Apple token into the outbox before Auth deletion', async () => {
-    mockReadSealedAppleToken.mockResolvedValue('v1:sealed');
-    mockPrepareDeletion.mockResolvedValue({
-      id: 'job-1',
-      userId: user.id,
-      appleRefreshToken: 'v1:sealed',
-    });
-
-    await expect(deleteAccountAction(input)).resolves.toEqual({
-      success: true,
-    });
-    expect(mockReadSealedAppleToken).toHaveBeenCalledWith(user.id);
-    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id, {
-      appleRefreshToken: 'v1:sealed',
-    });
-    // The token row cascades with the auth user, so it must be read first.
-    expect(mockReadSealedAppleToken.mock.invocationCallOrder[0]).toBeLessThan(
-      mockDeleteUser.mock.invocationCallOrder[0] as number
-    );
-    expect(mockProcessDeletion).toHaveBeenCalledWith(
-      expect.objectContaining({ appleRefreshToken: 'v1:sealed' }),
-      expect.any(Date)
     );
   });
 

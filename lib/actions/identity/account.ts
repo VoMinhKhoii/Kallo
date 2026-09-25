@@ -14,7 +14,11 @@ import {
   buildDataExport,
   type DataExport,
 } from '@/lib/domain/account-export/build-export';
-import { readSealedAppleRefreshToken } from '@/lib/domain/apple-sign-in/refresh-tokens';
+import {
+  claimAppleRevocation,
+  enqueueAppleRevocation,
+  processAppleRevocation,
+} from '@/lib/domain/apple-sign-in/revocation-outbox';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
@@ -190,14 +194,22 @@ export async function deleteAccountAction(
   }
 
   // Persist the provider-erasure job before deleting Auth. RevenueCat customer
-  // erasure and Sign in with Apple token revocation happen only after the
-  // local account is committed; transient provider failures are retried by
-  // the scheduled worker. The sealed Apple token is read NOW because its row
-  // cascades away with the auth user.
-  const appleRefreshToken = await readSealedAppleRefreshToken(user.id);
-  const deletionJob = await prepareAccountDeletion(user.id, {
-    appleRefreshToken,
-  });
+  // erasure happens only after the local account is committed; transient
+  // provider failures are retried by the scheduled worker.
+  const deletionJob = await prepareAccountDeletion(user.id);
+
+  // Sign in with Apple revocation has its own outbox: the sealed token must be
+  // copied out before the auth cascade removes it, and fail closed while the
+  // user can still retry.
+  let appleRevocation: { id: string } | null;
+  try {
+    appleRevocation = await enqueueAppleRevocation(user.id);
+  } catch (appleError) {
+    throw Errors.internal(
+      appleError,
+      'Could not prepare your account for deletion. Please try again.'
+    );
+  }
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
   const accountAlreadyDeleted =
@@ -228,12 +240,18 @@ export async function deleteAccountAction(
       await processAccountDeletionJob(deletionJob, claimedAt).catch(
         (providerError) => {
           console.error(
-            '[account-delete] Provider erasure queued for retry:',
+            '[account-delete] RevenueCat erasure queued for retry:',
             providerError
           );
         }
       );
     }
+  }
+
+  // Independent of the RevenueCat attempt above: neither outcome affects the
+  // other, and the hourly worker retries whichever did not finish.
+  if (appleRevocation && !accountAlreadyDeleted) {
+    await revokeAppleTokenNow(appleRevocation.id);
   }
 
   // Repeat after deletion to remove a webhook that raced the first pass. The
@@ -256,4 +274,17 @@ export async function deleteAccountAction(
   await supabase.auth.signOut().catch(() => {});
 
   return { success: true };
+}
+
+/** Immediate best-effort revocation; failures stay queued for the worker. */
+async function revokeAppleTokenNow(revocationId: string): Promise<void> {
+  try {
+    const claim = await claimAppleRevocation(revocationId);
+    if (claim) await processAppleRevocation(claim.row, claim.claimedAt);
+  } catch (appleError) {
+    console.error(
+      '[account-delete] Apple token revocation queued for retry:',
+      appleError
+    );
+  }
 }

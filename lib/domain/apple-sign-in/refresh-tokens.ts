@@ -14,18 +14,13 @@
 import 'server-only';
 import { eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
-import {
-  exchangeAppleAuthorizationCode,
-  revokeAppleRefreshToken,
-} from '@/lib/infra/apple-auth/apple-auth';
+import { exchangeAppleAuthorizationCode } from '@/lib/infra/apple-auth/apple-auth';
 import { readAppleAuthConfig } from '@/lib/infra/apple-auth/config';
-import { secretBox } from '@/lib/infra/crypto/secret-box';
+import { open, resolveSecretBoxKey, seal } from '@/lib/infra/crypto/secret-box';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { appleAuthTokens } from '@/lib/infra/db/schema';
 
-export const APPLE_TOKEN_ENCRYPTION_KEY_ENV = 'APPLE_TOKEN_ENCRYPTION_KEY';
-
-const box = secretBox(APPLE_TOKEN_ENCRYPTION_KEY_ENV);
+const ENCRYPTION_KEY_ENV = 'APPLE_TOKEN_ENCRYPTION_KEY';
 
 /** Binds a sealed token to its owner: copied onto another user it won't open. */
 function aadFor(userId: string): string {
@@ -53,8 +48,13 @@ export async function linkAppleAuthorizationCode(
   input: LinkAppleTokenInput,
   database: AppDb = appDb
 ): Promise<LinkAppleTokenOutcome> {
-  if (!(readAppleAuthConfig() && box.isConfigured())) {
-    console.warn('[apple-sign-in] token revocation is not configured');
+  // Both checks run BEFORE the exchange: the code is single-use, so finding a
+  // missing or malformed key only after Apple spent it would lose the token.
+  const key = resolveSecretBoxKey(ENCRYPTION_KEY_ENV);
+  if (!(readAppleAuthConfig() && key)) {
+    console.warn(
+      `[apple-sign-in] token revocation is not configured (Apple credentials or a valid ${ENCRYPTION_KEY_ENV} missing)`
+    );
     return 'not_configured';
   }
   const result = await exchangeAppleAuthorizationCode(input.authorizationCode);
@@ -75,7 +75,7 @@ export async function linkAppleAuthorizationCode(
       'The Apple authorization code does not belong to this account.'
     );
   }
-  const ciphertext = box.seal(result.refreshToken, aadFor(input.userId));
+  const ciphertext = seal(key, result.refreshToken, aadFor(input.userId));
   const now = new Date();
   await database
     .insert(appleAuthTokens)
@@ -87,7 +87,7 @@ export async function linkAppleAuthorizationCode(
   return 'stored';
 }
 
-/** The sealed token, for the account-deletion outbox. `null` = never linked. */
+/** The sealed token, for the revocation outbox. `null` = never linked. */
 export async function readSealedAppleRefreshToken(
   userId: string,
   database: AppDb = appDb
@@ -101,15 +101,12 @@ export async function readSealedAppleRefreshToken(
 }
 
 /**
- * Open and revoke a sealed token. Throws on any failure — including missing
- * config, since a stored token proves config existed — so the deletion job
- * retries instead of dropping the revocation.
+ * The plaintext refresh token behind a sealed value. Throws when the key is
+ * missing or malformed, or the value was sealed for another user or under
+ * another key — the revocation outbox turns that into a retry.
  */
-export async function revokeSealedAppleRefreshToken(
-  userId: string,
-  sealed: string
-): Promise<void> {
-  const refreshToken = box.open(sealed, aadFor(userId));
-  const result = await revokeAppleRefreshToken(refreshToken);
-  if (!result.ok) throw new Error(`apple_token_revoke_${result.reason}`);
+export function openAppleRefreshToken(userId: string, sealed: string): string {
+  const key = resolveSecretBoxKey(ENCRYPTION_KEY_ENV);
+  if (!key) throw new Error('apple_token_encryption_key_unavailable');
+  return open(key, sealed, aadFor(userId));
 }

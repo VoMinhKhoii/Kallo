@@ -1,8 +1,8 @@
+import { randomBytes } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockExchange, mockRevoke, mockReadConfig } = vi.hoisted(() => ({
+const { mockExchange, mockReadConfig } = vi.hoisted(() => ({
   mockExchange: vi.fn(),
-  mockRevoke: vi.fn(),
   mockReadConfig: vi.fn(),
 }));
 
@@ -10,7 +10,6 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 vi.mock('@/lib/infra/apple-auth/apple-auth', () => ({
   exchangeAppleAuthorizationCode: mockExchange,
-  revokeAppleRefreshToken: mockRevoke,
 }));
 vi.mock('@/lib/infra/apple-auth/config', () => ({
   readAppleAuthConfig: mockReadConfig,
@@ -18,8 +17,8 @@ vi.mock('@/lib/infra/apple-auth/config', () => ({
 
 const {
   linkAppleAuthorizationCode,
+  openAppleRefreshToken,
   readSealedAppleRefreshToken,
-  revokeSealedAppleRefreshToken,
 } = await import('@/lib/domain/apple-sign-in/refresh-tokens');
 const { appleSubjectOf } = await import('@/lib/domain/apple-sign-in/contracts');
 
@@ -37,12 +36,25 @@ function insertChain() {
   return { insert, values, onConflictDoUpdate };
 }
 
+/** Link once and hand back the ciphertext that was written. */
+async function linkAndCapture(): Promise<string> {
+  mockExchange.mockResolvedValue({
+    ok: true,
+    refreshToken: 'rt-plain',
+    subject: '001.apple',
+  });
+  const { insert, values } = insertChain();
+  await linkAppleAuthorizationCode(INPUT, { insert } as never);
+  return values.mock.calls[0]?.[0].refreshTokenCiphertext;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockReadConfig.mockReturnValue({ clientId: 'com.khoivo.nham' });
 });
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe('linkAppleAuthorizationCode', () => {
@@ -67,15 +79,26 @@ describe('linkAppleAuthorizationCode', () => {
         set: expect.objectContaining({ updatedAt: expect.any(Date) }),
       })
     );
-
-    mockRevoke.mockResolvedValue({ ok: true });
-    await revokeSealedAppleRefreshToken(USER_ID, row.refreshTokenCiphertext);
-    expect(mockRevoke).toHaveBeenCalledWith('rt-plain');
+    expect(openAppleRefreshToken(USER_ID, row.refreshTokenCiphertext)).toBe(
+      'rt-plain'
+    );
   });
 
   it('is a no-op without Apple credentials', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockReadConfig.mockReturnValue(null);
+    const { insert } = insertChain();
+    await expect(
+      linkAppleAuthorizationCode(INPUT, { insert } as never)
+    ).resolves.toBe('not_configured');
+    expect(mockExchange).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('never spends the single-use code when the encryption key is malformed', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubEnv('APPLE_TOKEN_ENCRYPTION_KEY', 'too-short');
     const { insert } = insertChain();
     await expect(
       linkAppleAuthorizationCode(INPUT, { insert } as never)
@@ -110,40 +133,26 @@ describe('linkAppleAuthorizationCode', () => {
   });
 });
 
-describe('revokeSealedAppleRefreshToken', () => {
-  it('throws so the deletion job retries when Apple refuses', async () => {
-    mockExchange.mockResolvedValue({
-      ok: true,
-      refreshToken: 'rt-plain',
-      subject: '001.apple',
-    });
-    const { insert, values } = insertChain();
-    await linkAppleAuthorizationCode(INPUT, { insert } as never);
-    const sealed = values.mock.calls[0]?.[0].refreshTokenCiphertext;
-
-    mockRevoke.mockResolvedValue({ ok: false, reason: 'upstream_error' });
-    await expect(
-      revokeSealedAppleRefreshToken(USER_ID, sealed)
-    ).rejects.toThrow('apple_token_revoke_upstream_error');
+describe('openAppleRefreshToken', () => {
+  it('will not open a token sealed for another user', async () => {
+    const sealed = await linkAndCapture();
+    expect(() =>
+      openAppleRefreshToken('22222222-2222-4222-8222-222222222222', sealed)
+    ).toThrow();
   });
 
-  it('will not open a token sealed for another user', async () => {
-    mockExchange.mockResolvedValue({
-      ok: true,
-      refreshToken: 'rt-plain',
-      subject: '001.apple',
-    });
-    const { insert, values } = insertChain();
-    await linkAppleAuthorizationCode(INPUT, { insert } as never);
-    const sealed = values.mock.calls[0]?.[0].refreshTokenCiphertext;
-
-    await expect(
-      revokeSealedAppleRefreshToken(
-        '22222222-2222-4222-8222-222222222222',
-        sealed
-      )
-    ).rejects.toThrow();
-    expect(mockRevoke).not.toHaveBeenCalled();
+  it('throws when the key is unavailable, so the outbox retries', async () => {
+    const sealed = await linkAndCapture();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubEnv('APPLE_TOKEN_ENCRYPTION_KEY', 'bad');
+    expect(() => openAppleRefreshToken(USER_ID, sealed)).toThrow(
+      'apple_token_encryption_key_unavailable'
+    );
+    vi.stubEnv(
+      'APPLE_TOKEN_ENCRYPTION_KEY',
+      randomBytes(32).toString('base64')
+    );
+    expect(() => openAppleRefreshToken(USER_ID, sealed)).toThrow();
   });
 });
 
@@ -168,17 +177,14 @@ describe('readSealedAppleRefreshToken', () => {
 
 describe('appleSubjectOf', () => {
   it('reads the Apple identity’s sub, falling back to its id', () => {
-    const base = { user_id: 'u', identity_id: 'i' };
     expect(
       appleSubjectOf([
-        { ...base, provider: 'email', id: 'e', identity_data: {} },
-        { ...base, provider: 'apple', id: 'a-id', identity_data: { sub: 's' } },
+        { provider: 'email', id: 'e', identity_data: {} },
+        { provider: 'apple', id: 'a-id', identity_data: { sub: 's' } },
       ])
     ).toBe('s');
     expect(
-      appleSubjectOf([
-        { ...base, provider: 'apple', id: 'a-id', identity_data: {} },
-      ])
+      appleSubjectOf([{ provider: 'apple', id: 'a-id', identity_data: null }])
     ).toBe('a-id');
     expect(appleSubjectOf([])).toBeNull();
     expect(appleSubjectOf(undefined)).toBeNull();

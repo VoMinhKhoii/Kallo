@@ -63,10 +63,13 @@ Apple requires apps that offer Sign in with Apple to revoke the user's tokens
 when the account is deleted. After a native Apple sign-in the iOS app posts the
 credential's authorization code to `POST /api/v1/auth/apple/token`; the server
 exchanges it at `https://appleid.apple.com/auth/token`, seals the refresh token
-with AES-256-GCM and stores it in `apple_auth_tokens`. Account deletion copies
-the sealed token into the deletion outbox and the deletion job revokes it at
-`https://appleid.apple.com/auth/revoke` before erasing the RevenueCat customer;
-failures retry hourly (`.github/workflows/account-deletion-retry.yml`).
+with AES-256-GCM and stores it in `apple_auth_tokens`. Just before the auth user
+is deleted, account deletion copies the sealed token into its own outbox,
+`apple_token_revocations` (independent of RevenueCat erasure), and revokes it at
+`https://appleid.apple.com/auth/revoke` once the account is gone. Failures retry
+hourly (`.github/workflows/account-deletion-retry.yml`); after 10 attempts the
+row is parked as `dead` with a logged error — fix the cause, then set its
+`status` back to `pending` to retry. The ciphertext is wiped on completion.
 
 Runtime env (code: `lib/infra/apple-auth/`, `lib/domain/apple-sign-in/`):
 
@@ -100,7 +103,7 @@ Until both secrets exist the prod workflow simply does not mount them (the
 
 **Never rotate `APPLE_TOKEN_ENCRYPTION_KEY` in place**: stored tokens are sealed
 under it (`v1:` prefix) and would stop opening, so deletion jobs holding them
-would fail and retry until the old key is restored. The Sign in with Apple
+would fail until the old key is restored, and park as `dead` after 10 hours. The Sign in with Apple
 `.p8` can be rotated freely (a fresh client secret is minted per call).
 
 **Limitation — web-linked Apple identities.** The web app has no Sign in with

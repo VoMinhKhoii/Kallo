@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { revokeSealedAppleRefreshToken } from '@/lib/domain/apple-sign-in/refresh-tokens';
 import {
   deleteRevenueCatCustomer,
   getBillingEnvironment,
@@ -15,14 +14,8 @@ const READY = 'ACCOUNT_DELETION_READY';
 const PROCESSING = 'ACCOUNT_DELETION_PROCESSING';
 const COMPLETED = 'ACCOUNT_DELETION_COMPLETED';
 const PROCESSING_LEASE_MS = 10 * 60 * 1000;
-// `appleRefreshToken` is the SEALED Sign in with Apple token (never
-// plaintext), optional because most accounts never linked one and rows
-// written before it existed must keep parsing.
 const payloadSchema = z.object({
-  accountDeletion: z.object({
-    userId: z.string().uuid(),
-    appleRefreshToken: z.string().min(1).optional(),
-  }),
+  accountDeletion: z.object({ userId: z.string().uuid() }),
 });
 
 function accountDeletionExternalEventId(userId: string): string {
@@ -42,21 +35,13 @@ export function authUserIsConfirmedAbsent(
 export interface AccountDeletionJob {
   id: string;
   userId: string;
-  /** Sealed Sign in with Apple refresh token to revoke, when one was linked. */
-  appleRefreshToken?: string;
 }
 
-/**
- * Persist a provider-erasure outbox row before the local auth user vanishes.
- * The sealed Apple token rides in the payload because its own table row is
- * cascaded away with the auth user.
- */
+/** Persist a provider-erasure outbox row before the local auth user vanishes. */
 export async function prepareAccountDeletion(
   userId: string,
-  extras: { appleRefreshToken?: string | null } = {},
   database: AppDb = appDb
 ): Promise<AccountDeletionJob> {
-  const appleRefreshToken = extras.appleRefreshToken ?? undefined;
   const environment = getBillingEnvironment();
   const externalEventId = accountDeletionExternalEventId(userId);
   const rows = await database
@@ -66,12 +51,7 @@ export async function prepareAccountDeletion(
       externalEventId,
       eventType: PREPARED,
       userId: null,
-      rawPayload: {
-        accountDeletion: {
-          userId,
-          ...(appleRefreshToken && { appleRefreshToken }),
-        },
-      },
+      rawPayload: { accountDeletion: { userId } },
       deploymentEnvironment: environment,
       environment,
       nextAttemptAt: new Date(),
@@ -100,7 +80,7 @@ export async function prepareAccountDeletion(
           .limit(1);
   const id = existingRows[0]?.id;
   if (!id) throw new Error('account_deletion_job_not_persisted');
-  return { id, userId, ...(appleRefreshToken && { appleRefreshToken }) };
+  return { id, userId };
 }
 
 export async function claimAccountDeletionJob(
@@ -130,20 +110,13 @@ export async function claimAccountDeletionJob(
   return rows.length === 1 ? now : null;
 }
 
-/**
- * Provider erasure is retryable after local account deletion has committed.
- * Apple revocation runs first and is idempotent, so a retry after a later
- * RevenueCat failure simply revokes an already-dead token again.
- */
+/** Provider erasure is retryable after local account deletion has committed. */
 export async function processAccountDeletionJob(
   job: AccountDeletionJob,
   claimedAt: Date,
   database: AppDb = appDb
 ): Promise<void> {
   try {
-    if (job.appleRefreshToken) {
-      await revokeSealedAppleRefreshToken(job.userId, job.appleRefreshToken);
-    }
     await deleteRevenueCatCustomer(job.userId);
     await database
       .update(billingWebhookEvents)
@@ -219,8 +192,7 @@ export async function retryAccountDeletionJobs(
       failed += 1;
       continue;
     }
-    const { userId, appleRefreshToken } = parsed.data.accountDeletion;
-    const job = { id: row.id, userId, appleRefreshToken };
+    const job = { id: row.id, userId: parsed.data.accountDeletion.userId };
     if (row.eventType === PREPARED) {
       const { data, error } = await admin.auth.admin.getUserById(job.userId);
       if (data.user) {

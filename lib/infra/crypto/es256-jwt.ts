@@ -17,14 +17,6 @@ import {
   sign as signWith,
 } from 'node:crypto';
 
-export function base64url(input: string | Buffer): string {
-  return Buffer.from(input)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
 /**
  * Parse a .p8 (PKCS#8 PEM) and refuse anything that cannot sign ES256.
  *
@@ -52,12 +44,14 @@ export function signEs256Jwt(
   keyId: string,
   claims: Record<string, unknown>
 ): string {
-  const header = base64url(JSON.stringify({ alg: 'ES256', kid: keyId }));
-  const body = base64url(JSON.stringify(claims));
+  const header = Buffer.from(
+    JSON.stringify({ alg: 'ES256', kid: keyId })
+  ).toString('base64url');
+  const body = Buffer.from(JSON.stringify(claims)).toString('base64url');
   const signature = signWith('sha256', Buffer.from(`${header}.${body}`), {
     key,
     // MANDATORY: Node defaults to DER, which Apple rejects outright.
     dsaEncoding: 'ieee-p1363',
   });
-  return `${header}.${body}.${base64url(signature)}`;
+  return `${header}.${body}.${signature.toString('base64url')}`;
 }
