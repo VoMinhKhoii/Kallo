@@ -167,6 +167,12 @@ jobs:
       contents: read
       id-token: write
     env:
+      # Only main pushes publish: cloud-run-prod.yml deploys main SHAs and is
+      # the sole consumer of these images. PR and staging runs still build the
+      # image (so a broken Dockerfile fails before merge) but never push — each
+      # pushed image adds ~30 MB of Artifact Registry storage (retention:
+      # docs/GOOGLE_CLOUD_RUN.md → "Image retention").
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -175,13 +181,16 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: docker/setup-buildx-action@v3
       - uses: google-github-actions/auth@v3
+        if: env.PUBLISH == 'true'
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: env.PUBLISH == 'true'
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Configure Docker authentication
+        if: env.PUBLISH == 'true'
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
       - name: Build container image
         env:
@@ -200,4 +209,5 @@ jobs:
           -t "$IMAGE_URI"
           .
       - name: Push container image
+        if: env.PUBLISH == 'true'
         run: docker push "$IMAGE_URI"

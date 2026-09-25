@@ -7,16 +7,18 @@
 
 This repo deploys a single production service via `cloud-run-prod.yml`:
 
-- **Production service** (`kallo-prod`): Automatically deploys on `main` merge after CI succeeds; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
-- Artifact Registry: One immutable image per commit SHA (built + pushed by CI)
+- **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
+- Artifact Registry: One immutable image per `main` commit SHA (built + pushed by CI; PRs build but do not push), pruned by a cleanup policy — see [Image retention](#image-retention)
 - Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
 ## Deployment Model
 
-1. A pull request runs CI and builds an immutable image.
-2. After review and verification, merge to `main`.
-3. A successful `main` CI run triggers `cloud-run-prod.yml`.
-4. The prod job acquires its GCS lease, applies pending migrations, deploys a
+1. A pull request runs CI, including a `docker build` (not pushed).
+2. After review and verification, merge to `main`; its CI run pushes
+   `nham:<sha>`.
+3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
+4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
+   (exempting it from cleanup), applies pending migrations, deploys a
    no-traffic candidate, smoke-tests it, and only then promotes traffic.
 
 There is currently no persistent staging, internal, or preview deployment.
@@ -216,7 +218,9 @@ Set these once in your shell before running the setup commands below:
 ```bash
 export GCP_PROJECT_ID="your-project-id"
 export GCP_PROJECT_NUMBER="your-project-number"
-export GCP_REGION="asia-southeast1"
+# The Artifact Registry repo lives in Bangkok; kallo-prod overrides this with
+# asia-southeast1 (Singapore) in cloud-run-prod.yml and pulls cross-region.
+export GCP_REGION="asia-southeast3"
 export GCP_ARTIFACT_REPO="nham"
 export GCP_WIF_POOL_ID="github-actions"
 export GCP_WIF_PROVIDER_ID="github"
@@ -232,6 +236,30 @@ gcloud artifacts repositories create "$GCP_ARTIFACT_REPO" \
   --repository-format=docker \
   --location="$GCP_REGION" \
   --description="Kallo Cloud Run images"
+```
+
+### Image retention
+
+Every `main` commit pushes a ~100 MB image (~30 MB of new layers), so without a
+policy the repo only grows (it reached 29 GB / 977 images by 2026-09). The
+cleanup policy lives in `scripts/cloud-run/artifact-cleanup-policy.json`:
+
+- **Delete** any image older than 14 days, unless a keep rule matches
+  (keep rules always win).
+- **Keep** the 30 newest images, anything tagged `prod-*` until 60 days after it was built (the prod
+  workflow adds `prod-<sha>` before migrating, so recent releases stay
+  redeployable), and anything tagged `keep-*` indefinitely (manual pins).
+
+Deploying a never-deployed `main` SHA that is older than 14 days and outside the
+30 newest may fail at "Pre-deploy validation" — ship it as a new `main` commit instead. Serving Cloud
+Run revisions are unaffected by deletions (Cloud Run keeps its own copy of a
+serving revision's image).
+
+```bash
+gcloud artifacts repositories set-cleanup-policies "$GCP_ARTIFACT_REPO" \
+  --location="$GCP_REGION" \
+  --policy=scripts/cloud-run/artifact-cleanup-policy.json \
+  --no-dry-run   # --dry-run logs would-be deletions (needs AR Data Write audit logs)
 ```
 
 ## 2. Create service accounts
@@ -577,7 +605,7 @@ gcloud run revisions list \
 Run these after setup:
 
 1. Open a same-repo PR and confirm:
-   - CI publishes an image for the PR head SHA
+   - CI builds the container image but does not push it (only `main` pushes)
    - no automatic preview deploy runs after CI succeeds
 2. Manually run `Cloud Run Staging` for that PR and confirm:
    - the workflow acquires the staging lease
