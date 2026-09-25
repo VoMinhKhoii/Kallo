@@ -1,10 +1,13 @@
 /// Blocking, unblocking and reporting in the Circle (App Store 1.2) — the data
 /// layer only; the sheets and menu items that call these live with the UI.
 ///
-/// A block hides both people from each other everywhere the server serves
-/// circle content: the friends list and feeds, named-group feeds, a post opened
-/// by id, replies, hearts, group-chat messages and chat previews. So a block or
-/// an unblock invalidates every one of those caches, not just the friends list.
+/// A block ends the friendship and hides both people from each other
+/// everywhere the server serves circle content: the friends list and feeds,
+/// named-group feeds, a post opened by id, replies, hearts, group-chat
+/// messages, chat previews and notifications. So a block or an unblock
+/// invalidates every one of those caches, not just the friends list. Blocks
+/// are per person: unblocking lifts only the viewer's own block — if the other
+/// person also blocked the viewer, theirs stays in force.
 ///
 /// Errors surface as [ApiError] for the caller to handle: 404 from
 /// [unblockCircleUser] means the viewer never blocked this person, 404 from
@@ -79,9 +82,8 @@ Future<void> unblockCircleUser(WidgetRef ref, String userId) async {
 
 /// Report a share, reply, chat message, chat group or profile
 /// (`POST /api/v1/reports`). Returns the report id. Reporting the same target
-/// twice returns the same id, so a retry is safe. [targetUserId] is sent for
-/// the record only — the server derives the reported person itself. A blank
-/// [note] is omitted.
+/// twice returns the same id, so a retry is safe. The reported person is not
+/// sent — the server derives it from the target. A blank [note] is omitted.
 ///
 /// Changes nothing the viewer sees, so it invalidates nothing; to also hide
 /// the person, follow with [blockCircleUser].
@@ -89,7 +91,6 @@ Future<String> reportCircleContent(
   WidgetRef ref, {
   required ReportTargetKind kind,
   required String targetId,
-  String? targetUserId,
   required ReportReason reason,
   String? note,
 }) async {
@@ -99,7 +100,6 @@ Future<String> reportCircleContent(
       .post<Map<String, dynamic>>('/api/v1/reports', {
         'targetKind': kind.wire,
         'targetId': targetId,
-        if (targetUserId != null) 'targetUserId': targetUserId,
         'reason': reason.wire,
         if (trimmedNote != null && trimmedNote.isNotEmpty) 'note': trimmedNote,
       })

@@ -114,7 +114,6 @@ void main() {
         ref,
         kind: ReportTargetKind.chatMessage,
         targetId: _targetId,
-        targetUserId: _userId,
         reason: ReportReason.selfHarm,
         note: '  worrying  ',
       );
@@ -124,33 +123,29 @@ void main() {
       expect(api.requests.single.body, {
         'targetKind': 'chat_message',
         'targetId': _targetId,
-        'targetUserId': _userId,
         'reason': 'self_harm',
         'note': 'worrying',
       });
     },
   );
 
-  test(
-    'a blank note and a missing target user are left out of the body',
-    () async {
-      api.handler = (_) async => <String, dynamic>{'id': 'report-2'};
+  test('a blank note is left out of the body', () async {
+    api.handler = (_) async => <String, dynamic>{'id': 'report-2'};
 
-      await reportCircleContent(
-        ref,
-        kind: ReportTargetKind.profile,
-        targetId: _userId,
-        reason: ReportReason.spam,
-        note: '   ',
-      );
+    await reportCircleContent(
+      ref,
+      kind: ReportTargetKind.profile,
+      targetId: _userId,
+      reason: ReportReason.spam,
+      note: '   ',
+    );
 
-      expect(api.requests.single.body, {
-        'targetKind': 'profile',
-        'targetId': _userId,
-        'reason': 'spam',
-      });
-    },
-  );
+    expect(api.requests.single.body, {
+      'targetKind': 'profile',
+      'targetId': _userId,
+      'reason': 'spam',
+    });
+  });
 
   test('enum wire values match the server contract', () {
     expect(ReportTargetKind.values.map((k) => k.wire), [
