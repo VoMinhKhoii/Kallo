@@ -56,12 +56,11 @@ vi.mock('@/lib/infra/db/client', () => ({
 const { NutritionLabelOcrError } = await import(
   '@/lib/ai/pipeline/estimator/label-ocr/normalization'
 );
-const {
-  createLabelImageUrl,
-  linkLabelImageToMeal,
-  NUTRITION_LABEL_BUCKET,
-  scanWithStoredLabelImage,
-} = await import('@/lib/domain/nutrition/label-images/label-images');
+const { createLabelImageUrl, linkLabelImageToMeal, scanWithStoredLabelImage } =
+  await import('@/lib/domain/nutrition/label-images/label-images');
+const { NUTRITION_LABEL_BUCKET } = await import(
+  '@/lib/domain/nutrition/label-images/bucket'
+);
 
 const USER = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';

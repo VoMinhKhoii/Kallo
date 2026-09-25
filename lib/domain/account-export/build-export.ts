@@ -6,7 +6,7 @@ import { loadNotificationsExport } from '@/lib/domain/account-export/notificatio
 import { loadProfileExport } from '@/lib/domain/account-export/profile';
 import { loadSocialExport } from '@/lib/domain/account-export/social';
 import { loadSupportExport } from '@/lib/domain/account-export/support';
-import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/label-images';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**

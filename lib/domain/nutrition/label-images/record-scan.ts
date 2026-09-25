@@ -71,6 +71,9 @@ async function stripMetadata(
 ): Promise<{ bytes: Buffer; mimeType: OcrImageMimeType }> {
   const { data, info } = await sharp(Buffer.from(input.imageBase64, 'base64'), {
     limitInputPixels: OCR_MAX_IMAGE_PIXELS,
+    // Match the scan's own validation (`ocr/image.ts`): a slightly truncated
+    // photo that the model read is kept, not silently dropped on a warning.
+    failOn: 'error',
   })
     .rotate()
     .toBuffer({ resolveWithObject: true });

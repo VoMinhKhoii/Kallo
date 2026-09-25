@@ -14,7 +14,7 @@ import {
   buildDataExport,
   type DataExport,
 } from '@/lib/domain/account-export/build-export';
-import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/label-images';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';

@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/openapi/column-schemas';
 import type { JsonSchema } from '@/lib/api/openapi/components';
 import { AUTH_CLAIM_KEYS } from '@/lib/domain/account-export/build-export';
-import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/label-images';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import {
   billingProviderSyncs,
   bodyWeightLog,

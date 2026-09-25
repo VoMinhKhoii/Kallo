@@ -47,10 +47,6 @@ import { db } from '@/lib/infra/db/client';
 import { nutritionLabelImages } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 
-/** The private bucket kept label photos live in (account deletion purges
- *  the owner's prefix; the data export lists its objects). */
-export { NUTRITION_LABEL_BUCKET };
-
 /** Let the post-response writes outlive the reply. `after()` throws outside
  *  a request scope; the promise keeps running regardless. */
 function keepAlive(pending: Promise<unknown>): void {
