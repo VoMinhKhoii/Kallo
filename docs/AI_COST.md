@@ -46,3 +46,10 @@ prices as `null`, never as zero.
 `scripts/eval/run-eval.ts` counts every attempt per case (Call 1, Call 2,
 retries, chunks) and prints a **Cost** section: calls, input / cached / output /
 thinking tokens per case, and observed USD per 1k meals.
+
+**AI Studio undercounts input.** Its `promptTokenCount` leaves out the response
+JSON schema; Vertex (prod) bills it. Measured 2026-09-25 on
+`gemini-3.1-flash-lite`: the Call-1 schema adds 1,733 prompt tokens on Vertex
+(full mode) and 803 in slim mode. An eval run on AI Studio therefore reads
+~2.6k input tokens per meal low, and schema-size changes do not show in it at
+all — run cost comparisons on Vertex.
