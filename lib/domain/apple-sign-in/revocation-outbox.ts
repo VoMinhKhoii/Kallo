@@ -13,7 +13,7 @@
 // cause and flip it back to `pending`.
 
 import 'server-only';
-import { and, eq, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, lte, sql } from 'drizzle-orm';
 import { authUserIsConfirmedAbsent } from '@/lib/domain/account-deletion/jobs';
 import { revokeAppleRefreshToken } from '@/lib/infra/apple-auth/apple-auth';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
@@ -30,6 +30,7 @@ const COMPLETED = 'completed';
 const DEAD = 'dead';
 export const MAX_ATTEMPTS = 10;
 const PROCESSING_LEASE_MS = 10 * 60 * 1000;
+const LIVE_USER_RECHECK_MS = 60 * 60 * 1000;
 
 export interface AppleRevocationRow {
   id: string;
@@ -138,7 +139,11 @@ export async function processAppleRevocation(
       const result = await revokeAppleRefreshToken(token);
       if (!result.ok) throw new Error(`apple_token_revoke_${result.reason}`);
     }
-    await database
+    // Also fenced on the token this attempt revoked: a link or an orphaned
+    // token can fill the row after the claim, and completing then would wipe
+    // a token nobody revoked. A missed fence leaves the row pending (whoever
+    // filled it made it due now) for the next run.
+    const done = await database
       .update(appleTokenRevocations)
       .set({
         status: COMPLETED,
@@ -146,7 +151,14 @@ export async function processAppleRevocation(
         completedAt: new Date(),
         lastError: null,
       })
-      .where(fence);
+      .where(and(fence, sameToken(row.refreshTokenCiphertext)))
+      .returning({ id: appleTokenRevocations.id });
+    if (done.length === 0) {
+      console.warn(
+        `[apple-revocation] ${row.id} changed while processing; left pending`
+      );
+      return 'retry';
+    }
     return 'completed';
   } catch (error) {
     const message = (
@@ -175,6 +187,12 @@ export async function processAppleRevocation(
   }
 }
 
+function sameToken(ciphertext: string | null) {
+  return ciphertext === null
+    ? isNull(appleTokenRevocations.refreshTokenCiphertext)
+    : eq(appleTokenRevocations.refreshTokenCiphertext, ciphertext);
+}
+
 /**
  * The hourly worker. A row is processed only once Auth confirms its user is
  * gone — a pending row whose deletion failed must not revoke a live account's
@@ -191,6 +209,7 @@ export async function retryAppleRevocations(
     })
     .from(appleTokenRevocations)
     .where(and(isPending, lte(appleTokenRevocations.nextAttemptAt, new Date())))
+    .orderBy(asc(appleTokenRevocations.nextAttemptAt))
     .limit(100);
 
   const admin = createAdminClient();
@@ -202,6 +221,9 @@ export async function retryAppleRevocations(
       candidate.userId
     );
     if (data.user) {
+      // A deletion that failed after enqueueing. Push the row back so rows
+      // like it cannot fill every batch and starve the due ones behind them.
+      await deferRevocation(candidate.id, database);
       skipped += 1;
       continue;
     }
@@ -223,4 +245,18 @@ export async function retryAppleRevocations(
     else failed += 1;
   }
   return { processed, failed, skipped };
+}
+
+async function deferRevocation(id: string, database: AppDb): Promise<void> {
+  const now = new Date();
+  await database
+    .update(appleTokenRevocations)
+    .set({ nextAttemptAt: new Date(now.getTime() + LIVE_USER_RECHECK_MS) })
+    .where(
+      and(
+        eq(appleTokenRevocations.id, id),
+        isPending,
+        lte(appleTokenRevocations.nextAttemptAt, now)
+      )
+    );
 }
