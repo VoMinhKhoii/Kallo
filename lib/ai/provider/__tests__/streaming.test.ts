@@ -143,6 +143,8 @@ describe('generateStructuredOutputStream with trace', () => {
       usageMetadata?: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
+        cachedContentTokenCount?: number;
+        thoughtsTokenCount?: number;
       };
     }>
   ) {
