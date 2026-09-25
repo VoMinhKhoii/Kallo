@@ -269,6 +269,7 @@ export async function confirmAndSaveMealAction(input: {
     const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
       actorId: user.id,
+      rawInput: pending.rawInput,
     });
 
     // Pre-generate a stable id for each ingredient row so the inserted rows and
