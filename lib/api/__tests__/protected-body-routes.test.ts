@@ -58,6 +58,9 @@ vi.mock('@/lib/domain/onboarding/actions', () =>
 vi.mock('@/lib/actions/visibility/sharing-preferences', () =>
   stub('setAutoShareToCircle')
 );
+vi.mock('@/lib/actions/privacy/ai-consent', () =>
+  stub('setAiProcessingConsent')
+);
 vi.mock('@/lib/actions/meal-sharing/share-with-friends', () =>
   stub('shareMealWithFriendsAction')
 );
@@ -98,6 +101,12 @@ const routes: [
     'PUT',
     'user',
     () => import('@/app/api/v1/profile/sharing/route'),
+  ],
+  [
+    'profile/ai-consent',
+    'PUT',
+    'user',
+    () => import('@/app/api/v1/profile/ai-consent/route'),
   ],
   [
     'onboarding/screen',

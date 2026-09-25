@@ -103,6 +103,20 @@ export const sharingPreferencesSchema = z.object({
 });
 
 /**
+ * Request body for `PUT /api/v1/profile/ai-consent`: `true` records consent to
+ * third-party AI processing (now), `false` withdraws it (NULL).
+ */
+export const aiConsentSchema = z.object({
+  consented: z.boolean(),
+});
+
+/** Response of `PUT /api/v1/profile/ai-consent` and the matching action. */
+export interface AiConsentState {
+  /** ISO timestamp of the consent, or null when not (or no longer) given. */
+  aiProcessingConsentedAt: string | null;
+}
+
+/**
  * Type-only re-export so the mobile client can type the
  * `GET /api/v1/onboarding/profile` response. The action has no named return
  * type — it returns an anonymous Drizzle row

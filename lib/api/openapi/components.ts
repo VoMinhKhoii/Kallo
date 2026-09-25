@@ -107,6 +107,17 @@ export const RATE_LIMITER_UNAVAILABLE_ERROR: JsonSchema = {
   ),
 };
 
+/**
+ * The 403 an AI-processing route answers while the user has not consented to
+ * sending their content to the third-party AI provider (App Store 5.1.2(i)).
+ * Only the routes that call the provider can give it.
+ */
+export const AI_CONSENT_REQUIRED_ERROR: JsonSchema = {
+  '403': errorResponse(
+    'The user has not consented to third-party AI processing (`ai_consent_required`). Not retryable until consent is granted via `PUT /api/v1/profile/ai-consent`.'
+  ),
+};
+
 const AUTH_ERRORS: JsonSchema = {
   '401': errorResponse('No valid session (`NOT_AUTHENTICATED`).'),
   '402': errorResponse(

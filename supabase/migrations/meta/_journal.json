@@ -519,6 +519,13 @@
       "when": 1790141741088,
       "tag": "20260923053541_add_account_export_user_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790338200000,
+      "tag": "20260925121000_add_ai_processing_consent",
+      "breakpoints": true
     }
   ]
 }

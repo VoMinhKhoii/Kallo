@@ -4,6 +4,7 @@ import {
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
 import {
+  AI_CONSENT_REQUIRED_ERROR,
   authed,
   fromZod,
   MEAL_ID_CONFLICT_ERROR,
@@ -79,6 +80,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       extraErrors: {
         ...PAYLOAD_TOO_LARGE_ERROR,
         ...RATE_LIMITER_UNAVAILABLE_ERROR,
+        ...AI_CONSENT_REQUIRED_ERROR,
       },
     }),
   },

@@ -87,7 +87,7 @@ beforeEach(() => {
   );
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
-    profile: {},
+    profile: { aiProcessingConsentedAt: new Date('2026-01-02T00:00:00Z') },
   });
   validateNutritionLabelImage.mockResolvedValue(undefined);
   scanNutritionLabelWithGemini.mockResolvedValue(parsedLabel);
@@ -112,6 +112,22 @@ describe('POST /api/v1/nutrition-label/scan', () => {
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(401);
     expect(validateNutritionLabelImage).not.toHaveBeenCalled();
+  });
+
+  it('refuses a user without AI consent with 403 before reading the body or spending', async () => {
+    requireAuthAndProfile.mockResolvedValueOnce({
+      user: { id: 'user-123' },
+      profile: { aiProcessingConsentedAt: null },
+    });
+
+    const res = await POST(makeRequest(validBody));
+
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error.code).toBe('ai_consent_required');
+    expect(json.error.retryable).toBe(false);
+    expect(withOcrGuard).not.toHaveBeenCalled();
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
   });
 
   it('rejects an unsupported mime type with 400 VALIDATION_FAILED', async () => {

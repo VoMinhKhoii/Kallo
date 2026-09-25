@@ -5,6 +5,7 @@ import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
 import { OCR_MAX_BODY_BYTES } from '@/lib/domain/nutrition/ocr/image-constants';
+import { assertAiConsent } from '@/lib/domain/privacy/ai-consent';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { withOcrGuard } from '@/lib/infra/rate-limit/ocr-guard';
@@ -28,6 +29,11 @@ export async function POST(req: NextRequest) {
     // /api/v1 convention: unauthenticated callers get a 401, not a
     // validation-shaped 400.
     const { user, profile } = await requireAuthAndProfile();
+
+    // The photo goes to the AI provider, so the user's recorded consent comes
+    // first (App Store 5.1.2(i)): a 403 `ai_consent_required`, passed through
+    // `mapNutritionLabelError` untouched like the 402 below.
+    assertAiConsent(profile);
 
     // Label scanning is premium: the throw is a 402 envelope via
     // `mapNutritionLabelError`'s pass-through default → `handleRouteError`.

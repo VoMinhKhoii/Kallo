@@ -154,6 +154,7 @@ beforeEach(() => {
       goal: 'cutting',
       aggression: '0.5',
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      aiProcessingConsentedAt: new Date('2026-01-02T00:00:00.000Z'),
     },
   });
 });
@@ -197,6 +198,26 @@ describe('scanNutritionLabelAction', () => {
     );
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
     expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it('returns ai_consent_required without a consent record, before billing or Gemini', async () => {
+    mockRequireAuthAndProfile.mockResolvedValueOnce({
+      user: mockUser,
+      profile: {
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        aiProcessingConsentedAt: null,
+      },
+    });
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code: 'ai_consent_required' });
+    expect(mockCheckFeatureGate).not.toHaveBeenCalled();
+    expect(mockWithOcrGuard).not.toHaveBeenCalled();
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
   });
 
   it('validates input and returns normalized label data', async () => {

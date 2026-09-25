@@ -17,10 +17,17 @@ const SEMANTIC_VECTOR_THRESHOLD = 0.72;
 const MIN_SEMANTIC_QUERY_LENGTH = 2;
 
 /** Resolve a query embedding through the pipeline's 3-tier cache (memory →
- *  ingredient_query_embeddings → live Gemini embed call, cached on return). */
-async function resolveEmbedding(q: string): Promise<number[] | null> {
+ *  ingredient_query_embeddings → live Gemini embed call, cached on return).
+ *  The live call sends the query text to the AI provider, so it only runs for
+ *  a user who consented to that (App Store 5.1.2(i)); a cache hit sends
+ *  nothing anywhere and is used either way. */
+async function resolveEmbedding(
+  q: string,
+  allowLiveEmbedding: boolean
+): Promise<number[] | null> {
   const cached = await resolveQueryEmbedding(q, db);
   if (cached) return cached;
+  if (!allowLiveEmbedding) return null;
   const gemini = createGeminiClient(resolveGeminiProvider());
   const [generated] = await gemini.generateEmbeddingBatch([q]);
   if (!generated) return null;
@@ -36,11 +43,12 @@ async function resolveEmbedding(q: string): Promise<number[] | null> {
  *  provider, vector infra down) degrades to lexical-only — never a 500. */
 export async function semanticSupplement(
   q: string,
-  limit: number
+  limit: number,
+  allowLiveEmbedding: boolean
 ): Promise<IngredientSearchResult[]> {
   if (q.length < MIN_SEMANTIC_QUERY_LENGTH) return [];
   try {
-    const embedding = await resolveEmbedding(q);
+    const embedding = await resolveEmbedding(q, allowLiveEmbedding);
     if (!embedding) return [];
     const rows = await db.execute<IngredientSearchRow>(sql`
       SELECT f.id, f.name_primary, f.name_alt, f.name_en, f.state, f.similarity,
