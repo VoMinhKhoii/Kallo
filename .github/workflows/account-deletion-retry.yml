@@ -31,11 +31,14 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - run: bun install --frozen-lockfile
-      - name: Retry due RevenueCat erasures
+      - name: Retry due provider erasures (Apple revocation, RevenueCat)
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           REVENUECAT_PROJECT_ID: ${{ vars.REVENUECAT_PROJECT_ID }}
           BILLING_ENVIRONMENT: production
+          APPLE_TEAM_ID: ZNG57U88R5
+          APPLE_SIGNIN_CLIENT_ID: com.khoivo.nham
+          APPLE_SIGNIN_KEY_ID: ${{ vars.APPLE_SIGNIN_KEY_ID }}
         run: |
           database_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
           service_key="$(gcloud secrets versions access latest --secret=kallo-prod-supabase-service-role-key)"
@@ -43,6 +46,21 @@ jobs:
           echo "::add-mask::$database_url"
           echo "::add-mask::$service_key"
           echo "::add-mask::$revenuecat_key"
+          # Sign in with Apple revocation is optional until its secrets exist
+          # (docs/GOOGLE_CLOUD_RUN.md). Without them a pending Apple revocation
+          # fails and retries (its own outbox, never blocking RevenueCat) until
+          # the attempt cap parks it as dead.
+          if gcloud secrets describe kallo-prod-apple-signin-key-p8 > /dev/null 2>&1 \
+            && gcloud secrets describe kallo-prod-apple-token-encryption-key > /dev/null 2>&1; then
+            apple_key_p8="$(gcloud secrets versions access latest --secret=kallo-prod-apple-signin-key-p8)"
+            apple_token_key="$(gcloud secrets versions access latest --secret=kallo-prod-apple-token-encryption-key)"
+            while IFS= read -r line; do
+              [ -n "$line" ] && echo "::add-mask::$line"
+            done <<< "$apple_key_p8"
+            echo "::add-mask::$apple_token_key"
+            export APPLE_SIGNIN_KEY_P8="$apple_key_p8"
+            export APPLE_TOKEN_ENCRYPTION_KEY="$apple_token_key"
+          fi
           DATABASE_URL="$database_url" \
           SUPABASE_SERVICE_ROLE_KEY="$service_key" \
           REVENUECAT_CUSTOMER_DELETE_API_KEY="$revenuecat_key" \

@@ -19,7 +19,7 @@ import { routeInventory } from '@/lib/api/route-inventory';
 const BODY_READ =
   /\b(?:readJsonBody|readBoundedJson|readBoundedBody)\(|\.(?:json|formData|arrayBuffer|text)\(\)/;
 const AUTH_GUARD =
-  /\b(?:requireUserId|requireUserWithAvatar|requireAuthAndProfile|requireSessionUser)\(|\.auth\.getUser\(/;
+  /\b(?:requireUserId|requireUser|requireUserWithAvatar|requireAuthAndProfile|requireSessionUser)\(|\.auth\.getUser\(/;
 const METHOD_EXPORT =
   /export\s+(?:async\s+)?(?:function|const)\s+(GET|POST|PUT|PATCH|DELETE)\b/g;
 

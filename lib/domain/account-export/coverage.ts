@@ -176,6 +176,14 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
     exported: 'pushDevices',
     excludedColumns: { user_id: OWN_ID },
   },
+  apple_auth_tokens: {
+    excluded:
+      'An encrypted Sign in with Apple refresh token, a live credential held only so account deletion can revoke it. Like Auth sessions and provider tokens, never exported.',
+  },
+  apple_token_revocations: {
+    excluded:
+      'Account-deletion outbox: written only as the account is deleted, so it never exists for a live user to export; the sealed token is wiped once revoked.',
+  },
 
   // --- Support -------------------------------------------------------------
   user_feedback: {
