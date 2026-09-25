@@ -798,6 +798,8 @@ describe('POST /api/analyze-meal', () => {
         rawInput: 'Phở bò tái',
         loggedAt: expect.any(Date),
         attemptId: TEST_ATTEMPT_ID,
+        // Carried to the meal at confirm so its AI spend joins back.
+        pipelineRequestId: 'request-123',
       })
     );
     // Upserts on (user_id, attempt_id) and refreshes expiresAt so a re-analysis
@@ -1054,6 +1056,8 @@ describe('POST /api/analyze-meal', () => {
         cheatIntensity: 'heavy',
       }),
       expect.anything(),
+      expect.any(Function),
+      // Budget recorder: cheat spend lands in analysis_model_budget_events.
       expect.any(Function)
     );
   });

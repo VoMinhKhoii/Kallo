@@ -71,6 +71,7 @@ export async function runCheatBranch({
       entryMode: 'cheat',
       loggedAt: ctx.loggedAt,
       attemptId: ctx.attemptId,
+      pipelineRequestId: requestId,
     }),
     PERSIST_DEADLINE_MS
   );

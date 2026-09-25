@@ -221,6 +221,30 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.id).toBe(UUID_MEAL);
   });
 
+  it('links the saved meal to the analysis request that produced it', async () => {
+    const capturedValues: unknown[] = [];
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: JSON.parse(JSON.stringify(samplePipelineResult)),
+            loggedAt: LOGGED_AT,
+            pipelineRequestId: UUID_1,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
+
+    await confirmAndSaveMealAction({ analysisId: UUID_2 });
+
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.pipelineRequestId).toBe(UUID_1);
+  });
+
   it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {
     const capturedValues: Record<string, unknown>[] = [];
     const cheatSpec = {

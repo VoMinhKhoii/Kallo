@@ -251,6 +251,7 @@ export async function confirmAndSaveMealAction(input: {
           ...(parsed.mealId ? { id: parsed.mealId } : {}),
           userId: user.id,
           rawInput: pending.rawInput,
+          pipelineRequestId: pending.pipelineRequestId,
           mealSlot,
           confidenceOverall: pipelineResult.confidenceOverall,
           loggedAt,
