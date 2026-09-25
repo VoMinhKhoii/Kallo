@@ -40,10 +40,12 @@ String _lookup(String locale, String key) {
 
 void main() {
   group('deleteSubscriptionWarningKey', () {
-    test('iOS with no managing store gets the App Store copy', () {
+    // `null` covers no subscription AND an entitlement still loading or failed
+    // to load — the store is unknown, so the copy must not name the App Store.
+    test('iOS with an unknown store gets neutral copy', () {
       expect(
         deleteSubscriptionWarningKey(platform: TargetPlatform.iOS),
-        _iosKey,
+        _iosOtherStoreKey,
       );
     });
 
@@ -109,14 +111,20 @@ void main() {
   group('AccountDeleteScreen', () {
     setUpAll(() => initOnboardingTest(fonts: false));
 
+    // No entitlement is loaded here, so iOS must fall back to neutral copy.
     testWidgets(
       'renders the copy for the running platform',
       (tester) async {
         await pumpSettingsPage(tester, const AccountDeleteScreen());
         final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+        final expected = isIos ? _iosOtherStoreKey : _generalKey;
 
-        expect(find.text(tr(isIos ? _iosKey : _generalKey)), findsOneWidget);
-        expect(find.text(tr(isIos ? _generalKey : _iosKey)), findsNothing);
+        for (final key in const [_generalKey, _iosKey, _iosOtherStoreKey]) {
+          expect(
+            find.text(tr(key)),
+            key == expected ? findsOneWidget : findsNothing,
+          );
+        }
         if (isIos) {
           expect(find.textContaining('Google Play'), findsNothing);
         }
