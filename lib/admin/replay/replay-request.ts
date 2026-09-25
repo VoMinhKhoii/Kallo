@@ -17,11 +17,13 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { hasAiConsent } from '@/lib/domain/privacy/ai-consent';
 import { db } from '@/lib/infra/db/client';
 import {
   analysisGuardEvents,
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
+  userProfiles,
 } from '@/lib/infra/db/schema';
 import { adminReplayGuardRoute } from '@/lib/infra/rate-limit/analysis-guard-limits';
 import {
@@ -70,7 +72,8 @@ export async function replayRequest(
   options: { dryRun?: boolean } = {}
 ): Promise<ReplayRequestResult> {
   const originalId = idSchema.parse(originalIdInput);
-  const { dryRun = false } = replayOptionsSchema.parse(options);
+  const { dryRun: requestedDryRun = false } =
+    replayOptionsSchema.parse(options);
   const admin = await requireAdmin();
 
   const [orig] = await db
@@ -78,11 +81,26 @@ export async function replayRequest(
       rawInput: pipelineRequests.rawInput,
       userContextJson: pipelineRequests.userContextJson,
       userId: pipelineRequests.userId,
+      // The ORIGINAL user's consent as it stands now — null too when the
+      // profile is gone, which fails closed like a withdrawal.
+      aiProcessingConsentedAt: userProfiles.aiProcessingConsentedAt,
     })
     .from(pipelineRequests)
+    .leftJoin(userProfiles, eq(userProfiles.userId, pipelineRequests.userId))
     .where(eq(pipelineRequests.id, originalId))
     .limit(1);
   if (!orig) throw new Error('original request not found');
+
+  // A live replay sends that user's meal text to the AI provider again, which
+  // only their consent covers (App Store 5.1.2(i)) — the admin's does not.
+  // Without it the replay runs dry: the captured responses are re-read and
+  // nothing leaves the server.
+  const dryRun = requestedDryRun || !hasAiConsent(orig);
+  if (dryRun && !requestedDryRun) {
+    console.info(
+      `[admin] ${originalId}: no AI-processing consent on record, replaying dry`
+    );
+  }
 
   if (!dryRun) {
     const guard = await checkAdminReplayGuard({ adminId: admin.id, db });
