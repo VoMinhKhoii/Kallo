@@ -3,7 +3,6 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../privacy/logic/ai_consent_gate.dart';
 import '../../data/logging_providers.dart';
 import '../../widgets/relog/mention_text_controller.dart';
 import '../feed/analysis/analysis_run.dart';
@@ -65,15 +64,11 @@ class ComposerSubmitter {
       freeText: composer.freeText,
     );
     switch (plan) {
-      // Both AI-bearing shapes ask for AI-processing consent first (App Store
-      // 5.1.2(i)). The composer is untouched until the run starts, so "Not
-      // now" loses nothing.
+      // Both AI-bearing shapes ask for AI-processing consent inside the run
+      // (App Store 5.1.2(i)); the composer is untouched until it starts, so
+      // "Not now" loses nothing.
       case PlainAnalysis(:final text):
-        startWithAiConsent(
-          context,
-          ref,
-          () => run.startPlain(ref, userId: userId, date: date, text: text),
-        );
+        run.startPlain(context, ref, userId: userId, date: date, text: text);
       case PureRelog(:final refs, :final stageIds):
         if (_staging) return;
         unawaited(
@@ -95,17 +90,14 @@ class ComposerSubmitter {
           ),
         );
       case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
-        startWithAiConsent(
+        run.startCombined(
           context,
           ref,
-          () => run.startCombined(
-            ref,
-            userId: userId,
-            date: date,
-            freeText: freeText,
-            refs: refs,
-            pickNames: pickNames,
-          ),
+          userId: userId,
+          date: date,
+          freeText: freeText,
+          refs: refs,
+          pickNames: pickNames,
         );
     }
   }

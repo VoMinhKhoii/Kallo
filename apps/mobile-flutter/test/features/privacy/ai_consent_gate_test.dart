@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,11 +97,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AiConsentSheet), findsOneWidget);
     expect(find.textContaining('Gemini'), findsOneWidget);
+    // The disclosure names every kind of text that reaches the AI.
+    expect(find.textContaining('ingredient searches'), findsOneWidget);
+    // A Cupertino route, not Material's bottom sheet.
+    expect(
+      ModalRoute.of(tester.element(find.byType(AiConsentSheet))),
+      isA<CupertinoModalPopupRoute<bool>>(),
+    );
+    expect(find.byType(BottomSheet), findsNothing);
 
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
 
     expect(answers, [false]);
+    expect(api.puts, isEmpty);
+  });
+
+  testWidgets('a tap on the barrier answers false and sends nothing', (
+    tester,
+  ) async {
+    final answers = await _pumpGate(tester, api: api, consented: false);
+
+    await tester.tap(find.text('log meal'));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(195, 40)); // above the sheet
+    await tester.pumpAndSettle();
+
+    expect(answers, [false]);
+    expect(find.byType(AiConsentSheet), findsNothing);
     expect(api.puts, isEmpty);
   });
 

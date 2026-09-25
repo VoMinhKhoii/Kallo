@@ -1,6 +1,7 @@
 /// The gate every AI entry point passes through before anything is sent:
-/// meal analysis (precise, cheat, relog-with-text) and label scanning. Web
-/// counterpart: `AiConsentGate` (`lib/domain/privacy/consent-gate.ts`).
+/// meal analysis (precise, cheat, relog-with-text, clarify — all through
+/// `FeedAnalysisRun`) and label scanning (`LabelScanBranch`). Web counterpart:
+/// `AiConsentGate` (`lib/domain/privacy/consent-gate.ts`).
 library;
 
 import 'dart:async' show unawaited;
@@ -19,6 +20,7 @@ import '../widgets/ai_consent_sheet.dart';
 /// user who already agreed is never asked again just because the row had not
 /// arrived yet.
 Future<bool> ensureAiConsent(BuildContext context, WidgetRef ref) async {
+  if (ref.read(aiConsentProvider)) return true;
   if (ref.read(aiConsentRecordProvider) == null &&
       !ref.read(profileProvider).hasValue) {
     try {
@@ -36,11 +38,15 @@ Future<bool> ensureAiConsent(BuildContext context, WidgetRef ref) async {
 /// consent is on record, asking first when it is not. Fire-and-forget for the
 /// synchronous submit handlers; [start] is skipped if the asking surface went
 /// away while the sheet was up.
+///
+/// Synchronous when consent is already on record, so a consented user's submit
+/// runs in the same frame it always did.
 void startWithAiConsent(
   BuildContext context,
   WidgetRef ref,
   VoidCallback start,
 ) {
+  if (ref.read(aiConsentProvider)) return start();
   unawaited(
     ensureAiConsent(context, ref).then((ok) {
       if (ok && context.mounted) start();

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,17 +13,31 @@ import '../../../shared/widgets/surface/kallo_button.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../shared/widgets/typography/meta_action.dart';
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/ai_consent_providers.dart';
 
 /// Opens the one-time AI-processing consent sheet (App Store 5.1.2(i)) and
 /// resolves with the answer: true once consent is recorded on the server,
-/// false for "Not now", the X, a drag-down or the barrier — nothing is sent.
+/// false for "Not now", the X or a tap on the barrier — nothing is sent.
+///
+/// A Cupertino route (`apps/mobile-flutter/AGENTS.md` §2), and the modal
+/// POPUP rather than `CupertinoSheetRoute`: this is a two-button decision that
+/// hugs its content, like an action sheet, and `CupertinoSheetRoute` has no
+/// content-hugging mode — it would present the question as a near-full-height
+/// page (`mobile.md`, the `SheetRoute` migration row). The route paints no
+/// `Material`, so the content gets a transparent one for [KalloButton] and the
+/// text theme; the barrier is the app's scrim, as the confirm alert's is.
 Future<bool> showAiConsentSheet(BuildContext context) async {
   HapticFeedback.lightImpact(); // a decision is being asked for
-  final agreed = await showNhamSheet<bool>(
-    context,
-    builder: (_) => const AiConsentSheet(),
+  final agreed = await showCupertinoModalPopup<bool>(
+    context: context,
+    barrierColor: KalloColors.scrim,
+    builder:
+        (_) => const Material(
+          type: MaterialType.transparency,
+          child: AiConsentSheet(),
+        ),
   );
   return agreed ?? false;
 }
@@ -63,10 +78,9 @@ class _AiConsentSheetState extends ConsumerState<AiConsentSheet> {
     final mq = MediaQuery.of(context);
     final muted = dashBody(color: kInkMuted);
     return PopScope(
-      // Hold the sheet against a back gesture while the write is in flight.
-      // A drag-down can still close it; the write lands regardless and is
-      // recorded in [aiConsentRecordProvider], so the next AI action simply
-      // goes through without asking.
+      // Hold the sheet — against the barrier and a back gesture alike — while
+      // the write is in flight, so Continue always answers with what the
+      // server stored.
       canPop: !_saving,
       child: KalloSheetSurface(
         scrollable: true,

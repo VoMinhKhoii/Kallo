@@ -153,7 +153,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     if (!mounted) return;
     final meal = _handoff.take(ref);
     if (meal == null) return;
-    _analysis.askThenStartPlain(
+    _analysis.startPlain(
       context,
       ref,
       userId: widget.profile.userId,
@@ -264,7 +264,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       failedText: _analysis.failedText,
       failedRetryable: _analysis.failedRetryable,
       onRetry:
-          () => _analysis.askThenRetry(
+          () => _analysis.retry(
             context,
             ref,
             userId: profile.userId,

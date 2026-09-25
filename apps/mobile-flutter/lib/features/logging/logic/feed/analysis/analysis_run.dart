@@ -124,17 +124,20 @@ class FeedAnalysisRun {
 
   String? get revealRawInput => _revealRawInput;
 
+  /// The last request, as it went out: "Continue" re-sends it after a refusal.
+  void Function(WidgetRef ref)? _resend;
+
   /// A fresh logging attempt carrying no relog picks — a plain composer, the
   /// dashboard's quick-log sheet, a first-run suggestion chip.
   void startPlain(
+    BuildContext context,
     WidgetRef ref, {
     required String userId,
     required String date,
     required String text,
-  }) {
-    // A fresh logging attempt: mint a new attempt id. Retries and cheat-clarify
-    // resubmits reuse the existing id instead (see [retry] / [retakeReveal]) so
-    // the server upserts one staging row per attempt.
+  }) => _gated(context, ref, () {
+    // A fresh attempt mints a new id; [retry] and [restartClarify] reuse it,
+    // so the server upserts one staging row per attempt.
     _attemptId = _uuid.v4();
     _analyze(
       ref,
@@ -142,25 +145,24 @@ class FeedAnalysisRun {
       date: date,
       attempt: AnalysisAttempt(text: text, isCheat: _modeIsCheat(ref)),
     );
-  }
+  });
 
   /// A fresh logging attempt with picks riding along: [freeText] is analyzed
   /// alone and [refs] are sent beside it, so the server merges the copied
   /// dishes in and relogged items are never re-analyzed.
   void startCombined(
+    BuildContext context,
     WidgetRef ref, {
     required String userId,
     required String date,
     required String freeText,
     required List<ComposerPickRef> refs,
     required List<String> pickNames,
-  }) {
+  }) => _gated(context, ref, () {
     _attemptId = _uuid.v4();
-    // [_analyze] clears the composer to show the streaming card, which drops
-    // the mentions with it — snapshot first so a failed run can hand them back,
-    // and take the label BEFORE the clear: it is the sentence on screen with
-    // the `/` markers removed, so the card reads back what was typed, in that
-    // order.
+    // [_analyze] clears the composer, mentions and all — snapshot first so a
+    // failed run can hand them back, and take the label BEFORE the clear: the
+    // sentence on screen minus its `/` markers, in the order it was typed.
     _relogSnapshot = composer.snapshot();
     _analyze(
       ref,
@@ -174,53 +176,36 @@ class FeedAnalysisRun {
         isCheat: _modeIsCheat(ref),
       ),
     );
+  });
+
+  /// "Try again" on the failed card. Asks for consent again too: it may have
+  /// been withdrawn in Settings while the card sat there.
+  void retry(
+    BuildContext context,
+    WidgetRef ref, {
+    required String userId,
+    required String date,
+  }) {
+    _gated(context, ref, () {
+      final attempt = _failed;
+      if (attempt == null) return;
+      // Reuse the failed attempt's id so the retry supersedes its staging row
+      // (kept on error precisely for this). Fall back to a fresh id.
+      _attemptId ??= _uuid.v4();
+      _replay(ref, userId: userId, date: date, attempt: attempt);
+    });
   }
 
-  /// [startPlain] behind the AI-processing consent ask (App Store 5.1.2(i)) —
-  /// for the entry points that did not already ask (a parked meal handed over
-  /// from another surface).
-  void askThenStartPlain(
-    BuildContext context,
+  /// REPLAY [attempt] — text, references, mode and answer as they went out —
+  /// never re-plan from the live composer, whose entries and mode drift while
+  /// an error card sits there: a failed cheat submit could come back as a
+  /// normal analysis carrying picks it never sent.
+  void _replay(
     WidgetRef ref, {
     required String userId,
     required String date,
-    required String text,
-  }) => startWithAiConsent(
-    context,
-    ref,
-    () => startPlain(ref, userId: userId, date: date, text: text),
-  );
-
-  /// [retry] behind the consent ask — consent may have been withdrawn in
-  /// Settings while the failed card sat there.
-  void askThenRetry(
-    BuildContext context,
-    WidgetRef ref, {
-    required String userId,
-    required String date,
-  }) => startWithAiConsent(
-    context,
-    ref,
-    () => retry(ref, userId: userId, date: date),
-  );
-
-  void retry(WidgetRef ref, {required String userId, required String date}) {
-    final attempt = _failed;
-    if (attempt == null) return;
-    // Reuse the failed attempt's id so the retry supersedes its staging row
-    // (kept on error precisely for this). Fall back to a fresh id defensively.
-    _attemptId ??= _uuid.v4();
-
-    // REPLAY the failed attempt — text, references and mode exactly as they
-    // went out — rather than re-planning from the live composer.
-    //
-    // Re-planning read the composer's entries and the current mode against a
-    // [_failed] text frozen at the moment of failure, and those two drift: the
-    // composer stays editable while the error card sits there, and picks
-    // survive a mode switch. A cheat submit that failed could come back as a
-    // normal analysis carrying leftover picks the user never sent with it —
-    // and since a cheat message is the RAW composer text, its `/Phở bò` would
-    // reach the AI as prose while the ref copied the same dish again.
+    required AnalysisAttempt attempt,
+  }) {
     if (attempt.refs.isNotEmpty) {
       // [_analyze] clears the composer again, so re-snapshot: a second failure
       // would otherwise have nothing to hand back.
@@ -283,13 +268,10 @@ class FeedAnalysisRun {
       // text AND picks — rather than the stripped text the AI saw, or the retry
       // would log the free text without the dishes the user picked.
       //
-      // UNCONDITIONALLY, unlike the plain-text branch below — and this DOES
-      // cost something: the snapshot predates the submit, so anything typed
-      // while the analysis was in flight is replaced by it. That is a chosen
-      // trade, not an oversight. A reference cannot be retyped (the picker has
-      // to be reopened and the dish found again), whereas a sentence can, and
-      // the window is one failed analysis long. Web restores the same way, so
-      // the two platforms lose the same keystrokes.
+      // UNCONDITIONALLY, unlike the plain-text branch below: anything typed
+      // while the analysis was in flight is replaced. A chosen trade — a
+      // reference cannot be retyped, a sentence can, the window is one failed
+      // analysis long, and web restores the same way.
       composer.restore(snapshot);
     } else if (attempt != null && input.getText().trim().isEmpty) {
       input.setText(attempt.text);
@@ -299,7 +281,14 @@ class FeedAnalysisRun {
       context.push('/paywall');
     }
     if (consentRequired && context.mounted) {
-      unawaited(reaskAiConsent(context, ref));
+      // Withdrawn elsewhere since this device last looked: ask again, and
+      // "Continue" re-runs the refused request as it went out.
+      final resend = _resend;
+      unawaited(
+        reaskAiConsent(context, ref).then((ok) {
+          if (ok && context.mounted) resend?.call(ref);
+        }),
+      );
     }
   }
 
@@ -313,56 +302,64 @@ class FeedAnalysisRun {
     ref.read(streamAnalysisProvider.notifier).reset();
   }
 
-  /// Put the revealed answer back into flight under the SAME attempt id, and
-  /// hand the caller what a resend needs. Null when there is nothing revealed.
-  ///
-  /// The cheat estimator's vague-input fallback runs on this: nothing is staged
-  /// for a vague input, so the clarify is a fresh analyze of the same occasion
-  /// text — but a double-fired clarify WOULD stage twice, and sharing the id
-  /// collapses that to one row.
-  ({String text, String attemptId})? retakeReveal({required String date}) {
-    final text = _revealRawInput;
-    if (text == null || text.isEmpty) return null;
-    final attemptId = _attemptId ??= _uuid.v4();
-    _revealRawInput = null;
-    // The clarify carries no picks (cheat mode cannot), so a bare attempt is
-    // the whole of it.
-    _inFlight = AnalysisAttempt(text: text, isCheat: true);
-    // Bypasses [_analyze], but is still a run in flight — see [_runDate].
-    _runDate = date;
-    // A retake is a fresh analysis, so it gets a fresh loader and a fresh
-    // timestamp — this path bypasses [_analyze] and would otherwise reuse the
-    // previous run's.
-    _loaderIndex = pickLoaderIndex();
-    _sentAt = DateTime.now();
-    onChanged();
-    onScrollToAnswer();
-    return (text: text, attemptId: attemptId);
+  /// The cheat estimator's vague-input fallback: re-run the revealed text with
+  /// [answer] attached, under the SAME attempt id (a double-fired clarify would
+  /// otherwise stage twice). "Not now" leaves the question card as it is.
+  void restartClarify(
+    BuildContext context,
+    WidgetRef ref, {
+    required String userId,
+    required String date,
+    required String answer,
+  }) {
+    _gated(context, ref, () {
+      final text = _revealRawInput;
+      if (text == null || text.isEmpty) return;
+      _attemptId ??= _uuid.v4();
+      _analyze(
+        ref,
+        userId: userId,
+        date: date,
+        // No picks: cheat mode cannot carry them.
+        attempt: AnalysisAttempt(
+          text: text,
+          isCheat: true,
+          clarifyAnswer: answer,
+        ),
+      );
+    });
   }
 
-  /// Core analyze path shared by fresh submit and retry. Honors the persistent
-  /// composer mode (precise vs cheat) — whichever surface last set it, the feed
+  /// The one door to [startMealAnalysis] (App Store 5.1.2(i)): [start] runs
+  /// once AI consent is on record, asking first. "Not now" changes nothing.
+  void _gated(BuildContext context, WidgetRef ref, VoidCallback start) =>
+      startWithAiConsent(context, ref, start);
+
+  /// Core analyze path shared by every run. Honors the persistent composer
+  /// mode (precise vs cheat) — whichever surface last set it, the feed
   /// composer or the dashboard's quick-log sheet — and sends the current
-  /// attempt id.
+  /// attempt id. Only [_gated] callers reach it.
   void _analyze(
     WidgetRef ref, {
     required String userId,
     required String date,
     required AnalysisAttempt attempt,
   }) {
+    _resend =
+        (ref) => _replay(ref, userId: userId, date: date, attempt: attempt);
     refreshStagedAnalysisDay(ref, userId: userId, fallbackDate: date);
     _runDate = date;
     _failed = null;
-    // Kept in lockstep with _failed (only read while _failed != null); reset it
-    // explicitly so the invariant holds without relying on the error branch
-    // always rewriting both.
+    // Kept in lockstep with _failed (only read while _failed != null), reset
+    // explicitly rather than trusting the error branch to rewrite both.
     _failedRetryable = true;
     _revealRawInput = null;
     _inFlight = attempt;
     _loaderIndex = pickLoaderIndex();
     _sentAt = DateTime.now();
     onChanged();
-    input.clear();
+    // A clarify answers a card, not the composer: what is typed there stays.
+    if (attempt.clarifyAnswer == null) input.clear();
     onScrollToAnswer();
     startMealAnalysis(
       ref,
@@ -370,6 +367,7 @@ class FeedAnalysisRun {
       date: date,
       isCheat: attempt.isCheat,
       cheatIntensity: ref.read(cheatIntensityProvider),
+      clarifyAnswer: attempt.clarifyAnswer,
       attemptId: _attemptId,
       // Null, not empty: `startMealAnalysis` reads a null refs list as "no
       // picks" and drops the label with it.
