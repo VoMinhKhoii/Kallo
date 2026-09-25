@@ -579,6 +579,12 @@ function languageSection(outputLanguage: 'en' | 'vi'): string {
 `;
 }
 
+/**
+ * Everything that varies per user (<language>, <user_context>) renders AFTER
+ * the examples: Gemini's implicit cache reuses the longest byte-identical
+ * prefix, so per-user blocks ahead of the ~2.4k-token examples cut every
+ * user's cacheable prefix down to the instructions alone.
+ */
 export function decompositionV2PromptText(
   countryLines: string[],
   locale: DecompositionPromptLocale = 'vi',
@@ -607,13 +613,13 @@ ${STRICT_ADHERENCE_RULE[locale]}
   ${INPUT_HANDLING_RULE}
 </instructions>
 
-${outputLanguage ? languageSection(outputLanguage) : ''}<user_context>
-${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
-</user_context>
-
 <examples>
 ${EXAMPLES[locale]}
 </examples>
+
+${outputLanguage ? languageSection(outputLanguage) : ''}<user_context>
+${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
+</user_context>
 
 Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. You MAY emit count/unitToken/sizeModifier/explicitMass when the user expressed them, but do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.`;
 }

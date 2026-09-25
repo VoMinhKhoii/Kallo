@@ -111,7 +111,7 @@ export function buildStaticPrefix(
       : '';
   const roleMass = 'estimate the whole as-served mass and its inedible share';
   const outputMassContract =
-    'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple ordered low ≤ mid ≤ high, non-negative.';
+    'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple you emit ordered low ≤ mid ≤ high, non-negative.';
   const gramsRule = `  If an ingredient carries resolved_grams="N", N is AUTHORITATIVE EDIBLE mass (explicit user weight, package size, or an edible-basis curated concept prior). Emit grossG and refusePct consistent with edible mass N; the server retains N as the anchor. Do NOT re-estimate, scale, or "correct" N. You may still adjust macros / fat for cooking method and prep_notes. Gross PORTION_PRIORS use basis-explicit labels such as "cả xương"/"nguyên vỏ"; the server retains their gross anchor and performs the one refuse deduction.
   If an ingredient carries user_mass_g="N" with mass_basis="gross_as_served", N is AUTHORITATIVE grossG; emit grossG=N and estimate refusePct. With mass_basis="edible", resolved_grams is authoritative. With mass_basis="unknown", infer conservatively from the named physical form.
   Otherwise, estimate the portion served. BASIS RULE — overrides every other sizing hint in this section: grossG is the WHOLE piece as served, INCLUDING bone/shell/skin/rind not eaten, in the SAME state as the selected candidate's db_state. refusePct is the integer share of grossG that is inedible; boneless/shell-off foods MUST emit 0. The SERVER computes edible mass = grossG × (1 − refusePct/100); never emit edibleG.
@@ -119,18 +119,16 @@ export function buildStaticPrefix(
     - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grossG = raw/dry whole mass. Convert from the as-served portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check edible mass with db_per_100g_kcal: edibleG × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high.
     - db_state="unknown": treat as cooked unless the user weighed raw.
   Refuse anchors: rib ≈ 40–60%; wing ≈ 30–50%; whole fish ≈ 35–50%; fish steak/section ≈ 15–30%; shell-on shrimp ≈ 35–55%; whole crab ≈ 55–75%; egg still in shell ≈ 10–15%; bone-in thigh/drumstick ≈ 25–35%; bare stock/soup bones (xương heo/bò/gà, xương ống, cục xương) ≈ 50–75% — only clinging meat and marrow are edible, and a candidate named "chỉ lấy phần nạc"/"separable lean only" still describes edible flesh per 100 g, so grossG stays the whole bone-in mass with a matching nonzero refusePct; boneless/peeled/picked/shell-off = 0.
-  db_inedible_pct, when present on a candidate, is the DB row's measured inedible share for its own physical form. Still emit your independent refusePct estimate so both can be compared in telemetry. The server does NOT use db_inedible_pct in arithmetic unless a future row-level physical-form tag proves it compatible with the served form.`;
+  db_inedible_pct, when present on a candidate, is that row's own measured inedible share; still emit your independent refusePct (telemetry compares them — the server does not use db_inedible_pct).`;
   const zeroMassContract =
     'emit normal best-effort fields (grossG must be > 0 and refusePct is required)';
   const serverScalingRule =
-    '  Server scales DB per_100g × edible mass / 100 after applying the accepted candidate override / refuse clamp — no further yield conversion happens server-side.';
+    '  The server multiplies DB per_100g × edible mass / 100 and applies NO yield conversion — the raw/cooked basis conversion is yours.';
   const outputIngredient =
-    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.';
+    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, proteinG?{low,mid,high}, carbohydrateG?{low,mid,high}, fatG{low,mid,high} }.';
   const finalBasisRule =
     "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG.";
   const verdictMassField = 'grossG';
-  const matchedMacroRule =
-    '    - protein, carb, calories: emit your best estimate for the EDIBLE portion (grossG after refusePct), but know the server OVERRIDES them with DB-anchored base = (per_100g × edible mass) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grossG, refusePct, and fat.';
   const finalSanityRule =
     '    - Sanity-check: edible mass × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g edible against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.';
   // Global-locale users get candidates with a paired English name; without
@@ -144,7 +142,7 @@ export function buildStaticPrefix(
   return `You are a grounded nutrition estimator. Return JSON only.
 
 <role>
-  For each decomposed ingredient with one or more matched DB candidates: pick the right candidate (CRAG verdict), ${roleMass}, and emit bounded macro triples. For unmatched ingredients (no candidates shown), estimate macros from cuisine knowledge.
+  For each decomposed ingredient with one or more matched DB candidates: pick the right candidate (CRAG verdict), ${roleMass}, and emit the macro triples <macro_rule> asks for. For unmatched ingredients (no candidates shown), estimate macros from cuisine knowledge.
 </role>
 
 <input_handling>
@@ -184,10 +182,9 @@ ${serverScalingRule}
 </grams_rule>${vesselRule}
 
 <macro_rule>
-  Every ingredient ALWAYS emits all four macro triples (caloriesKcal, proteinG, carbohydrateG, fatG). A genuine 0 is a valid value — never invent mass to avoid a zero, and never omit a field.
+  Never emit calories — the server derives them from 4P + 4C + 9F. A genuine 0 is a valid value; never invent mass to avoid a zero. base = the selected candidate's per_100g × edible mass / 100.
 
-  Per-ingredient default behavior (MATCHED ingredient, prep_notes EMPTY):
-${matchedMacroRule}
+  ACCEPTED candidate, prep_notes EMPTY — emit fatG only; OMIT proteinG and carbohydrateG (the server uses the DB row).
     - fat: reflect cooking-method effect.
         · chiên/rán/xào (oil): +30–80% over base.
         · luộc/hấp: near base.
@@ -197,7 +194,7 @@ ${matchedMacroRule}
           absorbed-oil allowance above. Beyond → server clamps the whole
           triple to the nearest bound while preserving its spread.
 
-  When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb, so those two triples now carry real signal — reflect the user's modifier. Move only what the note physically implies.
+  ACCEPTED candidate, prep_notes NON-EMPTY — also emit proteinG and carbohydrateG, reflecting the user's modifier. Move only what the note physically implies.
     Tighter prep-notes bands (server clamps to the nearest bound):
       - proteinG, carbohydrateG: 0.71× to 1.4× of base.
       - fatG floor: 0.5× base; ceiling: 2× base + the absorbed-oil allowance
@@ -206,20 +203,18 @@ ${matchedMacroRule}
       - "bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed": fat down ~30–50%; protein up ~10–20%/g.
       - "extra oil", "thêm dầu", "with butter": fat up ~50–100%.
       - "không dầu", "no oil", "dry-fried", "air-fried": fat near base or slightly below.
-      - "nước trong", "low-fat", "ít béo", "low-sugar": fat / kcal down modestly.
+      - "nước trong", "low-fat", "ít béo", "low-sugar": fat (or sugar carbs) down modestly.
       - "extra sauce", "thêm đường": carb up if sweet.
       - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy"): keep ALL macros at base.
 
-  For UNMATCHED ingredients (match_status="unmatched"): you MUST emit ABSOLUTE LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, and fatG for the as-eaten portion from cuisine knowledge (these are the truth — nothing overrides them). ${DENSITY_PRIORS[locale]} Stay under 900 kcal/100g.
-
-  Macro identity: kcal ≈ 4P + 4C + 9F. The server enforces this for matched ingredients.
+  NO accepted candidate (match_status="unmatched", or selectedCandidateId="none"): you MUST emit ABSOLUTE LOW/MID/HIGH proteinG, carbohydrateG and fatG for the as-eaten portion from cuisine knowledge — they are the only source; omitting one rejects the whole response. ${DENSITY_PRIORS[locale]} Keep 4P + 4C + 9F under 900 kcal/100g.
 </macro_rule>
 
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
 ${outputIngredient}
-  All four macro triples are REQUIRED on every ingredient, matched or not. 0 is a valid value; an omitted field is a schema violation and the whole response is rejected.
+  fatG is REQUIRED on every ingredient. proteinG and carbohydrateG follow <macro_rule>: required without an accepted candidate or with prep_notes, omitted otherwise. 0 is a valid value.
   Round numerical fields to 1 decimal place.
 
   FINAL CHECK before emitting, ingredient by ingredient — the BASIS RULE again, because getting it wrong is a silent 2–3× calorie error:
