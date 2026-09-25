@@ -73,7 +73,6 @@ export function groundedAccepted(): GroundedEstimation {
             selectedCandidateId: 'c1',
             grossG: 150,
             refusePct: 0,
-            caloriesKcal: { low: 270, mid: 290, high: 310 },
             proteinG: { low: 38, mid: 40, high: 42 },
             carbohydrateG: { low: 0, mid: 0, high: 0 },
             fatG: { low: 10, mid: 12, high: 14 },

@@ -15,6 +15,7 @@ import {
   isDiscreteOilIngredient,
 } from '@/lib/domain/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
+import { ZERO_TRIPLE } from '../verdicts';
 import { scalePer100g } from './macro-base';
 import {
   deriveCaloriesFromMacros,
@@ -78,8 +79,12 @@ export function resolveIngredientMacros(
   fatG: BoundedEstimate;
 } {
   if (!base) {
-    let proteinG = rawIng.proteinG;
-    let carbohydrateG = rawIng.carbohydrateG;
+    // Without a DB base, P/C must come from Call 2; the authoritative bridge
+    // carves out a row missing them (`resolveMacroSource`). Only the
+    // speculative stream preview reaches here with them absent mid-stream —
+    // the zero is a placeholder that the final reconciliation replaces.
+    let proteinG = rawIng.proteinG ?? ZERO_TRIPLE;
+    let carbohydrateG = rawIng.carbohydrateG ?? ZERO_TRIPLE;
     let fatG = rawIng.fatG;
     let caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
     if (typeof grams === 'number' && grams > 0) {
@@ -102,24 +107,28 @@ export function resolveIngredientMacros(
     }
     return { caloriesKcal, proteinG, carbohydrateG, fatG };
   }
-  const proteinG = prepNotesPresent
-    ? guardMacro(
-        rawIng.proteinG,
-        base.proteinG,
-        rawIng.ingredientName,
-        'proteinG',
-        PREP_NOTES_PC_MAX_RATIO
-      )
-    : flatTriple(base.proteinG);
-  const carbohydrateG = prepNotesPresent
-    ? guardMacro(
-        rawIng.carbohydrateG,
-        base.carbohydrateG,
-        rawIng.ingredientName,
-        'carbohydrateG',
-        PREP_NOTES_PC_MAX_RATIO
-      )
-    : flatTriple(base.carbohydrateG);
+  // Lean output: a matched row may omit P/C even with prep notes; the DB base
+  // is then the answer, exactly as for a matched row without notes.
+  const proteinG =
+    prepNotesPresent && rawIng.proteinG
+      ? guardMacro(
+          rawIng.proteinG,
+          base.proteinG,
+          rawIng.ingredientName,
+          'proteinG',
+          PREP_NOTES_PC_MAX_RATIO
+        )
+      : flatTriple(base.proteinG);
+  const carbohydrateG =
+    prepNotesPresent && rawIng.carbohydrateG
+      ? guardMacro(
+          rawIng.carbohydrateG,
+          base.carbohydrateG,
+          rawIng.ingredientName,
+          'carbohydrateG',
+          PREP_NOTES_PC_MAX_RATIO
+        )
+      : flatTriple(base.carbohydrateG);
   const oilMethodContext = [cookingMethod, ...prepNotes]
     .filter((value): value is string => Boolean(value?.trim()))
     .join(' ');

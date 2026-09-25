@@ -16,6 +16,32 @@ import { boundedEstimateSchema } from './bounded-estimate';
  * edible mass = grossG × (1 − refusePct/100). Both fields follow the selected
  * candidate's `db_state` with no yield fudge.
  */
+/**
+ * P/C are the only macro source when no candidate was accepted, so they must
+ * be present there — see the lean-output note on the schema fields.
+ */
+function requireMacrosWithoutDbAnchor(
+  ing: {
+    selectedCandidateId?: string;
+    proteinG?: unknown;
+    carbohydrateG?: unknown;
+  },
+  ctx: z.RefinementCtx
+): void {
+  const hasDbAnchor =
+    ing.selectedCandidateId != null && ing.selectedCandidateId !== 'none';
+  if (hasDbAnchor) return;
+  for (const key of ['proteinG', 'carbohydrateG'] as const) {
+    if (ing[key] == null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [key],
+        message: `${key} is required when no candidate is accepted`,
+      });
+    }
+  }
+}
+
 export function buildGroundedIngredientEstimateSchema() {
   // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
   // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
@@ -61,30 +87,33 @@ export function buildGroundedIngredientEstimateSchema() {
           'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
         ),
       ...massFields,
-      // ALWAYS REQUIRED — the D3 "slimmed matched output" optionality is
-      // deliberately reverted. It saved Call-2 output tokens for matched rows
-      // (the server overwrites P/C/kcal from the DB anyway), but the same
-      // optionality applied on the UNMATCHED path where these numbers are the
-      // only source: prod meal "mì gói sứa" had its noodles' carbohydrateG
-      // simply omitted, ZERO_TRIPLE'd, and persisted at C:0g / 412 kcal.
-      // Requiring the fields puts enforcement in the PROVIDER's JSON decoder
-      // (zod → toJSONSchema emits them in `required`, so Gemini structurally
-      // cannot omit them); zod parse remains the backstop. A genuine zero is a
-      // valid value — plausibility telemetry, not schema, judges plausibility.
-      caloriesKcal: boundedEstimateSchema.describe(
-        'Calories in kcal for the as-eaten portion. ALWAYS emit. For matched ingredients the server re-derives kcal from the DB anchor; for unmatched ingredients your value is the truth.'
-      ),
-      proteinG: boundedEstimateSchema.describe(
-        'Protein in grams. ALWAYS emit; 0 is a valid value for genuinely protein-free foods. For matched ingredients the server anchors to the DB base.'
-      ),
-      carbohydrateG: boundedEstimateSchema.describe(
-        'Carbohydrates in grams. ALWAYS emit; 0 is a valid value for genuinely carb-free foods. For matched ingredients the server anchors to the DB base.'
-      ),
+      // Lean output: the server DERIVES kcal (4P + 4C + 9F) for every
+      // ingredient and anchors P/C to the DB row for accepted matches
+      // (`resolveIngredientMacros`), so asking the model for them only bought
+      // discarded tokens. P/C stay REQUIRED wherever they are the only source —
+      // the D3 optionality was reverted after prod meal "mì gói sứa" persisted
+      // an UNMATCHED noodle at C:0g when the model omitted carbohydrateG. The
+      // `superRefine` below restores that guarantee per ingredient: no accepted
+      // candidate (omitted or "none") → both triples required, and a miss
+      // throws a ZodError into the zero-delay parse-retry path. An accepted
+      // candidate whose DB nutrition never loaded is caught server-side
+      // (`resolveMacroSource` → no_estimate carve-out), never zero-filled.
+      proteinG: boundedEstimateSchema
+        .optional()
+        .describe(
+          'Protein in grams for the edible portion. REQUIRED when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise omit (the server uses the DB row).'
+        ),
+      carbohydrateG: boundedEstimateSchema
+        .optional()
+        .describe(
+          'Carbohydrates in grams for the edible portion. REQUIRED when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise omit (the server uses the DB row).'
+        ),
       fatG: boundedEstimateSchema.describe(
         'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
       ),
     })
-    .strict();
+    .strict()
+    .superRefine(requireMacrosWithoutDbAnchor);
 }
 
 /** Call-2 ingredient schema: gross mass + refuse share, edible derived server-side. */

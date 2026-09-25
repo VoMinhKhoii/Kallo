@@ -44,12 +44,16 @@ export function resolveMacroSource(args: {
   // A DB row anchors P/C/kcal — the strongest source, so prefer it.
   if (acceptedCandidate?.nutrition != null) return { kind: 'db' };
   // No DB anchor (unmatched, rejected, or an accepted candidate whose
-  // nutrition never loaded): Call 2's triples carry the row. The schema makes
-  // all four triples REQUIRED (D3 optionality reverted after the mì-gói
-  // incident, where an omitted carbohydrateG became a persisted C:0g), so a
-  // parsed `ground` always has a full set of numbers. Whether those numbers
-  // are PLAUSIBLE is the plausibility classifier's job, not this function's —
-  // an explicit zero from the model ships, flagged in telemetry.
+  // nutrition never loaded): Call 2's triples carry the row. The schema
+  // requires P/C whenever no candidate was accepted, but an ACCEPTED candidate
+  // may legally omit them — and if its nutrition then failed to load there is
+  // no source at all. Carve it out (loud: the completeness gate sees it)
+  // rather than zero-fill it: the mì-gói incident persisted an omitted
+  // carbohydrateG as C:0g. Whether present numbers are PLAUSIBLE is the
+  // plausibility classifier's job — an explicit zero ships, flagged.
+  if (ground.proteinG == null || ground.carbohydrateG == null) {
+    return { kind: 'none', reason: 'no_estimate' };
+  }
   return { kind: 'llm' };
 }
 
@@ -69,7 +73,7 @@ export function scaleGroundedMacros(
   modelEdibleGrams?: number | null
 ): Pick<
   RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
-  'caloriesKcal' | 'proteinG' | 'carbohydrateG' | 'fatG'
+  'proteinG' | 'carbohydrateG' | 'fatG'
 > {
   const llmGrams =
     modelEdibleGrams ??
@@ -84,12 +88,15 @@ export function scaleGroundedMacros(
   // masses can still overflow, and an Infinity factor poisons the triples
   // (the density clamp then multiplies by 0 and yields NaN).
   const factor = Number.isFinite(raw) && raw > 0 ? raw : 1;
-  const s = (b: BoundedEstimate | null | undefined): BoundedEstimate =>
-    b == null ? ZERO_TRIPLE : factor === 1 ? b : scaleBounded(b, factor);
+  const scale = (b: BoundedEstimate): BoundedEstimate =>
+    factor === 1 ? b : scaleBounded(b, factor);
+  // P/C pass through ABSENT (lean output on an accepted DB match) instead of
+  // becoming a zero triple: the resolver anchors them to the DB base, and an
+  // absent value can never be mistaken for a real 0 g.
   return {
-    caloriesKcal: s(ground?.caloriesKcal),
-    proteinG: s(ground?.proteinG),
-    carbohydrateG: s(ground?.carbohydrateG),
-    fatG: s(ground?.fatG),
+    proteinG: ground?.proteinG == null ? undefined : scale(ground.proteinG),
+    carbohydrateG:
+      ground?.carbohydrateG == null ? undefined : scale(ground.carbohydrateG),
+    fatG: ground?.fatG == null ? ZERO_TRIPLE : scale(ground.fatG),
   };
 }

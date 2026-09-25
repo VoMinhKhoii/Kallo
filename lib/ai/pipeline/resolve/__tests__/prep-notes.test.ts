@@ -111,6 +111,29 @@ describe('resolveIngredientMacros — prepNotesPresent unlocks P/C', () => {
     expect(ing.proteinG.mid).toBeCloseTo(25.2, 3); // clamped to 1.4× base
   });
 
+  it('with prepNotes but P/C omitted (lean output): falls back to the DB base', () => {
+    const lean: RawNutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemName: 'đùi gà nướng',
+          ingredients: [
+            { ingredientName: 'đùi gà', fatG: { low: 7, mid: 7, high: 7 } },
+          ],
+        },
+      ],
+    };
+    const out = reconcileNutritionIds(
+      lean,
+      decompositionFactory(['bỏ da']),
+      matched
+    );
+    const ing = out.mealItems[0].ingredients[0];
+    expect(ing.proteinG.mid).toBeCloseTo(18, 3);
+    expect(ing.carbohydrateG.mid).toBeCloseTo(0, 3);
+    // kcal is derived: 4·18 + 4·0 + 9·7.
+    expect(ing.caloriesKcal.mid).toBeCloseTo(135, 3);
+  });
+
   it('empty prepNotes array is equivalent to no prep notes', () => {
     const out = reconcileNutritionIds(
       rawAdj(99, 99, 7),

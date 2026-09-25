@@ -24,7 +24,6 @@ import type {
 import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/resolve/macro-resolution';
 import { __testing as nutritionTesting } from '@/lib/ai/pipeline/resolve/macro-resolution';
 import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
-import { ZERO_TRIPLE } from '@/lib/ai/pipeline/resolve/verdicts';
 import type {
   IngredientLlmNutrition,
   MacroBase,
@@ -168,19 +167,16 @@ export function resolveStreamingV2MealItem(
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
 
-    // Every macro triple is schema-REQUIRED now, so a well-formed Call-2
-    // response can never omit one. These defaults survive for exactly one
-    // reason: this speculative streaming path reads partial chunks with no zod
-    // parse, so a triple can still be absent mid-stream from truncation. Zero
-    // is the safe placeholder — a matched ingredient has it replaced by
-    // resolveIngredientMacros from the DB anchor, and the final reconciliation
-    // re-parses the complete payload.
+    // Speculative preview: partial chunks are read with no zod parse. kcal is
+    // derived by the resolver; P/C pass through as-is (absent on a lean
+    // matched row, where the resolver uses the DB anchor, or mid-stream from
+    // truncation, where it falls back to a placeholder the final
+    // reconciliation replaces).
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,
-        caloriesKcal: rawIng.caloriesKcal ?? ZERO_TRIPLE,
-        proteinG: rawIng.proteinG ?? ZERO_TRIPLE,
-        carbohydrateG: rawIng.carbohydrateG ?? ZERO_TRIPLE,
+        proteinG: rawIng.proteinG,
+        carbohydrateG: rawIng.carbohydrateG,
         fatG: rawIng.fatG,
       };
 
