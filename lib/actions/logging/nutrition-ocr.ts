@@ -56,7 +56,7 @@ export async function scanNutritionLabelAction(input: {
   imageBase64: string;
   mimeType: string;
 }): Promise<
-  | { success: true; data: ParsedNutritionLabel; labelImageId?: string }
+  | { success: true; data: ParsedNutritionLabel }
   | { success: false; code: OcrErrorCode }
 > {
   try {
@@ -90,13 +90,9 @@ export async function scanNutritionLabelAction(input: {
       );
     });
 
-    return scanned.labelImageId
-      ? {
-          success: true,
-          data: scanned.result,
-          labelImageId: scanned.labelImageId,
-        }
-      : { success: true, data: scanned.result };
+    // The web review flow stages without linking the scan to its meal, so the
+    // kept scan's id is not returned.
+    return { success: true, data: scanned.result };
   } catch (error) {
     console.error('Error in scanNutritionLabelAction:', error);
     return { success: false, code: scanErrorCode(error) };

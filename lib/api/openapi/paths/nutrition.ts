@@ -69,13 +69,13 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       operationId: 'scanNutritionLabel',
       summary: 'Read a nutrition label from an image',
       description:
-        'OCR over a photographed nutrition label. Logs no meal: it returns what it read. Once the image passes validation, the photo and the scan outcome (what was read, or the failure) are kept in private storage linked to the account — readable only by its owner and the Kallo team (OCR quality work) — until the account is deleted. Keeping them is best-effort and never changes this reply; when the photo is already stored, the reply carries `labelImageId`, which the client passes back to `/log`. Returns 422 with `OCR_NO_LABEL_DETECTED` when the image contains no label it can parse — which is a normal outcome, not an error to retry blindly.',
+        'OCR over a photographed nutrition label. Logs no meal: it returns what it read. Once the image passes validation, the photo and the scan outcome (what was read, or the failure) are kept in private storage linked to the account — readable only by its owner and the Kallo team (OCR quality work) — until the account is deleted. The stored copy is re-encoded without its metadata (EXIF, including GPS). Keeping them is best-effort and never changes this reply; when the photo and its record are already stored, the reply carries `labelImageId`, which the client passes back to `/log`. Returns 422 with `OCR_NO_LABEL_DETECTED` when the image contains no label it can parse — which is a normal outcome, not an error to retry blindly.',
       tags: TAGS,
       body: fromZod(scanNutritionLabelSchema),
       bodyDescription: 'Base64-encoded image bytes.',
       ok: ref('Acknowledgement'),
       okDescription:
-        '`{ label, labelImageId? }` — the parsed label figures, and the id of the kept photo when it could be stored.',
+        '`{ label, labelImageId? }` — the parsed label figures, and the id of the kept photo when it and its record were stored before the reply.',
       // OCR is spend-gated (`withOcrGuard`): the global Gemini budget fails
       // closed, so this op alone can answer 503 when the limiter is down. The
       // shared 429 (per-user / concurrency block) is already in COMMON_ERRORS.

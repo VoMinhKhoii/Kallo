@@ -4,6 +4,7 @@
  * through `label-images.ts`. Neither write ever rejects: keeping a scan is
  * best-effort, so every failure is logged and swallowed here.
  */
+import sharp from 'sharp';
 import { NUTRITION_LABEL_OCR_MODEL } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import { AppError } from '@/lib/core/errors/app-error';
 import {
@@ -11,7 +12,10 @@ import {
   NUTRITION_LABEL_BUCKET,
 } from '@/lib/domain/nutrition/label-images/bucket';
 import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
-import type { OcrImageMimeType } from '@/lib/domain/nutrition/ocr/image-constants';
+import {
+  OCR_MAX_IMAGE_PIXELS,
+  type OcrImageMimeType,
+} from '@/lib/domain/nutrition/ocr/image-constants';
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
 import { db } from '@/lib/infra/db/client';
 import { nutritionLabelImages } from '@/lib/infra/db/schema';
@@ -24,10 +28,25 @@ export interface LabelImageInput {
   mimeType: OcrImageMimeType;
 }
 
+/** The object actually written to the bucket: the re-encoded photo. */
+export interface StoredLabelImage {
+  userId: string;
+  imageId: string;
+  storagePath: string;
+  mimeType: OcrImageMimeType;
+  byteSize: number;
+}
+
 /** How the model call ended, as the row records it. */
 export type ScanOutcome =
   | { status: 'succeeded'; result: ParsedNutritionLabel; latencyMs: number }
   | { status: 'failed'; errorCode: string; latencyMs: number };
+
+const MIME_BY_FORMAT: Record<string, OcrImageMimeType> = {
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+};
 
 /**
  * The code a failed scan is stored under. Finer than `scanErrorCode` (which
@@ -42,50 +61,99 @@ export function scanFailureCode(error: unknown): string {
   return scanErrorCode(error);
 }
 
-/** Put the photo at `{userId}/{imageId}.{ext}`; true once it is stored. */
+/**
+ * Re-encode in the same format, applying the EXIF orientation. sharp drops
+ * all metadata (EXIF incl. GPS, XMP, IPTC) unless asked to keep it, so the
+ * stored photo carries no location or device data from the client's bytes.
+ */
+async function stripMetadata(
+  input: LabelImageInput
+): Promise<{ bytes: Buffer; mimeType: OcrImageMimeType }> {
+  const { data, info } = await sharp(Buffer.from(input.imageBase64, 'base64'), {
+    limitInputPixels: OCR_MAX_IMAGE_PIXELS,
+  })
+    .rotate()
+    .toBuffer({ resolveWithObject: true });
+  const mimeType = MIME_BY_FORMAT[info.format];
+  if (!mimeType) throw new Error(`Unexpected re-encoded format ${info.format}`);
+  return { bytes: data, mimeType };
+}
+
+/**
+ * Store the photo, without its metadata, at `{userId}/{imageId}.{ext}`.
+ * Returns what was stored, or null when nothing was (the original bytes are
+ * never uploaded as a fallback).
+ */
 export async function uploadLabelImage(
   input: LabelImageInput,
   imageId: string
-): Promise<boolean> {
+): Promise<StoredLabelImage | null> {
   try {
+    const { bytes, mimeType } = await stripMetadata(input);
+    const storagePath = labelImagePath(input.userId, imageId, mimeType);
     const { error } = await createAdminClient()
       .storage.from(NUTRITION_LABEL_BUCKET)
-      .upload(
-        labelImagePath(input.userId, imageId, input.mimeType),
-        Buffer.from(input.imageBase64, 'base64'),
-        { contentType: input.mimeType, upsert: false }
-      );
+      .upload(storagePath, bytes, { contentType: mimeType, upsert: false });
     if (error) throw error;
-    return true;
+    return {
+      userId: input.userId,
+      imageId,
+      storagePath,
+      mimeType,
+      byteSize: bytes.byteLength,
+    };
   } catch (error) {
     console.error('[label-images] Uploading the scanned label failed:', error);
-    return false;
+    return null;
   }
 }
 
 /**
- * Record the scan next to its uploaded photo. A failed insert leaves the
- * object under the user's prefix, where account deletion still purges it.
+ * Best-effort delete of a stored photo whose row could not be written, so
+ * the bucket never holds a photo the export, the eval set and the owner's
+ * `/images` route cannot see. This also covers a scan that lands after
+ * account deletion purged the prefix: its insert fails on the user FK.
+ */
+async function removeOrphanedImage(stored: StoredLabelImage): Promise<void> {
+  try {
+    const { error } = await createAdminClient()
+      .storage.from(NUTRITION_LABEL_BUCKET)
+      .remove([stored.storagePath]);
+    if (error) throw error;
+  } catch (error) {
+    console.error(
+      '[label-images] Removing a label photo without a row failed:',
+      stored.storagePath,
+      error
+    );
+  }
+}
+
+/**
+ * Record the scan next to its stored photo; true once the row exists. When
+ * the insert fails the photo is removed, so the two never diverge.
  */
 export async function insertScanRow(
-  input: LabelImageInput,
-  imageId: string,
+  stored: StoredLabelImage,
   outcome: ScanOutcome
-): Promise<void> {
+): Promise<boolean> {
   try {
     await db.insert(nutritionLabelImages).values({
-      id: imageId,
-      userId: input.userId,
-      storagePath: labelImagePath(input.userId, imageId, input.mimeType),
-      mimeType: input.mimeType,
-      byteSize: Buffer.byteLength(input.imageBase64, 'base64'),
+      id: stored.imageId,
+      userId: stored.userId,
+      storagePath: stored.storagePath,
+      mimeType: stored.mimeType,
+      byteSize: stored.byteSize,
       status: outcome.status,
       result: outcome.status === 'succeeded' ? outcome.result : null,
       errorCode: outcome.status === 'failed' ? outcome.errorCode : null,
       model: NUTRITION_LABEL_OCR_MODEL,
       latencyMs: outcome.latencyMs,
     });
+    return true;
   } catch (error) {
     console.error('[label-images] Recording the scanned label failed:', error);
+    await removeOrphanedImage(stored);
+    return false;
   }
 }

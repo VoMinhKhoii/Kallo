@@ -1676,7 +1676,8 @@ export const nutritionLabelImages = pgTable(
     mealId: uuid('meal_id').references(() => meals.id, {
       onDelete: 'set null',
     }),
-    // The values the user saved for that meal, after reviewing `result`.
+    // The user's correction of `result` for that meal: product, serving and
+    // nutrients (not the diary day, timezone or model confidence).
     reviewedResult: jsonb('reviewed_result'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

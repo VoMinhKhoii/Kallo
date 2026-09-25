@@ -369,19 +369,34 @@ Every label photo the scanner sends to the vision model is kept, with what the
 model made of it — the future OCR eval set. Code: `lib/domain/nutrition/label-images/`.
 
 - **What is stored.** The photo in the PRIVATE `nutrition-labels` bucket at
-  `{user_id}/{id}.{ext}`, and a `nutrition_label_images` row: `status`
+  `{user_id}/{id}.{ext}` — re-encoded server-side in its own format with the
+  EXIF orientation applied and ALL metadata (EXIF incl. GPS, XMP, IPTC)
+  dropped; the row's `mime_type`/`byte_size` describe that stored copy. The
+  original bytes are never stored: if re-encoding fails, nothing is kept. Plus
+  a `nutrition_label_images` row: `status`
   (`succeeded` / `failed`), `result` (the parsed label exactly as returned to the
   client) or `error_code` (`no_label_detected`, `rate_limited`, `timeout`,
   `invalid_model_output`, `server_error`, …), `model`, `latency_ms`, and — once
   the scan is logged through `POST /api/v1/nutrition-label/log` — `meal_id` plus
-  `reviewed_result` (the values the user actually saved). Model output vs user
-  correction is the eval signal.
+  `reviewed_result` (the user's correction: product name, amount, unit and
+  nutrients — not the diary day, timezone or model confidence). Model output
+  vs user correction is the eval signal. A scan is linked once: the update is
+  guarded on `meal_id IS NULL`, so a replayed `/log` cannot re-point it.
 - **When.** Only after every gate (auth, premium, body cap, image validation,
-  the OCR spend guard): the upload starts alongside the model call, the row is
-  written after the response via `after()`. Both are best-effort; neither can
-  change the scan reply, its status or its latency. A request refused before
-  the model call stores nothing. Only the mobile log route links a scan to its
-  meal today (the web review flow stages without a meal id).
+  the OCR spend guard): the re-encode + upload starts alongside the model
+  call. When the model answers and the upload has already finished (the usual
+  case), the row is inserted before replying — a few ms, the only latency
+  keeping a scan adds — and the mobile reply carries `labelImageId` only if
+  that insert succeeded. If the upload is still running, the reply has no id
+  and the row is written after the response via `after()` (best-effort on
+  Cloud Run — see `docs/GOOGLE_CLOUD_RUN.md` §8). A failed scan's row is
+  always written via `after()`. Neither write can change the scan reply or its
+  status. A failed row insert removes the uploaded photo, so photo and row do
+  not diverge (this also catches an upload that lands after account deletion
+  purged the prefix: its insert fails on the user FK). A request refused
+  before the model call stores nothing. Only the mobile log route links a scan
+  to its meal today; the web action keeps the photo and outcome but returns no
+  id.
 - **Readers.** The owner: a 10-minute signed URL from
   `GET /api/v1/nutrition-label/images/{imageId}` (ownership checked on the row;
   anyone else gets 404). The team: service role only, e.g. from the Supabase

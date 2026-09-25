@@ -9,6 +9,7 @@ import {
 } from '@/lib/api/openapi/column-schemas';
 import type { JsonSchema } from '@/lib/api/openapi/components';
 import { AUTH_CLAIM_KEYS } from '@/lib/domain/account-export/build-export';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/label-images';
 import {
   billingProviderSyncs,
   bodyWeightLog,
@@ -343,7 +344,7 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
         object({
           bucket: {
             type: 'string',
-            enum: ['avatars', 'feedback-screenshots', 'nutrition-labels'],
+            enum: ['avatars', 'feedback-screenshots', NUTRITION_LABEL_BUCKET],
           },
           path: { type: 'string' },
           source: {

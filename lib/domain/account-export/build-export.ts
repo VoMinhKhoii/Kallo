@@ -6,6 +6,7 @@ import { loadNotificationsExport } from '@/lib/domain/account-export/notificatio
 import { loadProfileExport } from '@/lib/domain/account-export/profile';
 import { loadSocialExport } from '@/lib/domain/account-export/social';
 import { loadSupportExport } from '@/lib/domain/account-export/support';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/label-images';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -92,7 +93,7 @@ function identitiesOf(user: ExportAccountSource) {
 }
 
 export interface ExportedFile {
-  bucket: 'avatars' | 'feedback-screenshots' | 'nutrition-labels';
+  bucket: 'avatars' | 'feedback-screenshots' | typeof NUTRITION_LABEL_BUCKET;
   path: string;
   /** Which record points at the object. */
   source: 'circleProfile' | 'feedback' | 'labelScan';
@@ -148,7 +149,7 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
   }
   for (const scan of diary.labelScans) {
     files.push({
-      bucket: 'nutrition-labels',
+      bucket: NUTRITION_LABEL_BUCKET,
       path: scan.storagePath,
       source: 'labelScan',
       sourceId: scan.id,

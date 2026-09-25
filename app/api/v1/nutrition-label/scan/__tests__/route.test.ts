@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import sharp from 'sharp';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireAuthAndProfile = vi.fn();
 const validateNutritionLabelImage = vi.fn();
@@ -10,6 +11,7 @@ const assertFeatureAccess = vi.fn();
 // The kept-scan writes (lib/domain/nutrition/label-images/): the real module
 // runs against these, so the route's storage behaviour is what is asserted.
 const upload = vi.fn();
+const remove = vi.fn();
 const insertValues = vi.fn();
 const after = vi.fn();
 
@@ -20,7 +22,9 @@ vi.mock('next/server', async (importActual) => ({
   after,
 }));
 vi.mock('@/lib/infra/supabase/admin', () => ({
-  createAdminClient: () => ({ storage: { from: () => ({ upload }) } }),
+  createAdminClient: () => ({
+    storage: { from: () => ({ upload, remove }) },
+  }),
 }));
 vi.mock('@/lib/infra/db/client', () => ({
   db: { insert: () => ({ values: insertValues }) },
@@ -68,10 +72,16 @@ function makeRequest(
   }) as unknown as NextRequest;
 }
 
-/** A 1x1 JPEG is irrelevant here (validation is mocked) — only the base64
- * shape matters, and it must decode to a length divisible by 4. */
+/** A real (tiny) JPEG: validation is mocked, but the kept copy is re-encoded
+ *  through sharp before it is stored, so the bytes must decode. */
 const validBody = {
-  imageBase64: 'aGVsbG8gbGFiZWw=',
+  imageBase64: (
+    await sharp({
+      create: { width: 32, height: 32, channels: 3, background: '#c89664' },
+    })
+      .jpeg()
+      .toBuffer()
+  ).toString('base64'),
   mimeType: 'image/jpeg',
 };
 
@@ -115,6 +125,8 @@ beforeEach(() => {
   insertValues.mockReset();
   insertValues.mockResolvedValue(undefined);
   after.mockReset();
+  remove.mockReset();
+  remove.mockResolvedValue({ data: [], error: null });
 });
 
 /** Resolve the post-response writes handed to `after()`. */
@@ -122,9 +134,14 @@ async function settleAfter() {
   await Promise.all(after.mock.calls.map(([pending]) => pending));
 }
 
-/** The model answers on a later event-loop turn, as the real call does. */
-function geminiAfterATick(outcome: () => unknown) {
+// No request's post-response writes may land in the next test's mocks.
+afterEach(settleAfter);
+
+/** The model answers only once the photo is stored, as the real call (seconds,
+ *  against a storage PUT's milliseconds) does. */
+function geminiAfterUpload(outcome: () => unknown) {
   scanNutritionLabelWithGemini.mockImplementationOnce(async () => {
+    await vi.waitFor(() => expect(upload).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 0));
     return outcome();
   });
@@ -319,8 +336,8 @@ describe('POST /api/v1/nutrition-label/scan', () => {
 });
 
 describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
-  it('returns the kept id and records the result with the photo path', async () => {
-    geminiAfterATick(() => parsedLabel);
+  it('returns the id of a row already written with the photo path', async () => {
+    geminiAfterUpload(() => parsedLabel);
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(200);
@@ -333,7 +350,8 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
       { contentType: 'image/jpeg', upsert: false }
     );
 
-    await settleAfter();
+    // Inserted before the reply, so the id always names an existing row.
+    expect(after).not.toHaveBeenCalled();
     expect(insertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         id: labelImageId,
@@ -348,7 +366,7 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
 
   it('a storage failure leaves the success reply exactly as before', async () => {
     upload.mockResolvedValue({ data: null, error: new Error('down') });
-    geminiAfterATick(() => parsedLabel);
+    geminiAfterUpload(() => parsedLabel);
 
     const res = await POST(makeRequest(validBody));
     expect(await observe(res)).toEqual({

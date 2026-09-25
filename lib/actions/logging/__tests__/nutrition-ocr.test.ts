@@ -152,6 +152,11 @@ function servingLabel(
 }
 
 afterEach(cleanup);
+// Drain every scan's post-response write (the kept photo's re-encode, upload
+// and row), so none of it lands in the next test's mocks.
+afterEach(async () => {
+  await Promise.all(mockAfter.mock.calls.map(([pending]) => pending));
+});
 
 // Entitled by default: every pre-existing expectation is the unlocked path.
 beforeEach(() => {
@@ -407,32 +412,31 @@ describe('scanNutritionLabelAction — keeping the scan', () => {
     mockUpload.mockResolvedValue({ data: {}, error: null });
   });
 
-  it('returns the kept id and records the result with the photo path', async () => {
+  it('records the result with the photo path; the reply carries no kept id', async () => {
     const label = servingLabel(nutrition({ calories: 350 }));
     geminiAfterATick(() => label);
 
-    const result = await scanNutritionLabelAction(input());
-    expect(result).toEqual({
+    // The web review flow never links a scan to its meal, so the reply is
+    // exactly the pre-storage shape.
+    expect(await scanNutritionLabelAction(input())).toEqual({
       success: true,
       data: label,
-      labelImageId: expect.stringMatching(/^[0-9a-f-]{36}$/),
     });
-    const { labelImageId } = result as { labelImageId: string };
-    expect(mockUpload).toHaveBeenCalledWith(
-      `${mockUser.id}/${labelImageId}.png`,
-      expect.any(Buffer),
-      { contentType: 'image/png', upsert: false }
-    );
 
     await settleAfter();
-    expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: labelImageId,
-        userId: mockUser.id,
-        storagePath: `${mockUser.id}/${labelImageId}.png`,
-        status: 'succeeded',
-        result: label,
-      })
+    expect(mockValues).toHaveBeenCalledTimes(1);
+    const [row] = mockValues.mock.calls[0];
+    expect(row).toMatchObject({
+      userId: mockUser.id,
+      storagePath: `${mockUser.id}/${row.id}.png`,
+      mimeType: 'image/png',
+      status: 'succeeded',
+      result: label,
+    });
+    expect(mockUpload).toHaveBeenCalledWith(
+      `${mockUser.id}/${row.id}.png`,
+      expect.any(Buffer),
+      { contentType: 'image/png', upsert: false }
     );
   });
 
