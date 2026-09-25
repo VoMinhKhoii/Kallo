@@ -9,6 +9,9 @@ import type {
 import { recordAnalysisModelBudgetEvent } from '@/lib/infra/rate-limit/analysis-model-budget';
 
 export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
+/** Cheat mode shares the analyze-meal endpoint; split it out for cost. */
+export const CHEAT_BUDGET_ROUTE = '/api/analyze-meal#cheat';
+export const LABEL_OCR_BUDGET_ROUTE = 'nutrition-label-ocr';
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';
 
 /** Model-budget attribution for a pipeline run (primary vs shadow work). */
@@ -35,8 +38,17 @@ export function createBudgetAttemptRecorder(args: {
   workKind: AnalysisModelBudgetWorkKind;
   model: string;
   providerErrorState?: { recorded: boolean };
+  /** Defaults to the meal-analysis route; cheat and label OCR pass their own. */
+  route?: string;
 }): NonNullable<StreamOptions['onAttemptComplete']> {
-  return ({ error, inputTokens, model, outputTokens }) => {
+  return ({
+    error,
+    inputTokens,
+    model,
+    outputTokens,
+    cachedTokens,
+    thoughtTokens,
+  }) => {
     const errorCategory = error == null ? null : classifyProviderError(error);
 
     if (inputTokens == null && outputTokens == null && errorCategory == null) {
@@ -52,13 +64,15 @@ export function createBudgetAttemptRecorder(args: {
     recordAnalysisModelBudgetEventBestEffort({
       db: args.db,
       requestId: args.requestId,
-      route: ANALYSIS_MODEL_BUDGET_ROUTE,
+      route: args.route ?? ANALYSIS_MODEL_BUDGET_ROUTE,
       workKind: args.workKind,
       provider: ANALYSIS_MODEL_PROVIDER,
       model: model || args.model,
       requestCount: 0,
       inputTokens,
       outputTokens,
+      cachedTokens,
+      thoughtTokens,
       errorCategory,
     });
   };

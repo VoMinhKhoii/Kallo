@@ -519,6 +519,13 @@
       "when": 1790141741088,
       "tag": "20260923053541_add_account_export_user_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790324449780,
+      "tag": "20260925082049_add_budget_event_cache_thought_tokens",
+      "breakpoints": true
     }
   ]
 }

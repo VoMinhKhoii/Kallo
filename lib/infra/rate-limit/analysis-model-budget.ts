@@ -63,6 +63,8 @@ export async function recordAnalysisModelBudgetEvent(
     requestCount: readNonNegativeInteger(input.requestCount, 1),
     inputTokens: readNonNegativeInteger(input.inputTokens, 0),
     outputTokens: readNonNegativeInteger(input.outputTokens, 0),
+    cachedTokens: readNonNegativeInteger(input.cachedTokens, 0),
+    thoughtTokens: readNonNegativeInteger(input.thoughtTokens, 0),
     errorCategory: input.errorCategory ?? null,
   });
 

@@ -199,6 +199,10 @@ describe('generateStructuredOutputStream with trace', () => {
     expect(call.metadata).toEqual({
       promptChars: 'sys'.length + 'user'.length,
       schemaChars: JSON.stringify(toJSONSchema(traceSchema)).length,
+      inputTokens: 10,
+      outputTokens: 20,
+      cachedTokens: null,
+      thoughtTokens: null,
     });
   });
 
@@ -279,7 +283,14 @@ describe('generateStructuredOutputStream with trace', () => {
     mockGenerateContentStream.mockResolvedValueOnce(
       streamChunks([
         { text: '{"items":["d"]}' },
-        { usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 34 } },
+        {
+          usageMetadata: {
+            promptTokenCount: 12,
+            candidatesTokenCount: 34,
+            cachedContentTokenCount: 8,
+            thoughtsTokenCount: 5,
+          },
+        },
       ])
     );
 
@@ -309,6 +320,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: 12,
       outputTokens: 34,
+      cachedTokens: 8,
+      thoughtTokens: 5,
       error: null,
     });
   });
@@ -355,6 +368,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: null,
       outputTokens: null,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: retryableError,
     });
     expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
@@ -362,6 +377,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: 7,
       outputTokens: 11,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: null,
     });
   });

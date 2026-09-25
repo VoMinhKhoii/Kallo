@@ -2,11 +2,24 @@ import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import type { PromptBudget } from '@/lib/ai/prompts/budget';
 import type { GeminiCallTrace, StreamOptions } from './types';
 
-/** The usage counters Gemini attaches to streamed chunks. */
+/** The usage counters Gemini attaches to responses and streamed chunks. */
 export interface StreamUsageMetadata {
   promptTokenCount?: number;
   candidatesTokenCount?: number;
   cachedContentTokenCount?: number;
+  thoughtsTokenCount?: number;
+}
+
+/** Billable token counts for one attempt, null where Gemini sent none. */
+export function readAttemptUsage(
+  usage: StreamUsageMetadata | null | undefined
+) {
+  return {
+    inputTokens: usage?.promptTokenCount ?? null,
+    outputTokens: usage?.candidatesTokenCount ?? null,
+    cachedTokens: usage?.cachedContentTokenCount ?? null,
+    thoughtTokens: usage?.thoughtsTokenCount ?? null,
+  };
 }
 
 /**
@@ -46,9 +59,8 @@ export function createAttemptObserver({
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
 }) {
   return (attempt: number, t0: number, _result: unknown, err: unknown) => {
-    const inputTokens = state.usage?.promptTokenCount ?? null;
-    const outputTokens = state.usage?.candidatesTokenCount ?? null;
-    const cachedTokens = state.usage?.cachedContentTokenCount ?? null;
+    const usage = readAttemptUsage(state.usage);
+    const { inputTokens, outputTokens, cachedTokens } = usage;
 
     // Visibility: when Gemini's implicit cache hits (model 2.5+ caches
     // prompts ≥ 1024 tokens automatically), the response carries
@@ -82,19 +94,14 @@ export function createAttemptObserver({
         metadata: {
           promptChars: promptBudget.systemChars + promptBudget.userChars,
           schemaChars: promptBudget.schemaChars,
+          ...usage,
           ...(cachedTokens != null && cachedTokens > 0
-            ? { cachedTokens, cacheStatus: 'implicit_hit' }
+            ? { cacheStatus: 'implicit_hit' }
             : {}),
         },
       });
     }
 
-    onAttemptComplete?.({
-      attempt,
-      model,
-      inputTokens,
-      outputTokens,
-      error: err,
-    });
+    onAttemptComplete?.({ attempt, model, ...usage, error: err });
   };
 }

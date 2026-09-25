@@ -27,8 +27,18 @@ export interface GeminiAttemptMetadata {
   attempt: number;
   model: string;
   inputTokens: number | null;
+  /** Visible response tokens (`candidatesTokenCount`) — excludes thinking. */
   outputTokens: number | null;
+  /** Prompt tokens served from Gemini's cache, billed at the cached rate. */
+  cachedTokens?: number | null;
+  /** Thinking tokens (`thoughtsTokenCount`), billed at the output rate. */
+  thoughtTokens?: number | null;
   error: unknown;
+}
+
+/** Per-attempt hooks for a non-streamed structured-output call. */
+export interface StructuredOutputOptions {
+  onAttemptComplete?: (metadata: GeminiAttemptMetadata) => void;
 }
 
 export interface StreamOptions {
@@ -39,7 +49,10 @@ export interface StreamOptions {
 }
 
 export interface GeminiClient {
-  generateStructuredOutput<T>(params: StructuredOutputParams<T>): Promise<T>;
+  generateStructuredOutput<T>(
+    params: StructuredOutputParams<T>,
+    opts?: StructuredOutputOptions
+  ): Promise<T>;
   generateStructuredOutputStream<T>(
     params: StructuredOutputParams<T>,
     opts?: StreamOptions

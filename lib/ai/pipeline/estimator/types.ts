@@ -70,6 +70,8 @@ export interface EstimatorAttemptUsage {
   model: string;
   inputTokens: number | null;
   outputTokens: number | null;
+  cachedTokens?: number | null;
+  thoughtTokens?: number | null;
   error: unknown;
 }
 

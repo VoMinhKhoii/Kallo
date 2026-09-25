@@ -7,6 +7,7 @@
  * adapters. The Claude/OpenAI adapters are stubs that throw until wired.
  */
 
+import { MODEL_RATES } from '@/lib/ai/cost/pricing';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { createClaudeEstimator } from './claude-estimator';
 import { createGeminiEstimator } from './gemini-estimator';
@@ -43,9 +44,10 @@ export function selectEstimator(
 /**
  * Published per-1M-token USD pricing for the bakeoff cost column.
  *
- * TODO(phase5-followup): CONFIRM these against each provider's live pricing
- * page before trusting the cost report — they are placeholders captured from
- * public list prices and models/prices move. The bakeoff report multiplies
+ * The gemini row comes from the verified rate card (`@/lib/ai/cost/pricing`).
+ * TODO(phase5-followup): the claude/openai rows are still unverified
+ * placeholders — confirm them against each provider's live pricing page
+ * before trusting a cross-provider ranking. The bakeoff report multiplies
  * (input/output tokens × the rate below); a stale rate silently skews the
  * cost ranking, so re-verify on the day of the run.
  */
@@ -57,8 +59,8 @@ export interface TokenPricing {
 }
 
 export const ESTIMATOR_PRICING: Record<EstimatorName, TokenPricing> = {
-  // gemini-3-flash-class (bakeoff candidate for Call 2's `next` profile).
-  gemini: { inputPerMTokUsd: 0.3, outputPerMTokUsd: 2.5 },
+  // The deployed Call-2 model, from the verified rate card.
+  gemini: MODEL_RATES['gemini-3.1-flash-lite'],
   // claude-haiku-4-5.
   claude: { inputPerMTokUsd: 1.0, outputPerMTokUsd: 5.0 },
   // gpt-5-mini-class.

@@ -224,3 +224,75 @@ describe('generateStructuredOutput', () => {
     );
   });
 });
+
+describe('generateStructuredOutput attempt usage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const schema = z.object({ name: z.string() });
+
+  it('reports every billable token counter, thinking and cache included', async () => {
+    mockGenerateContent.mockResolvedValueOnce({
+      text: JSON.stringify({ name: 'ok' }),
+      usageMetadata: {
+        promptTokenCount: 900,
+        candidatesTokenCount: 40,
+        cachedContentTokenCount: 600,
+        thoughtsTokenCount: 250,
+      },
+    });
+    const onAttemptComplete = vi.fn();
+    const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'k' });
+
+    await client.generateStructuredOutput(
+      { schema, systemPrompt: 's', userMessage: 'u', model: 'm' },
+      { onAttemptComplete }
+    );
+
+    expect(onAttemptComplete).toHaveBeenCalledExactlyOnceWith({
+      attempt: 1,
+      model: 'm',
+      inputTokens: 900,
+      outputTokens: 40,
+      cachedTokens: 600,
+      thoughtTokens: 250,
+      error: null,
+    });
+  });
+
+  it('still reports the tokens of an attempt whose response failed the schema', async () => {
+    mockGenerateContent
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ wrong: true }),
+        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 9 },
+      })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'ok' }),
+        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 7 },
+      });
+    const onAttemptComplete = vi.fn();
+    const client = createGeminiClient(
+      { provider: 'ai-studio', apiKey: 'k' },
+      { maxRetries: 2, baseDelayMs: 1 }
+    );
+
+    await client.generateStructuredOutput(
+      { schema, systemPrompt: 's', userMessage: 'u', model: 'm' },
+      { onAttemptComplete }
+    );
+
+    expect(onAttemptComplete).toHaveBeenCalledTimes(2);
+    expect(onAttemptComplete.mock.calls[0][0]).toMatchObject({
+      attempt: 1,
+      inputTokens: 100,
+      outputTokens: 9,
+      error: expect.objectContaining({ name: 'ZodError' }),
+    });
+    expect(onAttemptComplete.mock.calls[1][0]).toMatchObject({
+      attempt: 2,
+      outputTokens: 7,
+      error: null,
+    });
+  });
+});
