@@ -82,3 +82,91 @@ describe('createGeminiEstimator — round-trips the pre-refactor call identicall
     );
   });
 });
+
+describe('createGeminiEstimator — lean output guard (the mì gói shape)', () => {
+  const triple = (mid: number) => ({ low: mid, mid, high: mid });
+  const leanWithUnanchoredNull = {
+    mealItems: [
+      {
+        mealItemName: 'Mì gói',
+        ingredients: [
+          {
+            ingredientName: 'mì gói',
+            selectedCandidateId: 'none',
+            rejectReason: 'category mismatch',
+            grossG: 80,
+            refusePct: 0,
+            proteinG: null,
+            carbohydrateG: null,
+            fatG: triple(14),
+          },
+        ],
+      },
+    ],
+  };
+  const strictReply = {
+    mealItems: [
+      {
+        mealItemName: 'Mì gói',
+        ingredients: [
+          {
+            ...leanWithUnanchoredNull.mealItems[0].ingredients[0],
+            proteinG: triple(8),
+            carbohydrateG: triple(48),
+          },
+        ],
+      },
+    ],
+  };
+
+  it('re-asks once with the strict schema when an unanchored row has null P/C', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const stream = vi
+      .fn()
+      .mockResolvedValueOnce(leanWithUnanchoredNull)
+      .mockResolvedValueOnce(strictReply);
+    const gemini = createMockGemini({ generateStructuredOutputStream: stream });
+    const estimator = createGeminiEstimator(gemini, 'gemini-3.1-flash-lite');
+
+    const result = await estimator.estimate(
+      input,
+      new AbortController().signal
+    );
+
+    expect(stream).toHaveBeenCalledTimes(2);
+    const strictSchema = stream.mock.calls[1][0].schema;
+    // The strict schema's decoder contract: null P/C cannot parse.
+    expect(strictSchema.safeParse(leanWithUnanchoredNull).success).toBe(false);
+    expect(strictSchema.safeParse(strictReply).success).toBe(true);
+    expect(
+      result.estimation.mealItems[0].ingredients[0].carbohydrateG?.mid
+    ).toBe(48);
+  });
+
+  it('makes one call when null P/C only sit on accepted matches', async () => {
+    const stream = vi.fn().mockResolvedValueOnce({
+      mealItems: [
+        {
+          mealItemName: 'Cơm',
+          ingredients: [
+            {
+              ingredientName: 'cơm',
+              selectedCandidateId: 'c1',
+              grossG: 200,
+              refusePct: 0,
+              proteinG: null,
+              carbohydrateG: null,
+              fatG: triple(0.6),
+            },
+          ],
+        },
+      ],
+    });
+    const gemini = createMockGemini({ generateStructuredOutputStream: stream });
+    await createGeminiEstimator(gemini, 'm').estimate(
+      input,
+      new AbortController().signal
+    );
+    expect(stream).toHaveBeenCalledTimes(1);
+  });
+});

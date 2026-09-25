@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildGroundedIngredientEstimateSchema,
+  findUnanchoredNullMacros,
   groundedEstimationSchema,
+  groundedEstimationStrictSchema,
   groundedIngredientEstimateSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 
@@ -67,42 +69,49 @@ describe('groundedIngredientEstimateSchema', () => {
     expect(parsed.selectedCandidateId).toBeUndefined();
   });
 
-  it('REJECTS missing or null P/C whenever no candidate is accepted (the mì gói regression)', () => {
+  it('flags null P/C on rows without an accepted candidate (the mì gói regression)', () => {
     // Prod incident: `carbohydrateG` was optional, Call 2 omitted it for the
     // unmatched noodles, and the absence persisted as C:0g / 412 kcal. Lean
-    // output lets an ACCEPTED match send null P/C (the DB row supplies them),
-    // but without an accepted candidate they are the only source — a missing
-    // key or a null must fail parse, which routes into the zero-delay retry.
-    // This test is the executable guard that the optionality never returns.
-    const base = {
+    // output lets an ACCEPTED match send null P/C (the DB row supplies them);
+    // without an accepted candidate a null must be caught — the estimator
+    // re-asks with the strict schema, which cannot parse a null there. This
+    // test is the executable guard that the gap never quietly returns.
+    const t = { low: 1, mid: 2, high: 3 };
+    const row = (selectedCandidateId?: string) => ({
       ingredientName: 'mì gói',
+      ...(selectedCandidateId ? { selectedCandidateId } : {}),
       grossG: 80,
       refusePct: 0,
-      proteinG: { low: 7, mid: 8, high: 9 },
-      carbohydrateG: { low: 46, mid: 48, high: 50 },
-      fatG: { low: 13, mid: 14, high: 15 },
-    };
-    for (const verdict of [{}, { selectedCandidateId: 'none' }]) {
-      for (const field of ['proteinG', 'carbohydrateG'] as const) {
-        const { [field]: _omitted, ...withoutField } = base;
-        expect(
-          () =>
-            groundedIngredientEstimateSchema.parse({
-              ...withoutField,
-              ...verdict,
-            }),
-          `omitting ${field} with verdict ${JSON.stringify(verdict)} must fail parse`
-        ).toThrow();
-        expect(
-          () =>
-            groundedIngredientEstimateSchema.parse({
-              ...base,
-              [field]: null,
-              ...verdict,
-            }),
-          `null ${field} with verdict ${JSON.stringify(verdict)} must fail parse`
-        ).toThrow(/required when no candidate is accepted/);
-      }
+      proteinG: null,
+      carbohydrateG: null,
+      fatG: t,
+    });
+    const estimation = groundedEstimationSchema.parse({
+      mealItems: [
+        {
+          mealItemName: 'Mì gói',
+          ingredients: [row(), row('none'), row('c1')],
+        },
+      ],
+    });
+    expect(findUnanchoredNullMacros(estimation)).toEqual([
+      { mealItemName: 'Mì gói', ingredientName: 'mì gói' },
+      { mealItemName: 'Mì gói', ingredientName: 'mì gói' },
+    ]);
+    for (const field of ['proteinG', 'carbohydrateG'] as const) {
+      expect(
+        groundedEstimationStrictSchema.safeParse({
+          mealItems: [
+            {
+              mealItemName: 'Mì gói',
+              ingredients: [
+                { ...row(), proteinG: t, carbohydrateG: t, [field]: null },
+              ],
+            },
+          ],
+        }).success,
+        `strict schema must reject null ${field}`
+      ).toBe(false);
     }
   });
 
