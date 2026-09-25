@@ -12,13 +12,13 @@
 // Auth where Kallo cannot reach them (docs/GOOGLE_CLOUD_RUN.md).
 
 import 'server-only';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { exchangeAppleAuthorizationCode } from '@/lib/infra/apple-auth/apple-auth';
 import { readAppleAuthConfig } from '@/lib/infra/apple-auth/config';
 import { open, resolveSecretBoxKey, seal } from '@/lib/infra/crypto/secret-box';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
-import { appleAuthTokens } from '@/lib/infra/db/schema';
+import { appleAuthTokens, appleTokenRevocations } from '@/lib/infra/db/schema';
 
 const ENCRYPTION_KEY_ENV = 'APPLE_TOKEN_ENCRYPTION_KEY';
 
@@ -77,13 +77,28 @@ export async function linkAppleAuthorizationCode(
   }
   const ciphertext = seal(key, result.refreshToken, aadFor(input.userId));
   const now = new Date();
-  await database
-    .insert(appleAuthTokens)
-    .values({ userId: input.userId, refreshTokenCiphertext: ciphertext })
-    .onConflictDoUpdate({
-      target: appleAuthTokens.userId,
-      set: { refreshTokenCiphertext: ciphertext, updatedAt: now },
-    });
+  await database.transaction(async (tx) => {
+    await tx
+      .insert(appleAuthTokens)
+      .values({ userId: input.userId, refreshTokenCiphertext: ciphertext })
+      .onConflictDoUpdate({
+        target: appleAuthTokens.userId,
+        set: { refreshTokenCiphertext: ciphertext, updatedAt: now },
+      });
+    // A deletion may already have enqueued a revocation with the PREVIOUS
+    // token (enqueue runs before the auth user is deleted, and this link can
+    // land in between). The auth cascade then drops the row written above,
+    // so the pending outbox row is the only place the newest token survives.
+    await tx
+      .update(appleTokenRevocations)
+      .set({ refreshTokenCiphertext: ciphertext, nextAttemptAt: now })
+      .where(
+        and(
+          eq(appleTokenRevocations.userId, input.userId),
+          eq(appleTokenRevocations.status, 'pending')
+        )
+      );
+  });
   return 'stored';
 }
 

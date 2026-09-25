@@ -29,11 +29,18 @@ const INPUT = {
   authorizationCode: 'code-1',
 };
 
+/** A db whose `transaction` runs the callback against a recording tx. */
 function insertChain() {
   const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
   const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
   const insert = vi.fn().mockReturnValue({ values });
-  return { insert, values, onConflictDoUpdate };
+  const where = vi.fn().mockResolvedValue(undefined);
+  const set = vi.fn().mockReturnValue({ where });
+  const update = vi.fn().mockReturnValue({ set });
+  const tx = { insert, update };
+  const transaction = vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx));
+  const db = { transaction } as never;
+  return { db, transaction, insert, values, onConflictDoUpdate, update, set };
 }
 
 /** Link once and hand back the ciphertext that was written. */
@@ -43,8 +50,8 @@ async function linkAndCapture(): Promise<string> {
     refreshToken: 'rt-plain',
     subject: '001.apple',
   });
-  const { insert, values } = insertChain();
-  await linkAppleAuthorizationCode(INPUT, { insert } as never);
+  const { db, values } = insertChain();
+  await linkAppleAuthorizationCode(INPUT, db);
   return values.mock.calls[0]?.[0].refreshTokenCiphertext;
 }
 
@@ -64,11 +71,9 @@ describe('linkAppleAuthorizationCode', () => {
       refreshToken: 'rt-plain',
       subject: '001.apple',
     });
-    const { insert, values, onConflictDoUpdate } = insertChain();
+    const { db, values, onConflictDoUpdate } = insertChain();
 
-    await expect(
-      linkAppleAuthorizationCode(INPUT, { insert } as never)
-    ).resolves.toBe('stored');
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe('stored');
     expect(mockExchange).toHaveBeenCalledWith('code-1');
     const row = values.mock.calls[0]?.[0];
     expect(row.userId).toBe(USER_ID);
@@ -84,13 +89,35 @@ describe('linkAppleAuthorizationCode', () => {
     );
   });
 
+  // Codex (#391): a link landing after a deletion enqueued its revocation, but
+  // before the auth user is gone, must not leave the older token in the
+  // outbox — the auth cascade drops `apple_auth_tokens` right after.
+  it('moves the newest token onto a pending revocation, in the same transaction', async () => {
+    mockExchange.mockResolvedValue({
+      ok: true,
+      refreshToken: 'rt-new',
+      subject: '001.apple',
+    });
+    const { db, transaction, values, update, set } = insertChain();
+
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe('stored');
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+    const stored = values.mock.calls[0]?.[0].refreshTokenCiphertext;
+    expect(set).toHaveBeenCalledWith({
+      refreshTokenCiphertext: stored,
+      nextAttemptAt: expect.any(Date),
+    });
+    expect(openAppleRefreshToken(USER_ID, stored)).toBe('rt-new');
+  });
+
   it('is a no-op without Apple credentials', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockReadConfig.mockReturnValue(null);
-    const { insert } = insertChain();
-    await expect(
-      linkAppleAuthorizationCode(INPUT, { insert } as never)
-    ).resolves.toBe('not_configured');
+    const { db, insert } = insertChain();
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe(
+      'not_configured'
+    );
     expect(mockExchange).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
   });
@@ -99,10 +126,10 @@ describe('linkAppleAuthorizationCode', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubEnv('APPLE_TOKEN_ENCRYPTION_KEY', 'too-short');
-    const { insert } = insertChain();
-    await expect(
-      linkAppleAuthorizationCode(INPUT, { insert } as never)
-    ).resolves.toBe('not_configured');
+    const { db, insert } = insertChain();
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe(
+      'not_configured'
+    );
     expect(mockExchange).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
   });
@@ -110,12 +137,12 @@ describe('linkAppleAuthorizationCode', () => {
   it('turns an invalid code into a 400 and an Apple outage into a 500', async () => {
     mockExchange.mockResolvedValueOnce({ ok: false, reason: 'invalid_grant' });
     await expect(
-      linkAppleAuthorizationCode(INPUT, insertChain() as never)
+      linkAppleAuthorizationCode(INPUT, insertChain().db)
     ).rejects.toMatchObject({ status: 400 });
 
     mockExchange.mockResolvedValueOnce({ ok: false, reason: 'timeout' });
     await expect(
-      linkAppleAuthorizationCode(INPUT, insertChain() as never)
+      linkAppleAuthorizationCode(INPUT, insertChain().db)
     ).rejects.toMatchObject({ status: 500 });
   });
 
@@ -125,10 +152,10 @@ describe('linkAppleAuthorizationCode', () => {
       refreshToken: 'rt-other',
       subject: '999.someone-else',
     });
-    const { insert } = insertChain();
-    await expect(
-      linkAppleAuthorizationCode(INPUT, { insert } as never)
-    ).rejects.toMatchObject({ status: 409 });
+    const { db, insert } = insertChain();
+    await expect(linkAppleAuthorizationCode(INPUT, db)).rejects.toMatchObject({
+      status: 409,
+    });
     expect(insert).not.toHaveBeenCalled();
   });
 });
