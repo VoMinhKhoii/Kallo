@@ -3,6 +3,7 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
+import { MODEL_RATES } from '@/lib/ai/cost/pricing';
 import {
   ESTIMATOR_PRICING,
   selectEstimator,
@@ -372,7 +373,11 @@ async function main() {
     allRelations
   );
   const generatedAt = new Date().toISOString();
-  const pricing = ESTIMATOR_PRICING[options.estimator];
+  // The running model's own rate when known (the `next` profile swaps Call 2's
+  // model), else the adapter-class placeholder.
+  const pricing =
+    MODEL_RATES[dependencies.estimator.model] ??
+    ESTIMATOR_PRICING[options.estimator];
   const estimatorSummary: EvalEstimatorSummary = {
     name: options.estimator,
     model: dependencies.estimator.model,
