@@ -66,6 +66,11 @@ cách chế biến, độ tin cậy khi khớp nguyên liệu, lượng cồn n�
 thanh trượt khi bạn dùng chế độ Bữa xả, và cả 28 chỉ số dinh dưỡng tính cho từng
 bữa và từng món.
 
+### Ảnh nhãn dinh dưỡng
+
+Ảnh của mỗi nhãn dinh dưỡng bạn quét, lưu trong kho riêng tư và gắn với tài
+khoản của bạn, cũng như với bữa ăn nếu bạn lưu bữa đó. Xem mục 3.
+
 ### Cân nặng theo thời gian
 
 Các lần bạn ghi cân nặng, kèm ngày ghi.
@@ -130,9 +135,12 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 - Thói quen nấu ăn của bạn.
 - Ngôn ngữ bạn muốn nhận kết quả.
 
-Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Kallo
-đọc nhãn từ ảnh ngay trong bộ nhớ và **không lưu** ảnh lại; chỉ những con số bạn
-xem lại và bấm lưu mới được ghi vào nhật ký bữa ăn.
+Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Chúng
+tôi cũng lưu ảnh đó trong một kho lưu trữ riêng tư, gắn với tài khoản của bạn và,
+nếu bạn lưu bữa ăn, gắn với bữa đó. Chỉ bạn (trong ứng dụng) và đội ngũ Kallo xem
+được ảnh; đội ngũ dùng ảnh để kiểm tra và cải thiện độ chính xác khi đọc nhãn.
+Ảnh không bao giờ được chia sẻ với người dùng khác, và được giữ cho tới khi bạn
+xóa tài khoản, lúc đó ảnh bị xóa cùng tài khoản.
 
 Khi bạn tìm nguyên liệu lúc ghi thủ công, chữ bạn gõ có thể được gửi tới mô
 hình nhúng (embedding) của Google để tìm những nguyên liệu có nghĩa gần giống.
@@ -220,7 +228,7 @@ thứ ba làm quảng cáo.
 
 | Nhà cung cấp | Vai trò | Dữ liệu tiếp cận |
 | --- | --- | --- |
-| Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện và ảnh góp ý |
+| Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện, ảnh góp ý và ảnh nhãn dinh dưỡng |
 | Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI, đọc nhãn dinh dưỡng, tìm nguyên liệu | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ; ảnh nhãn dinh dưỡng; chữ tìm nguyên liệu |
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
@@ -311,8 +319,8 @@ Chúng tôi bảo vệ dữ liệu bằng nhiều lớp:
   trong Vòng kết nối.
 - Chỉ nhận lưu lượng đi qua lớp bảo vệ phía trước, chặn truy cập thẳng vào máy
   chủ.
-- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý. Ảnh đại diện công
-  khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
+- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý và ảnh nhãn dinh
+  dưỡng. Ảnh đại diện công khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
   chủ của chúng tôi mới ghi được, sau khi mã hóa lại từng ảnh.
 - Siết chặt quyền dùng khóa và mật khẩu hệ thống.
 
@@ -368,8 +376,9 @@ hồ sơ, lịch sử bữa ăn và cân nặng, hồ sơ Vòng kết nối, qua
 bạn chia sẻ hoặc viết trong Vòng kết nối và trò chuyện, thông báo, thiết bị đã
 đăng ký (mã thiết bị được rút gọn), góp ý, hồ sơ thanh toán, và hoạt động gần
 đây trong ứng dụng. Các tệp bạn tải lên, như ảnh đại diện hay ảnh chụp màn hình
-trong góp ý, được liệt kê theo vị trí lưu trữ thay vì đính kèm. Tin nhắn và cảm
-xúc của người khác, cùng các bản ghi nội bộ về bảo mật và gỡ lỗi, không nằm
+trong góp ý, được liệt kê theo vị trí lưu trữ thay vì đính kèm; ảnh nhãn dinh
+dưỡng được liệt kê kèm mã định danh, ngày và bữa ăn liên quan. Tin nhắn và
+cảm xúc của người khác, cùng các bản ghi nội bộ về bảo mật và gỡ lỗi, không nằm
 trong tệp; [Dữ liệu của bạn](/docs/account/your-data) liệt kê những gì không có
 và lý do. Muốn nhận bản sao của bất cứ thứ gì không có trong tệp, hãy gửi email
 như trên.
@@ -447,7 +456,7 @@ California mà chúng tôi đã thu thập trong mười hai (12) tháng gần n
 | E. Dữ liệu sinh trắc học | Vân tay, mẫu giọng nói | Không |
 | F. Hoạt động mạng | Nhật ký máy chủ, thao tác trong ứng dụng | Có |
 | G. Dữ liệu định vị | Vị trí thiết bị | Không |
-| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý, ảnh nhãn dinh dưỡng (chỉ đọc, không lưu) | Có |
+| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý, ảnh nhãn dinh dưỡng | Có |
 | I. Thông tin nghề nghiệp hoặc việc làm | Chức danh, lịch sử công việc | Không |
 | J. Thông tin giáo dục | Hồ sơ học tập | Không |
 | K. Suy luận từ dữ liệu đã thu thập | Chỉ tiêu calo và đa lượng, xu hướng dinh dưỡng | Có |

@@ -63,6 +63,11 @@ recognises, estimated weights, cooking method, ingredient-match confidence,
 alcohol where relevant, the slider positions when you use Cheat meal, and all 28
 nutrient values computed for each meal and each item.
 
+### Nutrition label photos
+
+The photo of each nutrition label you scan, stored in a private bucket and
+linked to your account, and to the meal if you save it. See section 3.
+
 ### Weight over time
 
 Your weight entries and the dates they belong to.
@@ -126,8 +131,11 @@ When you request a meal analysis, the AI model receives **only**:
 - The language you want the result in.
 
 When you scan a nutrition label, the model receives **only the photo** you took.
-Kallo reads the label from it in memory and does **not** store the photo; only
-the values you review and save go into your meal log.
+We also store that photo in a private storage bucket, linked to your account and,
+if you save it, to the meal. Only you (in the app) and the Kallo team can see it;
+the team uses it to check and improve how accurately labels are read. It is never
+shared with other users, and it is kept until you delete your account, as part
+of which it is deleted.
 
 When you search for an ingredient while logging by hand, the text you type may
 be sent to Google's embedding model to find ingredients with a similar meaning.
@@ -208,7 +216,7 @@ advertising.
 
 | Provider | Role | Data reached |
 | --- | --- | --- |
-| Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
+| Supabase | Authentication, database, file storage | Account, all app data, avatars, feedback screenshots and label photos |
 | Google Cloud (Vertex AI, Gemini) | AI meal analysis, label reading, ingredient search | Meal text, country, cooking habits, language; nutrition label photos; ingredient search text |
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
@@ -293,9 +301,9 @@ We apply several layers of protection:
   from another.
 - Server-side permission checks on every cross-account read in Circle.
 - An origin lock that only accepts traffic arriving through our edge layer.
-- A private storage bucket for feedback screenshots. Avatars are public by
-  design (see section 2), stored under unguessable file names, and only our
-  servers can write them, after re-encoding each image.
+- Private storage buckets for feedback screenshots and label photos. Avatars
+  are public by design (see section 2), stored under unguessable file names,
+  and only our servers can write them, after re-encoding each image.
 - Tightly restricted access to server credentials.
 
 No system is perfectly secure. If an incident affects your personal data, we
@@ -349,7 +357,8 @@ profile, meal and weight history, Circle profile, friendships, the content you
 shared or wrote in the Circle and in chats, notifications, registered devices
 (with device tokens shortened), feedback, billing records, and recent app
 activity. Files you uploaded, such as a profile photo or a feedback screenshot,
-are listed by storage location rather than included. Other people's messages
+are listed by storage location rather than included; label photos are listed
+with their identifier, date and linked meal. Other people's messages
 and reactions, and internal security and debugging records, are not part of the
 file; [Your data](/docs/account/your-data) lists what is left out and why. For a
 copy of anything not in the file, email us as above.
@@ -422,7 +431,7 @@ California law, that we have collected in the preceding twelve (12) months.
 | E. Biometric information | Fingerprints, voiceprints | No |
 | F. Internet or network activity | Server logs, in-app actions | Yes |
 | G. Geolocation data | Device location | No |
-| H. Audio, visual and sensory information | Avatar, feedback screenshots, nutrition label photos (read, not stored) | Yes |
+| H. Audio, visual and sensory information | Avatar, feedback screenshots, nutrition label photos | Yes |
 | I. Professional or employment information | Job title, work history | No |
 | J. Education information | Student records | No |
 | K. Inferences drawn from collected data | Calorie and macro targets, nutrition trends | Yes |

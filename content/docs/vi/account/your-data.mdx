@@ -16,6 +16,7 @@ lastUpdated: '2026-09-25'
 - **Thói quen nấu ăn** — dầu, khẩu phần mặc định, nước dùng.
 - **Nhật ký bữa ăn** — câu bạn viết, các món, khối lượng và 28 chỉ số dinh
   dưỡng.
+- **Ảnh nhãn dinh dưỡng** — mỗi nhãn bạn quét, lưu ở kho riêng tư.
 - **Cân nặng theo thời gian.**
 - **Nội dung Vòng kết nối** — bạn bè, bữa ăn chia sẻ, tin nhắn.
 - **Góp ý** — nội dung và ảnh chụp màn hình bạn gửi.
@@ -32,8 +33,8 @@ Khi bạn yêu cầu phân tích một bữa ăn, mô hình chỉ nhận:
 - Thói quen nấu ăn
 - Ngôn ngữ bạn muốn nhận kết quả
 
-Khi bạn quét nhãn dinh dưỡng, mô hình chỉ nhận tấm ảnh, và Kallo không lưu ảnh
-đó. Chữ bạn gõ khi tìm nguyên liệu cũng có thể được gửi tới mô hình nhúng của
+Khi bạn quét nhãn dinh dưỡng, mô hình chỉ nhận tấm ảnh. Kallo cũng lưu riêng tư
+ảnh đó, chỉ bạn và đội ngũ Kallo xem được, cho tới khi bạn xóa tài khoản. Chữ bạn gõ khi tìm nguyên liệu cũng có thể được gửi tới mô hình nhúng của
 Google để tìm nguyên liệu tương tự. Kallo hỏi ý bạn trước lần đầu phân tích bằng
 AI hoặc quét nhãn.
 
@@ -88,7 +89,8 @@ web và trong ứng dụng di động. Tệp gồm:
   khoảng một tuần), các phân tích chưa lưu, nguyên liệu mà cơ sở dữ liệu thực
   phẩm không khớp được, và sự kiện phân tích sản phẩm gắn với tài khoản.
 - **Tệp** — ảnh đại diện bạn tải lên và ảnh chụp màn hình trong góp ý, được liệt
-  kê theo vị trí lưu trữ. Bản thân hình ảnh không nằm trong tệp.
+  kê theo vị trí lưu trữ, cùng ảnh nhãn dinh dưỡng, được liệt kê theo mã định
+  danh, ngày và bữa ăn liên quan. Bản thân hình ảnh không nằm trong tệp.
 
 Nội dung của người khác không nằm trong tệp: bạn nhận tin nhắn, trả lời và cảm
 xúc của chính mình, không phải của họ. Các quan hệ bạn bè đã bị chặn cũng không

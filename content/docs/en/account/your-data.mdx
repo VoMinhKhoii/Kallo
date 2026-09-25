@@ -15,6 +15,7 @@ This is the readable summary. The full, legally operative version is the
 - **Cooking habits** — oil, default portions, broth.
 - **Meal log** — the sentence you wrote, the dishes, weights and 28 nutrient
   values.
+- **Nutrition label photos** — each label you scan, in private storage.
 - **Weight over time.**
 - **Circle content** — friends, shared meals, messages.
 - **Feedback** — what you sent and any screenshot.
@@ -32,8 +33,9 @@ When you request a meal analysis, the model receives only:
 - Your cooking habits
 - The language you want the result in
 
-When you scan a nutrition label, it receives only the photo, which Kallo does
-not store. Ingredient search text may also go to Google's embedding model to
+When you scan a nutrition label, it receives only the photo. Kallo also keeps
+that photo privately, visible only to you and the Kallo team, until you delete
+your account. Ingredient search text may also go to Google's embedding model to
 find similar ingredients. Kallo asks your permission before your first AI
 analysis or label scan.
 
@@ -85,7 +87,8 @@ the web and in the mobile app. It contains:
   analyses not yet saved, ingredients the food database could not match, and
   product analytics events linked to your account.
 - **Files** — your uploaded profile photo and any feedback screenshots, listed
-  by storage location. The images themselves are not inside the file.
+  by storage location, and your label photos, listed by identifier, date and
+  linked meal. The images themselves are not inside the file.
 
 Other people's content stays out: the export has your own messages, replies and
 reactions, not theirs. Friendships you have blocked are left out too, because
