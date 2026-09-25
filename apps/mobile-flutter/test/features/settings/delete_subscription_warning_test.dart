@@ -8,8 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/settings/logic/delete_subscription_warning.dart';
 import 'package:kallo_mobile/features/settings/screens/account_delete_screen.dart';
 
-import '../../onboarding/onboarding_test_support.dart';
-import '../settings_test_support.dart';
+import '../onboarding/onboarding_test_support.dart';
+import 'settings_test_support.dart';
 
 /// App Review 2.3.10: the iOS build may not name another platform's store.
 /// The delete-account footnote used to list "App Store, Google Play, or the
