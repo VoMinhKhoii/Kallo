@@ -10,7 +10,7 @@ lib/infra/email/config.ts          — sender identity, send timeout, "is it con
 lib/infra/email/client.ts          — lazy Resend client (importable with no API key)
 lib/infra/email/send.ts            — the only send seam: sendEmail({ to, message, … })
 lib/infra/email/auth-email.ts      — Supabase hook payload → the emails to send
-lib/email/templates/         — plain HTML builders returning { subject, html, text }
+lib/infra/email/templates/   — plain HTML builders returning { subject, html, text }
 app/api/auth/send-email/     — the Supabase "Send Email" auth hook endpoint
 ```
 
@@ -56,6 +56,16 @@ falls back to Supabase's own sender; no deploy is involved. The commented-out
 The landing-page waitlist is double opt-in: the signup POST stores an
 unconfirmed row and sends a confirm link; following that link is what sets
 `confirmed_at` and triggers the welcome email. See `lib/waitlist/`.
+
+## Content-report alerts
+
+`POST /api/v1/reports` stores the report, then — after the response, via
+`after()` — emails every `ADMIN_EMAILS` address with
+`lib/infra/email/templates/content-report.ts` (English only; it goes to the
+team). `lib/actions/moderation/report-alert.ts` never throws: a Resend failure
+or an empty `ADMIN_EMAILS` is logged, and the report stays in
+`content_reports` with status `open` for triage. A repeat report of the same
+target by the same person does not alert again.
 
 ## Local development
 

@@ -1169,6 +1169,13 @@ export const friendships = pgTable(
     // friendships_set_accepted_at trigger (clock_timestamp() at the status
     // flip — see 20260923051230 for why that clock); the app never sets it.
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    // Who placed the block, while status = 'blocked'. Only that person may
+    // unblock (lib/actions/groups/blocks.ts). NULL on every other status, and
+    // on blocks written before this column existed — re-blocking claims those.
+    // Cascade like the other party columns: a deleted account's edges go too.
+    blockedBy: uuid('blocked_by').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
@@ -1635,6 +1642,66 @@ export const userFeedback = pgTable(
     index('user_feedback_user_created_idx').on(
       table.userId,
       sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Content reports — a user flags someone else's circle content (App Store 1.2).
+// Written by POST /api/v1/reports after the target is resolved server-side;
+// every admin in ADMIN_EMAILS is emailed on insert. One row per reporter per
+// target (the unique index makes a retried report idempotent). No client
+// update/delete: triage status is set by admins only.
+// ---------------------------------------------------------------------------
+
+export const contentReports = pgTable(
+  'content_reports',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // The person whose content was reported, derived from the target on the
+    // server. SET NULL so the report outlives the reported account.
+    targetUserId: uuid('target_user_id').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
+    targetKind: text('target_kind').notNull(),
+    // Every current target kind is keyed by a uuid (a profile by its user id).
+    targetId: uuid('target_id').notNull(),
+    reason: text('reason').notNull(),
+    note: text('note'),
+    status: text('status').notNull().default('open'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  },
+  (table) => [
+    unique('content_reports_reporter_target_uniq').on(
+      table.reporterId,
+      table.targetKind,
+      table.targetId
+    ),
+    index('content_reports_status_created_idx').on(
+      table.status,
+      sql`${table.createdAt} DESC`
+    ),
+    check(
+      'content_reports_target_kind_check',
+      sql`${table.targetKind} IN ('share', 'reply', 'chat_message', 'profile', 'chat_group')`
+    ),
+    check(
+      'content_reports_reason_check',
+      sql`${table.reason} IN ('spam', 'harassment', 'hate', 'sexual', 'violence', 'self_harm', 'other')`
+    ),
+    check(
+      'content_reports_status_check',
+      sql`${table.status} IN ('open', 'actioned', 'dismissed')`
+    ),
+    check(
+      'content_reports_note_length_check',
+      sql`char_length(${table.note}) <= 500`
     ),
   ]
 );

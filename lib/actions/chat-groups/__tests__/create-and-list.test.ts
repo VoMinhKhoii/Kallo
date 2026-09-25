@@ -134,6 +134,14 @@ describe('createChatGroup', () => {
     expect(mockDbTransaction).not.toHaveBeenCalled();
   });
 
+  it('rejects an objectionable group name with a 422 before any read', async () => {
+    await expect(
+      createChatGroup(USER_A, { name: 'Hội giết mày', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    expect(mockDbSelect).not.toHaveBeenCalled();
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
   it('rejects when every member is filtered down to none (self-only selection)', async () => {
     await expect(
       createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_A] })

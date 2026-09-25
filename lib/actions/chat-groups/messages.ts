@@ -6,6 +6,11 @@ import {
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
 import { sendChatMessagePush } from '@/lib/domain/notifications/push';
+import {
+  blockedUserIds,
+  notBlockedWithSql,
+} from '@/lib/domain/social/moderation/blocks';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -38,7 +43,15 @@ export async function listChatGroupMessages(
         createdAt: chatGroupMessages.createdAt,
       })
       .from(chatGroupMessages)
-      .where(eq(chatGroupMessages.groupId, parsed.groupId))
+      .where(
+        and(
+          eq(chatGroupMessages.groupId, parsed.groupId),
+          // In a named group both people of a block stay members; each simply
+          // stops seeing the other's messages. (A direct chat is already
+          // closed by requireGroupAccess once the edge is not 'accepted'.)
+          notBlockedWithSql(actorId, chatGroupMessages.senderId)
+        )
+      )
       .orderBy(desc(chatGroupMessages.createdAt), desc(chatGroupMessages.id))
       .limit(MESSAGE_PAGE_SIZE),
     db
@@ -64,6 +77,7 @@ export async function sendChatGroupMessage(
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupMessage> {
   const parsed = sendChatGroupMessageSchema.parse(input);
+  assertAcceptableText(parsed.body);
 
   // Per-actor cap FIRST, before any database work. It bounds the write and the
   // push fan-out the write triggers — but placed after `requireGroupAccess` it
@@ -115,10 +129,15 @@ export async function sendChatGroupMessage(
       throw Errors.notFound('Không tìm thấy nhóm chat.');
     }
 
+    // Nobody in a blocked relation with the sender gets the push preview —
+    // the thread read hides this message from them as well.
+    const blocked = await blockedUserIds(actorId, tx);
     return {
       row: message,
       recipientIds: members
-        .filter((member) => member.userId !== actorId)
+        .filter(
+          (member) => member.userId !== actorId && !blocked.has(member.userId)
+        )
         .map((member) => member.userId),
     };
   });

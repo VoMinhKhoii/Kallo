@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { and, eq } from 'drizzle-orm';
-import { z } from 'zod';
+import { createShareReplyBodySchema } from '@/lib/api/contracts/social/share-replies';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareReplyKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
@@ -13,6 +13,8 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
+import { blockedUserIds } from '@/lib/domain/social/moderation/blocks';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -24,33 +26,23 @@ import {
 } from '@/lib/infra/db/schema';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
-const createShareReplySchema = z.object({
-  shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),
-  replyId: z
-    .string()
-    .uuid('replyId phải là UUID hợp lệ.')
-    .toLowerCase()
-    .optional(),
-  body: z
-    .string()
-    .trim()
-    .min(1, 'Nội dung trả lời không được để trống.')
-    .max(500, 'Nội dung trả lời tối đa 500 ký tự.'),
-});
-
 /**
  * Post a reply to a share. canViewShare is the sole tenant boundary (Drizzle
  * bypasses RLS), mirroring toggleShareReactionAction — you may reply to any
  * meal you can see (owner, accepted friend, or co-member of a group with the
- * owner). Returns the enriched reply so the client can append it optimistically.
+ * owner). A block between the replier and the owner fails that gate (404),
+ * group or not. Returns the enriched reply so the client can append it
+ * optimistically.
  */
 export async function createShareReplyAction(input: {
   shareId: string;
   replyId?: string;
   body: string;
 }): Promise<ShareReply> {
-  const parsed = createShareReplySchema.parse(input);
+  const parsed = createShareReplyBodySchema.parse(input);
   const { user } = await requireAuthAndProfile();
+  // 422 before the limiter: a rejected draft is not a spent reply.
+  assertAcceptableText(parsed.body);
 
   // Per-actor cap before the write — bounds the reply and its push fan-out.
   await assertRateLimit('shareReply', { kind: 'user', value: user.id });
@@ -142,9 +134,16 @@ export async function createShareReplyAction(input: {
         .selectDistinct({ userId: mealShareReplies.userId })
         .from(mealShareReplies)
         .where(eq(mealShareReplies.shareId, parsed.shareId));
+      // A prior replier in a blocked relation with this author never hears
+      // about — or gets a preview of — this reply (the thread read hides it
+      // from them too). The owner cannot be one: the gate above refused.
+      const blocked = await blockedUserIds(user.id, tx);
       const candidateIds = [
         ...new Set(repliers.map((row) => row.userId)),
-      ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
+      ].filter(
+        (id) =>
+          id !== user.id && id !== lockedShares[0].actorId && !blocked.has(id)
+      );
       const visible = await Promise.all(
         candidateIds.map((candidateId) =>
           canViewShareOwnedBy(candidateId, lockedShares[0], tx)

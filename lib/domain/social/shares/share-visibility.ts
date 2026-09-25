@@ -7,6 +7,7 @@
 
 import { eq, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -50,6 +51,10 @@ export function friendSinceSql(
   `;
 }
 
+/** The friend branch, else a shared named group — unless the pair is blocked.
+ * The friend branch needs no block check (a blocked edge is not 'accepted');
+ * the group branch does, or a block would leave both people reading each
+ * other through any group they still share. */
 function relationshipAccessSql(
   viewerId: string,
   ownerId: SQLWrapper | string,
@@ -57,7 +62,7 @@ function relationshipAccessSql(
 ): SQL<boolean> {
   return sql<boolean>`
     ${friendSinceSql(viewerId, ownerId, sharedAt)}
-    OR EXISTS (
+    OR (${notBlockedWithSql(viewerId, ownerId)} AND EXISTS (
       SELECT 1
       -- Base table + alias spelled out: Drizzle renders an alias object inside
       -- raw sql as the bare alias name, which is not a relation.
@@ -71,7 +76,7 @@ function relationshipAccessSql(
         AND ${ownerMembership.userId} = ${ownerId}
         AND ${viewerMembership.joinedAt} <= ${sharedAt}
         AND ${ownerMembership.joinedAt} <= ${sharedAt}
-    )
+    ))
   `;
 }
 

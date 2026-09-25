@@ -139,7 +139,7 @@ another domain module is a smell worth a second look.
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
-| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/` |
+| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/`; `moderation/` (App Store 1.2): `blocks.ts` (the block predicate + blocked-id set every cross-user read folds in), `text-filter.ts` over the curated `objectionable-terms.ts` (422 `objectionable_content` on UGC writes), and `report-targets.ts` (resolves a reported target to its owner, gated on what the reporter could see) |
 | `waitlist/` | signup, confirm, token |
 
 ### `lib/` root

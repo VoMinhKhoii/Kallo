@@ -5,7 +5,8 @@
 // this module batches counts and the viewer's own state without re-reading the
 // underlying meals.
 
-import { inArray, sql } from 'drizzle-orm';
+import { and, inArray, sql } from 'drizzle-orm';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShareReactions } from '@/lib/infra/db/schema';
@@ -40,7 +41,14 @@ export async function reactionsForShares(
       mine: sql<boolean>`bool_or(${mealShareReactions.userId} = ${actorId})`,
     })
     .from(mealShareReactions)
-    .where(inArray(mealShareReactions.shareId, ids))
+    .where(
+      and(
+        inArray(mealShareReactions.shareId, ids),
+        // A blocked person's hearts are not counted for the viewer, in either
+        // direction of the block (the replies read applies the same rule).
+        notBlockedWithSql(actorId, mealShareReactions.userId)
+      )
+    )
     .groupBy(mealShareReactions.shareId);
 
   for (const row of rows) {

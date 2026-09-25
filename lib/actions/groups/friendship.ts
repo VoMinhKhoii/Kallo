@@ -6,7 +6,6 @@ import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-cha
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptInviteSchema,
-  blockFriendSchema,
   removeFriendSchema,
 } from '@/lib/core/validation/social';
 import { friendJoinedKey } from '@/lib/domain/notifications/group-keys';
@@ -250,36 +249,4 @@ export async function getFriendshipStatus(
   return rows[0]?.status ?? null;
 }
 
-// ---------------------------------------------------------------------------
-// blockFriend
-// ---------------------------------------------------------------------------
-
-export async function blockFriend(
-  actorId: string,
-  input: { targetUserId: string },
-  db: Db = defaultDb
-): Promise<{ friendshipId: string; status: string }> {
-  const parsed = blockFriendSchema.parse(input);
-
-  if (parsed.targetUserId === actorId) {
-    throw Errors.validationFailed('Không thể chặn chính mình.');
-  }
-
-  const { userLow, userHigh } = orderedPair(actorId, parsed.targetUserId);
-
-  const [row] = await db
-    .insert(friendships)
-    .values({
-      userLow,
-      userHigh,
-      requestedBy: actorId,
-      status: 'blocked',
-    })
-    .onConflictDoUpdate({
-      target: [friendships.userLow, friendships.userHigh],
-      set: { status: 'blocked', updatedAt: new Date() },
-    })
-    .returning({ id: friendships.id, status: friendships.status });
-
-  return { friendshipId: row.id, status: row.status };
-}
+// blockFriend / unblockFriend / listBlockedUsers live in ./blocks.ts.

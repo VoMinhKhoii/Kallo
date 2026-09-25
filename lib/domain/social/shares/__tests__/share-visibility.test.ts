@@ -161,7 +161,8 @@ describe('canViewShareOwnedBy', () => {
     // `sharedAt` arrives as encoder-mapped text: a raw Date in a raw fragment
     // reaches the driver unserialized and throws.
     // `sharedAt` now also bounds the friendship branch (accepted_at), so it is
-    // bound three times: friendship, then both group memberships.
+    // bound three times: friendship, then both group memberships. The group
+    // branch is also guarded by the pair's block check (four ids).
     expect(params).toEqual([
       VIEWER_ID,
       OWNER_ID,
@@ -170,9 +171,35 @@ describe('canViewShareOwnedBy', () => {
       sharedAt.toISOString(),
       VIEWER_ID,
       OWNER_ID,
+      VIEWER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      OWNER_ID,
       sharedAt.toISOString(),
       sharedAt.toISOString(),
     ]);
+  });
+
+  // A block must close the named-group branch too: both people can still be
+  // members of one group, and the friend branch alone (status 'accepted') is
+  // not enough to hide them from each other there.
+  it('refuses the group branch when the pair is blocked', async () => {
+    const db = fakeDb([{ visible: false }]);
+
+    await canViewShareOwnedBy(
+      VIEWER_ID,
+      { actorId: OWNER_ID, sharedAt, visibility: 'circle' },
+      db as never
+    );
+
+    const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
+    expect(sql).toMatch(
+      /NOT\s+EXISTS \(\s*SELECT 1\s+FROM "friendships"\s+WHERE "friendships"\."status" = 'blocked'/
+    );
+    // The guard sits in front of the membership EXISTS, inside the OR.
+    expect(sql.indexOf("'blocked'")).toBeLessThan(
+      sql.indexOf('"share_viewer_membership"')
+    );
   });
 
   // KALLO-03: a friend who connected after the share was made must not see it.

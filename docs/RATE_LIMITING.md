@@ -75,6 +75,8 @@ code.
 | `chatMessageSend` | user | 30 / 600 / 3000 | degraded |
 | `shareReply` | user | 20 / 300 / 1500 | degraded |
 | `shareReaction` | user | 60 / 600 / — | degraded |
+| `friendBlock` (block + unblock share one budget) | user | 10 / 60 / 200 | degraded |
+| `contentReport` (each report emails every admin) | user | 5 / 30 / 100 | degraded |
 | `barcodeSearch` | user | 30 / 300 / 1500 | degraded |
 | `avatarUpload` | user | 5 / 20 / 50 | degraded |
 | `feedbackScreenshot` | user | 5 / 20 / 50 | degraded |
@@ -305,6 +307,8 @@ except invite lookup (IP) and the two global budgets.
 | `sendChatGroupMessage` (`POST /api/v1/chat-groups/{groupId}/messages`) | `chatMessageSend`, charged before any database read | `user` (actor) | Route → **429** + `Retry-After` via `handleRouteError`. Placed after `requireGroupAccess` it bounded neither the membership lookup nor the circle-quota read, so bogus group ids drove unlimited reads on a two-connection pool. |
 | `createShareReplyAction` (`POST /api/v1/groups/shares/reply`) | `shareReply` | `user` (actor) | same |
 | `toggleShareReactionAction` (`POST /api/v1/groups/shares/reaction`) | `shareReaction` | `user` (actor) | same |
+| `POST /api/v1/groups/friends/block`, `POST /api/v1/groups/friends/unblock` | `friendBlock` (one shared budget) | `user` (actor) | **429** + `Retry-After`, charged after auth and before the body is read. |
+| `POST /api/v1/reports` | `contentReport` | `user` (reporter) | **429** + `Retry-After`, charged after auth and before the body is read — it bounds the admin email each accepted report sends. |
 | Push fan-out — inside `sendNotificationPush` (both the notification path and `sendChatMessagePush`) | `pushGlobalHourly`, charged only once there are messages to send | `global:'push'` | **Skip, not block.** A block SKIPs the send and returns — the message/notification row is already committed, so the worst case is a dropped push, never a failed write. Caught locally, logged once per 30 s per instance, never propagated. Most events notify nobody with a registered device, so the charge happens AFTER `buildMessages`: charging before it made the hourly budget count recipients rather than pushes. |
 | `searchBarcodeAction` + `GET /api/v1/barcode/search` | `barcodeSearch` | `user` | Route → **429** + `Retry-After`. Web action → typed `{success:false, code:'rate_limited'}`. |
 | `POST /api/v1/feedback/screenshot` | `feedbackScreenshot` | `user` | **429** + `Retry-After`. Auth runs FIRST and the guard before `formData()`, so an anonymous or throttled caller never makes the server buffer the multipart body — the route previously read it before asking who was calling. A missing / non-numeric / oversized `Content-Length` is a 400 `VALIDATION_FAILED`, also pre-buffer. |

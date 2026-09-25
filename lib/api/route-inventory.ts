@@ -110,7 +110,8 @@ export const routeInventory = {
     'feedbackScreenshot',
   ],
   'api/v1/groups/feed/route.ts': ['session', false, 'none-cheap'],
-  'api/v1/groups/friends/block/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/groups/friends/block/route.ts': ['session', true, 'friendBlock'],
+  'api/v1/groups/friends/blocked/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/friends/feed/route.ts': ['session', false, 'none-cheap'],
   'api/v1/groups/friends/read-marker/route.ts': [
     'session',
@@ -119,6 +120,7 @@ export const routeInventory = {
   ],
   'api/v1/groups/friends/remove/route.ts': ['session', true, 'none-cheap'],
   'api/v1/groups/friends/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/groups/friends/unblock/route.ts': ['session', true, 'friendBlock'],
   'api/v1/groups/invite/[slug]/route.ts': ['none', false, 'inviteLookupIp'],
   'api/v1/groups/invite/accept/route.ts': ['session', true, 'none-cheap'],
   'api/v1/groups/invites/accept-cheat/route.ts': [
@@ -192,6 +194,7 @@ export const routeInventory = {
   'api/v1/onboarding/screen/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/sharing/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/reports/route.ts': ['session', true, 'contentReport'],
   'api/v1/waitlist/confirm/route.ts': ['none', false, 'waitlistConfirmIp'],
   'api/v1/waitlist/route.ts': ['none', true, 'waitlistSignupIp'],
   'api/v1/weight/[loggedDate]/route.ts': ['session', false, 'none-cheap'],

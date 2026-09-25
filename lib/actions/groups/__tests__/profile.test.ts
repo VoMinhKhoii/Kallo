@@ -189,6 +189,18 @@ describe('upsertPublicProfile', () => {
       upsertPublicProfile(ACTOR, { handle: SLUG, displayName: '' })
     ).rejects.toThrow();
   });
+
+  it('rejects an objectionable display name or handle with a 422, before writing', async () => {
+    captureUpsert();
+
+    await expect(
+      upsertPublicProfile(ACTOR, { handle: SLUG, displayName: 'Con đĩ' })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    await expect(
+      upsertPublicProfile(ACTOR, { handle: 'fuck_you' })
+    ).rejects.toMatchObject({ code: 'objectionable_content' });
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -308,6 +320,15 @@ describe('renameMyProfile', () => {
   it('rejects an empty name', async () => {
     captureUpdates();
     await expect(renameMyProfile(ACTOR, '   ')).rejects.toThrow();
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects an objectionable name with a 422 before touching the profile', async () => {
+    captureUpdates();
+    await expect(renameMyProfile(ACTOR, 'Kill yourself')).rejects.toMatchObject(
+      { code: 'objectionable_content', status: 422 }
+    );
+    expect(mockDbSelect).not.toHaveBeenCalled();
     expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 });

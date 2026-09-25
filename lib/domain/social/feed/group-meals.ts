@@ -5,6 +5,7 @@ import {
   type SharedMealRow,
   sharedMealColumns,
 } from '@/lib/domain/social/feed/meal-feed';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -62,6 +63,10 @@ export async function sharedGroupMealsBefore(
     .where(
       and(
         sql`${mealShares.visibility} <> 'private'`,
+        // A block hides both people's meals from each other even inside a
+        // group they still share (share-visibility.ts applies the same rule
+        // to share-by-id reads).
+        notBlockedWithSql(viewerId, mealShares.actorId),
         gte(mealShares.sharedAt, viewerMembership.joinedAt),
         gte(mealShares.sharedAt, ownerMembership.joinedAt),
         before

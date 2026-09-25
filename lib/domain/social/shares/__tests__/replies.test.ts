@@ -1,3 +1,5 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
@@ -7,7 +9,7 @@ import { repliesForShares } from '@/lib/domain/social/shares/replies';
 const ACTOR_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const SHARE_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 
-function fakeDb(rows: unknown[]) {
+function fakeDb(rows: unknown[], captured: { where?: SQL } = {}) {
   const ranked = {
     id: 'ranked.id',
     shareId: 'ranked.shareId',
@@ -21,7 +23,10 @@ function fakeDb(rows: unknown[]) {
     .fn()
     .mockReturnValueOnce({
       from: vi.fn(() => ({
-        where: vi.fn(() => ({ as: vi.fn(() => ranked) })),
+        where: vi.fn((condition: SQL) => {
+          captured.where = condition;
+          return { as: vi.fn(() => ranked) };
+        }),
       })),
     })
     .mockReturnValueOnce({
@@ -67,6 +72,21 @@ describe('repliesForShares', () => {
       total: 17,
     });
     expect(db.select).toHaveBeenCalledTimes(2);
+  });
+
+  // Filtered before the window, so a blocked author's replies are neither
+  // shown nor counted — both directions of the block.
+  it('drops replies by anyone in a blocked relation with the viewer', async () => {
+    const captured: { where?: SQL } = {};
+    const db = fakeDb([], captured);
+
+    await repliesForShares(ACTOR_ID, [SHARE_ID], db as never);
+
+    const { sql, params } = new PgDialect().sqlToQuery(captured.where as SQL);
+    expect(sql).toMatch(/not\s+EXISTS/i);
+    expect(sql).toContain(`"friendships"."status" = 'blocked'`);
+    expect(sql).toContain('"meal_share_replies"."user_id"');
+    expect(params).toContain(ACTOR_ID);
   });
 
   it('materializes empty summaries without querying', async () => {

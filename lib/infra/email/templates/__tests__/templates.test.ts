@@ -4,6 +4,7 @@ import {
   authLinkEmail,
 } from '@/lib/infra/email/templates/auth-link';
 import { authOtpEmail } from '@/lib/infra/email/templates/auth-otp';
+import { contentReportEmail } from '@/lib/infra/email/templates/content-report';
 import type { EmailLocale } from '@/lib/infra/email/templates/layout';
 import {
   waitlistConfirmEmail,
@@ -99,5 +100,44 @@ describe('waitlist emails', () => {
     expect(waitlistConfirmEmail('en', confirmUrl).subject).not.toBe(
       waitlistWelcomeEmail('en').subject
     );
+  });
+});
+
+describe('content report admin email', () => {
+  const base = {
+    reportId: 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44',
+    targetKind: 'reply',
+    targetId: 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33',
+    targetUserId: 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22',
+    reporterId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    reason: 'harassment',
+    note: '<script>alert(1)</script> & more',
+    excerpt: 'Bún <b>bò</b>',
+    createdAt: new Date('2026-09-25T12:00:00.000Z'),
+  };
+
+  it('renders every fact and escapes user-written text in the HTML', () => {
+    const message = contentReportEmail(base);
+    expectWellFormed(message);
+    expect(message.subject).toBe('[Kallo report] harassment · reply');
+    expect(message.html).toContain(base.reportId);
+    expect(message.html).toContain(
+      '&lt;script&gt;alert(1)&lt;/script&gt; &amp; more'
+    );
+    expect(message.html).not.toContain('<script>');
+    expect(message.html).toContain('Bún &lt;b&gt;bò&lt;/b&gt;');
+    expect(message.text).toContain(`Reporter: ${base.reporterId}`);
+  });
+
+  it('omits the note and excerpt blocks when there are none', () => {
+    const message = contentReportEmail({
+      ...base,
+      note: null,
+      excerpt: null,
+      targetUserId: null,
+    });
+    expectWellFormed(message);
+    expect(message.text).not.toContain("Reporter's note");
+    expect(message.text).toContain('Reported user: (unknown)');
   });
 });

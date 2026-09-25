@@ -239,6 +239,23 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /** Block + unblock share one budget: toggling a block is a write to the
+   * pair's edge and nothing a person does dozens of times a minute. */
+  friendBlock: {
+    route: 'friend:block',
+    limits: { perMinute: 10, perHour: 60, perDay: 200 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /** Each accepted report emails every admin, so the ceiling bounds mail. */
+  contentReport: {
+    route: 'content:report',
+    limits: { perMinute: 5, perHour: 30, perDay: 100 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /** Reactions are one tap, so the minute ceiling is loose by design. */
   shareReaction: {
     route: 'share:reaction',

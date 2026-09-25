@@ -7,6 +7,8 @@ import { circleFeedSchema } from '@/lib/core/validation/social';
 import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import {
   assertGroupCapacity,
   assertUnlimitedCircleActor,
@@ -30,6 +32,7 @@ export async function createChatGroup(
   db: ChatGroupDb = defaultDb
 ): Promise<{ id: string }> {
   const parsed = createChatGroupSchema.parse(input);
+  assertAcceptableText(parsed.name);
 
   const memberIds = [...new Set(parsed.memberUserIds)].filter(
     (id) => id !== actorId
@@ -190,7 +193,13 @@ export async function listMyChatGroups(
             createdAt: chatGroupMessages.createdAt,
           })
           .from(chatGroupMessages)
-          .where(inArray(chatGroupMessages.groupId, groupIds))
+          .where(
+            and(
+              inArray(chatGroupMessages.groupId, groupIds),
+              // The preview must not surface a message the thread hides.
+              notBlockedWithSql(actorId, chatGroupMessages.senderId)
+            )
+          )
           .orderBy(
             chatGroupMessages.groupId,
             desc(chatGroupMessages.createdAt),

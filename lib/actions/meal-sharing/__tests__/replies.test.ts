@@ -84,6 +84,13 @@ vi.mock('@/lib/infra/db/client', () => ({
 vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
   canViewShareOwnedBy: mockCanViewShare,
 }));
+// Who the author is in a blocked relation with; empty unless a case says so.
+const { mockBlockedUserIds } = vi.hoisted(() => ({
+  mockBlockedUserIds: vi.fn(async (): Promise<Set<string>> => new Set()),
+}));
+vi.mock('@/lib/domain/social/moderation/blocks', () => ({
+  blockedUserIds: mockBlockedUserIds,
+}));
 
 import { createShareReplyAction } from '@/lib/actions/meal-sharing/replies';
 
@@ -152,7 +159,82 @@ describe('createShareReplyAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanViewShare.mockResolvedValue(true);
+    mockBlockedUserIds.mockResolvedValue(new Set());
     repliers([mockUser.id]);
+  });
+
+  it('rejects objectionable text with a 422 before the limiter or any read', async () => {
+    await expect(
+      createShareReplyAction({ shareId: SHARE_ID, body: 'fuck this' })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+
+    expect(mockAssertRateLimit).not.toHaveBeenCalled();
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('lets Vietnamese food talk through the filter', async () => {
+    lockShare();
+    insertReturning([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Bún bò với chả, ngon chết đi được',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    selectRows([]);
+
+    await expect(
+      createShareReplyAction({
+        shareId: SHARE_ID,
+        replyId: REPLY_ID,
+        body: 'Bún bò với chả, ngon chết đi được',
+      })
+    ).resolves.toMatchObject({ id: REPLY_ID });
+  });
+
+  it('404s a reply to a share whose owner is in a blocked relation (the gate refuses)', async () => {
+    lockShare();
+    mockCanViewShare.mockResolvedValueOnce(false);
+
+    await expect(
+      createShareReplyAction({ shareId: SHARE_ID, body: 'Ngon quá' })
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', status: 404 });
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('never notifies a prior replier in a blocked relation with the author', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    const BLOCKED = 'e4ccff33-d04f-4cc2-af01-affdf0724e55';
+    lockShare();
+    insertReturning([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Ngon quá',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    repliers([OWNER, BLOCKED, mockUser.id]);
+    selectRows([]);
+    mockBlockedUserIds.mockResolvedValueOnce(new Set([BLOCKED]));
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body: 'Ngon quá',
+    });
+
+    expect(mockBlockedUserIds).toHaveBeenCalledWith(mockUser.id, mockTx);
+    const inputs = mockNotify.mock.lastCall?.[1] as { recipientId: string }[];
+    expect(inputs.map((input) => input.recipientId)).toEqual([OWNER]);
+    // Dropped before the visibility re-check, not by it.
+    expect(mockCanViewShare).not.toHaveBeenCalledWith(
+      BLOCKED,
+      expect.anything(),
+      expect.anything()
+    );
   });
 
   it('blocks on the per-actor limit before locking or writing anything', async () => {
