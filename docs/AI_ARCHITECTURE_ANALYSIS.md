@@ -2,8 +2,8 @@
 
 An in-depth technical evaluation of Kallo's native AI provider pooling, multi-turn context retention, and zero-cost failover engine.
 
-**Related Specifications:** [`docs/AI_KEY_ROTATION_AND_CACHING.md`](file:///e:/Smolfish/nham1/Nham/docs/AI_KEY_ROTATION_AND_CACHING.md), [`docs/GOOGLE_CLOUD_RUN.md`](file:///e:/Smolfish/nham1/Nham/docs/GOOGLE_CLOUD_RUN.md)  
-**Implementation Details:** [`lib/ai/provider/pool/`](file:///e:/Smolfish/nham1/Nham/lib/ai/provider/pool), [`lib/ai/cache/chat-session.ts`](file:///e:/Smolfish/nham1/Nham/lib/ai/cache/chat-session.ts)  
+**Related Specifications:** [`docs/AI_KEY_ROTATION_AND_CACHING.md`](file:///e:/Smolfish/nham1/Nham/docs/AI_KEY_ROTATION_AND_CACHING.md), [`docs/GOOGLE_CLOUD_RUN.md`](file:///e:/Smolfish/nham1/Nham/docs/GOOGLE_CLOUD_RUN.md)
+**Implementation Details:** [`lib/ai/provider/pool/`](file:///e:/Smolfish/nham1/Nham/lib/ai/provider/pool), [`lib/ai/cache/chat-session.ts`](file:///e:/Smolfish/nham1/Nham/lib/ai/cache/chat-session.ts)
 **Verification Suite:** [`docs/superpowers/plans/2026-09-25-ai-key-rotation-test-plan.md`](file:///e:/Smolfish/nham1/Nham/docs/superpowers/plans/2026-09-25-ai-key-rotation-test-plan.md) (105 tests passing)
 
 ---
@@ -13,6 +13,7 @@ An in-depth technical evaluation of Kallo's native AI provider pooling, multi-tu
 Prior to this work, AI resilience relied on a single API key (`GEMINI_API_KEY`) and basic exponential backoff retry. During quota exhaustion (HTTP 429), requests slept for up to 4+ seconds or failed entirely. An early prototype on `origin/litellm-test` evaluated running an external **LiteLLM proxy sidecar container** to manage key rotation and external fallbacks.
 
 While LiteLLM proved the rotation concept, running a Python proxy sidecar introduced unacceptable trade-offs:
+
 - Additional cloud server and memory bills on Google Cloud Run.
 - Slower container cold-starts on scale-to-zero (`--min-instances=0`).
 - A 15–35 ms network loopback overhead per LLM call.
@@ -110,6 +111,7 @@ sequenceDiagram
 ```
 
 ### Key Technical Properties of This Flow:
+
 1. **Zero Exponential Delay on Key Failover**: Standard retry logic sleeps for $1000\text{ ms} \times 2^{\text{attempt}-1}$ to let a stressed endpoint recover. When an alternate key is healthy in the pool, sleeping burns user wall-clock time uselessly. The pool immediately returns Key 2 in $<1\text{ ms}$.
 2. **Deterministic Context Serialization**: Key 2 does not query Key 1's cache ID (which Google would reject across projects). Instead, Key 2 receives the exact serialized message sequence `[Turn 1 User, Turn 1 Assistant, Turn 2 User]`.
 3. **Automatic Recovery**: After 60,000 ms, Key 1 automatically transitions from `quarantined` back to `active` without polling or background timer threads.
@@ -118,25 +120,28 @@ sequenceDiagram
 
 ## 4. Comparative Analysis: In-Process vs. LiteLLM Proxy Sidecar
 
-| Evaluation Metric | LiteLLM Proxy Sidecar (`litellm-test`) | In-Process Engine (`lib/ai/provider/`) | Architectural Verdict |
-| :--- | :--- | :--- | :--- |
-| **Incremental Cloud Cost** | **+$10 to $35 / month** (Extra vCPU/RAM container allocations, optional Redis) | **$0.00 / month** (Runs inside existing container memory budget) | **Native Wins**: 100% cloud cost reduction. |
-| **Request Latency Overhead** | **+15 to 35 ms** (Local HTTP loopback, serialization, proxy routing) | **0 ms** (Direct in-memory function call) | **Native Wins**: Zero latency penalty. |
-| **Cold-Start Impact** | **Degraded** (Dual-container initialization slows Cloud Run boot) | **Instantaneous** (Preserves `--min-instances=0` scale-to-zero performance) | **Native Wins**: Optimal for serverless. |
-| **Failure Domains** | **Two processes** (If LiteLLM crashes or wedges, all AI routes fail) | **Single unified process** (Handled by standard Next.js error boundary) | **Native Wins**: Fewer points of failure. |
-| **Language & Tooling** | **Split** (Python 3.11, Docker Compose, YAML, Pip requirements) | **Unified** (100% TypeScript, Bun, Vitest, Biome) | **Native Wins**: Clean maintainability. |
-| **Context Retention Precision** | Dependent on LiteLLM's internal message-buffer re-mapping | Directly typed TypeScript `ChatMessage[]` with custom prompt formatting | **Native Wins**: Exact prompt control. |
-| **Test Execution Speed** | ~15–30s (Spins up Docker containers, tests network ports) | **2.8s** (Pure Vitest unit tests in memory) | **Native Wins**: Fast CI loop. |
+| Evaluation Metric                     | LiteLLM Proxy Sidecar (`litellm-test`)                                             | In-Process Engine (`lib/ai/provider/`)                                            | Architectural Verdict                             |
+| :------------------------------------ | :----------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :------------------------------------------------ |
+| **Incremental Cloud Cost**      | **+$10 to $35 / month** (Extra vCPU/RAM container allocations, optional Redis) | **$0.00 / month** (Runs inside existing container memory budget)              | **Native Wins**: 100% cloud cost reduction. |
+| **Request Latency Overhead**    | **+15 to 35 ms** (Local HTTP loopback, serialization, proxy routing)           | **0 ms** (Direct in-memory function call)                                     | **Native Wins**: Zero latency penalty.      |
+| **Cold-Start Impact**           | **Degraded** (Dual-container initialization slows Cloud Run boot)              | **Instantaneous** (Preserves `--min-instances=0` scale-to-zero performance) | **Native Wins**: Optimal for serverless.    |
+| **Failure Domains**             | **Two processes** (If LiteLLM crashes or wedges, all AI routes fail)           | **Single unified process** (Handled by standard Next.js error boundary)       | **Native Wins**: Fewer points of failure.   |
+| **Language & Tooling**          | **Split** (Python 3.11, Docker Compose, YAML, Pip requirements)                | **Unified** (100% TypeScript, Bun, Vitest, Biome)                             | **Native Wins**: Clean maintainability.     |
+| **Context Retention Precision** | Dependent on LiteLLM's internal message-buffer re-mapping                            | Directly typed TypeScript`ChatMessage[]` with custom prompt formatting            | **Native Wins**: Exact prompt control.      |
+| **Test Execution Speed**        | ~15–30s (Spins up Docker containers, tests network ports)                           | **2.8s** (Pure Vitest unit tests in memory)                                   | **Native Wins**: Fast CI loop.              |
 
 ---
 
 ## 5. Caching Mechanics & Economic Model
 
 ### The Cross-Project Cache Problem
+
 Google Gemini supports context caching (`cachedContents.create`). However, cache tokens are strictly scoped to the billing project and credentials that created them. If Key 1 (Project A) hits quota and traffic swaps to Key 2 (Project B), Project B cannot query or read Project A's cache token.
 
 ### The Dual-Layer Solution
+
 The new architecture solves this via a two-layer cache:
+
 1. **L1 — Canonical Application Session (`lib/ai/cache/chat-session.ts`)**:
    - Stores normalized messages in memory.
    - Independent of LLM vendors, API keys, or project IDs.
@@ -149,7 +154,9 @@ The new architecture solves this via a two-layer cache:
 
 Assuming `gemini-3.1-flash-lite` pricing (\$0.075 / 1M input tokens, \$0.30 / 1M output tokens, 75% prompt cache discount):
 
-$$\text{Savings Ratio} = 1 - \frac{\text{Cost}_{\text{cached}}}{\text{Cost}_{\text{naive}}}$$
+$$
+\text{Savings Ratio} = 1 - \frac{\text{Cost}_{\text{cached}}}{\text{Cost}_{\text{naive}}}
+$$
 
 ```
 Cost ($ per 1,000 sessions)
@@ -187,6 +194,7 @@ Managing multiple API keys expands the credential surface area. The architecture
 ```
 
 ### Production Key Rotation Lifecycle:
+
 1. **Secret Store**: GCP Secret Manager holds `kallo-prod-gemini-api-keys:latest` as a comma-separated string (`AIzaKey1,AIzaKey2,AIzaKey3`).
 2. **Secret Ingestion**: Cloud Run mounts the secret as `GEMINI_API_KEYS` inside the container environment.
 3. **Parse & Normalize**: `parseKeyList()` sanitizes whitespace, removes empty tokens, and deduplicates keys into the pool.
@@ -198,15 +206,19 @@ Managing multiple API keys expands the credential surface area. The architecture
 ## 7. Scalability & Distributed State Trade-Offs
 
 ### Single-Instance Memory vs. Distributed Redis
+
 In a multi-container Cloud Run environment (`--max-instances=20`), each container maintains its own in-process `KeyPool` instance.
 
 #### Why In-Process is Optimal for Kallo Today:
+
 1. **No Cold-Start Overhead**: Redis client connection pooling and network round-trips add 5–15 ms to cold starts.
 2. **Independent Failure Domains**: If Container A experiences a burst from User A and quarantines Key 1, Container B remains unaffected and can continue utilizing Key 1 for User B until Key 1 hits global quota.
 3. **Cost Savings**: Bypasses the need for Google Cloud Memorystore Redis (~$25–$35/month).
 
 #### When Would Redis Be Justified?
+
 A centralized Redis store (`Upstash` or `Memorystore`) should only be introduced if:
+
 - Production scales to $\ge 10$ concurrent Cloud Run instances simultaneously experiencing 429 quota exhaustion.
 - Cooldown states must be synchronized globally across instances to prevent multiple instances from hitting an already throttled key.
 
