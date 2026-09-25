@@ -159,6 +159,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `provider/` | the only folder allowed to touch an LLM SDK | ok |
+| `cost/` | the model rate card and `costUsd()` — tokens to dollars (`docs/AI_COST.md`) | ok |
 | `types/` | the shared vocabulary, split by stage | ok |
 | `cache/` | every pipeline cache in one place | ok |
 | `prompts/` | `text/` (the strings) vs `build/` (the builders) | ok |
