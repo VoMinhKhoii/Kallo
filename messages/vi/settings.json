@@ -122,7 +122,7 @@
   },
   "aiConsent": {
     "label": "Phân tích bữa ăn bằng AI",
-    "hint": "Gửi nội dung bạn nhập và ảnh nhãn bạn quét đến Google Gemini để ước tính dinh dưỡng. Khi tắt, việc ghi bữa ăn bằng AI và quét nhãn sẽ tạm dừng.",
+    "hint": "Gửi bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Google Gemini để ước tính dinh dưỡng. Khi tắt, việc ghi bữa ăn bằng AI và quét nhãn sẽ tạm dừng.",
     "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
   }
 }

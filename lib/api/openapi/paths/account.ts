@@ -99,7 +99,7 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       operationId: 'updateAiProcessingConsent',
       summary: 'Grant or withdraw consent to third-party AI processing',
       description:
-        'Meal descriptions and nutrition-label photos are sent to Google Gemini (Vertex AI) to estimate nutrition. `consented: true` records the consent (now); `false` withdraws it. While no consent is recorded, `POST /api/analyze-meal` and `POST /api/v1/nutrition-label/scan` answer 403 `ai_consent_required`, and ingredient search skips live embedding calls.',
+        'Meal descriptions, nutrition-label photos and ingredient search text are sent to Google Gemini (Vertex AI) to estimate nutrition. `consented: true` records the consent (now); `false` withdraws it. While no consent is recorded, `POST /api/analyze-meal` and `POST /api/v1/nutrition-label/scan` answer 403 `ai_consent_required`, and ingredient search skips live embedding calls.',
       tags: TAGS,
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(aiConsentSchema),

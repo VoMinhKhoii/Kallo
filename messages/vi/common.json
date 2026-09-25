@@ -26,7 +26,7 @@
   "notSignedIn": "Chưa đăng nhập.",
   "aiConsent": {
     "title": "Dùng AI để ước tính bữa ăn?",
-    "body": "Để ước tính dinh dưỡng, Kallo gửi mô tả bữa ăn bạn nhập — và ảnh nhãn dinh dưỡng bạn quét — đến Gemini AI của Google (Vertex AI trên Google Cloud).",
+    "body": "Để ước tính dinh dưỡng, Kallo gửi mô tả bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Gemini AI của Google (Vertex AI trên Google Cloud).",
     "training": "Google không dùng dữ liệu này để huấn luyện mô hình. Bạn có thể tắt bất cứ lúc nào trong Cài đặt.",
     "privacyLink": "Cách chúng tôi xử lý dữ liệu",
     "continue": "Tiếp tục",

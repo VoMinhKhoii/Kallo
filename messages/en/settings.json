@@ -122,7 +122,7 @@
   },
   "aiConsent": {
     "label": "AI meal analysis",
-    "hint": "Sends what you type and the label photos you scan to Google Gemini to estimate nutrition. While off, AI logging and label scanning stay paused.",
+    "hint": "Sends the meals you type, the label photos you scan and your ingredient searches to Google Gemini to estimate nutrition. While off, AI logging and label scanning stay paused.",
     "error": "Couldn’t update your AI preference. Please try again."
   }
 }

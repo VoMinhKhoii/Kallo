@@ -1508,7 +1508,7 @@
     "draftReplaced": "Draft replaced",
     "aiConsent": {
       "title": "Use AI to estimate your meals?",
-      "body": "To estimate nutrition, Kallo sends the meal descriptions you type — and the label photos you scan — to Google’s Gemini AI (Vertex AI on Google Cloud).",
+      "body": "To estimate nutrition, Kallo sends the meal descriptions you type, the label photos you scan and your ingredient searches to Google’s Gemini AI (Vertex AI on Google Cloud).",
       "training": "Google doesn’t use them to train its models. You can turn this off anytime in Settings.",
       "privacyLink": "How we handle your data",
       "continue": "Continue",
@@ -1862,7 +1862,7 @@
     },
     "aiConsent": {
       "label": "AI meal analysis",
-      "subline": "Sends meals and label photos to Google Gemini",
+      "subline": "Sends meals, label photos and searches to Google Gemini",
       "error": "Couldn’t update your AI preference. Please try again."
     }
   },
