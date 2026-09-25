@@ -92,7 +92,6 @@ const BODY_PARSED_ELSEWHERE: Record<string, { schema: string; in: string }> = {
  */
 const HAND_WRITTEN_BODIES = new Set([
   'POST /api/v1/chat-groups/{groupId}/messages',
-  'POST /api/v1/groups/friends/block',
   'DELETE /api/v1/groups/friends/remove',
   'POST /api/v1/groups/invite/accept',
   'POST /api/v1/groups/invites/accept',

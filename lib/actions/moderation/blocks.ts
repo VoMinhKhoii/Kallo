@@ -11,11 +11,18 @@
 // the same transaction, so direct chat, the friends feed and the friend list
 // close by construction. Unblocking never restores it — the pair are strangers
 // again and must re-invite to reconnect.
+//
+// It also DELETES every notification either person holds that the other one
+// acted in. Cleaning at the write keeps the activity list, its pagination and
+// the badge count on plain recipient-scoped reads: filtering at read time ran
+// after the page LIMIT (empty first pages), left the badge counting rows the
+// list hid, and could not scrub a grouped row's preview text written by the
+// blocked person. The whole row goes, not just the actor: its `data` preview
+// may be theirs. notify() refuses new rows between blocked people from then on.
 
-import { and, desc, eq } from 'drizzle-orm';
-import { unblockUserBodySchema } from '@/lib/api/contracts/social/moderation';
+import { and, arrayContains, desc, eq, or } from 'drizzle-orm';
+import { blockTargetBodySchema } from '@/lib/api/contracts/social/moderation';
 import { Errors } from '@/lib/core/errors/catalog';
-import { blockFriendSchema } from '@/lib/core/validation/social';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import {
   type PublicIdentity,
@@ -24,7 +31,12 @@ import {
 } from '@/lib/domain/social/identity/public-identity';
 import { lockPairSql } from '@/lib/domain/social/moderation/blocks';
 import { type AppDb, db as defaultDb } from '@/lib/infra/db/client';
-import { friendships, publicProfiles, userBlocks } from '@/lib/infra/db/schema';
+import {
+  friendships,
+  notifications,
+  publicProfiles,
+  userBlocks,
+} from '@/lib/infra/db/schema';
 
 export interface BlockedUser {
   profile: PublicIdentity;
@@ -37,13 +49,15 @@ export interface BlockedUser {
  * one transaction under the pair lock that acceptInvite also takes — so an
  * invite accepted concurrently can never re-create the friendship after the
  * block. Idempotent: blocking twice keeps the first row and its time.
+ * Notifications between the two are deleted in the same transaction (see the
+ * file header) and are not restored by unblocking.
  */
 export async function blockFriend(
   actorId: string,
   input: { targetUserId: string },
   db: AppDb = defaultDb
 ): Promise<{ status: 'blocked' }> {
-  const { targetUserId } = blockFriendSchema.parse(input);
+  const { targetUserId } = blockTargetBodySchema.parse(input);
   if (targetUserId === actorId) {
     throw Errors.validationFailed('Không thể chặn chính mình.');
   }
@@ -65,8 +79,25 @@ export async function blockFriend(
           eq(friendships.userHigh, userHigh)
         )
       );
+    await tx
+      .delete(notifications)
+      .where(
+        or(
+          sharedActivitySql(actorId, targetUserId),
+          sharedActivitySql(targetUserId, actorId)
+        )
+      );
     return { status: 'blocked' as const };
   });
+}
+
+/** `recipientId`'s notifications that `actorId` appears in — as the only
+ * actor or as one member of a grouped row. */
+function sharedActivitySql(recipientId: string, actorId: string) {
+  return and(
+    eq(notifications.recipientId, recipientId),
+    arrayContains(notifications.actorIds, [actorId])
+  );
 }
 
 /**
@@ -81,7 +112,7 @@ export async function unblockFriend(
   input: { targetUserId: string },
   db: AppDb = defaultDb
 ): Promise<{ unblocked: true }> {
-  const { targetUserId } = unblockUserBodySchema.parse(input);
+  const { targetUserId } = blockTargetBodySchema.parse(input);
   if (targetUserId === actorId) {
     throw Errors.validationFailed('Không thể bỏ chặn chính mình.');
   }

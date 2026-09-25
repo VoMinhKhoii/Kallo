@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { unblockFriend } from '@/lib/actions/moderation/blocks';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { unblockUserBodySchema } from '@/lib/api/contracts/social/moderation';
+import { blockTargetBodySchema } from '@/lib/api/contracts/social/moderation';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const actorId = await requireUserId();
     // Shared with block: one budget for toggling blocks.
     await assertRateLimit('friendBlock', { kind: 'user', value: actorId });
-    const body = unblockUserBodySchema.parse(await readJsonBody(request));
+    const body = blockTargetBodySchema.parse(await readJsonBody(request));
     const result = await unblockFriend(actorId, body);
     return NextResponse.json(result);
   } catch (error) {

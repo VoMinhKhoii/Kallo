@@ -1,6 +1,6 @@
 /**
- * Contract for the circle moderation surface: unblocking someone
- * (`POST /api/v1/groups/friends/unblock`) and reporting content
+ * Contract for the circle moderation surface: blocking and unblocking someone
+ * (`POST /api/v1/groups/friends/{block,unblock}`) and reporting content
  * (`POST /api/v1/reports`).
  *
  * Parsed by the route handlers and published through `fromZod` in the OpenAPI
@@ -35,8 +35,9 @@ export const REPORT_REASONS = [
 export type ReportTargetKind = (typeof REPORT_TARGET_KINDS)[number];
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
-/** Request body for `POST /api/v1/groups/friends/unblock`. */
-export const unblockUserBodySchema = z.object({
+/** Request body for both `POST /api/v1/groups/friends/block` and
+ * `POST /api/v1/groups/friends/unblock`: the person the caller acts on. */
+export const blockTargetBodySchema = z.object({
   targetUserId: uuidSchema,
 });
 
@@ -56,5 +57,5 @@ export const createReportBodySchema = z.object({
     .transform((note) => (note ? note : undefined)),
 });
 
-export type UnblockUserBody = z.infer<typeof unblockUserBodySchema>;
+export type BlockTargetBody = z.infer<typeof blockTargetBodySchema>;
 export type CreateReportBody = z.infer<typeof createReportBodySchema>;

@@ -1,6 +1,6 @@
 import {
+  blockTargetBodySchema,
   createReportBodySchema,
-  unblockUserBodySchema,
 } from '@/lib/api/contracts/social/moderation';
 import {
   authed,
@@ -22,7 +22,7 @@ export const MODERATION_PATHS: Record<string, PathItem> = {
       description:
         'Removes the block the caller placed on this person. Blocks are per person: if the other side also blocked the caller, that block stays in force. The connection ended when the block was placed and is not restored — the pair must re-invite each other to reconnect. 404 when the caller has not blocked this person, including when the caller is the one blocked, so the endpoint never reveals a block from the other side. Shares the `friendBlock` rate limit with blocking.',
       tags: TAGS,
-      body: fromZod(unblockUserBodySchema),
+      body: fromZod(blockTargetBodySchema),
       ok: {
         type: 'object',
         required: ['unblocked'],
