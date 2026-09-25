@@ -14,7 +14,10 @@
 import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
-import { exchangeAppleAuthorizationCode } from '@/lib/infra/apple-auth/apple-auth';
+import {
+  exchangeAppleAuthorizationCode,
+  revokeAppleRefreshToken,
+} from '@/lib/infra/apple-auth/apple-auth';
 import { readAppleAuthConfig } from '@/lib/infra/apple-auth/config';
 import { open, resolveSecretBoxKey, seal } from '@/lib/infra/crypto/secret-box';
 import {
@@ -23,6 +26,7 @@ import {
   db as appDb,
 } from '@/lib/infra/db/client';
 import { appleAuthTokens, appleTokenRevocations } from '@/lib/infra/db/schema';
+import { isForeignKeyViolation } from '@/lib/infra/db/sql-state';
 
 const ENCRYPTION_KEY_ENV = 'APPLE_TOKEN_ENCRYPTION_KEY';
 
@@ -54,7 +58,14 @@ export interface LinkAppleTokenInput {
   authorizationCode: string;
 }
 
-export type LinkAppleTokenOutcome = 'stored' | 'not_configured';
+/**
+ * `account_deleted`: the account was deleted mid-exchange; the fresh token was
+ * revoked at once (or queued for the retry worker) rather than stored.
+ */
+export type LinkAppleTokenOutcome =
+  | 'stored'
+  | 'not_configured'
+  | 'account_deleted';
 
 /**
  * Exchange the code and store the sealed refresh token (one row per user; a
@@ -96,12 +107,35 @@ export async function linkAppleAuthorizationCode(
     );
   }
   const ciphertext = seal(key, result.refreshToken, aadFor(input.userId));
+  try {
+    await storeLinkedToken(input.userId, ciphertext, database);
+  } catch (error) {
+    // The account was deleted while Apple was exchanging the code: the insert
+    // fails its FK to auth.users and the whole transaction rolls back. The
+    // code is already spent, so this token exists nowhere else — revoke it now.
+    if (!isForeignKeyViolation(error)) throw error;
+    await revokeOrphanedToken(
+      input.userId,
+      result.refreshToken,
+      ciphertext,
+      database
+    );
+    return 'account_deleted';
+  }
+  return 'stored';
+}
+
+async function storeLinkedToken(
+  userId: string,
+  ciphertext: string,
+  database: AppDb
+): Promise<void> {
   const now = new Date();
   await database.transaction(async (tx) => {
-    await lockAppleTokenForUser(tx, input.userId);
+    await lockAppleTokenForUser(tx, userId);
     await tx
       .insert(appleAuthTokens)
-      .values({ userId: input.userId, refreshTokenCiphertext: ciphertext })
+      .values({ userId, refreshTokenCiphertext: ciphertext })
       .onConflictDoUpdate({
         target: appleAuthTokens.userId,
         set: { refreshTokenCiphertext: ciphertext, updatedAt: now },
@@ -116,12 +150,42 @@ export async function linkAppleAuthorizationCode(
       .set({ refreshTokenCiphertext: ciphertext, nextAttemptAt: now })
       .where(
         and(
-          eq(appleTokenRevocations.userId, input.userId),
+          eq(appleTokenRevocations.userId, userId),
           eq(appleTokenRevocations.status, 'pending')
         )
       );
   });
-  return 'stored';
+}
+
+/**
+ * Revoke a token whose account is already gone. If Apple can't be reached,
+ * park it in the outbox (which has no FK, so it outlives the user) for the
+ * retry worker — unless a pending row already holds a token, which the lone
+ * pending slot cannot also carry; that rare case is logged loudly instead.
+ */
+async function revokeOrphanedToken(
+  userId: string,
+  refreshToken: string,
+  ciphertext: string,
+  database: AppDb
+): Promise<void> {
+  const revoked = await revokeAppleRefreshToken(refreshToken);
+  if (revoked.ok) return;
+  const rows = await database
+    .insert(appleTokenRevocations)
+    .values({ userId, refreshTokenCiphertext: ciphertext })
+    .onConflictDoUpdate({
+      target: appleTokenRevocations.userId,
+      targetWhere: sql`status = 'pending'`,
+      set: { refreshTokenCiphertext: ciphertext, nextAttemptAt: new Date() },
+      setWhere: sql`${appleTokenRevocations.refreshTokenCiphertext} is null`,
+    })
+    .returning({ id: appleTokenRevocations.id });
+  if (rows.length === 0) {
+    console.error(
+      `[apple-sign-in] could not queue an orphaned token for revocation (${revoked.reason}); a pending revocation already holds one`
+    );
+  }
 }
 
 /** The sealed token, for the revocation outbox. `null` = never linked. */

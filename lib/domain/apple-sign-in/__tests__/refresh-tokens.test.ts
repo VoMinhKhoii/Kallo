@@ -1,15 +1,17 @@
 import { randomBytes } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockExchange, mockReadConfig } = vi.hoisted(() => ({
+const { mockExchange, mockReadConfig, mockRevoke } = vi.hoisted(() => ({
   mockExchange: vi.fn(),
   mockReadConfig: vi.fn(),
+  mockRevoke: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 vi.mock('@/lib/infra/apple-auth/apple-auth', () => ({
   exchangeAppleAuthorizationCode: mockExchange,
+  revokeAppleRefreshToken: mockRevoke,
 }));
 vi.mock('@/lib/infra/apple-auth/config', () => ({
   readAppleAuthConfig: mockReadConfig,
@@ -173,6 +175,86 @@ describe('linkAppleAuthorizationCode', () => {
       status: 409,
     });
     expect(insert).not.toHaveBeenCalled();
+  });
+});
+
+// Codex (#391): the account can be deleted while Apple is still exchanging the
+// single-use code. The token insert then fails its FK to auth.users and the
+// transaction rolls back — that token must be revoked, never silently lost.
+describe('linkAppleAuthorizationCode when the account was deleted mid-exchange', () => {
+  /** The FK violation as it actually arrives: Drizzle wraps the driver error. */
+  const fkViolation = Object.assign(new Error('insert failed'), {
+    cause: Object.assign(new Error('violates foreign key'), { code: '23503' }),
+  });
+
+  function deletedAccountDb() {
+    const returning = vi.fn().mockResolvedValue([{ id: 'rev-9' }]);
+    const onConflictDoUpdate = vi.fn().mockReturnValue({ returning });
+    const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
+    const insert = vi.fn().mockReturnValue({ values });
+    const transaction = vi.fn().mockRejectedValue(fkViolation);
+    return {
+      db: { transaction, insert } as never,
+      insert,
+      values,
+      onConflictDoUpdate,
+      returning,
+    };
+  }
+
+  beforeEach(() => {
+    mockExchange.mockResolvedValue({
+      ok: true,
+      refreshToken: 'rt-orphan',
+      subject: '001.apple',
+    });
+  });
+
+  it('revokes the fresh token at once and stores nothing', async () => {
+    mockRevoke.mockResolvedValue({ ok: true });
+    const { db, insert } = deletedAccountDb();
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe(
+      'account_deleted'
+    );
+    expect(mockRevoke).toHaveBeenCalledWith('rt-orphan');
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('parks the token in the outbox when Apple cannot be reached', async () => {
+    mockRevoke.mockResolvedValue({ ok: false, reason: 'timeout' });
+    const { db, values, onConflictDoUpdate } = deletedAccountDb();
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe(
+      'account_deleted'
+    );
+    const row = values.mock.calls[0]?.[0];
+    expect(row.userId).toBe(USER_ID);
+    expect(openAppleRefreshToken(USER_ID, row.refreshTokenCiphertext)).toBe(
+      'rt-orphan'
+    );
+    // Only fills an EMPTY pending row: never overwrites a token already queued.
+    expect(onConflictDoUpdate.mock.calls[0]?.[0].setWhere).toBeDefined();
+  });
+
+  it('logs loudly when the pending slot already holds another token', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockRevoke.mockResolvedValue({ ok: false, reason: 'upstream_error' });
+    const { db, returning } = deletedAccountDb();
+    returning.mockResolvedValue([]);
+    await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe(
+      'account_deleted'
+    );
+    expect(error).toHaveBeenCalledOnce();
+  });
+
+  it('rethrows any failure other than the missing account', async () => {
+    const { db } = deletedAccountDb();
+    (db as { transaction: ReturnType<typeof vi.fn> }).transaction = vi
+      .fn()
+      .mockRejectedValue(new Error('db_down'));
+    await expect(linkAppleAuthorizationCode(INPUT, db)).rejects.toThrow(
+      'db_down'
+    );
+    expect(mockRevoke).not.toHaveBeenCalled();
   });
 });
 

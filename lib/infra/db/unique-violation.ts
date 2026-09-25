@@ -1,35 +1,11 @@
 import { Errors } from '@/lib/core/errors/catalog';
+import { findSqlState, SQL_STATE } from '@/lib/infra/db/sql-state';
 
 /**
- * Postgres unique-violation detection, shaped for how errors actually reach us.
- *
- * postgres-js throws a `PostgresError` carrying the SQLSTATE in `code` and the
- * violated constraint in `constraint_name`. Drizzle (0.44+) catches that and
- * rethrows a `DrizzleQueryError` whose `code` is undefined, with the original
- * error on `cause`. A bare `error.code === '23505'` check therefore silently
- * never matches in production, so the violation falls through to the generic
- * retryable 500. This walks the `cause` chain instead.
+ * Postgres unique-violation detection. Matching walks Drizzle's `cause` chain
+ * (see `sql-state.ts`): a bare `error.code === '23505'` check never matches in
+ * production, so the violation would fall through to the generic retryable 500.
  */
-
-const UNIQUE_VIOLATION = '23505';
-const MAX_CAUSE_DEPTH = 5;
-
-interface PgErrorLike {
-  code?: unknown;
-  constraint_name?: unknown;
-  cause?: unknown;
-}
-
-function findUniqueViolation(error: unknown): PgErrorLike | null {
-  let current: unknown = error;
-  for (let depth = 0; depth < MAX_CAUSE_DEPTH; depth++) {
-    if (typeof current !== 'object' || current === null) return null;
-    const candidate = current as PgErrorLike;
-    if (candidate.code === UNIQUE_VIOLATION) return candidate;
-    current = candidate.cause;
-  }
-  return null;
-}
 
 /**
  * True when `error` (or anything on its `cause` chain) is a Postgres 23505.
@@ -41,7 +17,7 @@ export function isUniqueViolation(
   error: unknown,
   constraint?: string
 ): boolean {
-  const violation = findUniqueViolation(error);
+  const violation = findSqlState(error, SQL_STATE.uniqueViolation);
   if (!violation) return false;
   if (!constraint || typeof violation.constraint_name !== 'string') return true;
   return violation.constraint_name === constraint;
