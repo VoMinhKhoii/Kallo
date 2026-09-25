@@ -20,9 +20,51 @@ Package _monthlyAt(double price, {String currency = 'USD'}) => Package(
 );
 
 void main() {
+  IntroOffer? offerFor(Package plan, {bool trialActive = false}) => introOffer(
+    plan: plan,
+    trialActive: trialActive,
+    eligibleProductIds: {plan.storeProduct.identifier},
+  );
+
   test('a free introductory period is measured in days', () {
-    expect(freeTrialDays(annualPackage), 7);
-    expect(freeTrialDays(monthlyPackage), 0);
+    expect(offerFor(annualPackage), isA<FreeTrial>());
+    expect(offerFor(annualPackage)!.days, 7);
+    expect(offerFor(monthlyPackage), isNull);
+  });
+
+  test('a paid first week is an intro offer, not a free trial', () {
+    for (final plan in [annualPaidWeekPackage, monthlyPaidWeekPackage]) {
+      final offer = offerFor(plan);
+      expect(offer, isA<PaidIntro>());
+      expect(offer!.days, 7);
+      expect((offer as PaidIntro).price, r'$0.99');
+    }
+    // A free introductory period is not a paid one.
+    expect(offerFor(annualPackage), isNot(isA<PaidIntro>()));
+    expect(offerFor(monthlyPackage), isNull);
+  });
+
+  test('the paid week does not wait on an app-level trial', () {
+    expect(
+      offerFor(annualPaidWeekPackage, trialActive: true),
+      isA<PaidIntro>(),
+    );
+  });
+
+  test('a customer who used their paid week is offered the full price', () {
+    expect(
+      introOffer(
+        plan: annualPaidWeekPackage,
+        trialActive: false,
+        eligibleProductIds: const {},
+      ),
+      isNull,
+    );
+  });
+
+  test('the shipped prices save 70% (USD) and 30% (VND) a year', () {
+    expect(savePercent(annual: 34.99, monthlyYear: 8.99 * 12), 70);
+    expect(savePercent(annual: 499000, monthlyYear: 59000 * 12), 30);
   });
 
   test('the saving is measured against twelve monthly payments', () {
@@ -102,11 +144,12 @@ void main() {
       ),
     ]) {
       expect(
-        offersTrial(
-          plan: plan,
-          trialActive: active,
-          eligibleProductIds: eligible,
-        ),
+        introOffer(
+              plan: plan,
+              trialActive: active,
+              eligibleProductIds: eligible,
+            )
+            is FreeTrial,
         promised,
         reason: why,
       );

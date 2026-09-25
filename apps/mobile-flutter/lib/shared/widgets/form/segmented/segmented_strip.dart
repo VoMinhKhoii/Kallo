@@ -5,11 +5,36 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../option_strip.dart' show OptionStripItem;
 import 'segmented_thumb.dart';
 
-/// The one mode-switch primitive — every segmented control draws through it,
-/// via [OptionStrip.segmented] or directly.
+/// A single segment of a [SegmentedStrip]: the value it reports, its label,
+/// and an optional Lucide glyph drawn inline before the label.
+class OptionStripItem {
+  final String value;
+  final String label;
+  final IconData? icon;
+
+  /// Drawn after the label — the Premium chip on a gated segment.
+  final Widget? badge;
+  const OptionStripItem({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.badge,
+  });
+}
+
+/// The one mode-switch primitive — every segmented control draws through it.
+///
+/// **Not `CupertinoSlidingSegmentedControl`** (`kallo-design/mobile.md`,
+/// *Cupertino wherever it exists*). The SDK control draws a rounded
+/// superellipse with a FIXED 9pt track radius and 7pt thumb radius
+/// (`_kCornerRadius` / `_kThumbRadius`, `cupertino/sliding_segmented_control.dart`
+/// lines 28 and 31, Flutter 3.44) — the iOS 13–18 shape. Both are private and
+/// the widget takes no shape or radius, so it cannot draw iOS 26's capsule,
+/// the shape the app's 52pt fields and full-width buttons already share.
+/// Retire this primitive when the SDK control draws the capsule or exposes
+/// its radius.
 ///
 /// ONE documented exception, and the bar for adding another is this high: the
 /// paywall's `PlanToggle` has a permanently-gold half, which this model cannot
@@ -110,6 +135,9 @@ class _SegmentedStripState extends State<SegmentedStrip> {
     ),
   );
 
+  /// A glyph inside a segment's text run (`OptionStripItem.icon`).
+  static const double _inlineGlyph = 16;
+
   /// Ink on the active segment, muted beside it — colour marks the selection,
   /// never weight. Only the colour animates, so the paragraph repaints rather
   /// than re-measuring; [FittedBox] shrinks the longest label at the top of
@@ -122,11 +150,30 @@ class _SegmentedStripState extends State<SegmentedStrip> {
       builder:
           (context, color, child) => FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(
-              widget.options[i].label,
-              maxLines: 1,
-              softWrap: false,
-              style: dashBody(color: color ?? kInkMuted),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // An item's glyph rides inside the text run, so it takes the
+                // label's colour and the inline 16 — not a 24pt tier glyph.
+                if (widget.options[i].icon != null) ...[
+                  Icon(
+                    widget.options[i].icon,
+                    size: _inlineGlyph,
+                    color: color ?? kInkMuted,
+                  ),
+                  const SizedBox(width: KalloSpacing.sp1 + 2),
+                ],
+                Text(
+                  widget.options[i].label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: dashBody(color: color ?? kInkMuted),
+                ),
+                if (widget.options[i].badge != null) ...[
+                  const SizedBox(width: KalloSpacing.sp2),
+                  widget.options[i].badge!,
+                ],
+              ],
             ),
           ),
     ),

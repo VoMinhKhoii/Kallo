@@ -10,7 +10,7 @@ import '../../../theme/kallo_theme.dart';
 /// generalized (native pass, 2026-08-31): optional leading 24pt glyph, Body
 /// title in REGULAR weight (Threads and the Claude app set theirs regular —
 /// medium made every row shout), Meta subline below, a quiet Meta value on
-/// the right, optional 18pt chevron. 52pt minimum single-line, 60pt with a
+/// the right, optional 18pt chevron. 52pt minimum single-line, 64pt with a
 /// subline; the whole row is the tap target.
 ///
 /// On the white card the press affordance is the warm wash (the canvas-side
@@ -80,7 +80,7 @@ class _ListRowState extends State<ListRow> {
     final row = AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeInOut,
-      constraints: BoxConstraints(minHeight: widget.subline != null ? 60 : 52),
+      constraints: BoxConstraints(minHeight: widget.subline != null ? 64 : 52),
       color: _pressed ? fill : Colors.transparent,
       child: Row(
         children: [
@@ -96,21 +96,31 @@ class _ListRowState extends State<ListRow> {
             const SizedBox(width: KalloSpacing.sp3),
           ],
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.label, style: dashBody(color: inkColor)),
-                if (widget.subline != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.subline!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashMeta(),
-                  ),
+            child: Padding(
+              // Only bites when the subline wraps: a two-line block keeps
+              // the same 12pt from the row's edges the one-line rows get
+              // from the minimum height.
+              padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.label, style: dashBody(color: inkColor)),
+                  if (widget.subline != null) ...[
+                    // One step more air than the 2pt it had: two stacked lines
+                    // read as one block at 2, as a label and its value at 4.
+                    const SizedBox(height: KalloSpacing.sp1),
+                    Text(
+                      widget.subline!,
+                      // A summary may take two lines ("Dầu vừa · Cơm vừa · …");
+                      // a one-line ellipsis cut exactly the part that differed.
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: dashMeta(),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           _trailing(),

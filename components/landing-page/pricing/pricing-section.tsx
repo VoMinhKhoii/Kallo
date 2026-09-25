@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { PaywallStatus } from '@/components/billing/activation/paywall-status';
+import { usePricingCheckout } from './checkout/checkout-context';
 import { PlanCard } from './plan-card';
 import { PLAN_IDS } from './plans';
 
@@ -11,17 +13,17 @@ import { PLAN_IDS } from './plans';
  *
  * One word and two cards — Lifetime is held back, see `PLAN_IDS`.
  *
- * The monthly/yearly switch and the "save N%" badge beside the price both live
- * in `premium-price.tsx`, which owns the period state — the section itself
- * holds none. Both periods quote a per-month rate so the switch compares like
- * with like, and the badge's percentage is computed per locale from the
- * `amountMonthly`/`amountYearly` messages rather than authored: the annual
- * discount is 32% in đồng and 40% in dollars, so a single hardcoded number
- * would be wrong in one of the two locales.
+ * The monthly/yearly switch lives on the Premium card, which owns the period
+ * state — the section itself holds none. The same section is the landing
+ * band and the whole of /pricing; on /pricing a `PricingCheckoutProvider`
+ * turns the buttons into the purchase flow for a signed-in visitor, and once
+ * a checkout completes the cards give way to its status (activated, or still
+ * waiting on the store).
  */
 export function PricingSection() {
   const t = useTranslations('landing.pricing');
   const { openDialog } = useAuthDialog();
+  const { status } = usePricingCheckout();
   const reduced = useReducedMotion() ?? false;
 
   const reveal = reduced
@@ -64,25 +66,39 @@ export function PricingSection() {
             across the full width would each be half a screen wide — the cap
             holds them at the ~26rem they were at three across, so removing a
             plan changes the count and nothing else. */}
-        <motion.div
-          {...reveal}
-          className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto"
-        >
-          {PLAN_IDS.map((plan) => (
-            <PlanCard
-              key={plan}
-              plan={plan}
-              onSelect={() => openDialog('sign-up')}
+        {status ? (
+          <div className="mx-auto mt-10 max-w-md rounded-3xl border border-kallo-border/60 bg-white shadow-sm md:mt-12">
+            <PaywallStatus
+              activationPending={status.activationPending}
+              checkingActivation={status.checkingActivation}
+              onAction={status.onAction}
             />
-          ))}
-        </motion.div>
+          </div>
+        ) : (
+          <motion.div
+            {...reveal}
+            className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto"
+          >
+            {PLAN_IDS.map((plan) => (
+              <PlanCard
+                key={plan}
+                plan={plan}
+                onSignUp={() => openDialog('sign-up')}
+              />
+            ))}
+          </motion.div>
+        )}
 
-        <motion.p
-          {...reveal}
-          className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
-        >
-          {t('betaNote')}
-        </motion.p>
+        {/* Not beside a checkout status: "free while in beta" would
+            contradict the charge the user just made. */}
+        {!status && (
+          <motion.p
+            {...reveal}
+            className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
+          >
+            {t('betaNote')}
+          </motion.p>
+        )}
       </div>
     </section>
   );

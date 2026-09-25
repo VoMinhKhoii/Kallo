@@ -516,9 +516,9 @@
       "candidatesError": "Couldn't load food ideas right now."
     },
     "locked": {
-      "title": "Micronutrients are a Premium view",
-      "description": "Calories and macros stay free. Go Premium to see vitamins, minerals and fiber tracked against your targets.",
-      "cta": "See Premium"
+      "title": "Micronutrients are in Premium plan",
+      "description": "Vitamins, minerals and fiber, tracked against your targets.",
+      "cta": "Upgrade"
     },
     "empty": {
       "title": "No meals in this range",
@@ -1752,7 +1752,6 @@
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",
-    "goals": "Targets",
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",
@@ -1768,25 +1767,8 @@
       "profile": "Profile",
       "navigationLabel": "Settings navigation"
     },
-    "regionalPanel": {
-      "description": "AI uses your country info to understand food culture and locally available ingredients.",
-      "searchCountryLabel": "Search country",
-      "clearLabel": "Clear selection"
-    },
-    "profilePage": {
-      "title": "Profile",
-      "description": "Manage your body metrics, regional preferences, and cooking habits.",
-      "emptyTitle": "No profile found",
-      "emptyDescription": "You need to complete the initial setup before editing your settings.",
-      "startSetup": "Start setup"
-    },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
-      "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
-      "invalidError": "Some entries are invalid — please review your body metrics.",
-      "retry": "Try again",
       "incompleteHint": "Nothing saved yet — fill in weight, height, and age first."
     },
     "rows": {
@@ -1794,7 +1776,11 @@
       "cooking": "Cooking habits",
       "region": "Region & language",
       "notSet": "Not set",
-      "pacePerWeek": "{pace} {unit}/wk"
+      "pacePerWeek": "{pace} {unit}/wk",
+      "aboutYou": "Body metrics",
+      "needsBodyFirst": "Add your body metrics first",
+      "cookingSummary": "{oil} oil · {rice} rice · {protein} protein · {broth}",
+      "cookingDefault": "Using medium defaults"
     },
     "feedback": {
       "rowLabel": "Send feedback",
@@ -1845,7 +1831,8 @@
       "nameSaved": "Name updated",
       "nameError": "Couldn't update your name",
       "nameRequired": "Please enter a name.",
-      "linkWarning": "Changing your name updates your invite link — old links stop working."
+      "linkWarning": "Changing your name updates your invite link — old links stop working.",
+      "avatarEdit": "Edit photo"
     },
     "subscription": {
       "groupLabel": "Subscription",
@@ -1859,6 +1846,9 @@
       "statusLifetime": "Premium · lifetime",
       "manage": "Manage subscription",
       "restore": "Restore purchases"
+    },
+    "groups": {
+      "nutritionProfile": "Nutrition profile"
     }
   },
   "errors": {
@@ -1895,7 +1885,6 @@
     "upsellEyebrow": "Kallo Pro",
     "upsellTitle": "Describe a meal, know the macros",
     "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from your own words, in Vietnamese or English.",
-    "expiredEyebrow": "Your free trial has ended",
     "expiredTitle": "Keep your AI analysis",
     "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
     "trialCountdown": "{days} days left in your free trial",
@@ -1905,7 +1894,6 @@
     "feature3": "Fast meal logging within fair-use limits",
     "purchase": "Start Premium",
     "purchaseTrial": "Subscribe now",
-    "restore": "Restore purchases",
     "manageActive": "Manage subscription",
     "alreadyPremiumTitle": "You're on Premium",
     "alreadyPremiumBody": "AI meal analysis is unlocked. Manage your plan in the store any time.",
@@ -1947,12 +1935,20 @@
     "compareCircleFree": "2 / 10",
     "compareUnlimited": "Unlimited",
     "startTrialDays": "Start {days}-day trial",
+    "startIntro": "Try {days} days for {price}",
+    "renewYearlyIntro": "{price}/year (≈{perMonth}/mo) from {date}, after {days} days at {intro}.",
+    "renewMonthlyIntro": "{price}/month from {date}, after {days} days at {intro}.",
     "startMonthly": "Start Premium — {price}/month",
     "saveChip": "Save {percent}%",
     "renewYearly": "Auto-renews at {price}/year (≈{perMonth}/mo) from {date} until cancelled.",
     "renewMonthly": "Auto-renews at {price}/month until cancelled.",
     "renewYearlyNow": "Auto-renews at {price}/year (≈{perMonth}/mo) until cancelled.",
     "renewMonthlyFrom": "Auto-renews at {price}/month from {date} until cancelled.",
-    "consent": "By continuing you agree to our Terms and Privacy Policy, and acknowledge it auto-renews until cancelled."
+    "consent": "By continuing you agree to our {restore}, {terms} and {privacy}, and acknowledge it auto-renews until cancelled.",
+    "consentRestore": "Restore",
+    "consentTerms": "Terms",
+    "consentPrivacy": "Privacy Policy",
+    "premiumChip": "Premium",
+    "premiumFeature": "Premium feature"
   }
 }

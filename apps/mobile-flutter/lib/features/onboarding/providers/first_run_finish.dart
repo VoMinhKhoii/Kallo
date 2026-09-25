@@ -11,9 +11,9 @@ import '../../../services/billing/entitlements_provider.dart';
 import '../../../shared/logic/display_format.dart';
 import '../../circle/data/circle_providers.dart';
 import '../../dashboard/data/dashboard_providers.dart';
-import '../../logging/data/logging_providers.dart';
 import 'onboarding_draft_providers.dart';
 import 'onboarding_providers.dart';
+import 'profile_refresh.dart';
 
 /// How long the finish waits on either network read before giving up on it.
 /// Neither is allowed to hold the first run open: the minimum window carries
@@ -41,9 +41,7 @@ class FirstRunFinishController {
 
     // Drop any stale instances so the dashboard/logging targets refetch fresh
     // (the per-screen saves only refreshed the profile).
-    _ref.invalidate(dashboardBundleProvider);
-    _ref.invalidate(loggingProfileProvider);
-    _ref.invalidate(profileProvider);
+    refreshProfileReaders(_ref);
 
     final userId = _ref.read(currentSessionProvider)?.user.id;
     // Both reads start before either is awaited: they are independent, and the

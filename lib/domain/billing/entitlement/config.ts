@@ -4,7 +4,9 @@ import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 // can tune the launch window, trial length, and enforcement kill-switch
 // without a deploy.
 
-const DEFAULT_TRIAL_DAYS = 7;
+// No free trial: the only trial is the paid first week sold by the stores
+// and Paddle. TRIAL_DAYS can still grant an app-level free window.
+const DEFAULT_TRIAL_DAYS = 0;
 
 export interface BillingConfig {
   // Start of the app-level trial window for pre-launch accounts. When null
@@ -24,7 +26,7 @@ function readTrialDays(): number {
   const raw = process.env.TRIAL_DAYS;
   if (raw == null || raw.trim() === '') return DEFAULT_TRIAL_DAYS;
   const parsed = Number(raw);
-  if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  if (Number.isInteger(parsed) && parsed >= 0) return parsed;
   return DEFAULT_TRIAL_DAYS;
 }
 

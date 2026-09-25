@@ -51,6 +51,42 @@ int? _int(Map<String, dynamic>? map, String key) {
   return null;
 }
 
+/// Which of the four cooking answers [profile] actually stores — a value
+/// that parses, not a neutral middle filled in for it — in the cooking
+/// step's order: oil, rice, protein, broth. Legacy profiles can hold some
+/// and not others (protein and broth arrived later).
+List<bool> storedCookingAnswers(ProfileRow? profile) => [
+  tryParseOilUsage(profile?.oilUsage) != null,
+  tryParseRicePortion(profile?.defaultRicePortion) != null,
+  tryParseProteinPortion(profile?.defaultProteinPortion) != null,
+  tryParseBrothConsumption(profile?.brothConsumption) != null,
+];
+
+/// The cooking habits, per field: profile → draft → the neutral middle. Always
+/// fully populated. Its own seam because the Settings root summarises these
+/// four answers without seeding a whole wizard.
+CookingHabits cookingHabitsFrom(
+  ProfileRow? profile, [
+  Map<String, dynamic>? step3,
+]) => CookingHabits(
+  oilUsage:
+      tryParseOilUsage(profile?.oilUsage) ??
+      tryParseOilUsage(_str(step3, 'oilUsage')) ??
+      kNeutralCookingDefaults.oilUsage,
+  defaultRicePortion:
+      tryParseRicePortion(profile?.defaultRicePortion) ??
+      tryParseRicePortion(_str(step3, 'defaultRicePortion')) ??
+      kNeutralCookingDefaults.defaultRicePortion,
+  defaultProteinPortion:
+      tryParseProteinPortion(profile?.defaultProteinPortion) ??
+      tryParseProteinPortion(_str(step3, 'defaultProteinPortion')) ??
+      kNeutralCookingDefaults.defaultProteinPortion,
+  brothConsumption:
+      tryParseBrothConsumption(profile?.brothConsumption) ??
+      tryParseBrothConsumption(_str(step3, 'brothConsumption')) ??
+      kNeutralCookingDefaults.brothConsumption,
+);
+
 /// Resolve every screen's opening answer. [deviceRegion] / [deviceLanguage]
 /// are passed in rather than read here so the merge stays pure.
 ({OnboardingAnswers answers, OnboardingDeviceHints device})
@@ -119,24 +155,7 @@ buildOnboardingAnswers({
         WizardDefaults.deficitOverride,
     // Always fully populated (neutral middles where nothing is saved) so
     // screen 5 opens pre-answered.
-    cooking: CookingHabits(
-      oilUsage:
-          tryParseOilUsage(profile?.oilUsage) ??
-          tryParseOilUsage(_str(step3, 'oilUsage')) ??
-          kNeutralCookingDefaults.oilUsage,
-      defaultRicePortion:
-          tryParseRicePortion(profile?.defaultRicePortion) ??
-          tryParseRicePortion(_str(step3, 'defaultRicePortion')) ??
-          kNeutralCookingDefaults.defaultRicePortion,
-      defaultProteinPortion:
-          tryParseProteinPortion(profile?.defaultProteinPortion) ??
-          tryParseProteinPortion(_str(step3, 'defaultProteinPortion')) ??
-          kNeutralCookingDefaults.defaultProteinPortion,
-      brothConsumption:
-          tryParseBrothConsumption(profile?.brothConsumption) ??
-          tryParseBrothConsumption(_str(step3, 'brothConsumption')) ??
-          kNeutralCookingDefaults.brothConsumption,
-    ),
+    cooking: cookingHabitsFrom(profile, step3),
   );
 
   answers.goalChosenByUser = savedGoal != null;

@@ -125,7 +125,6 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
       <EntitlementLifecycleSync userId={user.id} />
       <PremiumGuardProvider
         userId={user.id}
-        email={user.email ?? null}
         enforcementEnabled={enforcementEnabled}
       >
         {children}

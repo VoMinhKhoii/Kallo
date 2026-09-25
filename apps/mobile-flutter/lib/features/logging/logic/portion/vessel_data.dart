@@ -12,9 +12,7 @@
 library;
 
 import '../../../../models/nutrition/vessel.dart';
-
-/// Directory the silhouettes are bundled under (mirrors the web's `/portions`).
-const String portionAssetDir = 'assets/portions';
+import '../../../../shared/data/portion_assets.dart';
 
 class VesselAsset {
   final String file;

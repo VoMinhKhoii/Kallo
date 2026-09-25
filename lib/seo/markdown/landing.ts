@@ -54,7 +54,14 @@ export async function renderLandingMarkdown(locale: Locale): Promise<string> {
   lines.push('', `## ${t('pricing.title')}`, '');
   lines.push(
     `- **${t('pricing.plans.free.name')}** (${t('pricing.plans.free.price')}) — ${t('pricing.plans.free.tagline')}. ${t('pricing.plans.free.fineprint')}`,
-    `- **${t('pricing.plans.premium.name')}** (${t('pricing.plans.premium.priceMonthly')}/mo, or ${t('pricing.plans.premium.priceYearly')}/mo billed yearly) — ${t('pricing.plans.premium.tagline')}. ${t('pricing.plans.premium.fineprintYearly')}`,
+    `- **${t('pricing.plans.premium.name')}** (${t('pricing.plans.premium.priceMonthly')}/mo, or ${t('pricing.plans.premium.priceYearly')}/mo billed yearly) — ${t('pricing.plans.premium.tagline')}. ${t(
+      'pricing.plans.premium.fineprintYearly',
+      {
+        intro: t('pricing.plans.premium.introPrice'),
+        days: Number(t.raw('pricing.plans.premium.introDays')),
+        price: t('pricing.plans.premium.billedYearly'),
+      }
+    )}`,
     `- **${t('pricing.plans.lifetime.name')}** (${t('pricing.plans.lifetime.price')}) — ${t('pricing.plans.lifetime.tagline')}. ${t('pricing.plans.lifetime.fineprint')}`,
     '',
     t('pricing.betaNote'),

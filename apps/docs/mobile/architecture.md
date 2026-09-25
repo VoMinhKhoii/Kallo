@@ -108,7 +108,12 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
   a picker can't safely render, so both clients inherit one guarantee — the Dart parser's
   own checks are defense in depth for rows written before that guard existed.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows. Both clients send `range: 'auto'` and the SERVER picks the opening window (`lib/domain/nutrition/pattern/summary.ts`) — it is `7d` for everyone since 2026-09-10, where it used to promote heavy loggers to `30d`.
-- **settings** — two-level nav → profile form (body metrics, cooking, regional).
+- **settings** — two-level nav. The root's "Hồ sơ dinh dưỡng" rows ARE the onboarding steps
+  (body metrics, goal & pace, cooking, region & language), each with a summary subline
+  (`settings/logic/profile_summaries.dart`); a row opens that step's own body, prefilled, in
+  `SettingsStepPage` and saves through the per-step `POST /api/v1/onboarding/screen`
+  (`settings/data/step_save.dart`), which accepts a partial profile. Profile, delete account and
+  feedback are the other sub-pages; every one wears `InlineNavBar`.
 
 ## Cross-cutting design
 

@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/nutrition/nutrition.dart';
-import '../../../../shared/widgets/form/option_strip.dart';
+import '../../../../shared/widgets/form/segmented/segmented_strip.dart';
 
 // 7 days / 30 days / 90 days — the timeframe toggle on the page-title row.
 //
@@ -17,7 +17,7 @@ import '../../../../shared/widgets/form/option_strip.dart';
 // `NutritionRangeInput` so already-shipped builds that still request it work.
 const List<String> _ranges = ['7d', '30d', '90d'];
 
-/// The page's timeframe control: the shared [OptionStrip.segmented] skin at the
+/// The page's timeframe control: the shared [SegmentedStrip] at the
 /// artboard's 216pt width, sitting on the title row beside "Nutrition".
 class NutritionRangeSelector extends StatelessWidget {
   const NutritionRangeSelector({
@@ -46,7 +46,7 @@ class NutritionRangeSelector extends StatelessWidget {
         ignoring: disabled,
         child: SizedBox(
           width: 216,
-          child: OptionStrip.segmented(
+          child: SegmentedStrip(
             options: [
               for (final range in _ranges)
                 OptionStripItem(
@@ -57,7 +57,8 @@ class NutritionRangeSelector extends StatelessWidget {
             // NOT clamped to a valid index: `1d` is still a valid server
             // response (retired from this control, kept in the API), and
             // clamping would light up `7d` as though the user had picked it.
-            value: resolvedRange,
+            // -1 hides the thumb instead.
+            activeIndex: _ranges.indexOf(resolvedRange),
             onChange: (range) => onRangeChange(_inputFor(range)),
           ),
         ),

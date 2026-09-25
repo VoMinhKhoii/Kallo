@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
@@ -8,6 +9,7 @@ import 'package:kallo_mobile/features/logging/widgets/portion/portion_picker_she
 import 'package:kallo_mobile/features/logging/widgets/sheets/meal_mode_sheet.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/nutrients/source_attribution.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
+import 'package:kallo_mobile/services/billing/entitlements_provider.dart';
 
 import '../app_fonts.dart';
 import '../l10n_test_loader.dart';
@@ -38,19 +40,25 @@ const _viewports = <String, Size>{
 
 const _scales = [1.0, 1.3];
 
-Widget _wrap(Widget child) => EasyLocalization(
-  supportedLocales: const [Locale('en'), Locale('vi')],
-  path: 'assets/l10n',
-  fallbackLocale: const Locale('en'),
-  assetLoader: const FsL10nLoader(),
-  child: Builder(
-    builder:
-        (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: Scaffold(body: child),
-        ),
+// Signed out: the mode sheet reads its Premium markers from the entitlement
+// snapshot, and a null user resolves that to "free, nothing enforced" without
+// a network call.
+Widget _wrap(Widget child) => ProviderScope(
+  overrides: [entitlementsUserIdProvider.overrideWithValue(null)],
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en'), Locale('vi')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: Scaffold(body: child),
+          ),
+    ),
   ),
 );
 

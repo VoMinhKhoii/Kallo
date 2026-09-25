@@ -66,6 +66,32 @@ describe('useStreamingTerminalEffects — paymentRequired', () => {
     expect(next.map((m) => m.id)).toEqual(['msg-2']);
   });
 
+  it('hands the paywall the streaming id before dropping the bubble', () => {
+    // The feed controller retracts the whole unanswered exchange from this
+    // callback (`retractExchange`), so its update must queue while the
+    // streaming bubble is still in the feed.
+    const calls: string[] = [];
+    const onPaymentRequired = vi.fn((msgId: string) =>
+      calls.push(`pricing:${msgId}`)
+    );
+    const setMessages = vi.fn(() => calls.push('drop'));
+
+    renderHook(() =>
+      useStreamingTerminalEffects({
+        stream: baseStream({ status: 'paymentRequired' }),
+        streamingMsgId: 'msg-1',
+        setStreamingMsgId: vi.fn(),
+        setMessages,
+        scrollToBottom: vi.fn(),
+        lastAnalysisIdRef: { current: null },
+        lastErrorRef: { current: null },
+        onPaymentRequired,
+      })
+    );
+
+    expect(calls).toEqual(['pricing:msg-1', 'drop']);
+  });
+
   it('does nothing when there is no active streaming message', () => {
     const onPaymentRequired = vi.fn();
     const stream = baseStream({ status: 'paymentRequired' });

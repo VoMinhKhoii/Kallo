@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/feedback/screens/feedback_screen.dart';
-import 'package:kallo_mobile/features/feedback/widgets/feedback_fields.dart';
 import 'package:kallo_mobile/features/feedback/widgets/feedback_form.dart';
-import 'package:kallo_mobile/shared/widgets/chrome/page_header.dart';
+import 'package:kallo_mobile/shared/widgets/chrome/inline_nav_bar.dart';
+import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
 import 'package:kallo_mobile/shared/widgets/form/quiet_action_button.dart';
 
 import '../../l10n_test_loader.dart';
@@ -53,7 +53,10 @@ void main() {
 
     const title = 'Send feedback';
     expect(
-      find.descendant(of: find.byType(PageHeader), matching: find.text(title)),
+      find.descendant(
+        of: find.byType(InlineNavBar),
+        matching: find.text(title),
+      ),
       findsOneWidget,
     );
 
@@ -93,7 +96,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.byType(FeedbackTypeChip), findsNWidgets(3));
+    expect(find.byType(SegmentedStrip), findsOneWidget);
     expect(find.text('Bug'), findsOneWidget);
     expect(find.text('Ingredient'), findsOneWidget);
     expect(find.text('Idea'), findsOneWidget);

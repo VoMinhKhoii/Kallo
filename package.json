@@ -15,6 +15,7 @@
     "eval:core": "bun --conditions=react-server scripts/eval/run-eval.ts --tier core --concurrency 2",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bunx drizzle-kit migrate",
     "db:studio": "bunx drizzle-kit studio",
@@ -32,6 +33,7 @@
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.3.6",
+    "@paddle/paddle-js": "^1.6.5",
     "@revenuecat/purchases-js": "^1.47.2",
     "@sentry/nextjs": "^10.75.2",
     "@supabase/ssr": "^0.8.0",
@@ -79,6 +81,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.2",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

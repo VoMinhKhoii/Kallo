@@ -66,7 +66,7 @@ class WeightSubmitButton extends StatelessWidget {
                     label,
                     // Sentence-case, body-sized label — a native button reads as
                     // a word, not a techy 11px all-caps eyebrow.
-                    style: dashBody(color: KalloColors.text),
+                    style: kButtonLabel(color: KalloColors.text),
                   ),
         ),
       ),

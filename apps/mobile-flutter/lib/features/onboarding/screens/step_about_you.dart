@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../models/profile/onboarding.dart';
 import '../../../shared/widgets/form/option_row.dart';
-import '../../../shared/widgets/form/option_strip.dart' show OptionStripItem;
 import '../../../shared/widgets/form/segmented/segmented_strip.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../theme/calm_tokens.dart';

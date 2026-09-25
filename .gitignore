@@ -101,3 +101,7 @@ scripts/eval/local/*.local.ts
 
 # Scratch design canvases seeded by the `design` skill.
 .design/
+
+# Playwright e2e output
+/test-results/
+/playwright-report/

@@ -1,6 +1,7 @@
 // The Kallo Pro face: what the table says, which period the toggle starts on,
 // what the buy button buys and promises, and where its two exits go.
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,8 +10,9 @@ import 'package:kallo_mobile/features/paywall/logic/plan_pricing.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
 import 'package:kallo_mobile/features/paywall/widgets/paywall_header.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_consent.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_cta.dart';
-import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_sheet_actions.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/features/paywall/widgets/states/paywall_status.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -18,7 +20,7 @@ import 'package:kallo_mobile/services/billing/activation_pending.dart';
 import 'package:kallo_mobile/services/billing/purchases_service.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
-import 'package:kallo_mobile/theme/kallo_theme.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n_test_loader.dart';
@@ -300,22 +302,68 @@ void main() {
     },
   );
 
-  testWidgets('Restore, Terms and Privacy all clear the 44pt hit target', (
+  testWidgets('Restore, Terms and Privacy are links inside the consent line', (
+    tester,
+  ) async {
+    final purchases = PaywallPurchasesService(
+      packages: const [annualPackage, monthlyPackage],
+    );
+    await pumpPaywall(tester, purchases: purchases);
+
+    // One sentence, no separate action row under it.
+    const sentence =
+        'By continuing you agree to our Restore, Terms and Privacy Policy, '
+        'and acknowledge it auto-renews until cancelled.';
+    expect(find.text(sentence, findRichText: true), findsOneWidget);
+
+    final links = <String, TextSpan>{};
+    tester
+        .widget<RichText>(find.text(sentence, findRichText: true))
+        .text
+        .visitChildren((span) {
+          if (span is TextSpan && span.recognizer != null) {
+            links[span.text!] = span;
+          }
+          return true;
+        });
+    expect(links.keys, ['Restore', 'Terms', 'Privacy Policy']);
+    for (final link in links.values) {
+      expect(link.style?.decoration, TextDecoration.underline);
+    }
+
+    // Restore goes to the store, like the row it replaces did.
+    (links['Restore']!.recognizer! as TapGestureRecognizer).onTap!();
+    await _frames(tester);
+    expect(purchases.restoreCalls, 1);
+  });
+
+  testWidgets('the buy band is opaque and the chip stays inside it', (
     tester,
   ) async {
     await pumpPaywall(tester);
 
-    final actions = find.descendant(
-      of: find.byType(PaywallSheetActions),
-      matching: find.byType(GestureDetector),
+    final band = find.byType(PaywallBuyBand);
+    final decoration =
+        tester
+                .widget<DecoratedBox>(
+                  find
+                      .descendant(of: band, matching: find.byType(DecoratedBox))
+                      .first,
+                )
+                .decoration
+            as BoxDecoration;
+    expect(decoration.color, kPage);
+    expect(decoration.border, const Border(top: BorderSide(color: kHairline)));
+
+    // The table's viewport stops at the band's hairline, and the chip hanging
+    // off the button starts below it — so nothing scrolls under the chip.
+    final bandTop = tester.getTopLeft(band).dy;
+    final chip = find.text(_cta(tester).chipLabel!);
+    expect(tester.getTopLeft(chip).dy, greaterThan(bandTop));
+    expect(
+      tester.getBottomLeft(find.byType(SingleChildScrollView)).dy,
+      lessThanOrEqualTo(bandTop),
     );
-    expect(actions, findsNWidgets(3));
-    for (final element in actions.evaluate()) {
-      expect(
-        tester.getSize(find.byWidget(element.widget)).height,
-        greaterThanOrEqualTo(KalloIcons.hit),
-      );
-    }
   });
 
   testWidgets('at 320pt and 1.3x text the table scrolls instead of clipping', (
@@ -341,9 +389,9 @@ void main() {
   /// retry their way out of, so neither may take the paywall away from them.
   group('a store that is not open', () {
     void expectOrdinaryPaywallWithDeadCta(WidgetTester tester) {
-      // The table and the quiet action row both stay.
+      // The table and the consent line with its links both stay.
       expect(find.byType(PlanComparison), findsOneWidget);
-      expect(find.byType(PaywallSheetActions), findsOneWidget);
+      expect(find.byType(PaywallConsent), findsOneWidget);
 
       // No error copy, no retry, no empty state.
       expect(find.byType(PaywallNote), findsNothing);

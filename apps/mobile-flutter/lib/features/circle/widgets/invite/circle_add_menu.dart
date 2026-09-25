@@ -1,7 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
+import '../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -35,28 +39,39 @@ enum _AddAction { friend, group }
 /// shape in the move: the shared card is 44pt with the glyph TRAILING, where
 /// this drew 56pt [ListRow]s with it leading. One menu anatomy, app-wide,
 /// beats two that only look alike.
-class CircleAddMenu extends StatelessWidget {
+///
+/// "Create a group" is `unlimited_circle`: while the plan lacks it the row
+/// carries a [PremiumChip] and picking it opens the paywall.
+class CircleAddMenu extends ConsumerWidget {
   const CircleAddMenu({super.key});
 
   @override
-  Widget build(BuildContext context) => Builder(
-    builder:
-        (buttonContext) => IconButton(
-          tooltip: tr('groups.page.addFriend'),
-          onPressed: () => _openMenu(buttonContext),
-          // Pinned to the header's 44 slot: IconButton's own 48 default made this
-          // 4pt wider than the leading slot, which pushed the title off centre.
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-          icon: const Icon(
-            LucideIcons.userPlus300,
-            size: KalloIcons.size,
-            color: kInk,
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watched, not read at tap time: the snapshot is autoDispose, and a read
+    // from a closure with no listener would find it unloaded.
+    final group = premiumGate(ref, PremiumFeature.unlimitedCircle);
+    return Builder(
+      builder:
+          (buttonContext) => IconButton(
+            tooltip: tr('groups.page.addFriend'),
+            onPressed: () => _openMenu(buttonContext, group: group),
+            // Pinned to the header's 44 slot: IconButton's own 48 default made this
+            // 4pt wider than the leading slot, which pushed the title off centre.
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            icon: const Icon(
+              LucideIcons.userPlus300,
+              size: KalloIcons.size,
+              color: kInk,
+            ),
           ),
-        ),
-  );
+    );
+  }
 
-  Future<void> _openMenu(BuildContext context) async {
+  Future<void> _openMenu(
+    BuildContext context, {
+    required PremiumGate group,
+  }) async {
     final box = context.findRenderObject() as RenderBox?;
     // The root overlay: the same space the menu resolves its own geometry in.
     final overlay =
@@ -80,6 +95,7 @@ class CircleAddMenu extends StatelessWidget {
           label: tr('groups.page.createGroup'),
           icon: LucideIcons.users300,
           value: _AddAction.group,
+          badge: group.locked ? const PremiumChip() : null,
         ),
       ],
     );
@@ -88,7 +104,7 @@ class CircleAddMenu extends StatelessWidget {
       case _AddAction.friend:
         await showAddFriendSheet(context);
       case _AddAction.group:
-        await showCreateGroupSheet(context);
+        group.tap(context, () => showCreateGroupSheet(context))!();
     }
   }
 }

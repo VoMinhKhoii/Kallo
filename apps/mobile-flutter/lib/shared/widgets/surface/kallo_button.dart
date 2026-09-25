@@ -5,8 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
-import '../typography/kallo_text.dart';
+import '../../../theme/calm_tokens.dart';
 
 enum KalloButtonVariant { primary, secondary, danger, ghost, cta }
 
@@ -153,13 +152,7 @@ class _NhamButtonState extends State<KalloButton> {
   }
 
   Widget _label(Color color) {
-    final Widget text = KalloText(
-      widget.title,
-      variant: KalloTextVariant.body,
-      style: KalloTextStyles.sansSemiBold(
-        fontSize: KalloFontSize.md,
-      ).copyWith(color: color),
-    );
+    final Widget text = Text(widget.title, style: kButtonLabel(color: color));
     if (!widget.animateTitle) return text;
     return AnimatedSwitcher(
       duration: KalloMotion.quick,

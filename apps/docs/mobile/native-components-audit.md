@@ -13,8 +13,8 @@ Refs are `file:line` at HEAD; spot-checked with grep against the tree on this da
 >   transition moved into `pageTransitionsTheme`, and a `CupertinoPage` never reads it,
 >   so `MaterialPage`/`MaterialPageRoute` is now the correct type app-wide. The
 >   `email_auth_form.dart` "swap to `CupertinoPageRoute`" row is likewise void; the four
->   `CupertinoPageRoute` pushes in `features/settings/screens/` are being converted the
->   other way.
+>   `CupertinoPageRoute` pushes in `features/settings/screens/` were converted the other
+>   way on 2026-09-24.
 > - **Message long-press menu → `CupertinoContextMenu`** — rejected 2026-09-08. It
 >   relocates the pressed widget into its own preview slot and scales it 1.15x, so the
 >   bubble slides out from under the finger, and it holds 800ms. `showKalloAnchoredMenu`
@@ -22,8 +22,12 @@ Refs are `file:line` at HEAD; spot-checked with grep against the tree on this da
 > - **`CupertinoSwitch`** — correct, and adopted 2026-09-19 (the audit's "swap" verdict
 >   stands; it was `Switch.adaptive` in the interim).
 >
+> - **Settings' dropdowns and slider** (`settings/widgets/inputs/custom_select.dart`,
+>   `country_select.dart`, `aggression_slider.dart`) — deleted 2026-09-24, not swapped:
+>   Settings' profile pages now host the onboarding step bodies, which never used them.
+>
 > Everything else here still reads true; the counts are as of 2026-09-03 and several are
-> now stale (spinners are 13, not 17; sliders are 2, not 3).
+> now stale (spinners are 13, not 17; sliders are 1, not 3).
 
 ## 1. Context
 
@@ -53,7 +57,7 @@ SDK is Flutter 3.44.1, which ships `showCupertinoSheet` / `CupertinoSheetRoute`,
 | `shared/widgets/list/list_row.dart:18` + `grouped_list_card.dart:14` | Row + section-card list primitives | Radius 22, Threads-style regular weight, busy state are deliberate | 23 + 9 | `CupertinoListSection.insetGrouped`/`CupertinoListTile` | **keep** |
 | `shell/header/app_header.dart:14` + settings header (moving to `shared/widgets/chrome/page_header.dart` this batch) | In-flow app bar | Collapse + blur explicitly rejected; `ScrollSeparator` owns the hairline | shell-wide | `CupertinoNavigationBar.large` | **keep** page header; **hybrid** for `AppHeader` |
 | `shared/widgets/surface/kallo_primitives.dart:58` `KalloButton` | Stadium buttons, 50pt / 44pt | Press = colour shift, not opacity dim | 31 | `CupertinoButton` | **keep** the button, **swap** its spinner at :122 |
-| `shared/widgets/form/option_strip.dart:39` + `segmented_strip.dart:21` | Segmented control skins | n/a | 4 | `CupertinoSlidingSegmentedControl` (nullable `groupValue` matches the `-1` semantics; wrap in `SizedBox(height: 44)`) | **hybrid** — segmented case only; keep the two multi-line legacy skins |
+| `shared/widgets/form/segmented/segmented_strip.dart` | Segmented control | n/a | 4 | `CupertinoSlidingSegmentedControl` (nullable `groupValue` matches the `-1` semantics; wrap in `SizedBox(height: 44)`) | **hybrid** — the multi-line legacy skins retired 2026-09-24 |
 | `features/circle/widgets/invite/circle_add_menu.dart:49` | Anchored popover via `showGeneralDialog` | Rejects `CupertinoActionSheet`; predates `CupertinoMenuAnchor` | 1 | `CupertinoMenuAnchor` | **hybrid**, re-evaluate |
 | `features/onboarding/widgets/onboarding_dialog.dart:19` | Near-fullscreen card via `showGeneralDialog` + Material shim at :43 | n/a | 1 | `showCupertinoSheet`/`CupertinoSheetRoute` | **swap** |
 | 21 raw Material `TextField` sites (`share_replies.dart:134`, `create_group_sheet.dart:90`, `group_add_people.dart:107`, `group_info_sheet.dart:119`, `display_name_row.dart:102`, `invite_link_row.dart:128`, `create_group_member_picker.dart:63`, `country_select.dart:270`, `manual_gram_field.dart:73`, `decimal_input.dart`, …) | Bypass `KalloTextField` | n/a | 21 | `CupertinoTextField`; `CupertinoSearchTextField` for the 4 search fields (`manual_search_field.dart:25`, `country_select.dart:270`, `create_group_member_picker.dart:63`, `group_add_people.dart:107`) | **hybrid** — the real finding is the drift past `KalloTextField` |

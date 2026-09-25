@@ -70,6 +70,7 @@ const CAST = {
     animal: 'sloth',
     error: 'sloth-tangled-string',
     empty: 'sloth-peeking-out-box',
+    locked: 'sloth-telescope',
     night: 'sloth-sleeping-hammock',
   },
   dashboard: {

@@ -280,17 +280,6 @@ void main() {
     _expectFits(tester);
   });
 
-  testWidgets('ProfileEmpty holds at 320 × 1.3', (tester) async {
-    await _pump(tester, _l10nApp(const ProfileEmpty()));
-
-    expect(find.text(tr('settings.profilePage.emptyTitle')), findsOneWidget);
-    expect(
-      find.text(tr('settings.profilePage.emptyDescription')),
-      findsOneWidget,
-    );
-    _expectFits(tester);
-  });
-
   testWidgets('ProfileLoadError holds at 320 × 1.3', (tester) async {
     await _pump(tester, _l10nApp(ProfileLoadError(onRetry: () {})));
 

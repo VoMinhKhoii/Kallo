@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/form/option_strip.dart' show OptionStripItem;
 import '../../../../shared/widgets/form/segmented/segmented_strip.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_motion.dart';

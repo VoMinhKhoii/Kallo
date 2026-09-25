@@ -60,6 +60,24 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - run: bun run build
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # Non-blocking while the suite is new: it runs against `next dev` with
+    # placeholder Supabase settings, so only signed-out surfaces are covered.
+    continue-on-error: true
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: ./.github/actions/setup-bun
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+
   migrations:
     name: Validate Migrations
     runs-on: ubuntu-latest
@@ -175,6 +193,7 @@ jobs:
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
           --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+          --build-arg NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=${{ vars.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN }}
           --build-arg SENTRY_ORG=${{ vars.SENTRY_ORG }}
           --build-arg SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
           --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN

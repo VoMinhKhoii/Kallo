@@ -158,12 +158,19 @@
         "name": "Premium",
         "tagline": "Để ghi bằng lời của bạn",
         "priceMonthly": "49K₫",
-        "priceYearly": "33K₫",
+        "priceYearly": "37K₫",
+        "billedMonthly": "49.000 ₫",
+        "billedYearly": "449.000 ₫",
+        "introPrice": "7.999 ₫",
+        "introDays": 7,
         "amountMonthly": 49000,
-        "amountYearly": 399000,
-        "fineprintMonthly": "Trả mỗi tháng. Hủy bất cứ lúc nào.",
-        "fineprintYearly": "Trả 399K₫ một lần mỗi năm. Hủy bất cứ lúc nào.",
-        "cta": "Dùng thử miễn phí",
+        "amountYearly": 449000,
+        "fineprintMonthly": "{intro} cho {days} ngày đầu, sau đó {price} mỗi tháng. Hủy bất cứ lúc nào. Thuế được tính khi thanh toán.",
+        "fineprintYearly": "{intro} cho {days} ngày đầu, sau đó {price} mỗi năm. Hủy bất cứ lúc nào. Thuế được tính khi thanh toán.",
+        "fineprintMonthlyNoIntro": "Trả {price} mỗi tháng. Hủy bất cứ lúc nào. Thuế được tính khi thanh toán.",
+        "fineprintYearlyNoIntro": "Trả {price} mỗi năm. Hủy bất cứ lúc nào. Thuế được tính khi thanh toán.",
+        "cta": "Bắt đầu với {intro}",
+        "ctaNoIntro": "Nâng cấp",
         "inherits": "Mọi thứ ở gói Miễn phí, thêm:"
       },
       "lifetime": {
@@ -198,7 +205,8 @@
       "yearly": "Hàng năm"
     },
     "discount": "Tiết kiệm {percent}%",
-    "perMonth": "/tháng"
+    "perMonth": "/tháng",
+    "currentPlan": "Gói hiện tại"
   },
   "footer": {
     "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// A sheet footer's commit action: a beige in-app-primary pill (native pass,
 /// 2026-08-31 — umber retired from buttons) that hugs its label rather than
@@ -73,9 +74,10 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
                     )
                     : Text(
                       widget.label,
-                      style: KalloTextStyles.sansSemiBold(
-                        fontSize: KalloFontSize.sm,
-                      ).copyWith(color: KalloColors.text),
+                      style: kButtonLabel(
+                        color: KalloColors.text,
+                        size: KalloFontSize.sm,
+                      ),
                     ),
           ),
         ),

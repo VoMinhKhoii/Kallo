@@ -1,24 +1,6 @@
 {
   "paywall": {
-    "eyebrow": "Kallo Premium",
-    "titleLead": "Ước lượng mọi bữa ăn,",
-    "titleAccent": "tức thì",
-    "subtitle": "Mở khóa phân tích bữa ăn bằng AI — mô tả món ăn theo cách của bạn và nhận ước lượng calo cùng macro trong vài giây.",
-    "trialCountdown": "Bạn còn {days} ngày dùng thử.",
-    "perk1": "AI phân tích mọi bữa ăn Việt bạn mô tả",
-    "perk2": "Dữ liệu thành phần thực phẩm thật sau mỗi ước lượng",
-    "perk3": "Khoảng calo và macro có biên, không phóng đại độ chính xác",
-    "planMonthly": "Hàng tháng",
-    "planAnnual": "Hàng năm",
-    "planLifetime": "Trọn đời",
-    "cadenceMonth": "/ tháng",
-    "cadenceYear": "/ năm",
-    "cadenceOnce": "một lần",
-    "annualHint": "Tiết kiệm nhất",
-    "choosePlan": "Chọn",
-    "opening": "Đang mở…",
     "unavailable": "Hiện chưa thể mua. Vui lòng thử lại sau.",
-    "finetext": "Hủy bất cứ lúc nào. Thuế áp dụng (nếu có) sẽ hiển thị khi thanh toán.",
     "successToast": "Chào mừng đến với Kallo Premium.",
     "successPendingToast": "Đã nhận thanh toán — quyền premium sẽ xuất hiện trong giây lát.",
     "pendingToast": "Thanh toán đang chờ xử lý. Premium sẽ mở sau khi cửa hàng xác nhận.",
@@ -38,8 +20,6 @@
     "loadError": "Không tải được gói đăng ký. Vui lòng làm mới.",
     "freePlan": "Gói miễn phí",
     "freeDescription": "Nâng cấp để mở khóa phân tích bữa ăn bằng AI.",
-    "trialPlan": "Dùng thử miễn phí",
-    "trialRemaining": "Còn {days} ngày dùng thử.",
     "premiumPlan": "Kallo Premium",
     "premiumDescription": "Phân tích bữa ăn bằng AI đã được mở khóa.",
     "lifetimePlan": "Kallo Premium — Trọn đời",
@@ -60,14 +40,10 @@
   "premium": {
     "chip": "Premium",
     "micronutrientsLock": {
-      "title": "Thông tin vi chất",
-      "body": "Phân tích vitamin và khoáng chất trong mọi bữa bạn ghi lại là tính năng Premium. Nâng cấp để xem vi chất nào bạn đang ổn định và vi chất nào cần chú ý.",
+      "title": "Vi chất có trong gói Premium",
+      "subtitle": "Vitamin, khoáng chất và chất xơ theo mục tiêu của bạn.",
       "cta": "Nâng cấp"
     },
     "purchasesUnavailable": "Hiện chưa thể nâng cấp. Các tính năng Premium sẽ sớm được mở."
-  },
-  "trialBanner": {
-    "daysRemaining": "Còn {days} ngày dùng thử miễn phí",
-    "upgrade": "Nâng cấp"
   }
 }

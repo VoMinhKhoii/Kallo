@@ -3,12 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../services/billing/entitlements_provider.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/form/kallo_text_field.dart';
-import '../../../shared/widgets/chrome/page_header.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -17,6 +17,10 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
+import '../widgets/list/settings_group.dart';
+import '../../../shared/widgets/list/list_row.dart';
+import '../../../shared/widgets/chrome/inline_nav_bar.dart';
+import '../../../shared/widgets/typography/section_header_row.dart';
 
 /// Pushed delete-account screen: plain-language consequences and a type-to-
 /// confirm gate before the irreversible deletion.
@@ -84,57 +88,53 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: PageHeader(title: tr('settings.account.deleteScreenTitle')),
+        header: InlineNavBar(
+          title: tr('settings.account.deleteScreenTitle'),
+          parentTitle: tr('settings.title'),
+        ),
         child: SingleChildScrollView(
-          padding: SettingsSpacing.page(context),
+          padding: SettingsSpacing.rowList(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // No title here — it lives in the header bar. This is the
-              // consequence line that used to sit under it.
-              Text(tr('settings.account.deleteConsequence'), style: dashBody()),
-              const SizedBox(height: KalloSpacing.sp3),
-              Container(
-                padding: const EdgeInsets.all(KalloSpacing.sp4),
-                decoration: BoxDecoration(
-                  color: KalloColors.danger.withValues(alpha: 0.06),
-                  border: Border.all(
-                    color: KalloColors.danger.withValues(alpha: 0.3),
-                  ),
-                  // Card radius: it IS a card, just the one tinted red.
-                  borderRadius: BorderRadius.circular(KalloRadii.card),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              // ── The subscription — deleting does not cancel it ──────────
+              // The warning reads as a footnote under the one thing to do
+              // about it, not as a red panel: nothing here is an error yet.
+              if (entitlement?.managementUrl != null) ...[
+                SettingsGroup(
+                  label: tr('settings.subscription.groupLabel'),
                   children: [
-                    Text(
-                      tr('settings.account.deleteSubscriptionWarning'),
-                      style: dashBody(),
-                    ),
-                    if (entitlement?.managementUrl != null) ...[
-                      const SizedBox(height: KalloSpacing.sp2),
-                      KalloButton(
-                        title: tr('settings.account.deleteManageSubscription'),
-                        variant: KalloButtonVariant.secondary,
-                        onPressed:
-                            () => openStoreSubscriptions(
-                              context,
-                              entitlement!.managementUrl!,
-                            ),
+                    ListRow(
+                      label: tr('settings.account.deleteManageSubscription'),
+                      trailing: const Icon(
+                        LucideIcons.externalLink300,
+                        size: KalloIcons.tertiary,
+                        color: kInkMuted,
                       ),
-                    ],
+                      onTap:
+                          () => openStoreSubscriptions(
+                            context,
+                            entitlement!.managementUrl!,
+                          ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: KalloSpacing.sp5),
+                const SizedBox(height: KalloSpacing.sp2),
+              ],
               Text(
+                tr('settings.account.deleteSubscriptionWarning'),
+                style: dashMeta(),
+              ),
+              const SizedBox(height: KalloSpacing.sp6),
+
+              // ── The gate — type the word, read what it costs ────────────
+              GroupLabel(
                 tr(
                   'settings.account.deleteConfirmLabel',
                   namedArgs: {'word': tr('settings.account.deleteConfirmWord')},
                 ),
-                style: dashMeta(),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: SettingsSpacing.label),
               KalloTextField(
                 controller: _controller,
                 hintText: tr('settings.account.deleteConfirmWord'),
@@ -144,7 +144,9 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                 enableSuggestions: false,
                 textCapitalization: TextCapitalization.characters,
               ),
-              const SizedBox(height: KalloSpacing.sp4),
+              const SizedBox(height: KalloSpacing.sp2),
+              Text(tr('settings.account.deleteConsequence'), style: dashMeta()),
+              const SizedBox(height: KalloSpacing.sp6),
               _DeleteButton(
                 enabled: _canDelete,
                 deleting: _deleting,
@@ -164,7 +166,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
 /// quiet red-on-transparent affordance for reversible destructive rows, and
 /// this is the irreversible confirm at the end of a type-to-confirm gate — the
 /// one place a filled red belongs. Everything else about it is the button
-/// system: 50pt, fully rounded, 14/500 label.
+/// system: 50pt, fully rounded, the shared [kButtonLabel].
 class _DeleteButton extends StatelessWidget {
   const _DeleteButton({
     required this.enabled,
@@ -204,7 +206,7 @@ class _DeleteButton extends StatelessWidget {
                       )
                       : Text(
                         tr('settings.account.deleteConfirmAction'),
-                        style: dashBody(color: Colors.white),
+                        style: kButtonLabel(color: Colors.white),
                       ),
             ),
           ),

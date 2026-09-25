@@ -81,9 +81,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
                 ],
                 Text(
                   widget.label,
-                  style: dashBody(
-                    weight: FontWeight.w600,
-                  ).copyWith(color: KalloColors.elev, letterSpacing: -0.2),
+                  style: kButtonLabel(color: KalloColors.elev),
                 ),
               ],
             ),

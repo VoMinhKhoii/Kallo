@@ -30,21 +30,32 @@ void main() {
       }
     });
 
-    test('draws on exactly the 18 poses of the cast', () {
+    test('draws on exactly the 19 poses of the cast', () {
       final paths = <String>{
         for (final area in SurfaceArea.values)
           for (final kind in SurfaceKind.values)
             for (final lateNight in [false, true])
               surfaceIllustrationAsset(area, kind, lateNight: lateNight),
       };
-      expect(paths, hasLength(18));
+      expect(paths, hasLength(19));
       expect(
         Directory(illustrationAssetDir)
             .listSync()
             .whereType<File>()
             .where((f) => f.path.endsWith('.svg'))
             .length,
-        18,
+        19,
+      );
+    });
+
+    test('a Premium-locked nutrition surface shows the sloth eyeing it', () {
+      expect(
+        surfaceIllustrationAsset(
+          SurfaceArea.nutrition,
+          SurfaceKind.locked,
+          lateNight: false,
+        ),
+        'assets/illustrations/sloth-telescope.svg',
       );
     });
 

@@ -2,8 +2,10 @@
 
 import { eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
-import { hasSavedOnboardingProfileData } from '@/lib/domain/onboarding/progress';
+import {
+  buildScreenUpdate,
+  type ScreenUpdateOptions,
+} from '@/lib/domain/onboarding/screen-update';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
@@ -29,7 +31,8 @@ export async function getOnboardingProfile() {
 
 export async function saveOnboardingScreen(
   step: number,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
+  options: ScreenUpdateOptions = { advance: true }
 ) {
   const user = await getAuthUser();
 
@@ -38,51 +41,10 @@ export async function saveOnboardingScreen(
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
-  const existingProfile = existing;
 
-  const newStep = Math.max(existingProfile?.onboardingStep ?? 0, step);
-  const updateObj: Record<string, unknown> = {
-    onboardingStep: newStep,
-  };
-
-  // Step-specific field mapping (skip when data is empty — e.g. "Skip" button)
-  const hasData = Object.keys(data).length > 0;
-  if (step === 1 && hasData) {
-    updateObj.countryOfOrigin = data.countryOfOrigin;
-    updateObj.countryOfResidence = data.countryOfResidence;
-    updateObj.preferredLocale = data.preferredLocale;
-  } else if (step === 2 && hasData) {
-    updateObj.weightKg = data.weightKg;
-    updateObj.heightCm = data.heightCm;
-    updateObj.age = data.age;
-    updateObj.biologicalSex = data.biologicalSex;
-    updateObj.activityLevel = data.activityLevel;
-    updateObj.tdeeKcal = data.tdeeKcal;
-    updateObj.goal = data.goal;
-    updateObj.aggression =
-      data.aggression != null ? String(data.aggression) : null;
-    updateObj.carbSplit = data.carbSplit;
-    updateObj.calorieTarget = Math.max(Number(data.calorieTarget) || 0, 500);
-    updateObj.proteinTargetG = data.proteinTargetG;
-    updateObj.carbsTargetG = data.carbsTargetG;
-    updateObj.fatTargetG = data.fatTargetG;
-  } else if (step === 3 && hasData) {
-    updateObj.oilUsage = data.oilUsage;
-    updateObj.defaultRicePortion = data.defaultRicePortion;
-    updateObj.defaultProteinPortion = data.defaultProteinPortion;
-    updateObj.brothConsumption = data.brothConsumption;
-  }
-
-  // Mark completion when all screens done
-  const nextProfile = { ...existingProfile, ...updateObj };
-  if (
-    newStep >= ONBOARDING_TOTAL_STEPS &&
-    hasSavedOnboardingProfileData(nextProfile)
-  ) {
-    if (!existingProfile?.onboardingCompletedAt) {
-      updateObj.onboardingCompletedAt = new Date();
-    }
-  }
+  const updateObj = buildScreenUpdate(existing, step, data, options);
+  // A Settings edit of an empty step has nothing to write.
+  if (Object.keys(updateObj).length === 0) return { success: true };
 
   await db
     .update(userProfiles)
