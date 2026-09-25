@@ -1,4 +1,12 @@
-import { type Column, getTableColumns, type Table } from 'drizzle-orm';
+import {
+  anyJson,
+  columns,
+  dateTime,
+  list,
+  nullable,
+  object,
+  uuid,
+} from '@/lib/api/openapi/column-schemas';
 import type { JsonSchema } from '@/lib/api/openapi/components';
 import { AUTH_CLAIM_KEYS } from '@/lib/domain/account-export/build-export';
 import {
@@ -18,6 +26,7 @@ import {
   mealShares,
   meals,
   notifications,
+  nutritionLabelImages,
   pendingAnalyses,
   pipelineRequests,
   productTelemetryEvents,
@@ -38,76 +47,6 @@ import {
  * schema. Derived fields (a friend's id, a direction, a redacted token) are
  * spelled out by hand.
  */
-
-const nullable = (schema: JsonSchema): JsonSchema => ({
-  ...schema,
-  type: [schema.type, 'null'],
-});
-const uuid: JsonSchema = { type: 'string', format: 'uuid' };
-const dateTime: JsonSchema = { type: 'string', format: 'date-time' };
-const anyJson: JsonSchema = { description: 'Free-form JSON.' };
-
-function columnSchema(column: Column): JsonSchema {
-  const base = ((): JsonSchema => {
-    switch (column.columnType) {
-      case 'PgUUID':
-        return uuid;
-      case 'PgDateString':
-        return { type: 'string', format: 'date' };
-      case 'PgNumeric':
-        return { type: 'string', description: 'Decimal, as a string.' };
-      case 'PgInteger':
-      case 'PgSmallInt':
-      case 'PgSerial':
-        return { type: 'integer' };
-      case 'PgArray':
-        return { type: 'array', items: uuid };
-      default:
-        break;
-    }
-    switch (column.dataType) {
-      case 'number':
-        return { type: 'number' };
-      case 'boolean':
-        return { type: 'boolean' };
-      case 'date':
-        return dateTime;
-      case 'json':
-        return anyJson;
-      default:
-        return { type: 'string' };
-    }
-  })();
-  if (column.notNull || !('type' in base)) return base;
-  return nullable(base);
-}
-
-/** Property schemas for `keys` of `table` (every column when omitted). */
-function columns(table: Table, keys?: string[]): Record<string, JsonSchema> {
-  const all = getTableColumns(table) as Record<string, Column>;
-  return Object.fromEntries(
-    (keys ?? Object.keys(all)).map((key) => [key, columnSchema(all[key])])
-  );
-}
-
-function object(
-  properties: Record<string, JsonSchema>,
-  description?: string
-): JsonSchema {
-  return {
-    type: 'object',
-    additionalProperties: false,
-    required: Object.keys(properties),
-    properties,
-    ...(description ? { description } : {}),
-  };
-}
-
-const list = (items: JsonSchema, description?: string): JsonSchema => ({
-  type: 'array',
-  items,
-  ...(description ? { description } : {}),
-});
 
 /** Allowlisted Supabase Auth profile claims; each appears only when stored. */
 const authClaims: JsonSchema = {
@@ -174,6 +113,22 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
       ),
       dayCompletionMarks: list(
         object(columns(dayCompletionMarks, ['id', 'localDate', 'createdAt']))
+      ),
+      labelScans: list(
+        object(
+          columns(nutritionLabelImages, [
+            'id',
+            'mimeType',
+            'byteSize',
+            'status',
+            'result',
+            'errorCode',
+            'mealId',
+            'reviewedResult',
+            'createdAt',
+          ])
+        ),
+        'Nutrition-label scans whose photo was kept: what was read (`result`) or why not (`errorCode`), and the values saved for the linked meal. Each photo is listed under `files`.'
       ),
       social: object({
         friendships: list(
@@ -386,9 +341,15 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
       ),
       files: list(
         object({
-          bucket: { type: 'string', enum: ['avatars', 'feedback-screenshots'] },
+          bucket: {
+            type: 'string',
+            enum: ['avatars', 'feedback-screenshots', 'nutrition-labels'],
+          },
           path: { type: 'string' },
-          source: { type: 'string', enum: ['circleProfile', 'feedback'] },
+          source: {
+            type: 'string',
+            enum: ['circleProfile', 'feedback', 'labelScan'],
+          },
           sourceId: nullable(uuid),
         }),
         'Storage objects Kallo holds for the caller, as bucket + object path. The bytes are not inlined.'

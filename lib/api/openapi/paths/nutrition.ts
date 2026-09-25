@@ -1,5 +1,6 @@
 import { candidatesSchema } from '@/lib/api/contracts/nutrition';
 import {
+  labelImageUrlSchema,
   logNutritionLabelMealSchema,
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
@@ -10,6 +11,7 @@ import {
   optionalTzParam,
   PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
+  pathParam,
   RATE_LIMITER_UNAVAILABLE_ERROR,
   ref,
 } from '@/lib/api/openapi/components';
@@ -67,12 +69,13 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       operationId: 'scanNutritionLabel',
       summary: 'Read a nutrition label from an image',
       description:
-        'OCR over a photographed nutrition label. Read-only: it returns what it read and writes nothing. Returns 422 with `OCR_NO_LABEL_DETECTED` when the image contains no label it can parse — which is a normal outcome, not an error to retry blindly.',
+        'OCR over a photographed nutrition label. Logs no meal: it returns what it read. Once the image passes validation, the photo and the scan outcome (what was read, or the failure) are kept in private storage linked to the account — readable only by its owner and the Kallo team (OCR quality work) — until the account is deleted. Keeping them is best-effort and never changes this reply; when the photo is already stored, the reply carries `labelImageId`, which the client passes back to `/log`. Returns 422 with `OCR_NO_LABEL_DETECTED` when the image contains no label it can parse — which is a normal outcome, not an error to retry blindly.',
       tags: TAGS,
       body: fromZod(scanNutritionLabelSchema),
       bodyDescription: 'Base64-encoded image bytes.',
       ok: ref('Acknowledgement'),
-      okDescription: 'The parsed label figures.',
+      okDescription:
+        '`{ label, labelImageId? }` — the parsed label figures, and the id of the kept photo when it could be stored.',
       // OCR is spend-gated (`withOcrGuard`): the global Gemini budget fails
       // closed, so this op alone can answer 503 when the limiter is down. The
       // shared 429 (per-user / concurrency block) is already in COMMON_ERRORS.
@@ -88,11 +91,26 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       operationId: 'logNutritionLabelMeal',
       summary: 'Log a meal from scanned label figures',
       description:
-        'Saves the result of a label scan — after the user has confirmed or corrected it — as a meal.',
+        'Saves the result of a label scan — after the user has confirmed or corrected it — as a meal. An optional `labelImageId` from the scan links the kept photo to the saved meal; an id that is not the caller’s is ignored.',
       tags: TAGS,
       extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...MEAL_ID_CONFLICT_ERROR },
       body: fromZod(logNutritionLabelMealSchema),
       ok: ref('MealWriteResult'),
+    }),
+  },
+
+  '/api/v1/nutrition-label/images/{imageId}': {
+    get: authed({
+      operationId: 'getNutritionLabelImageUrl',
+      summary: 'View a kept label photo',
+      description:
+        'A short-lived (10-minute) signed URL for one of the caller’s own kept label photos. Another user’s id, an unknown id and a malformed one are all 404 `NOT_FOUND`.',
+      tags: TAGS,
+      parameters: [
+        pathParam('imageId', 'The `labelImageId` the scan returned (UUID).'),
+      ],
+      ok: fromZod(labelImageUrlSchema),
+      okDescription: 'The signed URL and the instant it stops working.',
     }),
   },
 };

@@ -92,10 +92,10 @@ function identitiesOf(user: ExportAccountSource) {
 }
 
 export interface ExportedFile {
-  bucket: 'avatars' | 'feedback-screenshots';
+  bucket: 'avatars' | 'feedback-screenshots' | 'nutrition-labels';
   path: string;
   /** Which record points at the object. */
-  source: 'circleProfile' | 'feedback';
+  source: 'circleProfile' | 'feedback' | 'labelScan';
   sourceId: string | null;
 }
 
@@ -146,6 +146,14 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
       });
     }
   }
+  for (const scan of diary.labelScans) {
+    files.push({
+      bucket: 'nutrition-labels',
+      path: scan.storagePath,
+      source: 'labelScan',
+      sourceId: scan.id,
+    });
+  }
 
   return {
     // The original six keys, unchanged in name and shape.
@@ -168,6 +176,8 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
     formatVersion: DATA_EXPORT_FORMAT_VERSION,
     circleProfile: profile.circleProfile,
     dayCompletionMarks: diary.dayCompletionMarks,
+    // Photo paths are listed under `files`, like feedback screenshots.
+    labelScans: diary.labelScans.map(({ storagePath: _path, ...scan }) => scan),
     social,
     chat,
     notifications: inbox.notifications,

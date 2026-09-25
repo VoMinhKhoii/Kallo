@@ -176,3 +176,18 @@ class NutritionLabel {
     );
   }
 }
+
+/// A short-lived signed URL for one of the user's own kept label photos, from
+/// `GET /api/v1/nutrition-label/images/{imageId}`. The URL stops working at
+/// [expiresAt] (about ten minutes out); fetch a fresh one rather than caching.
+class LabelImageUrl {
+  const LabelImageUrl({required this.url, required this.expiresAt});
+
+  final String url;
+  final DateTime expiresAt;
+
+  factory LabelImageUrl.fromJson(Map<String, dynamic> json) => LabelImageUrl(
+    url: json['url'] as String,
+    expiresAt: DateTime.parse(json['expiresAt'] as String),
+  );
+}

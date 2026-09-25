@@ -6,6 +6,7 @@ import {
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
 import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
+import { scanWithStoredLabelImage } from '@/lib/domain/nutrition/label-images/label-images';
 import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
 import {
   NutritionOcrImageError,
@@ -55,7 +56,7 @@ export async function scanNutritionLabelAction(input: {
   imageBase64: string;
   mimeType: string;
 }): Promise<
-  | { success: true; data: ParsedNutritionLabel }
+  | { success: true; data: ParsedNutritionLabel; labelImageId?: string }
   | { success: false; code: OcrErrorCode }
 > {
   try {
@@ -76,17 +77,26 @@ export async function scanNutritionLabelAction(input: {
     // budget last, once a provider call is actually about to happen. A block
     // throws `RateLimitedError` (429), which `scanErrorCode` folds into the
     // `rate_limited` code below.
-    const data = await withOcrGuard(user.id, async (chargeGlobal) => {
+    const scanned = await withOcrGuard(user.id, async (chargeGlobal) => {
       const parsed = parseScanInput(input);
       await validateNutritionLabelImage(parsed);
       await chargeGlobal();
-      return scanNutritionLabelWithGemini({
-        imageBase64: parsed.imageBase64,
-        mimeType: parsed.mimeType,
-      });
+      // The photo is kept best-effort, in parallel with the model call.
+      return scanWithStoredLabelImage({ userId: user.id, ...parsed }, () =>
+        scanNutritionLabelWithGemini({
+          imageBase64: parsed.imageBase64,
+          mimeType: parsed.mimeType,
+        })
+      );
     });
 
-    return { success: true, data };
+    return scanned.labelImageId
+      ? {
+          success: true,
+          data: scanned.result,
+          labelImageId: scanned.labelImageId,
+        }
+      : { success: true, data: scanned.result };
   } catch (error) {
     console.error('Error in scanNutritionLabelAction:', error);
     return { success: false, code: scanErrorCode(error) };

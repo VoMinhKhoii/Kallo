@@ -14,6 +14,7 @@ import {
   buildDataExport,
   type DataExport,
 } from '@/lib/domain/account-export/build-export';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
@@ -99,11 +100,14 @@ async function requireExpectedUser(
   return session;
 }
 
-async function purgeAvatarObjects(
+/** Remove every object under `{userId}/` in one bucket, paginating until the
+ *  listing comes back empty. Throws on any list/remove error (fail closed). */
+async function purgeUserObjects(
   admin: ReturnType<typeof createAdminClient>,
+  bucketId: string,
   userId: string
 ): Promise<void> {
-  const bucket = admin.storage.from('avatars');
+  const bucket = admin.storage.from(bucketId);
   for (;;) {
     const { data: objects, error: listError } = await bucket.list(userId, {
       limit: 100,
@@ -148,9 +152,9 @@ export async function exportMyDataAction(input: unknown): Promise<DataExport> {
  * row via the service-role admin client cascades to every app table that
  * references it (`onDelete: 'cascade'` on profiles, meals → items, weights,
  * friendships, meal shares, coach assignments, circle events, pipeline rows…),
- * so the Auth deletion removes app-owned relational data atomically. Public
- * storage is purged first; provider erasure is persisted in an outbox and
- * retried after the local account is gone. There is no undo.
+ * so the Auth deletion removes app-owned relational data atomically. Storage
+ * (avatars, kept label photos) is purged first; provider erasure is persisted
+ * in an outbox and retried after the local account is gone. There is no undo.
  */
 export async function deleteAccountAction(
   input: unknown
@@ -180,11 +184,20 @@ export async function deleteAccountAction(
   // fail closed: once Auth is gone the user cannot retry an orphaned public
   // avatar cleanup.
   try {
-    await purgeAvatarObjects(admin, user.id);
+    await purgeUserObjects(admin, 'avatars', user.id);
   } catch (storageError) {
     throw Errors.internal(
       storageError,
       'Could not remove your profile photo. Please try again.'
+    );
+  }
+  // Kept nutrition-label scans (private bucket), same fail-closed purge.
+  try {
+    await purgeUserObjects(admin, NUTRITION_LABEL_BUCKET, user.id);
+  } catch (storageError) {
+    throw Errors.internal(
+      storageError,
+      'Could not remove your scanned label photos. Please try again.'
     );
   }
 
