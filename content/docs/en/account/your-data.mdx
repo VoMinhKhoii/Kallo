@@ -15,7 +15,8 @@ This is the readable summary. The full, legally operative version is the
 - **Cooking habits** — oil, default portions, broth.
 - **Meal log** — the sentence you wrote, the dishes, weights and 28 nutrient
   values.
-- **Nutrition label photos** — each label you scan, in private storage.
+- **Nutrition label photos** — each label you scan, in private storage, with
+  what Kallo read from it and the values you saved.
 - **Weight over time.**
 - **Circle content** — friends, shared meals, messages.
 - **Feedback** — what you sent and any screenshot.
@@ -34,10 +35,12 @@ When you request a meal analysis, the model receives only:
 - The language you want the result in
 
 When you scan a nutrition label, it receives only the photo. Kallo also keeps
-that photo privately, visible only to you and the Kallo team, until you delete
-your account. Ingredient search text may also go to Google's embedding model to
-find similar ingredients. Kallo asks your permission before your first AI
-analysis or label scan.
+that photo privately, with the scan outcome (what was read, which model read it
+and how long it took) and the values you saved, visible only to you and the
+Kallo team, until you delete your account. Once you have given AI permission,
+ingredient search text may also go to Google's embedding model to find similar
+ingredients; without it, search uses Kallo's own text matching only. Kallo asks
+your permission before your first AI analysis or label scan.
 
 The model does **not** receive: your weight, height, age, sex, goal, pace,
 calorie targets, email, name, or meal history.

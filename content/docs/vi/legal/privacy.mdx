@@ -69,7 +69,10 @@ bữa và từng món.
 ### Ảnh nhãn dinh dưỡng
 
 Ảnh của mỗi nhãn dinh dưỡng bạn quét, lưu trong kho riêng tư và gắn với tài
-khoản của bạn, cũng như với bữa ăn nếu bạn lưu bữa đó. Xem mục 3.
+khoản của bạn, cũng như với bữa ăn nếu bạn lưu bữa đó. Kèm theo ảnh, chúng tôi
+lưu kết quả quét: những gì Kallo đọc được từ nhãn, hoặc lỗi nếu đọc thất bại, mô
+hình nào đã đọc và mất bao lâu; nếu bạn lưu bữa ăn, lưu cả các giá trị bạn đã
+lưu. Xem mục 3.
 
 ### Cân nặng theo thời gian
 
@@ -137,16 +140,20 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 
 Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Chúng
 tôi cũng lưu ảnh đó trong một kho lưu trữ riêng tư, gắn với tài khoản của bạn và,
-nếu bạn lưu bữa ăn, gắn với bữa đó. Chỉ bạn (trong ứng dụng) và đội ngũ Kallo xem
-được ảnh; đội ngũ dùng ảnh để kiểm tra và cải thiện độ chính xác khi đọc nhãn.
-Ảnh không bao giờ được chia sẻ với người dùng khác, và được giữ cho tới khi bạn
-xóa tài khoản, lúc đó ảnh bị xóa cùng tài khoản.
+nếu bạn lưu bữa ăn, gắn với bữa đó. Kèm theo ảnh là kết quả quét (những gì Kallo
+đọc được hoặc lỗi gặp phải, mô hình nào đã đọc và mất bao lâu) và, nếu bạn lưu
+bữa ăn, các giá trị bạn đã lưu. Chỉ bạn (trong ứng dụng) và đội ngũ Kallo xem
+được ảnh và các bản ghi này; đội ngũ dùng chúng để kiểm tra và cải thiện độ
+chính xác khi đọc nhãn. Chúng không bao giờ được chia sẻ với người dùng khác, và
+được giữ cho tới khi bạn xóa tài khoản, lúc đó chúng bị xóa cùng tài khoản.
 
-Khi bạn tìm nguyên liệu lúc ghi thủ công, chữ bạn gõ có thể được gửi tới mô
-hình nhúng (embedding) của Google để tìm những nguyên liệu có nghĩa gần giống.
-Chỉ có chữ tìm kiếm được gửi đi. Chúng tôi giữ chữ tìm kiếm đó cùng kết quả
-nhúng trong một bộ nhớ đệm dùng chung, không gắn với tài khoản của bạn, để lần
-tìm sau nhanh hơn.
+Khi bạn tìm nguyên liệu lúc ghi thủ công, và chỉ khi bạn đã đồng ý cho dùng AI
+(xem bên dưới), chữ bạn gõ có thể được gửi tới mô hình nhúng (embedding) của
+Google để tìm những nguyên liệu có nghĩa gần giống. Chỉ có chữ tìm kiếm được gửi
+đi. Chúng tôi giữ chữ tìm kiếm đó cùng kết quả nhúng trong một bộ nhớ đệm dùng
+chung, không gắn với tài khoản của bạn, để lần tìm sau nhanh hơn. Nếu bạn chưa
+đồng ý cho dùng AI, tìm nguyên liệu chỉ dùng cách so khớp chữ của riêng Kallo và
+không gửi gì tới Google.
 
 Mô hình **không** biết mục tiêu cân nặng, nhịp độ, chỉ tiêu calo hay đa lượng,
 cân nặng, chiều cao, tuổi, giới tính, email, tên, cũng như lịch sử bữa ăn của
@@ -166,8 +173,9 @@ Chúng tôi **không** dùng nội dung của bạn để huấn luyện mô hì
 Lần đầu bạn dùng tính năng phân tích bữa ăn bằng AI hoặc quét nhãn, Kallo sẽ hỏi
 ý bạn **trước khi gửi bất cứ thứ gì** tới mô hình. Bạn có thể rút lại sự đồng ý
 bất cứ lúc nào trong **Cài đặt → Tùy chỉnh → Phân tích bữa ăn bằng AI**. Khi đó,
-tính năng phân tích bằng AI và quét nhãn sẽ ngừng; ghi thủ công và quét mã vạch
-vẫn dùng bình thường.
+tính năng phân tích bằng AI và quét nhãn sẽ ngừng, và tìm nguyên liệu không gửi
+gì tới Google nữa. Ghi thủ công vẫn dùng bình thường, với tìm nguyên liệu chuyển
+sang so khớp chữ, và quét mã vạch cũng vậy.
 
 ### Điều gì xảy ra với dữ liệu đó ở phía Google
 
