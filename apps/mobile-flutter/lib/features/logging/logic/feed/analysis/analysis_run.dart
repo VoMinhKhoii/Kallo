@@ -12,6 +12,8 @@
 /// paging to another day changes the target under a state object that stays.
 library;
 
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +21,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../../models/logging/relog.dart';
+import '../../../../privacy/logic/ai_consent_gate.dart';
 import '../../../data/logging_providers.dart';
 import '../../../data/stream_analysis_controller.dart';
 import '../../../widgets/composer/meal_input.dart';
@@ -173,6 +176,34 @@ class FeedAnalysisRun {
     );
   }
 
+  /// [startPlain] behind the AI-processing consent ask (App Store 5.1.2(i)) —
+  /// for the entry points that did not already ask (a parked meal handed over
+  /// from another surface).
+  void askThenStartPlain(
+    BuildContext context,
+    WidgetRef ref, {
+    required String userId,
+    required String date,
+    required String text,
+  }) => startWithAiConsent(
+    context,
+    ref,
+    () => startPlain(ref, userId: userId, date: date, text: text),
+  );
+
+  /// [retry] behind the consent ask — consent may have been withdrawn in
+  /// Settings while the failed card sat there.
+  void askThenRetry(
+    BuildContext context,
+    WidgetRef ref, {
+    required String userId,
+    required String date,
+  }) => startWithAiConsent(
+    context,
+    ref,
+    () => retry(ref, userId: userId, date: date),
+  );
+
   void retry(WidgetRef ref, {required String userId, required String date}) {
     final attempt = _failed;
     if (attempt == null) return;
@@ -234,17 +265,15 @@ class FeedAnalysisRun {
     HapticFeedback.lightImpact();
   }
 
-  void fail(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool retryable,
-    bool paymentRequired = false,
-  }) {
+  void fail(BuildContext context, WidgetRef ref, AnalysisFailure failure) {
+    final (:retryable, :paymentRequired, :consentRequired) = failure;
     final attempt = _inFlight;
     final snapshot = _relogSnapshot;
     // The in-flight attempt becomes the failed card verbatim — this is what
-    // "Try again" replays.
-    _failed = attempt;
+    // "Try again" replays. Not for a missing AI consent: nothing went wrong
+    // that a retry could fix, so the words go back into the composer (below)
+    // and the consent sheet asks; agreeing and sending again is the retry.
+    _failed = consentRequired ? null : attempt;
     _failedRetryable = retryable;
     _inFlight = null;
     _relogSnapshot = null;
@@ -268,6 +297,9 @@ class FeedAnalysisRun {
     ref.read(streamAnalysisProvider.notifier).reset();
     if (paymentRequired && context.mounted) {
       context.push('/paywall');
+    }
+    if (consentRequired && context.mounted) {
+      unawaited(reaskAiConsent(context, ref));
     }
   }
 

@@ -1493,7 +1493,8 @@
         "serverError": "Could not scan label. Please try again.",
         "featureLocked": "Label scanning is a Premium feature. Go Premium to scan nutrition tables.",
         "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
-        "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
+        "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically.",
+        "aiConsentRequired": "Label scanning sends your photo to Google Gemini. Allow AI analysis to scan labels."
       }
     },
     "stagedMealCard": {
@@ -1504,7 +1505,16 @@
     "pendingDiscarded": "Unsaved meal discarded",
     "copyMessage": "Copy",
     "messageCopied": "Copied",
-    "draftReplaced": "Draft replaced"
+    "draftReplaced": "Draft replaced",
+    "aiConsent": {
+      "title": "Use AI to estimate your meals?",
+      "body": "To estimate nutrition, Kallo sends the meal descriptions you type — and the label photos you scan — to Google’s Gemini AI (Vertex AI on Google Cloud).",
+      "training": "Google doesn’t use them to train its models. You can turn this off anytime in Settings.",
+      "privacyLink": "How we handle your data",
+      "continue": "Continue",
+      "notNow": "Not now",
+      "error": "Couldn’t save your choice. Please try again."
+    }
   },
   "groups": {
     "page": {
@@ -1849,6 +1859,11 @@
     },
     "groups": {
       "nutritionProfile": "Nutrition profile"
+    },
+    "aiConsent": {
+      "label": "AI meal analysis",
+      "subline": "Sends meals and label photos to Google Gemini",
+      "error": "Couldn’t update your AI preference. Please try again."
     }
   },
   "errors": {

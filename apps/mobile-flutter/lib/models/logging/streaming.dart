@@ -203,6 +203,11 @@ class StreamErrorEvent extends StreamEvent {
 
   bool get isPaymentRequired => status == 402;
 
+  /// 403 `ai_consent_required`: the user has not agreed to send meal text to
+  /// the AI provider (App Store 5.1.2(i)). Nothing was analyzed.
+  bool get isAiConsentRequired =>
+      status == 403 || code == 'ai_consent_required';
+
   Map<String, dynamic> toJson() => {
     'type': 'error',
     'code': code,

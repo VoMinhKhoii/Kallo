@@ -55,7 +55,7 @@ shapes it covers.
 ### Features (one module per surface)
 
 `lib/features/{auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall,
-settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `providers/`, and
+privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `providers/`, and
 `logic/`:
 
 - **auth** — sign in / sign up, Google button, Supabase auth.

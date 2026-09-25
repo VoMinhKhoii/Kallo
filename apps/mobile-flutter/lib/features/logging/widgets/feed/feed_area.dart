@@ -153,7 +153,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     if (!mounted) return;
     final meal = _handoff.take(ref);
     if (meal == null) return;
-    _analysis.startPlain(
+    _analysis.askThenStartPlain(
+      context,
       ref,
       userId: widget.profile.userId,
       date: widget.date,
@@ -176,13 +177,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onRevealed:
           () =>
               _analysis.reveal(ref, userId: profile.userId, date: widget.date),
-      onFailed:
-          (retryable, paymentRequired) => _analysis.fail(
-            context,
-            ref,
-            retryable: retryable,
-            paymentRequired: paymentRequired,
-          ),
+      onFailed: (failure) => _analysis.fail(context, ref, failure),
     );
 
     _handoff.claim(
@@ -269,7 +264,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       failedText: _analysis.failedText,
       failedRetryable: _analysis.failedRetryable,
       onRetry:
-          () => _analysis.retry(ref, userId: profile.userId, date: widget.date),
+          () => _analysis.askThenRetry(
+            context,
+            ref,
+            userId: profile.userId,
+            date: widget.date,
+          ),
       onDiscardFailed: _analysis.discardFailed,
     );
 
