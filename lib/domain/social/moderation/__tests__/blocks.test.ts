@@ -1,11 +1,12 @@
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   blockedBetweenSql,
+  isBlockedPair,
   lockPairSql,
   notBlockedWithSql,
 } from '@/lib/domain/social/moderation/blocks';
-import { mealShareReplies } from '@/lib/infra/db/schema';
+import { mealShareReplies, userBlocks } from '@/lib/infra/db/schema';
 
 const VIEWER = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OTHER = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -44,6 +45,33 @@ describe('blockedBetweenSql', () => {
       notBlockedWithSql(VIEWER, OTHER)
     );
     expect(sql).toMatch(/^NOT\s+EXISTS/);
+  });
+});
+
+describe('isBlockedPair', () => {
+  // The same either-direction condition the EXISTS form wraps, counted over
+  // user_blocks — one spelling of the rule, read as a boolean.
+  it('counts user_blocks rows matching the pair in either direction', async () => {
+    const $count = vi.fn(async (..._args: unknown[]) => 1);
+
+    await expect(
+      isBlockedPair({ $count } as never, VIEWER, OTHER)
+    ).resolves.toBe(true);
+
+    const [table, condition] = $count.mock.calls[0] ?? [];
+    expect(table).toBe(userBlocks);
+    const { sql, params } = new PgDialect().sqlToQuery(condition as never);
+    expect(flat(sql)).toBe(
+      '(("user_blocks"."blocker_id" = $1 AND "user_blocks"."blocked_id" = $2) OR ("user_blocks"."blocker_id" = $3 AND "user_blocks"."blocked_id" = $4))'
+    );
+    expect(params).toEqual([VIEWER, OTHER, OTHER, VIEWER]);
+  });
+
+  it('is false when no row matches', async () => {
+    const $count = vi.fn(async () => 0);
+    await expect(
+      isBlockedPair({ $count } as never, VIEWER, OTHER)
+    ).resolves.toBe(false);
   });
 });
 

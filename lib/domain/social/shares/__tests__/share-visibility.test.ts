@@ -164,17 +164,21 @@ describe('canViewShareOwnedBy', () => {
 
     expectEveryColumnQualified(db.captured.statement);
     const { params } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    // The same bound values as before — the access contract is unchanged.
-    // `sharedAt` arrives as encoder-mapped text: a raw Date in a raw fragment
-    // reaches the driver unserialized and throws.
-    // Order: the block check (either direction), the friendship (bounded by
-    // accepted_at), then the group branch — the viewer's memberships, and
-    // both people's join times against the share.
+    // It is `shareAccessSql` over the row's values, so every branch of the
+    // contract is bound. `sharedAt` arrives as encoder-mapped text: a raw Date
+    // in a raw fragment reaches the driver unserialized and throws.
+    // Order: the block check (either direction), the owner check, the
+    // visibility, the friendship (bounded by accepted_at), then the group
+    // branch — the viewer's memberships, and both people's join times against
+    // the share.
     expect(params).toEqual([
       VIEWER_ID,
       OWNER_ID,
       OWNER_ID,
       VIEWER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      'circle',
       VIEWER_ID,
       OWNER_ID,
       VIEWER_ID,
@@ -201,7 +205,9 @@ describe('canViewShareOwnedBy', () => {
 
     const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
     const flat = sql.replace(/\s+/g, ' ');
-    expect(flat).toMatch(/^SELECT \(NOT EXISTS \( SELECT 1 FROM "user_blocks"/);
+    expect(flat).toMatch(
+      /^SELECT \( NOT EXISTS \( SELECT 1 FROM "user_blocks"/
+    );
     expect(flat.match(/FROM "user_blocks"/g)).toHaveLength(1);
     expect(flat.indexOf('"user_blocks"')).toBeLessThan(
       flat.indexOf('"friendships"')
@@ -219,7 +225,7 @@ describe('canViewShareOwnedBy', () => {
     );
 
     const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    expect(sql).toContain('"friendships"."accepted_at" <= $9');
+    expect(sql).toContain('"friendships"."accepted_at" <= $12');
   });
 });
 

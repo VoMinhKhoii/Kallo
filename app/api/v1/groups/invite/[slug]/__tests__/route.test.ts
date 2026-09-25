@@ -2,15 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const INVITER = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 
-const { mockExecute, mockSelect } = vi.hoisted(() => ({
-  mockExecute: vi.fn(),
+const { mockCount, mockSelect } = vi.hoisted(() => ({
+  mockCount: vi.fn(),
   mockSelect: vi.fn(),
 }));
 
 // The REAL getFriendshipStatus runs against this db double: its block check is
-// one `execute` (the shared user_blocks predicate), its edge read one select.
+// one `$count` over user_blocks (the shared predicate), its edge read one select.
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { execute: mockExecute, select: mockSelect },
+  db: { $count: mockCount, select: mockSelect },
 }));
 vi.mock('@/lib/actions/groups/profile', () => ({
   getProfileBySlug: vi.fn().mockResolvedValue({
@@ -51,7 +51,7 @@ describe('GET /api/v1/groups/invite/[slug]', () => {
   // A block — in either direction, now held in user_blocks — answers the
   // SAME 404 an invalid slug gets, so the preview can never reveal it.
   it('404s exactly like an invalid link when the pair is blocked', async () => {
-    mockExecute.mockResolvedValueOnce([{ blocked: true }]);
+    mockCount.mockResolvedValueOnce(1);
 
     const response = await GET({} as never, params);
 
@@ -64,7 +64,7 @@ describe('GET /api/v1/groups/invite/[slug]', () => {
   });
 
   it('previews a connectable inviter when nobody is blocked', async () => {
-    mockExecute.mockResolvedValueOnce([{ blocked: false }]);
+    mockCount.mockResolvedValueOnce(0);
     edgeRead([]);
 
     const response = await GET({} as never, params);

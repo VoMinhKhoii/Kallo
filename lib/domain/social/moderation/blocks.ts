@@ -15,9 +15,18 @@
 // predicate is what covers the rest — named groups the two still share.
 
 import { type SQL, type SQLWrapper, sql } from 'drizzle-orm';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { userBlocks } from '@/lib/infra/db/schema';
 
 type UserRef = SQLWrapper | string;
+
+/** A user_blocks row between `a` and `b`, in either direction — the rule
+ * itself, as a condition on user_blocks. Parenthesised whole, so it composes
+ * under an AND. */
+function blockRowBetweenSql(a: UserRef, b: UserRef): SQL<boolean> {
+  return sql<boolean>`((${userBlocks.blockerId} = ${a} AND ${userBlocks.blockedId} = ${b})
+         OR (${userBlocks.blockerId} = ${b} AND ${userBlocks.blockedId} = ${a}))`;
+}
 
 /**
  * True when `a` and `b` are in a blocked relation — either one blocked the
@@ -30,10 +39,20 @@ export function blockedBetweenSql(a: UserRef, b: UserRef): SQL<boolean> {
     EXISTS (
       SELECT 1
       FROM ${userBlocks}
-      WHERE (${userBlocks.blockerId} = ${a} AND ${userBlocks.blockedId} = ${b})
-         OR (${userBlocks.blockerId} = ${b} AND ${userBlocks.blockedId} = ${a})
+      WHERE ${blockRowBetweenSql(a, b)}
     )
   `;
+}
+
+/** The same rule read as one boolean, for a caller holding two ids rather
+ * than folding it into a query of its own (accepting an invite, resolving an
+ * invite link). At most two rows can match, so the count is the check. */
+export async function isBlockedPair(
+  db: Pick<AppDb | AppTransaction, '$count'>,
+  a: string,
+  b: string
+): Promise<boolean> {
+  return (await db.$count(userBlocks, blockRowBetweenSql(a, b))) > 0;
 }
 
 /** The negation, for a read's WHERE: keep only rows whose author is not

@@ -224,10 +224,10 @@ export async function canViewShare(
 }
 
 /** Variant for callers that already locked and read the share row. This skips
- * the duplicate meal_shares read while preserving the same access contract —
- * the owner and private short-circuits are the two branches `shareAccessSql`
- * evaluates in SQL, decided here in TypeScript because the row is already in
- * hand; the block check and the relationship rule still run in SQL. */
+ * the duplicate meal_shares read and evaluates the same `shareAccessSql` over
+ * the row's values instead of its columns. The owner and private cases are
+ * also answered here in TypeScript, without a round trip — the answers
+ * `shareAccessSql` itself gives for them. */
 export async function canViewShareOwnedBy(
   viewerId: string,
   share: { actorId: string; sharedAt: Date; visibility: string },
@@ -238,12 +238,15 @@ export async function canViewShareOwnedBy(
 
   return readVisible(
     db,
-    sql`SELECT (${notBlockedWithSql(viewerId, share.actorId)} AND (${relationshipAccessSql(
+    sql`SELECT ${shareAccessSql(
       viewerId,
-      share.actorId,
+      // Typed, so `owner = viewer` compares uuids rather than two untyped
+      // parameters.
+      sql`${share.actorId}::uuid`,
       // Bound through the column encoder: a bare Date in a raw fragment
       // reaches the driver unserialized and throws.
-      sql.param(share.sharedAt, mealShares.sharedAt)
-    )})) AS visible`
+      sql.param(share.sharedAt, mealShares.sharedAt),
+      share.visibility
+    )} AS visible`
   );
 }

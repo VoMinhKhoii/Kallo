@@ -15,7 +15,7 @@ import {
 } from '@/lib/domain/notifications/with-notifications';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import {
-  blockedBetweenSql,
+  isBlockedPair,
   lockPairSql,
 } from '@/lib/domain/social/moderation/blocks';
 import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
@@ -265,17 +265,4 @@ export async function getFriendshipStatus(
     )
     .limit(1);
   return rows[0]?.status ?? null;
-}
-
-/** Whether the two users are in a blocked relation, either direction — the
- * shared block rule, read as one boolean. */
-async function isBlockedPair(
-  db: Pick<Db, 'execute'>,
-  a: string,
-  b: string
-): Promise<boolean> {
-  const rows = (await db.execute(
-    sql`SELECT ${blockedBetweenSql(a, b)} AS blocked`
-  )) as unknown as Array<{ blocked: boolean | null }>;
-  return Boolean(rows[0]?.blocked);
 }
