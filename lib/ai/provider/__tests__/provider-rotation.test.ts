@@ -62,7 +62,7 @@ describe('AI Key Rotation & Context Retention End-to-End (TC-4.1)', () => {
     const prompt1 = `Tôi ăn trưa: 1 bát Phở bò với 150g bánh phở và ${targetQuantity} ${targetIngredient}.`;
     sessionStore.appendMessage(sessionId, { role: 'user', content: prompt1 });
 
-    const reply1 = await executeWithFailover({
+    const reply1 = await executeWithFailover<string>({
       primaryPool: pool,
       messages: sessionStore.formatForGenericLlm(sessionStore.get(sessionId)!),
       executePrimary: mockPrimaryCall,
@@ -83,7 +83,7 @@ describe('AI Key Rotation & Context Retention End-to-End (TC-4.1)', () => {
 
     const rotations: Array<{ fromKey: string; reason: string }> = [];
 
-    const reply2 = await executeWithFailover({
+    const reply2 = await executeWithFailover<string>({
       primaryPool: pool,
       messages: sessionStore.formatForGenericLlm(sessionStore.get(sessionId)!),
       executePrimary: mockPrimaryCall,
