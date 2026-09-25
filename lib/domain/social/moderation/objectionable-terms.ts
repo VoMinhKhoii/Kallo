@@ -13,7 +13,8 @@
 // Vietnamese is listed only where the unaccented spelling has no innocent
 // reading. Also NOT listed, on purpose: "óc chó" (an insult, but "hạt óc chó"
 // is a walnut), "cock" / "dick" / "pussy" (rooster, spotted dick, cat), bare
-// "kill" (a workout "kills" you).
+// "kill" (a workout "kills" you), "porn" ("food porn"), plural "faggots"
+// (faggots and peas, a British dish).
 //
 // Categories mirror the report reasons: slurs (hate), sexual, violence /
 // self-harm incitement. Lowercase; text-filter.ts normalises input the same
@@ -25,7 +26,6 @@ const EN_SLURS = [
   'nigga',
   'niggas',
   'faggot',
-  'faggots',
   'retard',
   'retarded',
   'retards',
@@ -59,7 +59,6 @@ const EN_SEXUAL = [
   'slut',
   'sluts',
   'blowjob',
-  'porn',
   'rape',
   'raped',
   'rapist',

@@ -24,6 +24,8 @@
 --       revision writes as 'blocked' becomes a user_blocks row (blocker =
 --       requested_by, only when that is one of the pair), the pair's
 --       notifications about each other are deleted, and the edge is removed.
+--   (i) the second bridge: an accepted edge the previous revision's
+--       acceptInvite writes for a blocked pair is removed.
 --
 -- How auth.uid() is simulated: Supabase's auth.uid() reads the 'sub' claim from
 -- current_setting('request.jwt.claims'). The helper authenticate_as(uuid) sets
@@ -35,7 +37,7 @@
 
 BEGIN;
 
-SELECT plan(34);
+SELECT plan(36);
 
 -- -----------------------------------------------------------------------------
 -- Fixtures (planted as the privileged test role, bypassing RLS)
@@ -514,6 +516,32 @@ SELECT is(
        AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid)),
   'accepted',
   '(h) an accepted edge is untouched by the bridge'
+);
+
+-- =============================================================================
+-- (i) Rollout bridge: the old acceptInvite cannot re-friend a blocked pair.
+-- =============================================================================
+-- stranger blocked coach in (h). The previous revision's acceptInvite finds
+-- no edge and inserts an accepted one; the bridge removes it.
+INSERT INTO public.friendships (user_low, user_high, status, requested_by)
+VALUES (least(:'stranger_id'::uuid, :'coach_id'::uuid),
+        greatest(:'stranger_id'::uuid, :'coach_id'::uuid),
+        'accepted', :'coach_id');
+
+SELECT is(
+  (SELECT count(*)::int FROM public.friendships
+     WHERE user_low = least(:'stranger_id'::uuid, :'coach_id'::uuid)
+       AND user_high = greatest(:'stranger_id'::uuid, :'coach_id'::uuid)),
+  0,
+  '(i) an accepted edge written for a blocked pair is removed'
+);
+
+SELECT is(
+  (SELECT status FROM public.friendships
+     WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
+       AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid)),
+  'accepted',
+  '(i) an unblocked pair''s accepted edge stands'
 );
 
 SELECT * FROM finish();

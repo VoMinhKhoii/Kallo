@@ -49,6 +49,8 @@ describe('findObjectionableTerm', () => {
     'a cocktail and a spotted dick',
     'grapes, shiitake, assassin bugs',
     'this workout will kill me',
+    'food porn: a stacked burger',
+    'faggots and peas',
   ])('lets %j through', (text) => {
     expect(findObjectionableTerm(text)).toBeNull();
   });

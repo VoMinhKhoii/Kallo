@@ -78,7 +78,8 @@ DELETE FROM public.friendships WHERE status = 'blocked';
 --
 -- FOLLOW-UP, once the new revision is fully promoted (see docs/DATABASE.md,
 -- "Retiring friendships.status = 'blocked'"): a migration that drops this
--- trigger and function and removes 'blocked' from friendships_status_check,
+-- trigger and 1c's, their functions, and removes 'blocked' from
+-- friendships_status_check,
 -- and a code change deleting the leftover `<> 'blocked'` guards.
 CREATE OR REPLACE FUNCTION public.convert_legacy_friendship_block()
 RETURNS trigger
@@ -115,6 +116,43 @@ CREATE TRIGGER convert_legacy_friendship_block
   FOR EACH ROW
   WHEN (NEW.status = 'blocked')
   EXECUTE FUNCTION public.convert_legacy_friendship_block();
+
+-- -----------------------------------------------------------------------------
+-- 1c. Rollout bridge: no friendship between a blocked pair
+-- -----------------------------------------------------------------------------
+-- TEMPORARY, retired with 1b. The backfill above deleted the blocked edges,
+-- and the previous revision's acceptInvite looks only at friendships for a
+-- block, so in the deploy window a blocked person redeeming the blocker's
+-- invite link would find no edge and insert an accepted friendship that
+-- nothing downstream hides (friend lists and direct chats read friendships).
+-- The new acceptInvite refuses a blocked pair under the pair lock, so this
+-- only ever fires for the old revision. Same AFTER-ROW self-delete as 1b.
+CREATE OR REPLACE FUNCTION public.drop_friendship_of_blocked_pair()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.user_blocks b
+    WHERE (b.blocker_id = NEW.user_low AND b.blocked_id = NEW.user_high)
+       OR (b.blocker_id = NEW.user_high AND b.blocked_id = NEW.user_low)
+  ) THEN
+    DELETE FROM public.friendships WHERE id = NEW.id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.drop_friendship_of_blocked_pair() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.drop_friendship_of_blocked_pair()
+  FROM anon, authenticated;
+
+CREATE TRIGGER drop_friendship_of_blocked_pair
+  AFTER INSERT OR UPDATE OF status ON public.friendships
+  FOR EACH ROW
+  WHEN (NEW.status <> 'blocked')
+  EXECUTE FUNCTION public.drop_friendship_of_blocked_pair();
 
 -- -----------------------------------------------------------------------------
 -- 2. user_blocks RLS — a user manages only the blocks they placed
