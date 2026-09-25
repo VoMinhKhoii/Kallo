@@ -122,7 +122,14 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                 ),
                 const SizedBox(height: KalloSpacing.sp2),
               ],
-              Text(tr(deleteSubscriptionWarningKey()), style: dashMeta()),
+              Text(
+                tr(
+                  deleteSubscriptionWarningKey(
+                    managementStore: entitlement?.managementStore,
+                  ),
+                ),
+                style: dashMeta(),
+              ),
               const SizedBox(height: KalloSpacing.sp6),
 
               // ── The gate — type the word, read what it costs ────────────
