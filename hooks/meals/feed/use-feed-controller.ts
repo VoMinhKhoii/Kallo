@@ -42,7 +42,7 @@ export function useFeedController(args: {
   isDateNavigationPending: boolean;
   onInitialMealApplied: (() => void) | undefined;
   onPaymentRequired: (() => void) | undefined;
-  /** Asks for AI-processing consent before the first analysis; re-asks on a 403. */
+  /** Asked before every analysis; re-asked when the server refuses for consent. */
   aiConsent: AiConsentGate;
   /**
    * The SERVER's answer to "does this day hold anything?", read before the page
@@ -66,7 +66,7 @@ export function useFeedController(args: {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stream = useStreamAnalysis();
+  const stream = useStreamAnalysis({ aiConsent });
   const { guard } = useSubmitGuard();
 
   // Persistence actions on a saved meal card (remove-with-undo, edit amounts,
@@ -142,7 +142,6 @@ export function useFeedController(args: {
     lastErrorRef,
     isCheat,
     cheatIntensity,
-    ensureAiConsent: aiConsent.ensure,
   });
 
   useMealPrefill({
@@ -185,24 +184,14 @@ export function useFeedController(args: {
   // cleared on submit. So the unanswered exchange leaves the feed and its
   // words go back into the composer — whose draft storage keeps them while
   // the user is on pricing.
-  // A missing AI consent (403) retracts the same way: the words go back into
-  // the composer, and the consent ask opens so one tap re-submits them.
-  const retractTo = useCallback(
-    (msgId: string, then: (() => void) | undefined) => {
+  const handlePaymentRequired = useCallback(
+    (msgId: string) => {
       const { text } = retractExchange(messages, msgId);
       setMessages((prev) => retractExchange(prev, msgId).messages);
       if (text) inputRef.current?.setText(text, text.length);
-      then?.();
+      onPaymentRequired?.();
     },
-    [messages]
-  );
-  const handlePaymentRequired = useCallback(
-    (msgId: string) => retractTo(msgId, onPaymentRequired),
-    [retractTo, onPaymentRequired]
-  );
-  const handleConsentRequired = useCallback(
-    (msgId: string) => retractTo(msgId, aiConsent.onRequired),
-    [retractTo, aiConsent.onRequired]
+    [messages, onPaymentRequired]
   );
 
   useStreamingTerminalEffects({
@@ -215,7 +204,6 @@ export function useFeedController(args: {
     lastErrorRef,
     onAnalysisComplete: handleAnalysisComplete,
     onPaymentRequired: handlePaymentRequired,
-    onConsentRequired: handleConsentRequired,
   });
 
   const { pendingMessages, displayMessages, unconfirmedMessages } =

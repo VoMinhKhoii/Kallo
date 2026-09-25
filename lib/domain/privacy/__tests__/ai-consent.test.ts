@@ -40,10 +40,4 @@ describe('assertAiConsent', () => {
     expect(error.retryable).toBe(false);
     expect(error.toJSON().error.resolution).toContain('permission');
   });
-
-  it('carries a caller-supplied (localized) message', () => {
-    expect(() => assertAiConsent(notConsented, 'Hãy cho phép')).toThrow(
-      'Hãy cho phép'
-    );
-  });
 });

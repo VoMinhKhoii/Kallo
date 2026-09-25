@@ -165,7 +165,7 @@ another domain module is a smell worth a second look.
 | `prompts/` | `text/` (the strings) vs `build/` (the builders) | ok |
 | `portion/` | `data/` (the tables) vs the resolver logic | ok |
 | `matching/` | `retrieve/` `rank/` `alias/` | ok |
-| `streaming/` | SSE event encoding and parsing | ok |
+| `streaming/` | SSE event encoding and parsing, plus the browser side of the stream: `client-state.ts` (the state an analysis streams into, folded frame by frame) and `pre-stream-refusal.ts` (402 paywall / `ai_consent_required` / error, read from the body code — never a bare 403) | ok |
 | `language/` | language detect + guard | ok |
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
@@ -204,7 +204,7 @@ another domain module is a smell worth a second look.
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
-| `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; entry points pass its `gate` to their hooks | ok |
+| `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; its `gate` goes to the two transports that own the ask — `useStreamAnalysis` (every meal analysis) and `useNutritionOcr` (label scans) | ok |
 | `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step | split |
 | `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |

@@ -2,10 +2,11 @@
 
 import type { RefObject } from 'react';
 import { toast } from 'sonner';
+import type { StreamAnalyzeInput } from '@/hooks/meals/analysis/use-stream-analysis';
 import type {
+  AnalyzeOutcome,
   StreamAnalysisState,
-  StreamAnalyzeInput,
-} from '@/hooks/meals/analysis/use-stream-analysis';
+} from '@/lib/ai/streaming/client-state';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import type { ChatMessage } from '@/lib/core/types/meal';
 import { mealTextSchema } from '@/lib/core/validation/meal';
@@ -14,7 +15,7 @@ import type { RelogRef } from '@/lib/domain/logging/relog/relog';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
-    analyze: (input: StreamAnalyzeInput) => Promise<boolean>;
+    analyze: (input: StreamAnalyzeInput) => Promise<AnalyzeOutcome>;
     reset: () => void;
   };
   selectedDate: string;
@@ -29,11 +30,6 @@ interface UseFeedSubmitParams {
   isCheat?: boolean;
   /** Indulgence magnitude passed to the cheat estimator. */
   cheatIntensity?: CheatIntensity;
-  /**
-   * Resolves true once AI-processing consent is on record, asking first when
-   * it is not; false means send nothing.
-   */
-  ensureAiConsent: () => Promise<boolean>;
 }
 
 function generateId() {
@@ -53,7 +49,6 @@ export function useFeedSubmit({
   lastErrorRef,
   isCheat,
   cheatIntensity,
-  ensureAiConsent,
 }: UseFeedSubmitParams) {
   /**
    * Analyze the composer's free text. `override` serves the combined-relog
@@ -91,11 +86,6 @@ export function useFeedSubmit({
     // Falls back to the analyzed text, so every non-relog submit is unchanged.
     const label = override?.label ?? text;
 
-    // Nothing goes to the AI provider before the user has agreed (App Store
-    // 5.1.2(i)). The composer still holds the text, so "Not now" loses
-    // nothing and "Continue" carries straight on with this same submit.
-    if (!(await ensureAiConsent())) return false;
-
     let durablyStaged = false;
     await guard(async () => {
       const assistantMsgId = generateId();
@@ -130,7 +120,7 @@ export function useFeedSubmit({
       inputRef.current?.clear();
       scrollToBottom();
 
-      durablyStaged = await stream.analyze({
+      const outcome = await stream.analyze({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
@@ -143,6 +133,17 @@ export function useFeedSubmit({
             }
           : {}),
       });
+      durablyStaged = outcome === 'staged';
+      // "Not now" to AI processing: nothing was sent. Take this exchange —
+      // and only this one — back out, and return the words to the composer.
+      if (outcome === 'consentDeclined') {
+        setMessages((prev) =>
+          prev.filter(
+            (msg) => msg.id !== userMessage.id && msg.id !== assistantMsgId
+          )
+        );
+        inputRef.current?.setText(label, label.length);
+      }
     });
     return durablyStaged;
   };

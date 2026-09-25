@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import type { StreamAnalysisState } from '@/hooks/meals/analysis/use-stream-analysis';
+import type { StreamAnalysisState } from '@/lib/ai/streaming/client-state';
 import type { ChatMessage } from '@/lib/core/types/meal';
 
 interface UseStreamingTerminalEffectsParams {
@@ -19,9 +19,6 @@ interface UseStreamingTerminalEffectsParams {
   // instead of showing an error toast. Gets the streaming bubble's id, and
   // runs before the bubble is dropped, so its updates still see it.
   onPaymentRequired?: (msgId: string) => void;
-  // Pre-stream 403: no AI-processing consent on record. Same bubble contract
-  // as `onPaymentRequired`; the surface re-asks for consent.
-  onConsentRequired?: (msgId: string) => void;
 }
 
 /**
@@ -131,7 +128,6 @@ export function useStreamingTerminalEffects({
   lastErrorRef,
   onAnalysisComplete,
   onPaymentRequired,
-  onConsentRequired,
 }: UseStreamingTerminalEffectsParams) {
   const { status, result, cheatSpec, analysisId, error, reset } = stream;
 
@@ -190,19 +186,27 @@ export function useStreamingTerminalEffects({
     setMessages,
   ]);
 
-  // Terminal: a pre-stream refusal — 402 (AI analysis is locked) or 403 (no
-  // AI-processing consent). Drop the in-flight streaming bubble (no error
-  // toast) and hand off to the paywall or the consent ask. Mirrors the error
-  // path's cleanup but routes to the surface that can unblock the user.
+  // Terminal: pre-stream 402 — AI analysis is locked. Drop the in-flight
+  // streaming bubble (no error toast) and open the paywall. Mirrors the error
+  // path's cleanup but routes to the upgrade surface instead.
+  //
+  // A declined AI-processing consent (`consentRequired`) only ends the run
+  // here. Nothing was sent, and the bubble belongs to whoever started the run
+  // — a submit, a refine, a clarify — which takes back exactly what it added
+  // when `analyze()` resolves `consentDeclined`. Deleting by id here would
+  // take a clarify's EXISTING cheat card with it.
   useEffect(() => {
-    if (status !== 'paymentRequired' && status !== 'consentRequired') return;
-    if (!streamingMsgId) return;
+    if (status === 'consentRequired') {
+      setStreamingMsgId(null);
+      reset();
+      return;
+    }
+    if (status !== 'paymentRequired' || !streamingMsgId) return;
 
     const msgId = streamingMsgId;
     setStreamingMsgId(null);
 
-    if (status === 'paymentRequired') onPaymentRequired?.(msgId);
-    else onConsentRequired?.(msgId);
+    onPaymentRequired?.(msgId);
     setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
     reset();
   }, [
@@ -210,7 +214,6 @@ export function useStreamingTerminalEffects({
     reset,
     streamingMsgId,
     onPaymentRequired,
-    onConsentRequired,
     setStreamingMsgId,
     setMessages,
   ]);

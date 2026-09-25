@@ -11,17 +11,14 @@ const mocks = vi.hoisted(() => ({
   resetError: vi.fn(),
   scanLabel: vi.fn(),
   stopCamera: vi.fn(),
-  ensureAiConsent: vi.fn(),
-  onConsentRequired: vi.fn(),
 }));
 
+// The consent gate itself lives in `useNutritionOcr` (mocked below); the tab
+// only hands it over.
 vi.mock('@/components/privacy/ai-consent-provider', () => ({
   useAiConsent: () => ({
     consented: true,
-    gate: {
-      ensure: mocks.ensureAiConsent,
-      onRequired: mocks.onConsentRequired,
-    },
+    gate: { ensure: vi.fn(), onRequired: vi.fn() },
     setConsent: vi.fn(),
   }),
 }));
@@ -83,7 +80,6 @@ function selectFile(container: HTMLElement, name: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.ensureAiConsent.mockResolvedValue(true);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     value: vi
@@ -144,10 +140,12 @@ describe('OcrScannerTab lifecycle', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
-  it('sends nothing when the user answers "Not now" to the AI consent ask', async () => {
-    mocks.ensureAiConsent.mockResolvedValueOnce(false);
+  it('keeps the photo and reviews nothing when the scan was declined', async () => {
+    // A null scan: "Not now" to AI processing, nothing was sent.
+    mocks.scanLabel.mockResolvedValueOnce(null);
+    const onSuccess = vi.fn();
     const { container } = render(
-      <OcrScannerTab onSuccess={vi.fn()} onManualEntry={vi.fn()} />
+      <OcrScannerTab onSuccess={onSuccess} onManualEntry={vi.fn()} />
     );
     selectFile(container, 'label.png');
 
@@ -155,21 +153,7 @@ describe('OcrScannerTab lifecycle', () => {
       fireEvent.click(screen.getByRole('button', { name: 'submit' }));
     });
 
-    expect(mocks.ensureAiConsent).toHaveBeenCalledOnce();
-    expect(mocks.scanLabel).not.toHaveBeenCalled();
-  });
-
-  it('re-asks for consent when the server refuses with ai_consent_required', async () => {
-    mocks.scanLabel.mockRejectedValueOnce(new Error('ai_consent_required'));
-    const { container } = render(
-      <OcrScannerTab onSuccess={vi.fn()} onManualEntry={vi.fn()} />
-    );
-    selectFile(container, 'label.png');
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-    });
-
-    expect(mocks.onConsentRequired).toHaveBeenCalledOnce();
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'submit' })).toBeInTheDocument();
   });
 });

@@ -40,7 +40,7 @@ export function useAiConsent() {
  * knows without a fetch whether to ask. `gate.ensure()` opens the one-time
  * dialog and resolves with the answer; the caller then proceeds or sends
  * nothing. The server is the authority — a 403 `ai_consent_required` reaches
- * `gate.onRequired()` and the dialog is shown again.
+ * `gate.onRequired()`, which forgets the cached answer and asks again.
  */
 export function AiConsentProvider({
   initialConsented,
@@ -68,19 +68,24 @@ export function AiConsentProvider({
     resolverRef.current = null;
   }, []);
 
-  const ensure = useCallback(() => {
-    if (consented) return Promise.resolve(true);
+  // Open the dialog and resolve with the answer when it closes.
+  const ask = useCallback(() => {
     settle(false); // a second ask supersedes an unanswered first one
     setOpen(true);
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
     });
-  }, [consented, settle]);
+  }, [settle]);
+
+  const ensure = useCallback(
+    () => (consented ? Promise.resolve(true) : ask()),
+    [consented, ask]
+  );
 
   const onRequired = useCallback(() => {
     setConsented(false);
-    setOpen(true);
-  }, []);
+    return ask();
+  }, [ask]);
 
   const handleContinue = async () => {
     setIsSaving(true);

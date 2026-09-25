@@ -16,6 +16,7 @@ export interface AiConsentGate {
   /**
    * The server refused with `ai_consent_required` (consent withdrawn on
    * another device, or a stale page): forget the cached answer and ask again.
+   * Resolves with the answer, so the caller can re-send on true.
    */
-  onRequired: () => void;
+  onRequired: () => Promise<boolean>;
 }

@@ -16,8 +16,7 @@ export interface AiConsentSubject {
 
 /**
  * True when this user has agreed to send content to the AI provider. Fails
- * closed: anything but a recorded timestamp — NULL, or a field a partial
- * select left out — counts as no consent.
+ * closed: a NULL timestamp — never agreed, or withdrew — counts as no consent.
  */
 export function hasAiConsent(profile: AiConsentSubject): boolean {
   return Boolean(profile.aiProcessingConsentedAt);
@@ -28,9 +27,6 @@ export function hasAiConsent(profile: AiConsentSubject): boolean {
  * For routes that fail through `handleRouteError`; the streaming analysis route
  * serializes the same error by hand because it answers before its stream opens.
  */
-export function assertAiConsent(
-  profile: AiConsentSubject,
-  message?: string
-): void {
-  if (!hasAiConsent(profile)) throw Errors.aiConsentRequired(message);
+export function assertAiConsent(profile: AiConsentSubject): void {
+  if (!hasAiConsent(profile)) throw Errors.aiConsentRequired();
 }

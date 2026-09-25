@@ -20,7 +20,7 @@ import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
  */
 export function useOcrImageSelection(
   onSuccess: (data: ParsedNutritionLabel) => void,
-  /** Asks for AI-processing consent before the photo is sent; re-asks on refusal. */
+  /** Handed to `useNutritionOcr`, which asks before the photo is sent. */
   aiConsent: AiConsentGate
 ) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +30,7 @@ export function useOcrImageSelection(
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { scanLabel, isCompressing, isScanning, error, resetError } =
-    useNutritionOcr();
+    useNutritionOcr(aiConsent);
 
   useEffect(
     () => () => {
@@ -67,22 +67,16 @@ export function useOcrImageSelection(
 
   const scan = async () => {
     if (!selectedFile) return;
-    // The photo goes to the AI provider: ask first (App Store 5.1.2(i)).
-    // "Not now" keeps the photo selected and sends nothing.
-    if (!(await aiConsent.ensure())) return;
     const scanGeneration = ++scanGenerationRef.current;
     try {
+      // Null: "Not now" to AI processing — nothing was sent, and the photo
+      // stays selected for another try.
       const result = await scanLabel(selectedFile);
-      if (scanGeneration === scanGenerationRef.current) onSuccess(result);
+      if (result && scanGeneration === scanGenerationRef.current) {
+        onSuccess(result);
+      }
     } catch (scanError) {
       console.warn('Nutrition label scan failed:', scanError);
-      // `useNutritionOcr` throws the action's error code as the message.
-      if (
-        scanError instanceof Error &&
-        scanError.message === 'ai_consent_required'
-      ) {
-        aiConsent.onRequired();
-      }
     }
   };
 

@@ -13,6 +13,7 @@ import type {
   OcrErrorCode,
   ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 
 const ENCODE_ATTEMPTS = [
   { quality: 0.85, scale: 1 },
@@ -120,11 +121,18 @@ async function compressNutritionLabelImage(file: File): Promise<{
   throw new Error('Compressed image exceeds the upload budget');
 }
 
-export function useNutritionOcr() {
+/**
+ * Reading one label photo, behind the AI-processing consent gate (App Store
+ * 5.1.2(i)): the photo goes to the AI provider, so `scanLabel` asks first and
+ * resolves null — sending nothing — on "Not now". A server refusal for consent
+ * (the action's typed `ai_consent_required` code) asks again and, on
+ * "Continue", re-sends the same photo once.
+ */
+export function useNutritionOcr(aiConsent: AiConsentGate) {
   const [isCompressing, setIsCompressing] = useState(false);
   const [errorCode, setErrorCode] = useState<OcrErrorCode | null>(null);
 
-  const mutation = useMutation<ParsedNutritionLabel, Error, File>({
+  const mutation = useMutation<ParsedNutritionLabel | null, Error, File>({
     mutationFn: async (file: File) => {
       setErrorCode(null);
       setIsCompressing(true);
@@ -143,15 +151,22 @@ export function useNutritionOcr() {
         setIsCompressing(false);
       }
 
-      let result: Awaited<ReturnType<typeof scanNutritionLabelAction>>;
-      try {
-        result = await scanNutritionLabelAction({
-          imageBase64: compressed.base64Data,
-          mimeType: compressed.mimeType,
-        });
-      } catch (error) {
-        setErrorCode('server_error');
-        throw error;
+      const send = async () => {
+        try {
+          return await scanNutritionLabelAction({
+            imageBase64: compressed.base64Data,
+            mimeType: compressed.mimeType,
+          });
+        } catch (error) {
+          setErrorCode('server_error');
+          throw error;
+        }
+      };
+
+      let result = await send();
+      if (!result.success && result.code === 'ai_consent_required') {
+        if (!(await aiConsent.onRequired())) return null;
+        result = await send();
       }
 
       if (!result.success) {
@@ -163,8 +178,11 @@ export function useNutritionOcr() {
     },
   });
 
+  const scanLabel = async (file: File) =>
+    (await aiConsent.ensure()) ? mutation.mutateAsync(file) : null;
+
   return {
-    scanLabel: mutation.mutateAsync,
+    scanLabel,
     isScanning: mutation.isPending,
     isCompressing,
     data: mutation.data ?? null,

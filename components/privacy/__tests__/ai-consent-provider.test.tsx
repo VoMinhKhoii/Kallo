@@ -84,13 +84,40 @@ describe('AiConsentProvider', () => {
     expect(setAiProcessingConsent).not.toHaveBeenCalled();
   });
 
-  it('re-opens the ask when the server reports consent missing', async () => {
+  it('re-asks when the server reports consent missing, and resolves with the answer', async () => {
+    setAiProcessingConsent.mockResolvedValue({
+      aiProcessingConsentedAt: '2026-09-25T12:10:00.000Z',
+    });
     const gate = renderProvider(true);
 
+    let answer: Promise<boolean> = Promise.resolve(false);
     act(() => {
-      gate().onRequired();
+      answer = gate().onRequired();
     });
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
 
+    await userEvent.click(screen.getByRole('button', { name: 'continue' }));
+
+    // True lets the caller re-send the request the server refused.
+    await expect(answer).resolves.toBe(true);
+  });
+
+  it('resolves a server re-ask false on Not now', async () => {
+    const gate = renderProvider(true);
+
+    let answer: Promise<boolean> = Promise.resolve(true);
+    act(() => {
+      answer = gate().onRequired();
+    });
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'notNow' })
+    );
+
+    await expect(answer).resolves.toBe(false);
+    // The cached answer is forgotten: the next AI action asks again.
+    act(() => {
+      void gate().ensure();
+    });
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
   });
 });
