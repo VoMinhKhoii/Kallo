@@ -20,6 +20,10 @@
 --   (g) a friend sees only shares made at or after friendships.accepted_at
 --       (KALLO-03): a share from before the two connected stays hidden, the
 --       trigger stamps accepted_at, and it cannot be moved back.
+--   (h) the rollout bridge (20260925120100): a friendships row the previous
+--       revision writes as 'blocked' becomes a user_blocks row (blocker =
+--       requested_by, only when that is one of the pair), the pair's
+--       notifications about each other are deleted, and the edge is removed.
 --
 -- How auth.uid() is simulated: Supabase's auth.uid() reads the 'sub' claim from
 -- current_setting('request.jwt.claims'). The helper authenticate_as(uuid) sets
@@ -31,7 +35,7 @@
 
 BEGIN;
 
-SELECT plan(28);
+SELECT plan(34);
 
 -- -----------------------------------------------------------------------------
 -- Fixtures (planted as the privileged test role, bypassing RLS)
@@ -449,6 +453,67 @@ WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
 SELECT ok(
   NOT public.is_friend_since(:'friend_id', :'owner_id', now() - interval '1 day'),
   '(g) rewinding accepted_at is ignored — the backlog stays hidden'
+);
+
+-- =============================================================================
+-- (h) Rollout bridge: a legacy 'blocked' edge is converted as it is written.
+-- =============================================================================
+-- The previous revision blocks by writing the pair's friendships row as
+-- 'blocked'. stranger blocks coach that way; coach had notified stranger.
+INSERT INTO public.notifications (recipient_id, type, actor_ids, group_key)
+VALUES (:'stranger_id', 'friend.joined', ARRAY[:'coach_id']::uuid[],
+        'friend.joined:bridge-test');
+
+INSERT INTO public.friendships (user_low, user_high, status, requested_by)
+VALUES (:'stranger_id', :'coach_id', 'blocked', :'stranger_id');
+
+SELECT is(
+  (SELECT count(*)::int FROM public.user_blocks
+     WHERE blocker_id = :'stranger_id' AND blocked_id = :'coach_id'),
+  1,
+  '(h) a legacy blocked edge becomes a directed user_blocks row (blocker = requested_by)'
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM public.friendships
+     WHERE user_low = :'stranger_id' AND user_high = :'coach_id'),
+  0,
+  '(h) the legacy blocked edge is deleted, as a fresh block leaves it'
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM public.notifications
+     WHERE recipient_id = :'stranger_id' AND :'coach_id' = ANY(actor_ids)),
+  0,
+  '(h) the pair''s notifications about each other are deleted'
+);
+
+-- A requested_by outside the pair never mints a block between strangers,
+-- but the edge is still removed (the backfill's rule).
+INSERT INTO public.friendships (user_low, user_high, status, requested_by)
+VALUES (:'stranger_id', :'other_coach_id', 'blocked', :'owner_id');
+
+SELECT is(
+  (SELECT count(*)::int FROM public.user_blocks
+     WHERE :'other_coach_id' IN (blocker_id, blocked_id)),
+  0,
+  '(h) a requested_by outside the pair creates no block'
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM public.friendships
+     WHERE user_low = :'stranger_id' AND user_high = :'other_coach_id'),
+  0,
+  '(h) the corrupt blocked edge is deleted all the same'
+);
+
+-- Only a 'blocked' status fires it: the accepted owner/friend edge stands.
+SELECT is(
+  (SELECT status FROM public.friendships
+     WHERE user_low = least(:'owner_id'::uuid, :'friend_id'::uuid)
+       AND user_high = greatest(:'owner_id'::uuid, :'friend_id'::uuid)),
+  'accepted',
+  '(h) an accepted edge is untouched by the bridge'
 );
 
 SELECT * FROM finish();

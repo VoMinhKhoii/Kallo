@@ -1,10 +1,11 @@
 -- =============================================================================
--- Domain B (hand-authored): RLS for user_blocks + content_reports, and the
--- one-time conversion of legacy friendship blocks into user_blocks.
+-- Domain B (hand-authored): RLS for user_blocks + content_reports, the
+-- one-time conversion of legacy friendship blocks into user_blocks, and a
+-- temporary trigger that keeps converting them during the deploy window.
 --
 -- The tables themselves are Domain A (drizzle-kit, 20260925120000). This file
--- owns the policies and the backfill, and must never be overwritten by
--- `drizzle-kit generate`.
+-- owns the policies, the backfill and the bridge trigger, and must never be
+-- overwritten by `drizzle-kit generate`.
 --
 -- The app reads and writes both tables only on the Drizzle owner connection,
 -- with the actor id taken from the session, and the API-role table grants
@@ -41,7 +42,79 @@ WHERE f.status = 'blocked'
   AND f.requested_by IN (f.user_low, f.user_high)
 ON CONFLICT (blocker_id, blocked_id) DO NOTHING;
 
+-- A block also deletes both people's notifications about each other
+-- (lib/actions/moderation/blocks.ts): the activity list and the badge read the
+-- table with no block rule of their own. user_blocks holds only the rows just
+-- backfilled, so this clears exactly the converted pairs.
+DELETE FROM public.notifications n
+USING public.user_blocks b
+WHERE (n.recipient_id = b.blocker_id AND n.actor_ids @> ARRAY[b.blocked_id])
+   OR (n.recipient_id = b.blocked_id AND n.actor_ids @> ARRAY[b.blocker_id]);
+
 DELETE FROM public.friendships WHERE status = 'blocked';
+
+-- -----------------------------------------------------------------------------
+-- 1b. Rollout bridge: convert blocked edges the OLD revision writes from now on
+-- -----------------------------------------------------------------------------
+-- TEMPORARY. Prod migrations apply before the new revision is promoted, and
+-- the revision still serving in that window blocks by upserting the pair's
+-- friendships row to status 'blocked' (which is why the status CHECK keeps
+-- the value). Without this trigger such a row, written after the backfill
+-- above, would be hidden by nothing (the new reads consult only user_blocks)
+-- and could never be lifted (unblock deletes a user_blocks row). The trigger
+-- applies the backfill to each one as it is written: the same guarded
+-- blocker = requested_by conversion with the same caveat (on an existing edge
+-- the old upsert keeps the original requester), the same notification
+-- cleanup, and the edge deleted, as a fresh block leaves it.
+--
+-- Deleting the row from its own AFTER ROW trigger is safe here: the old
+-- endpoint's RETURNING was computed before AFTER triggers run, and nothing
+-- else in its statement reads the row back.
+--
+-- Invoker rights, like friendships_set_accepted_at: every friendships write
+-- comes from the app's owner connection (the API roles have no table grants
+-- since 20260825120000), which is not subject to RLS on user_blocks or
+-- notifications.
+--
+-- FOLLOW-UP, once the new revision is fully promoted (see docs/DATABASE.md,
+-- "Retiring friendships.status = 'blocked'"): a migration that drops this
+-- trigger and function and removes 'blocked' from friendships_status_check,
+-- and a code change deleting the leftover `<> 'blocked'` guards.
+CREATE OR REPLACE FUNCTION public.convert_legacy_friendship_block()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  other_id uuid;
+BEGIN
+  IF NEW.requested_by IN (NEW.user_low, NEW.user_high) THEN
+    other_id := CASE WHEN NEW.requested_by = NEW.user_low
+                     THEN NEW.user_high ELSE NEW.user_low END;
+
+    INSERT INTO public.user_blocks (blocker_id, blocked_id)
+    VALUES (NEW.requested_by, other_id)
+    ON CONFLICT (blocker_id, blocked_id) DO NOTHING;
+
+    DELETE FROM public.notifications
+    WHERE (recipient_id = NEW.requested_by AND actor_ids @> ARRAY[other_id])
+       OR (recipient_id = other_id AND actor_ids @> ARRAY[NEW.requested_by]);
+  END IF;
+
+  DELETE FROM public.friendships WHERE id = NEW.id;
+  RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.convert_legacy_friendship_block() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.convert_legacy_friendship_block()
+  FROM anon, authenticated;
+
+CREATE TRIGGER convert_legacy_friendship_block
+  AFTER INSERT OR UPDATE OF status ON public.friendships
+  FOR EACH ROW
+  WHEN (NEW.status = 'blocked')
+  EXECUTE FUNCTION public.convert_legacy_friendship_block();
 
 -- -----------------------------------------------------------------------------
 -- 2. user_blocks RLS — a user manages only the blocks they placed

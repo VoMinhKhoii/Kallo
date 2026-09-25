@@ -149,9 +149,21 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260923051230_friendships_accepted_at_visibility.sql` | B (Manual) | Backfill `accepted_at` from `updated_at`; trigger keeping it authoritative; `is_friend_since()`; friend SELECT policies on `meal_shares`/`meals`/`meal_items`/`circle_events` bounded to shares made after acceptance |
 | `20260923053541_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat groups and messages, meal-share reactions/replies/invites, coach assignments); plain `CREATE INDEX`, since migrations run in a transaction |
 | `20260925120000_circle_blocks_and_reports.sql` | A (Drizzle) | `user_blocks` (directed blocker → blocked, PK on the pair, `blocked_id` index, no-self CHECK); `content_reports` table (target kind / reason / status CHECKs, one row per reporter per target, status + created_at triage index) |
-| `20260925120100_user_blocks_and_reports_rls.sql` | B (Manual) | Backfill: every `friendships.status = 'blocked'` edge → `user_blocks(requested_by → other member)`, then those edges are deleted (blocking now ends the friendship). RLS on `user_blocks` (select/insert/delete own rows as blocker) and `content_reports` (insert/select own; no UPDATE/DELETE — triage is admin-only). `'blocked'` stays in the friendships status CHECK only so the revision still serving during the deploy window keeps working |
+| `20260925120100_user_blocks_and_reports_rls.sql` | B (Manual) | Backfill: every `friendships.status = 'blocked'` edge → `user_blocks(requested_by → other member)`, the pair's notifications about each other are deleted, then those edges are deleted (blocking now ends the friendship). A temporary `convert_legacy_friendship_block` trigger applies the same conversion to any `'blocked'` edge written after it (see "Retiring `friendships.status = 'blocked'`" below). RLS on `user_blocks` (select/insert/delete own rows as blocker) and `content_reports` (insert/select own; no UPDATE/DELETE — triage is admin-only). `'blocked'` stays in the friendships status CHECK only so the revision still serving during the deploy window keeps working |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
+
+### Retiring `friendships.status = 'blocked'` (follow-up, not yet written)
+
+Blocks moved to `user_blocks` in `20260925120100`. Prod migrations apply before the new Cloud Run revision is promoted, so the previous revision keeps serving for a while and still blocks by writing the pair's `friendships` row as `'blocked'`. Two things cover that window:
+
+- `'blocked'` stays in `friendships_status_check`, so the old block endpoint does not fail.
+- The `convert_legacy_friendship_block` trigger (`AFTER INSERT OR UPDATE OF status ... WHEN (NEW.status = 'blocked')`) converts each such row as it is written. It inserts `user_blocks(requested_by → other member)` when `requested_by` is one of the pair, deletes the pair's notifications about each other, and deletes the edge. Without it, the pair would not be hidden from each other and could never be unblocked.
+
+Once the new revision is fully promoted and no older revision can serve traffic, ship one follow-up change:
+
+1. A Domain B migration that drops the trigger and its function (`DROP TRIGGER convert_legacy_friendship_block ON public.friendships; DROP FUNCTION public.convert_legacy_friendship_block();`), deletes any stray `'blocked'` rows, and a schema change that removes `'blocked'` from `friendships_status_check` (Drizzle, `lib/infra/db/schema.ts`).
+2. Code: delete the leftover `<> 'blocked'` / `=== 'blocked'` guards on `friendships.status`: `lib/actions/groups/feed.ts` (the friend-list filter), `lib/actions/groups/friendship.ts` (`acceptInvite`'s edge read, promote and reconcile, and `removeFriend`), and `lib/domain/account-export/social.ts`. `getFriendshipStatus`'s `'blocked'` return comes from `user_blocks` and stays.
 
 ## Meal Persistence Contract
 

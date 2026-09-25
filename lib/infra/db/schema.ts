@@ -1185,7 +1185,11 @@ export const friendships = pgTable(
     // purpose: prod migrations apply before the new revision is promoted, and
     // the revision still serving in that window writes 'blocked'; dropping the
     // value would turn its block endpoint into a 500 until the promote lands.
-    // App code treats a stray 'blocked' row as a dead edge (never 'accepted').
+    // The convert_legacy_friendship_block trigger (same migration) turns each
+    // such write into a user_blocks row and deletes the edge. App code treats
+    // a stray 'blocked' row as a dead edge (never 'accepted'). Retiring the
+    // value, the trigger and those guards is a follow-up: docs/DATABASE.md,
+    // "Retiring friendships.status = 'blocked'".
     check(
       'friendships_status_check',
       sql`${table.status} IN ('pending', 'accepted', 'blocked')`
