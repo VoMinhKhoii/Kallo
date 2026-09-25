@@ -12,15 +12,35 @@
 // Auth where Kallo cannot reach them (docs/GOOGLE_CLOUD_RUN.md).
 
 import 'server-only';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { exchangeAppleAuthorizationCode } from '@/lib/infra/apple-auth/apple-auth';
 import { readAppleAuthConfig } from '@/lib/infra/apple-auth/config';
 import { open, resolveSecretBoxKey, seal } from '@/lib/infra/crypto/secret-box';
-import { type AppDb, db as appDb } from '@/lib/infra/db/client';
+import {
+  type AppDb,
+  type AppTransaction,
+  db as appDb,
+} from '@/lib/infra/db/client';
 import { appleAuthTokens, appleTokenRevocations } from '@/lib/infra/db/schema';
 
 const ENCRYPTION_KEY_ENV = 'APPLE_TOKEN_ENCRYPTION_KEY';
+
+/**
+ * Serializes everything that moves a user's Apple token: linking a new one
+ * and copying it into the revocation outbox at deletion. Without it, deletion
+ * could read the old token, a link could then store the new one while no
+ * pending revocation exists yet, and deletion would queue the stale token.
+ * Transaction-scoped, so it is released on commit or rollback.
+ */
+export async function lockAppleTokenForUser(
+  tx: AppTransaction,
+  userId: string
+): Promise<void> {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtext('apple_token'), hashtext(${userId}::text))`
+  );
+}
 
 /** Binds a sealed token to its owner: copied onto another user it won't open. */
 function aadFor(userId: string): string {
@@ -78,6 +98,7 @@ export async function linkAppleAuthorizationCode(
   const ciphertext = seal(key, result.refreshToken, aadFor(input.userId));
   const now = new Date();
   await database.transaction(async (tx) => {
+    await lockAppleTokenForUser(tx, input.userId);
     await tx
       .insert(appleAuthTokens)
       .values({ userId: input.userId, refreshTokenCiphertext: ciphertext })
@@ -85,10 +106,11 @@ export async function linkAppleAuthorizationCode(
         target: appleAuthTokens.userId,
         set: { refreshTokenCiphertext: ciphertext, updatedAt: now },
       });
-    // A deletion may already have enqueued a revocation with the PREVIOUS
-    // token (enqueue runs before the auth user is deleted, and this link can
-    // land in between). The auth cascade then drops the row written above,
-    // so the pending outbox row is the only place the newest token survives.
+    // A deletion may already have enqueued a revocation (with the previous
+    // token, or none yet) before this link landed. The auth cascade then
+    // drops the row written above, so the pending outbox row is the only
+    // place the newest token survives. The lock above orders this against
+    // the enqueue, so one of the two always sees the other's write.
     await tx
       .update(appleTokenRevocations)
       .set({ refreshTokenCiphertext: ciphertext, nextAttemptAt: now })
@@ -105,7 +127,7 @@ export async function linkAppleAuthorizationCode(
 /** The sealed token, for the revocation outbox. `null` = never linked. */
 export async function readSealedAppleRefreshToken(
   userId: string,
-  database: AppDb = appDb
+  database: AppDb | AppTransaction = appDb
 ): Promise<string | null> {
   const rows = await database
     .select({ ciphertext: appleAuthTokens.refreshTokenCiphertext })

@@ -14,6 +14,7 @@ import {
   buildDataExport,
   type DataExport,
 } from '@/lib/domain/account-export/build-export';
+import { appleSubjectOf } from '@/lib/domain/apple-sign-in/contracts';
 import {
   claimAppleRevocation,
   enqueueAppleRevocation,
@@ -203,7 +204,9 @@ export async function deleteAccountAction(
   // user can still retry.
   let appleRevocation: { id: string } | null;
   try {
-    appleRevocation = await enqueueAppleRevocation(user.id);
+    appleRevocation = await enqueueAppleRevocation(user.id, {
+      hasAppleIdentity: appleSubjectOf(user.identities) !== null,
+    });
   } catch (appleError) {
     throw Errors.internal(
       appleError,

@@ -20,6 +20,7 @@ import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { appleTokenRevocations } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 import {
+  lockAppleTokenForUser,
   openAppleRefreshToken,
   readSealedAppleRefreshToken,
 } from './refresh-tokens';
@@ -42,29 +43,43 @@ const isPending = eq(appleTokenRevocations.status, PENDING);
 
 /**
  * Queue the caller's Apple token for revocation, BEFORE the auth user is
- * deleted. `null` when the account never linked a token. A still-pending row
- * from an earlier attempt is refreshed with the newest token and made due now,
- * so a retried deletion never revokes a stale token.
+ * deleted. A still-pending row from an earlier attempt is refreshed with the
+ * newest token and made due now, so a retried deletion never revokes a stale
+ * token.
+ *
+ * Runs under the same per-user lock as `linkAppleAuthorizationCode`, so a link
+ * racing the deletion either lands first (and is read here) or lands after
+ * (and updates the pending row this writes). An Apple account with no token
+ * stored YET still gets a pending row with no ciphertext, for exactly that
+ * late link to fill in; processing an empty row simply completes it.
+ * `null` when there is nothing to revoke and no Apple identity.
  */
 export async function enqueueAppleRevocation(
   userId: string,
+  options: { hasAppleIdentity: boolean },
   database: AppDb = appDb
 ): Promise<{ id: string } | null> {
-  const sealed = await readSealedAppleRefreshToken(userId, database);
-  if (!sealed) return null;
-  const now = new Date();
-  const rows = await database
-    .insert(appleTokenRevocations)
-    .values({ userId, refreshTokenCiphertext: sealed, nextAttemptAt: now })
-    .onConflictDoUpdate({
-      target: appleTokenRevocations.userId,
-      targetWhere: sql`status = 'pending'`,
-      set: { refreshTokenCiphertext: sealed, nextAttemptAt: now },
-    })
-    .returning({ id: appleTokenRevocations.id });
-  const id = rows[0]?.id;
-  if (!id) throw new Error('apple_revocation_not_persisted');
-  return { id };
+  return database.transaction(async (tx) => {
+    await lockAppleTokenForUser(tx, userId);
+    const sealed = await readSealedAppleRefreshToken(userId, tx);
+    if (!(sealed || options.hasAppleIdentity)) return null;
+    const now = new Date();
+    const rows = await tx
+      .insert(appleTokenRevocations)
+      .values({ userId, refreshTokenCiphertext: sealed, nextAttemptAt: now })
+      .onConflictDoUpdate({
+        target: appleTokenRevocations.userId,
+        targetWhere: sql`status = 'pending'`,
+        // Never blank out a token an earlier attempt already captured.
+        set: sealed
+          ? { refreshTokenCiphertext: sealed, nextAttemptAt: now }
+          : { nextAttemptAt: now },
+      })
+      .returning({ id: appleTokenRevocations.id });
+    const id = rows[0]?.id;
+    if (!id) throw new Error('apple_revocation_not_persisted');
+    return { id };
+  });
 }
 
 /**

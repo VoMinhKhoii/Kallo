@@ -183,7 +183,10 @@ describe('deleteAccountAction', () => {
       await expect(deleteAccountAction(input)).resolves.toEqual({
         success: true,
       });
-      expect(mockEnqueueApple).toHaveBeenCalledWith(user.id);
+      // The fixture user has no identities, so no empty placeholder row.
+      expect(mockEnqueueApple).toHaveBeenCalledWith(user.id, {
+        hasAppleIdentity: false,
+      });
       expect(mockEnqueueApple.mock.invocationCallOrder[0]).toBeLessThan(
         mockDeleteUser.mock.invocationCallOrder[0] as number
       );

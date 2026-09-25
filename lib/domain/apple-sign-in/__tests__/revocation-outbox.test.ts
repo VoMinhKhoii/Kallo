@@ -12,6 +12,9 @@ const { mockOpen, mockReadSealed, mockGetUserById } = vi.hoisted(() => ({
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 vi.mock('@/lib/domain/apple-sign-in/refresh-tokens', () => ({
+  // The real lock is one `tx.execute`; mirror that so tests can order it.
+  lockAppleTokenForUser: (tx: { execute: (q: string) => Promise<unknown> }) =>
+    tx.execute('lock'),
   openAppleRefreshToken: mockOpen,
   readSealedAppleRefreshToken: mockReadSealed,
 }));
@@ -79,25 +82,64 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** A db whose `transaction` runs against a tx recording lock + insert. */
+function enqueueDb() {
+  const returning = vi.fn().mockResolvedValue([{ id: 'rev-1' }]);
+  const onConflictDoUpdate = vi.fn().mockReturnValue({ returning });
+  const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
+  const insert = vi.fn().mockReturnValue({ values });
+  const execute = vi.fn().mockResolvedValue(undefined);
+  const tx = { execute, insert };
+  const db = {
+    transaction: async (fn: (t: typeof tx) => unknown) => fn(tx),
+  } as never;
+  return { db, tx, execute, insert, values, onConflictDoUpdate };
+}
+
 describe('enqueueAppleRevocation', () => {
-  it('queues nothing for an account that never linked a token', async () => {
+  it('queues nothing for a non-Apple account without a token', async () => {
     mockReadSealed.mockResolvedValue(null);
-    const insert = vi.fn();
+    const { db, insert } = enqueueDb();
     await expect(
-      enqueueAppleRevocation(USER_ID, { insert } as never)
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: false }, db)
     ).resolves.toBeNull();
     expect(insert).not.toHaveBeenCalled();
   });
 
+  // Codex (#391): an Apple account whose first token link races the deletion
+  // gets an empty pending row for that link to fill in — never a blanked one.
+  it('queues an empty pending row for an Apple account with no token yet', async () => {
+    mockReadSealed.mockResolvedValue(null);
+    const { db, execute, values, onConflictDoUpdate } = enqueueDb();
+    await expect(
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db)
+    ).resolves.toEqual({ id: 'rev-1' });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(values.mock.calls[0]?.[0]).toMatchObject({
+      userId: USER_ID,
+      refreshTokenCiphertext: null,
+    });
+    expect(onConflictDoUpdate.mock.calls[0]?.[0].set).toEqual({
+      nextAttemptAt: expect.any(Date),
+    });
+  });
+
+  it('reads the token under the per-user lock, inside the transaction', async () => {
+    mockReadSealed.mockResolvedValue('v1:newest');
+    const { db, tx, execute } = enqueueDb();
+    await enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db);
+    expect(execute.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReadSealed.mock.invocationCallOrder[0] as number
+    );
+    expect(mockReadSealed).toHaveBeenCalledWith(USER_ID, tx);
+  });
+
   it('refreshes a still-pending row with the newest token, due now', async () => {
     mockReadSealed.mockResolvedValue('v1:newest');
-    const returning = vi.fn().mockResolvedValue([{ id: 'rev-1' }]);
-    const onConflictDoUpdate = vi.fn().mockReturnValue({ returning });
-    const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
-    const insert = vi.fn().mockReturnValue({ values });
+    const { db, values, onConflictDoUpdate } = enqueueDb();
 
     await expect(
-      enqueueAppleRevocation(USER_ID, { insert } as never)
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db)
     ).resolves.toEqual({ id: 'rev-1' });
     expect(values.mock.calls[0]?.[0]).toMatchObject({
       userId: USER_ID,

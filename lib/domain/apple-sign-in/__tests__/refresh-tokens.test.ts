@@ -37,10 +37,20 @@ function insertChain() {
   const where = vi.fn().mockResolvedValue(undefined);
   const set = vi.fn().mockReturnValue({ where });
   const update = vi.fn().mockReturnValue({ set });
-  const tx = { insert, update };
+  const execute = vi.fn().mockResolvedValue(undefined);
+  const tx = { execute, insert, update };
   const transaction = vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx));
   const db = { transaction } as never;
-  return { db, transaction, insert, values, onConflictDoUpdate, update, set };
+  return {
+    db,
+    transaction,
+    execute,
+    insert,
+    values,
+    onConflictDoUpdate,
+    update,
+    set,
+  };
 }
 
 /** Link once and hand back the ciphertext that was written. */
@@ -98,10 +108,16 @@ describe('linkAppleAuthorizationCode', () => {
       refreshToken: 'rt-new',
       subject: '001.apple',
     });
-    const { db, transaction, values, update, set } = insertChain();
+    const { db, transaction, execute, insert, values, update, set } =
+      insertChain();
 
     await expect(linkAppleAuthorizationCode(INPUT, db)).resolves.toBe('stored');
     expect(transaction).toHaveBeenCalledTimes(1);
+    // The per-user token lock is taken before either write.
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute.mock.invocationCallOrder[0]).toBeLessThan(
+      insert.mock.invocationCallOrder[0] as number
+    );
     expect(update).toHaveBeenCalledTimes(1);
     const stored = values.mock.calls[0]?.[0].refreshTokenCiphertext;
     expect(set).toHaveBeenCalledWith({
