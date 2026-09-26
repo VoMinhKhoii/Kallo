@@ -65,6 +65,13 @@ export const userProfiles = pgTable(
     autoShareUpdatedAt: timestamp('auto_share_updated_at', {
       withTimezone: true,
     }),
+    // App Store 5.1.2(i) consent to send meal text and label photos to the
+    // third-party AI (Gemini on Vertex AI). NULL = never agreed or withdrawn:
+    // every AI entry point refuses with `ai_consent_required` until the user
+    // agrees through the one-time sheet (PUT /api/v1/profile/ai-consent).
+    aiProcessingConsentedAt: timestamp('ai_processing_consented_at', {
+      withTimezone: true,
+    }),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),

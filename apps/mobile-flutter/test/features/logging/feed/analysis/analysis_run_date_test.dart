@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/analysis/analysis_run.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/features/privacy/data/ai_consent_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
@@ -30,16 +31,22 @@ void main() {
     // outlive that, and the completion used whatever day was on screen when it
     // landed rather than the day it was sent on.
     final container = ProviderContainer(
-      overrides: [apiClientProvider.overrideWithValue(_HangingApi())],
+      overrides: [
+        apiClientProvider.overrideWithValue(_HangingApi()),
+        // Consent on record: the run starts at once, as before the gate.
+        aiConsentProvider.overrideWithValue(true),
+      ],
     );
     addTearDown(container.dispose);
 
+    late BuildContext context;
     late WidgetRef ref;
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: Consumer(
-          builder: (_, r, _) {
+          builder: (c, r, _) {
+            context = c;
             ref = r;
             return const SizedBox();
           },
@@ -76,7 +83,13 @@ void main() {
     );
 
     // Sent on Monday, answered while Monday is still on screen.
-    run.startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'phở bò');
+    run.startPlain(
+      context,
+      ref,
+      userId: 'u1',
+      date: '2026-08-10',
+      text: 'phở bò',
+    );
     expect(pinned, 1, reason: 'the SEND carries its turn to the top');
     pinned = 0;
     buzzed = 0;
@@ -93,7 +106,13 @@ void main() {
     // pinned to `stream.loggedDate` by [FeedViewState], so Tuesday's feed has
     // nothing new on it — buzzing for it is an answer delivered to the wrong
     // screen.
-    run.startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'bún chả');
+    run.startPlain(
+      context,
+      ref,
+      userId: 'u1',
+      date: '2026-08-10',
+      text: 'bún chả',
+    );
     buzzed = 0;
     run.reveal(ref, userId: 'u1', date: '2026-08-11');
     await tester.pump();

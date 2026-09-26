@@ -1490,7 +1490,8 @@
         "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
         "featureLocked": "Quét bảng dinh dưỡng là tính năng Premium. Nâng cấp Premium để dùng.",
         "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
-        "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
+        "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ.",
+        "aiConsentRequired": "Quét nhãn sẽ gửi ảnh của bạn đến Google Gemini. Hãy cho phép phân tích bằng AI để quét nhãn."
       }
     },
     "stagedMealCard": {
@@ -1501,7 +1502,16 @@
     "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
     "copyMessage": "Sao chép",
     "messageCopied": "Đã sao chép",
-    "draftReplaced": "Đã thay bản nháp"
+    "draftReplaced": "Đã thay bản nháp",
+    "aiConsent": {
+      "title": "Dùng AI để ước tính bữa ăn?",
+      "body": "Để ước tính dinh dưỡng, Kallo gửi mô tả bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Gemini AI của Google (Vertex AI trên Google Cloud).",
+      "training": "Google không dùng dữ liệu này để huấn luyện mô hình. Bạn có thể tắt bất cứ lúc nào trong Cài đặt.",
+      "privacyLink": "Cách chúng tôi xử lý dữ liệu",
+      "continue": "Tiếp tục",
+      "notNow": "Để sau",
+      "error": "Không thể lưu lựa chọn. Vui lòng thử lại."
+    }
   },
   "groups": {
     "page": {
@@ -1848,6 +1858,11 @@
     },
     "groups": {
       "nutritionProfile": "Hồ sơ dinh dưỡng"
+    },
+    "aiConsent": {
+      "label": "Phân tích bữa ăn bằng AI",
+      "subline": "Gửi bữa ăn, ảnh nhãn và từ khoá tìm kiếm đến Google Gemini",
+      "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
     }
   },
   "errors": {

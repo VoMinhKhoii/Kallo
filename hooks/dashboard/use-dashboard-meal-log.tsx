@@ -8,6 +8,7 @@ import {
   deriveStreamTicker,
   type StreamTickerFrame,
 } from '@/lib/domain/logging/stream-ticker';
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 import { useDashboardAutoSave } from './use-dashboard-autosave';
 
 export interface DashboardMealStream {
@@ -32,12 +33,15 @@ export interface DashboardMealStream {
 export function useDashboardMealLog({
   userId,
   todayDate,
+  aiConsent,
 }: {
   userId: string;
   todayDate: string;
+  /** Asked before every analysis; re-asked when the server refuses for consent. */
+  aiConsent: AiConsentGate;
 }) {
   const t = useTranslations('dashboard');
-  const stream = useStreamAnalysis();
+  const stream = useStreamAnalysis({ aiConsent });
 
   const [submittedText, setSubmittedText] = useState<string | null>(null);
   const [loaderIndex, setLoaderIndex] = useState(0);
@@ -87,9 +91,17 @@ export function useDashboardMealLog({
         timezoneOffset: new Date().getTimezoneOffset(),
         mode: 'precise',
         attemptId: attemptIdRef.current,
+      }).then((outcome) => {
+        if (outcome !== 'consentDeclined') return;
+        // "Not now" to AI processing: nothing was sent. Hand the text back to
+        // the input, like a dismiss.
+        setRestoredDraft({ text });
+        setSubmittedText(null);
+        attemptIdRef.current = null;
+        reset();
       });
     },
-    [analyze, isSaving, stream.isAnalyzing, todayDate]
+    [analyze, isSaving, reset, stream.isAnalyzing, todayDate]
   );
 
   const onRetry = useCallback(() => {

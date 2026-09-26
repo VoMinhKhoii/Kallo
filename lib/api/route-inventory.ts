@@ -196,6 +196,7 @@ export const routeInventory = {
   'api/v1/onboarding/nudge/restore/route.ts': ['session', false, 'none-cheap'],
   'api/v1/onboarding/profile/route.ts': ['session', false, 'none-cheap'],
   'api/v1/onboarding/screen/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/profile/ai-consent/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/sharing/route.ts': ['session', true, 'none-cheap'],
   'api/v1/waitlist/confirm/route.ts': ['none', false, 'waitlistConfirmIp'],

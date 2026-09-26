@@ -3,6 +3,7 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useNutritionOcr } from '@/hooks/meals/entry/use-nutrition-ocr';
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 
 /**
  * Holding one label photo and sending it to be read.
@@ -18,7 +19,9 @@ import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
  *   is dropped instead of populating a review step for an image they replaced.
  */
 export function useOcrImageSelection(
-  onSuccess: (data: ParsedNutritionLabel) => void
+  onSuccess: (data: ParsedNutritionLabel) => void,
+  /** Handed to `useNutritionOcr`, which asks before the photo is sent. */
+  aiConsent: AiConsentGate
 ) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -27,7 +30,7 @@ export function useOcrImageSelection(
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { scanLabel, isCompressing, isScanning, error, resetError } =
-    useNutritionOcr();
+    useNutritionOcr(aiConsent);
 
   useEffect(
     () => () => {
@@ -66,8 +69,12 @@ export function useOcrImageSelection(
     if (!selectedFile) return;
     const scanGeneration = ++scanGenerationRef.current;
     try {
+      // Null: "Not now" to AI processing — nothing was sent, and the photo
+      // stays selected for another try.
       const result = await scanLabel(selectedFile);
-      if (scanGeneration === scanGenerationRef.current) onSuccess(result);
+      if (result && scanGeneration === scanGenerationRef.current) {
+        onSuccess(result);
+      }
     } catch (scanError) {
       console.warn('Nutrition label scan failed:', scanError);
     }

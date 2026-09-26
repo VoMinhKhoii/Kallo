@@ -145,6 +145,12 @@ const onboardingProfile = object(
     onboardingStep: { type: 'integer' },
     onboardingCompletedAt: { type: ['string', 'null'], format: 'date-time' },
     onboardingMinimizedAt: { type: ['string', 'null'], format: 'date-time' },
+    aiProcessingConsentedAt: {
+      type: ['string', 'null'],
+      format: 'date-time',
+      description:
+        'When the user agreed to send meal text, label photos and ingredient search text to the third-party AI; null until they agree (or after they withdraw). AI endpoints answer 403 ai_consent_required while null.',
+    },
   },
   ['userId', 'onboardingStep']
 );

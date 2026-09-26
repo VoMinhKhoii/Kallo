@@ -28,6 +28,7 @@ class AnalysisAttempt {
     this.pickNames = const [],
     this.label,
     this.isCheat = false,
+    this.clarifyAnswer,
   }) : assert(
          label == null || refs.isNotEmpty,
          'a displayText without refs is rejected server-side',
@@ -62,6 +63,12 @@ class AnalysisAttempt {
   /// must replay the attempt that failed, not re-read a mode the user has
   /// switched in the meantime.
   final bool isCheat;
+
+  /// The answer to the cheat estimator's vague-input question this attempt
+  /// carried, when it was a clarify. Frozen for the same reason as [isCheat]:
+  /// a replay re-sends the question's answer, not a bare re-estimate that
+  /// would only ask again.
+  final String? clarifyAnswer;
 
   /// What this attempt's card should SAY: its label when it has one, else the
   /// sentence itself.

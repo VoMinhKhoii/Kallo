@@ -540,6 +540,13 @@
       "when": 1790339460000,
       "tag": "20260925123100_nutrition_labels_bucket",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1790340000000,
+      "tag": "20260925124000_add_ai_processing_consent",
+      "breakpoints": true
     }
   ]
 }

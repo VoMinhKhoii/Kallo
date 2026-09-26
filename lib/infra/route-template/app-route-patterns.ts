@@ -116,6 +116,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/v1/onboarding/profile',
   '/api/v1/onboarding/screen',
   '/api/v1/profile',
+  '/api/v1/profile/ai-consent',
   '/api/v1/profile/sharing',
   '/api/v1/waitlist',
   '/api/v1/waitlist/confirm',

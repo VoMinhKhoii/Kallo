@@ -152,6 +152,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260925122100_apple_auth_tokens_rls.sql` | B (Manual) | RLS enabled, no policies, explicit `REVOKE` from `anon`/`authenticated` on both tables — credentials, server-only |
 | `20260925123000_add_nutrition_label_images.sql` | A (Drizzle) | `nutrition_label_images` — one row per kept label scan: photo path, `status` (`succeeded`/`failed`), `result`/`error_code`, `model`, `latency_ms`, the linked `meal_id` (set null on meal delete) and the user's `reviewed_result` |
 | `20260925123100_nutrition_labels_bucket.sql` | B (Manual, journaled) | Private `nutrition-labels` bucket (4 MiB, JPEG/PNG/WebP), owner-only SELECT on `storage.objects`, no client write policies; RLS + owner SELECT on `nutrition_label_images` |
+| `20260925124000_add_ai_processing_consent.sql` | A (Drizzle) | `user_profiles.ai_processing_consented_at` — consent to third-party AI processing (App Store 5.1.2(i)); NULL = not consented, every AI entry point refuses with `ai_consent_required` |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

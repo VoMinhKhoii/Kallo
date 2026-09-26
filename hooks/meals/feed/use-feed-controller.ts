@@ -27,6 +27,7 @@ import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import { retractExchange } from '@/lib/domain/logging/retract-exchange';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 import { isLikelyPartialDay } from '@/lib/domain/nutrition/pattern/completeness';
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 
 /**
  * Controller for the logging feed: owns the message list, streaming refs,
@@ -41,6 +42,8 @@ export function useFeedController(args: {
   isDateNavigationPending: boolean;
   onInitialMealApplied: (() => void) | undefined;
   onPaymentRequired: (() => void) | undefined;
+  /** Asked before every analysis; re-asked when the server refuses for consent. */
+  aiConsent: AiConsentGate;
   /**
    * The SERVER's answer to "does this day hold anything?", read before the page
    * was sent. Undefined when it could not answer — no timezone cookie yet, or
@@ -56,13 +59,14 @@ export function useFeedController(args: {
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    aiConsent,
     initiallyHasEntries,
   } = args;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stream = useStreamAnalysis();
+  const stream = useStreamAnalysis({ aiConsent });
   const { guard } = useSubmitGuard();
 
   // Persistence actions on a saved meal card (remove-with-undo, edit amounts,
