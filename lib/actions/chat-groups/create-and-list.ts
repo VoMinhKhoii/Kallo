@@ -6,11 +6,14 @@ import { createChatGroupSchema } from '@/lib/core/validation/chat';
 import { circleFeedSchema } from '@/lib/core/validation/social';
 import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { visibleChatMessageSql } from '@/lib/domain/social/chat/message-visibility';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import {
   assertGroupCapacity,
   assertUnlimitedCircleActor,
 } from '@/lib/domain/social/quota/circle-quota';
+import { groupShareVisibleSql } from '@/lib/domain/social/shares/share-visibility';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
@@ -30,6 +33,7 @@ export async function createChatGroup(
   db: ChatGroupDb = defaultDb
 ): Promise<{ id: string }> {
   const parsed = createChatGroupSchema.parse(input);
+  assertAcceptableText(parsed.name);
 
   const memberIds = [...new Set(parsed.memberUserIds)].filter(
     (id) => id !== actorId
@@ -91,10 +95,6 @@ export async function listMyChatGroups(
   input: { timezoneOffset: number },
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupIdentity[]> {
-  const viewerMembership = alias(
-    chatGroupMembers,
-    'activity_viewer_membership'
-  );
   const unreadMessage = alias(chatGroupMessages, 'unread_group_message');
   const unreadOwnerMembership = alias(
     chatGroupMembers,
@@ -121,6 +121,7 @@ export async function listMyChatGroups(
           FROM "chat_group_messages" AS "unread_group_message"
           WHERE ${unreadMessage.groupId} = ${chatGroups.id}
             AND ${unreadMessage.createdAt} > ${chatGroupMembers.lastReadAt}
+            AND ${visibleChatMessageSql(actorId, unreadMessage)}
         )
         OR EXISTS (
           SELECT 1
@@ -128,10 +129,8 @@ export async function listMyChatGroups(
           INNER JOIN "meal_shares" AS "unread_group_meal_share"
             ON ${unreadShare.actorId} = ${unreadOwnerMembership.userId}
           WHERE ${unreadOwnerMembership.groupId} = ${chatGroups.id}
-            AND ${unreadShare.visibility} <> 'private'
             AND ${unreadShare.sharedAt} > ${chatGroupMembers.lastReadAt}
-            AND ${unreadShare.sharedAt} >= ${chatGroupMembers.joinedAt}
-            AND ${unreadShare.sharedAt} >= ${unreadOwnerMembership.joinedAt}
+            AND ${groupShareVisibleSql(actorId, chatGroups.id, unreadShare)}
         )
       `,
     })
@@ -190,7 +189,13 @@ export async function listMyChatGroups(
             createdAt: chatGroupMessages.createdAt,
           })
           .from(chatGroupMessages)
-          .where(inArray(chatGroupMessages.groupId, groupIds))
+          .where(
+            and(
+              inArray(chatGroupMessages.groupId, groupIds),
+              // The preview must not surface a message the thread hides.
+              visibleChatMessageSql(actorId, chatGroupMessages)
+            )
+          )
           .orderBy(
             chatGroupMessages.groupId,
             desc(chatGroupMessages.createdAt),
@@ -205,13 +210,6 @@ export async function listMyChatGroups(
           })
           .from(chatGroupMembers)
           .innerJoin(
-            viewerMembership,
-            and(
-              eq(viewerMembership.groupId, chatGroupMembers.groupId),
-              eq(viewerMembership.userId, actorId)
-            )
-          )
-          .innerJoin(
             mealShares,
             eq(mealShares.actorId, chatGroupMembers.userId)
           )
@@ -225,9 +223,13 @@ export async function listMyChatGroups(
           .where(
             and(
               inArray(chatGroupMembers.groupId, groupIds),
-              sql`${mealShares.visibility} <> 'private'`,
-              gte(mealShares.sharedAt, viewerMembership.joinedAt),
-              gte(mealShares.sharedAt, chatGroupMembers.joinedAt),
+              // The same rule the group feed serves by, so the activity rank
+              // never counts a share the feed would hide.
+              groupShareVisibleSql(
+                actorId,
+                chatGroupMembers.groupId,
+                mealShares
+              ),
               gte(mealShares.sharedAt, dayStart),
               lt(mealShares.sharedAt, dayEnd)
             )

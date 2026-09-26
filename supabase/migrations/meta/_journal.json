@@ -547,6 +547,13 @@
       "when": 1790340000000,
       "tag": "20260925124000_add_ai_processing_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1790340600000,
+      "tag": "20260925125000_circle_blocks_and_reports",
+      "breakpoints": true
     }
   ]
 }

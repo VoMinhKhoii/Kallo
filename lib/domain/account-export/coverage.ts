@@ -122,6 +122,10 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
       user_high: FRIEND_PAIR,
     },
   },
+  user_blocks: {
+    excluded:
+      'Who the user blocked. Listed in the app (GET /api/v1/groups/friends/blocked) and available from support on request; rows where the user is the one blocked are never disclosed to them, so a table-level export could not include those anyway.',
+  },
   meal_shares: {
     exported: 'social.mealShares',
     excludedColumns: { actor_id: OWN_ID },
@@ -200,6 +204,10 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   user_feedback: {
     exported: 'support.feedback',
     excludedColumns: { user_id: OWN_ID },
+  },
+  content_reports: {
+    excluded:
+      "Safety reports the user filed about other people's circle content. They describe someone else's content and are a moderation record, kept for triage; a copy of the user's own reports is available from support on request.",
   },
 
   // --- Billing -------------------------------------------------------------

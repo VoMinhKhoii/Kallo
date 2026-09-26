@@ -26,6 +26,7 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { assertShareableMealText } from '@/lib/domain/social/shares/shareable-meal';
 import { resolveShareAllocation } from '@/lib/domain/social/splits/parts';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -85,6 +86,9 @@ export async function shareMealWithFriendsAction(input: {
     if (!source) {
       throw Errors.notFound('Bữa ăn không tồn tại hoặc không thuộc về bạn.');
     }
+    // An offer shows the meal's text to each recipient: same filter as the
+    // circle share toggle (422 objectionable_content).
+    assertShareableMealText(source.rawInput);
     // A cheat meal shares as a COPY only. There is no dish to divide: its
     // numbers come from slider positions, not from item rows, and scaling those
     // by a fraction would invent a portion nobody chose. The recipient instead

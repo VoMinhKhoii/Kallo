@@ -117,6 +117,7 @@ export async function confirmCheatMeal(args: {
   const share = await insertDefaultCircleShare(tx, {
     mealId: meal.id,
     actorId: userId,
+    rawInput: pending.rawInput,
   });
 
   // A card staged from a friend's offer: point that offer at the meal it

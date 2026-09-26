@@ -4,6 +4,7 @@ import {
   renameChatGroup,
 } from '@/lib/actions/chat-groups/details';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
+import { renameChatGroupBodySchema } from '@/lib/api/contracts/social/chat-groups';
 import { handleRouteError } from '@/lib/api/respond';
 
 export async function GET(
@@ -27,7 +28,7 @@ export async function PATCH(
   try {
     const actorId = await requireUserId();
     const { groupId } = await params;
-    const body = (await readJsonBody(request)) as { name: string };
+    const body = renameChatGroupBodySchema.parse(await readJsonBody(request));
     const result = await renameChatGroup(actorId, { groupId, name: body.name });
     return NextResponse.json(result);
   } catch (error) {

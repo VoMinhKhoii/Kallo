@@ -9,6 +9,7 @@
 // upsert's own RETURNING (`inserted` OR `rebadged` — never a silent refresh),
 // and the guards that make retractActor a no-op.
 
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 import { notify, retractActor } from '@/lib/domain/notifications/notify';
 import type { NotifyInput } from '@/lib/domain/notifications/types';
@@ -67,7 +68,9 @@ function insertingTx(open: OpenRow[] = []) {
       };
     },
   }));
-  return { tx: { insert } as never, batches, insert };
+  // The block filter's one statement: no pair is blocked unless a case says.
+  const execute = vi.fn(async (_statement: unknown) => [] as unknown[]);
+  return { tx: { insert, execute } as never, batches, insert, execute };
 }
 
 const SEEN_AT = new Date('2026-08-28T10:00:00.000Z');
@@ -114,6 +117,39 @@ describe('notify', () => {
 
     expect(notified).toEqual([OWNER, OTHER]);
     expect(batches[0].map((row) => row.recipientId)).toEqual([OWNER, OTHER]);
+  });
+
+  // notify() is the single write seam, so the block rule lives here: an input
+  // whose actor and recipient are blocked (either direction) never becomes a
+  // row or a push, whichever producer sent it.
+  it('drops recipients in a blocked relation with the actor', async () => {
+    const { tx, batches, execute } = insertingTx();
+    execute.mockResolvedValueOnce([{ actor_id: ACTOR, recipient_id: OTHER }]);
+
+    const notified = await notify(tx, [
+      input({ recipientId: OWNER }),
+      input({ recipientId: OTHER, groupKey: 'share.reply:share-1' }),
+    ]);
+
+    expect(notified).toEqual([OWNER]);
+    expect(batches).toHaveLength(1);
+    expect(batches[0].map((row) => row.recipientId)).toEqual([OWNER]);
+    // One statement for the whole batch, asking the shared block predicate.
+    expect(execute).toHaveBeenCalledTimes(1);
+    const { sql, params } = new PgDialect().sqlToQuery(
+      execute.mock.calls[0]?.[0] as never
+    );
+    expect(sql).toContain('FROM "user_blocks"');
+    expect(sql).toContain('AS pair(actor_id, recipient_id)');
+    expect(params).toEqual([ACTOR, OWNER, ACTOR, OTHER]);
+  });
+
+  it('writes nothing when every recipient is blocked', async () => {
+    const { tx, insert, execute } = insertingTx();
+    execute.mockResolvedValueOnce([{ actor_id: ACTOR, recipient_id: OWNER }]);
+
+    await expect(notify(tx, [input()])).resolves.toEqual([]);
+    expect(insert).not.toHaveBeenCalled();
   });
 
   // The push gate, all three outcomes, all decided by what the single upsert

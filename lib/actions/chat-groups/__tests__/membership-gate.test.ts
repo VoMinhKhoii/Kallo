@@ -100,6 +100,20 @@ vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
   assertGroupCapacity: vi.fn(async () => undefined),
 }));
 
+// Blocks: the real predicate behind a spy, so a case can assert it was
+// folded into the query (the double db cannot evaluate it).
+const { mockNotBlockedWithSql } = vi.hoisted(() => ({
+  mockNotBlockedWithSql: vi.fn(),
+}));
+vi.mock('@/lib/domain/social/moderation/blocks', async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import('@/lib/domain/social/moderation/blocks')
+    >();
+  mockNotBlockedWithSql.mockImplementation(actual.notBlockedWithSql);
+  return { ...actual, notBlockedWithSql: mockNotBlockedWithSql };
+});
+
 vi.mock('@/lib/domain/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
@@ -273,6 +287,39 @@ describe('membership-gated reads', () => {
 
     expect(messages.map((m) => m.id)).toEqual(['m1', 'm2']);
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    // A blocked counterpart's messages are filtered in the read itself.
+    const schema = await import('./schema-doubles');
+    expect(mockNotBlockedWithSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroupMessages.senderId
+    );
+  });
+
+  it('sendChatGroupMessage rejects objectionable text with a 422 before any read', async () => {
+    await expect(
+      sendChatGroupMessage(USER_A, { groupId: GROUP_ID, body: 'đụ má mày' })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    expect(mockDbSelect).not.toHaveBeenCalled();
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
+  // The push audience is read with the block predicate in its WHERE, so a
+  // member in a blocked relation with the sender never comes back from the
+  // query (the double returns what the database would: USER_B only).
+  it('sendChatGroupMessage never pushes to a member in a blocked relation with the sender', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
+    stubSendTx(sentMessage(), [USER_B]);
+
+    await sendChatGroupMessage(USER_A, { groupId: GROUP_ID, body: 'hi' });
+
+    const schema = await import('./schema-doubles');
+    expect(mockNotBlockedWithSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroupMembers.userId
+    );
+    expect(mockSendChatMessagePush).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientIds: [USER_B] })
+    );
   });
 
   it('direct chat: a removed/blocked ex-friend is rejected despite membership', async () => {

@@ -254,6 +254,20 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
+  // An offer shows the meal's text to each recipient, so it passes the
+  // objectionable-content filter before anything is read or written.
+  it('refuses to offer a flagged meal with a 422', async () => {
+    queueLimitSelect([sourceMeal({ rawInput: 'kill yourself salad' })]);
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'copy',
+      })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
   it('refuses a meal with no item rows', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([]); // no items

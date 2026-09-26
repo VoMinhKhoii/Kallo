@@ -91,9 +91,7 @@ const BODY_PARSED_ELSEWHERE: Record<string, { schema: string; in: string }> = {
  * uncontracted body fails until it has one (or is added here, in review).
  */
 const HAND_WRITTEN_BODIES = new Set([
-  'PATCH /api/v1/chat-groups/{groupId}',
   'POST /api/v1/chat-groups/{groupId}/messages',
-  'POST /api/v1/groups/friends/block',
   'DELETE /api/v1/groups/friends/remove',
   'POST /api/v1/groups/invite/accept',
   'POST /api/v1/groups/invites/accept',
@@ -105,7 +103,6 @@ const HAND_WRITTEN_BODIES = new Set([
   'POST /api/v1/groups/shares',
   'POST /api/v1/groups/shares/log',
   'POST /api/v1/groups/shares/reaction',
-  'POST /api/v1/groups/shares/reply',
 ]);
 
 /** Where the route imports `name` from, e.g. `@/lib/api/contracts/meals`. */

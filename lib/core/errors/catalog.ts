@@ -31,6 +31,8 @@ const DEFAULT_MESSAGES = {
   featureLocked: 'Upgrade to keep using this feature.',
   aiConsentRequired:
     'Allow Kallo to send this to its AI provider before using AI features.',
+  objectionableContent:
+    'This contains language that is not allowed on Kallo. Please edit it and try again.',
   internal: 'Something went wrong. Please try again.',
 } as const;
 
@@ -120,6 +122,18 @@ export const Errors = {
       403,
       false,
       message ?? DEFAULT_MESSAGES.aiConsentRequired
+    ),
+
+  // User-generated text (a reply, chat message, group or display name) hit the
+  // objectionable-term filter. 422, not 400: the request is well-formed; the
+  // content is what must change. Lowercase code, like `feature_locked`, so
+  // clients can branch on it (Flutter: kObjectionableContentCode).
+  objectionableContent: (message?: string) =>
+    new AppError(
+      'objectionable_content',
+      422,
+      false,
+      message ?? DEFAULT_MESSAGES.objectionableContent
     ),
 
   internal: (cause?: unknown, message?: string) =>

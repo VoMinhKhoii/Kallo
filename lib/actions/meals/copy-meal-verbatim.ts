@@ -86,6 +86,7 @@ export async function copyMealVerbatim(
   const share = await insertDefaultCircleShare(tx, {
     mealId: meal.id,
     actorId: userId,
+    rawInput: source.rawInput,
   });
 
   const copies = sourceItems.map((row) => ({
