@@ -54,6 +54,45 @@ void startWithAiConsent(
   );
 }
 
+/// [startWithAiConsent] with at most ONE ask in flight, for a surface that can
+/// be tapped again while the sheet is still coming up. A call landing while an
+/// ask is pending is dropped: a fast double tap must never stack two sheets or
+/// start two analyses.
+class AiConsentAsk {
+  bool _pending = false;
+
+  /// Run [start] once consent is on record, asking first. [onDeclined] runs
+  /// instead on "Not now", or when this call was dropped behind a pending ask:
+  /// either way nothing is sent, and the caller keeps what it would have sent.
+  void run(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback start, {
+    VoidCallback? onDeclined,
+  }) {
+    if (ref.read(aiConsentProvider)) return start();
+    if (_pending) return onDeclined?.call();
+    _pending = true;
+    unawaited(_ask(context, ref, start, onDeclined));
+  }
+
+  Future<void> _ask(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback start,
+    VoidCallback? onDeclined,
+  ) async {
+    final bool ok;
+    try {
+      ok = await ensureAiConsent(context, ref);
+    } finally {
+      _pending = false;
+    }
+    if (!context.mounted) return;
+    ok ? start() : onDeclined?.call();
+  }
+}
+
 /// The server refused with `ai_consent_required` (consent withdrawn on another
 /// device, or a stale profile): forget what this device believed and ask.
 Future<bool> reaskAiConsent(BuildContext context, WidgetRef ref) {

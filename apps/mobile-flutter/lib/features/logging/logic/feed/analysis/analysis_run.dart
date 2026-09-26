@@ -127,6 +127,9 @@ class FeedAnalysisRun {
   /// The last request, as it went out: "Continue" re-sends it after a refusal.
   void Function(WidgetRef ref)? _resend;
 
+  /// [_gated]'s consent ask: one at a time, so a double tap sends once.
+  final AiConsentAsk _consent = AiConsentAsk();
+
   /// A fresh logging attempt carrying no relog picks — a plain composer, the
   /// dashboard's quick-log sheet, a first-run suggestion chip.
   void startPlain(
@@ -135,17 +138,25 @@ class FeedAnalysisRun {
     required String userId,
     required String date,
     required String text,
-  }) => _gated(context, ref, () {
-    // A fresh attempt mints a new id; [retry] and [restartClarify] reuse it,
-    // so the server upserts one staging row per attempt.
-    _attemptId = _uuid.v4();
-    _analyze(
-      ref,
-      userId: userId,
-      date: date,
-      attempt: AnalysisAttempt(text: text, isCheat: _modeIsCheat(ref)),
-    );
-  });
+  }) => _gated(
+    context,
+    ref,
+    () {
+      // A fresh attempt mints a new id; [retry] and [restartClarify] reuse
+      // it, so the server upserts one staging row per attempt.
+      _attemptId = _uuid.v4();
+      _analyze(
+        ref,
+        userId: userId,
+        date: date,
+        attempt: AnalysisAttempt(text: text, isCheat: _modeIsCheat(ref)),
+      );
+    },
+    // A meal parked by the quick-log sheet or a chip was never in the
+    // composer: on "Not now" hand it over, as [fail] does.
+    onDeclined:
+        () => input.getText().trim().isEmpty ? input.setText(text) : null,
+  );
 
   /// A fresh logging attempt with picks riding along: [freeText] is analyzed
   /// alone and [refs] are sent beside it, so the server merges the copied
@@ -331,9 +342,13 @@ class FeedAnalysisRun {
   }
 
   /// The one door to [startMealAnalysis] (App Store 5.1.2(i)): [start] runs
-  /// once AI consent is on record, asking first. "Not now" changes nothing.
-  void _gated(BuildContext context, WidgetRef ref, VoidCallback start) =>
-      startWithAiConsent(context, ref, start);
+  /// once AI consent is on record, asking first. "Not now" runs [onDeclined].
+  void _gated(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback start, {
+    VoidCallback? onDeclined,
+  }) => _consent.run(context, ref, start, onDeclined: onDeclined);
 
   /// Core analyze path shared by every run. Honors the persistent composer
   /// mode (precise vs cheat) — whichever surface last set it, the feed

@@ -38,12 +38,23 @@ class _Api extends ApiClient {
   }
 }
 
-/// Counts clears: the composer is untouched until a run actually starts.
+/// Holds the composer's text and counts clears: the composer is untouched
+/// until a run actually starts.
 class _Input extends MealInputController {
   int cleared = 0;
+  String text = '';
 
   @override
-  void clear() => cleared++;
+  String getText() => text;
+
+  @override
+  void setText(String value) => text = value;
+
+  @override
+  void clear() {
+    cleared++;
+    text = '';
+  }
 }
 
 class _Harness {
@@ -124,12 +135,13 @@ void main() {
     tester,
   ) async {
     final h = await _pump(tester, consented: false);
+    h.input.text = 'phở bò, half eaten';
     h.run.startPlain(
       h.context,
       h.ref,
       userId: 'u1',
       date: '2026-09-25',
-      text: 'phở bò',
+      text: 'phở bò, half eaten',
     );
     await tester.pumpAndSettle();
     expect(find.byType(AiConsentSheet), findsOneWidget);
@@ -138,7 +150,57 @@ void main() {
 
     expect(h.api.sent, isEmpty);
     expect(h.input.cleared, 0);
+    expect(h.input.text, 'phở bò, half eaten');
     expect(h.run.inFlightLabel, isNull);
+  });
+
+  testWidgets('"Not now" hands a quick-log meal to the empty composer', (
+    tester,
+  ) async {
+    final h = await _pump(tester, consented: false);
+    // Parked by the dashboard's quick-log sheet, which is gone by now: the
+    // feed composer below has never held these words.
+    expect(h.input.text, isEmpty);
+    h.run.startPlain(
+      h.context,
+      h.ref,
+      userId: 'u1',
+      date: '2026-09-25',
+      text: 'cơm tấm sườn',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(h.api.sent, isEmpty);
+    expect(h.input.text, 'cơm tấm sườn', reason: 'the typed meal survives');
+  });
+
+  testWidgets('a double tap opens one consent sheet and sends once', (
+    tester,
+  ) async {
+    final h = await _pump(tester, consented: false);
+    h.input.text = 'bánh mì';
+    for (var i = 0; i < 2; i++) {
+      h.run.startPlain(
+        h.context,
+        h.ref,
+        userId: 'u1',
+        date: '2026-09-25',
+        text: 'bánh mì',
+      );
+    }
+    await tester.pumpAndSettle();
+    expect(find.byType(AiConsentSheet), findsOneWidget);
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AiConsentSheet), findsNothing);
+    expect(h.api.puts, hasLength(1));
+    expect(h.api.sent, hasLength(1));
+
+    h.ref.read(streamAnalysisProvider.notifier).cancel();
+    await tester.pump();
   });
 
   testWidgets(
