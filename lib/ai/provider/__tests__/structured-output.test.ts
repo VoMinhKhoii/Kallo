@@ -155,7 +155,8 @@ describe('generateStructuredOutput', () => {
     );
   });
 
-  it('uses the full provider JSON schema by default', async () => {
+  it('uses the full provider JSON schema when rolled back to full', async () => {
+    vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'full');
     const describedSchema = z.object({
       name: z.string().describe('Name to return'),
     });
@@ -189,8 +190,7 @@ describe('generateStructuredOutput', () => {
     );
   });
 
-  it('uses slim provider JSON schema only when explicitly enabled', async () => {
-    vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'slim');
+  it('uses the slim provider JSON schema by default', async () => {
     const describedSchema = z.object({
       name: z.string().describe('Name to return'),
     });

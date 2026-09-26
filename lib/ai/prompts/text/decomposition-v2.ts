@@ -566,6 +566,30 @@ ${INJECTION_EXAMPLE}`,
 };
 
 /**
+ * Collapse each example's pretty-printed <output> JSON onto one line. The
+ * source stays readable; the prompt drops ~690 whitespace tokens per call
+ * (Vertex golden set 2026-09-26: no accuracy change). A body that is not
+ * strict JSON keeps its content with the whitespace collapsed.
+ */
+function oneLineExampleOutputs(block: string): string {
+  return block.replace(
+    /<output>([\s\S]*?)<\/output>/g,
+    (_match, body: string) => {
+      try {
+        return `<output>${JSON.stringify(JSON.parse(body))}</output>`;
+      } catch {
+        return `<output>${body.replace(/\s*\n\s*/g, ' ').trim()}</output>`;
+      }
+    }
+  );
+}
+
+const RENDERED_EXAMPLES: Record<DecompositionPromptLocale, string> = {
+  vi: oneLineExampleOutputs(EXAMPLES.vi),
+  global: oneLineExampleOutputs(EXAMPLES.global),
+};
+
+/**
  * Explicit output-language contract (restores the V1 <language> block that V2
  * dropped — without it, language conformance rests entirely on the post-hoc
  * guard/retry). Rendered only when the caller resolved an output language.
@@ -614,7 +638,7 @@ ${STRICT_ADHERENCE_RULE[locale]}
 </instructions>
 
 <examples>
-${EXAMPLES[locale]}
+${RENDERED_EXAMPLES[locale]}
 </examples>
 
 ${outputLanguage ? languageSection(outputLanguage) : ''}<user_context>

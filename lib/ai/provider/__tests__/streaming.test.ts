@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { toJSONSchema, z } from 'zod';
+import { z } from 'zod';
 
 // ── hoisted mocks (must run before module imports) ───────────────────────────
 const { mockLogLlmCall } = vi.hoisted(() => ({
@@ -28,6 +28,7 @@ vi.mock('@google/genai', () => ({
   }),
 }));
 
+import { toProviderJsonSchema } from '@/lib/ai/prompts/schema';
 import type { AppDb } from '@/lib/infra/db/client';
 import { createGeminiClient } from '../provider';
 
@@ -200,7 +201,7 @@ describe('generateStructuredOutputStream with trace', () => {
     expect(call.promptVersionId).toBe('pv-1');
     expect(call.metadata).toEqual({
       promptChars: 'sys'.length + 'user'.length,
-      schemaChars: JSON.stringify(toJSONSchema(traceSchema)).length,
+      schemaChars: JSON.stringify(toProviderJsonSchema(traceSchema)).length,
       inputTokens: 10,
       outputTokens: 20,
       cachedTokens: null,

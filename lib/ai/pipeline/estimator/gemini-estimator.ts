@@ -13,10 +13,8 @@
  */
 
 import {
-  findUnanchoredNullMacros,
   type GroundedEstimation,
   groundedEstimationSchema,
-  groundedEstimationStrictSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
@@ -52,10 +50,10 @@ export function createGeminiEstimator(
         mealItems: input.mealItems,
         userContext: input.userContext,
       });
-      const request = (schema: typeof groundedEstimationSchema) =>
-        gemini.generateStructuredOutputStream(
+      const estimation: GroundedEstimation =
+        await gemini.generateStructuredOutputStream(
           {
-            schema,
+            schema: groundedEstimationSchema,
             systemPrompt,
             userMessage: getGroundedEstimationUserMessage(),
             model,
@@ -75,22 +73,6 @@ export function createGeminiEstimator(
               : {}),
           }
         );
-      let estimation: GroundedEstimation = await request(
-        groundedEstimationSchema
-      );
-      // Lean output sends null P/C on accepted matches. A null on a row with
-      // NO accepted candidate leaves it without a macro source; re-asking the
-      // same prompt repeats the null, so re-ask once with the strict schema,
-      // whose decoder cannot emit it (see the schema module's LEAN note).
-      const unanchored = findUnanchoredNullMacros(estimation);
-      if (unanchored.length > 0) {
-        console.warn(
-          `[call2] lean output left ${unanchored.length} unanchored row(s) without P/C (${unanchored
-            .map((u) => u.ingredientName)
-            .join(', ')}); re-asking with the strict schema`
-        );
-        estimation = await request(groundedEstimationStrictSchema);
-      }
       return { estimation };
     },
   };

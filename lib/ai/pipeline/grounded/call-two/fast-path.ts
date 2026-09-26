@@ -184,11 +184,13 @@ export function buildFastPathEstimation(args: {
           // keeps edibleG = grossG through the shared refuse math.
           grossG: grams,
           refusePct: 0,
-          // Echo the DB-anchored fat as a flat triple: guardMacro passes it
-          // through byte-identical to the reconcile path's
-          // flatTriple(base.fatG). P/C/kcal come from the same base downstream.
-          proteinG: null,
-          carbohydrateG: null,
+          // Echo the DB-anchored base as flat triples. Fat: guardMacro passes
+          // it through byte-identical to the reconcile path's
+          // flatTriple(base.fatG). P/C: overwritten downstream from the same
+          // base, present only because the schema requires them (kcal is
+          // always derived, never emitted).
+          proteinG: flat(base.proteinG),
+          carbohydrateG: flat(base.carbohydrateG),
           fatG: flat(base.fatG),
         };
       }

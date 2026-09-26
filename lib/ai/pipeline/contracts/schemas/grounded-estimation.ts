@@ -15,24 +15,8 @@ import { boundedEstimateSchema } from './bounded-estimate';
  * The schema asks for ordered `grossG`, `refusePct`; the server derives
  * edible mass = grossG × (1 − refusePct/100). Both fields follow the selected
  * candidate's `db_state` with no yield fudge.
- *
- * LEAN OUTPUT. The server DERIVES kcal (4P + 4C + 9F) for every ingredient and
- * anchors P/C to the DB row for accepted matches (`resolveIngredientMacros`),
- * so the model never emits kcal and sends P/C as `null` on an accepted match.
- * Without an accepted candidate P/C are the only source — the D3 optionality
- * was reverted after prod meal "mì gói sứa" persisted an UNMATCHED noodle at
- * C:0g when the model omitted carbohydrateG. That guarantee now lives in three
- * places, none of which zero-fills:
- *   1. the keys stay REQUIRED (nullable, never optional) — measured
- *      2026-09-26 on Vertex, optional keys let the model skip P/C on unmatched
- *      rows 39× in 182 cases; a required key forces an explicit decision;
- *   2. `findUnanchoredNullMacros` + the estimator re-ask once with
- *      `groundedEstimationStrictSchema`, whose decoder cannot emit null — a
- *      blind retry of the same prompt repeated the null (4 meals failed all
- *      three attempts in the same run);
- *   3. `resolveMacroSource` carves out any row still without a source.
  */
-function buildIngredientSchema(pc: 'nullable' | 'strict') {
+export function buildGroundedIngredientEstimateSchema() {
   // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
   // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
   // masses and THROWS, which routes the whole call into the existing
@@ -57,16 +41,6 @@ function buildIngredientSchema(pc: 'nullable' | 'strict') {
         'REQUIRED integer share of grossG that is inedible bone, shell, or rind. Emit explicit 0 for boneless/shell-off foods; never omit.'
       ),
   };
-  const pcTriple = (label: string) =>
-    pc === 'strict'
-      ? boundedEstimateSchema.describe(
-          `${label} in grams for the edible portion. ALWAYS a triple; 0 is a valid value.`
-        )
-      : boundedEstimateSchema
-          .nullable()
-          .describe(
-            `${label} in grams for the edible portion. A triple when selectedCandidateId is omitted or "none", or when prep_notes is non-empty; otherwise null (the server uses the DB row).`
-          );
 
   return z
     .object({
@@ -87,8 +61,23 @@ function buildIngredientSchema(pc: 'nullable' | 'strict') {
           'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
         ),
       ...massFields,
-      proteinG: pcTriple('Protein'),
-      carbohydrateG: pcTriple('Carbohydrates'),
+      // No caloriesKcal: the server always DERIVES kcal from 4P + 4C + 9F
+      // (`resolveIngredientMacros`), so emitting it only bought discarded
+      // tokens. P/C/F stay ALWAYS REQUIRED — the D3 "slimmed matched output"
+      // optionality was reverted after prod meal "mì gói sứa" had its unmatched
+      // noodles' carbohydrateG omitted and persisted at C:0g. Requiring them
+      // puts enforcement in the PROVIDER's JSON decoder (zod → toJSONSchema
+      // emits them in `required`, so Gemini structurally cannot omit them);
+      // zod parse remains the backstop. A second attempt at optional/nullable
+      // P/C (2026-09-26) reproduced the omission on unmatched rows and needed a
+      // strict re-ask to stay safe — rejected for simplicity. A genuine zero
+      // is a valid value — plausibility telemetry judges plausibility.
+      proteinG: boundedEstimateSchema.describe(
+        'Protein in grams. ALWAYS emit; 0 is a valid value for genuinely protein-free foods. For matched ingredients the server anchors to the DB base.'
+      ),
+      carbohydrateG: boundedEstimateSchema.describe(
+        'Carbohydrates in grams. ALWAYS emit; 0 is a valid value for genuinely carb-free foods. For matched ingredients the server anchors to the DB base.'
+      ),
       fatG: boundedEstimateSchema.describe(
         'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
       ),
@@ -96,71 +85,25 @@ function buildIngredientSchema(pc: 'nullable' | 'strict') {
     .strict();
 }
 
-/** The default (lean) Call-2 ingredient schema — P/C nullable. */
-export function buildGroundedIngredientEstimateSchema() {
-  return buildIngredientSchema('nullable');
-}
-
 /** Call-2 ingredient schema: gross mass + refuse share, edible derived server-side. */
 export const groundedIngredientEstimateSchema =
   buildGroundedIngredientEstimateSchema();
 
-function buildEstimationSchema(pc: 'nullable' | 'strict') {
-  const mealItem = z
-    .object({
-      mealItemName: z
-        .string()
-        .describe('Must match the meal item name from decomposition.'),
-      ingredients: z.array(buildIngredientSchema(pc)).min(1),
-    })
-    .strict();
-  return {
-    mealItem,
-    estimation: z.object({ mealItems: z.array(mealItem).min(1) }),
-  };
-}
+export const groundedMealItemSchema = z
+  .object({
+    mealItemName: z
+      .string()
+      .describe('Must match the meal item name from decomposition.'),
+    ingredients: z.array(groundedIngredientEstimateSchema).min(1),
+  })
+  .strict();
 
-const lean = buildEstimationSchema('nullable');
-export const groundedMealItemSchema = lean.mealItem;
-export const groundedEstimationSchema = lean.estimation;
-
-/**
- * The re-ask schema: P/C are required triples, so the provider's decoder
- * cannot emit null. Its output is a valid `GroundedEstimation`.
- */
-export const groundedEstimationStrictSchema =
-  buildEstimationSchema('strict').estimation;
+export const groundedEstimationSchema = z.object({
+  mealItems: z.array(groundedMealItemSchema).min(1),
+});
 
 export type GroundedIngredientEstimate = z.infer<
   typeof groundedIngredientEstimateSchema
 >;
 export type GroundedMealItem = z.infer<typeof groundedMealItemSchema>;
 export type GroundedEstimation = z.infer<typeof groundedEstimationSchema>;
-
-/** True when the model accepted a DB candidate for this ingredient. */
-export function hasAcceptedCandidate(
-  ing: Pick<GroundedIngredientEstimate, 'selectedCandidateId'>
-): boolean {
-  return ing.selectedCandidateId != null && ing.selectedCandidateId !== 'none';
-}
-
-/**
- * Ingredients with no accepted candidate whose P/C came back null — the rows
- * whose macros would otherwise have no source (the mì-gói shape).
- */
-export function findUnanchoredNullMacros(
-  estimation: GroundedEstimation
-): Array<{ mealItemName: string; ingredientName: string }> {
-  return estimation.mealItems.flatMap((item) =>
-    item.ingredients
-      .filter(
-        (ing) =>
-          !hasAcceptedCandidate(ing) &&
-          (ing.proteinG == null || ing.carbohydrateG == null)
-      )
-      .map((ing) => ({
-        mealItemName: item.mealItemName,
-        ingredientName: ing.ingredientName,
-      }))
-  );
-}

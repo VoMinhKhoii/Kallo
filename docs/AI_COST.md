@@ -53,3 +53,19 @@ JSON schema; Vertex (prod) bills it. Measured 2026-09-25 on
 (full mode) and 803 in slim mode. An eval run on AI Studio therefore reads
 ~2.6k input tokens per meal low, and schema-size changes do not show in it at
 all — run cost comparisons on Vertex.
+
+## Prompt budget decisions (2026-09-26)
+
+Validated on the Vertex golden set (core tier) against a same-day baseline:
+
+- **Slim provider schema is the default** (`lib/ai/prompts/schema.ts`). The
+  response schema is billed as prompt tokens on Vertex; slim drops the
+  unenforced descriptions and runtime ids. `PIPELINE_PROVIDER_SCHEMA_MODE=full`
+  rolls back.
+- **Call 1 example JSON renders on one line** (`oneLineExampleOutputs` in
+  `lib/ai/prompts/text/decomposition-v2.ts`) — source stays pretty.
+- **Call 1 per-user blocks render after the examples**, so every user of a
+  locale shares the cacheable prefix.
+- **Call 2 never emits kcal** — the server derives it from 4P + 4C + 9F.
+  P/C/F stay required on every ingredient: optional or nullable P/C was tried
+  and the model dropped them on unmatched rows (the mì-gói C:0g failure mode).

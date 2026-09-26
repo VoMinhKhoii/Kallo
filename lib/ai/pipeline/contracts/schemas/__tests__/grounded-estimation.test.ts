@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildGroundedIngredientEstimateSchema,
-  findUnanchoredNullMacros,
   groundedEstimationSchema,
-  groundedEstimationStrictSchema,
   groundedIngredientEstimateSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 
@@ -69,76 +67,27 @@ describe('groundedIngredientEstimateSchema', () => {
     expect(parsed.selectedCandidateId).toBeUndefined();
   });
 
-  it('flags null P/C on rows without an accepted candidate (the mì gói regression)', () => {
+  it('REJECTS an ingredient missing any macro triple (the mì gói regression)', () => {
     // Prod incident: `carbohydrateG` was optional, Call 2 omitted it for the
-    // unmatched noodles, and the absence persisted as C:0g / 412 kcal. Lean
-    // output lets an ACCEPTED match send null P/C (the DB row supplies them);
-    // without an accepted candidate a null must be caught — the estimator
-    // re-asks with the strict schema, which cannot parse a null there. This
-    // test is the executable guard that the gap never quietly returns.
-    const t = { low: 1, mid: 2, high: 3 };
-    const row = (selectedCandidateId?: string) => ({
+    // unmatched noodles, and the absence persisted as C:0g / 412 kcal. All
+    // three triples (P/C/F) are required — zod rejection here is the backstop
+    // behind the provider's own `required` enforcement, and this test is the
+    // executable guard that the optionality never quietly returns.
+    const base = {
       ingredientName: 'mì gói',
-      ...(selectedCandidateId ? { selectedCandidateId } : {}),
       grossG: 80,
       refusePct: 0,
-      proteinG: null,
-      carbohydrateG: null,
-      fatG: t,
-    });
-    const estimation = groundedEstimationSchema.parse({
-      mealItems: [
-        {
-          mealItemName: 'Mì gói',
-          ingredients: [row(), row('none'), row('c1')],
-        },
-      ],
-    });
-    expect(findUnanchoredNullMacros(estimation)).toEqual([
-      { mealItemName: 'Mì gói', ingredientName: 'mì gói' },
-      { mealItemName: 'Mì gói', ingredientName: 'mì gói' },
-    ]);
-    for (const field of ['proteinG', 'carbohydrateG'] as const) {
+      proteinG: { low: 7, mid: 8, high: 9 },
+      carbohydrateG: { low: 46, mid: 48, high: 50 },
+      fatG: { low: 13, mid: 14, high: 15 },
+    };
+    for (const field of ['proteinG', 'carbohydrateG', 'fatG'] as const) {
+      const { [field]: _omitted, ...withoutField } = base;
       expect(
-        groundedEstimationStrictSchema.safeParse({
-          mealItems: [
-            {
-              mealItemName: 'Mì gói',
-              ingredients: [
-                { ...row(), proteinG: t, carbohydrateG: t, [field]: null },
-              ],
-            },
-          ],
-        }).success,
-        `strict schema must reject null ${field}`
-      ).toBe(false);
+        () => groundedIngredientEstimateSchema.parse(withoutField),
+        `omitting ${field} must fail parse`
+      ).toThrow();
     }
-  });
-
-  it('lets an accepted DB match send null P/C (the server anchors them)', () => {
-    const parsed = groundedIngredientEstimateSchema.parse({
-      ingredientName: 'cơm',
-      selectedCandidateId: 'c1',
-      grossG: 200,
-      refusePct: 0,
-      proteinG: null,
-      carbohydrateG: null,
-      fatG: { low: 0.5, mid: 0.6, high: 0.7 },
-    });
-    expect(parsed.proteinG).toBeNull();
-    expect(parsed.carbohydrateG).toBeNull();
-  });
-
-  it('requires the P/C keys even on an accepted match (an explicit decision, never a skip)', () => {
-    expect(() =>
-      groundedIngredientEstimateSchema.parse({
-        ingredientName: 'cơm',
-        selectedCandidateId: 'c1',
-        grossG: 200,
-        refusePct: 0,
-        fatG: { low: 0.5, mid: 0.6, high: 0.7 },
-      })
-    ).toThrow();
   });
 
   it('never accepts caloriesKcal — the server always derives it', () => {
@@ -149,20 +98,9 @@ describe('groundedIngredientEstimateSchema', () => {
         grossG: 200,
         refusePct: 0,
         caloriesKcal: { low: 250, mid: 260, high: 270 },
-        proteinG: null,
-        carbohydrateG: null,
+        proteinG: { low: 5, mid: 5, high: 5 },
+        carbohydrateG: { low: 55, mid: 56, high: 57 },
         fatG: { low: 0.5, mid: 0.6, high: 0.7 },
-      })
-    ).toThrow();
-  });
-
-  it('always requires fatG, matched or not', () => {
-    expect(() =>
-      groundedIngredientEstimateSchema.parse({
-        ingredientName: 'cơm',
-        selectedCandidateId: 'c1',
-        grossG: 200,
-        refusePct: 0,
       })
     ).toThrow();
   });
@@ -176,7 +114,7 @@ describe('groundedIngredientEstimateSchema', () => {
       carbohydrateG: { low: 0, mid: 0, high: 0 },
       fatG: { low: 0, mid: 0, high: 0 },
     });
-    expect(parsed.carbohydrateG?.mid).toBe(0);
+    expect(parsed.carbohydrateG.mid).toBe(0);
   });
 
   it('rejects rejectReason longer than 120 chars', () => {

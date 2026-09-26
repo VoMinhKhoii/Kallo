@@ -65,17 +65,17 @@ describe('decomposition-v2 prompt', () => {
     expect(out).toMatch(/cân sống/);
     expect(out).toMatch(/raw_weight/);
     expect(out).toMatch(
-      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
+      /"rawName":"ức gà"[^\n]+"explicitMass":\{"grams":300,"basis":"edible"\}/
     );
   });
 
   it('keeps explicitMass in both weighted examples', () => {
     const out = buildDecompositionV2Prompt(baseUserContext);
     expect(out).toMatch(
-      /"rawName": "cơm"[^\n]+"explicitMass": \{ "grams": 100, "basis": "unknown" \}/
+      /"rawName":"cơm"[^\n]+"explicitMass":\{"grams":100,"basis":"unknown"\}/
     );
     expect(out).toMatch(
-      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
+      /"rawName":"ức gà"[^\n]+"explicitMass":\{"grams":300,"basis":"edible"\}/
     );
   });
 
@@ -145,9 +145,7 @@ describe('decomposition-v2 locale blocks', () => {
     expect(out).toMatch(/unitToken: "tbsp"/);
     expect(out).toMatch(/1 oz ≈ 28 g/);
     expect(out).toMatch(/1 lb ≈ 454 g/);
-    expect(out).toMatch(
-      /"explicitMass": \{ "grams": 170, "basis": "edible" \}/
-    );
+    expect(out).toMatch(/"explicitMass":\{"grams":170,"basis":"edible"\}/);
   });
 
   it('both locales share the load-bearing invariants', () => {
@@ -171,13 +169,13 @@ describe('decomposition-v2 locale blocks', () => {
     // cơm tấm plate: dish names become meal items, ingredients are single
     // DB-matchable foods ("cơm tấm" → canonical "Cơm"; chả trứng decomposed).
     expect(vi).toMatch(/cơm tấm sườn bì chả trứng/);
-    expect(vi).toMatch(/"rawName": "cơm tấm", "canonicalName": "Cơm"/);
-    expect(vi).toMatch(/"rawName": "mộc nhĩ", "canonicalName": "Mộc nhĩ"/);
+    expect(vi).toMatch(/"rawName":"cơm tấm","canonicalName":"Cơm"/);
+    expect(vi).toMatch(/"rawName":"mộc nhĩ","canonicalName":"Mộc nhĩ"/);
 
     const en = buildDecompositionV2Prompt(enUserContext);
     expect(en).toMatch(/bbq plate: pulled pork, 2 pork ribs/);
-    expect(en).toMatch(/"count": 2, "unitToken": "rib"/);
-    expect(en).toMatch(/"rawName": "black beans"/);
+    expect(en).toMatch(/"count":2,"unitToken":"rib"/);
+    expect(en).toMatch(/"rawName":"black beans"/);
   });
 
   it('undefined outputLanguage keeps the original vi rendering with no language section', () => {
