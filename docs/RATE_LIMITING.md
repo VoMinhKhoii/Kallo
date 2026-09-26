@@ -79,6 +79,7 @@ code.
 | `avatarUpload` | user | 5 / 20 / 50 | degraded |
 | `feedbackScreenshot` | user | 5 / 20 / 50 | degraded |
 | `appleTokenLink` | user | 5 / 20 / 50 | degraded |
+| `labelImageView` | user | 30 / 300 / — | degraded |
 | `nutritionCandidates` | user | 30 / 300 / — | degraded |
 | `adminDebugAnalysis` | user | 3 / 20 / — | **closed** |
 | `ocrGlobalDaily` | global | 60 / — / 5000 | **closed** |
@@ -316,6 +317,7 @@ except invite lookup (IP) and the two global budgets.
 | `getFoodSourceCandidates` (`POST /api/v1/nutrition/candidates`) | `nutritionCandidates` | `user` | **429** + `Retry-After`. Guarded in the action, not the route: the web calls it directly as a Server Action. |
 | `POST /api/analyze-meal/debug` | `adminDebugAnalysis` | `user` (the admin) | **429**, or **503** while the limiter is down. Admin auth is a gate, not a budget — the route runs the live pipeline against arbitrary input. |
 | `DELETE /api/v1/groups/profile/avatar` | `avatarUpload` | `user` | **429** + `Retry-After`. The same policy the POST carries: a delete still writes storage and the profile row. |
+| `GET /api/v1/nutrition-label/images/{imageId}` | `labelImageView` | `user` | **429** + `Retry-After`, charged right after auth and before the row read and the Storage signing request. |
 
 ### The server-action 429 contract
 

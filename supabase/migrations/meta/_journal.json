@@ -526,6 +526,20 @@
       "when": 1790338800000,
       "tag": "20260925122000_add_apple_auth_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790339400000,
+      "tag": "20260925123000_add_nutrition_label_images",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1790339460000,
+      "tag": "20260925123100_nutrition_labels_bucket",
+      "breakpoints": true
     }
   ]
 }

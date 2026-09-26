@@ -106,6 +106,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/v1/notifications/push-tokens',
   '/api/v1/notifications/read',
   '/api/v1/notifications/seen',
+  '/api/v1/nutrition-label/images/[imageId]',
   '/api/v1/nutrition-label/log',
   '/api/v1/nutrition-label/scan',
   '/api/v1/nutrition/candidates',

@@ -566,6 +566,22 @@ That means:
 - Plain runtime env includes the production billing boundary, RevenueCat app
   allowlist/project/public web key, and the explicit dark-launch controls.
 
+**Post-response work (`after()`) is best-effort here.** The service runs with
+CPU throttling (request-based billing: the workflow does not pass
+`--no-cpu-throttling`) and `--min-instances=0`. Cloud Run only guarantees CPU
+while a request is in flight, so work scheduled with Next's `after()` may run
+slowly once the response is sent, and is lost if the instance scales down
+first. Today that covers the push fan-out (`lib/domain/notifications/`
+`with-notifications.ts` and `push.ts`), the late row write of a kept
+nutrition-label scan, and the scan's link to its meal from
+`/api/v1/nutrition-label/log` (`lib/domain/nutrition/label-images/`). All of
+it is acceptable to lose: the notification row is already committed, and a
+lost label-scan write only costs eval data (a late write cut off between the
+upload and the row can leave a photo with no row, under the owner's prefix
+where account deletion still purges it). Anything that must not be lost
+belongs before the response or in an outbox, not in `after()`. This is a known
+trade-off; the deploy flags are deliberately unchanged.
+
 ### Preview services: `nham-pr-<number>` (disabled by default)
 
 - CPU: `1`

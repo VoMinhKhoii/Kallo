@@ -280,6 +280,18 @@ export const rateLimitPolicies = {
   },
 
   /**
+   * Signed view URL for the owner's own nutrition-label photo. Each call is a
+   * row read plus a Storage signing request; a person opens a handful, so the
+   * ceiling only bites a loop.
+   */
+  labelImageView: {
+    route: 'label-image:view',
+    limits: { perMinute: 30, perHour: 300 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /**
    * Food-source candidates: one unindexed sequential scan of
    * `vietnamese_food_composition` per call (`>0` on an arbitrary nutrient
    * column, three `NOT ILIKE` patterns, an `ORDER BY` on the same column), on a

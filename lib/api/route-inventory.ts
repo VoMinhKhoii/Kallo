@@ -178,6 +178,11 @@ export const routeInventory = {
   'api/v1/notifications/read/route.ts': ['session', true, 'none-cheap'],
   'api/v1/notifications/route.ts': ['session', false, 'none-cheap'],
   'api/v1/notifications/seen/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/nutrition-label/images/[imageId]/route.ts': [
+    'session',
+    false,
+    'labelImageView',
+  ],
   'api/v1/nutrition-label/log/route.ts': ['session', true, 'none-cheap'],
   'api/v1/nutrition-label/scan/route.ts': ['session', true, 'ocr-guard'],
   'api/v1/nutrition/candidates/route.ts': [

@@ -311,6 +311,52 @@ describe('deleteAccountAction', () => {
     expect(mockPrepareDeletion).not.toHaveBeenCalled();
   });
 
+  it('purges kept nutrition-label photos before deleting the auth user', async () => {
+    const buckets: string[] = [];
+    const pages: Record<string, { name: string }[][]> = {
+      avatars: [[]],
+      'nutrition-labels': [
+        [{ name: 'scan-1.jpg' }, { name: 'scan-2.png' }],
+        [],
+      ],
+    };
+    mockStorageFrom.mockImplementation((bucket: string) => {
+      buckets.push(bucket);
+      return {
+        list: async () => ({ data: pages[bucket]?.shift() ?? [], error: null }),
+        remove: mockStorageRemove,
+      };
+    });
+
+    await expect(deleteAccountAction(input)).resolves.toEqual({
+      success: true,
+    });
+    expect(buckets).toEqual(['avatars', 'nutrition-labels']);
+    expect(mockStorageRemove).toHaveBeenCalledWith([
+      `${user.id}/scan-1.jpg`,
+      `${user.id}/scan-2.png`,
+    ]);
+    expect(mockStorageRemove.mock.invocationCallOrder[0]).toBeLessThan(
+      mockDeleteUser.mock.invocationCallOrder[0] as number
+    );
+  });
+
+  it('fails closed when the label-photo purge cannot be confirmed', async () => {
+    mockStorageFrom.mockImplementation((bucket: string) => ({
+      list: async () =>
+        bucket === 'nutrition-labels'
+          ? { data: null, error: new Error('storage_unavailable') }
+          : { data: [], error: null },
+      remove: mockStorageRemove,
+    }));
+
+    await expect(deleteAccountAction(input)).rejects.toMatchObject({
+      code: 'INTERNAL',
+    });
+    expect(mockDeleteUser).not.toHaveBeenCalled();
+    expect(mockPrepareDeletion).not.toHaveBeenCalled();
+  });
+
   it('cleans audit rows on both sides of auth deletion and signs out', async () => {
     await expect(deleteAccountAction(input)).resolves.toEqual({
       success: true,

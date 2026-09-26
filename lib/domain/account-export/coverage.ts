@@ -19,10 +19,11 @@
  *     (`AUTH_CLAIM_KEYS`) of `user_metadata` and each linked identity →
  *     `account`. Sessions, refresh and provider tokens are live credentials
  *     and are never exported; neither is `app_metadata` beyond the providers.
- *   - Storage: the uploaded avatar (`avatars` bucket) and feedback screenshots
- *     (`feedback-screenshots` bucket) → `files`, as bucket + object path. The
+ *   - Storage: the uploaded avatar (`avatars` bucket), feedback screenshots
+ *     (`feedback-screenshots` bucket) and kept nutrition-label scan photos
+ *     (`nutrition-labels` bucket) → `files`, as bucket + object path. The
  *     bytes are not inlined; the avatar is also visible in the app, and support
- *     can send a screenshot on request.
+ *     can send a screenshot or label photo on request.
  */
 
 export type ExportCoverage =
@@ -65,6 +66,16 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   day_completion_marks: {
     exported: 'dayCompletionMarks',
     excludedColumns: { user_id: OWN_ID },
+  },
+  nutrition_label_images: {
+    exported: 'labelScans',
+    excludedColumns: {
+      user_id: OWN_ID,
+      model:
+        'Internal diagnostics of the scan call: which model version answered. The scan itself, its result and the photo location are exported.',
+      latency_ms:
+        'Internal diagnostics of the scan call: how long the model took to answer.',
+    },
   },
 
   // --- Analysis & app activity ---------------------------------------------

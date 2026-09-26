@@ -1640,6 +1640,64 @@ export const userFeedback = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Nutrition-label scans
+//
+// One row per scan whose photo was kept: the photo sits in the PRIVATE
+// `nutrition-labels` bucket at `{user_id}/{id}.{ext}`, next to what the model
+// made of it — the extraction returned to the client (`result`) or the failure
+// (`error_code`) — and, once the scan is logged, what the user actually saved
+// (`reviewed_result`). Together they are the OCR eval dataset. Readers: the
+// owner (their own photo via a signed URL) and the team through the service
+// role. Retained until the account is deleted: account deletion purges the
+// objects, and the auth cascade removes these rows. Written only by the server
+// (`lib/domain/nutrition/label-images/`); the owner may SELECT their own rows.
+// ---------------------------------------------------------------------------
+
+export const nutritionLabelImages = pgTable(
+  'nutrition_label_images',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    storagePath: text('storage_path').notNull().unique(),
+    mimeType: text('mime_type').notNull(),
+    byteSize: integer('byte_size').notNull(),
+    // 'succeeded' | 'failed' — how the model call ended.
+    status: text('status').notNull(),
+    // The parsed label exactly as returned to the client (succeeded only).
+    result: jsonb('result'),
+    // The scan-path failure code (failed only), e.g. 'no_label_detected'.
+    errorCode: text('error_code'),
+    // The vision model the scan called, and how long the call took.
+    model: text('model'),
+    latencyMs: integer('latency_ms'),
+    // Set when the scan is logged; a scan the user abandoned stays unlinked.
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    // The user's correction of `result` for that meal: product, serving and
+    // nutrients (not the diary day, timezone or model confidence).
+    reviewedResult: jsonb('reviewed_result'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'nutrition_label_images_status_check',
+      sql`${table.status} IN ('succeeded', 'failed')`
+    ),
+    index('nutrition_label_images_user_created_idx').on(
+      table.userId,
+      sql`${table.createdAt} DESC`
+    ),
+    // Backs the ON DELETE SET NULL when a meal is deleted.
+    index('nutrition_label_images_meal_idx').on(table.mealId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Billing & Entitlements
 //
 // Source of truth for premium access. Rows are written ONLY by the
