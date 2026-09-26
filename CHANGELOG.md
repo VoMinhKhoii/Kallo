@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.17.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.16.0...v1.17.0) (2026-09-26)
+
+
+### Features
+
+* add Sentry error reporting and PostHog analytics (web + mobile) ([#383](https://github.com/VoMinhKhoii/Kallo/issues/383)) ([f0b280b](https://github.com/VoMinhKhoii/Kallo/commit/f0b280b8da309be09dfe682226b03f8f592f3ed6))
+* **auth:** revoke Sign in with Apple tokens on account deletion ([#391](https://github.com/VoMinhKhoii/Kallo/issues/391)) ([a22c868](https://github.com/VoMinhKhoii/Kallo/commit/a22c868f01d751e7f1fc9293570bebd68c26f080))
+* **billing:** new pricing with a paid first week, /pricing as the purchase page ([ff9835d](https://github.com/VoMinhKhoii/Kallo/commit/ff9835d9c734bc3b36da6db0751c342d5ce0420b))
+* **billing:** new pricing with a paid first week, /pricing as the purchase page ([#386](https://github.com/VoMinhKhoii/Kallo/issues/386)) ([fab35f0](https://github.com/VoMinhKhoii/Kallo/commit/fab35f0f5893e7c8b5c4e9efb0c09d6c5ed04a9b))
+* **circle:** block, report and objectionable-text filter for App Store 1.2 ([#392](https://github.com/VoMinhKhoii/Kallo/issues/392)) ([6d2c1a6](https://github.com/VoMinhKhoii/Kallo/commit/6d2c1a6cec1230a1bf8ad4233f5a461137ded663))
+* format tab titles as "Page / Kallo" ([#384](https://github.com/VoMinhKhoii/Kallo/issues/384)) ([d5e5799](https://github.com/VoMinhKhoii/Kallo/commit/d5e5799e0ff0dba86abb98140aa30ed7d94e53e5))
+* **logging:** restyle the calendar dialog with per-day calorie rings ([e25bc39](https://github.com/VoMinhKhoii/Kallo/commit/e25bc39a34eb55a7c37f108816db5dbd8c7cfe90))
+* **mobile:** settings sub-pages reuse the onboarding steps, with native chrome ([#385](https://github.com/VoMinhKhoii/Kallo/issues/385)) ([6ef879a](https://github.com/VoMinhKhoii/Kallo/commit/6ef879a3f6ca33f298b58bb5c00d3ddf8dd1589d))
+* **next:** upgrade to Next.js 16.3.6 and adopt Instant Navigations (KALLO-01) ([5c8a407](https://github.com/VoMinhKhoii/Kallo/commit/5c8a4072c78b5e17c5f4eb05427d1f21d233e879))
+* **nutrition-label:** keep scanned label photos with their scan outcome ([#394](https://github.com/VoMinhKhoii/Kallo/issues/394)) ([2181092](https://github.com/VoMinhKhoii/Kallo/commit/2181092da0bd6a2eb1ccdd1a9447b30ce734d5fe))
+* **privacy:** ask for AI-processing consent before the first AI request ([#393](https://github.com/VoMinhKhoii/Kallo/issues/393)) ([a7af2f1](https://github.com/VoMinhKhoii/Kallo/commit/a7af2f17782c9ec2ddf1fead9c816f7b7d0ff1de))
+* **security:** enforce a Content-Security-Policy compatible with prerendered shells ([54c8bd4](https://github.com/VoMinhKhoii/Kallo/commit/54c8bd427cda037c12bdf01a4dfd4bdbb97b53cb))
+* **security:** enforce a Content-Security-Policy compatible with prerendered shells ([f943211](https://github.com/VoMinhKhoii/Kallo/commit/f943211bc1174fd94bf47c654544632da92a670f))
+
+
+### Bug Fixes
+
+* **account:** export allowlisted Auth identity data; index chat and coach lookups ([bd5f2a8](https://github.com/VoMinhKhoii/Kallo/commit/bd5f2a8bc7f0668c2e5c2dd646b920615ea205bb))
+* **account:** export every user-linked record in "Export my data" ([a3d3fc0](https://github.com/VoMinhKhoii/Kallo/commit/a3d3fc06bce02fb34d78df238390d24221b9b10e))
+* **account:** export friendships.acceptedAt; guard export coverage per column ([4e4d30b](https://github.com/VoMinhKhoii/Kallo/commit/4e4d30b636c25a206458e349de29a5a0538bdce7))
+* **account:** index the user columns the data export filters by ([7466055](https://github.com/VoMinhKhoii/Kallo/commit/746605521763d028ee59dba1d0a7fbd5f819e56b))
+* **account:** regenerate the export index migration after main; export auto-share consent time ([113af49](https://github.com/VoMinhKhoii/Kallo/commit/113af4942ff9fea9f7aa274d5538a2c2ec5f3a77))
+* **api:** align OpenAPI with runtime and validate chat-group bodies ([537207e](https://github.com/VoMinhKhoii/Kallo/commit/537207e6cfebe617e09d40e1d3359a8dcad183bc))
+* **api:** authenticate day-complete before reading its body ([be47994](https://github.com/VoMinhKhoii/Kallo/commit/be479941909a2cc467db84257c22c1f5d4b663c2))
+* **api:** document 413 on every byte-capped operation ([f7ce06c](https://github.com/VoMinhKhoii/Kallo/commit/f7ce06c5f81aebb4b6a11b3b83e146752d12fc32))
+* **api:** document analyze-meal's 413 and follow helpers in the 413 guard ([32ffb9e](https://github.com/VoMinhKhoii/Kallo/commit/32ffb9e52e3267f6eef1bdd4dcfb436ba0319fab))
+* **api:** map bad input to 400/401/409/413 instead of retryable 500 ([903ab9f](https://github.com/VoMinhKhoii/Kallo/commit/903ab9fc1e7163def02f2f42e761a7732f59c54c))
+* **api:** mark the macro-card PNG response as binary ([55c6147](https://github.com/VoMinhKhoii/Kallo/commit/55c6147bf49dc27613a75b225de6f8644d45ceef))
+* **api:** model the analysis SSE body as text and document every error code ([462a8bf](https://github.com/VoMinhKhoii/Kallo/commit/462a8bf6c39662b89b5f4c944cd8b352f2d09b12))
+* **api:** serialize every analyze-meal pre-stream failure and keep nutrition tz optional ([b771cd3](https://github.com/VoMinhKhoii/Kallo/commit/b771cd372513831222ca17549ea90f5c13baea6d))
+* **app:** clear transient results when a kept-alive page is revealed ([4d08f74](https://github.com/VoMinhKhoii/Kallo/commit/4d08f74615efbfac1da63812ccd3721c2c87abce))
+* **app:** re-sync kept-alive state when its props or URL change ([6e18fe0](https://github.com/VoMinhKhoii/Kallo/commit/6e18fe0f6c7efbdf2c27e39ae6039b195a64f93f))
+* **auth-proxy:** canonicalize proxied paths and stop leaking the origin host ([93ad5ed](https://github.com/VoMinhKhoii/Kallo/commit/93ad5ed85ec49bfb60245fafa8862b5070b1b282))
+* **auth:** mark the session cookie Secure and cap its lifetime under HSTS ([2fe58be](https://github.com/VoMinhKhoii/Kallo/commit/2fe58be297aec42cacb8416ea4765e39031fc775))
+* **auth:** measure the password minimum in UTF-8 bytes like GoTrue ([8bbee13](https://github.com/VoMinhKhoii/Kallo/commit/8bbee137bcf6bd5ff4ebb0ce2ea416043c5eea80))
+* **auth:** say how accented letters count toward the password limits ([507620f](https://github.com/VoMinhKhoii/Kallo/commit/507620f945a813de5db0047eaa71f68732e71f7f))
+* **auth:** sync the password policy to 8+ characters with letters and digits ([970794b](https://github.com/VoMinhKhoii/Kallo/commit/970794bbdde672136b9b7a582cbae9ca4ba6d756))
+* **avatars:** route every avatar write through server processing ([8b3d46a](https://github.com/VoMinhKhoii/Kallo/commit/8b3d46a89349714813401c9783e9dfd3d55a7a1d))
+* **build:** keep test files out of the next build type-check ([ae3c7d4](https://github.com/VoMinhKhoii/Kallo/commit/ae3c7d481d1cb8847bb531a5501768b40abd5bb9))
+* **circle:** default auto-share off and hide shares made before a friendship ([18d24f2](https://github.com/VoMinhKhoii/Kallo/commit/18d24f2a1e311c980e8e7d3817687eb59d3c4595))
+* **circle:** stamp friendships.accepted_at at the status flip ([4481f44](https://github.com/VoMinhKhoii/Kallo/commit/4481f442fbb6bcb0b14571195a7847bc32a1f144))
+* **pricing:** clear a finished checkout on reveal and visitor change ([74f50b1](https://github.com/VoMinhKhoii/Kallo/commit/74f50b185a8343ac329e4952f6818e5e8435b9d7))
+* **pricing:** hide the beta note beside a checkout status ([097585b](https://github.com/VoMinhKhoii/Kallo/commit/097585b90c161cf1d7866c0c3b457916f7450127))
+* **pricing:** keep unresolved payments on reveal; drop stale-account results ([d94c42d](https://github.com/VoMinhKhoii/Kallo/commit/d94c42df44585acb55829b2398186aad12a00c6f))
+* **security:** log CSP report URLs as route templates, not raw paths ([82a7b34](https://github.com/VoMinhKhoii/Kallo/commit/82a7b3418576bd75b7ae2747746d98a486acd8c2))
+* **security:** redact CSP report paths by route position, not spelling ([501c557](https://github.com/VoMinhKhoii/Kallo/commit/501c55742f74e3e46b2d2c4ba35da39fb3f30274))
+* **settings:** drop Google Play from the iOS delete-account warning ([#389](https://github.com/VoMinhKhoii/Kallo/issues/389)) ([3f5c69e](https://github.com/VoMinhKhoii/Kallo/commit/3f5c69e5c012d73764598e67319402bca3dc9439))
+
+
+### Refactor
+
+* **logging:** one measureDay reading for the calendar's ring and label ([68b38cb](https://github.com/VoMinhKhoii/Kallo/commit/68b38cbb978f6b85024b23edc3bfc8997adb61fe))
+
+
+### Documentation
+
+* **circle:** tighten the accepted_at clock note ([02d05b2](https://github.com/VoMinhKhoii/Kallo/commit/02d05b2e22ca1f5f626859f63124d127cff371d4))
+* **email:** add staged SPF/DMARC enforcement runbook (KALLO-04) ([809c52e](https://github.com/VoMinhKhoii/Kallo/commit/809c52e9d69447a8fa6055bebdde5ae81f7d4312))
+* **email:** treat DMARC quarantine as availability-affecting ([27854e9](https://github.com/VoMinhKhoii/Kallo/commit/27854e95e01917c570cc58225cb3bf3a66de91cf))
+* **legal:** cover label photos, AI consent, reports and Apple tokens in the privacy policy ([#390](https://github.com/VoMinhKhoii/Kallo/issues/390)) ([b0a9822](https://github.com/VoMinhKhoii/Kallo/commit/b0a9822df55c3e8b1b61d9edf55d72de1b1e64b7))
+
 ## [1.16.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.15.0...v1.16.0) (2026-09-23)
 
 
