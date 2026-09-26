@@ -8,7 +8,9 @@ import {
   canViewShare,
   canViewShareOwnedBy,
   friendSinceSql,
+  groupShareVisibleSql,
   shareAccessSql,
+  shareVisibleIgnoringBlocksSql,
 } from '@/lib/domain/social/shares/share-visibility';
 import { mealShares } from '@/lib/infra/db/schema';
 
@@ -32,15 +34,20 @@ function fakeDb(rows: unknown[]) {
 function expectEveryColumnQualified(statement: SQL | undefined) {
   const { sql } = new PgDialect().sqlToQuery(statement as SQL);
   expect(sql).toContain(
-    '"share_owner_membership"."group_id" = "share_viewer_membership"."group_id"'
+    '"share_owner_membership"."group_id" = "chat_groups"."id"'
   );
   expect(sql).toContain(
-    '"chat_groups"."id" = "share_viewer_membership"."group_id"'
+    '"share_viewer_membership"."group_id" = "chat_groups"."id"'
+  );
+  expect(sql).toContain(
+    '"chat_groups"."id" = "share_group_membership"."group_id"'
   );
   expect(sql).toContain('"friendships"."user_low"');
+  expect(sql).toContain('"user_blocks"."blocker_id"');
   expect(
     sql.match(/(?<![."\w])"(?:group_id|user_id|joined_at|kind|status)"/g)
   ).toBeNull();
+  expect(sql.match(/(?<![."\w])"(?:blocker_id|blocked_id)"/g)).toBeNull();
   return sql;
 }
 
@@ -157,22 +164,54 @@ describe('canViewShareOwnedBy', () => {
 
     expectEveryColumnQualified(db.captured.statement);
     const { params } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    // The same bound values as before — the access contract is unchanged.
-    // `sharedAt` arrives as encoder-mapped text: a raw Date in a raw fragment
-    // reaches the driver unserialized and throws.
-    // `sharedAt` now also bounds the friendship branch (accepted_at), so it is
-    // bound three times: friendship, then both group memberships.
+    // It is `shareAccessSql` over the row's values, so every branch of the
+    // contract is bound. `sharedAt` arrives as encoder-mapped text: a raw Date
+    // in a raw fragment reaches the driver unserialized and throws.
+    // Order: the block check (either direction), the owner check, the
+    // visibility, the friendship (bounded by accepted_at), then the group
+    // branch — the viewer's memberships, and both people's join times against
+    // the share.
     expect(params).toEqual([
       VIEWER_ID,
       OWNER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      'circle',
+      VIEWER_ID,
+      OWNER_ID,
       VIEWER_ID,
       OWNER_ID,
       sharedAt.toISOString(),
       VIEWER_ID,
-      OWNER_ID,
+      VIEWER_ID,
       sharedAt.toISOString(),
+      OWNER_ID,
       sharedAt.toISOString(),
     ]);
+  });
+
+  // A block must close every branch — including a named group both people
+  // are still in — so it is applied ONCE, ahead of the whole relationship.
+  it('applies the block check once, ahead of every branch', async () => {
+    const db = fakeDb([{ visible: false }]);
+
+    await canViewShareOwnedBy(
+      VIEWER_ID,
+      { actorId: OWNER_ID, sharedAt, visibility: 'circle' },
+      db as never
+    );
+
+    const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
+    const flat = sql.replace(/\s+/g, ' ');
+    expect(flat).toMatch(
+      /^SELECT \( NOT EXISTS \( SELECT 1 FROM "user_blocks"/
+    );
+    expect(flat.match(/FROM "user_blocks"/g)).toHaveLength(1);
+    expect(flat.indexOf('"user_blocks"')).toBeLessThan(
+      flat.indexOf('"friendships"')
+    );
   });
 
   // KALLO-03: a friend who connected after the share was made must not see it.
@@ -186,7 +225,7 @@ describe('canViewShareOwnedBy', () => {
     );
 
     const { sql } = new PgDialect().sqlToQuery(db.captured.statement as SQL);
-    expect(sql).toContain('"friendships"."accepted_at" <= $5');
+    expect(sql).toContain('"friendships"."accepted_at" <= $12');
   });
 });
 
@@ -211,10 +250,32 @@ describe('friend-since bound on share-id reads', () => {
         mealShares.visibility
       )
     );
-    // Owner short-circuit first, then the time-bounded friendship.
-    expect(sql).toMatch(/^\s*"meal_shares"\."actor_id" = \$1/);
+    // Blocks first (for everyone but the owner, who is never self-blocked),
+    // then the owner short-circuit and the time-bounded friendship.
+    const flat = sql.replace(/\s+/g, ' ');
+    expect(flat).toMatch(/^\( NOT EXISTS \( SELECT 1 FROM "user_blocks"/);
+    expect(flat).toMatch(/AND \( "meal_shares"\."actor_id" = \$3/);
     expect(sql).toContain(
       '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
+    );
+  });
+
+  // Report admission judges a share the reporter may have since blocked, so
+  // it uses the rule WITHOUT blocks — but otherwise identical: a private
+  // share of a stranger stays inadmissible however the block is set.
+  it('shareVisibleIgnoringBlocksSql is the same rule minus the block check', () => {
+    const { sql } = new PgDialect().sqlToQuery(
+      shareVisibleIgnoringBlocksSql(
+        VIEWER_ID,
+        mealShares.actorId,
+        mealShares.sharedAt,
+        mealShares.visibility
+      )
+    );
+    expect(sql).not.toContain('user_blocks');
+    const flat = sql.replace(/\s+/g, ' ');
+    expect(flat).toMatch(
+      /^\( "meal_shares"\."actor_id" = \$1 OR \( "meal_shares"\."visibility" <> 'private'/
     );
   });
 
@@ -229,5 +290,27 @@ describe('friend-since bound on share-id reads', () => {
       '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
     );
     expect(params).toEqual([VIEWER_ID, VIEWER_ID]);
+  });
+});
+
+describe('groupShareVisibleSql', () => {
+  // The one group-share rule every group read folds in (feed, chat-list
+  // unread and activity): not private, not blocked, both members before.
+  it('is not-private AND not-blocked AND both memberships since the share', () => {
+    const GROUP_ID = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    const { sql, params } = new PgDialect().sqlToQuery(
+      groupShareVisibleSql(VIEWER_ID, GROUP_ID, mealShares)
+    );
+    const flat = sql.replace(/\s+/g, ' ');
+    expect(flat).toContain(`"meal_shares"."visibility" <> 'private'`);
+    expect(flat).toContain('NOT EXISTS ( SELECT 1 FROM "user_blocks"');
+    expect(flat).toContain(
+      '"share_viewer_membership"."joined_at" <= "meal_shares"."shared_at"'
+    );
+    expect(flat).toContain(
+      '"share_owner_membership"."joined_at" <= "meal_shares"."shared_at"'
+    );
+    expect(flat).not.toContain('"chat_groups"."kind"');
+    expect(params).toContain(GROUP_ID);
   });
 });

@@ -41,10 +41,6 @@ export const renameProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(50),
 });
 
-export const blockFriendSchema = z.object({
-  targetUserId: uuidSchema,
-});
-
 export const removeFriendSchema = z.object({
   targetUserId: uuidSchema,
 });

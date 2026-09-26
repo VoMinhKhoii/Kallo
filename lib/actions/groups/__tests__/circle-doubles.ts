@@ -31,6 +31,11 @@ export const schema = {
     requestedBy: 'f.requestedBy',
     updatedAt: 'f.updatedAt',
   },
+  userBlocks: {
+    blockerId: 'ub.blockerId',
+    blockedId: 'ub.blockedId',
+    createdAt: 'ub.createdAt',
+  },
   friendsFeedReadMarkers: {
     userId: 'ffrm.userId',
     lastReadAt: 'ffrm.lastReadAt',

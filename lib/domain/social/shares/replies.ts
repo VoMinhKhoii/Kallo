@@ -2,12 +2,13 @@
 // Meal-share reply enrichment
 // ---------------------------------------------------------------------------
 
-import { asc, eq, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm';
 import {
   type PublicIdentity,
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShareReplies, publicProfiles } from '@/lib/infra/db/schema';
@@ -58,7 +59,15 @@ export async function repliesForShares(
       )::int`.as('reply_total'),
     })
     .from(mealShareReplies)
-    .where(inArray(mealShareReplies.shareId, ids))
+    .where(
+      and(
+        inArray(mealShareReplies.shareId, ids),
+        // Filtered BEFORE ranking so a blocked author's replies neither show
+        // nor count toward the total — the thread reads as if they never
+        // replied, in both directions of the block.
+        notBlockedWithSql(actorId, mealShareReplies.userId)
+      )
+    )
     .as('ranked_share_replies');
 
   const rows = await db

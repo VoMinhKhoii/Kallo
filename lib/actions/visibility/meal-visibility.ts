@@ -15,6 +15,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { setMealShareVisibilitySchema } from '@/lib/core/validation/social';
+import { assertShareableMealText } from '@/lib/domain/social/shares/shareable-meal';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShares, meals } from '@/lib/infra/db/schema';
 
@@ -33,12 +34,17 @@ export async function setMealShareVisibility(
 
   // Defense in depth beyond RLS: the meal must belong to the actor.
   const owned = await db
-    .select({ id: meals.id })
+    .select({ id: meals.id, rawInput: meals.rawInput })
     .from(meals)
     .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, actorId)))
     .limit(1);
   if (!owned[0]) {
     throw Errors.notFound('Bữa ăn không tồn tại hoặc không thuộc về bạn.');
+  }
+  // Sharing makes the meal's text visible to friends: it must pass the
+  // objectionable-content filter (422). Making a meal private never does.
+  if (parsed.visibility !== 'private') {
+    assertShareableMealText(owned[0].rawInput);
   }
 
   // Upsert on the partial-unique meal_id. The DB trigger fans out the event

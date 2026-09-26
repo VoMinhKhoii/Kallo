@@ -1,6 +1,7 @@
 /**
  * Contract for the chat-group write surface (`POST /api/v1/chat-groups`,
- * `POST /api/v1/chat-groups/{groupId}/members`).
+ * `POST /api/v1/chat-groups/{groupId}/members`,
+ * `PATCH /api/v1/chat-groups/{groupId}`).
  *
  * Parsed by the route handlers and published through `fromZod` in the OpenAPI
  * spec, so this file must NEVER value-import a server action or any
@@ -17,6 +18,7 @@ import { z } from 'zod';
 import {
   addChatGroupMembersSchema,
   createChatGroupSchema,
+  renameChatGroupSchema,
 } from '@/lib/core/validation/chat';
 
 /** Drop repeated ids, keeping first-seen order. The action dedupes too; doing
@@ -33,6 +35,12 @@ export const createChatGroupBodySchema = z.object({
 export const addChatGroupMembersBodySchema = z.object({
   memberUserIds:
     addChatGroupMembersSchema.shape.memberUserIds.transform(dedupe),
+});
+
+/** Request body for `PATCH /api/v1/chat-groups/{groupId}` (the id is the
+ * path segment, not a body field). */
+export const renameChatGroupBodySchema = z.object({
+  name: renameChatGroupSchema.shape.name,
 });
 
 export type CreateChatGroupBody = z.infer<typeof createChatGroupBodySchema>;

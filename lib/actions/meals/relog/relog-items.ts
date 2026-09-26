@@ -135,6 +135,7 @@ export async function relogMealItemsAction(
       const share = await insertDefaultCircleShare(tx, {
         mealId: meal.id,
         actorId: user.id,
+        rawInput,
       });
 
       await tx.insert(mealItems).values(

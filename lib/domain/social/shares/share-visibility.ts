@@ -7,6 +7,7 @@
 
 import { eq, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { notBlockedWithSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -20,6 +21,7 @@ type Db = AppDb | AppTransaction;
 
 const viewerMembership = alias(chatGroupMembers, 'share_viewer_membership');
 const ownerMembership = alias(chatGroupMembers, 'share_owner_membership');
+const groupMembership = alias(chatGroupMembers, 'share_group_membership');
 
 /**
  * The friend half of the access contract: an accepted friendship between the
@@ -50,6 +52,67 @@ export function friendSinceSql(
   `;
 }
 
+/** The share columns (or bound values) a visibility predicate reads. */
+export interface ShareColumns {
+  actorId: SQLWrapper | string;
+  sharedAt: SQLWrapper | Date;
+  visibility: SQLWrapper | string;
+}
+
+/**
+ * PURE group membership: `viewerId` and the share's owner are both members of
+ * `groupId`, and both joined at or before the share. Knows nothing about
+ * visibility or blocks — the composites below add those.
+ */
+function groupMembersSinceSql(
+  viewerId: string,
+  groupId: SQLWrapper | string,
+  ownerId: SQLWrapper | string,
+  sharedAt: SQLWrapper | Date
+): SQL<boolean> {
+  // Base table + alias spelled out: Drizzle renders an alias object inside raw
+  // sql as the bare alias name, which is not a relation.
+  return sql<boolean>`
+    EXISTS (
+      SELECT 1
+      FROM "chat_group_members" AS "share_viewer_membership"
+      WHERE ${viewerMembership.groupId} = ${groupId}
+        AND ${viewerMembership.userId} = ${viewerId}
+        AND ${viewerMembership.joinedAt} <= ${sharedAt}
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM "chat_group_members" AS "share_owner_membership"
+      WHERE ${ownerMembership.groupId} = ${groupId}
+        AND ${ownerMembership.userId} = ${ownerId}
+        AND ${ownerMembership.joinedAt} <= ${sharedAt}
+    )
+  `;
+}
+
+/**
+ * THE group-share rule, for reads scoped to one chat group: the share is not
+ * private, the viewer and its owner are not blocked, and both were members of
+ * `groupId` when it was shared. Every group read folds this in — the group
+ * feed, the chat list's unread flag and its last-meal activity — so none can
+ * drift from another. (The share-by-id gate below composes the same pieces,
+ * with blocks applied once at its top instead of per branch.)
+ */
+export function groupShareVisibleSql(
+  viewerId: string,
+  groupId: SQLWrapper | string,
+  share: ShareColumns
+): SQL<boolean> {
+  return sql<boolean>`(
+    ${share.visibility} <> 'private'
+    AND ${notBlockedWithSql(viewerId, share.actorId)}
+    AND ${groupMembersSinceSql(viewerId, groupId, share.actorId, share.sharedAt)}
+  )`;
+}
+
+/** The friend branch, else ANY named group both people were in when it was
+ * shared. Pure: no visibility, no blocks. Driven from the viewer's own
+ * memberships so the planner never walks every group. */
 function relationshipAccessSql(
   viewerId: string,
   ownerId: SQLWrapper | string,
@@ -59,28 +122,46 @@ function relationshipAccessSql(
     ${friendSinceSql(viewerId, ownerId, sharedAt)}
     OR EXISTS (
       SELECT 1
-      -- Base table + alias spelled out: Drizzle renders an alias object inside
-      -- raw sql as the bare alias name, which is not a relation.
-      FROM "chat_group_members" AS "share_viewer_membership"
-      INNER JOIN "chat_group_members" AS "share_owner_membership"
-        ON ${ownerMembership.groupId} = ${viewerMembership.groupId}
+      FROM "chat_group_members" AS "share_group_membership"
       INNER JOIN ${chatGroups}
-        ON ${chatGroups.id} = ${viewerMembership.groupId}
-      WHERE ${chatGroups.kind} = 'group'
-        AND ${viewerMembership.userId} = ${viewerId}
-        AND ${ownerMembership.userId} = ${ownerId}
-        AND ${viewerMembership.joinedAt} <= ${sharedAt}
-        AND ${ownerMembership.joinedAt} <= ${sharedAt}
+        ON ${chatGroups.id} = ${groupMembership.groupId}
+      WHERE ${groupMembership.userId} = ${viewerId}
+        AND ${chatGroups.kind} = 'group'
+        AND ${groupMembersSinceSql(viewerId, chatGroups.id, ownerId, sharedAt)}
     )
   `;
 }
 
 /**
- * The whole access contract as one composable boolean: owner, else non-private
- * AND a live relationship. Exported so a caller that is already reading the
- * share row can fold admission into that row's `WHERE` instead of asking first
- * and reading second — one statement cannot have its answer change between the
- * two halves. `canViewShare` remains the form for callers holding only an id.
+ * Could `viewerId` see this share, IGNORING blocks: owner, else non-private
+ * and a live relationship. Only for callers that must judge a share the
+ * viewer has since blocked — a content report ("block, then report" must not
+ * turn into a 404) — never for serving content. Everything that shows a share
+ * uses {@link shareAccessSql}.
+ */
+export function shareVisibleIgnoringBlocksSql(
+  viewerId: string,
+  ownerId: SQLWrapper | string,
+  sharedAt: SQLWrapper | Date,
+  visibility: SQLWrapper | string
+): SQL<boolean> {
+  return sql<boolean>`(
+    ${ownerId} = ${viewerId}
+    OR (
+      ${visibility} <> 'private'
+      AND (${relationshipAccessSql(viewerId, ownerId, sharedAt)})
+    )
+  )`;
+}
+
+/**
+ * The whole access contract as one composable boolean: not blocked, then the
+ * relationship rule above. Blocks are applied ONCE, here at the top, so no
+ * branch (friend, group, a future one) can forget them. Exported so a caller
+ * that is already reading the share row can fold admission into that row's
+ * `WHERE` instead of asking first and reading second — one statement cannot
+ * have its answer change between the two halves. `canViewShare` remains the
+ * form for callers holding only an id.
  */
 export function shareAccessSql(
   viewerId: string,
@@ -88,13 +169,10 @@ export function shareAccessSql(
   sharedAt: SQLWrapper | Date,
   visibility: SQLWrapper | string
 ): SQL<boolean> {
-  return sql<boolean>`
-    ${ownerId} = ${viewerId}
-    OR (
-      ${visibility} <> 'private'
-      AND (${relationshipAccessSql(viewerId, ownerId, sharedAt)})
-    )
-  `;
+  return sql<boolean>`(
+    ${notBlockedWithSql(viewerId, ownerId)}
+    AND ${shareVisibleIgnoringBlocksSql(viewerId, ownerId, sharedAt, visibility)}
+  )`;
 }
 
 /**
@@ -146,10 +224,10 @@ export async function canViewShare(
 }
 
 /** Variant for callers that already locked and read the share row. This skips
- * the duplicate meal_shares read while preserving the same access contract —
- * the owner and private short-circuits are the two branches `shareAccessSql`
- * evaluates in SQL, decided here in TypeScript because the row is already in
- * hand. */
+ * the duplicate meal_shares read and evaluates the same `shareAccessSql` over
+ * the row's values instead of its columns. The owner and private cases are
+ * also answered here in TypeScript, without a round trip — the answers
+ * `shareAccessSql` itself gives for them. */
 export async function canViewShareOwnedBy(
   viewerId: string,
   share: { actorId: string; sharedAt: Date; visibility: string },
@@ -160,12 +238,15 @@ export async function canViewShareOwnedBy(
 
   return readVisible(
     db,
-    sql`SELECT (${relationshipAccessSql(
+    sql`SELECT ${shareAccessSql(
       viewerId,
-      share.actorId,
+      // Typed, so `owner = viewer` compares uuids rather than two untyped
+      // parameters.
+      sql`${share.actorId}::uuid`,
       // Bound through the column encoder: a bare Date in a raw fragment
       // reaches the driver unserialized and throws.
-      sql.param(share.sharedAt, mealShares.sharedAt)
-    )}) AS visible`
+      sql.param(share.sharedAt, mealShares.sharedAt),
+      share.visibility
+    )} AS visible`
   );
 }

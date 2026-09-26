@@ -21,14 +21,13 @@ export async function listGroupMealFeed(
   db: ChatGroupDb = defaultDb
 ): Promise<GroupMealFeedPage> {
   const parsed = groupMealFeedSchema.parse(input);
-  const access = await requireGroupAccess(actorId, parsed.groupId, db);
+  await requireGroupAccess(actorId, parsed.groupId, db);
   const before = decodeSharedMealCursor(parsed.before);
 
-  // The feed applies the same post-join policy as every group share read.
+  // The feed applies the same group-share rule as every group share read.
   const candidates = await sharedGroupMealsBefore(
     parsed.groupId,
     actorId,
-    access.joinedAt,
     before,
     db,
     LEGACY_GROUP_FEED_PAGE_SIZE + 1

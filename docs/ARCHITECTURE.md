@@ -143,7 +143,7 @@ another domain module is a smell worth a second look.
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
-| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/` |
+| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/`; `moderation/` (App Store 1.2): `blocks.ts` (the one symmetric block predicate over `user_blocks`, and the pair lock block/accept share), `text-filter.ts` over the curated `objectionable-terms.ts` (422 `objectionable_content` on UGC writes), and `report-targets.ts` (resolves a reported target to its owner, gated on what the reporter could see ignoring blocks). Visibility seams every read folds in: `shares/share-visibility.ts` (`shareAccessSql` for share-by-id, `groupShareVisibleSql` for group reads), `chat/message-visibility.ts` (`visibleChatMessageSql`) and `shares/shareable-meal.ts` (the text filter at the moment a meal becomes visible to others) |
 | `waitlist/` | signup, confirm, token |
 
 ### `lib/` root

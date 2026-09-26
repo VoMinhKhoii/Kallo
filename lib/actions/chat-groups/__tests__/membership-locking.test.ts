@@ -337,6 +337,19 @@ describe('chat-group membership locking', () => {
     expect(state.members.has(MEMBER_ID)).toBe(false);
   });
 
+  it('rejects an objectionable rename with a 422 before taking the lock', async () => {
+    const state = atomicMembershipDb([OWNER_ID, MEMBER_ID]);
+
+    await expect(
+      renameChatGroup(
+        OWNER_ID,
+        { groupId: GROUP_ID, name: 'nigga squad' },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    expect(state.events).not.toContain('lock:acquired');
+  });
+
   it('locks before owner authorization in rename and remove', async () => {
     const state = atomicMembershipDb([OWNER_ID, MEMBER_ID]);
 

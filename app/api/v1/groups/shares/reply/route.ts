@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createShareReplyAction } from '@/lib/actions/meal-sharing/replies';
 import { readJsonBody } from '@/lib/api/auth';
+import { createShareReplyBodySchema } from '@/lib/api/contracts/social/share-replies';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
@@ -11,10 +12,8 @@ export async function POST(request: NextRequest) {
     // keeps its own check as the authoritative boundary.
     await requireAuthAndProfile();
 
-    const body = await readJsonBody(request);
-    const result = await createShareReplyAction(
-      body as { shareId: string; replyId?: string; body: string }
-    );
+    const body = createShareReplyBodySchema.parse(await readJsonBody(request));
+    const result = await createShareReplyAction(body);
     return NextResponse.json(result);
   } catch (error) {
     return handleRouteError(error);

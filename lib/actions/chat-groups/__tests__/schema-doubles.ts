@@ -38,6 +38,12 @@ export const friendships = {
   userHigh: 'f.userHigh',
 };
 
+export const userBlocks = {
+  blockerId: 'ub.blockerId',
+  blockedId: 'ub.blockedId',
+  createdAt: 'ub.createdAt',
+};
+
 export const meals = {
   id: 'm.id',
   userId: 'm.userId',
