@@ -97,6 +97,10 @@ export interface RecordAnalysisModelBudgetEventInput {
   requestCount?: number | null;
   inputTokens?: number | null;
   outputTokens?: number | null;
+  /** Subset of `inputTokens` served from the provider cache. */
+  cachedTokens?: number | null;
+  /** Thinking tokens — billed as output, not included in `outputTokens`. */
+  thoughtTokens?: number | null;
   errorCategory?: AnalysisModelProviderErrorCategory | null;
 }
 

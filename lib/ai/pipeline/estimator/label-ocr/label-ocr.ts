@@ -1,8 +1,13 @@
 import {
+  createBudgetAttemptRecorder,
+  LABEL_OCR_BUDGET_ROUTE,
+} from '@/lib/ai/pipeline/telemetry/budget';
+import {
   createGeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
+import { db } from '@/lib/infra/db/client';
 import { normalizeNutritionLabelOcr } from './normalization';
 import { rawNutritionLabelOcrSchema } from './raw-schema';
 
@@ -94,19 +99,30 @@ export async function scanNutritionLabelWithGemini(
   const deadline = createDeadlineController(options);
 
   try {
-    const raw = await gemini.generateStructuredOutput({
-      schema: rawNutritionLabelOcrSchema,
-      systemPrompt: NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
-      userMessage:
-        'Extract all nutrition table facts accurately according to the JSON schema.',
-      image: {
-        mimeType: options.mimeType,
-        base64Data: options.imageBase64,
+    const raw = await gemini.generateStructuredOutput(
+      {
+        schema: rawNutritionLabelOcrSchema,
+        systemPrompt: NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
+        userMessage:
+          'Extract all nutrition table facts accurately according to the JSON schema.',
+        image: {
+          mimeType: options.mimeType,
+          base64Data: options.imageBase64,
+        },
+        model,
+        temperature: 0.1,
+        abortSignal: deadline.signal,
       },
-      model,
-      temperature: 0.1,
-      abortSignal: deadline.signal,
-    });
+      {
+        onAttemptComplete: createBudgetAttemptRecorder({
+          db,
+          requestId: null,
+          workKind: 'primary',
+          model,
+          route: LABEL_OCR_BUDGET_ROUTE,
+        }),
+      }
+    );
 
     return normalizeNutritionLabelOcr(raw);
   } finally {

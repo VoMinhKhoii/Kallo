@@ -688,6 +688,10 @@ export const analysisModelBudgetEvents = pgTable(
     requestCount: integer('request_count').notNull().default(1),
     inputTokens: integer('input_tokens').notNull().default(0),
     outputTokens: integer('output_tokens').notNull().default(0),
+    // Cost inputs (see lib/ai/cost/pricing.ts): cached is a subset of input
+    // billed at the cached rate; thought is billed as output on top of it.
+    cachedTokens: integer('cached_tokens').notNull().default(0),
+    thoughtTokens: integer('thought_tokens').notNull().default(0),
     errorCategory: text('error_category'),
   },
   (table) => [

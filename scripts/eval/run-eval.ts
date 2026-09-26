@@ -3,6 +3,7 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
+import { MODEL_RATES } from '@/lib/ai/cost/pricing';
 import {
   ESTIMATOR_PRICING,
   selectEstimator,
@@ -24,6 +25,11 @@ import {
   type EvalStageTimings,
   fixtureFileSchema,
 } from './eval-types';
+import {
+  costPer1kCases,
+  createCaseUsage,
+  withUsageCapture,
+} from './eval-usage';
 
 type StageKey = keyof EvalStageTimings;
 
@@ -142,18 +148,21 @@ async function runCase(
   // Ref'd timer + clearTimeout, NOT .unref(): Bun fires unref'd timers late
   // (observed 282s/640s for a 90s deadline), which defeats the ceiling.
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const usage = createCaseUsage();
   try {
     response = await Promise.race([
-      dependencies.analyzeMealV2(
-        fixture.input,
-        contextForFixture(fixture),
-        dependencies.db,
-        dependencies.gemini,
-        tracker.onEvent,
-        {
-          onDiagnostics: (value) => (diagnostics = value),
-          estimator: dependencies.estimator,
-        }
+      usage.run(() =>
+        dependencies.analyzeMealV2(
+          fixture.input,
+          contextForFixture(fixture),
+          dependencies.db,
+          dependencies.gemini,
+          tracker.onEvent,
+          {
+            onDiagnostics: (value) => (diagnostics = value),
+            estimator: dependencies.estimator,
+          }
+        )
       ),
       new Promise<never>((_, reject) => {
         timeoutHandle = setTimeout(
@@ -217,6 +226,7 @@ async function runCase(
       : [],
     error,
     timedOut: /took too long|timeout|timed out/i.test(error ?? ''),
+    usage: usage.summary(),
   };
   return scoreCase(fixture, observed);
 }
@@ -252,14 +262,15 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
     geminiModule.createGeminiClient(config)
   );
   let rotation = 0;
-  const gemini =
+  const gemini = withUsageCapture(
     clients.length === 1
       ? clients[0]
       : new Proxy(clients[0], {
           get(_target, prop) {
             return Reflect.get(clients[rotation++ % clients.length], prop);
           },
-        });
+        })
+  );
   if (clients.length > 1) {
     console.log(`[eval] rotating across ${clients.length} Gemini API keys`);
   }
@@ -362,15 +373,17 @@ async function main() {
     allRelations
   );
   const generatedAt = new Date().toISOString();
-  const pricing = ESTIMATOR_PRICING[options.estimator];
+  // The running model's own rate when known (the `next` profile swaps Call 2's
+  // model), else the adapter-class placeholder.
+  const pricing =
+    MODEL_RATES[dependencies.estimator.model] ??
+    ESTIMATOR_PRICING[options.estimator];
   const estimatorSummary: EvalEstimatorSummary = {
     name: options.estimator,
     model: dependencies.estimator.model,
     inputPerMTokUsd: pricing.inputPerMTokUsd,
     outputPerMTokUsd: pricing.outputPerMTokUsd,
-    // Token usage isn't surfaced through the offline harness yet, so the
-    // per-1k-meals cost projection is deferred to the live bakeoff (tomorrow).
-    costUsdPer1kMeals: null,
+    costUsdPer1kMeals: costPer1kCases(results),
   };
   const report = {
     generatedAt,

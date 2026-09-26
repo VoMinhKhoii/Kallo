@@ -130,7 +130,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'đùi gà',
-                caloriesKcal: triple(0),
                 proteinG: triple(0),
                 carbohydrateG: triple(0),
                 fatG: { low: 20, mid: 21, high: 22 }, // 21/21 base = 1×
@@ -192,7 +191,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'đùi gà',
-                caloriesKcal: triple(0),
                 proteinG: { low: 40, mid: 41, high: 42 }, // 41/36 ≈ 1.14×
                 carbohydrateG: triple(0),
                 fatG: { low: 10, mid: 11, high: 13 }, // 11/21 ≈ 0.52×
@@ -253,7 +251,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'ức gà',
-                caloriesKcal: triple(0),
                 proteinG: triple(0),
                 carbohydrateG: triple(0),
                 fatG: { low: 7, mid: 8, high: 9 }, // base.fatG = 7.8; LLM near base
@@ -317,7 +314,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'trứng gà',
-                caloriesKcal: triple(0),
                 proteinG: triple(13.2), // 1.02× — basically base
                 carbohydrateG: triple(1.1),
                 fatG: { low: 18, mid: 21, high: 24 }, // 21/11 ≈ 1.9×
@@ -379,7 +375,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'đùi gà',
-                caloriesKcal: triple(0),
                 proteinG: triple(36), // = base
                 carbohydrateG: triple(0),
                 fatG: triple(21), // = base
@@ -443,7 +438,6 @@ describe('scenario harness — prepNotes + weightBasis macro variance', () => {
             ingredients: [
               {
                 ingredientName: 'ức gà',
-                caloriesKcal: triple(0),
                 proteinG: { low: 47, mid: 48, high: 50 }, // 48/45 ≈ 1.07×
                 carbohydrateG: triple(0),
                 fatG: { low: 2.8, mid: 3.5, high: 4.5 }, // 3.5/5.2 ≈ 0.67×

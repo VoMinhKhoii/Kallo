@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { toJSONSchema, z } from 'zod';
+import { z } from 'zod';
 
 // ── hoisted mocks (must run before module imports) ───────────────────────────
 const { mockLogLlmCall } = vi.hoisted(() => ({
@@ -28,6 +28,7 @@ vi.mock('@google/genai', () => ({
   }),
 }));
 
+import { toProviderJsonSchema } from '@/lib/ai/prompts/schema';
 import type { AppDb } from '@/lib/infra/db/client';
 import { createGeminiClient } from '../provider';
 
@@ -143,6 +144,8 @@ describe('generateStructuredOutputStream with trace', () => {
       usageMetadata?: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
+        cachedContentTokenCount?: number;
+        thoughtsTokenCount?: number;
       };
     }>
   ) {
@@ -198,7 +201,11 @@ describe('generateStructuredOutputStream with trace', () => {
     expect(call.promptVersionId).toBe('pv-1');
     expect(call.metadata).toEqual({
       promptChars: 'sys'.length + 'user'.length,
-      schemaChars: JSON.stringify(toJSONSchema(traceSchema)).length,
+      schemaChars: JSON.stringify(toProviderJsonSchema(traceSchema)).length,
+      inputTokens: 10,
+      outputTokens: 20,
+      cachedTokens: null,
+      thoughtTokens: null,
     });
   });
 
@@ -279,7 +286,14 @@ describe('generateStructuredOutputStream with trace', () => {
     mockGenerateContentStream.mockResolvedValueOnce(
       streamChunks([
         { text: '{"items":["d"]}' },
-        { usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 34 } },
+        {
+          usageMetadata: {
+            promptTokenCount: 12,
+            candidatesTokenCount: 34,
+            cachedContentTokenCount: 8,
+            thoughtsTokenCount: 5,
+          },
+        },
       ])
     );
 
@@ -309,6 +323,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: 12,
       outputTokens: 34,
+      cachedTokens: 8,
+      thoughtTokens: 5,
       error: null,
     });
   });
@@ -355,6 +371,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: null,
       outputTokens: null,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: retryableError,
     });
     expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
@@ -362,6 +380,8 @@ describe('generateStructuredOutputStream with trace', () => {
       model: 'gemini-test',
       inputTokens: 7,
       outputTokens: 11,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: null,
     });
   });

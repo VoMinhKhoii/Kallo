@@ -1,3 +1,8 @@
+import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
+import {
+  CHEAT_BUDGET_ROUTE,
+  createBudgetAttemptRecorder,
+} from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { estimateCheatMeal } from '@/lib/domain/cheat/estimate';
@@ -26,7 +31,14 @@ export async function runCheatBranch({
       userContext: ctx.userContext,
     },
     gemini,
-    emit
+    emit,
+    createBudgetAttemptRecorder({
+      db,
+      requestId,
+      workKind: 'primary',
+      model: resolveModelProfile().nutritionModel,
+      route: CHEAT_BUDGET_ROUTE,
+    })
   );
 
   if (ctx.signal.aborted) {
@@ -59,6 +71,7 @@ export async function runCheatBranch({
       entryMode: 'cheat',
       loggedAt: ctx.loggedAt,
       attemptId: ctx.attemptId,
+      pipelineRequestId: requestId,
     }),
     PERSIST_DEADLINE_MS
   );

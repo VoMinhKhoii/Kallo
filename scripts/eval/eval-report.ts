@@ -30,6 +30,23 @@ function aggregateTable(aggregate: EvalAggregate): string[] {
   ];
 }
 
+function usageTable(report: EvalReport): string[] {
+  const cases = report.cases.length || 1;
+  const mean = (pick: (r: EvalCaseResult) => number) =>
+    Math.round(report.cases.reduce((sum, r) => sum + pick(r), 0) / cases);
+  const cost = report.estimator.costUsdPer1kMeals;
+  return [
+    '| Per case (mean) | Value |',
+    '| --- | ---: |',
+    `| LLM calls | ${(report.cases.reduce((sum, r) => sum + r.usage.calls, 0) / cases).toFixed(2)} |`,
+    `| Input tokens | ${mean((r) => r.usage.inputTokens)} |`,
+    `| of which cached | ${mean((r) => r.usage.cachedTokens)} |`,
+    `| Output tokens | ${mean((r) => r.usage.outputTokens)} |`,
+    `| Thinking tokens | ${mean((r) => r.usage.thoughtTokens)} |`,
+    `| Cost / 1k meals | ${cost == null ? 'n/a (model without a rate)' : `$${cost.toFixed(2)}`} |`,
+  ];
+}
+
 export function renderMarkdownReport(report: EvalReport): string {
   const lines = [
     '# V2 meal-analysis eval',
@@ -47,13 +64,12 @@ export function renderMarkdownReport(report: EvalReport): string {
     `| Model | ${report.estimator.model} |`,
     `| Input $/1M tok | $${report.estimator.inputPerMTokUsd.toFixed(2)} |`,
     `| Output $/1M tok | $${report.estimator.outputPerMTokUsd.toFixed(2)} |`,
-    `| Cost / 1k meals | ${
-      report.estimator.costUsdPer1kMeals == null
-        ? 'n/a (token usage deferred to live bakeoff)'
-        : `$${report.estimator.costUsdPer1kMeals.toFixed(2)}`
-    } |`,
     '',
-    '_Pricing is a placeholder from published list prices — CONFIRM before trusting the cost ranking (see `estimator/select.ts`)._',
+    '## Cost (whole pipeline, observed tokens)',
+    '',
+    ...usageTable(report),
+    '',
+    '_Rates: `lib/ai/cost/pricing.ts` (verified list prices; re-check the date there)._',
     '',
     '## Aggregate',
     '',

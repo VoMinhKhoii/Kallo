@@ -26,8 +26,13 @@ describe('toProviderJsonSchema', () => {
       .describe('Meal items'),
   });
 
-  it('keeps full Zod JSON schema by default', () => {
-    expect(toProviderJsonSchema(schema)).toEqual(toJSONSchema(schema));
+  it('slims by default and keeps the full Zod JSON schema on request', () => {
+    expect(toProviderJsonSchema(schema)).toEqual(
+      toProviderJsonSchema(schema, { mode: 'slim' })
+    );
+    expect(toProviderJsonSchema(schema, { mode: 'full' })).toEqual(
+      toJSONSchema(schema)
+    );
   });
 
   it('removes schema description metadata in slim mode', () => {
@@ -126,19 +131,19 @@ describe('toProviderJsonSchema', () => {
 });
 
 describe('getProviderJsonSchemaMode', () => {
-  it('defaults to full provider schemas', () => {
-    expect(getProviderJsonSchemaMode({})).toBe('full');
-  });
-
-  it('enables slim provider schemas only when explicitly requested', () => {
-    expect(
-      getProviderJsonSchemaMode({
-        PIPELINE_PROVIDER_SCHEMA_MODE: 'slim',
-      })
-    ).toBe('slim');
+  it('defaults to slim provider schemas', () => {
+    expect(getProviderJsonSchemaMode({})).toBe('slim');
     expect(
       getProviderJsonSchemaMode({
         PIPELINE_PROVIDER_SCHEMA_MODE: 'experimental',
+      })
+    ).toBe('slim');
+  });
+
+  it('keeps full provider schemas as an explicit rollback switch', () => {
+    expect(
+      getProviderJsonSchemaMode({
+        PIPELINE_PROVIDER_SCHEMA_MODE: 'full',
       })
     ).toBe('full');
   });

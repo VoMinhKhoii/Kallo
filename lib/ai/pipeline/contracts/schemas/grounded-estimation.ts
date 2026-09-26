@@ -61,19 +61,17 @@ export function buildGroundedIngredientEstimateSchema() {
           'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
         ),
       ...massFields,
-      // ALWAYS REQUIRED — the D3 "slimmed matched output" optionality is
-      // deliberately reverted. It saved Call-2 output tokens for matched rows
-      // (the server overwrites P/C/kcal from the DB anyway), but the same
-      // optionality applied on the UNMATCHED path where these numbers are the
-      // only source: prod meal "mì gói sứa" had its noodles' carbohydrateG
-      // simply omitted, ZERO_TRIPLE'd, and persisted at C:0g / 412 kcal.
-      // Requiring the fields puts enforcement in the PROVIDER's JSON decoder
-      // (zod → toJSONSchema emits them in `required`, so Gemini structurally
-      // cannot omit them); zod parse remains the backstop. A genuine zero is a
-      // valid value — plausibility telemetry, not schema, judges plausibility.
-      caloriesKcal: boundedEstimateSchema.describe(
-        'Calories in kcal for the as-eaten portion. ALWAYS emit. For matched ingredients the server re-derives kcal from the DB anchor; for unmatched ingredients your value is the truth.'
-      ),
+      // No caloriesKcal: the server always DERIVES kcal from 4P + 4C + 9F
+      // (`resolveIngredientMacros`), so emitting it only bought discarded
+      // tokens. P/C/F stay ALWAYS REQUIRED — the D3 "slimmed matched output"
+      // optionality was reverted after prod meal "mì gói sứa" had its unmatched
+      // noodles' carbohydrateG omitted and persisted at C:0g. Requiring them
+      // puts enforcement in the PROVIDER's JSON decoder (zod → toJSONSchema
+      // emits them in `required`, so Gemini structurally cannot omit them);
+      // zod parse remains the backstop. A second attempt at optional/nullable
+      // P/C (2026-09-26) reproduced the omission on unmatched rows and needed a
+      // strict re-ask to stay safe — rejected for simplicity. A genuine zero
+      // is a valid value — plausibility telemetry judges plausibility.
       proteinG: boundedEstimateSchema.describe(
         'Protein in grams. ALWAYS emit; 0 is a valid value for genuinely protein-free foods. For matched ingredients the server anchors to the DB base.'
       ),

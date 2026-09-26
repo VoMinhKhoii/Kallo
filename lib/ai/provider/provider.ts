@@ -18,6 +18,7 @@ export {
   resolveGeminiProvider,
 } from './client';
 export type {
+  AttemptTokens,
   GeminiAttemptMetadata,
   GeminiCallTrace,
   GeminiClient,

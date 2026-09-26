@@ -566,6 +566,30 @@ ${INJECTION_EXAMPLE}`,
 };
 
 /**
+ * Collapse each example's pretty-printed <output> JSON onto one line. The
+ * source stays readable; the prompt drops ~690 whitespace tokens per call
+ * (Vertex golden set 2026-09-26: no accuracy change). A body that is not
+ * strict JSON keeps its content with the whitespace collapsed.
+ */
+function oneLineExampleOutputs(block: string): string {
+  return block.replace(
+    /<output>([\s\S]*?)<\/output>/g,
+    (_match, body: string) => {
+      try {
+        return `<output>${JSON.stringify(JSON.parse(body))}</output>`;
+      } catch {
+        return `<output>${body.replace(/\s*\n\s*/g, ' ').trim()}</output>`;
+      }
+    }
+  );
+}
+
+const RENDERED_EXAMPLES: Record<DecompositionPromptLocale, string> = {
+  vi: oneLineExampleOutputs(EXAMPLES.vi),
+  global: oneLineExampleOutputs(EXAMPLES.global),
+};
+
+/**
  * Explicit output-language contract (restores the V1 <language> block that V2
  * dropped — without it, language conformance rests entirely on the post-hoc
  * guard/retry). Rendered only when the caller resolved an output language.
@@ -579,6 +603,12 @@ function languageSection(outputLanguage: 'en' | 'vi'): string {
 `;
 }
 
+/**
+ * Everything that varies per user (<language>, <user_context>) renders AFTER
+ * the examples: Gemini's implicit cache reuses the longest byte-identical
+ * prefix, so per-user blocks ahead of the ~2.4k-token examples cut every
+ * user's cacheable prefix down to the instructions alone.
+ */
 export function decompositionV2PromptText(
   countryLines: string[],
   locale: DecompositionPromptLocale = 'vi',
@@ -607,13 +637,13 @@ ${STRICT_ADHERENCE_RULE[locale]}
   ${INPUT_HANDLING_RULE}
 </instructions>
 
+<examples>
+${RENDERED_EXAMPLES[locale]}
+</examples>
+
 ${outputLanguage ? languageSection(outputLanguage) : ''}<user_context>
 ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
 </user_context>
-
-<examples>
-${EXAMPLES[locale]}
-</examples>
 
 Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. You MAY emit count/unitToken/sizeModifier/explicitMass when the user expressed them, but do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.`;
 }

@@ -54,6 +54,14 @@ function observed(): Omit<EvalCaseResult, 'checks' | 'pass' | 'expectClarify'> {
     error: null,
     timedOut: false,
     clarified: false,
+    usage: {
+      calls: 2,
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedTokens: 0,
+      thoughtTokens: 0,
+      costUsd: 0,
+    },
   };
 }
 

@@ -1,7 +1,8 @@
 import type { GoogleGenAI } from '@google/genai';
+import { readAttemptUsage, type StreamUsageMetadata } from './attempt-trace';
 import { buildContents, prepareRequest } from './request';
 import type { RetryOptions, WithRetry } from './retry';
-import type { StructuredOutputParams } from './types';
+import type { StructuredOutputOptions, StructuredOutputParams } from './types';
 
 /** One non-streamed structured-output call, retries included. */
 export function createStructuredOutput({
@@ -14,12 +15,16 @@ export function createStructuredOutput({
   withRetry: WithRetry;
 }) {
   return async function generateStructuredOutput<T>(
-    params: StructuredOutputParams<T>
+    params: StructuredOutputParams<T>,
+    opts?: StructuredOutputOptions
   ): Promise<T> {
     const { jsonSchema } = prepareRequest(params, 'structured output');
+    // Survives a parse throw so the attempt's tokens are still reported.
+    let usage: StreamUsageMetadata | null = null;
 
     return withRetry(
       async (attempt) => {
+        usage = null;
         const callStart = Date.now();
         const contents = buildContents(params);
 
@@ -43,6 +48,7 @@ export function createStructuredOutput({
             }),
           },
         });
+        usage = (response.usageMetadata as StreamUsageMetadata) ?? null;
 
         // Non-streaming has no TTFT split — total is the whole call.
         console.info(
@@ -54,7 +60,17 @@ export function createStructuredOutput({
 
         return params.schema.parse(JSON.parse(text));
       },
-      { label: params.model, abortSignal: params.abortSignal }
+      {
+        label: params.model,
+        abortSignal: params.abortSignal,
+        onAttempt: (attempt, _t0, _result, err) =>
+          opts?.onAttemptComplete?.({
+            attempt,
+            model: params.model,
+            ...readAttemptUsage(usage),
+            error: err,
+          }),
+      }
     );
   };
 }

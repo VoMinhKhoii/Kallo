@@ -10,7 +10,10 @@ import {
 } from '@/lib/ai/prompts/build/cheat-estimate';
 import { sanitizePromptContextValue } from '@/lib/ai/prompts/sanitize';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { GeminiClient } from '@/lib/ai/provider/provider';
+import type {
+  GeminiAttemptMetadata,
+  GeminiClient,
+} from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import type { CheatIntensity, CheatSliderSpec } from '@/lib/core/types/cheat';
@@ -88,7 +91,8 @@ function normalizeCheatEstimate(raw: CheatEstimate): CheatSliderSpec {
 export async function estimateCheatMeal(
   input: EstimateCheatMealInput,
   gemini: GeminiClient,
-  emit?: (event: StreamEvent) => void
+  emit?: (event: StreamEvent) => void,
+  onAttemptComplete?: (metadata: GeminiAttemptMetadata) => void
 ): Promise<CheatSliderSpec> {
   // Reuse the existing 'estimating' stage so the client phase mapper works.
   emit?.({ type: 'stage', stage: 'estimating' });
@@ -112,15 +116,18 @@ export async function estimateCheatMeal(
   const systemPrompt = buildCheatEstimatePrompt(promptInput);
   const { nutritionModel } = resolveModelProfile();
 
-  const raw = await gemini.generateStructuredOutput<CheatEstimate>({
-    schema: cheatEstimateSchema,
-    systemPrompt,
-    userMessage: description,
-    model: nutritionModel,
-    // Label quality (occasion-specific anchors, fat-source synthesis) depends
-    // on reasoning — turn it up for this one call.
-    thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-  });
+  const raw = await gemini.generateStructuredOutput<CheatEstimate>(
+    {
+      schema: cheatEstimateSchema,
+      systemPrompt,
+      userMessage: description,
+      model: nutritionModel,
+      // Label quality (occasion-specific anchors, fat-source synthesis) depends
+      // on reasoning — turn it up for this one call.
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+    },
+    { onAttemptComplete }
+  );
 
   return normalizeCheatEstimate(raw);
 }

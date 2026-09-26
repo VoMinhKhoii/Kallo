@@ -42,7 +42,8 @@ describe('scanNutritionLabelWithGemini deadline', () => {
     await vi.advanceTimersByTimeAsync(100);
     await rejection;
     expect(generateStructuredOutput).toHaveBeenCalledWith(
-      expect.objectContaining({ abortSignal: expect.any(AbortSignal) })
+      expect.objectContaining({ abortSignal: expect.any(AbortSignal) }),
+      { onAttemptComplete: expect.any(Function) }
     );
   });
 

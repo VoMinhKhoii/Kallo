@@ -171,6 +171,18 @@ export interface EvalCaseResult {
   expectClarify: boolean;
   /** True when the pipeline actually surfaced a clarify (response.unresolved). */
   clarified: boolean;
+  usage: EvalCaseUsage;
+}
+
+/** What one case's LLM attempts consumed (retries and chunks included). */
+export interface EvalCaseUsage {
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  thoughtTokens: number;
+  /** Null when a model in the case has no rate in `@/lib/ai/cost/pricing`. */
+  costUsd: number | null;
 }
 
 export interface EvalAggregate {
@@ -190,16 +202,15 @@ export interface EvalAggregate {
 }
 
 /**
- * Per-estimator bakeoff summary (D3). `costUsdPer1kMeals` is a PROJECTION from
- * the published pricing table × the fixture's observed token usage; until the
- * bakeoff runs with real usage counts it is null (tokens unavailable offline).
+ * Per-estimator bakeoff summary (D3). `costUsdPer1kMeals` is the run's observed
+ * token usage (every LLM attempt, Call 1 included) × `@/lib/ai/cost/pricing`.
  */
 export interface EvalEstimatorSummary {
   name: 'gemini' | 'claude' | 'openai';
   model: string;
   inputPerMTokUsd: number;
   outputPerMTokUsd: number;
-  /** Projected USD per 1,000 meals, or null when token usage isn't observed. */
+  /** Observed USD per 1,000 meals, or null when a model has no rate on file. */
   costUsdPer1kMeals: number | null;
 }
 
