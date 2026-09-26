@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-25'
 ---
 
 Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
@@ -26,6 +26,16 @@ riêng tư, hãy gửi email tới [support@kallo.fit](mailto:support@kallo.fit)
 Địa chỉ email, cách bạn đăng nhập (email kèm mật khẩu, Google, hoặc Apple), và
 mã định danh tài khoản. Chúng tôi **không** lưu mật khẩu ở dạng đọc được; phần
 xác thực do Supabase Auth đảm nhiệm.
+
+Nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, chúng tôi lưu thêm một **mã làm
+mới (refresh token) của Apple đã được mã hóa**. Mã này chỉ dùng vào một việc: thu
+hồi quyền truy cập của Kallo phía Apple khi bạn xóa tài khoản. Khi xóa tài khoản,
+chúng tôi thu hồi mã rồi xóa nó; nếu lúc đó chưa liên lạc được với Apple, chúng
+tôi tự động thử lại mỗi giờ, và đội ngũ của chúng tôi sẽ xử lý tiếp mọi trường
+hợp vẫn chưa thu hồi được. Nếu bạn đăng nhập bằng Apple trên
+web, mã đó do nhà cung cấp dịch vụ xác thực của chúng tôi giữ và chúng tôi không
+thu hồi được; bạn có thể gỡ Kallo trong phần cài đặt Tài khoản Apple, mục **Đăng
+nhập bằng Apple**.
 
 ### Hồ sơ và mục tiêu
 
@@ -61,6 +71,14 @@ cách chế biến, độ tin cậy khi khớp nguyên liệu, lượng cồn n�
 thanh trượt khi bạn dùng chế độ Bữa xả, và cả 28 chỉ số dinh dưỡng tính cho từng
 bữa và từng món.
 
+### Ảnh nhãn dinh dưỡng
+
+Ảnh của mỗi nhãn dinh dưỡng bạn quét, lưu trong kho riêng tư và gắn với tài
+khoản của bạn, cũng như với bữa ăn khi bạn lưu bữa đó trong ứng dụng iOS. Kèm
+theo ảnh, chúng tôi lưu kết quả quét: những gì Kallo đọc được từ nhãn, hoặc lỗi
+nếu đọc thất bại, mô hình nào đã đọc và mất bao lâu; khi bạn lưu bữa ăn trong ứng
+dụng iOS, lưu cả các giá trị bạn đã lưu. Xem mục 3.
+
 ### Cân nặng theo thời gian
 
 Các lần bạn ghi cân nặng, kèm ngày ghi.
@@ -70,6 +88,11 @@ Các lần bạn ghi cân nặng, kèm ngày ghi.
 Danh sách bạn bè, bữa ăn bạn chia sẻ, biểu cảm và phản hồi, lời mời chia phần,
 các nhóm bạn tham gia, và tin nhắn bạn gửi trong nhóm hoặc trong cuộc trò chuyện
 riêng.
+
+### Danh sách chặn và báo cáo
+
+Những người bạn đã chặn, và mọi báo cáo bạn gửi về một nội dung hay một hồ sơ.
+Xem mục 6.
 
 ### Góp ý
 
@@ -120,6 +143,26 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 - Thói quen nấu ăn của bạn.
 - Ngôn ngữ bạn muốn nhận kết quả.
 
+Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** nhãn bạn quét. Chúng
+tôi cũng lưu ảnh đó trong một kho lưu trữ riêng tư, gắn với tài khoản của bạn và,
+khi bạn lưu bữa ăn trong ứng dụng iOS, gắn với bữa đó. Trước khi lưu, máy chủ của
+chúng tôi mã hóa lại ảnh, nhờ đó loại bỏ siêu dữ liệu đi kèm như vị trí. Kèm theo
+ảnh là kết quả quét (những gì Kallo đọc được hoặc lỗi gặp phải, mô hình nào đã
+đọc và mất bao lâu) và, khi bạn lưu bữa ăn trong ứng dụng iOS, các giá trị bạn
+đã lưu. Chỉ bạn và đội ngũ Kallo truy cập được ảnh và các bản ghi này; đội ngũ
+dùng chúng để kiểm tra và cải thiện độ chính xác khi Kallo đọc nhãn. Chúng tôi
+**không** dùng chúng để huấn luyện mô hình AI, và chúng không bao giờ được chia
+sẻ với người dùng khác. Chúng được giữ cho tới khi bạn xóa tài khoản, lúc đó
+chúng bị xóa cùng tài khoản.
+
+Khi bạn tìm nguyên liệu lúc ghi thủ công, và chỉ khi bạn đã đồng ý cho dùng AI
+(xem bên dưới), chữ bạn gõ có thể được gửi tới mô hình nhúng (embedding) của
+Google để tìm những nguyên liệu có nghĩa gần giống. Chỉ có chữ tìm kiếm được gửi
+đi. Chúng tôi giữ chữ tìm kiếm đó cùng kết quả nhúng trong một bộ nhớ đệm dùng
+chung, không gắn với tài khoản của bạn, để lần tìm sau nhanh hơn. Nếu bạn chưa
+đồng ý cho dùng AI, tìm nguyên liệu chỉ dùng cách so khớp chữ của riêng Kallo và
+không gửi gì tới Google.
+
 Mô hình **không** biết mục tiêu cân nặng, nhịp độ, chỉ tiêu calo hay đa lượng,
 cân nặng, chiều cao, tuổi, giới tính, email, tên, cũng như lịch sử bữa ăn của
 bạn.
@@ -132,6 +175,15 @@ ngay trong kiểu dữ liệu của mã nguồn, chứ không phải chỉ là m
 </Callout>
 
 Chúng tôi **không** dùng nội dung của bạn để huấn luyện mô hình AI dùng chung.
+
+### Hỏi ý bạn trước
+
+Lần đầu bạn dùng tính năng phân tích bữa ăn bằng AI hoặc quét nhãn, Kallo sẽ hỏi
+ý bạn **trước khi gửi bất cứ thứ gì** tới mô hình. Bạn có thể rút lại sự đồng ý
+bất cứ lúc nào trong **Cài đặt → Tùy chỉnh → Phân tích bữa ăn bằng AI**. Khi đó,
+tính năng phân tích bằng AI và quét nhãn sẽ ngừng, và tìm nguyên liệu không gửi
+gì tới Google nữa. Ghi thủ công vẫn dùng bình thường, với tìm nguyên liệu chuyển
+sang so khớp chữ, và quét mã vạch cũng vậy.
 
 ### Điều gì xảy ra với dữ liệu đó ở phía Google
 
@@ -151,9 +203,9 @@ Có hai ngoại lệ:
   hình.
 
 Kallo gọi **điểm cuối toàn cầu** của Vertex AI, nên một yêu cầu có thể được xử
-lý ở bất kỳ vùng nào Google đang vận hành. Nói cách khác, câu mô tả bữa ăn của
-bạn cùng ba thông tin còn lại ở trên có thể rời khỏi Việt Nam trong lúc được xử
-lý. Mục 9 nói kỹ hơn.
+lý ở bất kỳ vùng nào Google đang vận hành. Nói cách khác, những dữ liệu nêu ở
+trên, và chỉ những dữ liệu đó, có thể rời khỏi Việt Nam trong lúc được xử lý.
+Mục 9 nói kỹ hơn.
 
 Khi lập trình viên chạy thử trên máy cá nhân, ứng dụng dùng một đường kết nối
 khác (Google AI Studio) với dữ liệu thử nghiệm, không phải dữ liệu tài khoản của
@@ -164,11 +216,12 @@ bạn.
 | Mục đích | Dữ liệu liên quan |
 | --- | --- |
 | Xác thực và giữ bạn ở trạng thái đã đăng nhập | Tài khoản, thiết bị |
-| Tạo ước lượng dinh dưỡng | Mô tả bữa ăn, thói quen nấu, quốc gia |
+| Tạo ước lượng dinh dưỡng | Mô tả bữa ăn, thói quen nấu, quốc gia, ảnh nhãn dinh dưỡng |
 | Cá nhân hóa chỉ tiêu và biểu đồ | Hồ sơ, chỉ số cơ thể, mục tiêu, nhật ký |
 | Hiển thị nội dung bạn chia sẻ | Vòng kết nối, bữa ăn được chia sẻ |
 | Duy trì quyền Premium | Dữ liệu thanh toán từ đơn vị cung cấp |
 | Chống lạm dụng, gian lận, quá tải | Sự kiện giới hạn tần suất, mã băm |
+| Giữ Vòng kết nối an toàn | Danh sách chặn, báo cáo và nội dung bị báo cáo |
 | Khắc phục sự cố, cải thiện độ tin cậy | Nhật ký vận hành, báo cáo lỗi, góp ý |
 | Hiểu cách các tính năng được sử dụng | Sự kiện sử dụng, thiết bị và phiên bản ứng dụng |
 | Trả lời hỗ trợ | Nội dung bạn liên hệ, tài khoản |
@@ -191,12 +244,12 @@ thứ ba làm quảng cáo.
 
 | Nhà cung cấp | Vai trò | Dữ liệu tiếp cận |
 | --- | --- | --- |
-| Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện và ảnh góp ý |
-| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ |
+| Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện, ảnh góp ý và ảnh nhãn dinh dưỡng |
+| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI, đọc nhãn dinh dưỡng, tìm nguyên liệu | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ; ảnh nhãn dinh dưỡng; chữ tìm nguyên liệu |
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
 | Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
-| Resend | Gửi email xác thực và thông báo | Địa chỉ email, nội dung email |
+| Resend | Gửi email xác thực và thông báo; báo cáo nội dung gửi tới đội ngũ | Địa chỉ email, nội dung email; chi tiết báo cáo bạn gửi |
 | RevenueCat | Quản lý quyền đăng ký đa nền tảng | Mã tài khoản, siêu dữ liệu giao dịch |
 | Apple App Store, Google Play | Thanh toán trong ứng dụng | Thông tin thanh toán của bạn với cửa hàng |
 | Stripe (qua RevenueCat Billing) | Thanh toán trên web | Thông tin thanh toán |
@@ -237,6 +290,21 @@ bữa mới ở chế độ riêng tư.
 Nội dung người khác đã xem hoặc đã sao chép vào nhật ký của họ có thể vẫn còn
 sau khi bạn xóa bản gốc.
 
+### Chặn và báo cáo
+
+Bạn có thể **chặn** một người: họ không còn thấy bữa ăn bạn chia sẻ, phản hồi
+hay tin nhắn của bạn, và bạn cũng không còn thấy của họ. Việc chặn cũng kết thúc
+kết nối giữa hai người trong Vòng kết nối và xóa các thông báo giữa hai người.
+
+Bạn cũng có thể **báo cáo** một nội dung hoặc một hồ sơ. Mỗi báo cáo lưu lại ai
+gửi, nội dung nào bị báo cáo (loại, mã định danh và người sở hữu nội dung đó), lý
+do, ghi chú nếu bạn thêm, và trạng thái xử lý. Đội ngũ Kallo xem xét từng báo cáo
+và cố gắng xử lý trong vòng 24 giờ. Chúng tôi giữ báo cáo như một bản ghi kiểm
+duyệt, kể cả sau khi đã xử lý xong, cho tới khi tài khoản của bạn bị xóa. Khi bạn
+gửi báo cáo, một thông báo kèm chi tiết báo cáo được gửi qua email tới đội ngũ
+Kallo và có thể vẫn nằm trong hộp thư của đội ngũ. Nếu muốn trao đổi thêm, hãy
+nhắn cho chúng tôi trong **Cài đặt → Góp ý**.
+
 ## 7. Lưu trữ và xóa dữ liệu
 
 Chúng tôi giữ nội dung tài khoản chừng nào tài khoản còn hoạt động, sau đó chỉ
@@ -245,7 +313,8 @@ pháp luật.
 
 Bạn có thể xóa tài khoản trong **Cài đặt**. Một tiến trình chạy theo lịch sẽ
 thực hiện việc xóa, và tiến trình đó cũng xóa luôn hồ sơ khách hàng của bạn ở
-đơn vị thanh toán.
+đơn vị thanh toán và, nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, thu hồi
+quyền truy cập của Kallo phía Apple.
 
 <Callout label="Trước khi xóa tài khoản" tone="caution">
 Xóa tài khoản Kallo **không** hủy gói đăng ký bạn mua qua Apple hoặc Google. Nếu
@@ -270,8 +339,8 @@ Chúng tôi bảo vệ dữ liệu bằng nhiều lớp:
   trong Vòng kết nối.
 - Chỉ nhận lưu lượng đi qua lớp bảo vệ phía trước, chặn truy cập thẳng vào máy
   chủ.
-- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý. Ảnh đại diện công
-  khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
+- Kho lưu trữ riêng tư cho ảnh chụp màn hình gửi kèm góp ý và ảnh nhãn dinh
+  dưỡng. Ảnh đại diện công khai theo thiết kế (xem mục 2), lưu dưới tên tệp không đoán được, và chỉ máy
   chủ của chúng tôi mới ghi được, sau khi mã hóa lại từng ảnh.
 - Siết chặt quyền dùng khóa và mật khẩu hệ thống.
 
@@ -289,8 +358,8 @@ Cụ thể:
 - **Cơ sở dữ liệu** do Supabase vận hành cũng đặt tại Singapore, ngay cạnh máy
   chủ ứng dụng.
 - **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
-  thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ bốn
-  thông tin nêu ở mục 3 đi theo đường này.
+  thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ những
+  dữ liệu nêu ở mục 3 đi theo đường này.
 - **Báo cáo lỗi** (Sentry) được lưu tại Hoa Kỳ, còn **sự kiện sử dụng**
   (PostHog) được lưu tại Liên minh châu Âu.
 - **Các nhà cung cấp còn lại** xử lý dữ liệu ở những vùng họ vận hành.
@@ -327,8 +396,9 @@ hồ sơ, lịch sử bữa ăn và cân nặng, hồ sơ Vòng kết nối, qua
 bạn chia sẻ hoặc viết trong Vòng kết nối và trò chuyện, thông báo, thiết bị đã
 đăng ký (mã thiết bị được rút gọn), góp ý, hồ sơ thanh toán, và hoạt động gần
 đây trong ứng dụng. Các tệp bạn tải lên, như ảnh đại diện hay ảnh chụp màn hình
-trong góp ý, được liệt kê theo vị trí lưu trữ thay vì đính kèm. Tin nhắn và cảm
-xúc của người khác, cùng các bản ghi nội bộ về bảo mật và gỡ lỗi, không nằm
+trong góp ý, được liệt kê theo vị trí lưu trữ thay vì đính kèm; ảnh nhãn dinh
+dưỡng được liệt kê kèm mã định danh, ngày và bữa ăn liên quan. Tin nhắn và
+cảm xúc của người khác, cùng các bản ghi nội bộ về bảo mật và gỡ lỗi, không nằm
 trong tệp; [Dữ liệu của bạn](/docs/account/your-data) liệt kê những gì không có
 và lý do. Muốn nhận bản sao của bất cứ thứ gì không có trong tệp, hãy gửi email
 như trên.
@@ -406,7 +476,7 @@ California mà chúng tôi đã thu thập trong mười hai (12) tháng gần n
 | E. Dữ liệu sinh trắc học | Vân tay, mẫu giọng nói | Không |
 | F. Hoạt động mạng | Nhật ký máy chủ, thao tác trong ứng dụng | Có |
 | G. Dữ liệu định vị | Vị trí thiết bị | Không |
-| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý | Có |
+| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý, ảnh nhãn dinh dưỡng | Có |
 | I. Thông tin nghề nghiệp hoặc việc làm | Chức danh, lịch sử công việc | Không |
 | J. Thông tin giáo dục | Hồ sơ học tập | Không |
 | K. Suy luận từ dữ liệu đã thu thập | Chỉ tiêu calo và đa lượng, xu hướng dinh dưỡng | Có |

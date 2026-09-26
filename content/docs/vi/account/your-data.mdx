@@ -20,7 +20,8 @@ lastUpdated: '2026-09-25'
 - **Nội dung Vòng kết nối** — bạn bè, bữa ăn chia sẻ, tin nhắn.
 - **Góp ý** — nội dung và ảnh chụp màn hình bạn gửi.
 - **Ảnh quét nhãn dinh dưỡng** — từng ảnh nhãn bạn quét, những gì Kallo đọc
-  được (hoặc lý do không đọc được), và các giá trị bạn đã lưu. Ảnh được lưu
+  được (hoặc lý do không đọc được), và các giá trị bạn đã lưu (khi bạn lưu bữa ăn
+  trong ứng dụng iOS). Ảnh được lưu
   sau khi đã xóa thông tin vị trí và thông tin máy ảnh. Chỉ bạn và đội ngũ Kallo
   xem được, để kiểm tra và cải thiện việc đọc nhãn; chúng được giữ
   đến khi bạn xóa tài khoản.
@@ -36,6 +37,15 @@ Khi bạn yêu cầu phân tích một bữa ăn, mô hình chỉ nhận:
 - Quốc gia xuất thân và quốc gia đang sống
 - Thói quen nấu ăn
 - Ngôn ngữ bạn muốn nhận kết quả
+
+Khi bạn quét nhãn dinh dưỡng, mô hình chỉ nhận tấm ảnh. Kallo cũng lưu riêng tư
+ảnh đó, kèm kết quả quét (những gì đọc được, mô hình nào đã đọc và mất bao lâu)
+và, khi bạn lưu bữa ăn trong ứng dụng iOS, các giá trị bạn đã lưu, chỉ bạn và đội
+ngũ Kallo xem được, cho tới khi bạn
+xóa tài khoản. Khi bạn đã đồng ý cho dùng AI, chữ bạn gõ khi tìm nguyên liệu
+cũng có thể được gửi tới mô hình nhúng của Google để tìm nguyên liệu tương tự;
+nếu chưa, tìm kiếm chỉ dùng cách so khớp chữ của riêng Kallo. Kallo hỏi ý bạn
+trước lần đầu phân tích bằng AI hoặc quét nhãn.
 
 Mô hình **không** nhận: cân nặng, chiều cao, tuổi, giới tính, mục tiêu, mức độ
 quyết liệt, chỉ tiêu calo, email, tên, hay lịch sử bữa ăn của bạn.
