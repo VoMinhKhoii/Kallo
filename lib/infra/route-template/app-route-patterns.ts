@@ -50,6 +50,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/v1/account/billing-config',
   '/api/v1/account/entitlements',
   '/api/v1/account/entitlements/reconcile',
+  '/api/v1/auth/apple/token',
   '/api/v1/barcode/log',
   '/api/v1/barcode/search',
   '/api/v1/chat-groups',

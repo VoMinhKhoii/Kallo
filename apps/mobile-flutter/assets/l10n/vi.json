@@ -1740,6 +1740,8 @@
       "deleteScreenTitle": "Xoá tài khoản",
       "deleteConsequence": "Thao tác này xoá hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
       "deleteSubscriptionWarning": "Xoá tài khoản Kallo không huỷ gói đăng ký đang hoạt động. Hãy huỷ trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xoá ngay.",
+      "deleteSubscriptionWarningIos": "Xoá tài khoản Kallo không huỷ gói đăng ký trên App Store. Hãy huỷ gói trong App Store trước để tránh phí về sau. Bạn vẫn có thể xoá ngay.",
+      "deleteSubscriptionWarningIosOtherStore": "Xoá tài khoản Kallo không huỷ gói đăng ký đang hoạt động. Hãy huỷ gói ở nơi bạn đã đăng ký trước để tránh phí về sau. Bạn vẫn có thể xoá ngay.",
       "deleteManageSubscription": "Quản lý hoặc huỷ gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",

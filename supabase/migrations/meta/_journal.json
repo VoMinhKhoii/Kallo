@@ -523,8 +523,15 @@
     {
       "idx": 74,
       "version": "7",
-      "when": 1790324449780,
-      "tag": "20260925082049_add_budget_event_cache_thought_tokens",
+      "when": 1790338800000,
+      "tag": "20260925122000_add_apple_auth_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790398803105,
+      "tag": "20260926050003_add_budget_event_cache_thought_tokens",
       "breakpoints": true
     }
   ]

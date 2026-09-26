@@ -1743,6 +1743,8 @@
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
       "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an active subscription. Cancel it first — in the App Store, Google Play, or the billing portal you purchased through on the web — to prevent future charges. You can still delete immediately.",
+      "deleteSubscriptionWarningIos": "Deleting your Kallo account does not cancel an App Store subscription. Cancel it in the App Store first to stop future charges. You can still delete right away.",
+      "deleteSubscriptionWarningIosOtherStore": "Deleting your Kallo account does not cancel an active subscription. Cancel it first where you subscribed to stop future charges. You can still delete right away.",
       "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",

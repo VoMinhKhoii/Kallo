@@ -270,6 +270,15 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /** Sign in with Apple code exchange: one Apple round trip per call, and a
+   *  real client posts once per Apple sign-in. */
+  appleTokenLink: {
+    route: 'auth:apple:token',
+    limits: { perMinute: 5, perHour: 20, perDay: 50 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /**
    * Food-source candidates: one unindexed sequential scan of
    * `vietnamese_food_composition` per call (`>0` on an arbitrary nutrient

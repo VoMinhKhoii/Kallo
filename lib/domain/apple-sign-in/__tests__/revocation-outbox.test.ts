@@ -1,0 +1,336 @@
+import { generateKeyPairSync } from 'node:crypto';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockOpen, mockReadSealed, mockGetUserById } = vi.hoisted(() => ({
+  mockOpen: vi.fn(),
+  mockReadSealed: vi.fn(),
+  mockGetUserById: vi.fn(),
+}));
+
+vi.mock('server-only', () => ({}));
+vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
+vi.mock('@/lib/domain/apple-sign-in/refresh-tokens', () => ({
+  // The real lock is one `tx.execute`; mirror that so tests can order it.
+  lockAppleTokenForUser: (tx: { execute: (q: string) => Promise<unknown> }) =>
+    tx.execute('lock'),
+  openAppleRefreshToken: mockOpen,
+  readSealedAppleRefreshToken: mockReadSealed,
+}));
+vi.mock('@/lib/domain/account-deletion/jobs', () => ({
+  authUserIsConfirmedAbsent: (
+    user: unknown,
+    error: { status?: number } | null
+  ) => !user && (!error || error.status === 404),
+}));
+vi.mock('@/lib/infra/supabase/admin', () => ({
+  createAdminClient: () => ({
+    auth: { admin: { getUserById: mockGetUserById } },
+  }),
+}));
+
+const {
+  MAX_ATTEMPTS,
+  claimAppleRevocation,
+  enqueueAppleRevocation,
+  processAppleRevocation,
+  retryAppleRevocations,
+} = await import('@/lib/domain/apple-sign-in/revocation-outbox');
+
+const USER_ID = '11111111-1111-4111-8111-111111111111';
+const ROW = { id: 'rev-1', userId: USER_ID, refreshTokenCiphertext: 'v1:s' };
+const CLAIMED_AT = new Date('2026-09-25T12:00:00.000Z');
+const fetchMock = vi.fn();
+const dialect = new PgDialect();
+
+/** `update().set().where()` — awaitable directly AND via `.returning()`. */
+function updateChain(returningRows: unknown[] = []) {
+  const returning = vi.fn().mockResolvedValue(returningRows);
+  const where = vi.fn((_filter: unknown) =>
+    Object.assign(Promise.resolve(undefined), { returning })
+  );
+  const set = vi.fn().mockReturnValue({ where });
+  const update = vi.fn().mockReturnValue({ set });
+  return { update, set, where, returning };
+}
+
+function jsonResponse(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Real Apple client against a stubbed network: the invalid_grant → success
+  // rule lives there, and this suite checks the outbox honours it.
+  const { privateKey } = generateKeyPairSync('ec', {
+    namedCurve: 'P-256',
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  });
+  vi.stubEnv('APPLE_TEAM_ID', 'TEAM98765');
+  vi.stubEnv('APPLE_SIGNIN_CLIENT_ID', 'com.khoivo.nham');
+  vi.stubEnv('APPLE_SIGNIN_KEY_ID', 'KEY1234567');
+  vi.stubEnv('APPLE_SIGNIN_KEY_P8', privateKey);
+  vi.stubGlobal('fetch', fetchMock);
+  mockOpen.mockReturnValue('rt-plain');
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+/** A db whose `transaction` runs against a tx recording lock + insert. */
+function enqueueDb() {
+  const returning = vi.fn().mockResolvedValue([{ id: 'rev-1' }]);
+  const onConflictDoUpdate = vi.fn().mockReturnValue({ returning });
+  const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
+  const insert = vi.fn().mockReturnValue({ values });
+  const execute = vi.fn().mockResolvedValue(undefined);
+  const tx = { execute, insert };
+  const db = {
+    transaction: async (fn: (t: typeof tx) => unknown) => fn(tx),
+  } as never;
+  return { db, tx, execute, insert, values, onConflictDoUpdate };
+}
+
+describe('enqueueAppleRevocation', () => {
+  it('queues nothing for a non-Apple account without a token', async () => {
+    mockReadSealed.mockResolvedValue(null);
+    const { db, insert } = enqueueDb();
+    await expect(
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: false }, db)
+    ).resolves.toBeNull();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  // Codex (#391): an Apple account whose first token link races the deletion
+  // gets an empty pending row for that link to fill in — never a blanked one.
+  it('queues an empty pending row for an Apple account with no token yet', async () => {
+    mockReadSealed.mockResolvedValue(null);
+    const { db, execute, values, onConflictDoUpdate } = enqueueDb();
+    await expect(
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db)
+    ).resolves.toEqual({ id: 'rev-1' });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(values.mock.calls[0]?.[0]).toMatchObject({
+      userId: USER_ID,
+      refreshTokenCiphertext: null,
+    });
+    expect(onConflictDoUpdate.mock.calls[0]?.[0].set).toEqual({
+      nextAttemptAt: expect.any(Date),
+    });
+  });
+
+  it('reads the token under the per-user lock, inside the transaction', async () => {
+    mockReadSealed.mockResolvedValue('v1:newest');
+    const { db, tx, execute } = enqueueDb();
+    await enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db);
+    expect(execute.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReadSealed.mock.invocationCallOrder[0] as number
+    );
+    expect(mockReadSealed).toHaveBeenCalledWith(USER_ID, tx);
+  });
+
+  it('refreshes a still-pending row with the newest token, due now', async () => {
+    mockReadSealed.mockResolvedValue('v1:newest');
+    const { db, values, onConflictDoUpdate } = enqueueDb();
+
+    await expect(
+      enqueueAppleRevocation(USER_ID, { hasAppleIdentity: true }, db)
+    ).resolves.toEqual({ id: 'rev-1' });
+    expect(values.mock.calls[0]?.[0]).toMatchObject({
+      userId: USER_ID,
+      refreshTokenCiphertext: 'v1:newest',
+    });
+    const conflict = onConflictDoUpdate.mock.calls[0]?.[0];
+    expect(conflict.set).toEqual({
+      refreshTokenCiphertext: 'v1:newest',
+      nextAttemptAt: expect.any(Date),
+    });
+    // Only the pending row is updated; completed/dead history is left alone.
+    expect(dialect.sqlToQuery(conflict.targetWhere as SQL).sql).toBe(
+      "status = 'pending'"
+    );
+  });
+});
+
+describe('claimAppleRevocation', () => {
+  it('returns the fresh row and the claim fence, or null when not due', async () => {
+    const chain = updateChain([ROW]);
+    await expect(
+      claimAppleRevocation('rev-1', chain as never)
+    ).resolves.toEqual({ row: ROW, claimedAt: expect.any(Date) });
+    expect(chain.set).toHaveBeenCalledWith({
+      lastAttemptAt: expect.any(Date),
+      nextAttemptAt: expect.any(Date),
+    });
+
+    await expect(
+      claimAppleRevocation('rev-1', updateChain([]) as never)
+    ).resolves.toBeNull();
+  });
+});
+
+describe('processAppleRevocation', () => {
+  it('revokes, then completes the row and wipes the sealed token', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+    const chain = updateChain([{ id: ROW.id }]);
+
+    await expect(
+      processAppleRevocation(ROW, CLAIMED_AT, chain as never)
+    ).resolves.toBe('completed');
+    expect(mockOpen).toHaveBeenCalledWith(USER_ID, 'v1:s');
+    const form = new URLSearchParams(fetchMock.mock.calls[0]?.[1].body);
+    expect(form.get('token')).toBe('rt-plain');
+    expect(chain.set).toHaveBeenCalledWith({
+      status: 'completed',
+      refreshTokenCiphertext: null,
+      completedAt: expect.any(Date),
+      lastError: null,
+    });
+  });
+
+  it('completes the row when Apple says the token is already dead', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(400, { error: 'invalid_grant' }));
+    const chain = updateChain([{ id: ROW.id }]);
+    await expect(
+      processAppleRevocation(ROW, CLAIMED_AT, chain as never)
+    ).resolves.toBe('completed');
+    expect(chain.set.mock.calls[0]?.[0].status).toBe('completed');
+  });
+
+  it('completes only while the row still holds the token it revoked', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+    const chain = updateChain([{ id: ROW.id }]);
+    await processAppleRevocation(ROW, CLAIMED_AT, chain as never);
+    const fence = dialect.sqlToQuery(chain.where.mock.calls[0]?.[0] as SQL);
+    expect(fence.sql).toContain('"refresh_token_ciphertext" = $');
+    expect(fence.params).toContain('v1:s');
+
+    const empty = updateChain([{ id: ROW.id }]);
+    await processAppleRevocation(
+      { ...ROW, refreshTokenCiphertext: null },
+      CLAIMED_AT,
+      empty as never
+    );
+    const emptyFence = dialect.sqlToQuery(
+      empty.where.mock.calls[0]?.[0] as SQL
+    );
+    expect(emptyFence.sql).toContain('"refresh_token_ciphertext" is null');
+  });
+
+  it('leaves the row pending when a token landed in it mid-attempt', async () => {
+    const chain = updateChain([]);
+    await expect(
+      processAppleRevocation(
+        { ...ROW, refreshTokenCiphertext: null },
+        CLAIMED_AT,
+        chain as never
+      )
+    ).resolves.toBe('retry');
+    expect(chain.update).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('changed while processing')
+    );
+  });
+
+  it('schedules a retry on failure and keeps the token', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(400, { error: 'invalid_client' }));
+    const chain = updateChain([{ status: 'pending' }]);
+
+    await expect(
+      processAppleRevocation(ROW, CLAIMED_AT, chain as never)
+    ).resolves.toBe('retry');
+    const retry = chain.set.mock.calls[0]?.[0];
+    expect(retry.lastError).toBe('apple_token_revoke_upstream_error');
+    expect(retry).not.toHaveProperty('refreshTokenCiphertext');
+    const status = dialect.sqlToQuery(retry.status as SQL);
+    expect(status.sql).toContain(
+      `"attempt_count" + 1 >= $1 THEN 'dead' ELSE 'pending' END`
+    );
+    expect(status.params).toEqual([MAX_ATTEMPTS]);
+  });
+
+  it('parks the row as dead at the attempt cap, loudly', async () => {
+    mockOpen.mockImplementation(() => {
+      throw new Error('apple_token_encryption_key_unavailable');
+    });
+    const chain = updateChain([{ status: 'dead' }]);
+
+    await expect(
+      processAppleRevocation(ROW, CLAIMED_AT, chain as never)
+    ).resolves.toBe('dead');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining(`gave up after ${MAX_ATTEMPTS} attempts`)
+    );
+  });
+});
+
+describe('retryAppleRevocations', () => {
+  function database(candidates: unknown[], claimed: unknown[]) {
+    const limit = vi.fn().mockResolvedValue(candidates);
+    const orderBy = vi.fn().mockReturnValue({ limit });
+    const where = vi.fn().mockReturnValue({ orderBy });
+    const from = vi.fn().mockReturnValue({ where });
+    const select = vi.fn().mockReturnValue({ from });
+    return { select, orderBy, ...updateChain(claimed) };
+  }
+
+  it('skips a row whose auth user still exists and pushes it back', async () => {
+    mockGetUserById.mockResolvedValue({ data: { user: { id: USER_ID } } });
+    const db = database([{ id: 'rev-1', userId: USER_ID }], [ROW]);
+
+    await expect(retryAppleRevocations(db as never)).resolves.toEqual({
+      processed: 0,
+      failed: 0,
+      skipped: 1,
+    });
+    // Deferred an hour, so abandoned rows cannot keep filling the batch.
+    expect(db.update).toHaveBeenCalledTimes(1);
+    expect(Object.keys(db.set.mock.calls[0]?.[0])).toEqual(['nextAttemptAt']);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('takes the longest-overdue rows first', async () => {
+    mockGetUserById.mockResolvedValue({ data: { user: { id: USER_ID } } });
+    const db = database([], []);
+    await retryAppleRevocations(db as never);
+    const order = dialect.sqlToQuery(db.orderBy.mock.calls[0]?.[0] as SQL);
+    expect(order.sql).toBe('"apple_token_revocations"."next_attempt_at" asc');
+  });
+
+  it('counts a transient Auth probe failure without revoking', async () => {
+    mockGetUserById.mockResolvedValue({
+      data: { user: null },
+      error: { status: 503 },
+    });
+    const db = database([{ id: 'rev-1', userId: USER_ID }], [ROW]);
+    await expect(retryAppleRevocations(db as never)).resolves.toEqual({
+      processed: 0,
+      failed: 1,
+      skipped: 0,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('revokes once the user is confirmed gone', async () => {
+    mockGetUserById.mockResolvedValue({
+      data: { user: null },
+      error: { status: 404 },
+    });
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+    const db = database([{ id: 'rev-1', userId: USER_ID }], [ROW]);
+
+    await expect(retryAppleRevocations(db as never)).resolves.toEqual({
+      processed: 1,
+      failed: 0,
+      skipped: 0,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

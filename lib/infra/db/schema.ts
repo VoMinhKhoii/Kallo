@@ -2039,6 +2039,73 @@ export const pushTokens = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Sign in with Apple refresh tokens (lib/domain/apple-sign-in/)
+//
+// One row per user who signed in with Apple on iOS: the refresh token Apple
+// issued for their authorization code, held ONLY so account deletion can
+// revoke it (Apple's account-deletion requirement). Sealed with AES-256-GCM
+// under APPLE_TOKEN_ENCRYPTION_KEY — a DB read alone never yields a usable
+// token. Server-only: RLS on, no client policies.
+// ---------------------------------------------------------------------------
+export const appleAuthTokens = pgTable('apple_auth_tokens', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  refreshTokenCiphertext: text('refresh_token_ciphertext').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// Sign in with Apple revocation outbox (lib/domain/apple-sign-in/)
+//
+// Written just before account deletion removes the auth user, so `user_id` is
+// deliberately NOT a foreign key: the row must outlive the cascade that takes
+// `apple_auth_tokens` with it. Its own table (not the RevenueCat outbox) so a
+// permanently failing revocation can never hold up billing erasure: each
+// pending row retries hourly up to an attempt cap, then parks as `dead`.
+// `last_attempt_at` is the claim fence; `next_attempt_at` doubles as the
+// processing lease. The sealed token is wiped (NULL) on completion.
+// ---------------------------------------------------------------------------
+export const appleTokenRevocations = pgTable(
+  'apple_token_revocations',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').notNull(),
+    refreshTokenCiphertext: text('refresh_token_ciphertext'),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (table) => [
+    // One live revocation per user; a re-queue refreshes it in place.
+    uniqueIndex('apple_token_revocations_pending_user_idx')
+      .on(table.userId)
+      .where(sql`status = 'pending'`),
+    // The retry worker's scan: due pending rows only.
+    index('apple_token_revocations_due_idx')
+      .on(table.nextAttemptAt)
+      .where(sql`status = 'pending'`),
+    check(
+      'apple_token_revocations_status_check',
+      sql`${table.status} IN ('pending', 'completed', 'dead')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Generic rate limiter (lib/infra/rate-limit/limiter/)
 //
 // `rate_limit_counters` holds ONE row per (key_kind, key_hash, route) carrying

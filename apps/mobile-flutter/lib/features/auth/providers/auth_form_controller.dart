@@ -1,17 +1,14 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/auth/supabase_service.dart';
-import '../logic/reuse_grant.dart';
+import '../../../services/http/api_client.dart';
+import 'apple_sign_in_flow.dart';
+import 'google_sign_in_flow.dart';
+import 'provider_sign_in_outcome.dart';
 
 /// Which auth action is currently in flight. Lets the UI spin only the button
 /// that was tapped while still disabling the others — replacing the old single
@@ -188,138 +185,42 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     }
   }
 
-  /// Native Google sign-in. Reuses the grant the user has already given where
-  /// there is one, otherwise opens the in-app Google account picker
-  /// (`google_sign_in` v7), then hands Supabase the returned identity token via
-  /// `signInWithIdToken` — the same end state Apple reaches, with no Safari
-  /// app-switch or `nham://auth-callback` deep-link round-trip. We only
-  /// authenticate (no Google API calls), so the ID token alone is passed; no
-  /// access token and no nonce (Google's `authenticate()` doesn't expose one).
-  ///
-  /// `attemptLightweightAuthentication()` goes FIRST. This used to call
-  /// `authenticate()` unconditionally on every tap, which walks a returning
-  /// user through the consent screen — and, on a re-consent, makes Google send
-  /// them another "you granted access" email — for a grant they had already
-  /// given. See [reuseGrantOrAuthenticate] for why the null-checks are
-  /// two-deep.
-  Future<void> signInWithGoogle() async {
-    state = state.copyWith(
-      action: AuthAction.google,
-      clearError: true,
-      clearNotice: true,
-    );
+  /// Native Google sign-in — the credential flow is [runGoogleSignIn].
+  Future<void> signInWithGoogle() => _runProviderSignIn(
+    AuthAction.google,
+    'auth.dialog.googleError',
+    () => runGoogleSignIn(auth: _auth),
+  );
+
+  /// Native Sign in with Apple — the credential flow is [runAppleSignIn].
+  Future<void> signInWithApple() => _runProviderSignIn(
+    AuthAction.apple,
+    'auth.dialog.appleError',
+    () => runAppleSignIn(auth: _auth, api: _ref.read(apiClientProvider)),
+  );
+
+  /// The state machine both native providers share: spin [action]'s button,
+  /// run the flow, then clear the spinner — silently on cancel, with the
+  /// provider's [errorKey] copy on a missing token or any non-Supabase
+  /// failure, and with mapped Supabase copy on an [AuthException]. On success
+  /// onAuthStateChange fires and the router redirect routes in.
+  Future<void> _runProviderSignIn(
+    AuthAction action,
+    String errorKey,
+    Future<ProviderSignInOutcome> Function() flow,
+  ) async {
+    state = state.copyWith(action: action, clearError: true, clearNotice: true);
     try {
-      // Silent reuse first; the native account picker only if there is no
-      // grant to reuse. Either path throws GoogleSignInException on cancel.
-      final account = await reuseGrantOrAuthenticate(
-        lightweight: GoogleSignIn.instance.attemptLightweightAuthentication,
-        authenticate:
-            () => GoogleSignIn.instance.authenticate(
-              scopeHint: const ['email', 'profile'],
-            ),
-      );
-      // `authentication` is a synchronous getter in v7; idToken is minted for
-      // the `serverClientId` (Web) audience configured at init.
-      final idToken = account.authentication.idToken;
-      if (idToken == null) {
-        state = state.copyWith(
-          clearAction: true,
-          error: tr('auth.dialog.googleError'),
-        );
-        return;
-      }
-      await _auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-      );
-      // Success: onAuthStateChange fires and the router redirect routes in.
-      state = state.copyWith(clearAction: true);
-    } on GoogleSignInException catch (e) {
-      // User dismissed the native sheet → clear the spinner silently (mirrors
-      // the Apple cancel path); surface anything else as the generic error.
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        state = state.copyWith(clearAction: true);
-        return;
-      }
-      state = state.copyWith(
-        clearAction: true,
-        error: tr('auth.dialog.googleError'),
-      );
+      final outcome = await flow();
+      state =
+          outcome == ProviderSignInOutcome.missingToken
+              ? state.copyWith(clearAction: true, error: tr(errorKey))
+              : state.copyWith(clearAction: true);
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
-      state = state.copyWith(
-        clearAction: true,
-        error: tr('auth.dialog.googleError'),
-      );
+      state = state.copyWith(clearAction: true, error: tr(errorKey));
     }
-  }
-
-  /// Native Sign in with Apple. Required by App Store Guideline 4.8 whenever a
-  /// third-party social login (Google) is offered. Uses the native credential
-  /// sheet, then hands Supabase the identity token + raw nonce so it verifies
-  /// the Apple-signed hashed nonce embedded in the token.
-  Future<void> signInWithApple() async {
-    state = state.copyWith(
-      action: AuthAction.apple,
-      clearError: true,
-      clearNotice: true,
-    );
-    try {
-      final rawNonce = _generateRawNonce();
-      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: const [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: hashedNonce,
-      );
-      final idToken = credential.identityToken;
-      if (idToken == null) {
-        state = state.copyWith(
-          clearAction: true,
-          error: tr('auth.dialog.appleError'),
-        );
-        return;
-      }
-      await _auth.signInWithIdToken(
-        provider: OAuthProvider.apple,
-        idToken: idToken,
-        nonce: rawNonce,
-      );
-      // Success: onAuthStateChange fires and the router redirect routes in.
-      state = state.copyWith(clearAction: true);
-    } on SignInWithAppleAuthorizationException catch (e) {
-      // User cancelled the sheet → no error surfaced, just clear the spinner.
-      if (e.code == AuthorizationErrorCode.canceled) {
-        state = state.copyWith(clearAction: true);
-        return;
-      }
-      state = state.copyWith(
-        clearAction: true,
-        error: tr('auth.dialog.appleError'),
-      );
-    } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
-    } catch (_) {
-      state = state.copyWith(
-        clearAction: true,
-        error: tr('auth.dialog.appleError'),
-      );
-    }
-  }
-
-  /// A cryptographically-random nonce. Its SHA-256 is sent to Apple; the raw
-  /// value is sent to Supabase, which checks the two match to prevent replay.
-  String _generateRawNonce([int length = 32]) {
-    const charset =
-        '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
-    final random = Random.secure();
-    return List.generate(
-      length,
-      (_) => charset[random.nextInt(charset.length)],
-    ).join();
   }
 
   /// Re-send the sign-up confirmation email to the pending address. Drives the
