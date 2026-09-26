@@ -22,6 +22,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 import '../../models/http/api_error.dart';
 import '../../models/http/stream_analyze_input.dart';
 import '../../models/logging/streaming.dart';
+import '../../models/nutrition_label.dart';
 import '../auth/supabase_service.dart';
 import '../env/env.dart';
 
@@ -145,12 +146,32 @@ class ApiClient {
   /// which cascades to every app row. There is no undo.
   Future<void> deleteAccount() => delete<dynamic>('/api/v1/account');
 
+  /// Hand the server the authorization code from a native Sign in with Apple
+  /// (`POST /api/v1/auth/apple/token`) so deleting the account can revoke the
+  /// Apple authorization. Must be called while signed in — the server checks
+  /// the code belongs to the caller's own Apple identity.
+  Future<void> linkAppleAuthorizationCode(String authorizationCode) =>
+      post<dynamic>('/api/v1/auth/apple/token', {
+        'authorizationCode': authorizationCode,
+      });
+
   /// Fetch a complete JSON snapshot of the user's data
   /// (`GET /api/v1/account`): profile, meals (with items), weights, Circle,
   /// chats, notifications, feedback, billing and app activity. Treated as
   /// opaque JSON — the server only ever adds keys (see `formatVersion`).
   Future<Map<String, dynamic>> exportMyData() =>
       get<Map<String, dynamic>>('/api/v1/account');
+
+  /// A short-lived signed URL for one of the user's own kept label photos
+  /// (`GET /api/v1/nutrition-label/images/{imageId}`), where [imageId] is the
+  /// `labelImageId` a scan returned. Someone else's id is a 404 [ApiError].
+  /// No screen calls this yet; it is the seam a label-photo viewer will use.
+  Future<LabelImageUrl> labelImageUrl(String imageId) async =>
+      LabelImageUrl.fromJson(
+        await get<Map<String, dynamic>>(
+          '/api/v1/nutrition-label/images/${Uri.encodeComponent(imageId)}',
+        ),
+      );
 
   /// Submit in-app feedback (`POST /api/v1/feedback`). Returns the new row id.
   /// [screenshotPath] comes from [uploadFeedbackScreenshot] when the user

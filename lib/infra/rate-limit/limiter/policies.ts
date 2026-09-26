@@ -270,6 +270,27 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /** Sign in with Apple code exchange: one Apple round trip per call, and a
+   *  real client posts once per Apple sign-in. */
+  appleTokenLink: {
+    route: 'auth:apple:token',
+    limits: { perMinute: 5, perHour: 20, perDay: 50 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /**
+   * Signed view URL for the owner's own nutrition-label photo. Each call is a
+   * row read plus a Storage signing request; a person opens a handful, so the
+   * ceiling only bites a loop.
+   */
+  labelImageView: {
+    route: 'label-image:view',
+    limits: { perMinute: 30, perHour: 300 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /**
    * Food-source candidates: one unindexed sequential scan of
    * `vietnamese_food_composition` per call (`>0` on an arbitrary nutrient

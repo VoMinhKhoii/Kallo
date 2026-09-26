@@ -31,12 +31,28 @@ const {
   mockCheckFeatureGate,
   mockWithOcrGuard,
   mockChargeGlobal,
+  mockUpload,
+  mockAfter,
 } = vi.hoisted(() => ({
   mockRequireAuthAndProfile: vi.fn(),
   mockUser: { id: 'user-123', email: 'test@example.com' },
   mockCheckFeatureGate: vi.fn(),
   mockWithOcrGuard: vi.fn(),
   mockChargeGlobal: vi.fn(),
+  mockUpload: vi.fn(),
+  mockAfter: vi.fn(),
+}));
+
+// The kept-scan photo upload (lib/domain/nutrition/label-images/) and the
+// post-response hook its row write rides on.
+vi.mock('@/lib/infra/supabase/admin', () => ({
+  createAdminClient: () => ({
+    storage: { from: () => ({ upload: mockUpload }) },
+  }),
+}));
+vi.mock('next/server', async (importActual) => ({
+  ...(await importActual<typeof import('next/server')>()),
+  after: mockAfter,
 }));
 
 vi.mock('@/lib/infra/auth/session', () => ({
@@ -55,6 +71,7 @@ vi.mock('@/lib/domain/billing/feature-gate', () => ({
 
 vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
   scanNutritionLabelWithGemini: vi.fn(),
+  NUTRITION_LABEL_OCR_MODEL: 'test-ocr-model',
 }));
 
 import {
@@ -135,6 +152,11 @@ function servingLabel(
 }
 
 afterEach(cleanup);
+// Drain every scan's post-response write (the kept photo's re-encode, upload
+// and row), so none of it lands in the next test's mocks.
+afterEach(async () => {
+  await Promise.all(mockAfter.mock.calls.map(([pending]) => pending));
+});
 
 // Entitled by default: every pre-existing expectation is the unlocked path.
 beforeEach(() => {
@@ -384,6 +406,112 @@ describe('scanNutritionLabelAction', () => {
       })
     ).toEqual({ success: false, code: 'rate_limited' });
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+  });
+});
+
+describe('scanNutritionLabelAction — keeping the scan', () => {
+  const mockValues = vi.fn();
+  const input = () => ({ imageBase64: validPngBase64, mimeType: 'image/png' });
+
+  async function settleAfter() {
+    await Promise.all(mockAfter.mock.calls.map(([pending]) => pending));
+  }
+
+  function geminiAfterATick(outcome: () => unknown) {
+    vi.mocked(scanNutritionLabelWithGemini).mockImplementationOnce(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return outcome() as ParsedNutritionLabel;
+    });
+  }
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { db } = await import('@/lib/infra/db/client');
+    vi.mocked(db.insert).mockReturnValue({ values: mockValues } as never);
+    mockValues.mockResolvedValue(undefined);
+    mockUpload.mockResolvedValue({ data: {}, error: null });
+  });
+
+  it('records the result with the photo path; the reply carries no kept id', async () => {
+    const label = servingLabel(nutrition({ calories: 350 }));
+    geminiAfterATick(() => label);
+
+    // The web review flow never links a scan to its meal, so the reply is
+    // exactly the pre-storage shape.
+    expect(await scanNutritionLabelAction(input())).toEqual({
+      success: true,
+      data: label,
+    });
+
+    await settleAfter();
+    expect(mockValues).toHaveBeenCalledTimes(1);
+    const [row] = mockValues.mock.calls[0];
+    expect(row).toMatchObject({
+      userId: mockUser.id,
+      storagePath: `${mockUser.id}/${row.id}.png`,
+      mimeType: 'image/png',
+      status: 'succeeded',
+      result: label,
+    });
+    expect(mockUpload).toHaveBeenCalledWith(
+      `${mockUser.id}/${row.id}.png`,
+      expect.any(Buffer),
+      { contentType: 'image/png', upsert: false }
+    );
+  });
+
+  it('a storage failure leaves the success result exactly as before', async () => {
+    const label = servingLabel(nutrition({ calories: 350 }));
+    mockUpload.mockResolvedValue({ data: null, error: new Error('down') });
+    geminiAfterATick(() => label);
+
+    expect(await scanNutritionLabelAction(input())).toEqual({
+      success: true,
+      data: label,
+    });
+    await settleAfter();
+    expect(mockValues).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no label', { code: 'no_label_detected' }, 'no_label_detected'],
+    ['provider fault', new Error('boom'), 'server_error'],
+  ])('%s: records a failed scan; the result is identical with storage up or down', async (_name, error, code) => {
+    vi.mocked(scanNutritionLabelWithGemini).mockRejectedValueOnce(error);
+    const kept = await scanNutritionLabelAction(input());
+    await settleAfter();
+    expect(mockValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        result: null,
+        errorCode: code,
+        storagePath: expect.stringMatching(/^user-123\/[0-9a-f-]{36}\.png$/),
+      })
+    );
+
+    mockUpload.mockResolvedValue({ data: null, error: new Error('down') });
+    vi.mocked(scanNutritionLabelWithGemini).mockRejectedValueOnce(error);
+    expect(await scanNutritionLabelAction(input())).toEqual(kept);
+  });
+
+  it('keeps nothing for a request refused before the model call', async () => {
+    mockCheckFeatureGate.mockResolvedValueOnce({
+      locked: true,
+      reason: 'not_entitled',
+    });
+    await scanNutritionLabelAction(input());
+    await scanNutritionLabelAction({
+      imageBase64: validPngBase64,
+      mimeType: 'image/jpeg',
+    });
+    mockChargeGlobal.mockRejectedValueOnce(new Error('budget spent'));
+    await scanNutritionLabelAction(input());
+
+    await settleAfter();
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(mockValues).not.toHaveBeenCalled();
   });
 });
 

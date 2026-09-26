@@ -57,6 +57,61 @@ an independently configured sandbox key and `APNS_PRODUCTION=false`; do not use
 the production-only key for local sandbox delivery. Apple capability and signing
 profile requirements are in [mobile releasing](../apps/docs/mobile/releasing.md#push-notifications-apns--what-ci-cannot-do-for-you).
 
+## Sign in with Apple token revocation (optional until configured)
+
+Apple requires apps that offer Sign in with Apple to revoke the user's tokens
+when the account is deleted. After a native Apple sign-in the iOS app posts the
+credential's authorization code to `POST /api/v1/auth/apple/token`; the server
+exchanges it at `https://appleid.apple.com/auth/token`, seals the refresh token
+with AES-256-GCM and stores it in `apple_auth_tokens`. Just before the auth user
+is deleted, account deletion copies the sealed token into its own outbox,
+`apple_token_revocations` (independent of RevenueCat erasure), and revokes it at
+`https://appleid.apple.com/auth/revoke` once the account is gone. Failures retry
+hourly (`.github/workflows/account-deletion-retry.yml`); after 10 attempts the
+row is parked as `dead` with a logged error — fix the cause, then set its
+`status` back to `pending` to retry. The ciphertext is wiped on completion.
+
+Runtime env (code: `lib/infra/apple-auth/`, `lib/domain/apple-sign-in/`):
+
+| Variable | Source | Value |
+|---|---|---|
+| `APPLE_SIGNIN_KEY_P8` | secret `kallo-prod-apple-signin-key-p8` | contents of `AuthKey_<KEY_ID>.p8` |
+| `APPLE_TOKEN_ENCRYPTION_KEY` | secret `kallo-prod-apple-token-encryption-key` | 32 random bytes, base64 (`openssl rand -base64 32`) |
+| `APPLE_SIGNIN_KEY_ID` | repository variable `APPLE_SIGNIN_KEY_ID` | the key's 10-character Key ID |
+| `APPLE_TEAM_ID` | workflow literal | `ZNG57U88R5` |
+| `APPLE_SIGNIN_CLIENT_ID` | workflow literal | `com.khoivo.nham` (native codes are minted for the bundle id) |
+
+Setup, once:
+
+1. Apple Developer → Certificates, Identifiers & Profiles → Identifiers →
+   App ID `com.khoivo.nham`: confirm the **Sign in with Apple** capability is
+   enabled (primary App ID).
+2. Keys → **+** → name it, tick **Sign in with Apple**, Configure → primary
+   App ID `com.khoivo.nham` → Save → Continue → Register. Download the `.p8`
+   (Apple offers it exactly once) and note the Key ID.
+3. `gcloud secrets create kallo-prod-apple-signin-key-p8 --data-file=AuthKey_<KEY_ID>.p8`
+   and `openssl rand -base64 32 | tr -d '\n' | gcloud secrets create kallo-prod-apple-token-encryption-key --data-file=-`;
+   grant both `roles/secretmanager.secretAccessor` to the runtime service
+   account and to the deployer service account (the hourly retry job reads
+   them).
+4. Set the repository variable `APPLE_SIGNIN_KEY_ID`, then deploy.
+
+Until both secrets exist the prod workflow simply does not mount them (the
+"Detect optional Sign in with Apple secrets" step) and the route answers
+`{ "stored": false }` — deploys keep working. Once they exist, a missing
+`APPLE_SIGNIN_KEY_ID` fails the deploy early.
+
+**Never rotate `APPLE_TOKEN_ENCRYPTION_KEY` in place**: stored tokens are sealed
+under it (`v1:` prefix) and would stop opening, so deletion jobs holding them
+would fail until the old key is restored, and park as `dead` after 10 hours. The Sign in with Apple
+`.p8` can be rotated freely (a fresh client secret is minted per call).
+
+**Limitation — web-linked Apple identities.** The web app has no Sign in with
+Apple button; an Apple identity linked on the web goes through Supabase's OAuth
+flow, which keeps Apple's tokens inside Supabase Auth, out of Kallo's reach.
+Only identities signed in natively on iOS (the only Apple sign-in surface we
+ship) are revoked on deletion.
+
 ## Preview database modes (Disabled by default)
 
 Automatic PR previews are currently disabled, but the preview workflow still
@@ -101,6 +156,9 @@ Create or confirm these resources:
   - `kallo-prod-resend-api-key`
   - `kallo-prod-send-email-hook-secret`
   - `kallo-prod-apns-key-p8`
+  - optional: `kallo-prod-apple-signin-key-p8` and
+    `kallo-prod-apple-token-encryption-key` — mounted only when both exist
+    (see "Sign in with Apple token revocation")
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
@@ -503,8 +561,26 @@ That means:
   - `REVENUECAT_REST_API_KEY`
   - `REVENUECAT_WEBHOOK_SECRET`
   - `APNS_KEY_P8`
+  - `APPLE_SIGNIN_KEY_P8`, `APPLE_TOKEN_ENCRYPTION_KEY` (optional, only once
+    both secrets exist)
 - Plain runtime env includes the production billing boundary, RevenueCat app
   allowlist/project/public web key, and the explicit dark-launch controls.
+
+**Post-response work (`after()`) is best-effort here.** The service runs with
+CPU throttling (request-based billing: the workflow does not pass
+`--no-cpu-throttling`) and `--min-instances=0`. Cloud Run only guarantees CPU
+while a request is in flight, so work scheduled with Next's `after()` may run
+slowly once the response is sent, and is lost if the instance scales down
+first. Today that covers the push fan-out (`lib/domain/notifications/`
+`with-notifications.ts` and `push.ts`), the late row write of a kept
+nutrition-label scan, and the scan's link to its meal from
+`/api/v1/nutrition-label/log` (`lib/domain/nutrition/label-images/`). All of
+it is acceptable to lose: the notification row is already committed, and a
+lost label-scan write only costs eval data (a late write cut off between the
+upload and the row can leave a photo with no row, under the owner's prefix
+where account deletion still purges it). Anything that must not be lost
+belongs before the response or in an outbox, not in `after()`. This is a known
+trade-off; the deploy flags are deliberately unchanged.
 
 ### Preview services: `nham-pr-<number>` (disabled by default)
 

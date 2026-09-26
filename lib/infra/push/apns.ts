@@ -3,22 +3,22 @@
 // ---------------------------------------------------------------------------
 // iOS is the only client we ship, so we talk to Apple directly instead of
 // paying for Firebase as a relay: a provider JWT signed with the .p8 key
-// (ES256 via node:crypto) plus one long-lived HTTP/2 session held open across
+// (ES256, `lib/infra/crypto/es256-jwt.ts`) plus one long-lived HTTP/2 session held open across
 // sends. Both caches are module-level — the sender is resolved per call and
 // holds no per-instance state.
 //
 // Two details Apple is unforgiving about, and both are silent in type-land:
-// the signature must be IEEE-P1363 (Node's DER default is rejected), and the
+// the signature must be IEEE-P1363 (the shared signer's job), and the
 // token must be refreshed no more often than every 20 minutes and no less
 // often than every 60. We sit at 40.
 
 import 'server-only';
-import {
-  createPrivateKey,
-  type KeyObject,
-  sign as signWith,
-} from 'node:crypto';
+import type { KeyObject } from 'node:crypto';
 import { type ClientHttp2Session, connect } from 'node:http2';
+import {
+  loadEs256PrivateKey,
+  signEs256Jwt,
+} from '@/lib/infra/crypto/es256-jwt';
 import type { PushMessage, PushSender, PushSendResult } from './types';
 
 export interface ApnsConfig {
@@ -58,14 +58,6 @@ export function resetApnsState(): void {
   cachedSession = null;
 }
 
-function base64url(input: string | Buffer): string {
-  return Buffer.from(input)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
 /** The provider token: `{alg,kid}.{iss,iat}` signed P-256, P1363-encoded. */
 function providerToken(config: ApnsConfig, key: KeyObject): string {
   const now = Date.now();
@@ -76,16 +68,10 @@ function providerToken(config: ApnsConfig, key: KeyObject): string {
   ) {
     return cachedToken.jwt;
   }
-  const header = base64url(JSON.stringify({ alg: 'ES256', kid: config.keyId }));
-  const claims = base64url(
-    JSON.stringify({ iss: config.teamId, iat: Math.floor(now / 1000) })
-  );
-  const signature = signWith('sha256', Buffer.from(`${header}.${claims}`), {
-    key,
-    // MANDATORY: Node defaults to DER, which APNs rejects outright.
-    dsaEncoding: 'ieee-p1363',
+  const jwt = signEs256Jwt(key, config.keyId, {
+    iss: config.teamId,
+    iat: Math.floor(now / 1000),
   });
-  const jwt = `${header}.${claims}.${base64url(signature)}`;
   cachedToken = { jwt, keyId: config.keyId, issuedAt: now };
   return jwt;
 }
@@ -222,19 +208,10 @@ function sendOne(
 export function createApnsSender(config: ApnsConfig): PushSender {
   // Parsed ONCE, eagerly: a malformed .p8 must surface here, where
   // getPushSender() catches it and degrades to the no-op — not on every send.
-  // Literal \n survive single-line env vars; PEM parsing needs real newlines.
-  const key = createPrivateKey(config.keyP8.replace(/\\n/g, '\n'));
-  // Any valid PKCS#8 parses; only a P-256 EC key can produce the ES256
-  // signature APNs accepts. Refusing here keeps an RSA or Ed25519 key from
-  // building a sender that fails on every send instead of degrading once.
-  if (
-    key.asymmetricKeyType !== 'ec' ||
-    key.asymmetricKeyDetails?.namedCurve !== 'prime256v1'
-  ) {
-    throw new Error(
-      `APNS_KEY_P8 must be an EC P-256 (prime256v1) key; got ${key.asymmetricKeyType}${key.asymmetricKeyDetails?.namedCurve ? `/${key.asymmetricKeyDetails.namedCurve}` : ''}`
-    );
-  }
+  // Only a P-256 EC key can produce the ES256 signature APNs accepts;
+  // refusing an RSA or Ed25519 key here keeps it from building a sender that
+  // fails on every send instead of degrading once.
+  const key = loadEs256PrivateKey(config.keyP8, 'APNS_KEY_P8');
   return {
     async send(messages: PushMessage[]): Promise<PushSendResult[]> {
       if (messages.length === 0) return [];

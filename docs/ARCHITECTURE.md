@@ -109,7 +109,9 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern |
 |---|---|
+| `apple-auth/` | Sign in with Apple REST: the per-call ES256 client secret, the authorization-code exchange and refresh-token revocation (`apple-auth.ts`), each returning a typed verdict instead of throwing; `null` config when the `APPLE_*` vars are unset |
 | `auth/` | session/profile guard, redirect and next-param safety |
+| `crypto/` | dependency-free primitives on `node:crypto`: the ES256 JWT signer Apple's APNs and Sign in with Apple both need (`es256-jwt.ts`), and `secret-box.ts` — versioned AES-256-GCM for credentials held at rest |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
 | `platform/` | runtime environment detection from the user agent |
@@ -127,6 +129,7 @@ another domain module is a smell worth a second look.
 |---|---|
 | `account-deletion/` | queued deletion jobs and their retry |
 | `account-export/` | the self-service data export: per-area loaders (profile, meals, social, chat, notifications, support, billing, activity) composed by `build-export.ts`, and `coverage.ts` — the table-by-table personal-data inventory a test holds against the schema |
+| `apple-sign-in/` | the sealed Sign in with Apple refresh token kept only so deletion can revoke it: `refresh-tokens.ts` (link = key check + exchange + subject check + seal + upsert; read; open), `revocation-outbox.ts` (the deletion-time revocation outbox, independent of RevenueCat erasure: enqueue, claim, process, hourly retry with an attempt cap), `contracts.ts` (route body + Apple-subject lookup) |
 | `barcode/` | Open Food Facts lookup and decode, plus `amount.ts` — the gram clamp, per-100g scaling and mode→grams resolution the quantity picker runs on — `meal-item.ts`, the one builder both the one-shot scan and a composer barcode pick produce their frozen meal item with, and `errors.ts`, the `BarcodeServiceError` + `BARCODE_*` envelope mapping every surface refuses an uncached scan through |
 | `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake), `entitlement/` (the grant side) and `activation/` (the browser's bounded recovery loops for a purchase the server has not projected); `entitlements-client.ts` is the browser's read of the contract |
 | `cheat/` | cheat-meal slider math |
@@ -136,7 +139,7 @@ another domain module is a smell worth a second look.
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
 | `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
-| `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
+| `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` bucket + `nutrition_label_images`) |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |

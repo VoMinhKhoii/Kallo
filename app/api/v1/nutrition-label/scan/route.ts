@@ -3,6 +3,7 @@ import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-
 import { scanNutritionLabelSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { scanWithStoredLabelImage } from '@/lib/domain/nutrition/label-images/label-images';
 import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
 import { OCR_MAX_BODY_BYTES } from '@/lib/domain/nutrition/ocr/image-constants';
 import { assertAiConsent } from '@/lib/domain/privacy/ai-consent';
@@ -14,11 +15,12 @@ import { mapNutritionLabelError } from '../_errors';
 /**
  * `POST /api/v1/nutrition-label/scan` — read a packaged product's Nutrition
  * Facts table out of a photo. Body is `{ imageBase64, mimeType }`; the reply is
- * `{ label: ParsedNutritionLabel }`, the same value the web Server Action
- * `scanNutritionLabelAction` returns.
+ * `{ label: ParsedNutritionLabel, labelImageId?: string }`, the same values
+ * the web Server Action `scanNutritionLabelAction` returns.
  *
- * Nothing is written: the client reviews and edits the extracted values, then
- * posts them to the sibling `/log` route.
+ * No meal is written: the client reviews and edits the extracted values, then
+ * posts them (with `labelImageId`) to the sibling `/log` route. The photo
+ * itself is kept in the private `nutrition-labels` bucket, best-effort.
  *
  * A photo with no printed nutrition table is a 422 `OCR_NO_LABEL_DETECTED`
  * envelope — the client offers the barcode scanner or manual entry instead.
@@ -56,18 +58,25 @@ export async function POST(req: NextRequest) {
     // authenticated caller could otherwise make the server buffer an unbounded
     // payload, and the schema's size check only runs after the whole thing has
     // been parsed into memory.
-    const label = await withOcrGuard(user.id, async (chargeGlobal) => {
+    const scanned = await withOcrGuard(user.id, async (chargeGlobal) => {
       const body = scanNutritionLabelSchema.parse(
         await readBoundedJson(req, OCR_MAX_BODY_BYTES)
       );
       await validateNutritionLabelImage(body);
       await chargeGlobal();
-      return scanNutritionLabelWithGemini({
-        imageBase64: body.imageBase64,
-        mimeType: body.mimeType,
-      });
+      // The photo is kept best-effort, in parallel with the model call.
+      return scanWithStoredLabelImage({ userId: user.id, ...body }, () =>
+        scanNutritionLabelWithGemini({
+          imageBase64: body.imageBase64,
+          mimeType: body.mimeType,
+        })
+      );
     });
-    return Response.json({ label });
+    // `labelImageId` is omitted when the photo could not be kept.
+    return Response.json({
+      label: scanned.result,
+      labelImageId: scanned.labelImageId ?? undefined,
+    });
   } catch (error) {
     return handleRouteError(mapNutritionLabelError(error));
   }
