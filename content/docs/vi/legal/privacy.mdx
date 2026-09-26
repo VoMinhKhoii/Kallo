@@ -29,8 +29,12 @@ xác thực do Supabase Auth đảm nhiệm.
 
 Nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, chúng tôi lưu thêm một **mã làm
 mới (refresh token) của Apple đã được mã hóa**. Mã này chỉ dùng vào một việc: thu
-hồi quyền truy cập của Kallo phía Apple khi bạn xóa tài khoản. Mã bị xóa cùng
-lúc với việc xóa tài khoản.
+hồi quyền truy cập của Kallo phía Apple khi bạn xóa tài khoản. Khi xóa tài khoản,
+chúng tôi thu hồi mã rồi xóa nó; nếu lúc đó chưa liên lạc được với Apple, chúng
+tôi sẽ thử lại cho tới khi thu hồi thành công. Nếu bạn đăng nhập bằng Apple trên
+web, mã đó do nhà cung cấp dịch vụ xác thực của chúng tôi giữ và chúng tôi không
+thu hồi được; bạn có thể gỡ Kallo trong phần cài đặt Tài khoản Apple, mục **Đăng
+nhập bằng Apple**.
 
 ### Hồ sơ và mục tiêu
 
@@ -140,12 +144,15 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 
 Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Chúng
 tôi cũng lưu ảnh đó trong một kho lưu trữ riêng tư, gắn với tài khoản của bạn và,
-nếu bạn lưu bữa ăn, gắn với bữa đó. Kèm theo ảnh là kết quả quét (những gì Kallo
-đọc được hoặc lỗi gặp phải, mô hình nào đã đọc và mất bao lâu) và, nếu bạn lưu
-bữa ăn, các giá trị bạn đã lưu. Chỉ bạn (trong ứng dụng) và đội ngũ Kallo xem
-được ảnh và các bản ghi này; đội ngũ dùng chúng để kiểm tra và cải thiện độ
-chính xác khi đọc nhãn. Chúng không bao giờ được chia sẻ với người dùng khác, và
-được giữ cho tới khi bạn xóa tài khoản, lúc đó chúng bị xóa cùng tài khoản.
+khi bạn lưu bữa ăn trong ứng dụng iOS, gắn với bữa đó. Trước khi lưu, máy chủ của
+chúng tôi mã hóa lại ảnh, nhờ đó loại bỏ siêu dữ liệu đi kèm như vị trí. Kèm theo
+ảnh là kết quả quét (những gì Kallo đọc được hoặc lỗi gặp phải, mô hình nào đã
+đọc và mất bao lâu) và, khi bạn lưu bữa ăn trong ứng dụng iOS, các giá trị bạn
+đã lưu. Chỉ bạn và đội ngũ Kallo truy cập được ảnh và các bản ghi này; đội ngũ
+dùng chúng để kiểm tra và cải thiện độ chính xác khi Kallo đọc nhãn. Chúng tôi
+**không** dùng chúng để huấn luyện mô hình AI, và chúng không bao giờ được chia
+sẻ với người dùng khác. Chúng được giữ cho tới khi bạn xóa tài khoản, lúc đó
+chúng bị xóa cùng tài khoản.
 
 Khi bạn tìm nguyên liệu lúc ghi thủ công, và chỉ khi bạn đã đồng ý cho dùng AI
 (xem bên dưới), chữ bạn gõ có thể được gửi tới mô hình nhúng (embedding) của
@@ -285,7 +292,8 @@ sau khi bạn xóa bản gốc.
 ### Chặn và báo cáo
 
 Bạn có thể **chặn** một người: họ không còn thấy bữa ăn bạn chia sẻ, phản hồi
-hay tin nhắn của bạn, và bạn cũng không còn thấy của họ.
+hay tin nhắn của bạn, và bạn cũng không còn thấy của họ. Việc chặn cũng kết thúc
+kết nối giữa hai người trong Vòng kết nối và xóa các thông báo giữa hai người.
 
 Bạn cũng có thể **báo cáo** một nội dung hoặc một hồ sơ. Mỗi báo cáo lưu lại ai
 gửi, nội dung nào bị báo cáo (loại, mã định danh và người sở hữu nội dung đó), lý
@@ -302,7 +310,8 @@ pháp luật.
 
 Bạn có thể xóa tài khoản trong **Cài đặt**. Một tiến trình chạy theo lịch sẽ
 thực hiện việc xóa, và tiến trình đó cũng xóa luôn hồ sơ khách hàng của bạn ở
-đơn vị thanh toán.
+đơn vị thanh toán và, nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, thu hồi
+quyền truy cập của Kallo phía Apple.
 
 <Callout label="Trước khi xóa tài khoản" tone="caution">
 Xóa tài khoản Kallo **không** hủy gói đăng ký bạn mua qua Apple hoặc Google. Nếu

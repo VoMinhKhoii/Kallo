@@ -28,7 +28,11 @@ is handled by Supabase Auth.
 
 If you sign in with Apple in the iOS app, we also store an **encrypted Apple
 refresh token**. We use it for one thing only: revoking Kallo's access at Apple
-when you delete your account. It is deleted as part of account deletion.
+when you delete your account. Deletion revokes it and then deletes it; if Apple
+cannot be reached at that moment, we keep retrying until the revocation goes
+through. If you signed in with Apple on the web, that token is held by our
+authentication provider and we cannot revoke it; you can remove Kallo in your
+Apple Account settings under **Sign in with Apple**.
 
 ### Profile and goals
 
@@ -134,13 +138,16 @@ When you request a meal analysis, the AI model receives **only**:
 - The language you want the result in.
 
 When you scan a nutrition label, the model receives **only the photo** you took.
-We also store that photo in a private storage bucket, linked to your account and,
-if you save it, to the meal. Alongside it we keep the scan outcome (what Kallo
-read, or the error; which model read it and how long it took) and, if you save
-the meal, the values you saved. Only you (in the app) and the Kallo team can see
-the photo and these records; the team uses them to check and improve how
-accurately labels are read. They are never shared with other users, and they are
-kept until you delete your account, as part of which they are deleted.
+We also store that photo in a private storage bucket, linked to your account
+and, when you save the meal in the iOS app, to that meal. Before storing it we
+re-encode it on our servers, which strips embedded metadata such as location.
+Alongside it we keep the scan outcome (what Kallo read, or the error; which model
+read it and how long it took) and, when you save the meal in the iOS app, the
+values you saved. Only you and the Kallo team can access the photo and these
+records; the team uses them to check and improve how accurately Kallo reads
+labels. We do **not** use them to train AI models, and they are never shared with
+other users. They are kept until you delete your account, as part of which they
+are deleted.
 
 When you search for an ingredient while logging by hand, and only if you have
 given AI permission (see below), the text you type may be sent to Google's
@@ -271,7 +278,8 @@ after you delete your original.
 ### Blocking and reporting
 
 You can **block** someone: they no longer see your shared meals, replies or
-messages, and you no longer see theirs.
+messages, and you no longer see theirs. Blocking also ends your Circle
+connection and deletes the notifications between the two of you.
 
 You can also **report** content or a profile. A report stores who filed it, what
 was reported (its type and identifier, and the person it belongs to), the reason,
@@ -287,7 +295,8 @@ long as needed for security, dispute resolution, legal compliance and backup
 recovery.
 
 You can delete your account in **Settings**. Deletion runs as a scheduled job
-that also erases your customer record at the billing provider.
+that also erases your customer record at the billing provider and, if you signed
+in with Apple in the iOS app, revokes Kallo's access at Apple.
 
 <Callout label="Before you delete" tone="caution">
 Deleting your Kallo account does **not** cancel a subscription bought through
