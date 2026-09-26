@@ -60,6 +60,7 @@ describe('searchIngredients — row parsing', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'com trang',
       limit: 10,
     });
@@ -92,6 +93,7 @@ describe('searchIngredients — row parsing', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'com trang',
       limit: 10,
     });
@@ -114,6 +116,7 @@ describe('searchIngredients — row parsing', () => {
 
     const [result] = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'com trang',
       limit: 10,
     });
@@ -137,6 +140,7 @@ describe('searchIngredients — recent foods', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: '',
       limit: 10,
     });
@@ -153,7 +157,12 @@ describe('searchIngredients — retrieval arms', () => {
   it('runs the word_similarity-ranked all-sources lexical function', async () => {
     execute.mockResolvedValueOnce([riceDbRow]).mockResolvedValueOnce([]); // substring backfill
 
-    await searchIngredients({ userId: 'user-123', q: 'com trang', limit: 10 });
+    await searchIngredients({
+      userId: 'user-123',
+      q: 'com trang',
+      limit: 10,
+      allowLiveEmbedding: true,
+    });
 
     // The whole-string-ranked `fuzzy_match_ingredients` buries body-part
     // entries ("ức gà") under short generic names; the all-sources function is
@@ -174,6 +183,7 @@ describe('searchIngredients — retrieval arms', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'lườn gà',
       limit: 10,
     });
@@ -194,6 +204,7 @@ describe('searchIngredients — retrieval arms', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'lườn gà',
       limit: 10,
     });
@@ -203,12 +214,58 @@ describe('searchIngredients — retrieval arms', () => {
     expect(results[0].semantic).toBe(true);
   });
 
+  describe('without AI-processing consent', () => {
+    it('never live-embeds the query on a cache miss — lexical results only', async () => {
+      resolveQueryEmbedding.mockResolvedValue(null);
+      generateEmbeddingBatch.mockResolvedValue([[0.5, 0.6]]);
+      execute
+        .mockResolvedValueOnce([{ ...riceDbRow, similarity: 0.2 }]) // lexical
+        .mockResolvedValueOnce([]); // substring backfill
+
+      const results = await searchIngredients({
+        userId: 'user-123',
+        allowLiveEmbedding: false,
+        q: 'lườn gà',
+        limit: 10,
+      });
+
+      expect(generateEmbeddingBatch).not.toHaveBeenCalled();
+      expect(cacheQueryEmbedding).not.toHaveBeenCalled();
+      // No vector query either: lexical + backfill only.
+      expect(execute).toHaveBeenCalledTimes(2);
+      expect(results.map((r) => r.id)).toEqual(['fct-rice']);
+    });
+
+    it('still uses an already-cached embedding, which sends nothing out', async () => {
+      resolveQueryEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
+      execute
+        .mockResolvedValueOnce([]) // no lexical hits
+        .mockResolvedValueOnce([{ ...riceDbRow, similarity: 0.8 }]) // vector
+        .mockResolvedValueOnce([]); // substring backfill
+
+      const results = await searchIngredients({
+        userId: 'user-123',
+        allowLiveEmbedding: false,
+        q: 'lườn gà',
+        limit: 10,
+      });
+
+      expect(generateEmbeddingBatch).not.toHaveBeenCalled();
+      expect(results[0].semantic).toBe(true);
+    });
+  });
+
   it('skips the embedding arm entirely for a 1-character query', async () => {
     execute
       .mockResolvedValueOnce([riceDbRow]) // lexical
       .mockResolvedValueOnce([]); // substring backfill
 
-    await searchIngredients({ userId: 'user-123', q: 'g', limit: 10 });
+    await searchIngredients({
+      userId: 'user-123',
+      q: 'g',
+      limit: 10,
+      allowLiveEmbedding: true,
+    });
 
     // Not even the cache lookup: a 1-char vector is noise.
     expect(resolveQueryEmbedding).not.toHaveBeenCalled();
@@ -224,6 +281,7 @@ describe('searchIngredients — retrieval arms', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'lườn gà',
       limit: 10,
     });
@@ -240,6 +298,7 @@ describe('searchIngredients — retrieval arms', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'lườn gà',
       limit: 10,
     });
@@ -259,6 +318,7 @@ describe('searchIngredients — substring backfill', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'cơm',
       limit: 10,
     });
@@ -281,6 +341,7 @@ describe('searchIngredients — substring backfill', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'com trang',
       limit: 10,
     });
@@ -301,6 +362,7 @@ describe('searchIngredients — substring backfill', () => {
 
     const results = await searchIngredients({
       userId: 'user-123',
+      allowLiveEmbedding: true,
       q: 'ức gà',
       limit: 2,
     });

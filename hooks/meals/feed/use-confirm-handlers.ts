@@ -72,7 +72,7 @@ export function useConfirmHandlers(args: {
   // pending card streams in exactly like a new log — and register the old meal
   // id so confirming the correction deletes the original (no stacking).
   const handleRefineMeal = useCallback(
-    (
+    async (
       meal: { id: string; rawInput: string; loggedAt: string },
       correction: string
     ) => {
@@ -113,7 +113,7 @@ export function useConfirmHandlers(args: {
       ]);
       scrollToBottom();
 
-      void stream.analyze({
+      const outcome = await stream.analyze({
         message: combined,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
@@ -121,6 +121,13 @@ export function useConfirmHandlers(args: {
         // Keep the corrected meal anchored to the original's instant/slot.
         inheritLoggedAt: meal.loggedAt,
       });
+      // "Not now" to AI processing: nothing was sent. Only the correction card
+      // this refine just added goes — the meal it would have replaced, and
+      // every other card, stay exactly as they were.
+      if (outcome === 'consentDeclined') {
+        replacedMealByMsgIdRef.current.delete(assistantMsgId);
+        setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
+      }
     },
     [
       stream,

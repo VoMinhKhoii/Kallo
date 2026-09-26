@@ -119,5 +119,10 @@
     "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
     "autoShareHint": "Tắt cho đến khi bạn tự bật. Khi bật, mỗi bữa ăn mới sẽ được chia sẻ với vòng kết nối ngay lúc bạn lưu. Bạn bè chỉ thấy các bữa được chia sẻ sau khi đã kết nối.",
     "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+  },
+  "aiConsent": {
+    "label": "Phân tích bữa ăn bằng AI",
+    "hint": "Gửi bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Google Gemini để ước tính dinh dưỡng. Khi tắt, việc ghi bữa ăn bằng AI và quét nhãn sẽ tạm dừng.",
+    "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
   }
 }

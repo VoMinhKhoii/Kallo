@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import type { StreamAnalysisState } from '@/hooks/meals/analysis/use-stream-analysis';
+import type { StreamAnalysisState } from '@/lib/ai/streaming/client-state';
 import type { ChatMessage } from '@/lib/core/types/meal';
 
 interface UseStreamingTerminalEffectsParams {
@@ -189,7 +189,18 @@ export function useStreamingTerminalEffects({
   // Terminal: pre-stream 402 — AI analysis is locked. Drop the in-flight
   // streaming bubble (no error toast) and open the paywall. Mirrors the error
   // path's cleanup but routes to the upgrade surface instead.
+  //
+  // A declined AI-processing consent (`consentRequired`) only ends the run
+  // here. Nothing was sent, and the bubble belongs to whoever started the run
+  // — a submit, a refine, a clarify — which takes back exactly what it added
+  // when `analyze()` resolves `consentDeclined`. Deleting by id here would
+  // take a clarify's EXISTING cheat card with it.
   useEffect(() => {
+    if (status === 'consentRequired') {
+      setStreamingMsgId(null);
+      reset();
+      return;
+    }
     if (status !== 'paymentRequired' || !streamingMsgId) return;
 
     const msgId = streamingMsgId;

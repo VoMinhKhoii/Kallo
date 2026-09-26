@@ -1,6 +1,6 @@
 {
-  "id": "7c2abd49-e86f-4984-a546-e7de7da0c5b5",
-  "prevId": "a3510a2d-950e-44c9-bda7-2901b9f6000d",
+  "id": "ac545828-8b1b-495b-8731-b2cafd993326",
+  "prevId": "514a6365-0e10-4e5a-8817-aa9e17c8303a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -6366,6 +6366,12 @@
         },
         "auto_share_updated_at": {
           "name": "auto_share_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_processing_consented_at": {
+          "name": "ai_processing_consented_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

@@ -87,6 +87,11 @@ class LabelScanState {
   /// succeed.
   bool get isFeatureLocked =>
       errorKey == 'logging.labelScan.error.featureLocked';
+
+  /// The server refused the scan for missing AI-processing consent (HTTP 403,
+  /// App Store 5.1.2(i)). The sheet asks for consent rather than retrying.
+  bool get isAiConsentRequired =>
+      errorKey == 'logging.labelScan.error.aiConsentRequired';
 }
 
 /// Map an [ApiError] from the label endpoints onto a stable l10n key. The
@@ -99,6 +104,10 @@ String _errorKeyFor(Object error) {
       // not from the OCR codes below it.
       case kFeatureLockedCode:
         return 'logging.labelScan.error.featureLocked';
+      // Also lowercase and from the shared catalog: the photo would go to the
+      // AI provider, and the user has not agreed to that.
+      case 'ai_consent_required':
+        return 'logging.labelScan.error.aiConsentRequired';
       case 'OCR_INVALID_IMAGE':
         return 'logging.labelScan.error.invalidImage';
       case 'OCR_NO_LABEL_DETECTED':

@@ -3,6 +3,7 @@
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useAiConsent } from '@/components/privacy/ai-consent-provider';
 import { useOcrCamera } from '@/hooks/meals/entry/use-ocr-camera';
 import { useOcrImageSelection } from '@/hooks/meals/entry/use-ocr-image-selection';
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
@@ -32,7 +33,8 @@ export function OcrScannerTab({
 }) {
   const t = useTranslations('logging');
   const [mode, setMode] = useState<'camera' | 'upload'>('camera');
-  const image = useOcrImageSelection(onSuccess);
+  const { gate: aiConsent } = useAiConsent();
+  const image = useOcrImageSelection(onSuccess, aiConsent);
   const camera = useOcrCamera(mode === 'camera' && !image.hasImage);
 
   const handleCapturePhoto = async () => {

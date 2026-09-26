@@ -18,6 +18,7 @@ export const ERROR_CODES = [
   'RATE_LIMITER_UNAVAILABLE',
   'PIPELINE_TIMEOUT',
   'feature_locked',
+  'ai_consent_required',
   'objectionable_content',
   'INTERNAL',
   'BARCODE_NOT_FOUND',

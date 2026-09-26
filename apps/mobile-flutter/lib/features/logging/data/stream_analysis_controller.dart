@@ -47,6 +47,10 @@ class StreamAnalysisState {
   /// routes to the paywall instead of showing a retry error.
   final bool paymentRequired;
 
+  /// Set when the analysis was refused with 403 `ai_consent_required` — the
+  /// UI re-asks for AI-processing consent instead of showing an error card.
+  final bool consentRequired;
+
   /// The day this run logs into (`StreamAnalyzeInput.loggedDate`). Lets the
   /// feed pin the streaming/reveal cards to their origin date, so switching
   /// the selected day doesn't render them on the wrong day's feed.
@@ -64,6 +68,7 @@ class StreamAnalysisState {
     this.isAnalyzing = false,
     this.loggedDate,
     this.paymentRequired = false,
+    this.consentRequired = false,
   });
 
   StreamAnalysisState copyWith({
@@ -78,6 +83,7 @@ class StreamAnalysisState {
     bool? isAnalyzing,
     String? loggedDate,
     bool? paymentRequired,
+    bool? consentRequired,
   }) => StreamAnalysisState(
     status: status ?? this.status,
     items: items ?? this.items,
@@ -90,6 +96,7 @@ class StreamAnalysisState {
     isAnalyzing: isAnalyzing ?? this.isAnalyzing,
     loggedDate: loggedDate ?? this.loggedDate,
     paymentRequired: paymentRequired ?? this.paymentRequired,
+    consentRequired: consentRequired ?? this.consentRequired,
   );
 
   static const StreamAnalysisState initial = StreamAnalysisState();
@@ -217,6 +224,7 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
           // 402 (feature locked, post Phase E) → route to the paywall instead
           // of the retry-error card. Flagged here; the feed reads it on error.
           paymentRequired: event.isPaymentRequired,
+          consentRequired: event.isAiConsentRequired,
         );
     }
   }

@@ -19,6 +19,7 @@ import type {
   ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
 import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
+import { hasAiConsent } from '@/lib/domain/privacy/ai-consent';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { withOcrGuard } from '@/lib/infra/rate-limit/ocr-guard';
 
@@ -64,6 +65,12 @@ export async function scanNutritionLabelAction(input: {
     // and work an anonymous caller can make the server do is work that needs no
     // account to abuse.
     const { user, profile } = await requireAuthAndProfile();
+    // The photo goes to the AI provider: no send without the user's recorded
+    // consent (App Store 5.1.2(i)). Returned as a code so the client can open
+    // the consent dialog instead of showing an error.
+    if (!hasAiConsent(profile)) {
+      return { success: false, code: 'ai_consent_required' };
+    }
     // Label scanning is premium. Returned as a code, never thrown: `scanErrorCode`
     // would classify a thrown FeatureLockedError as `server_error`.
     const gate = await checkFeatureGate(
