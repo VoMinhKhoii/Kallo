@@ -65,6 +65,13 @@ export const userProfiles = pgTable(
     autoShareUpdatedAt: timestamp('auto_share_updated_at', {
       withTimezone: true,
     }),
+    // App Store 5.1.2(i) consent to send meal text and label photos to the
+    // third-party AI (Gemini on Vertex AI). NULL = never agreed or withdrawn:
+    // every AI entry point refuses with `ai_consent_required` until the user
+    // agrees through the one-time sheet (PUT /api/v1/profile/ai-consent).
+    aiProcessingConsentedAt: timestamp('ai_processing_consented_at', {
+      withTimezone: true,
+    }),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
@@ -1640,6 +1647,64 @@ export const userFeedback = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Nutrition-label scans
+//
+// One row per scan whose photo was kept: the photo sits in the PRIVATE
+// `nutrition-labels` bucket at `{user_id}/{id}.{ext}`, next to what the model
+// made of it — the extraction returned to the client (`result`) or the failure
+// (`error_code`) — and, once the scan is logged, what the user actually saved
+// (`reviewed_result`). Together they are the OCR eval dataset. Readers: the
+// owner (their own photo via a signed URL) and the team through the service
+// role. Retained until the account is deleted: account deletion purges the
+// objects, and the auth cascade removes these rows. Written only by the server
+// (`lib/domain/nutrition/label-images/`); the owner may SELECT their own rows.
+// ---------------------------------------------------------------------------
+
+export const nutritionLabelImages = pgTable(
+  'nutrition_label_images',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    storagePath: text('storage_path').notNull().unique(),
+    mimeType: text('mime_type').notNull(),
+    byteSize: integer('byte_size').notNull(),
+    // 'succeeded' | 'failed' — how the model call ended.
+    status: text('status').notNull(),
+    // The parsed label exactly as returned to the client (succeeded only).
+    result: jsonb('result'),
+    // The scan-path failure code (failed only), e.g. 'no_label_detected'.
+    errorCode: text('error_code'),
+    // The vision model the scan called, and how long the call took.
+    model: text('model'),
+    latencyMs: integer('latency_ms'),
+    // Set when the scan is logged; a scan the user abandoned stays unlinked.
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    // The user's correction of `result` for that meal: product, serving and
+    // nutrients (not the diary day, timezone or model confidence).
+    reviewedResult: jsonb('reviewed_result'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'nutrition_label_images_status_check',
+      sql`${table.status} IN ('succeeded', 'failed')`
+    ),
+    index('nutrition_label_images_user_created_idx').on(
+      table.userId,
+      sql`${table.createdAt} DESC`
+    ),
+    // Backs the ON DELETE SET NULL when a meal is deleted.
+    index('nutrition_label_images_meal_idx').on(table.mealId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Billing & Entitlements
 //
 // Source of truth for premium access. Rows are written ONLY by the
@@ -2030,6 +2095,73 @@ export const pushTokens = pgTable(
     check(
       'push_tokens_platform_check',
       sql`${table.platform} IN ('ios', 'android', 'web')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Sign in with Apple refresh tokens (lib/domain/apple-sign-in/)
+//
+// One row per user who signed in with Apple on iOS: the refresh token Apple
+// issued for their authorization code, held ONLY so account deletion can
+// revoke it (Apple's account-deletion requirement). Sealed with AES-256-GCM
+// under APPLE_TOKEN_ENCRYPTION_KEY — a DB read alone never yields a usable
+// token. Server-only: RLS on, no client policies.
+// ---------------------------------------------------------------------------
+export const appleAuthTokens = pgTable('apple_auth_tokens', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  refreshTokenCiphertext: text('refresh_token_ciphertext').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// Sign in with Apple revocation outbox (lib/domain/apple-sign-in/)
+//
+// Written just before account deletion removes the auth user, so `user_id` is
+// deliberately NOT a foreign key: the row must outlive the cascade that takes
+// `apple_auth_tokens` with it. Its own table (not the RevenueCat outbox) so a
+// permanently failing revocation can never hold up billing erasure: each
+// pending row retries hourly up to an attempt cap, then parks as `dead`.
+// `last_attempt_at` is the claim fence; `next_attempt_at` doubles as the
+// processing lease. The sealed token is wiped (NULL) on completion.
+// ---------------------------------------------------------------------------
+export const appleTokenRevocations = pgTable(
+  'apple_token_revocations',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').notNull(),
+    refreshTokenCiphertext: text('refresh_token_ciphertext'),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (table) => [
+    // One live revocation per user; a re-queue refreshes it in place.
+    uniqueIndex('apple_token_revocations_pending_user_idx')
+      .on(table.userId)
+      .where(sql`status = 'pending'`),
+    // The retry worker's scan: due pending rows only.
+    index('apple_token_revocations_due_idx')
+      .on(table.nextAttemptAt)
+      .where(sql`status = 'pending'`),
+    check(
+      'apple_token_revocations_status_check',
+      sql`${table.status} IN ('pending', 'completed', 'dead')`
     ),
   ]
 );

@@ -1,23 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type AnalyzeOutcome,
+  applyStreamEvent,
+  INITIAL_STREAM_STATE,
+  isTerminalEvent,
+  type StreamAnalysisState,
+} from '@/lib/ai/streaming/client-state';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
-import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
-import type { CheatSliderSpec } from '@/lib/core/types/cheat';
-import type { MealItem, ParsedMeal } from '@/lib/core/types/meal';
+import {
+  classifyPreStreamRefusal,
+  preStreamErrorMessage,
+} from '@/lib/ai/streaming/pre-stream-refusal';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
-
-export interface StreamAnalysisState {
-  status: StreamStatus;
-  items: string[];
-  completedItems: MealItem[];
-  result: ParsedMeal | null;
-  /** Cheat-meal slider spec (when mode='cheat'); replaces `result`. */
-  cheatSpec: CheatSliderSpec | null;
-  analysisId: string | null;
-  error: string | null;
-  isAnalyzing: boolean;
-}
+import type { AiConsentGate } from '@/lib/domain/privacy/consent-gate';
 
 export interface StreamAnalyzeInput {
   message: string;
@@ -47,21 +45,10 @@ export interface StreamAnalyzeInput {
   displayText?: string;
 }
 
-/**
- * Terminal events end the SSE stream with no follow-up frame: a durable
- * `analysis_complete`, a fatal `error`, or a cheat `cheat_estimate` carrying a
- * clarifyingQuestion (the vague-input fallback).
- *
- * Anything else the server may emit is NOT terminal here: the stream closing
- * after it settles as "ended unexpectedly", i.e. a retryable failed attempt.
- */
-function isTerminalEvent(event: StreamEvent): boolean {
-  return (
-    event.type === 'analysis_complete' ||
-    event.type === 'error' ||
-    (event.type === 'cheat_estimate' && event.spec.clarifyingQuestion != null)
-  );
-}
+/** One request's end, before the consent retry decides what it means. */
+type SendOutcome =
+  | Exclude<AnalyzeOutcome, 'consentDeclined'>
+  | 'consentRequired';
 
 /**
  * Client-side backstop: if the SSE stream goes completely silent for this long
@@ -72,30 +59,30 @@ function isTerminalEvent(event: StreamEvent): boolean {
  */
 const INACTIVITY_MS = 45_000;
 
-const INITIAL_STATE: StreamAnalysisState = {
-  status: 'idle',
-  items: [],
-  completedItems: [],
-  result: null,
-  cheatSpec: null,
-  analysisId: null,
-  error: null,
-  isAnalyzing: false,
-};
-
-export function useStreamAnalysis() {
-  const [state, setState] = useState<StreamAnalysisState>(INITIAL_STATE);
+/**
+ * The one transport to `/api/analyze-meal`, and the one place AI-processing
+ * consent is asked for on its behalf (App Store 5.1.2(i)). Every caller —
+ * submit, refine, clarify, the dashboard bar — goes through `analyze()`, so no
+ * entry point can reach the provider without the gate.
+ */
+export function useStreamAnalysis({
+  aiConsent,
+}: {
+  /** Asked before every request; re-asked when the server refuses for consent. */
+  aiConsent: AiConsentGate;
+}) {
+  const [state, setState] = useState<StreamAnalysisState>(INITIAL_STREAM_STATE);
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
   const reset = useCallback(() => {
-    setState(INITIAL_STATE);
+    setState(INITIAL_STREAM_STATE);
   }, []);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
-    setState(INITIAL_STATE);
+    setState(INITIAL_STREAM_STATE);
   }, []);
 
   // Abort in-flight request on unmount
@@ -107,97 +94,34 @@ export function useStreamAnalysis() {
   }, []);
 
   const processEvent = useCallback(
-    (
-      event: StreamEvent,
-      thisRequestId: number,
-      reqIdRef: React.RefObject<number>
-    ) => {
-      if (thisRequestId !== reqIdRef.current) return;
-
-      setState((prev) => {
-        switch (event.type) {
-          case 'stage':
-            return { ...prev, status: event.stage };
-
-          case 'item_name':
-            return { ...prev, items: [...prev.items, event.name] };
-
-          case 'item_macros': {
-            // Upsert keyed by run-scoped mealItemId (§0.1, §4.4): retry
-            // re-emits the same logical slot, so replace by id rather
-            // than append.
-            const existing = prev.completedItems.findIndex(
-              (i) => i.id === event.mealItemId
-            );
-            const next: MealItem = { ...event.item, id: event.mealItemId };
-            if (existing >= 0) {
-              const updated = [...prev.completedItems];
-              updated[existing] = next;
-              return { ...prev, completedItems: updated };
-            }
-            return {
-              ...prev,
-              completedItems: [...prev.completedItems, next],
-            };
-          }
-
-          case 'result':
-            return { ...prev, result: event.data };
-
-          case 'cheat_estimate':
-            // A clarifying-question spec ends the stream with no
-            // analysis_complete (client must re-ask), so settle isAnalyzing
-            // here. A full spec keeps streaming until analysis_complete.
-            return event.spec.clarifyingQuestion
-              ? {
-                  ...prev,
-                  cheatSpec: event.spec,
-                  status: 'done',
-                  isAnalyzing: false,
-                }
-              : { ...prev, cheatSpec: event.spec };
-
-          case 'analysis_complete':
-            return {
-              ...prev,
-              status: 'done',
-              analysisId: event.analysisId,
-              isAnalyzing: false,
-            };
-
-          case 'error':
-            return {
-              ...prev,
-              status: 'error',
-              error: event.message,
-              isAnalyzing: false,
-            };
-
-          // Any event type this client does not consume (e.g. server frames
-          // added for other clients) is skipped without touching state.
-          default:
-            return prev;
-        }
-      });
+    (event: StreamEvent, thisRequestId: number) => {
+      if (thisRequestId !== requestIdRef.current) return;
+      setState((prev) => applyStreamEvent(prev, event));
     },
     []
   );
 
-  const analyze = useCallback(
-    async (input: StreamAnalyzeInput): Promise<boolean> => {
-      // Cancel any in-flight request
-      abortRef.current?.abort();
+  const fail = useCallback((error: string) => {
+    setState((prev) => ({
+      ...prev,
+      status: 'error',
+      error,
+      isAnalyzing: false,
+    }));
+  }, []);
 
-      const controller = new AbortController();
-      abortRef.current = controller;
-      const thisRequestId = ++requestIdRef.current;
-
-      setState({
-        ...INITIAL_STATE,
-        status: 'connecting',
-        isAnalyzing: true,
-      });
-
+  /**
+   * One POST and the stream it opens. Once consent was granted in this attempt
+   * (`consentGranted`), a consent refusal is an ordinary error: asking again
+   * could loop, and settling it as "Not now" would drop the meal silently.
+   */
+  const send = useCallback(
+    async (
+      input: StreamAnalyzeInput,
+      controller: AbortController,
+      thisRequestId: number,
+      consentGranted: boolean
+    ): Promise<SendOutcome> => {
       // Inactivity watchdog — hoisted so catch/finally can read/clear it.
       let receivedTerminal = false;
       // Whether the analysis DURABLY staged (an `analysis_complete` arrived), as
@@ -221,6 +145,13 @@ export function useStreamAnalysis() {
           controller.abort();
         }, INACTIVITY_MS);
       };
+      const consume = (events: StreamEvent[]) => {
+        for (const event of events) {
+          if (isTerminalEvent(event)) receivedTerminal = true;
+          if (event.type === 'analysis_complete') durablyStaged = true;
+          processEvent(event, thisRequestId);
+        }
+      };
 
       try {
         const response = await fetch('/api/analyze-meal', {
@@ -231,50 +162,34 @@ export function useStreamAnalysis() {
         });
 
         // Stale request check
-        if (thisRequestId !== requestIdRef.current) return false;
+        if (thisRequestId !== requestIdRef.current) return 'notStaged';
 
-        // Non-200 responses come as JSON (pre-stream validation errors)
-        // Error body may be structured { error: { code, message, ... } } or legacy { error: "string" }
+        // Non-200 responses come as JSON (pre-stream validation errors).
         if (!response.ok) {
           const body = await response.json().catch(() => null);
-          const errorMsg =
-            typeof body?.error === 'string'
-              ? body.error
-              : (body?.error?.message ?? `Request failed (${response.status})`);
-
-          // A pre-stream 402 means the AI-analysis feature is locked. Surface a
-          // distinct state so the logging surface opens the paywall rather than
-          // showing a generic error toast. Keyed on the HTTP status; the body
-          // (code 'feature_locked', feature, reason) is parsed defensively but
-          // the status alone is authoritative.
-          if (response.status === 402) {
-            setState((prev) => ({
-              ...prev,
-              status: 'paymentRequired',
-              error: errorMsg,
-              isAnalyzing: false,
-            }));
-            return false;
+          const refusal = classifyPreStreamRefusal(response.status, body);
+          // The consent refusal is the caller's to settle: it may re-ask and
+          // re-send, so nothing is committed to state here.
+          if (refusal === 'consentRequired' && !consentGranted) {
+            return 'consentRequired';
           }
-
+          const error = preStreamErrorMessage(response.status, body);
+          // A pre-stream 402 means the AI-analysis feature is locked: a
+          // distinct state so the logging surface opens the paywall rather
+          // than showing a generic error toast.
           setState((prev) => ({
             ...prev,
-            status: 'error',
-            error: errorMsg,
+            status: refusal === 'paymentRequired' ? 'paymentRequired' : 'error',
+            error,
             isAnalyzing: false,
           }));
-          return false;
+          return 'notStaged';
         }
 
         const reader = response.body?.getReader();
         if (!reader) {
-          setState((prev) => ({
-            ...prev,
-            status: 'error',
-            error: 'No response stream available',
-            isAnalyzing: false,
-          }));
-          return false;
+          fail('No response stream available');
+          return 'notStaged';
         }
 
         const decoder = new TextDecoder('utf-8');
@@ -289,36 +204,19 @@ export function useStreamAnalysis() {
           // Stale request check
           if (thisRequestId !== requestIdRef.current) {
             reader.cancel();
-            return false;
+            return 'notStaged';
           }
 
-          const chunk = decoder.decode(value, { stream: true });
-          const events = parseSSEChunk(chunk, buffer);
-
-          for (const event of events) {
-            if (isTerminalEvent(event)) {
-              receivedTerminal = true;
-            }
-            if (event.type === 'analysis_complete') durablyStaged = true;
-            processEvent(event, thisRequestId, requestIdRef);
-          }
-
+          consume(
+            parseSSEChunk(decoder.decode(value, { stream: true }), buffer)
+          );
           // Frame arrived — reset (or, once terminal, retire) the watchdog.
           armWatchdog();
         }
 
         // Flush any remaining data in decoder
         const finalChunk = decoder.decode();
-        if (finalChunk) {
-          const events = parseSSEChunk(finalChunk, buffer);
-          for (const event of events) {
-            if (isTerminalEvent(event)) {
-              receivedTerminal = true;
-            }
-            if (event.type === 'analysis_complete') durablyStaged = true;
-            processEvent(event, thisRequestId, requestIdRef);
-          }
-        }
+        if (finalChunk) consume(parseSSEChunk(finalChunk, buffer));
 
         // If stream ended without a terminal event, treat as error
         if (
@@ -326,48 +224,75 @@ export function useStreamAnalysis() {
           thisRequestId === requestIdRef.current &&
           !controller.signal.aborted
         ) {
-          setState((prev) => ({
-            ...prev,
-            status: 'error',
-            error: 'Analysis stream ended unexpectedly',
-            isAnalyzing: false,
-          }));
+          fail('Analysis stream ended unexpectedly');
         }
       } catch (error) {
         // Stale request — ignore
-        if (thisRequestId !== requestIdRef.current) return false;
+        if (thisRequestId !== requestIdRef.current) return 'notStaged';
 
         if (error instanceof DOMException && error.name === 'AbortError') {
           // The watchdog aborted a silent, un-terminated stream — surface it as
           // a retryable timeout. A user-initiated cancel() leaves timedOut
           // false and stays silent.
-          if (timedOut) {
-            setState((prev) => ({
-              ...prev,
-              status: 'error',
-              error: 'Analysis timed out. Please try again.',
-              isAnalyzing: false,
-            }));
-          }
-          return false;
+          if (timedOut) fail('Analysis timed out. Please try again.');
+          return 'notStaged';
         }
 
-        setState((prev) => ({
-          ...prev,
-          status: 'error',
-          error:
-            error instanceof Error ? error.message : 'Failed to analyze meal',
-          isAnalyzing: false,
-        }));
+        fail(error instanceof Error ? error.message : 'Failed to analyze meal');
       } finally {
         clearWatchdog();
       }
-      // Reached only on the normal (non-early-return) completion path. True only
-      // if an `analysis_complete` arrived; error/clarify/unexpected-end leave it
-      // false so a combined relog submit keeps its staged picks.
-      return durablyStaged;
+      // True only if an `analysis_complete` arrived; error/clarify/unexpected
+      // end leave it false so a combined relog submit keeps its staged picks.
+      return durablyStaged ? 'staged' : 'notStaged';
     },
-    [processEvent]
+    [fail, processEvent]
+  );
+
+  const analyze = useCallback(
+    async (input: StreamAnalyzeInput): Promise<AnalyzeOutcome> => {
+      // Cancel any in-flight request
+      abortRef.current?.abort();
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const thisRequestId = ++requestIdRef.current;
+      const isCurrent = () =>
+        thisRequestId === requestIdRef.current && !controller.signal.aborted;
+
+      setState({
+        ...INITIAL_STREAM_STATE,
+        status: 'connecting',
+        isAnalyzing: true,
+      });
+
+      // "Not now": nothing was sent. The caller takes back whatever it put on
+      // screen for this request; the state says why.
+      const declined = (): AnalyzeOutcome => {
+        if (!isCurrent()) return 'notStaged';
+        setState({ ...INITIAL_STREAM_STATE, status: 'consentRequired' });
+        return 'consentDeclined';
+      };
+
+      // Nothing reaches the AI provider before the user has agreed. Read
+      // before asking: not on record means a "true" is a "Continue" just now.
+      const askedNow = !aiConsent.consented;
+      if (!(await aiConsent.ensure())) return declined();
+      if (!isCurrent()) return 'notStaged';
+
+      const outcome = await send(input, controller, thisRequestId, askedNow);
+      if (outcome !== 'consentRequired') return outcome;
+      // The server has no consent on record — withdrawn on another device, or
+      // this page was stale. Ask once more: "Continue" re-sends this same
+      // request, "Not now" ends here without asking again.
+      if (!isCurrent()) return 'notStaged';
+      if (!(await aiConsent.onRequired())) return declined();
+      if (!isCurrent()) return 'notStaged';
+      const resent = await send(input, controller, thisRequestId, true);
+      // Unreachable: with consent granted, a refusal already failed as error.
+      return resent === 'consentRequired' ? 'notStaged' : resent;
+    },
+    [aiConsent, send]
   );
 
   return {

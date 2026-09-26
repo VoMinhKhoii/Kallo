@@ -64,8 +64,11 @@ class ComposerSubmitter {
       freeText: composer.freeText,
     );
     switch (plan) {
+      // Both AI-bearing shapes ask for AI-processing consent inside the run
+      // (App Store 5.1.2(i)); the composer is untouched until it starts, so
+      // "Not now" loses nothing.
       case PlainAnalysis(:final text):
-        run.startPlain(ref, userId: userId, date: date, text: text);
+        run.startPlain(context, ref, userId: userId, date: date, text: text);
       case PureRelog(:final refs, :final stageIds):
         if (_staging) return;
         unawaited(
@@ -88,6 +91,7 @@ class ComposerSubmitter {
         );
       case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
         run.startCombined(
+          context,
           ref,
           userId: userId,
           date: date,

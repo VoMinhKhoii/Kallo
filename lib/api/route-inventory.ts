@@ -71,6 +71,7 @@ export const routeInventory = {
   ],
   'api/v1/account/entitlements/route.ts': ['session', false, 'none-cheap'],
   'api/v1/account/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],
   'api/v1/barcode/search/route.ts': ['session', false, 'barcodeSearch'],
   'api/v1/chat-groups/[groupId]/feed/route.ts': [
@@ -177,6 +178,11 @@ export const routeInventory = {
   'api/v1/notifications/read/route.ts': ['session', true, 'none-cheap'],
   'api/v1/notifications/route.ts': ['session', false, 'none-cheap'],
   'api/v1/notifications/seen/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/nutrition-label/images/[imageId]/route.ts': [
+    'session',
+    false,
+    'labelImageView',
+  ],
   'api/v1/nutrition-label/log/route.ts': ['session', true, 'none-cheap'],
   'api/v1/nutrition-label/scan/route.ts': ['session', true, 'ocr-guard'],
   'api/v1/nutrition/candidates/route.ts': [
@@ -190,6 +196,7 @@ export const routeInventory = {
   'api/v1/onboarding/nudge/restore/route.ts': ['session', false, 'none-cheap'],
   'api/v1/onboarding/profile/route.ts': ['session', false, 'none-cheap'],
   'api/v1/onboarding/screen/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/profile/ai-consent/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/sharing/route.ts': ['session', true, 'none-cheap'],
   'api/v1/waitlist/confirm/route.ts': ['none', false, 'waitlistConfirmIp'],

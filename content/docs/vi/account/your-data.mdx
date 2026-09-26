@@ -16,11 +16,14 @@ lastUpdated: '2026-09-25'
 - **Thói quen nấu ăn** — dầu, khẩu phần mặc định, nước dùng.
 - **Nhật ký bữa ăn** — câu bạn viết, các món, khối lượng và 28 chỉ số dinh
   dưỡng.
-- **Ảnh nhãn dinh dưỡng** — mỗi nhãn bạn quét, lưu ở kho riêng tư, kèm những
-  gì Kallo đọc được và các giá trị bạn đã lưu.
 - **Cân nặng theo thời gian.**
 - **Nội dung Vòng kết nối** — bạn bè, bữa ăn chia sẻ, tin nhắn.
 - **Góp ý** — nội dung và ảnh chụp màn hình bạn gửi.
+- **Ảnh quét nhãn dinh dưỡng** — từng ảnh nhãn bạn quét, những gì Kallo đọc
+  được (hoặc lý do không đọc được), và các giá trị bạn đã lưu. Ảnh được lưu
+  sau khi đã xóa thông tin vị trí và thông tin máy ảnh. Chỉ bạn và đội ngũ Kallo
+  xem được, để kiểm tra và cải thiện việc đọc nhãn; chúng được giữ
+  đến khi bạn xóa tài khoản.
 - **Trạng thái thanh toán** — không bao giờ có số thẻ.
 
 ## Cái gì thực sự được gửi cho mô hình AI
@@ -78,7 +81,8 @@ web và trong ứng dụng di động. Tệp gồm:
 - **Hồ sơ Vòng kết nối** — tên người dùng (handle), tên hiển thị và thiết lập
   ảnh đại diện.
 - **Nhật ký bữa ăn** — mọi bữa ăn kèm các món và chỉ số dinh dưỡng, lịch sử cân
-  nặng, và những ngày bạn đánh dấu đã ghi đủ.
+  nặng, những ngày bạn đánh dấu đã ghi đủ, và các lần quét nhãn dinh dưỡng kèm
+  thứ đọc được và giá trị bạn đã lưu.
 - **Vòng kết nối** — bạn bè (theo handle, kèm thời điểm kết bạn được chấp
   nhận), các bữa ăn bạn chia sẻ, lượt thả cảm xúc và trả lời bạn để lại, các
   bữa ăn bạn gửi hoặc nhận để sao chép hay chia phần, và hoạt động Vòng kết nối
@@ -92,9 +96,8 @@ web và trong ứng dụng di động. Tệp gồm:
 - **Hoạt động trong ứng dụng** — các yêu cầu phân tích bữa ăn còn lưu (giữ
   khoảng một tuần), các phân tích chưa lưu, nguyên liệu mà cơ sở dữ liệu thực
   phẩm không khớp được, và sự kiện phân tích sản phẩm gắn với tài khoản.
-- **Tệp** — ảnh đại diện bạn tải lên và ảnh chụp màn hình trong góp ý, được liệt
-  kê theo vị trí lưu trữ, cùng ảnh nhãn dinh dưỡng, được liệt kê theo mã định
-  danh, ngày và bữa ăn liên quan. Bản thân hình ảnh không nằm trong tệp.
+- **Tệp** — ảnh đại diện bạn tải lên, ảnh chụp màn hình trong góp ý và ảnh nhãn
+  dinh dưỡng bạn đã quét, được liệt kê theo vị trí lưu trữ. Bản thân hình ảnh không nằm trong tệp.
 
 Nội dung của người khác không nằm trong tệp: bạn nhận tin nhắn, trả lời và cảm
 xúc của chính mình, không phải của họ. Các quan hệ bạn bè đã bị chặn cũng không

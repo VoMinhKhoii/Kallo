@@ -29,6 +29,8 @@ const DEFAULT_MESSAGES = {
   rateLimiterUnavailable:
     'The service is temporarily unavailable. Please try again shortly.',
   featureLocked: 'Upgrade to keep using this feature.',
+  aiConsentRequired:
+    'Allow Kallo to send this to its AI provider before using AI features.',
   internal: 'Something went wrong. Please try again.',
 } as const;
 
@@ -106,6 +108,18 @@ export const Errors = {
       feature,
       reason,
       message ?? DEFAULT_MESSAGES.featureLocked
+    ),
+
+  // The user has not agreed (or has withdrawn) to their meal text / label
+  // photos going to the third-party AI (App Store 5.1.2(i)). 403, not 402:
+  // no plan unlocks it, only the user's own consent. Not retryable — the same
+  // request fails again until the consent sheet has been accepted.
+  aiConsentRequired: (message?: string) =>
+    new AppError(
+      'ai_consent_required',
+      403,
+      false,
+      message ?? DEFAULT_MESSAGES.aiConsentRequired
     ),
 
   internal: (cause?: unknown, message?: string) =>

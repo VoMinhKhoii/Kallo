@@ -13,6 +13,16 @@ const mocks = vi.hoisted(() => ({
   stopCamera: vi.fn(),
 }));
 
+// The consent gate itself lives in `useNutritionOcr` (mocked below); the tab
+// only hands it over.
+vi.mock('@/components/privacy/ai-consent-provider', () => ({
+  useAiConsent: () => ({
+    consented: true,
+    gate: { ensure: vi.fn(), onRequired: vi.fn() },
+    setConsent: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => ({
   useNutritionOcr: () => ({
     scanLabel: mocks.scanLabel,
@@ -117,7 +127,9 @@ describe('OcrScannerTab lifecycle', () => {
     );
     selectFile(container, 'label.png');
 
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    });
     expect(mocks.scanLabel).toHaveBeenCalledOnce();
     unmount();
     await act(async () => {
@@ -126,5 +138,22 @@ describe('OcrScannerTab lifecycle', () => {
     });
 
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('keeps the photo and reviews nothing when the scan was declined', async () => {
+    // A null scan: "Not now" to AI processing, nothing was sent.
+    mocks.scanLabel.mockResolvedValueOnce(null);
+    const onSuccess = vi.fn();
+    const { container } = render(
+      <OcrScannerTab onSuccess={onSuccess} onManualEntry={vi.fn()} />
+    );
+    selectFile(container, 'label.png');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    });
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'submit' })).toBeInTheDocument();
   });
 });

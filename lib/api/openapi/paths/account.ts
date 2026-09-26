@@ -1,4 +1,5 @@
 import {
+  aiConsentSchema,
   profileSettingsSchema,
   sharingPreferencesSchema,
 } from '@/lib/api/contracts/onboarding';
@@ -9,6 +10,7 @@ import {
   type PathItem,
   ref,
 } from '@/lib/api/openapi/components';
+import { appleTokenLinkBodySchema } from '@/lib/domain/apple-sign-in/contracts';
 
 const TAGS = ['Account'];
 
@@ -31,6 +33,30 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
         'Schedules deletion of the account and everything under it. Irreversible once it runs; an hourly job completes any that fail on the first attempt.',
       tags: TAGS,
       ok: ref('Acknowledgement'),
+    }),
+  },
+
+  '/api/v1/auth/apple/token': {
+    post: authed({
+      operationId: 'linkAppleToken',
+      summary: 'Hand over a Sign in with Apple authorization code',
+      description:
+        'Call right after a native Sign in with Apple, with the `authorizationCode` from the credential. The server exchanges it with Apple for a refresh token and keeps it encrypted, solely so that deleting the account revokes the Apple authorization. The code must belong to the caller’s own linked Apple identity (409 `CONFLICT` otherwise, or when the account has no Apple identity); an expired or reused code is a 400 `VALIDATION_FAILED`. `stored: false` means this deployment has no Apple credentials configured. Fire-and-forget: a client must never block or fail sign-in on this call.',
+      tags: TAGS,
+      body: fromZod(appleTokenLinkBodySchema),
+      ok: {
+        type: 'object',
+        properties: { stored: { type: 'boolean' } },
+        required: ['stored'],
+      },
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        '409': {
+          description:
+            'The code belongs to a different Apple identity, or the account has none (`CONFLICT`).',
+          content: { 'application/json': { schema: ref('Error') } },
+        },
+      },
     }),
   },
 
@@ -90,6 +116,30 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(sharingPreferencesSchema),
       ok: ref('Acknowledgement'),
+    }),
+  },
+
+  '/api/v1/profile/ai-consent': {
+    put: authed({
+      operationId: 'updateAiProcessingConsent',
+      summary: 'Grant or withdraw consent to third-party AI processing',
+      description:
+        'Meal descriptions, nutrition-label photos and ingredient search text are sent to Google Gemini (Vertex AI) to estimate nutrition. `consented: true` records the consent (now); `false` withdraws it. While no consent is recorded, `POST /api/analyze-meal` and `POST /api/v1/nutrition-label/scan` answer 403 `ai_consent_required`, and ingredient search skips live embedding calls.',
+      tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      body: fromZod(aiConsentSchema),
+      ok: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['aiProcessingConsentedAt'],
+        properties: {
+          aiProcessingConsentedAt: {
+            type: ['string', 'null'],
+            format: 'date-time',
+            description: 'When consent was recorded; null after a withdrawal.',
+          },
+        },
+      },
     }),
   },
 };

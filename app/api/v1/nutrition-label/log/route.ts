@@ -1,9 +1,10 @@
-import type { NextRequest } from 'next/server';
+import { after, type NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { readJsonBody } from '@/lib/api/auth';
 import { logNutritionLabelMealSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { linkLabelImageToMeal } from '@/lib/domain/nutrition/label-images/label-images';
 import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapNutritionLabelError } from '../_errors';
@@ -38,6 +39,15 @@ export async function POST(req: NextRequest) {
       analysisId,
       mealId: body.mealId,
     });
+    // Link the kept scan to this meal with the values the user saved — after
+    // the response, so saving takes no longer than it did. Best-effort and
+    // owner-scoped: an id that is not the caller's is ignored.
+    const { labelImageId } = body;
+    if (labelImageId) {
+      after(() =>
+        linkLabelImageToMeal(user.id, labelImageId, result.mealId, body)
+      );
+    }
     return Response.json(result);
   } catch (error) {
     return handleRouteError(mapNutritionLabelError(error));

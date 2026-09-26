@@ -10,6 +10,7 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { serializeError } from '@/lib/core/errors/serialize';
 import { db } from '@/lib/infra/db/client';
+import { getAiConsentError } from './_lib/ai-consent-access';
 import { acquireAnalysisGuard } from './_lib/analysis-guard';
 import { applyRelogRefs } from './_lib/apply-relog-refs';
 import { getBillingAccessError } from './_lib/billing-access';
@@ -67,12 +68,20 @@ async function startAnalysis(
     profile,
   } = validation.data;
 
+  const responseLocale = locale ?? profile.preferredLocale ?? 'en';
+
+  // Nothing reaches the AI provider without the user's recorded consent
+  // (App Store 5.1.2(i)). Checked first: no paywall, rate-limit slot or trace
+  // row for a request that must not be processed at all.
+  const consentError = await getAiConsentError(profile, responseLocale);
+  if (consentError) return consentError;
+
   // Fail before both provider spend and rate-limit consumption. The server's
   // entitlement state is authoritative; clients never self-grant access.
   const billingError = await getBillingAccessError({
     userId,
     profileCreatedAt: profile.createdAt,
-    locale: locale ?? profile.preferredLocale ?? 'en',
+    locale: responseLocale,
   });
   if (billingError) return billingError;
 
@@ -84,11 +93,7 @@ async function startAnalysis(
     requestLocale: locale,
     profileLocale: profile.preferredLocale,
   });
-  const guard = await acquireAnalysisGuard(
-    request,
-    userId,
-    locale ?? profile.preferredLocale ?? 'en'
-  );
+  const guard = await acquireAnalysisGuard(request, userId, responseLocale);
   if (!guard.allowed) return guard.error;
   const releaseGuard = createGuardRelease(guard.release);
   pending.release = releaseGuard;

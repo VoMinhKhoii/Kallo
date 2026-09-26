@@ -248,6 +248,49 @@ void main() {
       expect(json.containsKey('ironMg'), isFalse);
       expect(json['mealId'], isA<String>());
       expect(json['loggedDate'], '2026-07-02');
+      // The scan reply kept no photo, so there is nothing to link.
+      expect(json.containsKey('labelImageId'), isFalse);
+    });
+
+    test('carries the kept photo id from the scan into the log', () async {
+      const labelImageId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+      await notifier().pickImage(ImageSource.camera);
+      api.handler =
+          (_, __, ___) => <String, dynamic>{
+            'label': _labelJson,
+            'labelImageId': labelImageId,
+          };
+      await notifier().scan();
+      expect(state().labelImageId, labelImageId);
+
+      api.handler = (_, __, ___) => <String, dynamic>{'mealId': 'meal-1'};
+      final saved = await notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        review: reviewFor(state()),
+      );
+
+      expect(saved, isTrue);
+      final logRequest = api.requests.firstWhere(
+        (request) => request.$2 == '/api/v1/nutrition-label/log',
+      );
+      final json = logRequest.$3! as Map<String, dynamic>;
+      expect(json['labelImageId'], labelImageId);
+    });
+
+    test("a new photo drops the previous scan's photo id", () async {
+      await notifier().pickImage(ImageSource.camera);
+      api.handler =
+          (_, __, ___) => <String, dynamic>{
+            'label': _labelJson,
+            'labelImageId': '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+          };
+      await notifier().scan();
+
+      notifier().retake();
+      expect(state().labelImageId, isNull);
+      await notifier().pickImage(ImageSource.camera);
+      expect(state().labelImageId, isNull);
     });
 
     test('refuses to post a review that cannot be confirmed', () async {
@@ -487,6 +530,28 @@ void main() {
         LabelImageFailure.unsupported,
       );
       expect(File('$path.shrunk.jpg').existsSync(), isFalse);
+    });
+  });
+
+  group('labelImageUrl', () {
+    test('asks for the signed URL of one kept photo', () async {
+      api.handler =
+          (_, __, ___) => <String, dynamic>{
+            'url': 'https://storage.example/signed',
+            'expiresAt': '2026-09-25T12:10:00.000Z',
+          };
+
+      final view = await api.labelImageUrl(
+        '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+      );
+
+      expect(api.requests.single, (
+        'GET',
+        '/api/v1/nutrition-label/images/7c9e6679-7425-40de-944b-e07fc1f90ae7',
+        null,
+      ));
+      expect(view.url, 'https://storage.example/signed');
+      expect(view.expiresAt, DateTime.utc(2026, 9, 25, 12, 10));
     });
   });
 }
