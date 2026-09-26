@@ -29,8 +29,8 @@ is handled by Supabase Auth.
 If you sign in with Apple in the iOS app, we also store an **encrypted Apple
 refresh token**. We use it for one thing only: revoking Kallo's access at Apple
 when you delete your account. Deletion revokes it and then deletes it; if Apple
-cannot be reached at that moment, we keep retrying until the revocation goes
-through. If you signed in with Apple on the web, that token is held by our
+cannot be reached at that moment, we retry automatically every hour, and our
+team follows up on any revocation that still fails. If you signed in with Apple on the web, that token is held by our
 authentication provider and we cannot revoke it; you can remove Kallo in your
 Apple Account settings under **Sign in with Apple**.
 
@@ -70,10 +70,10 @@ nutrient values computed for each meal and each item.
 ### Nutrition label photos
 
 The photo of each nutrition label you scan, stored in a private bucket and
-linked to your account, and to the meal if you save it. With it we keep the scan
-outcome — what Kallo read from the label, or the error if reading failed, which
-model read it and how long it took — and, if you save the meal, the values you
-saved. See section 3.
+linked to your account, and to the meal when you save it in the iOS app. With it
+we keep the scan outcome — what Kallo read from the label, or the error if
+reading failed, which model read it and how long it took — and, when you save the
+meal in the iOS app, the values you saved. See section 3.
 
 ### Weight over time
 
@@ -137,7 +137,7 @@ When you request a meal analysis, the AI model receives **only**:
 - Your cooking habits.
 - The language you want the result in.
 
-When you scan a nutrition label, the model receives **only the photo** you took.
+When you scan a nutrition label, the model receives **only the photo** you scan.
 We also store that photo in a private storage bucket, linked to your account
 and, when you save the meal in the iOS app, to that meal. Before storing it we
 re-encode it on our servers, which strips embedded metadata such as location.
@@ -237,7 +237,7 @@ advertising.
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
 | Cloudflare | Content delivery, attack protection | Request metadata, IP address |
-| Resend | Authentication and notification email | Email address, message content |
+| Resend | Authentication and notification email; content-report alerts to our team | Email address, message content; the details of reports you file |
 | RevenueCat | Cross-platform subscription state | Account identifier, purchase metadata |
 | Apple App Store, Google Play | In-app payments | Your payment details, held by the store |
 | Stripe (via RevenueCat Billing) | Web payments | Payment details |
@@ -284,8 +284,10 @@ connection and deletes the notifications between the two of you.
 You can also **report** content or a profile. A report stores who filed it, what
 was reported (its type and identifier, and the person it belongs to), the reason,
 any note you add, and its review status. The Kallo team reviews every report and
-aims to respond within 24 hours. We keep a report until it is resolved, and it is
-deleted when your account is deleted. To follow up, write to us in **Settings →
+aims to act on it within 24 hours. We keep a report as a moderation record,
+including after it is resolved, until your account is deleted. When you file a
+report, an alert with its details is emailed to the Kallo team and may remain in
+our team mailbox. To follow up, write to us in **Settings →
 Feedback**.
 
 ## 7. Retention and deletion

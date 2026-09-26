@@ -31,7 +31,8 @@ Nếu bạn đăng nhập bằng Apple trong ứng dụng iOS, chúng tôi lưu 
 mới (refresh token) của Apple đã được mã hóa**. Mã này chỉ dùng vào một việc: thu
 hồi quyền truy cập của Kallo phía Apple khi bạn xóa tài khoản. Khi xóa tài khoản,
 chúng tôi thu hồi mã rồi xóa nó; nếu lúc đó chưa liên lạc được với Apple, chúng
-tôi sẽ thử lại cho tới khi thu hồi thành công. Nếu bạn đăng nhập bằng Apple trên
+tôi tự động thử lại mỗi giờ, và đội ngũ của chúng tôi sẽ xử lý tiếp mọi trường
+hợp vẫn chưa thu hồi được. Nếu bạn đăng nhập bằng Apple trên
 web, mã đó do nhà cung cấp dịch vụ xác thực của chúng tôi giữ và chúng tôi không
 thu hồi được; bạn có thể gỡ Kallo trong phần cài đặt Tài khoản Apple, mục **Đăng
 nhập bằng Apple**.
@@ -73,10 +74,10 @@ bữa và từng món.
 ### Ảnh nhãn dinh dưỡng
 
 Ảnh của mỗi nhãn dinh dưỡng bạn quét, lưu trong kho riêng tư và gắn với tài
-khoản của bạn, cũng như với bữa ăn nếu bạn lưu bữa đó. Kèm theo ảnh, chúng tôi
-lưu kết quả quét: những gì Kallo đọc được từ nhãn, hoặc lỗi nếu đọc thất bại, mô
-hình nào đã đọc và mất bao lâu; nếu bạn lưu bữa ăn, lưu cả các giá trị bạn đã
-lưu. Xem mục 3.
+khoản của bạn, cũng như với bữa ăn khi bạn lưu bữa đó trong ứng dụng iOS. Kèm
+theo ảnh, chúng tôi lưu kết quả quét: những gì Kallo đọc được từ nhãn, hoặc lỗi
+nếu đọc thất bại, mô hình nào đã đọc và mất bao lâu; khi bạn lưu bữa ăn trong ứng
+dụng iOS, lưu cả các giá trị bạn đã lưu. Xem mục 3.
 
 ### Cân nặng theo thời gian
 
@@ -142,7 +143,7 @@ Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận đư�
 - Thói quen nấu ăn của bạn.
 - Ngôn ngữ bạn muốn nhận kết quả.
 
-Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** bạn vừa chụp. Chúng
+Khi bạn quét nhãn dinh dưỡng, mô hình **chỉ nhận tấm ảnh** nhãn bạn quét. Chúng
 tôi cũng lưu ảnh đó trong một kho lưu trữ riêng tư, gắn với tài khoản của bạn và,
 khi bạn lưu bữa ăn trong ứng dụng iOS, gắn với bữa đó. Trước khi lưu, máy chủ của
 chúng tôi mã hóa lại ảnh, nhờ đó loại bỏ siêu dữ liệu đi kèm như vị trí. Kèm theo
@@ -248,7 +249,7 @@ thứ ba làm quảng cáo.
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
 | Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
-| Resend | Gửi email xác thực và thông báo | Địa chỉ email, nội dung email |
+| Resend | Gửi email xác thực và thông báo; báo cáo nội dung gửi tới đội ngũ | Địa chỉ email, nội dung email; chi tiết báo cáo bạn gửi |
 | RevenueCat | Quản lý quyền đăng ký đa nền tảng | Mã tài khoản, siêu dữ liệu giao dịch |
 | Apple App Store, Google Play | Thanh toán trong ứng dụng | Thông tin thanh toán của bạn với cửa hàng |
 | Stripe (qua RevenueCat Billing) | Thanh toán trên web | Thông tin thanh toán |
@@ -298,8 +299,10 @@ kết nối giữa hai người trong Vòng kết nối và xóa các thông bá
 Bạn cũng có thể **báo cáo** một nội dung hoặc một hồ sơ. Mỗi báo cáo lưu lại ai
 gửi, nội dung nào bị báo cáo (loại, mã định danh và người sở hữu nội dung đó), lý
 do, ghi chú nếu bạn thêm, và trạng thái xử lý. Đội ngũ Kallo xem xét từng báo cáo
-và cố gắng phản hồi trong vòng 24 giờ. Chúng tôi giữ báo cáo cho tới khi xử lý
-xong, và báo cáo bị xóa khi tài khoản của bạn bị xóa. Nếu muốn trao đổi thêm, hãy
+và cố gắng xử lý trong vòng 24 giờ. Chúng tôi giữ báo cáo như một bản ghi kiểm
+duyệt, kể cả sau khi đã xử lý xong, cho tới khi tài khoản của bạn bị xóa. Khi bạn
+gửi báo cáo, một thông báo kèm chi tiết báo cáo được gửi qua email tới đội ngũ
+Kallo và có thể vẫn nằm trong hộp thư của đội ngũ. Nếu muốn trao đổi thêm, hãy
 nhắn cho chúng tôi trong **Cài đặt → Góp ý**.
 
 ## 7. Lưu trữ và xóa dữ liệu
