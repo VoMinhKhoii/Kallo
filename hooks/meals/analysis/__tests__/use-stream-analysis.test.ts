@@ -32,8 +32,11 @@ const staged = () =>
     { status: 200 }
   );
 
-function gate(answers: { ensure?: boolean; onRequired?: boolean } = {}) {
+function gate(
+  answers: { consented?: boolean; ensure?: boolean; onRequired?: boolean } = {}
+) {
   return {
+    consented: answers.consented ?? true,
     ensure: vi.fn(async () => answers.ensure ?? true),
     onRequired: vi.fn(async () => answers.onRequired ?? false),
   } satisfies AiConsentGate;
@@ -129,16 +132,35 @@ describe('useStreamAnalysis — the AI-processing consent gate', () => {
     expect(state.analysisId).toBe('analysis-1');
   });
 
-  it('never loops: a second refusal after "Continue" ends as declined', async () => {
+  it('never loops: a second refusal after "Continue" is an error, not a decline', async () => {
     fetchMock
       .mockResolvedValueOnce(consentRefusal())
       .mockResolvedValueOnce(consentRefusal());
     const aiConsent = gate({ onRequired: true });
 
-    const { outcome } = await analyzeWith(aiConsent);
+    const { outcome, state } = await analyzeWith(aiConsent);
 
     expect(aiConsent.onRequired).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(outcome).toBe('consentDeclined');
+    // Not `consentDeclined`: that takes the meal back off the screen as if
+    // the user had said "Not now". An error keeps it, with the toast.
+    expect(outcome).toBe('notStaged');
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('Allow AI processing first.');
+  });
+
+  it('a refusal right after the first "Continue" is an error, with no re-ask', async () => {
+    fetchMock.mockResolvedValueOnce(consentRefusal());
+    // Not on record, so `ensure()` asked and the user tapped "Continue".
+    const aiConsent = gate({ consented: false, ensure: true });
+
+    const { outcome, state } = await analyzeWith(aiConsent);
+
+    expect(aiConsent.ensure).toHaveBeenCalledOnce();
+    expect(aiConsent.onRequired).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(outcome).toBe('notStaged');
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('Allow AI processing first.');
   });
 });

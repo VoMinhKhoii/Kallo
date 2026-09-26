@@ -9,6 +9,11 @@
  */
 export interface AiConsentGate {
   /**
+   * Whether consent is on record as far as this page knows — false means
+   * `ensure()` will ask, so a "true" from it is consent granted just now.
+   */
+  consented: boolean;
+  /**
    * Resolve true when consent is on record — asking first when it is not.
    * False means the user chose "Not now": send nothing.
    */

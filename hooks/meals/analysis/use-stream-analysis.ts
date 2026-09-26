@@ -110,12 +110,17 @@ export function useStreamAnalysis({
     }));
   }, []);
 
-  /** One POST and the stream it opens. */
+  /**
+   * One POST and the stream it opens. Once consent was granted in this attempt
+   * (`consentGranted`), a consent refusal is an ordinary error: asking again
+   * could loop, and settling it as "Not now" would drop the meal silently.
+   */
   const send = useCallback(
     async (
       input: StreamAnalyzeInput,
       controller: AbortController,
-      thisRequestId: number
+      thisRequestId: number,
+      consentGranted: boolean
     ): Promise<SendOutcome> => {
       // Inactivity watchdog — hoisted so catch/finally can read/clear it.
       let receivedTerminal = false;
@@ -165,7 +170,9 @@ export function useStreamAnalysis({
           const refusal = classifyPreStreamRefusal(response.status, body);
           // The consent refusal is the caller's to settle: it may re-ask and
           // re-send, so nothing is committed to state here.
-          if (refusal === 'consentRequired') return 'consentRequired';
+          if (refusal === 'consentRequired' && !consentGranted) {
+            return 'consentRequired';
+          }
           const error = preStreamErrorMessage(response.status, body);
           // A pre-stream 402 means the AI-analysis feature is locked: a
           // distinct state so the logging surface opens the paywall rather
@@ -267,21 +274,23 @@ export function useStreamAnalysis({
         return 'consentDeclined';
       };
 
-      // Nothing reaches the AI provider before the user has agreed.
+      // Nothing reaches the AI provider before the user has agreed. Read
+      // before asking: not on record means a "true" is a "Continue" just now.
+      const askedNow = !aiConsent.consented;
       if (!(await aiConsent.ensure())) return declined();
       if (!isCurrent()) return 'notStaged';
 
-      let outcome = await send(input, controller, thisRequestId);
-      if (outcome === 'consentRequired') {
-        // The server has no consent on record — withdrawn on another device,
-        // or this page was stale. Ask once more: "Continue" re-sends this same
-        // request, "Not now" ends here without asking again.
-        if (!isCurrent()) return 'notStaged';
-        if (!(await aiConsent.onRequired())) return declined();
-        if (!isCurrent()) return 'notStaged';
-        outcome = await send(input, controller, thisRequestId);
-      }
-      return outcome === 'consentRequired' ? declined() : outcome;
+      const outcome = await send(input, controller, thisRequestId, askedNow);
+      if (outcome !== 'consentRequired') return outcome;
+      // The server has no consent on record — withdrawn on another device, or
+      // this page was stale. Ask once more: "Continue" re-sends this same
+      // request, "Not now" ends here without asking again.
+      if (!isCurrent()) return 'notStaged';
+      if (!(await aiConsent.onRequired())) return declined();
+      if (!isCurrent()) return 'notStaged';
+      const resent = await send(input, controller, thisRequestId, true);
+      // Unreachable: with consent granted, a refusal already failed as error.
+      return resent === 'consentRequired' ? 'notStaged' : resent;
     },
     [aiConsent, send]
   );

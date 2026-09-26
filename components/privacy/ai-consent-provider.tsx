@@ -119,7 +119,7 @@ export function AiConsentProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ consented, gate: { ensure, onRequired }, setConsent }),
+    () => ({ consented, gate: { consented, ensure, onRequired }, setConsent }),
     [consented, ensure, onRequired, setConsent]
   );
 

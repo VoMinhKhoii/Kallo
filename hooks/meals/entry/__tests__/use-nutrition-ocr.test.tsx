@@ -25,6 +25,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 function gate(answers: { ensure?: boolean; onRequired?: boolean } = {}) {
   return {
+    consented: true,
     ensure: vi.fn(async () => answers.ensure ?? true),
     onRequired: vi.fn(async () => answers.onRequired ?? false),
   } satisfies AiConsentGate;
