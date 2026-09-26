@@ -301,6 +301,13 @@ leaving a live Kallo account after a later failure. RevenueCat `200`, queued
 customer deletion does not cancel Apple/Google store subscriptions, and must not
 be assumed to cancel the Paddle subscription either — see the note above.
 
+Sign in with Apple token revocation runs beside this, in its own outbox
+(`apple_token_revocations`), so neither can block the other: a revocation that
+can never succeed (lost key, revoked `.p8`) parks as `dead` after 10 hourly
+attempts while RevenueCat erasure proceeds, and a RevenueCat outage never delays
+the revocation. Setup and the web-OAuth limitation:
+[Google Cloud Run → Sign in with Apple token revocation](./GOOGLE_CLOUD_RUN.md#sign-in-with-apple-token-revocation-optional-until-configured).
+
 ## Pricing
 
 The stores own the numbers; the app never hardcodes a billed price (the web

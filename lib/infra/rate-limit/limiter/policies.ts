@@ -270,6 +270,15 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /** Sign in with Apple code exchange: one Apple round trip per call, and a
+   *  real client posts once per Apple sign-in. */
+  appleTokenLink: {
+    route: 'auth:apple:token',
+    limits: { perMinute: 5, perHour: 20, perDay: 50 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /**
    * Signed view URL for the owner's own nutrition-label photo. Each call is a
    * row read plus a Storage signing request; a person opens a handful, so the

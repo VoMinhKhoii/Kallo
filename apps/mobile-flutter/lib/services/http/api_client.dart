@@ -146,6 +146,15 @@ class ApiClient {
   /// which cascades to every app row. There is no undo.
   Future<void> deleteAccount() => delete<dynamic>('/api/v1/account');
 
+  /// Hand the server the authorization code from a native Sign in with Apple
+  /// (`POST /api/v1/auth/apple/token`) so deleting the account can revoke the
+  /// Apple authorization. Must be called while signed in — the server checks
+  /// the code belongs to the caller's own Apple identity.
+  Future<void> linkAppleAuthorizationCode(String authorizationCode) =>
+      post<dynamic>('/api/v1/auth/apple/token', {
+        'authorizationCode': authorizationCode,
+      });
+
   /// Fetch a complete JSON snapshot of the user's data
   /// (`GET /api/v1/account`): profile, meals (with items), weights, Circle,
   /// chats, notifications, feedback, billing and app activity. Treated as

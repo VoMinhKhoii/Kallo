@@ -78,6 +78,7 @@ code.
 | `barcodeSearch` | user | 30 / 300 / 1500 | degraded |
 | `avatarUpload` | user | 5 / 20 / 50 | degraded |
 | `feedbackScreenshot` | user | 5 / 20 / 50 | degraded |
+| `appleTokenLink` | user | 5 / 20 / 50 | degraded |
 | `labelImageView` | user | 30 / 300 / — | degraded |
 | `nutritionCandidates` | user | 30 / 300 / — | degraded |
 | `adminDebugAnalysis` | user | 3 / 20 / — | **closed** |
@@ -309,6 +310,7 @@ except invite lookup (IP) and the two global budgets.
 | Push fan-out — inside `sendNotificationPush` (both the notification path and `sendChatMessagePush`) | `pushGlobalHourly`, charged only once there are messages to send | `global:'push'` | **Skip, not block.** A block SKIPs the send and returns — the message/notification row is already committed, so the worst case is a dropped push, never a failed write. Caught locally, logged once per 30 s per instance, never propagated. Most events notify nobody with a registered device, so the charge happens AFTER `buildMessages`: charging before it made the hourly budget count recipients rather than pushes. |
 | `searchBarcodeAction` + `GET /api/v1/barcode/search` | `barcodeSearch` | `user` | Route → **429** + `Retry-After`. Web action → typed `{success:false, code:'rate_limited'}`. |
 | `POST /api/v1/feedback/screenshot` | `feedbackScreenshot` | `user` | **429** + `Retry-After`. Auth runs FIRST and the guard before `formData()`, so an anonymous or throttled caller never makes the server buffer the multipart body — the route previously read it before asking who was calling. A missing / non-numeric / oversized `Content-Length` is a 400 `VALIDATION_FAILED`, also pre-buffer. |
+| `POST /api/v1/auth/apple/token` | `appleTokenLink` | `user` | **429** + `Retry-After`, charged after auth and before the body is read or Apple is called. The iOS client fires this once per Apple sign-in and ignores the outcome, so a refusal never affects sign-in. |
 | `POST /api/v1/groups/profile/avatar` | `avatarUpload` | `user` | **429** + `Retry-After` (via `serializeError`), before the body is buffered. |
 | `GET /api/v1/groups/invite/{slug}` | `inviteLookupIp` | `ip` (skipped when null) | **429** + `Retry-After`. Anonymous viewers are allowed, so a null IP admits — the memory-only policy has nothing else to key on. |
 | `GET /auth/verify`, `GET /auth/callback` | `authLinkIp` | `ip` (skipped when null) | **A redirect, never JSON.** Both are browser navigations, so a block lands on the same `?error=verify_failed` / `?error=oauth_exchange` screen a failed verify or exchange already produces. |
