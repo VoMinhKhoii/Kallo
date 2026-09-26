@@ -23,16 +23,20 @@ export interface GeminiCallTrace {
   promptRendered: string;
 }
 
-export interface GeminiAttemptMetadata {
-  attempt: number;
-  model: string;
+/** Billable token counts one attempt reported; null where none were sent. */
+export interface AttemptTokens {
   inputTokens: number | null;
   /** Visible response tokens (`candidatesTokenCount`) — excludes thinking. */
   outputTokens: number | null;
-  /** Prompt tokens served from Gemini's cache, billed at the cached rate. */
-  cachedTokens?: number | null;
+  /** Subset of `inputTokens` served from the provider cache (cached rate). */
+  cachedTokens: number | null;
   /** Thinking tokens (`thoughtsTokenCount`), billed at the output rate. */
-  thoughtTokens?: number | null;
+  thoughtTokens: number | null;
+}
+
+export interface GeminiAttemptMetadata extends AttemptTokens {
+  attempt: number;
+  model: string;
   error: unknown;
 }
 

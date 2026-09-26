@@ -2,8 +2,9 @@
 -- table (one row per LLM attempt, plus one 0-token request-count row per meal
 -- analysis). Read-only; run with psql against the target project.
 --
--- Rates mirror lib/ai/cost/pricing.ts (USD per 1M tokens). Keep them in sync
--- when that file changes. Unknown models price as NULL, never as zero.
+-- Rates mirror lib/ai/cost/pricing.ts (USD per 1M tokens); pricing.test.ts
+-- fails if a rates block drifts from it. Unknown models price as NULL, never
+-- as zero.
 --
 --   cached_tokens  ⊂ input_tokens, billed at the cached rate
 --   thought_tokens   billed at the output rate, on top of output_tokens

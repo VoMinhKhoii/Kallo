@@ -1,3 +1,5 @@
+import type { AttemptTokens } from '@/lib/ai/provider/provider';
+
 /**
  * Live per-1M-token USD rates for the models we call, and the one function
  * that turns recorded token usage into dollars.
@@ -51,14 +53,9 @@ export const MODEL_RATES: Record<string, ModelRate> = {
   },
 };
 
-export interface TokenUsage {
+/** One attempt's token counts and the model that produced them. */
+export interface TokenUsage extends AttemptTokens {
   model: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  /** Subset of `inputTokens` served from cache. */
-  cachedTokens?: number | null;
-  /** Billed as output; Gemini reports it apart from `outputTokens`. */
-  thoughtTokens?: number | null;
 }
 
 /** USD for one call, or null when the model has no rate on file. */

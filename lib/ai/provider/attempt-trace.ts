@@ -1,6 +1,6 @@
 import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import type { PromptBudget } from '@/lib/ai/prompts/budget';
-import type { GeminiCallTrace, StreamOptions } from './types';
+import type { AttemptTokens, GeminiCallTrace, StreamOptions } from './types';
 
 /** The usage counters Gemini attaches to responses and streamed chunks. */
 export interface StreamUsageMetadata {
@@ -13,7 +13,7 @@ export interface StreamUsageMetadata {
 /** Billable token counts for one attempt, null where Gemini sent none. */
 export function readAttemptUsage(
   usage: StreamUsageMetadata | null | undefined
-) {
+): AttemptTokens {
   return {
     inputTokens: usage?.promptTokenCount ?? null,
     outputTokens: usage?.candidatesTokenCount ?? null,

@@ -14,13 +14,7 @@ import type { EvalCaseUsage } from './eval-types';
 const caseAttempts = new AsyncLocalStorage<TokenUsage[]>();
 
 function record(metadata: GeminiAttemptMetadata) {
-  caseAttempts.getStore()?.push({
-    model: metadata.model,
-    inputTokens: metadata.inputTokens,
-    outputTokens: metadata.outputTokens,
-    cachedTokens: metadata.cachedTokens,
-    thoughtTokens: metadata.thoughtTokens,
-  });
+  caseAttempts.getStore()?.push(metadata);
 }
 
 function chain(

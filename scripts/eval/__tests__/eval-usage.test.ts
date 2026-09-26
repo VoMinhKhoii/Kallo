@@ -17,6 +17,8 @@ function fakeClient(tokens: number): GeminiClient {
         model: 'gemini-3.1-flash-lite',
         inputTokens: tokens,
         outputTokens: 10,
+        cachedTokens: null,
+        thoughtTokens: null,
         error: null,
       });
       return {} as never;
@@ -63,12 +65,24 @@ describe('eval usage capture', () => {
 
   it('reports cost per 1k cases, or null when a model has no rate', () => {
     const priced = summarizeAttempts([
-      { model: 'gemini-3.1-flash-lite', inputTokens: 1000, outputTokens: 0 },
+      {
+        model: 'gemini-3.1-flash-lite',
+        inputTokens: 1000,
+        outputTokens: 0,
+        cachedTokens: null,
+        thoughtTokens: null,
+      },
     ]);
     expect(costPer1kCases([{ usage: priced }])).toBeCloseTo(0.25, 9);
 
     const unpriced = summarizeAttempts([
-      { model: 'mystery', inputTokens: 1, outputTokens: 1 },
+      {
+        model: 'mystery',
+        inputTokens: 1,
+        outputTokens: 1,
+        cachedTokens: null,
+        thoughtTokens: null,
+      },
     ]);
     expect(unpriced.costUsd).toBeNull();
     expect(costPer1kCases([{ usage: priced }, { usage: unpriced }])).toBeNull();

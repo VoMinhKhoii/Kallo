@@ -62,6 +62,8 @@ describe('createBudgetAttemptRecorder', () => {
       model: 'm',
       inputTokens: 1,
       outputTokens: 1,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: null,
     });
 
@@ -81,6 +83,8 @@ describe('createBudgetAttemptRecorder', () => {
       model: 'm',
       inputTokens: null,
       outputTokens: null,
+      cachedTokens: null,
+      thoughtTokens: null,
       error: null,
     });
 

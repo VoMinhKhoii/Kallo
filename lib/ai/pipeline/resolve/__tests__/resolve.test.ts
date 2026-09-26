@@ -376,9 +376,9 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
       mid: 0,
       high: 0,
     });
-    expect(
-      out.rawNutrition.mealItems[0].ingredients[0].caloriesKcal
-    ).toBeUndefined();
+    expect('caloriesKcal' in out.rawNutrition.mealItems[0].ingredients[0]).toBe(
+      false
+    );
   });
 
   it('produces IDENTICAL resolved matched numbers for placeholder vs full LLM triples', () => {
@@ -401,7 +401,6 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
     const resolveSlim = nutritionTesting.resolveIngredientMacros(
       {
         ingredientName: 'đùi gà',
-        caloriesKcal: ZERO_TRIPLE,
         proteinG: ZERO_TRIPLE,
         carbohydrateG: ZERO_TRIPLE,
         fatG: slim.fatG,

@@ -21,7 +21,10 @@
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { GeminiCallTrace } from '@/lib/ai/provider/provider';
+import type {
+  AttemptTokens,
+  GeminiCallTrace,
+} from '@/lib/ai/provider/provider';
 
 /**
  * Structured, provider-independent Call-2 input. Deliberately NOT a rendered
@@ -65,13 +68,9 @@ export interface GroundedEstimatorStreamHooks {
  * gemini client's `GeminiAttemptMetadata` so the recorder can be passed
  * straight through as a stream option).
  */
-export interface EstimatorAttemptUsage {
+export interface EstimatorAttemptUsage extends AttemptTokens {
   attempt: number;
   model: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  cachedTokens?: number | null;
-  thoughtTokens?: number | null;
   error: unknown;
 }
 
