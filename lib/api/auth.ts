@@ -5,17 +5,24 @@
 // (Bearer for mobile, cookie for web). Throws a structured AppError that the
 // route's serializeError() catch turns into the right HTTP status.
 
+import type { User } from '@supabase/supabase-js';
 import { Errors } from '@/lib/core/errors/catalog';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export async function requireUserId(): Promise<string> {
+  return (await requireUser()).id;
+}
+
+/** The full auth user, for the routes that need more than the id (e.g. its
+ *  linked identities). */
+export async function requireUser(): Promise<User> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     throw Errors.notAuthenticated();
   }
-  return data.user.id;
+  return data.user;
 }
 
 /**

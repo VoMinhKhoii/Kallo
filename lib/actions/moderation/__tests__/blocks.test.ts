@@ -1,4 +1,5 @@
 import type { SQL } from 'drizzle-orm';
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -157,6 +158,28 @@ function firstPage(
 }
 
 describe('blockFriend', () => {
+  it('404s a target that is not a user (the FK refuses the block row)', async () => {
+    const fkViolation = new DrizzleQueryError(
+      'insert into "user_blocks" ...',
+      [],
+      Object.assign(new Error('violates foreign key constraint'), {
+        code: '23503',
+      })
+    );
+    const db = { transaction: vi.fn().mockRejectedValue(fkViolation) };
+
+    await expect(
+      blockFriend(A, { targetUserId: B }, db as never)
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', status: 404 });
+  });
+
+  it('lets any other database error through', async () => {
+    const db = { transaction: vi.fn().mockRejectedValue(new Error('boom')) };
+    await expect(
+      blockFriend(A, { targetUserId: B }, db as never)
+    ).rejects.toThrow('boom');
+  });
+
   it('records a directed block and ends the friendship, under the pair lock', async () => {
     const { db, state } = blockStore({ friends: true });
 

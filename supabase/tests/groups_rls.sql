@@ -20,7 +20,7 @@
 --   (g) a friend sees only shares made at or after friendships.accepted_at
 --       (KALLO-03): a share from before the two connected stays hidden, the
 --       trigger stamps accepted_at, and it cannot be moved back.
---   (h) the rollout bridge (20260925120100): a friendships row the previous
+--   (h) the rollout bridge (20260925125100): a friendships row the previous
 --       revision writes as 'blocked' becomes a user_blocks row (blocker =
 --       requested_by, only when that is one of the pair), the pair's
 --       notifications about each other are deleted, and the edge is removed.

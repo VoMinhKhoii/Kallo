@@ -6,6 +6,7 @@ import { loadNotificationsExport } from '@/lib/domain/account-export/notificatio
 import { loadProfileExport } from '@/lib/domain/account-export/profile';
 import { loadSocialExport } from '@/lib/domain/account-export/social';
 import { loadSupportExport } from '@/lib/domain/account-export/support';
+import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -92,10 +93,10 @@ function identitiesOf(user: ExportAccountSource) {
 }
 
 export interface ExportedFile {
-  bucket: 'avatars' | 'feedback-screenshots';
+  bucket: 'avatars' | 'feedback-screenshots' | typeof NUTRITION_LABEL_BUCKET;
   path: string;
   /** Which record points at the object. */
-  source: 'circleProfile' | 'feedback';
+  source: 'circleProfile' | 'feedback' | 'labelScan';
   sourceId: string | null;
 }
 
@@ -146,6 +147,14 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
       });
     }
   }
+  for (const scan of diary.labelScans) {
+    files.push({
+      bucket: NUTRITION_LABEL_BUCKET,
+      path: scan.storagePath,
+      source: 'labelScan',
+      sourceId: scan.id,
+    });
+  }
 
   return {
     // The original six keys, unchanged in name and shape.
@@ -168,6 +177,8 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
     formatVersion: DATA_EXPORT_FORMAT_VERSION,
     circleProfile: profile.circleProfile,
     dayCompletionMarks: diary.dayCompletionMarks,
+    // Photo paths are listed under `files`, like feedback screenshots.
+    labelScans: diary.labelScans.map(({ storagePath: _path, ...scan }) => scan),
     social,
     chat,
     notifications: inbox.notifications,

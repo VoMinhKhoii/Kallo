@@ -148,14 +148,18 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260923051200_circle_share_default_off.sql` | A (Drizzle) | `user_profiles.auto_share_to_circle` default → `false`; `user_profiles.auto_share_updated_at` (consent record); `friendships.accepted_at` |
 | `20260923051230_friendships_accepted_at_visibility.sql` | B (Manual) | Backfill `accepted_at` from `updated_at`; trigger keeping it authoritative; `is_friend_since()`; friend SELECT policies on `meal_shares`/`meals`/`meal_items`/`circle_events` bounded to shares made after acceptance |
 | `20260923053541_add_account_export_user_indexes.sql` | A (Drizzle) | Owner-leading indexes for "Export my data" (telemetry, notifications, unmatched ingredients, chat groups and messages, meal-share reactions/replies/invites, coach assignments); plain `CREATE INDEX`, since migrations run in a transaction |
-| `20260925120000_circle_blocks_and_reports.sql` | A (Drizzle) | `user_blocks` (directed blocker → blocked, PK on the pair, `blocked_id` index, no-self CHECK); `content_reports` table (target kind / reason / status CHECKs, one row per reporter per target, status + created_at triage index) |
-| `20260925120100_user_blocks_and_reports_rls.sql` | B (Manual) | Backfill: every `friendships.status = 'blocked'` edge → `user_blocks(requested_by → other member)`, the pair's notifications about each other are deleted, then those edges are deleted (blocking now ends the friendship). A temporary `convert_legacy_friendship_block` trigger applies the same conversion to any `'blocked'` edge written after it, and a temporary `drop_friendship_of_blocked_pair` trigger removes any other edge written for a blocked pair (see "Retiring `friendships.status = 'blocked'`" below). RLS on `user_blocks` (select/insert/delete own rows as blocker) and `content_reports` (insert/select own; no UPDATE/DELETE — triage is admin-only). `'blocked'` stays in the friendships status CHECK only so the revision still serving during the deploy window keeps working |
+| `20260925122000_add_apple_auth_tokens.sql` | A (Drizzle) | `apple_auth_tokens` — one sealed (AES-256-GCM) Sign in with Apple refresh token per user, cascaded with the auth user, kept only so account deletion can revoke it; `apple_token_revocations` — the deletion-time revocation outbox (`user_id` deliberately not a FK so it outlives the cascade; one pending row per user via a partial unique index; status `pending`/`completed`/`dead`, attempt cap, claim fence) |
+| `20260925122100_apple_auth_tokens_rls.sql` | B (Manual) | RLS enabled, no policies, explicit `REVOKE` from `anon`/`authenticated` on both tables — credentials, server-only |
+| `20260925123000_add_nutrition_label_images.sql` | A (Drizzle) | `nutrition_label_images` — one row per kept label scan: photo path, `status` (`succeeded`/`failed`), `result`/`error_code`, `model`, `latency_ms`, the linked `meal_id` (set null on meal delete) and the user's `reviewed_result` |
+| `20260925123100_nutrition_labels_bucket.sql` | B (Manual, journaled) | Private `nutrition-labels` bucket (4 MiB, JPEG/PNG/WebP), owner-only SELECT on `storage.objects`, no client write policies; RLS + owner SELECT on `nutrition_label_images` |
+| `20260925125000_circle_blocks_and_reports.sql` | A (Drizzle) | `user_blocks` (directed blocker → blocked, PK on the pair, `blocked_id` index, no-self CHECK); `content_reports` table (target kind / reason / status CHECKs, one row per reporter per target, status + created_at triage index) |
+| `20260925125100_user_blocks_and_reports_rls.sql` | B (Manual) | Backfill: every `friendships.status = 'blocked'` edge → `user_blocks(requested_by → other member)`, the pair's notifications about each other are deleted, then those edges are deleted (blocking now ends the friendship). A temporary `convert_legacy_friendship_block` trigger applies the same conversion to any `'blocked'` edge written after it, and a temporary `drop_friendship_of_blocked_pair` trigger removes any other edge written for a blocked pair (see "Retiring `friendships.status = 'blocked'`" below). RLS on `user_blocks` (select/insert/delete own rows as blocker) and `content_reports` (insert/select own; no UPDATE/DELETE — triage is admin-only). `'blocked'` stays in the friendships status CHECK only so the revision still serving during the deploy window keeps working |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
 ### Retiring `friendships.status = 'blocked'` (follow-up, not yet written)
 
-Blocks moved to `user_blocks` in `20260925120100`. Prod migrations apply before the new Cloud Run revision is promoted, so the previous revision keeps serving for a while and still blocks by writing the pair's `friendships` row as `'blocked'`. Two things cover that window:
+Blocks moved to `user_blocks` in `20260925125100`. Prod migrations apply before the new Cloud Run revision is promoted, so the previous revision keeps serving for a while and still blocks by writing the pair's `friendships` row as `'blocked'`. Two things cover that window:
 
 - `'blocked'` stays in `friendships_status_check`, so the old block endpoint does not fail.
 - The `convert_legacy_friendship_block` trigger (`AFTER INSERT OR UPDATE OF status ... WHEN (NEW.status = 'blocked')`) converts each such row as it is written. It inserts `user_blocks(requested_by → other member)` when `requested_by` is one of the pair, deletes the pair's notifications about each other, and deletes the edge. Without it, the pair would not be hidden from each other and could never be unblocked.
@@ -375,6 +379,51 @@ with `--ids` so existing non-null vectors are regenerated from the new names.
 - **Free tier**: 100 requests/minute, 1000 requests/day **per project** (not per key).
 - Each text in a batch counts as a separate request.
 - The backfill script uses 35s delay between batches of 50 to stay under limits.
+
+## Nutrition-label scans (private bucket)
+
+Every label photo the scanner sends to the vision model is kept, with what the
+model made of it — the future OCR eval set. Code: `lib/domain/nutrition/label-images/`.
+
+- **What is stored.** The photo in the PRIVATE `nutrition-labels` bucket at
+  `{user_id}/{id}.{ext}` — re-encoded server-side in its own format with the
+  EXIF orientation applied and ALL metadata (EXIF incl. GPS, XMP, IPTC)
+  dropped; the row's `mime_type`/`byte_size` describe that stored copy. The
+  original bytes are never stored: if re-encoding fails, nothing is kept. Plus
+  a `nutrition_label_images` row: `status`
+  (`succeeded` / `failed`), `result` (the parsed label exactly as returned to the
+  client) or `error_code` (`no_label_detected`, `rate_limited`, `timeout`,
+  `invalid_model_output`, `server_error`, …), `model`, `latency_ms`, and — once
+  the scan is logged through `POST /api/v1/nutrition-label/log` — `meal_id` plus
+  `reviewed_result` (the user's correction: product name, amount, unit and
+  nutrients — not the diary day, timezone or model confidence). Model output
+  vs user correction is the eval signal. A scan is linked once: the update is
+  guarded on `meal_id IS NULL`, so a replayed `/log` cannot re-point it.
+- **When.** Only after every gate (auth, premium, body cap, image validation,
+  the OCR spend guard): the re-encode + upload starts alongside the model
+  call. When the model answers and the upload has already finished (the usual
+  case), the row is inserted before replying — a few ms, the only latency
+  keeping a scan adds — and the mobile reply carries `labelImageId` only if
+  that insert succeeded. If the upload is still running, the reply has no id
+  and the row is written after the response via `after()` (best-effort on
+  Cloud Run — see `docs/GOOGLE_CLOUD_RUN.md` §8). A failed scan's row is
+  always written via `after()`. Neither write can change the scan reply or its
+  status. A failed row insert removes the uploaded photo, so photo and row do
+  not diverge (this also catches an upload that lands after account deletion
+  purged the prefix: its insert fails on the user FK). A request refused
+  before the model call stores nothing. Only the mobile log route links a scan
+  to its meal today; the web action keeps the photo and outcome but returns no
+  id.
+- **Readers.** The owner: a 10-minute signed URL from
+  `GET /api/v1/nutrition-label/images/{imageId}` (ownership checked on the row;
+  anyone else gets 404). The team: service role only, e.g. from the Supabase
+  dashboard or a script using `SUPABASE_SERVICE_ROLE_KEY`; there is no admin UI.
+  No other user can read a photo or a row. Writes are server-only (service
+  role) — the bucket has no client insert/update/delete policies.
+- **Retention.** Until the account is deleted. `deleteAccountAction` purges the
+  `{user_id}/` prefix (fail-closed, before the auth user is deleted) and the auth
+  cascade removes the rows. There is no time-based purge. "Export my data"
+  lists each scan under `labelScans` and its photo under `files`.
 
 ## pipeline_requests retention (Decision A)
 

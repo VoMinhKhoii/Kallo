@@ -58,6 +58,11 @@ export interface ScanLabelOptions {
 
 export const NUTRITION_LABEL_OCR_DEADLINE_MS = 20_000;
 
+/** The vision model a scan uses unless the caller names another. Exported so
+ *  the kept-scan record (`lib/domain/nutrition/label-images/`) can say which
+ *  model produced the result it stores. */
+export const NUTRITION_LABEL_OCR_MODEL = 'gemini-3.1-flash-lite';
+
 function createDeadlineController(options: ScanLabelOptions) {
   const controller = new AbortController();
   const abortFromCaller = () => controller.abort(options.abortSignal?.reason);
@@ -90,7 +95,7 @@ export async function scanNutritionLabelWithGemini(
 ): Promise<ParsedNutritionLabel> {
   const providerConfig = resolveGeminiProvider();
   const gemini = createGeminiClient(providerConfig);
-  const model = options.model ?? 'gemini-3.1-flash-lite';
+  const model = options.model ?? NUTRITION_LABEL_OCR_MODEL;
   const deadline = createDeadlineController(options);
 
   try {

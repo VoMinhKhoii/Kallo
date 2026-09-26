@@ -51,6 +51,10 @@ export const scanNutritionLabelSchema = z.object({
 
 export type ScanNutritionLabelInput = z.infer<typeof scanNutritionLabelSchema>;
 
+/** A stored label photo's id: the scan reply's `labelImageId`, and the path
+ *  id of `GET /api/v1/nutrition-label/images/{imageId}`. */
+export const labelImageIdSchema = z.string().uuid();
+
 /**
  * Body for `POST /api/v1/nutrition-label/log` — the user-reviewed values from
  * the label, staged AND confirmed in one call.
@@ -77,9 +81,24 @@ export const logNutritionLabelMealSchema = z.object({
   fatGrams: nutritionValuesSchema.shape.fatGrams.unwrap(),
   /** Client-generated id, as in `/api/v1/meals/confirm`. */
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  /**
+   * The `labelImageId` the scan returned. The stored photo is linked to the
+   * saved meal when it belongs to the caller; any other id is ignored.
+   */
+  labelImageId: labelImageIdSchema.optional(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
+
+/** Reply of `GET /api/v1/nutrition-label/images/{imageId}`. */
+export const labelImageUrlSchema = z.object({
+  /** Signed Storage URL; stops working at `expiresAt`. */
+  url: z.string().url(),
+  /** ISO-8601 instant, about ten minutes after the request. */
+  expiresAt: z.string().datetime(),
+});
+
+export type LabelImageUrl = z.infer<typeof labelImageUrlSchema>;
 
 export type LogNutritionLabelMealInput = z.infer<
   typeof logNutritionLabelMealSchema

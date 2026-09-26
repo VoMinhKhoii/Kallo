@@ -3,7 +3,7 @@
 -- one-time conversion of legacy friendship blocks into user_blocks, and a
 -- temporary trigger that keeps converting them during the deploy window.
 --
--- The tables themselves are Domain A (drizzle-kit, 20260925120000). This file
+-- The tables themselves are Domain A (drizzle-kit, 20260925125000). This file
 -- owns the policies, the backfill and the bridge trigger, and must never be
 -- overwritten by `drizzle-kit generate`.
 --

@@ -1,5 +1,5 @@
 {
-  "id": "af5eb9a2-317e-4671-8b50-8bdcdbe837bc",
+  "id": "aa668736-1217-46f9-a9ba-7bf9df283478",
   "prevId": "7066fb16-efff-4194-8aae-4fb8197cd91d",
   "version": "7",
   "dialect": "postgresql",
@@ -454,6 +454,176 @@
         "analysis_rate_limit_windows_count_check": {
           "name": "analysis_rate_limit_windows_count_check",
           "value": "\"analysis_rate_limit_windows\".\"count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.apple_auth_tokens": {
+      "name": "apple_auth_tokens",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "refresh_token_ciphertext": {
+          "name": "refresh_token_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "apple_auth_tokens_user_id_users_id_fk": {
+          "name": "apple_auth_tokens_user_id_users_id_fk",
+          "tableFrom": "apple_auth_tokens",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.apple_token_revocations": {
+      "name": "apple_token_revocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token_ciphertext": {
+          "name": "refresh_token_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_attempt_at": {
+          "name": "last_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "apple_token_revocations_pending_user_idx": {
+          "name": "apple_token_revocations_pending_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "status = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "apple_token_revocations_due_idx": {
+          "name": "apple_token_revocations_due_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "status = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "apple_token_revocations_status_check": {
+          "name": "apple_token_revocations_status_check",
+          "value": "\"apple_token_revocations\".\"status\" IN ('pending', 'completed', 'dead')"
         }
       },
       "isRLSEnabled": false
@@ -1468,160 +1638,6 @@
         "coach_assignments_status_check": {
           "name": "coach_assignments_status_check",
           "value": "\"coach_assignments\".\"status\" IN ('pending', 'active', 'revoked')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.content_reports": {
-      "name": "content_reports",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "reporter_id": {
-          "name": "reporter_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_user_id": {
-          "name": "target_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_kind": {
-          "name": "target_kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_id": {
-          "name": "target_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'open'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "content_reports_status_created_idx": {
-          "name": "content_reports_status_created_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"created_at\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "content_reports_reporter_id_users_id_fk": {
-          "name": "content_reports_reporter_id_users_id_fk",
-          "tableFrom": "content_reports",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "content_reports_target_user_id_users_id_fk": {
-          "name": "content_reports_target_user_id_users_id_fk",
-          "tableFrom": "content_reports",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "target_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "content_reports_reporter_target_uniq": {
-          "name": "content_reports_reporter_target_uniq",
-          "nullsNotDistinct": false,
-          "columns": [
-            "reporter_id",
-            "target_kind",
-            "target_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "content_reports_target_kind_check": {
-          "name": "content_reports_target_kind_check",
-          "value": "\"content_reports\".\"target_kind\" IN ('share', 'reply', 'chat_message', 'profile', 'chat_group')"
-        },
-        "content_reports_reason_check": {
-          "name": "content_reports_reason_check",
-          "value": "\"content_reports\".\"reason\" IN ('spam', 'harassment', 'hate', 'sexual', 'violence', 'self_harm', 'other')"
-        },
-        "content_reports_status_check": {
-          "name": "content_reports_status_check",
-          "value": "\"content_reports\".\"status\" IN ('open', 'actioned', 'dismissed')"
-        },
-        "content_reports_note_length_check": {
-          "name": "content_reports_note_length_check",
-          "value": "char_length(\"content_reports\".\"note\") <= 500"
         }
       },
       "isRLSEnabled": false
@@ -5631,96 +5647,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.user_blocks": {
-      "name": "user_blocks",
-      "schema": "",
-      "columns": {
-        "blocker_id": {
-          "name": "blocker_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "blocked_id": {
-          "name": "blocked_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "user_blocks_blocked_id_idx": {
-          "name": "user_blocks_blocked_id_idx",
-          "columns": [
-            {
-              "expression": "blocked_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_blocks_blocker_id_users_id_fk": {
-          "name": "user_blocks_blocker_id_users_id_fk",
-          "tableFrom": "user_blocks",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "blocker_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "user_blocks_blocked_id_users_id_fk": {
-          "name": "user_blocks_blocked_id_users_id_fk",
-          "tableFrom": "user_blocks",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "blocked_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "user_blocks_blocker_id_blocked_id_pk": {
-          "name": "user_blocks_blocker_id_blocked_id_pk",
-          "columns": [
-            "blocker_id",
-            "blocked_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "user_blocks_not_self_check": {
-          "name": "user_blocks_not_self_check",
-          "value": "\"user_blocks\".\"blocker_id\" <> \"user_blocks\".\"blocked_id\""
-        }
-      },
       "isRLSEnabled": false
     },
     "public.user_feedback": {

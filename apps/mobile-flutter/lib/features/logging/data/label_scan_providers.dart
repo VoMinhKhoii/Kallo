@@ -42,6 +42,7 @@ class LabelScanState {
     this.phase = LabelScanPhase.capture,
     this.image,
     this.label,
+    this.labelImageId,
     this.errorKey,
   });
 
@@ -53,6 +54,11 @@ class LabelScanState {
 
   final NutritionLabel? label;
 
+  /// The server's id for the kept photo of this scan (`labelImageId` in the
+  /// scan reply), passed back with the log request so the photo is linked to
+  /// the saved meal. Null when the scan kept no photo or never ran.
+  final String? labelImageId;
+
   /// l10n key for the current error (`logging.labelScan.error.*`), shown as an
   /// inline card. Null when no error.
   final String? errorKey;
@@ -61,11 +67,13 @@ class LabelScanState {
     LabelScanPhase? phase,
     LabelImage? Function()? image,
     NutritionLabel? Function()? label,
+    String? Function()? labelImageId,
     String? Function()? errorKey,
   }) => LabelScanState(
     phase: phase ?? this.phase,
     image: image != null ? image() : this.image,
     label: label != null ? label() : this.label,
+    labelImageId: labelImageId != null ? labelImageId() : this.labelImageId,
     errorKey: errorKey != null ? errorKey() : this.errorKey,
   );
 
@@ -200,6 +208,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       phase: LabelScanPhase.preview,
       image: () => result.image,
       label: () => null,
+      labelImageId: () => null,
       errorKey: () => null,
     );
   }
@@ -217,6 +226,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
     final api = ref.read(apiClientProvider);
     state = state.copyWith(
       phase: LabelScanPhase.scanning,
+      labelImageId: () => null,
       errorKey: () => null,
     );
     try {
@@ -230,7 +240,11 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       final label = NutritionLabel.fromJson(
         (json['label'] as Map<String, dynamic>?) ?? const {},
       );
-      state = state.copyWith(phase: LabelScanPhase.review, label: () => label);
+      state = state.copyWith(
+        phase: LabelScanPhase.review,
+        label: () => label,
+        labelImageId: () => json['labelImageId'] as String?,
+      );
     } catch (error) {
       state = state.copyWith(
         phase: LabelScanPhase.preview,
@@ -245,6 +259,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
     state = state.copyWith(
       phase: LabelScanPhase.review,
       label: () => null,
+      labelImageId: () => null,
       errorKey: () => null,
     );
   }
@@ -274,6 +289,8 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
         for (final entry in review.nutrition.entries)
           if (entry.value != null) entry.key: entry.value,
         'mealId': _uuid.v4(),
+        // Links the kept scan photo to this meal; omitted when none was kept.
+        if (state.labelImageId != null) 'labelImageId': state.labelImageId,
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
@@ -311,6 +328,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       phase: LabelScanPhase.capture,
       image: () => null,
       label: () => null,
+      labelImageId: () => null,
       errorKey: () => null,
     );
   }

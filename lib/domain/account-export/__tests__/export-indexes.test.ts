@@ -29,6 +29,7 @@ const EXPORT_LOOKUPS: ReadonlyArray<readonly [PgTable, string]> = [
   [schema.meals, 'user_id'],
   [schema.bodyWeightLog, 'user_id'],
   [schema.dayCompletionMarks, 'user_id'],
+  [schema.nutritionLabelImages, 'user_id'],
   [schema.notifications, 'recipient_id'],
   [schema.pushTokens, 'user_id'],
   [schema.userProfiles, 'user_id'],

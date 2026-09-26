@@ -37,6 +37,7 @@ import {
   publicProfiles,
   userBlocks,
 } from '@/lib/infra/db/schema';
+import { isForeignKeyViolation } from '@/lib/infra/db/sql-state';
 
 export interface BlockedUser {
   profile: PublicIdentity;
@@ -63,32 +64,41 @@ export async function blockFriend(
   }
   const { userLow, userHigh } = orderedPair(actorId, targetUserId);
 
-  return db.transaction(async (tx) => {
-    await tx.execute(lockPairSql(userLow, userHigh));
-    await tx
-      .insert(userBlocks)
-      .values({ blockerId: actorId, blockedId: targetUserId })
-      .onConflictDoNothing({
-        target: [userBlocks.blockerId, userBlocks.blockedId],
-      });
-    await tx
-      .delete(friendships)
-      .where(
-        and(
-          eq(friendships.userLow, userLow),
-          eq(friendships.userHigh, userHigh)
-        )
-      );
-    await tx
-      .delete(notifications)
-      .where(
-        or(
-          sharedActivitySql(actorId, targetUserId),
-          sharedActivitySql(targetUserId, actorId)
-        )
-      );
-    return { status: 'blocked' as const };
-  });
+  try {
+    return await db.transaction(async (tx) => {
+      await tx.execute(lockPairSql(userLow, userHigh));
+      await tx
+        .insert(userBlocks)
+        .values({ blockerId: actorId, blockedId: targetUserId })
+        .onConflictDoNothing({
+          target: [userBlocks.blockerId, userBlocks.blockedId],
+        });
+      await tx
+        .delete(friendships)
+        .where(
+          and(
+            eq(friendships.userLow, userLow),
+            eq(friendships.userHigh, userHigh)
+          )
+        );
+      await tx
+        .delete(notifications)
+        .where(
+          or(
+            sharedActivitySql(actorId, targetUserId),
+            sharedActivitySql(targetUserId, actorId)
+          )
+        );
+      return { status: 'blocked' as const };
+    });
+  } catch (error) {
+    // No such user: the user_blocks FK to auth.users refuses the row, and the
+    // transaction rolls back. A 404, not a server error.
+    if (isForeignKeyViolation(error)) {
+      throw Errors.notFound('Không tìm thấy người dùng.');
+    }
+    throw error;
+  }
 }
 
 /** `recipientId`'s notifications that `actorId` appears in — as the only
