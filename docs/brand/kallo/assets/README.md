@@ -42,7 +42,11 @@ launch page already paints the app canvas `#F8F7F4` on both platforms (iOS's
 and an espresso tile on it read as black. The mark is also the first frame of
 the Flutter launch intro (`apps/mobile-flutter/lib/shell/launch/`), which redraws
 the same K in the same spot before clacking the wordmark into place, so its
-colour, size and the page colour must stay equal to the intro's. Regenerate them
+colour, size and the page colour must stay equal to the intro's. Android 12+
+draws its own system splash and ignores that bitmap, so `values-v31` /
+`values-night-v31` name it explicitly through
+`drawable/launch_splash_icon.xml`, which centres the same K on the 288dp splash
+icon canvas at its 72dp size. Regenerate them
 with `node scripts/assets/gen-splash-mark.mjs`, which rasterises
 `kallo-mark.svg`'s three polygons directly and needs no renderer installed.
 Everything else here still comes from the SVGs above.
