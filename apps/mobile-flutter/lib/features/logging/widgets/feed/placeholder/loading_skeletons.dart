@@ -26,37 +26,41 @@ class MacroSummarySkeleton extends StatelessWidget {
         skeletonBar(width, height, KalloColors.track);
 
     return Pulse(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          pill(
-            kCompactCalorieDialRadius * 2,
-            gaugeHeight(kCompactCalorieDialRadius),
-          ),
-          const SizedBox(width: KalloSpacing.sp3),
-          Expanded(
-            child: Row(
-              children: [
-                for (var i = 0; i < 3; i++) ...[
-                  if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        pill(44, 11),
-                        const SizedBox(height: KalloSpacing.sp0_5),
-                        pill(
-                          kCompactMacroDialRadius * 2,
-                          gaugeHeight(kCompactMacroDialRadius),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final calorie = compactCalorieDialRadius(
+            calorieDialRoom(constraints.maxWidth, gap: KalloSpacing.sp3),
+          );
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              pill(calorie * 2, gaugeHeight(calorie)),
+              const SizedBox(width: KalloSpacing.sp3),
+              Expanded(
+                child: Row(
+                  children: [
+                    for (var i = 0; i < 3; i++) ...[
+                      if (i > 0) const SizedBox(width: KalloSpacing.sp2),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            pill(44, 11),
+                            const SizedBox(height: KalloSpacing.sp0_5),
+                            pill(
+                              kCompactMacroDialRadius * 2,
+                              gaugeHeight(kCompactMacroDialRadius),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

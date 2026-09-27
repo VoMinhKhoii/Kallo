@@ -12,6 +12,8 @@
 /// agreeing.
 library;
 
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -21,18 +23,29 @@ import '../../logic/calorie_readout.dart';
 import '../../logic/display_format.dart';
 import 'gauge_clear_area.dart';
 import 'gauge_dial.dart';
+import 'gauge_readout_line.dart';
 import 'gauge_readout_type.dart';
 
 /// Big enough to hold a four-figure headline in its mouth at 1.3 text scale.
 const double kCalorieDialRadius = 104;
 
-/// The embedded size — see [CalorieDial.compact].
+/// The embedded size — see [CalorieDial.compact] — when the header has room.
 ///
 /// 58, up from 52 (2026-09-27), so the compact dial can say the full dial's
 /// sentence: at 52 "Kcal còn lại" ran 1.4pt INTO the arc's tips even at 12pt;
-/// at 58 it clears them by 2.5pt a side. The six points come out of the macro
-/// columns, which still hold "CHẤT BÉO" in full at 1.0x.
+/// at 58 it clears them by 2.5pt a side.
 const double kCompactCalorieDialRadius = 58;
+
+/// The compact dial's size on a header too narrow for 58 — the size it had
+/// before the sentence, so a 320pt phone's macro dials keep what they had.
+const double kCompactCalorieDialMinRadius = 52;
+
+/// The compact radius for a dial that may take [maxWidth] — shared with the
+/// header's skeleton so the placeholder is the size the dial lands at.
+double compactCalorieDialRadius(double maxWidth) => (maxWidth / 2).clamp(
+  kCompactCalorieDialMinRadius,
+  kCompactCalorieDialRadius,
+);
 
 /// The word under the headline, per framing: the sentence ("Kcal left") when
 /// the mouth holds it, the one word ("Left") when it does not.
@@ -58,6 +71,7 @@ class CalorieDial extends StatelessWidget {
     required this.goal,
     super.key,
   }) : radius = kCalorieDialRadius,
+       maxWidth = null,
        _isCompact = false;
 
   /// The variant for a surface that draws the dial inside a fixed header above
@@ -68,16 +82,20 @@ class CalorieDial extends StatelessWidget {
   /// fits the mouth. Where it does not — a large text scale — the unit falls
   /// back to one word rather than crossing the arc (see [_unit]).
   ///
-  /// The detail keeps its verb when the headline counts DOWN. The bare
+  /// The detail keeps its verb when the headline counts DOWN: a bare
   /// "918/1.932" under "còn lại" read as "918 of 1.932 left" on device
-  /// (2026-09-27): a grey fraction with no word of its own borrowed the unit
-  /// above it. "Đã ghi 918/1.932" cannot be misread that way. Counting UP the
-  /// fraction starts with the headline figure, as the macro dials' do, so it
-  /// stays bare.
+  /// (2026-09-27). Counting UP the fraction leads with the headline figure,
+  /// as the macro dials' do, so it stays bare.
+  ///
+  /// [maxWidth] is what the surface can spare beside its macro dials; the dial
+  /// shrinks toward [kCompactCalorieDialMinRadius] and drops the verb before
+  /// taking more (at 320pt/1.3x the verb line squeezed the macro figures away,
+  /// review of #396). Without it the dial keeps to its own arc's width.
   const CalorieDial.compact({
     required this.logged,
     required this.target,
     required this.goal,
+    this.maxWidth,
     super.key,
   }) : radius = kCompactCalorieDialRadius,
        _isCompact = true;
@@ -86,7 +104,15 @@ class CalorieDial extends StatelessWidget {
   final double target;
   final MacroGoal? goal;
   final double radius;
+  final double? maxWidth;
   final bool _isCompact;
+
+  /// The radius this build draws at — see [maxWidth].
+  double get _radius {
+    final room = maxWidth;
+    if (!_isCompact || room == null) return radius;
+    return compactCalorieDialRadius(room);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +121,7 @@ class CalorieDial extends StatelessWidget {
 
     final readout = calorieReadout(logged: logged, target: target, goal: goal);
     final fraction = {'logged': fmt(logged), 'target': fmt(target)};
+    final radius = _radius;
 
     return GaugeDial(
       progress: target > 0 ? logged / target : 0,
@@ -109,50 +136,56 @@ class CalorieDial extends StatelessWidget {
         fmt(readout.headline),
         _isCompact ? gaugeFigure() : gaugeHeroFigure(),
       ),
-      secondary: _unit(context, readout.framing),
-      tertiary: GaugeLine(_detail(readout, fmt, fraction), gaugeDenominator()),
+      secondary: _unit(context, readout.framing, radius),
+      tertiary: GaugeLine(
+        _detail(context, readout, fmt, fraction, radius),
+        gaugeDenominator(),
+      ),
     );
   }
 
   /// The line on the arc's tips. The full dial always says the sentence; the
   /// compact one measures it at the viewer's text scale first and says the one
   /// word when the sentence would not clear the tips.
-  GaugeLine _unit(BuildContext context, CalorieFraming framing) {
+  GaugeLine _unit(BuildContext context, CalorieFraming framing, double radius) {
     final key = _unitKey[framing]!;
     if (!_isCompact) return GaugeLine(tr(key.long), gaugeUnit());
 
-    final style = gaugeCompactUnit();
-    final scaler = MediaQuery.textScalerOf(context);
-    final long = tr(key.long);
-    final painter = TextPainter(
-      text: TextSpan(text: long, style: style),
-      textDirection: Directionality.of(context),
-      textScaler: scaler,
-      maxLines: 1,
-    )..layout();
+    final long = GaugeLine(tr(key.long), gaugeCompactUnit());
+    final style = long.style;
     final fits = gaugeTipLineFits(
       radius,
-      width: painter.width,
-      height: scaler.scale(style.fontSize!) * style.height!,
+      width: gaugeLineWidth(context, long),
+      height:
+          MediaQuery.textScalerOf(context).scale(style.fontSize!) *
+          style.height!,
     );
-    painter.dispose();
-    return GaugeLine(fits ? long : tr(key.short), style);
+    return fits ? long : GaugeLine(tr(key.short), style);
   }
 
   /// The line under the arc: the OTHER figure, with a verb whenever it is not
-  /// the headline's own. The compact dial drops the verb only when counting
-  /// up, where the fraction already leads with the headline figure.
+  /// the headline's own. The compact dial drops the verb when counting up,
+  /// where the fraction already leads with the headline figure, and when the
+  /// verb line would widen the dial past what the surface can spare.
   String _detail(
+    BuildContext context,
     CalorieReadout readout,
     String Function(num) fmt,
     Map<String, String> fraction,
+    double radius,
   ) {
+    final bare = tr('dashboard.loggedOverTarget', namedArgs: fraction);
     if (readout.framing == CalorieFraming.remaining) {
-      return tr('dashboard.loggedOfTarget', namedArgs: fraction);
+      final verb = tr('dashboard.loggedOfTarget', namedArgs: fraction);
+      if (!_isCompact) return verb;
+      final room = math.max(maxWidth ?? 0, radius * 2);
+      final width = gaugeLineWidth(
+        context,
+        GaugeLine(verb, gaugeDenominator()),
+      );
+      return width <= room ? verb : bare;
     }
-    if (_isCompact) {
-      return tr('dashboard.loggedOverTarget', namedArgs: fraction);
-    }
+    if (_isCompact) return bare;
     final target = fraction['target']!;
     return readout.over == null
         ? tr(

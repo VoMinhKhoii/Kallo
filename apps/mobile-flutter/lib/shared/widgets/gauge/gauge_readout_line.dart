@@ -9,6 +9,27 @@ import 'package:flutter/material.dart';
 import 'gauge_clear_area.dart';
 import 'gauge_dial.dart';
 
+/// How wide [line] renders HERE — measured the way [Text] lays it out: over the
+/// ambient [DefaultTextStyle], at the viewer's text scale, in the ambient
+/// locale. Measuring the bare style instead ran ~4% narrow ("Đã ghi
+/// 1.850/2.000" measured 107pt and rendered 118), which is enough to pass a
+/// line that then does not fit.
+double gaugeLineWidth(BuildContext context, GaugeLine line) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: line.text,
+      style: DefaultTextStyle.of(context).style.merge(line.style),
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    locale: Localizations.maybeLocaleOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
 /// One readout line, optionally held inside [maxWidth].
 ///
 /// Taken IN rather than clipped or ellipsised: a clipped `1047g` renders as

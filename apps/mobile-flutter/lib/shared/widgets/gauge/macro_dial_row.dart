@@ -52,6 +52,18 @@ const double _gutter = KalloSpacing.sp1; // 4
 /// glyph reads as part of the word at 2 just as well as at 6.
 const double _iconGap = KalloSpacing.sp0_5; // 2
 
+/// The width a row of three [radius] dials needs to draw them at that size —
+/// what a surface subtracts before handing the rest to the calorie dial.
+double macroDialRowWidth(double radius) =>
+    kCompositionKeys.length * radius * 2 +
+    (kCompositionKeys.length - 1) * _gutter;
+
+/// What a header [width] wide can spare for the calorie dial beside a
+/// compact macro row at full size, after the [gap] between them. The logging
+/// header and its skeleton both size the calorie dial from this.
+double calorieDialRoom(double width, {double gap = KalloSpacing.sp2}) =>
+    width - gap - macroDialRowWidth(kCompactMacroDialRadius);
+
 /// The label each dial wears, in the namespace every surface already reads.
 const Map<String, String> _labelKey = {
   'protein': 'dashboard.protein',

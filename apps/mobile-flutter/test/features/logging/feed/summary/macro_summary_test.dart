@@ -259,13 +259,68 @@ void main() {
     final narrow = tester.getRect(find.byType(RoundedGaugeArc).at(1));
     expect(narrow.width, lessThan(kCompactMacroDialRadius * 2));
     expect(narrow.width, greaterThan(0));
-    // The calorie dial is fixed: it is the row's anchor, and shrinking it would
-    // put the day's own figure below its macros in prominence.
+    // The calorie dial steps down to its floor rather than taking the macros'
+    // room — and no further: it is the row's anchor, and shrinking it more
+    // would put the day's own figure below its macros in prominence.
     expect(
       tester.getRect(find.byType(RoundedGaugeArc).first).width,
-      kCompactCalorieDialRadius * 2,
+      kCompactCalorieDialMinRadius * 2,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  // Review of #396: at 320pt and the 1.3 cap, "Đã ghi 1.850/2.000" measured
+  // ~150pt, widened the calorie dial, and squeezed the macro dials to ~r21,
+  // where their figures scaled to nothing. The dial now drops the verb (and
+  // its radius) before it takes the macros' room.
+  testWidgets('the verb never costs the macro figures their room', (
+    tester,
+  ) async {
+    for (final width in [_narrowPhoneWidth, _phoneWidth]) {
+      await _pump(
+        tester,
+        goal: MacroGoal.cutting,
+        locale: const Locale('vi'),
+        textScale: 1.3,
+        width: width,
+      );
+      expect(find.text('Đã ghi 1.850/2.000'), findsNothing);
+      expect(find.text('1.850/2.000'), findsOneWidget);
+      final calorie = tester.getSize(find.byType(CalorieDial)).width;
+      expect(calorie, lessThanOrEqualTo(kCompactCalorieDialRadius * 2));
+      for (final figure in ['120g', '240g', '60g']) {
+        expect(
+          tester.getRect(find.text(figure)).width,
+          greaterThan(0),
+          reason: '$figure scaled away at ${width}pt',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    }
+    // On a phone with room for it the macro dials hold their full size.
+    expect(
+      tester.getRect(find.byType(RoundedGaugeArc).at(1)).width,
+      kCompactMacroDialRadius * 2,
+    );
+  });
+
+  testWidgets('a narrow phone keeps the header it had before the sentence', (
+    tester,
+  ) async {
+    // 320pt cannot spare 116 for the dial, so it keeps its old 52 radius, the
+    // one-word unit and the bare fraction: the macros keep their old room.
+    await _pump(
+      tester,
+      goal: MacroGoal.cutting,
+      locale: const Locale('vi'),
+      width: _narrowPhoneWidth,
+    );
+    expect(find.text('Còn lại'), findsOneWidget);
+    expect(find.text('1.850/2.000'), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(CalorieDial)).width,
+      kCompactCalorieDialMinRadius * 2,
+    );
   });
 
   testWidgets('a day it cannot total says so instead of drawing dials', (
