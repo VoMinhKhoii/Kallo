@@ -1,8 +1,8 @@
 'use client';
 
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
-import { BarcodeProductStep } from '@/components/logging/input/barcode/barcode-product-step';
 import { BarcodeSearchForm } from '@/components/logging/input/barcode/barcode-search-form';
+import { BarcodeProductStep } from '@/components/logging/input/barcode/product/barcode-product-step';
 import { ScanTypeToggle } from '@/components/logging/input/barcode/scan-type-toggle';
 import { useBarcodeScannerDialogState } from '@/components/logging/input/barcode/use-barcode-scanner-dialog-state';
 import { OcrReviewStep } from '@/components/logging/input/ocr/review/ocr-review-step';

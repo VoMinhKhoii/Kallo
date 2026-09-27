@@ -9,6 +9,7 @@ import {
   MAX_SERVINGS,
   QUICK_GRAM_OPTIONS,
 } from '@/lib/domain/barcode/amount';
+import type { BarcodeAmountUnit } from '@/lib/domain/barcode/types';
 
 // Shared inner-element classes, matching the onboarding wizard's vocabulary.
 const STEPPER_BTN =
@@ -33,10 +34,13 @@ interface BarcodeAmountControlsProps {
   /** Total the current mode resolves to, shown alongside the stepper. */
   grams: number;
   servingSizeG: number | null;
+  /** The product's unit: every amount on screen is in it. */
+  unit: BarcodeAmountUnit;
 }
 
 /** How much of the scanned product was eaten: by serving, whole package, or
- *  custom grams. Amount state is owned by the product step above. */
+ *  a custom amount in the product's unit (grams, or millilitres for a drink).
+ *  Amount state is owned by the product step above. */
 export function BarcodeAmountControls({
   modes,
   mode,
@@ -49,12 +53,13 @@ export function BarcodeAmountControls({
   onSetGrams,
   grams,
   servingSizeG,
+  unit,
 }: BarcodeAmountControlsProps) {
   const t = useTranslations('logging');
   const modeLabel: Record<AmountMode, string> = {
     serving: t('barcodeAmountServing'),
     package: t('barcodeAmountPackage'),
-    grams: t('barcodeAmountGrams'),
+    grams: unit === 'ml' ? t('barcodeAmountMl') : t('barcodeAmountGrams'),
   };
 
   return (
@@ -124,8 +129,8 @@ export function BarcodeAmountControls({
             </button>
           </div>
           <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
-            {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
-            {t('barcodeTotalGrams', { grams })}
+            {t('barcodePerServing', { amount: servingSizeG, unit })} ·{' '}
+            {t('barcodeTotalGrams', { amount: grams, unit })}
           </span>
         </div>
       ) : null}
@@ -135,7 +140,7 @@ export function BarcodeAmountControls({
       {mode === 'grams' ? (
         <div className="space-y-2">
           <label htmlFor="grams-input" className={FIELD_LABEL}>
-            {t('barcodeGramsLabel')}
+            {t('barcodeGramsLabel', { unit })}
           </label>
           <div className="flex items-center gap-2">
             <button
@@ -180,7 +185,8 @@ export function BarcodeAmountControls({
                     : 'border-[#EAE7E0] bg-white text-[#8B8682] hover:bg-kallo-track'
                 }`}
               >
-                {val}g
+                {val}
+                {unit}
               </button>
             ))}
           </div>

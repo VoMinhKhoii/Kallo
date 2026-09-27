@@ -1,24 +1,22 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../models/nutrition/barcode_product.dart';
-import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
-import '../../../../../shared/widgets/form/sheet_confirm_button.dart';
-import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/barcode_amount.dart';
 import 'barcode_amount_controls.dart';
 import 'barcode_grams_picker.dart';
 import 'barcode_nutrition_preview.dart';
+import 'barcode_product_footer.dart';
+import 'barcode_product_header.dart';
 import 'barcode_serving_picker.dart';
-import '../../../../../theme/calm_tokens.dart';
 import '../../../logic/relog/scan_purpose.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
-/// package, or custom grams — only the modes the product has sizing for — with
-/// a live nutrition preview for the chosen amount.
+/// package, or a custom amount in the product's unit (grams, or millilitres
+/// for a drink) — only the modes the product has sizing for — with a live
+/// nutrition preview for the chosen amount.
 ///
 /// Port of the web's `barcode-product-step.tsx`. Owns all amount state; the
 /// sheet keys it on `product.barcode` so defaults re-initialize per scan.
@@ -40,7 +38,7 @@ class BarcodeProductStep extends StatefulWidget {
   final bool saving;
   final VoidCallback onBack;
 
-  /// Called with the resolved gram amount to log.
+  /// Called with the resolved amount, in the product's unit, to log.
   final ValueChanged<int> onConfirm;
 
   /// Inline save error, above the footer so a failed attempt keeps the amount.
@@ -98,10 +96,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product header: brand eyebrow + name as the sheet's title.
-                if (product.brand != null && product.brand!.isNotEmpty)
-                  Text(product.brand!.toUpperCase(), style: dashEyebrow()),
-                Text(product.name, style: kSectionHeader()),
+                BarcodeProductHeader(product: product),
                 const SizedBox(height: KalloSpacing.sp3),
 
                 // Amount-mode segmented control (only when there's a choice).
@@ -110,6 +105,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
                     modes: _modes,
                     selected: _mode,
                     onSelect: _setMode,
+                    unit: product.amountUnit,
                   ),
                   const SizedBox(height: KalloSpacing.sp3),
                 ],
@@ -122,12 +118,15 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
                     totalGrams: grams,
                     disabled: widget.saving,
                     onAdjust: _adjustServings,
+                    unit: product.amountUnit,
                   ),
                   BarcodeAmountMode.package => BarcodePackageCard(
                     packageSizeG: product.packageSizeG ?? 0,
+                    unit: product.amountUnit,
                   ),
                   BarcodeAmountMode.grams => BarcodeGramsPicker(
                     grams: _customGrams,
+                    unit: product.amountUnit,
                     disabled: widget.saving,
                     onAdjust: _adjustGrams,
                     onChanged: (value) {
@@ -144,53 +143,12 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
           ),
         ),
 
-        if (widget.errorText != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              KalloSpacing.sp4,
-              0,
-              KalloSpacing.sp4,
-              KalloSpacing.sp2,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                widget.errorText!,
-                style: dashMeta(color: KalloColors.danger),
-              ),
-            ),
-          ),
-
-        // Pinned footer: back + add meal.
-        Container(
-          padding: EdgeInsets.fromLTRB(
-            KalloSpacing.sp4,
-            KalloSpacing.sp3,
-            KalloSpacing.sp4,
-            MediaQuery.of(context).padding.bottom + KalloSpacing.sp3,
-          ),
-          decoration: const BoxDecoration(
-            color: KalloColors.elev,
-            border: Border(top: BorderSide(color: KalloColors.borderFaint)),
-          ),
-          child: Row(
-            children: [
-              // Deliberately silent: leaving the step is not a confirmation,
-              // so it gets no haptic the way the other quiet links do.
-              QuietIconButton(
-                icon: LucideIcons.arrowLeft300,
-                label: 'logging.barcode.back'.tr(),
-                onTap: widget.saving ? null : widget.onBack,
-                haptic: false,
-              ),
-              const Spacer(),
-              SheetConfirmButton(
-                label: widget.purpose.ctaKey.tr(),
-                saving: widget.saving,
-                onTap: () => widget.onConfirm(grams),
-              ),
-            ],
-          ),
+        BarcodeProductFooter(
+          confirmLabel: widget.purpose.ctaKey.tr(),
+          saving: widget.saving,
+          errorText: widget.errorText,
+          onBack: widget.onBack,
+          onConfirm: () => widget.onConfirm(grams),
         ),
       ],
     );

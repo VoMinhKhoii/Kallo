@@ -59,7 +59,7 @@ int resolveGrams({
   return clampGrams(customGrams);
 }
 
-/// Scale a per-100g nutrient to [grams]. Calories round to whole numbers
+/// Scale a per-100 nutrient to [grams] (the amount in the product's unit). Calories round to whole numbers
 /// (`decimals: 0`), macros to one decimal, matching the source data's
 /// precision. Null passes through — unknown is not zero.
 double? scalePer100(double? per100, int grams, {int decimals = 1}) {
@@ -80,12 +80,13 @@ double? scalePer100(double? per100, int grams, {int decimals = 1}) {
 /// which is also what `reconcileMentions` would then see. Products without one
 /// keep the bare name.
 ///
-/// The grams are in the label because they are the half the user chose and the
-/// half a bare product name hides. The reference beside it carries the same
-/// number, so nothing here is load-bearing — break the text and the pick drops,
-/// which is exactly what a broken relog label does.
+/// The amount is in the label because it is the half the user chose and the
+/// half a bare product name hides — in the product's own unit, so a drink reads
+/// "(330ml)". The reference beside it carries the same number, so nothing here
+/// is load-bearing — break the text and the pick drops, which is exactly what a
+/// broken relog label does.
 String barcodePickLabel(BarcodeProduct product, int grams) {
   final brand = product.brand;
   final name = brand == null ? product.name : '$brand ${product.name}';
-  return '$name (${grams}g)';
+  return '$name ($grams${product.amountUnit})';
 }

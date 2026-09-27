@@ -24,16 +24,24 @@ class BarcodeAmountModeSwitch extends StatelessWidget {
     required this.modes,
     required this.selected,
     required this.onSelect,
+    required this.unit,
   });
 
   final List<BarcodeAmountMode> modes;
   final BarcodeAmountMode selected;
   final ValueChanged<BarcodeAmountMode> onSelect;
 
-  static String _label(BarcodeAmountMode mode) => switch (mode) {
+  /// The product's unit: the custom-amount segment reads "Millilitres" for a
+  /// drink.
+  final String unit;
+
+  String _label(BarcodeAmountMode mode) => switch (mode) {
     BarcodeAmountMode.serving => 'logging.barcode.amountServing'.tr(),
     BarcodeAmountMode.package => 'logging.barcode.amountPackage'.tr(),
-    BarcodeAmountMode.grams => 'logging.barcode.amountGrams'.tr(),
+    BarcodeAmountMode.grams =>
+      unit == 'ml'
+          ? 'logging.barcode.amountMl'.tr()
+          : 'logging.barcode.amountGrams'.tr(),
   };
 
   @override

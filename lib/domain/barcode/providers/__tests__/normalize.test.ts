@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
+import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 import {
   hasUsableNutrition,
   isNutritionComplete,
@@ -13,8 +13,8 @@ import {
 } from '../normalize';
 
 function product(
-  overrides: Partial<ParsedBarcodeProduct> = {}
-): ParsedBarcodeProduct {
+  overrides: Partial<BarcodeProductRecord> = {}
+): BarcodeProductRecord {
   return {
     barcode: '8934563138162',
     name: 'Test product',
@@ -27,6 +27,9 @@ function product(
     sodiumMg: null,
     servingSizeG: null,
     packageSizeG: null,
+    amountUnit: 'g',
+    micronutrients: {},
+    sourceImageUrl: null,
     ...overrides,
   };
 }

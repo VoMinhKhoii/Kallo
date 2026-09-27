@@ -20,9 +20,11 @@ class BarcodeServingPicker extends StatelessWidget {
     required this.totalGrams,
     required this.disabled,
     required this.onAdjust,
+    required this.unit,
   });
 
   final int servings;
+  final String unit;
   final double servingSizeG;
   final int totalGrams;
   final bool disabled;
@@ -55,7 +57,7 @@ class BarcodeServingPicker extends StatelessWidget {
         ),
         const SizedBox(height: KalloSpacing.sp1),
         Text(
-          '${'logging.barcode.perServing'.tr(namedArgs: {'grams': '${servingSizeG.round()}'})} · ${'logging.barcode.totalGrams'.tr(namedArgs: {'grams': '$totalGrams'})}',
+          '${'logging.barcode.perServing'.tr(namedArgs: {'amount': '${servingSizeG.round()}', 'unit': unit})} · ${'logging.barcode.totalGrams'.tr(namedArgs: {'amount': '$totalGrams', 'unit': unit})}',
           style: dashMeta(tabular: true),
         ),
       ],
@@ -64,9 +66,14 @@ class BarcodeServingPicker extends StatelessWidget {
 }
 
 class BarcodePackageCard extends StatelessWidget {
-  const BarcodePackageCard({super.key, required this.packageSizeG});
+  const BarcodePackageCard({
+    super.key,
+    required this.packageSizeG,
+    required this.unit,
+  });
 
   final double packageSizeG;
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +92,7 @@ class BarcodePackageCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             'logging.barcode.totalGrams'.tr(
-              namedArgs: {'grams': '${packageSizeG.round()}'},
+              namedArgs: {'amount': '${packageSizeG.round()}', 'unit': unit},
             ),
             style: dashMeta(tabular: true),
           ),

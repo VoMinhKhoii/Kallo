@@ -11,13 +11,23 @@
  * must stay instant and free. A future backfill that inserts `fdc_` siblings
  * would be preferred automatically by the rank-ordered read, with no code
  * change here.
+ *
+ * The one exception is a row older than {@link BARCODE_DATA_VERSION}: the
+ * parser has learned something since it was written, so its next scan re-asks
+ * the same provider once and overwrites it in place (`service.ts`).
  */
-import { inArray } from 'drizzle-orm';
+import { getTableColumns, inArray, type SQL, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { trustedProductImageUrl } from '@/lib/domain/barcode/image/image';
 import { parseSizeGrams } from '@/lib/domain/barcode/providers/normalize';
-import type {
-  BarcodeProviderId,
-  ParsedBarcodeProduct,
+import {
+  BARCODE_MICRONUTRIENT_KEYS,
+  type BarcodeMicronutrients,
+  type BarcodeProductRecord,
+  type BarcodeProviderId,
+  parseAmountUnit,
 } from '@/lib/domain/barcode/types';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -43,6 +53,13 @@ export const BARCODE_PROVIDER_RANK: readonly BarcodeProviderId[] = [
   'off',
 ];
 
+/**
+ * The parser generation a cached row was written by. Bump it whenever a
+ * provider adapter starts reading something new: every older row then heals on
+ * its next scan, with no backfill. 1 = unit, micronutrients and photo.
+ */
+export const BARCODE_DATA_VERSION = 1;
+
 export function barcodeCacheId(
   providerId: BarcodeProviderId,
   barcode: string
@@ -52,6 +69,22 @@ export function barcodeCacheId(
 
 /** One cached product row. Exported because the meal-item builder maps it. */
 export type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
+
+/** Which provider wrote a cached row, read off its id prefix. */
+export function providerIdOfRow(
+  row: BarcodeCacheRow
+): BarcodeProviderId | null {
+  return (
+    BARCODE_PROVIDER_RANK.find((providerId) =>
+      row.id.startsWith(BARCODE_CACHE_PREFIXES[providerId])
+    ) ?? null
+  );
+}
+
+/** Whether a row predates the current parser and should be re-fetched. */
+export function isStaleBarcodeRow(row: BarcodeCacheRow): boolean {
+  return (row.barcodeDataVersion ?? 0) < BARCODE_DATA_VERSION;
+}
 
 /**
  * The best cached row for EACH of `barcodes`, keyed by barcode. Barcodes with
@@ -118,10 +151,10 @@ export async function findCachedRow(
  * the chain's nutrition gate: meals already logged against a nutrition-less
  * row must keep resolving.
  */
-export function rowToProduct(
+export function rowToRecord(
   barcode: string,
   row: BarcodeCacheRow
-): ParsedBarcodeProduct {
+): BarcodeProductRecord {
   // Parse brand and name from primary name e.g. "[Coca-Cola] Original Taste"
   let brand: string | null = null;
   let name = row.namePrimary;
@@ -148,8 +181,23 @@ export function rowToProduct(
     // positivity + 100kg-cap invariant (single source of truth).
     servingSizeG: parseSizeGrams(row.servingSizeG),
     packageSizeG: parseSizeGrams(row.packageSizeG),
+    amountUnit: parseAmountUnit(row.amountUnit),
+    micronutrients: pickMicronutrients(nutrition),
+    sourceImageUrl: trustedProductImageUrl(row.imageUrl),
   };
 }
+
+function pickMicronutrients(nutrition: NutritionValues): BarcodeMicronutrients {
+  const result: BarcodeMicronutrients = {};
+  for (const key of BARCODE_MICRONUTRIENT_KEYS) {
+    const value = nutrition[key];
+    if (value !== null) result[key] = value;
+  }
+  return result;
+}
+
+const toNumeric = (value: number | null | undefined): string | null =>
+  value === null || value === undefined ? null : String(value);
 
 /** Every provider's `ingredient_sources` id, keyed by code, in one query. */
 export async function getBarcodeSourceIds(): Promise<Map<string, number>> {
@@ -164,10 +212,22 @@ export async function getBarcodeSourceIds(): Promise<Map<string, number>> {
   return new Map(rows.map((row) => [row.code, row.id]));
 }
 
+/**
+ * Write a provider's product to its row, or overwrite that row in place.
+ *
+ * The overwrite is what lets a stale row heal. It touches only what the
+ * provider supplies (sizing, unit, photo, nutrition) and stamps the version;
+ * the names stay as first cached, so search text, embeddings and the names on
+ * already-logged meals never move under a refresh. A refresh fills and
+ * corrects but never ERASES: a field the provider now omits keeps its stored
+ * value, because OFF has been seen silently dropping fields from a response.
+ * Two concurrent first scans both write the same provider answer, so the race
+ * is harmless.
+ */
 export async function cacheBarcodeProduct(params: {
   providerId: BarcodeProviderId;
   barcode: string;
-  product: ParsedBarcodeProduct;
+  product: BarcodeProductRecord;
   sourceId: number;
 }): Promise<void> {
   const { providerId, barcode, product, sourceId } = params;
@@ -175,8 +235,26 @@ export async function cacheBarcodeProduct(params: {
     ? `[${product.brand}] ${product.name}`
     : product.name;
 
-  // onConflictDoNothing: two concurrent first-time scans of the same barcode
-  // would otherwise race on the primary key; the loser is harmlessly ignored.
+  const providerData = {
+    servingSizeG: toNumeric(product.servingSizeG),
+    packageSizeG: toNumeric(product.packageSizeG),
+    amountUnit: product.amountUnit,
+    imageUrl: product.sourceImageUrl,
+    barcodeDataVersion: BARCODE_DATA_VERSION,
+    caloriesKcal: toNumeric(product.caloriesKcal),
+    proteinG: toNumeric(product.proteinG),
+    carbohydrateG: toNumeric(product.carbohydrateG),
+    fatG: toNumeric(product.fatG),
+    fiberG: toNumeric(product.fiberG),
+    sodiumMg: toNumeric(product.sodiumMg),
+    ...Object.fromEntries(
+      BARCODE_MICRONUTRIENT_KEYS.map((key) => [
+        key,
+        toNumeric(product.micronutrients[key]),
+      ])
+    ),
+  };
+
   await db
     .insert(vietnameseFoodComposition)
     .values({
@@ -187,23 +265,32 @@ export async function cacheBarcodeProduct(params: {
       typeEn: 'Packaged product',
       sourceId,
       state: 'cooked',
-      servingSizeG:
-        product.servingSizeG !== null ? String(product.servingSizeG) : null,
-      packageSizeG:
-        product.packageSizeG !== null ? String(product.packageSizeG) : null,
-      caloriesKcal:
-        product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
-      proteinG: product.proteinG !== null ? String(product.proteinG) : null,
-      carbohydrateG:
-        product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
-      fatG: product.fatG !== null ? String(product.fatG) : null,
-      fiberG: product.fiberG !== null ? String(product.fiberG) : null,
-      sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
+      ...providerData,
       // search_text / search_text_ascii are owned by the
       // `on_food_composition_search_text` trigger (migration 20260301022622):
       // it derives search_text from the name columns and unaccents
       // search_text_ascii in Postgres. Supplying them here would be dead
       // writes that mask where the real fold happens.
     })
-    .onConflictDoNothing({ target: vietnameseFoodComposition.id });
+    .onConflictDoUpdate({
+      target: vietnameseFoodComposition.id,
+      set: keepStoredWhenOmitted(Object.keys(providerData)),
+    });
+}
+
+/** `coalesce(excluded.<col>, <col>)` for each key: the fresh value, else the stored one. */
+function keepStoredWhenOmitted(keys: string[]): Record<string, SQL> {
+  const columns = getTableColumns(vietnameseFoodComposition) as Record<
+    string,
+    AnyPgColumn
+  >;
+  return Object.fromEntries(
+    keys.map((key) => {
+      const column = columns[key];
+      return [
+        key,
+        sql`coalesce(excluded.${sql.identifier(column.name)}, ${column})`,
+      ];
+    })
+  );
 }

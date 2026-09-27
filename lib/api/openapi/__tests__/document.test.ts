@@ -233,13 +233,14 @@ describe('the published OpenAPI document', () => {
     expect(wrong).toEqual([]);
   });
 
-  it('names the four public operations', () => {
+  it('names the five public operations', () => {
     const publicIds = everyOperation()
       .filter(({ op }) => !op['x-internal'])
       .map(({ op }) => op.operationId)
       .sort();
     expect(publicIds).toEqual([
       'confirmWaitlist',
+      'getBarcodeProductImage',
       'getHealth',
       'getInvitePreview',
       'joinWaitlist',

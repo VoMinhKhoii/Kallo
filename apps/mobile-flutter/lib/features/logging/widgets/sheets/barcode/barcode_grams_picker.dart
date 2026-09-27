@@ -1,5 +1,6 @@
-/// The custom-grams mode: a typed amount flanked by ± steppers, with one-tap
-/// chips for the portions people reach for most.
+/// The custom-amount mode: a typed amount in the product's unit (grams, or
+/// millilitres for a drink) flanked by ± steppers, with one-tap chips for the
+/// portions people reach for most.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -21,9 +22,12 @@ class BarcodeGramsPicker extends StatelessWidget {
     required this.disabled,
     required this.onAdjust,
     required this.onChanged,
+    required this.unit,
   });
 
+  /// The amount, in [unit].
   final int grams;
+  final String unit;
   final bool disabled;
   final ValueChanged<int> onAdjust;
   final ValueChanged<double?> onChanged;
@@ -43,9 +47,10 @@ class BarcodeGramsPicker extends StatelessWidget {
             const SizedBox(width: KalloSpacing.sp2),
             Expanded(
               child: DecimalInput(
-                // Keyed so stepper taps (which change state outside the
-                // field) refresh the text.
-                key: ValueKey(grams),
+                // NOT keyed on the value: a key that changes per keystroke
+                // builds a new field each time, which drops focus and the
+                // keyboard after one digit. DecimalInput already syncs a
+                // stepper or chip change into its text (didUpdateWidget).
                 value: grams.toDouble(),
                 integer: true,
                 onValueChange: disabled ? (_) {} : onChanged,
@@ -71,7 +76,7 @@ class BarcodeGramsPicker extends StatelessWidget {
           children: [
             for (final option in quickGramOptions)
               _QuickChip(
-                label: '${option}g',
+                label: '$option$unit',
                 selected: grams == option,
                 onTap:
                     disabled

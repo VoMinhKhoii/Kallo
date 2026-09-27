@@ -163,6 +163,16 @@ void main() {
       expect(barcodePickLabel(bareProduct, 100), 'Mystery snack (100g)');
     });
 
+    test('says a drink in millilitres', () {
+      const milk = BarcodeProduct(
+        barcode: '8935217400058',
+        name: 'Sữa tươi',
+        brand: 'TH true milk',
+        amountUnit: 'ml',
+      );
+      expect(barcodePickLabel(milk, 180), 'TH true milk Sữa tươi (180ml)');
+    });
+
     // Two packages, one name: without the brand both picks read as the same
     // words, so the sentence cannot say which was scanned — and neither can
     // `reconcileMentions`, which locates a pick BY those words.
@@ -194,6 +204,44 @@ void main() {
       expect(product.servingSizeG, 30.5);
       expect(product.proteinG, isNull);
       expect(product.packageSizeG, isNull);
+    });
+
+    test('reads an older server with no unit, photo or micros as grams', () {
+      final product = BarcodeProduct.fromJson(const {
+        'barcode': '123',
+        'name': 'Snack',
+      });
+      expect(product.amountUnit, 'g');
+      expect(product.imageUrl, isNull);
+      expect(product.micronutrients, isNull);
+    });
+
+    test('reads the unit, the photo path and the micronutrients', () {
+      final product = BarcodeProduct.fromJson(const {
+        'barcode': '8938507849131',
+        'name': 'Coconut Water',
+        'amountUnit': 'ml',
+        'imageUrl': '/api/v1/barcode/image/8938507849131',
+        'micronutrients': {'calciumMg': 10, 'potassiumMg': 170.5},
+      });
+      expect(product.amountUnit, 'ml');
+      expect(product.imageUrl, '/api/v1/barcode/image/8938507849131');
+      expect(product.micronutrients, {'calciumMg': 10.0, 'potassiumMg': 170.5});
+    });
+
+    test('keeps a Premium-stripped response distinguishable from none', () {
+      final stripped = BarcodeProduct.fromJson(const {
+        'barcode': '1',
+        'name': 'x',
+        'micronutrients': null,
+      });
+      final empty = BarcodeProduct.fromJson(const {
+        'barcode': '1',
+        'name': 'x',
+        'micronutrients': <String, dynamic>{},
+      });
+      expect(stripped.micronutrients, isNull);
+      expect(empty.micronutrients, isEmpty);
     });
   });
 }

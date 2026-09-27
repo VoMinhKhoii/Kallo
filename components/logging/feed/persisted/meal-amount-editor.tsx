@@ -43,6 +43,7 @@ export function MealAmountEditor({
           id: ing.id,
           name: ing.ingredientName,
           grams: ing.estimatedGrams,
+          unit: ing.userFacingUnit === 'ml' ? 'ml' : 'g',
           removed: false,
         }))
       ),

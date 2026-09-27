@@ -1,18 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDbSelect, mockDbInsert, mockUser, mockAssertRateLimit } =
-  vi.hoisted(() => {
-    const mockDbSelect = vi.fn();
-    const mockDbInsert = vi.fn();
-    const mockUser = { id: 'user-123', email: 'test@example.com' };
-    const mockAssertRateLimit = vi.fn();
-    return {
-      mockDbSelect,
-      mockDbInsert,
-      mockUser,
-      mockAssertRateLimit,
-    };
-  });
+const {
+  mockDbSelect,
+  mockDbInsert,
+  mockUser,
+  mockAssertRateLimit,
+  mockCheckFeatureGate,
+} = vi.hoisted(() => {
+  const mockDbSelect = vi.fn();
+  const mockDbInsert = vi.fn();
+  const mockUser = { id: 'user-123', email: 'test@example.com' };
+  const mockAssertRateLimit = vi.fn();
+  const mockCheckFeatureGate = vi.fn();
+  return {
+    mockDbSelect,
+    mockDbInsert,
+    mockUser,
+    mockAssertRateLimit,
+    mockCheckFeatureGate,
+  };
+});
+
+// Micronutrients are Premium to see. Unlocked by default; one case locks it.
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: mockCheckFeatureGate,
+}));
 
 // The generic limiter has its own suite; here it admits by default so the
 // barcode logic is what is under test. One case overrides it to prove a block
@@ -38,14 +50,8 @@ vi.mock('@/lib/infra/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/infra/db/schema', () => ({
-  vietnameseFoodComposition: { id: 'vietnameseFoodComposition.id' },
-  ingredientSources: {
-    id: 'ingredientSources.id',
-    code: 'ingredientSources.code',
-  },
-  pendingAnalyses: { id: 'pendingAnalyses.id' },
-}));
+// The real schema: it is pure table definitions, and the upsert builds its
+// conflict clause from the table's actual columns.
 
 // Stubbing the chain is what keeps this suite off the network — it owns every
 // provider fetch.
@@ -61,6 +67,7 @@ import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
 describe('searchBarcodeAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCheckFeatureGate.mockResolvedValue({ locked: false });
   });
 
   it('should return from local cache if present', async () => {
@@ -79,6 +86,8 @@ describe('searchBarcodeAction', () => {
               sodiumMg: 850,
               servingSizeG: '75',
               packageSizeG: '150',
+              calciumMg: '12',
+              barcodeDataVersion: 1,
             },
           ]),
         }),
@@ -101,8 +110,55 @@ describe('searchBarcodeAction', () => {
         sodiumMg: 850,
         servingSizeG: 75,
         packageSizeG: 150,
+        amountUnit: 'g',
+        imageUrl: null,
+        micronutrients: { calciumMg: 12 },
       },
     });
+    expect(mockCheckFeatureGate).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123' }),
+      'micronutrients'
+    );
+  });
+
+  it('strips every Premium figure for a viewer without access', async () => {
+    mockCheckFeatureGate.mockResolvedValue({
+      locked: true,
+      reason: 'not_entitled',
+    });
+    mockDbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([
+            {
+              id: 'off_8934563138162',
+              namePrimary: 'Sữa tươi',
+              caloriesKcal: 66,
+              fiberG: 0,
+              sodiumMg: 40,
+              calciumMg: '110',
+              amountUnit: 'ml',
+              barcodeDataVersion: 1,
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const result = await searchBarcodeAction({ barcode: '8934563138162' });
+
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        caloriesKcal: 66,
+        amountUnit: 'ml',
+        fiberG: null,
+        sodiumMg: null,
+        micronutrients: null,
+      },
+    });
+    // Hidden, not discarded: nothing about the stored row changed.
+    expect(mockDbInsert).not.toHaveBeenCalled();
   });
 
   it('should fetch from API and cache if not in local cache', async () => {
@@ -136,6 +192,9 @@ describe('searchBarcodeAction', () => {
       sodiumMg: 850,
       servingSizeG: 75,
       packageSizeG: null,
+      amountUnit: 'g' as const,
+      micronutrients: {},
+      sourceImageUrl: null,
     };
 
     vi.mocked(resolveBarcodeProduct).mockResolvedValue({
@@ -155,7 +214,7 @@ describe('searchBarcodeAction', () => {
       values: vi.fn().mockImplementation((val) => {
         capturedValues.push(val);
         return {
-          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
         };
       }),
     });
@@ -165,9 +224,10 @@ describe('searchBarcodeAction', () => {
     expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
       seededSourceCodes: new Set(['OFF']),
     });
+    const { sourceImageUrl: _source, ...clientFields } = mockProduct;
     expect(result).toEqual({
       success: true,
-      data: mockProduct,
+      data: { ...clientFields, imageUrl: null },
     });
     expect(mockDbInsert).toHaveBeenCalledTimes(1);
     expect(capturedValues[0]).toMatchObject({

@@ -1,7 +1,7 @@
 ---
 title: Barcode scanning
 description: Packaged food, logged with the camera — figures taken straight from the label.
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-26'
 ---
 
 For packaged food the label already has the numbers. Nothing needs estimating.
@@ -20,13 +20,15 @@ label — you can type the digits by hand.
 </Step>
 
 <Step index={3} title="Check the product">
-Kallo looks the code up in the Open Food Facts database and shows the product
-name and its nutrition figures.
+Kallo looks the code up in the Open Food Facts database and shows the product,
+its photo and its nutrition figures. Drinks are measured in millilitres, the way
+their label states them. With Premium you also see the fiber, sodium, vitamins
+and minerals the label lists; they are saved with the meal on every plan.
 </Step>
 
 <Step index={4} title="Choose how to measure it">
-Three ways: by the **serving** on the label, by the **whole package**, or by a
-**gram amount** you type.
+Three ways: by the **serving** on the label, by the **whole package**, or by an
+amount you type — **grams**, or **millilitres** for a drink.
 </Step>
 </Steps>
 
@@ -41,7 +43,9 @@ is still uneven. If nothing comes back:
 
 <Callout label="What the scan sends">
 Only the barcode digits are sent to Open Food Facts for the lookup. No image, no
-account information. Details in the [privacy policy](/docs/legal/privacy).
+account information. The product photo is fetched by Kallo's server and passed
+on to you, so Open Food Facts never sees who looked at it. Details in the
+[privacy policy](/docs/legal/privacy).
 </Callout>
 
 ## About label accuracy
@@ -49,4 +53,4 @@ account information. Details in the [privacy policy](/docs/legal/privacy).
 Package figures are rounded and carry a legally permitted tolerance. They are
 usually more accurate than an estimate, but not exact — and the serving on the
 label rarely matches what you actually ate. If you had two thirds of the packet,
-use the gram amount.
+type the amount instead.

@@ -6,9 +6,11 @@ import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../logic/barcode_amount.dart';
 import '../../../../../theme/calm_tokens.dart';
+import 'barcode_micronutrients.dart';
 
-/// What the chosen amount comes to: calories in the hero figure, then the
-/// three macros scaled off the per-100g panel.
+/// What the chosen amount comes to: calories in the hero figure, the three
+/// macros scaled off the per-100 panel, then — for Premium — the label's other
+/// nutrients behind a disclosure.
 class BarcodeNutritionPreview extends StatelessWidget {
   const BarcodeNutritionPreview({
     super.key,
@@ -17,6 +19,8 @@ class BarcodeNutritionPreview extends StatelessWidget {
   });
 
   final BarcodeProduct product;
+
+  /// The chosen amount, in the product's unit.
   final int grams;
 
   String _fmt(double? value) => value == null ? '—' : '$value';
@@ -52,7 +56,7 @@ class BarcodeNutritionPreview extends StatelessWidget {
         children: [
           Text(
             'logging.barcode.nutritionForAmount'.tr(
-              namedArgs: {'grams': '$grams'},
+              namedArgs: {'amount': '$grams', 'unit': product.amountUnit},
             ),
             style: kGroupLabel(),
           ),
@@ -88,6 +92,7 @@ class BarcodeNutritionPreview extends StatelessWidget {
                 ),
             ],
           ),
+          BarcodeMicronutrients(product: product, grams: grams),
         ],
       ),
     );
