@@ -15,7 +15,11 @@ import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/screens/dashboard_screen.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/chrome/week_day_cell.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/chrome/week_strip.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/today/today_first_run.dart';
+import 'package:kallo_mobile/features/logging/logic/timeline_utils.dart'
+    show addDays;
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_grid_painter.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/states/card_skeletons.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart';
@@ -331,5 +335,41 @@ void main() {
 
     gate.complete(DashboardBundle.fromJson(_bundleJson()));
     await tester.pumpAndSettle();
+  });
+  testWidgets('a first-run dashboard ignores strip taps instead of crashing', (
+    tester,
+  ) async {
+    // Sentry KALLO-MOBILE-1 (1.0.1+55, fatal): a brand-new user tapped a past
+    // day on the week strip. First-run shows the static FirstRunCard, not the
+    // DayPager, so the page controller had no attached PageView and
+    // animateToPage / jumpToPage threw `StateError: Bad state: No element`.
+    // The bundle here is first-run: no meals, no heatmap cells.
+    await tester.pumpWidget(
+      app(load: () async => DashboardBundle.fromJson(_bundleJson())),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(FirstRunCard), findsOneWidget, reason: 'first-run');
+
+    // Drive the strip's own callback: yesterday may sit on the previous week's
+    // page, so tapping it on screen would depend on the weekday the test runs.
+    final today = todayDateString();
+    final onSelectDay =
+        tester
+            .widget<WeekDayCell>(
+              find.byWidgetPredicate((w) => w is WeekDayCell && w.isToday),
+            )
+            .onSelectDay;
+
+    onSelectDay(addDays(today, -1)); // a neighbour → animateToPage
+    await tester.pumpAndSettle();
+    onSelectDay(addDays(today, -5)); // further back → jumpToPage
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.byType(FirstRunCard),
+      findsOneWidget,
+      reason: 'first-run has only today to show, so the tap is a no-op',
+    );
   });
 }
