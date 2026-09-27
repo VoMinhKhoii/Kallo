@@ -13,7 +13,6 @@ import {
 const vegetableEstimate: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
   {
     ingredientName: 'rau muống',
-    caloriesKcal: { low: 45, mid: 55, high: 65 },
     proteinG: { low: 2, mid: 3, high: 4 },
     carbohydrateG: { low: 4, mid: 5, high: 6 },
     fatG: { low: 6, mid: 7, high: 8 },

@@ -22,7 +22,6 @@ describe('resolveIngredientMacros — prepNotesPresent unlocks P/C', () => {
           ingredients: [
             {
               ingredientName: 'đùi gà',
-              caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: p, mid: p, high: p },
               carbohydrateG: { low: c, mid: c, high: c },
               fatG: { low: f, mid: f, high: f },

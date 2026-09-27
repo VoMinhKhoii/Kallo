@@ -14,7 +14,6 @@ describe('streamed refuse resolution', () => {
           ingredientName: 'khúc cá',
           grossG: 200,
           refusePct: 20,
-          caloriesKcal: triple(200),
           proteinG: triple(30),
           carbohydrateG: triple(0),
           fatG: triple(8),

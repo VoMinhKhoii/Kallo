@@ -18,6 +18,8 @@ interface StagePendingAnalysis {
   entryMode: 'precise' | 'cheat';
   loggedAt: Date;
   attemptId?: string;
+  /** Copied onto the meal at confirm so its AI spend can be joined back. */
+  pipelineRequestId?: string;
 }
 
 /**
@@ -38,6 +40,7 @@ export function upsertPendingAnalysis(values: StagePendingAnalysis) {
         rawInput: values.rawInput,
         entryMode: values.entryMode,
         loggedAt: values.loggedAt,
+        pipelineRequestId: values.pipelineRequestId ?? null,
         expiresAt: sql`now() + interval '30 minutes'`,
       },
     })

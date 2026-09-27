@@ -319,7 +319,7 @@ describe('grounded-estimation prompt structure', () => {
         'rib ≈ 40–60%; wing ≈ 30–50%; whole fish ≈ 35–50%'
       );
       expect(enabled).toContain(
-        'db_inedible_pct, when present on a candidate, is the DB'
+        "db_inedible_pct, when present on a candidate, is that row's own"
       );
       expect(enabled).toContain(
         'Gross PORTION_PRIORS use basis-explicit labels'
@@ -514,7 +514,7 @@ describe('buildStaticPrefix locale blocks', () => {
     expect(global).toContain('pizza slice ~250–300 kcal/100g');
     expect(global).not.toContain('nem lụi ~250–290');
     // Shared cap and refuse anchors stay in both variants.
-    expect(global).toContain('Stay under 900 kcal/100g');
+    expect(global).toContain('under 900 kcal/100g');
     expect(global).toContain('rib ≈ 40–60%');
   });
 });

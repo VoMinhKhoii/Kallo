@@ -26,6 +26,8 @@ import {
  * Raw shape that comes out of `nutritionAdjustmentSchema.parse()` before
  * reconciliation: `ingredientId` / `mealItemId` are optional (today's prompt
  * does not request them). Macros are absolute `{low, mid, high}` triples.
+ * There is no kcal: the resolver always derives it from 4P + 4C + 9F (the v1
+ * legacy payload still carries one; it is simply never read).
  */
 export type RawNutritionAdjustment = {
   mealItems: Array<{
@@ -34,7 +36,6 @@ export type RawNutritionAdjustment = {
     ingredients: Array<{
       ingredientId?: string;
       ingredientName: string;
-      caloriesKcal: BoundedEstimate;
       proteinG: BoundedEstimate;
       carbohydrateG: BoundedEstimate;
       fatG: BoundedEstimate;

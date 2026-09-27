@@ -1,0 +1,2 @@
+ALTER TABLE "analysis_model_budget_events" ADD COLUMN IF NOT EXISTS "cached_tokens" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "analysis_model_budget_events" ADD COLUMN IF NOT EXISTS "thought_tokens" integer DEFAULT 0 NOT NULL;

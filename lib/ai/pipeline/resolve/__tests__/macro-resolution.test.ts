@@ -15,8 +15,7 @@ afterEach(() => {
 
 function rawNutrition(
   mealItemName: string,
-  ingredientName: string,
-  caloriesMid = 100
+  ingredientName: string
 ): RawNutritionAdjustment {
   return {
     mealItems: [
@@ -25,11 +24,6 @@ function rawNutrition(
         ingredients: [
           {
             ingredientName,
-            caloriesKcal: {
-              low: caloriesMid - 10,
-              mid: caloriesMid,
-              high: caloriesMid + 10,
-            },
             proteinG: { low: 1, mid: 2, high: 3 },
             carbohydrateG: { low: 1, mid: 2, high: 3 },
             fatG: { low: 0.5, mid: 1, high: 1.5 },
@@ -116,7 +110,6 @@ describe('reconcileNutritionIds', () => {
             ingredients: [
               {
                 ingredientName: 'nước dùng',
-                caloriesKcal: { low: 80, mid: 80, high: 80 },
                 proteinG: { low: 8, mid: 8, high: 8 },
                 carbohydrateG: { low: 6, mid: 6, high: 6 },
                 fatG: { low: 2, mid: 2, high: 2 },
@@ -128,7 +121,6 @@ describe('reconcileNutritionIds', () => {
             ingredients: [
               {
                 ingredientName: 'nước dùng',
-                caloriesKcal: { low: 60, mid: 60, high: 60 },
                 proteinG: { low: 6, mid: 6, high: 6 },
                 carbohydrateG: { low: 4, mid: 4, high: 4 },
                 fatG: { low: 1, mid: 1, high: 1 },
@@ -240,7 +232,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'Chả giò tôm',
-              caloriesKcal: { low: 290, mid: 320, high: 380 },
               proteinG: { low: 12, mid: 14, high: 17 },
               carbohydrateG: { low: 30, mid: 33, high: 38 },
               fatG: { low: 9, mid: 11, high: 14 },
@@ -314,7 +305,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'bánh hủ tíu',
-              caloriesKcal: { low: 800, mid: 822, high: 850 },
               proteinG: { low: 35, mid: 40, high: 45 },
               carbohydrateG: { low: 120, mid: 137, high: 150 },
               fatG: { low: 0.6, mid: 0.8, high: 1 },
@@ -378,7 +368,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'trứng gà',
-              caloriesKcal: { low: 420, mid: 447, high: 480 },
               proteinG: { low: 30, mid: 34, high: 38 },
               carbohydrateG: { low: 0.8, mid: 1, high: 1.5 },
               fatG: { low: 30, mid: 34, high: 38 },
@@ -439,7 +428,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'Sườn non',
-              caloriesKcal: { low: 5500, mid: 5511, high: 5520 },
               proteinG: { low: 22, mid: 22, high: 22 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 90, mid: 91, high: 92 },
@@ -502,7 +490,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'gạo tẻ',
-              caloriesKcal: { low: 180, mid: 200, high: 220 },
               proteinG: { low: 3, mid: 4, high: 5 },
               carbohydrateG: { low: 38, mid: 42, high: 46 },
               fatG: { low: 0, mid: 0.5, high: 1 },
@@ -551,7 +538,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'nem lụi',
-              caloriesKcal: { low: 170, mid: 200, high: 240 },
               proteinG: { low: 13, mid: 14, high: 16 },
               carbohydrateG: { low: 2, mid: 2.5, high: 3 },
               fatG: { low: 12, mid: 14, high: 17 },
@@ -601,7 +587,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'Nem lụi',
-              caloriesKcal: { low: 3200, mid: 3360, high: 3500 },
               proteinG: { low: 150, mid: 170, high: 190 },
               carbohydrateG: { low: 40, mid: 50, high: 60 },
               fatG: { low: 280, mid: 300, high: 320 },
@@ -656,7 +641,6 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
           ingredients: [
             {
               ingredientName: 'sốt đậu phộng',
-              caloriesKcal: { low: 300, mid: 400, high: 1500 },
               proteinG: { low: 8, mid: 12, high: 40 },
               carbohydrateG: { low: 8, mid: 12, high: 40 },
               fatG: { low: 25, mid: 35, high: 135 },

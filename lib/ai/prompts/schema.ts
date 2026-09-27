@@ -65,10 +65,17 @@ function stripDescriptionAndRuntimeIdKeys(
   return result;
 }
 
+/**
+ * Slim is the default (2026-09-26): on Vertex the response schema is billed as
+ * prompt tokens (Call 1: 1,733 full vs 803 slim) and a 182-case golden-set run
+ * showed no accuracy or structured-output reliability change. Every rule the
+ * stripped descriptions carried is also in the prompt text. `full` is the
+ * rollback switch.
+ */
 export function getProviderJsonSchemaMode(
   env: Record<string, string | undefined> = process.env
 ): ProviderJsonSchemaMode {
-  return env[PROVIDER_SCHEMA_MODE_ENV] === 'slim' ? 'slim' : 'full';
+  return env[PROVIDER_SCHEMA_MODE_ENV] === 'full' ? 'full' : 'slim';
 }
 
 export type ProviderJsonSchema = ReturnType<

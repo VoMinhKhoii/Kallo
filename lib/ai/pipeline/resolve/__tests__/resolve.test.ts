@@ -37,7 +37,6 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
               ingredientName: 'đậu hũ',
               grossG: 100,
               refusePct: 50,
-              caloriesKcal: { low: 70, mid: 80, high: 90 },
               proteinG: { low: 7, mid: 8, high: 9 },
               carbohydrateG: { low: 1, mid: 2, high: 3 },
               fatG: { low: 3, mid: 4, high: 5 },
@@ -86,7 +85,6 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
               ingredientName: '1 miếng sườn heo',
               grossG: 220,
               refusePct: 50,
-              caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 0, mid: 0, high: 0 },
@@ -149,7 +147,6 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
               ingredientName: 'unknown-basis ingredient',
               grossG: 200,
               refusePct: 25,
-              caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 0, mid: 0, high: 0 },
@@ -260,7 +257,6 @@ describe('bridgeV2ToV1 — rejected verdict ("none")', () => {
               rejectReason: 'category mismatch — thigh ≠ whole-bird aggregate',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 250, mid: 280, high: 310 },
               proteinG: { low: 25, mid: 28, high: 30 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 10, mid: 12, high: 14 },
@@ -298,7 +294,6 @@ describe('bridgeV2ToV1 — unmatched (no candidates emitted)', () => {
               ingredientName: 'đùi gà',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 270, mid: 290, high: 310 },
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 10, mid: 12, high: 14 },
@@ -352,7 +347,6 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
               grossG: 150,
               refusePct: 0,
               // Cheap flat placeholders — discarded for matched ingredients.
-              caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 10, mid: 12, high: 14 },
@@ -374,18 +368,17 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
     // fatG (the one triple the server still needs from Call 2) flows through.
     expect(out.rawNutrition.mealItems[0].ingredients[0].fatG.mid).toBe(12);
-    // Placeholder P/kcal pass through raw — harmless because
-    // resolveIngredientMacros overwrites P/C/kcal from the DB base for matched.
+    // Placeholder P passes through raw — harmless because
+    // resolveIngredientMacros overwrites P/C from the DB base for matched, and
+    // kcal is never carried at all (always derived from 4P + 4C + 9F).
     expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG).toEqual({
       low: 0,
       mid: 0,
       high: 0,
     });
-    expect(out.rawNutrition.mealItems[0].ingredients[0].caloriesKcal).toEqual({
-      low: 0,
-      mid: 0,
-      high: 0,
-    });
+    expect('caloriesKcal' in out.rawNutrition.mealItems[0].ingredients[0]).toBe(
+      false
+    );
   });
 
   it('produces IDENTICAL resolved matched numbers for placeholder vs full LLM triples', () => {
@@ -408,7 +401,6 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
     const resolveSlim = nutritionTesting.resolveIngredientMacros(
       {
         ingredientName: 'đùi gà',
-        caloriesKcal: ZERO_TRIPLE,
         proteinG: ZERO_TRIPLE,
         carbohydrateG: ZERO_TRIPLE,
         fatG: slim.fatG,
@@ -465,7 +457,6 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
               ingredientName: 'nước lọc',
               grossG: 300,
               refusePct: 0,
-              caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 0, mid: 0, high: 0 },
@@ -497,7 +488,6 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
               ingredientName: 'ức gà',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 240, mid: 250, high: 260 },
               proteinG: { low: 44, mid: 46, high: 48 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 3, mid: 4, high: 5 },
@@ -515,7 +505,7 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
     expect(out.verdicts[0].verdict).toBe('unmatched');
     expect(out.plausibility[0].state).toBe('ok');
     expect(out.unmatched).toHaveLength(1);
-    expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG.mid).toBe(46);
+    expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG?.mid).toBe(46);
   });
 
   it('matched ingredient with placeholder P/C/kcal → still ok, real anchored numbers (regression guard)', () => {
@@ -531,7 +521,6 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
               selectedCandidateId: 'c1',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 10, mid: 12, high: 14 },
@@ -567,7 +556,6 @@ describe('bridgeV2ToV1 — selectedCandidateId out of range', () => {
               selectedCandidateId: 'c9',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 0, mid: 0, high: 0 },
@@ -655,7 +643,6 @@ describe('bridgeV2ToV1 — case-insensitive name matching', () => {
               selectedCandidateId: 'c1',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 270, mid: 290, high: 310 },
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
               fatG: { low: 10, mid: 12, high: 14 },
@@ -757,7 +744,6 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
               ingredientName: 'đùi gà',
               grossG: 150,
               refusePct: 0,
-              caloriesKcal: { low: 90, mid: 100, high: 110 },
               proteinG: { low: 4, mid: 5, high: 6 },
               carbohydrateG: { low: 18, mid: 20, high: 22 },
               fatG: { low: 1, mid: 2, high: 3 },
@@ -784,9 +770,8 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(330);
     const ing = out.rawNutrition.mealItems[0].ingredients[0];
     // 330/150 = 2.2x
-    expect(ing.caloriesKcal.mid).toBeCloseTo(220, 5);
-    expect(ing.proteinG.mid).toBeCloseTo(11, 5);
-    expect(ing.carbohydrateG.mid).toBeCloseTo(44, 5);
+    expect(ing.proteinG?.mid).toBeCloseTo(11, 5);
+    expect(ing.carbohydrateG?.mid).toBeCloseTo(44, 5);
     expect(ing.fatG.mid).toBeCloseTo(4.4, 5);
   });
 
@@ -930,7 +915,6 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
               grossG: 250,
               refusePct: 0,
               // The bug: the LLM assigned P/F but C≈0 to a starch base.
-              caloriesKcal: { low: 120, mid: 135, high: 150 },
               proteinG: { low: 14, mid: 15, high: 16 },
               carbohydrateG: { low: 0, mid: 0, high: 1 },
               fatG: { low: 11, mid: 12, high: 13 },
@@ -939,7 +923,6 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
               ingredientName: 'chả bò',
               grossG: 60,
               refusePct: 0,
-              caloriesKcal: { low: 130, mid: 140, high: 150 },
               proteinG: { low: 12, mid: 13, high: 14 },
               carbohydrateG: { low: 1, mid: 2, high: 3 },
               fatG: { low: 8, mid: 9, high: 10 },
@@ -1008,7 +991,6 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
               ingredientName,
               grossG: 350,
               refusePct: 0,
-              caloriesKcal: { low: 380, mid: 410, high: 440 },
               proteinG: { low: 18, mid: 20, high: 22 },
               carbohydrateG,
               fatG: { low: 34, mid: 37, high: 40 },
@@ -1043,9 +1025,9 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
     });
 
     expect(out.rawNutrition.mealItems).toHaveLength(1);
-    expect(out.rawNutrition.mealItems[0].ingredients[0].carbohydrateG.mid).toBe(
-      55
-    );
+    expect(
+      out.rawNutrition.mealItems[0].ingredients[0].carbohydrateG?.mid
+    ).toBe(55);
     expect(out.plausibility[0].state).toBe('ok');
   });
 
@@ -1064,7 +1046,6 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
                 ingredientName: 'mì chính',
                 grossG: 3,
                 refusePct: 0,
-                caloriesKcal: ZERO_TRIPLE,
                 proteinG: ZERO_TRIPLE,
                 carbohydrateG: ZERO_TRIPLE,
                 fatG: ZERO_TRIPLE,

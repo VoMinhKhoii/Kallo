@@ -19,7 +19,9 @@ export const drizzleAnalysisModelBudgetSource: AnalysisModelBudgetSource = {
       .select({
         globalRequests: sql<number>`coalesce(sum(${analysisModelBudgetEvents.requestCount}), 0)::int`,
         shadowRequests: sql<number>`coalesce(sum(${analysisModelBudgetEvents.requestCount}) filter (where ${analysisModelBudgetEvents.workKind} = 'shadow'), 0)::int`,
-        globalTokens: sql<number>`coalesce(sum(${analysisModelBudgetEvents.inputTokens} + ${analysisModelBudgetEvents.outputTokens}), 0)::int`,
+        // Billed tokens: thinking is billed as output but kept out of
+        // output_tokens; cached tokens are already inside input_tokens.
+        globalTokens: sql<number>`coalesce(sum(${analysisModelBudgetEvents.inputTokens} + ${analysisModelBudgetEvents.outputTokens} + ${analysisModelBudgetEvents.thoughtTokens}), 0)::int`,
       })
       .from(analysisModelBudgetEvents)
       .where(
@@ -63,6 +65,8 @@ export async function recordAnalysisModelBudgetEvent(
     requestCount: readNonNegativeInteger(input.requestCount, 1),
     inputTokens: readNonNegativeInteger(input.inputTokens, 0),
     outputTokens: readNonNegativeInteger(input.outputTokens, 0),
+    cachedTokens: readNonNegativeInteger(input.cachedTokens, 0),
+    thoughtTokens: readNonNegativeInteger(input.thoughtTokens, 0),
     errorCategory: input.errorCategory ?? null,
   });
 

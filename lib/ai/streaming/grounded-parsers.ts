@@ -178,7 +178,6 @@ export function resolveStreamingV2MealItem(
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,
-        caloriesKcal: rawIng.caloriesKcal ?? ZERO_TRIPLE,
         proteinG: rawIng.proteinG ?? ZERO_TRIPLE,
         carbohydrateG: rawIng.carbohydrateG ?? ZERO_TRIPLE,
         fatG: rawIng.fatG,

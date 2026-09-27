@@ -95,6 +95,7 @@ export async function confirmCheatMeal(args: {
         ...(mealId ? { id: mealId } : {}),
         userId,
         rawInput: pending.rawInput,
+        pipelineRequestId: pending.pipelineRequestId,
         mealSlot,
         confidenceOverall: spec.confidence,
         loggedAt,

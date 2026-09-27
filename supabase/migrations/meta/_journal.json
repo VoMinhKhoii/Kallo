@@ -554,6 +554,13 @@
       "when": 1790340600000,
       "tag": "20260925125000_circle_blocks_and_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1790398803105,
+      "tag": "20260926050003_add_budget_event_cache_thought_tokens",
+      "breakpoints": true
     }
   ]
 }

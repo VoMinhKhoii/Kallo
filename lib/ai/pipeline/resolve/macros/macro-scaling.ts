@@ -45,8 +45,8 @@ export function resolveMacroSource(args: {
   if (acceptedCandidate?.nutrition != null) return { kind: 'db' };
   // No DB anchor (unmatched, rejected, or an accepted candidate whose
   // nutrition never loaded): Call 2's triples carry the row. The schema makes
-  // all four triples REQUIRED (D3 optionality reverted after the mì-gói
-  // incident, where an omitted carbohydrateG became a persisted C:0g), so a
+  // P/C/F REQUIRED (D3 optionality reverted after the mì-gói incident, where
+  // an omitted carbohydrateG became a persisted C:0g; kcal is derived), so a
   // parsed `ground` always has a full set of numbers. Whether those numbers
   // are PLAUSIBLE is the plausibility classifier's job, not this function's —
   // an explicit zero from the model ships, flagged in telemetry.
@@ -69,7 +69,7 @@ export function scaleGroundedMacros(
   modelEdibleGrams?: number | null
 ): Pick<
   RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
-  'caloriesKcal' | 'proteinG' | 'carbohydrateG' | 'fatG'
+  'proteinG' | 'carbohydrateG' | 'fatG'
 > {
   const llmGrams =
     modelEdibleGrams ??
@@ -87,7 +87,6 @@ export function scaleGroundedMacros(
   const s = (b: BoundedEstimate | null | undefined): BoundedEstimate =>
     b == null ? ZERO_TRIPLE : factor === 1 ? b : scaleBounded(b, factor);
   return {
-    caloriesKcal: s(ground?.caloriesKcal),
     proteinG: s(ground?.proteinG),
     carbohydrateG: s(ground?.carbohydrateG),
     fatG: s(ground?.fatG),

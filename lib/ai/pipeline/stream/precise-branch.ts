@@ -151,6 +151,7 @@ export async function runPreciseBranch({
       entryMode: 'precise',
       loggedAt: ctx.loggedAt,
       attemptId: ctx.attemptId,
+      pipelineRequestId: requestId,
     }),
     PERSIST_DEADLINE_MS
   );
