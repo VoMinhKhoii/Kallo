@@ -42,8 +42,8 @@ lib/
                        surface_cast.dart (area × state → assets/illustrations/)
   shell/               app shell: header/, nav/ (pill tab bar), launch/ (the
                        launch intro: a curtain over the whole app that redraws
-                       the native launch K, walks it into the wordmark and opens
-                       onto the app once the router has left `/`),
+                       the native launch K, clacks "allo" into it and lifts
+                       off onto the app once the router has left `/`),
                        tab_scaffold.dart, placeholder_screen.dart,
                        route_error_screen.dart (go_router errorBuilder: unknown
                        deep link / route failure)

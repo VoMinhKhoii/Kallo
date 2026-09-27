@@ -36,10 +36,6 @@ abstract final class WordmarkGlyphs {
   static Path pathOf(WordmarkGlyph glyph) =>
       _paths.putIfAbsent(glyph, () => parseSvgPathData(_data[glyph]!));
 
-  /// The hole inside the o, alone — where the launch intro opens its window
-  /// into the app.
-  static final Path counter = parseSvgPathData(_oCounter);
-
   static final Map<WordmarkGlyph, Path> _paths = {};
 
   static const Map<WordmarkGlyph, String> _data = {

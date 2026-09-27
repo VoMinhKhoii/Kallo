@@ -10,7 +10,7 @@ import '../../golden_tolerance.dart';
 /// The first frame must BE the native launch screen — the ink K, 72pt tall,
 /// centred on the canvas — or iOS's fade from its storyboard to Flutter shows
 /// a jump. At rest it must be the wordmark, counters and all. The numbers are
-/// asserted in `rise_intro_test.dart`; these hold what numbers cannot see.
+/// asserted in `clack_intro_test.dart`; these hold what numbers cannot see.
 Widget _frameAt(double t) => Center(
   child: RepaintBoundary(
     child: SizedBox(

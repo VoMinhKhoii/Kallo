@@ -9,9 +9,10 @@ import 'launch_timeline.dart';
 ///
 /// Its first frame is the native launch screen redrawn exactly — the ink K,
 /// centred, on the app canvas — so the fade from the iOS storyboard to
-/// Flutter cannot be seen. Then the K glides left, the wordmark rises in its
-/// wake and the o winks (`RiseIntro`); once the app underneath is [ready],
-/// the o opens into it (`PortalReveal`) and the curtain removes itself.
+/// Flutter cannot be seen. Then the K backs up to the left and "allo" rolls
+/// in from the right as a little train that clacks into it (`ClackIntro`);
+/// once the app underneath is [ready], the word lifts and fades and the
+/// canvas clears onto the app (`LiftReveal`), and the curtain removes itself.
 ///
 /// The app routes, builds and fetches underneath from the first frame, so the
 /// intro spends load time rather than adding to it. It plays once per

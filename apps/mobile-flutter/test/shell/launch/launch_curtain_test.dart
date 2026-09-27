@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shell/launch/launch_curtain.dart';
 import 'package:kallo_mobile/shell/launch/launch_painter.dart';
 import 'package:kallo_mobile/shell/launch/launch_timeline.dart';
-import 'package:kallo_mobile/shell/launch/portal_reveal.dart';
+import 'package:kallo_mobile/shell/launch/lift_reveal.dart';
 
 /// The app under the curtain: counts its taps and its mounts.
 class _App extends StatefulWidget {
@@ -72,7 +72,7 @@ void main() {
     const timeline = LaunchTimeline();
     await tester.pumpWidget(_host(ValueNotifier(true), () {}));
 
-    await tester.pump(_ms(timeline.introEnd + PortalReveal.duration - 20));
+    await tester.pump(_ms(timeline.introEnd + LiftReveal.duration - 20));
     expect(_curtain, findsOneWidget);
     await tester.pump(_ms(40));
     expect(_curtain, findsNothing);
@@ -90,7 +90,7 @@ void main() {
 
     ready.value = true;
     await tester.pump();
-    await tester.pump(_ms(PortalReveal.duration + 20));
+    await tester.pump(_ms(LiftReveal.duration + 20));
     expect(_curtain, findsNothing);
 
     await tester.tapAt(const Offset(196, 426));

@@ -11,8 +11,9 @@
  *
  * The mark is also the FIRST FRAME of the Flutter launch intro
  * (`lib/shell/launch/`): Flutter redraws this K at the same size and centre,
- * then glides it left while "allo" rises in its wake. So the height below and
- * the intro's `WordmarkStage.launchMarkHeight` are one number — change both.
+ * then backs it up to the left while "allo" rolls in from the right and
+ * clacks into it. So the height below and the intro's
+ * `WordmarkStage.launchMarkHeight` are one number — change both.
  *
  * The geometry is `docs/brand/kallo/assets/kallo-mark.svg` verbatim — three
  * straight-edged polygons in a 656x708 viewBox, which is why this can rasterise

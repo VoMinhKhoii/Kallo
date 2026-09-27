@@ -425,7 +425,7 @@ hit-testing with `IgnorePointer`.
 
 **The launch intro is the one choreography, and it keeps its own clock.**
 `lib/shell/launch/` times its beats in milliseconds inside its own files
-(`rise_intro.dart`, `portal_reveal.dart`), not as `KalloMotion` tokens: they
+(`clack_intro.dart`, `lift_reveal.dart`), not as `KalloMotion` tokens: they
 are positions on a single timeline, not the durations of separate
 interactions, and a token for "the second l starts rising" would name nothing.
 Its fixed points come from the platform, not the app. The first frame must be

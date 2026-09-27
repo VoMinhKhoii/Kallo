@@ -41,13 +41,4 @@ void main() {
     expect(o.contains(const Offset(1884, 526)), isFalse, reason: "o's hole");
     expect(o.contains(const Offset(1690, 526)), isTrue, reason: "o's ring");
   });
-
-  test("the o's hole, alone, is the window the launch reveal opens", () {
-    final hole = WordmarkGlyphs.counter;
-    final o = WordmarkGlyphs.bounds[WordmarkGlyph.o]!;
-
-    expect(hole.contains(const Offset(1884, 526)), isTrue);
-    expect(o.contains(hole.getBounds().topLeft), isTrue);
-    expect(o.contains(hole.getBounds().bottomRight), isTrue);
-  });
 }

@@ -4,36 +4,43 @@ import '../../shared/widgets/brand/wordmark_glyphs.dart';
 
 /// Where one letter is, relative to where it rests in the wordmark.
 ///
-/// Only what the intro actually moves. Offsets are in wordmark units, so the
-/// choreography reads the same on every screen size.
+/// Only what the intro actually moves: a horizontal offset, a squash and a
+/// lean. Every value is in wordmark units, so the choreography reads the same
+/// on every screen size.
 @immutable
 class GlyphPose {
   const GlyphPose({
     this.dx = 0,
-    this.dy = 0,
     this.scaleX = 1,
     this.scaleY = 1,
-    this.aboutCentre = false,
+    this.skew = 0,
+    this.pinLeadingEdge = false,
   });
 
-  /// Offset from the resting position; positive is right and down.
+  /// Horizontal offset from the resting position; positive is to the right.
   final double dx;
-  final double dy;
 
-  /// Scale about the letter's foot (the middle of its baseline), or about its
-  /// centre when [aboutCentre] — a blink closes towards the middle.
+  /// Scale about the letter's foot: the middle of its baseline, or its
+  /// bottom-left corner when [pinLeadingEdge].
   final double scaleX;
   final double scaleY;
-  final bool aboutCentre;
+
+  /// Horizontal shear about the baseline. Positive leans the top to the left,
+  /// ahead of the feet, the way a letter running left trails its feet.
+  final double skew;
+
+  /// Squash against the letter ahead: the leading (left) edge stays in
+  /// contact while the body compresses into it.
+  final bool pinLeadingEdge;
 
   static const GlyphPose rest = GlyphPose();
 
-  GlyphPose shifted(double by) => GlyphPose(
-    dx: dx + by,
-    dy: dy,
+  GlyphPose copyWith({double? dx, double? skew}) => GlyphPose(
+    dx: dx ?? this.dx,
     scaleX: scaleX,
     scaleY: scaleY,
-    aboutCentre: aboutCentre,
+    skew: skew ?? this.skew,
+    pinLeadingEdge: pinLeadingEdge,
   );
 }
 
@@ -76,23 +83,25 @@ class WordmarkStage {
   /// Where the wordmark unit point [unit] lands on the screen.
   Offset toScreen(Offset unit) => anchor + (unit - focus) * scale;
 
+  WordmarkStage shifted(Offset by) =>
+      WordmarkStage(anchor: anchor + by, focus: focus, scale: scale);
+
   /// The canvas transform that paints [glyph] in [pose] on this stage.
   Matrix4 transformFor(WordmarkGlyph glyph, GlyphPose pose) {
     final box = WordmarkGlyphs.bounds[glyph]!;
-    final pivot =
-        pose.aboutCentre
-            ? box.center
-            : Offset(box.center.dx, WordmarkGlyphs.baseline);
+    final footX = pose.pinLeadingEdge ? box.left : box.center.dx;
+    const footY = WordmarkGlyphs.baseline;
     return Matrix4.translationValues(anchor.dx, anchor.dy, 0)
       ..multiply(Matrix4.diagonal3Values(scale, scale, 1))
       ..multiply(
         Matrix4.translationValues(
-          pose.dx - focus.dx + pivot.dx,
-          pose.dy - focus.dy + pivot.dy,
+          pose.dx - focus.dx + footX,
+          footY - focus.dy,
           0,
         ),
       )
+      ..multiply(Matrix4.identity()..setEntry(0, 1, pose.skew))
       ..multiply(Matrix4.diagonal3Values(pose.scaleX, pose.scaleY, 1))
-      ..multiply(Matrix4.translationValues(-pivot.dx, -pivot.dy, 0));
+      ..multiply(Matrix4.translationValues(-footX, -footY, 0));
   }
 }

@@ -4,8 +4,8 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import '../../shared/widgets/brand/wordmark_glyphs.dart';
-import 'portal_reveal.dart';
-import 'rise_intro.dart';
+import 'clack_intro.dart';
+import 'lift_reveal.dart';
 import 'spring_math.dart';
 import 'wordmark_stage.dart';
 
@@ -15,7 +15,6 @@ class LaunchFrame {
   const LaunchFrame({
     required this.reveal,
     this.poses = const {},
-    this.slot,
     this.ghostK = 0,
   });
 
@@ -24,10 +23,6 @@ class LaunchFrame {
 
   /// Letters left out are at rest.
   final Map<WordmarkGlyph, GlyphPose> poses;
-
-  /// While the letters rise: the line (in wordmark units) nothing is drawn
-  /// below, so they come up out of it.
-  final double? slot;
 
   /// Reduced motion only: the K still centred where the launch screen drew
   /// it, crossfading out as the assembled wordmark fades in.
@@ -80,15 +75,15 @@ class LaunchTimeline {
   /// Reduced motion: the K crossfades into the wordmark over this long.
   static const double _crossfade = 320;
 
-  /// The wait's blinking starts this long after the intro ends, and bleeds
-  /// out over the first [_idleFadeOut] of the reveal.
-  static const double _idleDelay = 400;
+  /// The wait's ripple starts this long after the intro ends, and bleeds out
+  /// over the first [_idleFadeOut] of the reveal.
+  static const double _idleDelay = 120;
   static const double _idleFadeOut = 180;
 
   double get introEnd =>
-      hold + (reduceMotion ? _crossfade : RiseIntro.duration);
+      hold + (reduceMotion ? _crossfade : ClackIntro.duration);
 
-  double get revealDuration => reduceMotion ? 360 : PortalReveal.duration;
+  double get revealDuration => reduceMotion ? 360 : LiftReveal.duration;
 
   /// When the reveal begins, or null while the app is not ready.
   double? revealStart(double? readyAt) =>
@@ -116,26 +111,20 @@ class LaunchTimeline {
         waiting
             ? 1 - easeOutCubic(interval(sinceReveal, 0, _idleFadeOut))
             : 0.0;
-
-    final poses = {
-      for (final glyph in WordmarkGlyph.values)
-        glyph: RiseIntro.pose(glyph, t - hold),
-    };
-    final blink = idle * RiseIntro.idleBlink(idleT);
-    if (blink > 0) {
-      poses[WordmarkGlyph.o] = RiseIntro.winking(
-        poses[WordmarkGlyph.o]!,
-        blink,
-      );
-    }
+    final speed = ClackIntro.trainSpeed(rest, screen);
 
     return LaunchFrame(
       reveal:
           sinceReveal >= 0
-              ? PortalReveal.at(sinceReveal, rest, screen)
+              ? LiftReveal.at(sinceReveal, rest)
               : RevealState(stage: rest),
-      poses: poses,
-      slot: t < introEnd ? RiseIntro.slot : null,
+      poses: {
+        for (final glyph in WordmarkGlyph.values)
+          glyph: _nudged(
+            ClackIntro.pose(glyph, t - hold, speed),
+            idle * ClackIntro.idleNudge(glyph, idleT),
+          ),
+      },
     );
   }
 
@@ -147,13 +136,15 @@ class LaunchTimeline {
     return LaunchFrame(
       reveal: RevealState(
         stage: rest,
-        lettersOpacity: word * leaving,
-        oOpacity: word * leaving,
+        wordOpacity: word * leaving,
         curtainOpacity: 1 - easeInOutCubic(interval(sinceReveal, 60, 300)),
       ),
       ghostK: (1 - word) * leaving,
     );
   }
+
+  static GlyphPose _nudged(GlyphPose pose, double by) =>
+      by == 0 ? pose : pose.copyWith(dx: pose.dx + by);
 
   @override
   bool operator ==(Object other) =>
