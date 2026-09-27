@@ -212,7 +212,13 @@ class _ContentState extends State<_Content> {
 
   /// Strip tap → animate the day card to that page (selection haptic fires in
   /// the strip's own GestureDetector). Days after today have no page.
+  ///
+  /// First-run renders the static FirstRunCard instead of the DayPager, so the
+  /// controller has no PageView to drive — `animateToPage` / `jumpToPage` then
+  /// throw `StateError: No element` (Sentry KALLO-MOBILE-1). A new user has
+  /// only today to show, so the tap is a no-op until the pager mounts.
   void _onSelectDay(String date) {
+    if (!_pageController.hasClients) return;
     final page = dayPageForDate(widget.todayDate, date);
     if (page == _page || page < 0 || page > kDayPageBase) return;
     // Animating across many pages builds every intermediate day, and each one
