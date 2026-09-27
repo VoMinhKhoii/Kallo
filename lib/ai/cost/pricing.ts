@@ -1,8 +1,5 @@
-import type { AttemptTokens } from '@/lib/ai/provider/provider';
-
 /**
- * Live per-1M-token USD rates for the models we call, and the one function
- * that turns recorded token usage into dollars.
+ * Live per-1M-token USD rates for the models we call.
  *
  * Source: https://ai.google.dev/gemini-api/docs/pricing (paid tier, text
  * input), read 2026-09-25. Vertex bills the same list rates for these models.
@@ -16,8 +13,6 @@ export interface ModelRate {
   /** Rate for response tokens, thinking tokens included. */
   outputPerMTokUsd: number;
 }
-
-export const RATES_AS_OF = '2026-09-25';
 
 export const MODEL_RATES: Record<string, ModelRate> = {
   'gemini-3.1-flash-lite': {
@@ -52,23 +47,3 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     outputPerMTokUsd: 2.5,
   },
 };
-
-/** One attempt's token counts and the model that produced them. */
-export interface TokenUsage extends AttemptTokens {
-  model: string;
-}
-
-/** USD for one call, or null when the model has no rate on file. */
-export function costUsd(usage: TokenUsage): number | null {
-  const rate = MODEL_RATES[usage.model];
-  if (!rate) return null;
-  const input = usage.inputTokens ?? 0;
-  const cached = Math.min(usage.cachedTokens ?? 0, input);
-  const output = (usage.outputTokens ?? 0) + (usage.thoughtTokens ?? 0);
-  return (
-    ((input - cached) * rate.inputPerMTokUsd +
-      cached * rate.cachedInputPerMTokUsd +
-      output * rate.outputPerMTokUsd) /
-    1_000_000
-  );
-}

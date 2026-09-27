@@ -37,15 +37,14 @@ Embeddings are not recorded: under 1% of spend (Vertex monitoring, 2026-09).
 ## Rates
 
 `lib/ai/cost/pricing.ts` holds the per-model rate card (input, cached input,
-output) with the date it was read, and `costUsd()`. `scripts/bench/ai-cost.sql`
-repeats the rates inline — update both together. A model missing from the card
-prices as `null`, never as zero.
+output) with the date it was read. `scripts/bench/ai-cost.sql` repeats the rates
+inline — update both together (`pricing.test.ts` fails when they drift). A model
+missing from the SQL card prices as `null`, never as zero.
 
-## Evals report cost
+## Costing an eval run
 
-`scripts/eval/run-eval.ts` counts every attempt per case (Call 1, Call 2,
-retries, chunks) and prints a **Cost** section: calls, input / cached / output /
-thinking tokens per case, and observed USD per 1k meals.
+The eval harness does not record token usage. Read a Vertex run's spend from the
+Cloud Monitoring metric above, over the run's time window.
 
 **AI Studio undercounts input.** Its `promptTokenCount` leaves out the response
 JSON schema; Vertex (prod) bills it. Measured 2026-09-25 on
