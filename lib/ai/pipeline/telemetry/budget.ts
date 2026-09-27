@@ -143,6 +143,41 @@ export function classifyProviderError(
 }
 
 /**
+ * The one `requestCount: 1` row per analysis — what the daily request limit
+ * counts. Attempt rows (`requestCount: 0`) carry the tokens.
+ */
+function recordAnalysisReservation(args: {
+  db: AppDb;
+  requestId: string | null;
+  model: string;
+  route: BudgetRoute;
+}): void {
+  recordAnalysisModelBudgetEventBestEffort({
+    ...args,
+    workKind: 'primary',
+    provider: ANALYSIS_MODEL_PROVIDER,
+    requestCount: 1,
+  });
+}
+
+/**
+ * Cheat mode's single reasoning call gets the same accounting as a text meal
+ * (a reservation plus a row per attempt), under its own route.
+ */
+export function initCheatBudgetAccounting(args: {
+  db: AppDb;
+  requestId: string | null;
+  model: string;
+}): NonNullable<StreamOptions['onAttemptComplete']> {
+  recordAnalysisReservation({ ...args, route: CHEAT_BUDGET_ROUTE });
+  return createBudgetAttemptRecorder({
+    ...args,
+    workKind: 'primary',
+    route: CHEAT_BUDGET_ROUTE,
+  });
+}
+
+/**
  * One-call budget accounting setup for the v2 orchestrator: records the
  * primary request-count event immediately and returns per-stage attempt
  * recorders plus a catch-path error recorder. Parity with v1's inline wiring
@@ -160,14 +195,11 @@ export function initV2BudgetAccounting(args: {
   recordCatchError: (error: unknown) => void;
 } {
   const providerErrorState = { recorded: false };
-  recordAnalysisModelBudgetEventBestEffort({
+  recordAnalysisReservation({
     db: args.db,
     requestId: args.requestId,
-    route: ANALYSIS_MODEL_BUDGET_ROUTE,
-    workKind: 'primary',
-    provider: ANALYSIS_MODEL_PROVIDER,
     model: args.nutritionModel,
-    requestCount: 1,
+    route: ANALYSIS_MODEL_BUDGET_ROUTE,
   });
   return {
     decompositionRecorder: createBudgetAttemptRecorder({

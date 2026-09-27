@@ -4,7 +4,7 @@
 --
 -- Rates mirror lib/ai/cost/pricing.ts (USD per 1M tokens); pricing.test.ts
 -- fails if a rates block drifts from it. Unknown models price as NULL, never
--- as zero.
+-- as zero — and so does any analysis with a billable attempt on one.
 --
 --   cached_tokens  ⊂ input_tokens, billed at the cached rate
 --   thought_tokens   billed at the output rate, on top of output_tokens
@@ -51,11 +51,16 @@ per_request as (
     count(*) filter (where e.request_count = 0) as attempts,
     count(*) filter (where e.error_category is not null) as errors,
     sum(e.input_tokens) as input_tok, sum(e.output_tokens + e.thought_tokens) as output_tok,
-    sum((
-      (e.input_tokens - e.cached_tokens) * r.input_rate
-      + e.cached_tokens * r.cached_rate
-      + (e.output_tokens + e.thought_tokens) * r.output_rate
-    ) / 1e6) as usd
+    -- sum() skips NULLs, so one unpriced attempt would silently understate
+    -- the analysis; NULL it instead. Token-free rows (the reservation) don't count.
+    case when bool_and(r.input_rate is not null
+        or e.input_tokens + e.output_tokens + e.thought_tokens = 0)
+      then sum((
+        (e.input_tokens - e.cached_tokens) * r.input_rate
+        + e.cached_tokens * r.cached_rate
+        + (e.output_tokens + e.thought_tokens) * r.output_rate
+      ) / 1e6)
+    end as usd
   from analysis_model_budget_events e
   left join rates r using (model)
   where e.created_at >= (select since from params) and e.request_id is not null
@@ -67,7 +72,8 @@ select route, count(*) as analyses,
   round(avg(usd)::numeric, 5) as usd_per_analysis,
   round((percentile_cont(0.9) within group (order by usd))::numeric, 5) as p90_usd,
   round(sum(usd)::numeric, 4) as total_usd,
-  count(*) filter (where errors > 0) as analyses_with_errors
+  count(*) filter (where errors > 0) as analyses_with_errors,
+  count(*) filter (where usd is null) as unpriced_analyses
 from per_request group by 1 order by total_usd desc nulls first;
 
 \echo '== 3. Implicit cache effectiveness'

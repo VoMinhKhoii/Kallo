@@ -12,6 +12,7 @@ import {
   ANALYSIS_MODEL_BUDGET_ROUTE,
   CHEAT_BUDGET_ROUTE,
   createBudgetAttemptRecorder,
+  initCheatBudgetAccounting,
 } from '../budget';
 
 const db = {} as never;
@@ -89,5 +90,42 @@ describe('createBudgetAttemptRecorder', () => {
     });
 
     expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it('reserves one request for a cheat analysis and records its attempts under the cheat route', () => {
+    const record = initCheatBudgetAccounting({
+      db,
+      requestId: 'r2',
+      model: 'gemini-3.1-flash-lite',
+    });
+
+    expect(mockRecord).toHaveBeenCalledTimes(1);
+    expect(mockRecord).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        requestId: 'r2',
+        route: CHEAT_BUDGET_ROUTE,
+        workKind: 'primary',
+        requestCount: 1,
+      })
+    );
+
+    record({
+      attempt: 1,
+      model: 'gemini-3.1-flash-lite',
+      inputTokens: 900,
+      outputTokens: 200,
+      cachedTokens: null,
+      thoughtTokens: 1500,
+      error: null,
+    });
+
+    expect(mockRecord).toHaveBeenCalledTimes(2);
+    expect(mockRecord).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        route: CHEAT_BUDGET_ROUTE,
+        requestCount: 0,
+        thoughtTokens: 1500,
+      })
+    );
   });
 });

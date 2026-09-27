@@ -1,8 +1,5 @@
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import {
-  CHEAT_BUDGET_ROUTE,
-  createBudgetAttemptRecorder,
-} from '@/lib/ai/pipeline/telemetry/budget';
+import { initCheatBudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { estimateCheatMeal } from '@/lib/domain/cheat/estimate';
@@ -32,12 +29,10 @@ export async function runCheatBranch({
     },
     gemini,
     emit,
-    createBudgetAttemptRecorder({
+    initCheatBudgetAccounting({
       db,
       requestId,
-      workKind: 'primary',
       model: resolveModelProfile().nutritionModel,
-      route: CHEAT_BUDGET_ROUTE,
     })
   );
 
