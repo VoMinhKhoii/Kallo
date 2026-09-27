@@ -336,13 +336,13 @@ void main() {
     gate.complete(DashboardBundle.fromJson(_bundleJson()));
     await tester.pumpAndSettle();
   });
-  testWidgets('a first-run dashboard ignores strip taps instead of crashing', (
-    tester,
-  ) async {
-    // Sentry KALLO-MOBILE-1 (1.0.1+55, fatal): a brand-new user tapped a past
-    // day on the week strip. First-run shows the static FirstRunCard, not the
-    // DayPager, so the page controller had no attached PageView and
-    // animateToPage / jumpToPage threw `StateError: Bad state: No element`.
+  // Sentry KALLO-MOBILE-1 (1.0.1+55, fatal): a brand-new user tapped a past
+  // day on the week strip. First-run shows the static FirstRunCard, not the
+  // DayPager, so the page controller had no attached PageView and
+  // animateToPage / jumpToPage threw `StateError: Bad state: No element`.
+  // `_onSelectDay` animates to a neighbouring day and jumps further back, so
+  // each branch gets its own test — one failing must not hide the other.
+  Future<void> selectDayOnFirstRun(WidgetTester tester, int daysBack) async {
     // The bundle here is first-run: no meals, no heatmap cells.
     await tester.pumpWidget(
       app(load: () async => DashboardBundle.fromJson(_bundleJson())),
@@ -350,19 +350,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(FirstRunCard), findsOneWidget, reason: 'first-run');
 
-    // Drive the strip's own callback: yesterday may sit on the previous week's
-    // page, so tapping it on screen would depend on the weekday the test runs.
-    final today = todayDateString();
+    // Drive the strip's own callback: a past day may sit on the previous
+    // week's page, so tapping it on screen would depend on the weekday the
+    // test runs.
     final onSelectDay =
         tester
             .widget<WeekDayCell>(
               find.byWidgetPredicate((w) => w is WeekDayCell && w.isToday),
             )
             .onSelectDay;
-
-    onSelectDay(addDays(today, -1)); // a neighbour → animateToPage
-    await tester.pumpAndSettle();
-    onSelectDay(addDays(today, -5)); // further back → jumpToPage
+    onSelectDay(addDays(todayDateString(), -daysBack));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -371,5 +368,17 @@ void main() {
       findsOneWidget,
       reason: 'first-run has only today to show, so the tap is a no-op',
     );
+  }
+
+  testWidgets('first-run: selecting yesterday (animateToPage) is a no-op', (
+    tester,
+  ) async {
+    await selectDayOnFirstRun(tester, 1);
+  });
+
+  testWidgets('first-run: selecting an older day (jumpToPage) is a no-op', (
+    tester,
+  ) async {
+    await selectDayOnFirstRun(tester, 5);
   });
 }
