@@ -10,9 +10,11 @@ import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_summary
 import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/gauge_clear_area.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 
+import '../../../../app_fonts.dart';
 import '../../../../l10n_test_loader.dart';
 
 /// iPhone 14/15 logical width — the narrow end of what this ships on.
@@ -25,8 +27,10 @@ Widget _wrap(
   Widget child, {
   double textScale = 1.0,
   double width = _phoneWidth,
+  Locale locale = const Locale('en'),
 }) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
+  startLocale: locale,
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
@@ -94,6 +98,7 @@ Future<void> _pump(
   bool hasUnknownDailyMacros = false,
   double textScale = 1.0,
   double width = _phoneWidth,
+  Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
     _wrap(
@@ -106,6 +111,7 @@ Future<void> _pump(
       ),
       textScale: textScale,
       width: width,
+      locale: locale,
     ),
   );
   if (isLoading) {
@@ -127,7 +133,24 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
+    // The header's words are measured against the arc (the unit's fit test)
+    // and against the macro columns, so the real font is load-bearing here.
+    await loadAppFonts();
   });
+
+  /// How far the calorie dial's unit stays clear of its own arc's band, each
+  /// side — negative means it runs into the tips.
+  double unitClearance(WidgetTester tester, String unit) {
+    final arc = tester.getRect(find.byType(RoundedGaugeArc).first);
+    final line = tester.getRect(find.text(unit));
+    final centreY = arc.top + kCompactCalorieDialRadius;
+    final half = gaugeClearHalfWidthForBand(
+      kCompactCalorieDialRadius,
+      line.top - centreY,
+      line.bottom - centreY,
+    );
+    return half - (line.center.dx - arc.center.dx).abs() - line.width / 2;
+  }
 
   testWidgets('draws four dials: the day, then its three macros', (
     tester,
@@ -146,19 +169,59 @@ void main() {
 
   testWidgets('the header counts the way the user does', (tester) async {
     // No goal on the profile reads as counting UP, the same fallback the dock
-    // takes — the headline is what has been logged. The unit is one word here,
-    // not the dock's sentence: the compact mouth cannot hold "kcal logged", so
-    // the framing moves to the line under the arc.
+    // takes — the headline is what has been logged, and the fraction under the
+    // arc leads with that same figure, so it needs no verb.
     await _pump(tester);
     expect(find.text('1,850'), findsOneWidget);
-    expect(find.text('logged'), findsOneWidget);
+    expect(find.text('Kcal eaten'), findsOneWidget);
     expect(find.text('1,850/2,000'), findsOneWidget);
 
-    // A cutter counts DOWN: the headline is what is left to spend.
+    // A cutter counts DOWN: the headline is what is left to spend, and the
+    // fraction carries its own verb so it cannot borrow the unit above it.
     await _pump(tester, goal: MacroGoal.cutting);
     expect(find.text('150'), findsOneWidget);
-    expect(find.text('left'), findsOneWidget);
-    expect(find.text('1,850/2,000'), findsOneWidget);
+    expect(find.text('Kcal left'), findsOneWidget);
+    expect(find.text('Ate 1,850/2,000'), findsOneWidget);
+  });
+
+  // The on-device misread (2026-09-27): "1.014 / còn lại / 918/1.932" was
+  // read as "ate 1.014, còn lại 918/1.932" — the grey unit word bound DOWN to
+  // a bare grey fraction. The unit now names the figure in full, in ink, and
+  // the fraction says what it is.
+  testWidgets('a Vietnamese cutter reads what is left, then what was logged', (
+    tester,
+  ) async {
+    await _pump(tester, goal: MacroGoal.cutting, locale: const Locale('vi'));
+    expect(find.text('150'), findsOneWidget);
+    expect(find.text('Kcal còn lại'), findsOneWidget);
+    expect(find.text('Đã ghi 1.850/2.000'), findsOneWidget);
+    expect(find.text('1.850/2.000'), findsNothing);
+  });
+
+  testWidgets('the unit sentence clears the arc tips', (tester) async {
+    await _pump(tester, goal: MacroGoal.cutting, locale: const Locale('vi'));
+    // 2.5pt measured; the fit test holds it to at least the unit margin.
+    expect(
+      unitClearance(tester, 'Kcal còn lại'),
+      greaterThanOrEqualTo(kGaugeUnitClearMargin - 0.01),
+    );
+  });
+
+  testWidgets('a text scale too large for the sentence falls back to a word', (
+    tester,
+  ) async {
+    // At 1.3x "Kcal còn lại" would run ~7.6pt into the tips. The dial says the
+    // one word instead of crossing its own arc.
+    await _pump(
+      tester,
+      goal: MacroGoal.cutting,
+      locale: const Locale('vi'),
+      textScale: 1.3,
+    );
+    expect(find.text('Kcal còn lại'), findsNothing);
+    expect(find.text('Còn lại'), findsOneWidget);
+    expect(unitClearance(tester, 'Còn lại'), greaterThan(0));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a macro figure sits on its arc tips', (tester) async {

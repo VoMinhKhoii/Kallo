@@ -27,7 +27,14 @@ import 'gauge_readout_type.dart';
 const double kMacroDialRadius = 44;
 
 /// The embedded size — see [MacroDialRow.compact].
-const double kCompactMacroDialRadius = 30;
+///
+/// 36, up from 30 (2026-09-27). The logging header hands each column ~78pt
+/// whatever the dial's size, and at 30 the ring used 60 of it with "115g"
+/// sitting ~1.5pt off the stroke. At 36 the figure clears it by ~5.4pt, it
+/// stays full size at the 1.3 text-scale cap on a typical day, and the arcs
+/// still end above the calorie dial's, so the header grows no taller. 38 was
+/// measured too: the rings then nearly touch across the gutters.
+const double kCompactMacroDialRadius = 36;
 
 /// Between two dial columns.
 ///
@@ -62,8 +69,8 @@ class MacroDialRow extends StatelessWidget {
       _isCompact = false;
 
   /// The variant that sits beside `CalorieDial.compact` in a fixed header:
-  /// two thirds of the radius, and the gram figure steps from the dial's
-  /// pinned 17 to 14 so it still clears the mouth at the 1.3 text-scale cap.
+  /// a smaller radius, and the gram figure steps from the dial's pinned 17 to
+  /// 14 so it still clears the mouth at the 1.3 text-scale cap.
   const MacroDialRow.compact({
     required this.current,
     required this.target,

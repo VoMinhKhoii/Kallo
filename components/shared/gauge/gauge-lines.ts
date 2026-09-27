@@ -37,7 +37,12 @@ const SHORT_LINE_LEADING = 4;
 
 const FIGURE_CLASS =
   'font-sans-display font-medium text-kallo-text tabular-nums tracking-[-0.02em]';
-const UNIT_CLASS = 'font-sans-display text-kallo-text-muted';
+/**
+ * Ink, not muted: a muted unit matched the muted detail under it and the two
+ * read as one phrase ("còn lại 918/1.932"). Sharing the figure's ink binds the
+ * word to the number it names. Mirrors Flutter's `gaugeUnit()`.
+ */
+const UNIT_CLASS = 'font-sans-display text-kallo-text';
 const META_CLASS = 'font-sans-display text-kallo-text-muted tabular-nums';
 const META_OVER_CLASS =
   'font-sans-display font-medium text-kallo-danger tabular-nums';

@@ -1083,7 +1083,7 @@
         "year": "1 năm"
       }
     },
-    "caloriesLogged": "kcal đã ghi",
+    "caloriesLogged": "Kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
     "firstRunHint": "Mô tả bữa đầu tiên — Kallo lo phần còn lại.",
@@ -1099,12 +1099,12 @@
       "evening3": "1 tô bún bò Huế"
     },
     "yesterday": "Hôm qua",
-    "kcalRemaining": "kcal còn lại",
-    "loggedOfTarget": "đã ghi {logged}/{target}",
-    "leftOfTarget": "còn {left}/{target}",
-    "overTargetBy": "vượt {over}/{target}",
-    "remainingShort": "còn lại",
-    "loggedShort": "đã ghi",
+    "kcalRemaining": "Kcal còn lại",
+    "loggedOfTarget": "Đã ghi {logged}/{target}",
+    "leftOfTarget": "Còn {left}/{target}",
+    "overTargetBy": "Vượt {over}/{target}",
+    "remainingShort": "Còn lại",
+    "loggedShort": "Đã ghi",
     "loggedOverTarget": "{logged}/{target}"
   },
   "logging": {

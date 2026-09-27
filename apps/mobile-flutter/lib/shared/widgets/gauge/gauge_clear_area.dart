@@ -41,6 +41,37 @@ const double _deg = math.pi / 180;
 /// own, so the margin costs the ramp nothing in the case that matters.
 const double kGaugeReadoutClearMargin = 4;
 
+/// The gap a WORD on the tip line keeps from the arc — smaller than
+/// [kGaugeReadoutClearMargin] because a word is never taken in to meet it: it
+/// either fits with this much air or gives way to a shorter word (see
+/// [gaugeTipLineFits]). 2pt is what "Kcal còn lại" keeps at 12pt on the
+/// compact calorie dial (2.5pt measured); the 4pt figure margin would have
+/// cost that dial another 6pt of radius, taken straight off the macro labels
+/// beside it.
+const double kGaugeUnitClearMargin = 2;
+
+/// Whether a line [width] wide and [height] tall, centred on the arc's tip
+/// line (where every dial's secondary line sits), stays [margin] clear of the
+/// band on both sides.
+///
+/// The question the compact calorie dial asks before it commits to its long
+/// unit: the tip line is where the mouth is narrowest for a line straddling
+/// it, because the band's inner corners sit just above it.
+bool gaugeTipLineFits(
+  double outerRadius, {
+  required double width,
+  required double height,
+  double margin = kGaugeUnitClearMargin,
+}) {
+  final tip = gaugeTipOffset(outerRadius);
+  final half = gaugeClearHalfWidthForBand(
+    outerRadius,
+    tip - height / 2,
+    tip + height / 2,
+  );
+  return width / 2 + margin <= half;
+}
+
 double gaugeClearHalfWidth(double outerRadius, double depth) {
   final inner = gaugeInnerRadius(outerRadius);
   final ring =

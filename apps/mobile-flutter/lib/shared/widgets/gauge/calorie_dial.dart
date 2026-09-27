@@ -19,6 +19,7 @@ import '../../../models/nutrition/nutrition_enums.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../logic/calorie_readout.dart';
 import '../../logic/display_format.dart';
+import 'gauge_clear_area.dart';
 import 'gauge_dial.dart';
 import 'gauge_readout_type.dart';
 
@@ -26,21 +27,27 @@ import 'gauge_readout_type.dart';
 const double kCalorieDialRadius = 104;
 
 /// The embedded size — see [CalorieDial.compact].
-const double kCompactCalorieDialRadius = 52;
-
-/// The word under the headline, per framing and per how much room there is.
 ///
-/// A table rather than a branch: the framing and the variant are independent
+/// 58, up from 52 (2026-09-27), so the compact dial can say the full dial's
+/// sentence: at 52 "Kcal còn lại" ran 1.4pt INTO the arc's tips even at 12pt;
+/// at 58 it clears them by 2.5pt a side. The six points come out of the macro
+/// columns, which still hold "CHẤT BÉO" in full at 1.0x.
+const double kCompactCalorieDialRadius = 58;
+
+/// The word under the headline, per framing: the sentence ("Kcal left") when
+/// the mouth holds it, the one word ("Left") when it does not.
+///
+/// A table rather than a branch: the framing and the wording are independent
 /// questions, and multiplying them into conditionals is what made this
-/// unreadable the first time.
-const Map<CalorieFraming, ({String full, String compact})> _unitKey = {
+/// unreadable the first time. Same shape as the web dial's `UNIT_KEY`.
+const Map<CalorieFraming, ({String long, String short})> _unitKey = {
   CalorieFraming.remaining: (
-    full: 'dashboard.kcalRemaining',
-    compact: 'dashboard.remainingShort',
+    long: 'dashboard.kcalRemaining',
+    short: 'dashboard.remainingShort',
   ),
   CalorieFraming.logged: (
-    full: 'dashboard.caloriesLogged',
-    compact: 'dashboard.loggedShort',
+    long: 'dashboard.caloriesLogged',
+    short: 'dashboard.loggedShort',
   ),
 };
 
@@ -56,17 +63,17 @@ class CalorieDial extends StatelessWidget {
   /// The variant for a surface that draws the dial inside a fixed header above
   /// a scrolling day, rather than giving it the top of the screen.
   ///
-  /// Half the radius, the headline steps from Hero 40 to Figure 17, and both
-  /// lower lines shorten. The radius forces that: on the tip line the mouth is
-  /// only ~0.56× the radius each side, so at 52 it holds ~58pt, and the dock's
-  /// "kcal remaining" measures 102. The unit becomes one word, and the detail
-  /// drops to the bare fraction — figures and a slash, which every locale
-  /// renders at the same width, so a long translation cannot push the macro
-  /// dials beside it out of shape.
+  /// A smaller radius, the headline steps from Hero 40 to Figure 17, and the
+  /// unit steps to 12 ([gaugeCompactUnit]) so the full dial's sentence still
+  /// fits the mouth. Where it does not — a large text scale — the unit falls
+  /// back to one word rather than crossing the arc (see [_unit]).
   ///
-  /// This is the calorie ring's own composition, which this dial replaced: the
-  /// figure and a one-word label inside the mark, the day's arithmetic under
-  /// it.
+  /// The detail keeps its verb when the headline counts DOWN. The bare
+  /// "918/1.932" under "còn lại" read as "918 of 1.932 left" on device
+  /// (2026-09-27): a grey fraction with no word of its own borrowed the unit
+  /// above it. "Đã ghi 918/1.932" cannot be misread that way. Counting UP the
+  /// fraction starts with the headline figure, as the macro dials' do, so it
+  /// stays bare.
   const CalorieDial.compact({
     required this.logged,
     required this.target,
@@ -88,42 +95,63 @@ class CalorieDial extends StatelessWidget {
 
     final readout = calorieReadout(logged: logged, target: target, goal: goal);
     final fraction = {'logged': fmt(logged), 'target': fmt(target)};
-    final unit = _unitKey[readout.framing]!;
 
     return GaugeDial(
       progress: target > 0 ? logged / target : 0,
       radius: radius,
       // The calorie mark's own colour, as on the ring and the week strip.
       fill: KalloColors.accent,
-      // Only the HEADLINE changes between the variants. The word under it and
-      // the fraction under that are the same size in both — the dial's own
-      // type, sized by the arc rather than by the reading ramp (see
+      // The headline and the unit step down in the compact variant; the
+      // fraction under the arc is the same size in both — the dial's own type,
+      // sized by the arc rather than by the reading ramp (see
       // [gaugeDenominator]).
       primary: GaugeLine(
         fmt(readout.headline),
         _isCompact ? gaugeFigure() : gaugeHeroFigure(),
       ),
-      secondary: GaugeLine(
-        tr(_isCompact ? unit.compact : unit.full),
-        gaugeUnit(),
-      ),
+      secondary: _unit(context, readout.framing),
       tertiary: GaugeLine(_detail(readout, fmt, fraction), gaugeDenominator()),
     );
   }
 
-  /// The line under the arc. The compact dial's is the same fraction for every
-  /// goal — the unit word above it says which of the two figures the headline
-  /// is. The full dial has room to say it in words.
+  /// The line on the arc's tips. The full dial always says the sentence; the
+  /// compact one measures it at the viewer's text scale first and says the one
+  /// word when the sentence would not clear the tips.
+  GaugeLine _unit(BuildContext context, CalorieFraming framing) {
+    final key = _unitKey[framing]!;
+    if (!_isCompact) return GaugeLine(tr(key.long), gaugeUnit());
+
+    final style = gaugeCompactUnit();
+    final scaler = MediaQuery.textScalerOf(context);
+    final long = tr(key.long);
+    final painter = TextPainter(
+      text: TextSpan(text: long, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    final fits = gaugeTipLineFits(
+      radius,
+      width: painter.width,
+      height: scaler.scale(style.fontSize!) * style.height!,
+    );
+    painter.dispose();
+    return GaugeLine(fits ? long : tr(key.short), style);
+  }
+
+  /// The line under the arc: the OTHER figure, with a verb whenever it is not
+  /// the headline's own. The compact dial drops the verb only when counting
+  /// up, where the fraction already leads with the headline figure.
   String _detail(
     CalorieReadout readout,
     String Function(num) fmt,
     Map<String, String> fraction,
   ) {
-    if (_isCompact) {
-      return tr('dashboard.loggedOverTarget', namedArgs: fraction);
-    }
     if (readout.framing == CalorieFraming.remaining) {
       return tr('dashboard.loggedOfTarget', namedArgs: fraction);
+    }
+    if (_isCompact) {
+      return tr('dashboard.loggedOverTarget', namedArgs: fraction);
     }
     final target = fraction['target']!;
     return readout.over == null
