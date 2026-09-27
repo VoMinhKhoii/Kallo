@@ -54,9 +54,9 @@ void main() {
   ) async {
     await _pump(tester, logged: 741, goal: MacroGoal.cutting);
     expect(find.text('1,259'), findsOneWidget);
-    expect(find.text('kcal remaining'), findsOneWidget);
+    expect(find.text('Kcal left'), findsOneWidget);
     // What was eaten is still on screen, just demoted.
-    expect(find.text('741/2,000 logged'), findsOneWidget);
+    expect(find.text('Ate 741/2,000'), findsOneWidget);
   });
 
   testWidgets('bulking counts UP — the headline is what was eaten', (
@@ -64,14 +64,14 @@ void main() {
   ) async {
     await _pump(tester, logged: 741, goal: MacroGoal.bulking);
     expect(find.text('741'), findsOneWidget);
-    expect(find.text('kcal logged'), findsOneWidget);
+    expect(find.text('Kcal eaten'), findsOneWidget);
     expect(find.text('1,259/2,000 left'), findsOneWidget);
   });
 
   testWidgets('an unset goal counts up, like maintaining', (tester) async {
     await _pump(tester, logged: 741, goal: null);
     expect(find.text('741'), findsOneWidget);
-    expect(find.text('kcal logged'), findsOneWidget);
+    expect(find.text('Kcal eaten'), findsOneWidget);
   });
 
   testWidgets('a cutter past target reads 0, never a negative', (tester) async {
@@ -80,7 +80,7 @@ void main() {
     expect(find.text('-341'), findsNothing);
     expect(find.text('−341'), findsNothing);
     // The overshoot is not hidden — it is carried by the line underneath.
-    expect(find.text('2,341/2,000 logged'), findsOneWidget);
+    expect(find.text('Ate 2,341/2,000'), findsOneWidget);
   });
 
   testWidgets('a bulker past target is told by how much', (tester) async {

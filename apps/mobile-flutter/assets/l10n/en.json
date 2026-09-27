@@ -1083,7 +1083,7 @@
         "year": "1 year"
       }
     },
-    "caloriesLogged": "kcal logged",
+    "caloriesLogged": "Kcal eaten",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "firstRunQuestion": "What did you eat today?",
     "firstRunHint": "Describe your first meal — Kallo estimates the rest.",
@@ -1099,12 +1099,12 @@
       "evening3": "1 tô bún bò Huế"
     },
     "yesterday": "Yesterday",
-    "kcalRemaining": "kcal remaining",
-    "loggedOfTarget": "{logged}/{target} logged",
+    "kcalRemaining": "Kcal left",
+    "loggedOfTarget": "Ate {logged}/{target}",
     "leftOfTarget": "{left}/{target} left",
     "overTargetBy": "{over} over {target}",
-    "remainingShort": "left",
-    "loggedShort": "logged",
+    "remainingShort": "Left",
+    "loggedShort": "Eaten",
     "loggedOverTarget": "{logged}/{target}"
   },
   "logging": {

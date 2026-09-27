@@ -126,12 +126,13 @@ void main() {
     // Not just "the string is somewhere in the tree" — a truncated paragraph
     // still matches its full text. Ask the render object whether it had to cut.
     //
-    // Measured on this layout: the calorie dial takes its 104 minimum, leaving
-    // the row 254, so a column is 82 and the label 66 after the glyph and its
-    // gap. "CHẤT BÉO" is 59.4. Before the gaps were tightened the label had 58
-    // and this failed. The margin is ~11%, i.e. it holds to about 1.1x Dynamic
-    // Type and ellipsizes above that — the documented degradation, since the
-    // column does not scale with the text.
+    // Measured on this layout: the calorie dial takes its 116 minimum (radius
+    // 58 — "Đã ghi 2.219/1.844" fits inside it), leaving the row 242, so a
+    // column is 78 and the label 62 after the glyph and its gap. "CHẤT BÉO" is
+    // 59.4. Before the gaps were tightened the label had 58 and this failed.
+    // The margin is ~4%, so it holds at 1.0x and ellipsizes a little above it
+    // — the documented degradation, since the column does not scale with the
+    // text. Growing the calorie dial from 52 to 58 spent 7 of the old 11%.
     for (final label in const ['ĐẠM', 'CARB', 'CHẤT BÉO']) {
       final paragraph = tester.renderObject<RenderParagraph>(find.text(label));
       expect(

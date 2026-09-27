@@ -37,9 +37,9 @@ TextStyle gaugeFigure() => const TextStyle(
 /// 40 / 400 — the one hero figure, in the dial that gets the top of a screen.
 TextStyle gaugeHeroFigure() => dashHero();
 
-/// 14 / 400 — the figure a COMPACT dial holds. Two thirds of the radius means
-/// two thirds of the room, so the compact variant steps its figure down one
-/// notch and keeps the same denominator beneath it.
+/// 14 / 400 — the figure a COMPACT dial holds. A smaller radius means less
+/// room, so the compact variant steps its figure down one notch and keeps the
+/// same denominator beneath it.
 TextStyle gaugeCompactFigure() => const TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
@@ -49,16 +49,28 @@ TextStyle gaugeCompactFigure() => const TextStyle(
   fontFeatures: [FontFeature.tabularFigures()],
 );
 
-/// 14 / 400 muted — the WORD under a calorie figure ("kcal remaining", "còn
+/// 14 / 400 ink — the WORD under a calorie figure ("Kcal left", "Kcal còn
 /// lại"). A phrase, not a figure: it is what sizes the calorie dial's box, so
 /// it deliberately sits outside the clamp (see [GaugeDial.clampReadout]).
+///
+/// INK, not muted (2026-09-27). Muted, it matched the detail line under it,
+/// and the two grey lines read as one phrase: on device "1.014 / còn lại /
+/// 918/1.932" was read as "ate 1.014, 918 of 1.932 left". Sharing the
+/// headline's ink binds the word UP to the figure it names.
 TextStyle gaugeUnit() => const TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
   fontWeight: FontWeight.w400,
   height: 1.3,
-  color: kInkMuted,
+  color: kInk,
 );
+
+/// 12 / 400 ink — the compact dial's unit. Two points under [gaugeUnit]
+/// because the compact mouth is what bounds it: at 12 "Kcal còn lại" clears
+/// the arc's tips by 2.5pt a side at radius 58, at 13 it touches them. The
+/// hierarchy under the figure is carried by colour (ink over the muted
+/// detail), not by size.
+TextStyle gaugeCompactUnit() => gaugeUnit().copyWith(fontSize: 12);
 
 /// 12 / 400 muted, tabular — the quiet line under the figure: `/140g`, and the
 /// calorie dial's `2.485/1.844`. The SAME size in both variants; the figure
