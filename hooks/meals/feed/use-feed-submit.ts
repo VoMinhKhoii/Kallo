@@ -2,10 +2,11 @@
 
 import type { RefObject } from 'react';
 import { toast } from 'sonner';
+import type { StreamAnalyzeInput } from '@/hooks/meals/analysis/use-stream-analysis';
 import type {
+  AnalyzeOutcome,
   StreamAnalysisState,
-  StreamAnalyzeInput,
-} from '@/hooks/meals/analysis/use-stream-analysis';
+} from '@/lib/ai/streaming/client-state';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import type { ChatMessage } from '@/lib/core/types/meal';
 import { mealTextSchema } from '@/lib/core/validation/meal';
@@ -14,7 +15,7 @@ import type { RelogRef } from '@/lib/domain/logging/relog/relog';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
-    analyze: (input: StreamAnalyzeInput) => Promise<boolean>;
+    analyze: (input: StreamAnalyzeInput) => Promise<AnalyzeOutcome>;
     reset: () => void;
   };
   selectedDate: string;
@@ -119,7 +120,7 @@ export function useFeedSubmit({
       inputRef.current?.clear();
       scrollToBottom();
 
-      durablyStaged = await stream.analyze({
+      const outcome = await stream.analyze({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
@@ -132,6 +133,17 @@ export function useFeedSubmit({
             }
           : {}),
       });
+      durablyStaged = outcome === 'staged';
+      // "Not now" to AI processing: nothing was sent. Take this exchange —
+      // and only this one — back out, and return the words to the composer.
+      if (outcome === 'consentDeclined') {
+        setMessages((prev) =>
+          prev.filter(
+            (msg) => msg.id !== userMessage.id && msg.id !== assistantMsgId
+          )
+        );
+        inputRef.current?.setText(label, label.length);
+      }
     });
     return durablyStaged;
   };

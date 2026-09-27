@@ -66,6 +66,7 @@ const EXPECTED_SCOPE: Record<string, string> = {
   'meal_items ⋈ meals': '"meals"."user_id" = $1',
   body_weight_log: '"body_weight_log"."user_id" = $1',
   day_completion_marks: '"day_completion_marks"."user_id" = $1',
+  nutrition_label_images: '"nutrition_label_images"."user_id" = $1',
   'friendships ⋈ public_profiles':
     '(("friendships"."user_low" = $1 or "friendships"."user_high" = $2) and "friendships"."status" <> $3)',
   meal_shares: '"meal_shares"."actor_id" = $1',
@@ -125,6 +126,7 @@ describe('buildDataExport — contents', () => {
         'billingGrants',
         'circleProfile',
         'dayCompletionMarks',
+        'labelScans',
         'social',
         'chat',
         'notifications',
@@ -347,9 +349,28 @@ describe('buildDataExport — contents', () => {
           { id: 'fb-2', screenshotPath: null },
         ];
       }
+      if (query.from === 'nutrition_label_images') {
+        return [
+          {
+            id: 'scan-1',
+            storagePath: `${USER}/scan-1.jpg`,
+            status: 'succeeded',
+            mealId: null,
+            createdAt: at,
+          },
+        ];
+      }
       return undefined;
     });
-    const { files, circleProfile } = await buildDataExport(db, user);
+    const { files, circleProfile, labelScans } = await buildDataExport(
+      db,
+      user
+    );
+
+    // The scan keeps its metadata; its photo is only listed under `files`.
+    expect(labelScans).toEqual([
+      { id: 'scan-1', status: 'succeeded', mealId: null, createdAt: at },
+    ]);
 
     expect(circleProfile).not.toHaveProperty('userId');
     expect(files).toEqual([
@@ -365,6 +386,12 @@ describe('buildDataExport — contents', () => {
         source: 'feedback',
         sourceId: 'fb-1',
       },
+      {
+        bucket: 'nutrition-labels',
+        path: `${USER}/scan-1.jpg`,
+        source: 'labelScan',
+        sourceId: 'scan-1',
+      },
     ]);
   });
 
@@ -376,6 +403,7 @@ describe('buildDataExport — contents', () => {
     expect(document.circleProfile).toBeNull();
     expect(document.social.feedLastReadAt).toBeNull();
     expect(document.chat.groups).toEqual([]);
+    expect(document.labelScans).toEqual([]);
     expect(document.files).toEqual([]);
     expect(document.account.signInProviders).toEqual([]);
     expect(document.account.profileClaims).toEqual({});

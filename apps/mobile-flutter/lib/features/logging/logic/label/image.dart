@@ -111,6 +111,9 @@ Future<LabelImageResult> captureLabelImage(
       source: source,
       maxWidth: labelImageMaxWidth,
       imageQuality: labelImageQuality,
+      // The photo is kept server-side: never ask for (or send) the gallery
+      // asset's EXIF/GPS. The server strips metadata again regardless.
+      requestFullMetadata: false,
     );
     if (picked == null) {
       return const LabelImageResult.failure(LabelImageFailure.cancelled);

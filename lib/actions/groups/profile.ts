@@ -19,6 +19,7 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
 import { isUniqueViolation } from '@/lib/infra/db/unique-violation';
@@ -34,6 +35,8 @@ export async function upsertPublicProfile(
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   const parsed = upsertPublicProfileSchema.parse(input);
+  // Both are shown to other people: the handle is the invite link.
+  assertAcceptableText(parsed.handle, parsed.displayName);
 
   // Reserved-handle blocklist (distinct rejection reason from shape validation).
   const checked = validateHandle(parsed.handle);
@@ -228,6 +231,8 @@ export async function renameMyProfile(
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   const name = renameProfileSchema.parse({ displayName }).displayName;
+  // The handle is derived from this name, so one check covers both.
+  assertAcceptableText(name);
 
   // Ensure the profile row exists (rename may be the first profile touch).
   const current = await getOrCreateMyProfile(actorId, null, db);

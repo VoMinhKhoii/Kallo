@@ -127,10 +127,9 @@ export function removeFriend(targetUserId: string) {
 }
 
 export function blockFriend(targetUserId: string) {
-  return postJson<{ friendshipId: string; status: string }>(
-    '/api/v1/groups/friends/block',
-    { targetUserId }
-  );
+  return postJson<{ status: 'blocked' }>('/api/v1/groups/friends/block', {
+    targetUserId,
+  });
 }
 
 export function setMealShareVisibility(

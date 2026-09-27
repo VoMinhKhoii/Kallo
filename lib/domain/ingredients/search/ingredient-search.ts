@@ -15,6 +15,13 @@ export interface IngredientSearchParams {
   /** Already trimmed by the request contract; empty means "recent foods". */
   q: string;
   limit: number;
+  /**
+   * Whether a cache miss may embed `q` with a live AI-provider call — true
+   * only for a user who consented to third-party AI processing. Without it
+   * the semantic arm answers from cached embeddings alone, so the search is
+   * trigram-led but never refused.
+   */
+  allowLiveEmbedding: boolean;
 }
 
 /**
@@ -32,12 +39,13 @@ export async function searchIngredients({
   userId,
   q,
   limit,
+  allowLiveEmbedding,
 }: IngredientSearchParams): Promise<IngredientSearchResult[]> {
   if (!q) return loadRecentIngredients(userId, limit);
 
   const [lexical, semantic] = await Promise.all([
     lexicalSearch(q, limit),
-    semanticSupplement(q, limit),
+    semanticSupplement(q, limit, allowLiveEmbedding),
   ]);
   const ranked =
     semantic.length > 0 ? rrfFuse(lexical, semantic, limit) : lexical;

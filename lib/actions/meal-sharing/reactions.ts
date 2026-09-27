@@ -4,12 +4,13 @@
 // Meal-share reaction toggle
 // ---------------------------------------------------------------------------
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareReactionKey } from '@/lib/domain/notifications/group-keys';
 import { retractActor } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -101,17 +102,15 @@ export async function toggleShareReactionAction(input: {
       });
     }
 
-    const [summary] = await tx
-      .select({
-        count: sql<number>`count(*)::int`,
-        mine: sql<boolean>`bool_or(${mealShareReactions.userId} = ${user.id})`,
-      })
-      .from(mealShareReactions)
-      .where(eq(mealShareReactions.shareId, parsed.shareId));
+    // The same summary every read serves — so the count excludes hearts from
+    // anyone in a blocked relation with the viewer, exactly as the feed does.
+    const summary = (
+      await reactionsForShares(user.id, [parsed.shareId], tx)
+    ).get(parsed.shareId);
 
     return {
       reacted: Boolean(summary?.mine),
-      count: Number(summary?.count ?? 0),
+      count: summary?.count ?? 0,
     };
   });
 }

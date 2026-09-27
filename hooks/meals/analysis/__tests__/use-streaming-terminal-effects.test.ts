@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { StreamAnalysisState } from '@/hooks/meals/analysis/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/meals/analysis/use-streaming-terminal-effects';
+import type { StreamAnalysisState } from '@/lib/ai/streaming/client-state';
 import type { ChatMessage } from '@/lib/core/types/meal';
 
 const toastError = vi.fn();
@@ -110,5 +110,35 @@ describe('useStreamingTerminalEffects — paymentRequired', () => {
     );
 
     expect(onPaymentRequired).not.toHaveBeenCalled();
+  });
+});
+
+describe('useStreamingTerminalEffects — consentRequired', () => {
+  it('ends the run without deleting any card, opening the paywall, or toasting', () => {
+    // The run's starter (submit / refine / clarify) takes back what IT added;
+    // deleting by streaming id here would take a clarify's existing cheat card.
+    const onPaymentRequired = vi.fn();
+    const setStreamingMsgId = vi.fn();
+    const setMessages = vi.fn();
+    const stream = baseStream({ status: 'consentRequired' });
+
+    renderHook(() =>
+      useStreamingTerminalEffects({
+        stream,
+        streamingMsgId: 'msg-1',
+        setStreamingMsgId,
+        setMessages,
+        scrollToBottom: vi.fn(),
+        lastAnalysisIdRef: { current: null },
+        lastErrorRef: { current: null },
+        onPaymentRequired,
+      })
+    );
+
+    expect(setMessages).not.toHaveBeenCalled();
+    expect(onPaymentRequired).not.toHaveBeenCalled();
+    expect(setStreamingMsgId).toHaveBeenCalledWith(null);
+    expect(stream.reset).toHaveBeenCalledTimes(1);
+    expect(toastError).not.toHaveBeenCalled();
   });
 });

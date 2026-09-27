@@ -5,6 +5,7 @@
   "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
   "featureLockedTrialExpired": "Tuần dùng thử của bạn đã kết thúc — nâng cấp để tiếp tục phân tích bữa ăn bằng AI.",
   "featureLockedNotEntitled": "Nâng cấp lên Kallo Premium để phân tích bữa ăn bằng AI.",
+  "aiConsentRequired": "Hãy cho phép Kallo gửi bữa ăn của bạn đến nhà cung cấp AI trước khi phân tích. Bạn có thể bật khi ghi bữa ăn hoặc trong Cài đặt.",
   "internal": "Đã xảy ra lỗi. Vui lòng thử lại.",
   "route": {
     "title": "Trang này chưa tải được.",

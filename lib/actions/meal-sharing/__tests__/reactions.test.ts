@@ -75,6 +75,14 @@ vi.mock('@/lib/infra/db/client', () => ({
 vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
   canViewShareOwnedBy: mockCanViewShare,
 }));
+// The response summary is the SAME read every feed serves (block-filtered);
+// its SQL is covered by lib/domain/social/shares/__tests__/reactions.test.ts.
+const { mockReactionsForShares } = vi.hoisted(() => ({
+  mockReactionsForShares: vi.fn(),
+}));
+vi.mock('@/lib/domain/social/shares/reactions', () => ({
+  reactionsForShares: mockReactionsForShares,
+}));
 
 import { toggleShareReactionAction } from '@/lib/actions/meal-sharing/reactions';
 
@@ -98,8 +106,7 @@ function insertReturning(rows: unknown[]) {
   });
 }
 
-// The first select in the action is the FOR UPDATE lock on the share row;
-// queue it as the one-shot so the default summary mock serves the second call.
+// The one select in the action is the FOR UPDATE lock on the share row.
 function lockShare(
   rows: unknown[] = [
     {
@@ -119,12 +126,12 @@ function lockShare(
   });
 }
 
-function summary(rows: unknown[]) {
-  mockTxSelect.mockReturnValue({
-    from: vi.fn(() => ({
-      where: vi.fn().mockResolvedValue(rows),
-    })),
-  });
+/** What reactionsForShares reports for this share after the toggle. */
+function summary(rows: Array<{ count: number; mine: boolean }>) {
+  mockReactionsForShares.mockImplementation(
+    async (_actorId: string, shareIds: string[]) =>
+      new Map(shareIds.map((id) => [id, rows[0] ?? { count: 0, mine: false }]))
+  );
 }
 
 describe('toggleShareReactionAction', () => {
@@ -142,6 +149,27 @@ describe('toggleShareReactionAction', () => {
     await expect(
       toggleShareReactionAction({ shareId: SHARE_ID })
     ).resolves.toEqual({ reacted: true, count: 3 });
+  });
+
+  // (c) The toggle's own response used to recount hearts by hand, without
+  // the block filter, so it disagreed with the feed. It now returns the
+  // shared summary, asked for this viewer and share inside the transaction.
+  it('returns the shared, block-filtered summary for the viewer', async () => {
+    lockShare();
+    deleteReturning([]);
+    insertReturning([{ id: 'reaction' }]);
+    summary([{ count: 4, mine: true }]);
+
+    await expect(
+      toggleShareReactionAction({ shareId: SHARE_ID })
+    ).resolves.toEqual({ reacted: true, count: 4 });
+    expect(mockReactionsForShares).toHaveBeenCalledWith(
+      mockUser.id,
+      [SHARE_ID],
+      mockTx
+    );
+    // No hand-built count query: the lock is the only select.
+    expect(mockTxSelect).toHaveBeenCalledTimes(1);
   });
 
   it('deletes an existing reaction without attempting an insert', async () => {

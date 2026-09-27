@@ -88,6 +88,37 @@ vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
   assertGroupCapacity: mockAssertCapacity,
 }));
 
+// The two visibility seams, real behind spies: the double db cannot evaluate
+// SQL, so the suite asserts WHICH rule each read folds in.
+const { mockGroupShareVisibleSql, mockVisibleChatMessageSql } = vi.hoisted(
+  () => ({
+    mockGroupShareVisibleSql: vi.fn(),
+    mockVisibleChatMessageSql: vi.fn(),
+  })
+);
+vi.mock(
+  '@/lib/domain/social/shares/share-visibility',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@/lib/domain/social/shares/share-visibility')
+      >();
+    mockGroupShareVisibleSql.mockImplementation(actual.groupShareVisibleSql);
+    return { ...actual, groupShareVisibleSql: mockGroupShareVisibleSql };
+  }
+);
+vi.mock(
+  '@/lib/domain/social/chat/message-visibility',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@/lib/domain/social/chat/message-visibility')
+      >();
+    mockVisibleChatMessageSql.mockImplementation(actual.visibleChatMessageSql);
+    return { ...actual, visibleChatMessageSql: mockVisibleChatMessageSql };
+  }
+);
+
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
@@ -131,6 +162,14 @@ describe('createChatGroup', () => {
     await expect(
       createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
     ).rejects.toThrow('Chỉ có thể thêm bạn bè đã kết nối vào nhóm.');
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects an objectionable group name with a 422 before any read', async () => {
+    await expect(
+      createChatGroup(USER_A, { name: 'Hội giết mày', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ code: 'objectionable_content', status: 422 });
+    expect(mockDbSelect).not.toHaveBeenCalled();
     expect(mockDbTransaction).not.toHaveBeenCalled();
   });
 
@@ -352,6 +391,51 @@ describe('listMyChatGroups', () => {
     expect(entry.title).toBe('Trip');
     expect(entry.lastMessagePreview).toBe('See you there!');
     expect(entry.unread).toBe(true);
+  });
+
+  // Blocks, (a) + (b): the unread flag and the last-meal activity used to
+  // hand-copy the group-share rule WITHOUT the block check, so a blocked
+  // member's messages and shares could keep a chat unread forever and bump
+  // its rank. All three reads now fold in the shared seams.
+  it('builds unread, preview and activity from the shared visibility seams', async () => {
+    const schema = await import('./schema-doubles');
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: false,
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([]);
+
+    await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    // (a) unread — the message branch and the share branch (`alias` is the
+    // identity in this suite, so the aliased tables arrive as the doubles).
+    expect(mockVisibleChatMessageSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroupMessages
+    );
+    expect(mockGroupShareVisibleSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroups.id,
+      schema.mealShares
+    );
+    // (b) lastMealSharedAt / activityRank — the same group-share rule, keyed
+    // on each member row's group.
+    expect(mockGroupShareVisibleSql).toHaveBeenCalledWith(
+      USER_A,
+      schema.chatGroupMembers.groupId,
+      schema.mealShares
+    );
+    // The preview and the unread message branch: two message reads.
+    expect(mockVisibleChatMessageSql).toHaveBeenCalledTimes(2);
   });
 
   it('is read when the last message predates the read marker', async () => {

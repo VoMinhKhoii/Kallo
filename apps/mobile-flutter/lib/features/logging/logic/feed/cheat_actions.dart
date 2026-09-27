@@ -6,7 +6,6 @@ import '../../data/logging_providers.dart';
 import '../composer/composer_actions.dart';
 import '../../widgets/composer/meal_input.dart';
 import '../meal_log_mode.dart';
-import 'analysis/analysis_actions.dart';
 import 'analysis/analysis_run.dart';
 
 /// The feed's cheat branch: the composer's persistent mode and its intensity,
@@ -59,19 +58,13 @@ class FeedCheatActions {
   /// Vague-input fallback: the estimator could not read the occasion, so re-run
   /// it on the same text with the answer the user picked attached (mirrors web
   /// `handleCheatClarify`).
-  void clarify(String answer) {
-    final retake = run.retakeReveal(date: date);
-    if (retake == null) return;
-    startMealAnalysis(
-      ref,
-      message: retake.text,
-      date: date,
-      isCheat: true,
-      cheatIntensity: ref.read(cheatIntensityProvider),
-      clarifyAnswer: answer,
-      attemptId: retake.attemptId,
-    );
-  }
+  void clarify(String answer) => run.restartClarify(
+    context,
+    ref,
+    userId: userId,
+    date: date,
+    answer: answer,
+  );
 
   /// "Log it again" — one re-stage at a time; the chips are disabled while it
   /// runs, and this guard covers a double tap that beats the rebuild.

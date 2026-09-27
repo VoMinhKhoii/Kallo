@@ -107,6 +107,28 @@ export const RATE_LIMITER_UNAVAILABLE_ERROR: JsonSchema = {
   ),
 };
 
+/**
+ * The 403 an AI-processing route answers while the user has not consented to
+ * sending their content to the third-party AI provider (App Store 5.1.2(i)).
+ * Only the routes that call the provider can give it.
+ */
+export const AI_CONSENT_REQUIRED_ERROR: JsonSchema = {
+  '403': errorResponse(
+    'The user has not consented to third-party AI processing (`ai_consent_required`). Not retryable until consent is granted via `PUT /api/v1/profile/ai-consent`.'
+  ),
+};
+
+/**
+ * The 422 a user-generated-text write can produce when the text hits the
+ * objectionable-term filter (`lib/domain/social/moderation/text-filter.ts`):
+ * share replies, chat messages, chat group names and circle display names.
+ */
+export const OBJECTIONABLE_CONTENT_ERROR: JsonSchema = {
+  '422': errorResponse(
+    'The text contains language that is not allowed (`objectionable_content`). Not retryable as-is — edit the text.'
+  ),
+};
+
 const AUTH_ERRORS: JsonSchema = {
   '401': errorResponse('No valid session (`NOT_AUTHENTICATED`).'),
   '402': errorResponse(

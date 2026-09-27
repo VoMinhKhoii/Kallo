@@ -62,6 +62,8 @@ export async function listCircle(
     .where(
       and(
         or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
+        // Blocking deletes the pair's edge, so no blocked person reaches this
+        // list; this only drops a leftover of the retired 'blocked' status.
         sql`${friendships.status} <> 'blocked'`
       )
     )

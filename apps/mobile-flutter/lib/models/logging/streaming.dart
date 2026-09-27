@@ -177,6 +177,31 @@ class AnalysisCompleteEvent extends StreamEvent {
   bool get isTerminal => true;
 }
 
+/// How the analyze endpoint refused before its stream opened, as the feed
+/// needs to act on it. Web twin: `classifyPreStreamRefusal` in
+/// `lib/ai/streaming/pre-stream-refusal.ts`.
+enum PreStreamRefusal {
+  /// HTTP 402: AI analysis is locked — open the paywall.
+  paymentRequired,
+
+  /// The body code is `ai_consent_required` — ask for AI-processing consent.
+  consentRequired,
+
+  /// Anything else, a bare 403 included.
+  error,
+}
+
+/// Consent is read from the body [code], never from the status alone: the
+/// server's origin lock, a WAF or Cloud Run can all answer a bare 403, and
+/// reading those as "ask for consent" opens the sheet on a refusal consent
+/// cannot fix — and re-opens it on every retry. The 402 stays keyed on the
+/// status, as it always was.
+PreStreamRefusal classifyPreStreamRefusal(int? status, String code) {
+  if (status == 402) return PreStreamRefusal.paymentRequired;
+  if (code == 'ai_consent_required') return PreStreamRefusal.consentRequired;
+  return PreStreamRefusal.error;
+}
+
 /// Error during streaming -- terminal event.
 class StreamErrorEvent extends StreamEvent {
   final String code;
@@ -201,7 +226,15 @@ class StreamErrorEvent extends StreamEvent {
         status: json['status'] is int ? json['status'] as int : null,
       );
 
-  bool get isPaymentRequired => status == 402;
+  /// How the endpoint refused before its stream opened — see
+  /// [classifyPreStreamRefusal].
+  PreStreamRefusal get refusal => classifyPreStreamRefusal(status, code);
+
+  bool get isPaymentRequired => refusal == PreStreamRefusal.paymentRequired;
+
+  /// `ai_consent_required`: the user has not agreed to send meal text to the
+  /// AI provider (App Store 5.1.2(i)). Nothing was analyzed.
+  bool get isAiConsentRequired => refusal == PreStreamRefusal.consentRequired;
 
   Map<String, dynamic> toJson() => {
     'type': 'error',

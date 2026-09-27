@@ -1,11 +1,13 @@
 import {
   addChatGroupMembersBodySchema,
   createChatGroupBodySchema,
+  renameChatGroupBodySchema,
 } from '@/lib/api/contracts/social/chat-groups';
 import {
   authed,
   fromZod,
   type JsonSchema,
+  OBJECTIONABLE_CONTENT_ERROR,
   PAYLOAD_TOO_LARGE_ERROR,
   type Parameter,
   type PathItem,
@@ -75,7 +77,10 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       body: fromZod(createChatGroupBodySchema),
       ok: wrap({ group: wrap({ id: { type: 'string', format: 'uuid' } }) }),
       okDescription: 'The new group’s id.',
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
     }),
   },
 
@@ -92,24 +97,17 @@ export const GROUP_PATHS: Record<string, PathItem> = {
     patch: authed({
       operationId: 'updateChatGroup',
       summary: 'Rename a group',
-      description: 'Changes the group’s display name.',
+      description:
+        'Changes the group’s display name (owner only). A name that hits the objectionable-term filter answers 422.',
       tags: TAGS,
       parameters: [groupId],
-      body: {
-        type: 'object',
-        required: ['name'],
-        properties: {
-          name: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 60,
-            description: 'New display name, trimmed.',
-          },
-        },
-      },
+      body: fromZod(renameChatGroupBodySchema),
       ok: wrap({ name: { type: 'string' } }),
       okDescription: 'The name as stored.',
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
     }),
   },
 
@@ -153,7 +151,8 @@ export const GROUP_PATHS: Record<string, PathItem> = {
     post: authed({
       operationId: 'sendChatGroupMessage',
       summary: 'Post a message',
-      description: 'Sends a text message to the group.',
+      description:
+        'Sends a text message to the group. Members in a blocked relation with the sender neither see it nor get its push. Text that hits the objectionable-term filter answers 422.',
       tags: TAGS,
       parameters: [groupId],
       body: {
@@ -169,7 +168,10 @@ export const GROUP_PATHS: Record<string, PathItem> = {
         },
       },
       ok: wrap({ message: chatGroupMessage }),
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
     }),
   },
 

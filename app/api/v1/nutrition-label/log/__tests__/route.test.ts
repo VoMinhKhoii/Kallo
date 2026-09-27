@@ -4,8 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requireAuthAndProfile = vi.fn();
 const stageOcrMeal = vi.fn();
 const confirmAndSaveMealAction = vi.fn();
+const linkLabelImageToMeal = vi.fn();
+const after = vi.fn();
 
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
+// Owner scoping of the link itself is tested with the module
+// (lib/domain/nutrition/label-images/__tests__); here, what the route hands it.
+vi.mock('@/lib/domain/nutrition/label-images/label-images', () => ({
+  linkLabelImageToMeal,
+}));
+vi.mock('next/server', async (importActual) => ({
+  ...(await importActual<typeof import('next/server')>()),
+  after,
+}));
 
 vi.mock('@/lib/domain/nutrition/ocr/stage', async (importActual) => {
   const actual =
@@ -60,6 +71,9 @@ beforeEach(() => {
   });
   stageOcrMeal.mockResolvedValue({ analysisId: 'analysis-1' });
   confirmAndSaveMealAction.mockResolvedValue(confirmResponse);
+  linkLabelImageToMeal.mockReset();
+  linkLabelImageToMeal.mockResolvedValue(undefined);
+  after.mockReset();
 });
 
 describe('POST /api/v1/nutrition-label/log', () => {
@@ -83,6 +97,46 @@ describe('POST /api/v1/nutrition-label/log', () => {
       analysisId: 'analysis-1',
       mealId: validBody.mealId,
     });
+  });
+
+  it('links the kept scan to the saved meal for the caller, with the saved values', async () => {
+    const labelImageId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+
+    const res = await POST(makeRequest({ ...validBody, labelImageId }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(confirmResponse);
+    // Deferred past the response, so the save is no slower than before.
+    expect(linkLabelImageToMeal).not.toHaveBeenCalled();
+    expect(after).toHaveBeenCalledTimes(1);
+    await after.mock.calls[0][0]();
+    expect(linkLabelImageToMeal).toHaveBeenCalledWith(
+      'user-123',
+      labelImageId,
+      confirmResponse.mealId,
+      expect.objectContaining({
+        productName: 'Bánh quy Cosy',
+        calories: 480,
+        labelImageId,
+      })
+    );
+    expect(linkLabelImageToMeal.mock.invocationCallOrder[0]).toBeGreaterThan(
+      confirmAndSaveMealAction.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('links nothing without a labelImageId', async () => {
+    await POST(makeRequest(validBody));
+    expect(after).not.toHaveBeenCalled();
+    expect(linkLabelImageToMeal).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed labelImageId with 400 before staging', async () => {
+    const res = await POST(
+      makeRequest({ ...validBody, labelImageId: 'not-a-uuid' })
+    );
+    expect(res.status).toBe(400);
+    expect(stageOcrMeal).not.toHaveBeenCalled();
   });
 
   it('accepts a body without mealId', async () => {

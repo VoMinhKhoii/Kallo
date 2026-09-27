@@ -30,7 +30,7 @@ beforeEach(() => {
   requireAuthAndProfile.mockReset();
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
-    profile: {},
+    profile: { aiProcessingConsentedAt: new Date('2026-01-02T00:00:00Z') },
   });
   searchIngredients.mockResolvedValue([]);
 });
@@ -44,7 +44,22 @@ describe('GET /api/v1/ingredients/search', () => {
       userId: 'user-123',
       q: 'com trang',
       limit: 5,
+      allowLiveEmbedding: true,
     });
+  });
+
+  it('searches without live embeddings — never a 403 — for a user without AI consent', async () => {
+    requireAuthAndProfile.mockResolvedValueOnce({
+      user: { id: 'user-123' },
+      profile: { aiProcessingConsentedAt: null },
+    });
+
+    const res = await GET(makeRequest({ q: 'lườn gà' }));
+
+    expect(res.status).toBe(200);
+    expect(searchIngredients).toHaveBeenCalledWith(
+      expect.objectContaining({ q: 'lườn gà', allowLiveEmbedding: false })
+    );
   });
 
   it('defaults to an empty query and a limit of 10', async () => {
@@ -54,6 +69,7 @@ describe('GET /api/v1/ingredients/search', () => {
       userId: 'user-123',
       q: '',
       limit: 10,
+      allowLiveEmbedding: true,
     });
   });
 

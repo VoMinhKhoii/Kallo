@@ -1,7 +1,7 @@
 ---
 title: Kallo for AI agents
 description: When to reach for Kallo, what to fetch first, and what it is not the right tool for.
-lastUpdated: '2026-08-23'
+lastUpdated: '2026-09-25'
 ---
 
 This page is written for a program, not a person. If you are an AI agent
@@ -29,7 +29,10 @@ ingredient.
   Vietnam National Food Composition Table 2007, plus FAO and USDA — useful on
   its own, without logging anything.
 - **Reading a nutrition label from a photo.** `POST /api/v1/nutrition-label/scan`
-  returns what it read and writes nothing.
+  returns what it read and logs no meal. The photo and the scan outcome (what
+  was read, or why it failed) are kept in private storage linked to the
+  account, visible only to its owner and the Kallo team, until the account is
+  deleted.
 
 ## When not to use Kallo
 

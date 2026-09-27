@@ -33,7 +33,10 @@ export function useClarifyHandlers(args: {
   //   - clear cheatSpec so the card leaves its question state and streams again.
   //   - upsert the card (map when present, else append): the clarify may have
   //     come from a server pending row that is not in `messages`.
-  const handleCheatClarify = (message: ChatMessage, answer: string) => {
+  //   - "Not now" to AI processing sends nothing: the card goes back to asking
+  //     its question, exactly as it was rendered. Never removed — it is the
+  //     user's existing card, not something this clarify added.
+  const handleCheatClarify = async (message: ChatMessage, answer: string) => {
     setStreamingMsgId(message.id);
     lastAnalysisIdRef.current = null;
     lastErrorRef.current = null;
@@ -59,7 +62,7 @@ export function useClarifyHandlers(args: {
             },
           ]
     );
-    void stream.analyze({
+    const outcome = await stream.analyze({
       message: message.userInput ?? message.content,
       loggedDate: selectedDate,
       timezoneOffset: new Date().getTimezoneOffset(),
@@ -73,6 +76,11 @@ export function useClarifyHandlers(args: {
       // to one row.)
       attemptId: message.attemptId,
     });
+    if (outcome === 'consentDeclined') {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === message.id ? message : m))
+      );
+    }
   };
 
   return { handleCheatClarify };

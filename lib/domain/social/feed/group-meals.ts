@@ -1,10 +1,11 @@
-import { and, desc, eq, gte, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { SharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   type SharedMealRow,
   sharedMealColumns,
 } from '@/lib/domain/social/feed/meal-feed';
+import { groupShareVisibleSql } from '@/lib/domain/social/shares/share-visibility';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -16,42 +17,26 @@ import {
 
 type Db = AppDb | AppTransaction;
 
-interface GroupSharedMealRow extends SharedMealRow {
-  ownerJoinedAt: Date;
-  visibilitySharedAt: Date;
-}
-
-/** Group-scoped shared meals. Both post-join bounds run in SQL before LIMIT;
- * the in-memory repeat protects test doubles and future query refactors. */
+/** Group-scoped shared meals, newest first. Admission is `groupShareVisibleSql`
+ * — the one group-share rule (not private, not blocked, both members joined
+ * before the share) — evaluated in SQL before LIMIT. The owner-membership join
+ * only drives the scan from this group's members. */
 export async function sharedGroupMealsBefore(
   groupId: string,
   viewerId: string,
-  viewerJoinedAt: Date,
   before: SharedMealCursor | null,
   db: Db = defaultDb,
   limit = 20
 ): Promise<SharedMealRow[]> {
   const ownerMembership = alias(chatGroupMembers, 'meal_owner_membership');
-  const viewerMembership = alias(chatGroupMembers, 'meal_viewer_membership');
-  const rows: GroupSharedMealRow[] = await db
-    .select({
-      ...sharedMealColumns,
-      ownerJoinedAt: ownerMembership.joinedAt,
-      visibilitySharedAt: mealShares.sharedAt,
-    })
+  return db
+    .select(sharedMealColumns)
     .from(mealShares)
     .innerJoin(
       meals,
       and(eq(meals.id, mealShares.mealId), eq(meals.userId, mealShares.actorId))
     )
     .innerJoin(publicProfiles, eq(publicProfiles.userId, mealShares.actorId))
-    .innerJoin(
-      viewerMembership,
-      and(
-        eq(viewerMembership.groupId, groupId),
-        eq(viewerMembership.userId, viewerId)
-      )
-    )
     .innerJoin(
       ownerMembership,
       and(
@@ -61,9 +46,7 @@ export async function sharedGroupMealsBefore(
     )
     .where(
       and(
-        sql`${mealShares.visibility} <> 'private'`,
-        gte(mealShares.sharedAt, viewerMembership.joinedAt),
-        gte(mealShares.sharedAt, ownerMembership.joinedAt),
+        groupShareVisibleSql(viewerId, groupId, mealShares),
         before
           ? or(
               sql`${mealShares.sharedAt} < ${before.ts}::timestamptz`,
@@ -77,18 +60,4 @@ export async function sharedGroupMealsBefore(
     )
     .orderBy(desc(mealShares.sharedAt), desc(mealShares.id))
     .limit(limit);
-
-  return rows
-    .filter(
-      (row) =>
-        row.visibilitySharedAt >= viewerJoinedAt &&
-        row.visibilitySharedAt >= row.ownerJoinedAt
-    )
-    .map(
-      ({
-        ownerJoinedAt: _ownerJoinedAt,
-        visibilitySharedAt: _visibilitySharedAt,
-        ...row
-      }) => row
-    );
 }

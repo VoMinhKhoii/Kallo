@@ -239,6 +239,23 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /** Block + unblock share one budget: toggling a block is a write to the
+   * pair's edge and nothing a person does dozens of times a minute. */
+  friendBlock: {
+    route: 'friend:block',
+    limits: { perMinute: 10, perHour: 60, perDay: 200 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /** Each accepted report emails every admin, so the ceiling bounds mail. */
+  contentReport: {
+    route: 'content:report',
+    limits: { perMinute: 5, perHour: 30, perDay: 100 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /** Reactions are one tap, so the minute ceiling is loose by design. */
   shareReaction: {
     route: 'share:reaction',
@@ -275,6 +292,18 @@ export const rateLimitPolicies = {
   appleTokenLink: {
     route: 'auth:apple:token',
     limits: { perMinute: 5, perHour: 20, perDay: 50 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
+  /**
+   * Signed view URL for the owner's own nutrition-label photo. Each call is a
+   * row read plus a Storage signing request; a person opens a handful, so the
+   * ceiling only bites a loop.
+   */
+  labelImageView: {
+    route: 'label-image:view',
+    limits: { perMinute: 30, perHour: 300 },
     keyKinds: ['user'],
     failMode: 'degraded',
   },

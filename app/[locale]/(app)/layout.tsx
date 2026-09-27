@@ -5,6 +5,7 @@ import { AppShell } from '@/components/app/shell/app-shell';
 import { AppShellSkeleton } from '@/components/app/shell/app-shell-skeleton';
 import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
 import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
+import { AiConsentProvider } from '@/components/privacy/ai-consent-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
@@ -127,7 +128,11 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
         userId={user.id}
         enforcementEnabled={enforcementEnabled}
       >
-        {children}
+        <AiConsentProvider
+          initialConsented={Boolean(profile?.aiProcessingConsentedAt)}
+        >
+          {children}
+        </AiConsentProvider>
       </PremiumGuardProvider>
     </AppShell>
   );

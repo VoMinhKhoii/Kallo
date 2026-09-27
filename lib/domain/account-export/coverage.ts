@@ -19,10 +19,11 @@
  *     (`AUTH_CLAIM_KEYS`) of `user_metadata` and each linked identity →
  *     `account`. Sessions, refresh and provider tokens are live credentials
  *     and are never exported; neither is `app_metadata` beyond the providers.
- *   - Storage: the uploaded avatar (`avatars` bucket) and feedback screenshots
- *     (`feedback-screenshots` bucket) → `files`, as bucket + object path. The
+ *   - Storage: the uploaded avatar (`avatars` bucket), feedback screenshots
+ *     (`feedback-screenshots` bucket) and kept nutrition-label scan photos
+ *     (`nutrition-labels` bucket) → `files`, as bucket + object path. The
  *     bytes are not inlined; the avatar is also visible in the app, and support
- *     can send a screenshot on request.
+ *     can send a screenshot or label photo on request.
  */
 
 export type ExportCoverage =
@@ -65,6 +66,16 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   day_completion_marks: {
     exported: 'dayCompletionMarks',
     excludedColumns: { user_id: OWN_ID },
+  },
+  nutrition_label_images: {
+    exported: 'labelScans',
+    excludedColumns: {
+      user_id: OWN_ID,
+      model:
+        'Internal diagnostics of the scan call: which model version answered. The scan itself, its result and the photo location are exported.',
+      latency_ms:
+        'Internal diagnostics of the scan call: how long the model took to answer.',
+    },
   },
 
   // --- Analysis & app activity ---------------------------------------------
@@ -110,6 +121,10 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
       user_low: FRIEND_PAIR,
       user_high: FRIEND_PAIR,
     },
+  },
+  user_blocks: {
+    excluded:
+      'Who the user blocked. Listed in the app (GET /api/v1/groups/friends/blocked) and available from support on request; rows where the user is the one blocked are never disclosed to them, so a table-level export could not include those anyway.',
   },
   meal_shares: {
     exported: 'social.mealShares',
@@ -189,6 +204,10 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   user_feedback: {
     exported: 'support.feedback',
     excludedColumns: { user_id: OWN_ID },
+  },
+  content_reports: {
+    excluded:
+      "Safety reports the user filed about other people's circle content. They describe someone else's content and are a moderation record, kept for triage; a copy of the user's own reports is available from support on request.",
   },
 
   // --- Billing -------------------------------------------------------------

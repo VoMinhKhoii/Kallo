@@ -23,5 +23,14 @@
   "notFoundIndex": "Mục lục tài liệu (llms.txt)",
   "notFoundSitemap": "Sơ đồ trang",
   "notFoundApi": "Đặc tả API",
-  "notSignedIn": "Chưa đăng nhập."
+  "notSignedIn": "Chưa đăng nhập.",
+  "aiConsent": {
+    "title": "Dùng AI để ước tính bữa ăn?",
+    "body": "Để ước tính dinh dưỡng, Kallo gửi mô tả bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Gemini AI của Google (Vertex AI trên Google Cloud).",
+    "training": "Google không dùng dữ liệu này để huấn luyện mô hình. Bạn có thể tắt bất cứ lúc nào trong Cài đặt.",
+    "privacyLink": "Cách chúng tôi xử lý dữ liệu",
+    "continue": "Tiếp tục",
+    "notNow": "Để sau",
+    "error": "Không thể lưu lựa chọn. Vui lòng thử lại."
+  }
 }

@@ -21,6 +21,15 @@ vi.mock('@/components/billing/premium-guard-provider', () => ({
   }),
 }));
 
+// Same for the app-wide AI-consent provider: consent on record, so no ask.
+vi.mock('@/components/privacy/ai-consent-provider', () => ({
+  useAiConsent: () => ({
+    consented: true,
+    gate: { ensure: async () => true, onRequired: vi.fn() },
+    setConsent: vi.fn(),
+  }),
+}));
+
 vi.mock('@/components/logging/feed/macro-summary', () => ({
   MacroSummary: ({ totals }: { totals: { calories: number } }) => (
     <div data-testid="macro-summary" data-calories={totals.calories} />

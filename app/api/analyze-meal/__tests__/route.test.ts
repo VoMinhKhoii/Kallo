@@ -272,6 +272,7 @@ const mockProfile = {
   brothConsumption: 'some',
   preferredLocale: 'en',
   createdAt: new Date('2026-01-01T00:00:00Z'),
+  aiProcessingConsentedAt: new Date('2026-01-02T00:00:00Z'),
 };
 
 const mockPipelineData = {
@@ -761,6 +762,52 @@ describe('POST /api/analyze-meal', () => {
     // The guard check must never run for a locked-out user — they don't
     // consume a rate-limit slot.
     expect(mockCheckAnalysisGuards).not.toHaveBeenCalled();
+  });
+
+  describe('AI-processing consent (App Store 5.1.2(i))', () => {
+    it('returns a JSON 403 ai_consent_required when the user never consented', async () => {
+      mockSelect.mockResolvedValue([
+        { ...mockProfile, aiProcessingConsentedAt: null },
+      ]);
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+      expect(res.status).toBe(403);
+      expect(res.headers.get('Content-Type')).toContain('application/json');
+      const json = await res.json();
+      expect(json.error.code).toBe('ai_consent_required');
+      expect(json.error.status).toBe(403);
+      expect(json.error.retryable).toBe(false);
+      // The global next-intl mock echoes the key it was asked for.
+      expect(json.error.message).toBe('aiConsentRequired');
+
+      // Nothing downstream ran: no provider client, no trace row.
+      expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+      expect(mockLogPipelineStart).not.toHaveBeenCalled();
+      expect(mockAnalyzeMeal).not.toHaveBeenCalled();
+    });
+
+    it('checks consent BEFORE billing and the rate-limit guards', async () => {
+      mockSelect.mockResolvedValue([
+        { ...mockProfile, aiProcessingConsentedAt: null },
+      ]);
+      // Billing would lock this user out too — consent must answer first.
+      mockGetBillingConfig.mockReturnValue({
+        launchDate: new Date('2026-01-01T00:00:00Z'),
+        trialDays: 7,
+        enforcementEnabled: true,
+      });
+      mockCheckFeatureAccess.mockResolvedValue({
+        allowed: false,
+        reason: 'trial_expired',
+      });
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+      expect(res.status).toBe(403);
+      expect(mockCheckFeatureAccess).not.toHaveBeenCalled();
+      expect(mockCheckAnalysisGuards).not.toHaveBeenCalled();
+    });
   });
 
   // SSE streaming tests — these return 200 with event stream

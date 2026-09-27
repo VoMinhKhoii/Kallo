@@ -22,7 +22,8 @@ Builds run from a `/tmp` mirror (iCloud file-provider breaks codesigning) and sh
 
 ```
 lib/features/<feature>/          — feature code (auth, circle, dashboard, feedback,
-  screens/                         logging, nutrition, onboarding, paywall, settings)
+  screens/                         logging, nutrition, onboarding, paywall, privacy,
+                                   settings)
   widgets/[<sub-concern>/]       — presentation; sub-concern subfolders when it grows
   logic/                         — pure functions and BuildContext action helpers
   data/                          — Riverpod providers and feature-static tables

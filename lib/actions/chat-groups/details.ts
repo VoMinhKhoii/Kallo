@@ -8,6 +8,7 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
+import { assertAcceptableText } from '@/lib/domain/social/moderation/text-filter';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
@@ -78,6 +79,7 @@ export async function renameChatGroup(
   db: ChatGroupDb = defaultDb
 ): Promise<{ name: string }> {
   const parsed = renameChatGroupSchema.parse(input);
+  assertAcceptableText(parsed.name);
 
   return db.transaction(async (tx) => {
     await lockChatGroup(parsed.groupId, tx);

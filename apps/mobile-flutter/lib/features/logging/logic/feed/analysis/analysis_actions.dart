@@ -65,13 +65,18 @@ void startMealAnalysis(
 ///
 /// On error: never destroy the typed meal. [onFailed] restores the raw text
 /// into the composer AND renders the failed attempt as a feed card (Try again).
+/// How an analysis failed, as the feed needs to know it: whether a retry can
+/// help, and whether the refusal was a paywall (402) or a missing
+/// AI-processing consent (403) — which only the raw state knows.
+typedef AnalysisFailure =
+    ({bool retryable, bool paymentRequired, bool consentRequired});
+
 /// Subscribe the feed to those two moments. Called from `build`, where
-/// `ref.listen` belongs; [onFailed] also carries whether the error was a
-/// paywall, which only the raw state knows.
+/// `ref.listen` belongs.
 void listenToAnalysisStream(
   WidgetRef ref, {
   required VoidCallback onRevealed,
-  required void Function(bool retryable, bool paymentRequired) onFailed,
+  required ValueChanged<AnalysisFailure> onFailed,
 }) {
   ref.listen<StreamAnalysisState>(
     streamAnalysisProvider,
@@ -79,7 +84,12 @@ void listenToAnalysisStream(
       prev,
       next,
       onRevealed: onRevealed,
-      onFailed: (retryable) => onFailed(retryable, next.paymentRequired),
+      onFailed:
+          (retryable) => onFailed((
+            retryable: retryable,
+            paymentRequired: next.paymentRequired,
+            consentRequired: next.consentRequired,
+          )),
     ),
   );
 }

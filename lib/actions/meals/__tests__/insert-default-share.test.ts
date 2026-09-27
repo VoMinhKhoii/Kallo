@@ -30,7 +30,11 @@ describe('insertDefaultCircleShare', () => {
     const { tx, insert } = fakeTx([]);
 
     await expect(
-      insertDefaultCircleShare(tx, { mealId: MEAL_ID, actorId: ACTOR_ID })
+      insertDefaultCircleShare(tx, {
+        mealId: MEAL_ID,
+        actorId: ACTOR_ID,
+        rawInput: 'Phở bò tái',
+      })
     ).resolves.toBeNull();
     expect(insert).not.toHaveBeenCalled();
   });
@@ -39,7 +43,11 @@ describe('insertDefaultCircleShare', () => {
     const { tx, insert, lockedRead } = fakeTx([{ autoShareToCircle: false }]);
 
     await expect(
-      insertDefaultCircleShare(tx, { mealId: MEAL_ID, actorId: ACTOR_ID })
+      insertDefaultCircleShare(tx, {
+        mealId: MEAL_ID,
+        actorId: ACTOR_ID,
+        rawInput: 'Phở bò tái',
+      })
     ).resolves.toBeNull();
     expect(insert).not.toHaveBeenCalled();
     // The preference is read under a row lock inside the save transaction.
@@ -50,12 +58,51 @@ describe('insertDefaultCircleShare', () => {
     const { tx, values } = fakeTx([{ autoShareToCircle: true }]);
 
     await expect(
-      insertDefaultCircleShare(tx, { mealId: MEAL_ID, actorId: ACTOR_ID })
+      insertDefaultCircleShare(tx, {
+        mealId: MEAL_ID,
+        actorId: ACTOR_ID,
+        rawInput: 'Phở bò tái',
+      })
     ).resolves.toEqual({ shareId: 'share-1', visibility: 'circle' });
     expect(values).toHaveBeenCalledWith({
       mealId: MEAL_ID,
       actorId: ACTOR_ID,
       visibility: 'circle',
     });
+  });
+
+  // Auto-share must never fail a log: a meal whose text the objectionable-
+  // content filter refuses is saved and simply stays private.
+  it('keeps a flagged meal private instead of failing the log', async () => {
+    const { tx, insert } = fakeTx([{ autoShareToCircle: true }]);
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
+
+    await expect(
+      insertDefaultCircleShare(tx, {
+        mealId: MEAL_ID,
+        actorId: ACTOR_ID,
+        rawInput: 'fuck this salad',
+      })
+    ).resolves.toBeNull();
+    expect(insert).not.toHaveBeenCalled();
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining(MEAL_ID));
+    debug.mockRestore();
+  });
+
+  it.each([
+    'Bún bò Huế, chả cá',
+    'Nửa quả bưởi, đu đủ',
+    'hạt óc chó rang',
+  ])('auto-shares Vietnamese food text %j normally', async (rawInput) => {
+    const { tx, insert } = fakeTx([{ autoShareToCircle: true }]);
+
+    await expect(
+      insertDefaultCircleShare(tx, {
+        mealId: MEAL_ID,
+        actorId: ACTOR_ID,
+        rawInput,
+      })
+    ).resolves.toEqual({ shareId: 'share-1', visibility: 'circle' });
+    expect(insert).toHaveBeenCalledTimes(1);
   });
 });

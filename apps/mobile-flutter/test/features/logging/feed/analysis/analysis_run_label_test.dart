@@ -8,6 +8,7 @@ import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.da
 import 'package:kallo_mobile/features/logging/logic/feed/analysis/analysis_run.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/features/privacy/data/ai_consent_providers.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/models/logging/relog.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
@@ -53,16 +54,22 @@ void main() {
   ) async {
     final api = _CapturingApi();
     final container = ProviderContainer(
-      overrides: [apiClientProvider.overrideWithValue(api)],
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        // Consent on record: the run starts at once, as before the gate.
+        aiConsentProvider.overrideWithValue(true),
+      ],
     );
     addTearDown(container.dispose);
 
+    late BuildContext context;
     late WidgetRef ref;
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: Consumer(
-          builder: (_, r, _) {
+          builder: (c, r, _) {
+            context = c;
             ref = r;
             return const SizedBox();
           },
@@ -83,6 +90,7 @@ void main() {
       onChanged: () {},
       onScrollToAnswer: () {},
     ).startCombined(
+      context,
       ref,
       userId: 'u1',
       date: '2026-08-10',
@@ -114,16 +122,22 @@ void main() {
   ) async {
     final api = _CapturingApi();
     final container = ProviderContainer(
-      overrides: [apiClientProvider.overrideWithValue(api)],
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        // Consent on record: the run starts at once, as before the gate.
+        aiConsentProvider.overrideWithValue(true),
+      ],
     );
     addTearDown(container.dispose);
 
+    late BuildContext context;
     late WidgetRef ref;
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: Consumer(
-          builder: (_, r, _) {
+          builder: (c, r, _) {
+            context = c;
             ref = r;
             return const SizedBox();
           },
@@ -138,7 +152,13 @@ void main() {
       input: MealInputController(),
       onChanged: () {},
       onScrollToAnswer: () {},
-    ).startPlain(ref, userId: 'u1', date: '2026-08-10', text: 'phở bò');
+    ).startPlain(
+      context,
+      ref,
+      userId: 'u1',
+      date: '2026-08-10',
+      text: 'phở bò',
+    );
     await tester.pump();
 
     expect(api.sent!.toJson().containsKey('displayText'), isFalse);

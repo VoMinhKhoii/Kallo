@@ -66,14 +66,13 @@ vi.mock('@/lib/infra/db/client', () => ({
         },
       };
     }),
-    select: vi.fn(() => ({
-      from: () => ({
-        where: () => ({
-          limit: selectSpy,
-          orderBy: llmCallsSelectSpy,
-        }),
-      }),
-    })),
+    select: vi.fn(() => {
+      const where = () => ({
+        limit: selectSpy,
+        orderBy: llmCallsSelectSpy,
+      });
+      return { from: () => ({ where, leftJoin: () => ({ where }) }) };
+    }),
     update: () => ({ set: () => ({ where: updateSpy }) }),
   },
 }));
@@ -132,7 +131,12 @@ describe('replayRequest', () => {
     checkAdminReplayGuardSpy.mockResolvedValue({ allowed: true });
     process.env.GEMINI_API_KEY = 'test-key';
     selectSpy.mockResolvedValue([
-      { rawInput: 'x', userContextJson: {}, userId: 'orig-user' },
+      {
+        rawInput: 'x',
+        userContextJson: {},
+        userId: 'orig-user',
+        aiProcessingConsentedAt: new Date('2026-09-25T12:00:00Z'),
+      },
     ]);
     llmCallsSelectSpy.mockResolvedValue([]);
     analyzeMealSpy.mockImplementation(async () => {
@@ -303,5 +307,29 @@ describe('replayRequest', () => {
     expect(insertedTables).toContain(pipelineRequests);
     expect(insertedTables).toContain(pipelineRequestReplayAuditLogs);
     expect(insertedTables).not.toContain(analysisGuardEvents);
+  });
+
+  it('replays dry, sending nothing to the AI, without the original user consent (or profile)', async () => {
+    selectSpy.mockResolvedValue([
+      {
+        rawInput: 'x',
+        userContextJson: {},
+        userId: 'orig-user',
+        aiProcessingConsentedAt: null,
+      },
+    ]);
+    llmCallsSelectSpy.mockResolvedValue([{ responseRaw: '{"foo":"bar"}' }]);
+
+    // Asked for a LIVE replay.
+    await replayRequest('11111111-1111-4111-a111-111111111111');
+
+    expect(createGeminiClientSpy).not.toHaveBeenCalled();
+    expect(checkAdminReplayGuardSpy).not.toHaveBeenCalled();
+    const reqInsertIdx = insertedTables.indexOf(pipelineRequests);
+    expect(insertValuesSpy.mock.calls[reqInsertIdx]?.[0]?.dryRun).toBe(true);
+    const auditInsertIdx = insertedTables.indexOf(
+      pipelineRequestReplayAuditLogs
+    );
+    expect(insertValuesSpy.mock.calls[auditInsertIdx]?.[0]?.dryRun).toBe(true);
   });
 });

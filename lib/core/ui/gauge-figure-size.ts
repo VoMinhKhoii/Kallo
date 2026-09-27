@@ -96,6 +96,11 @@ export const tipOpening = (radius: number) => 1.482 * radius;
  *
  * English is the widest of the two locales: "kcal còn lại" measures 58.3px at
  * 11px against this string's 75.6px.
+ *
+ * The shipped English copy is now "Kcal left" (2026-09-27), narrower than the
+ * string this was measured on. The constant is kept as the worst case on
+ * purpose: it can only make the test say "short" where "long" would have fit,
+ * never the reverse, and it keeps the answer stable if the copy grows back.
  */
 export const LONG_UNIT_EM = 6.876;
 

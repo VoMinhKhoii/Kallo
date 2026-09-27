@@ -2,6 +2,7 @@ import {
   authed,
   type JsonSchema,
   MEAL_ID_CONFLICT_ERROR,
+  OBJECTIONABLE_CONTENT_ERROR,
   PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   pathParam,
@@ -136,16 +137,26 @@ export const SHARE_PATHS: Record<string, PathItem> = {
     post: authed({
       operationId: 'replyToShare',
       summary: 'Comment on a shared meal',
-      description: 'Adds a reply, optionally threaded under an existing one.',
+      description:
+        'Adds a reply to a share the caller can see. A block between the caller and the share’s owner answers 404, even through a shared group. Text that hits the objectionable-term filter answers 422.',
       tags: TAGS,
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
       body: shareIdBody(
         {
-          body: { type: 'string', description: 'Reply text.' },
+          body: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500,
+            description: 'Reply text, trimmed.',
+          },
           replyId: {
             type: 'string',
             format: 'uuid',
-            description: 'Reply to thread this one under.',
+            description:
+              'Client-generated id for the new reply, so a retried request is idempotent.',
           },
         },
         ['body']
@@ -241,7 +252,10 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         },
       },
       ok: profileResponse,
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
     }),
   },
 
@@ -258,7 +272,10 @@ export const SHARE_PATHS: Record<string, PathItem> = {
         properties: { displayName: { type: 'string' } },
       },
       ok: profileResponse,
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: {
+        ...PAYLOAD_TOO_LARGE_ERROR,
+        ...OBJECTIONABLE_CONTENT_ERROR,
+      },
     }),
   },
 

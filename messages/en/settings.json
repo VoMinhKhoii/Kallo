@@ -119,5 +119,10 @@
     "autoShareLabel": "Share new meals with your circle",
     "autoShareHint": "Off unless you turn it on. When on, each new meal is shared with your circle as you save it. Friends only see meals shared after you connected.",
     "error": "Couldn't update your sharing preference. Please try again."
+  },
+  "aiConsent": {
+    "label": "AI meal analysis",
+    "hint": "Sends the meals you type, the label photos you scan and your ingredient searches to Google Gemini to estimate nutrition. While off, AI logging and label scanning stay paused.",
+    "error": "Couldn’t update your AI preference. Please try again."
   }
 }

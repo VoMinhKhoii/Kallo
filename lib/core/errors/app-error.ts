@@ -46,6 +46,8 @@ function resolutionFor(status: number, retryable: boolean): string {
       return 'Authenticate with a valid Kallo user access token, then retry.';
     case 402:
       return 'Use an account whose plan includes this feature.';
+    case 403:
+      return 'The account holder must grant the missing permission in the app, then retry.';
     case 404:
       return 'Verify the path and resource identifier against /openapi.json.';
     case 409:

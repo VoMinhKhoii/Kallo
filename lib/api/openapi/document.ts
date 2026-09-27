@@ -12,6 +12,7 @@ import { ONBOARDING_PATHS } from '@/lib/api/openapi/paths/onboarding';
 import { PUBLIC_PATHS } from '@/lib/api/openapi/paths/public';
 import { FRIEND_PATHS } from '@/lib/api/openapi/paths/social/friends';
 import { GROUP_PATHS } from '@/lib/api/openapi/paths/social/groups';
+import { MODERATION_PATHS } from '@/lib/api/openapi/paths/social/moderation';
 import { SHARE_PATHS } from '@/lib/api/openapi/paths/social/shares';
 import { SUPPORT_PATHS } from '@/lib/api/openapi/paths/support';
 import { TRACKING_PATHS } from '@/lib/api/openapi/paths/tracking';
@@ -48,6 +49,7 @@ const PATHS: Record<string, PathItem> = {
   ...TRACKING_PATHS,
   ...GROUP_PATHS,
   ...FRIEND_PATHS,
+  ...MODERATION_PATHS,
   ...SHARE_PATHS,
   ...NOTIFICATION_PATHS,
   ...ACCOUNT_PATHS,

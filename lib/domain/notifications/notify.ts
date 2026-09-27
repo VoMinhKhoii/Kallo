@@ -22,6 +22,7 @@
 // RETURNING. There is no second query and no row lock to order.
 
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { blockedBetweenSql } from '@/lib/domain/social/moderation/blocks';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { notifications } from '@/lib/infra/db/schema';
 import type { NotifyInput } from './types';
@@ -66,7 +67,9 @@ const aggregateSet = () => {
 
 /**
  * Record one notification per input, aggregating into an open row when one
- * exists. Self-notifications are dropped (Gate 2).
+ * exists. Self-notifications are dropped (Gate 2), and so is any input whose
+ * actor and recipient are in a blocked relation, either direction — this is
+ * the single write seam, so no producer can forget it.
  *
  * Returns the distinct recipients this event should PUSH to. Each input has one
  * of three outcomes, and only two of them buzz a device:
@@ -88,7 +91,10 @@ export async function notify(
   tx: NotifyDb,
   inputs: NotifyInput[]
 ): Promise<string[]> {
-  const wanted = inputs.filter((input) => input.recipientId !== input.actorId);
+  const wanted = await dropBlocked(
+    tx,
+    inputs.filter((input) => input.recipientId !== input.actorId)
+  );
   if (wanted.length === 0) return [];
 
   const pushRecipients = new Set<string>();
@@ -141,6 +147,43 @@ export async function notify(
     }
   }
   return [...pushRecipients];
+}
+
+const pairKey = (actorId: string, recipientId: string) =>
+  `${actorId}>${recipientId}`;
+
+/**
+ * Drop every input whose actor and recipient are blocked with each other. One
+ * statement for the whole batch: the distinct (actor, recipient) pairs as a
+ * VALUES list, filtered by the shared block predicate, returns the blocked
+ * ones. Skipped entirely for an empty batch.
+ */
+async function dropBlocked(
+  tx: NotifyDb,
+  inputs: NotifyInput[]
+): Promise<NotifyInput[]> {
+  if (inputs.length === 0) return inputs;
+  const pairs = new Map(
+    inputs.map((input) => [pairKey(input.actorId, input.recipientId), input])
+  );
+  const rows = (await tx.execute(sql`
+    SELECT pair.actor_id::text AS actor_id,
+           pair.recipient_id::text AS recipient_id
+    FROM (VALUES ${sql.join(
+      [...pairs.values()].map(
+        (input) => sql`(${input.actorId}::uuid, ${input.recipientId}::uuid)`
+      ),
+      sql`, `
+    )}) AS pair(actor_id, recipient_id)
+    WHERE ${blockedBetweenSql(sql`pair.actor_id`, sql`pair.recipient_id`)}
+  `)) as unknown as Array<{ actor_id: string; recipient_id: string }>;
+  if (rows.length === 0) return inputs;
+  const blocked = new Set(
+    rows.map((row) => pairKey(row.actor_id, row.recipient_id))
+  );
+  return inputs.filter(
+    (input) => !blocked.has(pairKey(input.actorId, input.recipientId))
+  );
 }
 
 const conflictKey = (row: { recipientId: string; groupKey: string }) =>

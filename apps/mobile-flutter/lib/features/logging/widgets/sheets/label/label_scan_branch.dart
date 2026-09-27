@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../models/logging/scan_outcome.dart';
 import '../../../../../services/billing/feature_lock.dart';
+import '../../../../privacy/logic/ai_consent_gate.dart';
 import '../../../data/label_scan_providers.dart';
 import '../../../logic/label/review.dart';
 import '../../../logic/meal_log_mode.dart';
@@ -84,6 +85,13 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
       if (next.isFeatureLocked && !(prev?.isFeatureLocked ?? false)) {
         openPaywall(context);
       }
+      // Consent withdrawn elsewhere since the gate last looked: ask again, and
+      // re-send the held photo if the answer is yes.
+      if (next.isAiConsentRequired && !(prev?.isAiConsentRequired ?? false)) {
+        reaskAiConsent(context, ref).then((ok) {
+          if (ok && mounted) _scan();
+        });
+      }
     });
 
     final state = ref.watch(labelScanProvider);
@@ -107,7 +115,7 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
           onPick: notifier.pickImage,
           onCapture: notifier.captureFromFile,
           onCaptureFailure: notifier.reportCaptureFailure,
-          onScan: notifier.scan,
+          onScan: _scan,
           onRetake: notifier.retake,
           onManualEntry: _enterManualReview,
         );
@@ -131,6 +139,13 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
     }
   }
 
+  /// The photo goes to the AI provider: consent first (App Store 5.1.2(i)).
+  void _scan() => startWithAiConsent(
+    context,
+    ref,
+    ref.read(labelScanProvider.notifier).scan,
+  );
+
   void _enterManualReview() {
     _dropReview();
     ref.read(labelScanProvider.notifier).enterManualReview();
@@ -146,7 +161,7 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
             hasPhoto
                 ? 'logging.labelScan.retryPhoto'.tr()
                 : 'logging.labelScan.takePhoto'.tr(),
-        onTap: hasPhoto ? notifier.scan : notifier.retake,
+        onTap: hasPhoto ? _scan : notifier.retake,
       ),
       secondary: [
         if (state.isNoLabelDetected)

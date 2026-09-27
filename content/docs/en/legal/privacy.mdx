@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-25'
 ---
 
 This policy describes how VÕ MINH KHÔI ("Kallo", "we") collects, uses,
@@ -25,6 +25,14 @@ For any privacy question, access request or complaint, write to
 Your email address, sign-in method (email and password, Google, or Apple), and
 an account identifier. We do **not** store readable passwords — authentication
 is handled by Supabase Auth.
+
+If you sign in with Apple in the iOS app, we also store an **encrypted Apple
+refresh token**. We use it for one thing only: revoking Kallo's access at Apple
+when you delete your account. Deletion revokes it and then deletes it; if Apple
+cannot be reached at that moment, we retry automatically every hour, and our
+team follows up on any revocation that still fails. If you signed in with Apple on the web, that token is held by our
+authentication provider and we cannot revoke it; you can remove Kallo in your
+Apple Account settings under **Sign in with Apple**.
 
 ### Profile and goals
 
@@ -59,6 +67,14 @@ recognises, estimated weights, cooking method, ingredient-match confidence,
 alcohol where relevant, the slider positions when you use Cheat meal, and all 28
 nutrient values computed for each meal and each item.
 
+### Nutrition label photos
+
+The photo of each nutrition label you scan, stored in a private bucket and
+linked to your account, and to the meal when you save it in the iOS app. With it
+we keep the scan outcome — what Kallo read from the label, or the error if
+reading failed, which model read it and how long it took — and, when you save the
+meal in the iOS app, the values you saved. See section 3.
+
 ### Weight over time
 
 Your weight entries and the dates they belong to.
@@ -67,6 +83,11 @@ Your weight entries and the dates they belong to.
 
 Friendships, meals you share, reactions, replies, portion invites, the groups
 you join and the messages you send in groups or private chats.
+
+### Blocks and reports
+
+The people you block, and any report you file about content or a profile. See
+section 6.
 
 ### Feedback
 
@@ -116,6 +137,25 @@ When you request a meal analysis, the AI model receives **only**:
 - Your cooking habits.
 - The language you want the result in.
 
+When you scan a nutrition label, the model receives **only the photo** you scan.
+We also store that photo in a private storage bucket, linked to your account
+and, when you save the meal in the iOS app, to that meal. Before storing it we
+re-encode it on our servers, which strips embedded metadata such as location.
+Alongside it we keep the scan outcome (what Kallo read, or the error; which model
+read it and how long it took) and, when you save the meal in the iOS app, the
+values you saved. Only you and the Kallo team can access the photo and these
+records; the team uses them to check and improve how accurately Kallo reads
+labels. We do **not** use them to train AI models, and they are never shared with
+other users. They are kept until you delete your account, as part of which they
+are deleted.
+
+When you search for an ingredient while logging by hand, and only if you have
+given AI permission (see below), the text you type may be sent to Google's
+embedding model to find ingredients with a similar meaning. Only the search text
+is sent. We keep that text and its embedding in a shared cache, not linked to
+your account, so the same search is faster next time. Without AI permission,
+ingredient search uses Kallo's own text matching and nothing is sent to Google.
+
 The model does **not** know your weight goal, your pace, your calorie or
 macro targets, weight, height, age, sex, email, name, or meal history.
 
@@ -127,6 +167,15 @@ rather than by convention.
 </Callout>
 
 We do **not** use your content to train shared AI models.
+
+### Your permission comes first
+
+Kallo asks for your permission the first time you use AI meal analysis or label
+scanning, **before anything is sent** to the model. You can withdraw it at any
+time in **Settings → Preferences → AI meal analysis**. After that, AI analysis
+and label scanning stop, and ingredient search sends nothing to Google. Manual
+logging keeps working, with ingredient search falling back to text matching, and
+so does barcode scanning.
 
 ### What happens to it on Google's side
 
@@ -144,9 +193,8 @@ There are two exceptions:
   violation. That data is still **not** used to train models.
 
 Kallo calls Vertex AI's **global endpoint**, so a request may be served from any
-region Google operates in. That means your meal description — and only the meal
-description plus the four fields above — can leave Vietnam while it is being
-processed. See section 9.
+region Google operates in. That means the data listed above — and only that
+data — can leave Vietnam while it is being processed. See section 9.
 
 Developer machines and internal scripts use a different connection (Google AI
 Studio) with test data, not your account data.
@@ -156,11 +204,12 @@ Studio) with test data, not your account data.
 | Purpose | Data involved |
 | --- | --- |
 | Authenticate you and keep you signed in | Account, device |
-| Produce nutrition estimates | Meal text, cooking habits, country |
+| Produce nutrition estimates | Meal text, cooking habits, country, nutrition label photos |
 | Personalise targets and charts | Profile, body metrics, goal, meal log |
 | Show content you share | Circle, shared meals |
 | Maintain Premium access | Billing data from the provider |
 | Prevent abuse, fraud and overload | Rate-limit events, hashed identifiers |
+| Keep Circle safe | Blocks, reports and the content reported |
 | Troubleshoot and improve reliability | Operational logs, error reports, feedback |
 | Understand how features are used | Usage events, device and app version |
 | Respond to support | Your message, account |
@@ -183,12 +232,12 @@ advertising.
 
 | Provider | Role | Data reached |
 | --- | --- | --- |
-| Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
-| Google Cloud (Vertex AI, Gemini) | AI meal analysis | Meal text, country, cooking habits, language |
+| Supabase | Authentication, database, file storage | Account, all app data, avatars, feedback screenshots and label photos |
+| Google Cloud (Vertex AI, Gemini) | AI meal analysis, label reading, ingredient search | Meal text, country, cooking habits, language; nutrition label photos; ingredient search text |
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
 | Cloudflare | Content delivery, attack protection | Request metadata, IP address |
-| Resend | Authentication and notification email | Email address, message content |
+| Resend | Authentication and notification email; content-report alerts to our team | Email address, message content; the details of reports you file |
 | RevenueCat | Cross-platform subscription state | Account identifier, purchase metadata |
 | Apple App Store, Google Play | In-app payments | Your payment details, held by the store |
 | Stripe (via RevenueCat Billing) | Web payments | Payment details |
@@ -226,6 +275,21 @@ private.
 Content others have already viewed or copied into their own log may persist
 after you delete your original.
 
+### Blocking and reporting
+
+You can **block** someone: they no longer see your shared meals, replies or
+messages, and you no longer see theirs. Blocking also ends your Circle
+connection and deletes the notifications between the two of you.
+
+You can also **report** content or a profile. A report stores who filed it, what
+was reported (its type and identifier, and the person it belongs to), the reason,
+any note you add, and its review status. The Kallo team reviews every report and
+aims to act on it within 24 hours. We keep a report as a moderation record,
+including after it is resolved, until your account is deleted. When you file a
+report, an alert with its details is emailed to the Kallo team and may remain in
+our team mailbox. To follow up, write to us in **Settings →
+Feedback**.
+
 ## 7. Retention and deletion
 
 We keep account content while your account is active, and afterwards only for as
@@ -233,7 +297,8 @@ long as needed for security, dispute resolution, legal compliance and backup
 recovery.
 
 You can delete your account in **Settings**. Deletion runs as a scheduled job
-that also erases your customer record at the billing provider.
+that also erases your customer record at the billing provider and, if you signed
+in with Apple in the iOS app, revokes Kallo's access at Apple.
 
 <Callout label="Before you delete" tone="caution">
 Deleting your Kallo account does **not** cancel a subscription bought through
@@ -256,9 +321,9 @@ We apply several layers of protection:
   from another.
 - Server-side permission checks on every cross-account read in Circle.
 - An origin lock that only accepts traffic arriving through our edge layer.
-- A private storage bucket for feedback screenshots. Avatars are public by
-  design (see section 2), stored under unguessable file names, and only our
-  servers can write them, after re-encoding each image.
+- Private storage buckets for feedback screenshots and label photos. Avatars
+  are public by design (see section 2), stored under unguessable file names,
+  and only our servers can write them, after re-encoding each image.
 - Tightly restricted access to server credentials.
 
 No system is perfectly secure. If an incident affects your personal data, we
@@ -276,7 +341,7 @@ you live. Specifically:
   application servers.
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
-  the four fields listed in section 3 travel this path.
+  the data listed in section 3 travels this path.
 - **Error reports** (Sentry) are stored in the United States, and **usage
   events** (PostHog) in the European Union.
 - **Every other provider** processes data in the regions it operates.
@@ -312,7 +377,8 @@ profile, meal and weight history, Circle profile, friendships, the content you
 shared or wrote in the Circle and in chats, notifications, registered devices
 (with device tokens shortened), feedback, billing records, and recent app
 activity. Files you uploaded, such as a profile photo or a feedback screenshot,
-are listed by storage location rather than included. Other people's messages
+are listed by storage location rather than included; label photos are listed
+with their identifier, date and linked meal. Other people's messages
 and reactions, and internal security and debugging records, are not part of the
 file; [Your data](/docs/account/your-data) lists what is left out and why. For a
 copy of anything not in the file, email us as above.
@@ -385,7 +451,7 @@ California law, that we have collected in the preceding twelve (12) months.
 | E. Biometric information | Fingerprints, voiceprints | No |
 | F. Internet or network activity | Server logs, in-app actions | Yes |
 | G. Geolocation data | Device location | No |
-| H. Audio, visual and sensory information | Avatar, feedback screenshots | Yes |
+| H. Audio, visual and sensory information | Avatar, feedback screenshots, nutrition label photos | Yes |
 | I. Professional or employment information | Job title, work history | No |
 | J. Education information | Student records | No |
 | K. Inferences drawn from collected data | Calorie and macro targets, nutrition trends | Yes |

@@ -123,16 +123,35 @@ describe('sharedMealVisibleToActor', () => {
   it('qualifies every column it names — no bare "group_id"', async () => {
     // The `isSingleTable` hazard share-visibility.ts documents: Drizzle drops
     // the table prefix off SELECT-list columns in a join-free query, which
-    // turned the membership self-join into `ON "group_id" = "group_id"`. A
+    // once turned a membership self-join into `ON "group_id" = "group_id"`. A
     // WHERE predicate is rendered verbatim, and this query has two joins
-    // besides — so the self-join stays qualified on both sides.
+    // besides — so every membership reference stays qualified.
     const db = fakeDb([row]);
 
     await sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never);
 
     const where = compile(db.captured.where);
     expect(where.sql).toContain(
-      '"share_owner_membership"."group_id" = "share_viewer_membership"."group_id"'
+      '"share_owner_membership"."group_id" = "chat_groups"."id"'
+    );
+    expect(where.sql).toContain(
+      '"chat_groups"."id" = "share_group_membership"."group_id"'
+    );
+    expect(
+      where.sql.match(/(?<![."\w])"(?:group_id|user_id|joined_at|kind)"/g)
+    ).toBeNull();
+  });
+
+  // Blocks apply to share-by-id too, once, at the top of the gate: a person
+  // in a blocked relation with the owner cannot open the post by link.
+  it('refuses the row when the actor and owner are blocked', async () => {
+    const db = fakeDb([row]);
+
+    await sharedMealVisibleToActor(ACTOR, SHARE_ID, db as never);
+
+    const where = compile(db.captured.where);
+    expect(where.sql.replace(/\s+/g, ' ')).toMatch(
+      /NOT EXISTS \( SELECT 1 FROM "user_blocks"/
     );
   });
 });

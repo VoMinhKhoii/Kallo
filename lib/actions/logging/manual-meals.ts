@@ -143,6 +143,7 @@ export async function saveManualMealAction(
     const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
       actorId: user.id,
+      rawInput,
     });
 
     return { mealId: meal.id, share };

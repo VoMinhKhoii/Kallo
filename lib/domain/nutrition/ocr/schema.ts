@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export type OcrErrorCode =
+  | 'ai_consent_required'
   | 'feature_locked'
   | 'invalid_image'
   | 'no_label_detected'

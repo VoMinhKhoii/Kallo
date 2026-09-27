@@ -6,7 +6,6 @@ import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-cha
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptInviteSchema,
-  blockFriendSchema,
   removeFriendSchema,
 } from '@/lib/core/validation/social';
 import { friendJoinedKey } from '@/lib/domain/notifications/group-keys';
@@ -15,6 +14,10 @@ import {
   withNotifications,
 } from '@/lib/domain/notifications/with-notifications';
 import { orderedPair } from '@/lib/domain/social/friendship';
+import {
+  isBlockedPair,
+  lockPairSql,
+} from '@/lib/domain/social/moderation/blocks';
 import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { circleEvents, friendships } from '@/lib/infra/db/schema';
@@ -63,9 +66,16 @@ export async function acceptInvite(
   // The wrapper drains the queued push only after the transaction commits, so
   // it can never fire for a friendship that rolled back.
   return withNotifications(db, async (tx, notify) => {
+    // The pair lock blockFriend also takes: a block committing between the
+    // check below and the friendship write would otherwise leave the pair
+    // friends despite the block (there may be no row yet to lock).
+    await tx.execute(lockPairSql(userLow, userHigh));
+    if (await isBlockedPair(tx, actorId, inviter.userId)) {
+      throw Errors.conflict('Không thể kết nối.');
+    }
+
     // Lock the canonical edge row for the duration of the transaction so a
-    // concurrent blockFriend/acceptInvite can't interleave between this read
-    // and the promote below (which would let an accept land on top of a block).
+    // concurrent writer can't interleave between this read and the promote.
     const existing = await tx
       .select({ id: friendships.id, status: friendships.status })
       .from(friendships)
@@ -78,6 +88,9 @@ export async function acceptInvite(
       .limit(1)
       .for('update');
 
+    // Retired status (blocks live in user_blocks): a 'blocked' edge can only
+    // be a leftover from the revision serving while the migration applied. It
+    // is honoured as a block rather than promoted.
     if (existing[0]?.status === 'blocked') {
       throw Errors.conflict('Không thể kết nối.');
     }
@@ -202,8 +215,9 @@ function notifyInviterOfJoin(
 // ---------------------------------------------------------------------------
 // removeFriend — drop a connection (re-invitable later)
 // ---------------------------------------------------------------------------
-// Deletes the canonical edge so the pair can reconnect via a new invite. Never
-// clears a 'blocked' edge (removing a friend must not silently unblock).
+// Deletes the canonical edge so the pair can reconnect via a new invite. Blocks
+// live in user_blocks and are untouched; a leftover 'blocked' edge (the retired
+// status, see acceptInvite) is still never cleared by a remove.
 
 export async function removeFriend(
   actorId: string,
@@ -239,6 +253,9 @@ export async function getFriendshipStatus(
   otherUserId: string,
   db: Db = defaultDb
 ): Promise<string | null> {
+  // A block in either direction reads as 'blocked' — callers (the invite
+  // preview route and page) answer it exactly like an invalid link.
+  if (await isBlockedPair(db, actorId, otherUserId)) return 'blocked';
   const { userLow, userHigh } = orderedPair(actorId, otherUserId);
   const rows = await db
     .select({ status: friendships.status })
@@ -248,38 +265,4 @@ export async function getFriendshipStatus(
     )
     .limit(1);
   return rows[0]?.status ?? null;
-}
-
-// ---------------------------------------------------------------------------
-// blockFriend
-// ---------------------------------------------------------------------------
-
-export async function blockFriend(
-  actorId: string,
-  input: { targetUserId: string },
-  db: Db = defaultDb
-): Promise<{ friendshipId: string; status: string }> {
-  const parsed = blockFriendSchema.parse(input);
-
-  if (parsed.targetUserId === actorId) {
-    throw Errors.validationFailed('Không thể chặn chính mình.');
-  }
-
-  const { userLow, userHigh } = orderedPair(actorId, parsed.targetUserId);
-
-  const [row] = await db
-    .insert(friendships)
-    .values({
-      userLow,
-      userHigh,
-      requestedBy: actorId,
-      status: 'blocked',
-    })
-    .onConflictDoUpdate({
-      target: [friendships.userLow, friendships.userHigh],
-      set: { status: 'blocked', updatedAt: new Date() },
-    })
-    .returning({ id: friendships.id, status: friendships.status });
-
-  return { friendshipId: row.id, status: row.status };
 }

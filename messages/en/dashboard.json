@@ -71,13 +71,13 @@
     "light": "Light day",
     "veryLight": "Very light day"
   },
-  "caloriesLogged": "kcal logged",
-  "kcalRemaining": "kcal remaining",
-  "loggedOfTarget": "{logged}/{target} logged",
+  "caloriesLogged": "Kcal eaten",
+  "kcalRemaining": "Kcal left",
+  "loggedOfTarget": "Ate {logged}/{target}",
   "leftOfTarget": "{left}/{target} left",
   "overTargetBy": "{over} over {target}",
-  "remainingShort": "left",
-  "loggedShort": "logged",
+  "remainingShort": "Left",
+  "loggedShort": "Eaten",
   "loggedOverTarget": "{logged}/{target}",
   "mealReceiptsHint": "Your meal receipts will show up here",
   "streaming": {

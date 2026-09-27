@@ -23,5 +23,14 @@
   "notFoundIndex": "Documentation index (llms.txt)",
   "notFoundSitemap": "Sitemap",
   "notFoundApi": "API specification",
-  "notSignedIn": "Not signed in."
+  "notSignedIn": "Not signed in.",
+  "aiConsent": {
+    "title": "Use AI to estimate your meals?",
+    "body": "To estimate nutrition, Kallo sends the meal descriptions you type, the label photos you scan and your ingredient searches to Google’s Gemini AI (Vertex AI on Google Cloud).",
+    "training": "Google doesn’t use them to train its models. You can turn this off anytime in Settings.",
+    "privacyLink": "How we handle your data",
+    "continue": "Continue",
+    "notNow": "Not now",
+    "error": "Couldn’t save your choice. Please try again."
+  }
 }

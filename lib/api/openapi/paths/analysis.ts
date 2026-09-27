@@ -1,4 +1,5 @@
 import {
+  AI_CONSENT_REQUIRED_ERROR,
   authed,
   fromZod,
   type JsonSchema,
@@ -94,14 +95,14 @@ export const ANALYSIS_PATHS: Record<string, PathItem> = {
       operationId: 'analyzeMeal',
       summary: 'Estimate a meal from a sentence (streamed)',
       description:
-        'Runs the analysis pipeline on a free-text meal description and streams progress as server-sent events (`text/event-stream`), ending in `analysis_complete` with the id of a staged analysis, or in `error`. Nothing is logged: confirm the staged analysis with `confirmMeal`. Auth, body validation (400, or 413 for a body over the cap), billing (402), the per-user concurrency guard (429) and a scanned pick that was never cached (404 `BARCODE_NOT_CACHED`) are all checked BEFORE the stream opens and answer with the ordinary JSON error envelope; once the stream has started, a failure can only arrive as an `error` frame.',
+        'Runs the analysis pipeline on a free-text meal description and streams progress as server-sent events (`text/event-stream`), ending in `analysis_complete` with the id of a staged analysis, or in `error`. Nothing is logged: confirm the staged analysis with `confirmMeal`. Auth, body validation (400, or 413 for a body over the cap), AI-processing consent (403 `ai_consent_required`, checked before billing), billing (402), the per-user concurrency guard (429) and a scanned pick that was never cached (404 `BARCODE_NOT_CACHED`) are all checked BEFORE the stream opens and answer with the ordinary JSON error envelope; once the stream has started, a failure can only arrive as an `error` frame.',
       tags: ['Meals'],
       body: fromZod(mealMessageSchema),
       ok: SSE_BODY,
       okMedia: 'text/event-stream',
       okDescription:
         'An SSE stream. Each frame is `event: <type>` followed by `data: <json>`; the body is text, and each `data` payload is an `AnalyzeMealStreamEvent`.',
-      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      extraErrors: { ...PAYLOAD_TOO_LARGE_ERROR, ...AI_CONSENT_REQUIRED_ERROR },
     }),
   },
 };

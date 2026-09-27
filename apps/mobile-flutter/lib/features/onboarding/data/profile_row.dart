@@ -78,6 +78,17 @@ class ProfileRow {
   /// in.
   bool get autoShareToCircle => raw['autoShareToCircle'] == true;
 
+  // ── AI-processing consent (App Store 5.1.2(i)) ─────────────────────────
+  /// When the user agreed to send meal text and label photos to the AI
+  /// provider; null when they never did or withdrew.
+  DateTime? get aiProcessingConsentedAt {
+    final v = _string('aiProcessingConsentedAt');
+    return v == null ? null : DateTime.tryParse(v);
+  }
+
+  /// Fails closed: a missing or unparseable field never reads as consent.
+  bool get hasAiConsent => aiProcessingConsentedAt != null;
+
   /// Generic field read for the progress-resume heuristic.
   Object? field(String key) => _get(key);
 }

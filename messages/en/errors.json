@@ -5,6 +5,7 @@
   "rateLimited": "The service is busy. Please wait a moment and try again.",
   "featureLockedTrialExpired": "Your free trial has ended — upgrade to keep analyzing meals with AI.",
   "featureLockedNotEntitled": "Upgrade to Kallo Premium to analyze meals with AI.",
+  "aiConsentRequired": "Allow Kallo to send your meal to its AI provider before analyzing it. You can turn this on when you log a meal or in Settings.",
   "internal": "Something went wrong. Please try again.",
   "route": {
     "title": "This didn’t load.",

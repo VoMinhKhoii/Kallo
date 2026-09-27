@@ -18,6 +18,7 @@ import '../../onboarding/widgets/onboarding_dialog.dart';
 import '../../onboarding/widgets/onboarding_nudge.dart';
 import '../logic/profile_summaries.dart';
 import '../logic/settings_spacing.dart';
+import '../widgets/account/ai_consent_toggle.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
@@ -84,7 +85,10 @@ class _SettingsList extends ConsumerWidget {
       if (profile != null)
         SettingsGroup(
           label: tr('settings.preferences'),
-          children: [AutoShareToCircleToggle(value: profile.autoShareToCircle)],
+          children: [
+            AutoShareToCircleToggle(value: profile.autoShareToCircle),
+            const AiConsentToggle(),
+          ],
         ),
 
       if (showSubscription) const SubscriptionSection(),
