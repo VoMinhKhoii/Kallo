@@ -39,17 +39,28 @@ export 'anchored_menu_layer.dart' show KalloMenuEdge;
 class KalloMenuAction<T> {
   const KalloMenuAction({
     required this.label,
-    required this.icon,
     required this.value,
+    this.icon,
     this.badge,
+    this.detail,
+    this.checked,
   });
 
   final String label;
-  final IconData icon;
+
+  /// The trailing glyph; a pull-down's rows ([KalloPullDown]) carry none.
+  final IconData? icon;
   final T value;
 
   /// A marker drawn just left of the glyph (the Premium chip).
   final Widget? badge;
+
+  /// A muted value at the row's end ("100 ml").
+  final String? detail;
+
+  /// Non-null turns the menu into a pull-down: a leading check column,
+  /// ticked on the current choice.
+  final bool? checked;
 }
 
 /// Shows [actions] anchored to [anchor] (a GLOBAL rect in the root overlay's
@@ -99,6 +110,8 @@ Future<T?> showKalloAnchoredMenu<T>(
                 label: action.label,
                 icon: action.icon,
                 badge: action.badge,
+                detail: action.detail,
+                checked: action.checked,
                 onTap: () => Navigator.of(dialogContext).pop(action.value),
               ),
           ],

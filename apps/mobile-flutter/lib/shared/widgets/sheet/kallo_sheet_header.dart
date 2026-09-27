@@ -9,21 +9,24 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import 'kallo_sheet.dart';
+import 'sheet_circle_button.dart';
 
-/// The unified sheet header: a centered grabber, then the X close button on
-/// the LEFT, a bold centered 17/600 title (with an optional [subtitle]), and a
-/// right-hand mirror so the title stays optically centered against the close
-/// button.
+/// The unified sheet header, iOS 26 anatomy: a centred grabber, a grey circle
+/// close (or back) on the LEFT, the 17/600 title centred, and an optional
+/// [trailing] action — a `SheetCapsuleButton` such as "Edit".
 ///
-/// The grabber came back after the native pass retired it: it is the standard
-/// iOS cue that a surface is draggable, and `showNhamSheet` sheets ARE
-/// drag-to-dismiss. Without it the drag affordance was invisible. Every sheet
-/// surface in the app renders this header, so putting it here gives all of
-/// them the same chrome.
+/// **Geometry is exact, not approximate** (owner review, 2026-09-28): both
+/// controls are 36pt tall and sit 16pt from the sheet's top and 16pt in from
+/// its side, TOP-aligned, so a control's centre is (34, 34) — the centre of
+/// the sheet's 34pt corner ([kSheetRadius]). The gap between control and
+/// corner is then even all the way round the curve. Centring the controls in
+/// a taller row pushed them 4pt down and broke that, visibly.
 ///
-/// Pass [title] for the common case, or [titleWidget] to supply a dynamic
-/// header (e.g. an inline-editable name). [onClose] defaults to popping the
-/// route; [closeEnabled] gates the button while a sheet is mid-save.
+/// The grabber stays: it is the standard iOS cue that a surface drags, and
+/// `showNhamSheet` sheets drag to dismiss.
+///
+/// The header inherits the surface's content inset ([SheetContentInset]) so
+/// the circle starts on exactly the line the sheet's body starts on.
 class KalloSheetHeader extends StatelessWidget {
   const KalloSheetHeader({
     super.key,
@@ -31,124 +34,121 @@ class KalloSheetHeader extends StatelessWidget {
     this.titleWidget,
     this.subtitle,
     this.onClose,
+    this.onBack,
     this.closeEnabled = true,
-  }) : assert(
-         title != null || titleWidget != null,
-         'Provide either a title or a titleWidget',
-       );
+    this.trailing,
+  });
 
   final String? title;
 
   /// Overrides [title] for the one dynamic case (group name with inline edit).
   final Widget? titleWidget;
 
-  /// Optional centered caption under the title.
+  /// Optional centred caption under the title.
   final String? subtitle;
 
+  /// Close action; defaults to popping the route. Ignored when [onBack] is set.
   final VoidCallback? onClose;
 
-  /// When false the X is dimmed and inert (barcode disables it while saving).
+  /// Turns the leading control into a back chevron — a sheet's second level.
+  final VoidCallback? onBack;
+
+  /// When false the leading control is dimmed and inert (a sheet mid-save).
   final bool closeEnabled;
 
-  /// The close button's tap target — the app's 44pt minimum.
-  static const double _closeTarget = 44;
+  /// The right-hand action, usually a `SheetCapsuleButton`.
+  final Widget? trailing;
 
-  /// The part of [kSheetContentInset] this header still has to add itself.
-  ///
-  /// Clamped at 0: a sheet that insets its body further than the standard line
-  /// (the 20pt group and country sheets) wants its X on THAT line too, not
-  /// pulled back out to 16.
+  /// Controls start this far below the sheet's top edge; the 44pt targets
+  /// reach 4pt above the 36pt circles.
+  static const double _controlsTop = 16;
+  static const double _targetOverhang =
+      (KalloIcons.hit - SheetCircleButton.size) / 2;
+
+  /// Grabber, controls row, and a 4pt breath before the body.
+  static const double height = _controlsTop + SheetCircleButton.size + 8;
+
   static double _ownInset(BuildContext context) =>
       math.max(0, kSheetContentInset - SheetContentInset.of(context));
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // The grabber, 8pt off the sheet's top edge.
-        const SizedBox(height: KalloSpacing.sp2),
-        Container(
-          width: 36,
-          height: 5,
-          decoration: BoxDecoration(
-            color: KalloColors.border,
-            borderRadius: BorderRadius.circular(2.5),
-          ),
-        ),
-        const SizedBox(height: KalloSpacing.sp2),
-        Padding(
-          // Only the inset the SURFACE has not already applied, so the X's
-          // glyph starts on exactly the line the sheet's body starts on —
-          // whatever that line is. Adding a flat 16 here regardless is what
-          // put the X 32pt in on every sheet that pads its own content, a
-          // full inset right of the row icons immediately beneath it.
-          padding: EdgeInsets.fromLTRB(
-            _ownInset(context),
-            0,
-            _ownInset(context),
-            KalloSpacing.sp1,
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed:
-                    closeEnabled
-                        ? () {
-                          // `AppHeaderBackButton` ticks on the page-level
-                          // equivalent; the X on every sheet in the app did
-                          // not.
-                          HapticFeedback.lightImpact();
-                          (onClose ?? () => Navigator.of(context).pop())();
-                        }
-                        : null,
-                icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
-                color: KalloColors.textMuted,
-                tooltip: 'common.cancel'.tr(),
-                // The 44pt target keeps its size by extending INWARD from the
-                // glyph rather than centring the glyph inside itself.
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                constraints: const BoxConstraints.tightFor(
-                  width: _closeTarget,
-                  height: _closeTarget,
-                ),
-                // Material's default padded tap target wraps the button in a
-                // 48pt box and CENTRES it, which pushed the glyph 2pt off the
-                // inset. The 44pt constraints above already meet the minimum.
-                style: IconButton.styleFrom(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    final inset = _ownInset(context);
+    final back = onBack != null;
+    final leading = SheetCircleButton(
+      icon: back ? LucideIcons.chevronLeft300 : LucideIcons.x300,
+      label: back ? 'common.back'.tr() : 'common.close'.tr(),
+      onTap:
+          closeEnabled
+              ? () {
+                HapticFeedback.lightImpact();
+                (onBack ?? onClose ?? () => Navigator.of(context).pop())();
+              }
+              : null,
+    );
+    final heading =
+        titleWidget ??
+        (title == null
+            ? null
+            : Text(
+              title!,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: kSheetTitle(),
+            ));
+
+    return SizedBox(
+      height: height,
+      child: Stack(
+        children: [
+          // The grabber, 8pt off the sheet's top edge.
+          Positioned(
+            top: KalloSpacing.sp2,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: KalloColors.border,
+                  borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    titleWidget ??
-                        Text(
-                          title!,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: kSectionHeader(),
-                        ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        textAlign: TextAlign.center,
-                        style: dashMeta(),
+            ),
+          ),
+          Positioned(
+            top: _controlsTop - _targetOverhang,
+            left: inset,
+            right: inset,
+            height: KalloIcons.hit,
+            // The same layout the platform's navigation bar uses: the title
+            // centres on the SHEET and gives way to wide side controls rather
+            // than colliding with them.
+            child: NavigationToolbar(
+              leading: leading,
+              middle:
+                  heading == null
+                      ? null
+                      : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          heading,
+                          if (subtitle != null)
+                            Text(
+                              subtitle!,
+                              textAlign: TextAlign.center,
+                              style: dashMeta(),
+                            ),
+                        ],
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              // Mirror the close target so the title stays centered.
-              const SizedBox(width: _closeTarget, height: _closeTarget),
-            ],
+              trailing: trailing,
+              middleSpacing: KalloSpacing.sp2,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

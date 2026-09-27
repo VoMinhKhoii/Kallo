@@ -157,18 +157,12 @@ void main() {
       reason: 'the level must push within the sheet, not open another sheet',
     );
 
-    // The second-level chrome: back reads the parent's title, the page's own
-    // title sits clear of it, and the card is explained by a muted line.
+    // The second-level chrome: the grey back circle (iOS 26 names the way
+    // out with the control, not with the parent's title beside it), the
+    // page's own title clear of it, and the card explained by a muted line.
     expect(find.byType(KalloSheetSubHeader), findsOneWidget);
-    // The mode sheet's title is a QUESTION ("How do you want to log?") and is
-    // far too long to sit beside a centred title, so the back group falls back
-    // to the generic word — iOS's own rule — rather than ellipsising to
-    // "How do you wa…", which would name nothing.
-    final back =
-        CupertinoLocalizations.of(
-          tester.element(find.byType(KalloSheetSubHeader)),
-        ).backButtonLabel;
-    expect(find.text(back), findsOneWidget);
+    expect(find.byIcon(LucideIcons.chevronLeft300), findsOneWidget);
+    expect(find.bySemanticsLabel('common.back'.tr()), findsOneWidget);
     expect(find.text('logging.cheatIntensity.title'.tr()), findsOneWidget);
     expect(find.text('logging.cheatIntensity.helper'.tr()), findsOneWidget);
     for (final level in CheatIntensity.values) {

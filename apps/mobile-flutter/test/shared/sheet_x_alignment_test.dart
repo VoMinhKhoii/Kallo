@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:kallo_mobile/features/logging/widgets/sheets/meal_mode_sheet.dar
 import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet_header.dart';
+import 'package:kallo_mobile/shared/widgets/sheet/sheet_circle_button.dart';
 import 'package:kallo_mobile/shell/nav/add_sheet.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
@@ -71,19 +73,31 @@ void main() {
     required Finder content,
     required String sheet,
   }) {
-    final glyph = tester.getRect(find.byIcon(LucideIcons.x300));
+    // The grey CIRCLE is what the eye lines up against the body now; the X
+    // glyph sits centred inside it.
+    final circle = tester.getRect(
+      find.descendant(
+        of: find.byType(SheetCircleButton),
+        matching: find.byType(Container),
+      ),
+    );
     final body = tester.getRect(content);
     expect(
-      glyph.left,
+      circle.left,
       closeTo(body.left, 0.5),
       reason:
-          'on the $sheet the X glyph starts at ${glyph.left} while the '
+          'on the $sheet the close circle starts at ${circle.left} while the '
           'content column starts at ${body.left} — the close affordance is '
           'not on the sheet\'s own line',
     );
 
-    // The 44pt target is kept by growing from the glyph, never by pushing it in.
-    final target = tester.getSize(find.byType(IconButton));
+    // The 44pt target is kept by growing from the circle, never by pushing it in.
+    final target = tester.getSize(
+      find.descendant(
+        of: find.byType(SheetCircleButton),
+        matching: find.byType(CupertinoButton),
+      ),
+    );
     expect(target.width, greaterThanOrEqualTo(44));
     expect(target.height, greaterThanOrEqualTo(44));
   }
