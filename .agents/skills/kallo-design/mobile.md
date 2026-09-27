@@ -423,6 +423,17 @@ destroyed the whole `TimelineStrip` — `PageController`, paged-to week and all 
 inside an animation frame. Keep both layers mounted, key them, and gate
 hit-testing with `IgnorePointer`.
 
+**The launch intro is the one choreography, and it keeps its own clock.**
+`lib/shell/launch/` times its beats in milliseconds inside its own files
+(`rise_intro.dart`, `portal_reveal.dart`), not as `KalloMotion` tokens: they
+are positions on a single timeline, not the durations of separate
+interactions, and a token for "the second l starts rising" would name nothing.
+Its fixed points come from the platform, not the app. The first frame must be
+the native launch screen (the ink K, 72pt, centred on `#F8F7F4`, rendered by
+`scripts/assets/gen-splash-mark.mjs`). The K holds still for 260ms while iOS
+fades its storyboard out. Nothing lifts before the router has left `/`.
+Reduce Motion swaps it for a crossfade.
+
 ## Platform — Cupertino wherever it exists
 
 **Where Flutter ships a Cupertino widget or behaviour for the thing you are

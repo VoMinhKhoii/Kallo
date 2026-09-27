@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import '../shared/widgets/brand/kallo_wordmark.dart';
 import '../theme/kallo_colors.dart';
 
-/// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the [KalloWordmark] breathing gently on the cream
-/// surface, instead of a generic Material spinner. The cream background matches
-/// the native LaunchScreen so the native→Flutter handoff is seamless.
+/// Canvas splash shown on the index route while the redirect resolves: the
+/// [KalloWordmark] breathing gently, instead of a generic Material spinner.
+///
+/// At a cold start the launch curtain (`shell/launch/`) covers this route and
+/// does not lift until the router has moved on, so it is never seen then. It
+/// is what shows when the redirect holds here mid-session — a brand-new
+/// account waiting on its profile right after sign-up.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

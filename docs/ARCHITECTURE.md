@@ -259,7 +259,7 @@ proved to be one hook.
 | `shared/widgets/` | cross-feature widget primitives, one folder per primitive: `avatar/` `brand/` `calorie_ring/` `feedback/` (skeleton, empty, refresh, progress) `form/` `motion/` `sheet/` `surface/` (the screen frame, the card/button, the scroll hairline) `toast/` `typography/` | ok |
 | `shared/logic/` | pure functions more than one feature reads — `tdee.dart`, `display_format.dart` | ok |
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |
-| `shell/` | app scaffold and navigation: `header/` `sidebar/`, plus the two routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`) | ok |
+| `shell/` | app scaffold and navigation: `header/` `nav/`, `launch/` (the launch intro curtain over the whole app, which plays once per process and lifts when the router has settled), plus the routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`, `route_error_screen.dart`) | ok |
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |

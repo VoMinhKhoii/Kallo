@@ -40,9 +40,13 @@ lib/
                        the surface-state night pose share)
   shared/data/         static tables >1 feature reads: countries.dart,
                        surface_cast.dart (area × state → assets/illustrations/)
-  shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,
-                       placeholder_screen.dart, route_error_screen.dart (go_router
-                       errorBuilder: unknown deep link / route failure)
+  shell/               app shell: header/, nav/ (pill tab bar), launch/ (the
+                       launch intro: a curtain over the whole app that redraws
+                       the native launch K, walks it into the wordmark and opens
+                       onto the app once the router has left `/`),
+                       tab_scaffold.dart, placeholder_screen.dart,
+                       route_error_screen.dart (go_router errorBuilder: unknown
+                       deep link / route failure)
   theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
 

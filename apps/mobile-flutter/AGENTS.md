@@ -42,7 +42,10 @@ lib/models/     — data models (ported from web lib/*/types.ts), grouped by dom
 lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
                   and its slots), nav/ (the floating pill tab bar, its Add sheet,
                   the goToLogging/popOr helpers, and swipe_back/ — the app-wide
-                  full-width back gesture, installed through the theme), plus
+                  full-width back gesture, installed through the theme),
+                  launch/ (the launch intro: a curtain above the router whose
+                  first frame is the native launch K, lifted once the router
+                  leaves `/`), plus
                   tab_scaffold.dart,
                   placeholder_screen.dart and route_error_screen.dart (the
                   go_router errorBuilder) — the routed surfaces the shell itself
