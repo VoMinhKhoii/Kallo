@@ -568,19 +568,14 @@ ${INJECTION_EXAMPLE}`,
 /**
  * Collapse each example's pretty-printed <output> JSON onto one line. The
  * source stays readable; the prompt drops ~690 whitespace tokens per call
- * (Vertex golden set 2026-09-26: no accuracy change). A body that is not
- * strict JSON keeps its content with the whitespace collapsed.
+ * (Vertex golden set 2026-09-26: no accuracy change). Every body must be
+ * strict JSON — a malformed example throws at import, so tests catch it.
  */
 function oneLineExampleOutputs(block: string): string {
   return block.replace(
     /<output>([\s\S]*?)<\/output>/g,
-    (_match, body: string) => {
-      try {
-        return `<output>${JSON.stringify(JSON.parse(body))}</output>`;
-      } catch {
-        return `<output>${body.replace(/\s*\n\s*/g, ' ').trim()}</output>`;
-      }
-    }
+    (_match, body: string) =>
+      `<output>${JSON.stringify(JSON.parse(body))}</output>`
   );
 }
 

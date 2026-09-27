@@ -187,9 +187,7 @@ describe('decomposition-v2 locale blocks', () => {
     expect(out).toMatch(/"đùi gà" \(thigh\)/);
     expect(out).not.toMatch(/<language>/);
   });
-});
 
-describe('wrapUserMealTextAsData — prompt-injection delimiter', () => {
   it('keeps every per-user block after the examples (implicit-cache prefix)', () => {
     // Gemini caches the longest byte-identical prefix. Within one locale
     // (outputLanguage picks it), users who differ in country must share
@@ -214,6 +212,25 @@ describe('wrapUserMealTextAsData — prompt-injection delimiter', () => {
     }
   });
 
+  it('renders every example output as one line of JSON', () => {
+    for (const outputLanguage of ['vi', 'en'] as const) {
+      const out = buildDecompositionV2Prompt({
+        ...baseUserContext,
+        outputLanguage,
+      });
+      const bodies = [...out.matchAll(/<output>([\s\S]*?)<\/output>/g)].map(
+        ([, body]) => body
+      );
+      expect(bodies.length).toBeGreaterThan(0);
+      for (const body of bodies) {
+        expect(body).not.toContain('\n');
+        expect(() => JSON.parse(body)).not.toThrow();
+      }
+    }
+  });
+});
+
+describe('wrapUserMealTextAsData — prompt-injection delimiter', () => {
   it('wraps plain input in the named data delimiter', () => {
     const out = wrapUserMealTextAsData('cơm gà');
     expect(out).toBe('<meal_text_data>\ncơm gà\n</meal_text_data>');

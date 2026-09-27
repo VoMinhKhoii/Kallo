@@ -12,6 +12,11 @@ export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
 /** Cheat mode shares the analyze-meal endpoint; split it out for cost. */
 export const CHEAT_BUDGET_ROUTE = '/api/analyze-meal#cheat';
 export const LABEL_OCR_BUDGET_ROUTE = 'nutrition-label-ocr';
+/** The `route` values spend rows carry — `docs/AI_COST.md` reads them. */
+export type BudgetRoute =
+  | typeof ANALYSIS_MODEL_BUDGET_ROUTE
+  | typeof CHEAT_BUDGET_ROUTE
+  | typeof LABEL_OCR_BUDGET_ROUTE;
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';
 
 /** Model-budget attribution for a pipeline run (primary vs shadow work). */
@@ -39,7 +44,7 @@ export function createBudgetAttemptRecorder(args: {
   model: string;
   providerErrorState?: { recorded: boolean };
   /** Defaults to the meal-analysis route; cheat and label OCR pass their own. */
-  route?: string;
+  route?: BudgetRoute;
 }): NonNullable<StreamOptions['onAttemptComplete']> {
   return ({
     error,
