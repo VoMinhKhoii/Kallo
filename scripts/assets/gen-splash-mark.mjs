@@ -4,9 +4,15 @@
  *
  * The splash used to be the app-icon tile — a cream K on an espresso
  * (#2C2416) rounded square — which reads as black on the cream launch page.
- * These are the mark ALONE in brand umber (#695E4E) on transparency, so the
- * page colour shows through: iOS's LaunchScreen storyboard and Android's
- * `@color/launch_background` already paint cream behind it.
+ * These are the mark ALONE in ink (#141413, `KalloColors.text`) on
+ * transparency, so the page colour shows through: iOS's LaunchScreen
+ * storyboard and Android's `@color/launch_background` paint the app canvas
+ * (#F8F7F4, `KalloColors.surface`) behind it.
+ *
+ * The mark is also the FIRST FRAME of the Flutter launch intro
+ * (`lib/shell/launch/`): Flutter redraws this K at the same size and centre,
+ * then glides it left while "allo" rises in its wake. So the height below and
+ * the intro's `WordmarkStage.launchMarkHeight` are one number — change both.
  *
  * The geometry is `docs/brand/kallo/assets/kallo-mark.svg` verbatim — three
  * straight-edged polygons in a 656x708 viewBox, which is why this can rasterise
@@ -26,8 +32,8 @@ const REPO_ROOT = path.resolve(
 );
 const MOBILE = path.join(REPO_ROOT, 'apps/mobile-flutter');
 
-/** Brand umber. The palette is documented in docs/brand/kallo/assets/README.md. */
-const UMBER = [0x69, 0x5e, 0x4e];
+/** Ink — `KalloColors.text`, the colour the Flutter intro draws the K in. */
+const INK = [0x14, 0x14, 0x13];
 
 /** The mark's viewBox, and its three polygons: stem, upper arm, leg. */
 const VIEW = { w: 656, h: 708 };
@@ -112,9 +118,9 @@ function render(height) {
     for (let x = 0; x < width; x++) {
       const a = coverage(x, y, scale);
       // Premultiplication is not used by PNG; store straight colour + alpha.
-      raw[o++] = UMBER[0];
-      raw[o++] = UMBER[1];
-      raw[o++] = UMBER[2];
+      raw[o++] = INK[0];
+      raw[o++] = INK[1];
+      raw[o++] = INK[2];
       raw[o++] = Math.round(a * 255);
     }
   }
@@ -133,10 +139,10 @@ function render(height) {
 }
 
 /**
- * Targets. The mark stands ~88pt tall — a little larger than the 64pt mark
- * inside the old tile, since it no longer has a tile to sit in.
+ * Targets. The mark stands 72pt tall: the capital of a wordmark ~218pt wide
+ * once the intro has assembled it — about 55% of a 393pt phone.
  */
-const BASE_PT = 88;
+const BASE_PT = 72;
 const TARGETS = [
   ['ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png', 1],
   ['ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png', 2],

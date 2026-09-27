@@ -36,12 +36,16 @@ splash tiles):
 | `apps/mobile-flutter/android/.../drawable-*/launch_image.png` | Splash mark, 5 densities |
 
 The two **splash** rows are the exception to "render the SVG": they are the
-mark alone in umber `#695E4E` on transparency — no tile — because the launch
-page is already cream on both platforms (iOS's `LaunchScreen.storyboard`
-background, Android's `@color/launch_background`), and an espresso tile on it
-read as black. Regenerate them with `node scripts/assets/gen-splash-mark.mjs`, which
-rasterises `kallo-mark.svg`'s three polygons directly and needs no renderer
-installed. Everything else here still comes from the SVGs above.
+mark alone in ink `#141413`, 72pt tall, on transparency — no tile — because the
+launch page already paints the app canvas `#F8F7F4` on both platforms (iOS's
+`LaunchScreen.storyboard` background, Android's `@color/launch_background`),
+and an espresso tile on it read as black. The mark is also the first frame of
+the Flutter launch intro (`apps/mobile-flutter/lib/shell/launch/`), which redraws
+the same K in the same spot before walking it left into the wordmark, so its
+colour, size and the page colour must stay equal to the intro's. Regenerate them
+with `node scripts/assets/gen-splash-mark.mjs`, which rasterises
+`kallo-mark.svg`'s three polygons directly and needs no renderer installed.
+Everything else here still comes from the SVGs above.
 | `apps/mobile-flutter/web/icons/`, `apps/mobile-flutter/web/favicon.png` | Flutter web icons |
 
 The lockup rule: the mark is never placed next to the wordmark (the wordmark's
