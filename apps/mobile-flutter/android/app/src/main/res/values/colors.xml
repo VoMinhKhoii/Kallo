@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Kallo brand cream — splash background behind the centered app icon. -->
-    <color name="launch_background">#FEFBF6</color>
+    <!-- The app canvas (KalloColors.surface) behind the centred ink K, so the
+         first Flutter frame of the launch intro lands on the same colour. -->
+    <color name="launch_background">#F8F7F4</color>
 </resources>

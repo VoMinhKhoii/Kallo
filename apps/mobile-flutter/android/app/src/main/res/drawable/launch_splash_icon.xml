@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Android 12+ system splash icon: the ink K from launch_image, centred
+     on the 288dp icon canvas at the same 67x72dp it has on older Androids and
+     iOS, so the Flutter launch intro's first frame lands on it. The insets are
+     fractions of that canvas: (288 - 67) / 2 / 288 across, (288 - 72) / 2 / 288
+     down. Referenced only from values-v31 / values-night-v31. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/launch_image"
+    android:insetLeft="38.368%"
+    android:insetRight="38.368%"
+    android:insetTop="37.5%"
+    android:insetBottom="37.5%" />

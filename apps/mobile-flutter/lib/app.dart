@@ -15,6 +15,8 @@ import 'features/logging/data/logging_providers.dart';
 import 'features/notifications/logic/push_registration.dart';
 import 'router.dart';
 import 'shell/kallo_app_theme.dart';
+import 'shell/launch/launch_curtain.dart';
+import 'shell/launch/route_settled.dart';
 
 /// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
@@ -59,6 +61,7 @@ class _NhamAppState extends ConsumerState<KalloApp>
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    final launchReady = ref.watch(launchReadyProvider);
 
     // Tie PostHog + Sentry identity and the RevenueCat customer to the auth session:
     // identify / logIn on sign-in (email, Google, sign-up, restore). On
@@ -107,11 +110,12 @@ class _NhamAppState extends ConsumerState<KalloApp>
           theme: kalloAppTheme(),
           routerConfig: router,
           // Dynamic Type is respected, but capped: the feed's fixed-width
-          // columns overflow past ~1.3x.
+          // columns overflow past ~1.3x. The launch intro sits over the whole
+          // app, above the router, so it plays once per process.
           builder:
               (context, child) => MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
-                child: child!,
+                child: LaunchCurtain(ready: launchReady, child: child!),
               ),
           // easy_localization wiring (locale source of truth lives on the
           // EasyLocalization wrapper in main()).
