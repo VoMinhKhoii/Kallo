@@ -1,12 +1,16 @@
 /// Paginated Threads-style Circle feed providers and local cache splices.
 library;
 
+import 'dart:async';
+
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
 import 'chat_group_providers.dart';
+import 'circle_providers.dart' show kCirclePollInterval;
 import 'local_blocks.dart';
 
 const Duration _feedRequestTimeout = Duration(seconds: 15);
@@ -42,6 +46,16 @@ class FriendsReadMarker {
 
 final friendsReadMarkerProvider = FutureProvider.autoDispose<FriendsReadMarker>(
   (ref) async {
+    // Refreshed on the wall's cadence: a past-day meal shared while Circle is
+    // open reaches the unread dot only through latestSharedAt, never the wall.
+    // Paused in the background, like the wall's own poll.
+    final poll = Timer.periodic(kCirclePollInterval, (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle == null || lifecycle == AppLifecycleState.resumed) {
+        ref.invalidateSelf();
+      }
+    });
+    ref.onDispose(poll.cancel);
     final api = ref.watch(apiClientProvider);
     return runWithRetry(() async {
       final json = await api

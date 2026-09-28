@@ -11,10 +11,11 @@
 -- a copy. A copy is only safe while nothing can let it drift, so the database
 -- keeps it, not the app:
 --
--- 1. meal_shares_copy_eaten_at — BEFORE INSERT OR UPDATE on meal_shares. Every
---    row written gets its meal's logged_at, whatever the writer sent. This also
---    covers the still-serving previous app revision during a deploy, which
---    inserts shares without knowing the column exists.
+-- 1. meal_shares_copy_eaten_at — BEFORE INSERT OR UPDATE OF meal_id on
+--    meal_shares. A new share (or one re-pointed at another meal) gets its
+--    meal's logged_at, whatever the writer sent. This also covers the
+--    still-serving previous app revision during a deploy, which inserts shares
+--    without knowing the column exists. The app never writes eaten_at itself.
 --
 -- 2. meals_sync_share_eaten_at — AFTER UPDATE OF logged_at on meals. No path
 --    moves a meal to another day today; when one does, its share follows.
@@ -40,6 +41,12 @@
 -- while this share's transaction holds FOR SHARE, the meal's UPDATE waits,
 -- and its sync trigger then sees the committed share. (The FK check's FOR KEY
 -- SHARE does not serialize these: it does not conflict with a non-key update.)
+--
+-- Not on every UPDATE: a share row locked by an UPDATE and then its meal
+-- locked here is the reverse of a meal deletion's order (the meal, then its
+-- share through the cascade), and the two could deadlock. Only an INSERT or a
+-- change of meal_id — which nothing does — reaches the meal from here. A
+-- re-share (visibility / shared_at) leaves eaten_at as it was.
 CREATE OR REPLACE FUNCTION public.meal_shares_copy_eaten_at()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -60,15 +67,16 @@ REVOKE EXECUTE ON FUNCTION public.meal_shares_copy_eaten_at()
   FROM anon, authenticated;
 
 CREATE TRIGGER meal_shares_copy_eaten_at
-  BEFORE INSERT OR UPDATE ON public.meal_shares
+  BEFORE INSERT OR UPDATE OF meal_id ON public.meal_shares
   FOR EACH ROW
   EXECUTE FUNCTION public.meal_shares_copy_eaten_at();
 
 -- -----------------------------------------------------------------------------
 -- 2. A meal moved to another day takes its share with it
 -- -----------------------------------------------------------------------------
--- The UPDATE below fires meal_shares_copy_eaten_at, which re-reads the meal's
--- (already updated) logged_at — the same value, from the one source.
+-- Writes the new logged_at straight across; it does not fire (1), which
+-- listens only to meal_id. The meal row is already locked by the UPDATE that
+-- fired this, so the order is meal then share, the same as a deletion.
 CREATE OR REPLACE FUNCTION public.meals_sync_share_eaten_at()
 RETURNS trigger
 LANGUAGE plpgsql
