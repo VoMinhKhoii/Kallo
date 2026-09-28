@@ -61,13 +61,10 @@ class ThreadBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Replies by someone the viewer has just blocked leave at once, not when
-    // the refetch the block started lands (`local_blocks.dart`).
-    final blocks = ref.watch(localBlocksProvider);
-    final replies = [
-      for (final reply in entry.replies)
-        if (!blocks.hides(reply.author.userId, reply)) reply,
-    ];
+    // Replies by someone the viewer has just blocked leave at once, and stop
+    // counting toward the post's reply total (`local_blocks.dart`).
+    final shown = withoutBlockedReplies(ref.watch(localBlocksProvider), entry);
+    final replies = shown.replies;
     return KalloRefreshableScroll(
       controller: controller,
       onRefresh: onRefresh,
@@ -98,7 +95,7 @@ class ThreadBody extends ConsumerWidget {
                       // not a tap target here — and its reply glyph is
                       // re-pointed at this page's own composer.
                       child: FeedEntry(
-                        entry: entry,
+                        entry: shown,
                         scope: scope,
                         onReply: onReply,
                       ),

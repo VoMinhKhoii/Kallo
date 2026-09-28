@@ -141,7 +141,8 @@ class ThreadFeed extends ConsumerWidget {
     // the refetch the block started lands (`local_blocks.dart`).
     final entries = [
       for (final entry in state.entries)
-        if (!blocks.hides(entry.friend.userId, entry)) entry,
+        if (!blocks.hides(entry.friend.userId, entry))
+          withoutBlockedReplies(blocks, entry),
     ];
     if (entries.isEmpty) {
       return _stateScroll(_empty());

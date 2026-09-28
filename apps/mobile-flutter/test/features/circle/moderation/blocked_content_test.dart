@@ -35,7 +35,9 @@ void main() {
           SharedMealFeedState(
             entries: [
               CircleFeedEntry.fromJson(entryJson('s1')),
-              CircleFeedEntry.fromJson(entryJson('s2')),
+              CircleFeedEntry.fromJson(
+                entryJson('s2', replies: [replyJson('r1'), replyJson('r2')]),
+              ),
             ],
             nextCursor: null,
           ),
@@ -50,6 +52,11 @@ void main() {
     );
 
     expect(find.byType(FeedEntry), findsOneWidget);
+    // The post left standing no longer counts the blocked replier's reply.
+    expect(
+      tester.widget<FeedEntry>(find.byType(FeedEntry)).entry.repliesTotal,
+      1,
+    );
   });
 
   testWidgets("a thread drops a blocked person's replies", (tester) async {
@@ -74,6 +81,11 @@ void main() {
     );
 
     expect(find.text('Ngon quá!'), findsOneWidget);
+    // And the post's reply count no longer counts the hidden one.
+    expect(
+      tester.widget<FeedEntry>(find.byType(FeedEntry)).entry.repliesTotal,
+      1,
+    );
   });
 
   testWidgets("a blocked person's meal offers leave the inbox", (tester) async {

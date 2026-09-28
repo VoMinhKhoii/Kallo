@@ -107,6 +107,32 @@ class LocallyBlockedUsers extends Notifier<LocalBlocks> {
   }
 }
 
+/// [entry] without replies by anyone blocked since it was fetched, and with a
+/// reply total that no longer counts them — the server leaves a blocked
+/// author out of both, so a retained entry must not show a count its thread
+/// cannot back up. Returns [entry] itself when nothing is hidden.
+CircleFeedEntry withoutBlockedReplies(
+  LocalBlocks blocks,
+  CircleFeedEntry entry,
+) {
+  final kept = [
+    for (final reply in entry.replies)
+      if (!blocks.hides(reply.author.userId, reply)) reply,
+  ];
+  final hidden = entry.replies.length - kept.length;
+  if (hidden == 0) return entry;
+  final copy = CircleFeedEntry(
+    friend: entry.friend,
+    isSelf: entry.isSelf,
+    meal: entry.meal,
+    reactions: entry.reactions,
+    replies: kept,
+    repliesTotal: max(0, entry.repliesTotal - hidden),
+  );
+  carryStamp(entry, copy);
+  return copy;
+}
+
 // ---------------------------------------------------------------------------
 // What the viewer sees: the cached lists without a just-blocked person.
 // Loading and error pass through unchanged; a retry still invalidates the

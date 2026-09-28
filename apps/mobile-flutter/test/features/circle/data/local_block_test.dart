@@ -163,6 +163,30 @@ void main() {
     },
   );
 
+  test('a stale entry drops a blocked replier and their count', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final entry = CircleFeedEntry.fromJson(
+      entryJson(
+        's1',
+        replies: [replyJson('r1'), replyJson('r2')],
+        repliesTotal: 5,
+      ),
+    );
+    stampEntries([entry], 0);
+    container.read(localBlocksProvider.notifier).add('author-r1');
+    final blocks = container.read(localBlocksProvider);
+
+    final shown = withoutBlockedReplies(blocks, entry);
+
+    expect([for (final r in shown.replies) r.id], ['r2']);
+    expect(shown.repliesTotal, 4);
+    // Still the same fetch, so the post itself is judged as before.
+    expect(blocks.hides('friend-s1', shown), isFalse);
+    // Nothing hidden: the entry itself, not a copy.
+    expect(withoutBlockedReplies(const LocalBlocks(), entry), same(entry));
+  });
+
   group('each cached value is judged by when it was fetched', () {
     late ProviderContainer container;
     late LocallyBlockedUsers blocks;
