@@ -1280,9 +1280,24 @@ export const mealShares = pgTable(
     sharedAt: timestamp('shared_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When the shared meal was EATEN: a copy of meals.logged_at, so the feeds
+    // filter, sort and page on this table's own index instead of sorting a join
+    // (see meal-feed.ts). The app never writes it — the meal_shares_copy_eaten_at
+    // trigger fills it on every insert/update and meals_sync_share_eaten_at
+    // follows a change to the meal (20260928170000_meal_shares_eaten_at_sync).
+    // Nullable only because a trigger, not a column default, supplies it.
+    eatenAt: timestamp('eaten_at', { withTimezone: true }),
   },
   (table) => [
     unique('meal_shares_meal_id_uniq').on(table.mealId),
+    // The eaten-order feeds: the Friends thread walks the first, the circle
+    // wall and group feeds (scoped to a set of actors) the second.
+    index('meal_shares_eaten_at_id_idx')
+      .on(sql`${table.eatenAt} DESC`, sql`${table.id} DESC`)
+      .where(sql`visibility <> 'private'`),
+    index('meal_shares_actor_eaten_at_id_idx')
+      .on(table.actorId, sql`${table.eatenAt} DESC`, sql`${table.id} DESC`)
+      .where(sql`visibility <> 'private'`),
     // Feed driving scan filters shared_at within the day, only non-private rows.
     // The partial predicate keeps the index small (most rows stay private).
     index('meal_shares_shared_at_idx')

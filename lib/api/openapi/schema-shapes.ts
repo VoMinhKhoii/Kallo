@@ -280,6 +280,12 @@ const sharedMealEntry = object({
         'A cheat meal has no item rows, so it cannot be copied off the wall; clients hide the copy action for these.',
     },
     sharedAt: { type: 'string', format: 'date-time' },
+    loggedAt: {
+      type: 'string',
+      format: 'date-time',
+      description:
+        'When the meal was eaten. Feeds order and day-group by this, not sharedAt.',
+    },
     isBackfilled: { type: 'boolean' },
   }),
   reactions: object({ count: { type: 'integer' }, mine: { type: 'boolean' } }),

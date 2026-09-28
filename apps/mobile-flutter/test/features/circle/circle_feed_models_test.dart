@@ -77,6 +77,21 @@ void main() {
       expect(entry.repliesTotal, 0);
     });
 
+    test('reads loggedAt, falling back to sharedAt for an older server', () {
+      final json = _feedEntryJson();
+      expect(
+        CircleFeedEntry.fromJson(json).meal.loggedAt,
+        json['meal']['sharedAt'],
+      );
+
+      (json['meal'] as Map<String, dynamic>)['loggedAt'] =
+          '2026-07-17T03:04:05.000Z';
+      expect(
+        CircleFeedEntry.fromJson(json).meal.loggedAt,
+        '2026-07-17T03:04:05.000Z',
+      );
+    });
+
     test('parses isBackfilled flag on a shared meal', () {
       final json = _feedEntryJson();
       (json['meal'] as Map<String, dynamic>)['isBackfilled'] = true;
