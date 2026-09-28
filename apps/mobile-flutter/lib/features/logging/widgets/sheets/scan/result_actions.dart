@@ -23,6 +23,9 @@ mixin ScanResultActions on ConsumerState<ScanScreen> {
   ScanFood? editedFood;
   ({ScanFood food, bool isNew})? editing;
 
+  /// The result's "Other nutrients" level is showing.
+  bool others = false;
+
   /// The amount chosen on the result. Held here, not in the result panel, so
   /// it survives an edit that leaves it meaningful ([carryAmount]).
   ScanAmount? amount;
@@ -46,6 +49,7 @@ mixin ScanResultActions on ConsumerState<ScanScreen> {
     typing = false;
     editedFood = null;
     editing = null;
+    others = false;
     amount = null;
     saveError = null;
     _mealId = null;
@@ -54,6 +58,10 @@ mixin ScanResultActions on ConsumerState<ScanScreen> {
   void startTyping() => setState(() => typing = true);
 
   void stopTyping() => setState(() => typing = false);
+
+  void openOthers() => setState(() => others = true);
+
+  void closeOthers() => setState(() => others = false);
 
   void openEditor(ScanFood food, {required bool isNew}) =>
       setState(() => editing = (food: food, isNew: isNew));

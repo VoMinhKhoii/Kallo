@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../preview_fade_in.dart';
 import '../problem.dart';
 import '../mode_chip.dart';
 import '../window.dart';
@@ -28,6 +29,22 @@ class LabelCameraLayer extends StatelessWidget {
   /// library photo that could not be used.
   final String? problem;
 
+  /// The plugin paints at the sensor's aspect; give it that box and let
+  /// FittedBox cover the screen, clipping the overflow.
+  static Widget _preview(CameraController live, Size size) {
+    final portrait = 1 / live.value.aspectRatio;
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: size.width,
+          height: size.width / portrait,
+          child: CameraPreview(live),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -41,26 +58,17 @@ class LabelCameraLayer extends StatelessWidget {
             if (photoPath != null)
               Image.file(File(photoPath!), fit: BoxFit.cover)
             else
-              ValueListenableBuilder<CameraController?>(
-                valueListenable: controller,
-                builder: (context, live, _) {
-                  if (live == null || !live.value.isInitialized) {
-                    return const SizedBox.shrink();
-                  }
-                  // The plugin paints at the sensor's aspect; give it that box
-                  // and let FittedBox cover the screen, clipping the overflow.
-                  final portrait = 1 / live.value.aspectRatio;
-                  return ClipRect(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: size.width,
-                        height: size.width / portrait,
-                        child: CameraPreview(live),
-                      ),
-                    ),
-                  );
-                },
+              ScanPreviewFadeIn(
+                source: controller,
+                isReady: () => controller.value?.value.isInitialized ?? false,
+                child: ValueListenableBuilder<CameraController?>(
+                  valueListenable: controller,
+                  builder:
+                      (context, live, _) =>
+                          live != null && live.value.isInitialized
+                              ? _preview(live, size)
+                              : const SizedBox.shrink(),
+                ),
               ),
             if (photoPath == null && problem != null)
               ScanCameraProblem(text: problem!),

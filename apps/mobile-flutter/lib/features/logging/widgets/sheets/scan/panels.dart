@@ -5,54 +5,65 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../shared/data/surface_cast.dart';
 import '../../../data/barcode_providers.dart';
 import '../../../data/label_scan_providers.dart';
-import '../../../logic/scan/amount.dart';
 import '../../../logic/scan/food.dart';
 import 'camera/mode_chip.dart';
 import 'editor/editor.dart';
 import 'panel/state_panel.dart';
 import 'panel/type_barcode.dart';
-import 'result/panel.dart';
+import 'panel/page_stack.dart';
+import 'result_page.dart';
 import 'screen.dart';
 
-/// Which panel stands over the camera right now, from the two flows' states
-/// plus the screen's own (typing, editing, an edited food). Null = the live
-/// camera. Every panel is keyed so a change of panel animates as one.
-Widget? buildScanPanel(
+/// Which page of the scan sheet shows right now, from the two flows' states
+/// plus the screen's own (typing, editing, an edited food, the other
+/// nutrients). Null = no sheet: the live camera. Each page is keyed — a new
+/// key is a new page — and levelled: the result, a miss and typing a code are
+/// level 0, the editor and the other nutrients level 1, so going in pushes
+/// and coming out pops, inside the one sheet.
+ScanSheetPage? buildScanPanel(
   ScanScreenState s,
   BarcodeFlowState barcode,
   LabelScanState label,
 ) {
   final editing = s.editing;
   if (editing != null) {
-    return ScanFoodEditor(
+    return ScanSheetPage(
       key: const ValueKey('editor'),
-      food: editing.food,
-      isNew: editing.isNew,
-      onDone: s.finishEditing,
-      onCancel: s.cancelEditing,
+      level: 1,
+      child: ScanFoodEditor(
+        food: editing.food,
+        isNew: editing.isNew,
+        onDone: s.finishEditing,
+        onCancel: s.cancelEditing,
+      ),
     );
   }
   final edited = s.editedFood;
-  if (edited != null) return _result(s, edited, key: 'edited');
+  if (edited != null) return scanResultPage(s, edited, key: 'edited');
   return s.mode == ScanType.barcode
       ? _barcodePanel(s, barcode)
       : _labelPanel(s, label);
 }
 
-Widget? _barcodePanel(ScanScreenState s, BarcodeFlowState barcode) {
+ScanSheetPage _page(String key, Widget child) =>
+    ScanSheetPage(key: ValueKey(key), level: 0, child: child);
+
+ScanSheetPage? _barcodePanel(ScanScreenState s, BarcodeFlowState barcode) {
   if (s.typing) {
-    return TypeBarcodePanel(
-      key: const ValueKey('typing'),
-      onBack: s.stopTyping,
-      onLookUp: s.lookUpTyped,
-      searching: false,
+    return _page(
+      'typing',
+      TypeBarcodePanel(
+        onBack: s.stopTyping,
+        onLookUp: s.lookUpTyped,
+        searching: false,
+      ),
     );
   }
   final product = barcode.product;
   if (product != null &&
       (barcode.phase == BarcodeFlowPhase.product ||
           barcode.phase == BarcodeFlowPhase.saving)) {
-    return _result(
+    return scanResultPage(
       s,
       ScanFood.fromBarcode(product),
       key: 'barcode-${product.barcode}',
@@ -96,10 +107,10 @@ Widget? _barcodePanel(ScanScreenState s, BarcodeFlowState barcode) {
   );
 }
 
-Widget? _labelPanel(ScanScreenState s, LabelScanState label) {
+ScanSheetPage? _labelPanel(ScanScreenState s, LabelScanState label) {
   final read = label.label;
   if (label.phase == LabelScanPhase.review && read != null) {
-    return _result(
+    return scanResultPage(
       s,
       ScanFood.fromLabel(read, fallbackName: 'logging.scan.scannedFood'.tr()),
       key: 'label',
@@ -151,41 +162,21 @@ Widget? _labelPanel(ScanScreenState s, LabelScanState label) {
 
 /// A miss over the camera: what happened, the ways on, and — as on every
 /// miss — back to scanning (the close) or "Enter manually".
-Widget _miss(
+ScanSheetPage _miss(
   ScanScreenState s, {
   required String key,
   required SurfaceKind kind,
   required String title,
   required String message,
   required List<ScanStateAction> actions,
-}) => ScanStatePanel(
-  key: ValueKey(key),
-  kind: kind,
-  title: title,
-  message: message,
-  actions: actions,
-  onClose: s.resumeScanning,
-  onEnterManually: s.gated(s.enterManually),
-);
-
-Widget _result(ScanScreenState s, ScanFood food, {required String key}) {
-  return ScanResultPanel(
-    key: ValueKey(key),
-    food: food,
-    // A photographed or typed food is not a product the composer can hand
-    // back by reference, so only an unedited barcode product takes the
-    // purpose's "Add to meal"; everything else logs.
-    ctaLabel:
-        (food.logsByBarcode
-                ? s.widget.purpose.ctaKey
-                : 'logging.barcode.addMeal')
-            .tr(),
-    amount: s.amount ?? ScanAmount.initial(food),
-    onAmount: s.setAmount,
-    saving: s.saving,
-    errorText: s.saveError,
+}) => _page(
+  key,
+  ScanStatePanel(
+    kind: kind,
+    title: title,
+    message: message,
+    actions: actions,
     onClose: s.resumeScanning,
-    onEdit: s.gated(() => s.openEditor(food, isNew: false)),
-    onAdd: (amount) => s.add(food, amount),
-  );
-}
+    onEnterManually: s.gated(s.enterManually),
+  ),
+);

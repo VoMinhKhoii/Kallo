@@ -93,6 +93,7 @@ class _TypeBarcodePanelState extends State<TypeBarcodePanel> {
     );
     return ScanPanel(
       height: ScanPanelHeight.fit,
+      onDismiss: widget.onBack,
       header: KalloSheetHeader(
         title: 'logging.scan.typeBarcode'.tr(),
         onBack: widget.onBack,

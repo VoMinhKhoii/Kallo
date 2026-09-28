@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/field.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/result/amount/cup_ruler.dart';
 import 'package:kallo_mobile/models/logging/scan_outcome.dart';
+import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
 
 import 'harness.dart';
 
@@ -15,7 +17,7 @@ void main() {
   const labelLog = '/api/v1/nutrition-label/log';
 
   Future<void> fillRequired(ScanHarness h) async {
-    await h.tester.enterText(find.byType(TextField), 'Chè bắp');
+    await h.tester.enterText(h.nameField, 'Chè bắp');
     await h.tester.pumpAndSettle();
     await h.type('Calories', '250');
     await h.type('Protein', '10');
@@ -24,7 +26,25 @@ void main() {
   }
 
   group('Enter manually', () {
-    testWidgets('Done waits for a name and the four; the food logs per 100 g', (
+    testWidgets('group labels sit flush with the card they name', (
+      tester,
+    ) async {
+      final h = ScanHarness(tester);
+      await h.open();
+      await h.tapText('Enter manually');
+
+      final card = find.ancestor(
+        of: find.widgetWithText(ScanEditorField, 'Calories'),
+        matching: find.byType(GroupedListCard),
+      );
+      expect(
+        tester.getTopLeft(find.text('Macronutrients')).dx,
+        tester.getTopLeft(card).dx,
+        reason: 'not inset to the row text, as every group label in the app',
+      );
+    });
+
+    testWidgets('Save waits for a name and the four; the food logs per 100 g', (
       tester,
     ) async {
       final h = ScanHarness(tester);
@@ -32,16 +52,16 @@ void main() {
       await h.tapText('Enter manually');
 
       expect(find.text('New food'), findsOneWidget);
-      await h.tapText('Done');
+      await h.tapText('Save');
       expect(
         find.byType(ScanFoodEditor),
         findsOneWidget,
-        reason: 'Done is off while the form is empty',
+        reason: 'Save is off while the form is empty',
       );
 
       await fillRequired(h);
       await h.type('Sodium', '0');
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.byType(ScanFoodEditor), findsNothing);
       expect(find.text('New food'), findsOneWidget, reason: 'result title');
@@ -71,7 +91,7 @@ void main() {
       await h.tapText('100 g');
       await h.tapText('100 ml');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.byType(ScanCupRuler), findsOneWidget);
       await h.tapText('Add meal');
@@ -90,7 +110,7 @@ void main() {
 
       expect(h.cameraIsLive, isTrue);
       await h.tapText('Enter manually');
-      expect(find.widgetWithText(TextField, 'Chè bắp'), findsNothing);
+      expect(find.widgetWithText(CupertinoTextField, 'Chè bắp'), findsNothing);
     });
 
     testWidgets('from a miss, and the typed food closes to a live camera', (
@@ -106,7 +126,7 @@ void main() {
       await h.detect('8938507849131');
       await h.tapText('Enter manually');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('Chè bắp'), findsOneWidget);
       await h.tapLabel('Close');
@@ -126,7 +146,7 @@ void main() {
       await h.open();
       await h.tapText('Enter manually');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
       await h.tapText('Add meal');
 
       expect(h.closed, isFalse);

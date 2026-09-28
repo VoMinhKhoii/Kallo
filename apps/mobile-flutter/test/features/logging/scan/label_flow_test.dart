@@ -102,7 +102,7 @@ void main() {
       await h.tapText('Library');
       await h.tapText('Edit');
       await h.type('Fiber', '3');
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('Extracted nutrition'), findsOneWidget);
       await h.tapText('Add meal');

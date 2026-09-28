@@ -59,6 +59,7 @@ class ScanStatePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return ScanPanel(
       height: ScanPanelHeight.fit,
+      onDismiss: onClose,
       header: KalloSheetHeader(
         onClose: onClose,
         trailing: SheetCapsuleButton(

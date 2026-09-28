@@ -119,4 +119,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Custom'), findsNothing, reason: 'no menu opened');
   });
+
+  testWidgets('the page under a pull-down stays sharp: no blur, no dim', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(value: 'serving', changes: []));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('100 ml / serving'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pack'), findsOneWidget, reason: 'the menu is open');
+    expect(
+      find.byType(BackdropFilter),
+      findsNothing,
+      reason: 'a context menu recedes the page; a pull-down does not',
+    );
+  });
 }

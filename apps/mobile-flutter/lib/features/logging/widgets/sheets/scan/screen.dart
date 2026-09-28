@@ -13,6 +13,8 @@ import 'camera/layer/label.dart';
 import 'camera/controls.dart';
 import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
+import 'camera/switch_veil.dart';
+import 'panel/sheet.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
 import 'panels.dart';
@@ -22,7 +24,7 @@ import 'panels.dart';
 ///
 /// Full screen — the whole camera, so the user sees what they are pointing at
 /// and its surroundings (owner review). Results rise as a sheet INSIDE this
-/// screen over the frozen frame (`ScanPanel` explains why not a sheet route).
+/// screen over the frozen frame (`ScanSheet` explains why not a sheet route).
 /// A `MaterialPageRoute` in fullscreen-dialog form: the platform's modal
 /// slide-up, through the theme like every route in the app.
 ///
@@ -115,7 +117,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            if (mode == ScanType.barcode)
+            if (cameraMode == ScanType.barcode)
               BarcodeCameraLayer(
                 controller:
                     barcodeCamera.isRunning ? barcodeCamera.ensure() : null,
@@ -128,6 +130,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
                 photoPath: label.image?.path,
                 problem: label.cameraProblemKey?.tr(),
               ),
+            ScanCameraVeil(shown: veiled, onCovered: swapCamera),
             if (busy)
               ScanLoadingOverlay(
                 mode: mode,
@@ -161,7 +164,12 @@ class ScanScreenState extends ConsumerState<ScanScreen>
                     ).animate(animation),
                     child: child,
                   ),
-              child: panel ?? const SizedBox.shrink(key: ValueKey('none')),
+              // One sheet for every page: a change of page travels inside it
+              // (`ScanPageStack`); only no sheet ↔ a sheet slides it up/down.
+              child:
+                  panel == null
+                      ? const SizedBox.shrink(key: ValueKey('none'))
+                      : ScanSheet(key: const ValueKey('sheet'), page: panel),
             ),
           ],
         ),

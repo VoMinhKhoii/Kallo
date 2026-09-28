@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
+import '../../../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_theme.dart';
 
@@ -48,10 +49,8 @@ class ScanOtherNutrientsPage extends StatelessWidget {
       children: [
         header,
         const SizedBox(height: KalloSpacing.sp5),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-          child: Text(caption, style: kGroupLabel()),
-        ),
+        // Flush with the card's edge, as every group label in the app.
+        GroupLabel(caption),
         const SizedBox(height: 6),
         GroupedListCard(
           separatorInset: 0,

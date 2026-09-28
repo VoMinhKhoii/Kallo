@@ -18,7 +18,8 @@ class ScanEditorField extends StatelessWidget {
     required this.unit,
     this.icon,
     this.iconColor,
-    this.error = false,
+    this.errorText,
+    this.filledNote,
   });
 
   final String label;
@@ -29,18 +30,25 @@ class ScanEditorField extends StatelessWidget {
   final IconData? icon;
   final Color? iconColor;
 
-  /// The figure doesn't parse or is out of range — shown in the danger ink.
-  final bool error;
+  /// Why the figure can't be saved ("Max 5,000 g") — the figure turns red and
+  /// this reads under the row, so a greyed-out Save has its reason in place.
+  final String? errorText;
+
+  /// Set while the figure was worked out rather than typed: says so, muted,
+  /// under the row, and a tap selects the figure so typing replaces it.
+  final String? filledNote;
+
+  static const double _iconGap = 6;
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
+    final row = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 52),
       child: Row(
         children: [
           if (icon != null) ...[
             Icon(icon, size: 16, color: iconColor),
-            const SizedBox(width: 6),
+            const SizedBox(width: _iconGap),
           ],
           Expanded(
             child: Text(
@@ -60,16 +68,49 @@ class ScanEditorField extends StatelessWidget {
               textAlign: TextAlign.end,
               decoration: null,
               padding: const EdgeInsets.symmetric(vertical: 12),
-              style: dashValue(color: error ? KalloColors.danger : kInk),
+              style: dashValue(
+                color: errorText != null ? KalloColors.danger : kInk,
+              ),
               placeholder: '—',
               placeholderStyle: dashValue(color: KalloColors.textMuted),
               cursorColor: kInk,
+              // Runs after the tap has placed the caret, so this wins.
+              onTap:
+                  filledNote == null
+                      ? null
+                      : () =>
+                          controller.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: controller.text.length,
+                          ),
             ),
           ),
           const SizedBox(width: KalloSpacing.sp1),
           SizedBox(width: 34, child: Text(unit, style: dashMeta())),
         ],
       ),
+    );
+    final caption = errorText ?? filledNote;
+    if (caption == null) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          // Under the label's own text, past the macro glyph.
+          padding: EdgeInsetsDirectional.only(
+            start: icon == null ? 0 : 16 + _iconGap,
+            bottom: KalloSpacing.sp3,
+          ),
+          child: Text(
+            caption,
+            style:
+                errorText != null
+                    ? dashMeta(color: KalloColors.danger)
+                    : dashMeta(),
+          ),
+        ),
+      ],
     );
   }
 }

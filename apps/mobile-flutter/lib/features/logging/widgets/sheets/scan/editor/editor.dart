@@ -1,13 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
+import '../../../../../../shared/logic/display_format.dart';
 import '../../../../../../shared/logic/macro_composition.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../shared/widgets/menu/kallo_pull_down.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
+import '../../../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../../../theme/calm_tokens.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
 import '../../../../logic/label/nutrients.dart';
 import '../../../../logic/label/review.dart';
 import '../../../../logic/scan/amount.dart';
@@ -20,8 +24,10 @@ import 'field.dart';
 /// the three macros and every nutrient the app knows (all 24, so adding one is
 /// scroll-and-type, never a picker) — or type one from scratch ("New food").
 ///
-/// Done hands back the edited [ScanFood]; nothing is saved until Add meal on
-/// the result. Done waits for a name and the four the log requires.
+/// Save hands back the edited [ScanFood]; nothing is logged until Add meal on
+/// the result. Save waits for a name and the four the log requires (the
+/// macronutrients' header says so), and for nothing typed to be malformed or
+/// out of range — each such field says why, in red, under its row.
 class ScanFoodEditor extends StatefulWidget {
   const ScanFoodEditor({
     super.key,
@@ -64,7 +70,18 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
         unit: d.unit,
         icon: macroKey == null ? null : kMacroIcons[macroKey],
         iconColor: macroKey == null ? null : kCompositionColors[macroKey],
-        error: _draft.hasError(d.key),
+        errorText: switch (_draft.issueOf(d.key)) {
+          null => null,
+          ScanFieldIssue.notANumber => 'logging.scan.notANumber'.tr(),
+          ScanFieldIssue.tooHigh => 'logging.scan.tooHigh'.tr(
+            namedArgs: {
+              'max': formatCount(d.maximum.round(), localeOf(context)),
+              'unit': d.unit,
+            },
+          ),
+        },
+        filledNote:
+            _draft.filledKey == d.key ? 'logging.scan.filledValue'.tr() : null,
       );
 
   @override
@@ -76,12 +93,15 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
     };
     return ScanPanel(
       height: ScanPanelHeight.full,
+      onDismiss: widget.onCancel,
+      // A level in: a swipe right cancels, as the X does.
+      onBack: widget.onCancel,
       header: KalloSheetHeader(
         title:
             (widget.isNew ? 'logging.scan.newFood' : 'logging.scan.edit').tr(),
         onClose: widget.onCancel,
         trailing: SheetCapsuleButton(
-          label: 'logging.scan.done'.tr(),
+          label: 'logging.scan.save'.tr(),
           onTap: _draft.isValid ? () => widget.onDone(_draft.toFood()) : null,
         ),
       ),
@@ -90,16 +110,23 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
         children: [
           GroupedListCard(
             children: [
-              TextField(
+              // Cupertino, not a Material `TextField`: the theme's
+              // `inputDecorationTheme` gives every Material field an outlined
+              // pill, and `border: none` alone left its `enabledBorder` drawn —
+              // a bordered field inside the card's own row.
+              CupertinoTextField(
                 controller: _draft.name,
                 style: dashBody(),
                 maxLength: 200,
-                decoration: InputDecoration(
-                  hintText: 'logging.scan.foodName'.tr(),
-                  border: InputBorder.none,
-                  counterText: '',
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: null,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                placeholder: 'logging.scan.foodName'.tr(),
+                placeholderStyle: dashBody(
+                  color: KalloColors.placeholderMuted40,
                 ),
+                cursorColor: kInk,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
               ),
             ],
           ),
@@ -121,7 +148,10 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
               ),
             ],
           ),
-          _Caption('logging.scan.nutrition'.tr()),
+          _Header(
+            title: 'logging.scan.macronutrients'.tr(),
+            meta: 'logging.scan.requiredToSave'.tr(),
+          ),
           GroupedListCard(
             separatorInset: 0,
             children: [
@@ -129,7 +159,10 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
                 _field(d, macroKey: macroKeys[d.key]),
             ],
           ),
-          _Caption('logging.scan.otherNutrients'.tr()),
+          _Header(
+            title: 'logging.scan.otherNutrients'.tr(),
+            meta: 'logging.scan.optional'.tr(),
+          ),
           GroupedListCard(
             separatorInset: 0,
             children: [
@@ -137,7 +170,7 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.only(top: 8),
             child: Text('logging.scan.blankNote'.tr(), style: dashMeta()),
           ),
         ],
@@ -146,14 +179,22 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
   }
 }
 
-class _Caption extends StatelessWidget {
-  const _Caption(this.text);
+/// A section's header over its card, as the Nutrition page's ("Vitamin ·
+/// Limited data"): the title in ink on the left, flush with the card's edge,
+/// and what the section asks of you, muted, on the right. The same break
+/// above and rhythm below as there.
+class _Header extends StatelessWidget {
+  const _Header({required this.title, required this.meta});
 
-  final String text;
+  final String title;
+  final String meta;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
-    child: Text(text, style: kGroupLabel()),
+    padding: const EdgeInsets.only(
+      top: KalloSpacing.sp6,
+      bottom: KalloSpacing.sp3,
+    ),
+    child: SectionHeaderRow(title: title, meta: meta),
   );
 }

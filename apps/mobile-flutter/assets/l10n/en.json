@@ -1416,8 +1416,8 @@
       "barcodeTitle": "Barcode",
       "blankNote": "Blank means the label doesn't list it. 0 means it has none.",
       "decrease": "Less",
+      "filledValue": "Worked out from the other three",
       "increase": "More",
-      "done": "Done",
       "edit": "Edit",
       "enterManually": "Enter manually",
       "foodName": "Food name",
@@ -1431,18 +1431,22 @@
       "lookingUp": "Looking up",
       "lookUp": "Look up",
       "lookupFailedTitle": "Couldn't look it up",
+      "macronutrients": "Macronutrients",
       "missingValues": "Add a name, calories, protein, carbs and fat first.",
       "modeBarcode": "Barcode",
       "modeLabel": "Nutrition label",
       "newFood": "New food",
+      "notANumber": "Enter a valid number",
       "notFoundBody": "Barcode {code} isn't in our database yet.",
       "notFoundTitle": "No match found",
-      "nutrition": "Nutrition",
+      "optional": "Optional",
       "otherNutrients": "Other nutrients",
       "packWord": {
         "one": "pack",
         "other": "packs"
       },
+      "requiredToSave": "Required to save",
+      "save": "Save",
       "servingWord": {
         "one": "serving",
         "other": "servings"
@@ -1458,6 +1462,7 @@
       "scanBarcode": "Scan barcode",
       "scanLabel": "Scan nutrition label",
       "scannedFood": "Scanned food",
+      "tooHigh": "Max {max} {unit}",
       "tryAgain": "Try again",
       "typeBarcode": "Type barcode",
       "valuesPer": "Values per"
