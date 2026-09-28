@@ -163,28 +163,66 @@ void main() {
     },
   );
 
-  test('a stale entry drops a blocked replier and their count', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    final entry = CircleFeedEntry.fromJson(
-      entryJson(
-        's1',
-        replies: [replyJson('r1'), replyJson('r2')],
-        repliesTotal: 5,
-      ),
-    );
-    stampEntries([entry], 0);
-    container.read(localBlocksProvider.notifier).add('author-r1');
-    final blocks = container.read(localBlocksProvider);
+  group('a stale entry drops a blocked replier from its replies and count', () {
+    late ProviderContainer container;
+    setUp(() {
+      container = ProviderContainer();
+      addTearDown(container.dispose);
+    });
+    CircleFeedEntry stale({required int total}) {
+      final entry = CircleFeedEntry.fromJson(
+        entryJson(
+          's1',
+          replies: [replyJson('r1'), replyJson('r2')],
+          repliesTotal: total,
+        ),
+      );
+      stampEntries([entry], 0);
+      return entry;
+    }
 
-    final shown = withoutBlockedReplies(blocks, entry);
+    LocalBlocks blockR1() {
+      container.read(localBlocksProvider.notifier).add('author-r1');
+      return container.read(localBlocksProvider);
+    }
 
-    expect([for (final r in shown.replies) r.id], ['r2']);
-    expect(shown.repliesTotal, 4);
-    // Still the same fetch, so the post itself is judged as before.
-    expect(blocks.hides('friend-s1', shown), isFalse);
-    // Nothing hidden: the entry itself, not a copy.
-    expect(withoutBlockedReplies(const LocalBlocks(), entry), same(entry));
+    test('every reply in the preview: the total is exact', () {
+      final entry = stale(total: 2);
+      final shown = withoutBlockedReplies(blockR1(), entry);
+
+      expect([for (final r in shown.replies) r.id], ['r2']);
+      expect(shown.repliesTotal, 1);
+      expect(
+        container.read(localBlocksProvider).hides('friend-s1', shown),
+        isFalse,
+      );
+    });
+
+    test('a cut-off preview: only what is on screen is counted', () {
+      // The server sends the newest dozen and a total for all: older replies
+      // by the blocked person may be in the 5, so it cannot be vouched for.
+      final shown = withoutBlockedReplies(blockR1(), stale(total: 5));
+
+      expect(shown.repliesTotal, 1);
+    });
+
+    test('an entry fetched after every block is left as it came', () {
+      final blocks = blockR1();
+      final fresh = CircleFeedEntry.fromJson(
+        entryJson('s1', replies: [replyJson('r2')], repliesTotal: 30),
+      );
+      stampEntries([
+        fresh,
+      ], container.read(localBlocksProvider.notifier).generation);
+
+      expect(withoutBlockedReplies(blocks, fresh), same(fresh));
+      final untouched = stale(total: 2);
+      // And with no blocks at all, nothing is ever copied.
+      expect(
+        withoutBlockedReplies(const LocalBlocks(), untouched),
+        same(untouched),
+      );
+    });
   });
 
   group('each cached value is judged by when it was fetched', () {

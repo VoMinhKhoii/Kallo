@@ -107,27 +107,40 @@ class LocallyBlockedUsers extends Notifier<LocalBlocks> {
   }
 }
 
-/// [entry] without replies by anyone blocked since it was fetched, and with a
-/// reply total that no longer counts them — the server leaves a blocked
-/// author out of both, so a retained entry must not show a count its thread
-/// cannot back up. Returns [entry] itself when nothing is hidden.
+/// [entry] as the viewer sees it after a block: without replies by anyone
+/// blocked since it was fetched, and with a reply total it can vouch for.
+///
+/// The server leaves a blocked author out of both the replies and the total,
+/// so a retained entry must not show a count its thread cannot back up. But
+/// [CircleFeedEntry.replies] is only the newest dozen: when it holds every
+/// reply, the total is exact after dropping the hidden ones; when it does
+/// not, older replies by a blocked person may still be counted, so the total
+/// falls back to what is on screen until a fresh fetch says otherwise.
+/// An entry fetched after every block is returned as it is.
 CircleFeedEntry withoutBlockedReplies(
   LocalBlocks blocks,
   CircleFeedEntry entry,
 ) {
+  if (!blocks.predatesAnyBlock(entry)) return entry;
   final kept = [
     for (final reply in entry.replies)
       if (!blocks.hides(reply.author.userId, reply)) reply,
   ];
-  final hidden = entry.replies.length - kept.length;
-  if (hidden == 0) return entry;
+  final complete = entry.repliesTotal <= entry.replies.length;
+  final total =
+      complete
+          ? max(0, entry.repliesTotal - (entry.replies.length - kept.length))
+          : kept.length;
+  if (kept.length == entry.replies.length && total == entry.repliesTotal) {
+    return entry;
+  }
   final copy = CircleFeedEntry(
     friend: entry.friend,
     isSelf: entry.isSelf,
     meal: entry.meal,
     reactions: entry.reactions,
     replies: kept,
-    repliesTotal: max(0, entry.repliesTotal - hidden),
+    repliesTotal: total,
   );
   carryStamp(entry, copy);
   return copy;
