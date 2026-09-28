@@ -23,6 +23,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import '../../../models/http/api_error.dart';
+import 'feed_providers.dart' show sharedMealFeedProvider;
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
 const Duration kCirclePollInterval = Duration(seconds: 30);
@@ -252,7 +253,12 @@ Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
 }
 
 /// Remove a connection (`DELETE /api/v1/groups/friends/remove`). The pair can
-/// re-invite later. Invalidates friends + feed. Throws [ApiError] on failure.
+/// re-invite later. Throws [ApiError] on failure.
+///
+/// Invalidates the friends list, the ambient feed AND the rendered post feed
+/// ([sharedMealFeedProvider], every scope): the Circle tab stays mounted in
+/// its shell branch, so without the last one a removal made from Settings
+/// left the removed person's meals on the Circle page until a manual refresh.
 Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   final api = ref.read(apiClientProvider);
   await api.delete<dynamic>('/api/v1/groups/friends/remove', {
@@ -260,6 +266,7 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   });
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
+  ref.invalidate(sharedMealFeedProvider);
 }
 
 // ---------------------------------------------------------------------------
