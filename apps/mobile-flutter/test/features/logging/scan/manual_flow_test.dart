@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/field.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/result/amount/cup_ruler.dart';
 import 'package:kallo_mobile/models/logging/scan_outcome.dart';
+import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
 
 import 'harness.dart';
 
@@ -24,6 +26,24 @@ void main() {
   }
 
   group('Enter manually', () {
+    testWidgets('group labels sit flush with the card they name', (
+      tester,
+    ) async {
+      final h = ScanHarness(tester);
+      await h.open();
+      await h.tapText('Enter manually');
+
+      final card = find.ancestor(
+        of: find.widgetWithText(ScanEditorField, 'Calories'),
+        matching: find.byType(GroupedListCard),
+      );
+      expect(
+        tester.getTopLeft(find.text('Nutrition')).dx,
+        tester.getTopLeft(card).dx,
+        reason: 'not inset to the row text, as every group label in the app',
+      );
+    });
+
     testWidgets('Done waits for a name and the four; the food logs per 100 g', (
       tester,
     ) async {

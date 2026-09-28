@@ -7,6 +7,7 @@ import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../shared/widgets/menu/kallo_pull_down.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
+import '../../../../../../shared/widgets/typography/section_header_row.dart';
 import '../../../../../../models/nutrition_label.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_colors.dart';
@@ -153,7 +154,7 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.only(top: 8),
             child: Text('logging.scan.blankNote'.tr(), style: dashMeta()),
           ),
         ],
@@ -162,6 +163,9 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
   }
 }
 
+/// A group label over its card, flush with the card's edge like every other
+/// group label in the app (Settings, Region) — not inset to the row text,
+/// which left it floating a step in from the card it names.
 class _Caption extends StatelessWidget {
   const _Caption(this.text);
 
@@ -169,7 +173,7 @@ class _Caption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
-    child: Text(text, style: kGroupLabel()),
+    padding: const EdgeInsets.only(top: 20, bottom: 6),
+    child: GroupLabel(text),
   );
 }
