@@ -22,6 +22,7 @@ void main() {
     required AsyncValue<List<ChatGroupIdentity>> groups,
     List<CircleFeedEntry> feed = const [],
     DateTime? marker,
+    DateTime? latestSharedAt,
   }) => pumpCircleScreen(
     tester,
     const Scaffold(body: ViewSwitcher()),
@@ -29,7 +30,10 @@ void main() {
       chatGroupsProvider.overrideWith((_) => groups.requireValue),
       circleFeedProvider.overrideWith((_) => Stream.value(feed)),
       friendsReadMarkerProvider.overrideWith(
-        (_) async => marker ?? DateTime.utc(2026),
+        (_) async => FriendsReadMarker(
+          marker ?? DateTime.utc(2026),
+          latestSharedAt: latestSharedAt,
+        ),
       ),
     ],
   );
@@ -80,6 +84,21 @@ void main() {
       marker: DateTime.utc(2026, 7, 19),
     );
     expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
+  });
+
+  testWidgets('All is unread for a past-day meal shared after the marker', (
+    tester,
+  ) async {
+    // Eaten yesterday, shared just now: the eaten-today wall does not hold
+    // it, so only the marker's latestSharedAt can light the dot.
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      feed: [entry(DateTime.utc(2026, 7, 18))],
+      marker: DateTime.utc(2026, 7, 19),
+      latestSharedAt: DateTime.utc(2026, 7, 20),
+    );
+    expect(find.byKey(const Key('circle-unread-dot')), findsOneWidget);
   });
 
   // The header's add control is an ANCHORED POPOVER (native pass,

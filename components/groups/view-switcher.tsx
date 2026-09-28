@@ -39,15 +39,17 @@ export function ViewSwitcher() {
 
   const namedGroups = groups.filter((g) => g.kind === 'group');
 
-  // Most recent shared meal across all friends (excluding the actor's own) —
-  // the same ambient feed FriendsRow reads from, so no extra request.
+  // Most recent shared meal across all friends (excluding the actor's own).
+  // The polled wall keeps it live for meals eaten today; the marker's
+  // latestSharedAt adds a meal shared now but eaten on an earlier day, which
+  // the wall (eaten today only) never holds.
   const latestSharedAt = feed
     .filter((entry) => !entry.isSelf)
+    .map((entry) => entry.meal.sharedAt)
+    .concat(readMarker?.latestSharedAt ?? [])
     .reduce<string | null>(
-      (latest, entry) =>
-        !latest || new Date(entry.meal.sharedAt) > new Date(latest)
-          ? entry.meal.sharedAt
-          : latest,
+      (latest, sharedAt) =>
+        !latest || new Date(sharedAt) > new Date(latest) ? sharedAt : latest,
       null
     );
 

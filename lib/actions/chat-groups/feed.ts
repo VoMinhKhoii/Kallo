@@ -4,11 +4,11 @@ import {
   decodeSharedMealCursor,
   encodeSharedMealCursor,
 } from '@/lib/domain/social/feed/cursor';
-import { sharedGroupMealsBefore } from '@/lib/domain/social/feed/group-meals';
 import {
-  newestSharedAt,
-  toSharedMealEntry,
-} from '@/lib/domain/social/feed/meal-feed';
+  newestGroupSharedAt,
+  sharedGroupMealsBefore,
+} from '@/lib/domain/social/feed/group-meals';
+import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -26,6 +26,12 @@ export async function listGroupMealFeed(
   const parsed = groupMealFeedSchema.parse(input);
   await requireGroupAccess(actorId, parsed.groupId, db);
   const before = decodeSharedMealCursor(parsed.before);
+
+  // Page one is "caught up": read the newest share before the page so the
+  // marker never passes a share the page could not have seen.
+  const caughtUpTo = parsed.before
+    ? null
+    : await newestGroupSharedAt(parsed.groupId, actorId, db);
 
   // The feed applies the same group-share rule as every group share read.
   const candidates = await sharedGroupMealsBefore(
@@ -60,12 +66,11 @@ export async function listGroupMealFeed(
   );
 
   // Advance only after the complete read/enrichment succeeds.
-  const newest = newestSharedAt(rows);
-  if (!parsed.before && newest) {
+  if (caughtUpTo) {
     await db
       .update(chatGroupMembers)
       .set({
-        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${newest.toISOString()}::timestamptz)`,
+        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${caughtUpTo.toISOString()}::timestamptz)`,
       })
       .where(
         and(

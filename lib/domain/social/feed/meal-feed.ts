@@ -14,7 +14,7 @@
 // is unread is when it was SHARED (meal_shares.shared_at), because that is when
 // it reached anyone.
 
-import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
 import {
   encodeSharedMealCursor,
@@ -116,15 +116,31 @@ export function eatenBeforeCursor(before: SharedMealCursor | null) {
  * meal_shares_(actor_)eaten_at_id_idx indexes. */
 export const eatenNewestFirst = [desc(mealShares.eatenAt), desc(mealShares.id)];
 
-/** The page's newest SHARE — what a feed read marker advances to. Not `rows[0]`:
- * the page is in eaten order, so a meal logged for an earlier day but shared
- * just now sits further down. */
-export function newestSharedAt(rows: SharedMealRow[]): Date | null {
-  let newest: Date | null = null;
-  for (const row of rows) {
-    if (!newest || row.sharedAt > newest) newest = row.sharedAt;
-  }
-  return newest;
+/**
+ * When the newest share from a friend that the viewer may see was made — what
+ * the Friends unread dot compares with the read marker, and what opening the
+ * feed advances that marker to. Not taken from a feed page: pages run in eaten
+ * order, so a meal logged for last week but shared just now can sit pages
+ * down, and a marker read off page one would leave it unread forever. Read it
+ * BEFORE the page, so it never counts a share that page could not have seen.
+ */
+export async function newestFriendSharedAt(
+  viewerId: string,
+  db: Db = defaultDb
+): Promise<Date | null> {
+  const [row] = await db
+    .select({ sharedAt: mealShares.sharedAt })
+    .from(mealShares)
+    .where(
+      and(
+        ne(mealShares.actorId, viewerId),
+        sql`${mealShares.visibility} <> 'private'`,
+        friendSinceSql(viewerId, mealShares.actorId, mealShares.sharedAt)
+      )
+    )
+    .orderBy(desc(mealShares.sharedAt))
+    .limit(1);
+  return row?.sharedAt ?? null;
 }
 
 /**

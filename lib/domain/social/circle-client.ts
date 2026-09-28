@@ -55,9 +55,15 @@ export async function fetchShareThread(
   }
 }
 
-/** The actor's "last checked the combined Friends feed" marker. */
-export function fetchFriendsFeedReadMarker(): Promise<{ lastReadAt: string }> {
-  return request<{ lastReadAt: string }>('/api/v1/groups/friends/read-marker');
+/** The actor's "last checked the combined Friends feed" marker, and when the
+ * newest friend share they may see was made. */
+export interface FriendsFeedReadMarker {
+  lastReadAt: string;
+  latestSharedAt: string | null;
+}
+
+export function fetchFriendsFeedReadMarker(): Promise<FriendsFeedReadMarker> {
+  return request<FriendsFeedReadMarker>('/api/v1/groups/friends/read-marker');
 }
 
 export function fetchFriends(): Promise<CircleMember[]> {

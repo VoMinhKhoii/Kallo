@@ -87,7 +87,9 @@ void main() {
       overrides: [
         apiClientProvider.overrideWithValue(api),
         circleFeedProvider.overrideWith((_) => Stream.value(const [])),
-        friendsReadMarkerProvider.overrideWith((_) async => DateTime.utc(2026)),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
       ],
     );
 
@@ -116,7 +118,9 @@ void main() {
           );
         }),
         circleFeedProvider.overrideWith((_) => Stream.value(const [])),
-        friendsReadMarkerProvider.overrideWith((_) async => DateTime.utc(2026)),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
       ],
     );
     final container = ProviderScope.containerOf(
@@ -146,7 +150,9 @@ void main() {
           );
         }),
         circleFeedProvider.overrideWith((_) => Stream.value(const [])),
-        friendsReadMarkerProvider.overrideWith((_) async => DateTime.utc(2026)),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
       ],
     );
     final container = ProviderScope.containerOf(

@@ -10,7 +10,7 @@ import {
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
-  newestSharedAt,
+  newestFriendSharedAt,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
@@ -194,11 +194,15 @@ export async function listCircleFeed(
 // provisions the row on first read, defaulting to "now" so a first-time
 // viewer never sees a backlog as unread — same idea as
 // chat_group_members.last_read_at's DEFAULT now().
+//
+// Also answers when the newest friend share was made, so the clients' unread
+// dot catches a meal shared just now but eaten on an earlier day — the circle
+// wall they otherwise read it from shows only meals eaten today.
 
 export async function getFriendsFeedReadMarker(
   actorId: string,
   db: Db = defaultDb
-): Promise<{ lastReadAt: string }> {
+): Promise<{ lastReadAt: string; latestSharedAt: string | null }> {
   await db
     .insert(friendsFeedReadMarkers)
     .values({ userId: actorId })
@@ -210,7 +214,12 @@ export async function getFriendsFeedReadMarker(
     .where(eq(friendsFeedReadMarkers.userId, actorId))
     .limit(1);
 
-  return { lastReadAt: row.lastReadAt.toISOString() };
+  const latest = await newestFriendSharedAt(actorId, db);
+
+  return {
+    lastReadAt: row.lastReadAt.toISOString(),
+    latestSharedAt: latest?.toISOString() ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +243,12 @@ export async function listFriendsThreadFeed(
 
   const before = decodeSharedMealCursor(parsed.before);
 
+  // Page one is "caught up": read the newest friend share before the page so
+  // the marker never passes a share the page could not have seen.
+  const caughtUpTo = parsed.before
+    ? null
+    : await newestFriendSharedAt(actorId, db);
+
   const { rows, nextCursor } = await sharedMealsBefore(actorId, before, db);
 
   const shareIds = rows.map((row) => row.shareId);
@@ -252,17 +267,16 @@ export async function listFriendsThreadFeed(
 
   // Advance only after the complete read/enrichment succeeds, and only to the
   // newest share the actor actually received — never to wall-clock time.
-  const newest = newestSharedAt(rows);
-  if (!parsed.before && newest) {
+  if (caughtUpTo) {
     await db
       .insert(friendsFeedReadMarkers)
-      .values({ userId: actorId, lastReadAt: newest })
+      .values({ userId: actorId, lastReadAt: caughtUpTo })
       .onConflictDoUpdate({
         target: friendsFeedReadMarkers.userId,
         set: {
           // ISO string, not the Date object — raw sql params bypass the column
           // mapper and postgres.js cannot serialize a bare Date there.
-          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${newest.toISOString()}::timestamptz)`,
+          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${caughtUpTo.toISOString()}::timestamptz)`,
         },
       });
   }

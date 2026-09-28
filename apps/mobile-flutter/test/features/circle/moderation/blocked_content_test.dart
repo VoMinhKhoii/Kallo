@@ -167,7 +167,7 @@ void main() {
           chatGroupsProvider.overrideWith((_) => [group]),
           circleFeedProvider.overrideWith((_) => Stream.value(const [])),
           friendsReadMarkerProvider.overrideWith(
-            (_) async => DateTime.utc(2026),
+            (_) async => FriendsReadMarker(DateTime.utc(2026)),
           ),
         ],
       );
@@ -208,7 +208,9 @@ void main() {
         circleFeedProvider.overrideWith(
           (_) => Stream.value([CircleFeedEntry.fromJson(entryJson('s1'))]),
         ),
-        friendsReadMarkerProvider.overrideWith((_) async => DateTime.utc(2026)),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
       ],
     );
 
