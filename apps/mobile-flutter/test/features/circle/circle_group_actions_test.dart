@@ -349,6 +349,44 @@ void main() {
     expect(find.text('Mai'), findsNothing);
   });
 
+  testWidgets('re-adding a removed member brings them back at once', (
+    tester,
+  ) async {
+    final api = FakeApiClient((request) => <String, dynamic>{});
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        // The refetch still lists Mai (as a slow server would), so only the
+        // sheet's own removal mask hides her.
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => [_friend()]),
+      ],
+    );
+    await tester.drag(find.text('Mai'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(kKalloConfirmSurface),
+        matching: find.text('Remove'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Mai'), findsNothing);
+
+    await tester.tap(find.text('Add members'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mai'));
+    await tester.pump();
+    await tester.tap(find.text('Add (1)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mai'), findsOneWidget);
+  });
+
   testWidgets('an owner with members left is not offered Leave', (
     tester,
   ) async {

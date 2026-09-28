@@ -5,15 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../models/social/chat_group.dart';
 import '../../../../../services/auth/session_provider.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
-import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../shared/widgets/sheet/sheet_page_swap.dart';
 import '../../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../../theme/calm_tokens.dart';
-import '../../../../../theme/kallo_theme.dart';
 import '../../../data/chat_group_providers.dart';
 import '../../../logic/group_permissions.dart';
 import '../../../logic/group_flows.dart';
 import '../../../logic/moderation_flows.dart';
+import '../../states/group_info_error.dart';
 import '../../states/group_info_skeleton.dart';
 import 'group_add_page.dart';
 import 'group_info_page.dart';
@@ -51,9 +50,9 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   final _search = TextEditingController();
   final _picked = <String>{};
 
-  /// Removed this session. A swiped row leaves the tree the moment it is
-  /// dismissed; the refetch that drops it from the detail lands later, and a
-  /// dismissed [Dismissible] still in the tree is an assertion.
+  /// Removed here, until a fresh detail reflects it: a swiped row leaves the
+  /// tree at once, the refetch lands later, and a dismissed [Dismissible]
+  /// still in the tree is an assertion. Re-adding someone lifts their entry.
   final _removed = <String>{};
 
   @override
@@ -99,12 +98,15 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   );
 
   Future<void> _add() => _run(() async {
+    final ids = _picked.toList();
     await addGroupMembers(
       _container,
       groupId: widget.groupId,
-      memberUserIds: _picked.toList(),
+      memberUserIds: ids,
     );
-    if (mounted) showTopToast(context, tr('groups.info.added'));
+    if (!mounted) return;
+    setState(() => _removed.removeAll(ids));
+    showTopToast(context, tr('groups.info.added'));
   }, 'groups.info.addError');
 
   Future<bool> _remove(ChatGroupMember member) =>
@@ -150,43 +152,44 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   };
 
   @override
-  Widget build(BuildContext context) => KalloSheetSurface(
-    color: kPage,
-    constraints: BoxConstraints(
-      // Off the height the keyboard LEAVES — `KalloSheetSurface` lifts the
-      // sheet clear of it, and the rename and search fields both raise one.
-      maxHeight:
-          (MediaQuery.sizeOf(context).height -
-              MediaQuery.viewInsetsOf(context).bottom) *
-          .9,
-    ),
-    child: ref
-        .watch(chatGroupDetailProvider(widget.groupId))
-        .when(
-          loading: () => const GroupDetailSkeleton(),
-          error:
-              (_, __) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const KalloSheetHeader(),
-                  CupertinoButton(
-                    onPressed:
-                        () => ref.invalidate(
-                          chatGroupDetailProvider(widget.groupId),
-                        ),
-                    child: Text(tr('groups.switcher.retry')),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp6),
-                ],
-              ),
-          data:
-              (group) => SheetPageSwap(
-                isSecondLevel: _level != GroupSheetLevel.info,
-                child: KeyedSubtree(
-                  key: ValueKey(_level),
-                  child: _page(group.withoutMembers(_removed)),
+  Widget build(BuildContext context) {
+    ref.listen(chatGroupDetailProvider(widget.groupId), (_, next) {
+      final members = next.valueOrNull?.members;
+      // A fresh detail without them has caught up; drop the entry.
+      _removed.removeWhere(
+        (id) => !(members?.any((m) => m.userId == id) ?? true),
+      );
+    });
+    return KalloSheetSurface(
+      color: kPage,
+      constraints: BoxConstraints(
+        // Off the height the keyboard LEAVES — `KalloSheetSurface` lifts the
+        // sheet clear of it, and the rename and search fields both raise one.
+        maxHeight:
+            (MediaQuery.sizeOf(context).height -
+                MediaQuery.viewInsetsOf(context).bottom) *
+            .9,
+      ),
+      child: ref
+          .watch(chatGroupDetailProvider(widget.groupId))
+          .when(
+            loading: () => const GroupDetailSkeleton(),
+            error:
+                (_, __) => GroupDetailError(
+                  onRetry:
+                      () => ref.invalidate(
+                        chatGroupDetailProvider(widget.groupId),
+                      ),
                 ),
-              ),
-        ),
-  );
+            data:
+                (group) => SheetPageSwap(
+                  isSecondLevel: _level != GroupSheetLevel.info,
+                  child: KeyedSubtree(
+                    key: ValueKey(_level),
+                    child: _page(group.withoutMembers(_removed)),
+                  ),
+                ),
+          ),
+    );
+  }
 }

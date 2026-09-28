@@ -1,9 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/widgets/switcher/circle_tab.dart';
 import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/info/group_add_page.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/info/group_info_sheet.dart';
@@ -172,6 +174,71 @@ void main() {
     await tester.longPress(find.text('Weekend hikers'));
     await tester.pumpAndSettle();
     expect(find.text('Rename group'), findsOneWidget);
+  });
+
+  testWidgets('the open tab grows instead of overflowing at 1.3x text', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'member', members: 9),
+    );
+    expect(tester.takeException(), isNull);
+    final tab = find.ancestor(
+      of: find.text('Weekend hikers'),
+      matching: find.byType(CircleTab),
+    );
+    expect(tester.getSize(tab).height, greaterThan(CircleTab.height));
+  });
+
+  testWidgets('a one-letter tab still offers a 44pt target', (tester) async {
+    await pump(
+      tester,
+      groups: const AsyncData([
+        ChatGroupIdentity(
+          id: 'g2',
+          kind: 'group',
+          title: 'A',
+          updatedAt: '2026-07-18T00:00:00Z',
+          unread: false,
+        ),
+      ]),
+    );
+    final tab = find.ancestor(
+      of: find.text('A'),
+      matching: find.byType(CircleTab),
+    );
+    expect(tester.getSize(tab).width, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('a held tab stays pressed once the long press takes over', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'member'),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Weekend hikers')),
+    );
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+    // The long press has won the arena and cancelled the tap; the finger is
+    // still down, so the tab must still read as pressed.
+    final scale = tester.widget<AnimatedScale>(
+      find
+          .descendant(
+            of: find.byType(CircleTab),
+            matching: find.byType(AnimatedScale),
+          )
+          .at(1),
+    );
+    expect(scale.scale, lessThan(1));
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 
   // The header's add control is an ANCHORED POPOVER (native pass,
