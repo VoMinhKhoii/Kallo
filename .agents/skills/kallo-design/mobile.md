@@ -91,11 +91,14 @@ shipped a visible bug first.
 **Regular is the weight for everything but titles and names.** Be Vietnam Pro
 reads heavy — its Medium (500) is what most faces call semibold — so 500 is
 not a step, it is bold, and it is gone from every data, label, button and
-figure role (2026-09-02). 600 lives in four tokens only: page title, section
-header, name — and `kButtonLabel`, the word on a pill BUTTON (2026-09-24: at
-400 a beige pill read as a label on a swatch, and the weight had been
-re-decided per widget, so "Gửi góp ý" and "Lưu tên" two screens apart wore
-different weights; every pill label now reads it from the one token). A
+figure role (2026-09-02). 600 lives in three tokens only: page title, section
+header, name. The word on a pill BUTTON reads `kButtonLabel`, which is **500**
+(2026-09-24 it was introduced at 600: at 400 a beige pill read as a label on a
+swatch, and the weight had been re-decided per widget, so "Gửi góp ý" and
+"Lưu tên" two screens apart wore different weights; 2026-09-28 it stepped down
+to 500 because every button in the app read too bold — the confirm dialog's
+affirmative and the sign-in buttons followed). This is the ONE sanctioned 500:
+a button label, never a data, label or figure role. A
 selected segment, today's day number, the total row: all regular, told apart
 by ink versus muted. Serif is never bold. If something needs to stand out and colour is not enough, the
 answer is size or position, not weight.
@@ -640,6 +643,24 @@ Reach for these before writing a local variant:
   one sanctioned use of the ink pill outside auth and the paywall. It replaced `KalloEmptyState` and the
   `SeedMark`; the paywall lock card uses `.withMark` to keep the anatomy
   with its own glyph.
+- **`shared/widgets/surface/kallo_small_button.dart`** — the SECONDARY
+  button (2026-09-28): 34pt, 14pt label, Apple's continuous-corner squircle
+  (`RoundedSuperellipseBorder`, radius 10), inside a 44pt `CupertinoButton`
+  hit target. `outline` (white + the hairline) for every secondary action —
+  "Sửa hồ sơ", "Xem nhóm"; `ink` (solid black) for a RARE action that
+  should stand apart — "Bỏ chặn". The 50pt full-round `KalloButton` stays
+  for primaries. Beige is not the answer to every button.
+- **`shared/widgets/chrome/underline_tab_bar.dart`** — equal-width text tabs
+  over a hairline, the selected one ink with a 2pt ink rule (2026-09-28). For
+  switching between sibling LISTS of one page ("Bạn bè · Nhóm"); the pill
+  `SegmentedStrip` stays for picking a value inside a form. Material's
+  `TabBar` with its splash and overlay off — Cupertino ships no underline tab
+  bar.
+- **A post is content, not a control.** `KalloPressable(wash: false)` for a
+  target that is a whole piece of content (a Circle post opening its
+  thread): the full-bleed press wash clipped inside a rounded day card read
+  as a broken grey slab. Threads and Instagram draw nothing on a pressed
+  post.
 - **`shared/widgets/scroll_separator.dart`** — a header hairline that only
   exists once content has scrolled. Wraps header + scroll view and listens to
   bubbled `ScrollNotification`, so any scrollable works and a body that swaps

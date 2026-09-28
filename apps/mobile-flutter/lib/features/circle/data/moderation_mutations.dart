@@ -25,6 +25,7 @@ import 'chat_group_providers.dart'
 import 'circle_providers.dart'
     show circleFeedProvider, circleFriendsProvider, mealShareInvitesProvider;
 import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'local_blocks.dart';
 import 'share_entry_provider.dart' show sharedMealEntryProvider;
 
 const Duration _moderationRequestTimeout = Duration(seconds: 15);
@@ -67,6 +68,7 @@ Future<void> blockCircleUser(WidgetRef ref, String userId) async {
   await api
       .post<dynamic>('/api/v1/groups/friends/block', {'targetUserId': userId})
       .timeout(_moderationRequestTimeout);
+  ref.read(localBlocksProvider.notifier).add(userId);
   _invalidateAfterBlockChange(ref);
 }
 

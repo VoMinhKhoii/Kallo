@@ -6,6 +6,8 @@ import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/surface/kallo_pressable.dart';
 import '../../logic/circle_spacing.dart';
+import '../../../../models/social/moderation.dart';
+import '../moderation/moderation_long_press.dart';
 import 'feed_entry_actions.dart';
 import 'feed_entry_identity.dart';
 import 'feed_nutrition.dart';
@@ -82,8 +84,19 @@ class FeedEntry extends StatelessWidget {
       ],
     );
 
+    // Long-press → report / block, on other people's posts only. It wraps
+    // the tap target from outside: the long press wins the arena at 500ms,
+    // the thread-opening tap wins anything shorter.
+    Widget reportable(Widget child) => ModerationLongPress(
+      kind: ReportTargetKind.share,
+      targetId: meal.shareId,
+      author: entry.friend,
+      isSelf: entry.isSelf,
+      child: child,
+    );
+
     final open = onOpen;
-    if (open == null) return row;
+    if (open == null) return reportable(row);
 
     // The WHOLE post opens its thread (Threads), not a "View thread" link:
     // the three glyphs are the post's only other targets and each wins the
@@ -108,14 +121,21 @@ class FeedEntry extends StatelessWidget {
     // of their own rather than being absorbed into this label (dumped both
     // ways: identical trees). The exact-label finds in
     // `circle_feed_open_thread_test.dart` go red if that stops holding.
-    return Semantics(
-      button: true,
-      label: tr('groups.feed.openThread'),
-      onTap: open,
-      child: KalloPressable(
+    //
+    // No press wash (2026-09-28): a post is content, not a control, and a
+    // full-bleed grey slab clipped inside the rounded day card read as broken.
+    // Threads and Instagram draw nothing when a post is pressed.
+    return reportable(
+      Semantics(
+        button: true,
+        label: tr('groups.feed.openThread'),
         onTap: open,
-        alignment: Alignment.topLeft,
-        child: row,
+        child: KalloPressable(
+          onTap: open,
+          wash: false,
+          alignment: Alignment.topLeft,
+          child: row,
+        ),
       ),
     );
   }

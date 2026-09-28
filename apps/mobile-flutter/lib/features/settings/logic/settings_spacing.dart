@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import '../../../theme/kallo_theme.dart';
@@ -28,10 +30,23 @@ abstract final class SettingsSpacing {
   /// Settings is PUSHED (no pill nav), so the bottom only has to clear the
   /// home indicator — content still scrolls under it rather than stopping
   /// short, which is why [Screen] keeps `bottom: false`.
+  ///
+  /// Or the KEYBOARD, while it is up. `/settings` is a root route with no
+  /// `Scaffold`, so nothing shrinks the page for it: without this the name
+  /// field's Save and the delete-account button sat under the keys with no
+  /// way to scroll them out (2026-09-28). The keyboard covers the home
+  /// indicator, so the larger of the two is the whole inset.
   static EdgeInsets rowList(BuildContext context) => EdgeInsets.fromLTRB(
     KalloSpacing.sp3, // 12
     KalloSpacing.sp2, // 8 — with the header's own 4, the artboard's 12 gap
     KalloSpacing.sp3,
-    KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom, // 32 + inset
+    KalloSpacing.sp8 + bottomInset(context), // 32 + inset
+  );
+
+  /// The home indicator, or the keyboard while it is up — whichever reaches
+  /// higher.
+  static double bottomInset(BuildContext context) => math.max(
+    MediaQuery.viewPaddingOf(context).bottom,
+    MediaQuery.viewInsetsOf(context).bottom,
   );
 }

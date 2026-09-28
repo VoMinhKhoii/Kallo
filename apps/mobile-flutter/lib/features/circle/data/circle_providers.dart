@@ -23,6 +23,8 @@ import '../../dashboard/data/dashboard_providers.dart'
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import '../../../models/http/api_error.dart';
+import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'local_blocks.dart';
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
 const Duration kCirclePollInterval = Duration(seconds: 30);
@@ -33,7 +35,9 @@ const Duration kCirclePollInterval = Duration(seconds: 30);
 /// invite survives the auth detour instead of dropping the user on the dashboard.
 final pendingInviteSlugProvider = StateProvider<String?>((ref) => null);
 
-Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) =>
+/// Stamped with when it was asked for (`local_blocks.dart`), so the unread
+/// dot skips a just-blocked person's post in a stale frame.
+Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api, int since) =>
     runWithRetry(() async {
       final tz = localTimezoneOffsetMinutes();
       // Timeout so a hung request can't block the initial load or wedge a
@@ -42,9 +46,12 @@ Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) =>
           .get<Map<String, dynamic>>('/api/v1/groups/feed?timezoneOffset=$tz')
           .timeout(const Duration(seconds: 15));
       final list = (json['feed'] as List<dynamic>?) ?? const [];
-      return list
-          .map((e) => CircleFeedEntry.fromJson(e as Map<String, dynamic>))
-          .toList(growable: false);
+      final entries = [
+        for (final e in list)
+          CircleFeedEntry.fromJson(e as Map<String, dynamic>),
+      ];
+      stampEntries(entries, since);
+      return entries;
     });
 
 /// The ambient circle wall — one most-recent shared meal per friend, today.
@@ -58,8 +65,11 @@ final circleFeedProvider = StreamProvider.autoDispose<List<CircleFeedEntry>>((
 ) async* {
   final api = ref.watch(apiClientProvider);
 
+  final blocks = ref.read(localBlocksProvider.notifier);
+  Future<List<CircleFeedEntry>> fetch() => _fetchFeed(api, blocks.generation);
+
   // First load: let errors propagate to the UI.
-  yield await _fetchFeed(api);
+  yield await fetch();
 
   await for (final _ in Stream<void>.periodic(kCirclePollInterval)) {
     // Don't burn network/battery while the app is backgrounded — web parity:
@@ -70,7 +80,7 @@ final circleFeedProvider = StreamProvider.autoDispose<List<CircleFeedEntry>>((
       continue;
     }
     try {
-      yield await _fetchFeed(api);
+      yield await fetch();
     } on ApiError catch (error) {
       // A terminal error (401 expired session, 400, 404) must not hide behind
       // a stale wall forever — surface it so the UI shows retry. Retryable
@@ -87,13 +97,16 @@ final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
   ref,
 ) async {
   final api = ref.watch(apiClientProvider);
-  return runWithRetry(() async {
+  final since = ref.read(localBlocksProvider.notifier).generation;
+  final friends = await runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/friends');
     final list = (json['circle'] as List<dynamic>?) ?? const [];
     return list
         .map((e) => CircleMember.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
   });
+  stampFetched(friends, since);
+  return friends;
 });
 
 /// The viewer's own public profile — auto-provisioned server-side, so the
@@ -252,7 +265,12 @@ Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
 }
 
 /// Remove a connection (`DELETE /api/v1/groups/friends/remove`). The pair can
-/// re-invite later. Invalidates friends + feed. Throws [ApiError] on failure.
+/// re-invite later. Throws [ApiError] on failure.
+///
+/// Invalidates the friends list, the ambient feed AND the rendered post feed
+/// ([sharedMealFeedProvider], every scope): the Circle tab stays mounted in
+/// its shell branch, so without the last one a removal made from Settings
+/// left the removed person's meals on the Circle page until a manual refresh.
 Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   final api = ref.read(apiClientProvider);
   await api.delete<dynamic>('/api/v1/groups/friends/remove', {
@@ -260,6 +278,7 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   });
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
+  ref.invalidate(sharedMealFeedProvider);
 }
 
 // ---------------------------------------------------------------------------
@@ -271,7 +290,8 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
 final mealShareInvitesProvider =
     FutureProvider.autoDispose<List<MealShareInvite>>((ref) async {
       final api = ref.watch(apiClientProvider);
-      return runWithRetry(() async {
+      final since = ref.read(localBlocksProvider.notifier).generation;
+      final invites = await runWithRetry(() async {
         final json = await api.get<Map<String, dynamic>>(
           '/api/v1/groups/invites',
         );
@@ -280,6 +300,8 @@ final mealShareInvitesProvider =
             .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
             .toList(growable: false);
       });
+      stampFetched(invites, since);
+      return invites;
     });
 
 /// Refresh the meal-share inbox after a day read that handed offers back.

@@ -1779,6 +1779,60 @@
       "signedOutTitle": "{name} invited you to their circle",
       "signedOutBody": "Sign in or create an account to connect.",
       "signIn": "Sign in to connect"
+    },
+    "manage": {
+      "tabFriends": "Friends",
+      "tabCircle": "Circle",
+      "more": "More for {name}",
+      "goToCircle": "Go to circle",
+      "friendsEmptyTitle": "No friends yet",
+      "friendsEmptyBody": "Share your invite link to bring someone into your circle.",
+      "circleEmptyTitle": "No groups yet",
+      "circleEmptyBody": "Start a group with friends to share meals together.",
+      "circleLoadError": "Couldn't load your groups",
+      "blockedRow": "Blocked ({count})",
+      "blockedTitle": "Blocked",
+      "blockedEmptyTitle": "No one is blocked",
+      "blockedEmptyBody": "People you block show up here, and you can unblock them any time.",
+      "blockedLoadError": "Couldn't load who you've blocked",
+      "unblock": "Unblock",
+      "groupLoadError": "Couldn't load this group. Try again.",
+      "ownerNoActions": "You own this group — you can leave once everyone else has left."
+    },
+    "moderation": {
+      "report": "Report",
+      "reportPost": "Report post",
+      "reportReply": "Report reply",
+      "reportGroup": "Report group",
+      "block": "Block",
+      "blockName": "Block {name}",
+      "removeFromCircle": "Remove from circle",
+      "reasonTitle": "Why are you reporting this?",
+      "reasons": {
+        "spam": "Spam",
+        "harassment": "Harassment or bullying",
+        "hate": "Hate speech",
+        "sexual": "Nudity or sexual content",
+        "violence": "Violence or threats",
+        "selfHarm": "Self-harm",
+        "other": "Something else"
+      },
+      "reportSentTitle": "Thanks for letting us know",
+      "reportSentBody": "We review every report within 24 hours.",
+      "reportSentBlockBody": "We review every report within 24 hours. You can also block {name} so you stop seeing each other.",
+      "done": "Done",
+      "reportError": "Couldn't send the report. Try again.",
+      "blockTitle": "Block {name}?",
+      "blockBody": "They'll be removed from your circle, and you'll stop seeing each other's meals, replies and group posts. They won't be told.",
+      "blocked": "{name} is blocked",
+      "blockError": "Couldn't block {name}. Try again.",
+      "unblockTitle": "Unblock {name}?",
+      "unblockBody": "They won't be added back to your circle. To reconnect, one of you shares a new invite link.",
+      "unblocked": "{name} is unblocked",
+      "unblockError": "Couldn't unblock {name}. Try again.",
+      "removeTitle": "Remove {name}?",
+      "removeBody": "You'll stop seeing each other's meals. To reconnect, one of you shares a new invite link.",
+      "removed": "Removed {name} from your circle"
     }
   },
   "settings": {
@@ -1915,6 +1969,15 @@
       "label": "AI meal analysis",
       "subline": "Sends meals, label photos and searches to Google Gemini",
       "error": "Couldn’t update your AI preference. Please try again."
+    },
+    "me": {
+      "friends": {
+        "one": "friend",
+        "other": "friends"
+      },
+      "friendsLabel": "{count} friends in your circle",
+      "editProfile": "Edit profile",
+      "editCircle": "Edit circle"
     }
   },
   "errors": {

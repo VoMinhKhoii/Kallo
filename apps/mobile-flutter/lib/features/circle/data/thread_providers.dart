@@ -28,6 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/social/circle.dart';
 import '../logic/find_share_entry.dart';
 import 'feed_providers.dart';
+import 'local_blocks.dart';
 import 'share_entry_provider.dart';
 
 /// Which post, in which feed. `scope` null is the combined friends feed.
@@ -88,10 +89,26 @@ class ThreadFailed extends ThreadNotReady {
 
 /// One post for the thread page, out of the two sources this library's doc
 /// explains — the feed first, the fetch by id only if it settles without it.
+///
+/// A post by someone the viewer has just blocked is gone at once
+/// ([localBlocksProvider]), not only once the refetch the block
+/// started comes back without it: until then the page would keep its
+/// composer, hearts and long-press live on content the server now refuses.
 final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
   ref,
   key,
 ) {
+  final view = _threadView(ref, key);
+  if (view is ThreadReady) {
+    final blocks = ref.watch(localBlocksProvider);
+    if (blocks.hides(view.entry.friend.userId, view.entry)) {
+      return const ThreadMissing();
+    }
+  }
+  return view;
+});
+
+ThreadView _threadView(Ref ref, ThreadRef key) {
   final fromFeed = ref.watch(
     sharedMealFeedProvider(key.scope).select((feed) {
       final entry = findShareEntry(feed.valueOrNull?.entries, key.shareId);
@@ -126,7 +143,7 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
     return entry == null ? const ThreadMissing() : ThreadReady(entry);
   }
   return fetched.isLoading ? const ThreadLoading() : const ThreadFailed();
-});
+}
 
 /// Refetch the post, from whichever of this library's two sources the page is
 /// actually reading it out of.

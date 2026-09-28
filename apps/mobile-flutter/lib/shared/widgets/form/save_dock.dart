@@ -17,7 +17,16 @@ import '../surface/kallo_button.dart';
 ///
 /// Hand it to `ScrollSeparator.overlay`, which lays it over the body without
 /// letting it drive the header's hairline. Pad the body's bottom by
-/// [clearance] so the last row can scroll clear of it.
+/// [clearance] so the last row can scroll clear of it (the keyboard's share
+/// of that bottom is the page padding's job — `SettingsSpacing.rowList`).
+///
+/// **It rides the keyboard itself.** Every edit page lives under the
+/// `/settings` root route, which has no `Scaffold`, so no
+/// `resizeToAvoidBottomInset` lifts anything: pinned to the physical bottom
+/// the dock sat UNDER the keyboard, and the name field's Save could only be
+/// reached by dismissing the keyboard first (2026-09-28). Same fix as the Log
+/// composer (`composer_dock.dart`): a plain `Padding` of `viewInsets.bottom`
+/// — never animated, iOS already ramps the inset frame by frame.
 class SaveDock extends StatefulWidget {
   const SaveDock({
     super.key,
@@ -73,40 +82,46 @@ class _SaveDockState extends State<SaveDock>
   @override
   Widget build(BuildContext context) {
     final curved = CurvedAnimation(parent: _c, curve: KalloEase.decelerate);
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: IgnorePointer(
-        ignoring: !widget.visible,
-        child: FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0, 0.25),
-              end: Offset.zero,
-            ).animate(curved),
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: kPage,
-                border: Border(top: BorderSide(color: kHairline)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  KalloSpacing.sp3,
-                  KalloSpacing.sp3,
-                  KalloSpacing.sp3 + MediaQuery.viewPaddingOf(context).bottom,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: IgnorePointer(
+          ignoring: !widget.visible,
+          child: FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0, 0.25),
+                end: Offset.zero,
+              ).animate(curved),
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: kPage,
+                  border: Border(top: BorderSide(color: kHairline)),
                 ),
-                // A FIXED box: KalloButton centres its label with a Container
-                // alignment, which grows to any finite height it is offered —
-                // under this Align it would take the whole page.
-                child: SizedBox(
-                  width: double.infinity,
-                  height: SaveDock.buttonHeight,
-                  child: KalloButton(
-                    title: widget.label,
-                    loading: widget.loading,
-                    disabled: !widget.enabled,
-                    onPressed: widget.onPressed,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp3,
+                    // `padding`, not `viewPadding`: the home indicator ALREADY
+                    // netted against the keyboard, so a lifted dock does not
+                    // also pay the indicator's 34pt above the keys.
+                    KalloSpacing.sp3 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  // A FIXED box: KalloButton centres its label with a Container
+                  // alignment, which grows to any finite height it is offered —
+                  // under this Align it would take the whole page.
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: SaveDock.buttonHeight,
+                    child: KalloButton(
+                      title: widget.label,
+                      loading: widget.loading,
+                      disabled: !widget.enabled,
+                      onPressed: widget.onPressed,
+                    ),
                   ),
                 ),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
@@ -216,6 +217,44 @@ void main() {
       'name': 'Dinner crew',
       'memberUserIds': ['u2'],
     });
+  });
+
+  testWidgets('a 402 on create opens the paywall, not an error toast', (
+    tester,
+  ) async {
+    // The plan had not loaded when the form opened, so nothing gated it up
+    // front: the server's feature lock is what sends the user to the paywall.
+    final api = FakeApiClient((request) {
+      if (request.method == 'POST' && request.path == '/api/v1/chat-groups') {
+        throw ApiError('feature_locked', 402, false, 'Premium');
+      }
+      return unexpectedRequest(request);
+    });
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(body: CreateGroupSheet()),
+        ),
+        GoRoute(path: '/paywall', builder: (_, __) => const Text('PAYWALL')),
+      ],
+    );
+    await pumpCircleRouter(
+      tester,
+      router,
+      api: api,
+      overrides: [
+        circleFriendsProvider.overrideWith((_) async => [_friend()]),
+      ],
+    );
+    await tester.enterText(find.byType(TextField).first, 'Dinner crew');
+    await tester.tap(find.text('Mai'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Create group'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PAYWALL'), findsOneWidget);
+    expect(find.text(tr('groups.createGroup.createError')), findsNothing);
   });
 
   testWidgets('rename affordance is visible only to the owner', (tester) async {

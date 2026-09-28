@@ -7,6 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
 import 'deck/invite_deck.dart';
+import '../../data/local_blocks.dart';
 
 /// The Circle inbox: pending copy/split offers addressed to me. Renders nothing
 /// when empty. Mirrors the web `MealInvites`.
@@ -15,7 +16,10 @@ class MealInvitesSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final invitesAsync = ref.watch(mealShareInvitesProvider);
+    // Without offers from anyone the viewer has just blocked: the server
+    // refuses taking one anyway (the block ended the friendship the claim
+    // re-checks), so a card left up would only offer an Accept that fails.
+    final invitesAsync = ref.watch(visibleMealShareInvitesProvider);
     return invitesAsync.when(
       loading: () => const SizedBox.shrink(),
       // A failed fetch must not read as "no invites" — a quiet, tappable retry.

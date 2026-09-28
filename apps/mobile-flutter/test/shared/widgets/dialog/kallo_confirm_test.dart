@@ -186,11 +186,12 @@ void main() {
     expect(rules.first.color, kHairline);
   });
 
-  testWidgets('paints the destructive verb red and semibold', (tester) async {
+  testWidgets('paints the destructive verb red and medium', (tester) async {
     await _open(tester, _host(onResult: (_) {}, destructive: true));
     final confirm = _painted(tester, 'Xoá');
     expect(confirm.color, KalloColors.danger);
-    expect(confirm.fontWeight, FontWeight.w600);
+    // The button-label step (`kButtonLabel`), one over the cancel's 400.
+    expect(confirm.fontWeight, FontWeight.w500);
     // No fill anywhere behind it — the pills are retired.
     final wash =
         tester
@@ -221,7 +222,8 @@ void main() {
     final confirm = _painted(tester, 'Lưu');
     expect(confirm.color, isNot(KalloColors.danger));
     expect(confirm.color, kInk);
-    expect(confirm.fontWeight, FontWeight.w600);
+    // The button-label step (`kButtonLabel`), one over the cancel's 400.
+    expect(confirm.fontWeight, FontWeight.w500);
   });
 
   testWidgets('no yellow error underline leaks onto the text', (tester) async {

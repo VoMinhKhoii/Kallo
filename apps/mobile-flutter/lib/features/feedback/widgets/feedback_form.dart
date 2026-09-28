@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -49,12 +51,20 @@ class FeedbackForm extends StatelessWidget {
       // (`features/settings/logic/settings_spacing.dart`) — inlined rather
       // than imported, because feedback is its own feature and one page's
       // padding is not worth a cross-feature dependency. The bottom clears
-      // the home indicator, which the hand-rolled sp6 used to ignore.
+      // the home indicator, which the hand-rolled sp6 used to ignore — or
+      // the keyboard while it is up: this page is pushed under `/settings`,
+      // which has no `Scaffold` to shrink it, so without the keyboard's
+      // height here "Gửi góp ý" sat under the keys with no way to scroll it
+      // out while typing (2026-09-28).
       padding: EdgeInsets.fromLTRB(
         KalloSpacing.sp3,
         KalloSpacing.sp2,
         KalloSpacing.sp3,
-        KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom,
+        KalloSpacing.sp8 +
+            math.max(
+              MediaQuery.viewPaddingOf(context).bottom,
+              MediaQuery.viewInsetsOf(context).bottom,
+            ),
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [

@@ -11,6 +11,7 @@ import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
+import '../../circle/screens/circle_manage_screen.dart';
 import '../../onboarding/data/profile_row.dart';
 import '../../onboarding/providers/onboarding_providers.dart'
     show onboardingResumeProvider, profileProvider;
@@ -24,7 +25,7 @@ import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
 import '../widgets/chrome/settings_navigator.dart';
 import '../widgets/list/settings_group.dart';
-import '../widgets/profile/settings_profile_card.dart';
+import '../widgets/profile/settings_profile_header.dart';
 import 'about_section.dart';
 import 'account_section.dart';
 import 'identity_section.dart';
@@ -73,8 +74,13 @@ class _SettingsList extends ConsumerWidget {
       if (ref.watch(onboardingResumeProvider))
         OnboardingNudge(onResume: () => showOnboardingDialog(context, ref)),
 
-      SettingsProfileCard(
-        onTap: () => pushSettingsPage(context, const IdentityScreen()),
+      SettingsProfileHeader(
+        onEditProfile: () => pushSettingsPage(context, const IdentityScreen()),
+        onEditCircle:
+            () => pushSettingsPage(
+              context,
+              CircleManageScreen(parentTitle: tr('settings.title')),
+            ),
       ),
 
       _NutritionProfileGroup(profile: profile),

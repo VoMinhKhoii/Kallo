@@ -7,6 +7,7 @@ import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
 import 'chat_group_providers.dart';
+import 'local_blocks.dart';
 
 const Duration _feedRequestTimeout = Duration(seconds: 15);
 
@@ -66,16 +67,21 @@ class SharedMealFeedNotifier
     );
   }
 
-  Future<SharedMealFeedPage> _fetchPage({required String? before}) {
+  Future<SharedMealFeedPage> _fetchPage({required String? before}) async {
     final query =
         before == null ? '' : '?before=${Uri.encodeQueryComponent(before)}';
     final api = ref.read(apiClientProvider);
-    return runWithRetry(() async {
+    final since = ref.read(localBlocksProvider.notifier).generation;
+    final page = await runWithRetry(() async {
       final json = await api
           .get<Map<String, dynamic>>('$_path$query')
           .timeout(_feedRequestTimeout);
       return SharedMealFeedPage.fromJson(json);
     });
+    // When it was asked for, so a block landing meanwhile still hides the
+    // people in it (`local_blocks.dart`).
+    stampEntries(page.entries, since);
+    return page;
   }
 
   Future<void> loadMore() async {
@@ -182,16 +188,22 @@ class SharedMealFeedNotifier
   }
 }
 
+/// A patched copy keeps the original's fetch stamp (`local_blocks.dart`): a
+/// heart or a reply on fresh content must not make it read as stale.
 CircleFeedEntry _copyEntry(
   CircleFeedEntry entry, {
   ShareReactions? reactions,
   List<ShareReply>? replies,
   int? repliesTotal,
-}) => CircleFeedEntry(
-  friend: entry.friend,
-  isSelf: entry.isSelf,
-  meal: entry.meal,
-  reactions: reactions ?? entry.reactions,
-  replies: replies ?? entry.replies,
-  repliesTotal: repliesTotal ?? entry.repliesTotal,
-);
+}) {
+  final copy = CircleFeedEntry(
+    friend: entry.friend,
+    isSelf: entry.isSelf,
+    meal: entry.meal,
+    reactions: reactions ?? entry.reactions,
+    replies: replies ?? entry.replies,
+    repliesTotal: repliesTotal ?? entry.repliesTotal,
+  );
+  carryStamp(entry, copy);
+  return copy;
+}

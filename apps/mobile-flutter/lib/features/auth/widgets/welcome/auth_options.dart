@@ -125,7 +125,7 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
                 Text(
                   tr('auth.welcome.continueWithEmail'),
                   style: dashBody(
-                    weight: FontWeight.w600,
+                    weight: FontWeight.w500,
                   ).copyWith(color: KalloColors.text, letterSpacing: -0.2),
                 ),
               ],
