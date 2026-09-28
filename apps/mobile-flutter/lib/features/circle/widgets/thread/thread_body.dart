@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../data/moderation_mutations.dart';
 import '../feed/feed_entry.dart';
 import '../replies/reply_row.dart';
 import 'thread_dock_insets.dart';
@@ -28,7 +30,7 @@ import 'thread_states.dart';
 /// where the old [SingleChildScrollView] defaulted to `manual`: dragging a list
 /// with the keyboard up dismisses it on iOS, and a thread is read as much as it
 /// is written. The draft survives — only the keyboard goes.
-class ThreadBody extends StatelessWidget {
+class ThreadBody extends ConsumerWidget {
   const ThreadBody({
     required this.entry,
     required this.scope,
@@ -58,7 +60,14 @@ class ThreadBody extends StatelessWidget {
   final ValueListenable<double> dockHeight;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Replies by someone the viewer has just blocked leave at once, not when
+    // the refetch the block started lands (`locallyBlockedUserIdsProvider`).
+    final blocked = ref.watch(locallyBlockedUserIdsProvider);
+    final replies = [
+      for (final reply in entry.replies)
+        if (!blocked.contains(reply.author.userId)) reply,
+    ];
     return KalloRefreshableScroll(
       controller: controller,
       onRefresh: onRefresh,
@@ -98,11 +107,11 @@ class ThreadBody extends StatelessWidget {
                 ),
               ),
             ),
-            if (entry.replies.isEmpty)
+            if (replies.isEmpty)
               ThreadEmptySliver(dockHeight: dockHeight)
             else
               _RepliesSliver(
-                replies: entry.replies,
+                replies: replies,
                 locale: context.locale.languageCode,
                 dockHeight: dockHeight,
               ),

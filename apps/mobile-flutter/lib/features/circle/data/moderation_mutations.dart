@@ -18,6 +18,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/moderation.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import 'chat_group_providers.dart'
@@ -45,6 +46,26 @@ final blockedCircleUsersProvider =
       });
     });
 
+/// Who the viewer has blocked since the Circle's caches last came back from
+/// the server — the people whose content is hidden NOW, before any refetch
+/// lands.
+///
+/// A block invalidates every cache below, but each keeps its old value until
+/// its refetch returns (so a refresh never blanks a page), and until then the
+/// blocked person's posts, replies and thread would stay on screen and live:
+/// a heart or a reply sent to them is refused, and the long-press would offer
+/// the same block again. The feed, the thread page, its replies and the
+/// long-press read this set to drop that content the moment the block lands.
+/// Once the refetches arrive the server has already left the person out, so
+/// the set only ever repeats what the server says.
+///
+/// Per account: it resets when the signed-in user changes, so one account's
+/// blocks never hide anything for the next.
+final locallyBlockedUserIdsProvider = StateProvider<Set<String>>((ref) {
+  ref.watch(currentSessionProvider.select((session) => session?.user.id));
+  return const <String>{};
+});
+
 /// Everything a block or unblock can change for the viewer. Families are
 /// invalidated whole: a block can remove posts, replies and messages from any
 /// group feed or opened thread, and we do not know which ones are cached.
@@ -67,6 +88,9 @@ Future<void> blockCircleUser(WidgetRef ref, String userId) async {
   await api
       .post<dynamic>('/api/v1/groups/friends/block', {'targetUserId': userId})
       .timeout(_moderationRequestTimeout);
+  ref
+      .read(locallyBlockedUserIdsProvider.notifier)
+      .update((ids) => {...ids, userId});
   _invalidateAfterBlockChange(ref);
 }
 
@@ -77,6 +101,9 @@ Future<void> unblockCircleUser(WidgetRef ref, String userId) async {
   await api
       .post<dynamic>('/api/v1/groups/friends/unblock', {'targetUserId': userId})
       .timeout(_moderationRequestTimeout);
+  ref
+      .read(locallyBlockedUserIdsProvider.notifier)
+      .update((ids) => {...ids}..remove(userId));
   _invalidateAfterBlockChange(ref);
 }
 

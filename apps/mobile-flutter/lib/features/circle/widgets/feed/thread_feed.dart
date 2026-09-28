@@ -11,6 +11,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
+import '../../data/moderation_mutations.dart';
 import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
 import 'feed_day_group.dart';
@@ -76,7 +77,12 @@ class ThreadFeed extends ConsumerWidget {
             (_, __) => _stateScroll(
               CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
             ),
-        data: (state) => _dataList(context, state),
+        data:
+            (state) => _dataList(
+              context,
+              state,
+              ref.watch(locallyBlockedUserIdsProvider),
+            ),
       ),
     );
   }
@@ -129,12 +135,22 @@ class ThreadFeed extends ConsumerWidget {
         ],
   );
 
-  Widget _dataList(BuildContext context, SharedMealFeedState state) {
-    if (state.entries.isEmpty) {
+  Widget _dataList(
+    BuildContext context,
+    SharedMealFeedState state,
+    Set<String> blocked,
+  ) {
+    // Posts by someone the viewer has just blocked leave at once, not when
+    // the refetch the block started lands (`locallyBlockedUserIdsProvider`).
+    final entries = [
+      for (final entry in state.entries)
+        if (!blocked.contains(entry.friend.userId)) entry,
+    ];
+    if (entries.isEmpty) {
       return _stateScroll(_empty());
     }
     final children = <Widget>[header];
-    for (final day in groupEntriesByDay(state.entries)) {
+    for (final day in groupEntriesByDay(entries)) {
       children.add(const SizedBox(height: KalloSpacing.sp3));
       children.add(
         FeedDayGroup(date: day.date, entries: day.entries, scope: scope),

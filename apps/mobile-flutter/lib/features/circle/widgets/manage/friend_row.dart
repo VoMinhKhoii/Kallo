@@ -36,6 +36,13 @@ class _FriendRowState extends ConsumerState<FriendRow> {
   /// the refreshed list drops the row.
   bool _gone = false;
 
+  /// True from the `⋯` tap until its flow ends. The confirm closes before the
+  /// request is sent, so a slow block or removal would otherwise leave the
+  /// `⋯` live under it — a second flow could start alongside the first
+  /// (spending the rate-limited block budget, or removing then blocking in an
+  /// order the first choice never meant).
+  bool _busy = false;
+
   CircleProfile get profile => widget.profile;
 
   void _markGone() {
@@ -43,6 +50,15 @@ class _FriendRowState extends ConsumerState<FriendRow> {
   }
 
   Future<void> _openMenu() async {
+    setState(() => _busy = true);
+    try {
+      await _runMenu();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _runMenu() async {
     final action = await showCircleActionSheet<_FriendAction>(
       context,
       title: profile.label,
@@ -91,7 +107,9 @@ class _FriendRowState extends ConsumerState<FriendRow> {
       // from the name, not a username anyone chose, so it would only repeat
       // the name as a URL fragment.
       title: name,
-      trailing: [MoreButton(name: name, onPressed: _gone ? null : _openMenu)],
+      trailing: [
+        MoreButton(name: name, onPressed: _gone || _busy ? null : _openMenu),
+      ],
     );
   }
 }

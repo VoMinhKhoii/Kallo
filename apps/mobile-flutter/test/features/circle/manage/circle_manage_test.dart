@@ -50,12 +50,14 @@ FakeApiClient _api({
   bool groupDetailFail = false,
   Future<void>? groupDetailGate,
   Future<void>? writeGate,
+  bool writeFail = false,
   Future<void>? blockedRefetchGate,
 }) {
   var blockedFetches = 0;
   return FakeApiClient((request) async {
     final path = request.path;
     if (request.method != 'GET' && writeGate != null) await writeGate;
+    if (request.method != 'GET' && writeFail) throw Exception('offline');
     if (request.method == 'GET') {
       if (path == _friendsPath) {
         if (friendsFail) throw Exception('offline');
@@ -190,6 +192,43 @@ void main() {
       expect(write.path, '/api/v1/groups/friends/block');
       expect(write.body, {'targetUserId': 'u1'});
       expect(_moreOn(tester, 'Linh'), isFalse, reason: 'blocked: row is off');
+    });
+
+    testWidgets('the ⋯ is off while a block is in flight', (tester) async {
+      final post = Completer<void>();
+      final api = _api(
+        friends: [_member('u1', 'Linh')],
+        writeGate: post.future,
+      );
+      await _pump(tester, api);
+
+      await tester.tap(_more('Linh'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block').last);
+      await tester.pumpAndSettle();
+
+      // The confirm is gone and the POST hangs: no second flow can start.
+      expect(_moreOn(tester, 'Linh'), isFalse);
+      post.complete();
+      await tester.pumpAndSettle();
+      expect(_writes(api), hasLength(1));
+    });
+
+    testWidgets('a failed block turns the ⋯ back on', (tester) async {
+      final api = _api(friends: [_member('u1', 'Linh')], writeFail: true);
+      await _pump(tester, api);
+
+      await tester.tap(_more('Linh'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't block Linh. Try again."), findsOneWidget);
+      expect(_moreOn(tester, 'Linh'), isTrue);
     });
 
     testWidgets('⋯ → Report sends the reason, then offers the block', (
