@@ -6,14 +6,14 @@ import '../../../../../models/social/chat_group.dart';
 import '../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_theme.dart';
-import 'group_face_cluster.dart';
 
-/// The top of the group sheet: the members' faces, the group's name, how many
-/// are in it, and — for the owner — the way to rename it.
+/// The top of the group sheet under its header: the group's name, how many
+/// are in it, and — for the owner — the way to rename it. The members' faces
+/// sit in the header row above (`GroupInfoPage`).
 ///
 /// The name lives HERE rather than in the sheet header (the contact-card
-/// shape): the header keeps only its close control, so the name is never
-/// squeezed between two 44pt targets, and rename is a labelled capsule under
+/// shape): the header holds only the close control and the faces, so the
+/// name is never squeezed between two 44pt targets, and rename is a labelled capsule under
 /// it instead of a lone pencil floating beside the title.
 class GroupHero extends StatelessWidget {
   const GroupHero({required this.group, required this.onRename, super.key});
@@ -27,8 +27,6 @@ class GroupHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        GroupFaceCluster(members: group.members, size: 56, ringColor: kPage),
-        const SizedBox(height: KalloSpacing.sp3),
         Text(
           group.name ?? '',
           textAlign: TextAlign.center,

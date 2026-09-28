@@ -8,6 +8,7 @@ import '../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_theme.dart';
+import 'group_face_cluster.dart';
 import 'group_hero.dart';
 import 'group_members_card.dart';
 
@@ -45,7 +46,21 @@ class GroupInfoPage extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const KalloSheetHeader(),
+        // The faces ride IN the header row, centred between the close circle
+        // and its mirror, so the sheet does not open on an empty band above
+        // them (owner review, 2026-09-29).
+        KalloSheetHeader(
+          // 8pt down: the grabber sits 8–13pt from the top, and the row
+          // starts at 12, so the faces would otherwise touch it.
+          titleWidget: Padding(
+            padding: const EdgeInsets.only(top: KalloSpacing.sp2),
+            child: GroupFaceCluster(
+              members: group.members,
+              size: 56,
+              ringColor: kPage,
+            ),
+          ),
+        ),
         Flexible(
           child: SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
