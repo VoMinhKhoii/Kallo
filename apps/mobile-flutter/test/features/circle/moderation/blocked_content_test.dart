@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/deck/invite_deck.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/meal_invites.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_body.dart';
+import 'package:kallo_mobile/models/social/chat_group.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 
 import '../../../l10n_test_loader.dart';
@@ -22,7 +25,7 @@ void main() {
 
   setUpL10nBinding();
 
-  final blocked = locallyBlockedUserIdsProvider.overrideWith(_JustBlocked.new);
+  final blocked = localBlocksProvider.overrideWith(_JustBlocked.new);
 
   testWidgets("the feed drops a blocked person's posts", (tester) async {
     await pumpCircleScreen(
@@ -107,31 +110,45 @@ void main() {
     expect([for (final i in visible) i.id], ['i2']);
   });
 
-  testWidgets('a blocked person\'s post has no long-press menu', (
+  testWidgets("the All pill's unread dot ignores a blocked person's post", (
     tester,
   ) async {
     await pumpCircleScreen(
       tester,
-      FeedEntry(
-        entry: CircleFeedEntry.fromJson(entryJson('s1')),
-        onReply: () {},
-        onOpen: () {},
-      ),
-      overrides: [blocked],
-      expand: true,
+      const Scaffold(body: ViewSwitcher()),
+      overrides: [
+        blocked,
+        chatGroupsProvider.overrideWith(
+          (_) => [
+            const ChatGroupIdentity(
+              id: 'g1',
+              kind: 'group',
+              title: 'Weekend hikers',
+              updatedAt: '2026-07-18T00:00:00Z',
+              unread: false,
+            ),
+          ],
+        ),
+        // The newest unread post is the blocked person's, from a frame
+        // fetched before the block.
+        circleFeedProvider.overrideWith(
+          (_) => Stream.value([CircleFeedEntry.fromJson(entryJson('s1'))]),
+        ),
+        friendsReadMarkerProvider.overrideWith((_) async => DateTime.utc(2026)),
+      ],
     );
 
-    await tester.longPress(find.text('Bún chả Hà Nội'));
-    await tester.pumpAndSettle();
-    expect(find.text('Report post'), findsNothing);
+    expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
   });
 }
 
 /// Two people the viewer has just blocked: the author of post `s1`, and of
 /// reply `r1`.
+/// Everything these tests render is unstamped, so it reads as fetched before
+/// the blocks.
 class _JustBlocked extends LocallyBlockedUsers {
   @override
-  Set<String> build() => {'friend-s1', 'author-r1'};
+  LocalBlocks build() => const LocalBlocks({'friend-s1': 1, 'author-r1': 1});
 }
 
 /// A copy offer of [id] from [from].

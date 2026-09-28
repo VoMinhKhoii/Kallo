@@ -33,8 +33,7 @@ const Duration _shareRequestTimeout = Duration(seconds: 15);
 final sharedMealEntryProvider = FutureProvider.autoDispose
     .family<CircleFeedEntry?, String>((ref, shareId) async {
       final api = ref.watch(apiClientProvider);
-      final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
-      final since = blocks.generation;
+      final since = ref.read(localBlocksProvider.notifier).generation;
       try {
         final entry = await runWithRetry(() async {
           final json = await api
@@ -46,7 +45,7 @@ final sharedMealEntryProvider = FutureProvider.autoDispose
             json['entry'] as Map<String, dynamic>,
           );
         });
-        blocks.reconcileShown(peopleShownIn([entry]), since: since);
+        stampEntries([entry], since);
         return entry;
       } on ApiError catch (error) {
         if (error.status == 404) return null;

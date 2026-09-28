@@ -68,7 +68,7 @@ Future<void> blockCircleUser(WidgetRef ref, String userId) async {
   await api
       .post<dynamic>('/api/v1/groups/friends/block', {'targetUserId': userId})
       .timeout(_moderationRequestTimeout);
-  ref.read(locallyBlockedUserIdsProvider.notifier).add(userId);
+  ref.read(localBlocksProvider.notifier).add(userId);
   _invalidateAfterBlockChange(ref);
 }
 

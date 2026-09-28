@@ -1,84 +1,97 @@
-/// Who the viewer has JUST blocked, and when that stops mattering.
+/// Hiding a just-blocked person's content that is still in the caches.
 ///
 /// A block invalidates every Circle cache, but each keeps its old value until
-/// its refetch returns (so a refresh never blanks a page), and until then the
-/// blocked person's posts, replies, thread and invites would stay on screen
-/// and live: a heart or a reply sent to them is refused, and the long-press
-/// would offer the same block again. The feed, the thread page, its replies,
-/// the invites and the long-press read [locallyBlockedUserIdsProvider] to drop
-/// that content the moment the block lands.
+/// its refetch returns (so a refresh never blanks a page) — and keeps it for
+/// good if the refetch fails. Until then the blocked person's posts, replies,
+/// thread, offers and unread dot would stay on screen and live: a heart or a
+/// reply sent to them is refused, an offer can only fail to accept.
 ///
-/// **An entry leaves only when the server shows the person again**: a
-/// Circle fetch — feed page, post by id, invites — that STARTED after the
-/// block and still has them in it ([LocallyBlockedUsers.reconcileShown]).
-/// Nothing weaker counts:
+/// **Each cached value is judged by when it was fetched.** Every Circle fetch
+/// stamps what it returns ([stampFetched]) with [LocallyBlockedUsers.generation]
+/// as it was when the request STARTED, and every block records the generation
+/// it landed at. A value hides a person exactly when it was fetched before
+/// that person was blocked ([LocalBlocks.hides]):
 ///
-///   - not a timer, which cannot tell a refetch that landed from one that
-///     failed or never ran (the app suspended);
-///   - not an unblock, here or elsewhere, nor the blocked list dropping them:
-///     unblocking never restores the friendship the block deleted, and the
-///     other person may block back, so "no longer blocked" is not "visible
-///     again" — lifting on it would re-expose whatever stale content a failed
-///     refetch left cached. An unblock here invalidates every Circle cache,
-///     and the first fetch that does show them lifts the entry.
+///   - a stale value — a refetch still in flight, one that failed, one the
+///     app never got to run — keeps its old stamp, so it stays hidden however
+///     long it lingers;
+///   - a value fetched after the block is the server's own answer and is
+///     shown as it came. If it has the person in it, the block was lifted and
+///     the server says they are visible there — in that cache, and only that
+///     one: a group feed that shows them lifts nothing in a friends feed whose
+///     refetch failed.
 ///
-/// Until then an entry costs nothing: every fresh answer already leaves the
-/// person out, so the filter only repeats the server. Per account: the set
-/// resets when the signed-in user changes.
+/// So nothing is ever "lifted", and no signal (a timer, an unblock, the
+/// blocked list) has to be trusted to mean "visible again". Per account: the
+/// blocks reset when the signed-in user changes.
 library;
 
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/circle.dart';
 import '../../../services/auth/session_provider.dart';
 
-final locallyBlockedUserIdsProvider =
-    NotifierProvider<LocallyBlockedUsers, Set<String>>(LocallyBlockedUsers.new);
+final localBlocksProvider = NotifierProvider<LocallyBlockedUsers, LocalBlocks>(
+  LocallyBlockedUsers.new,
+);
 
-class LocallyBlockedUsers extends Notifier<Set<String>> {
-  /// When each entry landed, on [generation]'s clock.
-  final Map<String, int> _blockedAt = {};
-  int _clock = 0;
+/// The generation each fetched value was asked for at. An [Expando] so the
+/// stamp rides on the value itself without the models knowing about it.
+final Expando<int> _fetchedAt = Expando<int>('fetchedAt');
 
-  /// Read by a fetch as it STARTS and handed back to a reconcile when it
-  /// succeeds, so an answer is only ever weighed against blocks placed before
-  /// it was asked for. A counter rather than wall time: nothing about it can
-  /// run backwards or tie.
-  int get generation => _clock;
-
-  @override
-  Set<String> build() {
-    ref.watch(currentSessionProvider.select((session) => session?.user.id));
-    _blockedAt.clear();
-    return const <String>{};
-  }
-
-  void add(String userId) {
-    _blockedAt[userId] = ++_clock;
-    state = {...state, userId};
-  }
-
-  /// A fetch that started at [since] came back showing [shown]: anyone in it
-  /// who was blocked before it started is visible to the viewer again.
-  void reconcileShown(Iterable<String> shown, {required int since}) => _lift([
-    for (final id in shown)
-      if ((_blockedAt[id] ?? since + 1) <= since) id,
-  ]);
-
-  void _lift(List<String> ids) {
-    final lifted = ids.where(_blockedAt.containsKey).toList();
-    if (lifted.isEmpty) return;
-    lifted.forEach(_blockedAt.remove);
-    state = {...state}..removeAll(lifted);
+/// Stamp [values] as fetched by a request that started at generation [since].
+void stampFetched(Iterable<Object> values, int since) {
+  for (final value in values) {
+    _fetchedAt[value] = since;
   }
 }
 
-/// The other people a Circle post shows: its author and its repliers.
-Iterable<String> peopleShownIn(Iterable<CircleFeedEntry> entries) sync* {
+/// Stamp feed entries and their replies.
+void stampEntries(Iterable<CircleFeedEntry> entries, int since) {
   for (final entry in entries) {
-    if (!entry.isSelf) yield entry.friend.userId;
-    for (final reply in entry.replies) {
-      if (!reply.isSelf) yield reply.author.userId;
-    }
+    stampFetched([entry, ...entry.replies], since);
+  }
+}
+
+/// Give [copy] the stamp of the value it was patched from, so an optimistic
+/// patch (a heart, a reply) never makes fresh content look stale.
+void carryStamp(Object from, Object copy) {
+  final at = _fetchedAt[from];
+  if (at != null) _fetchedAt[copy] = at;
+}
+
+/// Who the viewer has blocked this session, and at which generation.
+@immutable
+class LocalBlocks {
+  const LocalBlocks([this._blockedAt = const {}]);
+
+  final Map<String, int> _blockedAt;
+
+  /// Whether [content], by [userId], was fetched before [userId] was blocked.
+  /// Unstamped content counts as fetched before any block.
+  bool hides(String userId, Object content) {
+    final blockedAt = _blockedAt[userId];
+    if (blockedAt == null) return false;
+    return (_fetchedAt[content] ?? 0) < blockedAt;
+  }
+}
+
+class LocallyBlockedUsers extends Notifier<LocalBlocks> {
+  int _clock = 0;
+
+  /// Read by a fetch as it starts and handed to [stampFetched].
+  int get generation => _clock;
+
+  @override
+  LocalBlocks build() {
+    ref.watch(currentSessionProvider.select((session) => session?.user.id));
+    return const LocalBlocks();
+  }
+
+  /// [userId] was blocked just now: every value fetched before this hides them.
+  void add(String userId) {
+    _clock += 1;
+    state = LocalBlocks({...state._blockedAt, userId: _clock});
   }
 }

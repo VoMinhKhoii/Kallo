@@ -78,11 +78,8 @@ class ThreadFeed extends ConsumerWidget {
               CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
             ),
         data:
-            (state) => _dataList(
-              context,
-              state,
-              ref.watch(locallyBlockedUserIdsProvider),
-            ),
+            (state) =>
+                _dataList(context, state, ref.watch(localBlocksProvider)),
       ),
     );
   }
@@ -138,13 +135,13 @@ class ThreadFeed extends ConsumerWidget {
   Widget _dataList(
     BuildContext context,
     SharedMealFeedState state,
-    Set<String> blocked,
+    LocalBlocks blocks,
   ) {
     // Posts by someone the viewer has just blocked leave at once, not when
-    // the refetch the block started lands (`locallyBlockedUserIdsProvider`).
+    // the refetch the block started lands (`local_blocks.dart`).
     final entries = [
       for (final entry in state.entries)
-        if (!blocked.contains(entry.friend.userId)) entry,
+        if (!blocks.hides(entry.friend.userId, entry)) entry,
     ];
     if (entries.isEmpty) {
       return _stateScroll(_empty());

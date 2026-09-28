@@ -62,11 +62,11 @@ class ThreadBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Replies by someone the viewer has just blocked leave at once, not when
-    // the refetch the block started lands (`locallyBlockedUserIdsProvider`).
-    final blocked = ref.watch(locallyBlockedUserIdsProvider);
+    // the refetch the block started lands (`local_blocks.dart`).
+    final blocks = ref.watch(localBlocksProvider);
     final replies = [
       for (final reply in entry.replies)
-        if (!blocked.contains(reply.author.userId)) reply,
+        if (!blocks.hides(reply.author.userId, reply)) reply,
     ];
     return KalloRefreshableScroll(
       controller: controller,

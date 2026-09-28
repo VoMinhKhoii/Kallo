@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../models/social/moderation.dart';
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
-import '../../data/local_blocks.dart';
 import '../../logic/moderation_flows.dart';
 
 enum _Action { report, block }
@@ -106,14 +105,7 @@ class _ModerationLongPressState extends ConsumerState<ModerationLongPress> {
 
   @override
   Widget build(BuildContext context) {
-    // Nor does someone the viewer has just blocked: their content is leaving,
-    // and a second "Block" would be refused.
-    final blocked = ref.watch(
-      locallyBlockedUserIdsProvider.select(
-        (ids) => ids.contains(widget.author.userId),
-      ),
-    );
-    if (widget.isSelf || blocked) return widget.child;
+    if (widget.isSelf) return widget.child;
     return GestureDetector(
       // Alongside the post's own tap (it opens the thread): the long press
       // wins the arena at 500ms, the tap wins anything shorter.

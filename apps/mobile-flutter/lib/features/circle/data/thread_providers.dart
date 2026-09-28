@@ -91,7 +91,7 @@ class ThreadFailed extends ThreadNotReady {
 /// explains — the feed first, the fetch by id only if it settles without it.
 ///
 /// A post by someone the viewer has just blocked is gone at once
-/// ([locallyBlockedUserIdsProvider]), not only once the refetch the block
+/// ([localBlocksProvider]), not only once the refetch the block
 /// started comes back without it: until then the page would keep its
 /// composer, hearts and long-press live on content the server now refuses.
 final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
@@ -100,8 +100,8 @@ final threadEntryProvider = Provider.autoDispose.family<ThreadView, ThreadRef>((
 ) {
   final view = _threadView(ref, key);
   if (view is ThreadReady) {
-    final blocked = ref.watch(locallyBlockedUserIdsProvider);
-    if (blocked.contains(view.entry.friend.userId)) {
+    final blocks = ref.watch(localBlocksProvider);
+    if (blocks.hides(view.entry.friend.userId, view.entry)) {
       return const ThreadMissing();
     }
   }

@@ -8,6 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
 import '../../data/feed_providers.dart';
+import '../../data/local_blocks.dart';
 
 class ViewSwitcher extends ConsumerWidget {
   const ViewSwitcher({super.key});
@@ -35,7 +36,11 @@ class ViewSwitcher extends ConsumerWidget {
     final selected = ref.watch(circleSelectedViewProvider);
     final ambient = ref.watch(circleFeedProvider);
     final marker = ref.watch(friendsReadMarkerProvider);
-    final allUnread = _allUnread(ambient, marker);
+    final allUnread = _allUnread(
+      ambient,
+      marker,
+      ref.watch(localBlocksProvider),
+    );
 
     return Semantics(
       label: tr('groups.switcher.label'),
@@ -82,11 +87,14 @@ class ViewSwitcher extends ConsumerWidget {
   bool _allUnread(
     AsyncValue<List<CircleFeedEntry>> ambient,
     AsyncValue<DateTime> marker,
+    LocalBlocks blocks,
   ) {
     if (!ambient.hasValue || !marker.hasValue) return false;
     DateTime? latest;
     for (final entry in ambient.requireValue) {
-      if (entry.isSelf) continue;
+      // Nor a post by someone the viewer has just blocked, from a frame
+      // fetched before the block (`local_blocks.dart`).
+      if (entry.isSelf || blocks.hides(entry.friend.userId, entry)) continue;
       final date = DateTime.tryParse(entry.meal.sharedAt);
       if (date != null && (latest == null || date.isAfter(latest))) {
         latest = date;

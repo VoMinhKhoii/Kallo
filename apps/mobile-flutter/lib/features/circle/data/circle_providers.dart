@@ -35,7 +35,9 @@ const Duration kCirclePollInterval = Duration(seconds: 30);
 /// invite survives the auth detour instead of dropping the user on the dashboard.
 final pendingInviteSlugProvider = StateProvider<String?>((ref) => null);
 
-Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) =>
+/// Stamped with when it was asked for (`local_blocks.dart`), so the unread
+/// dot skips a just-blocked person's post in a stale frame.
+Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api, int since) =>
     runWithRetry(() async {
       final tz = localTimezoneOffsetMinutes();
       // Timeout so a hung request can't block the initial load or wedge a
@@ -44,9 +46,12 @@ Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) =>
           .get<Map<String, dynamic>>('/api/v1/groups/feed?timezoneOffset=$tz')
           .timeout(const Duration(seconds: 15));
       final list = (json['feed'] as List<dynamic>?) ?? const [];
-      return list
-          .map((e) => CircleFeedEntry.fromJson(e as Map<String, dynamic>))
-          .toList(growable: false);
+      final entries = [
+        for (final e in list)
+          CircleFeedEntry.fromJson(e as Map<String, dynamic>),
+      ];
+      stampEntries(entries, since);
+      return entries;
     });
 
 /// The ambient circle wall — one most-recent shared meal per friend, today.
@@ -60,8 +65,11 @@ final circleFeedProvider = StreamProvider.autoDispose<List<CircleFeedEntry>>((
 ) async* {
   final api = ref.watch(apiClientProvider);
 
+  final blocks = ref.read(localBlocksProvider.notifier);
+  Future<List<CircleFeedEntry>> fetch() => _fetchFeed(api, blocks.generation);
+
   // First load: let errors propagate to the UI.
-  yield await _fetchFeed(api);
+  yield await fetch();
 
   await for (final _ in Stream<void>.periodic(kCirclePollInterval)) {
     // Don't burn network/battery while the app is backgrounded — web parity:
@@ -72,7 +80,7 @@ final circleFeedProvider = StreamProvider.autoDispose<List<CircleFeedEntry>>((
       continue;
     }
     try {
-      yield await _fetchFeed(api);
+      yield await fetch();
     } on ApiError catch (error) {
       // A terminal error (401 expired session, 400, 404) must not hide behind
       // a stale wall forever — surface it so the UI shows retry. Retryable
@@ -279,8 +287,7 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
 final mealShareInvitesProvider =
     FutureProvider.autoDispose<List<MealShareInvite>>((ref) async {
       final api = ref.watch(apiClientProvider);
-      final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
-      final since = blocks.generation;
+      final since = ref.read(localBlocksProvider.notifier).generation;
       final invites = await runWithRetry(() async {
         final json = await api.get<Map<String, dynamic>>(
           '/api/v1/groups/invites',
@@ -290,25 +297,22 @@ final mealShareInvitesProvider =
             .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
             .toList(growable: false);
       });
-      blocks.reconcileShown([
-        for (final invite in invites) invite.from.userId,
-      ], since: since);
+      stampFetched(invites, since);
       return invites;
     });
 
-/// The inbox as the viewer sees it: [mealShareInvitesProvider] without offers
-/// from anyone they have just blocked (`local_blocks.dart`). The inbox and the
-/// Circle tab's badge both read this, so the badge never promises an offer the
-/// inbox has hidden. Loading and error pass through unchanged.
+/// [mealShareInvitesProvider] minus offers from anyone just blocked
+/// (`local_blocks.dart`). The inbox AND the tab badge read this, so the badge
+/// never promises an offer the inbox hides.
 final visibleMealShareInvitesProvider =
     Provider.autoDispose<AsyncValue<List<MealShareInvite>>>((ref) {
-      final blocked = ref.watch(locallyBlockedUserIdsProvider);
+      final blocks = ref.watch(localBlocksProvider);
       return ref
           .watch(mealShareInvitesProvider)
           .whenData(
             (all) => [
               for (final invite in all)
-                if (!blocked.contains(invite.from.userId)) invite,
+                if (!blocks.hides(invite.from.userId, invite)) invite,
             ],
           );
     });

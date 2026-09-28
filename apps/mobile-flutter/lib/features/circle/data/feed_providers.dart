@@ -71,17 +71,16 @@ class SharedMealFeedNotifier
     final query =
         before == null ? '' : '?before=${Uri.encodeQueryComponent(before)}';
     final api = ref.read(apiClientProvider);
-    final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
-    final since = blocks.generation;
+    final since = ref.read(localBlocksProvider.notifier).generation;
     final page = await runWithRetry(() async {
       final json = await api
           .get<Map<String, dynamic>>('$_path$query')
           .timeout(_feedRequestTimeout);
       return SharedMealFeedPage.fromJson(json);
     });
-    // Anyone this page shows who was blocked before it was asked for has been
-    // unblocked since (`local_blocks.dart`).
-    blocks.reconcileShown(peopleShownIn(page.entries), since: since);
+    // When it was asked for, so a block landing meanwhile still hides the
+    // people in it (`local_blocks.dart`).
+    stampEntries(page.entries, since);
     return page;
   }
 
@@ -189,16 +188,22 @@ class SharedMealFeedNotifier
   }
 }
 
+/// A patched copy keeps the original's fetch stamp (`local_blocks.dart`): a
+/// heart or a reply on fresh content must not make it read as stale.
 CircleFeedEntry _copyEntry(
   CircleFeedEntry entry, {
   ShareReactions? reactions,
   List<ShareReply>? replies,
   int? repliesTotal,
-}) => CircleFeedEntry(
-  friend: entry.friend,
-  isSelf: entry.isSelf,
-  meal: entry.meal,
-  reactions: reactions ?? entry.reactions,
-  replies: replies ?? entry.replies,
-  repliesTotal: repliesTotal ?? entry.repliesTotal,
-);
+}) {
+  final copy = CircleFeedEntry(
+    friend: entry.friend,
+    isSelf: entry.isSelf,
+    meal: entry.meal,
+    reactions: reactions ?? entry.reactions,
+    replies: replies ?? entry.replies,
+    repliesTotal: repliesTotal ?? entry.repliesTotal,
+  );
+  carryStamp(entry, copy);
+  return copy;
+}
