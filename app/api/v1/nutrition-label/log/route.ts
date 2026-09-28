@@ -1,9 +1,9 @@
 import { after, type NextRequest } from 'next/server';
-import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { readJsonBody } from '@/lib/api/auth';
 import { logNutritionLabelMealSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { confirmStagedMeal } from '@/lib/domain/meals/confirm-staged';
 import { linkLabelImageToMeal } from '@/lib/domain/nutrition/label-images/label-images';
 import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -35,10 +35,7 @@ export async function POST(req: NextRequest) {
     );
 
     const { analysisId } = await stageOcrMeal(user.id, body);
-    const result = await confirmAndSaveMealAction({
-      analysisId,
-      mealId: body.mealId,
-    });
+    const result = await confirmStagedMeal(user.id, analysisId, body.mealId);
     // Link the kept scan to this meal with the values the user saved — after
     // the response, so saving takes no longer than it did. Best-effort and
     // owner-scoped: an id that is not the caller's is ignored.

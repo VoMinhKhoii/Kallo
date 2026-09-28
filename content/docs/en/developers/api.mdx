@@ -1,7 +1,7 @@
 ---
 title: The Kallo API
 description: What the HTTP API is, how it authenticates, what it returns when something goes wrong, and what you may and may not rely on.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-28'
 ---
 
 Kallo has an HTTP API. It is the same API the web app and the mobile app use —
@@ -24,7 +24,7 @@ https://kallo.fit
 
 Endpoints live under `/api/v1/`. The exceptions are `/api/healthz`, which is
 unversioned because it is a liveness probe rather than part of the surface, and
-two authenticated routes the apps call directly: `POST /api/analyze-meal` and
+two authenticated routes, `POST /api/analyze-meal` and
 `GET /api/og/macro-card/{shareId}` (both described below).
 
 Successful responses are `200` (the waitlist confirmation link is a `307`
@@ -146,6 +146,7 @@ Operations tagged `Public` in the spec are safe to depend on:
 - `POST /api/v1/waitlist`
 - `GET /api/v1/waitlist/confirm`
 - `GET /api/v1/groups/invite/{slug}`
+- `GET /api/v1/barcode/image/{code}`
 
 Everything else is marked `x-internal: true`. Those endpoints exist to serve
 Kallo's own clients. They are versioned under `/v1`, but that version is not a

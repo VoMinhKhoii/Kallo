@@ -7,6 +7,13 @@ import '../../../theme/kallo_shapes.dart';
 /// The line every sheet's content starts on, header and body alike.
 const double kSheetContentInset = KalloSpacing.sp4; // 16
 
+/// A sheet's top corner radius: CONCENTRIC with its header controls. The
+/// 36pt grey circle sits [kSheetContentInset] in from the side and the top,
+/// so its centre is 16 + 18 = 34pt from the corner — and a 34pt corner keeps
+/// the same gap to the circle all the way round the curve. At the old 22 the
+/// gap pinched on the diagonal (owner review, 2026-09-28).
+const double kSheetRadius = kSheetContentInset + 18; // 34
+
 /// How much horizontal inset the surface has ALREADY applied to its body.
 ///
 /// Exists so [KalloSheetHeader] can inherit the sheet's inset instead of
@@ -108,6 +115,7 @@ class KalloSheetSurface extends StatelessWidget {
     this.clipBehavior = Clip.none,
     this.scrollable = false,
     this.maxHeightFraction = 0.9,
+    this.color = kCardSurface,
   });
 
   final Widget child;
@@ -121,6 +129,11 @@ class KalloSheetSurface extends StatelessWidget {
   /// Height cap for [scrollable], as a fraction of the screen. 0.9 leaves the
   /// barrier tappable so the sheet never reads as a full-screen page.
   final double maxHeightFraction;
+
+  /// White by default. A sheet whose body is itself made of white grouped
+  /// cards (the scan result) paints the canvas colour instead, so the cards
+  /// separate by surface the way they do on a page.
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -152,8 +165,8 @@ class KalloSheetSurface extends StatelessWidget {
         // curvature the way every iOS sheet's do. `ShapeDecoration` is what
         // takes a `ShapeBorder` — note it spells shadows `shadows`.
         decoration: ShapeDecoration(
-          color: kCardSurface,
-          shape: KalloShapes.squircleTop(kCardRadius),
+          color: color,
+          shape: KalloShapes.squircleTop(kSheetRadius),
           // Sheets are TRUE elevation on the borderless-card canvas.
           shadows: kSheetShadows,
         ),

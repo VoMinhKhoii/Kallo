@@ -23,8 +23,9 @@ import { SITE_URL } from '@/lib/seo/site';
  * The published OpenAPI 3.1 description of Kallo's HTTP API.
  *
  * Scope is deliberate. It covers every route a web or mobile client calls —
- * `/api/v1/*`, `/api/healthz`, the `/api/analyze-meal` SSE stream and the
- * `/api/og/macro-card/{shareId}` image — and omits the rest on purpose: the
+ * `/api/v1/*`, `/api/healthz` and the `/api/analyze-meal` SSE stream — plus
+ * the `/api/og/macro-card/{shareId}` image, which no client links to today
+ * but any signed-in caller can still fetch. It omits the rest on purpose: the
  * RevenueCat and Supabase-Auth webhooks (signature-verified provider callbacks
  * that no caller should ever invoke), the Supabase auth proxy (internal
  * plumbing), the admin-only analyse-meal debug endpoint (which answers 404

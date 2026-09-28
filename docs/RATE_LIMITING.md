@@ -72,6 +72,7 @@ code.
 | `healthzIp` | ip | 30 / — / — | memory |
 | `inviteLookupIp` | ip | 30 / — / — | memory |
 | `cspReportIp` | ip | 30 / — / — | memory |
+| `barcodeImageIp` (product photos; one per scanned product, then device-cached) | ip | 60 / — / — | memory |
 | `chatMessageSend` | user | 30 / 600 / 3000 | degraded |
 | `shareReply` | user | 20 / 300 / 1500 | degraded |
 | `shareReaction` | user | 60 / 600 / — | degraded |
@@ -313,6 +314,7 @@ except invite lookup (IP) and the two global budgets.
 | `POST /api/v1/reports` | `contentReport` | `user` (reporter) | **429** + `Retry-After`, charged after auth and before the body is read — it bounds the admin email each accepted report sends. |
 | Push fan-out — inside `sendNotificationPush` (both the notification path and `sendChatMessagePush`) | `pushGlobalHourly`, charged only once there are messages to send | `global:'push'` | **Skip, not block.** A block SKIPs the send and returns — the message/notification row is already committed, so the worst case is a dropped push, never a failed write. Caught locally, logged once per 30 s per instance, never propagated. Most events notify nobody with a registered device, so the charge happens AFTER `buildMessages`: charging before it made the hourly budget count recipients rather than pushes. |
 | `searchBarcodeAction` + `GET /api/v1/barcode/search` | `barcodeSearch` | `user` | Route → **429** + `Retry-After`. Web action → typed `{success:false, code:'rate_limited'}`. |
+| `GET /api/v1/barcode/image/{code}` | `barcodeImageIp` | `ip` (skipped when null) | **429** + `Retry-After`, before the product lookup. Anonymous because `<img>` and Flutter's image cache send no bearer token; it only serves photos of barcodes already in the store, so a null IP admits. |
 | `POST /api/v1/feedback/screenshot` | `feedbackScreenshot` | `user` | **429** + `Retry-After`. Auth runs FIRST and the guard before `formData()`, so an anonymous or throttled caller never makes the server buffer the multipart body — the route previously read it before asking who was calling. A missing / non-numeric / oversized `Content-Length` is a 400 `VALIDATION_FAILED`, also pre-buffer. |
 | `POST /api/v1/auth/apple/token` | `appleTokenLink` | `user` | **429** + `Retry-After`, charged after auth and before the body is read or Apple is called. The iOS client fires this once per Apple sign-in and ignores the outcome, so a refusal never affects sign-in. |
 | `POST /api/v1/groups/profile/avatar` | `avatarUpload` | `user` | **429** + `Retry-After` (via `serializeError`), before the body is buffered. |
@@ -337,7 +339,7 @@ caller actually receives depends on how it reaches the action:
   both the Flutter (route) and web (route-via-fetch) paths — no typed result is
   needed, and adding one to the action would be dead code.
 - **Barcode.** The web calls `searchBarcodeAction` DIRECTLY as a Server Action
-  (`use-barcode-scanner-dialog-state.ts`). A thrown error there is caught by the
+  (`components/logging/input/scan/use-lookup.ts`). A thrown error there is caught by the
   action and returned as `{success:false, code}` — before this change a limiter
   block folded to `code:'server_error'`, a generic error with no `Retry-After`.
   So barcode grew a `rate_limited` code (`BarcodeErrorCode`), which the dialog

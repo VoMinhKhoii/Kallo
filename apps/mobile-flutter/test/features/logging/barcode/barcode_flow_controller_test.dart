@@ -41,6 +41,8 @@ const productJson = <String, dynamic>{
   'packageSizeG': 150,
 };
 
+const _mealId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+
 void main() {
   late FakeApiClient api;
   late ProviderContainer container;
@@ -149,6 +151,7 @@ void main() {
         final ok = await notifier().logMeal(
           userId: 'user-1',
           date: '2026-07-02',
+          mealId: _mealId,
           grams: 150,
         );
 
@@ -165,6 +168,64 @@ void main() {
       },
     );
 
+    test('sends the id it was given, so a retry is the same meal', () async {
+      await landOnProduct();
+      api.handler = (_, __, ___) => <String, dynamic>{};
+      await notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        mealId: _mealId,
+        grams: 150,
+      );
+      final body =
+          api.requests.firstWhere((r) => r.$2 == '/api/v1/barcode/log').$3
+              as Map<String, dynamic>;
+      expect(body['mealId'], _mealId);
+    });
+
+    test(
+      'a retry whose first try landed counts as saved, not failed',
+      () async {
+        await landOnProduct();
+        // This account already holds the meal: the first POST committed and
+        // its answer was lost. Reporting a failure would invite a third try.
+        api.handler =
+            (_, path, __) =>
+                path == '/api/v1/barcode/log'
+                    ? throw ApiError('MEAL_ALREADY_SAVED', 409, false, 'saved')
+                    : <String, dynamic>{};
+
+        final ok = await notifier().logMeal(
+          userId: 'user-1',
+          date: '2026-07-02',
+          mealId: _mealId,
+          grams: 150,
+        );
+
+        expect(ok, isTrue);
+        expect(state().errorKey, isNull);
+      },
+    );
+
+    test('an id this account does not own stays a failure', () async {
+      await landOnProduct();
+      api.handler =
+          (_, path, __) =>
+              path == '/api/v1/barcode/log'
+                  ? throw ApiError('CONFLICT', 409, false, 'taken')
+                  : <String, dynamic>{};
+
+      final ok = await notifier().logMeal(
+        userId: 'user-1',
+        date: '2026-07-02',
+        mealId: _mealId,
+        grams: 150,
+      );
+
+      expect(ok, isFalse);
+      expect(state().errorKey, isNotNull);
+    });
+
     test('does not resolve until the day feed has refetched', () async {
       await landOnProduct();
       // Popping the sheet is what pins the feed to its tail, and the sheet pops
@@ -180,7 +241,12 @@ void main() {
 
       var resolved = false;
       final logging = notifier()
-          .logMeal(userId: 'user-1', date: '2026-07-02', grams: 150)
+          .logMeal(
+            userId: 'user-1',
+            date: '2026-07-02',
+            mealId: _mealId,
+            grams: 150,
+          )
           .then((ok) {
             resolved = true;
             return ok;
@@ -217,6 +283,7 @@ void main() {
       final ok = await notifier().logMeal(
         userId: 'user-1',
         date: '2026-07-02',
+        mealId: _mealId,
         grams: 150,
       );
 
@@ -239,6 +306,7 @@ void main() {
       final logging = notifier().logMeal(
         userId: 'user-1',
         date: '2026-07-02',
+        mealId: _mealId,
         grams: 150,
       );
       await Future<void>.delayed(Duration.zero);
@@ -263,6 +331,7 @@ void main() {
       final ok = await notifier().logMeal(
         userId: 'user-1',
         date: '2026-07-02',
+        mealId: _mealId,
         grams: 150,
       );
 
@@ -282,6 +351,7 @@ void main() {
       final ok = await notifier().logMeal(
         userId: 'user-1',
         date: '2026-07-02',
+        mealId: _mealId,
         grams: 150,
       );
 
@@ -294,6 +364,7 @@ void main() {
       final ok = await notifier().logMeal(
         userId: 'user-1',
         date: '2026-07-02',
+        mealId: _mealId,
         grams: 100,
       );
       expect(ok, isFalse);
@@ -314,17 +385,6 @@ void main() {
       expect(s.phase, BarcodeFlowPhase.scanning);
       expect(s.errorKey, isNull);
       expect(s.product, isNull);
-    });
-
-    test('enterManualMode switches phase and clears error', () async {
-      api.handler =
-          (_, __, ___) => throw ApiError('BARCODE_NOT_FOUND', 404, false, 'x');
-      await notifier().search('123');
-
-      notifier().enterManualMode();
-
-      expect(state().phase, BarcodeFlowPhase.manualEntry);
-      expect(state().errorKey, isNull);
     });
   });
 
@@ -381,14 +441,6 @@ void main() {
         expect(api.requests, hasLength(2));
       },
     );
-
-    test('enterManualMode clears the block too', () async {
-      await missOn('8934563138162');
-
-      notifier().enterManualMode();
-
-      expect(state().errorKey, isNull);
-    });
 
     test('force: true bypasses it — a typed retry must get through', () async {
       await missOn('8934563138162');

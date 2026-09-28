@@ -29,6 +29,7 @@ class PortionRulerControl extends StatefulWidget {
     required this.labelFor,
     required this.glyphBandAspect,
     required this.onChanged,
+    this.unit = 'g',
   });
 
   final List<PortionAnchor> anchors;
@@ -51,6 +52,10 @@ class PortionRulerControl extends StatefulWidget {
   final double glyphBandAspect;
 
   final ValueChanged<int> onChanged;
+
+  /// The unit a screen reader speaks after a nudged value — "ml" on the scan
+  /// sheet's cup ruler, where it used to say "g" for a drink.
+  final String unit;
 
   @override
   State<PortionRulerControl> createState() => PortionRulerControlState();
@@ -106,8 +111,8 @@ class PortionRulerControlState extends State<PortionRulerControl> {
         // Flutter asserts these accompany `value` whenever the actions exist.
         // The strip is a scroll view, so without them a screen reader gets
         // scroll actions instead of the slider it actually is.
-        increasedValue: '${gramsAfter(1)} g',
-        decreasedValue: '${gramsAfter(-1)} g',
+        increasedValue: '${gramsAfter(1)} ${widget.unit}',
+        decreasedValue: '${gramsAfter(-1)} ${widget.unit}',
         onIncrease: () => _emit(gramsAfter(1)),
         onDecrease: () => _emit(gramsAfter(-1)),
         child: PortionRulerStrip(

@@ -1,3 +1,5 @@
+import type { NutritionNutrientKey } from '@/lib/domain/nutrition/types';
+
 /**
  * Stable, locale-agnostic error codes for the barcode flow. Clients map them
  * to a localized message (web: `t('barcodeError.<code>')`; mobile:
@@ -23,11 +25,63 @@ export type BarcodeErrorCode =
 export type BarcodeProviderId = 'usda_fdc' | 'off';
 
 /**
- * A barcode product as every provider adapter and the cache-read path return
- * it: per-100g nutrition plus optional sizing. Mirrored field-for-field by the
- * Flutter client (`apps/mobile-flutter/lib/models/nutrition/barcode_product.dart`) and
- * re-exported by the REST contract, so the field set is a cross-client
- * contract — adding or renaming a field breaks mobile.
+ * The unit a product is measured in: 'ml' for drinks labelled per 100ml, 'g'
+ * otherwise. Sizes, the logged amount and the per-100 nutrition all share it,
+ * so per-100ml values scaled by millilitres are exact. Stored amounts treat
+ * 1 ml as 1 g, as the nutrition-label scan does.
+ */
+export type BarcodeAmountUnit = 'g' | 'ml';
+
+/** A stored unit. Rows cached before units were stored hold null: grams. */
+export function parseAmountUnit(value: unknown): BarcodeAmountUnit {
+  return value === 'ml' ? 'ml' : 'g';
+}
+
+/**
+ * The micronutrients a product can carry beyond fiber and sodium, which have
+ * their own fields. All of them are Premium to see and always saved.
+ */
+export type BarcodeMicronutrientKey = Exclude<
+  NutritionNutrientKey,
+  'fiberG' | 'sodiumMg'
+>;
+
+/** Per-100 micronutrient values, keyed like `NutritionValues`. */
+export type BarcodeMicronutrients = Partial<
+  Record<BarcodeMicronutrientKey, number>
+>;
+
+export const BARCODE_MICRONUTRIENT_KEYS = [
+  'calciumMg',
+  'ironMg',
+  'magnesiumMg',
+  'phosphorusMg',
+  'potassiumMg',
+  'zincMg',
+  'copperMcg',
+  'manganeseMg',
+  'betaCaroteneMcg',
+  'vitaminAMcg',
+  'vitaminDMcg',
+  'vitaminEMg',
+  'vitaminKMcg',
+  'vitaminCMg',
+  'vitaminB1Mg',
+  'vitaminB2Mg',
+  'vitaminPpMg',
+  'vitaminB5Mg',
+  'vitaminB6Mg',
+  'vitaminB9Mcg',
+  'vitaminB12Mcg',
+  'vitaminHMcg',
+] as const satisfies readonly BarcodeMicronutrientKey[];
+
+/**
+ * A barcode product as the search route and action return it: per-100
+ * nutrition in `amountUnit` plus optional sizing. Mirrored field-for-field by
+ * the Flutter client (`apps/mobile-flutter/lib/models/nutrition/barcode_product.dart`)
+ * and re-exported by the REST contract, so the field set is a cross-client
+ * contract: renaming or removing a field breaks mobile; adding one does not.
  */
 export interface ParsedBarcodeProduct {
   barcode: string;
@@ -37,10 +91,28 @@ export interface ParsedBarcodeProduct {
   proteinG: number | null;
   carbohydrateG: number | null;
   fatG: number | null;
+  /** Premium: null for a viewer without micronutrient access. */
   fiberG: number | null;
+  /** Premium: null for a viewer without micronutrient access. */
   sodiumMg: number | null;
-  /** Grams per serving, if the provider gives a plausible value. */
+  /** Amount per serving in `amountUnit`, if the provider gives a plausible value. */
   servingSizeG: number | null;
-  /** Grams in the whole package (net quantity), if plausible. */
+  /** Amount in the whole package in `amountUnit`, if plausible. */
   packageSizeG: number | null;
+  amountUnit: BarcodeAmountUnit;
+  /** Our proxy path for the product photo, never the provider's URL. */
+  imageUrl: string | null;
+  /** Premium: null for a viewer without micronutrient access. */
+  micronutrients: BarcodeMicronutrients | null;
+}
+
+/**
+ * A product as every provider adapter returns it and the store persists it.
+ * Server-internal: it carries the provider's own photo URL, which clients
+ * never see, and micronutrients no viewer gate has touched yet.
+ */
+export interface BarcodeProductRecord
+  extends Omit<ParsedBarcodeProduct, 'imageUrl' | 'micronutrients'> {
+  micronutrients: BarcodeMicronutrients;
+  sourceImageUrl: string | null;
 }

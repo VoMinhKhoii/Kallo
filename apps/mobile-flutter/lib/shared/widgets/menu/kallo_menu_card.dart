@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -43,18 +44,30 @@ class KalloMenuActionRow extends StatelessWidget {
   const KalloMenuActionRow({
     super.key,
     required this.label,
-    required this.icon,
     required this.onTap,
+    this.icon,
     this.badge,
+    this.detail,
+    this.checked,
   });
 
   final String label;
-  final IconData icon;
+
+  /// The trailing glyph that confirms an action. A pull-down's rows carry
+  /// none: the check column says what is chosen.
+  final IconData? icon;
   final VoidCallback onTap;
 
   /// A marker at the row's right end, just left of the glyph (the Premium
   /// chip) — the same slot a check takes on a list row.
   final Widget? badge;
+
+  /// A muted value at the row's end — what the choice amounts to ("100 ml").
+  final String? detail;
+
+  /// Null for an action menu. For a pull-down every row reserves a leading
+  /// check column, ticked on the current choice — the iOS pull-down anatomy.
+  final bool? checked;
 
   @override
   Widget build(BuildContext context) => KalloPressable(
@@ -63,6 +76,21 @@ class KalloMenuActionRow extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
     child: Row(
       children: [
+        if (checked != null)
+          SizedBox(
+            width: KalloIcons.tertiary + KalloSpacing.sp2,
+            child:
+                checked!
+                    ? const Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Icon(
+                        LucideIcons.check300,
+                        size: KalloIcons.tertiary,
+                        color: KalloColors.text,
+                      ),
+                    )
+                    : null,
+          ),
         Expanded(
           child: Text(
             label,
@@ -71,8 +99,13 @@ class KalloMenuActionRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (detail != null) ...[
+          const SizedBox(width: KalloSpacing.sp2),
+          Text(detail!, style: dashMeta()),
+        ],
         if (badge != null) ...[badge!, const SizedBox(width: KalloSpacing.sp2)],
-        Icon(icon, size: KalloIcons.tertiary, color: KalloColors.textSoft),
+        if (icon != null)
+          Icon(icon, size: KalloIcons.tertiary, color: KalloColors.textSoft),
       ],
     ),
   );

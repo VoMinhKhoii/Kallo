@@ -24,6 +24,17 @@ const ENCODE_ATTEMPTS = [
 
 class OcrImageEnvironmentError extends Error {}
 
+/** A failed read, carrying its code — so a caller that tracks several reads
+ *  can pin each failure to its own photo rather than to the shared state. */
+export class OcrScanError extends Error {
+  constructor(
+    readonly code: OcrErrorCode,
+    options?: { cause?: unknown }
+  ) {
+    super(code, options);
+  }
+}
+
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -141,12 +152,12 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
       try {
         compressed = await compressNutritionLabelImage(file);
       } catch (error) {
-        setErrorCode(
+        const code =
           error instanceof OcrImageEnvironmentError
             ? 'server_error'
-            : 'invalid_image'
-        );
-        throw error;
+            : 'invalid_image';
+        setErrorCode(code);
+        throw new OcrScanError(code, { cause: error });
       } finally {
         setIsCompressing(false);
       }
@@ -159,7 +170,7 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
           });
         } catch (error) {
           setErrorCode('server_error');
-          throw error;
+          throw new OcrScanError('server_error', { cause: error });
         }
       };
 
@@ -171,7 +182,7 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
 
       if (!result.success) {
         setErrorCode(result.code);
-        throw new Error(result.code);
+        throw new OcrScanError(result.code);
       }
 
       return result.data;

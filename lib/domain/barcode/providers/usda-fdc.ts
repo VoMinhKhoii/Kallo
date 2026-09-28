@@ -15,7 +15,10 @@ import {
   parseSizeGrams,
   reconcileEnergy,
 } from '@/lib/domain/barcode/providers/normalize';
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
+import type {
+  BarcodeAmountUnit,
+  BarcodeProductRecord,
+} from '@/lib/domain/barcode/types';
 
 const FDC_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 
@@ -36,6 +39,8 @@ const NUTRIENT_NUMBERS = {
 
 /** Serving units that denote grams or (density-1 approximated) millilitres. */
 const GRAM_EQUIVALENT_UNITS = new Set(['g', 'grm', 'ml', 'mlt']);
+/** The subset that marks the product as a drink measured in millilitres. */
+const MILLILITRE_UNITS = new Set(['ml', 'mlt']);
 
 const numeric = z.union([z.number(), z.string()]).optional().nullable();
 
@@ -96,8 +101,9 @@ function buildProduct(
   food: FdcFood,
   nutrients: NutrientValues,
   servingSizeG: number | null,
+  amountUnit: BarcodeAmountUnit,
   scale: number
-): ParsedBarcodeProduct {
+): BarcodeProductRecord {
   const scaled = (value: number | null) =>
     value === null ? null : value * scale;
 
@@ -120,21 +126,29 @@ function buildProduct(
     // `packageWeight` is free text ("1 LB 2 OZ"); a wrong guess would feed the
     // quantity picker a wrong number, and null is a supported value.
     packageSizeG: null,
+    amountUnit,
+    // FDC micronutrients are not mapped yet; the search endpoint's per-nutrient
+    // units need pinning against live data first.
+    micronutrients: {},
+    // Branded FDC records carry no product photo.
+    sourceImageUrl: null,
   };
 }
 
-function toProduct(barcode: string, food: FdcFood): ParsedBarcodeProduct {
+function toProduct(barcode: string, food: FdcFood): BarcodeProductRecord {
   const nutrients = readNutrients(food);
   const unit = food.servingSizeUnit?.trim().toLowerCase() ?? '';
   const servingSizeG = GRAM_EQUIVALENT_UNITS.has(unit)
     ? parseSizeGrams(food.servingSize)
     : null;
+  const amountUnit: BarcodeAmountUnit = MILLILITRE_UNITS.has(unit) ? 'ml' : 'g';
 
   const perHundredGrams = buildProduct(
     barcode,
     food,
     nutrients,
     servingSizeG,
+    amountUnit,
     1
   );
   if (isPlausiblePer100g(perHundredGrams)) return perHundredGrams;
@@ -149,6 +163,7 @@ function toProduct(barcode: string, food: FdcFood): ParsedBarcodeProduct {
     food,
     nutrients,
     servingSizeG,
+    amountUnit,
     100 / servingSizeG
   );
   if (!isPlausiblePer100g(perServing)) return perHundredGrams;
@@ -162,7 +177,7 @@ function toProduct(barcode: string, food: FdcFood): ParsedBarcodeProduct {
 export async function fetchProductFromUsdaFdc(
   barcode: string,
   timeoutMs: number = FDC_TIMEOUT_MS
-): Promise<ParsedBarcodeProduct | null> {
+): Promise<BarcodeProductRecord | null> {
   const cleanBarcode = barcode.trim();
   if (!/^\d+$/.test(cleanBarcode)) return null;
 

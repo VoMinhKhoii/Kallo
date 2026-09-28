@@ -1,7 +1,7 @@
 ---
 title: API của Kallo
 description: HTTP API là gì, xác thực ra sao, trả về gì khi có lỗi, và bạn được phép — hoặc không được phép — dựa vào điều gì.
-lastUpdated: '2026-09-23'
+lastUpdated: '2026-09-28'
 ---
 
 Kallo có một HTTP API. Nó chính là API mà ứng dụng web và ứng dụng di động đang
@@ -24,8 +24,8 @@ https://kallo.fit
 
 Các endpoint nằm dưới `/api/v1/`. Ngoại lệ là `/api/healthz`, không đánh phiên
 bản vì nó là kiểm tra sống chứ không phải một phần của bề mặt API, và hai route
-cần xác thực mà ứng dụng gọi trực tiếp: `POST /api/analyze-meal` và
-`GET /api/og/macro-card/{shareId}` (mô tả bên dưới).
+cần xác thực: `POST /api/analyze-meal` và `GET /api/og/macro-card/{shareId}`
+(mô tả bên dưới).
 
 Phản hồi thành công là `200` (riêng liên kết xác nhận danh sách chờ là chuyển
 hướng `307`). Không endpoint nào trả `201`, kể cả những cái tạo ra dữ liệu mới.
@@ -147,6 +147,7 @@ Các thao tác gắn nhãn `Public` trong đặc tả là an toàn để phụ t
 - `POST /api/v1/waitlist`
 - `GET /api/v1/waitlist/confirm`
 - `GET /api/v1/groups/invite/{slug}`
+- `GET /api/v1/barcode/image/{code}`
 
 Tất cả phần còn lại đánh dấu `x-internal: true`. Những endpoint đó tồn tại để phục
 vụ chính các client của Kallo. Chúng được đánh phiên bản dưới `/v1`, nhưng phiên

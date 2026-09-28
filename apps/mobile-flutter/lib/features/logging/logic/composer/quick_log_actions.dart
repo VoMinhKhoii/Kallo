@@ -45,10 +45,6 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
         purpose: ScanPurpose.log,
         userId: userId,
         date: date,
-        // Neither scan got us there → re-open the sheet, caret in the field.
-        onFallbackToText: () {
-          if (context.mounted) showQuickLogSheet(context, ref);
-        },
       );
     case MealLogMode.normal:
     case MealLogMode.cheat:

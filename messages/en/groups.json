@@ -67,11 +67,7 @@
     "shared": "Shared to circle",
     "sharing": "Sharing…",
     "errorShare": "Couldn't share to your circle. Try again.",
-    "errorUnshare": "Couldn't update sharing. Try again.",
-    "shareCard": "Share card",
-    "shareCardTitle": "My meal on Kallo",
-    "copiedLink": "Card link copied to clipboard",
-    "errorCopy": "Couldn't copy the card link. Try again."
+    "errorUnshare": "Couldn't update sharing. Try again."
   },
   "shareMeal": {
     "title": "Share this meal",

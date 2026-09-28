@@ -8,7 +8,7 @@
  * persisted rows obey the same bounds as freshly ingested ones.
  */
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/core/validation/food-limits';
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
+import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 
 export function parseNumber(val: unknown): number | null {
   if (val === undefined || val === null) return null;
@@ -111,7 +111,7 @@ const ATWATER_OVERSHOOT_LIMIT = 2.0;
  * unchanged, so only the absolute caps above (kcal > 950, macro > 100 g) can
  * catch that case.
  */
-export function isPlausiblePer100g(product: ParsedBarcodeProduct): boolean {
+export function isPlausiblePer100g(product: BarcodeProductRecord): boolean {
   const { caloriesKcal, proteinG, carbohydrateG, fatG, fiberG } = product;
 
   if (
@@ -141,7 +141,7 @@ const NUTRITION_FIELDS = [
   'fatG',
   'fiberG',
   'sodiumMg',
-] as const satisfies readonly (keyof ParsedBarcodeProduct)[];
+] as const satisfies readonly (keyof BarcodeProductRecord)[];
 
 /**
  * Calories are the absolute gate: a barcode match carrying no nutrition is a
@@ -149,13 +149,13 @@ const NUTRITION_FIELDS = [
  * source that does carry nutrition. Evaluated after {@link reconcileEnergy},
  * so kJ-only labels qualify.
  */
-export function hasUsableNutrition(product: ParsedBarcodeProduct): boolean {
+export function hasUsableNutrition(product: BarcodeProductRecord): boolean {
   return product.caloriesKcal !== null;
 }
 
 /** Count of populated nutrition fields; ranks two candidates that both pass
  *  the gate but neither of which is complete. */
-export function nutritionCompleteness(product: ParsedBarcodeProduct): number {
+export function nutritionCompleteness(product: BarcodeProductRecord): number {
   return NUTRITION_FIELDS.filter((key) => product[key] !== null).length;
 }
 
@@ -164,7 +164,7 @@ export function nutritionCompleteness(product: ParsedBarcodeProduct): number {
  * product card to stand on its own, so the chain can return it immediately
  * and ignore sources still in flight.
  */
-export function isNutritionComplete(product: ParsedBarcodeProduct): boolean {
+export function isNutritionComplete(product: BarcodeProductRecord): boolean {
   if (!hasUsableNutrition(product)) return false;
   const macros = [product.proteinG, product.carbohydrateG, product.fatG];
   return macros.filter((macro) => macro !== null).length >= 2;

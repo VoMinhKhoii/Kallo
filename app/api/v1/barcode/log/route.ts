@@ -1,10 +1,10 @@
 import type { NextRequest } from 'next/server';
-import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { readJsonBody } from '@/lib/api/auth';
 import { logBarcodeMealSchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
 import { mapBarcodeServiceError } from '@/lib/domain/barcode/errors';
 import { stageBarcodeMeal } from '@/lib/domain/barcode/service';
+import { confirmStagedMeal } from '@/lib/domain/meals/confirm-staged';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 /**
@@ -31,10 +31,7 @@ export async function POST(req: NextRequest) {
     const body = logBarcodeMealSchema.parse(await readJsonBody(req));
 
     const { analysisId } = await stageBarcodeMeal(user.id, body);
-    const result = await confirmAndSaveMealAction({
-      analysisId,
-      mealId: body.mealId,
-    });
+    const result = await confirmStagedMeal(user.id, analysisId, body.mealId);
     return Response.json(result);
   } catch (error) {
     return handleRouteError(mapBarcodeServiceError(error));
