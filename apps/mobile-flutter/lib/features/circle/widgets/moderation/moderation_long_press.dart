@@ -18,7 +18,7 @@ enum _Action { report, block }
 ///
 /// The viewer's own content gets no menu — there is nobody to report — so
 /// [isSelf] returns [child] untouched.
-class ModerationLongPress extends ConsumerWidget {
+class ModerationLongPress extends ConsumerStatefulWidget {
   const ModerationLongPress({
     super.key,
     required this.kind,
@@ -36,7 +36,31 @@ class ModerationLongPress extends ConsumerWidget {
   final bool isSelf;
   final Widget child;
 
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<ModerationLongPress> createState() =>
+      _ModerationLongPressState();
+}
+
+class _ModerationLongPressState extends ConsumerState<ModerationLongPress> {
+  /// True from the long press until its flow ends. The reason sheet and the
+  /// confirm close before their request is sent, so a slow report or block
+  /// would otherwise leave the gesture live under it — and a second press
+  /// would send the same POST again, spending the report and block routes'
+  /// per-minute budgets.
+  bool _busy = false;
+
+  Future<void> _open() async {
+    setState(() => _busy = true);
+    try {
+      await _run();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _run() async {
+    final kind = widget.kind;
+    final author = widget.author;
     final box = context.findRenderObject() as RenderBox?;
     final overlay =
         Overlay.of(context, rootOverlay: true).context.findRenderObject()
@@ -65,14 +89,14 @@ class ModerationLongPress extends ConsumerWidget {
         ),
       ],
     );
-    if (action == null || !context.mounted) return;
+    if (action == null || !mounted) return;
     switch (action) {
       case _Action.report:
         await reportFlow(
           context,
           ref,
           kind: kind,
-          targetId: targetId,
+          targetId: widget.targetId,
           author: author,
         );
       case _Action.block:
@@ -81,20 +105,20 @@ class ModerationLongPress extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     // Nor does someone the viewer has just blocked: their content is leaving,
     // and a second "Block" would be refused.
     final blocked = ref.watch(
       locallyBlockedUserIdsProvider.select(
-        (ids) => ids.contains(author.userId),
+        (ids) => ids.contains(widget.author.userId),
       ),
     );
-    if (isSelf || blocked) return child;
+    if (widget.isSelf || blocked) return widget.child;
     return GestureDetector(
       // Alongside the post's own tap (it opens the thread): the long press
       // wins the arena at 500ms, the tap wins anything shorter.
-      onLongPress: () => _open(context, ref),
-      child: child,
+      onLongPress: _busy ? null : _open,
+      child: widget.child,
     );
   }
 }

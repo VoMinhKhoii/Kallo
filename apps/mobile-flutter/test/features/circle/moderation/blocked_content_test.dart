@@ -19,9 +19,7 @@ void main() {
 
   setUpL10nBinding();
 
-  final blocked = locallyBlockedUserIdsProvider.overrideWith(
-    (ref) => {'friend-s1', 'author-r1'},
-  );
+  final blocked = locallyBlockedUserIdsProvider.overrideWith(_JustBlocked.new);
 
   testWidgets("the feed drops a blocked person's posts", (tester) async {
     await pumpCircleScreen(
@@ -90,4 +88,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Report post'), findsNothing);
   });
+}
+
+/// Two people the viewer has just blocked: the author of post `s1`, and of
+/// reply `r1`.
+class _JustBlocked extends LocallyBlockedUsers {
+  @override
+  Set<String> build() => {'friend-s1', 'author-r1'};
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/data/moderation_mutations.dart';
@@ -62,5 +63,22 @@ void main() {
       throwsException,
     );
     expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
+  });
+
+  // testWidgets for its fake clock: the entry lives on a Timer.
+  testWidgets('an entry expires once any refetch has had time to land', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final ids = locallyBlockedUserIdsProvider;
+    container.read(ids.notifier).add('friend-s1');
+
+    await tester.pump(const Duration(seconds: 59));
+    expect(container.read(ids), {'friend-s1'});
+    // After this the server's answer is the only one — including an unblock
+    // made on another device.
+    await tester.pump(const Duration(seconds: 2));
+    expect(container.read(ids), isEmpty);
   });
 }

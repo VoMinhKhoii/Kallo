@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,6 +73,37 @@ void main() {
       'targetId': 's1',
       'reason': 'spam',
     });
+  });
+
+  testWidgets('a second long-press waits for the first flow to end', (
+    tester,
+  ) async {
+    final post = Completer<void>();
+    final backend = FakeApiClient((request) async {
+      if (request.path == '/api/v1/reports') {
+        await post.future;
+        return {'id': 'r1'};
+      }
+      return <String, dynamic>{};
+    });
+    await pumpPost(tester, backend);
+
+    await tester.longPress(find.text('Bún chả Hà Nội'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Report post'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Spam'));
+    await tester.pumpAndSettle();
+
+    // The reason sheet is gone and the report hangs: pressing again opens
+    // nothing, so nothing can be sent twice.
+    await tester.longPress(find.text('Bún chả Hà Nội'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report post'), findsNothing);
+
+    post.complete();
+    await tester.pumpAndSettle();
+    expect(backend.requests.where((r) => r.method == 'POST'), hasLength(1));
   });
 
   testWidgets('your own post has no menu', (tester) async {
