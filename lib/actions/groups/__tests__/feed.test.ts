@@ -185,6 +185,19 @@ describe('listFriendsThreadFeed', () => {
 
   const FRIEND = INVITER;
 
+  // newestFriendSharedAt: select().from().where().orderBy().limit(1), read
+  // before the page on page one only.
+  function newestShareQuery(sharedAt: Date | null) {
+    const query = {
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue(sharedAt ? [{ sharedAt }] : []),
+    };
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
+  }
+
   // sharedMealsBefore: the accepted-friend LEFT JOIN and actor's own shares
   // are authorized in this one query.
   function sharedMealsBeforeQuery(
@@ -247,6 +260,7 @@ describe('listFriendsThreadFeed', () => {
 
   it('scopes the meal query to the actor and accepted friendship edge', async () => {
     const capture: { where?: unknown } = {};
+    newestShareQuery(null);
     sharedMealsBeforeQuery([], capture);
     stubReadMarkerUpsert();
 
@@ -254,10 +268,11 @@ describe('listFriendsThreadFeed', () => {
 
     const serialized = JSON.stringify(capture.where ?? {});
     expect(serialized).toContain(ACTOR);
-    expect(mockDbSelect).toHaveBeenCalledTimes(1);
+    expect(mockDbSelect).toHaveBeenCalledTimes(2);
   });
 
   it('returns every shared meal, not collapsed to one per day, all tagged isSelf: false', async () => {
+    newestShareQuery(new Date('2026-01-01T18:00:00Z'));
     sharedMealsBeforeQuery([
       sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
       sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
@@ -287,6 +302,7 @@ describe('listFriendsThreadFeed', () => {
   });
 
   it('returns an empty page without advancing the read marker', async () => {
+    newestShareQuery(null);
     sharedMealsBeforeQuery([]);
 
     const page = await listFriendsThreadFeed(ACTOR, {});
@@ -299,6 +315,7 @@ describe('listFriendsThreadFeed', () => {
   it('bumps the read marker on page 1', async () => {
     const newest = new Date('2026-01-22T00:00:00.000Z');
     const marker: { values?: unknown; set?: unknown } = {};
+    newestShareQuery(newest);
     sharedMealsBeforeQuery([sharedMeal(FRIEND, 1, newest)]);
     stubReadMarkerUpsert(marker);
 
@@ -308,6 +325,25 @@ describe('listFriendsThreadFeed', () => {
     expect(marker.values).toEqual({ userId: ACTOR, lastReadAt: newest });
     expect(JSON.stringify(marker.set)).toContain('GREATEST');
     expect(JSON.stringify(marker.set)).toContain(newest.toISOString());
+  });
+
+  it('advances the marker past a share that sits beyond page one in eaten order', async () => {
+    // Eaten last week, shared just now: page one (newest-eaten) does not hold
+    // it, yet opening the feed must still clear the unread it caused.
+    const backfillSharedAt = new Date('2026-01-22T20:00:00.000Z');
+    const marker: { values?: unknown; set?: unknown } = {};
+    newestShareQuery(backfillSharedAt);
+    sharedMealsBeforeQuery([
+      sharedMeal(FRIEND, 1, new Date('2026-01-22T12:00:00.000Z')),
+    ]);
+    stubReadMarkerUpsert(marker);
+
+    await listFriendsThreadFeed(ACTOR, {});
+
+    expect(marker.values).toEqual({
+      userId: ACTOR,
+      lastReadAt: backfillSharedAt,
+    });
   });
 
   it('does not touch the read marker when paginating with a before cursor', async () => {
@@ -321,6 +357,7 @@ describe('listFriendsThreadFeed', () => {
   });
 
   it('does not advance the marker when reply enrichment fails', async () => {
+    newestShareQuery(new Date('2026-01-22T00:00:00.000Z'));
     sharedMealsBeforeQuery([
       sharedMeal(FRIEND, 1, new Date('2026-01-22T00:00:00.000Z')),
     ]);
@@ -353,10 +390,25 @@ describe('getFriendsFeedReadMarker', () => {
     mockDbSelect.mockReturnValueOnce(
       selectRows([{ lastReadAt: new Date('2026-01-01T00:00:00Z') }])
     );
+    // newestFriendSharedAt — a meal shared after the marker, whatever day it
+    // was eaten, is what the clients' unread dot needs to see.
+    const newest = {
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi
+        .fn()
+        .mockResolvedValue([{ sharedAt: new Date('2026-01-02T00:00:00Z') }]),
+    };
+    newest.where.mockReturnValue(newest);
+    newest.orderBy.mockReturnValue(newest);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(newest) });
 
     const marker = await getFriendsFeedReadMarker(ACTOR);
 
     expect(mockDbInsert).toHaveBeenCalledTimes(1);
-    expect(marker.lastReadAt).toBe('2026-01-01T00:00:00.000Z');
+    expect(marker).toEqual({
+      lastReadAt: '2026-01-01T00:00:00.000Z',
+      latestSharedAt: '2026-01-02T00:00:00.000Z',
+    });
   });
 });

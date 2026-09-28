@@ -32,6 +32,14 @@
 -- -----------------------------------------------------------------------------
 -- 1. Every share row carries its meal's eaten time
 -- -----------------------------------------------------------------------------
+-- FOR SHARE, not a plain read. A transaction moving the meal to another day
+-- holds its row lock while its sync trigger (2) finds no share yet to update;
+-- a plain SELECT here would read the old, still-committed logged_at and both
+-- could commit with the copy stale forever. FOR SHARE waits for that
+-- transaction and reads what it committed. The other order is covered too:
+-- while this share's transaction holds FOR SHARE, the meal's UPDATE waits,
+-- and its sync trigger then sees the committed share. (The FK check's FOR KEY
+-- SHARE does not serialize these: it does not conflict with a non-key update.)
 CREATE OR REPLACE FUNCTION public.meal_shares_copy_eaten_at()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -41,7 +49,8 @@ AS $$
 BEGIN
   SELECT m.logged_at INTO NEW.eaten_at
   FROM public.meals m
-  WHERE m.id = NEW.meal_id;
+  WHERE m.id = NEW.meal_id
+  FOR SHARE;
   RETURN NEW;
 END;
 $$;

@@ -12,6 +12,7 @@ vi.mock('@/lib/infra/db/client', () => ({ db: { select: mockDbSelect } }));
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
+  newestFriendSharedAt,
   sharedMealsBefore,
   toSharedMealEntry,
 } from '@/lib/domain/social/feed/meal-feed';
@@ -225,6 +226,32 @@ describe('friend feeds hide shares made before the friendship', () => {
       .slice(1)
       .map((part: SQL) => new PgDialect().sqlToQuery(part).sql);
     expect(order[0]).toContain('"meal_shares"."eaten_at" desc');
+  });
+
+  it('newestFriendSharedAt reads a friend share by SHARE time, bounded by the friendship', async () => {
+    // Unread is the share clock: a meal eaten last week but shared just now
+    // must count, so this never looks at eaten_at.
+    const query = {
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue([]),
+    };
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
+
+    await expect(newestFriendSharedAt(USER_A)).resolves.toBeNull();
+
+    const { sql, params } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."actor_id" <> $1');
+    expect(params[0]).toBe(USER_A);
+    expect(sql).toContain(`"meal_shares"."visibility" <> 'private'`);
+    expect(sql).toContain(FRIEND_SINCE);
+    expect(sql).not.toContain('eaten_at');
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toBe('"meal_shares"."shared_at" desc');
   });
 
   it('skips the query entirely for an empty user list', async () => {

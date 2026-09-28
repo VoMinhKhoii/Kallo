@@ -27,18 +27,34 @@ class SharedMealFeedState {
 /// named chat-group id.
 final circleSelectedViewProvider = StateProvider<String?>((ref) => null);
 
-/// The viewer's last-read marker for the combined friends feed.
-final friendsReadMarkerProvider = FutureProvider.autoDispose<DateTime>((
-  ref,
-) async {
-  final api = ref.watch(apiClientProvider);
-  return runWithRetry(() async {
-    final json = await api
-        .get<Map<String, dynamic>>('/api/v1/groups/friends/read-marker')
-        .timeout(_feedRequestTimeout);
-    return DateTime.parse(json['lastReadAt'] as String);
-  });
-});
+/// The viewer's last-read marker for the combined friends feed, and when the
+/// newest friend share they may see was made.
+class FriendsReadMarker {
+  const FriendsReadMarker(this.lastReadAt, {this.latestSharedAt});
+
+  final DateTime lastReadAt;
+
+  /// Catches a meal shared just now but eaten on an earlier day: the circle
+  /// wall the unread dot otherwise reads holds only meals eaten today. Null
+  /// when there is no such share, or from a server that does not send it.
+  final DateTime? latestSharedAt;
+}
+
+final friendsReadMarkerProvider = FutureProvider.autoDispose<FriendsReadMarker>(
+  (ref) async {
+    final api = ref.watch(apiClientProvider);
+    return runWithRetry(() async {
+      final json = await api
+          .get<Map<String, dynamic>>('/api/v1/groups/friends/read-marker')
+          .timeout(_feedRequestTimeout);
+      final latest = json['latestSharedAt'] as String?;
+      return FriendsReadMarker(
+        DateTime.parse(json['lastReadAt'] as String),
+        latestSharedAt: latest == null ? null : DateTime.parse(latest),
+      );
+    });
+  },
+);
 
 /// arg == null loads the combined friends feed; otherwise it loads one group.
 final sharedMealFeedProvider = AsyncNotifierProvider.autoDispose
