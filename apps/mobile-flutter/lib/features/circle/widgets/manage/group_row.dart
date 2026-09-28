@@ -45,6 +45,12 @@ class _GroupRowState extends ConsumerState<GroupRow> {
   /// Taps inside the window are ignored.
   bool _menuOpen = false;
 
+  /// True once the viewer has left. The row stays on screen while the group
+  /// list refetches (the tab keeps its data through a refresh), and a live
+  /// row there would open a group the viewer is no longer in — so it is off
+  /// until the refreshed list drops it.
+  bool _left = false;
+
   ChatGroupIdentity get group => widget.group;
 
   /// Opens the Circle tab on this group's feed. `go`, not `push`: the Circle
@@ -124,7 +130,8 @@ class _GroupRowState extends ConsumerState<GroupRow> {
           targetId: group.id,
         );
       case _GroupAction.leave:
-        await leaveGroupFlow(context, ref, group.id);
+        final left = await leaveGroupFlow(context, ref, group.id);
+        if (left && mounted) setState(() => _left = true);
     }
   }
 
@@ -137,9 +144,9 @@ class _GroupRowState extends ConsumerState<GroupRow> {
         const SizedBox(width: KalloSpacing.sp2),
         KalloSmallButton(
           label: tr('groups.manage.goToCircle'),
-          onPressed: _goToCircle,
+          onPressed: _left ? null : _goToCircle,
         ),
-        MoreButton(name: group.title, onPressed: _openMenu),
+        MoreButton(name: group.title, onPressed: _left ? null : _openMenu),
       ],
     );
   }

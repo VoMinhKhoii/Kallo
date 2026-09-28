@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_manage_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/manage/more_button.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/friend_list_skeleton.dart';
+import 'package:kallo_mobile/shared/widgets/surface/kallo_small_button.dart';
 import 'package:kallo_mobile/services/billing/entitlement_state.dart';
 import 'package:kallo_mobile/services/billing/feature_lock.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
@@ -124,6 +125,12 @@ Future<void> _pump(
 Finder _more(String name) =>
     find.byWidgetPredicate((w) => w is MoreButton && w.name == name);
 
+/// Whether [name]'s `⋯` still responds. The fake keeps answering with the
+/// same lists, so a row whose person or group is gone stays on screen — the
+/// state a slow refetch leaves the real page in.
+bool _moreOn(WidgetTester tester, String name) =>
+    tester.widget<MoreButton>(_more(name)).onPressed != null;
+
 Iterable<Request> _writes(FakeApiClient api) =>
     api.requests.where((r) => r.method != 'GET');
 
@@ -182,6 +189,7 @@ void main() {
       final write = _writes(api).single;
       expect(write.path, '/api/v1/groups/friends/block');
       expect(write.body, {'targetUserId': 'u1'});
+      expect(_moreOn(tester, 'Linh'), isFalse, reason: 'blocked: row is off');
     });
 
     testWidgets('⋯ → Report sends the reason, then offers the block', (
@@ -208,10 +216,30 @@ void main() {
       expect(find.text('Thanks for letting us know'), findsOneWidget);
       expect(find.text('Block Linh'), findsOneWidget);
 
-      // "Done" closes it without blocking.
+      // "Done" closes it without blocking, and the friend stays a friend.
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
       expect(_writes(api).length, 1);
+      expect(_moreOn(tester, 'Linh'), isTrue);
+    });
+
+    testWidgets('blocking from the report thank-you turns the row off', (
+      tester,
+    ) async {
+      final api = _api(friends: [_member('u1', 'Linh')]);
+      await _pump(tester, api);
+
+      await tester.tap(_more('Linh'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Report'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Harassment or bullying'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block Linh'));
+      await tester.pumpAndSettle();
+
+      expect(_writes(api).last.path, '/api/v1/groups/friends/block');
+      expect(_moreOn(tester, 'Linh'), isFalse);
     });
 
     testWidgets('⋯ → Remove from circle confirms, then removes', (
@@ -232,6 +260,7 @@ void main() {
       expect(write.method, 'DELETE');
       expect(write.path, '/api/v1/groups/friends/remove');
       expect(write.body, {'targetUserId': 'u1'});
+      expect(_moreOn(tester, 'Linh'), isFalse, reason: 'removed: row is off');
     });
 
     testWidgets('no friends: the capybara and "Add friend"', (tester) async {
@@ -550,6 +579,28 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Leave group'), findsOneWidget);
       expect(find.text('Report group'), findsNothing);
+    });
+
+    testWidgets('a group just left is off until the list drops it', (
+      tester,
+    ) async {
+      final api = _api(groups: [_group('g1', 'Team lunch')]);
+      await _pump(tester, api, tab: CircleManageTab.circle);
+
+      await tester.tap(_more('Team lunch'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Leave group'));
+      await tester.pumpAndSettle();
+      expect(find.text('Leave this group?'), findsOneWidget);
+      await tester.tap(find.text('Leave group').last);
+      await tester.pumpAndSettle();
+
+      expect(_writes(api).single.method, 'DELETE');
+      expect(_moreOn(tester, 'Team lunch'), isFalse);
+      final goTo = tester.widget<KalloSmallButton>(
+        find.widgetWithText(KalloSmallButton, 'Go to circle'),
+      );
+      expect(goTo.onPressed, isNull);
     });
 
     testWidgets('no groups: the capybara in a box and "Create group"', (

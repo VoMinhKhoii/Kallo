@@ -19,12 +19,30 @@ enum _FriendAction { report, block, remove }
 /// once a person is blocked the server no longer lets the viewer see them, so
 /// a report placed after a block cannot find its target. Reporting first, then
 /// offering the block on the thank-you, is the order that always works.
-class FriendRow extends ConsumerWidget {
+class FriendRow extends ConsumerStatefulWidget {
   const FriendRow({super.key, required this.profile});
 
   final CircleProfile profile;
 
-  Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<FriendRow> createState() => _FriendRowState();
+}
+
+class _FriendRowState extends ConsumerState<FriendRow> {
+  /// True once this person has left the viewer's circle — removed or blocked.
+  /// The row stays on screen while the friends list refetches (the tab keeps
+  /// its data through a refresh), and a live `⋯` there would offer to remove
+  /// or block them a second time, which the server refuses. So it is off until
+  /// the refreshed list drops the row.
+  bool _gone = false;
+
+  CircleProfile get profile => widget.profile;
+
+  void _markGone() {
+    if (mounted) setState(() => _gone = true);
+  }
+
+  Future<void> _openMenu() async {
     final action = await showCircleActionSheet<_FriendAction>(
       context,
       title: profile.label,
@@ -45,25 +63,27 @@ class FriendRow extends ConsumerWidget {
         ),
       ],
     );
-    if (action == null || !context.mounted) return;
+    if (action == null || !mounted) return;
     switch (action) {
       case _FriendAction.report:
+        // Reporting keeps the friend; a block from the thank-you does not.
         await reportFlow(
           context,
           ref,
           kind: ReportTargetKind.profile,
           targetId: profile.userId,
           author: profile,
+          onBlocked: _markGone,
         );
       case _FriendAction.block:
-        await blockFlow(context, ref, profile);
+        if (await blockFlow(context, ref, profile)) _markGone();
       case _FriendAction.remove:
-        await removeFriendFlow(context, ref, profile);
+        if (await removeFriendFlow(context, ref, profile)) _markGone();
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final name = profile.label;
     return ManageRow(
       leading: ProfileAvatarDisc(profile: profile, size: ManageRow.disc),
@@ -71,9 +91,7 @@ class FriendRow extends ConsumerWidget {
       // from the name, not a username anyone chose, so it would only repeat
       // the name as a URL fragment.
       title: name,
-      trailing: [
-        MoreButton(name: name, onPressed: () => _openMenu(context, ref)),
-      ],
+      trailing: [MoreButton(name: name, onPressed: _gone ? null : _openMenu)],
     );
   }
 }

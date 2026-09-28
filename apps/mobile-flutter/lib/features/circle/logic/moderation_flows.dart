@@ -35,13 +35,15 @@ String reportReasonLabel(ReportReason reason) =>
 /// When the content has an [author] (a person, a post, a reply), the thank-you
 /// also offers to block them — the moment someone reports is the moment they
 /// most want the person gone. Reporting a group offers nothing more: leaving
-/// it is a separate choice on its own menu.
+/// it is a separate choice on its own menu. [onBlocked] runs once that block
+/// lands, for a caller showing the person (their row is now stale).
 Future<bool> reportFlow(
   BuildContext context,
   WidgetRef ref, {
   required ReportTargetKind kind,
   required String targetId,
   CircleProfile? author,
+  VoidCallback? onBlocked,
 }) async {
   final reason = await showCircleActionSheet<ReportReason>(
     context,
@@ -82,7 +84,10 @@ Future<bool> reportFlow(
   );
   // The block button on the thank-you IS the confirmation: it names the
   // person and sits under what blocking means, so it does not ask again.
-  if (block && context.mounted) await _block(context, ref, author, ask: false);
+  if (block && context.mounted) {
+    final blocked = await _block(context, ref, author, ask: false);
+    if (blocked) onBlocked?.call();
+  }
   return true;
 }
 

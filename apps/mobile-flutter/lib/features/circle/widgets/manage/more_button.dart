@@ -17,7 +17,10 @@ class MoreButton extends StatelessWidget {
 
   /// Whose menu this is, for VoiceOver: "More for Linh", not a bare "More".
   final String name;
-  final VoidCallback onPressed;
+
+  /// Null turns the button off — a row whose person or group has just gone,
+  /// kept on screen only until its list refetches.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

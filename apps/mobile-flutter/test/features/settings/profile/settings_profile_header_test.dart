@@ -10,10 +10,10 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/billing/entitlements_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
-import '../../golden_tolerance.dart';
-import '../circle/circle_feed_test_support.dart';
-import '../onboarding/onboarding_test_support.dart';
-import 'settings_test_support.dart';
+import '../../../golden_tolerance.dart';
+import '../../circle/circle_feed_test_support.dart';
+import '../../onboarding/onboarding_test_support.dart';
+import '../settings_test_support.dart';
 
 /// The Settings header: avatar, name, email, the friend count (accepted
 /// friends only) and the two buttons that open "Sửa hồ sơ" and "Sửa vòng kết
