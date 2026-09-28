@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/chrome/inline_nav_bar.dart';
 import '../../../shared/widgets/chrome/underline_tab_bar.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shell/nav/swipe_back/swipe_back_detector.dart';
 import '../data/circle_providers.dart';
 import '../widgets/manage/circle_tab.dart';
 import '../widgets/manage/friends_tab.dart';
@@ -59,6 +60,23 @@ class _CircleManageScreenState extends ConsumerState<CircleManageScreen>
     );
   }
 
+  /// The first tab has no tab to its left, so a swipe right there is the
+  /// app's back swipe — to the page this was pushed from.
+  ///
+  /// Without this the pager took it: a horizontal scrollable under the finger
+  /// wins the drag by design (`SwipeBackDetector`), and a pager claims a drag
+  /// toward its start even with nowhere to go, so from the list you could not
+  /// swipe back to Settings at all. Wrapping the PAGE puts this detector
+  /// deeper in the hit test than the pager, so it hears the drag first; it
+  /// only ever claims one heading back, so a swipe left still pages to Groups.
+  Widget _backSwipeOnFirstTab(Widget page) => switch (ModalRoute.of(context)) {
+    final PageRoute<Object?> route => SwipeBackDetector(
+      route: route,
+      child: page,
+    ),
+    _ => page,
+  };
+
   @override
   Widget build(BuildContext context) {
     final title =
@@ -80,7 +98,9 @@ class _CircleManageScreenState extends ConsumerState<CircleManageScreen>
             child: TabBarView(
               controller: _tabs,
               children: [
-                FriendsTab(onOpenBlocked: () => _openBlocked(title)),
+                _backSwipeOnFirstTab(
+                  FriendsTab(onOpenBlocked: () => _openBlocked(title)),
+                ),
                 const CircleTab(),
               ],
             ),
