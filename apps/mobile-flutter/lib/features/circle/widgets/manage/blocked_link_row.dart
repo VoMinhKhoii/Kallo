@@ -14,6 +14,10 @@ class BlockedLinkRow extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
 
+  /// The row's height — the 44pt target — for a layout that has to leave
+  /// room for it under a centred state.
+  static const double extent = KalloIcons.hit;
+
   @override
   Widget build(BuildContext context) {
     final label = tr(
@@ -26,7 +30,7 @@ class BlockedLinkRow extends StatelessWidget {
       label: label,
       onTap: onTap,
       child: CupertinoButton(
-        minimumSize: const Size.square(KalloIcons.hit),
+        minimumSize: const Size.square(extent),
         padding: EdgeInsets.zero,
         onPressed: onTap,
         child: Row(

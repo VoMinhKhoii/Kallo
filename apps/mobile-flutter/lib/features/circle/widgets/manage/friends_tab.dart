@@ -14,6 +14,7 @@ import '../states/friend_list_skeleton.dart';
 import '../states/manage_tab_state.dart';
 import 'blocked_link_row.dart';
 import 'friend_row.dart';
+import 'manage_list.dart';
 
 /// The Friends tab: everyone in the viewer's circle, then — only once someone
 /// has been blocked — one quiet row into the blocked list.
@@ -22,11 +23,10 @@ import 'friend_row.dart';
 /// there is no one yet (with the way to add someone), stuck in the jar when
 /// the list failed (with a retry). A failed fetch never reads as "no friends".
 class FriendsTab extends ConsumerWidget {
-  const FriendsTab({super.key, this.onOpenBlocked});
+  const FriendsTab({super.key, required this.onOpenBlocked});
 
-  /// Pushes the blocked list. Null hides the row (tests that only need the
-  /// friends).
-  final VoidCallback? onOpenBlocked;
+  /// Pushes the blocked list.
+  final VoidCallback onOpenBlocked;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,8 +34,8 @@ class FriendsTab extends ConsumerWidget {
     final blockedCount =
         ref.watch(blockedCircleUsersProvider).valueOrNull?.length ?? 0;
     final blockedRow =
-        blockedCount > 0 && onOpenBlocked != null
-            ? BlockedLinkRow(count: blockedCount, onTap: onOpenBlocked!)
+        blockedCount > 0
+            ? BlockedLinkRow(count: blockedCount, onTap: onOpenBlocked)
             : null;
 
     return friendsAsync.when(
@@ -62,7 +62,12 @@ class FriendsTab extends ConsumerWidget {
                     KalloSurfaceState(
                       area: SurfaceArea.circle,
                       kind: SurfaceKind.empty,
-                      minHeight: blockedRow == null ? height : height - 60,
+                      // Centred in what is left once the blocked row has its
+                      // line under it.
+                      minHeight:
+                          blockedRow == null
+                              ? height
+                              : height - BlockedLinkRow.extent,
                       title: tr('groups.manage.friendsEmptyTitle'),
                       subtitle: tr('groups.manage.friendsEmptyBody'),
                       action: KalloButton(
@@ -73,18 +78,18 @@ class FriendsTab extends ConsumerWidget {
                     ),
                     // Someone who blocked their only friend still needs the
                     // way back to them.
-                    if (blockedRow != null) _padded(blockedRow),
+                    if (blockedRow != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KalloSpacing.sp3,
+                        ),
+                        child: blockedRow,
+                      ),
                   ],
                 ),
           );
         }
-        return ListView(
-          padding: EdgeInsets.fromLTRB(
-            KalloSpacing.sp3,
-            KalloSpacing.sp2,
-            KalloSpacing.sp3,
-            KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom,
-          ),
+        return ManageList(
           children: [
             for (final friend in friends)
               FriendRow(key: ValueKey(friend.userId), profile: friend),
@@ -97,9 +102,4 @@ class FriendsTab extends ConsumerWidget {
       },
     );
   }
-
-  Widget _padded(Widget child) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-    child: child,
-  );
 }

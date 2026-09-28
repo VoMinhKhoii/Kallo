@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/surface/kallo_button.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/chat_group_providers.dart';
 import '../invite/circle_add_menu.dart' show showCreateGroupSheet;
 import '../states/circle_error.dart';
 import '../states/friend_list_skeleton.dart';
 import '../states/manage_tab_state.dart';
 import 'group_row.dart';
+import 'manage_list.dart';
 
 /// The Circle tab ("Nhóm"): every named group the viewer is in, each with
 /// "Go to circle" and its `⋯`. Direct chats are not groups and do not list.
@@ -56,13 +56,7 @@ class CircleTab extends ConsumerWidget {
                 ),
           );
         }
-        return ListView(
-          padding: EdgeInsets.fromLTRB(
-            KalloSpacing.sp3,
-            KalloSpacing.sp2,
-            KalloSpacing.sp3,
-            KalloSpacing.sp8 + MediaQuery.viewPaddingOf(context).bottom,
-          ),
+        return ManageList(
           children: [
             for (final group in groups)
               GroupRow(key: ValueKey(group.id), group: group),

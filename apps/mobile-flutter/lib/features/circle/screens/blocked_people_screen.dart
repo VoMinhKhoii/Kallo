@@ -12,6 +12,7 @@ import '../../../shared/widgets/surface/kallo_small_button.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/moderation_mutations.dart';
 import '../logic/moderation_flows.dart';
+import '../widgets/manage/manage_list.dart';
 import '../widgets/manage/manage_row.dart';
 import '../widgets/states/circle_error.dart';
 import '../widgets/states/friend_list_skeleton.dart';
@@ -30,7 +31,6 @@ class BlockedPeopleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final blockedAsync = ref.watch(blockedCircleUsersProvider);
     return Screen(
       bottom: false,
       child: Column(
@@ -40,62 +40,58 @@ class BlockedPeopleScreen extends ConsumerWidget {
             parentTitle: parentTitle,
           ),
           Expanded(
-            child: blockedAsync.when(
-              skipLoadingOnRefresh: true,
-              loading: () => const FriendListSkeleton(),
-              error:
-                  (_, __) => ManageTabState(
-                    builder:
-                        (height) => CircleErrorCard(
-                          minHeight: height,
-                          title: tr('groups.manage.blockedLoadError'),
-                          onRetry:
-                              () => ref.invalidate(blockedCircleUsersProvider),
-                        ),
-                  ),
-              data:
-                  (blocked) =>
-                      blocked.isEmpty
-                          ? ManageTabState(
-                            builder:
-                                (height) => KalloSurfaceState(
-                                  area: SurfaceArea.circle,
-                                  kind: SurfaceKind.empty,
-                                  minHeight: height,
-                                  title: tr('groups.manage.blockedEmptyTitle'),
-                                  subtitle: tr(
-                                    'groups.manage.blockedEmptyBody',
-                                  ),
-                                  action: KalloButton(
-                                    variant: KalloButtonVariant.cta,
-                                    title: tr('common.back'),
-                                    onPressed:
-                                        () => Navigator.of(context).maybePop(),
-                                  ),
-                                ),
-                          )
-                          : ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              KalloSpacing.sp3,
-                              KalloSpacing.sp2,
-                              KalloSpacing.sp3,
-                              KalloSpacing.sp8 +
-                                  MediaQuery.viewPaddingOf(context).bottom,
-                            ),
-                            children: [
-                              for (final entry in blocked)
-                                _BlockedRow(
-                                  key: ValueKey(entry.profile.userId),
-                                  entry: entry,
-                                ),
-                            ],
-                          ),
-            ),
+            child: ref
+                .watch(blockedCircleUsersProvider)
+                .when(
+                  skipLoadingOnRefresh: true,
+                  loading: () => const FriendListSkeleton(),
+                  error: (_, __) => _error(ref),
+                  data:
+                      (blocked) =>
+                          blocked.isEmpty
+                              ? _empty(context)
+                              : ManageList(
+                                children: [
+                                  for (final entry in blocked)
+                                    _BlockedRow(
+                                      key: ValueKey(entry.profile.userId),
+                                      entry: entry,
+                                    ),
+                                ],
+                              ),
+                ),
           ),
         ],
       ),
     );
   }
+
+  Widget _error(WidgetRef ref) => ManageTabState(
+    builder:
+        (height) => CircleErrorCard(
+          minHeight: height,
+          title: tr('groups.manage.blockedLoadError'),
+          onRetry: () => ref.invalidate(blockedCircleUsersProvider),
+        ),
+  );
+
+  /// Reached when the last person was just unblocked: the list empties under
+  /// the viewer, so the one action takes them back.
+  Widget _empty(BuildContext context) => ManageTabState(
+    builder:
+        (height) => KalloSurfaceState(
+          area: SurfaceArea.circle,
+          kind: SurfaceKind.empty,
+          minHeight: height,
+          title: tr('groups.manage.blockedEmptyTitle'),
+          subtitle: tr('groups.manage.blockedEmptyBody'),
+          action: KalloButton(
+            variant: KalloButtonVariant.cta,
+            title: tr('common.back'),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+  );
 }
 
 class _BlockedRow extends ConsumerWidget {

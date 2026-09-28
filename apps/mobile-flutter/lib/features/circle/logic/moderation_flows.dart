@@ -53,29 +53,21 @@ Future<bool> reportFlow(
   );
   if (reason == null || !context.mounted) return false;
 
-  try {
-    await reportCircleContent(
-      ref,
-      kind: kind,
-      targetId: targetId,
-      reason: reason,
-    );
-  } catch (_) {
-    if (context.mounted) {
-      showTopToast(
-        context,
-        tr('groups.moderation.reportError'),
-        variant: TopToastVariant.error,
-      );
-    }
-    return false;
-  }
-  if (!context.mounted) return true;
+  final sent = await _run(
+    context,
+    action:
+        () => reportCircleContent(
+          ref,
+          kind: kind,
+          targetId: targetId,
+          reason: reason,
+        ),
+    // With no author to offer a block on, the toast IS the thank-you.
+    done: author == null ? tr('groups.moderation.reportSentBody') : null,
+    failed: tr('groups.moderation.reportError'),
+  );
+  if (!sent || author == null || !context.mounted) return sent;
 
-  if (author == null) {
-    showTopToast(context, tr('groups.moderation.reportSentBody'));
-    return true;
-  }
   final name = author.label;
   final block = await showKalloConfirm(
     context,
@@ -90,7 +82,7 @@ Future<bool> reportFlow(
   );
   // The block button on the thank-you IS the confirmation: it names the
   // person and sits under what blocking means, so it does not ask again.
-  if (block && context.mounted) await _block(context, ref, author);
+  if (block && context.mounted) await _block(context, ref, author, ask: false);
   return true;
 }
 
@@ -99,45 +91,33 @@ Future<bool> blockFlow(
   BuildContext context,
   WidgetRef ref,
   CircleProfile person,
-) async {
-  final name = person.label;
-  final yes = await showKalloConfirm(
-    context,
-    title: tr('groups.moderation.blockTitle', namedArgs: {'name': name}),
-    description: tr('groups.moderation.blockBody'),
-    confirmLabel: tr('groups.moderation.block'),
-    cancelLabel: tr('common.cancel'),
-    destructive: true,
-  );
-  if (!yes || !context.mounted) return false;
-  return _block(context, ref, person);
-}
+) => _block(context, ref, person, ask: true);
 
+/// Blocks [person], asking first unless [ask] is false — for a caller whose
+/// own button already was the confirmation (the report thank-you's "Block
+/// {name}").
 Future<bool> _block(
   BuildContext context,
   WidgetRef ref,
-  CircleProfile person,
-) async {
-  final name = person.label;
-  try {
-    await blockCircleUser(ref, person.userId);
-  } catch (_) {
-    if (context.mounted) {
-      showTopToast(
-        context,
-        tr('groups.moderation.blockError', namedArgs: {'name': name}),
-        variant: TopToastVariant.error,
-      );
-    }
-    return false;
-  }
-  if (context.mounted) {
-    showTopToast(
-      context,
-      tr('groups.moderation.blocked', namedArgs: {'name': name}),
-    );
-  }
-  return true;
+  CircleProfile person, {
+  required bool ask,
+}) {
+  final name = {'name': person.label};
+  return _run(
+    context,
+    confirm:
+        ask
+            ? (
+              title: tr('groups.moderation.blockTitle', namedArgs: name),
+              body: tr('groups.moderation.blockBody'),
+              label: tr('groups.moderation.block'),
+              destructive: true,
+            )
+            : null,
+    action: () => blockCircleUser(ref, person.userId),
+    done: tr('groups.moderation.blocked', namedArgs: name),
+    failed: tr('groups.moderation.blockError', namedArgs: name),
+  );
 }
 
 /// Confirms, then lifts the viewer's block on [person]. Not destructive: it
@@ -146,105 +126,106 @@ Future<bool> unblockFlow(
   BuildContext context,
   WidgetRef ref,
   CircleProfile person,
-) async {
-  final name = person.label;
-  final yes = await showKalloConfirm(
-    context,
-    title: tr('groups.moderation.unblockTitle', namedArgs: {'name': name}),
-    description: tr('groups.moderation.unblockBody'),
-    confirmLabel: tr('groups.manage.unblock'),
-    cancelLabel: tr('common.cancel'),
-  );
-  if (!yes || !context.mounted) return false;
-  try {
-    await unblockCircleUser(ref, person.userId);
-  } catch (_) {
-    if (context.mounted) {
-      showTopToast(
-        context,
-        tr('groups.moderation.unblockError', namedArgs: {'name': name}),
-        variant: TopToastVariant.error,
-      );
-    }
-    return false;
-  }
-  if (context.mounted) {
-    showTopToast(
-      context,
-      tr('groups.moderation.unblocked', namedArgs: {'name': name}),
-    );
-  }
-  return true;
-}
+) => _run(
+  context,
+  confirm: (
+    title: tr(
+      'groups.moderation.unblockTitle',
+      namedArgs: {'name': person.label},
+    ),
+    body: tr('groups.moderation.unblockBody'),
+    label: tr('groups.manage.unblock'),
+    destructive: false,
+  ),
+  action: () => unblockCircleUser(ref, person.userId),
+  done: tr('groups.moderation.unblocked', namedArgs: {'name': person.label}),
+  failed: tr(
+    'groups.moderation.unblockError',
+    namedArgs: {'name': person.label},
+  ),
+);
 
 /// Confirms, then removes [person] from the viewer's circle.
 Future<bool> removeFriendFlow(
   BuildContext context,
   WidgetRef ref,
   CircleProfile person,
-) async {
-  final name = person.label;
-  final yes = await showKalloConfirm(
-    context,
-    title: tr('groups.moderation.removeTitle', namedArgs: {'name': name}),
-    description: tr('groups.moderation.removeBody'),
-    confirmLabel: tr('groups.circle.remove'),
-    cancelLabel: tr('common.cancel'),
+) => _run(
+  context,
+  confirm: (
+    title: tr(
+      'groups.moderation.removeTitle',
+      namedArgs: {'name': person.label},
+    ),
+    body: tr('groups.moderation.removeBody'),
+    label: tr('groups.circle.remove'),
     destructive: true,
-  );
-  if (!yes || !context.mounted) return false;
-  try {
-    await removeCircleFriend(ref, person.userId);
-  } catch (_) {
-    if (context.mounted) {
-      showTopToast(
-        context,
-        tr('groups.circle.removeError'),
-        variant: TopToastVariant.error,
-      );
-    }
-    return false;
-  }
-  if (context.mounted) {
-    showTopToast(
-      context,
-      tr('groups.moderation.removed', namedArgs: {'name': name}),
-    );
-  }
-  return true;
-}
+  ),
+  action: () => removeCircleFriend(ref, person.userId),
+  done: tr('groups.moderation.removed', namedArgs: {'name': person.label}),
+  failed: tr('groups.circle.removeError'),
+);
 
 /// Confirms, then leaves [groupId]. Clears the Circle tab's selection when it
 /// was showing that group, so the tab does not open on a feed the viewer can
-/// no longer read.
+/// no longer read. No success toast: the row leaving the list says it.
 Future<bool> leaveGroupFlow(
   BuildContext context,
   WidgetRef ref,
   String groupId,
-) async {
-  final yes = await showKalloConfirm(
-    context,
-    title: tr('groups.feed.leaveTitle'),
-    description: tr('groups.feed.leaveDescription'),
-    confirmLabel: tr('groups.feed.leaveConfirm'),
-    cancelLabel: tr('common.cancel'),
-    destructive: true,
-  );
-  if (!yes || !context.mounted) return false;
+) {
   final container = ProviderScope.containerOf(context, listen: false);
+  return _run(
+    context,
+    confirm: (
+      title: tr('groups.feed.leaveTitle'),
+      body: tr('groups.feed.leaveDescription'),
+      label: tr('groups.feed.leaveConfirm'),
+      destructive: true,
+    ),
+    action: () async {
+      await leaveChatGroup(container, groupId);
+      final selected = container.read(circleSelectedViewProvider.notifier);
+      if (selected.state == groupId) selected.state = null;
+    },
+    failed: tr('groups.feed.leaveError'),
+  );
+}
+
+/// What a flow asks before it acts.
+typedef _Confirm =
+    ({String title, String body, String label, bool destructive});
+
+/// The one shape every flow above shares: ask (when [confirm] is given), run
+/// [action], then answer with a toast — [done] on success (none when null),
+/// [failed] on any error. Never rethrows; returns whether [action] ran and
+/// succeeded.
+Future<bool> _run(
+  BuildContext context, {
+  _Confirm? confirm,
+  required Future<void> Function() action,
+  String? done,
+  required String failed,
+}) async {
+  if (confirm != null) {
+    final yes = await showKalloConfirm(
+      context,
+      title: confirm.title,
+      description: confirm.body,
+      confirmLabel: confirm.label,
+      cancelLabel: tr('common.cancel'),
+      destructive: confirm.destructive,
+    );
+    if (!yes || !context.mounted) return false;
+  }
   try {
-    await leaveChatGroup(container, groupId);
+    await action();
   } catch (_) {
     if (context.mounted) {
-      showTopToast(
-        context,
-        tr('groups.feed.leaveError'),
-        variant: TopToastVariant.error,
-      );
+      showTopToast(context, failed, variant: TopToastVariant.error);
     }
     return false;
   }
-  final selected = container.read(circleSelectedViewProvider.notifier);
-  if (selected.state == groupId) selected.state = null;
+  if (done != null && context.mounted) showTopToast(context, done);
   return true;
 }
