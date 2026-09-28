@@ -215,4 +215,20 @@ void main() {
     expect(find.text('No match found'), findsOneWidget, reason: 'popped back');
     expect(find.byType(ScanFoodEditor), findsNothing);
   });
+
+  testWidgets('a pull down on the editor over a result goes back to it, and '
+      'the sheet comes back to rest', (tester) async {
+    await atProduct(tester);
+    final resultTop = sheetTop(tester);
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ScanFoodEditor), findsOneWidget);
+
+    await tester.drag(find.text('Macronutrients'), const Offset(0, 300));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ScanFoodEditor), findsNothing);
+    expect(find.text('Add meal'), findsOneWidget, reason: 'back a level');
+    expect(sheetTop(tester), resultTop, reason: 'not where the finger left it');
+  });
 }

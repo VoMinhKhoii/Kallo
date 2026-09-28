@@ -62,6 +62,15 @@ class _ScanSheetState extends State<ScanSheet>
   }
 
   @override
+  void didUpdateWidget(ScanSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new page under the same sheet after a pull down: the dismiss only
+    // went back a level (the editor over a result), so the sheet stayed —
+    // and must not stay where the finger left it.
+    if (oldWidget.page.key != widget.page.key) _drag.settle();
+  }
+
+  @override
   void dispose() {
     _drag.dispose();
     super.dispose();

@@ -199,5 +199,12 @@ void main() {
     d.fields['sodiumMg']!.text = '12,';
     expect(d.issueOf('sodiumMg'), isNull, reason: 'still being typed');
     expect(d.valueOf('sodiumMg'), 12);
+
+    fill(d);
+    for (final lone in ['.', ',']) {
+      d.fields['sodiumMg']!.text = lone;
+      expect(d.issueOf('sodiumMg'), ScanFieldIssue.notANumber, reason: lone);
+      expect(d.isValid, isFalse, reason: 'not saved as blank: $lone');
+    }
   });
 }

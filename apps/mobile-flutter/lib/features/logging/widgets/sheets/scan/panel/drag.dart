@@ -52,7 +52,9 @@ class ScanPanelDrag {
   }
 
   /// Released after a pull down: [dismiss], or spring home. A dismissed
-  /// panel is left where it is — the screen's switcher slides it on out.
+  /// panel is left where it is — if the sheet goes, the screen's switcher
+  /// slides it on out from there; if the dismiss only went back a level and
+  /// the sheet stayed, the sheet calls [settle].
   void endDown(double velocity, VoidCallback? dismiss) {
     final dy = offset.value.dy;
     if (dy <= 0) return;
@@ -61,6 +63,11 @@ class ScanPanelDrag {
     } else {
       _animateTo(Offset.zero);
     }
+  }
+
+  /// Back to rest from wherever a drag left the sheet.
+  void settle() {
+    if (offset.value != Offset.zero) _animateTo(Offset.zero);
   }
 
   /// Follow the finger right; never left of where the panel rests.

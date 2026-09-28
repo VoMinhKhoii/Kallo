@@ -81,8 +81,9 @@ class ScanEditorDraft {
 
   /// What was typed, a decimal still being written ("12,") read as its whole
   /// part — so the field's error does not flash on every separator typed.
+  /// Only after a digit: a lone "." stays, and is an error, not a blank.
   String _typed(String key) =>
-      fields[key]!.text.trim().replaceFirst(RegExp(r'[.,]$'), '');
+      fields[key]!.text.trim().replaceFirst(RegExp(r'(?<=\d)[.,]$'), '');
 
   /// Blank is unknown (null); anything typed must parse and stay in range.
   double? valueOf(String key) => parseLabelDecimal(_typed(key));
