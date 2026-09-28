@@ -35,6 +35,10 @@ export function useRemoveFriend() {
       queryClient.invalidateQueries({ queryKey: friendsKeys.all });
       // Drop the removed friend's meals from the ambient wall, too.
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+      // Its latestSharedAt may be the removed friend's share.
+      queryClient.invalidateQueries({
+        queryKey: friendsFeedReadMarkerKeys.all,
+      });
     },
   });
 }
