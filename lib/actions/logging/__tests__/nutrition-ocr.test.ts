@@ -10,12 +10,21 @@ import {
   it,
   vi,
 } from 'vitest';
-import { OcrReviewStep } from '@/components/logging/input/ocr/review/ocr-review-step';
 import type {
   NutritionValues as OcrNutritionValues,
   OcrReviewPayload,
   ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
+import {
+  draftToFood,
+  fieldTexts,
+  isDraftValid,
+} from '@/lib/domain/scan/editor';
+import {
+  hasRequired,
+  labelLogPayload,
+  scanFoodFromLabel,
+} from '@/lib/domain/scan/food';
 
 vi.mock('server-only', () => ({}));
 
@@ -515,52 +524,34 @@ describe('scanNutritionLabelAction — keeping the scan', () => {
   });
 });
 
-describe('OCR review to staging seam', () => {
+describe('scan result to staging seam', () => {
   it('keeps a partial extraction editable and accepts comma decimals', () => {
-    const onConfirm = vi.fn();
-    render(
-      createElement(OcrReviewStep, {
-        data: servingLabel(
-          nutrition({ calories: 120, proteinGrams: 4, carbsGrams: null })
-        ),
-        isStaging: false,
-        onBack: vi.fn(),
-        onConfirm,
-      })
+    const food = scanFoodFromLabel(
+      servingLabel(
+        nutrition({ calories: 120, proteinGrams: 4, carbsGrams: null })
+      ),
+      'Scanned food'
     );
+    // Carbohydrates missing: nothing is sent until the user fills it in.
+    expect(hasRequired(food)).toBe(false);
 
-    // Confirm is always live; an untouched form is not scolded before the
-    // user has asked for anything.
-    const confirm = screen.getByRole('button', { name: 'confirm' });
-    expect(confirm).toBeEnabled();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-
-    // Asking to save with carbohydrates missing reports it on that field and
-    // submits nothing.
-    fireEvent.click(confirm);
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(
-      screen.getByLabelText('ocrNutrients.carbohydrates (g)')
-    ).toHaveAttribute('aria-invalid', 'true');
-
-    fireEvent.change(screen.getByLabelText('ocrNutrients.protein (g)'), {
-      target: { value: '3,5' },
+    const fields = {
+      ...fieldTexts(food.values),
+      proteinGrams: '3,5',
+      carbsGrams: '20',
+      fatGrams: '4',
+    };
+    expect(isDraftValid(food.name, fields)).toBe(true);
+    const edited = draftToFood(food, {
+      name: food.name,
+      basis: { amount: food.basisAmount, unit: food.unit },
+      fields,
     });
-    fireEvent.change(screen.getByLabelText('ocrNutrients.carbohydrates (g)'), {
-      target: { value: '20' },
+    expect(edited.values).toMatchObject({
+      proteinGrams: 3.5,
+      carbsGrams: 20,
+      fatGrams: 4,
     });
-    fireEvent.change(screen.getByLabelText('ocrNutrients.fat (g)'), {
-      target: { value: '4' },
-    });
-
-    fireEvent.click(confirm);
-    expect(onConfirm).toHaveBeenCalledWith(
-      expect.objectContaining({
-        proteinGrams: 3.5,
-        carbsGrams: 20,
-        fatGrams: 4,
-      })
-    );
   });
 
   it('passes every extracted nutrient, confidence, and ml unit into persistence', async () => {
@@ -606,25 +597,12 @@ describe('OCR review to staging seam', () => {
       servingSizeDescription: '1 bottle (330 ml)',
       confidence: 'medium',
     });
-    let staging: ReturnType<typeof stageOcrMealAction> | undefined;
-    const onConfirm = vi.fn((payload: OcrReviewPayload) => {
-      staging = stageOcrMealAction({
-        ...payload,
-        loggedDate: '2026-08-06',
-        timezoneOffset: -420,
-      });
+    const food = scanFoodFromLabel(label, 'Scanned food');
+    const staging = stageOcrMealAction({
+      ...labelLogPayload(food, food.basisAmount),
+      loggedDate: '2026-08-06',
+      timezoneOffset: -420,
     });
-
-    render(
-      createElement(OcrReviewStep, {
-        data: label,
-        isStaging: false,
-        onBack: vi.fn(),
-        onConfirm,
-      })
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
-    expect(onConfirm).toHaveBeenCalledOnce();
     expect(await staging).toEqual({
       success: true,
       analysisId: 'analysis-123',

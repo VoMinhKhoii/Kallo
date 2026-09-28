@@ -8,9 +8,9 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import { searchBarcodeProductForViewer } from '@/lib/domain/barcode/premium-scope';
 import {
   BarcodeServiceError,
-  searchBarcodeProduct,
   stageBarcodeMeal,
 } from '@/lib/domain/barcode/service';
 import type {
@@ -77,11 +77,14 @@ export async function searchBarcodeAction(input: {
 > {
   try {
     const parsed = searchBarcodeSchema.parse(input);
-    const { user } = await requireAuthAndProfile();
+    const { user, profile } = await requireAuthAndProfile();
     // Per-user cap before the Open Food Facts fan-out. `RateLimitedError`
     // surfaces below as the `rate_limited` code.
     await assertRateLimit('barcodeSearch', { kind: 'user', value: user.id });
-    const data = await searchBarcodeProduct(parsed.barcode);
+    const data = await searchBarcodeProductForViewer(parsed.barcode, {
+      userId: user.id,
+      profileCreatedAt: profile.createdAt,
+    });
     return { success: true, data };
   } catch (error) {
     console.error('Error in searchBarcodeAction:', error);

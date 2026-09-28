@@ -77,7 +77,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       operationId: 'searchBarcode',
       summary: 'Look up a packaged product by barcode',
       description:
-        'Resolves a scanned barcode to a product and its label figures. Returns 404 when the code is not in the database — nothing is invented for an unknown product.',
+        'Resolves a scanned barcode to a product and its label figures, per 100 of `amountUnit` (`g`, or `ml` for drinks). `imageUrl` is a path on this API, never a third-party URL. Fiber, sodium and `micronutrients` are Premium: they are `null` for an account without it, though meals logged from the product still keep them. Returns 404 when the code is not in the database — nothing is invented for an unknown product.',
       tags: TAGS,
       parameters: [codeParam],
       ok: ref('Acknowledgement'),

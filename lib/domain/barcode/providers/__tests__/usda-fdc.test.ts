@@ -73,7 +73,17 @@ describe('fetchProductFromUsdaFdc', () => {
       sodiumMg: 4,
       servingSizeG: 240,
       packageSizeG: null,
+      // A 240 ml serving: the drink is measured in millilitres.
+      amountUnit: 'ml',
+      micronutrients: {},
+      sourceImageUrl: null,
     });
+  });
+
+  it('keeps a gram-served product in grams', async () => {
+    mockSearch({ foods: [food({ servingSize: 30, servingSizeUnit: 'GRM' })] });
+    const result = await fetchProductFromUsdaFdc(BARCODE);
+    expect(result?.amountUnit).toBe('g');
   });
 
   it('picks the exact GTIN match, not the top text match', async () => {

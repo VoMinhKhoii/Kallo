@@ -1,15 +1,23 @@
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
+  type BarcodeCacheRow,
   cacheBarcodeProduct,
   findCachedRow,
   getBarcodeSourceIds,
-  rowToProduct,
+  isStaleBarcodeRow,
+  providerIdOfRow,
+  rowToRecord,
 } from '@/lib/domain/barcode/cache';
 import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
 import { BarcodeServiceError } from '@/lib/domain/barcode/errors';
+import { barcodeImagePath } from '@/lib/domain/barcode/image/image';
 import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
+import {
+  type BarcodeProductRecord,
+  type ParsedBarcodeProduct,
+  parseAmountUnit,
+} from '@/lib/domain/barcode/types';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -19,9 +27,31 @@ import { pendingAnalyses } from '@/lib/infra/db/schema';
 export { BarcodeServiceError } from '@/lib/domain/barcode/errors';
 
 /**
+ * Per-provider wait when refreshing a stale row. Shorter than a first scan's,
+ * because a failed refresh still has the stored row to answer with.
+ */
+export const STALE_REFRESH_TIMEOUT_MS = 3000;
+
+/** The client shape: the provider's photo URL becomes our proxy path. */
+function toClientProduct({
+  sourceImageUrl,
+  ...record
+}: BarcodeProductRecord): ParsedBarcodeProduct {
+  return {
+    ...record,
+    imageUrl: sourceImageUrl ? barcodeImagePath(record.barcode) : null,
+  };
+}
+
+/**
  * Look up a product by (digits-only, pre-validated) barcode. Checks the local
  * cache first; on a miss runs the provider chain and caches the winner in
  * `vietnamese_food_composition` under the resolving provider's prefixed id.
+ *
+ * A cached row older than the current parser is refreshed once from the
+ * provider that wrote it, then served fresh to everyone after. If the refresh
+ * fails the stored row still answers, so a provider outage never turns a
+ * known product into "not found".
  *
  * @throws BarcodeServiceError `not_found` when no provider returns a usable
  *   product; `server_error` when that provider's seeded `ingredient_sources`
@@ -31,23 +61,39 @@ export async function searchBarcodeProduct(
   barcode: string
 ): Promise<ParsedBarcodeProduct> {
   const cached = await findCachedRow(barcode);
-  if (cached) {
-    return rowToProduct(barcode, cached);
+  if (cached && !isStaleBarcodeRow(cached)) {
+    return toClientProduct(rowToRecord(barcode, cached));
   }
 
+  const fresh = await resolveAndCache(barcode, cached);
+  if (fresh) return toClientProduct(fresh);
+  if (cached) return toClientProduct(rowToRecord(barcode, cached));
+  throw new BarcodeServiceError('not_found');
+}
+
+/**
+ * Run the provider chain and cache its winner. With a stale row, only that
+ * row's provider is asked, under the shorter refresh budget.
+ */
+async function resolveAndCache(
+  barcode: string,
+  stale: BarcodeCacheRow | undefined
+): Promise<BarcodeProductRecord | null> {
   // Resolved BEFORE the chain, not in parallel with it: a provider whose seed
   // row is missing must be skipped rather than allowed to win and then fail.
   // The lost parallelism is noise — one indexed local query against 4–8s of
   // external provider fetches.
   const sourceIds = await getBarcodeSourceIds();
+  const staleProvider = stale ? providerIdOfRow(stale) : null;
 
   const resolved = await resolveBarcodeProduct(barcode, {
     seededSourceCodes: new Set(sourceIds.keys()),
+    ...(stale && {
+      providerIds: staleProvider ? [staleProvider] : [],
+      maxTimeoutMs: STALE_REFRESH_TIMEOUT_MS,
+    }),
   });
-
-  if (!resolved) {
-    throw new BarcodeServiceError('not_found');
-  }
+  if (!resolved) return null;
 
   // Defensive backstop, effectively unreachable: the chain was already handed
   // the seeded codes and skips any provider missing from them. Kept so a future
@@ -58,6 +104,7 @@ export async function searchBarcodeProduct(
     console.error(
       `Missing '${resolved.provider.sourceCode}' ingredient source — cannot cache barcode product`
     );
+    if (stale) return null;
     throw new BarcodeServiceError('server_error');
   }
 
@@ -72,7 +119,8 @@ export async function searchBarcodeProduct(
 }
 
 /**
- * Scale the cached product's per-100g nutrition to `grams` and stage it in
+ * Scale the cached product's per-100 nutrition to `grams` (the amount in the
+ * product's own unit, so millilitres for a drink) and stage it in
  * `pending_analyses` as a high-confidence, precise-entry {@link PipelineResult}.
  *
  * @throws BarcodeServiceError `not_cached` when the barcode was never searched
@@ -118,7 +166,7 @@ export async function stageBarcodeMeal(
     .values({
       userId,
       pipelineResult,
-      rawInput: `${dbProduct.namePrimary} (${input.grams}g)`,
+      rawInput: `${dbProduct.namePrimary} (${input.grams}${parseAmountUnit(dbProduct.amountUnit)})`,
       entryMode: 'precise',
       loggedAt,
     })

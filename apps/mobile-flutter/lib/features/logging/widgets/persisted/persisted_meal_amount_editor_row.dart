@@ -18,12 +18,16 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
   const PersistedMealAmountEditorRow({
     super.key,
     required this.name,
+    required this.unit,
     required this.row,
     required this.onStep,
     required this.onToggleRemove,
   });
 
   final String name;
+
+  /// `'g'`, or `'ml'` for a drink; the ±10 step is the same in both.
+  final String unit;
   final EditableIngredientRow row;
   final void Function(String id, double delta) onStep;
   final void Function(String id) onToggleRemove;
@@ -77,7 +81,7 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    '${grams.round()}g',
+                    '${grams.round()}$unit',
                     maxLines: 1,
                     softWrap: false,
                     textAlign: TextAlign.center,

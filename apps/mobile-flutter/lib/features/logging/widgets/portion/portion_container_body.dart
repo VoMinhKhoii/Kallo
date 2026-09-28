@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,6 +6,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/vessel_data.dart';
+import '../../logic/portion/vessel_glyph_scale.dart';
 import 'portion_glyphs.dart';
 import 'portion_readout.dart';
 import 'ruler/portion_ruler_control.dart';
@@ -45,36 +44,17 @@ class PortionContainerBody extends StatelessWidget {
     for (final a in anchors) vesselFamilies[family]![a.tier]!,
   ];
 
-  /// Glyph widths as a fraction of a column, normalised so the largest vessel
-  /// exactly fills its slot. Volume enters as a cube root — a bowl twice the
-  /// volume reads ~26% wider, not twice as wide — and the aspect turns that
-  /// height-like scale into the width the row lays out on.
-  List<double> get _widthRatios {
-    final largestMl = _tiers.last.ml;
-    final weights = [
-      for (final tier in _tiers)
-        (math.pow(tier.ml / largestMl, 1 / 3) * tier.asset.aspect).toDouble(),
-    ];
-    final widest = weights.reduce(math.max);
-    return [for (final w in weights) w / widest];
-  }
-
   /// Nearest tier to the CURRENT grams — the same rule the assumption line
   /// uses, so the card and this sheet can never name different vessels.
   PortionAnchor get _nearest => nearestAnchor(anchors, grams);
 
   @override
   Widget build(BuildContext context) {
-    final ratios = _widthRatios;
     final tiers = _tiers;
+    final ratios = vesselWidthRatios(tiers);
     final nearest = _nearest;
     final nearestTier =
         tiers[anchors.indexWhere((a) => a.tier == nearest.tier)];
-    // Tallest glyph in column widths — pins the band so the sheet doesn't
-    // change height between a flat platter and an upright cup.
-    final tallest = [
-      for (final (i, tier) in tiers.indexed) ratios[i] / tier.asset.aspect,
-    ].reduce(math.max);
 
     return Column(
       children: [
@@ -96,7 +76,7 @@ class PortionContainerBody extends StatelessWidget {
             final tier = tiers[anchors.indexWhere((a) => a.tier == at.tier)];
             return '$g g — ${at.label} (${tier.sizeLabel})';
           },
-          glyphBandAspect: 1 / tallest,
+          glyphBandAspect: vesselBandAspect(tiers, ratios),
           glyphBuilder:
               (index, column) => PortionVesselGlyph(
                 asset: tiers[index].asset,

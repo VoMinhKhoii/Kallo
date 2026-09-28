@@ -272,6 +272,18 @@ export const rateLimitPolicies = {
     failMode: 'degraded',
   },
 
+  /**
+   * Product photos: one per scanned product, then cached on the device for a
+   * week. Memory-only so a thumbnail never costs a database write; the upstream
+   * fetch is served from Next's data cache after the first load anyway.
+   */
+  barcodeImageIp: {
+    route: 'barcode:image:ip',
+    limits: { perMinute: 60 },
+    keyKinds: ['ip'],
+    failMode: 'memory',
+  },
+
   /** Uploads: bounded low because each one costs storage plus processing. */
   avatarUpload: {
     route: 'avatar:upload',

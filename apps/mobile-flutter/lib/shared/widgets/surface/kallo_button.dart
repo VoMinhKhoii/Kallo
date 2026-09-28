@@ -23,6 +23,7 @@ class KalloButton extends StatefulWidget {
     this.disabled = false,
     this.animateTitle = false,
     this.compact = false,
+    this.icon,
   });
 
   final String title;
@@ -35,6 +36,10 @@ class KalloButton extends StatefulWidget {
   /// into "Save my plan". Off by default: a label that changes for a different
   /// reason (a count, a countdown) should not dissolve every time.
   final bool animateTitle;
+
+  /// A leading glyph, for an action a word alone undersells ("Retake photo"
+  /// with the camera). Drawn at the label's colour, 20pt, 8pt before it.
+  final IconData? icon;
 
   /// A 36pt button that rides IN a row rather than owning its own line: the
   /// live action on a notification, where a 50pt primary would out-weigh the
@@ -152,7 +157,18 @@ class _NhamButtonState extends State<KalloButton> {
   }
 
   Widget _label(Color color) {
-    final Widget text = Text(widget.title, style: kButtonLabel(color: color));
+    final Widget words = Text(widget.title, style: kButtonLabel(color: color));
+    final Widget text =
+        widget.icon == null
+            ? words
+            : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, size: 20, color: color),
+                const SizedBox(width: KalloSpacing.sp2),
+                words,
+              ],
+            );
     if (!widget.animateTitle) return text;
     return AnimatedSwitcher(
       duration: KalloMotion.quick,

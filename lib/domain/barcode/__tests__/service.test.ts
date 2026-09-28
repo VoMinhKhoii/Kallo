@@ -12,14 +12,8 @@ vi.mock('@/lib/infra/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/infra/db/schema', () => ({
-  vietnameseFoodComposition: { id: 'vietnameseFoodComposition.id' },
-  ingredientSources: {
-    id: 'ingredientSources.id',
-    code: 'ingredientSources.code',
-  },
-  pendingAnalyses: { id: 'pendingAnalyses.id' },
-}));
+// The real schema: it is pure table definitions, and the upsert builds its
+// conflict clause from the table's actual columns.
 
 // The chain owns all provider I/O, so stubbing it is what keeps this suite
 // off the network; the real cache module still runs against the db mock above
@@ -31,8 +25,10 @@ vi.mock('@/lib/domain/barcode/chain', () => ({
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
 import type { BarcodeProvider } from '@/lib/domain/barcode/providers/types';
+import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 import {
   BarcodeServiceError,
+  STALE_REFRESH_TIMEOUT_MS,
   searchBarcodeProduct,
   stageBarcodeMeal,
 } from '../service';
@@ -67,7 +63,7 @@ function mockSelectOnce(rows: unknown[]) {
   };
 }
 
-const offProduct = {
+const offProduct: BarcodeProductRecord = {
   barcode: '8934563138162',
   name: 'Hảo Hảo Chua Cay',
   brand: 'Acecook',
@@ -79,7 +75,26 @@ const offProduct = {
   sodiumMg: 850,
   servingSizeG: 75,
   packageSizeG: null,
+  amountUnit: 'g',
+  micronutrients: {},
+  sourceImageUrl: null,
 };
+
+/** `offProduct` as the client receives it. */
+const { sourceImageUrl: _source, ...offClientProduct } = offProduct;
+const offClient = { ...offClientProduct, imageUrl: null };
+
+/** Capture every inserted row; the write is an upsert. */
+function mockUpsertCapture(): unknown[] {
+  const captured: unknown[] = [];
+  mockDbInsert.mockReturnValue({
+    values: vi.fn().mockImplementation((val) => {
+      captured.push(val);
+      return { onConflictDoUpdate: vi.fn().mockResolvedValue(undefined) };
+    }),
+  });
+  return captured;
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -102,6 +117,7 @@ describe('searchBarcodeProduct', () => {
           // Beyond the 100kg cap — must be rejected by parseSizeGrams, not
           // passed through raw.
           packageSizeG: '500000',
+          barcodeDataVersion: 1,
         },
       ])
     );
@@ -120,6 +136,9 @@ describe('searchBarcodeProduct', () => {
       sodiumMg: 850,
       servingSizeG: 75,
       packageSizeG: null,
+      amountUnit: 'g',
+      imageUrl: null,
+      micronutrients: {},
     });
     expect(resolveBarcodeProduct).not.toHaveBeenCalled();
   });
@@ -134,17 +153,11 @@ describe('searchBarcodeProduct', () => {
       product: offProduct,
     });
 
-    const capturedValues: unknown[] = [];
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockImplementation((val) => {
-        capturedValues.push(val);
-        return { onConflictDoNothing: vi.fn().mockResolvedValue(undefined) };
-      }),
-    });
+    const capturedValues = mockUpsertCapture();
 
     const product = await searchBarcodeProduct('8934563138162');
 
-    expect(product).toEqual(offProduct);
+    expect(product).toEqual(offClient);
     expect(mockDbInsert).toHaveBeenCalledTimes(1);
     expect(capturedValues[0]).toMatchObject({
       id: 'off_8934563138162',
@@ -153,6 +166,9 @@ describe('searchBarcodeProduct', () => {
       sourceId: 42,
       servingSizeG: '75',
       packageSizeG: null,
+      amountUnit: 'g',
+      imageUrl: null,
+      barcodeDataVersion: 1,
     });
   });
 
@@ -169,13 +185,7 @@ describe('searchBarcodeProduct', () => {
       product: offProduct,
     });
 
-    const capturedValues: unknown[] = [];
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockImplementation((val) => {
-        capturedValues.push(val);
-        return { onConflictDoNothing: vi.fn().mockResolvedValue(undefined) };
-      }),
-    });
+    const capturedValues = mockUpsertCapture();
 
     await searchBarcodeProduct('8934563138162');
 
@@ -210,15 +220,11 @@ describe('searchBarcodeProduct', () => {
       product: offProduct,
     });
 
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      }),
-    });
+    mockUpsertCapture();
 
     const product = await searchBarcodeProduct('8934563138162');
 
-    expect(product).toEqual(offProduct);
+    expect(product).toEqual(offClient);
     expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
       seededSourceCodes: new Set(['OFF']),
     });
@@ -240,6 +246,152 @@ describe('searchBarcodeProduct', () => {
       code: 'server_error',
     });
     expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+
+  it('serves the proxy path, never the provider photo URL', async () => {
+    mockDbSelect.mockReturnValue(
+      mockSelectOnce([
+        {
+          id: 'off_8934563138162',
+          namePrimary: 'Coconut Water',
+          caloriesKcal: 16,
+          amountUnit: 'ml',
+          imageUrl:
+            'https://images.openfoodfacts.org/images/products/893/850/784/9131/front_en.44.400.jpg',
+          calciumMg: '10',
+          barcodeDataVersion: 1,
+        },
+      ])
+    );
+
+    const product = await searchBarcodeProduct('8934563138162');
+
+    expect(product.imageUrl).toBe('/api/v1/barcode/image/8934563138162');
+    expect(product.amountUnit).toBe('ml');
+    expect(product.micronutrients).toEqual({ calciumMg: 10 });
+    expect(JSON.stringify(product)).not.toContain('openfoodfacts');
+  });
+
+  describe('a row cached by an older parser', () => {
+    const staleRow = {
+      id: 'off_8934563138162',
+      namePrimary: '[Coco Xim] Coconut Water',
+      caloriesKcal: 16,
+      servingSizeG: '330',
+      // No amountUnit / barcodeDataVersion: written before enrichment.
+    };
+
+    const freshDrink: BarcodeProductRecord = {
+      ...offProduct,
+      name: 'Coconut Water',
+      brand: 'Coco Xim',
+      caloriesKcal: 16,
+      servingSizeG: 330,
+      amountUnit: 'ml',
+      micronutrients: { calciumMg: 10, potassiumMg: 170 },
+      sourceImageUrl:
+        'https://images.openfoodfacts.org/images/products/893/850/784/9131/front_en.44.400.jpg',
+    };
+
+    it('re-asks only its own provider, on the short budget, and overwrites it', async () => {
+      mockDbSelect
+        .mockReturnValueOnce(mockSelectOnce([staleRow]))
+        .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+      vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+        provider: offProvider,
+        product: freshDrink,
+      });
+      const capturedValues = mockUpsertCapture();
+
+      const product = await searchBarcodeProduct('8934563138162');
+
+      expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
+        seededSourceCodes: new Set(['OFF']),
+        providerIds: ['off'],
+        maxTimeoutMs: STALE_REFRESH_TIMEOUT_MS,
+      });
+      expect(capturedValues[0]).toMatchObject({
+        id: 'off_8934563138162',
+        amountUnit: 'ml',
+        calciumMg: '10',
+        potassiumMg: '170',
+        barcodeDataVersion: 1,
+      });
+      expect(product.amountUnit).toBe('ml');
+      expect(product.imageUrl).toBe('/api/v1/barcode/image/8934563138162');
+    });
+
+    it('updates only provider data on conflict, never the names', async () => {
+      mockDbSelect
+        .mockReturnValueOnce(mockSelectOnce([staleRow]))
+        .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+      vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+        provider: offProvider,
+        product: freshDrink,
+      });
+      const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockReturnValue({ onConflictDoUpdate }),
+      });
+
+      await searchBarcodeProduct('8934563138162');
+
+      const { set } = onConflictDoUpdate.mock.calls[0][0];
+      expect(Object.keys(set)).toEqual(
+        expect.arrayContaining(['amountUnit', 'barcodeDataVersion'])
+      );
+      expect(set).not.toHaveProperty('namePrimary');
+      expect(set).not.toHaveProperty('nameEn');
+      expect(set).not.toHaveProperty('id');
+    });
+
+    it('pins an fdc_ row to FDC', async () => {
+      mockDbSelect
+        .mockReturnValueOnce(
+          mockSelectOnce([{ ...staleRow, id: 'fdc_8934563138162' }])
+        )
+        .mockReturnValueOnce(mockSelectOnce([{ id: 77, code: 'USDA_FDC' }]));
+      vi.mocked(resolveBarcodeProduct).mockResolvedValue(null);
+
+      await searchBarcodeProduct('8934563138162');
+
+      expect(resolveBarcodeProduct).toHaveBeenCalledWith(
+        '8934563138162',
+        expect.objectContaining({ providerIds: ['usda_fdc'] })
+      );
+    });
+
+    it('still answers with the stored row when the refresh fails', async () => {
+      mockDbSelect
+        .mockReturnValueOnce(mockSelectOnce([staleRow]))
+        .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+      vi.mocked(resolveBarcodeProduct).mockResolvedValue(null);
+
+      const product = await searchBarcodeProduct('8934563138162');
+
+      expect(product).toMatchObject({
+        name: 'Coconut Water',
+        brand: 'Coco Xim',
+        amountUnit: 'g',
+        servingSizeG: 330,
+      });
+      expect(mockDbInsert).not.toHaveBeenCalled();
+    });
+
+    it('answers with the stored row rather than 500 when the source row is gone', async () => {
+      mockDbSelect
+        .mockReturnValueOnce(mockSelectOnce([staleRow]))
+        .mockReturnValueOnce(mockSelectOnce([]));
+      vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+        provider: offProvider,
+        product: freshDrink,
+      });
+
+      const product = await searchBarcodeProduct('8934563138162');
+
+      expect(product.name).toBe('Coconut Water');
+      expect(mockDbInsert).not.toHaveBeenCalled();
+    });
   });
 });
 
@@ -311,6 +463,46 @@ describe('stageBarcodeMeal', () => {
       matchConfidence: 1,
       userFacingUnit: 'g',
     });
+  });
+
+  it('keeps a drink in millilitres: raw input and the ingredient unit', async () => {
+    mockDbSelect.mockReturnValue(
+      mockSelectOnce([
+        {
+          id: 'off_8938507849131',
+          namePrimary: '[Coco Xim] Coconut Water',
+          caloriesKcal: 16,
+          calciumMg: '10',
+          amountUnit: 'ml',
+        },
+      ])
+    );
+    const capturedValues: unknown[] = [];
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockImplementation((val) => {
+        capturedValues.push(val);
+        return {
+          returning: vi.fn().mockResolvedValue([{ id: 'pending-ml' }]),
+        };
+      }),
+    });
+
+    await stageBarcodeMeal('user-123', {
+      ...stageInput,
+      barcode: '8938507849131',
+      grams: 330,
+    });
+
+    const stagedRow = capturedValues[0] as Record<string, unknown>;
+    expect(stagedRow.rawInput).toBe('[Coco Xim] Coconut Water (330ml)');
+    const pipelineResult = stagedRow.pipelineResult as PipelineResult;
+    expect(pipelineResult.mealItems[0].ingredients[0]).toMatchObject({
+      estimatedGrams: 330,
+      userFacingUnit: 'ml',
+    });
+    // Micronutrients are saved whoever logs: 10 mg/100 ml × 3.3.
+    expect(pipelineResult.displayedNutrition.calciumMg).toBe(33);
+    expect(pipelineResult.displayedNutrition.caloriesKcal).toBe(52.8);
   });
 
   it('stages from an fdc_ row under that row id', async () => {

@@ -39,7 +39,9 @@ describe('fetchProductFromOpenFoodFacts', () => {
     const result = await fetchProductFromOpenFoodFacts('8934563138162');
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      'https://world.openfoodfacts.org/api/v3/product/8934563138162.json',
+      expect.stringMatching(
+        /^https:\/\/world\.openfoodfacts\.org\/api\/v3\/product\/8934563138162\.json\?fields=/
+      ),
       expect.any(Object)
     );
     expect(result).toEqual({
@@ -54,6 +56,9 @@ describe('fetchProductFromOpenFoodFacts', () => {
       sodiumMg: 250,
       servingSizeG: 30,
       packageSizeG: 150,
+      amountUnit: 'g',
+      micronutrients: {},
+      sourceImageUrl: null,
     });
   });
 
@@ -198,5 +203,179 @@ describe('fetchProductFromOpenFoodFacts', () => {
 
     const result = await fetchProductFromOpenFoodFacts('8934563138162');
     expect(result?.sodiumMg).toBe(1000);
+  });
+
+  it('asks only for the fields it reads', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ product: { product_name: 'x' } }),
+    } as Response);
+
+    await fetchProductFromOpenFoodFacts('8934563138162');
+
+    const url = new URL(String(fetchSpy.mock.calls[0][0]));
+    const fields = url.searchParams.get('fields')?.split(',') ?? [];
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        'nutriments',
+        'nutrition_data_per',
+        'serving_quantity_unit',
+        'product_quantity_unit',
+        'image_front_url',
+        // Unread, but without them OFF drops the derived sizes (see OFF_FIELDS).
+        'quantity',
+        'serving_size',
+      ])
+    );
+  });
+
+  it('reads a per-100ml drink as ml with its minerals and photo', async () => {
+    // Trimmed from the live OFF record for Coco Xim coconut water, 1 L.
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 'success',
+        product: {
+          product_name: 'Coconut Water',
+          brands: 'Coco Xim',
+          serving_quantity: 100,
+          serving_quantity_unit: 'ml',
+          product_quantity: 1000,
+          product_quantity_unit: 'ml',
+          nutrition_data_per: '100ml',
+          image_front_url:
+            'https://images.openfoodfacts.org/images/products/893/850/784/9131/front_en.44.400.jpg',
+          nutriments: {
+            'energy-kcal_100g': 16,
+            'energy-kj_100g': 68,
+            carbohydrates_100g: 4,
+            proteins_100g: 0,
+            fat_100g: 0,
+            sodium_100g: 0.039,
+            calcium_100g: 0.01,
+            potassium_100g: 0.17,
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8938507849131');
+
+    expect(result).toMatchObject({
+      amountUnit: 'ml',
+      servingSizeG: 100,
+      packageSizeG: 1000,
+      sodiumMg: 39,
+      micronutrients: { calciumMg: 10, potassiumMg: 170 },
+      sourceImageUrl:
+        'https://images.openfoodfacts.org/images/products/893/850/784/9131/front_en.44.400.jpg',
+    });
+  });
+
+  it('reads a carton sold in ml as ml even when labelled per 100g', async () => {
+    // Vinamilk 100% fresh milk: nutrition typed per 100g, sold as 1 l, and
+    // carries vitamins that OFF normalizes to grams.
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        product: {
+          product_name: '100 % fresh milk',
+          product_quantity: 1000,
+          product_quantity_unit: 'ml',
+          nutrition_data_per: '100g',
+          nutriments: {
+            'energy-kcal_100g': 66,
+            calcium_100g: 0.11,
+            phosphorus_100g: 0.08,
+            'vitamin-a_100g': 0.00006,
+            'vitamin-d_100g': 0.0000015,
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934673576390');
+
+    expect(result?.amountUnit).toBe('ml');
+    expect(result?.micronutrients).toEqual({
+      calciumMg: 110,
+      phosphorusMg: 80,
+      vitaminAMcg: 60,
+      vitaminDMcg: 1.5,
+    });
+  });
+
+  it('stays in grams when a gram quantity is present or units are absent', async () => {
+    const respond = (product: Record<string, unknown>) =>
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ product }),
+      } as Response);
+
+    respond({
+      product_name: 'Snack',
+      serving_quantity_unit: 'g',
+      product_quantity_unit: 'ml',
+      nutriments: { 'energy-kcal_100g': 500 },
+    });
+    expect(
+      (await fetchProductFromOpenFoodFacts('8934563138162'))?.amountUnit
+    ).toBe('g');
+
+    respond({ product_name: 'Unknown', nutriments: {} });
+    expect(
+      (await fetchProductFromOpenFoodFacts('8934563138162'))?.amountUnit
+    ).toBe('g');
+  });
+
+  it('drops micronutrients that cannot be per-100 figures', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        product: {
+          product_name: 'Bad data',
+          nutriments: {
+            calcium_100g: -1,
+            iron_100g: 250,
+            'vitamin-c_100g': '',
+            zinc_100g: 0.002,
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.micronutrients).toEqual({ zincMg: 2 });
+  });
+
+  it('never stores a photo URL off the trusted image host', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        product: {
+          product_name: 'x',
+          image_front_url: 'https://evil.example/front.jpg',
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.sourceImageUrl).toBeNull();
+  });
+
+  it('ignores the unsuffixed energy figure, which may be per serving', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        product: {
+          product_name: 'Per-serving label',
+          nutrition_data_per: 'serving',
+          nutriments: { 'energy-kcal': 240 },
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.caloriesKcal).toBeNull();
   });
 });

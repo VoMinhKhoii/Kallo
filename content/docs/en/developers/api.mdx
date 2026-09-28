@@ -146,6 +146,7 @@ Operations tagged `Public` in the spec are safe to depend on:
 - `POST /api/v1/waitlist`
 - `GET /api/v1/waitlist/confirm`
 - `GET /api/v1/groups/invite/{slug}`
+- `GET /api/v1/barcode/image/{code}`
 
 Everything else is marked `x-internal: true`. Those endpoints exist to serve
 Kallo's own clients. They are versioned under `/v1`, but that version is not a

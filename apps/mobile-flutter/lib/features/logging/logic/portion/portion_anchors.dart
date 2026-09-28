@@ -76,6 +76,19 @@ List<PortionAnchor> buildContainerAnchors(
   ];
 }
 
+/// The four cups at their STATED volume, in ml — for a packaged drink measured
+/// in ml (the scan sheet's custom amount), where "a regular cup" means the
+/// cup's 250 ml, not the fill-adjusted grams a poured drink in a meal card
+/// resolves to.
+List<PortionAnchor> buildCupAnchorsMl(String locale) => [
+  for (var tier = 1; tier <= 4; tier++)
+    PortionAnchor(
+      tier: tier,
+      value: vesselFamilies[ContainerFamily.cup]![tier]!.ml.toDouble(),
+      label: vesselFamilies[ContainerFamily.cup]![tier]!.label(locale),
+    ),
+];
+
 List<PortionAnchor> buildPieceAnchors(PieceVessel vessel, String locale) {
   return [
     for (final (index, tier) in pieceTiers.indexed)

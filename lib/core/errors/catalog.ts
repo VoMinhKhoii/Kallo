@@ -68,6 +68,18 @@ export const Errors = {
 
   conflict: (detail: string) => new AppError('CONFLICT', 409, false, detail),
 
+  // A one-shot log retried with the client meal id of a meal the CALLER
+  // already saved — its first try landed and the answer was lost. Distinct from
+  // `conflict` so the app can close as saved; an id held by any other account
+  // stays the plain conflict (`confirmStagedMeal`).
+  mealAlreadySaved: () =>
+    new AppError(
+      'MEAL_ALREADY_SAVED',
+      409,
+      false,
+      'This meal is already saved.'
+    ),
+
   // A body that blew its cap. 413 rather than 400: the request was well-formed
   // as far as anyone got to look, it was simply too big, and the distinction is
   // what tells a client to send less instead of to send something different.

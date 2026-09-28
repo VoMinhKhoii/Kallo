@@ -40,8 +40,8 @@ import {
   fetchProductFromUsdaFdc,
 } from '@/lib/domain/barcode/providers/usda-fdc';
 import type {
+  BarcodeProductRecord,
   BarcodeProviderId,
-  ParsedBarcodeProduct,
 } from '@/lib/domain/barcode/types';
 
 const openFoodFactsProvider: BarcodeProvider = {
@@ -80,7 +80,7 @@ export const BARCODE_PROVIDERS: readonly BarcodeProvider[] =
 
 export interface BarcodeChainResult {
   provider: BarcodeProvider;
-  product: ParsedBarcodeProduct;
+  product: BarcodeProductRecord;
 }
 
 export interface BarcodeChainOptions {
@@ -91,15 +91,31 @@ export interface BarcodeChainOptions {
    * cached and would fail the lookup outright, so it must degrade instead.
    */
   seededSourceCodes?: ReadonlySet<string>;
+  /**
+   * Ask only these providers. A stale-row refresh re-asks the provider that
+   * wrote the row, so a refresh can never switch a product to another source.
+   */
+  providerIds?: readonly BarcodeProviderId[];
+  /**
+   * Cap on each provider's own timeout. A refresh has a stored row to fall
+   * back on, so it is not worth a first scan's full wait.
+   */
+  maxTimeoutMs?: number;
 }
 
 export async function resolveBarcodeProduct(
   barcode: string,
   opts: BarcodeChainOptions = {}
 ): Promise<BarcodeChainResult | null> {
-  const { env = process.env, seededSourceCodes } = opts;
+  const {
+    env = process.env,
+    seededSourceCodes,
+    providerIds,
+    maxTimeoutMs,
+  } = opts;
 
   const inFlight = BARCODE_PROVIDERS.filter((provider) => {
+    if (providerIds && !providerIds.includes(provider.id)) return false;
     if (seededSourceCodes && !seededSourceCodes.has(provider.sourceCode)) {
       // A missing seed row is a real misconfiguration (the migration has not
       // been applied) — log loudly, but degrade to the other providers rather
@@ -122,7 +138,12 @@ export async function resolveBarcodeProduct(
     // too: the descriptor seam is public, so a synchronous throw from `fetch`
     // must be contained exactly like an async one.
     settled: Promise.resolve()
-      .then(() => provider.fetch(barcode, provider.timeoutMs))
+      .then(() =>
+        provider.fetch(
+          barcode,
+          Math.min(provider.timeoutMs, maxTimeoutMs ?? provider.timeoutMs)
+        )
+      )
       .catch((error) => {
         console.error(`Barcode provider ${provider.id} threw:`, error);
         return null;

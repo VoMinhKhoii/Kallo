@@ -18,6 +18,7 @@ import type {
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
 import type { BarcodeCacheRow } from '@/lib/domain/barcode/cache';
+import { parseAmountUnit } from '@/lib/domain/barcode/types';
 
 /** Per-100g values scaled by `factor`, rounded to the stored precision. */
 export function scaleNutrition(
@@ -44,7 +45,11 @@ export function buildBoundedNutrition(
   return bounded;
 }
 
-/** The scanned product at `grams`, as one meal item and its display name. */
+/**
+ * The scanned product at `grams`, as one meal item and its display name.
+ * `grams` is the amount in the product's own unit; the item keeps that unit
+ * as `userFacingUnit`, so a drink shows as 330ml, not 330g.
+ */
 export function buildBarcodeMealItem(
   row: BarcodeCacheRow,
   grams: number
@@ -64,7 +69,7 @@ export function buildBarcodeMealItem(
           estimatedGrams: grams,
           rawEquivalentGrams: grams,
           cookingMethod: null,
-          userFacingUnit: 'g',
+          userFacingUnit: parseAmountUnit(row.amountUnit),
           matchConfidence: 1,
           boundedNutrition: bounded,
           displayedNutrition: nutrition,

@@ -12,8 +12,8 @@
  * layer turns an exhausted chain into a `BarcodeServiceError`.
  */
 import type {
+  BarcodeProductRecord,
   BarcodeProviderId,
-  ParsedBarcodeProduct,
 } from '@/lib/domain/barcode/types';
 
 /**
@@ -41,5 +41,5 @@ export interface BarcodeProvider {
   fetch(
     barcode: string,
     timeoutMs: number
-  ): Promise<ParsedBarcodeProduct | null>;
+  ): Promise<BarcodeProductRecord | null>;
 }

@@ -67,6 +67,22 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/v1/barcode/image/{code}': {
+    get: open({
+      operationId: 'getBarcodeProductImage',
+      summary: 'Photo of a scanned product',
+      description:
+        "The front-of-pack photo of a product that has already been looked up by barcode, fetched by Kallo's server so the photo's source (Open Food Facts) never sees who viewed it. Photo: Open Food Facts contributors, CC BY-SA. Only barcodes already in the product store have one; anything else is a 404. Rate limited per IP address and cacheable for a week.",
+      tags: ['Public'],
+      parameters: [
+        pathParam('code', 'The barcode digits (EAN-8, EAN-13 or UPC-A).'),
+      ],
+      ok: { type: 'string', format: 'binary' },
+      okMedia: 'image/*',
+      okDescription: 'The image bytes.',
+    }),
+  },
+
   '/api/v1/groups/invite/{slug}': {
     get: open({
       operationId: 'getInvitePreview',
