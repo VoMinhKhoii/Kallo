@@ -86,6 +86,8 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
     return ScanPanel(
       height: ScanPanelHeight.full,
       onDismiss: widget.onCancel,
+      // A level in: a swipe right cancels, as the X does.
+      onBack: widget.onCancel,
       header: KalloSheetHeader(
         title:
             (widget.isNew ? 'logging.scan.newFood' : 'logging.scan.edit').tr(),

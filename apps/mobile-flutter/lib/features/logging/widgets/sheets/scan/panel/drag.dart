@@ -5,8 +5,10 @@ import '../../../../../../../theme/kallo_motion.dart';
 /// Where a dragged scan panel is, and where it goes when the finger lifts:
 /// down past [dismissDistance] (or flung) it goes, right past a third of its
 /// width (or flung) it goes back a level, and short of either it springs home.
+/// Down moves the whole sheet; right moves only the page showing (the sheet's
+/// `ScanPageStack` reads [offset]'s `dx`).
 ///
-/// The physics apart from the wiring (`ScanPanelGestures`): the thresholds and
+/// The physics apart from the wiring (`ScanSheet`): the thresholds and
 /// the settle are the part worth reading on their own.
 class ScanPanelDrag {
   ScanPanelDrag({required TickerProvider vsync})
@@ -34,12 +36,12 @@ class ScanPanelDrag {
     offset.dispose();
   }
 
-  void _animateTo(Offset target, {VoidCallback? then}) {
+  void _animateTo(Offset target) {
     _tween = Tween(
       begin: offset.value,
       end: target,
     ).animate(CurvedAnimation(parent: _settle, curve: KalloEase.decelerate));
-    _settle.forward(from: 0).whenComplete(() => then?.call());
+    _settle.forward(from: 0);
   }
 
   /// Follow the finger down; never above where the panel rests.
@@ -68,19 +70,20 @@ class ScanPanelDrag {
     offset.value = Offset(next, 0);
   }
 
-  /// Released after a swipe right: the level slides the rest of the way out
-  /// and [onBack] shows the first one in its place — or it springs home.
-  void endBack(double velocity, double width, VoidCallback? onBack) {
+  /// Released after a swipe right: past the line (or flung), [commit] pops
+  /// the level from how far the finger carried it (0 → 1 of [width]) and the
+  /// drag lets go of the page in the same frame; short of it, spring home.
+  void endBack(
+    double velocity,
+    double width,
+    void Function(double progress)? commit,
+  ) {
     final dx = offset.value.dx;
-    if (onBack != null &&
+    if (dx <= 0) return;
+    if (commit != null &&
         (velocity > flingVelocity || dx > width * backFraction)) {
-      _animateTo(
-        Offset(width, 0),
-        then: () {
-          onBack();
-          offset.value = Offset.zero;
-        },
-      );
+      offset.value = Offset.zero;
+      commit((dx / width).clamp(0.0, 1.0));
     } else {
       _animateTo(Offset.zero);
     }
