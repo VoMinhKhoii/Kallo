@@ -49,51 +49,65 @@ FakeApiClient _api({
   bool groupDetailFail = false,
   Future<void>? groupDetailGate,
   Future<void>? writeGate,
-}) => FakeApiClient((request) async {
-  final path = request.path;
-  if (request.method != 'GET' && writeGate != null) await writeGate;
-  if (request.method == 'GET') {
-    if (path == _friendsPath) {
-      if (friendsFail) throw Exception('offline');
-      if (friendsGate != null) await friendsGate;
-      return {'circle': friends};
+  Future<void>? blockedRefetchGate,
+}) {
+  var blockedFetches = 0;
+  return FakeApiClient((request) async {
+    final path = request.path;
+    if (request.method != 'GET' && writeGate != null) await writeGate;
+    if (request.method == 'GET') {
+      if (path == _friendsPath) {
+        if (friendsFail) throw Exception('offline');
+        if (friendsGate != null) await friendsGate;
+        return {'circle': friends};
+      }
+      if (path == _blockedPath) {
+        if (blockedFail) throw Exception('offline');
+        // With a refetch gate, every fetch after the first is the refresh an
+        // unblock starts: it waits on the gate, then comes back empty.
+        if (blockedFetches++ > 0 && blockedRefetchGate != null) {
+          await blockedRefetchGate;
+          return {'blocked': const <Map<String, dynamic>>[]};
+        }
+        return {'blocked': blocked};
+      }
+      if (path.startsWith('/api/v1/chat-groups?')) return {'groups': groups};
+      if (path.startsWith('/api/v1/chat-groups/')) {
+        if (groupDetailFail) throw Exception('offline');
+        if (groupDetailGate != null) await groupDetailGate;
+        final id = path.split('/').last;
+        return {
+          'group': {
+            'id': id,
+            'kind': 'group',
+            'name': id,
+            'myRole': myRole,
+            'members': [
+              {'userId': 'me', 'handle': 'me', 'role': myRole},
+              if (!aloneInGroup)
+                {
+                  'userId': 'u9',
+                  'handle': 'u9',
+                  'role': myRole == 'owner' ? 'member' : 'owner',
+                },
+            ],
+          },
+        };
+      }
+      if (path == '/api/v1/groups/profile') {
+        return {
+          'profile': {
+            'userId': 'me',
+            'handle': 'me',
+            'displayName': 'vmkhoiii',
+          },
+        };
+      }
     }
-    if (path == _blockedPath) {
-      if (blockedFail) throw Exception('offline');
-      return {'blocked': blocked};
-    }
-    if (path.startsWith('/api/v1/chat-groups?')) return {'groups': groups};
-    if (path.startsWith('/api/v1/chat-groups/')) {
-      if (groupDetailFail) throw Exception('offline');
-      if (groupDetailGate != null) await groupDetailGate;
-      final id = path.split('/').last;
-      return {
-        'group': {
-          'id': id,
-          'kind': 'group',
-          'name': id,
-          'myRole': myRole,
-          'members': [
-            {'userId': 'me', 'handle': 'me', 'role': myRole},
-            if (!aloneInGroup)
-              {
-                'userId': 'u9',
-                'handle': 'u9',
-                'role': myRole == 'owner' ? 'member' : 'owner',
-              },
-          ],
-        },
-      };
-    }
-    if (path == '/api/v1/groups/profile') {
-      return {
-        'profile': {'userId': 'me', 'handle': 'me', 'displayName': 'vmkhoiii'},
-      };
-    }
-  }
-  if (path == '/api/v1/reports') return {'id': 'report-1'};
-  return <String, dynamic>{};
-});
+    if (path == '/api/v1/reports') return {'id': 'report-1'};
+    return <String, dynamic>{};
+  });
+}
 
 Future<void> _pump(
   WidgetTester tester,
@@ -342,12 +356,14 @@ void main() {
       expect(write.body, {'targetUserId': 'b1'});
     });
 
-    testWidgets('Unblock is off while its request is in flight', (
+    testWidgets('Unblock stays off until the row leaves the list', (
       tester,
     ) async {
-      final gate = Completer<void>();
+      final post = Completer<void>();
+      final refetch = Completer<void>();
       final api = _api(
-        writeGate: gate.future,
+        writeGate: post.future,
+        blockedRefetchGate: refetch.future,
         blocked: [
           {
             'profile': {'userId': 'b1', 'handle': 'b1', 'displayName': 'Duy'},
@@ -359,20 +375,36 @@ void main() {
       await tester.tap(find.text('Blocked (1)'));
       await tester.pumpAndSettle();
 
+      // Cancelling the confirm leaves the button on.
+      await tester.tap(find.text('Unblock'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Unblock'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unblock').last);
       await tester.pumpAndSettle();
       expect(_writes(api), hasLength(1));
 
-      // The request hangs and the row is still here: a second tap must not
-      // start a second unblock.
-      await tester.tap(find.text('Unblock'), warnIfMissed: false);
-      await tester.pumpAndSettle();
-      expect(find.text('Unblock Duy?'), findsNothing);
+      Future<void> tapAgain() async {
+        await tester.tap(find.text('Unblock'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(find.text('Unblock Duy?'), findsNothing);
+      }
 
-      gate.complete();
+      // The POST hangs: the row is still here, and a tap starts nothing.
+      await tapAgain();
+      // The POST lands and the list refetch hangs: the stale row is still
+      // here, and still off.
+      post.complete();
       await tester.pumpAndSettle();
+      expect(find.text('Duy'), findsOneWidget);
+      await tapAgain();
+
+      refetch.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Duy'), findsNothing);
       expect(_writes(api), hasLength(1));
     });
   });

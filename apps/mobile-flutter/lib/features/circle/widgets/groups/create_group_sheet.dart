@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
@@ -47,7 +48,13 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
       container.read(circleSelectedViewProvider.notifier).state = id;
       showTopToast(sheetContext, tr('groups.createGroup.created'));
       Navigator.pop(sheetContext);
-    } catch (_) {
+    } catch (error) {
+      // Creating a group is `unlimited_circle`. The entry points show the
+      // paywall up front once the plan is known, but the plan can still be
+      // loading (or have failed to load) when the form opens — so the
+      // server's 402 goes to the paywall too, over the sheet, keeping what was
+      // typed. Never a "try again" for something that cannot succeed.
+      if (handledFeatureLock(sheetContext, error)) return;
       if (sheetContext.mounted) {
         showTopToast(
           sheetContext,

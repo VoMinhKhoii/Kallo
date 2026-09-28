@@ -104,18 +104,21 @@ class _BlockedRow extends ConsumerStatefulWidget {
 }
 
 class _BlockedRowState extends ConsumerState<_BlockedRow> {
-  /// True from the tap until the unblock flow ends. The row stays on screen
-  /// until the list refetches, so without this a second tap during a slow
-  /// request would send a second unblock — which the server answers 404 once
-  /// the first has landed, toasting a failure for an unblock that worked.
+  /// True from the tap until this row leaves the list. The row stays on
+  /// screen while the blocked list refetches (the page keeps its data through
+  /// a refresh), so a button that came back on when the POST returned would
+  /// let a second tap send a second unblock — which the server answers 404,
+  /// toasting a failure for an unblock that worked. Only a cancelled or
+  /// failed unblock turns it back on.
   bool _busy = false;
 
   Future<void> _unblock() async {
     setState(() => _busy = true);
+    var unblocked = false;
     try {
-      await unblockFlow(context, ref, widget.entry.profile);
+      unblocked = await unblockFlow(context, ref, widget.entry.profile);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (!unblocked && mounted) setState(() => _busy = false);
     }
   }
 
