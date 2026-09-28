@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../models/social/chat_group.dart';
 import '../../../../models/social/moderation.dart';
 import '../../../../shared/widgets/surface/kallo_small_button.dart';
+import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -41,11 +42,34 @@ class GroupRow extends ConsumerWidget {
     GoRouter.of(context).go('/circle');
   }
 
-  Future<void> _openMenu(
+  /// The viewer's permissions for this group. Loaded before the sheet opens
+  /// when the watched detail has not landed yet — never guessed — and a load
+  /// that fails is a toast and a retry on the next tap, not a menu that
+  /// offers what the server will refuse.
+  Future<({bool report, bool leave})?> _allowed(
     BuildContext context,
     WidgetRef ref,
-    ({bool report, bool leave}) allowed,
   ) async {
+    final provider = chatGroupDetailProvider(group.id);
+    try {
+      return groupActionsFor(await ref.read(provider.future));
+    } catch (_) {
+      ref.invalidate(provider);
+      if (context.mounted) {
+        showTopToast(
+          context,
+          tr('groups.manage.groupLoadError'),
+          variant: TopToastVariant.error,
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
+    final allowed = await _allowed(context, ref);
+    if (allowed == null || !context.mounted) return;
+    if (!allowed.report && !allowed.leave) return;
     final action = await showCircleActionSheet<_GroupAction>(
       context,
       title: group.title,
@@ -79,12 +103,12 @@ class GroupRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The viewer's role decides what the menu may offer (see
-    // [groupActionsFor]). Watched, not read on tap, so the sheet opens at once
-    // and a menu with nothing left in it never shows a `⋯` at all.
-    final allowed = groupActionsFor(
-      ref.watch(chatGroupDetailProvider(group.id)).valueOrNull,
-    );
+    // Watched so the role is usually in hand before the tap (the sheet opens
+    // at once) and so a menu KNOWN to be empty draws no `⋯` at all. While the
+    // role is unknown the `⋯` stays: [_openMenu] loads it first.
+    final detail = ref.watch(chatGroupDetailProvider(group.id)).valueOrNull;
+    final allowed = detail == null ? null : groupActionsFor(detail);
+    final hasMenu = allowed == null || allowed.report || allowed.leave;
     return ManageRow(
       leading: const _GroupDisc(),
       title: group.title,
@@ -94,10 +118,10 @@ class GroupRow extends ConsumerWidget {
           label: tr('groups.manage.goToCircle'),
           onPressed: () => _goToCircle(context, ref),
         ),
-        if (allowed.report || allowed.leave)
+        if (hasMenu)
           MoreButton(
             name: group.title,
-            onPressed: () => _openMenu(context, ref, allowed),
+            onPressed: () => _openMenu(context, ref),
           )
         else
           // Keeps "Go to circle" aligned with the rows that do have a `⋯`.

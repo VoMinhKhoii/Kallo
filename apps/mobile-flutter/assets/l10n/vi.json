@@ -1743,7 +1743,8 @@
       "blockedEmptyTitle": "Bạn chưa chặn ai",
       "blockedEmptyBody": "Người bạn chặn sẽ hiện ở đây, và bạn có thể bỏ chặn bất cứ lúc nào.",
       "blockedLoadError": "Không thể tải danh sách đã chặn",
-      "unblock": "Bỏ chặn"
+      "unblock": "Bỏ chặn",
+      "groupLoadError": "Không tải được nhóm này. Hãy thử lại."
     },
     "moderation": {
       "report": "Báo cáo",

@@ -1746,7 +1746,8 @@
       "blockedEmptyTitle": "No one is blocked",
       "blockedEmptyBody": "People you block show up here, and you can unblock them any time.",
       "blockedLoadError": "Couldn't load who you've blocked",
-      "unblock": "Unblock"
+      "unblock": "Unblock",
+      "groupLoadError": "Couldn't load this group. Try again."
     },
     "moderation": {
       "report": "Report",

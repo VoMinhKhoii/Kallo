@@ -40,6 +40,7 @@ FakeApiClient _api({
   bool blockedFail = false,
   String myRole = 'member',
   bool aloneInGroup = false,
+  bool groupDetailFail = false,
 }) => FakeApiClient((request) async {
   final path = request.path;
   if (request.method == 'GET') {
@@ -53,6 +54,7 @@ FakeApiClient _api({
     }
     if (path.startsWith('/api/v1/chat-groups?')) return {'groups': groups};
     if (path.startsWith('/api/v1/chat-groups/')) {
+      if (groupDetailFail) throw Exception('offline');
       final id = path.split('/').last;
       return {
         'group': {
@@ -246,6 +248,28 @@ void main() {
       expect(find.text("Couldn't load who you've blocked"), findsOneWidget);
     });
 
+    testWidgets('a failed friends fetch still leaves the way to unblock', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _api(
+          friendsFail: true,
+          blocked: [
+            {
+              'profile': {'userId': 'b1', 'handle': 'b1', 'displayName': 'Duy'},
+              'blockedAt': '2026-09-20T00:00:00.000Z',
+            },
+          ],
+        ),
+      );
+
+      expect(find.text("Couldn't load your circle"), findsOneWidget);
+      await tester.tap(find.text('Blocked (1)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Duy'), findsOneWidget);
+    });
+
     testWidgets('the blocked list unblocks after a confirm', (tester) async {
       final api = _api(
         friends: [_member('u1', 'Linh')],
@@ -328,6 +352,24 @@ void main() {
 
       expect(find.text('Go to circle'), findsOneWidget);
       expect(_more('Team lunch'), findsNothing);
+    });
+
+    testWidgets('an unknown role offers nothing: a failed load is a toast', (
+      tester,
+    ) async {
+      // The role never loads, so the menu must not guess: an owner would be
+      // offered what the server refuses.
+      final api = _api(
+        groups: [_group('g1', 'Team lunch')],
+        groupDetailFail: true,
+      );
+      await _pump(tester, api, tab: CircleManageTab.circle);
+
+      await tester.tap(_more('Team lunch'));
+      await tester.pumpAndSettle();
+      expect(find.text('Report group'), findsNothing);
+      expect(find.text('Leave group'), findsNothing);
+      expect(find.text("Couldn't load this group. Try again."), findsOneWidget);
     });
 
     testWidgets('an owner alone in the group can leave, not report', (

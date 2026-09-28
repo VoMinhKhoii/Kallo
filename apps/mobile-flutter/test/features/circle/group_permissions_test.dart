@@ -37,8 +37,4 @@ void main() {
   test('an owner alone may leave but not report', () {
     expect(groupActionsFor(detail('owner', [])), (report: false, leave: true));
   });
-
-  test('an unknown role offers both — the server still guards them', () {
-    expect(groupActionsFor(null), (report: true, leave: true));
-  });
 }

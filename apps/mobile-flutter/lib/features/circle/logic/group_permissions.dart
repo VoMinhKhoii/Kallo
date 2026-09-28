@@ -8,10 +8,9 @@ import '../../../models/social/chat_group.dart';
 /// - **Leave** is refused to an owner while anyone else is still in the group
 ///   (`membership.ts`, `leaveChatGroup`): ownership cannot be handed over yet.
 ///
-/// A [detail] that has not loaded (or failed) offers both — the server still
-/// guards them, and hiding a real option on a slow request would be worse.
-({bool report, bool leave}) groupActionsFor(ChatGroupDetail? detail) {
-  if (detail == null) return (report: true, leave: true);
+/// It needs the loaded [detail]: an unknown role is never read as "allowed"
+/// (the caller loads the detail before it opens the menu).
+({bool report, bool leave}) groupActionsFor(ChatGroupDetail detail) {
   final owner = detail.myRole == 'owner';
   // Role-based rather than a count, so it holds whether or not the viewer's
   // own row is in [ChatGroupDetail.members]: a group has one owner.
