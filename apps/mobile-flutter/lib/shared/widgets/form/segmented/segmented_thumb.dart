@@ -25,6 +25,8 @@ class SegmentedThumb extends StatefulWidget {
   const SegmentedThumb({
     required this.activeIndex,
     required this.count,
+    this.color = kCardSurface,
+    this.raised = true,
     super.key,
   });
 
@@ -32,6 +34,11 @@ class SegmentedThumb extends StatefulWidget {
   /// entirely rather than parking it on a segment the user did not choose.
   final int activeIndex;
   final int count;
+
+  /// The pill's fill, and whether it casts the small shadow that lifts a white
+  /// thumb off a warm track (a glass thumb over a photo has nothing to lift).
+  final Color color;
+  final bool raised;
 
   static const double peakScale = 1.04;
 
@@ -104,11 +111,13 @@ class _SegmentedThumbState extends State<SegmentedThumb>
               translation: Offset(_position, 0),
               child: Transform.scale(scale: _scale, child: child),
             ),
-        child: const DecoratedBox(
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            color: kCardSurface,
-            borderRadius: BorderRadius.all(Radius.circular(KalloRadii.pill)),
-            boxShadow: [KalloShadows.sm],
+            color: widget.color,
+            borderRadius: const BorderRadius.all(
+              Radius.circular(KalloRadii.pill),
+            ),
+            boxShadow: widget.raised ? const [KalloShadows.sm] : null,
           ),
         ),
       ),

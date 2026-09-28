@@ -1,7 +1,7 @@
-/// Riverpod state for the nutrition-label branch of the scan sheet: take (or
-/// choose) a photo → `POST /api/v1/nutrition-label/scan` → review the
-/// extracted values → `POST /api/v1/nutrition-label/log` (stage + confirm in
-/// one server-side call — no pending card).
+/// Riverpod state for the nutrition-label branch of the scan screen: take (or
+/// choose) a photo → `POST /api/v1/nutrition-label/scan` → the extracted
+/// values as a result → `POST /api/v1/nutrition-label/log` ([logEntry], which
+/// also logs an edited barcode product and a food typed by hand).
 ///
 /// Kept separate from [barcodeFlowProvider] rather than merged into it: the
 /// barcode controller is already covered end to end, and two small
@@ -11,19 +11,16 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
 import '../logic/label/image.dart';
 import '../logic/label/image_shrink.dart';
-import '../logic/label/review.dart';
+import '../logic/scan/food.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';
-
-const _uuid = Uuid();
 
 /// How the controller gets a photo. Behind a provider purely so tests can
 /// stand in for the platform picker, which has no test surface of its own.
@@ -34,8 +31,9 @@ final labelImageCaptureProvider = Provider<LabelImageCapture>(
   (ref) => captureLabelImage,
 );
 
-/// Where the sheet is in the capture → scan → review → save flow.
-enum LabelScanPhase { capture, preview, scanning, review, saving }
+/// Where the screen is in the capture → scan → review flow. Saving is the
+/// result card's own state ([LabelScanController.logEntry] leaves this alone).
+enum LabelScanPhase { capture, preview, scanning, review }
 
 class LabelScanState {
   const LabelScanState({
@@ -76,6 +74,11 @@ class LabelScanState {
     labelImageId: labelImageId != null ? labelImageId() : this.labelImageId,
     errorKey: errorKey != null ? errorKey() : this.errorKey,
   );
+
+  /// A failure before any read — a camera that would not open, a library
+  /// photo that could not be used — which the camera stage says in words.
+  String? get cameraProblemKey =>
+      phase == LabelScanPhase.capture ? errorKey : null;
 
   /// The one error where switching to the barcode scanner is a better exit
   /// than reshooting the same wrong side of the package.
@@ -147,21 +150,25 @@ String _captureErrorKeyFor(LabelImageFailure failure) => switch (failure) {
   LabelImageFailure.cancelled => 'logging.labelScan.error.serverError',
 };
 
-/// One label-sheet session: capture, scan, and log, with single-flight guards
-/// so double taps can't double-scan or double-log.
+/// One label session: capture, scan, and log, with a single-flight guard so
+/// a double tap can't double-scan.
 class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
   @override
   LabelScanState build() => const LabelScanState();
 
   /// Take or choose a label photo. A cancelled picker leaves the state alone
   /// so the user lands back where they were.
-  Future<void> pickImage(ImageSource source) async {
-    if (state.phase == LabelScanPhase.scanning ||
-        state.phase == LabelScanPhase.saving) {
-      return;
-    }
+  ///
+  /// [isCurrent] is asked before the photo is committed: a photo from a
+  /// camera session the screen has since left is dropped, not held or read.
+  Future<void> pickImage(
+    ImageSource source, {
+    bool Function()? isCurrent,
+  }) async {
+    if (state.phase == LabelScanPhase.scanning) return;
 
     final result = await ref.read(labelImageCaptureProvider)(source);
+    if (isCurrent?.call() == false) return;
     final failure = result.failure;
     if (failure == LabelImageFailure.cancelled) return;
     if (failure != null) {
@@ -180,16 +187,17 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
   /// written — the preset is a target, not a byte guarantee. A still the size
   /// guard rejects is therefore shrunk to the picker's own rung and re-run
   /// ([shrinkLabelImageFile]) instead of being dropped as `tooLarge`.
-  Future<void> captureFromFile(String path) async {
-    if (state.phase == LabelScanPhase.scanning ||
-        state.phase == LabelScanPhase.saving) {
-      return;
-    }
+  Future<void> captureFromFile(
+    String path, {
+    bool Function()? isCurrent,
+  }) async {
+    if (state.phase == LabelScanPhase.scanning) return;
 
     var result = await labelImageFromFile(path);
     if (result.failure == LabelImageFailure.tooLarge) {
       result = await shrinkLabelImageFile(path);
     }
+    if (isCurrent?.call() == false) return;
     final failure = result.failure;
     if (failure == LabelImageFailure.cancelled) return;
     if (failure != null) {
@@ -201,7 +209,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
 
   /// A camera failure raised by the live preview itself (permission refused,
   /// no usable sensor, a shutter that threw). Lands on the capture phase with
-  /// an error, which is the branch's ScanErrorCard.
+  /// an error, which the camera stage shows in words.
   void reportCaptureFailure(LabelImageFailure failure) {
     if (failure == LabelImageFailure.cancelled) return;
     state = state.copyWith(
@@ -226,11 +234,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
   /// a retry is one tap away.
   Future<void> scan() async {
     final image = state.image;
-    if (image == null ||
-        state.phase == LabelScanPhase.scanning ||
-        state.phase == LabelScanPhase.saving) {
-      return;
-    }
+    if (image == null || state.phase == LabelScanPhase.scanning) return;
 
     final api = ref.read(apiClientProvider);
     state = state.copyWith(
@@ -262,53 +266,46 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
     }
   }
 
-  /// Skip the scan and edit an empty form — the escape hatch for a label the
-  /// model can't read at all.
-  void enterManualReview() {
-    state = state.copyWith(
-      phase: LabelScanPhase.review,
-      label: () => null,
-      labelImageId: () => null,
-      errorKey: () => null,
-    );
-  }
-
-  /// Stage + confirm the reviewed values in one call. Returns true on success
-  /// (the sheet pops and toasts); on failure the review step stays put with an
-  /// inline error so the user's edits aren't lost.
-  Future<bool> logMeal({
+  /// Log a food confirmed on the scan result — a read label, a barcode
+  /// product the user edited, or one typed by hand — at [amount] (in the
+  /// food's unit): stage + confirm in one call, no pending card.
+  ///
+  /// Returns null once the meal is written, else the error key to show. It
+  /// does NOT move [state]: the result card owns its saving spinner and keeps
+  /// the amount and edits on a failure, so the retry is one tap away.
+  ///
+  /// Premium: the endpoint is behind `label_scan`, so free accounts reach this
+  /// only after the paywall (the owner's ruling, 2026-09-28).
+  ///
+  /// [mealId] is the result's own, kept across its retries ([isMealAlreadySaved]).
+  Future<String?> logEntry({
     required String userId,
     required String date,
-    required LabelReviewState review,
+    required ScanFood food,
+    required double amount,
+    required String mealId,
   }) async {
-    if (state.phase == LabelScanPhase.saving || !review.canConfirm) {
-      return false;
+    if (!food.hasRequired || amount <= 0 || food.name.trim().isEmpty) {
+      return 'logging.scan.missingValues';
     }
-
     final api = ref.read(apiClientProvider);
-    state = state.copyWith(phase: LabelScanPhase.saving, errorKey: () => null);
     try {
       await api.post<Map<String, dynamic>>('/api/v1/nutrition-label/log', {
-        'productName': review.productName.trim(),
-        'amount': review.parsedAmount,
-        'unit': review.unit,
-        'confidence': (state.label?.confidence ?? LabelConfidence.low).name,
-        // Omit what the label never printed rather than send explicit nulls;
-        // the contract's micronutrients are optional.
-        for (final entry in review.nutrition.entries)
+        'productName': food.name.trim(),
+        'amount': amount,
+        'unit': food.unit,
+        'confidence': (food.confidence ?? LabelConfidence.low).name,
+        for (final entry in food.nutritionFor(amount).entries)
           if (entry.value != null) entry.key: entry.value,
-        'mealId': _uuid.v4(),
-        // Links the kept scan photo to this meal; omitted when none was kept.
-        if (state.labelImageId != null) 'labelImageId': state.labelImageId,
+        'mealId': mealId,
+        // Only a read label has a kept photo to link.
+        if (food.source == ScanFoodSource.label && state.labelImageId != null)
+          'labelImageId': state.labelImageId,
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
     } catch (error) {
-      state = state.copyWith(
-        phase: LabelScanPhase.review,
-        errorKey: () => _errorKeyFor(error),
-      );
-      return false;
+      if (!isMealAlreadySaved(error)) return _errorKeyFor(error);
     }
     // The meal COMMITTED the moment the POST returned, so nothing below may
     // turn a saved meal into a failed save — [settleAfterMealWrite] sits
@@ -328,7 +325,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
             includeDay: false,
           ),
     );
-    return true;
+    return null;
   }
 
   /// Discard the current photo and shoot another.
@@ -338,15 +335,6 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
       image: () => null,
       label: () => null,
       labelImageId: () => null,
-      errorKey: () => null,
-    );
-  }
-
-  /// Back out of the review step to the photo it came from.
-  void backToPreview() {
-    state = state.copyWith(
-      phase:
-          state.image == null ? LabelScanPhase.capture : LabelScanPhase.preview,
       errorKey: () => null,
     );
   }

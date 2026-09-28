@@ -6,6 +6,8 @@ export interface EditableRow {
   id: string;
   name: string;
   grams: number | null;
+  /** 'ml' for a drink logged in millilitres; the step size is the same. */
+  unit: 'g' | 'ml';
   removed: boolean;
 }
 
@@ -51,7 +53,8 @@ export function AmountEditorRow({
               <Minus className="h-2.5 w-2.5" />
             </button>
             <span className="w-9 text-center font-semibold text-[11px] text-kallo-text tabular-nums">
-              {Math.round(row.grams)}g
+              {Math.round(row.grams)}
+              {row.unit}
             </span>
             <button
               type="button"

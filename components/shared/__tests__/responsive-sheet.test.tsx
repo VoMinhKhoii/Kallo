@@ -143,6 +143,41 @@ describe('ResponsiveSheetHeader', () => {
     expect(container.querySelectorAll('p')).toHaveLength(1);
   });
 
+  it('turns the circle into a back chevron for a second level', async () => {
+    const onBack = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <ResponsiveSheetHeader
+        backLabel="Back"
+        closeLabel="Close"
+        onBack={onBack}
+        onClose={onClose}
+        title="Other nutrients"
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('holds a trailing action on the right', () => {
+    render(
+      <ResponsiveSheetHeader
+        closeLabel="Close"
+        onClose={vi.fn()}
+        title="Barcode"
+        trailing={<button type="button">Edit</button>}
+      />
+    );
+
+    const title = screen.getByText('Barcode');
+    const edit = screen.getByRole('button', { name: 'Edit' });
+    expect(
+      title.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it('disables the close button while a save is in flight', async () => {
     const onClose = vi.fn();
     render(

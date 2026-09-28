@@ -37,6 +37,10 @@ const Color kHairline =
     KalloColors.border; // the one border (neutral hairline, solid)
 const Color kFieldFill =
     KalloColors.elev; // input fills read white on the neutral canvas
+// Dark glass: controls floating over a live picture (the scan camera). A
+// translucent ink reads over a white carton and a dark counter alike — a light
+// one vanished over the carton in review (2026-09-27).
+const Color kGlass = Color(0x61141413); // ink @ 38%
 
 // ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
 const Color kInk = KalloColors.text; // near-black ink — primary data
@@ -281,6 +285,13 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
   letterSpacing: -0.3,
   color: color,
 );
+
+/// 17 / 600 / -0.3 — a SHEET's centred title, one step above
+/// [kSectionHeader]. Between the 36pt grey circle and capsule controls of the
+/// iOS 26 sheet header, 16 read small (owner's call, 2026-09-28). Semibold
+/// stays confined to titles: this is the same role, one step up.
+TextStyle kSheetTitle({Color color = kInk}) =>
+    kSectionHeader(color: color).copyWith(fontSize: 17);
 
 /// 600 — the label on a pill BUTTON ("Lưu thay đổi", "Gửi góp ý", "Xác
 /// nhận"), 16 by default, 14 for the compact sheet buttons.

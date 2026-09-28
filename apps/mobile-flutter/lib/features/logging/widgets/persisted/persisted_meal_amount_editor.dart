@@ -51,6 +51,11 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
   late final Map<String, String> _names = {
     for (final ing in _ingredients) ing.id: ing.ingredientName,
   };
+  // A drink logged in millilitres reads back in them; everything else is g.
+  late final Map<String, String> _units = {
+    for (final ing in _ingredients)
+      ing.id: ing.userFacingUnit == 'ml' ? 'ml' : 'g',
+  };
   late List<EditableIngredientRow> _rows = [
     for (final ing in _ingredients)
       EditableIngredientRow(
@@ -136,6 +141,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
           for (final row in _rows)
             PersistedMealAmountEditorRow(
               name: _names[row.id] ?? '',
+              unit: _units[row.id] ?? 'g',
               row: row,
               onStep: _step,
               onToggleRemove: _toggleRemove,

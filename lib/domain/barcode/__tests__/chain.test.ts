@@ -15,14 +15,14 @@ vi.mock('@/lib/domain/barcode/providers/usda-fdc', () => ({
   fetchProductFromUsdaFdc: mockFetchFdc,
 }));
 
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/types';
+import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 import { BARCODE_PROVIDERS, resolveBarcodeProduct } from '../chain';
 
 const BARCODE = '8934563138162';
 
 function product(
-  overrides: Partial<ParsedBarcodeProduct> = {}
-): ParsedBarcodeProduct {
+  overrides: Partial<BarcodeProductRecord> = {}
+): BarcodeProductRecord {
   return {
     barcode: BARCODE,
     name: 'Hảo Hảo',
@@ -35,6 +35,9 @@ function product(
     sodiumMg: 850,
     servingSizeG: 75,
     packageSizeG: null,
+    amountUnit: 'g',
+    micronutrients: {},
+    sourceImageUrl: null,
     ...overrides,
   };
 }
@@ -130,7 +133,7 @@ describe('resolveBarcodeProduct', () => {
   });
 
   it('lets a slow complete FDC answer beat a fast OFF answer', async () => {
-    const slowFdc = deferred<ParsedBarcodeProduct>();
+    const slowFdc = deferred<BarcodeProductRecord>();
     mockFetchFdc.mockReturnValue(slowFdc.promise);
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 

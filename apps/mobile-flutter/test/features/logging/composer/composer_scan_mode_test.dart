@@ -9,10 +9,11 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:kallo_mobile/features/logging/widgets/sheets/barcode/barcode_scanner_sheet.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/screen.dart';
 import 'package:kallo_mobile/features/logging/logic/composer/feed_sheets.dart';
 
 import '../../../l10n_test_loader.dart';
+import '../scan/fake_scanner_platform.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
 
 /// The composer's scan icon means two different things depending on the mode
@@ -24,52 +25,10 @@ import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
 /// the words "TH true milk Sữa tươi (180g)", silently throwing away the exact
 /// product the user had just scanned. Cheat therefore keeps the one-shot log,
 /// which is what the icon did in every mode before picks existed.
-class _FakeScannerPlatform extends MobileScannerPlatform {
-  final StreamController<BarcodeCapture?> barcodes =
-      StreamController<BarcodeCapture?>.broadcast();
-
-  @override
-  Stream<BarcodeCapture?> get barcodesStream => barcodes.stream;
-
-  @override
-  Stream<TorchState> get torchStateStream => const Stream.empty();
-
-  @override
-  Stream<double> get zoomScaleStateStream => const Stream.empty();
-
-  @override
-  Widget buildCameraView() => const ColoredBox(color: Color(0xFF000000));
-
-  @override
-  Future<MobileScannerViewAttributes> start(StartOptions startOptions) async =>
-      const MobileScannerViewAttributes(
-        cameraDirection: CameraFacing.back,
-        currentTorchMode: TorchState.unavailable,
-        size: Size(640, 480),
-      );
-
-  @override
-  Future<void> stop() async {}
-
-  @override
-  Future<void> pause() async {}
-
-  @override
-  Future<void> dispose() async {}
-
-  @override
-  Future<void> updateScanWindow(Rect? window) async {}
-
-  @override
-  Future<Set<CameraLensType>> getSupportedLenses() async => {
-    CameraLensType.any,
-  };
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late _FakeScannerPlatform scanner;
+  late FakeScannerPlatform scanner;
   late MentionTextEditingController composer;
 
   setUpAll(() async {
@@ -82,18 +41,15 @@ void main() {
   });
 
   setUp(() {
-    scanner = _FakeScannerPlatform();
+    scanner = FakeScannerPlatform();
     MobileScannerPlatform.instance = scanner;
     composer = MentionTextEditingController();
     addTearDown(scanner.barcodes.close);
     addTearDown(composer.dispose);
   });
 
-  /// Tap the composer's scan icon in [mode] and hand back the branch it opened.
-  Future<BarcodeScannerSheet> tapScanIcon(
-    WidgetTester tester,
-    MealLogMode mode,
-  ) async {
+  /// Tap the composer's scan icon in [mode] and hand back the screen it opened.
+  Future<ScanScreen> tapScanIcon(WidgetTester tester, MealLogMode mode) async {
     late BuildContext hostContext;
     await tester.pumpWidget(
       ProviderScope(
@@ -134,7 +90,7 @@ void main() {
     unawaited(sheets.openBarcodeFromComposer());
     await tester.pumpAndSettle();
 
-    return tester.widget<BarcodeScannerSheet>(find.byType(BarcodeScannerSheet));
+    return tester.widget<ScanScreen>(find.byType(ScanScreen));
   }
 
   testWidgets('normal mode scans a PICK into the sentence', (tester) async {

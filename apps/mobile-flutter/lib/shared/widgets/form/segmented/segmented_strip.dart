@@ -6,6 +6,7 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'segmented_thumb.dart';
+import 'segmented_tone.dart';
 
 /// A single segment of a [SegmentedStrip]: the value it reports, its label,
 /// and an optional Lucide glyph drawn inline before the label.
@@ -58,9 +59,11 @@ class SegmentedStrip extends StatefulWidget {
     required this.options,
     required this.activeIndex,
     required this.onChange,
+    this.tone = SegmentedStripTone.standard,
   });
 
   final List<OptionStripItem> options;
+  final SegmentedStripTone tone;
 
   /// -1 when nothing is selected — the thumb is absent, not parked on a
   /// segment the user did not choose.
@@ -81,7 +84,14 @@ class _SegmentedStripState extends State<SegmentedStrip> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
+  Widget build(BuildContext context) {
+    final strip = _strip();
+    // Equal segments either way; a strip that hugs its words takes the widest
+    // label's width for each.
+    return widget.tone.hugsLabels ? IntrinsicWidth(child: strip) : strip;
+  }
+
+  Widget _strip() => SizedBox(
     height: SegmentedStrip.target,
     child: Stack(
       alignment: Alignment.center,
@@ -115,7 +125,7 @@ class _SegmentedStripState extends State<SegmentedStrip> {
   Widget _track() => Container(
     padding: const EdgeInsets.all(SegmentedStrip.inset),
     decoration: BoxDecoration(
-      color: KalloColors.track,
+      color: widget.tone.track,
       borderRadius: BorderRadius.circular(KalloRadii.pill),
     ),
     child: Stack(
@@ -124,6 +134,8 @@ class _SegmentedStripState extends State<SegmentedStrip> {
           SegmentedThumb(
             activeIndex: widget.activeIndex,
             count: widget.options.length,
+            color: widget.tone.thumb,
+            raised: widget.tone.thumbShadow,
           ),
         Row(
           children: [
@@ -142,11 +154,17 @@ class _SegmentedStripState extends State<SegmentedStrip> {
   /// never weight. Only the colour animates, so the paragraph repaints rather
   /// than re-measuring; [FittedBox] shrinks the longest label at the top of
   /// the Dynamic Type range instead of clipping it.
-  Widget _label(int i) => Center(
-    child: TweenAnimationBuilder<Color?>(
+  Widget _label(int i) => Padding(
+    padding: EdgeInsets.symmetric(horizontal: widget.tone.labelInset),
+    child: Center(child: _labelText(i)),
+  );
+
+  Widget _labelText(int i) {
+    final tone = widget.tone;
+    return TweenAnimationBuilder<Color?>(
       duration: KalloMotion.quick,
       curve: KalloEase.standard,
-      tween: ColorTween(end: i == widget.activeIndex ? kInk : kInkMuted),
+      tween: ColorTween(end: i == widget.activeIndex ? tone.on : tone.off),
       builder:
           (context, color, child) => FittedBox(
             fit: BoxFit.scaleDown,
@@ -159,7 +177,7 @@ class _SegmentedStripState extends State<SegmentedStrip> {
                   Icon(
                     widget.options[i].icon,
                     size: _inlineGlyph,
-                    color: color ?? kInkMuted,
+                    color: color ?? tone.off,
                   ),
                   const SizedBox(width: KalloSpacing.sp1 + 2),
                 ],
@@ -167,7 +185,7 @@ class _SegmentedStripState extends State<SegmentedStrip> {
                   widget.options[i].label,
                   maxLines: 1,
                   softWrap: false,
-                  style: dashBody(color: color ?? kInkMuted),
+                  style: dashBody(color: color ?? tone.off),
                 ),
                 if (widget.options[i].badge != null) ...[
                   const SizedBox(width: KalloSpacing.sp2),
@@ -176,6 +194,6 @@ class _SegmentedStripState extends State<SegmentedStrip> {
               ],
             ),
           ),
-    ),
-  );
+    );
+  }
 }

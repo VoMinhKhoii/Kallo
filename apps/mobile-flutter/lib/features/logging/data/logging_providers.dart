@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../models/http/api_error.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/logging/cheat.dart';
 import '../../circle/data/circle_providers.dart'
@@ -298,6 +299,14 @@ Future<void> settleAfterMealWrite(
     // The write stands. Nothing left to refresh means nothing left to do.
   }
 }
+
+/// A one-shot log retried with the id of a meal THIS account already saved
+/// (`MEAL_ALREADY_SAVED`, from `confirmStagedMeal`): the first try landed and
+/// its answer was lost. The meal exists, so the retry succeeded — never a
+/// second meal, never an error for a saved one. A plain `CONFLICT` (an id this
+/// account does not own) stays an error.
+bool isMealAlreadySaved(Object error) =>
+    error is ApiError && error.code == 'MEAL_ALREADY_SAVED';
 
 /// Confirm a pending analysis into a saved meal, then refetch the day.
 ///

@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireAuthAndProfile = vi.fn();
 const searchBarcodeProduct = vi.fn();
+const checkFeatureGate = vi.fn();
+
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate,
+}));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile,
@@ -43,14 +48,19 @@ const product = {
   sodiumMg: null,
   servingSizeG: 330,
   packageSizeG: null,
+  amountUnit: 'ml',
+  imageUrl: null,
+  micronutrients: { potassiumMg: 2 },
 };
 
 beforeEach(() => {
   requireAuthAndProfile.mockReset();
   searchBarcodeProduct.mockReset();
+  checkFeatureGate.mockReset();
+  checkFeatureGate.mockResolvedValue({ locked: false });
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
-    profile: {},
+    profile: { createdAt: new Date('2026-09-01T00:00:00Z') },
   });
 });
 
@@ -62,6 +72,32 @@ describe('GET /api/v1/barcode/search', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ product });
     expect(searchBarcodeProduct).toHaveBeenCalledWith('5449000000996');
+  });
+
+  it('strips Premium figures server-side for a viewer without access', async () => {
+    searchBarcodeProduct.mockResolvedValue({ ...product, sodiumMg: 4 });
+    checkFeatureGate.mockResolvedValue({
+      locked: true,
+      reason: 'not_entitled',
+    });
+
+    const res = await GET(makeRequest({ code: '5449000000996' }));
+    const body = await res.json();
+
+    expect(checkFeatureGate).toHaveBeenCalledWith(
+      {
+        userId: 'user-123',
+        profileCreatedAt: new Date('2026-09-01T00:00:00Z'),
+      },
+      'micronutrients'
+    );
+    expect(body.product).toMatchObject({
+      caloriesKcal: 42,
+      amountUnit: 'ml',
+      sodiumMg: null,
+      fiberG: null,
+      micronutrients: null,
+    });
   });
 
   it('rejects a non-numeric barcode with 400 before hitting the service', async () => {

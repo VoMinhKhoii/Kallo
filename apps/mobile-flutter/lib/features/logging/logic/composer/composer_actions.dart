@@ -9,7 +9,7 @@ import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../widgets/sheets/meal_mode_sheet.dart';
-import '../../widgets/sheets/scan/scan_sheet.dart';
+import '../../widgets/sheets/scan/screen.dart';
 import '../meal_log_mode.dart';
 import '../relog/scan_purpose.dart';
 
@@ -61,16 +61,12 @@ Future<ScanOutcome?> openScanSheet(
   required ScanPurpose purpose,
   required String userId,
   required String date,
-  required VoidCallback onFallbackToText,
 }) async {
-  final outcome = await showScanSheet(
+  final outcome = await showScanScreen(
     context,
     userId: userId,
     date: date,
     purpose: purpose,
-    // Neither the barcode nor the label got us there → the AI composer is the
-    // better tool: pop the sheet and hand the user the keyboard.
-    onFallbackToText: onFallbackToText,
   );
   if (outcome is ScanSaved && context.mounted) {
     HapticFeedback.mediumImpact();

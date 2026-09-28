@@ -192,6 +192,16 @@ export const vietnameseFoodComposition = pgTable(
     // in the whole package. Nullable — most non-packaged rows have neither.
     servingSizeG: numeric('serving_size_g'),
     packageSizeG: numeric('package_size_g'),
+    // The unit those sizes and the per-100 nutrition are in: 'ml' for drinks
+    // labelled per 100ml, 'g' otherwise. Null on rows cached before barcode
+    // enrichment, read as 'g'.
+    amountUnit: text('amount_unit'),
+    // The provider's front-of-pack photo. Server-only: clients get our proxy
+    // path (`/api/v1/barcode/image/<code>`), never this URL.
+    imageUrl: text('image_url'),
+    // The barcode parser version that wrote the row. Null predates versioning;
+    // a row older than `BARCODE_DATA_VERSION` is re-fetched on its next scan.
+    barcodeDataVersion: smallint('barcode_data_version'),
 
     // Macros
     caloriesKcal: numeric('calories_kcal'),
@@ -240,6 +250,10 @@ export const vietnameseFoodComposition = pgTable(
     check(
       'vietnamese_food_composition_state_check',
       sql`${table.state} IN ('raw', 'cooked')`
+    ),
+    check(
+      'vietnamese_food_composition_amount_unit_check',
+      sql`${table.amountUnit} IN ('g', 'ml')`
     ),
   ]
 );

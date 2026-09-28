@@ -152,7 +152,6 @@ class _MealModeSheetState extends ConsumerState<_MealModeSheet> {
     children: [
       KalloSheetSubHeader(
         title: 'logging.cheatIntensity.title'.tr(),
-        parentTitle: 'logging.modeSelector.title'.tr(),
         onBack: _back,
       ),
       const SizedBox(height: KalloSpacing.sp2),

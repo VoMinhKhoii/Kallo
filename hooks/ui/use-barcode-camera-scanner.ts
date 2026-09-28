@@ -17,9 +17,31 @@ export interface CameraDevice {
 interface UseBarcodeCameraScannerOptions {
   /** Only run the camera lifecycle while both are true. */
   isActive: boolean;
-  /** Called with the raw decoded text once a barcode is read. The scanner is
-   *  stopped before this fires, so the caller may safely start network work. */
-  onDecode: (decodedText: string) => void;
+  /** Called with the raw decoded text once a barcode is read, and the frame
+   *  it was read in (a JPEG data URL, or null) so the caller can hold the
+   *  picture while the code is looked up. The scanner is stopped before this
+   *  fires, so the caller may safely start network work. */
+  onDecode: (decodedText: string, frame: string | null) => void;
+}
+
+/** The element html5-qrcode renders its video into. */
+export const BARCODE_SCANNER_ELEMENT_ID = 'kallo-barcode-scanner';
+
+/** The live video's current frame, before the scanner stops and takes it. */
+function grabFrame(): string | null {
+  const video = document.querySelector<HTMLVideoElement>(
+    `#${BARCODE_SCANNER_ELEMENT_ID} video`
+  );
+  if (!video?.videoWidth) return null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.8);
+  } catch {
+    return null;
+  }
 }
 
 function playBeep() {
@@ -130,7 +152,7 @@ export function useBarcodeCameraScanner({
         await new Promise((resolve) => setTimeout(resolve, 150));
         if (!isMounted) return;
 
-        const scanner = new Html5Qrcode('kallo-barcode-scanner', {
+        const scanner = new Html5Qrcode(BARCODE_SCANNER_ELEMENT_ID, {
           formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -173,10 +195,11 @@ export function useBarcodeCameraScanner({
 
             playBeep();
             vibrate();
+            const frame = grabFrame();
 
             stopScanner().then(() => {
               if (!isMounted) return;
-              onDecode(decodedText);
+              onDecode(decodedText, frame);
             });
           },
           () => {
