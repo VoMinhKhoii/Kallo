@@ -1654,9 +1654,7 @@
       "sharedToast": "Đã chia sẻ với vòng kết nối",
       "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
-      "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
-      "shareCard": "Chia sẻ thẻ",
-      "shareCardTitle": "Bữa ăn của tôi trên Kallo"
+      "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại."
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn",
