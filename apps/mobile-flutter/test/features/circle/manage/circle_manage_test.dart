@@ -30,12 +30,16 @@ Map<String, dynamic> _group(String id, String title, {String kind = 'group'}) =>
     };
 
 /// A fake backend for "Edit circle": [friends], [groups] and [blocked] are
-/// what the three lists read; every POST/DELETE succeeds.
+/// what the three lists read; every POST/DELETE succeeds. Each group's detail
+/// says the viewer is [myRole], with other members unless [aloneInGroup].
 FakeApiClient _api({
   List<Map<String, dynamic>> friends = const [],
   List<Map<String, dynamic>> groups = const [],
   List<Map<String, dynamic>> blocked = const [],
   bool friendsFail = false,
+  bool blockedFail = false,
+  String myRole = 'member',
+  bool aloneInGroup = false,
 }) => FakeApiClient((request) async {
   final path = request.path;
   if (request.method == 'GET') {
@@ -43,8 +47,31 @@ FakeApiClient _api({
       if (friendsFail) throw Exception('offline');
       return {'circle': friends};
     }
-    if (path == _blockedPath) return {'blocked': blocked};
-    if (path.startsWith('/api/v1/chat-groups')) return {'groups': groups};
+    if (path == _blockedPath) {
+      if (blockedFail) throw Exception('offline');
+      return {'blocked': blocked};
+    }
+    if (path.startsWith('/api/v1/chat-groups?')) return {'groups': groups};
+    if (path.startsWith('/api/v1/chat-groups/')) {
+      final id = path.split('/').last;
+      return {
+        'group': {
+          'id': id,
+          'kind': 'group',
+          'name': id,
+          'myRole': myRole,
+          'members': [
+            {'userId': 'me', 'handle': 'me', 'role': myRole},
+            if (!aloneInGroup)
+              {
+                'userId': 'u9',
+                'handle': 'u9',
+                'role': myRole == 'owner' ? 'member' : 'owner',
+              },
+          ],
+        },
+      };
+    }
     if (path == '/api/v1/groups/profile') {
       return {
         'profile': {'userId': 'me', 'handle': 'me', 'displayName': 'vmkhoiii'},
@@ -205,6 +232,20 @@ void main() {
       expect(find.textContaining('Blocked ('), findsNothing);
     });
 
+    testWidgets('a failed blocked count keeps the way to the blocked list', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _api(friends: [_member('u1', 'Linh')], blockedFail: true),
+      );
+
+      // No count to show, but the row stays: it is the only way to unblock.
+      await tester.tap(find.text('Blocked'));
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't load who you've blocked"), findsOneWidget);
+    });
+
     testWidgets('the blocked list unblocks after a confirm', (tester) async {
       final api = _api(
         friends: [_member('u1', 'Linh')],
@@ -272,6 +313,40 @@ void main() {
         'reason': 'spam',
       });
       expect(find.text('Thanks for letting us know'), findsNothing);
+    });
+
+    testWidgets('the owner of a group with members gets no ⋯ at all', (
+      tester,
+    ) async {
+      // The server refuses both: a report resolves to the creator, and an
+      // owner cannot leave while others remain.
+      await _pump(
+        tester,
+        _api(groups: [_group('g1', 'Team lunch')], myRole: 'owner'),
+        tab: CircleManageTab.circle,
+      );
+
+      expect(find.text('Go to circle'), findsOneWidget);
+      expect(_more('Team lunch'), findsNothing);
+    });
+
+    testWidgets('an owner alone in the group can leave, not report', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _api(
+          groups: [_group('g1', 'Team lunch')],
+          myRole: 'owner',
+          aloneInGroup: true,
+        ),
+        tab: CircleManageTab.circle,
+      );
+
+      await tester.tap(_more('Team lunch'));
+      await tester.pumpAndSettle();
+      expect(find.text('Leave group'), findsOneWidget);
+      expect(find.text('Report group'), findsNothing);
     });
 
     testWidgets('no groups: the capybara in a box and "Create group"', (

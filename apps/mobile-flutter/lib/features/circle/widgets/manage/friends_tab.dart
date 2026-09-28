@@ -31,11 +31,17 @@ class FriendsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final friendsAsync = ref.watch(circleFriendsProvider);
-    final blockedCount =
-        ref.watch(blockedCircleUsersProvider).valueOrNull?.length ?? 0;
+    // Shown once someone is blocked — and ALSO when the count failed to load:
+    // this row is the only way to the blocked list, and that page carries its
+    // own retry, so an error must not quietly take the way to unblock away.
+    final blocked = ref.watch(blockedCircleUsersProvider);
+    final blockedCount = blocked.valueOrNull?.length ?? 0;
     final blockedRow =
-        blockedCount > 0
-            ? BlockedLinkRow(count: blockedCount, onTap: onOpenBlocked)
+        blockedCount > 0 || blocked.hasError
+            ? BlockedLinkRow(
+              count: blocked.hasError ? null : blockedCount,
+              onTap: onOpenBlocked,
+            )
             : null;
 
     return friendsAsync.when(

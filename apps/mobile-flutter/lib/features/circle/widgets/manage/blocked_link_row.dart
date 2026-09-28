@@ -11,7 +11,9 @@ import '../../../../theme/kallo_theme.dart';
 class BlockedLinkRow extends StatelessWidget {
   const BlockedLinkRow({super.key, required this.count, required this.onTap});
 
-  final int count;
+  /// Null when the count could not be loaded: the row then reads just
+  /// "Blocked", and the list it opens shows the error with a retry.
+  final int? count;
   final VoidCallback onTap;
 
   /// The row's height — the 44pt target — for a layout that has to leave
@@ -20,10 +22,10 @@ class BlockedLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = tr(
-      'groups.manage.blockedRow',
-      namedArgs: {'count': '$count'},
-    );
+    final label =
+        count == null
+            ? tr('groups.manage.blockedTitle')
+            : tr('groups.manage.blockedRow', namedArgs: {'count': '$count'});
     return Semantics(
       button: true,
       excludeSemantics: true,
