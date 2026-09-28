@@ -13,6 +13,7 @@ import 'share_meal_draft.dart';
 import 'share_meal_request.dart';
 import 'share_meal_states.dart';
 import 'share_meal_footer.dart';
+import '../../data/local_blocks.dart';
 
 /// The sheet body. Opened through `showShareMealSheet`, which owns the
 /// confirmation toast, the undo, and the send — all three outlive this widget,
@@ -72,7 +73,7 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.9;
-    final friendsAsync = ref.watch(circleFriendsProvider);
+    final friendsAsync = ref.watch(visibleCircleFriendsProvider);
 
     return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),

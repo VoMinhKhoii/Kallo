@@ -10,6 +10,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
 import '../states/circle_error.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../data/local_blocks.dart';
 
 /// Who is already in your circle, with a Remove beside each. Mirrors
 /// `components/groups/invite/circle-list.tsx`.
@@ -18,7 +19,7 @@ class CircleListSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final friendsAsync = ref.watch(circleFriendsProvider);
+    final friendsAsync = ref.watch(visibleCircleFriendsProvider);
     return friendsAsync.when(
       loading: () => const SizedBox.shrink(),
       error:

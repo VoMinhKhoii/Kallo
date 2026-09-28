@@ -15,6 +15,7 @@ import '../states/manage_tab_state.dart';
 import 'blocked_link_row.dart';
 import 'friend_row.dart';
 import 'manage_list.dart';
+import '../../data/local_blocks.dart';
 
 /// The Friends tab: everyone in the viewer's circle, then — once someone has
 /// been blocked — one quiet row into the blocked list.
@@ -47,7 +48,7 @@ class FriendsTab extends ConsumerWidget {
             : null;
 
     return ref
-        .watch(circleFriendsProvider)
+        .watch(visibleCircleFriendsProvider)
         .when(
           skipLoadingOnRefresh: true,
           loading: () => _loadingWith(blockedRow),

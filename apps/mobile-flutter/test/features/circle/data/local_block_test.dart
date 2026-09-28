@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/data/moderation_mutations.dart';
@@ -97,6 +99,69 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'a group list fetched after the block is trusted for its unread flags',
+    () async {
+      final api = FakeApiClient((request) async {
+        if (request.path.startsWith('/api/v1/chat-groups?')) {
+          return {
+            'groups': [
+              {
+                'id': 'g1',
+                'kind': 'group',
+                'title': 'Weekend hikers',
+                'updatedAt': '2026-07-18T00:00:00Z',
+                'unread': true,
+              },
+            ],
+          };
+        }
+        return <String, dynamic>{};
+      });
+      final container = makeContainer(api);
+      container.read(localBlocksProvider.notifier).add('friend-s1');
+
+      holdProvider(container, chatGroupsProvider);
+      final groups = await container.read(chatGroupsProvider.future);
+
+      expect(
+        container.read(localBlocksProvider).predatesAnyBlock(groups.single),
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'a friends list fetched after the block is the server\'s answer',
+    () async {
+      // Unblocked and re-friended elsewhere: the fresh list has them again.
+      final api = FakeApiClient((request) async {
+        if (request.path == '/api/v1/groups/friends') {
+          return {
+            'circle': [
+              {
+                'friendshipId': 'f1',
+                'status': 'accepted',
+                'profile': {'userId': 'friend-s1', 'handle': 'h'},
+              },
+            ],
+          };
+        }
+        return <String, dynamic>{};
+      });
+      final container = makeContainer(api);
+      container.read(localBlocksProvider.notifier).add('friend-s1');
+
+      holdProvider(container, circleFriendsProvider);
+      final friends = await container.read(circleFriendsProvider.future);
+
+      expect(
+        container.read(localBlocksProvider).hides('friend-s1', friends.single),
+        isFalse,
+      );
+    },
+  );
 
   group('each cached value is judged by when it was fetched', () {
     late ProviderContainer container;

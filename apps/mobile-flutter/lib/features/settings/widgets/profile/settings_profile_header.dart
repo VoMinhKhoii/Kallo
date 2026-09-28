@@ -10,6 +10,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../circle/data/circle_providers.dart';
+import '../../../circle/data/local_blocks.dart';
 
 /// The person at the top of Settings: a 64pt avatar, their name over the
 /// signed-in email, their friend count where the chevron used to be, and two
@@ -110,7 +111,7 @@ class _FriendCount extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final members = ref.watch(circleFriendsProvider).valueOrNull;
+    final members = ref.watch(visibleCircleFriendsProvider).valueOrNull;
     final count = members?.where((m) => m.isAccepted).length;
     // A dash until the list lands, never a 0 that is not true yet.
     final figure = count == null ? '–' : '$count';

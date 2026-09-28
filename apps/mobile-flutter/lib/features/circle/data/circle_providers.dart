@@ -97,13 +97,16 @@ final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
   ref,
 ) async {
   final api = ref.watch(apiClientProvider);
-  return runWithRetry(() async {
+  final since = ref.read(localBlocksProvider.notifier).generation;
+  final friends = await runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/friends');
     final list = (json['circle'] as List<dynamic>?) ?? const [];
     return list
         .map((e) => CircleMember.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
   });
+  stampFetched(friends, since);
+  return friends;
 });
 
 /// The viewer's own public profile — auto-provisioned server-side, so the
@@ -299,22 +302,6 @@ final mealShareInvitesProvider =
       });
       stampFetched(invites, since);
       return invites;
-    });
-
-/// [mealShareInvitesProvider] minus offers from anyone just blocked
-/// (`local_blocks.dart`). The inbox AND the tab badge read this, so the badge
-/// never promises an offer the inbox hides.
-final visibleMealShareInvitesProvider =
-    Provider.autoDispose<AsyncValue<List<MealShareInvite>>>((ref) {
-      final blocks = ref.watch(localBlocksProvider);
-      return ref
-          .watch(mealShareInvitesProvider)
-          .whenData(
-            (all) => [
-              for (final invite in all)
-                if (!blocks.hides(invite.from.userId, invite)) invite,
-            ],
-          );
     });
 
 /// Refresh the meal-share inbox after a day read that handed offers back.

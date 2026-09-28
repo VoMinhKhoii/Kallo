@@ -110,6 +110,68 @@ void main() {
     expect([for (final i in visible) i.id], ['i2']);
   });
 
+  test("the friends lists drop a blocked person's stale row", () async {
+    final container = ProviderContainer(
+      overrides: [
+        blocked,
+        circleFriendsProvider.overrideWith(
+          (ref) async => [
+            for (final id in ['friend-s1', 'friend-s2'])
+              CircleMember.fromJson({
+                'friendshipId': 'f-$id',
+                'status': 'accepted',
+                'profile': {'userId': id, 'handle': id, 'displayName': id},
+              }),
+          ],
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(visibleCircleFriendsProvider, (_, __) {});
+    addTearDown(sub.close);
+    await container.read(circleFriendsProvider.future);
+
+    final visible = container.read(visibleCircleFriendsProvider).value!;
+    expect([for (final m in visible) m.profile.userId], ['friend-s2']);
+  });
+
+  group("a group pill's unread dot from a list fetched before a block", () {
+    Future<void> pumpPills(WidgetTester tester, {required bool fresh}) {
+      const group = ChatGroupIdentity(
+        id: 'g1',
+        kind: 'group',
+        title: 'Weekend hikers',
+        updatedAt: '2026-07-18T00:00:00Z',
+        unread: true,
+      );
+      // `_JustBlocked` blocks at generation 1: a list asked for at 1 is
+      // fresh, an unstamped one predates it.
+      if (fresh) stampFetched([group], 1);
+      return pumpCircleScreen(
+        tester,
+        const Scaffold(body: ViewSwitcher()),
+        overrides: [
+          blocked,
+          chatGroupsProvider.overrideWith((_) => [group]),
+          circleFeedProvider.overrideWith((_) => Stream.value(const [])),
+          friendsReadMarkerProvider.overrideWith(
+            (_) async => DateTime.utc(2026),
+          ),
+        ],
+      );
+    }
+
+    testWidgets('is held back', (tester) async {
+      await pumpPills(tester, fresh: false);
+      expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
+    });
+
+    testWidgets('but a fresh list still shows it', (tester) async {
+      await pumpPills(tester, fresh: true);
+      expect(find.byKey(const Key('circle-unread-dot')), findsOneWidget);
+    });
+  });
+
   testWidgets("the All pill's unread dot ignores a blocked person's post", (
     tester,
   ) async {

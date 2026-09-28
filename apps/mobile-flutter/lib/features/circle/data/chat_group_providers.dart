@@ -8,6 +8,7 @@ import '../../../services/http/query.dart';
 import '../../../models/social/chat_group.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show localTimezoneOffsetMinutes;
+import 'local_blocks.dart';
 
 const Duration _groupRequestTimeout = Duration(seconds: 15);
 
@@ -16,7 +17,8 @@ final chatGroupsProvider = FutureProvider.autoDispose<List<ChatGroupIdentity>>((
 ) async {
   final api = ref.watch(apiClientProvider);
   final timezoneOffset = localTimezoneOffsetMinutes();
-  return runWithRetry(() async {
+  final since = ref.read(localBlocksProvider.notifier).generation;
+  final groups = await runWithRetry(() async {
     final json = await api
         .get<Map<String, dynamic>>(
           '/api/v1/chat-groups?timezoneOffset=$timezoneOffset',
@@ -28,6 +30,10 @@ final chatGroupsProvider = FutureProvider.autoDispose<List<ChatGroupIdentity>>((
         )
         .toList(growable: false);
   });
+  // Its unread flags cannot say whose message they count, so a list fetched
+  // before a block is not trusted for them (`local_blocks.dart`).
+  stampFetched(groups, since);
+  return groups;
 });
 
 final chatGroupDetailProvider = FutureProvider.autoDispose

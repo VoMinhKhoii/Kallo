@@ -13,6 +13,7 @@ import '../../data/circle_providers.dart';
 import '../../data/feed_providers.dart';
 import '../invite/add_friend_sheet.dart';
 import 'create_group_member_picker.dart';
+import '../../data/local_blocks.dart';
 
 class CreateGroupSheet extends ConsumerStatefulWidget {
   const CreateGroupSheet({super.key});
@@ -107,7 +108,7 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
                   ),
                   const SizedBox(height: KalloSpacing.sp2),
                   CreateGroupMemberPicker(
-                    friends: ref.watch(circleFriendsProvider),
+                    friends: ref.watch(visibleCircleFriendsProvider),
                     searchController: _search,
                     selected: _selected,
                     onChanged: () => setState(() {}),

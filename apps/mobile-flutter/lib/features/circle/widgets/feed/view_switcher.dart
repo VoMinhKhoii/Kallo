@@ -36,11 +36,8 @@ class ViewSwitcher extends ConsumerWidget {
     final selected = ref.watch(circleSelectedViewProvider);
     final ambient = ref.watch(circleFeedProvider);
     final marker = ref.watch(friendsReadMarkerProvider);
-    final allUnread = _allUnread(
-      ambient,
-      marker,
-      ref.watch(localBlocksProvider),
-    );
+    final blocks = ref.watch(localBlocksProvider);
+    final allUnread = _allUnread(ambient, marker, blocks);
 
     return Semantics(
       label: tr('groups.switcher.label'),
@@ -62,7 +59,9 @@ class ViewSwitcher extends ConsumerWidget {
               _Pill(
                 label: group.title,
                 selected: selected == group.id,
-                unread: group.unread,
+                // A group's flag cannot say whose message it counts, so one
+                // from a list fetched before a block waits for a fresh list.
+                unread: group.unread && !blocks.predatesAnyBlock(group),
                 onTap:
                     () =>
                         ref.read(circleSelectedViewProvider.notifier).state =

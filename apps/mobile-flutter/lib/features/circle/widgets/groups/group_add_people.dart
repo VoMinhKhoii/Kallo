@@ -16,6 +16,7 @@ import '../../data/circle_providers.dart';
 import '../states/circle_error.dart';
 import '../states/friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
+import '../../data/local_blocks.dart';
 
 class GroupAddPeople extends ConsumerStatefulWidget {
   const GroupAddPeople({required this.group, super.key});
@@ -70,7 +71,7 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
         widget.group.members.map((member) => member.userId).toSet();
     final gate = premiumGate(ref, PremiumFeature.unlimitedCircle);
     return ref
-        .watch(circleFriendsProvider)
+        .watch(visibleCircleFriendsProvider)
         .when(
           loading:
               () => FriendListSkeleton(semanticsLabel: tr('common.loading')),

@@ -7,6 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/circle_providers.dart';
 import 'deck/invite_deck.dart';
+import '../../data/local_blocks.dart';
 
 /// The Circle inbox: pending copy/split offers addressed to me. Renders nothing
 /// when empty. Mirrors the web `MealInvites`.

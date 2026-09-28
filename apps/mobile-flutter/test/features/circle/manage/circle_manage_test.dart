@@ -54,6 +54,8 @@ FakeApiClient _api({
   Future<void>? blockedRefetchGate,
 }) {
   var blockedFetches = 0;
+  // Like the server: once blocked, a person leaves the friends list.
+  final blockedIds = <String>{};
   return FakeApiClient((request) async {
     final path = request.path;
     if (request.method != 'GET' && writeGate != null) await writeGate;
@@ -62,7 +64,12 @@ FakeApiClient _api({
       if (path == _friendsPath) {
         if (friendsFail) throw Exception('offline');
         if (friendsGate != null) await friendsGate;
-        return {'circle': friends};
+        return {
+          'circle': [
+            for (final f in friends)
+              if (!blockedIds.contains((f['profile'] as Map)['userId'])) f,
+          ],
+        };
       }
       if (path == _blockedPath) {
         if (blockedFail) throw Exception('offline');
@@ -106,6 +113,9 @@ FakeApiClient _api({
           },
         };
       }
+    }
+    if (path == '/api/v1/groups/friends/block') {
+      blockedIds.add((request.body! as Map)['targetUserId'] as String);
     }
     if (path == '/api/v1/reports') return {'id': 'report-1'};
     return <String, dynamic>{};
@@ -191,7 +201,7 @@ void main() {
       final write = _writes(api).single;
       expect(write.path, '/api/v1/groups/friends/block');
       expect(write.body, {'targetUserId': 'u1'});
-      expect(_moreOn(tester, 'Linh'), isFalse, reason: 'blocked: row is off');
+      expect(_more('Linh'), findsNothing, reason: 'blocked: the row is gone');
     });
 
     testWidgets('the ⋯ is off while a block is in flight', (tester) async {
@@ -278,7 +288,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_writes(api).last.path, '/api/v1/groups/friends/block');
-      expect(_moreOn(tester, 'Linh'), isFalse);
+      expect(_more('Linh'), findsNothing);
     });
 
     testWidgets('⋯ → Remove from circle confirms, then removes', (

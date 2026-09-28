@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/circle/data/circle_providers.dart';
 import '../../theme/calm_tokens.dart';
 import '../../theme/kallo_theme.dart';
 import '../../theme/kallo_typography.dart';
 import '../header/app_header_status_dots.dart';
+import '../../features/circle/data/local_blocks.dart';
 
 /// One pill-nav tab: a 24pt stroke glyph, ink when active and muted
 /// otherwise, filling its flex slot so the whole column is the target (well

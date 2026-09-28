@@ -26,11 +26,15 @@
 /// blocks reset when the signed-in user changes.
 library;
 
+import 'dart:math' show max;
+
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/circle.dart';
 import '../../../services/auth/session_provider.dart';
+import 'circle_providers.dart'
+    show circleFriendsProvider, mealShareInvitesProvider;
 
 final localBlocksProvider = NotifierProvider<LocallyBlockedUsers, LocalBlocks>(
   LocallyBlockedUsers.new,
@@ -75,6 +79,13 @@ class LocalBlocks {
     if (blockedAt == null) return false;
     return (_fetchedAt[content] ?? 0) < blockedAt;
   }
+
+  /// Whether [content] was fetched before the latest block — for a value
+  /// that cannot say which person it counts (a group's unread flag), and so
+  /// is not trusted until a fresh one arrives.
+  bool predatesAnyBlock(Object content) =>
+      _blockedAt.isNotEmpty &&
+      (_fetchedAt[content] ?? 0) < _blockedAt.values.reduce(max);
 }
 
 class LocallyBlockedUsers extends Notifier<LocalBlocks> {
@@ -95,3 +106,42 @@ class LocallyBlockedUsers extends Notifier<LocalBlocks> {
     state = LocalBlocks({...state._blockedAt, userId: _clock});
   }
 }
+
+// ---------------------------------------------------------------------------
+// What the viewer sees: the cached lists without a just-blocked person.
+// Loading and error pass through unchanged; a retry still invalidates the
+// underlying provider.
+// ---------------------------------------------------------------------------
+
+/// [circleFriendsProvider] without anyone blocked since it was fetched. Every
+/// friends list — Edit circle, the Settings count, the share and group
+/// pickers — reads this, so a person blocked from a post never keeps a live
+/// row (Report, Block, Remove) while the refetch runs.
+final visibleCircleFriendsProvider =
+    Provider.autoDispose<AsyncValue<List<CircleMember>>>((ref) {
+      final blocks = ref.watch(localBlocksProvider);
+      return ref
+          .watch(circleFriendsProvider)
+          .whenData(
+            (all) => [
+              for (final member in all)
+                if (!blocks.hides(member.profile.userId, member)) member,
+            ],
+          );
+    });
+
+/// [mealShareInvitesProvider] minus offers from anyone just blocked. The inbox
+/// AND the Circle tab badge read this, so the badge never promises an offer
+/// the inbox hides.
+final visibleMealShareInvitesProvider =
+    Provider.autoDispose<AsyncValue<List<MealShareInvite>>>((ref) {
+      final blocks = ref.watch(localBlocksProvider);
+      return ref
+          .watch(mealShareInvitesProvider)
+          .whenData(
+            (all) => [
+              for (final invite in all)
+                if (!blocks.hides(invite.from.userId, invite)) invite,
+            ],
+          );
+    });
