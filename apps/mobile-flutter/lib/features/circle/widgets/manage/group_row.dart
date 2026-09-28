@@ -28,16 +28,30 @@ enum _GroupAction { report, leave }
 /// "Go to circle" is the row's one positive action — a small outline squircle
 /// ([KalloSmallButton]) — so the list reads as places to go, not things to
 /// get rid of.
-class GroupRow extends ConsumerWidget {
+class GroupRow extends ConsumerStatefulWidget {
   const GroupRow({super.key, required this.group});
 
   final ChatGroupIdentity group;
+
+  @override
+  ConsumerState<GroupRow> createState() => _GroupRowState();
+}
+
+class _GroupRowState extends ConsumerState<GroupRow> {
+  /// True from the `⋯` tap until its whole flow ends (role load, sheet, the
+  /// chosen action). The role loads on the tap, so a slow request leaves a
+  /// window where more taps would each await the same future and then each
+  /// push a sheet — stacked copies, and a second chance to repeat the action.
+  /// Taps inside the window are ignored.
+  bool _menuOpen = false;
+
+  ChatGroupIdentity get group => widget.group;
 
   /// Opens the Circle tab on this group's feed. `go`, not `push`: the Circle
   /// tab is a shell branch, and this page sits on a root route above the
   /// shell, so going there replaces the settings stack rather than stacking a
   /// second shell on top of it. The selection is what `CircleScreen` reads.
-  void _goToCircle(BuildContext context, WidgetRef ref) {
+  void _goToCircle() {
     ref.read(circleSelectedViewProvider.notifier).state = group.id;
     GoRouter.of(context).go('/circle');
   }
@@ -47,16 +61,13 @@ class GroupRow extends ConsumerWidget {
   /// N groups must not fan out into N detail requests nobody asked for). A
   /// load that fails is a toast and a fresh fetch on the next tap, not a menu
   /// that offers what the server will refuse.
-  Future<({bool report, bool leave})?> _allowed(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<({bool report, bool leave})?> _allowed() async {
     final provider = chatGroupDetailProvider(group.id);
     try {
       return groupActionsFor(await ref.read(provider.future));
     } catch (_) {
       ref.invalidate(provider);
-      if (context.mounted) {
+      if (mounted) {
         showTopToast(
           context,
           tr('groups.manage.groupLoadError'),
@@ -67,9 +78,19 @@ class GroupRow extends ConsumerWidget {
     }
   }
 
-  Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
-    final allowed = await _allowed(context, ref);
-    if (allowed == null || !context.mounted) return;
+  Future<void> _openMenu() async {
+    if (_menuOpen) return;
+    _menuOpen = true;
+    try {
+      await _runMenu();
+    } finally {
+      _menuOpen = false;
+    }
+  }
+
+  Future<void> _runMenu() async {
+    final allowed = await _allowed();
+    if (allowed == null || !mounted) return;
     if (!allowed.report && !allowed.leave) {
       // The owner of a group others are still in: nothing to report, and
       // leaving is refused until they have gone. Say so, not a dead tap.
@@ -93,7 +114,7 @@ class GroupRow extends ConsumerWidget {
           ),
       ],
     );
-    if (action == null || !context.mounted) return;
+    if (action == null || !mounted) return;
     switch (action) {
       case _GroupAction.report:
         await reportFlow(
@@ -108,7 +129,7 @@ class GroupRow extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return ManageRow(
       leading: const _GroupDisc(),
       title: group.title,
@@ -116,9 +137,9 @@ class GroupRow extends ConsumerWidget {
         const SizedBox(width: KalloSpacing.sp2),
         KalloSmallButton(
           label: tr('groups.manage.goToCircle'),
-          onPressed: () => _goToCircle(context, ref),
+          onPressed: _goToCircle,
         ),
-        MoreButton(name: group.title, onPressed: () => _openMenu(context, ref)),
+        MoreButton(name: group.title, onPressed: _openMenu),
       ],
     );
   }

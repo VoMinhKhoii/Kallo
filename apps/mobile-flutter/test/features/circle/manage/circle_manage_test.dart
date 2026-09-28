@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,6 +43,7 @@ FakeApiClient _api({
   String myRole = 'member',
   bool aloneInGroup = false,
   bool groupDetailFail = false,
+  Future<void>? groupDetailGate,
 }) => FakeApiClient((request) async {
   final path = request.path;
   if (request.method == 'GET') {
@@ -55,6 +58,7 @@ FakeApiClient _api({
     if (path.startsWith('/api/v1/chat-groups?')) return {'groups': groups};
     if (path.startsWith('/api/v1/chat-groups/')) {
       if (groupDetailFail) throw Exception('offline');
+      if (groupDetailGate != null) await groupDetailGate;
       final id = path.split('/').last;
       return {
         'group': {
@@ -359,6 +363,29 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('tapping ⋯ again while the role loads opens one sheet', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      await _pump(
+        tester,
+        _api(
+          groups: [_group('g1', 'Team lunch')],
+          groupDetailGate: gate.future,
+        ),
+        tab: CircleManageTab.circle,
+      );
+
+      await tester.tap(_more('Team lunch'));
+      await tester.pump();
+      await tester.tap(_more('Team lunch'));
+      await tester.pump();
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Report group'), findsOneWidget);
     });
 
     testWidgets('rendering the list fetches no group detail', (tester) async {
