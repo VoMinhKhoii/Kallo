@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import '../../../../shared/widgets/badges/premium_dot.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 
 class MealActionIconButton extends StatelessWidget {
@@ -71,14 +70,14 @@ class MealActionIconButton extends StatelessWidget {
                     onTap!();
                   }
                   : null,
-          // Both washes — the selected fill and the pressed splash — hug the
-          // glyph rather than filling the hit box. The tap target stays
-          // [LoggingIcons.hit] for accessibility; a selected action reads as
-          // a small chip around its icon, not a 36pt block under the card.
+          // Both washes — the selected fill and the press — are the same
+          // circle hugging the glyph, not a block filling the hit box; the tap
+          // target stays [LoggingIcons.hit] for accessibility. Uncontained, an
+          // InkResponse draws its highlight as a circle of [radius] around its
+          // centre and grows the splash to that circle. (Contained with a
+          // rounded rectangle, as it was, a press lit the whole 44pt box.)
           radius: LoggingIcons.wash / 2,
-          containedInkWell: true,
-          highlightShape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(KalloRadii.md),
+          highlightShape: BoxShape.circle,
           child: SizedBox.square(
             dimension: LoggingIcons.hit,
             child: Center(
@@ -92,7 +91,7 @@ class MealActionIconButton extends StatelessWidget {
                 height: LoggingIcons.wash,
                 decoration: BoxDecoration(
                   color: active ? KalloColors.hover : Colors.transparent,
-                  borderRadius: BorderRadius.circular(KalloRadii.md),
+                  shape: BoxShape.circle,
                 ),
                 child: Center(
                   child:
