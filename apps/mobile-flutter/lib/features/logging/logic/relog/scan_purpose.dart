@@ -17,7 +17,7 @@ typedef ScanCommit =
     Future<ScanOutcome?> Function(
       WidgetRef ref, {
       required BarcodeProduct product,
-      required int grams,
+      required double grams,
       required String userId,
       required String date,
       required String mealId,
@@ -64,7 +64,7 @@ class ScanPurpose {
 Future<ScanOutcome?> _logMeal(
   WidgetRef ref, {
   required BarcodeProduct product,
-  required int grams,
+  required double grams,
   required String userId,
   required String date,
   required String mealId,
@@ -80,13 +80,13 @@ Future<ScanOutcome?> _logMeal(
 Future<ScanOutcome?> _pickProduct(
   WidgetRef ref, {
   required BarcodeProduct product,
-  required int grams,
+  required double grams,
   required String userId,
   required String date,
   required String mealId,
 }) async => ScanPicked(
   label: barcodePickLabel(product, grams),
-  ref: BarcodeRef(barcode: product.barcode, grams: grams.toDouble()),
+  ref: BarcodeRef(barcode: product.barcode, grams: grams),
 );
 
 /// What a scanned product reads as INSIDE the composer's sentence: its brand,
@@ -104,8 +104,12 @@ Future<ScanOutcome?> _pickProduct(
 /// "(330ml)". The reference beside it carries the same number, so nothing here
 /// is load-bearing — break the text and the pick drops, which is exactly what a
 /// broken relog label does.
-String barcodePickLabel(BarcodeProduct product, int grams) {
+String barcodePickLabel(BarcodeProduct product, num grams) {
   final brand = product.brand;
   final name = brand == null ? product.name : '$brand ${product.name}';
-  return '$name ($grams${product.amountUnit})';
+  final amount =
+      grams == grams.roundToDouble()
+          ? grams.round().toString()
+          : grams.toStringAsFixed(1);
+  return '$name ($amount${product.amountUnit})';
 }

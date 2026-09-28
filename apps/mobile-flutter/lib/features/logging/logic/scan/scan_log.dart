@@ -35,7 +35,9 @@ Future<({ScanOutcome? outcome, String? errorKey})> logScanFood(
     final outcome = await purpose.commit(
       ref,
       product: product,
-      grams: amount.round(),
+      // The amount the preview showed, not rounded to a whole gram: a
+      // 12.5 ml serving logs 12.5 ml.
+      grams: amount,
       userId: userId,
       date: date,
       mealId: mealId,

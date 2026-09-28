@@ -31,6 +31,11 @@ void main() {
       expect(barcodePickLabel(bareProduct, 100), 'Mystery snack (100g)');
     });
 
+    test('keeps a part serving as printed, a whole one without ".0"', () {
+      expect(barcodePickLabel(bareProduct, 12.5), 'Mystery snack (12.5g)');
+      expect(barcodePickLabel(bareProduct, 100.0), 'Mystery snack (100g)');
+    });
+
     test('says a drink in millilitres', () {
       const milk = BarcodeProduct(
         barcode: '8935217400058',

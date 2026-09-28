@@ -148,7 +148,7 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   Future<bool> logMeal({
     required String userId,
     required String date,
-    required int grams,
+    required double grams,
     required String mealId,
   }) async {
     final product = state.product;
