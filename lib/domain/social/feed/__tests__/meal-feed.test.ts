@@ -36,6 +36,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
+    sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
     eatenAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
     displayName: null,
@@ -116,14 +117,22 @@ describe('sharedMealsBefore', () => {
     });
   });
 
-  it('orders and seeks by when the meal was eaten, not when it was shared', async () => {
-    const query = sharedMealsQuery([]);
+  it("'eaten' order seeks, sorts and pages by when the meal was eaten", async () => {
+    const backfill = {
+      ...sharedMeal(2, new Date('2026-01-02T20:00:00Z')),
+      eatenAtText: '2026-01-01 19:00:00.5+00',
+    };
+    const query = sharedMealsQuery([
+      sharedMeal(3, new Date('2026-01-02T12:00:00Z')),
+      backfill,
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
+    ]);
     const before = {
-      ts: '2026-01-02T08:00:00.123+00',
-      id: '00000000-0000-4000-8000-000000000002',
+      ts: '2026-01-03T08:00:00.123+00',
+      id: '00000000-0000-4000-8000-000000000009',
     };
 
-    await sharedMealsBefore(USER_A, before);
+    const page = await sharedMealsBefore(USER_A, before, undefined, 2, 'eaten');
 
     const { sql } = renderedWhere(query.where);
     expect(sql).toContain('"meal_shares"."eaten_at" <');
@@ -133,6 +142,32 @@ describe('sharedMealsBefore', () => {
       query.orderBy.mock.calls[0][0] as SQL
     ).sql;
     expect(order).toContain('"meal_shares"."eaten_at" desc');
+    // The cursor resumes on the same clock it was issued under.
+    expect(decodeSharedMealCursor(page.nextCursor ?? undefined)?.ts).toBe(
+      backfill.eatenAtText
+    );
+  });
+
+  it('keeps share order by default — the v1 contract installed apps group on', async () => {
+    const backfill = {
+      ...sharedMeal(2, new Date('2026-01-02T20:00:00Z')),
+      eatenAtText: '2026-01-01 19:00:00.5+00',
+    };
+    const query = sharedMealsQuery([
+      sharedMeal(3, new Date('2026-01-03T12:00:00Z')),
+      backfill,
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
+    ]);
+
+    const page = await sharedMealsBefore(USER_A, null, undefined, 2);
+
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toBe('"meal_shares"."shared_at" desc');
+    expect(decodeSharedMealCursor(page.nextCursor ?? undefined)?.ts).toBe(
+      backfill.sharedAtText
+    );
   });
 
   it('does not collapse multiple shares from the same user (unlike mostRecentSharedMealsToday)', async () => {

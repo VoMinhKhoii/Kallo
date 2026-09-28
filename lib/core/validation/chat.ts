@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import {
   beforeCursorSchema,
+  feedOrderSchema,
   uuidSchema,
 } from '@/lib/core/validation/primitives';
 
@@ -53,6 +54,7 @@ export const sendChatGroupMessageSchema = z.object({
 export const groupMealFeedSchema = z.object({
   groupId: uuidSchema,
   before: beforeCursorSchema,
+  order: feedOrderSchema,
 });
 
 /** Remove the actor from one membership-gated chat group. */

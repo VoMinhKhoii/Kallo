@@ -235,6 +235,7 @@ describe('listFriendsThreadFeed', () => {
       portionFactor: 1,
       sharedAt,
       loggedAt: sharedAt,
+      sharedAtText: sharedAt.toISOString(),
       eatenAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
@@ -344,6 +345,13 @@ describe('listFriendsThreadFeed', () => {
       userId: ACTOR,
       lastReadAt: backfillSharedAt,
     });
+  });
+
+  it('rejects an order it does not know', async () => {
+    await expect(
+      listFriendsThreadFeed(ACTOR, { order: 'newest' })
+    ).rejects.toThrow();
+    expect(mockDbSelect).not.toHaveBeenCalled();
   });
 
   it('does not touch the read marker when paginating with a before cursor', async () => {

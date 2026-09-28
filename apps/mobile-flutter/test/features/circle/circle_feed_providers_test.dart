@@ -113,6 +113,32 @@ void main() {
     });
   });
 
+  test('asks both feeds for eaten order, first page and older pages', () async {
+    // The server serves share order unless asked: builds that predate this
+    // group their day dividers by sharedAt. This one groups by loggedAt.
+    final api = FakeApiClient((request) {
+      if (request.path.endsWith('/feed')) {
+        return pageJson([entryJson('share-1')], 'cursor-1');
+      }
+      if (request.path.endsWith('?before=cursor-1')) {
+        return pageJson([entryJson('share-2')], null);
+      }
+      return unexpectedRequest(request);
+    });
+    final container = makeContainer(api);
+    await mountFeed(container, null);
+    await container.read(sharedMealFeedProvider(null).notifier).loadMore();
+    await mountFeed(container, 'group-1');
+
+    // Page one also refreshes the read marker and group list; only the feed
+    // requests carry the order.
+    expect(api.sentPaths.where((path) => path.contains('/feed')), [
+      '/api/v1/groups/friends/feed?order=eaten',
+      '/api/v1/groups/friends/feed?order=eaten&before=cursor-1',
+      '/api/v1/chat-groups/group-1/feed?order=eaten',
+    ]);
+  });
+
   test(
     'loadMore appends, dedupes, single-flights, and stops at null',
     () async {

@@ -98,8 +98,11 @@ class SharedMealFeedNotifier
   }
 
   Future<SharedMealFeedPage> _fetchPage({required String? before}) async {
+    // Eaten order: this client day-groups by loggedAt. The server keeps share
+    // order for builds that do not ask, which group by sharedAt.
     final query =
-        before == null ? '' : '?before=${Uri.encodeQueryComponent(before)}';
+        '?order=eaten'
+        '${before == null ? '' : '&before=${Uri.encodeQueryComponent(before)}'}';
     final api = ref.read(apiClientProvider);
     final since = ref.read(localBlocksProvider.notifier).generation;
     final page = await runWithRetry(() async {

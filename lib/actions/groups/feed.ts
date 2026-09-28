@@ -236,7 +236,7 @@ export async function getFriendsFeedReadMarker(
 
 export async function listFriendsThreadFeed(
   actorId: string,
-  input: { before?: string },
+  input: { before?: string; order?: string },
   db: Db = defaultDb
 ): Promise<FriendsThreadFeedPage> {
   const parsed = friendsThreadFeedSchema.parse(input);
@@ -249,7 +249,13 @@ export async function listFriendsThreadFeed(
     ? null
     : await newestFriendSharedAt(actorId, db);
 
-  const { rows, nextCursor } = await sharedMealsBefore(actorId, before, db);
+  const { rows, nextCursor } = await sharedMealsBefore(
+    actorId,
+    before,
+    db,
+    undefined,
+    parsed.order
+  );
 
   const shareIds = rows.map((row) => row.shareId);
   const [reactions, replies] = await Promise.all([

@@ -46,6 +46,15 @@ const beforeParam: Parameter = {
   schema: { type: 'string' },
 };
 
+const orderParam: Parameter = {
+  name: 'order',
+  in: 'query',
+  required: false,
+  description:
+    'Which clock the history is ordered and paged by: `shared` (default — when each meal was shared, the order installed apps group their day dividers on) or `eaten` (when each meal was eaten; a meal logged for a past day files under that day). Page with the same order that issued the cursor.',
+  schema: { type: 'string', enum: ['shared', 'eaten'], default: 'shared' },
+};
+
 /** Friend connections, and the two kinds of invite that create them. */
 export const FRIEND_PATHS: Record<string, PathItem> = {
   '/api/v1/groups/friends': {
@@ -85,7 +94,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       summary: 'Meals shared by friends',
       description: 'A page of meals from connected people, newest first.',
       tags: TAGS,
-      parameters: [beforeParam],
+      parameters: [beforeParam, orderParam],
       ok: ref('Feed'),
     }),
   },
