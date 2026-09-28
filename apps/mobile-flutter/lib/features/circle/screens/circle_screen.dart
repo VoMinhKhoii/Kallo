@@ -14,7 +14,7 @@ import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
 import '../widgets/invite/add_friend_sheet.dart';
 import '../widgets/invite/circle_add_menu.dart';
-import '../widgets/groups/group_info_sheet.dart';
+import '../widgets/groups/info/group_info_sheet.dart';
 import '../widgets/invite/meal_invites.dart';
 import '../widgets/feed/thread_feed.dart';
 import '../widgets/feed/view_switcher.dart';

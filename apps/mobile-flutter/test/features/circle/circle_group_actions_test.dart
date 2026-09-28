@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,7 @@ import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/create_group_sheet.dart';
-import 'package:kallo_mobile/features/circle/widgets/groups/group_info_sheet.dart';
+import 'package:kallo_mobile/features/circle/widgets/groups/info/group_info_sheet.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
 import 'package:kallo_mobile/models/social/chat_group.dart';
@@ -268,7 +269,36 @@ void main() {
         circleFriendsProvider.overrideWith((_) async => const []),
       ],
     );
-    expect(find.byTooltip('Rename group'), findsOneWidget);
+    expect(find.text('Rename group'), findsOneWidget);
+  });
+
+  testWidgets('rename is a second level whose Save capsule PATCHes', (
+    tester,
+  ) async {
+    final api = FakeApiClient((request) => <String, dynamic>{});
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    await tester.tap(find.text('Rename group'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(CupertinoTextField), 'Trail crew');
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(api.requests.single.method, 'PATCH');
+    expect(api.requests.single.path, '/api/v1/chat-groups/g1');
+    expect(api.requests.single.body, {'name': 'Trail crew'});
+    // Back on the first level once the rename lands.
+    expect(find.text('Rename group'), findsOneWidget);
   });
 
   testWidgets('rename affordance is hidden from a member', (tester) async {
@@ -282,10 +312,12 @@ void main() {
         circleFriendsProvider.overrideWith((_) async => const []),
       ],
     );
-    expect(find.byTooltip('Rename group'), findsNothing);
+    expect(find.text('Rename group'), findsNothing);
   });
 
-  testWidgets('remove-member confirmation sends DELETE', (tester) async {
+  testWidgets('swiping a member away confirms, then sends DELETE', (
+    tester,
+  ) async {
     final api = FakeApiClient((request) => <String, dynamic>{});
     await pump(
       tester,
@@ -298,7 +330,8 @@ void main() {
         circleFriendsProvider.overrideWith((_) async => const []),
       ],
     );
-    await tester.tap(find.byTooltip('Remove Mai'));
+    // Removal is a trailing swipe on the row, not an X beside every name.
+    await tester.drag(find.text('Mai'), const Offset(-500, 0));
     await tester.pumpAndSettle();
     // Both options are verbs now (2026-09-03): "Remove" against "Keep", on a
     // native alert surface. Scoped to the dialog so this can only pass by
@@ -313,6 +346,73 @@ void main() {
 
     expect(api.requests.single.method, 'DELETE');
     expect(api.requests.single.path, '/api/v1/chat-groups/g1/members/u2');
+    expect(find.text('Mai'), findsNothing);
+  });
+
+  testWidgets('an owner with members left is not offered Leave', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    expect(find.text('Leave group'), findsNothing);
+  });
+
+  testWidgets('add members is a second level whose capsule POSTs the picks', (
+    tester,
+  ) async {
+    final api = FakeApiClient((request) => <String, dynamic>{});
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith(
+          (_) async => [
+            const CircleMember(
+              friendshipId: 'f9',
+              status: 'accepted',
+              profile: CircleProfile(
+                userId: 'u9',
+                handle: 'lan',
+                displayName: 'Lan',
+                avatarUrl: null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    await tester.tap(find.text('Add members'));
+    await tester.pumpAndSettle();
+    // Nothing picked: the capsule reads "Add" and is inert.
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(api.requests, isEmpty);
+
+    await tester.tap(find.text('Lan'));
+    await tester.pump();
+    await tester.tap(find.text('Add (1)'));
+    await tester.pumpAndSettle();
+
+    expect(api.requests.single.method, 'POST');
+    expect(api.requests.single.path, '/api/v1/chat-groups/g1/members');
+    expect(api.requests.single.body, {
+      'memberUserIds': ['u9'],
+    });
+    // Back on the first level once the add lands.
+    expect(find.text('Add members'), findsOneWidget);
+    expect(find.text('Lan'), findsNothing);
   });
 
   testWidgets('leave confirmation calls DELETE and resets selection', (
@@ -334,7 +434,7 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(GroupInfoSheet)),
     );
-    await tester.tap(find.widgetWithText(TextButton, 'Leave group'));
+    await tester.tap(find.text('Leave group'));
     await tester.pumpAndSettle();
     // The dialog repeats the row's label ("Leave group", against "Stay"), so
     // scope to the alert or this finds the row behind the barrier.
