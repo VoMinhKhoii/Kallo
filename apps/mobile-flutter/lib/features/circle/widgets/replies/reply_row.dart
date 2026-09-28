@@ -2,12 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../models/social/moderation.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_time.dart';
 import '../../logic/circle_spacing.dart';
 import '../feed/feed_rhythm.dart';
+import '../moderation/moderation_long_press.dart';
 
 /// One reply: the avatar on the left, the author line and the reply body in
 /// the content column beside it.
@@ -34,6 +36,17 @@ class ReplyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = reply.isSelf ? tr('groups.wall.you') : reply.author.label;
+    // Long-press → report / block, on other people's replies only.
+    return ModerationLongPress(
+      kind: ReportTargetKind.reply,
+      targetId: reply.id,
+      author: reply.author,
+      isSelf: reply.isSelf,
+      child: _body(name),
+    );
+  }
+
+  Widget _body(String name) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

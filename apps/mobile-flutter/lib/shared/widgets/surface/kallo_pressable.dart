@@ -22,7 +22,8 @@ import 'press_scope.dart';
 /// the colours.
 ///
 /// The wash is [KalloColors.pressWash], full-bleed — the app has one press
-/// token and every consumer so far is a rectangular row or square. It is
+/// token and every consumer so far is a rectangular row or square. A target
+/// that is content rather than a control turns it off with [wash]. It is
 /// painted by an [AnimatedContainer] so it crossfades over [KalloMotion.press]
 /// like every other quiet control, rather than snapping.
 ///
@@ -61,6 +62,7 @@ class KalloPressable extends StatefulWidget {
     this.constraints,
     this.padding,
     this.alignment = Alignment.center,
+    this.wash = true,
     super.key,
   });
 
@@ -77,6 +79,14 @@ class KalloPressable extends StatefulWidget {
   /// Where the child sits in the target. Applied by an [Align] with both size
   /// factors, so aligning never widens the box (see *Sizing* above).
   final AlignmentGeometry alignment;
+
+  /// False paints no press at all — the target still taps and still claims
+  /// its pointer (so nothing above it washes either). For a target that is a
+  /// whole piece of CONTENT rather than a control: a Circle post opens its
+  /// thread on tap, and a full-bleed grey slab over a post that sits inside a
+  /// rounded day card read as broken (2026-09-28). Threads and Instagram
+  /// draw nothing when you press a post; neither does this.
+  final bool wash;
 
   @override
   State<KalloPressable> createState() => _KalloPressableState();
@@ -150,7 +160,10 @@ class _KalloPressableState extends State<KalloPressable> {
             height: widget.height,
             constraints: widget.constraints,
             padding: widget.padding,
-            color: _pressed ? KalloColors.pressWash : const Color(0x00000000),
+            color:
+                _pressed && widget.wash
+                    ? KalloColors.pressWash
+                    : const Color(0x00000000),
             child: Align(
               alignment: widget.alignment,
               widthFactor: 1,

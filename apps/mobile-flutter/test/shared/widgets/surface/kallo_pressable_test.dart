@@ -347,4 +347,30 @@ void main() {
           'the alert action is full-bleed from the Column that stretches it',
     );
   });
+
+  testWidgets('wash: false taps without painting a press', (tester) async {
+    var fired = 0;
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: KalloPressable(
+            onTap: () => fired++,
+            wash: false,
+            height: 44,
+            child: const Text('post'),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('post')),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(washOf(tester), const Color(0x00000000));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(fired, 1);
+  });
 }

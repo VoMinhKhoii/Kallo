@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/calm_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// Equal-width text tabs over a hairline, the selected one ink with a 2pt ink
 /// rule under it — the Instagram "followers / following" switcher, which the
@@ -14,10 +14,10 @@ import '../../../../theme/calm_tokens.dart';
 /// Material's tells are switched off — no ink splash, no hover or press
 /// overlay — so the only motion is the rule sliding.
 ///
-/// Experimental and feature-local on purpose: it has one consumer, the "Edit
-/// circle" page. Promote it to `shared/widgets/` when a second surface adopts
-/// it, and retire `SegmentedStrip` there only if the user settles on this
-/// style app-wide.
+/// A shared primitive (2026-09-28): the underline switcher the user prefers
+/// over the pill strip for switching between two or three sibling LISTS of a
+/// page ("Bạn bè · Nhóm"). `SegmentedStrip` stays for picking a VALUE inside
+/// a form (a feedback type, a unit) — a choice, not a place.
 class UnderlineTabBar extends StatelessWidget implements PreferredSizeWidget {
   const UnderlineTabBar({
     super.key,

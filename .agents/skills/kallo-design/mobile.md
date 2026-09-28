@@ -643,6 +643,24 @@ Reach for these before writing a local variant:
   one sanctioned use of the ink pill outside auth and the paywall. It replaced `KalloEmptyState` and the
   `SeedMark`; the paywall lock card uses `.withMark` to keep the anatomy
   with its own glyph.
+- **`shared/widgets/surface/kallo_small_button.dart`** — the SECONDARY
+  button (2026-09-28): 34pt, 14pt label, Apple's continuous-corner squircle
+  (`RoundedSuperellipseBorder`, radius 10), inside a 44pt `CupertinoButton`
+  hit target. `outline` (white + the hairline) for every secondary action —
+  "Sửa hồ sơ", "Xem nhóm"; `ink` (solid black) for a RARE action that
+  should stand apart — "Bỏ chặn". The 50pt full-round `KalloButton` stays
+  for primaries. Beige is not the answer to every button.
+- **`shared/widgets/chrome/underline_tab_bar.dart`** — equal-width text tabs
+  over a hairline, the selected one ink with a 2pt ink rule (2026-09-28). For
+  switching between sibling LISTS of one page ("Bạn bè · Nhóm"); the pill
+  `SegmentedStrip` stays for picking a value inside a form. Material's
+  `TabBar` with its splash and overlay off — Cupertino ships no underline tab
+  bar.
+- **A post is content, not a control.** `KalloPressable(wash: false)` for a
+  target that is a whole piece of content (a Circle post opening its
+  thread): the full-bleed press wash clipped inside a rounded day card read
+  as a broken grey slab. Threads and Instagram draw nothing on a pressed
+  post.
 - **`shared/widgets/scroll_separator.dart`** — a header hairline that only
   exists once content has scrolled. Wraps header + scroll view and listens to
   bubbled `ScrollNotification`, so any scrollable works and a body that swaps

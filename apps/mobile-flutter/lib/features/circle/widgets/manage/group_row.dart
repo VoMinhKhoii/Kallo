@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/chat_group.dart';
 import '../../../../models/social/moderation.dart';
-import '../../../../shared/widgets/surface/kallo_button.dart';
+import '../../../../shared/widgets/surface/kallo_small_button.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -21,9 +21,9 @@ enum _GroupAction { report, leave }
 /// A group the viewer is in: a glyph disc, its name, "Go to circle", and the
 /// quiet `⋯` holding Report group and Leave group.
 ///
-/// "Go to circle" is the row's one positive action and the only filled thing
-/// on it — a compact beige pill, the in-app primary — so the list reads as
-/// places to go, not things to get rid of.
+/// "Go to circle" is the row's one positive action — a small outline squircle
+/// ([KalloSmallButton]) — so the list reads as places to go, not things to
+/// get rid of.
 class GroupRow extends ConsumerWidget {
   const GroupRow({super.key, required this.group});
 
@@ -75,9 +75,8 @@ class GroupRow extends ConsumerWidget {
       title: group.title,
       trailing: [
         const SizedBox(width: KalloSpacing.sp2),
-        KalloButton(
-          compact: true,
-          title: tr('groups.manage.goToCircle'),
+        KalloSmallButton(
+          label: tr('groups.manage.goToCircle'),
           onPressed: () => _goToCircle(context, ref),
         ),
         MoreButton(name: group.title, onPressed: () => _openMenu(context, ref)),
