@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/billing/entitlement_state.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/surface/kallo_button.dart';
@@ -24,6 +26,10 @@ class CircleTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // "Create group" is `unlimited_circle`, as in the header's add menu: while
+    // the plan lacks it the CTA opens the paywall, not a form the server will
+    // refuse with a 402 after it has been filled in.
+    final createGroup = premiumGate(ref, PremiumFeature.unlimitedCircle);
     final groupsAsync = ref.watch(chatGroupsProvider);
     return groupsAsync.when(
       skipLoadingOnRefresh: true,
@@ -51,7 +57,10 @@ class CircleTab extends ConsumerWidget {
                   action: KalloButton(
                     variant: KalloButtonVariant.cta,
                     title: tr('groups.page.createGroup'),
-                    onPressed: () => showCreateGroupSheet(context),
+                    onPressed: createGroup.tap(
+                      context,
+                      () => showCreateGroupSheet(context),
+                    ),
                   ),
                 ),
           );

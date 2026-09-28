@@ -11,6 +11,8 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_manage_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/manage/more_button.dart';
 import 'package:kallo_mobile/features/circle/widgets/states/friend_list_skeleton.dart';
+import 'package:kallo_mobile/services/billing/entitlement_state.dart';
+import 'package:kallo_mobile/services/billing/feature_lock.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
 
 import '../circle_feed_test_support.dart';
@@ -46,8 +48,10 @@ FakeApiClient _api({
   bool aloneInGroup = false,
   bool groupDetailFail = false,
   Future<void>? groupDetailGate,
+  Future<void>? writeGate,
 }) => FakeApiClient((request) async {
   final path = request.path;
+  if (request.method != 'GET' && writeGate != null) await writeGate;
   if (request.method == 'GET') {
     if (path == _friendsPath) {
       if (friendsFail) throw Exception('offline');
@@ -337,6 +341,40 @@ void main() {
       expect(write.path, '/api/v1/groups/friends/unblock');
       expect(write.body, {'targetUserId': 'b1'});
     });
+
+    testWidgets('Unblock is off while its request is in flight', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final api = _api(
+        writeGate: gate.future,
+        blocked: [
+          {
+            'profile': {'userId': 'b1', 'handle': 'b1', 'displayName': 'Duy'},
+            'blockedAt': '2026-09-20T00:00:00.000Z',
+          },
+        ],
+      );
+      await _pump(tester, api);
+      await tester.tap(find.text('Blocked (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Unblock'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unblock').last);
+      await tester.pumpAndSettle();
+      expect(_writes(api), hasLength(1));
+
+      // The request hangs and the row is still here: a second tap must not
+      // start a second unblock.
+      await tester.tap(find.text('Unblock'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.text('Unblock Duy?'), findsNothing);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(_writes(api), hasLength(1));
+    });
   });
 
   group('Circle tab', () {
@@ -489,6 +527,39 @@ void main() {
 
       expect(find.text('No groups yet'), findsOneWidget);
       expect(find.text('Create group'), findsOneWidget);
+    });
+
+    testWidgets('a free plan\'s "Create group" opens the paywall', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder:
+                (_, __) => const CircleManageScreen(
+                  parentTitle: 'Settings',
+                  initialTab: CircleManageTab.circle,
+                ),
+          ),
+          GoRoute(path: '/paywall', builder: (_, __) => const Text('PAYWALL')),
+        ],
+      );
+      await pumpCircleRouter(
+        tester,
+        router,
+        api: _api(),
+        overrides: [
+          premiumLockProvider(
+            PremiumFeature.unlimitedCircle,
+          ).overrideWithValue(true),
+        ],
+      );
+
+      await tester.tap(find.text('Create group'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PAYWALL'), findsOneWidget);
     });
 
     testWidgets('Go to circle opens the Circle tab on that group', (

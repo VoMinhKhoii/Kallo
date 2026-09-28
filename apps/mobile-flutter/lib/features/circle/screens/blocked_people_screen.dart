@@ -94,14 +94,34 @@ class BlockedPeopleScreen extends ConsumerWidget {
   );
 }
 
-class _BlockedRow extends ConsumerWidget {
+class _BlockedRow extends ConsumerStatefulWidget {
   const _BlockedRow({super.key, required this.entry});
 
   final BlockedCircleUser entry;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profile = entry.profile;
+  ConsumerState<_BlockedRow> createState() => _BlockedRowState();
+}
+
+class _BlockedRowState extends ConsumerState<_BlockedRow> {
+  /// True from the tap until the unblock flow ends. The row stays on screen
+  /// until the list refetches, so without this a second tap during a slow
+  /// request would send a second unblock — which the server answers 404 once
+  /// the first has landed, toasting a failure for an unblock that worked.
+  bool _busy = false;
+
+  Future<void> _unblock() async {
+    setState(() => _busy = true);
+    try {
+      await unblockFlow(context, ref, widget.entry.profile);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.entry.profile;
     return ManageRow(
       leading: ProfileAvatarDisc(profile: profile, size: ManageRow.disc),
       title: profile.label,
@@ -110,7 +130,7 @@ class _BlockedRow extends ConsumerWidget {
         KalloSmallButton(
           label: tr('groups.manage.unblock'),
           variant: KalloSmallButtonVariant.ink,
-          onPressed: () => unblockFlow(context, ref, profile),
+          onPressed: _busy ? null : _unblock,
         ),
       ],
     );
