@@ -18,11 +18,20 @@ class CircleErrorCard extends StatelessWidget {
     required this.onRetry,
     this.isRetrying = false,
     this.compact = false,
+    this.title,
+    this.minHeight,
     super.key,
   });
 
   final VoidCallback onRetry;
   final bool isRetrying;
+
+  /// What failed to load, when it is not the circle itself ("Couldn't load
+  /// your groups"). Defaults to "Couldn't load your circle".
+  final String? title;
+
+  /// The block to centre in — a whole tab, for the "Edit circle" page.
+  final double? minHeight;
 
   /// In-card sizing, for the sheets and lists that host this inside a section
   /// rather than handing it the surface.
@@ -34,7 +43,8 @@ class CircleErrorCard extends StatelessWidget {
       area: SurfaceArea.circle,
       kind: SurfaceKind.error,
       compact: compact,
-      title: tr('groups.error.title'),
+      minHeight: minHeight,
+      title: title ?? tr('groups.error.title'),
       subtitle: tr('groups.error.body'),
       action: KalloButton(
         variant: KalloButtonVariant.cta,

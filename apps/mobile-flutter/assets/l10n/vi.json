@@ -1727,6 +1727,58 @@
       "signedOutTitle": "{name} đã mời bạn vào vòng kết nối",
       "signedOutBody": "Đăng nhập hoặc tạo tài khoản để kết nối.",
       "signIn": "Đăng nhập để kết nối"
+    },
+    "manage": {
+      "tabFriends": "Bạn bè",
+      "tabCircle": "Nhóm",
+      "more": "Tuỳ chọn cho {name}",
+      "goToCircle": "Xem nhóm",
+      "friendsEmptyTitle": "Chưa có bạn bè",
+      "friendsEmptyBody": "Chia sẻ liên kết mời để đưa ai đó vào vòng kết nối.",
+      "circleEmptyTitle": "Chưa có nhóm nào",
+      "circleEmptyBody": "Tạo nhóm với bạn bè để cùng chia sẻ bữa ăn.",
+      "circleLoadError": "Không thể tải các nhóm",
+      "blockedRow": "Đã chặn ({count})",
+      "blockedTitle": "Đã chặn",
+      "blockedEmptyTitle": "Bạn chưa chặn ai",
+      "blockedEmptyBody": "Người bạn chặn sẽ hiện ở đây, và bạn có thể bỏ chặn bất cứ lúc nào.",
+      "blockedLoadError": "Không thể tải danh sách đã chặn",
+      "unblock": "Bỏ chặn"
+    },
+    "moderation": {
+      "report": "Báo cáo",
+      "reportPost": "Báo cáo bài đăng",
+      "reportReply": "Báo cáo trả lời",
+      "reportGroup": "Báo cáo nhóm",
+      "block": "Chặn",
+      "blockName": "Chặn {name}",
+      "removeFromCircle": "Xoá khỏi vòng kết nối",
+      "reasonTitle": "Vì sao bạn báo cáo nội dung này?",
+      "reasons": {
+        "spam": "Spam",
+        "harassment": "Quấy rối hoặc bắt nạt",
+        "hate": "Ngôn từ thù ghét",
+        "sexual": "Khoả thân hoặc nội dung tình dục",
+        "violence": "Bạo lực hoặc đe doạ",
+        "selfHarm": "Tự gây hại",
+        "other": "Lý do khác"
+      },
+      "reportSentTitle": "Cảm ơn bạn đã báo cho chúng tôi",
+      "reportSentBody": "Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ.",
+      "reportSentBlockBody": "Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ. Bạn cũng có thể chặn {name} để hai bạn không còn thấy nhau.",
+      "done": "Xong",
+      "reportError": "Không gửi được báo cáo. Hãy thử lại.",
+      "blockTitle": "Chặn {name}?",
+      "blockBody": "Họ sẽ bị xoá khỏi vòng kết nối, và hai bạn sẽ không còn thấy bữa ăn, trả lời hay bài đăng trong nhóm của nhau. Họ sẽ không được thông báo.",
+      "blocked": "Đã chặn {name}",
+      "blockError": "Không chặn được {name}. Hãy thử lại.",
+      "unblockTitle": "Bỏ chặn {name}?",
+      "unblockBody": "Họ sẽ không tự được thêm lại vào vòng kết nối. Để kết nối lại, một trong hai bạn gửi liên kết mời mới.",
+      "unblocked": "Đã bỏ chặn {name}",
+      "unblockError": "Không bỏ chặn được {name}. Hãy thử lại.",
+      "removeTitle": "Xoá {name}?",
+      "removeBody": "Hai bạn sẽ không còn thấy bữa ăn của nhau. Để kết nối lại, một trong hai bạn gửi liên kết mời mới.",
+      "removed": "Đã xoá {name} khỏi vòng kết nối"
     }
   },
   "settings": {
@@ -1863,6 +1915,15 @@
       "label": "Phân tích bữa ăn bằng AI",
       "subline": "Gửi bữa ăn, ảnh nhãn và từ khoá tìm kiếm đến Google Gemini",
       "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
+    },
+    "me": {
+      "friends": {
+        "one": "bạn bè",
+        "other": "bạn bè"
+      },
+      "friendsLabel": "{count} bạn bè trong vòng kết nối",
+      "editProfile": "Sửa hồ sơ",
+      "editCircle": "Sửa vòng kết nối"
     }
   },
   "errors": {
