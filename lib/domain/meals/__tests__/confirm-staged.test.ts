@@ -68,10 +68,11 @@ describe('confirmStagedMeal', () => {
     log.mockRestore();
   });
 
-  it('leaves the card alone on any other failure', async () => {
+  it('throws away the staged card on any failed confirm — a retry stages its own', async () => {
     confirmAndSaveMealAction.mockRejectedValue(new Error('boom'));
 
     await expect(run()).rejects.toThrow('boom');
-    expect(db.delete).not.toHaveBeenCalled();
+    expect(db.delete).toHaveBeenCalledTimes(1);
+    expect(db.select).not.toHaveBeenCalled();
   });
 });

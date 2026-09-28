@@ -7,17 +7,18 @@ import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 
 /**
  * Confirm the meal a one-shot log (`/api/v1/barcode/log`,
- * `/api/v1/nutrition-label/log`) has just staged.
+ * `/api/v1/nutrition-label/log`, the web scan dialog) has just staged.
+ *
+ * The staged row exists only for this confirm. When the confirm fails it is
+ * thrown away — a retry stages its own — or it would sit in the feed as a
+ * pending copy beside the meal the retry saves.
  *
  * The apps reuse one meal id across the retries of one save, so the retry of a
- * save that landed but whose answer was lost meets a conflict on that id. Then:
- *
- * - the card this attempt staged on the way is thrown away, or it would sit in
- *   the feed as a second, pending copy;
- * - only a meal the CALLER owns turns the conflict into `MEAL_ALREADY_SAVED`,
- *   which the app closes on as saved. An id held by any other account keeps
- *   the plain `CONFLICT` it always had, so the answer says nothing more about
- *   other accounts than it did before.
+ * save that landed but whose answer was lost meets a conflict on that id. Only
+ * a meal the CALLER owns turns that into `MEAL_ALREADY_SAVED`, which the app
+ * closes on as saved; an id held by any other account keeps the plain
+ * `CONFLICT` it always had, so the answer says nothing more about other
+ * accounts than it did before.
  */
 export async function confirmStagedMeal(
   userId: string,
@@ -27,11 +28,11 @@ export async function confirmStagedMeal(
   try {
     return await confirmAndSaveMealAction({ analysisId, mealId });
   } catch (error) {
-    if (!(error instanceof AppError && error.code === 'CONFLICT') || !mealId) {
-      throw error;
-    }
     await discardStaged(userId, analysisId);
-    if (await ownsMeal(userId, mealId)) throw Errors.mealAlreadySaved();
+    const conflict = error instanceof AppError && error.code === 'CONFLICT';
+    if (conflict && mealId && (await ownsMeal(userId, mealId))) {
+      throw Errors.mealAlreadySaved();
+    }
     throw error;
   }
 }
