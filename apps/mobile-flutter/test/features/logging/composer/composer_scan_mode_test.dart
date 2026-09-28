@@ -9,7 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:kallo_mobile/features/logging/widgets/sheets/scan/scan_screen.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/screen.dart';
 import 'package:kallo_mobile/features/logging/logic/composer/feed_sheets.dart';
 
 import '../../../l10n_test_loader.dart';

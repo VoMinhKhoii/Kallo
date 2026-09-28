@@ -11,7 +11,7 @@ import {
 /**
  * One food the scan dialog shows, whatever it came from — a barcode product, a
  * read nutrition label, or one typed by hand ("Enter manually"). Mirrors the
- * Flutter app's `ScanFood` (`apps/mobile-flutter/lib/features/logging/logic/scan/scan_food.dart`).
+ * Flutter app's `ScanFood` (`apps/mobile-flutter/lib/features/logging/logic/scan/food.dart`).
  *
  * Values are held PER BASIS ("per 100 ml", "per serving"), apart from the
  * amount being logged: the result scales them to the chosen amount, the editor

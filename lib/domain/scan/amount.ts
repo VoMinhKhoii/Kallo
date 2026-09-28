@@ -5,7 +5,7 @@ import type { ScanFood } from '@/lib/domain/scan/food';
  * How much of a `ScanFood` is being logged: a count of servings, a count of
  * packs, or a custom amount in the food's unit. Pure, so the result's Portion
  * and Amount rows are testable without a component. Mirrors the Flutter app's
- * `ScanAmount` (`logic/scan/scan_amount.dart`).
+ * `ScanAmount` (`logic/scan/amount.dart`).
  */
 export type ScanPortion = 'serving' | 'pack' | 'custom';
 

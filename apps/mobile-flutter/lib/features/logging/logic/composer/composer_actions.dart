@@ -9,7 +9,7 @@ import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../widgets/sheets/meal_mode_sheet.dart';
-import '../../widgets/sheets/scan/scan_screen.dart';
+import '../../widgets/sheets/scan/screen.dart';
 import '../meal_log_mode.dart';
 import '../relog/scan_purpose.dart';
 

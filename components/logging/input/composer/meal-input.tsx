@@ -8,7 +8,7 @@ import { ComposerSendButton } from '@/components/logging/input/composer/composer
 import { ComposerTextField } from '@/components/logging/input/composer/composer-text-field';
 import { useMealInputState } from '@/components/logging/input/composer/use-meal-input-state';
 import { ManualLoggingControls } from '@/components/logging/input/manual/manual-logging-controls';
-import { ScanDialog } from '@/components/logging/input/scan/scan-dialog';
+import { ScanDialog } from '@/components/logging/input/scan/dialog';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import { readDraft } from '@/lib/domain/logging/meal-input-draft';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';

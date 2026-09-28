@@ -17,7 +17,7 @@ import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
 import '../logic/label/image.dart';
 import '../logic/label/image_shrink.dart';
-import '../logic/scan/scan_food.dart';
+import '../logic/scan/food.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';

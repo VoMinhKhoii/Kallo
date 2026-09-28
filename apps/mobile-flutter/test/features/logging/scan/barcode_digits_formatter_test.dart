@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/logging/widgets/sheets/scan/panel/type_barcode_panel.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/panel/type_barcode.dart';
 
 /// "Type barcode" keeps digits only, at most a GTIN-14, in groups of four so
 /// the code reads against the pack at a glance.

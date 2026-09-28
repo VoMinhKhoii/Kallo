@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image_shrink.dart';
-import 'package:kallo_mobile/features/logging/logic/scan/scan_food.dart';
+import 'package:kallo_mobile/features/logging/logic/scan/food.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
