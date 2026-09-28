@@ -1,14 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart'
+    show kCirclePollInterval;
 import 'package:kallo_mobile/features/circle/data/feed_mutations.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'circle_feed_test_support.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 
 void main() {
   setUpAll(() async {
@@ -40,6 +44,40 @@ void main() {
       expect(state.entries.single.meal.shareId, 'share-1');
       expect(state.nextCursor, 'cursor-1');
       expect(markerCalls, 2);
+    });
+
+    testWidgets('the read marker re-polls on the wall cadence', (tester) async {
+      // A past-day meal shared while Circle is open reaches the All dot only
+      // through latestSharedAt, so the marker must refresh like the wall does.
+      var markerCalls = 0;
+      final api = FakeApiClient((request) {
+        if (request.path == '/api/v1/groups/friends/read-marker') {
+          markerCalls++;
+          return {
+            'lastReadAt': '2026-07-18T01:00:00.000Z',
+            'latestSharedAt': '2026-07-18T02:00:00.000Z',
+          };
+        }
+        return unexpectedRequest(request);
+      });
+      // Disposed here, not in tearDown: the poll timer must be gone before
+      // the widget test's pending-timer check runs.
+      final container = ProviderContainer(
+        overrides: [apiClientProvider.overrideWithValue(api)],
+      );
+      container.listen(friendsReadMarkerProvider, (_, __) {});
+
+      await tester.pump();
+      expect(markerCalls, 1);
+      expect(
+        container.read(friendsReadMarkerProvider).value!.latestSharedAt,
+        DateTime.utc(2026, 7, 18, 2),
+      );
+
+      await tester.pump(kCirclePollInterval);
+      await tester.pump();
+      expect(markerCalls, 2);
+      container.dispose();
     });
 
     test('group page one invalidates the chat-groups list', () async {
