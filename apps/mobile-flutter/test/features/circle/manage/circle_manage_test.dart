@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_manage_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/manage/more_button.dart';
+import 'package:kallo_mobile/features/circle/widgets/states/friend_list_skeleton.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_surface_state.dart';
 
 import '../circle_feed_test_support.dart';
@@ -39,6 +40,7 @@ FakeApiClient _api({
   List<Map<String, dynamic>> groups = const [],
   List<Map<String, dynamic>> blocked = const [],
   bool friendsFail = false,
+  Future<void>? friendsGate,
   bool blockedFail = false,
   String myRole = 'member',
   bool aloneInGroup = false,
@@ -49,6 +51,7 @@ FakeApiClient _api({
   if (request.method == 'GET') {
     if (path == _friendsPath) {
       if (friendsFail) throw Exception('offline');
+      if (friendsGate != null) await friendsGate;
       return {'circle': friends};
     }
     if (path == _blockedPath) {
@@ -272,6 +275,40 @@ void main() {
       await tester.tap(find.text('Blocked (1)'));
       await tester.pumpAndSettle();
       expect(find.text('Duy'), findsOneWidget);
+    });
+
+    testWidgets('friends still loading leaves the way to unblock', (
+      tester,
+    ) async {
+      // The friends request hangs; the blocked one has already answered.
+      final gate = Completer<void>();
+      await pumpCircleScreen(
+        tester,
+        const CircleManageScreen(parentTitle: 'Settings'),
+        api: _api(
+          friendsGate: gate.future,
+          blocked: [
+            {
+              'profile': {'userId': 'b1', 'handle': 'b1', 'displayName': 'Duy'},
+              'blockedAt': '2026-09-20T00:00:00.000Z',
+            },
+          ],
+        ),
+        size: const Size(390, 844),
+        settle: false,
+      );
+      // The skeleton pulses forever, so step the clock instead of settling.
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(FriendListSkeleton), findsOneWidget);
+      await tester.tap(find.text('Blocked (1)'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      expect(find.text('Duy'), findsOneWidget);
+
+      gate.complete();
+      await tester.pump(const Duration(milliseconds: 100));
     });
 
     testWidgets('the blocked list unblocks after a confirm', (tester) async {

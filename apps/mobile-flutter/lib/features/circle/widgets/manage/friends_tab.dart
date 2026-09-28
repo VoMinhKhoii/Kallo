@@ -24,8 +24,8 @@ import 'manage_list.dart';
 /// the list failed (with a retry). A failed fetch never reads as "no friends".
 ///
 /// **The blocked row survives every state.** It is the only way to the
-/// blocked list, so neither an empty circle, a failed friends fetch nor a
-/// failed blocked count may take the way to unblock away.
+/// blocked list, so neither a loading or empty circle, a failed friends fetch
+/// nor a failed blocked count may take the way to unblock away.
 class FriendsTab extends ConsumerWidget {
   const FriendsTab({super.key, required this.onOpenBlocked});
 
@@ -50,7 +50,7 @@ class FriendsTab extends ConsumerWidget {
         .watch(circleFriendsProvider)
         .when(
           skipLoadingOnRefresh: true,
-          loading: () => const FriendListSkeleton(),
+          loading: () => _loadingWith(blockedRow),
           error:
               (_, __) => _stateWith(
                 blockedRow,
@@ -94,6 +94,26 @@ class FriendsTab extends ConsumerWidget {
           },
         );
   }
+
+  /// The skeleton while friends load, with [blockedRow] (when there is one)
+  /// under it: the two requests are independent, and a slow friends list
+  /// must not hold back a blocked list that is already here.
+  Widget _loadingWith(BlockedLinkRow? blockedRow) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const FriendListSkeleton(),
+      if (blockedRow != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            KalloSpacing.sp3,
+            KalloSpacing.sp3,
+            KalloSpacing.sp3,
+            0,
+          ),
+          child: blockedRow,
+        ),
+    ],
+  );
 
   /// A whole-tab [state], centred in what is left once [blockedRow] (when
   /// there is one) has its line under it.

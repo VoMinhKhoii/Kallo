@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 
-import 'circle_feed_test_support.dart';
+import '../circle_feed_test_support.dart';
 
 /// Removing a friend has to refresh the posts the Circle tab is showing, not
 /// only the friends list: the tab stays mounted in its shell branch, so a
