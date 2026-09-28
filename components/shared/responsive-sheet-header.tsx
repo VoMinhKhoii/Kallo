@@ -1,16 +1,21 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 /**
  * The sheet header, structurally identical to the Flutter app's
- * `KalloSheetHeader`: close button on the LEFT, a centered semibold title, and
- * a 48x48 spacer on the right so the title stays optically centered against
- * the close button.
+ * `KalloSheetHeader`: a grey circle close (or back) on the LEFT, the 17/600
+ * title centred on the sheet, and an optional trailing action — a
+ * `SheetCapsuleButton` such as "Edit".
  *
- * Type scale is the mobile one, so the two platforms read as one component:
- * title 17/600 (`dashValue` + w600). Everything below follows the same 14px
- * body / 12px meta rhythm.
+ * Geometry is the app's, exactly: 36px controls 16px from the top and sides,
+ * so a control's centre sits on the centre of the sheet's corner, and the same
+ * 16px below them (68px in all).
+ *
+ * The title centres on the SHEET, not on the space left beside the controls:
+ * the side columns are equal (`1fr auto 1fr`), whatever the trailing action's
+ * width.
  *
  * There is no subtitle slot. A line under the title was, in every sheet that
  * had one, a restatement of the title or of the controls below it.
@@ -23,33 +28,39 @@ export function ResponsiveSheetHeader({
   closeLabel,
   closeDisabled = false,
   onClose,
+  onBack,
+  backLabel,
+  trailing,
 }: {
   title: string;
   closeLabel: string;
   closeDisabled?: boolean;
   onClose: () => void;
+  /** Turns the leading control into a back chevron — a sheet's second level. */
+  onBack?: () => void;
+  backLabel?: string;
+  /** The right-hand action, usually a `SheetCapsuleButton`. */
+  trailing?: ReactNode;
 }) {
+  const back = onBack !== undefined;
+  const Glyph = back ? ChevronLeft : X;
   return (
-    <div className="flex shrink-0 items-center gap-1 px-2 pt-2 pb-1">
+    <div className="grid h-[68px] shrink-0 grid-cols-[1fr_auto_1fr] items-start gap-2 px-4 pt-4">
       <button
         type="button"
-        aria-label={closeLabel}
+        aria-label={back ? (backLabel ?? closeLabel) : closeLabel}
         disabled={closeDisabled}
-        onClick={onClose}
-        className="flex size-12 shrink-0 items-center justify-center rounded-full text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text disabled:opacity-40"
+        onClick={onBack ?? onClose}
+        className="flex size-9 items-center justify-center justify-self-start rounded-full bg-kallo-segment text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-40"
       >
-        <X className="size-[18px]" />
+        <Glyph className="size-[18px]" strokeWidth={1.75} />
       </button>
 
-      <div className="min-w-0 flex-1 text-center">
-        <p className="truncate font-semibold text-[17px] text-kallo-text leading-tight">
-          {title}
-        </p>
-      </div>
+      <p className="truncate pt-2 text-center font-semibold text-[17px] text-kallo-text leading-5">
+        {title}
+      </p>
 
-      {/* Mirrors the close button so the title is centered on the sheet, not
-          on the space left over beside it. */}
-      <div className="size-12 shrink-0" aria-hidden="true" />
+      <div className="flex justify-self-end">{trailing}</div>
     </div>
   );
 }

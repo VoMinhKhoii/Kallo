@@ -339,7 +339,7 @@ caller actually receives depends on how it reaches the action:
   both the Flutter (route) and web (route-via-fetch) paths — no typed result is
   needed, and adding one to the action would be dead code.
 - **Barcode.** The web calls `searchBarcodeAction` DIRECTLY as a Server Action
-  (`use-barcode-scanner-dialog-state.ts`). A thrown error there is caught by the
+  (`components/logging/input/scan/use-scan-lookup.ts`). A thrown error there is caught by the
   action and returned as `{success:false, code}` — before this change a limiter
   block folded to `code:'server_error'`, a generic error with no `Retry-After`.
   So barcode grew a `rate_limited` code (`BarcodeErrorCode`), which the dialog

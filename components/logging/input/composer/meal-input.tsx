@@ -3,12 +3,12 @@
 import { Barcode } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { forwardRef, useState } from 'react';
-import { BarcodeScannerDialog } from '@/components/logging/input/barcode/barcode-scanner-dialog';
 import { CheatModePicker } from '@/components/logging/input/composer/cheat-mode-picker';
 import { ComposerSendButton } from '@/components/logging/input/composer/composer-send-button';
 import { ComposerTextField } from '@/components/logging/input/composer/composer-text-field';
 import { useMealInputState } from '@/components/logging/input/composer/use-meal-input-state';
 import { ManualLoggingControls } from '@/components/logging/input/manual/manual-logging-controls';
+import { ScanDialog } from '@/components/logging/input/scan/scan-dialog';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import { readDraft } from '@/lib/domain/logging/meal-input-draft';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
@@ -175,7 +175,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           />
         </div>
         {selectedDate && onBarcodeSuccess && (
-          <BarcodeScannerDialog
+          <ScanDialog
             isOpen={isBarcodeOpen}
             onOpenChange={setIsBarcodeOpen}
             selectedDate={selectedDate}
