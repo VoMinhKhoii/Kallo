@@ -24,6 +24,7 @@ import '../../dashboard/data/dashboard_providers.dart'
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import '../../../models/http/api_error.dart';
 import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'local_blocks.dart';
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
 const Duration kCirclePollInterval = Duration(seconds: 30);
@@ -278,7 +279,9 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
 final mealShareInvitesProvider =
     FutureProvider.autoDispose<List<MealShareInvite>>((ref) async {
       final api = ref.watch(apiClientProvider);
-      return runWithRetry(() async {
+      final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
+      final since = blocks.generation;
+      final invites = await runWithRetry(() async {
         final json = await api.get<Map<String, dynamic>>(
           '/api/v1/groups/invites',
         );
@@ -287,6 +290,27 @@ final mealShareInvitesProvider =
             .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
             .toList(growable: false);
       });
+      blocks.reconcileShown([
+        for (final invite in invites) invite.from.userId,
+      ], since: since);
+      return invites;
+    });
+
+/// The inbox as the viewer sees it: [mealShareInvitesProvider] without offers
+/// from anyone they have just blocked (`local_blocks.dart`). The inbox and the
+/// Circle tab's badge both read this, so the badge never promises an offer the
+/// inbox has hidden. Loading and error pass through unchanged.
+final visibleMealShareInvitesProvider =
+    Provider.autoDispose<AsyncValue<List<MealShareInvite>>>((ref) {
+      final blocked = ref.watch(locallyBlockedUserIdsProvider);
+      return ref
+          .watch(mealShareInvitesProvider)
+          .whenData(
+            (all) => [
+              for (final invite in all)
+                if (!blocked.contains(invite.from.userId)) invite,
+            ],
+          );
     });
 
 /// Refresh the meal-share inbox after a day read that handed offers back.

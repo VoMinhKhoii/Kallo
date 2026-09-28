@@ -74,20 +74,6 @@ void main() {
   });
 
   testWidgets("a blocked person's meal offers leave the inbox", (tester) async {
-    MealShareInvite offer(String id, String from) => MealShareInvite.fromJson({
-      'id': id,
-      'mode': 'copy',
-      'portionFactor': 1,
-      'createdAt': '2026-09-28T10:00:00.000Z',
-      'from': {'userId': from, 'handle': from, 'displayName': from},
-      'meal': {
-        'rawInput': 'Trà sữa',
-        'caloriesKcal': 100,
-        'proteinG': 2,
-        'carbohydrateG': 20,
-        'fatG': 2.5,
-      },
-    });
     await pumpCircleScreen(
       tester,
       const SingleChildScrollView(child: MealInvitesSection()),
@@ -101,6 +87,24 @@ void main() {
     );
 
     expect(find.byType(InviteDeck), findsNothing);
+  });
+
+  test('the Circle badge reads the same filtered inbox', () async {
+    final container = ProviderContainer(
+      overrides: [
+        blocked,
+        mealShareInvitesProvider.overrideWith(
+          (ref) async => [offer('i1', 'friend-s1'), offer('i2', 'friend-s2')],
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(visibleMealShareInvitesProvider, (_, __) {});
+    addTearDown(sub.close);
+    await container.read(mealShareInvitesProvider.future);
+
+    final visible = container.read(visibleMealShareInvitesProvider).value!;
+    expect([for (final i in visible) i.id], ['i2']);
   });
 
   testWidgets('a blocked person\'s post has no long-press menu', (
@@ -129,3 +133,19 @@ class _JustBlocked extends LocallyBlockedUsers {
   @override
   Set<String> build() => {'friend-s1', 'author-r1'};
 }
+
+/// A copy offer of [id] from [from].
+MealShareInvite offer(String id, String from) => MealShareInvite.fromJson({
+  'id': id,
+  'mode': 'copy',
+  'portionFactor': 1,
+  'createdAt': '2026-09-28T10:00:00.000Z',
+  'from': {'userId': from, 'handle': from, 'displayName': from},
+  'meal': {
+    'rawInput': 'Trà sữa',
+    'caloriesKcal': 100,
+    'proteinG': 2,
+    'carbohydrateG': 20,
+    'fatG': 2.5,
+  },
+});

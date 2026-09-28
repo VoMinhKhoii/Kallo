@@ -46,7 +46,8 @@ class PillNavItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasInvites =
         showInviteBadge &&
-        (ref.watch(mealShareInvitesProvider).valueOrNull?.isNotEmpty ?? false);
+        (ref.watch(visibleMealShareInvitesProvider).valueOrNull?.isNotEmpty ??
+            false);
     final color = active ? kInk : kInkMuted;
 
     return Expanded(

@@ -8,17 +8,19 @@
 /// the invites and the long-press read [locallyBlockedUserIdsProvider] to drop
 /// that content the moment the block lands.
 ///
-/// **An entry leaves only on the server's word**, never on a timer: a timer
-/// cannot tell a refetch that landed from one that failed or never ran (the
-/// app suspended), and dropping the entry then would bring the blocked
-/// person's content back. It leaves when
+/// **An entry leaves only when the server shows the person again**: a
+/// Circle fetch — feed page, post by id, invites — that STARTED after the
+/// block and still has them in it ([LocallyBlockedUsers.reconcileShown]).
+/// Nothing weaker counts:
 ///
-///   - the viewer unblocks them here;
-///   - a Circle fetch that STARTED after the block still shows them — the
-///     server would not have served them if the block still stood, so it was
-///     lifted elsewhere (another device) ([LocallyBlockedUsers.reconcileShown]);
-///   - the blocked list, fetched after the block, no longer names them
-///     ([LocallyBlockedUsers.reconcileBlocked]).
+///   - not a timer, which cannot tell a refetch that landed from one that
+///     failed or never ran (the app suspended);
+///   - not an unblock, here or elsewhere, nor the blocked list dropping them:
+///     unblocking never restores the friendship the block deleted, and the
+///     other person may block back, so "no longer blocked" is not "visible
+///     again" — lifting on it would re-expose whatever stale content a failed
+///     refetch left cached. An unblock here invalidates every Circle cache,
+///     and the first fetch that does show them lifts the entry.
 ///
 /// Until then an entry costs nothing: every fresh answer already leaves the
 /// person out, so the filter only repeats the server. Per account: the set
@@ -56,20 +58,11 @@ class LocallyBlockedUsers extends Notifier<Set<String>> {
     state = {...state, userId};
   }
 
-  void remove(String userId) => _lift([userId]);
-
   /// A fetch that started at [since] came back showing [shown]: anyone in it
-  /// who was blocked before it started has been unblocked since.
+  /// who was blocked before it started is visible to the viewer again.
   void reconcileShown(Iterable<String> shown, {required int since}) => _lift([
     for (final id in shown)
       if ((_blockedAt[id] ?? since + 1) <= since) id,
-  ]);
-
-  /// The blocked list, fetched from [since], names [blocked]: anyone blocked
-  /// here before then who is missing from it has been unblocked since.
-  void reconcileBlocked(Set<String> blocked, {required int since}) => _lift([
-    for (final MapEntry(key: id, value: at) in _blockedAt.entries)
-      if (at <= since && !blocked.contains(id)) id,
   ]);
 
   void _lift(List<String> ids) {

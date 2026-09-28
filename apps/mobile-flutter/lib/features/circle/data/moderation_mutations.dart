@@ -35,9 +35,7 @@ const Duration _moderationRequestTimeout = Duration(seconds: 15);
 final blockedCircleUsersProvider =
     FutureProvider.autoDispose<List<BlockedCircleUser>>((ref) async {
       final api = ref.watch(apiClientProvider);
-      final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
-      final since = blocks.generation;
-      final blocked = await runWithRetry(() async {
+      return runWithRetry(() async {
         final json = await api
             .get<Map<String, dynamic>>('/api/v1/groups/friends/blocked')
             .timeout(_moderationRequestTimeout);
@@ -46,12 +44,6 @@ final blockedCircleUsersProvider =
             .map((e) => BlockedCircleUser.fromJson(e as Map<String, dynamic>))
             .toList(growable: false);
       });
-      // The server's own list: a local entry it no longer names was lifted
-      // elsewhere (`local_blocks.dart`).
-      blocks.reconcileBlocked({
-        for (final entry in blocked) entry.profile.userId,
-      }, since: since);
-      return blocked;
     });
 
 /// Everything a block or unblock can change for the viewer. Families are
@@ -87,7 +79,6 @@ Future<void> unblockCircleUser(WidgetRef ref, String userId) async {
   await api
       .post<dynamic>('/api/v1/groups/friends/unblock', {'targetUserId': userId})
       .timeout(_moderationRequestTimeout);
-  ref.read(locallyBlockedUserIdsProvider.notifier).remove(userId);
   _invalidateAfterBlockChange(ref);
 }
 

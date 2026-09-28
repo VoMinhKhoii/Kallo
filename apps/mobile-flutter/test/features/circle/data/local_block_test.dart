@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/data/moderation_mutations.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
@@ -14,43 +15,48 @@ import '../circle_feed_test_support.dart';
 /// refresh, so until then the post, its composer and its hearts stayed live on
 /// content the server now refuses.
 void main() {
-  test(
-    'a block empties the thread before the refetch lands; unblock lifts it',
-    () async {
-      final refetch = Completer<void>();
-      var feedFetches = 0;
-      final api = FakeApiClient((request) async {
-        if (request.path == '/api/v1/groups/friends/feed') {
-          // Every fetch after the first is the refresh a block or unblock
-          // starts, and it hangs.
-          if (feedFetches++ > 0) await refetch.future;
-          return pageJson([entryJson('s1')], null);
-        }
-        return <String, dynamic>{};
-      });
-      final container = makeContainer(api);
-      await mountFeed(container, null);
-      const key = (scope: null, shareId: 's1');
-      holdProvider(container, threadEntryProvider(key));
-      expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
+  test('a block empties the thread before the refetch lands, and only a fetch '
+      'that shows them again lifts it', () async {
+    final refetch = Completer<void>();
+    var feedFetches = 0;
+    final api = FakeApiClient((request) async {
+      if (request.path == '/api/v1/groups/friends/feed') {
+        // Every fetch after the first is the refresh a block or unblock
+        // starts, and it hangs.
+        if (feedFetches++ > 0) await refetch.future;
+        return pageJson([entryJson('s1')], null);
+      }
+      return <String, dynamic>{};
+    });
+    final container = makeContainer(api);
+    await mountFeed(container, null);
+    const key = (scope: null, shareId: 's1');
+    holdProvider(container, threadEntryProvider(key));
+    expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
 
-      final ref = ContainerWidgetRef(container);
-      await blockCircleUser(ref, 'friend-s1');
+    final ref = ContainerWidgetRef(container);
+    await blockCircleUser(ref, 'friend-s1');
 
-      expect(container.read(locallyBlockedUserIdsProvider), {'friend-s1'});
-      expect(container.read(threadEntryProvider(key)), isA<ThreadMissing>());
-      // Read against the refetch, which is in flight and holding the old
-      // page — the window this guards.
-      await pumpEventQueue();
-      expect(feedFetches, 2);
-      expect(container.read(threadEntryProvider(key)), isA<ThreadMissing>());
+    expect(container.read(locallyBlockedUserIdsProvider), {'friend-s1'});
+    expect(container.read(threadEntryProvider(key)), isA<ThreadMissing>());
+    // Read against the refetch, which is in flight and holding the old
+    // page — the window this guards.
+    await pumpEventQueue();
+    expect(feedFetches, 2);
+    expect(container.read(threadEntryProvider(key)), isA<ThreadMissing>());
 
-      await unblockCircleUser(ref, 'friend-s1');
-      expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
+    // An unblock alone lifts nothing: it restores no friendship, so it is
+    // no proof the cached post is theirs to see again.
+    await unblockCircleUser(ref, 'friend-s1');
+    expect(container.read(locallyBlockedUserIdsProvider), {'friend-s1'});
+    expect(container.read(threadEntryProvider(key)), isA<ThreadMissing>());
 
-      refetch.complete();
-    },
-  );
+    // The refetch — asked for after the block — comes back showing them.
+    refetch.complete();
+    await pumpEventQueue();
+    expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
+    expect(container.read(threadEntryProvider(key)), isA<ThreadReady>());
+  });
 
   test('a refused block hides nothing', () async {
     final api = FakeApiClient((request) async {
@@ -98,35 +104,36 @@ void main() {
     });
 
     test(
-      'a blocked list fetched after the block that no longer names them',
+      'an invites fetch asked for after the block with an offer from them',
       () async {
-        var blocked = <Map<String, dynamic>>[];
         final api = FakeApiClient((request) async {
-          if (request.path == '/api/v1/groups/friends/blocked') {
-            return {'blocked': blocked};
+          if (request.path == '/api/v1/groups/invites') {
+            return {
+              'invites': [
+                {
+                  'id': 'i1',
+                  'mode': 'copy',
+                  'portionFactor': 1,
+                  'createdAt': '2026-09-28T10:00:00.000Z',
+                  'from': {
+                    'userId': 'friend-s1',
+                    'handle': 'h',
+                    'displayName': 'H',
+                  },
+                  'meal': {'rawInput': 'Trà sữa', 'caloriesKcal': 100},
+                },
+              ],
+            };
           }
           return <String, dynamic>{};
         });
         final container = makeContainer(api);
-        final blocks = container.read(locallyBlockedUserIdsProvider.notifier);
-        blocks.add('friend-s1');
-        blocks.add('friend-s2');
+        container.read(locallyBlockedUserIdsProvider.notifier).add('friend-s1');
 
-        // The server still lists s2, and no longer s1.
-        blocked = [
-          {
-            'profile': {
-              'userId': 'friend-s2',
-              'handle': 's2',
-              'displayName': 'B',
-            },
-            'blockedAt': '2026-09-28T00:00:00.000Z',
-          },
-        ];
-        holdProvider(container, blockedCircleUsersProvider);
-        await container.read(blockedCircleUsersProvider.future);
+        holdProvider(container, mealShareInvitesProvider);
+        await container.read(mealShareInvitesProvider.future);
 
-        expect(container.read(locallyBlockedUserIdsProvider), {'friend-s2'});
+        expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
       },
     );
 
