@@ -241,6 +241,19 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('a tab can be selected from VoiceOver', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pump(tester, groups: AsyncData([group(unread: false)]));
+    // The tab replaces its children's semantics, so the tap must be its own.
+    tester.semantics.tap(find.semantics.byLabel('Weekend hikers'));
+    await tester.pump();
+    final scope = ProviderScope.containerOf(
+      tester.element(find.byType(ViewSwitcher)),
+    );
+    expect(scope.read(circleSelectedViewProvider), 'g1');
+    semantics.dispose();
+  });
+
   // The header's add control is an ANCHORED POPOVER (native pass,
   // 2026-08-31), not the Cupertino action sheet it replaced: the card hangs
   // off the button that opened it, so the eye never leaves the corner it

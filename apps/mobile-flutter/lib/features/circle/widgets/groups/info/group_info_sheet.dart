@@ -128,7 +128,10 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
         _go(GroupSheetLevel.rename);
       },
       onRemove: _remove,
-      onRemoved: (id) => setState(() => _removed.add(id)),
+      // A long-press removal can land after the sheet is closed.
+      onRemoved: (id) {
+        if (mounted) setState(() => _removed.add(id));
+      },
       onLeave: groupActionsFor(group).leave ? _leave : null,
     ),
     GroupSheetLevel.add => GroupAddPage(

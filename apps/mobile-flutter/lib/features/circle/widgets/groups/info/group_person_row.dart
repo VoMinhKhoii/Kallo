@@ -61,16 +61,20 @@ class GroupPersonRow extends StatelessWidget {
     );
     final tap = onTap;
     if (tap == null) return row;
+    void activate() {
+      if (selected != null) HapticFeedback.selectionClick();
+      tap();
+    }
+
+    // The node replaces the button's own, so it carries the tap itself.
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       excludeSemantics: true,
+      onTap: activate,
       child: CupertinoButton(
-        onPressed: () {
-          if (selected != null) HapticFeedback.selectionClick();
-          tap();
-        },
+        onPressed: activate,
         padding: EdgeInsets.zero,
         minimumSize: const Size.square(KalloIcons.hit),
         child: row,

@@ -12,13 +12,10 @@ import 'tab_label.dart';
 /// faces between the name and the underline, lifting the name as they come
 /// in (approved canvas "E2", 2026-09-29).
 ///
-/// **The whole column is the target.** 72pt tall, and [slop] points of it
-/// reach into the gap on each side, so neighbouring tabs meet with no dead
-/// strip between them. A second tap on the open tab — name, faces or the air
-/// around them — is [onTap] again; the parent opens the group from it. The
-/// press shows as the block shrinking a touch under a wash: the warm select
-/// wash on the open tab, the ink press wash on the rest (mobile.md, *Press
-/// wash*).
+/// **The whole column is the target** (≥72pt tall, ≥44pt wide, reaching into
+/// the gaps), and a second tap on the open tab is [onTap] again — the parent
+/// opens the group from it. A press shrinks the block under a wash: warm on
+/// the open tab, ink on the rest (mobile.md, *Press wash*).
 class CircleTab extends StatefulWidget {
   const CircleTab({
     required this.label,
@@ -101,6 +98,11 @@ class _CircleTabState extends State<CircleTab> {
       final onLongPress? => () => _longPress(onLongPress),
       null => null,
     };
+    void tap() {
+      HapticFeedback.selectionClick();
+      widget.onTap();
+    }
+
     final wash = selected ? KalloColors.hover : KalloColors.pressWash;
     return Semantics(
       button: true,
@@ -108,13 +110,11 @@ class _CircleTabState extends State<CircleTab> {
       label: widget.semanticsLabel ?? widget.label,
       hint: selected ? widget.openHint : null,
       excludeSemantics: true,
+      onTap: tap,
       onLongPress: longPress,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          widget.onTap();
-        },
+        onTap: tap,
         onLongPress: longPress,
         child: Listener(
           onPointerDown: (_) => _pointer(true),

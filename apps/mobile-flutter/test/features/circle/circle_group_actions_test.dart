@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/create_group_sheet.dart';
+import 'package:kallo_mobile/features/circle/widgets/groups/info/group_add_page.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/info/group_info_sheet.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
@@ -385,6 +386,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mai'), findsOneWidget);
+  });
+
+  testWidgets('"Add members" can be activated from VoiceOver', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => [_friend()]),
+      ],
+    );
+    tester.semantics.tap(find.semantics.byLabel('Add members'));
+    await tester.pumpAndSettle();
+    expect(find.byType(GroupAddPage), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('an owner with members left is not offered Leave', (
