@@ -1453,6 +1453,7 @@
       "portionPack": "Pack",
       "portionServing": "Serving",
       "reading": "Reading the label",
+      "requiredValue": "Required",
       "retake": "Retake photo",
       "scanAgain": "Scan again",
       "scanBarcode": "Scan barcode",

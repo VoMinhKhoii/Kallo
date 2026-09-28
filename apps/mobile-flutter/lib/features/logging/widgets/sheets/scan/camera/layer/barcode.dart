@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../preview_fade_in.dart';
 import '../problem.dart';
 import '../mode_chip.dart';
 import '../window.dart';
@@ -40,20 +41,25 @@ class BarcodeCameraLayer extends StatelessWidget {
           children: [
             const ColoredBox(color: Color(0xFF000000)),
             if (live != null && frozen == null)
-              MobileScanner(
-                controller: live,
-                fit: BoxFit.cover,
-                scanWindow: window,
-                onDetect: onDetect,
-                errorBuilder:
-                    (context, error) => ScanCameraProblem(
-                      text:
-                          (error.errorCode ==
-                                      MobileScannerErrorCode.permissionDenied
-                                  ? 'logging.barcode.cameraDenied'
-                                  : 'logging.barcode.cameraError')
-                              .tr(),
-                    ),
+              ScanPreviewFadeIn(
+                source: live,
+                // An error shows at once: it is what the user must read.
+                isReady: () => live.value.isRunning || live.value.error != null,
+                child: MobileScanner(
+                  controller: live,
+                  fit: BoxFit.cover,
+                  scanWindow: window,
+                  onDetect: onDetect,
+                  errorBuilder:
+                      (context, error) => ScanCameraProblem(
+                        text:
+                            (error.errorCode ==
+                                        MobileScannerErrorCode.permissionDenied
+                                    ? 'logging.barcode.cameraDenied'
+                                    : 'logging.barcode.cameraError')
+                                .tr(),
+                      ),
+                ),
               ),
             if (frozen != null)
               Image.memory(frozen!, fit: BoxFit.cover, gaplessPlayback: true),

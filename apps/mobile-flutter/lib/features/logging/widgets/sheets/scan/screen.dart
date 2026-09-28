@@ -13,6 +13,7 @@ import 'camera/layer/label.dart';
 import 'camera/controls.dart';
 import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
+import 'camera/switch_veil.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
 import 'panels.dart';
@@ -115,7 +116,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            if (mode == ScanType.barcode)
+            if (cameraMode == ScanType.barcode)
               BarcodeCameraLayer(
                 controller:
                     barcodeCamera.isRunning ? barcodeCamera.ensure() : null,
@@ -128,6 +129,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
                 photoPath: label.image?.path,
                 problem: label.cameraProblemKey?.tr(),
               ),
+            ScanCameraVeil(shown: veiled, onCovered: swapCamera),
             if (busy)
               ScanLoadingOverlay(
                 mode: mode,

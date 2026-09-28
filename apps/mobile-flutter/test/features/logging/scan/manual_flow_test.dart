@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
@@ -15,7 +15,7 @@ void main() {
   const labelLog = '/api/v1/nutrition-label/log';
 
   Future<void> fillRequired(ScanHarness h) async {
-    await h.tester.enterText(find.byType(TextField), 'Chè bắp');
+    await h.tester.enterText(h.nameField, 'Chè bắp');
     await h.tester.pumpAndSettle();
     await h.type('Calories', '250');
     await h.type('Protein', '10');
@@ -90,7 +90,7 @@ void main() {
 
       expect(h.cameraIsLive, isTrue);
       await h.tapText('Enter manually');
-      expect(find.widgetWithText(TextField, 'Chè bắp'), findsNothing);
+      expect(find.widgetWithText(CupertinoTextField, 'Chè bắp'), findsNothing);
     });
 
     testWidgets('from a miss, and the typed food closes to a live camera', (

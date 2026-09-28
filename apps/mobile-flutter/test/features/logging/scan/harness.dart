@@ -14,6 +14,7 @@ import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/camera/controls.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/field.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/screen.dart';
 import 'package:kallo_mobile/features/privacy/data/ai_consent_providers.dart';
@@ -228,6 +229,15 @@ class ScanHarness {
     await tester.tap(find.bySemanticsLabel(semanticsLabel).last);
     await tester.pumpAndSettle();
   }
+
+  /// The editor's name field — its first, above the nutrient rows.
+  Finder get nameField =>
+      find
+          .descendant(
+            of: find.byType(ScanFoodEditor),
+            matching: find.byType(CupertinoTextField),
+          )
+          .first;
 
   /// The editor's field for the nutrient labelled [label] ("Calories").
   Finder field(String label) => find.descendant(

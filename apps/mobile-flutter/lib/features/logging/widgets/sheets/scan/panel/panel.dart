@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_shapes.dart';
+import 'gestures.dart';
 
 /// How high a scan panel stands over the frozen camera — the owner's levels.
 /// Fractions of the screen measured from the TOP (the 844pt artboards: 214,
@@ -39,6 +40,10 @@ enum ScanPanelHeight {
 /// Retire this if the SDK's sheet gains detents that leave the route behind it
 /// in place.
 ///
+/// Being no route, it carries a sheet's gestures itself ([ScanPanelGestures]):
+/// drag down or tap the frame above to close ([onDismiss]), tap the sheet to
+/// put the keyboard away, swipe right on a second level ([onBack]).
+///
 /// Painted in the canvas colour so the result's white cards separate by
 /// surface, as on a page; corners at [kSheetRadius], concentric with the
 /// header's controls.
@@ -49,6 +54,8 @@ class ScanPanel extends StatelessWidget {
     required this.header,
     required this.body,
     this.dock,
+    this.onDismiss,
+    this.onBack,
   });
 
   final ScanPanelHeight height;
@@ -59,6 +66,13 @@ class ScanPanel extends StatelessWidget {
 
   /// Pinned under the scrolling body — "Add meal", or a state's buttons.
   final Widget? dock;
+
+  /// What a drag down or a tap outside does — the header's close. Null while
+  /// the sheet may not close.
+  final VoidCallback? onDismiss;
+
+  /// A second level's swipe back to the first.
+  final VoidCallback? onBack;
 
   static const double _dockGap = 12;
 
@@ -103,6 +117,8 @@ class ScanPanel extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   child: body,
                 ),
@@ -113,8 +129,13 @@ class ScanPanel extends StatelessWidget {
       ),
     );
 
-    return top == null
-        ? Align(alignment: Alignment.bottomCenter, child: surface)
-        : Padding(padding: EdgeInsets.only(top: top), child: surface);
+    return ScanPanelGestures(
+      onDismiss: onDismiss,
+      onBack: onBack,
+      child:
+          top == null
+              ? Align(alignment: Alignment.bottomCenter, child: surface)
+              : Padding(padding: EdgeInsets.only(top: top), child: surface),
+    );
   }
 }

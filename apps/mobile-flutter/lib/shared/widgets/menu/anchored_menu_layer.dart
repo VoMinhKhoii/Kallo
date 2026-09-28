@@ -1,5 +1,5 @@
-/// The open anchored menu, as a widget: blur + scrim, the caller's pinned
-/// copy at its own rect, and the card growing out of the anchor's corner.
+/// The open anchored menu, as a widget: its backdrop (blur + scrim, in
+/// `anchored_menu_backdrop.dart`), the caller's pinned copy at its own rect, and the card growing out of the anchor's corner.
 ///
 /// Split out of `kallo_anchored_menu.dart`, which kept the public API and the
 /// route (see that file for WHY the app owns this menu at all).
@@ -12,12 +12,12 @@
 library;
 
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
+import 'anchored_menu_backdrop.dart';
 import 'kallo_menu_card.dart';
 
 /// Which vertical edge the card shares with its anchor.
@@ -33,16 +33,6 @@ enum KalloMenuEdge {
   /// bubble and the Circle "+" both want.
   trailing,
 }
-
-/// The scrim under the blur — ink at 20%, well short of the dialog scrim's
-/// black/50, and INK rather than pure black so the blurred canvas keeps its
-/// hue (`kallo_colors.dart`: a ramp fading toward the wrong neutral is a
-/// visible seam). A menu is an extension of the page it hangs off, so that
-/// page stays readable; a dialog is not, and dims it properly. The value
-/// `circle_add_menu.dart` shipped.
-const Color _menuScrim = Color(0x33141413);
-
-const double _menuBlur = 8; // how far the page recedes behind the card
 
 /// The open menu. [anchor] is a GLOBAL rect in the root overlay's coordinates
 /// and [overlaySize] is that overlay's own size — both measured by the caller,
@@ -60,6 +50,7 @@ class AnchoredMenuLayer extends StatefulWidget {
     required this.rows,
     this.header,
     this.pinned,
+    this.backdrop = true,
     super.key,
   });
 
@@ -70,6 +61,11 @@ class AnchoredMenuLayer extends StatefulWidget {
   final List<KalloMenuActionRow> rows;
   final String? header;
   final Widget? pinned;
+
+  /// Blur and dim the page behind the card — a context menu's backdrop. A
+  /// pull-down ([showKalloAnchoredMenu]'s `backdrop: false`) leaves the page
+  /// as it is, as iOS does for a button's menu.
+  final bool backdrop;
 
   @override
   State<AnchoredMenuLayer> createState() => _AnchoredMenuLayerState();
@@ -149,20 +145,8 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
 
     return Stack(
       children: [
-        // Decorative only — IgnorePointer so the dismiss tap reaches the
-        // route's barrier underneath rather than dying on the scrim.
-        Positioned.fill(
-          child: IgnorePointer(
-            child: FadeTransition(
-              opacity: _curved,
-              // The blur is the transition's `child`: a tick repaints it.
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: _menuBlur, sigmaY: _menuBlur),
-                child: const ColoredBox(color: _menuScrim),
-              ),
-            ),
-          ),
-        ),
+        if (widget.backdrop)
+          Positioned.fill(child: AnchoredMenuBackdrop(opacity: _curved)),
         if (pinned != null)
           Positioned.fromRect(
             rect: anchor,

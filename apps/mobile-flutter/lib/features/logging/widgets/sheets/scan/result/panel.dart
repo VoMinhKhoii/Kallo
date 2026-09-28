@@ -102,6 +102,10 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
         // One level above a plain result, as the dense result: the product
         // and its macros stay on top, the frozen photo still shows above.
         height: ScanPanelHeight.dense,
+        // Down closes the whole sheet, as on any sheet with a pushed level;
+        // right goes back a level.
+        onDismiss: widget.saving ? null : widget.onClose,
+        onBack: () => setState(() => _others = false),
         header: KalloSheetSubHeader(
           title: 'logging.scan.otherNutrients'.tr(),
           onBack: () => setState(() => _others = false),
@@ -132,6 +136,7 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
     final dense = _amount.portion == ScanPortion.custom && food.unit == 'ml';
     return ScanPanel(
       height: dense ? ScanPanelHeight.dense : ScanPanelHeight.result,
+      onDismiss: widget.saving ? null : widget.onClose,
       header: KalloSheetHeader(
         title: _title,
         onClose: widget.onClose,

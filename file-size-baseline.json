@@ -30,8 +30,7 @@
     "components/app/navigation/mobile-nav.tsx": 204,
     "apps/mobile-flutter/lib/features/auth/widgets/auth_text_field.dart": 204,
     "apps/mobile-flutter/lib/features/circle/widgets/groups/group_info_sheet.dart": 204,
-    "apps/mobile-flutter/lib/features/logging/widgets/portion/ruler/portion_ruler_strip.dart": 203,
-    "apps/mobile-flutter/lib/shared/widgets/menu/anchored_menu_layer.dart": 202
+    "apps/mobile-flutter/lib/features/logging/widgets/portion/ruler/portion_ruler_strip.dart": 203
   },
   "folders": {
     "components/auth": 11

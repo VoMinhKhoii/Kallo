@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
@@ -279,7 +278,10 @@ void main() {
       final h = await atProduct(tester);
       await h.tapText('Edit');
       expect(find.text('Edit'), findsWidgets, reason: 'the editor title');
-      expect(find.widgetWithText(TextField, 'Coconut Water'), findsOneWidget);
+      expect(
+        find.widgetWithText(CupertinoTextField, 'Coconut Water'),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(CupertinoTextField, '16'), findsOneWidget);
 
       await h.type('Calories', '20');
@@ -305,7 +307,7 @@ void main() {
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
       await h.tapText('Edit');
-      await tester.enterText(find.byType(TextField), 'Nước dừa');
+      await tester.enterText(h.nameField, 'Nước dừa');
       await tester.pumpAndSettle();
       await h.tapText('Done');
 

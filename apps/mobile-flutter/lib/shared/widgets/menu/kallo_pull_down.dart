@@ -65,6 +65,10 @@ class KalloPullDown<T> extends StatelessWidget {
     final picked = await showKalloAnchoredMenu<T>(
       context,
       anchor: anchor,
+      // No blur, no dim: the page the value belongs to stays readable under
+      // its menu (iOS draws a button's menu over an untouched page). Over the
+      // scan sheet the blur took the frozen photo and the result with it.
+      backdrop: false,
       actions: [
         for (final option in options)
           KalloMenuAction<T>(

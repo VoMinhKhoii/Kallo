@@ -41,6 +41,14 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
       ref.read(barcodeFlowProvider.notifier);
   LabelScanController get labelNotifier => ref.read(labelScanProvider.notifier);
 
+  /// The camera actually running, and on screen. Trails [mode] by the dip a
+  /// switch makes (`ScanCameraVeil`): the chip moves at once, the camera
+  /// swaps once the old picture has dimmed out.
+  ScanType cameraMode = ScanType.barcode;
+
+  /// The dip is covering the camera, or on its way to.
+  bool veiled = false;
+
   /// Each mode starts clean: a miss or result left in the other mode (a
   /// "Not found" that led here via "Scan nutrition label") must not be
   /// waiting when the user switches back — and each mode holds the sensor
@@ -52,22 +60,36 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
       torch = false;
       frozen = null;
       clearResult();
+      veiled = next != cameraMode;
     });
     barcodeNotifier.scanAgain();
     labelNotifier.retake();
-    if (next == ScanType.label) {
-      barcodeCamera.release();
-      labelCamera.open();
-    } else {
-      labelCamera.close();
-      barcodeCamera.ensure();
-      barcodeCamera.arm();
+  }
+
+  /// The veil is down: hand the sensor to the mode chosen by now (a second
+  /// tap during the dip may have taken it back), and lift the veil.
+  void swapCamera() {
+    if (!mounted) return;
+    final next = mode;
+    if (next != cameraMode) {
+      if (next == ScanType.label) {
+        barcodeCamera.release();
+        labelCamera.open();
+      } else {
+        labelCamera.close();
+        barcodeCamera.ensure();
+        barcodeCamera.arm();
+      }
     }
+    setState(() {
+      cameraMode = next;
+      veiled = false;
+    });
   }
 
   void toggleTorch() {
     setState(() => torch = !torch);
-    if (mode == ScanType.barcode) {
+    if (cameraMode == ScanType.barcode) {
       barcodeCamera.setTorch(torch);
     } else {
       labelCamera.setTorch(torch);
@@ -75,7 +97,10 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
   }
 
   void onDetect(BarcodeCapture capture) {
+    // `mode`: a code caught while the camera dims out for label mode is not
+    // looked up.
     if (typing ||
+        mode != ScanType.barcode ||
         ref.read(barcodeFlowProvider).phase != BarcodeFlowPhase.scanning) {
       return;
     }
@@ -149,7 +174,12 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
       frozen = null;
       clearResult();
     });
-    if (mode == ScanType.barcode) {
+    // Mid-dip, the swap about to land opens the right camera itself.
+    if (cameraMode != mode) {
+      mode == ScanType.barcode
+          ? barcodeNotifier.scanAgain()
+          : labelNotifier.retake();
+    } else if (mode == ScanType.barcode) {
       barcodeNotifier.scanAgain();
       barcodeCamera.ensure();
       barcodeCamera.arm();

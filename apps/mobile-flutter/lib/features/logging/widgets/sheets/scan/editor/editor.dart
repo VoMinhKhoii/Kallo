@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../../../../shared/logic/macro_composition.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
@@ -7,7 +7,9 @@ import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../shared/widgets/menu/kallo_pull_down.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
+import '../../../../../../models/nutrition_label.dart';
 import '../../../../../../theme/calm_tokens.dart';
+import '../../../../../../theme/kallo_colors.dart';
 import '../../../../logic/label/nutrients.dart';
 import '../../../../logic/label/review.dart';
 import '../../../../logic/scan/amount.dart';
@@ -21,7 +23,9 @@ import 'field.dart';
 /// scroll-and-type, never a picker) — or type one from scratch ("New food").
 ///
 /// Done hands back the edited [ScanFood]; nothing is saved until Add meal on
-/// the result. Done waits for a name and the four the log requires.
+/// the result. Done waits for a name and the four the log requires
+/// (calories, protein, carbs, fat — their empty fields read "Required"), and
+/// for nothing typed to be malformed or out of range (shown in danger ink).
 class ScanFoodEditor extends StatefulWidget {
   const ScanFoodEditor({
     super.key,
@@ -65,6 +69,10 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
         icon: macroKey == null ? null : kMacroIcons[macroKey],
         iconColor: macroKey == null ? null : kCompositionColors[macroKey],
         error: _draft.hasError(d.key),
+        placeholder:
+            requiredLabelNutrientKeys.contains(d.key)
+                ? 'logging.scan.requiredValue'.tr()
+                : '—',
       );
 
   @override
@@ -76,6 +84,7 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
     };
     return ScanPanel(
       height: ScanPanelHeight.full,
+      onDismiss: widget.onCancel,
       header: KalloSheetHeader(
         title:
             (widget.isNew ? 'logging.scan.newFood' : 'logging.scan.edit').tr(),
@@ -90,16 +99,23 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
         children: [
           GroupedListCard(
             children: [
-              TextField(
+              // Cupertino, not a Material `TextField`: the theme's
+              // `inputDecorationTheme` gives every Material field an outlined
+              // pill, and `border: none` alone left its `enabledBorder` drawn —
+              // a bordered field inside the card's own row.
+              CupertinoTextField(
                 controller: _draft.name,
                 style: dashBody(),
                 maxLength: 200,
-                decoration: InputDecoration(
-                  hintText: 'logging.scan.foodName'.tr(),
-                  border: InputBorder.none,
-                  counterText: '',
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: null,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                placeholder: 'logging.scan.foodName'.tr(),
+                placeholderStyle: dashBody(
+                  color: KalloColors.placeholderMuted40,
                 ),
+                cursorColor: kInk,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
               ),
             ],
           ),

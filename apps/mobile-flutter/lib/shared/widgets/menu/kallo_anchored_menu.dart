@@ -18,8 +18,8 @@
 /// over; nothing here reaches into the caller's tree.
 ///
 /// This file is the API and the route only; the open menu's geometry — the
-/// blur, the pinned copy, the flip and the clamps — lives in
-/// `anchored_menu_layer.dart`.
+/// pinned copy, the flip and the clamps — lives in `anchored_menu_layer.dart`,
+/// and the blur behind it in `anchored_menu_backdrop.dart`.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -72,7 +72,9 @@ class KalloMenuAction<T> {
 /// above the blur without moving it by a pixel. [edge] picks which vertical
 /// edge the card shares with the anchor: [KalloMenuEdge.trailing] hangs it off
 /// the trailing edge (the default), [KalloMenuEdge.leading] off the leading
-/// one.
+/// one. [backdrop] false drops the blur and scrim behind the card: a
+/// pull-down hangs off a value row and the page it belongs to stays sharp,
+/// where a long-press context menu recedes the page.
 Future<T?> showKalloAnchoredMenu<T>(
   BuildContext context, {
   required Rect anchor,
@@ -80,6 +82,7 @@ Future<T?> showKalloAnchoredMenu<T>(
   String? header,
   Widget? pinned,
   KalloMenuEdge edge = KalloMenuEdge.trailing,
+  bool backdrop = true,
 }) {
   HapticFeedback.lightImpact(); // open cue, as everywhere else
   final overlay = Overlay.of(context, rootOverlay: true);
@@ -104,6 +107,7 @@ Future<T?> showKalloAnchoredMenu<T>(
           edge: edge,
           header: header,
           pinned: pinned,
+          backdrop: backdrop,
           rows: [
             for (final action in actions)
               KalloMenuActionRow(

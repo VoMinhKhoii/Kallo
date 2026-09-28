@@ -19,6 +19,7 @@ class ScanEditorField extends StatelessWidget {
     this.icon,
     this.iconColor,
     this.error = false,
+    this.placeholder = '—',
   });
 
   final String label;
@@ -31,6 +32,10 @@ class ScanEditorField extends StatelessWidget {
 
   /// The figure doesn't parse or is out of range — shown in the danger ink.
   final bool error;
+
+  /// What an empty field says: "—" (unknown, and fine), or "Required" on the
+  /// four Done waits for — so a greyed-out Done has its reason on screen.
+  final String placeholder;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +66,7 @@ class ScanEditorField extends StatelessWidget {
               decoration: null,
               padding: const EdgeInsets.symmetric(vertical: 12),
               style: dashValue(color: error ? KalloColors.danger : kInk),
-              placeholder: '—',
+              placeholder: placeholder,
               placeholderStyle: dashValue(color: KalloColors.textMuted),
               cursorColor: kInk,
             ),
