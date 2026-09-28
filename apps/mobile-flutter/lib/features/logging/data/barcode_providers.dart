@@ -4,7 +4,6 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
@@ -13,10 +12,8 @@ import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';
 
-const _uuid = Uuid();
-
 /// Where the sheet is in the scan → search → quantity → save flow.
-enum BarcodeFlowPhase { scanning, manualEntry, searching, product, saving }
+enum BarcodeFlowPhase { scanning, searching, product, saving }
 
 class BarcodeFlowState {
   final BarcodeFlowPhase phase;
@@ -48,8 +45,8 @@ class BarcodeFlowState {
     lastBarcode: lastBarcode ?? this.lastBarcode,
   );
 
-  /// Not-found is the one error where "describe it instead" (the AI composer)
-  /// is a better exit than rescanning the same unknown product.
+  /// A miss, not a failure: the product is just not in the database, so the
+  /// ways on are its nutrition label or typing it — not scanning it again.
   bool get isNotFound => errorKey == 'logging.barcode.error.notFound';
 }
 
@@ -146,10 +143,13 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
   /// on success (the sheet pops and toasts). A failure keeps the quantity step
   /// and its chosen amount, with the error inline — except `not_cached`, which
   /// only a fresh search can repair and so routes back to the scanner.
+  ///
+  /// [mealId] is the result's own, kept across its retries ([isMealAlreadySaved]).
   Future<bool> logMeal({
     required String userId,
     required String date,
     required int grams,
+    required String mealId,
   }) async {
     final product = state.product;
     if (product == null || state.phase == BarcodeFlowPhase.saving) return false;
@@ -163,24 +163,12 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       await api.post<Map<String, dynamic>>('/api/v1/barcode/log', {
         'barcode': product.barcode,
         'grams': grams,
-        'mealId': _uuid.v4(),
+        'mealId': mealId,
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
     } catch (error) {
-      final key = _errorKeyFor(error);
-      // A purged cache row (not_cached) can only be repaired by re-searching;
-      // send the user back to the scanner. Anything else keeps the quantity
-      // step (and the chosen amount) so a transient failure is one tap away
-      // from a retry.
-      state = state.copyWith(
-        phase:
-            key == 'logging.barcode.error.notCached'
-                ? BarcodeFlowPhase.scanning
-                : BarcodeFlowPhase.product,
-        errorKey: () => key,
-      );
-      return false;
+      if (!isMealAlreadySaved(error)) return _failLog(error);
     }
     // The meal COMMITTED the moment the POST returned, so nothing below may
     // turn a saved meal into a failed save — [settleAfterMealWrite] sits
@@ -203,19 +191,26 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
     return true;
   }
 
+  /// A failed log. A purged cache row (not_cached) can only be repaired by
+  /// re-searching, so it sends the user back to the scanner; anything else
+  /// keeps the result and its amount, the error beside it, so a transient
+  /// failure is one tap away from a retry.
+  bool _failLog(Object error) {
+    final key = _errorKeyFor(error);
+    state = state.copyWith(
+      phase:
+          key == 'logging.barcode.error.notCached'
+              ? BarcodeFlowPhase.scanning
+              : BarcodeFlowPhase.product,
+      errorKey: () => key,
+    );
+    return false;
+  }
+
   /// Resume scanning after an error or from the quantity step's back link.
   void scanAgain() {
     state = state.copyWith(
       phase: BarcodeFlowPhase.scanning,
-      product: () => null,
-      errorKey: () => null,
-    );
-  }
-
-  /// Switch to typing the barcode (camera unavailable, damaged code, …).
-  void enterManualMode() {
-    state = state.copyWith(
-      phase: BarcodeFlowPhase.manualEntry,
       product: () => null,
       errorKey: () => null,
     );

@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image_shrink.dart';
-import 'package:kallo_mobile/features/logging/logic/label/review.dart';
+import 'package:kallo_mobile/features/logging/logic/scan/scan_food.dart';
 import 'package:kallo_mobile/models/nutrition_label.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
@@ -102,6 +102,13 @@ void main() {
       expect(state().phase, LabelScanPhase.preview);
       expect(state().image?.mimeType, 'image/jpeg');
       expect(state().errorKey, isNull);
+    });
+
+    test('a photo from a session the screen has left is dropped', () async {
+      await notifier().pickImage(ImageSource.camera, isCurrent: () => false);
+
+      expect(state().phase, LabelScanPhase.capture);
+      expect(state().image, isNull);
     });
 
     test('a cancelled picker leaves the state untouched', () async {
@@ -215,42 +222,51 @@ void main() {
     });
   });
 
-  group('logMeal', () {
-    LabelReviewState reviewFor(LabelScanState scanState) =>
-        LabelReviewState(scanState.label, defaultProductName: 'Scanned food');
+  group('logEntry', () {
+    Future<String?> log(ScanFood food, double amount) => notifier().logEntry(
+      userId: 'user-1',
+      date: '2026-07-02',
+      food: food,
+      amount: amount,
+      mealId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    );
 
-    test('posts the reviewed values and omits unprinted nutrients', () async {
-      await reachReview();
-      final review = reviewFor(state());
-      review.commitAmount('50');
+    ScanFood readFood() =>
+        ScanFood.fromLabel(state().label!, fallbackName: 'Scanned food');
 
-      api.handler = (_, __, ___) => <String, dynamic>{'mealId': 'meal-1'};
-      final saved = await notifier().logMeal(
-        userId: 'user-1',
-        date: '2026-07-02',
-        review: review,
-      );
+    Map<String, dynamic> logBody() =>
+        // Not `.last`: the day refresh that `invalidateMealSurfaces` kicks off
+        // rides the same fake client and lands after the log post.
+        api.requests
+                .firstWhere((r) => r.$2 == '/api/v1/nutrition-label/log')
+                .$3!
+            as Map<String, dynamic>;
 
-      expect(saved, isTrue);
-      // Not `.last`: the day refresh that `invalidateMealSurfaces` kicks off
-      // rides the same fake client and lands after the log post.
-      final logRequest = api.requests.firstWhere(
-        (request) => request.$2 == '/api/v1/nutrition-label/log',
-      );
-      final json = logRequest.$3! as Map<String, dynamic>;
-      expect(json['productName'], 'Bánh quy Cosy');
-      expect(json['amount'], 50);
-      expect(json['unit'], 'g');
-      expect(json['confidence'], 'high');
-      expect(json['calories'], 240);
-      expect(json['sodiumMg'], 160);
-      // Never printed on this label — omitted rather than sent as null.
-      expect(json.containsKey('ironMg'), isFalse);
-      expect(json['mealId'], isA<String>());
-      expect(json['loggedDate'], '2026-07-02');
-      // The scan reply kept no photo, so there is nothing to link.
-      expect(json.containsKey('labelImageId'), isFalse);
-    });
+    test(
+      'posts the values scaled to the amount, omitting unprinted ones',
+      () async {
+        await reachReview();
+        api.handler = (_, __, ___) => <String, dynamic>{'mealId': 'meal-1'};
+
+        expect(await log(readFood(), 50), isNull);
+
+        final json = logBody();
+        expect(json['productName'], 'Bánh quy Cosy');
+        expect(json['amount'], 50);
+        expect(json['unit'], 'g');
+        expect(json['confidence'], 'high');
+        expect(json['calories'], 240);
+        expect(json['sodiumMg'], 160);
+        // Never printed on this label — omitted rather than sent as null.
+        expect(json.containsKey('ironMg'), isFalse);
+        expect(json['mealId'], isA<String>());
+        expect(json['loggedDate'], '2026-07-02');
+        // The scan reply kept no photo, so there is nothing to link.
+        expect(json.containsKey('labelImageId'), isFalse);
+        // The result card owns the saving state; the flow stays on review.
+        expect(state().phase, LabelScanPhase.review);
+      },
+    );
 
     test('carries the kept photo id from the scan into the log', () async {
       const labelImageId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
@@ -264,18 +280,33 @@ void main() {
       expect(state().labelImageId, labelImageId);
 
       api.handler = (_, __, ___) => <String, dynamic>{'mealId': 'meal-1'};
-      final saved = await notifier().logMeal(
-        userId: 'user-1',
-        date: '2026-07-02',
-        review: reviewFor(state()),
-      );
+      expect(await log(readFood(), 30), isNull);
+      expect(logBody()['labelImageId'], labelImageId);
+    });
 
-      expect(saved, isTrue);
-      final logRequest = api.requests.firstWhere(
-        (request) => request.$2 == '/api/v1/nutrition-label/log',
+    test('a food typed by hand never claims the scan photo', () async {
+      await notifier().pickImage(ImageSource.camera);
+      api.handler =
+          (_, __, ___) => <String, dynamic>{
+            'label': _labelJson,
+            'labelImageId': '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+          };
+      await notifier().scan();
+
+      final typed = ScanFood.blank().copyWith(
+        name: 'Chè bắp',
+        values: {
+          ...ScanFood.blank().values,
+          'calories': 250,
+          'proteinGrams': 10,
+          'carbsGrams': 30,
+          'fatGrams': 8,
+        },
       );
-      final json = logRequest.$3! as Map<String, dynamic>;
-      expect(json['labelImageId'], labelImageId);
+      api.handler = (_, __, ___) => <String, dynamic>{'mealId': 'meal-1'};
+      expect(await log(typed, 100), isNull);
+      expect(logBody().containsKey('labelImageId'), isFalse);
+      expect(logBody()['confidence'], 'low');
     });
 
     test("a new photo drops the previous scan's photo id", () async {
@@ -293,35 +324,47 @@ void main() {
       expect(state().labelImageId, isNull);
     });
 
-    test('refuses to post a review that cannot be confirmed', () async {
+    test('refuses a food without the four the log requires', () async {
       await reachReview();
-      final review = reviewFor(state())..setNutrientText('proteinGrams', '');
-
-      final saved = await notifier().logMeal(
-        userId: 'user-1',
-        date: '2026-07-02',
-        review: review,
+      final food = readFood();
+      final missing = food.copyWith(
+        values: {...food.values, 'proteinGrams': null},
       );
 
-      expect(saved, isFalse);
+      expect(await log(missing, 30), 'logging.scan.missingValues');
       expect(api.requests.length, 1); // the scan only
     });
 
-    test('a failed save keeps the review step and its edits', () async {
+    test('a retry whose first try landed counts as saved', () async {
       await reachReview();
-      final review = reviewFor(state());
+      api.handler =
+          (_, path, __) =>
+              path == '/api/v1/nutrition-label/log'
+                  ? throw ApiError('MEAL_ALREADY_SAVED', 409, false, 'saved')
+                  : <String, dynamic>{};
+
+      expect(await log(readFood(), 30), isNull);
+    });
+
+    test('an id this account does not own stays a failure', () async {
+      await reachReview();
+      api.handler =
+          (_, path, __) =>
+              path == '/api/v1/nutrition-label/log'
+                  ? throw ApiError('CONFLICT', 409, false, 'taken')
+                  : <String, dynamic>{};
+
+      expect(await log(readFood(), 30), isNotNull);
+    });
+
+    test('a failed save returns why and leaves the flow alone', () async {
+      await reachReview();
       api.handler =
           (_, __, ___) => throw ApiError('INTERNAL_ERROR', 500, false, 'boom');
 
-      final saved = await notifier().logMeal(
-        userId: 'user-1',
-        date: '2026-07-02',
-        review: review,
-      );
-
-      expect(saved, isFalse);
+      expect(await log(readFood(), 30), 'logging.labelScan.error.serverError');
       expect(state().phase, LabelScanPhase.review);
-      expect(state().errorKey, 'logging.labelScan.error.serverError');
+      expect(state().errorKey, isNull);
     });
   });
 
@@ -333,29 +376,6 @@ void main() {
       expect(state().phase, LabelScanPhase.capture);
       expect(state().image, isNull);
       expect(state().label, isNull);
-    });
-
-    test('back from review returns to the photo it came from', () async {
-      await reachReview();
-      notifier().backToPreview();
-
-      expect(state().phase, LabelScanPhase.preview);
-      expect(state().image, isNotNull);
-      expect(state().label, isNotNull);
-    });
-
-    test('manual review opens an empty form', () async {
-      notifier().enterManualReview();
-
-      expect(state().phase, LabelScanPhase.review);
-      expect(state().label, isNull);
-      expect(
-        LabelReviewState(
-          state().label,
-          defaultProductName: 'Scanned food',
-        ).unit,
-        'serving',
-      );
     });
   });
 

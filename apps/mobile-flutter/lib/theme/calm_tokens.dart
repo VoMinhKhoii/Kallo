@@ -37,6 +37,10 @@ const Color kHairline =
     KalloColors.border; // the one border (neutral hairline, solid)
 const Color kFieldFill =
     KalloColors.elev; // input fills read white on the neutral canvas
+// Dark glass: controls floating over a live picture (the scan camera). A
+// translucent ink reads over a white carton and a dark counter alike — a light
+// one vanished over the carton in review (2026-09-27).
+const Color kGlass = Color(0x61141413); // ink @ 38%
 
 // ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
 const Color kInk = KalloColors.text; // near-black ink — primary data

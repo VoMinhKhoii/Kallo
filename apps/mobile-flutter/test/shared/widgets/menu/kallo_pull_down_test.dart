@@ -94,7 +94,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Serving'));
     await tester.pumpAndSettle();
-    expect(changes, isEmpty, reason: 're-picking the current choice is a no-op');
+    expect(
+      changes,
+      isEmpty,
+      reason: 're-picking the current choice is a no-op',
+    );
 
     await tester.tap(find.text('100 ml / serving'));
     await tester.pumpAndSettle();

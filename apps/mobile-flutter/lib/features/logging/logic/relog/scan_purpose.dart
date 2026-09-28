@@ -7,7 +7,6 @@ import '../../../../models/logging/relog.dart';
 import '../../../../models/logging/scan_outcome.dart';
 import '../../../../models/nutrition/barcode_product.dart';
 import '../../data/barcode_providers.dart';
-import '../barcode_amount.dart';
 
 /// What a confirmed amount DOES: write the meal, or hand the product back.
 ///
@@ -21,6 +20,7 @@ typedef ScanCommit =
       required int grams,
       required String userId,
       required String date,
+      required String mealId,
     });
 
 /// What the scan sheet was opened FOR: the CTA it shows on the amount step, and
@@ -67,10 +67,11 @@ Future<ScanOutcome?> _logMeal(
   required int grams,
   required String userId,
   required String date,
+  required String mealId,
 }) async {
   final saved = await ref
       .read(barcodeFlowProvider.notifier)
-      .logMeal(userId: userId, date: date, grams: grams);
+      .logMeal(userId: userId, date: date, grams: grams, mealId: mealId);
   // A failure has already put its message on the amount step. Popping would
   // take that away along with the amount the user chose.
   return saved ? const ScanSaved() : null;
@@ -82,7 +83,29 @@ Future<ScanOutcome?> _pickProduct(
   required int grams,
   required String userId,
   required String date,
+  required String mealId,
 }) async => ScanPicked(
   label: barcodePickLabel(product, grams),
   ref: BarcodeRef(barcode: product.barcode, grams: grams.toDouble()),
 );
+
+/// What a scanned product reads as INSIDE the composer's sentence: its brand,
+/// its name and the amount, so "2 shot cafe + TH true milk Sữa tươi (180g)"
+/// says back what was actually scanned.
+///
+/// The BRAND is there because a bare name does not identify a package: two
+/// "Sữa tươi" from different companies are different products with different
+/// numbers, and a sentence holding both would read as the same pick twice —
+/// which is also what `reconcileMentions` would then see. Products without one
+/// keep the bare name.
+///
+/// The amount is in the label because it is the half the user chose and the
+/// half a bare product name hides — in the product's own unit, so a drink reads
+/// "(330ml)". The reference beside it carries the same number, so nothing here
+/// is load-bearing — break the text and the pick drops, which is exactly what a
+/// broken relog label does.
+String barcodePickLabel(BarcodeProduct product, int grams) {
+  final brand = product.brand;
+  final name = brand == null ? product.name : '$brand ${product.name}';
+  return '$name ($grams${product.amountUnit})';
+}

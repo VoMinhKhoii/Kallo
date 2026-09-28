@@ -67,7 +67,6 @@ class FeedSheets {
       purpose: ScanPurpose.log,
       userId: userId,
       date: date,
-      onFallbackToText: focusComposer,
     );
     if (outcome is ScanSaved) onLogged();
   }
@@ -90,7 +89,6 @@ class FeedSheets {
       purpose: ScanPurpose.pick,
       userId: userId,
       date: date,
-      onFallbackToText: focusComposer,
     );
     // The nutrition-LABEL branch inside the same sheet still writes a meal —
     // there is no reference to hand back for a photographed table — so that
