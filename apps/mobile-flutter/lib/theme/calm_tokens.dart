@@ -282,12 +282,14 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
   color: color,
 );
 
-/// 600 — the label on a pill BUTTON ("Lưu thay đổi", "Gửi góp ý", "Xác
+/// 500 — the label on a pill BUTTON ("Lưu thay đổi", "Gửi góp ý", "Xác
 /// nhận"), 16 by default, 14 for the compact sheet buttons.
 ///
-/// The fourth 600 token, and the only one that is not a title or a name: a
-/// button's word is an instruction, and at 400 a beige pill read as a label
-/// sitting on a swatch. Before this token the weight was re-decided per widget
+/// The one 500 token: a button's word is an instruction, and at 400 a beige
+/// pill read as a label sitting on a swatch. It was 600 — the titles' weight —
+/// until 2026-09-28, when every button in the app read too bold beside the
+/// 400 text around it (Be Vietnam Pro runs a step heavy, so its 600 is most
+/// faces' bold); one step down keeps the instruction firm without shouting. Before this token the weight was re-decided per widget
 /// — KalloButton, the meal confirm and the auth CTA at 600, the sheet actions
 /// at 500, QuietActionButton and the weight submit at 400 — so "Gửi góp ý" and
 /// "Lưu tên" two screens apart wore different weights. Every pill label now
@@ -295,7 +297,7 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
 TextStyle kButtonLabel({Color color = kInk, double size = 16}) => TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: size,
-  fontWeight: FontWeight.w600,
+  fontWeight: FontWeight.w500,
   height: 1.3,
   letterSpacing: -0.2,
   color: color,

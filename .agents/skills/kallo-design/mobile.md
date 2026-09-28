@@ -91,11 +91,14 @@ shipped a visible bug first.
 **Regular is the weight for everything but titles and names.** Be Vietnam Pro
 reads heavy — its Medium (500) is what most faces call semibold — so 500 is
 not a step, it is bold, and it is gone from every data, label, button and
-figure role (2026-09-02). 600 lives in four tokens only: page title, section
-header, name — and `kButtonLabel`, the word on a pill BUTTON (2026-09-24: at
-400 a beige pill read as a label on a swatch, and the weight had been
-re-decided per widget, so "Gửi góp ý" and "Lưu tên" two screens apart wore
-different weights; every pill label now reads it from the one token). A
+figure role (2026-09-02). 600 lives in three tokens only: page title, section
+header, name. The word on a pill BUTTON reads `kButtonLabel`, which is **500**
+(2026-09-24 it was introduced at 600: at 400 a beige pill read as a label on a
+swatch, and the weight had been re-decided per widget, so "Gửi góp ý" and
+"Lưu tên" two screens apart wore different weights; 2026-09-28 it stepped down
+to 500 because every button in the app read too bold — the confirm dialog's
+affirmative and the sign-in buttons followed). This is the ONE sanctioned 500:
+a button label, never a data, label or figure role. A
 selected segment, today's day number, the total row: all regular, told apart
 by ink versus muted. Serif is never bold. If something needs to stand out and colour is not enough, the
 answer is size or position, not weight.

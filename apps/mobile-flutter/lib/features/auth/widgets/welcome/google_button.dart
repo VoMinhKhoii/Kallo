@@ -76,7 +76,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               Text(
                 tr('auth.dialog.continueWithGoogle'),
                 style: dashBody(
-                  weight: FontWeight.w600,
+                  weight: FontWeight.w500,
                 ).copyWith(color: KalloColors.text, letterSpacing: -0.2),
               ),
             ],

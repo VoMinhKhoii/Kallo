@@ -54,7 +54,9 @@ class KalloConfirmActions extends StatelessWidget {
           // action's, colour is the destructive one's. A non-destructive
           // affirmative keeps the weight and drops the red.
           color: destructive ? KalloColors.danger : kInk,
-          weight: FontWeight.w600,
+          // Medium, not semibold: the button-label step (`kButtonLabel`),
+          // still one step over the cancel's regular.
+          weight: FontWeight.w500,
           // The one moment worth a firmer tap than a selection click: past this
           // point something is gone.
           onTap: () {

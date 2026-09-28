@@ -70,7 +70,7 @@ class _AppleButtonState extends State<AppleButton> {
               Text(
                 tr('auth.dialog.continueWithApple'),
                 style: dashBody(
-                  weight: FontWeight.w600,
+                  weight: FontWeight.w500,
                 ).copyWith(color: KalloColors.elev, letterSpacing: -0.2),
               ),
             ],
