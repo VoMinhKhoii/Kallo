@@ -74,7 +74,7 @@ function meal(index: number, sharedAt: Date) {
     portionFactor: 1,
     sharedAt,
     loggedAt: sharedAt,
-    sharedAtText: sharedAt.toISOString(),
+    eatenAtText: sharedAt.toISOString(),
     handle: 'owner',
     displayName: 'Owner',
     avatarSeed: 'owner',

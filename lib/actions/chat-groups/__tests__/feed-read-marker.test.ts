@@ -138,7 +138,7 @@ describe('listGroupMealFeed', () => {
       portionFactor: 1,
       sharedAt,
       loggedAt: sharedAt,
-      sharedAtText: sharedAt.toISOString(),
+      eatenAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
       avatarSeed: 'phofan',
@@ -170,6 +170,24 @@ describe('listGroupMealFeed', () => {
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(marker.set)).toContain('2026-01-01T18:00:00.000Z');
     expect(JSON.stringify(marker.set)).toContain('GREATEST');
+  });
+
+  it('advances lastReadAt to the newest SHARE, not the first row in eaten order', async () => {
+    const marker: { set?: unknown } = {};
+    membershipQuery([{ id: 'member-row' }]);
+    // Eaten order: today's lunch first, then yesterday's dinner — which was
+    // backfilled and shared later, so it is the newest share on the page.
+    const lunch = sharedMeal(2, new Date('2026-01-02T12:00:00Z'));
+    const backfill = {
+      ...sharedMeal(1, new Date('2026-01-02T20:00:00Z')),
+      loggedAt: new Date('2026-01-01T19:00:00Z'),
+    };
+    sharedMealsBeforeQuery([lunch, backfill]);
+    stubUpdate(marker);
+
+    await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+
+    expect(JSON.stringify(marker.set)).toContain('2026-01-02T20:00:00.000Z');
   });
 
   it('reports a nextCursor when more history remains', async () => {

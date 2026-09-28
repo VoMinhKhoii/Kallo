@@ -128,7 +128,11 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   },
   meal_shares: {
     exported: 'social.mealShares',
-    excludedColumns: { actor_id: OWN_ID },
+    excludedColumns: {
+      actor_id: OWN_ID,
+      eaten_at:
+        "A database-maintained copy of the shared meal's logged_at, kept only so the circle feeds can be indexed; the eaten time itself is exported with the meal.",
+    },
   },
   meal_share_reactions: {
     exported: 'social.reactions',

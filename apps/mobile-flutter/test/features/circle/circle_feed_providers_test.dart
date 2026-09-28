@@ -8,6 +8,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'circle_feed_test_support.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
+import 'package:kallo_mobile/models/social/circle.dart';
 
 void main() {
   setUpAll(() async {
@@ -392,6 +393,41 @@ void main() {
         (ThreadDayLabelKind.date, 'July 12'),
       );
       expect(olderYear.dateLabel, 'July 12, 2025');
+    });
+
+    test('groups by the day the meal was eaten, not when it was shared', () {
+      // Relogged onto yesterday and shared just now: the server sorts it
+      // under yesterday, so it must open a Yesterday run of its own.
+      CircleFeedEntry entry(String id, {required String loggedAt}) =>
+          CircleFeedEntry.fromJson(
+            entryJson(id)
+              ..['meal'] = {
+                ...(entryJson(id)['meal'] as Map<String, dynamic>),
+                'sharedAt': DateTime(2026, 7, 18, 11).toUtc().toIso8601String(),
+                'loggedAt': loggedAt,
+              },
+          );
+      final today = entry(
+        'today',
+        loggedAt: DateTime(2026, 7, 18, 9).toUtc().toIso8601String(),
+      );
+      final backfill = entry(
+        'backfill',
+        loggedAt: DateTime(2026, 7, 17, 19).toUtc().toIso8601String(),
+      );
+
+      final days = groupEntriesByDay([today, backfill]);
+
+      expect(days, hasLength(2));
+      expect(
+        threadDayLabel(days.first.date, now: now, locale: 'en').kind,
+        ThreadDayLabelKind.today,
+      );
+      expect(days.last.entries.single.meal.shareId, 'backfill');
+      expect(
+        threadDayLabel(days.last.date, now: now, locale: 'en').kind,
+        ThreadDayLabelKind.yesterday,
+      );
     });
   });
 }

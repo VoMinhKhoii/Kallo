@@ -6,6 +6,13 @@
 // projection below from group-meals.ts. A friend's share is visible only when
 // it was made at or after the friendship was accepted — friendSinceSql, the
 // same predicate the share-by-id gate uses.
+//
+// Two clocks, never swapped. WHERE a meal sits — its day, its order, the
+// "today" window — is when it was EATEN (meal_shares.eaten_at, the trigger-kept
+// copy of meals.logged_at that the feed indexes cover): a meal logged for
+// yesterday belongs under Yesterday, not Today. WHO may see it and whether it
+// is unread is when it was SHARED (meal_shares.shared_at), because that is when
+// it reached anyone.
 
 import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
@@ -47,8 +54,9 @@ export interface SharedMealRow {
   /** When the meal was eaten. Differs from sharedAt for a backfilled meal
    * (logged for a past date), letting the client hide its meaningless time. */
   loggedAt: Date;
-  /** Full PostgreSQL timestamptz precision used only to construct cursors. */
-  sharedAtText: string;
+  /** The share's eaten_at at full PostgreSQL timestamptz precision, used only
+   * to construct cursors — the feeds page in eaten order. */
+  eatenAtText: string;
   handle: string;
   displayName: string | null;
   avatarSeed: string | null;
@@ -72,7 +80,7 @@ export const sharedMealColumns = {
   entryMode: meals.entryMode,
   sharedAt: mealShares.sharedAt,
   loggedAt: meals.loggedAt,
-  sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
+  eatenAtText: sql<string>`${mealShares.eatenAt}::text`,
   ...publicProfileColumns,
 };
 
@@ -91,9 +99,38 @@ function visibleToViewer(viewerId: string) {
   );
 }
 
+/** Rows strictly after `before` in eaten order — newest-eaten first, ties
+ * broken by share id. `undefined` (no bound) for the first page. */
+export function eatenBeforeCursor(before: SharedMealCursor | null) {
+  if (!before) return undefined;
+  return or(
+    sql`${mealShares.eatenAt} < ${before.ts}::timestamptz`,
+    and(
+      sql`${mealShares.eatenAt} = ${before.ts}::timestamptz`,
+      lt(mealShares.id, before.id)
+    )
+  );
+}
+
+/** The order `eatenBeforeCursor` seeks through — the key of the
+ * meal_shares_(actor_)eaten_at_id_idx indexes. */
+export const eatenNewestFirst = [desc(mealShares.eatenAt), desc(mealShares.id)];
+
+/** The page's newest SHARE — what a feed read marker advances to. Not `rows[0]`:
+ * the page is in eaten order, so a meal logged for an earlier day but shared
+ * just now sits further down. */
+export function newestSharedAt(rows: SharedMealRow[]): Date | null {
+  let newest: Date | null = null;
+  for (const row of rows) {
+    if (!newest || row.sharedAt > newest) newest = row.sharedAt;
+  }
+  return newest;
+}
+
 /**
- * Most-recent non-private shared meal per user, within [dayStart, dayEnd).
- * Callers scope `userIds` to the viewer plus their accepted friends; the query
+ * Most-recent non-private shared meal per user EATEN within [dayStart, dayEnd).
+ * A meal logged for yesterday and shared today is not today's meal. Callers
+ * scope `userIds` to the viewer plus their accepted friends; the query
  * additionally drops any friend share made before that friendship was
  * accepted, so "most recent" means most recent the viewer may see.
  */
@@ -123,16 +160,12 @@ export async function mostRecentSharedMealsToday(
           inArray(mealShares.actorId, userIds),
           sql`${mealShares.visibility} <> 'private'`,
           visibleToViewer(viewerId),
-          gte(mealShares.sharedAt, dayStart),
-          lt(mealShares.sharedAt, dayEnd)
+          gte(mealShares.eatenAt, dayStart),
+          lt(mealShares.eatenAt, dayEnd)
         )
       )
       // DISTINCT ON requires the leading ORDER BY to match the distinct key.
-      .orderBy(
-        mealShares.actorId,
-        desc(mealShares.sharedAt),
-        desc(mealShares.id)
-      )
+      .orderBy(mealShares.actorId, ...eatenNewestFirst)
   );
 }
 
@@ -149,8 +182,9 @@ const THREAD_PAGE_SIZE = 20;
 /**
  * Seek-paginated Friends history: every non-private share from the actor, or
  * from a live accepted friend made after the friendship was accepted,
- * newest-first. Friendship authorization is part of this query so the
- * owner-role connection never fetches an unscoped share.
+ * newest-EATEN first, so a meal logged for a past day files under that day.
+ * Friendship authorization is part of this query so the owner-role connection
+ * never fetches an unscoped share.
  */
 export async function sharedMealsBefore(
   actorId: string,
@@ -172,18 +206,10 @@ export async function sharedMealsBefore(
       and(
         visibleToViewer(actorId),
         sql`${mealShares.visibility} <> 'private'`,
-        before
-          ? or(
-              sql`${mealShares.sharedAt} < ${before.ts}::timestamptz`,
-              and(
-                sql`${mealShares.sharedAt} = ${before.ts}::timestamptz`,
-                lt(mealShares.id, before.id)
-              )
-            )
-          : undefined
+        eatenBeforeCursor(before)
       )
     )
-    .orderBy(desc(mealShares.sharedAt), desc(mealShares.id))
+    .orderBy(...eatenNewestFirst)
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
@@ -194,7 +220,7 @@ export async function sharedMealsBefore(
     rows: page,
     nextCursor:
       hasMore && last
-        ? encodeSharedMealCursor({ ts: last.sharedAtText, id: last.shareId })
+        ? encodeSharedMealCursor({ ts: last.eatenAtText, id: last.shareId })
         : null,
   };
 }
@@ -214,6 +240,9 @@ export interface SharedMealEntry {
     /** 'precise' | 'cheat' — see SharedMealRow.entryMode. */
     entryMode: string;
     sharedAt: string;
+    /** When the meal was eaten. The feeds order and day-group by this, never
+     * by sharedAt. */
+    loggedAt: string;
     /** True when the meal was logged for a PAST date (backfilled), so its
      * share-time ("just now") would be misleading and the UI hides it.
      * Computed server-side and timezone-independently — see isBackfilledShare. */
@@ -268,6 +297,7 @@ export function toSharedMealEntry(
       portionFactor: row.portionFactor,
       entryMode: row.entryMode,
       sharedAt: row.sharedAt.toISOString(),
+      loggedAt: row.loggedAt.toISOString(),
       isBackfilled: isBackfilledShare(row.loggedAt, row.sharedAt),
     },
     reactions,

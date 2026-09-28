@@ -1,7 +1,9 @@
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { SharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
+  eatenBeforeCursor,
+  eatenNewestFirst,
   type SharedMealRow,
   sharedMealColumns,
 } from '@/lib/domain/social/feed/meal-feed';
@@ -17,8 +19,8 @@ import {
 
 type Db = AppDb | AppTransaction;
 
-/** Group-scoped shared meals, newest first. Admission is `groupShareVisibleSql`
- * — the one group-share rule (not private, not blocked, both members joined
+/** Group-scoped shared meals, newest-EATEN first (see meal-feed.ts). Admission
+ * is `groupShareVisibleSql` — the one group-share rule (not private, not blocked, both members joined
  * before the share) — evaluated in SQL before LIMIT. The owner-membership join
  * only drives the scan from this group's members. */
 export async function sharedGroupMealsBefore(
@@ -47,17 +49,9 @@ export async function sharedGroupMealsBefore(
     .where(
       and(
         groupShareVisibleSql(viewerId, groupId, mealShares),
-        before
-          ? or(
-              sql`${mealShares.sharedAt} < ${before.ts}::timestamptz`,
-              and(
-                sql`${mealShares.sharedAt} = ${before.ts}::timestamptz`,
-                lt(mealShares.id, before.id)
-              )
-            )
-          : undefined
+        eatenBeforeCursor(before)
       )
     )
-    .orderBy(desc(mealShares.sharedAt), desc(mealShares.id))
+    .orderBy(...eatenNewestFirst)
     .limit(limit);
 }

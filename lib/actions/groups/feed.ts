@@ -10,6 +10,7 @@ import {
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
+  newestSharedAt,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
@@ -146,7 +147,7 @@ export async function listCircleFeed(
   const cappedFriendIds = friendIds.slice(0, CIRCLE_FEED_FRIEND_CAP);
   const queryUserIds = [actorId, ...cappedFriendIds];
 
-  // Most-recent shared ('circle' or 'public') meal per user within today —
+  // Most-recent shared ('circle' or 'public') meal per user EATEN today —
   // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
   // a user only ever sees their own meal and meals of users they are accepted
   // friends with (the friendIds set is derived from accepted edges above), and
@@ -173,14 +174,14 @@ export async function listCircleFeed(
     )
   );
 
-  // The actor's own table is the first slot; friends follow newest-first.
+  // The actor's own table is the first slot; friends follow newest-eaten first.
   const self = entries.filter((e) => e.isSelf);
   const friends = entries
     .filter((e) => !e.isSelf)
     .sort(
       (a, b) =>
-        new Date(b.meal.sharedAt).getTime() -
-        new Date(a.meal.sharedAt).getTime()
+        new Date(b.meal.loggedAt).getTime() -
+        new Date(a.meal.loggedAt).getTime()
     );
   return [...self, ...friends];
 }
@@ -251,17 +252,17 @@ export async function listFriendsThreadFeed(
 
   // Advance only after the complete read/enrichment succeeds, and only to the
   // newest share the actor actually received — never to wall-clock time.
-  const newest = rows[0];
+  const newest = newestSharedAt(rows);
   if (!parsed.before && newest) {
     await db
       .insert(friendsFeedReadMarkers)
-      .values({ userId: actorId, lastReadAt: newest.sharedAt })
+      .values({ userId: actorId, lastReadAt: newest })
       .onConflictDoUpdate({
         target: friendsFeedReadMarkers.userId,
         set: {
           // ISO string, not the Date object — raw sql params bypass the column
           // mapper and postgres.js cannot serialize a bare Date there.
-          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
+          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${newest.toISOString()}::timestamptz)`,
         },
       });
   }

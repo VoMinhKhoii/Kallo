@@ -5,7 +5,10 @@ import {
   encodeSharedMealCursor,
 } from '@/lib/domain/social/feed/cursor';
 import { sharedGroupMealsBefore } from '@/lib/domain/social/feed/group-meals';
-import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
+import {
+  newestSharedAt,
+  toSharedMealEntry,
+} from '@/lib/domain/social/feed/meal-feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -39,7 +42,7 @@ export async function listGroupMealFeed(
   const last = rows.at(-1);
   const nextCursor =
     hasMore && last
-      ? encodeSharedMealCursor({ ts: last.sharedAtText, id: last.shareId })
+      ? encodeSharedMealCursor({ ts: last.eatenAtText, id: last.shareId })
       : null;
 
   const shareIds = rows.map((row) => row.shareId);
@@ -57,12 +60,12 @@ export async function listGroupMealFeed(
   );
 
   // Advance only after the complete read/enrichment succeeds.
-  const newest = rows[0];
+  const newest = newestSharedAt(rows);
   if (!parsed.before && newest) {
     await db
       .update(chatGroupMembers)
       .set({
-        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
+        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${newest.toISOString()}::timestamptz)`,
       })
       .where(
         and(

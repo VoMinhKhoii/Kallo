@@ -35,7 +35,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
-    sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
+    eatenAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
     displayName: null,
     avatarSeed: 'me',
@@ -110,9 +110,28 @@ describe('sharedMealsBefore', () => {
     expect(page.rows.map((r) => r.mealId)).toEqual(['meal-3', 'meal-2']);
     // The cursor is the oldest row IN THE PAGE, not the dropped extra row.
     expect(decodeSharedMealCursor(page.nextCursor ?? undefined)).toEqual({
-      ts: rows[1].sharedAtText,
+      ts: rows[1].eatenAtText,
       id: rows[1].shareId,
     });
+  });
+
+  it('orders and seeks by when the meal was eaten, not when it was shared', async () => {
+    const query = sharedMealsQuery([]);
+    const before = {
+      ts: '2026-01-02T08:00:00.123+00',
+      id: '00000000-0000-4000-8000-000000000002',
+    };
+
+    await sharedMealsBefore(USER_A, before);
+
+    const { sql } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."eaten_at" <');
+    expect(sql).toContain('"meal_shares"."eaten_at" =');
+    expect(sql).not.toContain('"meal_shares"."shared_at" <');
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toContain('"meal_shares"."eaten_at" desc');
   });
 
   it('does not collapse multiple shares from the same user (unlike mostRecentSharedMealsToday)', async () => {
@@ -177,6 +196,37 @@ describe('friend feeds hide shares made before the friendship', () => {
     expect(params.filter((p) => p === USER_A).length).toBeGreaterThanOrEqual(3);
   });
 
+  it('mostRecentSharedMealsToday windows by the day the meal was EATEN', async () => {
+    // A meal logged for yesterday and shared just now is not today's meal.
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn().mockResolvedValue([]),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    const db = {
+      selectDistinctOn: vi.fn(() => ({ from: vi.fn().mockReturnValue(query) })),
+    } as never;
+
+    await mostRecentSharedMealsToday(
+      USER_A,
+      [USER_A],
+      new Date('2026-01-01T00:00:00Z'),
+      new Date('2026-01-02T00:00:00Z'),
+      db
+    );
+
+    const { sql } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."eaten_at" >=');
+    expect(sql).toContain('"meal_shares"."eaten_at" <');
+    expect(sql).not.toContain('"meal_shares"."shared_at" >=');
+    const order = query.orderBy.mock.calls[0]
+      .slice(1)
+      .map((part: SQL) => new PgDialect().sqlToQuery(part).sql);
+    expect(order[0]).toContain('"meal_shares"."eaten_at" desc');
+  });
+
   it('skips the query entirely for an empty user list', async () => {
     const selectDistinctOn = vi.fn();
 
@@ -237,5 +287,16 @@ describe('toSharedMealEntry', () => {
     };
 
     expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);
+  });
+
+  it('sends when the meal was eaten, which the clients day-group by', () => {
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-02T12:00:00Z')),
+      loggedAt: new Date('2026-01-01T12:00:00Z'),
+    };
+
+    const { meal } = toSharedMealEntry(row, USER_A);
+    expect(meal.loggedAt).toBe('2026-01-01T12:00:00.000Z');
+    expect(meal.sharedAt).toBe('2026-01-02T12:00:00.000Z');
   });
 });

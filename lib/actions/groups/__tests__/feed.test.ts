@@ -222,7 +222,7 @@ describe('listFriendsThreadFeed', () => {
       portionFactor: 1,
       sharedAt,
       loggedAt: sharedAt,
-      sharedAtText: sharedAt.toISOString(),
+      eatenAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
       avatarSeed: 'phofan',

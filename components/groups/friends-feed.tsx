@@ -31,7 +31,7 @@ export function FriendsFeed() {
   const entries = (data?.pages ?? []).flatMap((page) => page.entries);
   const items = entries.map((entry) => ({
     id: entry.meal.shareId,
-    timestamp: entry.meal.sharedAt,
+    timestamp: entry.meal.loggedAt,
     content: <FeedEntry entry={entry} />,
   }));
 

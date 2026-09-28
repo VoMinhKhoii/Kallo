@@ -55,6 +55,7 @@ export function sharedMealEntryFixture(
       fatG: 12,
       portionFactor: 1,
       sharedAt: '2026-05-03T08:00:00.000Z',
+      loggedAt: '2026-05-03T08:00:00.000Z',
       isBackfilled: false,
     },
     reactions: { count: 0, mine: false },
