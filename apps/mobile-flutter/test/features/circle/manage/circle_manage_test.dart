@@ -339,9 +339,8 @@ void main() {
       expect(find.text('Thanks for letting us know'), findsNothing);
     });
 
-    testWidgets('the owner of a group with members gets no ⋯ at all', (
-      tester,
-    ) async {
+    testWidgets('the owner of a group with members is told why, not offered '
+        'what the server refuses', (tester) async {
       // The server refuses both: a report resolves to the creator, and an
       // owner cannot leave while others remain.
       await _pump(
@@ -350,8 +349,36 @@ void main() {
         tab: CircleManageTab.circle,
       );
 
-      expect(find.text('Go to circle'), findsOneWidget);
-      expect(_more('Team lunch'), findsNothing);
+      await tester.tap(_more('Team lunch'));
+      await tester.pumpAndSettle();
+      expect(find.text('Report group'), findsNothing);
+      expect(find.text('Leave group'), findsNothing);
+      expect(
+        find.text(
+          'You own this group — you can leave once everyone else has left.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('rendering the list fetches no group detail', (tester) async {
+      // N groups must not fan out into N detail requests: the role is
+      // loaded when a `⋯` is tapped, for that group only.
+      final api = _api(
+        groups: [_group('g1', 'Team lunch'), _group('g2', 'Family')],
+      );
+      await _pump(tester, api, tab: CircleManageTab.circle);
+
+      bool detailFetched(String id) => api.requests.any(
+        (r) => r.method == 'GET' && r.path == '/api/v1/chat-groups/$id',
+      );
+      expect(detailFetched('g1'), isFalse);
+      expect(detailFetched('g2'), isFalse);
+
+      await tester.tap(_more('Team lunch'));
+      await tester.pumpAndSettle();
+      expect(detailFetched('g1'), isTrue);
+      expect(detailFetched('g2'), isFalse);
     });
 
     testWidgets('an unknown role offers nothing: a failed load is a toast', (

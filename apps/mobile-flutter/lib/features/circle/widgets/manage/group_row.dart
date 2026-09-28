@@ -42,10 +42,11 @@ class GroupRow extends ConsumerWidget {
     GoRouter.of(context).go('/circle');
   }
 
-  /// The viewer's permissions for this group. Loaded before the sheet opens
-  /// when the watched detail has not landed yet — never guessed — and a load
-  /// that fails is a toast and a retry on the next tap, not a menu that
-  /// offers what the server will refuse.
+  /// The viewer's permissions for this group, loaded on the tap — never
+  /// guessed, and never fetched for every row of the list up front (a list of
+  /// N groups must not fan out into N detail requests nobody asked for). A
+  /// load that fails is a toast and a fresh fetch on the next tap, not a menu
+  /// that offers what the server will refuse.
   Future<({bool report, bool leave})?> _allowed(
     BuildContext context,
     WidgetRef ref,
@@ -69,7 +70,12 @@ class GroupRow extends ConsumerWidget {
   Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
     final allowed = await _allowed(context, ref);
     if (allowed == null || !context.mounted) return;
-    if (!allowed.report && !allowed.leave) return;
+    if (!allowed.report && !allowed.leave) {
+      // The owner of a group others are still in: nothing to report, and
+      // leaving is refused until they have gone. Say so, not a dead tap.
+      showTopToast(context, tr('groups.manage.ownerNoActions'));
+      return;
+    }
     final action = await showCircleActionSheet<_GroupAction>(
       context,
       title: group.title,
@@ -103,12 +109,6 @@ class GroupRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watched so the role is usually in hand before the tap (the sheet opens
-    // at once) and so a menu KNOWN to be empty draws no `⋯` at all. While the
-    // role is unknown the `⋯` stays: [_openMenu] loads it first.
-    final detail = ref.watch(chatGroupDetailProvider(group.id)).valueOrNull;
-    final allowed = detail == null ? null : groupActionsFor(detail);
-    final hasMenu = allowed == null || allowed.report || allowed.leave;
     return ManageRow(
       leading: const _GroupDisc(),
       title: group.title,
@@ -118,14 +118,7 @@ class GroupRow extends ConsumerWidget {
           label: tr('groups.manage.goToCircle'),
           onPressed: () => _goToCircle(context, ref),
         ),
-        if (hasMenu)
-          MoreButton(
-            name: group.title,
-            onPressed: () => _openMenu(context, ref),
-          )
-        else
-          // Keeps "Go to circle" aligned with the rows that do have a `⋯`.
-          const SizedBox(width: KalloIcons.hit),
+        MoreButton(name: group.title, onPressed: () => _openMenu(context, ref)),
       ],
     );
   }

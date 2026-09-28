@@ -1744,7 +1744,8 @@
       "blockedEmptyBody": "Người bạn chặn sẽ hiện ở đây, và bạn có thể bỏ chặn bất cứ lúc nào.",
       "blockedLoadError": "Không thể tải danh sách đã chặn",
       "unblock": "Bỏ chặn",
-      "groupLoadError": "Không tải được nhóm này. Hãy thử lại."
+      "groupLoadError": "Không tải được nhóm này. Hãy thử lại.",
+      "ownerNoActions": "Bạn là chủ nhóm — bạn có thể rời nhóm khi mọi người khác đã rời."
     },
     "moderation": {
       "report": "Báo cáo",

@@ -1747,7 +1747,8 @@
       "blockedEmptyBody": "People you block show up here, and you can unblock them any time.",
       "blockedLoadError": "Couldn't load who you've blocked",
       "unblock": "Unblock",
-      "groupLoadError": "Couldn't load this group. Try again."
+      "groupLoadError": "Couldn't load this group. Try again.",
+      "ownerNoActions": "You own this group — you can leave once everyone else has left."
     },
     "moderation": {
       "report": "Report",
