@@ -8,7 +8,7 @@ import '../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_theme.dart';
-import 'group_face_cluster.dart';
+import '../group_face_cluster.dart';
 import 'group_hero.dart';
 import 'group_members_card.dart';
 

@@ -4,10 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
+import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
+import 'package:kallo_mobile/features/circle/widgets/groups/info/group_add_page.dart';
+import 'package:kallo_mobile/features/circle/widgets/groups/info/group_info_sheet.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/circle_add_menu.dart';
 import 'package:kallo_mobile/models/social/chat_group.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/shared/widgets/avatar/profile_avatar.dart';
 import 'package:kallo_mobile/shared/widgets/menu/kallo_menu_card.dart';
 
 import 'circle_feed_test_support.dart';
@@ -22,10 +25,12 @@ void main() {
     required AsyncValue<List<ChatGroupIdentity>> groups,
     List<CircleFeedEntry> feed = const [],
     DateTime? marker,
+    List<Override> extra = const [],
   }) => pumpCircleScreen(
     tester,
     const Scaffold(body: ViewSwitcher()),
     overrides: [
+      ...extra,
       chatGroupsProvider.overrideWith((_) => groups.requireValue),
       circleFeedProvider.overrideWith((_) => Stream.value(feed)),
       friendsReadMarkerProvider.overrideWith(
@@ -58,7 +63,7 @@ void main() {
   // One scenario per test: re-pumping the same ProviderScope with different
   // overrides does not recompute already-resolved providers.
   testWidgets(
-    'unread dots shown when group unread and feed newer than marker',
+    'a closed group tab shows its unread dot; the open tab does not',
     (tester) async {
       await pump(
         tester,
@@ -66,7 +71,9 @@ void main() {
         feed: [entry(DateTime.utc(2026, 7, 18))],
         marker: DateTime.utc(2026, 7, 17),
       );
-      expect(find.byKey(const Key('circle-unread-dot')), findsNWidgets(2));
+      // "All" is the open tab, so its own dot is not drawn — the viewer is
+      // reading it. The group's is.
+      expect(find.byKey(const Key('circle-unread-dot')), findsOneWidget);
     },
   );
 
@@ -80,6 +87,91 @@ void main() {
       marker: DateTime.utc(2026, 7, 19),
     );
     expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
+  });
+
+  // The open tab replaced the "name · N members · (i)" line under the chips:
+  // its faces say who is in the view, and a second tap opens the group.
+  List<Override> openGroup({required String role, int members = 3}) => [
+    circleSelectedViewProvider.overrideWith((_) => 'g1'),
+    circleFriendsProvider.overrideWith((_) async => const []),
+    chatGroupDetailProvider('g1').overrideWith(
+      (_) async => ChatGroupDetail(
+        id: 'g1',
+        kind: 'group',
+        name: 'Weekend hikers',
+        myRole: role,
+        members: [
+          for (var i = 0; i < members; i++)
+            ChatGroupMember(
+              userId: 'u$i',
+              handle: 'p$i',
+              role: i == 0 ? 'owner' : 'member',
+            ),
+        ],
+      ),
+    ),
+  ];
+
+  testWidgets('a second tap on the open group tab opens the group sheet', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'member'),
+    );
+    expect(find.byType(GroupInfoSheet), findsNothing);
+    await tester.tap(find.text('Weekend hikers'));
+    await tester.pumpAndSettle();
+    expect(find.byType(GroupInfoSheet), findsOneWidget);
+  });
+
+  testWidgets('the open tab caps its faces to its name and counts the rest', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'member', members: 9),
+    );
+    // Nine people never fit under one tab name: the last slot says how many
+    // more there are, and the count adds up to the group.
+    final more = tester.widget<Text>(find.textContaining(RegExp(r'^\+\d+$')));
+    final hidden = int.parse(more.data!.substring(1));
+    final shown = find.byType(ProfileAvatarDisc).evaluate().length;
+    expect(shown + hidden, 9);
+  });
+
+  testWidgets('long-pressing a group tab offers only what the viewer may do', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'member'),
+    );
+    await tester.longPress(find.text('Weekend hikers'));
+    await tester.pumpAndSettle();
+    expect(find.text('View group'), findsOneWidget);
+    expect(find.text('Add members'), findsOneWidget);
+    // Rename is the owner's.
+    expect(find.text('Rename group'), findsNothing);
+
+    await tester.tap(find.text('Add members'));
+    await tester.pumpAndSettle();
+    // Straight onto the sheet's second level.
+    expect(find.byType(GroupAddPage), findsOneWidget);
+  });
+
+  testWidgets("the owner's long-press menu also offers rename", (tester) async {
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: false)]),
+      extra: openGroup(role: 'owner'),
+    );
+    await tester.longPress(find.text('Weekend hikers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Rename group'), findsOneWidget);
   });
 
   // The header's add control is an ANCHORED POPOVER (native pass,

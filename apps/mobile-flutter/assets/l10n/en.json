@@ -1585,7 +1585,10 @@
     "switcher": {
       "all": "All",
       "label": "Circle views",
-      "retry": "Retry"
+      "retry": "Retry",
+      "viewGroup": "View group",
+      "openGroupHint": "Tap again to see the group",
+      "openCircleHint": "Tap again to manage your circle"
     },
     "feed": {
       "heart": "Heart",

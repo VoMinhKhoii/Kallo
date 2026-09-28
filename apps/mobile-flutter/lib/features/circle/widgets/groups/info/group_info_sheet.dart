@@ -12,33 +12,42 @@ import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../data/chat_group_providers.dart';
 import '../../../logic/group_permissions.dart';
-import '../../../logic/group_member_flows.dart';
+import '../../../logic/group_flows.dart';
 import '../../../logic/moderation_flows.dart';
 import '../../states/group_info_skeleton.dart';
 import 'group_add_page.dart';
 import 'group_info_page.dart';
 import 'group_rename_page.dart';
 
-enum _Level { info, add, rename }
+/// Where the group sheet opens: its info, or straight on a second level.
+enum GroupSheetLevel { info, add, rename }
 
 /// The group sheet: info first, with "Add members" and "Rename group" as
-/// second levels that slide in inside the same sheet ([SheetPageSwap]) —
-/// one surface, one grabber, one way out.
-///
-/// The surface is the CANVAS colour, not white: its body is white grouped
-/// cards, which separate from the canvas the way they do on a page (the scan
-/// result's precedent in [KalloSheetSurface.color]).
+/// second levels sliding in inside the same sheet ([SheetPageSwap]). The
+/// surface is the CANVAS colour: its body is white grouped cards, which
+/// separate from the canvas as they do on a page.
 class GroupInfoSheet extends ConsumerStatefulWidget {
-  const GroupInfoSheet({required this.groupId, super.key});
+  const GroupInfoSheet({
+    required this.groupId,
+    this.initial = GroupSheetLevel.info,
+    this.initialName = '',
+    super.key,
+  });
   final String groupId;
+
+  /// The long-press menu opens straight on add or rename; back is the info.
+  final GroupSheetLevel initial;
+
+  /// Prefills the rename field when [initial] is rename.
+  final String initialName;
   @override
   ConsumerState<GroupInfoSheet> createState() => _GroupInfoSheetState();
 }
 
 class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
-  _Level _level = _Level.info;
+  late GroupSheetLevel _level = widget.initial;
   bool _busy = false;
-  final _name = TextEditingController();
+  late final _name = TextEditingController(text: widget.initialName);
   final _search = TextEditingController();
   final _picked = <String>{};
 
@@ -57,9 +66,9 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   ProviderContainer get _container =>
       ProviderScope.containerOf(context, listen: false);
 
-  void _go(_Level level) => setState(() {
+  void _go(GroupSheetLevel level) => setState(() {
     _level = level;
-    if (level == _Level.info) {
+    if (level == GroupSheetLevel.info) {
       _picked.clear();
       _search.clear();
     }
@@ -70,7 +79,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     setState(() => _busy = true);
     try {
       await action();
-      if (mounted) _go(_Level.info);
+      if (mounted) _go(GroupSheetLevel.info);
     } catch (_) {
       if (mounted) {
         showTopToast(context, tr(errorKey), variant: TopToastVariant.error);
@@ -107,34 +116,20 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     }
   }
 
-  ChatGroupDetail _withoutRemoved(ChatGroupDetail group) =>
-      _removed.isEmpty
-          ? group
-          : ChatGroupDetail(
-            id: group.id,
-            kind: group.kind,
-            name: group.name,
-            myRole: group.myRole,
-            members: [
-              for (final m in group.members)
-                if (!_removed.contains(m.userId)) m,
-            ],
-          );
-
   Widget _page(ChatGroupDetail group) => switch (_level) {
-    _Level.info => GroupInfoPage(
+    GroupSheetLevel.info => GroupInfoPage(
       group: group,
       selfId: ref.watch(currentSessionProvider)?.user.id,
-      onAdd: () => _go(_Level.add),
+      onAdd: () => _go(GroupSheetLevel.add),
       onRename: () {
         _name.text = group.name ?? '';
-        _go(_Level.rename);
+        _go(GroupSheetLevel.rename);
       },
       onRemove: _remove,
       onRemoved: (id) => setState(() => _removed.add(id)),
       onLeave: groupActionsFor(group).leave ? _leave : null,
     ),
-    _Level.add => GroupAddPage(
+    GroupSheetLevel.add => GroupAddPage(
       group: group,
       search: _search,
       selected: _picked,
@@ -143,13 +138,13 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
           (id) => setState(
             () => _picked.contains(id) ? _picked.remove(id) : _picked.add(id),
           ),
-      onBack: () => _go(_Level.info),
+      onBack: () => _go(GroupSheetLevel.info),
       onAdd: _add,
     ),
-    _Level.rename => GroupRenamePage(
+    GroupSheetLevel.rename => GroupRenamePage(
       controller: _name,
       busy: _busy,
-      onBack: () => _go(_Level.info),
+      onBack: () => _go(GroupSheetLevel.info),
       onSave: _rename,
     ),
   };
@@ -186,10 +181,10 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
               ),
           data:
               (group) => SheetPageSwap(
-                isSecondLevel: _level != _Level.info,
+                isSecondLevel: _level != GroupSheetLevel.info,
                 child: KeyedSubtree(
                   key: ValueKey(_level),
-                  child: _page(_withoutRemoved(group)),
+                  child: _page(group.withoutMembers(_removed)),
                 ),
               ),
         ),

@@ -13,7 +13,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/create_group_sheet.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/info/group_info_sheet.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
+import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
 import 'package:kallo_mobile/models/social/chat_group.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 

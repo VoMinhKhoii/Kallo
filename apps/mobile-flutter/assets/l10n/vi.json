@@ -1582,7 +1582,10 @@
     "switcher": {
       "all": "Tất cả",
       "label": "Chế độ xem vòng kết nối",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "viewGroup": "Xem nhóm",
+      "openGroupHint": "Chạm lần nữa để xem nhóm",
+      "openCircleHint": "Chạm lần nữa để quản lý vòng kết nối"
     },
     "feed": {
       "heart": "Thả tim",
