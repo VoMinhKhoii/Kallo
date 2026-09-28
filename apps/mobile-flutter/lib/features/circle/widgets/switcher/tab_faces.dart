@@ -16,19 +16,16 @@ import '../groups/group_face_cluster.dart';
 ///
 /// Opening grows the row in (the name lifts with it) and fades the faces up
 /// from a few points above; closing folds it away.
-class TabFaces extends StatelessWidget {
-  const TabFaces({
-    required this.open,
-    required this.label,
-    required this.faces,
-    required this.total,
-    super.key,
-  });
+/// Who a Circle view holds: the people to draw, and how many there are.
+typedef TabPeople = ({List<CircleProfile> faces, int total});
 
-  final bool open;
+class TabFaces extends StatelessWidget {
+  const TabFaces({required this.label, required this.people, super.key});
+
   final String label;
-  final List<CircleProfile> faces;
-  final int total;
+
+  /// Null while the tab is closed, or before its people have loaded.
+  final TabPeople? people;
 
   static const double _size = 26;
   static const double _step = 17;
@@ -42,12 +39,15 @@ class TabFaces extends StatelessWidget {
     )..layout();
     final width = painter.width;
     painter.dispose();
-    return GroupFaceCluster.slotsFor(width, size: _size, step: _step);
+    // Faces that fit under the name with 4pt of give, never fewer than two
+    // (a face and the "+N") nor more than five.
+    return (((width + 4 - _size) / _step).floor() + 1).clamp(2, 5);
   }
 
   @override
   Widget build(BuildContext context) {
-    final show = open && faces.isNotEmpty;
+    final people = this.people;
+    final show = people != null && people.faces.isNotEmpty;
     return AnimatedSize(
       duration: KalloMotion.emphasis,
       curve: KalloEase.decelerate,
@@ -70,8 +70,8 @@ class TabFaces extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(top: KalloSpacing.sp1_5),
                   child: GroupFaceCluster(
-                    members: faces,
-                    total: total,
+                    members: people.faces,
+                    total: people.total,
                     max: _slots(context),
                     size: _size,
                     step: _step,

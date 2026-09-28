@@ -41,17 +41,6 @@ class GroupFaceCluster extends StatelessWidget {
   /// Distance between one face's left edge and the next; 70% of [size].
   final double? step;
 
-  /// Slots for faces of [size] and [step] that fit in [width] (+4pt of give),
-  /// clamped to [min]–[maxSlots] — how the Circle tab sizes its faces to its
-  /// name.
-  static int slotsFor(
-    double width, {
-    required double size,
-    required double step,
-    int min = 2,
-    int maxSlots = 5,
-  }) => (((width + 4 - size) / step).floor() + 1).clamp(min, maxSlots);
-
   @override
   Widget build(BuildContext context) {
     final count = total ?? members.length;

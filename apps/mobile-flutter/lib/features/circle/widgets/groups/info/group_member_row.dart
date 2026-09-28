@@ -7,8 +7,9 @@ import '../../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
+import 'group_person_row.dart';
 
-/// One person in the group card: 36pt face, name, a quiet role on the right.
+/// One person in the group card, with a quiet role on the right.
 ///
 /// **Removal is a trailing swipe, not an X on every row.** The X put a
 /// destructive control one tap from every name, in the same column the eye
@@ -18,7 +19,7 @@ import '../../../../../theme/kallo_theme.dart';
 class GroupMemberRow extends StatelessWidget {
   const GroupMemberRow({
     required this.profile,
-    required this.trailing,
+    required this.role,
     this.onRemove,
     this.onRemoved,
     super.key,
@@ -27,7 +28,7 @@ class GroupMemberRow extends StatelessWidget {
   final CircleProfile profile;
 
   /// Quiet role text ("Owner", "You · Owner"), or null.
-  final String? trailing;
+  final String? role;
 
   /// Confirms and performs the removal; resolves true once the member is
   /// gone. Null makes the row inert (not the owner, or the owner's own row).
@@ -37,45 +38,26 @@ class GroupMemberRow extends StatelessWidget {
   /// instead of waiting for the refetch.
   final VoidCallback? onRemoved;
 
-  /// Row height; the separator insets are measured against it.
-  static const double height = 56;
-
-  /// Where the name column starts — the separator lines up with it.
-  static const double textInset = KalloSpacing.sp4 + 36 + KalloSpacing.sp3;
-
-  Future<void> _removeFromMenu() async {
-    if (await onRemove!()) onRemoved?.call();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final row = Container(
-      height: height,
-      color: kCardSurface,
-      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-      child: Row(
-        children: [
-          ProfileAvatarDisc(profile: profile, size: 36),
-          const SizedBox(width: KalloSpacing.sp3),
-          Expanded(
-            child: Text(
-              profile.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: dashBody(),
-            ),
-          ),
-          if (trailing != null) Text(trailing!, style: dashMeta()),
-        ],
-      ),
+    final role = this.role;
+    final row = GroupPersonRow(
+      leading: ProfileAvatarDisc(profile: profile, size: GroupPersonRow.face),
+      label: profile.label,
+      trailing: role == null ? null : Text(role, style: dashMeta()),
     );
-    if (onRemove == null) {
+    final remove = onRemove;
+    if (remove == null) {
       return Semantics(
-        label: [profile.label, if (trailing != null) trailing!].join(', '),
+        label: [profile.label, if (role != null) role].join(', '),
         excludeSemantics: true,
         child: row,
       );
     }
+    Future<void> removeFromMenu() async {
+      if (await remove()) onRemoved?.call();
+    }
+
     final removeLabel = tr(
       'groups.info.removeLabel',
       namedArgs: {'name': profile.label},
@@ -83,15 +65,15 @@ class GroupMemberRow extends StatelessWidget {
     return Semantics(
       label: profile.label,
       customSemanticsActions: {
-        CustomSemanticsAction(label: removeLabel): _removeFromMenu,
+        CustomSemanticsAction(label: removeLabel): removeFromMenu,
       },
       excludeSemantics: true,
       child: GestureDetector(
-        onLongPress: _removeFromMenu,
+        onLongPress: removeFromMenu,
         child: Dismissible(
           key: ValueKey('group-member-${profile.userId}'),
           direction: DismissDirection.endToStart,
-          confirmDismiss: (_) => onRemove!(),
+          confirmDismiss: (_) => remove(),
           onDismissed: (_) => onRemoved?.call(),
           background: Container(
             color: KalloColors.danger,

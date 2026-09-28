@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../models/social/chat_group.dart';
 import '../../../../../models/social/circle.dart';
@@ -10,13 +11,16 @@ import '../../../../../shared/widgets/badges/premium_chip.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_sub_header.dart';
 import '../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
 import '../../../../../theme/calm_tokens.dart';
-import '../../../../../theme/kallo_shapes.dart';
+import '../../../../../shared/widgets/avatar/profile_avatar.dart';
+import '../../../../../theme/kallo_colors.dart';
+import '../../../../../theme/kallo_motion.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../data/circle_providers.dart';
 import '../../../data/local_blocks.dart';
 import '../../states/circle_error.dart';
 import '../../states/friend_list_skeleton.dart';
-import 'group_candidate_row.dart';
+import 'group_person_row.dart';
+import 'group_rows_card.dart';
 import 'group_search_field.dart';
 
 /// The group sheet's second level: pick friends to add.
@@ -135,58 +139,58 @@ class GroupAddPage extends ConsumerWidget {
           children: [
             GroupSearchField(controller: search),
             const SizedBox(height: KalloSpacing.sp5),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                KalloSpacing.sp4,
-                0,
-                KalloSpacing.sp4,
-                KalloSpacing.sp1_5,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      tr('groups.info.candidatesHeading'),
-                      style: kGroupLabel(),
-                    ),
-                  ),
-                  if (locked) const PremiumChip(),
-                ],
-              ),
-            ),
             if (filtered.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(KalloSpacing.sp4),
                 child: Text(tr('groups.info.noMatches'), style: dashMeta()),
               )
             else
-              Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: ShapeDecoration(
-                  color: kCardSurface,
-                  shape: KalloShapes.squircle(KalloRadii.card),
-                ),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < filtered.length; i++) ...[
-                      if (i > 0)
-                        Container(
-                          height: 1,
-                          margin: const EdgeInsets.only(left: 64),
-                          color: kHairline,
-                        ),
-                      GroupCandidateRow(
-                        profile: filtered[i].profile,
-                        selected: selected.contains(filtered[i].profile.userId),
-                        onTap: () => onToggle(filtered[i].profile.userId),
+              GroupRowsCard(
+                label: tr('groups.info.candidatesHeading'),
+                labelTrailing: locked ? const PremiumChip() : null,
+                rows: [
+                  for (final friend in filtered)
+                    GroupPersonRow(
+                      leading: ProfileAvatarDisc(
+                        profile: friend.profile,
+                        size: GroupPersonRow.face,
                       ),
-                    ],
-                  ],
-                ),
+                      label: friend.profile.label,
+                      selected: selected.contains(friend.profile.userId),
+                      trailing: _Check(
+                        selected: selected.contains(friend.profile.userId),
+                      ),
+                      onTap: () => onToggle(friend.profile.userId),
+                    ),
+                ],
               ),
           ],
         );
       },
     );
   }
+}
+
+/// The iOS round check: an empty ring, or an ink disc with a white tick.
+class _Check extends StatelessWidget {
+  const _Check({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: KalloMotion.press,
+    width: 24,
+    height: 24,
+    decoration: BoxDecoration(
+      color: selected ? kInk : null,
+      shape: BoxShape.circle,
+      border:
+          selected ? null : Border.all(color: KalloColors.border, width: 1.5),
+    ),
+    child:
+        selected
+            ? const Icon(LucideIcons.check300, size: 15, color: Colors.white)
+            : null,
+  );
 }

@@ -11,6 +11,7 @@ import '../../data/feed_providers.dart';
 import '../../data/local_blocks.dart';
 import '../../logic/group_flows.dart';
 import 'circle_tab.dart';
+import 'tab_faces.dart';
 
 /// The Circle's view switcher: underlined tabs — "All", then each group —
 /// with the open tab's faces between its name and the underline.
@@ -49,7 +50,7 @@ class ViewSwitcher extends ConsumerWidget {
       ref.watch(friendsReadMarkerProvider),
       blocks,
     );
-    final faces = _openFaces(ref, selected);
+    final people = _openPeople(ref, selected);
     void select(String? id) =>
         ref.read(circleSelectedViewProvider.notifier).state = id;
 
@@ -73,8 +74,7 @@ class ViewSwitcher extends ConsumerWidget {
                   label: tr('groups.switcher.all'),
                   selected: selected == null,
                   unread: allUnread,
-                  faces: selected == null ? faces.people : const [],
-                  total: faces.total,
+                  people: selected == null ? people : null,
                   openHint: tr('groups.switcher.openCircleHint'),
                   onTap:
                       () =>
@@ -91,8 +91,7 @@ class ViewSwitcher extends ConsumerWidget {
                     // one from a list fetched before a block waits for a
                     // fresh list.
                     unread: group.unread && !blocks.predatesAnyBlock(group),
-                    faces: selected == group.id ? faces.people : const [],
-                    total: faces.total,
+                    people: selected == group.id ? people : null,
                     openHint: tr('groups.switcher.openGroupHint'),
                     onTap:
                         () =>
@@ -124,22 +123,19 @@ class ViewSwitcher extends ConsumerWidget {
   /// Who the open tab shows: the group's members, or — on "All" — the
   /// viewer's accepted friends. Empty until they load; the tab simply opens
   /// without faces rather than waiting on them.
-  ({List<CircleProfile> people, int total}) _openFaces(
-    WidgetRef ref,
-    String? selected,
-  ) {
+  TabPeople _openPeople(WidgetRef ref, String? selected) {
     if (selected != null) {
       final members =
           ref.watch(chatGroupDetailProvider(selected)).valueOrNull?.members ??
           const [];
-      return (people: members, total: members.length);
+      return (faces: members, total: members.length);
     }
     final friends = <CircleProfile>[
       for (final friend
           in ref.watch(visibleCircleFriendsProvider).valueOrNull ?? const [])
         if (friend.isAccepted) friend.profile,
     ];
-    return (people: friends, total: friends.length);
+    return (faces: friends, total: friends.length);
   }
 
   bool _allUnread(

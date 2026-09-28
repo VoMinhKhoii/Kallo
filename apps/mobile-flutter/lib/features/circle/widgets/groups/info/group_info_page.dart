@@ -75,7 +75,6 @@ class GroupInfoPage extends StatelessWidget {
               children: [
                 GroupHero(group: group, onRename: isOwner ? onRename : null),
                 const SizedBox(height: KalloSpacing.sp6),
-                _Label(tr('groups.info.membersHeading')),
                 GroupMembersCard(
                   group: group,
                   selfId: selfId,
@@ -113,22 +112,4 @@ class GroupInfoPage extends StatelessWidget {
       ],
     );
   }
-}
-
-/// The muted label above a grouped card, inset to the card's text line.
-class _Label extends StatelessWidget {
-  const _Label(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      KalloSpacing.sp4,
-      0,
-      KalloSpacing.sp4,
-      KalloSpacing.sp1_5,
-    ),
-    child: Text(text, style: kGroupLabel()),
-  );
 }

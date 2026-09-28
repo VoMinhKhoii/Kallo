@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
@@ -26,8 +25,7 @@ class CircleTab extends StatefulWidget {
     required this.unread,
     required this.onTap,
     this.onLongPress,
-    this.faces = const [],
-    this.total = 0,
+    this.people,
     this.semanticsLabel,
     this.openHint,
     super.key,
@@ -45,9 +43,8 @@ class CircleTab extends StatefulWidget {
   /// Called with the tab's rect in the root overlay; null for "All".
   final ValueChanged<Rect>? onLongPress;
 
-  /// The members to show while open, and how many there are in all.
-  final List<CircleProfile> faces;
-  final int total;
+  /// Who the view holds; given to the open tab only.
+  final TabPeople? people;
 
   final String? semanticsLabel;
 
@@ -70,20 +67,22 @@ class _CircleTabState extends State<CircleTab> {
     if (_pressed != down) setState(() => _pressed = down);
   }
 
-  void _longPress() {
+  void _longPress(ValueChanged<Rect> onLongPress) {
     final box = context.findRenderObject() as RenderBox?;
     final overlay =
         Overlay.of(context, rootOverlay: true).context.findRenderObject()
             as RenderBox?;
     if (box == null || overlay == null) return;
-    widget.onLongPress!(
-      box.localToGlobal(Offset.zero, ancestor: overlay) & box.size,
-    );
+    onLongPress(box.localToGlobal(Offset.zero, ancestor: overlay) & box.size);
   }
 
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
+    final longPress = switch (widget.onLongPress) {
+      final onLongPress? => () => _longPress(onLongPress),
+      null => null,
+    };
     final wash = selected ? KalloColors.hover : KalloColors.pressWash;
     final name = Row(
       mainAxisSize: MainAxisSize.min,
@@ -109,14 +108,14 @@ class _CircleTabState extends State<CircleTab> {
       label: widget.semanticsLabel ?? widget.label,
       hint: selected ? widget.openHint : null,
       excludeSemantics: true,
-      onLongPress: widget.onLongPress == null ? null : _longPress,
+      onLongPress: longPress,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticFeedback.selectionClick();
           widget.onTap();
         },
-        onLongPress: widget.onLongPress == null ? null : _longPress,
+        onLongPress: longPress,
         onTapDown: (_) => _press(true),
         onTapUp: (_) => _press(false),
         onTapCancel: () => _press(false),
@@ -154,10 +153,8 @@ class _CircleTabState extends State<CircleTab> {
                         children: [
                           name,
                           TabFaces(
-                            open: selected,
                             label: widget.label,
-                            faces: widget.faces,
-                            total: widget.total,
+                            people: selected ? widget.people : null,
                           ),
                         ],
                       ),
