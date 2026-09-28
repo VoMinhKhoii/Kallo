@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 
+import '../../../../../../shared/logic/display_format.dart';
 import '../../../../../../shared/logic/macro_composition.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
@@ -8,9 +9,9 @@ import '../../../../../../shared/widgets/menu/kallo_pull_down.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
 import '../../../../../../shared/widgets/typography/section_header_row.dart';
-import '../../../../../../models/nutrition_label.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
 import '../../../../logic/label/nutrients.dart';
 import '../../../../logic/label/review.dart';
 import '../../../../logic/scan/amount.dart';
@@ -23,10 +24,10 @@ import 'field.dart';
 /// the three macros and every nutrient the app knows (all 24, so adding one is
 /// scroll-and-type, never a picker) — or type one from scratch ("New food").
 ///
-/// Done hands back the edited [ScanFood]; nothing is saved until Add meal on
-/// the result. Done waits for a name and the four the log requires
-/// (calories, protein, carbs, fat — their empty fields read "Required"), and
-/// for nothing typed to be malformed or out of range (shown in danger ink).
+/// Save hands back the edited [ScanFood]; nothing is logged until Add meal on
+/// the result. Save waits for a name and the four the log requires (the
+/// macronutrients' header says so), and for nothing typed to be malformed or
+/// out of range — each such field says why, in red, under its row.
 class ScanFoodEditor extends StatefulWidget {
   const ScanFoodEditor({
     super.key,
@@ -69,11 +70,18 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
         unit: d.unit,
         icon: macroKey == null ? null : kMacroIcons[macroKey],
         iconColor: macroKey == null ? null : kCompositionColors[macroKey],
-        error: _draft.hasError(d.key),
-        placeholder:
-            requiredLabelNutrientKeys.contains(d.key)
-                ? 'logging.scan.requiredValue'.tr()
-                : '—',
+        errorText: switch (_draft.issueOf(d.key)) {
+          null => null,
+          ScanFieldIssue.notANumber => 'logging.scan.notANumber'.tr(),
+          ScanFieldIssue.tooHigh => 'logging.scan.tooHigh'.tr(
+            namedArgs: {
+              'max': formatCount(d.maximum.round(), localeOf(context)),
+              'unit': d.unit,
+            },
+          ),
+        },
+        filledNote:
+            _draft.filledKey == d.key ? 'logging.scan.filledValue'.tr() : null,
       );
 
   @override
@@ -93,7 +101,7 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
             (widget.isNew ? 'logging.scan.newFood' : 'logging.scan.edit').tr(),
         onClose: widget.onCancel,
         trailing: SheetCapsuleButton(
-          label: 'logging.scan.done'.tr(),
+          label: 'logging.scan.save'.tr(),
           onTap: _draft.isValid ? () => widget.onDone(_draft.toFood()) : null,
         ),
       ),
@@ -140,7 +148,10 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
               ),
             ],
           ),
-          _Caption('logging.scan.nutrition'.tr()),
+          _Header(
+            title: 'logging.scan.macronutrients'.tr(),
+            meta: 'logging.scan.requiredToSave'.tr(),
+          ),
           GroupedListCard(
             separatorInset: 0,
             children: [
@@ -148,7 +159,10 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
                 _field(d, macroKey: macroKeys[d.key]),
             ],
           ),
-          _Caption('logging.scan.otherNutrients'.tr()),
+          _Header(
+            title: 'logging.scan.otherNutrients'.tr(),
+            meta: 'logging.scan.optional'.tr(),
+          ),
           GroupedListCard(
             separatorInset: 0,
             children: [
@@ -165,17 +179,22 @@ class _ScanFoodEditorState extends State<ScanFoodEditor> {
   }
 }
 
-/// A group label over its card, flush with the card's edge like every other
-/// group label in the app (Settings, Region) — not inset to the row text,
-/// which left it floating a step in from the card it names.
-class _Caption extends StatelessWidget {
-  const _Caption(this.text);
+/// A section's header over its card, as the Nutrition page's ("Vitamin ·
+/// Limited data"): the title in ink on the left, flush with the card's edge,
+/// and what the section asks of you, muted, on the right. The same break
+/// above and rhythm below as there.
+class _Header extends StatelessWidget {
+  const _Header({required this.title, required this.meta});
 
-  final String text;
+  final String title;
+  final String meta;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 20, bottom: 6),
-    child: GroupLabel(text),
+    padding: const EdgeInsets.only(
+      top: KalloSpacing.sp6,
+      bottom: KalloSpacing.sp3,
+    ),
+    child: SectionHeaderRow(title: title, meta: meta),
   );
 }

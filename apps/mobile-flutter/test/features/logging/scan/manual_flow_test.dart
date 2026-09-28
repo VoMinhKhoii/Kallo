@@ -38,13 +38,13 @@ void main() {
         matching: find.byType(GroupedListCard),
       );
       expect(
-        tester.getTopLeft(find.text('Nutrition')).dx,
+        tester.getTopLeft(find.text('Macronutrients')).dx,
         tester.getTopLeft(card).dx,
         reason: 'not inset to the row text, as every group label in the app',
       );
     });
 
-    testWidgets('Done waits for a name and the four; the food logs per 100 g', (
+    testWidgets('Save waits for a name and the four; the food logs per 100 g', (
       tester,
     ) async {
       final h = ScanHarness(tester);
@@ -52,16 +52,16 @@ void main() {
       await h.tapText('Enter manually');
 
       expect(find.text('New food'), findsOneWidget);
-      await h.tapText('Done');
+      await h.tapText('Save');
       expect(
         find.byType(ScanFoodEditor),
         findsOneWidget,
-        reason: 'Done is off while the form is empty',
+        reason: 'Save is off while the form is empty',
       );
 
       await fillRequired(h);
       await h.type('Sodium', '0');
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.byType(ScanFoodEditor), findsNothing);
       expect(find.text('New food'), findsOneWidget, reason: 'result title');
@@ -91,7 +91,7 @@ void main() {
       await h.tapText('100 g');
       await h.tapText('100 ml');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.byType(ScanCupRuler), findsOneWidget);
       await h.tapText('Add meal');
@@ -126,7 +126,7 @@ void main() {
       await h.detect('8938507849131');
       await h.tapText('Enter manually');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('Chè bắp'), findsOneWidget);
       await h.tapLabel('Close');
@@ -146,7 +146,7 @@ void main() {
       await h.open();
       await h.tapText('Enter manually');
       await fillRequired(h);
-      await h.tapText('Done');
+      await h.tapText('Save');
       await h.tapText('Add meal');
 
       expect(h.closed, isFalse);

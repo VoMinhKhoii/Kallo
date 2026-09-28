@@ -125,7 +125,7 @@ void main() {
     expect(find.text('Add meal'), findsOneWidget);
   });
 
-  testWidgets('Edit pushes the editor; Done pops the result back, typed '
+  testWidgets('Edit pushes the editor; Save pops the result back, typed '
       'values riding out with the editor', (tester) async {
     await atProduct(tester);
     final restX = x(tester, 'Add meal');
@@ -140,7 +140,7 @@ void main() {
     final h = ScanHarness(tester);
     await tester.enterText(h.nameField, 'Nước dừa');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Done'));
+    await tester.tap(find.text('Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
 
@@ -163,7 +163,7 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
 
-    await tester.drag(find.text('Nutrition'), const Offset(300, 0));
+    await tester.drag(find.text('Macronutrients'), const Offset(300, 0));
     await tester.pumpAndSettle();
     expect(find.byType(ScanFoodEditor), findsNothing);
     expect(find.text('Coconut Water'), findsOneWidget);

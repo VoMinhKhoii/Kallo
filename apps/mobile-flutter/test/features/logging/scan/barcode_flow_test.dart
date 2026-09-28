@@ -285,7 +285,7 @@ void main() {
       expect(find.widgetWithText(CupertinoTextField, '16'), findsOneWidget);
 
       await h.type('Calories', '20');
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('20'), findsOneWidget, reason: 'per serving now');
       await h.tapText('Add meal');
@@ -309,7 +309,7 @@ void main() {
       await h.tapText('Edit');
       await tester.enterText(h.nameField, 'Nước dừa');
       await tester.pumpAndSettle();
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('2 servings'), findsOneWidget);
       await h.tapText('Add meal');
@@ -337,7 +337,7 @@ void main() {
       expect(find.text('Add to meal'), findsOneWidget);
       await h.tapText('Edit');
       await h.type('Calories', '20');
-      await h.tapText('Done');
+      await h.tapText('Save');
 
       expect(find.text('Add to meal'), findsNothing);
       await h.tapText('Add meal');

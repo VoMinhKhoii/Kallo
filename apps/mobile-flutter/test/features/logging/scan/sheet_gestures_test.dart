@@ -146,25 +146,6 @@ void main() {
       expect(h.cameraIsLive, isTrue);
     });
 
-    testWidgets('the four Done waits for say "Required" while empty', (
-      tester,
-    ) async {
-      // CupertinoTextField keeps its placeholder mounted, hidden by a
-      // Visibility, once there is text.
-      int shown() =>
-          find
-              .text('Required')
-              .evaluate()
-              .where(
-                (e) => e.findAncestorWidgetOfExactType<Visibility>()!.visible,
-              )
-              .length;
-      final h = await editing(tester);
-      expect(shown(), 4);
-      await h.type('Calories', '250');
-      expect(shown(), 3);
-    });
-
     testWidgets('the name is a plain row, not a bordered Material field', (
       tester,
     ) async {
