@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/data/moderation_mutations.dart';
 import 'package:kallo_mobile/features/circle/data/thread_providers.dart';
 
@@ -65,20 +66,78 @@ void main() {
     expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
   });
 
-  // testWidgets for its fake clock: the entry lives on a Timer.
-  testWidgets('an entry expires once any refetch has had time to land', (
-    tester,
-  ) async {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    final ids = locallyBlockedUserIdsProvider;
-    container.read(ids.notifier).add('friend-s1');
+  group('an entry leaves only on the server\'s word', () {
+    test('a fetch asked for after the block that still shows them', () async {
+      // Unblocked on another device: the server serves their post again.
+      final api = FakeApiClient((request) async {
+        if (request.path == '/api/v1/groups/friends/feed') {
+          return pageJson([entryJson('s1')], null);
+        }
+        return <String, dynamic>{};
+      });
+      final container = makeContainer(api);
+      final blocks = container.read(locallyBlockedUserIdsProvider.notifier);
+      blocks.add('friend-s1');
 
-    await tester.pump(const Duration(seconds: 59));
-    expect(container.read(ids), {'friend-s1'});
-    // After this the server's answer is the only one — including an unblock
-    // made on another device.
-    await tester.pump(const Duration(seconds: 2));
-    expect(container.read(ids), isEmpty);
+      await mountFeed(container, null);
+
+      expect(container.read(locallyBlockedUserIdsProvider), isEmpty);
+    });
+
+    test('not a fetch that was already in flight when the block landed', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final blocks = container.read(locallyBlockedUserIdsProvider.notifier);
+      final since = blocks.generation; // the fetch starts…
+      blocks.add('friend-s1'); // …the block lands…
+
+      // …and the fetch's pre-block answer still shows them.
+      blocks.reconcileShown(['friend-s1'], since: since);
+
+      expect(container.read(locallyBlockedUserIdsProvider), {'friend-s1'});
+    });
+
+    test(
+      'a blocked list fetched after the block that no longer names them',
+      () async {
+        var blocked = <Map<String, dynamic>>[];
+        final api = FakeApiClient((request) async {
+          if (request.path == '/api/v1/groups/friends/blocked') {
+            return {'blocked': blocked};
+          }
+          return <String, dynamic>{};
+        });
+        final container = makeContainer(api);
+        final blocks = container.read(locallyBlockedUserIdsProvider.notifier);
+        blocks.add('friend-s1');
+        blocks.add('friend-s2');
+
+        // The server still lists s2, and no longer s1.
+        blocked = [
+          {
+            'profile': {
+              'userId': 'friend-s2',
+              'handle': 's2',
+              'displayName': 'B',
+            },
+            'blockedAt': '2026-09-28T00:00:00.000Z',
+          },
+        ];
+        holdProvider(container, blockedCircleUsersProvider);
+        await container.read(blockedCircleUsersProvider.future);
+
+        expect(container.read(locallyBlockedUserIdsProvider), {'friend-s2'});
+      },
+    );
+
+    test('and never because time passed', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.read(locallyBlockedUserIdsProvider.notifier).add('friend-s1');
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(container.read(locallyBlockedUserIdsProvider), {'friend-s1'});
+    });
   });
 }

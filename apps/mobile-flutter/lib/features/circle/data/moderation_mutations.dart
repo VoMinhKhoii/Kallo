@@ -15,12 +15,9 @@
 /// the shared block/unblock (or report) rate limit.
 library;
 
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/social/moderation.dart';
-import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import 'chat_group_providers.dart'
@@ -28,6 +25,7 @@ import 'chat_group_providers.dart'
 import 'circle_providers.dart'
     show circleFeedProvider, circleFriendsProvider, mealShareInvitesProvider;
 import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'local_blocks.dart';
 import 'share_entry_provider.dart' show sharedMealEntryProvider;
 
 const Duration _moderationRequestTimeout = Duration(seconds: 15);
@@ -37,7 +35,9 @@ const Duration _moderationRequestTimeout = Duration(seconds: 15);
 final blockedCircleUsersProvider =
     FutureProvider.autoDispose<List<BlockedCircleUser>>((ref) async {
       final api = ref.watch(apiClientProvider);
-      return runWithRetry(() async {
+      final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
+      final since = blocks.generation;
+      final blocked = await runWithRetry(() async {
         final json = await api
             .get<Map<String, dynamic>>('/api/v1/groups/friends/blocked')
             .timeout(_moderationRequestTimeout);
@@ -46,56 +46,13 @@ final blockedCircleUsersProvider =
             .map((e) => BlockedCircleUser.fromJson(e as Map<String, dynamic>))
             .toList(growable: false);
       });
+      // The server's own list: a local entry it no longer names was lifted
+      // elsewhere (`local_blocks.dart`).
+      blocks.reconcileBlocked({
+        for (final entry in blocked) entry.profile.userId,
+      }, since: since);
+      return blocked;
     });
-
-/// Who the viewer has JUST blocked — the people whose content is hidden now,
-/// before the refetches the block started have come back.
-///
-/// A block invalidates every cache below, but each keeps its old value until
-/// its refetch returns (so a refresh never blanks a page), and until then the
-/// blocked person's posts, replies and thread would stay on screen and live:
-/// a heart or a reply sent to them is refused, and the long-press would offer
-/// the same block again. The feed, the thread page, its replies and the
-/// long-press read this set to drop that content the moment the block lands.
-///
-/// **An entry only bridges that window.** It expires after [_bridge], longer
-/// than any Circle refetch can take (three tries of 15 seconds), so from then
-/// on the server's answer is the only one — including an unblock made on
-/// another device, which a session-long entry would go on hiding. An unblock
-/// here lifts the entry at once. Per account: the set resets when the
-/// signed-in user changes, cancelling its timers.
-final locallyBlockedUserIdsProvider =
-    NotifierProvider<LocallyBlockedUsers, Set<String>>(LocallyBlockedUsers.new);
-
-const Duration _bridge = Duration(seconds: 60);
-
-class LocallyBlockedUsers extends Notifier<Set<String>> {
-  final Map<String, Timer> _expiries = {};
-
-  @override
-  Set<String> build() {
-    ref.watch(currentSessionProvider.select((session) => session?.user.id));
-    ref.onDispose(() {
-      for (final timer in _expiries.values) {
-        timer.cancel();
-      }
-      _expiries.clear();
-    });
-    return const <String>{};
-  }
-
-  /// Hide [userId]'s content until the refetches have had time to land.
-  void add(String userId) {
-    _expiries.remove(userId)?.cancel();
-    _expiries[userId] = Timer(_bridge, () => remove(userId));
-    state = {...state, userId};
-  }
-
-  void remove(String userId) {
-    _expiries.remove(userId)?.cancel();
-    if (state.contains(userId)) state = {...state}..remove(userId);
-  }
-}
 
 /// Everything a block or unblock can change for the viewer. Families are
 /// invalidated whole: a block can remove posts, replies and messages from any

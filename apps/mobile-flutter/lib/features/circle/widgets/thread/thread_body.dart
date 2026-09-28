@@ -7,7 +7,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/moderation_mutations.dart';
+import '../../data/local_blocks.dart';
 import '../feed/feed_entry.dart';
 import '../replies/reply_row.dart';
 import 'thread_dock_insets.dart';

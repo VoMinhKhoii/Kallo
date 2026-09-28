@@ -7,6 +7,7 @@ import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
 import 'chat_group_providers.dart';
+import 'local_blocks.dart';
 
 const Duration _feedRequestTimeout = Duration(seconds: 15);
 
@@ -66,16 +67,22 @@ class SharedMealFeedNotifier
     );
   }
 
-  Future<SharedMealFeedPage> _fetchPage({required String? before}) {
+  Future<SharedMealFeedPage> _fetchPage({required String? before}) async {
     final query =
         before == null ? '' : '?before=${Uri.encodeQueryComponent(before)}';
     final api = ref.read(apiClientProvider);
-    return runWithRetry(() async {
+    final blocks = ref.read(locallyBlockedUserIdsProvider.notifier);
+    final since = blocks.generation;
+    final page = await runWithRetry(() async {
       final json = await api
           .get<Map<String, dynamic>>('$_path$query')
           .timeout(_feedRequestTimeout);
       return SharedMealFeedPage.fromJson(json);
     });
+    // Anyone this page shows who was blocked before it was asked for has been
+    // unblocked since (`local_blocks.dart`).
+    blocks.reconcileShown(peopleShownIn(page.entries), since: since);
+    return page;
   }
 
   Future<void> loadMore() async {

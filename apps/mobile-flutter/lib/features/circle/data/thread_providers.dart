@@ -28,7 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/social/circle.dart';
 import '../logic/find_share_entry.dart';
 import 'feed_providers.dart';
-import 'moderation_mutations.dart' show locallyBlockedUserIdsProvider;
+import 'local_blocks.dart';
 import 'share_entry_provider.dart';
 
 /// Which post, in which feed. `scope` null is the combined friends feed.

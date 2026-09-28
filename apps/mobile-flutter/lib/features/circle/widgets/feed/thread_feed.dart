@@ -11,7 +11,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
-import '../../data/moderation_mutations.dart';
+import '../../data/local_blocks.dart';
 import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
 import 'feed_day_group.dart';

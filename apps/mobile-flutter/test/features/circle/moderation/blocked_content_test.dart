@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
-import 'package:kallo_mobile/features/circle/data/moderation_mutations.dart';
+import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
+import 'package:kallo_mobile/features/circle/widgets/invite/deck/invite_deck.dart';
+import 'package:kallo_mobile/features/circle/widgets/invite/meal_invites.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_body.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 
@@ -68,6 +71,36 @@ void main() {
     );
 
     expect(find.text('Ngon quá!'), findsOneWidget);
+  });
+
+  testWidgets("a blocked person's meal offers leave the inbox", (tester) async {
+    MealShareInvite offer(String id, String from) => MealShareInvite.fromJson({
+      'id': id,
+      'mode': 'copy',
+      'portionFactor': 1,
+      'createdAt': '2026-09-28T10:00:00.000Z',
+      'from': {'userId': from, 'handle': from, 'displayName': from},
+      'meal': {
+        'rawInput': 'Trà sữa',
+        'caloriesKcal': 100,
+        'proteinG': 2,
+        'carbohydrateG': 20,
+        'fatG': 2.5,
+      },
+    });
+    await pumpCircleScreen(
+      tester,
+      const SingleChildScrollView(child: MealInvitesSection()),
+      overrides: [
+        blocked,
+        mealShareInvitesProvider.overrideWith(
+          (ref) async => [offer('i1', 'friend-s1')],
+        ),
+      ],
+      expand: true,
+    );
+
+    expect(find.byType(InviteDeck), findsNothing);
   });
 
   testWidgets('a blocked person\'s post has no long-press menu', (

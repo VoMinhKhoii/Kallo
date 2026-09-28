@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../models/social/moderation.dart';
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
-import '../../data/moderation_mutations.dart';
+import '../../data/local_blocks.dart';
 import '../../logic/moderation_flows.dart';
 
 enum _Action { report, block }
