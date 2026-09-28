@@ -35,8 +35,11 @@ export function fetchCircleFeed(
 export function fetchFriendsThreadFeed(
   before?: string
 ): Promise<FriendsThreadFeedPage> {
-  const query = before ? `?before=${encodeURIComponent(before)}` : '';
-  return request<FriendsThreadFeedPage>(`/api/v1/groups/friends/feed${query}`);
+  // Eaten order: the feed day-groups by loggedAt (see feedOrderSchema).
+  const query = before ? `&before=${encodeURIComponent(before)}` : '';
+  return request<FriendsThreadFeedPage>(
+    `/api/v1/groups/friends/feed?order=eaten${query}`
+  );
 }
 
 /** One share as its own page. A share that is gone — deleted, or never the

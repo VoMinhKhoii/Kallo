@@ -37,3 +37,10 @@ export const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLower
 /** Opaque tuple cursor shared by the friend/group history feeds. A plain ISO
  * timestamp remains valid for legacy Flutter clients. */
 export const beforeCursorSchema = z.string().trim().min(1).max(500).optional();
+
+/** Which clock a friend/group history feed is ordered and paged by. `shared`
+ * is the v1 contract: installed apps group their day dividers by `sharedAt`
+ * over the order they receive, so it stays the default. Clients that group by
+ * `loggedAt` ask for `eaten`, so a meal logged for yesterday files under
+ * Yesterday. */
+export const feedOrderSchema = z.enum(['shared', 'eaten']).default('shared');

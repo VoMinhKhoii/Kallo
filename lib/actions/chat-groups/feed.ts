@@ -1,14 +1,14 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { groupMealFeedSchema } from '@/lib/core/validation/chat';
-import {
-  decodeSharedMealCursor,
-  encodeSharedMealCursor,
-} from '@/lib/domain/social/feed/cursor';
+import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   newestGroupSharedAt,
   sharedGroupMealsBefore,
 } from '@/lib/domain/social/feed/group-meals';
-import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
+import {
+  feedCursorAfter,
+  toSharedMealEntry,
+} from '@/lib/domain/social/feed/meal-feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -20,7 +20,7 @@ const LEGACY_GROUP_FEED_PAGE_SIZE = 20;
 
 export async function listGroupMealFeed(
   actorId: string,
-  input: { groupId: string; before?: string },
+  input: { groupId: string; before?: string; order?: string },
   db: ChatGroupDb = defaultDb
 ): Promise<GroupMealFeedPage> {
   const parsed = groupMealFeedSchema.parse(input);
@@ -39,7 +39,8 @@ export async function listGroupMealFeed(
     actorId,
     before,
     db,
-    LEGACY_GROUP_FEED_PAGE_SIZE + 1
+    LEGACY_GROUP_FEED_PAGE_SIZE + 1,
+    parsed.order
   );
   const hasMore = candidates.length > LEGACY_GROUP_FEED_PAGE_SIZE;
   const rows = hasMore
@@ -47,9 +48,7 @@ export async function listGroupMealFeed(
     : candidates;
   const last = rows.at(-1);
   const nextCursor =
-    hasMore && last
-      ? encodeSharedMealCursor({ ts: last.eatenAtText, id: last.shareId })
-      : null;
+    hasMore && last ? feedCursorAfter(parsed.order, last) : null;
 
   const shareIds = rows.map((row) => row.shareId);
   const [reactions, replies] = await Promise.all([

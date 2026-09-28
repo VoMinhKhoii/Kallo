@@ -12,7 +12,9 @@
 // copy of meals.logged_at that the feed indexes cover): a meal logged for
 // yesterday belongs under Yesterday, not Today. WHO may see it and whether it
 // is unread is when it was SHARED (meal_shares.shared_at), because that is when
-// it reached anyone.
+// it reached anyone. The history feeds still serve share order by default
+// (FeedOrder): installed apps group day dividers by sharedAt over whatever
+// order they receive, so only a client that asks for 'eaten' gets eaten order.
 
 import { and, desc, eq, gte, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
@@ -54,8 +56,9 @@ export interface SharedMealRow {
   /** When the meal was eaten. Differs from sharedAt for a backfilled meal
    * (logged for a past date), letting the client hide its meaningless time. */
   loggedAt: Date;
-  /** The share's eaten_at at full PostgreSQL timestamptz precision, used only
-   * to construct cursors — the feeds page in eaten order. */
+  /** shared_at and eaten_at at full PostgreSQL timestamptz precision, used
+   * only to construct cursors for the matching FeedOrder. */
+  sharedAtText: string;
   eatenAtText: string;
   handle: string;
   displayName: string | null;
@@ -80,6 +83,7 @@ export const sharedMealColumns = {
   entryMode: meals.entryMode,
   sharedAt: mealShares.sharedAt,
   loggedAt: meals.loggedAt,
+  sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
   eatenAtText: sql<string>`${mealShares.eatenAt}::text`,
   ...publicProfileColumns,
 };
@@ -99,22 +103,43 @@ function visibleToViewer(viewerId: string) {
   );
 }
 
-/** Rows strictly after `before` in eaten order — newest-eaten first, ties
- * broken by share id. `undefined` (no bound) for the first page. */
-export function eatenBeforeCursor(before: SharedMealCursor | null) {
+/** Which clock a history feed is ordered and paged by — see the header. */
+export type FeedOrder = 'shared' | 'eaten';
+
+/** Each order's clock; both have a matching meal_shares_(actor_)*_id_idx. */
+const FEED_CLOCK = {
+  shared: mealShares.sharedAt,
+  eaten: mealShares.eatenAt,
+} as const;
+
+/** Rows strictly after `before` in `order`, newest first, ties broken by
+ * share id. `undefined` (no bound) for the first page. A cursor is only ever
+ * read back under the order that issued it: the client pages one feed with
+ * one order. */
+export function feedBeforeCursor(
+  order: FeedOrder,
+  before: SharedMealCursor | null
+) {
   if (!before) return undefined;
+  const clock = FEED_CLOCK[order];
   return or(
-    sql`${mealShares.eatenAt} < ${before.ts}::timestamptz`,
-    and(
-      sql`${mealShares.eatenAt} = ${before.ts}::timestamptz`,
-      lt(mealShares.id, before.id)
-    )
+    sql`${clock} < ${before.ts}::timestamptz`,
+    and(sql`${clock} = ${before.ts}::timestamptz`, lt(mealShares.id, before.id))
   );
 }
 
-/** The order `eatenBeforeCursor` seeks through — the key of the
- * meal_shares_(actor_)eaten_at_id_idx indexes. */
-export const eatenNewestFirst = [desc(mealShares.eatenAt), desc(mealShares.id)];
+/** The order `feedBeforeCursor` seeks through. */
+export function feedNewestFirst(order: FeedOrder) {
+  return [desc(FEED_CLOCK[order]), desc(mealShares.id)];
+}
+
+/** The cursor that resumes after `row` in `order`. */
+export function feedCursorAfter(order: FeedOrder, row: SharedMealRow): string {
+  return encodeSharedMealCursor({
+    ts: order === 'eaten' ? row.eatenAtText : row.sharedAtText,
+    id: row.shareId,
+  });
+}
 
 /**
  * When the newest share from a friend that the viewer may see was made — what
@@ -181,7 +206,7 @@ export async function mostRecentSharedMealsToday(
         )
       )
       // DISTINCT ON requires the leading ORDER BY to match the distinct key.
-      .orderBy(mealShares.actorId, ...eatenNewestFirst)
+      .orderBy(mealShares.actorId, ...feedNewestFirst('eaten'))
   );
 }
 
@@ -198,7 +223,7 @@ const THREAD_PAGE_SIZE = 20;
 /**
  * Seek-paginated Friends history: every non-private share from the actor, or
  * from a live accepted friend made after the friendship was accepted,
- * newest-EATEN first, so a meal logged for a past day files under that day.
+ * newest first by `order`'s clock.
  * Friendship authorization is part of this query so the owner-role connection
  * never fetches an unscoped share.
  */
@@ -206,7 +231,8 @@ export async function sharedMealsBefore(
   actorId: string,
   before: SharedMealCursor | null,
   db: Db = defaultDb,
-  limit = THREAD_PAGE_SIZE
+  limit = THREAD_PAGE_SIZE,
+  order: FeedOrder = 'shared'
 ): Promise<SharedMealPage> {
   // Fetch one extra row so hasMore/nextCursor is known from a single
   // round trip instead of a separate count query.
@@ -222,10 +248,10 @@ export async function sharedMealsBefore(
       and(
         visibleToViewer(actorId),
         sql`${mealShares.visibility} <> 'private'`,
-        eatenBeforeCursor(before)
+        feedBeforeCursor(order, before)
       )
     )
-    .orderBy(...eatenNewestFirst)
+    .orderBy(...feedNewestFirst(order))
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
@@ -234,10 +260,7 @@ export async function sharedMealsBefore(
 
   return {
     rows: page,
-    nextCursor:
-      hasMore && last
-        ? encodeSharedMealCursor({ ts: last.eatenAtText, id: last.shareId })
-        : null,
+    nextCursor: hasMore && last ? feedCursorAfter(order, last) : null,
   };
 }
 
@@ -256,8 +279,8 @@ export interface SharedMealEntry {
     /** 'precise' | 'cheat' — see SharedMealRow.entryMode. */
     entryMode: string;
     sharedAt: string;
-    /** When the meal was eaten. The feeds order and day-group by this, never
-     * by sharedAt. */
+    /** When the meal was eaten. A client that asks for the 'eaten' order
+     * day-groups by this. */
     loggedAt: string;
     /** True when the meal was logged for a PAST date (backfilled), so its
      * share-time ("just now") would be misleading and the UI hides it.

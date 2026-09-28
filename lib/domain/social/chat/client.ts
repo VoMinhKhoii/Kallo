@@ -48,9 +48,10 @@ export function fetchGroupMealFeed(
   groupId: string,
   before?: string
 ): Promise<GroupMealFeedPage> {
-  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+  // Eaten order: the feed day-groups by loggedAt (see feedOrderSchema).
+  const query = before ? `&before=${encodeURIComponent(before)}` : '';
   return request<GroupMealFeedPage>(
-    `/api/v1/chat-groups/${groupId}/feed${query}`
+    `/api/v1/chat-groups/${groupId}/feed?order=eaten${query}`
   );
 }
 
