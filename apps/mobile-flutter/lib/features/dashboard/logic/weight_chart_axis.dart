@@ -97,7 +97,12 @@ List<int> weightDayOffsets(List<String> dates, int count) {
 /// they are missing (older server, see `WeightSummaryData.weightDates`) the
 /// labels degrade to just "Start" and "Now" rather than inventing week
 /// numbers. Ticks are dropped — never overlapped — until the widest label
-/// fits [plotWidth] at every remaining tick.
+/// fits [plotWidth] at every remaining tick, and then any date tick whose
+/// drawn box would still touch a neighbour or the "Now" label is dropped too
+/// (see [_dropColliding]).
+///
+/// [domainEnd] is the x value at the plot's RIGHT edge: past the last offset
+/// when the chart draws a forecast tail, the last offset itself otherwise.
 Map<int, String> weightXTickLabels({
   required int pointCount,
   required List<int> offsets,
@@ -106,6 +111,7 @@ Map<int, String> weightXTickLabels({
   required double plotWidth,
   required TextStyle style,
   required TextScaler textScaler,
+  double? domainEnd,
 }) {
   if (pointCount <= 0) return const {};
 
@@ -164,20 +170,86 @@ Map<int, String> weightXTickLabels({
     return fits(labels) ? labels : const {};
   }
 
+  Map<int, String> placed(Map<int, String> labels) => _dropColliding(
+    labels,
+    domainEnd: domainEnd ?? span.toDouble(),
+    plotWidth: plotWidth,
+    style: style,
+    textScaler: textScaler,
+  );
+
   // Without dates there is nothing to tick but the two ends.
   if (!hasDates) {
     final ends = labelsFor(2);
-    return ends.length >= 2 ? ends : {span: tr('dashboard.now')};
+    return ends.length >= 2 ? placed(ends) : {span: tr('dashboard.now')};
   }
 
   // Aim for 5, thin only when the labels genuinely will not fit.
   for (var wanted = 5; wanted >= 2; wanted--) {
     final labels = labelsFor(wanted);
     if (labels.length < 2) continue;
-    if (fits(labels) || labels.length == 2) return labels;
+    if (fits(labels) || labels.length == 2) return placed(labels);
   }
   return {span: tr('dashboard.now')};
 }
+
+/// Drops each tick whose label box, as the date row will actually draw it,
+/// comes within [kWeightAxisGap] of the kept tick before it or of the LAST
+/// tick ("Now"), which is never dropped or moved.
+///
+/// The width check in [weightXTickLabels] cannot see this. It budgets an equal
+/// slot per label, but the drawn boxes are not evenly spaced:
+/// - `SideTitleWidget.fitInside` pulls an edge label that would overhang the
+///   plot back inside it, [kWeightDateEdgeInset] from the edge — so "Now" sits
+///   wholly LEFT of its tick instead of centred on it;
+/// - ticks land on whole days, so five ticks over six days put the last two
+///   one day apart — a sixth of the plot, not the fifth the slot assumed;
+/// - a forecast tail extends the x domain past the last reading, packing every
+///   tick into the left ~80% of the plot.
+/// Seen on device as "16/9Hiện tại".
+Map<int, String> _dropColliding(
+  Map<int, String> labels, {
+  required double domainEnd,
+  required double plotWidth,
+  required TextStyle style,
+  required TextScaler textScaler,
+}) {
+  final keys = labels.keys.toList()..sort();
+  // Centred on its tick unless that overhangs the plot's nearer edge, in which
+  // case it is pulled in to [kWeightDateEdgeInset] from that edge — fl_chart's
+  // `calcFitInsideOffset`, which the date row's `fitInside` applies.
+  ({double left, double right}) box(int key) {
+    final width = _measure(labels[key]!, style, textScaler);
+    final centre = domainEnd > 0 ? key / domainEnd * plotWidth : 0.0;
+    var left = centre - width / 2;
+    if (centre < plotWidth / 2) {
+      if (left < 0) left = kWeightDateEdgeInset;
+    } else if (left + width > plotWidth) {
+      left = plotWidth - kWeightDateEdgeInset - width;
+    }
+    return (left: left, right: left + width);
+  }
+
+  final now = box(keys.last);
+  final kept = <int, String>{};
+  double? keptRight;
+  for (final key in keys.take(keys.length - 1)) {
+    final tick = box(key);
+    final hitsPrevious =
+        keptRight != null && tick.left < keptRight + kWeightAxisGap;
+    final hitsNow = tick.right + kWeightAxisGap > now.left;
+    if (hitsPrevious || hitsNow) continue;
+    kept[key] = labels[key]!;
+    keptRight = tick.right;
+  }
+  kept[keys.last] = labels[keys.last]!;
+  return kept;
+}
+
+/// How far `fitInside` keeps an edge date label from the plot's edge. Passed to
+/// the date row explicitly (fl_chart's own default is also 6) so the collision
+/// pass above models the same number the row draws with.
+const double kWeightDateEdgeInset = 6;
 
 /// Between a Y bound label and the plot it scales — the same breathing room
 /// the x tick thinning keeps between neighbouring date labels.

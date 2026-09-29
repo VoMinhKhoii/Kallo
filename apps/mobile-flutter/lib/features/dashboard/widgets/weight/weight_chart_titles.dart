@@ -51,7 +51,10 @@ FlTitlesData weightChartTitles({
         return SideTitleWidget(
           meta: meta,
           space: kWeightDateTickLead,
-          fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
+          fitInside: SideTitleFitInsideData.fromTitleMeta(
+            meta,
+            distanceFromEdge: kWeightDateEdgeInset,
+          ),
           child: Text(label, style: style),
         );
       },
