@@ -19,6 +19,7 @@ class GroupRenamePage extends StatefulWidget {
     required this.busy,
     required this.onBack,
     required this.onSave,
+    required this.isOpen,
     super.key,
   });
 
@@ -27,6 +28,11 @@ class GroupRenamePage extends StatefulWidget {
   final bool busy;
   final VoidCallback onBack;
   final VoidCallback onSave;
+
+  /// Whether the sheet is still on this level, asked when the field is about
+  /// to focus. `SheetPageSwap` also builds a fresh copy of the page to slide
+  /// OUT on Back, and that copy must not raise the keyboard on its way off.
+  final bool Function() isOpen;
 
   static const int maxLength = 60;
 
@@ -43,7 +49,7 @@ class _GroupRenamePageState extends State<GroupRenamePage> {
     // Focus once the page has slid in: a keyboard rising DURING the slide
     // resizes the sheet under it every frame.
     Future.delayed(KalloMotion.page, () {
-      if (mounted) _focus.requestFocus();
+      if (mounted && widget.isOpen()) _focus.requestFocus();
     });
   }
 

@@ -482,6 +482,39 @@ void main() {
     });
   }
 
+  testWidgets('Back from rename never reopens the keyboard', (tester) async {
+    // `SheetPageSwap` rebuilds the departing page from scratch for its
+    // slide out; that copy must not re-run the rename field's autofocus.
+    await pump(
+      tester,
+      const GroupInfoSheet(
+        groupId: 'g1',
+        initial: GroupSheetLevel.rename,
+        initialName: 'Hikers',
+      ),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    // The field focuses once the page has slid in.
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.testTextInput.isVisible, isTrue);
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    tester.testTextInput.log.clear();
+    for (var i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pumpAndSettle();
+    expect(
+      tester.testTextInput.log.map((call) => call.method),
+      isNot(contains('TextInput.show')),
+    );
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
   testWidgets('an owner with members left is not offered Leave', (
     tester,
   ) async {

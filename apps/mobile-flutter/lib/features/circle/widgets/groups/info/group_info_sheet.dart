@@ -131,6 +131,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
         busy: _busy,
         onBack: () => _go(GroupSheetLevel.info),
         onSave: _rename,
+        isOpen: () => mounted && _level == GroupSheetLevel.rename,
       ),
     ),
   };
