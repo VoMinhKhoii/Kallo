@@ -140,11 +140,13 @@ class ViewSwitcher extends ConsumerWidget {
 
   bool _allUnread(
     AsyncValue<List<CircleFeedEntry>> ambient,
-    AsyncValue<DateTime> marker,
+    AsyncValue<FriendsReadMarker> marker,
     LocalBlocks blocks,
   ) {
     if (!ambient.hasValue || !marker.hasValue) return false;
-    DateTime? latest;
+    // The polled wall keeps this live for meals eaten today; the marker adds
+    // a meal shared now but eaten on an earlier day, which the wall never has.
+    DateTime? latest = marker.requireValue.latestSharedAt;
     for (final entry in ambient.requireValue) {
       // Nor a post by someone the viewer has just blocked, from a frame
       // fetched before the block (`local_blocks.dart`).
@@ -154,6 +156,6 @@ class ViewSwitcher extends ConsumerWidget {
         latest = date;
       }
     }
-    return latest?.isAfter(marker.requireValue) ?? false;
+    return latest?.isAfter(marker.requireValue.lastReadAt) ?? false;
   }
 }

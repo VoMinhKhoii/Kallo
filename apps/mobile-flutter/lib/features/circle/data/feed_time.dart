@@ -87,16 +87,18 @@ ThreadDayLabel threadDayLabel(
   return ThreadDayLabel.date(formatter.format(localValue));
 }
 
-/// Consecutive runs of entries sharing a day key, in feed order. A run, not
-/// a bucket: the feed is already sorted, and grouping by key would silently
-/// reorder a day that arrived split across two pages.
+/// Consecutive runs of entries sharing the day the meal was EATEN, in feed
+/// order. A run, not a bucket: the server already sorts by that same eaten
+/// time, and grouping by key would silently reorder a day that arrived split
+/// across two pages. Never the share time — a meal logged for yesterday and
+/// shared today belongs under Yesterday.
 List<({DateTime date, List<CircleFeedEntry> entries})> groupEntriesByDay(
   List<CircleFeedEntry> entries,
 ) {
   final days = <({DateTime date, List<CircleFeedEntry> entries})>[];
   String? previous;
   for (final entry in entries) {
-    final date = DateTime.parse(entry.meal.sharedAt);
+    final date = DateTime.parse(entry.meal.loggedAt);
     final key = threadDayKey(date);
     if (key != previous) {
       days.add((date: date, entries: <CircleFeedEntry>[]));

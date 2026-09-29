@@ -33,7 +33,7 @@ export function GroupFeed({ groupId }: { groupId: string }) {
     .flatMap((page) => page.entries)
     .map((entry) => ({
       id: entry.meal.shareId,
-      timestamp: entry.meal.sharedAt,
+      timestamp: entry.meal.loggedAt,
       content: <FeedEntry entry={entry} />,
     }));
 

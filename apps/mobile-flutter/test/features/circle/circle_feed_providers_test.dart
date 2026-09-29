@@ -1,13 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart'
+    show kCirclePollInterval;
 import 'package:kallo_mobile/features/circle/data/feed_mutations.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'circle_feed_test_support.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
+import 'package:kallo_mobile/models/social/circle.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 
 void main() {
   setUpAll(() async {
@@ -41,6 +46,40 @@ void main() {
       expect(markerCalls, 2);
     });
 
+    testWidgets('the read marker re-polls on the wall cadence', (tester) async {
+      // A past-day meal shared while Circle is open reaches the All dot only
+      // through latestSharedAt, so the marker must refresh like the wall does.
+      var markerCalls = 0;
+      final api = FakeApiClient((request) {
+        if (request.path == '/api/v1/groups/friends/read-marker') {
+          markerCalls++;
+          return {
+            'lastReadAt': '2026-07-18T01:00:00.000Z',
+            'latestSharedAt': '2026-07-18T02:00:00.000Z',
+          };
+        }
+        return unexpectedRequest(request);
+      });
+      // Disposed here, not in tearDown: the poll timer must be gone before
+      // the widget test's pending-timer check runs.
+      final container = ProviderContainer(
+        overrides: [apiClientProvider.overrideWithValue(api)],
+      );
+      container.listen(friendsReadMarkerProvider, (_, __) {});
+
+      await tester.pump();
+      expect(markerCalls, 1);
+      expect(
+        container.read(friendsReadMarkerProvider).value!.latestSharedAt,
+        DateTime.utc(2026, 7, 18, 2),
+      );
+
+      await tester.pump(kCirclePollInterval);
+      await tester.pump();
+      expect(markerCalls, 2);
+      container.dispose();
+    });
+
     test('group page one invalidates the chat-groups list', () async {
       var groupListCalls = 0;
       final api = FakeApiClient((request) {
@@ -72,6 +111,32 @@ void main() {
 
       expect(groupListCalls, 2);
     });
+  });
+
+  test('asks both feeds for eaten order, first page and older pages', () async {
+    // The server serves share order unless asked: builds that predate this
+    // group their day dividers by sharedAt. This one groups by loggedAt.
+    final api = FakeApiClient((request) {
+      if (request.path.endsWith('/feed')) {
+        return pageJson([entryJson('share-1')], 'cursor-1');
+      }
+      if (request.path.endsWith('?before=cursor-1')) {
+        return pageJson([entryJson('share-2')], null);
+      }
+      return unexpectedRequest(request);
+    });
+    final container = makeContainer(api);
+    await mountFeed(container, null);
+    await container.read(sharedMealFeedProvider(null).notifier).loadMore();
+    await mountFeed(container, 'group-1');
+
+    // Page one also refreshes the read marker and group list; only the feed
+    // requests carry the order.
+    expect(api.sentPaths.where((path) => path.contains('/feed')), [
+      '/api/v1/groups/friends/feed?order=eaten',
+      '/api/v1/groups/friends/feed?order=eaten&before=cursor-1',
+      '/api/v1/chat-groups/group-1/feed?order=eaten',
+    ]);
   });
 
   test(
@@ -392,6 +457,41 @@ void main() {
         (ThreadDayLabelKind.date, 'July 12'),
       );
       expect(olderYear.dateLabel, 'July 12, 2025');
+    });
+
+    test('groups by the day the meal was eaten, not when it was shared', () {
+      // Relogged onto yesterday and shared just now: the server sorts it
+      // under yesterday, so it must open a Yesterday run of its own.
+      CircleFeedEntry entry(String id, {required String loggedAt}) =>
+          CircleFeedEntry.fromJson(
+            entryJson(id)
+              ..['meal'] = {
+                ...(entryJson(id)['meal'] as Map<String, dynamic>),
+                'sharedAt': DateTime(2026, 7, 18, 11).toUtc().toIso8601String(),
+                'loggedAt': loggedAt,
+              },
+          );
+      final today = entry(
+        'today',
+        loggedAt: DateTime(2026, 7, 18, 9).toUtc().toIso8601String(),
+      );
+      final backfill = entry(
+        'backfill',
+        loggedAt: DateTime(2026, 7, 17, 19).toUtc().toIso8601String(),
+      );
+
+      final days = groupEntriesByDay([today, backfill]);
+
+      expect(days, hasLength(2));
+      expect(
+        threadDayLabel(days.first.date, now: now, locale: 'en').kind,
+        ThreadDayLabelKind.today,
+      );
+      expect(days.last.entries.single.meal.shareId, 'backfill');
+      expect(
+        threadDayLabel(days.last.date, now: now, locale: 'en').kind,
+        ThreadDayLabelKind.yesterday,
+      );
     });
   });
 }

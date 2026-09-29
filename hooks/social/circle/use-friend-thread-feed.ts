@@ -49,12 +49,15 @@ export function useFriendsThreadFeed() {
   });
 }
 
-/** The actor's "last checked the combined Friends feed" marker — compared
- * against the latest shared meal (from useCircleFeed) to drive FriendsRow's
- * unread bold/dot. */
+/** The actor's "last checked the combined Friends feed" marker and the newest
+ * friend share — compared, with the latest meal on the wall (useCircleFeed),
+ * to drive the All pill's unread dot. */
 export function useFriendsFeedReadMarker() {
   return useQuery({
     queryKey: friendsFeedReadMarkerKeys.all,
     queryFn: fetchFriendsFeedReadMarker,
+    // The wall's cadence (useCircleFeed): a past-day meal shared while Circle
+    // is open reaches the unread dot only through latestSharedAt.
+    refetchInterval: 30_000,
   });
 }

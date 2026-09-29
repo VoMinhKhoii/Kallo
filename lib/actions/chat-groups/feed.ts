@@ -1,11 +1,14 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { groupMealFeedSchema } from '@/lib/core/validation/chat';
+import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
-  decodeSharedMealCursor,
-  encodeSharedMealCursor,
-} from '@/lib/domain/social/feed/cursor';
-import { sharedGroupMealsBefore } from '@/lib/domain/social/feed/group-meals';
-import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
+  newestGroupSharedAt,
+  sharedGroupMealsBefore,
+} from '@/lib/domain/social/feed/group-meals';
+import {
+  feedCursorAfter,
+  toSharedMealEntry,
+} from '@/lib/domain/social/feed/meal-feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -17,12 +20,18 @@ const LEGACY_GROUP_FEED_PAGE_SIZE = 20;
 
 export async function listGroupMealFeed(
   actorId: string,
-  input: { groupId: string; before?: string },
+  input: { groupId: string; before?: string; order?: string },
   db: ChatGroupDb = defaultDb
 ): Promise<GroupMealFeedPage> {
   const parsed = groupMealFeedSchema.parse(input);
   await requireGroupAccess(actorId, parsed.groupId, db);
   const before = decodeSharedMealCursor(parsed.before);
+
+  // Page one is "caught up": read the newest share before the page so the
+  // marker never passes a share the page could not have seen.
+  const caughtUpTo = parsed.before
+    ? null
+    : await newestGroupSharedAt(parsed.groupId, actorId, db);
 
   // The feed applies the same group-share rule as every group share read.
   const candidates = await sharedGroupMealsBefore(
@@ -30,7 +39,8 @@ export async function listGroupMealFeed(
     actorId,
     before,
     db,
-    LEGACY_GROUP_FEED_PAGE_SIZE + 1
+    LEGACY_GROUP_FEED_PAGE_SIZE + 1,
+    parsed.order
   );
   const hasMore = candidates.length > LEGACY_GROUP_FEED_PAGE_SIZE;
   const rows = hasMore
@@ -38,9 +48,7 @@ export async function listGroupMealFeed(
     : candidates;
   const last = rows.at(-1);
   const nextCursor =
-    hasMore && last
-      ? encodeSharedMealCursor({ ts: last.sharedAtText, id: last.shareId })
-      : null;
+    hasMore && last ? feedCursorAfter(parsed.order, last) : null;
 
   const shareIds = rows.map((row) => row.shareId);
   const [reactions, replies] = await Promise.all([
@@ -57,12 +65,11 @@ export async function listGroupMealFeed(
   );
 
   // Advance only after the complete read/enrichment succeeds.
-  const newest = rows[0];
-  if (!parsed.before && newest) {
+  if (caughtUpTo) {
     await db
       .update(chatGroupMembers)
       .set({
-        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
+        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${caughtUpTo.toISOString()}::timestamptz)`,
       })
       .where(
         and(

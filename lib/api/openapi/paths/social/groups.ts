@@ -29,6 +29,15 @@ const beforeParam: Parameter = {
   schema: { type: 'string' },
 };
 
+const orderParam: Parameter = {
+  name: 'order',
+  in: 'query',
+  required: false,
+  description:
+    'Which clock the history is ordered and paged by: `shared` (default — when each meal was shared, the order installed apps group their day dividers on) or `eaten` (when each meal was eaten; a meal logged for a past day files under that day). Page with the same order that issued the cursor.',
+  schema: { type: 'string', enum: ['shared', 'eaten'], default: 'shared' },
+};
+
 /**
  * Unlike `tz` elsewhere, this one is genuinely optional: these two routes
  * `safeParse` it and fall back to UTC (0) on a missing or out-of-range value.
@@ -181,7 +190,7 @@ export const GROUP_PATHS: Record<string, PathItem> = {
       summary: 'Meals shared into a group',
       description: 'A page of meals shared into this group, newest first.',
       tags: TAGS,
-      parameters: [groupId, beforeParam],
+      parameters: [groupId, beforeParam, orderParam],
       ok: ref('Feed'),
     }),
   },

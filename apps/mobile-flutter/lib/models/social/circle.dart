@@ -97,6 +97,7 @@ class CircleFeedMeal {
     required this.shareId,
     required this.rawInput,
     required this.sharedAt,
+    String? loggedAt,
     this.caloriesKcal,
     this.proteinG,
     this.carbohydrateG,
@@ -104,14 +105,21 @@ class CircleFeedMeal {
     this.portionFactor = 1,
     this.isBackfilled = false,
     this.entryMode = 'precise',
-  });
+  }) : loggedAt = loggedAt ?? sharedAt;
 
   final String mealId;
   final String shareId;
   final String rawInput;
 
-  /// ISO-8601 timestamp of when the meal was shared.
+  /// ISO-8601 timestamp of when the meal was shared — when it reached anyone,
+  /// so it drives unread, never where the meal sits.
   final String sharedAt;
+
+  /// ISO-8601 timestamp of when the meal was EATEN. The feed orders and
+  /// day-groups by this: a meal logged for yesterday belongs under Yesterday
+  /// even when it was shared today. Falls back to [sharedAt] for a server that
+  /// does not send it yet.
+  final String loggedAt;
 
   final double? caloriesKcal;
   final double? proteinG;
@@ -138,6 +146,7 @@ class CircleFeedMeal {
     shareId: json['shareId'] as String? ?? '',
     rawInput: json['rawInput'] as String? ?? '',
     sharedAt: json['sharedAt'] as String? ?? '',
+    loggedAt: json['loggedAt'] as String?,
     caloriesKcal: _asDouble(json['caloriesKcal']),
     proteinG: _asDouble(json['proteinG']),
     carbohydrateG: _asDouble(json['carbohydrateG']),

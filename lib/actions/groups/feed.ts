@@ -10,6 +10,7 @@ import {
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
+  newestFriendSharedAt,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
@@ -146,7 +147,7 @@ export async function listCircleFeed(
   const cappedFriendIds = friendIds.slice(0, CIRCLE_FEED_FRIEND_CAP);
   const queryUserIds = [actorId, ...cappedFriendIds];
 
-  // Most-recent shared ('circle' or 'public') meal per user within today —
+  // Most-recent shared ('circle' or 'public') meal per user EATEN today —
   // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
   // a user only ever sees their own meal and meals of users they are accepted
   // friends with (the friendIds set is derived from accepted edges above), and
@@ -173,14 +174,14 @@ export async function listCircleFeed(
     )
   );
 
-  // The actor's own table is the first slot; friends follow newest-first.
+  // The actor's own table is the first slot; friends follow newest-eaten first.
   const self = entries.filter((e) => e.isSelf);
   const friends = entries
     .filter((e) => !e.isSelf)
     .sort(
       (a, b) =>
-        new Date(b.meal.sharedAt).getTime() -
-        new Date(a.meal.sharedAt).getTime()
+        new Date(b.meal.loggedAt).getTime() -
+        new Date(a.meal.loggedAt).getTime()
     );
   return [...self, ...friends];
 }
@@ -193,11 +194,15 @@ export async function listCircleFeed(
 // provisions the row on first read, defaulting to "now" so a first-time
 // viewer never sees a backlog as unread — same idea as
 // chat_group_members.last_read_at's DEFAULT now().
+//
+// Also answers when the newest friend share was made, so the clients' unread
+// dot catches a meal shared just now but eaten on an earlier day — the circle
+// wall they otherwise read it from shows only meals eaten today.
 
 export async function getFriendsFeedReadMarker(
   actorId: string,
   db: Db = defaultDb
-): Promise<{ lastReadAt: string }> {
+): Promise<{ lastReadAt: string; latestSharedAt: string | null }> {
   await db
     .insert(friendsFeedReadMarkers)
     .values({ userId: actorId })
@@ -209,7 +214,12 @@ export async function getFriendsFeedReadMarker(
     .where(eq(friendsFeedReadMarkers.userId, actorId))
     .limit(1);
 
-  return { lastReadAt: row.lastReadAt.toISOString() };
+  const latest = await newestFriendSharedAt(actorId, db);
+
+  return {
+    lastReadAt: row.lastReadAt.toISOString(),
+    latestSharedAt: latest?.toISOString() ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -226,14 +236,26 @@ export async function getFriendsFeedReadMarker(
 
 export async function listFriendsThreadFeed(
   actorId: string,
-  input: { before?: string },
+  input: { before?: string; order?: string },
   db: Db = defaultDb
 ): Promise<FriendsThreadFeedPage> {
   const parsed = friendsThreadFeedSchema.parse(input);
 
   const before = decodeSharedMealCursor(parsed.before);
 
-  const { rows, nextCursor } = await sharedMealsBefore(actorId, before, db);
+  // Page one is "caught up": read the newest friend share before the page so
+  // the marker never passes a share the page could not have seen.
+  const caughtUpTo = parsed.before
+    ? null
+    : await newestFriendSharedAt(actorId, db);
+
+  const { rows, nextCursor } = await sharedMealsBefore(
+    actorId,
+    before,
+    db,
+    undefined,
+    parsed.order
+  );
 
   const shareIds = rows.map((row) => row.shareId);
   const [reactions, replies] = await Promise.all([
@@ -251,17 +273,16 @@ export async function listFriendsThreadFeed(
 
   // Advance only after the complete read/enrichment succeeds, and only to the
   // newest share the actor actually received — never to wall-clock time.
-  const newest = rows[0];
-  if (!parsed.before && newest) {
+  if (caughtUpTo) {
     await db
       .insert(friendsFeedReadMarkers)
-      .values({ userId: actorId, lastReadAt: newest.sharedAt })
+      .values({ userId: actorId, lastReadAt: caughtUpTo })
       .onConflictDoUpdate({
         target: friendsFeedReadMarkers.userId,
         set: {
           // ISO string, not the Date object — raw sql params bypass the column
           // mapper and postgres.js cannot serialize a bare Date there.
-          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
+          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${caughtUpTo.toISOString()}::timestamptz)`,
         },
       });
   }

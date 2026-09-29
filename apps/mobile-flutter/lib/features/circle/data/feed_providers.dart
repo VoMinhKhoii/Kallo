@@ -1,12 +1,16 @@
 /// Paginated Threads-style Circle feed providers and local cache splices.
 library;
 
+import 'dart:async';
+
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
 import 'chat_group_providers.dart';
+import 'circle_providers.dart' show kCirclePollInterval;
 import 'local_blocks.dart';
 
 const Duration _feedRequestTimeout = Duration(seconds: 15);
@@ -27,18 +31,44 @@ class SharedMealFeedState {
 /// named chat-group id.
 final circleSelectedViewProvider = StateProvider<String?>((ref) => null);
 
-/// The viewer's last-read marker for the combined friends feed.
-final friendsReadMarkerProvider = FutureProvider.autoDispose<DateTime>((
-  ref,
-) async {
-  final api = ref.watch(apiClientProvider);
-  return runWithRetry(() async {
-    final json = await api
-        .get<Map<String, dynamic>>('/api/v1/groups/friends/read-marker')
-        .timeout(_feedRequestTimeout);
-    return DateTime.parse(json['lastReadAt'] as String);
-  });
-});
+/// The viewer's last-read marker for the combined friends feed, and when the
+/// newest friend share they may see was made.
+class FriendsReadMarker {
+  const FriendsReadMarker(this.lastReadAt, {this.latestSharedAt});
+
+  final DateTime lastReadAt;
+
+  /// Catches a meal shared just now but eaten on an earlier day: the circle
+  /// wall the unread dot otherwise reads holds only meals eaten today. Null
+  /// when there is no such share, or from a server that does not send it.
+  final DateTime? latestSharedAt;
+}
+
+final friendsReadMarkerProvider = FutureProvider.autoDispose<FriendsReadMarker>(
+  (ref) async {
+    // Refreshed on the wall's cadence: a past-day meal shared while Circle is
+    // open reaches the unread dot only through latestSharedAt, never the wall.
+    // Paused in the background, like the wall's own poll.
+    final poll = Timer.periodic(kCirclePollInterval, (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle == null || lifecycle == AppLifecycleState.resumed) {
+        ref.invalidateSelf();
+      }
+    });
+    ref.onDispose(poll.cancel);
+    final api = ref.watch(apiClientProvider);
+    return runWithRetry(() async {
+      final json = await api
+          .get<Map<String, dynamic>>('/api/v1/groups/friends/read-marker')
+          .timeout(_feedRequestTimeout);
+      final latest = json['latestSharedAt'] as String?;
+      return FriendsReadMarker(
+        DateTime.parse(json['lastReadAt'] as String),
+        latestSharedAt: latest == null ? null : DateTime.parse(latest),
+      );
+    });
+  },
+);
 
 /// arg == null loads the combined friends feed; otherwise it loads one group.
 final sharedMealFeedProvider = AsyncNotifierProvider.autoDispose
@@ -68,8 +98,11 @@ class SharedMealFeedNotifier
   }
 
   Future<SharedMealFeedPage> _fetchPage({required String? before}) async {
+    // Eaten order: this client day-groups by loggedAt. The server keeps share
+    // order for builds that do not ask, which group by sharedAt.
     final query =
-        before == null ? '' : '?before=${Uri.encodeQueryComponent(before)}';
+        '?order=eaten'
+        '${before == null ? '' : '&before=${Uri.encodeQueryComponent(before)}'}';
     final api = ref.read(apiClientProvider);
     final since = ref.read(localBlocksProvider.notifier).generation;
     final page = await runWithRetry(() async {

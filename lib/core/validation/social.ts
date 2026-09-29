@@ -7,6 +7,7 @@ import { z } from 'zod';
 import {
   beforeCursorSchema,
   dateStringSchema,
+  feedOrderSchema,
   timezoneOffsetSchema,
   uuidSchema,
 } from '@/lib/core/validation/primitives';
@@ -138,6 +139,7 @@ export const shareThreadSchema = z.object({
  * every accepted friend), newest-first, paginated. */
 export const friendsThreadFeedSchema = z.object({
   before: beforeCursorSchema,
+  order: feedOrderSchema,
 });
 
 export type HandleInput = z.infer<typeof handleSchema>;

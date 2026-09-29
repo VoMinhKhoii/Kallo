@@ -12,6 +12,7 @@ vi.mock('@/lib/infra/db/client', () => ({ db: { select: mockDbSelect } }));
 import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
+  newestFriendSharedAt,
   sharedMealsBefore,
   toSharedMealEntry,
 } from '@/lib/domain/social/feed/meal-feed';
@@ -36,6 +37,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
     sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
+    eatenAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
     displayName: null,
     avatarSeed: 'me',
@@ -110,9 +112,62 @@ describe('sharedMealsBefore', () => {
     expect(page.rows.map((r) => r.mealId)).toEqual(['meal-3', 'meal-2']);
     // The cursor is the oldest row IN THE PAGE, not the dropped extra row.
     expect(decodeSharedMealCursor(page.nextCursor ?? undefined)).toEqual({
-      ts: rows[1].sharedAtText,
+      ts: rows[1].eatenAtText,
       id: rows[1].shareId,
     });
+  });
+
+  it("'eaten' order seeks, sorts and pages by when the meal was eaten", async () => {
+    const backfill = {
+      ...sharedMeal(2, new Date('2026-01-02T20:00:00Z')),
+      eatenAtText: '2026-01-01 19:00:00.5+00',
+    };
+    const query = sharedMealsQuery([
+      sharedMeal(3, new Date('2026-01-02T12:00:00Z')),
+      backfill,
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
+    ]);
+    const before = {
+      ts: '2026-01-03T08:00:00.123+00',
+      id: '00000000-0000-4000-8000-000000000009',
+    };
+
+    const page = await sharedMealsBefore(USER_A, before, undefined, 2, 'eaten');
+
+    const { sql } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."eaten_at" <');
+    expect(sql).toContain('"meal_shares"."eaten_at" =');
+    expect(sql).not.toContain('"meal_shares"."shared_at" <');
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toContain('"meal_shares"."eaten_at" desc');
+    // The cursor resumes on the same clock it was issued under.
+    expect(decodeSharedMealCursor(page.nextCursor ?? undefined)?.ts).toBe(
+      backfill.eatenAtText
+    );
+  });
+
+  it('keeps share order by default — the v1 contract installed apps group on', async () => {
+    const backfill = {
+      ...sharedMeal(2, new Date('2026-01-02T20:00:00Z')),
+      eatenAtText: '2026-01-01 19:00:00.5+00',
+    };
+    const query = sharedMealsQuery([
+      sharedMeal(3, new Date('2026-01-03T12:00:00Z')),
+      backfill,
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
+    ]);
+
+    const page = await sharedMealsBefore(USER_A, null, undefined, 2);
+
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toBe('"meal_shares"."shared_at" desc');
+    expect(decodeSharedMealCursor(page.nextCursor ?? undefined)?.ts).toBe(
+      backfill.sharedAtText
+    );
   });
 
   it('does not collapse multiple shares from the same user (unlike mostRecentSharedMealsToday)', async () => {
@@ -177,6 +232,63 @@ describe('friend feeds hide shares made before the friendship', () => {
     expect(params.filter((p) => p === USER_A).length).toBeGreaterThanOrEqual(3);
   });
 
+  it('mostRecentSharedMealsToday windows by the day the meal was EATEN', async () => {
+    // A meal logged for yesterday and shared just now is not today's meal.
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn().mockResolvedValue([]),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    const db = {
+      selectDistinctOn: vi.fn(() => ({ from: vi.fn().mockReturnValue(query) })),
+    } as never;
+
+    await mostRecentSharedMealsToday(
+      USER_A,
+      [USER_A],
+      new Date('2026-01-01T00:00:00Z'),
+      new Date('2026-01-02T00:00:00Z'),
+      db
+    );
+
+    const { sql } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."eaten_at" >=');
+    expect(sql).toContain('"meal_shares"."eaten_at" <');
+    expect(sql).not.toContain('"meal_shares"."shared_at" >=');
+    const order = query.orderBy.mock.calls[0]
+      .slice(1)
+      .map((part: SQL) => new PgDialect().sqlToQuery(part).sql);
+    expect(order[0]).toContain('"meal_shares"."eaten_at" desc');
+  });
+
+  it('newestFriendSharedAt reads a friend share by SHARE time, bounded by the friendship', async () => {
+    // Unread is the share clock: a meal eaten last week but shared just now
+    // must count, so this never looks at eaten_at.
+    const query = {
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue([]),
+    };
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
+
+    await expect(newestFriendSharedAt(USER_A)).resolves.toBeNull();
+
+    const { sql, params } = renderedWhere(query.where);
+    expect(sql).toContain('"meal_shares"."actor_id" <> $1');
+    expect(params[0]).toBe(USER_A);
+    expect(sql).toContain(`"meal_shares"."visibility" <> 'private'`);
+    expect(sql).toContain(FRIEND_SINCE);
+    expect(sql).not.toContain('eaten_at');
+    const order = new PgDialect().sqlToQuery(
+      query.orderBy.mock.calls[0][0] as SQL
+    ).sql;
+    expect(order).toBe('"meal_shares"."shared_at" desc');
+  });
+
   it('skips the query entirely for an empty user list', async () => {
     const selectDistinctOn = vi.fn();
 
@@ -237,5 +349,16 @@ describe('toSharedMealEntry', () => {
     };
 
     expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);
+  });
+
+  it('sends when the meal was eaten, which the clients day-group by', () => {
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-02T12:00:00Z')),
+      loggedAt: new Date('2026-01-01T12:00:00Z'),
+    };
+
+    const { meal } = toSharedMealEntry(row, USER_A);
+    expect(meal.loggedAt).toBe('2026-01-01T12:00:00.000Z');
+    expect(meal.sharedAt).toBe('2026-01-02T12:00:00.000Z');
   });
 });

@@ -102,6 +102,23 @@ describe('listGroupMealFeed', () => {
     );
   }
 
+  // newestGroupSharedAt: one join, then where/orderBy/limit(1) — read before
+  // the page on page one only.
+  function newestShareQuery(sharedAt: Date | null) {
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue(sharedAt ? [{ sharedAt }] : []),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue(query),
+    });
+  }
+
   // sharedGroupMealsBefore: four joins, then seek/order/limit.
   function sharedMealsBeforeQuery(rows: unknown[]) {
     const boundedRows = rows.map((row) => ({
@@ -139,6 +156,7 @@ describe('listGroupMealFeed', () => {
       sharedAt,
       loggedAt: sharedAt,
       sharedAtText: sharedAt.toISOString(),
+      eatenAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
       avatarSeed: 'phofan',
@@ -157,6 +175,7 @@ describe('listGroupMealFeed', () => {
   it('returns every shared meal among members, not collapsed per person', async () => {
     const marker: { set?: unknown } = {};
     membershipQuery([{ id: 'member-row' }]);
+    newestShareQuery(new Date('2026-01-01T18:00:00Z'));
     sharedMealsBeforeQuery([
       sharedMeal(2, new Date('2026-01-01T18:00:00Z')),
       sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
@@ -172,8 +191,23 @@ describe('listGroupMealFeed', () => {
     expect(JSON.stringify(marker.set)).toContain('GREATEST');
   });
 
+  it('advances lastReadAt past a share that sits beyond page one in eaten order', async () => {
+    const marker: { set?: unknown } = {};
+    membershipQuery([{ id: 'member-row' }]);
+    // Eaten last week, shared just now: page one (newest-eaten) does not hold
+    // it, yet opening the group must still clear the unread it caused.
+    newestShareQuery(new Date('2026-01-02T20:00:00Z'));
+    sharedMealsBeforeQuery([sharedMeal(2, new Date('2026-01-02T12:00:00Z'))]);
+    stubUpdate(marker);
+
+    await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+
+    expect(JSON.stringify(marker.set)).toContain('2026-01-02T20:00:00.000Z');
+  });
+
   it('reports a nextCursor when more history remains', async () => {
     membershipQuery([{ id: 'member-row' }]);
+    newestShareQuery(new Date(Date.UTC(2026, 0, 21)));
     const rows = Array.from({ length: 21 }, (_, i) =>
       sharedMeal(i, new Date(Date.UTC(2026, 0, 21 - i)))
     );
@@ -188,6 +222,7 @@ describe('listGroupMealFeed', () => {
 
   it('does not bump lastReadAt for an empty first page', async () => {
     membershipQuery([{ id: 'member-row' }]);
+    newestShareQuery(null);
     sharedMealsBeforeQuery([]);
     stubUpdate();
 
@@ -210,6 +245,7 @@ describe('listGroupMealFeed', () => {
 
   it('does not advance lastReadAt when reaction enrichment fails', async () => {
     membershipQuery([{ id: 'member-row' }]);
+    newestShareQuery(new Date('2026-01-01T18:00:00.000Z'));
     sharedMealsBeforeQuery([
       sharedMeal(1, new Date('2026-01-01T18:00:00.000Z')),
     ]);

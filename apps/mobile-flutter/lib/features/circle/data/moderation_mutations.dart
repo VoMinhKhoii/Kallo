@@ -24,7 +24,8 @@ import 'chat_group_providers.dart'
     show chatGroupDetailProvider, chatGroupsProvider;
 import 'circle_providers.dart'
     show circleFeedProvider, circleFriendsProvider, mealShareInvitesProvider;
-import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'feed_providers.dart'
+    show friendsReadMarkerProvider, sharedMealFeedProvider;
 import 'local_blocks.dart';
 import 'share_entry_provider.dart' show sharedMealEntryProvider;
 
@@ -53,6 +54,9 @@ void _invalidateAfterBlockChange(WidgetRef ref) {
   ref.invalidate(blockedCircleUsersProvider);
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
+  // Its latestSharedAt may be the blocked person's share, lighting a dot for
+  // content the viewer can no longer see.
+  ref.invalidate(friendsReadMarkerProvider);
   ref.invalidate(sharedMealFeedProvider);
   ref.invalidate(sharedMealEntryProvider);
   ref.invalidate(chatGroupsProvider);

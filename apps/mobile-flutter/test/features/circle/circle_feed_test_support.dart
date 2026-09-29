@@ -20,8 +20,17 @@ class FakeApiClient extends ApiClient {
   RequestHandler handler;
   final List<Request> requests = [];
 
+  /// Paths exactly as sent. [requests] and [handler] see them without the
+  /// feed's `order=eaten` opt-in, so stubs and assertions key on the endpoint
+  /// and cursor alone; `circle_feed_providers_test.dart` pins the opt-in here.
+  final List<String> sentPaths = [];
+
   Future<T> _respond<T>(String method, String path, Object? body) async {
-    final request = (method: method, path: path, body: body);
+    sentPaths.add(path);
+    final routed = path
+        .replaceFirst('?order=eaten&', '?')
+        .replaceFirst('?order=eaten', '');
+    final request = (method: method, path: routed, body: body);
     requests.add(request);
     return await handler(request) as T;
   }

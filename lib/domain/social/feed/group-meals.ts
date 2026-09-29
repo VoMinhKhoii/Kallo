@@ -1,7 +1,10 @@
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { SharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
+  type FeedOrder,
+  feedBeforeCursor,
+  feedNewestFirst,
   type SharedMealRow,
   sharedMealColumns,
 } from '@/lib/domain/social/feed/meal-feed';
@@ -17,16 +20,18 @@ import {
 
 type Db = AppDb | AppTransaction;
 
-/** Group-scoped shared meals, newest first. Admission is `groupShareVisibleSql`
- * — the one group-share rule (not private, not blocked, both members joined
- * before the share) — evaluated in SQL before LIMIT. The owner-membership join
- * only drives the scan from this group's members. */
+/** Group-scoped shared meals, newest first by `order` (see meal-feed.ts).
+ * Admission is `groupShareVisibleSql` — the one group-share rule (not private,
+ * not blocked, both members joined before the share) — evaluated in SQL before
+ * LIMIT. The owner-membership join only drives the scan from this group's
+ * members. */
 export async function sharedGroupMealsBefore(
   groupId: string,
   viewerId: string,
   before: SharedMealCursor | null,
   db: Db = defaultDb,
-  limit = 20
+  limit = 20,
+  order: FeedOrder = 'shared'
 ): Promise<SharedMealRow[]> {
   const ownerMembership = alias(chatGroupMembers, 'meal_owner_membership');
   return db
@@ -47,17 +52,36 @@ export async function sharedGroupMealsBefore(
     .where(
       and(
         groupShareVisibleSql(viewerId, groupId, mealShares),
-        before
-          ? or(
-              sql`${mealShares.sharedAt} < ${before.ts}::timestamptz`,
-              and(
-                sql`${mealShares.sharedAt} = ${before.ts}::timestamptz`,
-                lt(mealShares.id, before.id)
-              )
-            )
-          : undefined
+        feedBeforeCursor(order, before)
       )
     )
-    .orderBy(desc(mealShares.sharedAt), desc(mealShares.id))
+    .orderBy(...feedNewestFirst(order))
     .limit(limit);
+}
+
+/** When the newest share this viewer may see in the group was made — what
+ * opening the group advances its read marker to. The same admission as the
+ * group list's unread check (a member's share passing `groupShareVisibleSql`),
+ * so the marker covers exactly what makes the group unread; see
+ * `newestFriendSharedAt` for why a feed page cannot supply it. */
+export async function newestGroupSharedAt(
+  groupId: string,
+  viewerId: string,
+  db: Db = defaultDb
+): Promise<Date | null> {
+  const ownerMembership = alias(chatGroupMembers, 'meal_owner_membership');
+  const [row] = await db
+    .select({ sharedAt: mealShares.sharedAt })
+    .from(mealShares)
+    .innerJoin(
+      ownerMembership,
+      and(
+        eq(ownerMembership.groupId, groupId),
+        eq(ownerMembership.userId, mealShares.actorId)
+      )
+    )
+    .where(groupShareVisibleSql(viewerId, groupId, mealShares))
+    .orderBy(desc(mealShares.sharedAt))
+    .limit(1);
+  return row?.sharedAt ?? null;
 }

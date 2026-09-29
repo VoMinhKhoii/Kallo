@@ -23,7 +23,8 @@ import '../../dashboard/data/dashboard_providers.dart'
         localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import '../../../models/http/api_error.dart';
-import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'feed_providers.dart'
+    show friendsReadMarkerProvider, sharedMealFeedProvider;
 import 'local_blocks.dart';
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
@@ -278,6 +279,8 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   });
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
+  // Its latestSharedAt may be the removed friend's share.
+  ref.invalidate(friendsReadMarkerProvider);
   ref.invalidate(sharedMealFeedProvider);
 }
 

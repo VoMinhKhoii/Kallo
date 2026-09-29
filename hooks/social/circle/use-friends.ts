@@ -11,6 +11,7 @@ import {
 import {
   chatGroupsKeys,
   circleFeedKeys,
+  friendsFeedReadMarkerKeys,
   friendsKeys,
   friendsThreadFeedKeys,
   shareThreadKeys,
@@ -34,6 +35,10 @@ export function useRemoveFriend() {
       queryClient.invalidateQueries({ queryKey: friendsKeys.all });
       // Drop the removed friend's meals from the ambient wall, too.
       queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
+      // Its latestSharedAt may be the removed friend's share.
+      queryClient.invalidateQueries({
+        queryKey: friendsFeedReadMarkerKeys.all,
+      });
     },
   });
 }
@@ -41,6 +46,8 @@ export function useRemoveFriend() {
 const BLOCK_AFFECTED_KEYS = [
   friendsKeys.all,
   circleFeedKeys.all,
+  // Its latestSharedAt may be the blocked person's share.
+  friendsFeedReadMarkerKeys.all,
   friendsThreadFeedKeys.all,
   shareThreadKeys.all,
   chatGroupsKeys.all,

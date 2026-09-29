@@ -79,6 +79,7 @@ function sharedMealRow(sharedAt: Date) {
     sharedAt,
     loggedAt: sharedAt,
     sharedAtText: sharedAt.toISOString(),
+    eatenAtText: sharedAt.toISOString(),
     handle: 'phofan',
     displayName: 'Phở Fan',
     avatarSeed: 'phofan',

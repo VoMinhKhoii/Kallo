@@ -55,6 +55,7 @@ export const mealShares = {
   actorId: 'ms.actorId',
   visibility: 'ms.visibility',
   sharedAt: 'ms.sharedAt',
+  eatenAt: 'ms.eatenAt',
 };
 
 export const publicProfiles = {
