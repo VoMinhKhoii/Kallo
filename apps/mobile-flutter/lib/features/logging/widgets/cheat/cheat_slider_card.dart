@@ -11,6 +11,7 @@ import '../../../../shared/widgets/nutrition/cheat_badge.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/slider_nutrition.dart';
+import 'cheat_stop_band.dart';
 
 /// One food-domain icon per axis — encodes the slider's identity (and shares
 /// its accent color), matching the web `CHEAT_SLIDER_ICONS`.
@@ -186,35 +187,13 @@ class _CheatSliderRow extends StatelessWidget {
               },
             );
 
-    Widget stopsBand({required bool top}) => SizedBox(
-      height: 42,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          const labelWidth = 84.0;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (final (i, anchor) in stops.indexed)
-                if ((i % 2 == 0) == top)
-                  _StopLabel(
-                    anchor: anchor,
-                    trackWidth: width,
-                    labelWidth: labelWidth,
-                    top: top,
-                    exact: onStop && anchor.level.round() == rounded,
-                    between:
-                        anchor.level.round() == betweenLow ||
-                        anchor.level.round() == betweenHigh,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      onChange(anchor.level);
-                    },
-                  ),
-            ],
-          );
-        },
-      ),
+    Widget stopsBand({required bool top}) => CheatStopBand(
+      stops: stops,
+      top: top,
+      exactLevel: onStop ? rounded : null,
+      betweenLow: betweenLow,
+      betweenHigh: betweenHigh,
+      onSelect: onChange,
     );
 
     return Column(
@@ -259,68 +238,6 @@ class _CheatSliderRow extends StatelessWidget {
         ),
         stopsBand(top: false),
       ],
-    );
-  }
-}
-
-/// A scenario label pinned at its point on the 0–10 scale. Edge stops align
-/// outward; middle stops center on their position.
-class _StopLabel extends StatelessWidget {
-  const _StopLabel({
-    required this.anchor,
-    required this.trackWidth,
-    required this.labelWidth,
-    required this.top,
-    required this.exact,
-    required this.between,
-    required this.onTap,
-  });
-
-  final CheatSliderAnchor anchor;
-  final double trackWidth;
-  final double labelWidth;
-  final bool top;
-  final bool exact;
-  final bool between;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isLeftEdge = anchor.level <= 0;
-    final isRightEdge = anchor.level >= 10;
-    final center = trackWidth * (anchor.level / 10);
-    final left =
-        isLeftEdge
-            ? 0.0
-            : isRightEdge
-            ? trackWidth - labelWidth
-            : (center - labelWidth / 2).clamp(0.0, trackWidth - labelWidth);
-
-    final style = dashMeta(
-      color: exact || between ? kInk : kInkMuted,
-    ).copyWith(height: 1.25, fontWeight: FontWeight.w400);
-
-    return Positioned(
-      left: left,
-      top: top ? null : 0,
-      bottom: top ? 0 : null,
-      width: labelWidth,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Text(
-          anchor.label,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          textAlign:
-              isLeftEdge
-                  ? TextAlign.left
-                  : isRightEdge
-                  ? TextAlign.right
-                  : TextAlign.center,
-          style: style,
-        ),
-      ),
     );
   }
 }
