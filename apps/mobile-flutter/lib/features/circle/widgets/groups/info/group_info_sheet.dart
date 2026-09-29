@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +5,6 @@ import '../../../../../models/social/chat_group.dart';
 import '../../../../../services/auth/session_provider.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../shared/widgets/sheet/sheet_page_swap.dart';
-import '../../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../data/chat_group_providers.dart';
 import '../../../logic/group_permissions.dart';
@@ -50,9 +48,8 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   final _search = TextEditingController();
   final _picked = <String>{};
 
-  /// Removed here, until a fresh detail reflects it: a swiped row leaves the
-  /// tree at once, the refetch lands later, and a dismissed [Dismissible]
-  /// still in the tree is an assertion. Re-adding someone lifts their entry.
+  /// Removed here until a fresh detail reflects it: a dismissed
+  /// [Dismissible] still in the tree is an assertion.
   final _removed = <String>{};
 
   @override
@@ -62,10 +59,16 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     super.dispose();
   }
 
-  ProviderContainer get _container =>
-      ProviderScope.containerOf(context, listen: false);
+  /// The info page's height as it is left: the second levels are held to it,
+  /// so a swap is a pure slide. `SheetPageSwap` snaps to the taller page and
+  /// settles after, which read as a jump each way.
+  final _infoKey = GlobalKey();
+  double? _levelHeight;
 
   void _go(GroupSheetLevel level) => setState(() {
+    if (_level == GroupSheetLevel.info) {
+      _levelHeight = _infoKey.currentContext?.size?.height ?? _levelHeight;
+    }
     _level = level;
     if (level == GroupSheetLevel.info) {
       _picked.clear();
@@ -73,41 +76,35 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     }
   });
 
-  Future<void> _run(Future<void> Function() action, String errorKey) async {
+  /// Runs one of the sheet's mutations; on success it lands back on the info.
+  Future<void> _submit(Future<bool> Function() flow) async {
     if (_busy) return;
     setState(() => _busy = true);
-    try {
-      await action();
-      if (mounted) _go(GroupSheetLevel.info);
-    } catch (_) {
-      if (mounted) {
-        showTopToast(context, tr(errorKey), variant: TopToastVariant.error);
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    final ok = await flow();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) _go(GroupSheetLevel.info);
   }
 
-  Future<void> _rename() => _run(
-    () => renameChatGroup(
-      _container,
+  Future<void> _rename() => _submit(
+    () => renameGroupFlow(
+      context,
       groupId: widget.groupId,
       name: _name.text.trim(),
     ),
-    'groups.info.renameError',
   );
 
-  Future<void> _add() => _run(() async {
+  Future<void> _add() => _submit(() async {
     final ids = _picked.toList();
-    await addGroupMembers(
-      _container,
+    final ok = await addMembersFlow(
+      context,
       groupId: widget.groupId,
-      memberUserIds: ids,
+      userIds: ids,
     );
-    if (!mounted) return;
-    setState(() => _removed.removeAll(ids));
-    showTopToast(context, tr('groups.info.added'));
-  }, 'groups.info.addError');
+    // Re-added people come out of the removal mask at once.
+    if (ok) _removed.removeAll(ids);
+    return ok;
+  });
 
   Future<bool> _remove(ChatGroupMember member) =>
       removeGroupMemberFlow(context, groupId: widget.groupId, member: member);
@@ -120,6 +117,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
 
   Widget _page(ChatGroupDetail group) => switch (_level) {
     GroupSheetLevel.info => GroupInfoPage(
+      key: _infoKey,
       group: group,
       selfId: ref.watch(currentSessionProvider)?.user.id,
       onAdd: () => _go(GroupSheetLevel.add),
@@ -189,7 +187,11 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                   isSecondLevel: _level != GroupSheetLevel.info,
                   child: KeyedSubtree(
                     key: ValueKey(_level),
-                    child: _page(group.withoutMembers(_removed)),
+                    child: SizedBox(
+                      height:
+                          _level == GroupSheetLevel.info ? null : _levelHeight,
+                      child: _page(group.withoutMembers(_removed)),
+                    ),
                   ),
                 ),
           ),

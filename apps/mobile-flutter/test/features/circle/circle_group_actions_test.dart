@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
+import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
@@ -410,6 +411,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GroupAddPage), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('the sheet keeps one height through every level swap', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => [_friend()]),
+      ],
+    );
+    final surface = find.byType(KalloSheetSurface);
+    final rest = tester.getSize(surface).height;
+    Future<void> expectSteady() async {
+      // Frame by frame through the whole slide: SheetPageSwap snapped to the
+      // taller page and settled after, which read as a jump each way.
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getSize(surface).height, rest);
+      }
+    }
+
+    await tester.tap(find.text('Add members'));
+    await expectSteady();
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    await expectSteady();
+    await tester.tap(find.text('Rename group'));
+    await expectSteady();
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    await expectSteady();
   });
 
   testWidgets('an owner with members left is not offered Leave', (

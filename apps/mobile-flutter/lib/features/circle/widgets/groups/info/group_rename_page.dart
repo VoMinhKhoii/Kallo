@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_sub_header.dart';
 import '../../../../../shared/widgets/sheet/sheet_capsule_button.dart';
 import '../../../../../theme/calm_tokens.dart';
+import '../../../../../theme/kallo_motion.dart';
 import '../../../../../theme/kallo_theme.dart';
 
 /// The group sheet's rename level: one field and a "Save" capsule.
@@ -12,7 +13,7 @@ import '../../../../../theme/kallo_theme.dart';
 /// box squeezed between the close circle and a tick button, with the keyboard
 /// arriving under a sheet that had not been built for one. A second level
 /// gives the field the full width and the header its usual shape.
-class GroupRenamePage extends StatelessWidget {
+class GroupRenamePage extends StatefulWidget {
   const GroupRenamePage({
     required this.controller,
     required this.busy,
@@ -30,7 +31,31 @@ class GroupRenamePage extends StatelessWidget {
   static const int maxLength = 60;
 
   @override
+  State<GroupRenamePage> createState() => _GroupRenamePageState();
+}
+
+class _GroupRenamePageState extends State<GroupRenamePage> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Focus once the page has slid in: a keyboard rising DURING the slide
+    // resizes the sheet under it every frame.
+    Future.delayed(KalloMotion.page, () {
+      if (mounted) _focus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final GroupRenamePage(:controller, :busy, :onBack, :onSave) = widget;
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -56,8 +81,8 @@ class GroupRenamePage extends StatelessWidget {
               ),
               child: CupertinoTextField(
                 controller: controller,
-                autofocus: true,
-                maxLength: maxLength,
+                focusNode: _focus,
+                maxLength: GroupRenamePage.maxLength,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => canSave ? onSave() : null,
