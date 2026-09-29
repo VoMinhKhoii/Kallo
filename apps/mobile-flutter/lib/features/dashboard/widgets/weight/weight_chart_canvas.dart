@@ -117,9 +117,8 @@ class WeightChartCanvas extends StatelessWidget {
       kg: kg,
     );
 
-    // Meta 12, not a bespoke 9 — the tick thinning below measures each label
-    // and drops ticks until they fit, so the axis adapts instead of needing
-    // its own size.
+    // Meta, not a bespoke size: the tick labels below are measured and thinned
+    // until they fit and do not collide, so the axis needs no size of its own.
     final axisLabel = dashMeta(color: kInkMuted);
     // Dashed, at full hairline weight: the plot carries no frame any more, so
     // the gridlines are the only structure and a 50%-alpha solid rule read as
@@ -161,6 +160,7 @@ class WeightChartCanvas extends StatelessWidget {
                     plotWidth: plotWidth,
                     style: axisLabel,
                     textScaler: scaler,
+                    domainEnd: maxX,
                   );
           final chart = LineChart(
             LineChartData(

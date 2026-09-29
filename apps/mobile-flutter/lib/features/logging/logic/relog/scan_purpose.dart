@@ -104,12 +104,33 @@ Future<ScanOutcome?> _pickProduct(
 /// "(330ml)". The reference beside it carries the same number, so nothing here
 /// is load-bearing — break the text and the pick drops, which is exactly what a
 /// broken relog label does.
+///
+/// A name that already opens with its brand ("Vinamilk Sữa chua" from
+/// Vinamilk) keeps it once: prepending it again logged "Vinamilk Vinamilk …".
 String barcodePickLabel(BarcodeProduct product, num grams) {
-  final brand = product.brand;
-  final name = brand == null ? product.name : '$brand ${product.name}';
+  final brand = product.brand?.trim();
+  final name =
+      brand == null || brand.isEmpty || _opensWith(product.name, brand)
+          ? product.name
+          : '$brand ${product.name}';
   final amount =
       grams == grams.roundToDouble()
           ? grams.round().toString()
           : grams.toStringAsFixed(1);
   return '$name ($amount${product.amountUnit})';
 }
+
+/// Whether [name]'s first word(s) ARE [brand]: case-insensitive, diacritics
+/// compared as-is ("Bo" is not "Bò"), and only on a word boundary, so brand
+/// "Vina" does not count as carried by "Vinamilk …".
+bool _opensWith(String name, String brand) {
+  final head = name.trimLeft().toLowerCase();
+  final lower = brand.toLowerCase();
+  if (!head.startsWith(lower)) return false;
+  // matchAsPrefix, not head[i]: indexing yields one UTF-16 code unit, which
+  // splits a supplementary-plane character in half.
+  return head.length == lower.length ||
+      _wordChar.matchAsPrefix(head, lower.length) == null;
+}
+
+final _wordChar = RegExp(r'[\p{L}\p{M}\p{N}]', unicode: true);
