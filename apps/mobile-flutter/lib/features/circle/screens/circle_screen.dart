@@ -56,11 +56,15 @@ class CircleScreen extends ConsumerWidget {
           header: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Edge to edge; everything under it keeps the page's inset.
               ViewSwitcher(),
               // MealInvitesSection collapses to nothing when there are no
               // invites, so it owns the gap above itself rather than having
               // one reserved here for a widget that usually is not there.
-              MealInvitesSection(),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+                child: MealInvitesSection(),
+              ),
             ],
           ),
           onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
@@ -103,13 +107,10 @@ class _CircleTitleRow extends StatelessWidget {
   const _CircleTitleRow();
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
-    child: Row(
-      children: [
-        Expanded(child: Text(tr('groups.page.title'), style: kPageTitle())),
-        const CircleAddMenu(),
-      ],
-    ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: Text(tr('groups.page.title'), style: kPageTitle())),
+      const CircleAddMenu(),
+    ],
   );
 }

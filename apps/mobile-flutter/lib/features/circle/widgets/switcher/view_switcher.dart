@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/social/circle.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
 import '../../data/feed_providers.dart';
@@ -12,9 +10,11 @@ import '../../data/local_blocks.dart';
 import '../../logic/group_flows.dart';
 import 'circle_tab.dart';
 import 'tab_faces.dart';
+import 'tab_strip.dart';
 
 /// The Circle's view switcher: underlined tabs — "All", then each group —
-/// with the open tab's faces between its name and the underline.
+/// with the open tab's faces between its name and the underline, laid out
+/// edge to edge by [TabStrip].
 ///
 /// It replaced a row of filter chips plus a separate "name · N members · (i)"
 /// line under them (approved canvas, 2026-09-29). The open tab now carries
@@ -70,66 +70,54 @@ class _ViewSwitcherState extends ConsumerState<ViewSwitcher>
 
     return Semantics(
       label: tr('groups.switcher.label'),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: kHairline)),
-        ),
-        // Shifted left by the tab's own side padding, so the first NAME sits
-        // on the page title's line while its target still reaches the edge.
-        child: Transform.translate(
-          offset: const Offset(-(CircleTab.slop + KalloSpacing.sp2), 0),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                CircleTab(
-                  label: tr('groups.switcher.all'),
-                  selected: selected == null,
-                  unread: allUnread,
-                  people: selected == null ? people : null,
-                  openHint: tr('groups.switcher.openCircleHint'),
-                  onTap:
-                      () =>
-                          selected == null
-                              ? openCircleManager(context)
-                              : select(null),
-                ),
-                for (final group in groups)
-                  CircleTab(
-                    key: ValueKey(group.id),
-                    label: group.title,
-                    selected: selected == group.id,
-                    // A group's flag cannot say whose message it counts, so
-                    // one from a list fetched before a block waits for a
-                    // fresh list.
-                    unread: group.unread && !blocks.predatesAnyBlock(group),
-                    people: selected == group.id ? people : null,
-                    openHint: tr('groups.switcher.openGroupHint'),
-                    onTap:
-                        () =>
-                            selected == group.id
-                                ? showGroupInfoSheet(context, group.id)
-                                : select(group.id),
-                    onLongPress:
-                        (anchor) => openGroupTabMenu(
-                          context,
-                          groupId: group.id,
-                          anchor: anchor,
-                        ),
-                  ),
-                if (groupsAsync.hasError)
-                  CircleTab(
-                    label: tr('groups.switcher.retry'),
-                    selected: false,
-                    unread: false,
-                    onTap: () => ref.invalidate(chatGroupsProvider),
-                  ),
-              ],
-            ),
+      child: TabStrip(
+        selected:
+            selected == null
+                ? 0
+                : 1 + groups.indexWhere((group) => group.id == selected),
+        tabs: [
+          CircleTab(
+            label: tr('groups.switcher.all'),
+            selected: selected == null,
+            unread: allUnread,
+            people: selected == null ? people : null,
+            openHint: tr('groups.switcher.openCircleHint'),
+            onTap:
+                () =>
+                    selected == null
+                        ? openCircleManager(context)
+                        : select(null),
           ),
-        ),
+          for (final group in groups)
+            CircleTab(
+              key: ValueKey(group.id),
+              label: group.title,
+              selected: selected == group.id,
+              // A group's flag cannot say whose message it counts, so one
+              // from a list fetched before a block waits for a fresh list.
+              unread: group.unread && !blocks.predatesAnyBlock(group),
+              people: selected == group.id ? people : null,
+              openHint: tr('groups.switcher.openGroupHint'),
+              onTap:
+                  () =>
+                      selected == group.id
+                          ? showGroupInfoSheet(context, group.id)
+                          : select(group.id),
+              onLongPress:
+                  (anchor) => openGroupTabMenu(
+                    context,
+                    groupId: group.id,
+                    anchor: anchor,
+                  ),
+            ),
+          if (groupsAsync.hasError)
+            CircleTab(
+              label: tr('groups.switcher.retry'),
+              selected: false,
+              unread: false,
+              onTap: () => ref.invalidate(chatGroupsProvider),
+            ),
+        ],
       ),
     );
   }
