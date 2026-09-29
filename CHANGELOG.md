@@ -1,5 +1,54 @@
 # Changelog
 
+## [1.18.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.17.0...v1.18.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** Circle block & report UI, settings profile header, squircle buttons ([#401](https://github.com/VoMinhKhoii/Kallo/issues/401)) ([2c9880d](https://github.com/VoMinhKhoii/Kallo/commit/2c9880d39ea7957f30568e45e865c22cc6702840))
+* **mobile:** Circle group tabs with faces, and a native group-info sheet ([a74baec](https://github.com/VoMinhKhoii/Kallo/commit/a74baec0b21ce0fab730cb818af6823de38c7631))
+* **mobile:** Circle tabs carry the group's faces; the open tab opens it ([d49f7c5](https://github.com/VoMinhKhoii/Kallo/commit/d49f7c579293366be4563863dd5f72013a892a02))
+* **mobile:** Circle tabs span the full width ([ebaa643](https://github.com/VoMinhKhoii/Kallo/commit/ebaa643d590f304a27b274c04764c65f4e259ff2))
+* **mobile:** full-width Circle tabs, smooth group sheet, steady feed scroll ([4595c2a](https://github.com/VoMinhKhoii/Kallo/commit/4595c2aa8387a6e3341d8c57f26d3448c33955a1))
+* **mobile:** rebuild the Circle group sheet as an iOS group-info page ([c9eddaa](https://github.com/VoMinhKhoii/Kallo/commit/c9eddaa4c86ca964a9adbce94574044a0345b1a3))
+* **mobile:** the open Circle tab shows as many faces as its tab holds ([a85aed0](https://github.com/VoMinhKhoii/Kallo/commit/a85aed0fb8023e524a1049827f6fc3bf44c8c60c))
+* **scan:** editor headers, inline errors, Save, and the fourth macro fills itself ([dbbccf3](https://github.com/VoMinhKhoii/Kallo/commit/dbbccf36be64c5aa74f1693cc57dac9b63bd6e81))
+* **scan:** one swipeable scan sheet and a smarter food editor ([272d17b](https://github.com/VoMinhKhoii/Kallo/commit/272d17bf72878a70d840ba381ee10613be56c6db))
+
+
+### Bug Fixes
+
+* **circle:** keep share order for installed apps; new clients opt into eaten order ([d236430](https://github.com/VoMinhKhoii/Kallo/commit/d236430eb3f812335c7c3437308f95206bd86112))
+* **circle:** keep unread on the share clock under eaten-order feeds ([0a6a7d2](https://github.com/VoMinhKhoii/Kallo/commit/0a6a7d2352cbdf692c83885e63b4f6b376917265))
+* **circle:** place shared meals by when they were eaten, not shared ([0a9265b](https://github.com/VoMinhKhoii/Kallo/commit/0a9265b840cb2c1bb0ecc9f8065af4c1415a52dc))
+* **circle:** poll the unread marker, and keep the share trigger off updates ([8ee5c8d](https://github.com/VoMinhKhoii/Kallo/commit/8ee5c8df8d7c204ce9c41c2190d61c7a143ea19f))
+* **circle:** refresh the unread marker when a friend is removed ([4564d3e](https://github.com/VoMinhKhoii/Kallo/commit/4564d3e75f5961a25de3ea8ec5302a3b3333c2f5))
+* **circle:** swipe back from Edit circle's first tab ([1d26e62](https://github.com/VoMinhKhoii/Kallo/commit/1d26e62272fd855009e0964e31847cd23511f91e))
+* **ios:** ship iPhone-only for the App Store release ([215d771](https://github.com/VoMinhKhoii/Kallo/commit/215d771159f2718684575640599e9ebe60da4969))
+* **logging:** cheat-slider labels no longer overlap the section title ([12b89dc](https://github.com/VoMinhKhoii/Kallo/commit/12b89dc42b1c77beacd8282b02ddb1faf4c653e7))
+* **logging:** drop the Share card button; action presses are circles ([#399](https://github.com/VoMinhKhoii/Kallo/issues/399)) ([f0f6427](https://github.com/VoMinhKhoii/Kallo/commit/f0f64272d2bf0b4d6e523530d8e78cc90a3024c2))
+* **mobile:** address Codex review on Circle tabs and the group sheet ([8150f6a](https://github.com/VoMinhKhoii/Kallo/commit/8150f6aee3541f81b0c3cc493d6040b184d05993))
+* **mobile:** App Store polish — iPhone-only, brand printed twice, weight-axis collision, cheat-slider overlap ([b5bf9c7](https://github.com/VoMinhKhoii/Kallo/commit/b5bf9c7afb94670ab3be3a6095b330cedec10475))
+* **mobile:** Back from rename no longer reopens the keyboard ([68cf500](https://github.com/VoMinhKhoii/Kallo/commit/68cf5005808789eaf784941e092353c5a2f277a1))
+* **mobile:** group sheet faces sit in the header row ([11249c9](https://github.com/VoMinhKhoii/Kallo/commit/11249c98826ac9b1c218cb73e0323c38b9d164e1))
+* **mobile:** only the current rename page may focus its field ([4538b47](https://github.com/VoMinhKhoii/Kallo/commit/4538b47df6c3e07c26eda87f615775db32ad27b0))
+* **mobile:** scrolling the Circle feed no longer jolts the tab row ([994e00b](https://github.com/VoMinhKhoii/Kallo/commit/994e00b6e550d1e669f4a56e255fba862bbb125b))
+* **mobile:** steady Circle tabs and group sheet (Codex review) ([5283316](https://github.com/VoMinhKhoii/Kallo/commit/5283316e2c855c11f73ad76710dac4b555c62f43))
+* **mobile:** the group sheet slides between levels without jumping ([1f96466](https://github.com/VoMinhKhoii/Kallo/commit/1f96466c55f6ea7d2808f623e345ee44170f6a8e))
+* **mobile:** VoiceOver can activate Circle tabs and group rows ([c47b325](https://github.com/VoMinhKhoii/Kallo/commit/c47b3250781c496ae7eba38f14575ef00de37b0c))
+* **progress:** drop a date tick that collides with the now label ([604bb26](https://github.com/VoMinhKhoii/Kallo/commit/604bb26391fe7a7e11884cad9e397df91c4a829b))
+* **scan:** check the whole character after the brand, not one UTF-16 unit ([148fcf3](https://github.com/VoMinhKhoii/Kallo/commit/148fcf360164e429bdb9edd39aae999afdc382f4))
+* **scan:** don't print the brand twice when the name already carries it ([e6641b2](https://github.com/VoMinhKhoii/Kallo/commit/e6641b2592bab9f226810ff02903177db4782cf7))
+* **scan:** group labels flush with their cards ([c55eda3](https://github.com/VoMinhKhoii/Kallo/commit/c55eda34b28e93c2c211facd7bffc26643a62ca3))
+* **scan:** one sheet whose pages push and pop, instead of a new sheet per level ([a309c44](https://github.com/VoMinhKhoii/Kallo/commit/a309c4442ec7e732d1c2e86716e1fdf60ec1fa82))
+* **scan:** settle the sheet after a pull-down that only goes back a level; reject a lone separator ([594d323](https://github.com/VoMinhKhoii/Kallo/commit/594d323323825eb88aa6d3e36f9b79b3f98a3d9f))
+* **scan:** sheet gestures, name field, pull-down backdrop, camera dip ([f18b7f6](https://github.com/VoMinhKhoii/Kallo/commit/f18b7f65120bbdc7a6b9e67ae6424a8df822c926))
+
+
+### Refactor
+
+* **mobile:** one person row and one rows card for the group sheet ([261adbd](https://github.com/VoMinhKhoii/Kallo/commit/261adbdf719523df0bdffe6ead95b943e98a41bf))
+
 ## [1.17.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.16.0...v1.17.0) (2026-09-28)
 
 
