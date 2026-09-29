@@ -132,9 +132,9 @@ class _TabStripState extends State<TabStrip> {
                   ),
                 ),
                 if (overflows)
-                  Positioned(
+                  PositionedDirectional(
                     top: 0,
-                    right: 0,
+                    end: 0,
                     // Clear of the hairline, which runs on under the fade.
                     bottom: 1,
                     width: TabStrip.fade,
@@ -148,7 +148,11 @@ class _TabStripState extends State<TabStrip> {
                               duration: KalloMotion.quick,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
+                                  // Toward the trailing edge, which is
+                                  // the left one in a right-to-left locale.
                                   gradient: LinearGradient(
+                                    begin: AlignmentDirectional.centerStart,
+                                    end: AlignmentDirectional.centerEnd,
                                     colors: [kPage.withValues(alpha: 0), kPage],
                                   ),
                                 ),

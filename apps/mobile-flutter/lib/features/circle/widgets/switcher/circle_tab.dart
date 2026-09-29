@@ -153,10 +153,7 @@ class _CircleTabState extends State<CircleTab> {
                         selected: selected,
                         unread: widget.unread,
                       ),
-                      TabFaces(
-                        label: widget.label,
-                        people: selected ? widget.people : null,
-                      ),
+                      TabFaces(people: selected ? widget.people : null),
                     ],
                   ),
                 ),

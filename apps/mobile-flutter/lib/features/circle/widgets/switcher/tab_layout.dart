@@ -30,10 +30,11 @@ abstract final class TabGeometry {
   static const double dotSize = 6;
   static const double dotGap = 3;
 
-  /// Faces that fit under a name [labelWidth] wide, with 4pt of give: never
-  /// fewer than two (a face and the "+N") nor more than five.
-  static int faceSlots(double labelWidth) =>
-      (((labelWidth + 4 - faceSize) / faceStep).floor() + 1).clamp(2, 5);
+  /// Faces that fit across a tab's content [width] (its share of the row,
+  /// less [sidePad] each side): never fewer than two (a face and the "+N")
+  /// nor more than five, so a wide tab still reads as a glance, not a list.
+  static int faceSlots(double width) =>
+      (((width - faceSize) / faceStep).floor() + 1).clamp(2, 5);
 
   static double clusterWidth(int slots) => faceSize + faceStep * (slots - 1);
 
@@ -50,15 +51,11 @@ abstract final class TabGeometry {
     return size;
   }
 
-  /// The width a tab's content needs, open or closed, so opening a tab never
-  /// resizes it: the name (plus the dot when there is one) or the faces under
-  /// it, whichever is wider.
+  /// The width a tab's content needs: the name, plus the dot when there is
+  /// one. The faces never ask for width — they take as many slots as the
+  /// tab's share holds ([faceSlots]), so opening a tab never resizes it.
   static double natural(double labelWidth, {required bool unread}) =>
-      math.max(
-        labelWidth + (unread ? dotGap + dotSize : 0),
-        clusterWidth(faceSlots(labelWidth)),
-      ) +
-      2 * sidePad;
+      labelWidth + (unread ? dotGap + dotSize : 0) + 2 * sidePad;
 
   /// The row's height: the open tab's name over its faces. Fixed, so the
   /// feed under the row never moves when a tab opens or its faces load.

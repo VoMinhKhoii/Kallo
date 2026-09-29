@@ -524,6 +524,88 @@ void main() {
     );
   });
 
+  List<Override> friends(int count) => [
+    circleFriendsProvider.overrideWith(
+      (_) async => [
+        for (var i = 0; i < count; i++)
+          CircleMember(
+            friendshipId: 'f$i',
+            status: 'accepted',
+            profile: CircleProfile(userId: 'u$i', handle: 'p$i'),
+          ),
+      ],
+    ),
+  ];
+
+  int facesShown() =>
+      find
+          .descendant(of: _faces, matching: find.byType(ProfileAvatarDisc))
+          .evaluate()
+          .length;
+
+  testWidgets('a minimum-width "All" shows three faces and a +N, not one', (
+    tester,
+  ) async {
+    // The faces take the TAB's width, not the name's: "All" is three letters
+    // but its tab is at least 104pt, room for four slots.
+    await pump(
+      tester,
+      groups: AsyncData(manyGroups(8)),
+      size: const Size(390, 700),
+      extra: friends(12),
+    );
+    expect(tester.getSize(_tab('All')).width, TabGeometry.minWidth);
+    expect(facesShown(), 3);
+    expect(find.text('+9'), findsOneWidget);
+    expect(
+      tester.getSize(_faces).width,
+      lessThanOrEqualTo(TabGeometry.minWidth - 2 * TabGeometry.sidePad),
+    );
+  });
+
+  testWidgets('a half-width tab shows five slots, inside its share', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData(manyGroups(1)),
+      size: const Size(390, 700),
+      extra: friends(12),
+    );
+    expect(tester.getSize(_tab('All')).width, 195);
+    expect(facesShown(), 4);
+    expect(find.text('+8'), findsOneWidget);
+    final tab = tester.getRect(_tab('All'));
+    final faces = tester.getRect(_faces);
+    expect(faces.left, greaterThanOrEqualTo(tab.left + TabGeometry.sidePad));
+    expect(faces.right, lessThanOrEqualTo(tab.right - TabGeometry.sidePad));
+  });
+
+  testWidgets('right to left, the row fades at its left edge', (tester) async {
+    await pumpCircleScreen(
+      tester,
+      const Scaffold(
+        body: Directionality(
+          textDirection: TextDirection.rtl,
+          child: ViewSwitcher(),
+        ),
+      ),
+      size: const Size(390, 700),
+      overrides: [
+        chatGroupsProvider.overrideWith((_) => manyGroups(8)),
+        circleFeedProvider.overrideWith((_) => Stream.value(const [])),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
+      ],
+    );
+    // "All" leads on the right; the fade covers the trailing, left, edge.
+    expect(tester.getRect(_tab('All')).right, 390);
+    final fade = tester.getRect(find.byKey(const Key('circle-tabs-fade')));
+    expect(fade.left, 0);
+    expect(fade.width, TabStrip.fade);
+  });
+
   testWidgets('opening a tab never moves the row, the tabs, or the feed', (
     tester,
   ) async {
