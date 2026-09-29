@@ -1960,7 +1960,7 @@
     },
     "subscription": {
       "groupLabel": "Gói đăng ký",
-      "row": "Kallo Pro",
+      "row": "Kallo Premium",
       "statusFree": "Gói miễn phí",
       "statusTrial": "Dùng thử · còn {days} ngày",
       "statusTrialLastDay": "Dùng thử · ngày cuối",
@@ -2020,7 +2020,7 @@
     }
   },
   "paywall": {
-    "upsellEyebrow": "Kallo Pro",
+    "upsellEyebrow": "Kallo Premium",
     "upsellTitle": "Mô tả bữa ăn, biết ngay dinh dưỡng",
     "upsellBody": "Phân tích bữa ăn bằng AI đọc ra món ăn, khẩu phần, calo và macro từ chính lời bạn mô tả, bằng tiếng Việt hay tiếng Anh.",
     "expiredTitle": "Giữ lại phân tích AI của bạn",
@@ -2060,7 +2060,7 @@
     "toggleMonthly": "Gói tháng",
     "toggleYearly": "Gói năm",
     "columnFree": "Miễn phí",
-    "columnPro": "Pro",
+    "columnPro": "Premium",
     "compareLogging": "Nhập tay, quét mã vạch",
     "compareMacros": "Theo dõi macro",
     "compareAi": "Tả bữa ăn bằng lời (AI)",

@@ -1,4 +1,4 @@
-// The Kallo Pro face: what the table says, which period the toggle starts on,
+// The Kallo Premium face: what the table says, which period the toggle starts on,
 // what the buy button buys and promises, and where its two exits go.
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';

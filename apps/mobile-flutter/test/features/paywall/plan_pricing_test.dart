@@ -1,4 +1,4 @@
-// The Kallo Pro sheet's plan selection and the yearly row's derived copy.
+// The Kallo Premium sheet's plan selection and the yearly row's derived copy.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/paywall/logic/plan_pricing.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
