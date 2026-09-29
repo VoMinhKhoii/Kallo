@@ -62,5 +62,65 @@ void main() {
       );
       expect(barcodePickLabel(th, 180), isNot(barcodePickLabel(vinamilk, 180)));
     });
+
+    // Seen on device: a scanned Vinamilk yogurt logged as
+    // "Vinamilk Vinamilk Sữa chua ít đường (100g)".
+    group('a name that already carries its brand', () {
+      BarcodeProduct product(String name, String? brand) =>
+          BarcodeProduct(barcode: '8934673', name: name, brand: brand);
+
+      test('does not print the brand twice', () {
+        expect(
+          barcodePickLabel(
+            product('Vinamilk Sữa chua ít đường', 'Vinamilk'),
+            100,
+          ),
+          'Vinamilk Sữa chua ít đường (100g)',
+        );
+      });
+
+      test('matches the brand case-insensitively and trimmed', () {
+        expect(
+          barcodePickLabel(product('VINAMILK Sữa chua', ' Vinamilk '), 100),
+          'VINAMILK Sữa chua (100g)',
+        );
+      });
+
+      test('compares Vietnamese diacritics as they are', () {
+        expect(
+          barcodePickLabel(product('Bò Cười phô mai', 'Bò Cười'), 20),
+          'Bò Cười phô mai (20g)',
+        );
+        // "Bo Cuoi" is not "Bò Cười": the brand is still said.
+        expect(
+          barcodePickLabel(product('Bò Cười phô mai', 'Bo Cuoi'), 20),
+          'Bo Cuoi Bò Cười phô mai (20g)',
+        );
+      });
+
+      test('prepends a brand the name does not carry', () {
+        expect(
+          barcodePickLabel(product('Sữa chua ít đường', 'Vinamilk'), 100),
+          'Vinamilk Sữa chua ít đường (100g)',
+        );
+      });
+
+      test('keeps the bare name when there is no brand', () {
+        expect(
+          barcodePickLabel(product('Sữa chua ít đường', null), 100),
+          'Sữa chua ít đường (100g)',
+        );
+      });
+
+      test(
+        'still prepends a brand that is only a prefix of the first word',
+        () {
+          expect(
+            barcodePickLabel(product('Vinamilk Sữa chua', 'Vina'), 100),
+            'Vina Vinamilk Sữa chua (100g)',
+          );
+        },
+      );
+    });
   });
 }
