@@ -1,4 +1,4 @@
-/// Plan arithmetic for the Kallo Pro screen: which packages the free face
+/// Plan arithmetic for the Kallo Premium screen: which packages the free face
 /// offers, and the yearly plan's derived per-month and save-percent figures.
 ///
 /// Everything here is DERIVED from the live store product (price + currency

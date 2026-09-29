@@ -1963,7 +1963,7 @@
     },
     "subscription": {
       "groupLabel": "Subscription",
-      "row": "Kallo Pro",
+      "row": "Kallo Premium",
       "statusFree": "Free plan",
       "statusTrial": "Free trial · {days} days left",
       "statusTrialLastDay": "Free trial · last day",
@@ -2023,7 +2023,7 @@
     }
   },
   "paywall": {
-    "upsellEyebrow": "Kallo Pro",
+    "upsellEyebrow": "Kallo Premium",
     "upsellTitle": "Describe a meal, know the macros",
     "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from your own words, in Vietnamese or English.",
     "expiredTitle": "Keep your AI analysis",
@@ -2063,7 +2063,7 @@
     "toggleMonthly": "Monthly plan",
     "toggleYearly": "Yearly plan",
     "columnFree": "Free",
-    "columnPro": "Pro",
+    "columnPro": "Premium",
     "compareLogging": "Manual entry & barcode",
     "compareMacros": "Macros tracking",
     "compareAi": "Describe a meal in words",

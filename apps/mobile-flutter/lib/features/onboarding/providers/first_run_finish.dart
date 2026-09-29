@@ -60,7 +60,7 @@ class FirstRunFinishController {
   }
 
   /// A pending circle invite outranks the default landing — finish the connect
-  /// they came for. Otherwise the first run ends on Kallo Pro, whose two exits
+  /// they came for. Otherwise the first run ends on Kallo Premium, whose two exits
   /// both continue into the logging feed.
   String _next(bool showPaywall) {
     final pendingInvite = _ref.read(pendingInviteSlugProvider);
@@ -88,7 +88,7 @@ class FirstRunFinishController {
     }
   }
 
-  /// Whether to end the first run on Kallo Pro — only for someone who could
+  /// Whether to end the first run on Kallo Premium — only for someone who could
   /// actually buy it. An UNREADABLE snapshot answers `false` too: failing to
   /// reach the endpoint is not evidence that a paying customer is on free, and
   /// the paywall is one tap away from Settings either way.

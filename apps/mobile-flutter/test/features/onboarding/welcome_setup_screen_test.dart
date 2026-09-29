@@ -1,5 +1,5 @@
 // The last beat of the first run: it flushes the draft, counts the target up,
-// and then has ONE decision to make — Kallo Pro, or straight into the feed.
+// and then has ONE decision to make — Kallo Premium, or straight into the feed.
 // Selling Pro to someone who already owns it is the failure this pins.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,7 +92,7 @@ void main() {
     return router.state.matchedLocation;
   }
 
-  testWidgets('a free user finishes on Kallo Pro', (tester) async {
+  testWidgets('a free user finishes on Kallo Premium', (tester) async {
     expect(await land(tester, _Api(_entitlement(premium: false))), '/paywall');
   });
 

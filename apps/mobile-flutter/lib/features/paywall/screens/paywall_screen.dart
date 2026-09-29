@@ -14,7 +14,7 @@ import 'paywall_purchase_face.dart';
 import '../widgets/states/paywall_premium_body.dart';
 import '../widgets/states/paywall_status.dart';
 
-/// Kallo Pro. Free and lapsed users get the plan decision — the bun's line,
+/// Kallo Premium. Free and lapsed users get the plan decision — the bun's line,
 /// the monthly/yearly toggle, the Free ↔ Pro table and the pinned buy band —
 /// while premium users get their plan and the store-management CTA.
 ///
