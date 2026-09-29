@@ -43,6 +43,7 @@ class GroupInfoSheet extends ConsumerStatefulWidget {
 }
 
 class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
+  late final _detail = chatGroupDetailProvider(widget.groupId);
   late GroupSheetLevel _level = widget.initial;
   bool _busy = false;
   late final _name = TextEditingController(text: widget.initialName);
@@ -60,7 +61,14 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     super.dispose();
   }
 
+  /// Bumped on every level change. A page takes the value it was built at,
+  /// so the departing copy `SheetPageSwap` keeps for its slide knows it is
+  /// no longer current.
+  int _swaps = 0;
+  bool Function() _isCurrent(int swap) => () => mounted && _swaps == swap;
+
   void _go(GroupSheetLevel level) => setState(() {
+    _swaps++;
     _level = level;
     if (level == GroupSheetLevel.info) {
       _picked.clear();
@@ -131,7 +139,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
         busy: _busy,
         onBack: () => _go(GroupSheetLevel.info),
         onSave: _rename,
-        isOpen: () => mounted && _level == GroupSheetLevel.rename,
+        isOpen: _isCurrent(_swaps),
       ),
     ),
   };
@@ -154,7 +162,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(chatGroupDetailProvider(widget.groupId), (_, next) {
+    ref.listen(_detail, (_, next) {
       final members = next.valueOrNull?.members;
       // A fresh detail without them has caught up; drop the entry.
       _removed.removeWhere(
@@ -172,16 +180,12 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
             .9,
       ),
       child: ref
-          .watch(chatGroupDetailProvider(widget.groupId))
+          .watch(_detail)
           .when(
             loading: () => const GroupDetailSkeleton(),
             error:
-                (_, __) => GroupDetailError(
-                  onRetry:
-                      () => ref.invalidate(
-                        chatGroupDetailProvider(widget.groupId),
-                      ),
-                ),
+                (_, __) =>
+                    GroupDetailError(onRetry: () => ref.invalidate(_detail)),
             data:
                 (group) => SheetPageSwap(
                   isSecondLevel: _level != GroupSheetLevel.info,

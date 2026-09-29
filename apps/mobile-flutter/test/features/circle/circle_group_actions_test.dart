@@ -515,6 +515,43 @@ void main() {
     expect(tester.testTextInput.isVisible, isFalse);
   });
 
+  testWidgets('re-entering rename mid-slide focuses only the new field', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GroupInfoSheet(
+        groupId: 'g1',
+        initial: GroupSheetLevel.rename,
+        initialName: 'Hikers',
+      ),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    // Back in again just before the departing copy's 280ms focus timer: the
+    // level reads "rename" once more while that copy is still mounted.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 270));
+    await tester.tap(find.text('Rename group').last, warnIfMissed: false);
+    tester.testTextInput.log.clear();
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester.testTextInput.log.map((call) => call.method),
+      isNot(contains('TextInput.show')),
+    );
+    // The new copy still focuses once it has slid in.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(tester.testTextInput.isVisible, isTrue);
+  });
+
   testWidgets('an owner with members left is not offered Leave', (
     tester,
   ) async {
