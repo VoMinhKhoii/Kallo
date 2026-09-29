@@ -20,11 +20,25 @@ import 'tab_faces.dart';
 /// line under them (approved canvas, 2026-09-29). The open tab now carries
 /// who is in the view, and a second tap on it opens the group sheet (or, on
 /// "All", the circle manager). Long-press a group tab for its menu.
-class ViewSwitcher extends ConsumerWidget {
+class ViewSwitcher extends ConsumerStatefulWidget {
   const ViewSwitcher({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ViewSwitcher> createState() => _ViewSwitcherState();
+}
+
+/// Kept alive while scrolled off. The switcher is the first item of the
+/// feed's lazily built list, so scrolling away used to unmount it: back at
+/// the top it refetched its faces and replayed their entrance, and the open
+/// tab's name climbed ~30pt under the finger on every return.
+class _ViewSwitcherState extends ConsumerState<ViewSwitcher>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     ref.listen(chatGroupsProvider, (_, next) {
       if (!next.hasValue || next.isLoading || next.hasError) return;
       final selected = ref.read(circleSelectedViewProvider);

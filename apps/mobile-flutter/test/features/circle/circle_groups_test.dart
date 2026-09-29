@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/features/circle/widgets/switcher/circle_tab.dart';
 import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
 import 'package:kallo_mobile/features/circle/widgets/groups/info/group_add_page.dart';
@@ -274,6 +275,77 @@ void main() {
       extra: openGroup(role: 'member'),
     );
     expect(find.byKey(const Key('circle-unread-dot')), findsOneWidget);
+  });
+
+  testWidgets('scrolling the feed away and back leaves the tab row still', (
+    tester,
+  ) async {
+    // The switcher is the first item of the feed's lazily built list. It
+    // used to be unmounted when scrolled off: back at the top it refetched
+    // its faces and replayed their entrance, and the open tab's name climbed
+    // ~30pt under the finger on every return.
+    var fetches = 0;
+    await pumpCircleScreen(
+      tester,
+      Scaffold(
+        body: ThreadFeed(
+          feed: AsyncData(
+            SharedMealFeedState(
+              entries: [
+                for (var i = 0; i < 30; i++)
+                  CircleFeedEntry.fromJson(entryJson('s$i')),
+              ],
+              nextCursor: null,
+            ),
+          ),
+          header: const ViewSwitcher(),
+          onRefresh: () async {},
+          onRetry: () {},
+          onAddFriend: () {},
+        ),
+      ),
+      overrides: [
+        chatGroupsProvider.overrideWith((_) => [group(unread: false)]),
+        circleFeedProvider.overrideWith((_) => Stream.value(const [])),
+        friendsReadMarkerProvider.overrideWith(
+          (_) async => FriendsReadMarker(DateTime.utc(2026)),
+        ),
+        circleFriendsProvider.overrideWith((_) async {
+          fetches++;
+          // A real round trip: the faces land after the first frames.
+          await Future<void>.delayed(const Duration(milliseconds: 150));
+          return [
+            for (var i = 0; i < 5; i++)
+              CircleMember(
+                friendshipId: 'f$i',
+                status: 'accepted',
+                profile: CircleProfile(userId: 'u$i', handle: 'p$i'),
+              ),
+          ];
+        }),
+      ],
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+
+    final feed = find.byWidgetPredicate(
+      (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+    );
+    final position = tester.state<ScrollableState>(feed.first).position;
+    double labelTop() =>
+        tester.getTopLeft(find.text('All')).dy -
+        tester.getTopLeft(find.byType(ViewSwitcher)).dy;
+    final restTop = labelTop();
+
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    position.jumpTo(0);
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(labelTop(), restTop);
+    }
+    expect(fetches, 1);
   });
 
   // The header's add control is an ANCHORED POPOVER (native pass,
