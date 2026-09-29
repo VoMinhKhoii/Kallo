@@ -121,6 +121,15 @@ void main() {
           );
         },
       );
+
+      test('reads a supplementary-plane character after the brand whole', () {
+        // 𝟚 (U+1D7DA) is a digit outside the BMP: two UTF-16 code units, so
+        // indexing the string would hand the boundary check half of it.
+        expect(
+          barcodePickLabel(product('Vina𝟚 Sữa chua', 'Vina'), 100),
+          'Vina Vina𝟚 Sữa chua (100g)',
+        );
+      });
     });
   });
 }

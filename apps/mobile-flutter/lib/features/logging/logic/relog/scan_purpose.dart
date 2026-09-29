@@ -127,7 +127,10 @@ bool _opensWith(String name, String brand) {
   final head = name.trimLeft().toLowerCase();
   final lower = brand.toLowerCase();
   if (!head.startsWith(lower)) return false;
-  return head.length == lower.length || !_wordChar.hasMatch(head[lower.length]);
+  // matchAsPrefix, not head[i]: indexing yields one UTF-16 code unit, which
+  // splits a supplementary-plane character in half.
+  return head.length == lower.length ||
+      _wordChar.matchAsPrefix(head, lower.length) == null;
 }
 
 final _wordChar = RegExp(r'[\p{L}\p{M}\p{N}]', unicode: true);
