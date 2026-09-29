@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -33,14 +34,9 @@ class TabStrip extends StatefulWidget {
 class _TabStripState extends State<TabStrip> {
   final _scroll = ScrollController();
 
-  /// The widths last laid out, for [_reveal].
+  /// The widths last laid out, for [_reveal]; empty before the first layout.
   List<double> _widths = const [];
-
-  @override
-  void initState() {
-    super.initState();
-    _reveal(animate: false);
-  }
+  double _rowWidth = 0;
 
   @override
   void didUpdateWidget(TabStrip oldWidget) {
@@ -100,14 +96,17 @@ class _TabStripState extends State<TabStrip> {
         height: height,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final widths =
-                _widths = tabWidths([
-                  for (var i = 0; i < tabs.length; i++)
-                    TabGeometry.natural(
-                      labels[i].width,
-                      unread: tabs[i].unread,
-                    ),
-                ], constraints.maxWidth);
+            final widths = tabWidths([
+              for (final label in labels) TabGeometry.natural(label.width),
+            ], constraints.maxWidth);
+            // A rename, a text-size change or a rotation moves the open tab
+            // without changing which one it is; bring it back into view.
+            if (!listEquals(widths, _widths) ||
+                constraints.maxWidth != _rowWidth) {
+              _reveal(animate: _widths.isNotEmpty);
+              _widths = widths;
+              _rowWidth = constraints.maxWidth;
+            }
             final overflows =
                 widths.fold<double>(0, (sum, w) => sum + w) >
                 constraints.maxWidth + 0.5;

@@ -51,11 +51,13 @@ abstract final class TabGeometry {
     return size;
   }
 
-  /// The width a tab's content needs: the name, plus the dot when there is
-  /// one. The faces never ask for width — they take as many slots as the
-  /// tab's share holds ([faceSlots]), so opening a tab never resizes it.
-  static double natural(double labelWidth, {required bool unread}) =>
-      labelWidth + (unread ? dotGap + dotSize : 0) + 2 * sidePad;
+  /// The width a tab's content needs: the name and room for the dot. The
+  /// room is kept whether or not the dot shows — opening an unread group
+  /// clears its flag a moment later, and a tab sized by the flag would shrink
+  /// under the finger. The faces never ask for width: they take as many slots
+  /// as the tab's share holds ([faceSlots]).
+  static double natural(double labelWidth) =>
+      labelWidth + dotGap + dotSize + 2 * sidePad;
 
   /// The row's height: the open tab's name over its faces. Fixed, so the
   /// feed under the row never moves when a tab opens or its faces load.
@@ -98,7 +100,8 @@ List<double> tabWidths(List<double> naturals, double rowWidth) {
 }
 
 /// The scroll offset that brings tab [index] fully into view, clear of the
-/// [fade] over the row's trailing edge; [current] when it already is.
+/// [fade] over the row's trailing edge; [current] when it already is. A tab
+/// wider than that is aligned to the row's leading edge.
 double revealOffset(
   List<double> widths,
   int index, {
@@ -110,7 +113,8 @@ double revealOffset(
   final left = widths.take(index).fold<double>(0, (sum, w) => sum + w);
   final right = left + widths[index];
   var target = current;
-  if (left < current) {
+  // A tab too wide to show whole shows its start, where its name begins.
+  if (left < current || right - left > viewport - fade) {
     target = left;
   } else if (right > current + viewport - fade) {
     target = right - viewport + fade;

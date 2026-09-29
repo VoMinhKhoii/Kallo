@@ -12,6 +12,7 @@ import '../../../logic/group_flows.dart';
 import '../../../logic/moderation_flows.dart';
 import '../../states/group_info_error.dart';
 import '../../states/group_info_skeleton.dart';
+import '../held_level.dart';
 import 'group_add_page.dart';
 import 'group_info_page.dart';
 import 'group_rename_page.dart';
@@ -59,16 +60,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     super.dispose();
   }
 
-  /// The info page's height as it is left: the second levels are held to it,
-  /// so a swap is a pure slide. `SheetPageSwap` snaps to the taller page and
-  /// settles after, which read as a jump each way.
-  final _infoKey = GlobalKey();
-  double? _levelHeight;
-
   void _go(GroupSheetLevel level) => setState(() {
-    if (_level == GroupSheetLevel.info) {
-      _levelHeight = _infoKey.currentContext?.size?.height ?? _levelHeight;
-    }
     _level = level;
     if (level == GroupSheetLevel.info) {
       _picked.clear();
@@ -116,41 +108,48 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   }
 
   Widget _page(ChatGroupDetail group) => switch (_level) {
-    GroupSheetLevel.info => GroupInfoPage(
-      key: _infoKey,
-      group: group,
-      selfId: ref.watch(currentSessionProvider)?.user.id,
-      onAdd: () => _go(GroupSheetLevel.add),
-      onRename: () {
-        _name.text = group.name ?? '';
-        _go(GroupSheetLevel.rename);
-      },
-      onRemove: _remove,
-      // A long-press removal can land after the sheet is closed.
-      onRemoved: (id) {
-        if (mounted) setState(() => _removed.add(id));
-      },
-      onLeave: groupActionsFor(group).leave ? _leave : null,
+    GroupSheetLevel.info => _info(group),
+    GroupSheetLevel.add => HeldLevel(
+      info: _info(group),
+      child: GroupAddPage(
+        group: group,
+        search: _search,
+        selected: _picked,
+        busy: _busy,
+        onToggle:
+            (id) => setState(
+              () => _picked.contains(id) ? _picked.remove(id) : _picked.add(id),
+            ),
+        onBack: () => _go(GroupSheetLevel.info),
+        onAdd: _add,
+      ),
     ),
-    GroupSheetLevel.add => GroupAddPage(
-      group: group,
-      search: _search,
-      selected: _picked,
-      busy: _busy,
-      onToggle:
-          (id) => setState(
-            () => _picked.contains(id) ? _picked.remove(id) : _picked.add(id),
-          ),
-      onBack: () => _go(GroupSheetLevel.info),
-      onAdd: _add,
-    ),
-    GroupSheetLevel.rename => GroupRenamePage(
-      controller: _name,
-      busy: _busy,
-      onBack: () => _go(GroupSheetLevel.info),
-      onSave: _rename,
+    GroupSheetLevel.rename => HeldLevel(
+      info: _info(group),
+      child: GroupRenamePage(
+        controller: _name,
+        busy: _busy,
+        onBack: () => _go(GroupSheetLevel.info),
+        onSave: _rename,
+      ),
     ),
   };
+
+  Widget _info(ChatGroupDetail group) => GroupInfoPage(
+    group: group,
+    selfId: ref.watch(currentSessionProvider)?.user.id,
+    onAdd: () => _go(GroupSheetLevel.add),
+    onRename: () {
+      _name.text = group.name ?? '';
+      _go(GroupSheetLevel.rename);
+    },
+    onRemove: _remove,
+    // A long-press removal can land after the sheet is closed.
+    onRemoved: (id) {
+      if (mounted) setState(() => _removed.add(id));
+    },
+    onLeave: groupActionsFor(group).leave ? _leave : null,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -187,11 +186,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                   isSecondLevel: _level != GroupSheetLevel.info,
                   child: KeyedSubtree(
                     key: ValueKey(_level),
-                    child: SizedBox(
-                      height:
-                          _level == GroupSheetLevel.info ? null : _levelHeight,
-                      child: _page(group.withoutMembers(_removed)),
-                    ),
+                    child: _page(group.withoutMembers(_removed)),
                   ),
                 ),
           ),

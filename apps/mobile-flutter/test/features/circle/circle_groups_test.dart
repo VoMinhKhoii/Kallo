@@ -35,13 +35,17 @@ void main() {
     DateTime? latestSharedAt,
     List<Override> extra = const [],
     Size? size,
+    // Read on every fetch, for a test that changes the list and invalidates.
+    List<ChatGroupIdentity> Function()? groupsOf,
   }) => pumpCircleScreen(
     tester,
     const Scaffold(body: ViewSwitcher()),
     size: size,
     overrides: [
       ...extra,
-      chatGroupsProvider.overrideWith((_) => groups.requireValue),
+      chatGroupsProvider.overrideWith(
+        (_) => groupsOf?.call() ?? groups.requireValue,
+      ),
       circleFeedProvider.overrideWith((_) => Stream.value(feed)),
       friendsReadMarkerProvider.overrideWith(
         (_) async => FriendsReadMarker(
@@ -407,6 +411,18 @@ void main() {
       ),
       416 - 350,
     );
+    // Wider than the row: its start, where the name begins, is shown.
+    expect(
+      revealOffset(
+        <double>[104, 500, 104],
+        1,
+        current: 0,
+        viewport: 390,
+        maxExtent: 318,
+        fade: 40,
+      ),
+      104,
+    );
     // Off the leading edge: its left edge lands on the row's.
     expect(
       revealOffset(
@@ -606,13 +622,90 @@ void main() {
     expect(fade.width, TabStrip.fade);
   });
 
+  testWidgets('a tab keeps its width when its unread flag clears', (
+    tester,
+  ) async {
+    // Opening an unread group refetches the list a moment later with the
+    // flag off; the open tab never draws the dot, so it must not resize.
+    var unread = true;
+    await pump(
+      tester,
+      groups: AsyncData([group(unread: true)]),
+      size: const Size(390, 700),
+      groupsOf: () => [group(unread: unread)],
+    );
+    List<Rect> rects() => [
+      for (final name in ['All', 'Weekend hikers']) tester.getRect(_tab(name)),
+    ];
+    final before = rects();
+    unread = false;
+    ProviderScope.containerOf(
+      tester.element(find.byType(ViewSwitcher)),
+    ).invalidate(chatGroupsProvider);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('circle-unread-dot')), findsNothing);
+    expect(rects(), before);
+  });
+
+  testWidgets('a narrower row brings the open tab back into view', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      groups: AsyncData(manyGroups(8)),
+      size: const Size(390, 700),
+      extra: [circleSelectedViewProvider.overrideWith((_) => 'g2')],
+    );
+    expect(
+      tester.getRect(_tab('Group 2')).right,
+      lessThanOrEqualTo(390 - TabStrip.fade + 0.5),
+    );
+    // Rotated or resized: the same tab stays open, nothing re-selects it.
+    tester.view.physicalSize = const Size(300, 700);
+    await tester.pumpAndSettle();
+    final open = tester.getRect(_tab('Group 2'));
+    expect(open.left, greaterThanOrEqualTo(0));
+    expect(open.right, lessThanOrEqualTo(300 - TabStrip.fade + 0.5));
+  });
+
+  testWidgets('renaming the open tab keeps its start in view', (tester) async {
+    var title = 'Group 5';
+    await pump(
+      tester,
+      groups: AsyncData(manyGroups(8)),
+      size: const Size(390, 700),
+      extra: [circleSelectedViewProvider.overrideWith((_) => 'g5')],
+      groupsOf:
+          () => [
+            for (final g in manyGroups(8))
+              g.id == 'g5'
+                  ? ChatGroupIdentity(
+                    id: 'g5',
+                    kind: 'group',
+                    title: title,
+                    updatedAt: g.updatedAt,
+                    unread: false,
+                  )
+                  : g,
+          ],
+    );
+    title = 'Our long running Sunday lunch group';
+    ProviderScope.containerOf(
+      tester.element(find.byType(ViewSwitcher)),
+    ).invalidate(chatGroupsProvider);
+    await tester.pumpAndSettle();
+    // Wider than the row itself: its start, where the name begins, shows.
+    expect(tester.getRect(_tab(title)).left, moreOrLessEquals(0));
+  });
+
   testWidgets('opening a tab never moves the row, the tabs, or the feed', (
     tester,
   ) async {
     await pump(
       tester,
       groups: AsyncData([group(unread: false), ...manyGroups(1)]),
-      size: const Size(390, 700),
+      // Wide enough that nothing scrolls: a scroll-into-view is not a jump.
+      size: const Size(520, 700),
       extra: openGroup(role: 'member', members: 9)..removeAt(0),
     );
     List<Rect> rects() => [

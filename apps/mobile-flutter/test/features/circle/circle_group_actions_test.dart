@@ -447,6 +447,41 @@ void main() {
     await expectSteady();
   });
 
+  for (final level in [GroupSheetLevel.add, GroupSheetLevel.rename]) {
+    testWidgets('opened straight on ${level.name}, Back is a pure slide', (
+      tester,
+    ) async {
+      // The long-press menu opens the sheet on a second level, so the info
+      // page was never on screen to be measured on the way out.
+      final semantics = tester.ensureSemantics();
+      await pump(
+        tester,
+        GroupInfoSheet(groupId: 'g1', initial: level, initialName: 'Hikers'),
+        overrides: [
+          chatGroupDetailProvider(
+            'g1',
+          ).overrideWith((_) async => _detail(role: 'owner')),
+          circleFriendsProvider.overrideWith((_) async => [_friend()]),
+        ],
+      );
+      // The info page laid out beneath the level is not read out: its row
+      // for the OTHER second level is nowhere in the semantics.
+      final other =
+          level == GroupSheetLevel.add ? 'Rename group' : 'Add members';
+      expect(find.bySemanticsLabel(other), findsNothing);
+      final surface = find.byType(KalloSheetSurface);
+      final rest = tester.getSize(surface).height;
+      await tester.tap(find.bySemanticsLabel('Back').first);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getSize(surface).height, rest);
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Add members'), findsOneWidget);
+      semantics.dispose();
+    });
+  }
+
   testWidgets('an owner with members left is not offered Leave', (
     tester,
   ) async {
