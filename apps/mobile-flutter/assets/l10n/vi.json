@@ -1582,7 +1582,10 @@
     "switcher": {
       "all": "Tất cả",
       "label": "Chế độ xem vòng kết nối",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "viewGroup": "Xem nhóm",
+      "openGroupHint": "Chạm lần nữa để xem nhóm",
+      "openCircleHint": "Chạm lần nữa để quản lý vòng kết nối"
     },
     "feed": {
       "heart": "Thả tim",
@@ -1629,7 +1632,11 @@
       "membersHeading": "Thành viên",
       "memberCount": "{count} thành viên",
       "owner": "Chủ nhóm",
-      "addPeople": "Thêm người",
+      "addMembers": "Thêm thành viên",
+      "addCount": "Thêm ({count})",
+      "candidatesHeading": "Bạn bè chưa có trong nhóm",
+      "swipeHint": "Vuốt sang trái trên một người để xoá khỏi nhóm.",
+      "you": "Bạn",
       "searchPlaceholder": "Tìm bạn bè",
       "noMatches": "Không tìm thấy",
       "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.",

@@ -1,10 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/data/surface_cast.dart';
-import '../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
@@ -14,17 +12,9 @@ import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
 import '../widgets/invite/add_friend_sheet.dart';
 import '../widgets/invite/circle_add_menu.dart';
-import '../widgets/groups/group_info_sheet.dart';
 import '../widgets/invite/meal_invites.dart';
 import '../widgets/feed/thread_feed.dart';
-import '../widgets/feed/view_switcher.dart';
-
-Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
-    showNhamSheet<void>(
-      context,
-      isScrollControlled: true,
-      builder: (_) => GroupInfoSheet(groupId: groupId),
-    );
+import '../widgets/switcher/view_switcher.dart';
 
 class CircleScreen extends ConsumerWidget {
   const CircleScreen({super.key});
@@ -63,22 +53,14 @@ class CircleScreen extends ConsumerWidget {
           scope: selected,
           onRefresh: () => _refresh(ref, selected),
           feed: feed,
-          header: Column(
+          header: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ViewSwitcher(),
+              ViewSwitcher(),
               // MealInvitesSection collapses to nothing when there are no
               // invites, so it owns the gap above itself rather than having
               // one reserved here for a widget that usually is not there.
-              const MealInvitesSection(),
-              if (selected != null) ...[
-                const SizedBox(height: KalloSpacing.sp3),
-                _GroupHeader(
-                  groupId: selected,
-                  name: name,
-                  count: group?.members.length,
-                ),
-              ],
+              MealInvitesSection(),
             ],
           ),
           onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
@@ -129,48 +111,5 @@ class _CircleTitleRow extends StatelessWidget {
         const CircleAddMenu(),
       ],
     ),
-  );
-}
-
-class _GroupHeader extends StatelessWidget {
-  const _GroupHeader({
-    required this.groupId,
-    required this.name,
-    required this.count,
-  });
-  final String groupId;
-  final String name;
-  final int? count;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: dashBody()),
-            if (count != null)
-              Text(
-                tr('groups.info.memberCount', namedArgs: {'count': '$count'}),
-                style: dashMeta(),
-              ),
-          ],
-        ),
-      ),
-      IconButton(
-        tooltip: tr('groups.info.title'),
-        onPressed: () => _showGroupInfoSheet(context, groupId),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(
-          width: KalloIcons.hit,
-          height: KalloIcons.hit,
-        ),
-        icon: const Icon(
-          LucideIcons.info300,
-          size: KalloIcons.size,
-          color: kInkMuted,
-        ),
-      ),
-    ],
   );
 }

@@ -29,7 +29,6 @@
     "components/design-system/colors-section.tsx": 205,
     "components/app/navigation/mobile-nav.tsx": 204,
     "apps/mobile-flutter/lib/features/auth/widgets/auth_text_field.dart": 204,
-    "apps/mobile-flutter/lib/features/circle/widgets/groups/group_info_sheet.dart": 204,
     "apps/mobile-flutter/lib/features/logging/widgets/portion/ruler/portion_ruler_strip.dart": 203
   },
   "folders": {

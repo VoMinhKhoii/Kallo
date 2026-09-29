@@ -8,7 +8,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/data/local_blocks.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
-import 'package:kallo_mobile/features/circle/widgets/feed/view_switcher.dart';
+import 'package:kallo_mobile/features/circle/widgets/switcher/view_switcher.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/deck/invite_deck.dart';
 import 'package:kallo_mobile/features/circle/widgets/invite/meal_invites.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_body.dart';

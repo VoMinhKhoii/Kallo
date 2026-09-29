@@ -103,4 +103,20 @@ class ChatGroupDetail {
                 .toList(),
         myRole: json['myRole'] as String,
       );
+
+  /// The same group minus [userIds] — members removed on this device whose
+  /// removal the next fetch has not reflected yet.
+  ChatGroupDetail withoutMembers(Set<String> userIds) =>
+      userIds.isEmpty
+          ? this
+          : ChatGroupDetail(
+            id: id,
+            kind: kind,
+            name: name,
+            myRole: myRole,
+            members: [
+              for (final m in members)
+                if (!userIds.contains(m.userId)) m,
+            ],
+          );
 }
