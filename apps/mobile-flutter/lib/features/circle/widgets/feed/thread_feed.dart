@@ -33,6 +33,9 @@ class ThreadFeed extends ConsumerWidget {
   });
 
   final AsyncValue<SharedMealFeedState> feed;
+
+  /// Over the feed, spanning the page EDGE TO EDGE (the tab row runs full
+  /// bleed); it pays its own side inset where it wants one.
   final Widget header;
 
   /// The pull-to-refresh refetch. It lives HERE rather than around this widget
@@ -69,7 +72,6 @@ class ThreadFeed extends ConsumerWidget {
         // which is why it goes down the CONTENT path and not the state one.
         loading:
             () => _contentScroll([
-              header,
               const SizedBox(height: KalloSpacing.sp3),
               const CircleWallSkeleton(),
             ]),
@@ -85,13 +87,20 @@ class ThreadFeed extends ConsumerWidget {
   }
 
   /// The page's own inset. The side inset is the app-wide 12 on every sliver
-  /// here; only the BOTTOM differs, and which sliver pays it is the whole
-  /// distinction between the two helpers below.
+  /// under the header; only the BOTTOM differs, and which sliver pays it is
+  /// the whole distinction between the two helpers below.
   static EdgeInsets _pad(double top, double bottom) =>
       EdgeInsets.fromLTRB(KalloSpacing.sp3, top, KalloSpacing.sp3, bottom);
 
+  /// The header's own sliver: full width, [KalloSpacing.sp1_5] under the
+  /// page title.
+  Widget get _headerSliver => SliverPadding(
+    padding: const EdgeInsets.only(top: KalloSpacing.sp1_5),
+    sliver: SliverList(delegate: SliverChildListDelegate([header])),
+  );
+
   /// The page's one scroll view holding FEED CONTENT: the refresh control,
-  /// then [children] as a plain list under the header.
+  /// the header, then [children] as a plain list under it.
   ///
   /// The list pays the bottom inset, because the content is what has to clear
   /// the floating pill nav — without it the last post's action row sits under
@@ -101,8 +110,9 @@ class ThreadFeed extends ConsumerWidget {
     onRefresh: onRefresh,
     slivers:
         (bottomInset) => [
+          _headerSliver,
           SliverPadding(
-            padding: _pad(KalloSpacing.sp2, bottomInset),
+            padding: _pad(0, bottomInset),
             sliver: SliverList(delegate: SliverChildListDelegate(children)),
           ),
         ],
@@ -114,17 +124,14 @@ class ThreadFeed extends ConsumerWidget {
   /// the header's underside with the page blank beneath reads as content still
   /// loading.
   ///
-  /// The header list therefore pays NO bottom inset; the inset is paid inside
+  /// The header sliver therefore pays NO bottom inset; the inset is paid inside
   /// the fill sliver instead, since a trailing spacer below a sliver that
   /// already fills the viewport lands below the fold and pushes nothing.
   Widget _stateScroll(Widget state) => KalloRefreshableScroll(
     onRefresh: onRefresh,
     slivers:
         (bottomInset) => [
-          SliverPadding(
-            padding: _pad(KalloSpacing.sp2, 0),
-            sliver: SliverList(delegate: SliverChildListDelegate([header])),
-          ),
+          _headerSliver,
           SliverCenteredState(
             padding: _pad(KalloSpacing.sp3, bottomInset),
             child: state,
@@ -147,7 +154,7 @@ class ThreadFeed extends ConsumerWidget {
     if (entries.isEmpty) {
       return _stateScroll(_empty());
     }
-    final children = <Widget>[header];
+    final children = <Widget>[];
     for (final day in groupEntriesByDay(entries)) {
       children.add(const SizedBox(height: KalloSpacing.sp3));
       children.add(

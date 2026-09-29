@@ -3,46 +3,28 @@ import 'package:flutter/material.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_motion.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../groups/group_face_cluster.dart';
+import 'tab_layout.dart';
 
-/// The faces under an open Circle tab's name.
-///
-/// **Sized to the name, not to the group.** As many faces as the name is
-/// wide (2–5 slots of [_size] every [_step]), the last slot turning into "+N"
-/// when the group is bigger — so the name and its faces read as one block
-/// and the tab never widens when it opens. The width is MEASURED at the
-/// viewer's text scale, so it holds in both languages and at 1.3x.
-///
-/// Opening grows the row in (the name lifts with it) and fades the faces up
-/// from a few points above; closing folds it away.
 /// Who a Circle view holds: the people to draw, and how many there are.
 typedef TabPeople = ({List<CircleProfile> faces, int total});
 
+/// The faces under an open Circle tab's name, centred under it.
+///
+/// **Sized to the tab, not to the group.** As many faces as the tab's share
+/// of the row holds ([TabGeometry.faceSlots]; at least 104pt, so even "All"
+/// shows three and a "+N"), the last slot turning into "+N" when the group
+/// is bigger. The tab's width never depends on its faces, so they can never
+/// widen it.
+///
+/// Opening grows the row in (the name lifts with it) and fades the faces up
+/// from a few points above; closing folds it away. The tab row's height is
+/// fixed, so none of this moves the feed.
 class TabFaces extends StatelessWidget {
-  const TabFaces({required this.label, required this.people, super.key});
-
-  final String label;
+  const TabFaces({required this.people, super.key});
 
   /// Null while the tab is closed, or before its people have loaded.
   final TabPeople? people;
-
-  static const double _size = 26;
-  static const double _step = 17;
-
-  int _slots(BuildContext context) {
-    final painter = TextPainter(
-      text: TextSpan(text: label, style: dashBody()),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final width = painter.width;
-    painter.dispose();
-    // Faces that fit under the name with 4pt of give, never fewer than two
-    // (a face and the "+N") nor more than five.
-    return (((width + 4 - _size) / _step).floor() + 1).clamp(2, 5);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +33,7 @@ class TabFaces extends StatelessWidget {
     return AnimatedSize(
       duration: KalloMotion.emphasis,
       curve: KalloEase.decelerate,
-      alignment: Alignment.topLeft,
+      alignment: Alignment.topCenter,
       child:
           show
               ? TweenAnimationBuilder<double>(
@@ -68,14 +50,17 @@ class TabFaces extends StatelessWidget {
                       ),
                     ),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: KalloSpacing.sp1_5),
-                  child: GroupFaceCluster(
-                    members: people.faces,
-                    total: people.total,
-                    max: _slots(context),
-                    size: _size,
-                    step: _step,
-                    ringColor: kPage,
+                  padding: const EdgeInsets.only(top: TabGeometry.facesGap),
+                  child: LayoutBuilder(
+                    builder:
+                        (_, constraints) => GroupFaceCluster(
+                          members: people.faces,
+                          total: people.total,
+                          max: TabGeometry.faceSlots(constraints.maxWidth),
+                          size: TabGeometry.faceSize,
+                          step: TabGeometry.faceStep,
+                          ringColor: kPage,
+                        ),
                   ),
                 ),
               )

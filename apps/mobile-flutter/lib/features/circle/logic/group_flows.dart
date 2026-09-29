@@ -110,6 +110,55 @@ Future<void> openGroupTabMenu(
   );
 }
 
+/// Renames [groupId]; a failure is a toast. Returns whether it landed.
+Future<bool> renameGroupFlow(
+  BuildContext context, {
+  required String groupId,
+  required String name,
+}) => _mutate(
+  context,
+  () => renameChatGroup(
+    ProviderScope.containerOf(context, listen: false),
+    groupId: groupId,
+    name: name,
+  ),
+  failed: 'groups.info.renameError',
+);
+
+/// Adds [userIds] to [groupId] and says so; a failure is a toast.
+Future<bool> addMembersFlow(
+  BuildContext context, {
+  required String groupId,
+  required List<String> userIds,
+}) => _mutate(
+  context,
+  () => addGroupMembers(
+    ProviderScope.containerOf(context, listen: false),
+    groupId: groupId,
+    memberUserIds: userIds,
+  ),
+  done: 'groups.info.added',
+  failed: 'groups.info.addError',
+);
+
+Future<bool> _mutate(
+  BuildContext context,
+  Future<void> Function() action, {
+  String? done,
+  required String failed,
+}) async {
+  try {
+    await action();
+  } catch (_) {
+    if (context.mounted) {
+      showTopToast(context, tr(failed), variant: TopToastVariant.error);
+    }
+    return false;
+  }
+  if (done != null && context.mounted) showTopToast(context, tr(done));
+  return true;
+}
+
 /// Confirms, then removes [member] from [groupId].
 ///
 /// "Xoá {name}?" — "Xoá" against "Giữ lại": the member goes, or stays. Both

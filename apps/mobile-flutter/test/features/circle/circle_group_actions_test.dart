@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
+import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
@@ -410,6 +411,145 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GroupAddPage), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('the sheet keeps one height through every level swap', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GroupInfoSheet(groupId: 'g1'),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => [_friend()]),
+      ],
+    );
+    final surface = find.byType(KalloSheetSurface);
+    final rest = tester.getSize(surface).height;
+    Future<void> expectSteady() async {
+      // Frame by frame through the whole slide: SheetPageSwap snapped to the
+      // taller page and settled after, which read as a jump each way.
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getSize(surface).height, rest);
+      }
+    }
+
+    await tester.tap(find.text('Add members'));
+    await expectSteady();
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    await expectSteady();
+    await tester.tap(find.text('Rename group'));
+    await expectSteady();
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    await expectSteady();
+  });
+
+  for (final level in [GroupSheetLevel.add, GroupSheetLevel.rename]) {
+    testWidgets('opened straight on ${level.name}, Back is a pure slide', (
+      tester,
+    ) async {
+      // The long-press menu opens the sheet on a second level, so the info
+      // page was never on screen to be measured on the way out.
+      final semantics = tester.ensureSemantics();
+      await pump(
+        tester,
+        GroupInfoSheet(groupId: 'g1', initial: level, initialName: 'Hikers'),
+        overrides: [
+          chatGroupDetailProvider(
+            'g1',
+          ).overrideWith((_) async => _detail(role: 'owner')),
+          circleFriendsProvider.overrideWith((_) async => [_friend()]),
+        ],
+      );
+      // The info page laid out beneath the level is not read out: its row
+      // for the OTHER second level is nowhere in the semantics.
+      final other =
+          level == GroupSheetLevel.add ? 'Rename group' : 'Add members';
+      expect(find.bySemanticsLabel(other), findsNothing);
+      final surface = find.byType(KalloSheetSurface);
+      final rest = tester.getSize(surface).height;
+      await tester.tap(find.bySemanticsLabel('Back').first);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getSize(surface).height, rest);
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Add members'), findsOneWidget);
+      semantics.dispose();
+    });
+  }
+
+  testWidgets('Back from rename never reopens the keyboard', (tester) async {
+    // `SheetPageSwap` rebuilds the departing page from scratch for its
+    // slide out; that copy must not re-run the rename field's autofocus.
+    await pump(
+      tester,
+      const GroupInfoSheet(
+        groupId: 'g1',
+        initial: GroupSheetLevel.rename,
+        initialName: 'Hikers',
+      ),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    // The field focuses once the page has slid in.
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.testTextInput.isVisible, isTrue);
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    tester.testTextInput.log.clear();
+    for (var i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pumpAndSettle();
+    expect(
+      tester.testTextInput.log.map((call) => call.method),
+      isNot(contains('TextInput.show')),
+    );
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
+  testWidgets('re-entering rename mid-slide focuses only the new field', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GroupInfoSheet(
+        groupId: 'g1',
+        initial: GroupSheetLevel.rename,
+        initialName: 'Hikers',
+      ),
+      overrides: [
+        chatGroupDetailProvider(
+          'g1',
+        ).overrideWith((_) async => _detail(role: 'owner')),
+        circleFriendsProvider.overrideWith((_) async => const []),
+      ],
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.bySemanticsLabel('Back').first);
+    // Back in again just before the departing copy's 280ms focus timer: the
+    // level reads "rename" once more while that copy is still mounted.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 270));
+    await tester.tap(find.text('Rename group').last, warnIfMissed: false);
+    tester.testTextInput.log.clear();
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester.testTextInput.log.map((call) => call.method),
+      isNot(contains('TextInput.show')),
+    );
+    // The new copy still focuses once it has slid in.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(tester.testTextInput.isVisible, isTrue);
   });
 
   testWidgets('an owner with members left is not offered Leave', (
