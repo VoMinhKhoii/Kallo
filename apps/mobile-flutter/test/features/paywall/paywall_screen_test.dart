@@ -361,9 +361,35 @@ void main() {
     final chip = find.text(_cta(tester).chipLabel!);
     expect(tester.getTopLeft(chip).dy, greaterThan(bandTop));
     expect(
-      tester.getBottomLeft(find.byType(SingleChildScrollView)).dy,
+      tester.getBottomLeft(find.byType(CustomScrollView)).dy,
       lessThanOrEqualTo(bandTop),
     );
+  });
+
+  testWidgets('on a tall phone the table reaches down to the buy band', (
+    tester,
+  ) async {
+    // iPhone 17 Pro Max: the table's natural height stopped ~190pt short of
+    // the band and left an empty stretch of page under it.
+    await pumpPaywall(tester, size: const Size(440, 956));
+    expect(tester.takeException(), isNull);
+
+    final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
+    final bandTop = tester.getTopLeft(find.byType(PaywallBuyBand)).dy;
+    // Only the scroll view's bottom padding sits between them.
+    expect(bandTop - tableBottom, lessThanOrEqualTo(24));
+
+    // And with the room, the rows are set in the regular reading size.
+    final label = tester.widget<Text>(find.text(tr('paywall.compareAi')));
+    expect(label.style?.fontSize, kDashBodySize);
+  });
+
+  testWidgets('on a 6.1-inch phone the rows stay a step down so none wrap', (
+    tester,
+  ) async {
+    await pumpPaywall(tester);
+    final label = tester.widget<Text>(find.text(tr('paywall.compareAi')));
+    expect(label.style?.fontSize, kDashMetaSize);
   });
 
   testWidgets('at 320pt and 1.3x text the table scrolls instead of clipping', (

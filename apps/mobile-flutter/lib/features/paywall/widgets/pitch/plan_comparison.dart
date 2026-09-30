@@ -30,6 +30,24 @@ class PlanComparison extends StatelessWidget {
   static const double _freeColumn = 56;
   static const double _proColumn = 92;
 
+  /// The narrowest screen that sets the table in the app's regular reading
+  /// size (16, [dashBody]). Plus / Pro Max widths (428+) fit every label on
+  /// one line in both languages; at 393 most of the Vietnamese rows wrap and
+  /// the table outgrows the screen, so narrower phones keep one step down
+  /// (14, [dashMeta]).
+  static const double _roomyWidth = 428;
+
+  /// The type under the row labels: column heads, notes and quantities sit
+  /// one step below the label, whichever size the label is.
+  static TextStyle _small(
+    bool roomy, {
+    Color color = kInkMuted,
+    FontWeight weight = FontWeight.w400,
+  }) =>
+      roomy
+          ? dashMeta(color: color, weight: weight)
+          : dashCaption(color: color, weight: weight);
+
   /// Column text that CANNOT wrap: it shrinks to fit instead.
   ///
   /// These two columns are fixed-width by design — that is what holds every
@@ -51,6 +69,7 @@ class PlanComparison extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = compareRows();
+    final roomy = MediaQuery.sizeOf(context).width >= _roomyWidth;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,
@@ -63,21 +82,35 @@ class PlanComparison extends StatelessWidget {
           KalloSpacing.sp4,
           KalloSpacing.sp4,
         ),
+        // Given more height than it needs (the paywall hands it the rest of
+        // the screen), the table spreads its rows rather than leaving a void
+        // under the last one. The rules are their own children so the spare
+        // height lands evenly on both sides of each, not just above it.
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _header(),
-            for (var i = 0; i < rows.length; i++)
-              _PlanComparisonRow(row: rows[i], ruled: i > 0),
+            _header(roomy),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) _rule,
+              _PlanComparisonRow(row: rows[i], roomy: roomy),
+            ],
           ],
         ),
       ),
     );
   }
 
+  /// The hairline between rows: none under the last line and none between
+  /// the heads and row one.
+  static const Widget _rule = SizedBox(
+    width: double.infinity,
+    height: 1,
+    child: ColoredBox(color: KalloColors.borderSoft),
+  );
+
   /// The two column names. Pro is ink and semibold, Free is muted — the
   /// column heads carry the ranking so the rows below them do not have to.
-  Widget _header() => Container(
+  Widget _header(bool roomy) => Container(
     // A MINIMUM, never a fixed height: at 26 exactly, a heading that wrapped
     // had its second line clipped instead of pushing the row open.
     constraints: const BoxConstraints(minHeight: 26),
@@ -85,11 +118,11 @@ class PlanComparison extends StatelessWidget {
     child: Row(
       children: [
         const Spacer(),
-        _head(tr('paywall.columnFree'), _freeColumn, dashCaption()),
+        _head(tr('paywall.columnFree'), _freeColumn, _small(roomy)),
         _head(
           tr('paywall.columnPro'),
           _proColumn,
-          dashCaption(color: kInk, weight: FontWeight.w600),
+          _small(roomy, color: kInk, weight: FontWeight.w600),
         ),
       ],
     ),
@@ -102,25 +135,18 @@ class PlanComparison extends StatelessWidget {
 /// One row of the table. Its own widget so the row's height is set by its own
 /// content — a label that wraps in Vietnamese grows only its own line.
 class _PlanComparisonRow extends StatelessWidget {
-  const _PlanComparisonRow({required this.row, required this.ruled});
+  const _PlanComparisonRow({required this.row, required this.roomy});
 
   final CompareRow row;
 
-  /// Every row but the first carries the hairline ABOVE it, so the table has
-  /// no rule under its last line and none between the heads and row one.
-  final bool ruled;
+  /// See [PlanComparison._roomyWidth].
+  final bool roomy;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp1),
-      decoration:
-          ruled
-              ? const BoxDecoration(
-                border: Border(top: BorderSide(color: KalloColors.borderSoft)),
-              )
-              : null,
       child: Row(
         children: [
           Expanded(
@@ -130,8 +156,12 @@ class _PlanComparisonRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(row.label, style: dashMeta(color: kInk)),
-                  if (row.note != null) Text(row.note!, style: dashCaption()),
+                  Text(
+                    row.label,
+                    style: roomy ? dashBody() : dashMeta(color: kInk),
+                  ),
+                  if (row.note != null)
+                    Text(row.note!, style: PlanComparison._small(roomy)),
                 ],
               ),
             ),
@@ -146,7 +176,7 @@ class _PlanComparisonRow extends StatelessWidget {
   /// The Pro tick is the app's success emerald and the Free tick is muted ink:
   /// both mean "included", and the colour is what says which column is the
   /// offer. Exhaustive over [Cell] — a new kind fails to compile here.
-  static Widget _cell(Cell value, {required bool pro, required double width}) {
+  Widget _cell(Cell value, {required bool pro, required double width}) {
     final Widget child = switch (value) {
       Included() => BrushCheck(
         size: KalloIcons.tertiary,
@@ -161,7 +191,7 @@ class _PlanComparisonRow extends StatelessWidget {
       // lines against a one-glyph cell opposite it and read as a defect.
       Quantity(:final text) => PlanComparison._columnText(
         text,
-        dashCaption(color: pro ? kInk : kInkMuted),
+        PlanComparison._small(roomy, color: pro ? kInk : kInkMuted),
       ),
     };
     return SizedBox(width: width, child: Center(child: child));
