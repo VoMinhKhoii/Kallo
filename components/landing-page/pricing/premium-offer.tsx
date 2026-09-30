@@ -38,8 +38,6 @@ export function PremiumOffer({
     priceYearly: t(`${base}.priceYearly`),
     billedMonthly: t(`${base}.billedMonthly`),
     billedYearly: t(`${base}.billedYearly`),
-    introPrice: t(`${base}.introPrice`),
-    introDays: Number(t.raw(`${base}.introDays`)),
     amountMonthly: Number(t.raw(`${base}.amountMonthly`)),
     amountYearly: Number(t.raw(`${base}.amountYearly`)),
   });

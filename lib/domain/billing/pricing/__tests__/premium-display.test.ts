@@ -7,8 +7,6 @@ const EN_FALLBACK: PremiumFallback = {
   priceYearly: '$2.50',
   billedMonthly: '$7.99',
   billedYearly: '$29.99',
-  introPrice: '$0.89',
-  introDays: 7,
   amountMonthly: 7.99,
   amountYearly: 29.99,
 };
@@ -30,7 +28,7 @@ describe('premiumDisplay — message fallbacks', () => {
     expect(premiumDisplay('yearly', undefined, 'en', EN_FALLBACK)).toEqual({
       price: '$2.50',
       billed: '$29.99',
-      intro: { price: '$0.89', days: 7 },
+      intro: null,
       savePercent: 69,
     });
   });
@@ -39,7 +37,7 @@ describe('premiumDisplay — message fallbacks', () => {
     expect(premiumDisplay('monthly', null, 'en', EN_FALLBACK)).toEqual({
       price: '$7.99',
       billed: '$7.99',
-      intro: { price: '$0.89', days: 7 },
+      intro: null,
       savePercent: null,
     });
   });

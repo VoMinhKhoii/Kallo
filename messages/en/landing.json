@@ -162,8 +162,6 @@
         "priceYearly": "$2.50",
         "billedMonthly": "$7.99",
         "billedYearly": "$29.99",
-        "introPrice": "$0.89",
-        "introDays": 7,
         "amountMonthly": 7.99,
         "amountYearly": 29.99,
         "fineprintMonthly": "{intro} for your first {days} days, then {price} billed monthly. Cancel any time. Tax calculated at checkout.",

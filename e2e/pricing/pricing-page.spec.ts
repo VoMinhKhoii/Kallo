@@ -6,7 +6,7 @@ import { fakePaddle } from './fake-paddle';
 // point of asking Paddle instead of the message file.
 
 test.describe('/pricing live prices', () => {
-  test('a US visitor sees USD prices and the $0.89 first week', async ({
+  test('a US visitor sees USD prices and no first-week offer', async ({
     page,
   }) => {
     await fakePaddle(page, 'US');
@@ -18,7 +18,7 @@ test.describe('/pricing live prices', () => {
 
     // Yearly is the default: the per-month equivalent of $29.99.
     await expect(price).toContainText('$2.50');
-    await expect(cta).toContainText('$0.89');
+    await expect(cta).toHaveText('Upgrade');
     await expect(page.getByTestId('pricing-save-chip')).toContainText('69%');
     await expect(fineprint).toContainText('$29.99');
     await expect(fineprint).toContainText('Tax calculated at checkout');
@@ -38,7 +38,7 @@ test.describe('/pricing live prices', () => {
 
     const cta = page.getByTestId('pricing-premium-cta');
     const fineprint = page.getByTestId('pricing-premium-fineprint');
-    await expect(cta).toContainText('7,999');
+    await expect(cta).toHaveText('Upgrade');
     await expect(fineprint).toContainText('449,000');
 
     await page.getByTestId('pricing-period-monthly').click();
@@ -53,22 +53,48 @@ test.describe('/pricing live prices', () => {
     await fakePaddle(page, 'VN');
     await page.goto('/vi/pricing');
 
-    await expect(page.getByTestId('pricing-premium-cta')).toContainText(
-      '7.999'
+    await expect(page.getByTestId('pricing-premium-cta')).toHaveText(
+      'Nâng cấp'
     );
     await expect(page.getByTestId('pricing-premium-fineprint')).toContainText(
       'Thuế được tính khi thanh toán'
     );
   });
 
-  test('never shows the first-week charge as the plan price', async ({
+  // The first week was withdrawn on 2026-09-30. Nothing on the page may still
+  // quote it, in either market, on either period.
+  for (const [market, locale, stale] of [
+    ['US', 'en', /\$0\.89|first 7 days/],
+    ['VN', 'vi', /7[.,]999|7 ngày đầu/],
+  ] as const) {
+    test(`a ${market} visitor is never quoted a first week`, async ({
+      page,
+    }) => {
+      await fakePaddle(page, market);
+      await page.goto(`/${locale}/pricing`);
+      const card = page.getByTestId('pricing-premium-fineprint');
+      await expect(card).toBeVisible();
+      await expect(page.locator('main')).not.toContainText(stale);
+      await page.getByTestId('pricing-period-monthly').click();
+      await expect(page.locator('main')).not.toContainText(stale);
+    });
+  }
+
+  // Paddle unreachable: the message-file fallbacks stand in, and they must not
+  // advertise a first week either (they did until 2026-09-30).
+  test('with Paddle unreachable the fallback quotes no first week', async ({
     page,
   }) => {
-    await fakePaddle(page, 'US');
+    await page.route('https://cdn.paddle.com/**', (route) => route.abort());
     await page.goto('/en/pricing');
-    await page.getByTestId('pricing-period-monthly').click();
-    await expect(page.getByTestId('pricing-premium-price')).not.toContainText(
-      '$0.89'
+    await expect(page.getByTestId('pricing-premium-price')).toContainText(
+      '$2.50'
+    );
+    await expect(page.getByTestId('pricing-premium-fineprint')).toContainText(
+      '$29.99 billed yearly'
+    );
+    await expect(page.locator('main')).not.toContainText(
+      /\$0\.89|first 7 days/
     );
   });
 });

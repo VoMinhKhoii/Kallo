@@ -161,8 +161,6 @@
         "priceYearly": "37K₫",
         "billedMonthly": "49.000 ₫",
         "billedYearly": "449.000 ₫",
-        "introPrice": "7.999 ₫",
-        "introDays": 7,
         "amountMonthly": 49000,
         "amountYearly": 449000,
         "fineprintMonthly": "{intro} cho {days} ngày đầu, sau đó {price} mỗi tháng. Hủy bất cứ lúc nào. Thuế được tính khi thanh toán.",

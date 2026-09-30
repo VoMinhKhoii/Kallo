@@ -1,9 +1,11 @@
 // What the Premium pricing card prints for one billing period: the per-month
-// hero, the amount actually billed, the paid first week and the yearly saving.
+// hero, the amount actually billed, any first-week offer and the yearly saving.
 //
 // Live Paddle prices win when they have arrived; until then (or without a
 // Paddle token, or when Paddle is unreachable) the message-file fallbacks
 // stand in, so the card never waits on a third party to say what it costs.
+// The fallbacks never promise a first-week offer: whether one exists is
+// Paddle's to say, and a stale fallback would advertise a price nobody sells.
 
 import {
   type BillingPeriod,
@@ -20,8 +22,6 @@ export interface PremiumFallback {
   priceYearly: string;
   billedMonthly: string;
   billedYearly: string;
-  introPrice: string;
-  introDays: number;
   /** Bare billed amounts, for the computed saving. */
   amountMonthly: number;
   amountYearly: number;
@@ -32,7 +32,7 @@ export interface PremiumDisplay {
   price: string;
   /** What each renewal charges for this period. */
   billed: string;
-  /** The paid first week, or null when this market has none. */
+  /** The first-week offer, or null when this market has none. */
   intro: { price: string; days: number } | null;
   /** Yearly only: the saving against twelve monthly payments. */
   savePercent: number | null;
@@ -66,7 +66,7 @@ export function premiumDisplay(
   return {
     price: yearly ? fallback.priceYearly : fallback.priceMonthly,
     billed: yearly ? fallback.billedYearly : fallback.billedMonthly,
-    intro: { price: fallback.introPrice, days: fallback.introDays },
+    intro: null,
     savePercent: yearly
       ? yearlySavePercent({
           monthly: inLocaleCurrency(fallback.amountMonthly),

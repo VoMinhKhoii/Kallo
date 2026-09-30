@@ -1,15 +1,17 @@
 import type { Page } from '@playwright/test';
 
 // A stand-in for Paddle.js, served in place of cdn.paddle.com so /pricing's
-// price preview is deterministic. Its preview mirrors the LIVE shape: while a
-// price has a paid trial, the line totals are the trial charge, and the
-// recurring price only lives on the price (its base + country overrides).
+// price preview is deterministic. Its preview mirrors the LIVE catalog: no
+// trial on either price since 2026-09-30 (a paid first week fell under
+// Paddle's minimum charge in Vietnam), so the line totals are the recurring
+// charge, and the market's price lives on the price (base + country
+// overrides).
 type Market = 'US' | 'VN';
 
 const CATALOG = {
-  // [monthly, annual] recurring amounts, then the first-week charge.
-  usd: ['799', '2999', '89'],
-  vnd: ['49000', '449000', '7999'],
+  // [monthly, annual] recurring amounts.
+  usd: ['799', '2999'],
+  vnd: ['49000', '449000'],
 };
 
 function script(market: Market): string {
@@ -21,17 +23,7 @@ function script(market: Market): string {
       id,
       unitPrice: { amount: CATALOG.usd[i], currencyCode: 'USD' },
       unitPriceOverrides: vn(CATALOG.vnd[i]),
-      // Live Paddle.js leaves the trial's fields snake_case (captured
-      // 2026-09-24), unlike the camelCase price around it.
-      trialPeriod: {
-        interval: 'day',
-        frequency: 7,
-        requires_payment_method: true,
-        unit_price: { amount: CATALOG.usd[2], currency_code: 'USD' },
-        unit_price_overrides: [
-          { country_codes: ['VN'], unit_price: { amount: CATALOG.vnd[2], currency_code: 'VND' } },
-        ],
-      },
+      trialPeriod: null,
     });
     // paddle-js 1.x reads the Billing instance from window.PaddleBillingV1.
     window.PaddleBillingV1 = window.Paddle = {
@@ -46,7 +38,7 @@ function script(market: Market): string {
           details: {
             lineItems: items.map((item, i) => ({
               price: price(item.priceId, i),
-              unitTotals: { subtotal: MARKET === 'VN' ? CATALOG.vnd[2] : CATALOG.usd[2] },
+              unitTotals: { subtotal: MARKET === 'VN' ? CATALOG.vnd[i] : CATALOG.usd[i] },
             })),
           },
         },
