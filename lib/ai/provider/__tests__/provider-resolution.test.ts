@@ -24,6 +24,26 @@ describe('resolveGeminiProvider', () => {
     });
   });
 
+  it('resolves pool of keys when GEMINI_API_KEYS contains comma-separated values', () => {
+    expect(
+      resolveGeminiProvider({ GEMINI_API_KEYS: 'sk-key1, sk-key2, sk-key3' })
+    ).toEqual({
+      provider: 'ai-studio',
+      apiKey: 'sk-key1',
+      apiKeys: ['sk-key1', 'sk-key2', 'sk-key3'],
+    });
+  });
+
+  it('resolves pool of keys when GEMINI_API_KEY contains comma-separated values', () => {
+    expect(
+      resolveGeminiProvider({ GEMINI_API_KEY: 'sk-keyA, sk-keyB' })
+    ).toEqual({
+      provider: 'ai-studio',
+      apiKey: 'sk-keyA',
+      apiKeys: ['sk-keyA', 'sk-keyB'],
+    });
+  });
+
   it('returns vertex config when AI_PROVIDER=vertex with project + location', () => {
     expect(
       resolveGeminiProvider({
