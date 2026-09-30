@@ -380,7 +380,12 @@ void main() {
     // height stopped ~190pt short of the band and left an empty stretch of
     // page under it.
     await pumpPaywall(tester, size: const Size(440, 956));
-    tester.view.padding = const FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
+    // Both insets: SafeArea reads `padding`, the buy band reads `viewPadding`
+    // for the home indicator, and a test view keeps them separately.
+    const insets = FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
+    tester.view
+      ..padding = insets
+      ..viewPadding = insets;
     await tester.pump();
     expect(tester.takeException(), isNull);
 
