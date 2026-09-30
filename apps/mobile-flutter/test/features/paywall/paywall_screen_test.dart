@@ -21,8 +21,10 @@ import 'package:kallo_mobile/services/billing/purchases_service.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
 import 'paywall_test_support.dart';
 
@@ -154,6 +156,11 @@ Future<void> _pickMonthly(WidgetTester tester) async {
 }
 
 void main() {
+  // The real faces, not the test font: the fill and gap tests below measure
+  // where the table ends on an actual handset, and the fallback font sets
+  // far wider than Be Vietnam Pro, so it wraps rows a real phone does not.
+  setUpAll(loadAppFonts);
+
   testWidgets('the screen compares the tiers and starts on the yearly plan', (
     tester,
   ) async {
@@ -369,19 +376,60 @@ void main() {
   testWidgets('on a tall phone the table reaches down to the buy band', (
     tester,
   ) async {
-    // iPhone 17 Pro Max: the table's natural height stopped ~190pt short of
-    // the band and left an empty stretch of page under it.
+    // A Pro Max, status bar and home indicator included. The table's natural
+    // height stopped ~190pt short of the band and left an empty stretch of
+    // page under it.
     await pumpPaywall(tester, size: const Size(440, 956));
+    // Both insets: SafeArea reads `padding`, the buy band reads `viewPadding`
+    // for the home indicator, and a test view keeps them separately.
+    const insets = FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
+    tester.view
+      ..padding = insets
+      ..viewPadding = insets;
+    await tester.pump();
     expect(tester.takeException(), isNull);
 
     final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
     final bandTop = tester.getTopLeft(find.byType(PaywallBuyBand)).dy;
-    // Only the scroll view's bottom padding sits between them.
-    expect(bandTop - tableBottom, lessThanOrEqualTo(24));
+    // Exactly the pitch's bottom padding between them: not a void, and not
+    // flush either (the padding once landed below the fold, and the card ran
+    // straight into the band with its bottom corners cut off).
+    expect(bandTop - tableBottom, moreOrLessEquals(KalloSpacing.sp4));
+
+    // It all fits, so nothing scrolls — not even by that padding.
+    final scroll = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(scroll.position.maxScrollExtent, 0);
 
     // And with the room, the rows are set in the regular reading size.
     final label = tester.widget<Text>(find.text(tr('paywall.compareAi')));
     expect(label.style?.fontSize, kDashBodySize);
+  });
+
+  testWidgets('when the table outgrows the screen it scrolls to a clean gap', (
+    tester,
+  ) async {
+    // A small phone with the text size turned up: the table outgrows it.
+    await pumpPaywall(tester, size: const Size(320, 640), textScale: 1.3);
+    expect(tester.takeException(), isNull);
+
+    final scroll = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(scroll.position.maxScrollExtent, greaterThan(0));
+    scroll.position.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pump();
+
+    final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
+    final bandTop = tester.getTopLeft(find.byType(PaywallBuyBand)).dy;
+    expect(bandTop - tableBottom, moreOrLessEquals(KalloSpacing.sp4));
   });
 
   testWidgets('on a 6.1-inch phone the rows stay a step down so none wrap', (
