@@ -21,6 +21,7 @@ import 'package:kallo_mobile/services/billing/purchases_service.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n_test_loader.dart';
@@ -369,19 +370,57 @@ void main() {
   testWidgets('on a tall phone the table reaches down to the buy band', (
     tester,
   ) async {
-    // iPhone 17 Pro Max: the table's natural height stopped ~190pt short of
-    // the band and left an empty stretch of page under it.
-    await pumpPaywall(tester, size: const Size(440, 956));
+    // On a Pro Max the table's natural height stopped ~190pt short of the band
+    // and left an empty stretch of page under it. Taller than the handset
+    // here because the test font sets far wider than Be Vietnam Pro, and the
+    // case under test is the one where the content fits.
+    await pumpPaywall(tester, size: const Size(440, 1400));
     expect(tester.takeException(), isNull);
 
     final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
     final bandTop = tester.getTopLeft(find.byType(PaywallBuyBand)).dy;
-    // Only the scroll view's bottom padding sits between them.
-    expect(bandTop - tableBottom, lessThanOrEqualTo(24));
+    // Exactly the pitch's bottom padding between them: not a void, and not
+    // flush either (the padding once landed below the fold, and the card ran
+    // straight into the band with its bottom corners cut off).
+    expect(bandTop - tableBottom, moreOrLessEquals(KalloSpacing.sp4));
+
+    // It all fits, so nothing scrolls — not even by that padding.
+    final scroll = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(scroll.position.maxScrollExtent, 0);
 
     // And with the room, the rows are set in the regular reading size.
     final label = tester.widget<Text>(find.text(tr('paywall.compareAi')));
     expect(label.style?.fontSize, kDashBodySize);
+  });
+
+  testWidgets('when the table outgrows the screen it scrolls to a clean gap', (
+    tester,
+  ) async {
+    await pumpPaywall(tester, size: const Size(440, 956));
+    // A real handset's status bar and home indicator: with the test font this
+    // no longer fits, so the pitch scrolls.
+    tester.view.padding = const FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    final scroll = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(scroll.position.maxScrollExtent, greaterThan(0));
+    scroll.position.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pump();
+
+    final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
+    final bandTop = tester.getTopLeft(find.byType(PaywallBuyBand)).dy;
+    expect(bandTop - tableBottom, moreOrLessEquals(KalloSpacing.sp4));
   });
 
   testWidgets('on a 6.1-inch phone the rows stay a step down so none wrap', (

@@ -111,15 +111,19 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   /// content is taller than the screen, it simply scrolls as before.
   Widget _pitch(PaywallOffer offer, bool purchasing) => CustomScrollView(
     slivers: [
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          PaywallPurchaseFace.gutter,
-          KalloSpacing.sp2,
-          PaywallPurchaseFace.gutter,
-          KalloSpacing.sp4,
-        ),
-        sliver: SliverFillRemaining(
-          hasScrollBody: false,
+      // The padding goes INSIDE the fill, not around it as a SliverPadding:
+      // SliverFillRemaining fills whatever is left of the viewport, so a
+      // SliverPadding's bottom inset landed below the fold — the card ran
+      // flush into the buy band and the page scrolled by that inset.
+      SliverFillRemaining(
+        hasScrollBody: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            PaywallPurchaseFace.gutter,
+            KalloSpacing.sp2,
+            PaywallPurchaseFace.gutter,
+            KalloSpacing.sp4,
+          ),
           child: _pitchColumn(offer, purchasing),
         ),
       ),

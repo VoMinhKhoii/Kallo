@@ -131,7 +131,15 @@ class PlanToggle extends StatelessWidget {
     child: Stack(
       fit: StackFit.expand,
       children: [
-        if (!yearly) const ColoredBox(color: _veil),
+        // Rounded like the gold it veils: a bare ColoredBox is a rectangle,
+        // and its corners showed as a grey square behind the pill.
+        if (!yearly)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: _veil,
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
+            ),
+          ),
         _label(yearlyLabel, true),
       ],
     ),
