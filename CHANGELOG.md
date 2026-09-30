@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.18.1](https://github.com/VoMinhKhoii/Kallo/compare/v1.18.0...v1.18.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **mobile:** call the paid tier Kallo Premium everywhere ([6c89b17](https://github.com/VoMinhKhoii/Kallo/commit/6c89b1722d95f8b433036162053c008755e4890c))
+* **mobile:** call the paid tier Kallo Premium everywhere ([78307a6](https://github.com/VoMinhKhoii/Kallo/commit/78307a68fbde80760ef9b768fc087bb030b99f47))
+* **paywall:** fill the screen with the plan table; body-size rows on big phones ([0967d74](https://github.com/VoMinhKhoii/Kallo/commit/0967d744eb1e349065dd7ac307c6461836891b57))
+* **paywall:** gap above the buy band; round the yearly veil ([f8d04ad](https://github.com/VoMinhKhoii/Kallo/commit/f8d04ad065bc077e3356d4eaa1d84d84215b9b44))
+* **paywall:** keep a gap between the plan table and the buy band; round the yearly veil ([8c19b8a](https://github.com/VoMinhKhoii/Kallo/commit/8c19b8a4a87abd690ca7d033527602e04bbcb304))
+* **paywall:** let the plan table fill the screen and read at body size on big phones ([f18e3f1](https://github.com/VoMinhKhoii/Kallo/commit/f18e3f19d051521c63666754bf9013398be72a82))
+* **pricing:** stop quoting a first-week offer from the message fallbacks ([f303ca5](https://github.com/VoMinhKhoii/Kallo/commit/f303ca5f021fd4a6aebcdcd60ec43a1bd0e1f381))
+* **pricing:** stop quoting a first-week offer from the message fallbacks ([98c19e0](https://github.com/VoMinhKhoii/Kallo/commit/98c19e07b4cdcee18d4b871aa037936bfc925b40))
+
 ## [1.18.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.17.0...v1.18.0) (2026-09-29)
 
 
