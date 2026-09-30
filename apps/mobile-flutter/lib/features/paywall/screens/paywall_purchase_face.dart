@@ -104,35 +104,49 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   /// Scrolls, and only this half does: with the system text size turned up
   /// the table outgrows any phone, and it is the half a user can afford to go
   /// looking for (see [PaywallBuyBand]).
-  Widget _pitch(PaywallOffer offer, bool purchasing) => SingleChildScrollView(
-    padding: const EdgeInsets.fromLTRB(
-      PaywallPurchaseFace.gutter,
-      KalloSpacing.sp2,
-      PaywallPurchaseFace.gutter,
-      KalloSpacing.sp4,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        PaywallGuide(line: offer.guideLine),
-        const SizedBox(height: KalloSpacing.sp3_5),
-        if (offer.showPeriodToggle) ...[
-          PlanToggle(
-            monthlyLabel: tr('paywall.toggleMonthly'),
-            yearlyLabel: tr('paywall.toggleYearly'),
-            yearly: offer.yearly,
-            // Inert while a purchase is in flight, and on the store-closed
-            // face, where there is no second period to switch to.
-            onChanged:
-                purchasing || offer.plan == null
-                    ? null
-                    : (value) => setState(() => _yearly = value),
-          ),
-          const SizedBox(height: KalloSpacing.sp2_5),
-        ],
-        const PlanComparison(),
+  ///
+  /// On a tall phone the table would stop short of the buy band and leave a
+  /// void under it, so the table takes whatever height is left instead
+  /// ([SliverFillRemaining]) and spreads its rows to fill it. When the
+  /// content is taller than the screen, it simply scrolls as before.
+  Widget _pitch(PaywallOffer offer, bool purchasing) => CustomScrollView(
+    slivers: [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          PaywallPurchaseFace.gutter,
+          KalloSpacing.sp2,
+          PaywallPurchaseFace.gutter,
+          KalloSpacing.sp4,
+        ),
+        sliver: SliverFillRemaining(
+          hasScrollBody: false,
+          child: _pitchColumn(offer, purchasing),
+        ),
+      ),
+    ],
+  );
+
+  Widget _pitchColumn(PaywallOffer offer, bool purchasing) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      PaywallGuide(line: offer.guideLine),
+      const SizedBox(height: KalloSpacing.sp3_5),
+      if (offer.showPeriodToggle) ...[
+        PlanToggle(
+          monthlyLabel: tr('paywall.toggleMonthly'),
+          yearlyLabel: tr('paywall.toggleYearly'),
+          yearly: offer.yearly,
+          // Inert while a purchase is in flight, and on the store-closed
+          // face, where there is no second period to switch to.
+          onChanged:
+              purchasing || offer.plan == null
+                  ? null
+                  : (value) => setState(() => _yearly = value),
+        ),
+        const SizedBox(height: KalloSpacing.sp2_5),
       ],
-    ),
+      const Expanded(child: PlanComparison()),
+    ],
   );
 
   Future<void> _purchase(Package plan) =>
