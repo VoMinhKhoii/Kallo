@@ -24,6 +24,7 @@ import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
 import 'paywall_test_support.dart';
 
@@ -155,6 +156,11 @@ Future<void> _pickMonthly(WidgetTester tester) async {
 }
 
 void main() {
+  // The real faces, not the test font: the fill and gap tests below measure
+  // where the table ends on an actual handset, and the fallback font sets
+  // far wider than Be Vietnam Pro, so it wraps rows a real phone does not.
+  setUpAll(loadAppFonts);
+
   testWidgets('the screen compares the tiers and starts on the yearly plan', (
     tester,
   ) async {
@@ -370,11 +376,12 @@ void main() {
   testWidgets('on a tall phone the table reaches down to the buy band', (
     tester,
   ) async {
-    // On a Pro Max the table's natural height stopped ~190pt short of the band
-    // and left an empty stretch of page under it. Taller than the handset
-    // here because the test font sets far wider than Be Vietnam Pro, and the
-    // case under test is the one where the content fits.
-    await pumpPaywall(tester, size: const Size(440, 1400));
+    // A Pro Max, status bar and home indicator included. The table's natural
+    // height stopped ~190pt short of the band and left an empty stretch of
+    // page under it.
+    await pumpPaywall(tester, size: const Size(440, 956));
+    tester.view.padding = const FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
+    await tester.pump();
     expect(tester.takeException(), isNull);
 
     final tableBottom = tester.getBottomLeft(find.byType(PlanComparison)).dy;
@@ -401,11 +408,8 @@ void main() {
   testWidgets('when the table outgrows the screen it scrolls to a clean gap', (
     tester,
   ) async {
-    await pumpPaywall(tester, size: const Size(440, 956));
-    // A real handset's status bar and home indicator: with the test font this
-    // no longer fits, so the pitch scrolls.
-    tester.view.padding = const FakeViewPadding(top: 62 * 3, bottom: 34 * 3);
-    await tester.pump();
+    // A small phone with the text size turned up: the table outgrows it.
+    await pumpPaywall(tester, size: const Size(320, 640), textScale: 1.3);
     expect(tester.takeException(), isNull);
 
     final scroll = tester.state<ScrollableState>(
