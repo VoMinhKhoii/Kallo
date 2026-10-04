@@ -111,6 +111,7 @@ class PaywallScreen extends ConsumerWidget {
             entitlement: entitlement,
             state: state,
             storeUnavailable: storeUnavailable,
+            onboarding: onboarding,
             onStayFree: () => _dismiss(context),
           ),
         ),

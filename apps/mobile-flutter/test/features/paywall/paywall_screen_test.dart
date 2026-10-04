@@ -556,4 +556,89 @@ void main() {
     await _frames(tester);
     expect(router.state.matchedLocation, '/logging');
   });
+
+  group('the welcome face (complimentary Premium, end of onboarding)', () {
+    final now = DateTime.utc(2026, 10, 4, 9);
+    ApiClient welcomeApi() => _StaticEntitlementsApi({
+      ...premiumEntitlement(),
+      'expiresAt': '2026-10-18T03:00:00.000Z',
+      'willRenew': false,
+      'source': 'promo',
+      'hasActiveSubscription': false,
+      'complimentary': true,
+    });
+
+    testWidgets('leads with starting the free days, which charges nothing', (
+      tester,
+    ) async {
+      late GoRouter router;
+      final purchases = PaywallPurchasesService(
+        packages: const [annualPackage, monthlyPackage],
+      );
+      await pumpPaywall(
+        tester,
+        api: welcomeApi(),
+        purchases: purchases,
+        onboarding: true,
+        now: now,
+        onRouter: (value) => router = value,
+      );
+
+      expect(
+        _cta(tester).label,
+        tr('paywall.welcomeStart', namedArgs: {'days': '14'}),
+      );
+      expect(find.textContaining('Oct 18'), findsOneWidget);
+
+      await tester.tap(find.byType(PlanCta));
+      await _frames(tester);
+      expect(purchases.purchaseCalls, 0);
+      expect(router.state.matchedLocation, '/logging');
+    });
+
+    testWidgets('Subscribe now still buys the selected plan', (tester) async {
+      // Cancelled at the store sheet, as in the buy test above, so the test
+      // does not wait out the server poll.
+      final purchases = PaywallPurchasesService(
+        outcomes: const [PurchaseOutcome.userCancelled],
+        packages: const [annualPackage, monthlyPackage],
+      );
+      await pumpPaywall(
+        tester,
+        api: welcomeApi(),
+        purchases: purchases,
+        onboarding: true,
+        now: now,
+      );
+
+      await tester.tap(find.text(tr('paywall.welcomeSubscribe')));
+      await _frames(tester);
+      expect(purchases.purchaseCalls, 1);
+      expect(purchases.lastPurchased, annualPackage);
+    });
+
+    testWidgets('outside onboarding the same user sees the normal buy band', (
+      tester,
+    ) async {
+      await pumpPaywall(tester, api: welcomeApi(), now: now);
+
+      expect(
+        _cta(tester).label,
+        isNot(tr('paywall.welcomeStart', namedArgs: {'days': '14'})),
+      );
+      expect(_stayFree(), findsOneWidget);
+    });
+  });
+}
+
+class _StaticEntitlementsApi extends ApiClient {
+  _StaticEntitlementsApi(this.body);
+
+  final Map<String, dynamic> body;
+
+  @override
+  Future<T> get<T>(String path) async => body as T;
+
+  @override
+  Future<T> post<T>(String path, [Object? b]) async => body as T;
 }

@@ -128,6 +128,11 @@ Premium, written as an ordinary `entitlement_grants` row (`source = 'promo'`,
   mobile), so a welcome user can still check out on `/pricing` or the mobile
   paywall, settings shows an Upgrade action, and a purchase counts as landed
   only once the paid grant arrives (`complimentary` flips false).
+- **mobile onboarding ends on the welcome face.** A complimentary user finishing
+  onboarding lands on the normal paywall, but its buy band leads with "Start my
+  {days} days of Premium" (no charge, into logging) and "Free until {date}",
+  with "Subscribe now" and its renewal terms below. Opened later from settings,
+  the paywall is the ordinary purchase face.
 - **lifecycle fields follow the subscription.** The winning grant decides
   access, but a renewing store subscription owns `expiresAt`/`willRenew`, so a
   longer promo never reads "ends <date>" while the store keeps charging. The
