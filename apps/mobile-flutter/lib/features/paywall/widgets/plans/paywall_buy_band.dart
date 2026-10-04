@@ -75,12 +75,13 @@ class PaywallBuyBand extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (welcome != null) ...[
+              // Today's band, same shape and height: only the words change.
               PlanCta(
                 label: tr(
                   'paywall.welcomeStart',
                   namedArgs: {'days': '${welcome.days}'},
                 ),
-                gold: false,
+                gold: offer.yearly,
                 onPressed: onStayFree,
               ),
               const SizedBox(height: KalloSpacing.sp1_5),
@@ -90,21 +91,14 @@ class PaywallBuyBand extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: KalloSpacing.sp2),
+              // Buying is still on offer; the price rides on its own button
+              // so the band keeps today's height.
               KalloButton(
-                title: tr('paywall.welcomeSubscribe'),
+                title: _subscribeLabel(),
                 variant: KalloButtonVariant.secondary,
                 loading: loading,
                 onPressed: onBuy,
               ),
-              // Buying is still on offer, so its terms stay beside it.
-              if (offer.renewalLine.isNotEmpty) ...[
-                const SizedBox(height: KalloSpacing.sp1_5),
-                Text(
-                  offer.renewalLine,
-                  style: dashCaption().copyWith(height: 1.35),
-                  textAlign: TextAlign.center,
-                ),
-              ],
               const SizedBox(height: KalloSpacing.sp2),
               const PaywallConsent(),
             ] else ...[
@@ -141,6 +135,18 @@ class PaywallBuyBand extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+extension on PaywallBuyBand {
+  String _subscribeLabel() {
+    final plan = offer.plan;
+    if (plan == null) return tr('paywall.welcomeSubscribe');
+    final period = tr(offer.yearly ? 'paywall.perYear' : 'paywall.perMonth');
+    return tr(
+      'paywall.welcomeSubscribePrice',
+      namedArgs: {'price': '${plan.storeProduct.priceString}$period'},
     );
   }
 }

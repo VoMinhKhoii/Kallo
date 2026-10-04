@@ -611,7 +611,7 @@ void main() {
         now: now,
       );
 
-      await tester.tap(find.text(tr('paywall.welcomeSubscribe')));
+      await tester.tap(find.textContaining('Subscribe now'));
       await _frames(tester);
       expect(purchases.purchaseCalls, 1);
       expect(purchases.lastPurchased, annualPackage);
