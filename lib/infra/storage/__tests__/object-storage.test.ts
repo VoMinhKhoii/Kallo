@@ -95,8 +95,25 @@ describe('listObjects', () => {
     expect(s3.commandCalls(ListObjectsV2Command)[0]?.args[0].input).toEqual({
       Bucket: 'kallo-test-feedback-screenshots',
       Prefix: 'u/',
-      MaxKeys: 1000,
+      ContinuationToken: undefined,
     });
+  });
+
+  it('follows continuation tokens past the first page', async () => {
+    s3.on(ListObjectsV2Command)
+      .resolvesOnce({
+        Contents: [{ Key: 'u/1.png' }],
+        IsTruncated: true,
+        NextContinuationToken: 'next',
+      })
+      .resolvesOnce({ Contents: [{ Key: 'u/2.png' }], IsTruncated: false });
+
+    const objects = await listObjects('feedback-screenshots', 'u/');
+
+    expect(objects.map((o) => o.key)).toEqual(['u/1.png', 'u/2.png']);
+    const calls = s3.commandCalls(ListObjectsV2Command);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.args[0].input.ContinuationToken).toBe('next');
   });
 });
 

@@ -62,24 +62,33 @@ export async function putObject(
   );
 }
 
-/** One page (up to `maxKeys`, max 1000) of the objects under `prefix`. */
+/** Every object under `prefix`, following continuation tokens past the
+ *  1000-key page. */
 export async function listObjects(
   bucket: StorageBucket,
-  prefix: string,
-  maxKeys = 1000
+  prefix: string
 ): Promise<StoredObject[]> {
-  const page = await r2Client().send(
-    new ListObjectsV2Command({
-      Bucket: r2BucketName(bucket),
-      Prefix: prefix,
-      MaxKeys: maxKeys,
-    })
-  );
-  return (page.Contents ?? []).flatMap((object) =>
-    object.Key
-      ? [{ key: object.Key, lastModified: object.LastModified ?? null }]
-      : []
-  );
+  const objects: StoredObject[] = [];
+  let token: string | undefined;
+  do {
+    const page = await r2Client().send(
+      new ListObjectsV2Command({
+        Bucket: r2BucketName(bucket),
+        Prefix: prefix,
+        ContinuationToken: token,
+      })
+    );
+    for (const object of page.Contents ?? []) {
+      if (object.Key) {
+        objects.push({
+          key: object.Key,
+          lastModified: object.LastModified ?? null,
+        });
+      }
+    }
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
+  return objects;
 }
 
 /** Delete these keys. Throws if R2 reports any key it could not delete. */
@@ -105,7 +114,8 @@ export async function removeObjects(
 }
 
 /**
- * Delete every object under a `{segment}/` prefix, listing until empty.
+ * Delete every object under a `{segment}/` prefix, re-listing until empty so
+ * an object written mid-purge is caught too.
  * Refuses an empty or unterminated prefix so a bad id can never widen the
  * purge to the whole bucket or to a sibling (`abc` would match `abcd/…`).
  */
