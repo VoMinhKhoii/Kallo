@@ -33,7 +33,7 @@ describe('useStreamingTerminalEffects — paymentRequired', () => {
     const setMessages = vi.fn();
     const stream = baseStream({
       status: 'paymentRequired',
-      error: 'Your free trial has ended — upgrade to keep analyzing meals.',
+      error: 'Upgrade to Kallo Premium to analyze meals with AI.',
     });
 
     renderHook(() =>

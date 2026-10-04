@@ -62,7 +62,7 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 
-const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
+const _PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -334,7 +334,7 @@ describe('logSharedMealAction — premium (copy_split)', () => {
     ).rejects.toBeInstanceOf(FeatureLockedError);
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      { userId: mockUser.id },
       'copy_split'
     );
     expect(mockCanViewShare).not.toHaveBeenCalled();

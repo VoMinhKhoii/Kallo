@@ -220,7 +220,7 @@ void main() {
   testWidgets('the button offers the free trial the yearly plan carries', (
     tester,
   ) async {
-    await pumpPaywall(tester, api: PaywallEntitlementsApi(trialActive: false));
+    await pumpPaywall(tester, api: PaywallEntitlementsApi());
 
     expect(
       _cta(tester).label,
@@ -244,7 +244,7 @@ void main() {
     // one has already used theirs, and Apple would charge them on day one.
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(trialActive: false),
+      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(
         packages: const [annualPackage, monthlyPackage],
         trialEligibleIds: const {},
@@ -262,7 +262,7 @@ void main() {
   ) async {
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(trialActive: false),
+      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(
         packages: const [annualNoTrialPackage, monthlyPackage],
       ),
@@ -276,7 +276,7 @@ void main() {
   ) async {
     await pumpPaywall(
       tester,
-      api: PaywallEntitlementsApi(trialActive: false),
+      api: PaywallEntitlementsApi(),
       purchases: PaywallPurchasesService(
         packages: const [annualPackage, monthlyPackage],
       ),

@@ -184,6 +184,7 @@ another domain module is a smell worth a second look.
 | `diagnostics/` | reading a pipeline trace — stage schemas, derived diagnostics, compare | ok |
 | `replay/` | re-running a captured request, live or against captured responses | ok |
 | `triage/` | moving a feedback row through its statuses | ok |
+| `premium/` | granting complimentary Premium (named accounts or everyone) with an audit trail | ok |
 
 ## `components/` — presentation
 

@@ -4,8 +4,6 @@ import { getBillingConfig } from '../config';
 const originalEnv = { ...process.env };
 
 beforeEach(() => {
-  delete process.env.SUBSCRIPTION_LAUNCH_DATE;
-  delete process.env.TRIAL_DAYS;
   delete process.env.BILLING_ENFORCEMENT_ENABLED;
   delete process.env.BILLING_PURCHASES_ENABLED;
 });
@@ -15,12 +13,11 @@ afterEach(() => {
 });
 
 describe('getBillingConfig', () => {
-  it('defaults: launchDate null, no free trial, enforcement off', () => {
-    const config = getBillingConfig();
-    expect(config.launchDate).toBeNull();
-    expect(config.trialDays).toBe(0);
-    expect(config.enforcementEnabled).toBe(false);
-    expect(config.purchasesEnabled).toBe(false);
+  it('defaults: enforcement and purchases both off', () => {
+    expect(getBillingConfig()).toEqual({
+      enforcementEnabled: false,
+      purchasesEnabled: false,
+    });
   });
 
   it('enables purchases independently from enforcement', () => {
@@ -29,47 +26,8 @@ describe('getBillingConfig', () => {
     expect(getBillingConfig().enforcementEnabled).toBe(false);
   });
 
-  it('parses a valid ISO launch date', () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
-    expect(getBillingConfig().launchDate?.toISOString()).toBe(
-      '2026-08-01T00:00:00.000Z'
-    );
-  });
-
-  it('invalid launch date → null', () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = 'not-a-date';
-    expect(getBillingConfig().launchDate).toBeNull();
-  });
-
-  it('accepts TRIAL_DAYS=0 and a positive integer', () => {
-    process.env.TRIAL_DAYS = '0';
-    expect(getBillingConfig().trialDays).toBe(0);
-    process.env.TRIAL_DAYS = '7';
-    expect(getBillingConfig().trialDays).toBe(7);
-  });
-
-  it('negative / non-integer TRIAL_DAYS falls back to no trial', () => {
-    process.env.TRIAL_DAYS = '-1';
-    expect(getBillingConfig().trialDays).toBe(0);
-    process.env.TRIAL_DAYS = 'abc';
-    expect(getBillingConfig().trialDays).toBe(0);
-  });
-
   it('enforcement toggles via readBooleanEnv', () => {
     process.env.BILLING_ENFORCEMENT_ENABLED = 'true';
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
     expect(getBillingConfig().enforcementEnabled).toBe(true);
-  });
-
-  it('fails closed when enforcement has no valid launch date', () => {
-    process.env.BILLING_ENFORCEMENT_ENABLED = 'true';
-    expect(() => getBillingConfig()).toThrow(
-      'billing_enforcement_requires_valid_launch_date'
-    );
-
-    process.env.SUBSCRIPTION_LAUNCH_DATE = 'not-a-date';
-    expect(() => getBillingConfig()).toThrow(
-      'billing_enforcement_requires_valid_launch_date'
-    );
   });
 });

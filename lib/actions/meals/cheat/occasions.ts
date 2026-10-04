@@ -78,14 +78,11 @@ export async function stageCheatRepeatAction(input: {
   timezoneOffset: number;
 }): Promise<StagedCheatAnalysis> {
   const parsed = stageCheatRepeatSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
   // Premium: cheat meals are a Premium-card feature. Only the WRITE path is
   // gated — `loadRecentCheatOccasionsAction` above stays open so a free user
   // still sees their own history (and the chips that sell the upgrade).
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'cheat_meal'
-  );
+  await assertFeatureAccess({ userId: user.id }, 'cheat_meal');
 
   const [source] = await db
     .select({

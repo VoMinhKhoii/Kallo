@@ -86,11 +86,7 @@ export async function confirmAndSaveMealAction(input: {
   // Premium (cheat_meal) — resolved and enforced BEFORE the transaction opens
   // (no entitlement reads inside an open tx; pool max is 2). No-op unless the
   // pending row is a cheat one. See `assertCheatConfirmAllowed`.
-  await assertCheatConfirmAllowed(
-    user.id,
-    profile.createdAt,
-    parsed.analysisId
-  );
+  await assertCheatConfirmAllowed(user.id, parsed.analysisId);
 
   return await db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)

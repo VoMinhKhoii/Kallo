@@ -20,9 +20,8 @@ Package _monthlyAt(double price, {String currency = 'USD'}) => Package(
 );
 
 void main() {
-  IntroOffer? offerFor(Package plan, {bool trialActive = false}) => introOffer(
+  IntroOffer? offerFor(Package plan) => introOffer(
     plan: plan,
-    trialActive: trialActive,
     eligibleProductIds: {plan.storeProduct.identifier},
   );
 
@@ -44,20 +43,9 @@ void main() {
     expect(offerFor(monthlyPackage), isNull);
   });
 
-  test('the paid week does not wait on an app-level trial', () {
-    expect(
-      offerFor(annualPaidWeekPackage, trialActive: true),
-      isA<PaidIntro>(),
-    );
-  });
-
   test('a customer who used their paid week is offered the full price', () {
     expect(
-      introOffer(
-        plan: annualPaidWeekPackage,
-        trialActive: false,
-        eligibleProductIds: const {},
-      ),
+      introOffer(plan: annualPaidWeekPackage, eligibleProductIds: const {}),
       isNull,
     );
   });
@@ -124,32 +112,19 @@ void main() {
   );
 
   test('the trial promise needs the store\'s blessing, not just the offer', () {
-    // Same product, four customers — only the first is promised days.
-    for (final (why, plan, active, eligible, promised) in [
-      ('eligible', annualPackage, false, {'kallo_premium_annual'}, true),
-      ('the store refuses them', annualPackage, false, <String>{}, false),
-      (
-        'already mid-trial',
-        annualPackage,
-        true,
-        {'kallo_premium_annual'},
-        false,
-      ),
+    // Same product, three customers — only the first is promised days.
+    for (final (why, plan, eligible, promised) in [
+      ('eligible', annualPackage, {'kallo_premium_annual'}, true),
+      ('the store refuses them', annualPackage, <String>{}, false),
       (
         'no introductory period',
         monthlyPackage,
-        false,
         {'kallo_premium_monthly'},
         false,
       ),
     ]) {
       expect(
-        introOffer(
-              plan: plan,
-              trialActive: active,
-              eligibleProductIds: eligible,
-            )
-            is FreeTrial,
+        introOffer(plan: plan, eligibleProductIds: eligible) is FreeTrial,
         promised,
         reason: why,
       );

@@ -58,18 +58,13 @@ final class PaidIntro extends IntroOffer {
 
 /// What [plan] may promise this customer, or null for the plain full price.
 ///
-/// A price of 0 is a FREE trial, offered only while the account is not already
-/// mid-trial and the STORE says this customer is still eligible — a returning
-/// subscriber's product carries `introductoryPrice` exactly like a new one's;
-/// only the store knows Apple would refuse the trial at purchase.
-///
-/// A price above 0 is a PAID intro. It needs the same store eligibility (Apple
-/// grants one intro offer per customer) but ignores [trialActive]: the store
-/// charges the intro whatever the app-level trial says, so only the store's
-/// eligibility decides whether it is disclosed.
+/// A price of 0 is a store FREE trial, a price above 0 a PAID intro. Either is
+/// offered only while the STORE says this customer is still eligible — a
+/// returning subscriber's product carries `introductoryPrice` exactly like a
+/// new one's; only the store knows Apple would refuse the intro at purchase
+/// (Apple grants one intro offer per customer).
 IntroOffer? introOffer({
   required Package plan,
-  required bool trialActive,
   required Set<String> eligibleProductIds,
 }) {
   final intro = plan.storeProduct.introductoryPrice;
@@ -77,7 +72,7 @@ IntroOffer? introOffer({
   final days = _introDays(intro);
   final eligible = eligibleProductIds.contains(plan.storeProduct.identifier);
   if (days <= 0 || !eligible) return null;
-  if (intro.price == 0) return trialActive ? null : FreeTrial(days);
+  if (intro.price == 0) return FreeTrial(days);
   if (intro.price > 0) return PaidIntro(days, intro.priceString);
   return null;
 }

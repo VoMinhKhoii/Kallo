@@ -27,7 +27,6 @@ function entitlements(
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: true, endsAt: null, daysRemaining: 5 },
     enforcementEnabled: true,
     features: {} as EntitlementsResponse['features'],
     ...overrides,

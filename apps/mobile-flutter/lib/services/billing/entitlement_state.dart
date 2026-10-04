@@ -7,12 +7,10 @@ library;
 enum EntitlementTier { free, premium }
 
 /// Why a feature is (or isn't) allowed — mirrors the server `reason` union.
-enum FeatureReason { entitled, trial, trialExpired, notEntitled }
+enum FeatureReason { entitled, notEntitled }
 
 FeatureReason _parseReason(Object? raw) => switch (raw) {
   'entitled' => FeatureReason.entitled,
-  'trial' => FeatureReason.trial,
-  'trial_expired' => FeatureReason.trialExpired,
   _ => FeatureReason.notEntitled,
 };
 
@@ -48,28 +46,6 @@ class FeatureAccess {
   );
 }
 
-/// Free-trial window from the `trial` object.
-class TrialState {
-  const TrialState({
-    required this.active,
-    required this.endsAt,
-    required this.daysRemaining,
-  });
-
-  final bool active;
-  final DateTime? endsAt;
-  final int daysRemaining;
-
-  factory TrialState.fromJson(Map<String, dynamic>? json) => TrialState(
-    active: json?['active'] == true,
-    endsAt: _parseDate(json?['endsAt']),
-    daysRemaining:
-        json?['daysRemaining'] is int ? json!['daysRemaining'] as int : 0,
-  );
-
-  static const none = TrialState(active: false, endsAt: null, daysRemaining: 0);
-}
-
 /// The full parsed entitlement snapshot.
 class EntitlementState {
   const EntitlementState({
@@ -84,7 +60,6 @@ class EntitlementState {
     required this.managementUrl,
     required this.managementStore,
     required this.hasActiveSubscription,
-    required this.trial,
     required this.features,
     required this.enforcementEnabled,
   });
@@ -100,7 +75,6 @@ class EntitlementState {
   final String? managementUrl;
   final String? managementStore;
   final bool hasActiveSubscription;
-  final TrialState trial;
 
   /// Every gated feature the server reported, keyed by [PremiumFeature] name.
   ///
@@ -130,11 +104,6 @@ class EntitlementState {
 
   bool get isPremium => tier == EntitlementTier.premium;
 
-  /// True when the ONLY thing keeping the user premium is an active trial —
-  /// drives the trial-countdown copy on the paywall / settings.
-  bool get isTrialing =>
-      purchasesEnabled && trial.active && !hasActiveSubscription && !isLifetime;
-
   factory EntitlementState.fromJson(Map<String, dynamic> json) {
     final features = json['features'] as Map<String, dynamic>?;
     return EntitlementState(
@@ -152,7 +121,6 @@ class EntitlementState {
       managementUrl: json['managementUrl'] as String?,
       managementStore: json['managementStore'] as String?,
       hasActiveSubscription: json['hasActiveSubscription'] == true,
-      trial: TrialState.fromJson(json['trial'] as Map<String, dynamic>?),
       features: _parseFeatures(features),
       // Absent on a server that predates the rollout flag: default OFF, so an
       // old payload shows no locks rather than locking everything.
@@ -161,7 +129,7 @@ class EntitlementState {
   }
 
   /// Conservative fallback used before the first fetch resolves / on a hard
-  /// error: free, no trial, every feature locked. Never over-grants.
+  /// error: free, every feature locked. Never over-grants.
   static const free = EntitlementState(
     tier: EntitlementTier.free,
     purchasesEnabled: false,
@@ -174,7 +142,6 @@ class EntitlementState {
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: TrialState.none,
     features: {},
     enforcementEnabled: false,
   );

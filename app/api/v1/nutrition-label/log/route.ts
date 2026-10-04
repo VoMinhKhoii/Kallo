@@ -24,15 +24,12 @@ import { mapNutritionLabelError } from '../_errors';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { user, profile } = await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
     const body = logNutritionLabelMealSchema.parse(await readJsonBody(req));
 
     // Label scanning is premium: the throw is a 402 envelope via
     // `mapNutritionLabelError`'s pass-through default → `handleRouteError`.
-    await assertFeatureAccess(
-      { userId: user.id, profileCreatedAt: profile.createdAt },
-      'label_scan'
-    );
+    await assertFeatureAccess({ userId: user.id }, 'label_scan');
 
     const { analysisId } = await stageOcrMeal(user.id, body);
     const result = await confirmStagedMeal(user.id, analysisId, body.mealId);

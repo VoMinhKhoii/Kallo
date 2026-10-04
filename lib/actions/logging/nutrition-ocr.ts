@@ -73,10 +73,7 @@ export async function scanNutritionLabelAction(input: {
     }
     // Label scanning is premium. Returned as a code, never thrown: `scanErrorCode`
     // would classify a thrown FeatureLockedError as `server_error`.
-    const gate = await checkFeatureGate(
-      { userId: user.id, profileCreatedAt: profile.createdAt },
-      'label_scan'
-    );
+    const gate = await checkFeatureGate({ userId: user.id }, 'label_scan');
     if (gate.locked) return { success: false, code: 'feature_locked' };
 
     // Same per-user slot as the mobile route, wrapping validation, the `sharp`
@@ -116,12 +113,9 @@ export async function stageOcrMealAction(
 > {
   try {
     const parsed = logNutritionLabelMealSchema.parse(input);
-    const { user, profile } = await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
     // Same premium gate as the scan step, same return-don't-throw reasoning.
-    const gate = await checkFeatureGate(
-      { userId: user.id, profileCreatedAt: profile.createdAt },
-      'label_scan'
-    );
+    const gate = await checkFeatureGate({ userId: user.id }, 'label_scan');
     if (gate.locked) return { success: false, code: 'feature_locked' };
 
     return { success: true, ...(await stageOcrMeal(user.id, parsed)) };

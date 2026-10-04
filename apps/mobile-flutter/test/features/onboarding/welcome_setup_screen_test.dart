@@ -44,7 +44,6 @@ Map<String, dynamic> _entitlement({required bool premium}) => {
   'willRenew': false,
   'source': null,
   'hasActiveSubscription': premium,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {'allowed': true, 'reason': 'entitled'},
   },

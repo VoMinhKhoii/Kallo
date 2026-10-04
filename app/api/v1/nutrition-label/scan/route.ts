@@ -39,10 +39,7 @@ export async function POST(req: NextRequest) {
 
     // Label scanning is premium: the throw is a 402 envelope via
     // `mapNutritionLabelError`'s pass-through default → `handleRouteError`.
-    await assertFeatureAccess(
-      { userId: user.id, profileCreatedAt: profile.createdAt },
-      'label_scan'
-    );
+    await assertFeatureAccess({ userId: user.id }, 'label_scan');
 
     // The per-user slot wraps the WHOLE expensive region: reading a multi-MB
     // base64 body, validating it, the `sharp` decode inside

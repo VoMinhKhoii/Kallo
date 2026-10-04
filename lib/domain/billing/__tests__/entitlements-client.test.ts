@@ -9,14 +9,13 @@ import {
   featureLocked,
   fetchEntitlements,
   isPremium,
-  trialDaysRemaining,
 } from '@/lib/domain/billing/entitlements-client';
 import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
 import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 
 function makeFeatures(
   allowed: boolean,
-  reason: 'entitled' | 'trial' | 'trial_expired' | 'not_entitled'
+  reason: 'entitled' | 'not_entitled'
 ): EntitlementsResponse['features'] {
   return {
     ai_analysis: { allowed, reason },
@@ -46,7 +45,6 @@ function make(
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: false, endsAt: null, daysRemaining: 0 },
     features: makeFeatures(false, 'not_entitled'),
     ...overrides,
   };
@@ -83,23 +81,9 @@ describe('entitlement selectors', () => {
     expect(isPremium(undefined)).toBe(false);
   });
 
-  it('trialDaysRemaining returns 0 when the trial is inactive', () => {
-    expect(
-      trialDaysRemaining(
-        make({ trial: { active: true, endsAt: null, daysRemaining: 4 } })
-      )
-    ).toBe(4);
-    expect(
-      trialDaysRemaining(
-        make({ trial: { active: false, endsAt: null, daysRemaining: 4 } })
-      )
-    ).toBe(0);
-    expect(trialDaysRemaining(undefined)).toBe(0);
-  });
-
   it('aiAnalysisAllowed mirrors the feature flag, defaulting to false', () => {
     expect(
-      aiAnalysisAllowed(make({ features: makeFeatures(true, 'trial') }))
+      aiAnalysisAllowed(make({ features: makeFeatures(true, 'entitled') }))
     ).toBe(true);
     expect(aiAnalysisAllowed(make())).toBe(false);
     expect(aiAnalysisAllowed(undefined)).toBe(false);
@@ -116,7 +100,7 @@ describe('entitlement selectors', () => {
   it('featureLocked is true only when enforcement is on AND access denied', () => {
     expect(featureLocked(make(), 'relog')).toBe(true);
     expect(
-      featureLocked(make({ features: makeFeatures(true, 'trial') }), 'relog')
+      featureLocked(make({ features: makeFeatures(true, 'entitled') }), 'relog')
     ).toBe(false);
   });
 
@@ -224,41 +208,6 @@ describe('applyEntitlementSnapshot', () => {
       entitlementsKeys.user('user-a'),
       next
     );
-    expect(invalidateQueries).not.toHaveBeenCalled();
-  });
-
-  it('invalidates when a trial expires without the tier moving', () => {
-    // A trial runs on the free tier with micronutrients allowed; expiry flips
-    // the feature and the response SHAPE while `tier` never moves.
-    const { queryClient, invalidateQueries } = harness(
-      make({
-        tier: 'free',
-        features: makeFeatures(true, 'trial'),
-        trial: { active: true, endsAt: null, daysRemaining: 1 },
-      })
-    );
-
-    applyEntitlementSnapshot(
-      queryClient,
-      make({ tier: 'free', features: makeFeatures(false, 'trial_expired') })
-    );
-
-    expect(invalidateQueries).toHaveBeenCalledWith({
-      queryKey: nutritionKeys.all,
-    });
-  });
-
-  it('does not invalidate when a trial converts to premium', () => {
-    // The tier moves but access — and therefore the overview shape — does not.
-    const { queryClient, invalidateQueries } = harness(
-      make({ tier: 'free', features: makeFeatures(true, 'trial') })
-    );
-
-    applyEntitlementSnapshot(
-      queryClient,
-      make({ tier: 'premium', features: makeFeatures(true, 'entitled') })
-    );
-
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
 

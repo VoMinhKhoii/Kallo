@@ -2052,6 +2052,42 @@ export const billingWebhookEvents = pgTable(
   ]
 );
 
+// Who granted complimentary Premium from /admin/premium, to whom, for how long.
+// One row per grant action; the grants themselves are ordinary
+// `entitlement_grants` rows (source 'promo', external_ref
+// 'admin:<this id>:<user id>'). Server-only: RLS on, no policies, revoked from
+// the client roles in the creating migration. `admin_user_id` is deliberately
+// not a FK so the trail outlives a deleted admin account.
+export const premiumGrantAudit = pgTable(
+  'premium_grant_audit',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    adminUserId: uuid('admin_user_id').notNull(),
+    adminEmail: text('admin_email').notNull(),
+    scope: text('scope').notNull(),
+    days: integer('days').notNull(),
+    // Accounts that received a grant (resolved server-side at grant time).
+    userCount: integer('user_count').notNull(),
+    // The targeted account ids for scope 'users'; NULL for 'everyone'.
+    targetUserIds: uuid('target_user_ids').array(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'premium_grant_audit_scope_check',
+      sql`${table.scope} IN ('users', 'everyone')`
+    ),
+    check(
+      'premium_grant_audit_days_check',
+      sql`${table.days} BETWEEN 1 AND 365`
+    ),
+    index('premium_grant_audit_created_at_idx').on(table.createdAt),
+  ]
+);
+
 /**
  * Landing-page waitlist, with double opt-in.
  *

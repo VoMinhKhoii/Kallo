@@ -192,7 +192,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     ).rejects.toBeInstanceOf(FeatureLockedError);
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: 'user-123', profileCreatedAt: PROFILE_CREATED_AT },
+      { userId: 'user-123' },
       'relog'
     );
     expect(checkAnalysisGuards).not.toHaveBeenCalled();
@@ -241,7 +241,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     );
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: 'user-123', profileCreatedAt: PROFILE_CREATED_AT },
+      { userId: 'user-123' },
       'relog'
     );
     expect(checkAnalysisGuards).not.toHaveBeenCalled();

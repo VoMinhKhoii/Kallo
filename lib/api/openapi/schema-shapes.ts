@@ -215,17 +215,12 @@ const entitlements = object({
   managementUrl: { type: ['string', 'null'], format: 'uri' },
   managementStore: nullableString,
   hasActiveSubscription: { type: 'boolean' },
-  trial: object({
-    active: { type: 'boolean' },
-    endsAt: { type: ['string', 'null'], format: 'date-time' },
-    daysRemaining: { type: 'integer', minimum: 0 },
-  }),
   features: object({
     ai_analysis: object({
       allowed: { type: 'boolean' },
       reason: {
         type: 'string',
-        enum: ['entitled', 'trial', 'trial_expired', 'not_entitled'],
+        enum: ['entitled', 'not_entitled'],
       },
     }),
   }),

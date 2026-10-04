@@ -48,12 +48,9 @@ const POOL_SIZE = 18;
 /// curated list). Returns a pool the client pages through.
 export async function getFoodSourceCandidates(input: unknown) {
   const { nutrient } = foodSourceCandidatesInputSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
   // Food sources answer a micronutrient question, so they follow that gate.
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'micronutrients'
-  );
+  await assertFeatureAccess({ userId: user.id }, 'micronutrients');
   // The query below is an unindexed sequential scan of the whole composition
   // table (a `> 0` on an arbitrary nutrient column, three `NOT ILIKE` patterns,
   // an `ORDER BY` on that same column) against a two-connection pool. Guarded

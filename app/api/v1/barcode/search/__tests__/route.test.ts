@@ -87,7 +87,6 @@ describe('GET /api/v1/barcode/search', () => {
     expect(checkFeatureGate).toHaveBeenCalledWith(
       {
         userId: 'user-123',
-        profileCreatedAt: new Date('2026-09-01T00:00:00Z'),
       },
       'micronutrients'
     );

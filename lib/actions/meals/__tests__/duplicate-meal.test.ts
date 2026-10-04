@@ -68,7 +68,6 @@ import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
   LOGGED_AT,
-  MOCK_PROFILE,
   mockInsertRouting,
   MOCK_USER as mockUser,
   UUID_1,
@@ -244,7 +243,7 @@ describe('duplicateMealAction', () => {
     ).rejects.toBeInstanceOf(FeatureLockedError);
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: mockUser.id, profileCreatedAt: MOCK_PROFILE.createdAt },
+      { userId: mockUser.id },
       'relog'
     );
     // Nothing read, nothing written — the refusal happens ahead of the tx.

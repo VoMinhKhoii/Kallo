@@ -39,7 +39,6 @@ vi.mock(
 
 import {
   LOGGED_AT,
-  MOCK_PROFILE,
   MOCK_USER,
   UUID_MEAL,
 } from '@/lib/actions/meals/__tests__/meal-doubles';
@@ -111,7 +110,7 @@ describe('stageCheatRepeatAction', () => {
     );
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: MOCK_USER.id, profileCreatedAt: MOCK_PROFILE.createdAt },
+      { userId: MOCK_USER.id },
       'cheat_meal'
     );
     expect(mockDbSelect).not.toHaveBeenCalled();

@@ -54,7 +54,6 @@ import {
   chatGroups,
   friendships,
   publicProfiles,
-  userProfiles,
 } from '@/lib/infra/db/schema';
 
 /** Groups (`kind='group'`) a free user may belong to. */
@@ -70,7 +69,6 @@ export type CircleQuotaDb = AppDb | AppTransaction;
 interface ProfileMeta {
   userId: string;
   name: string;
-  profileCreatedAt: Date;
 }
 
 function enforcementOff(): boolean {
@@ -110,24 +108,14 @@ async function lockUserQuotas(
 
 async function isAllowed(
   db: CircleQuotaDb,
-  profile: ProfileMeta
+  userId: string
 ): Promise<
   { allowed: true } | { allowed: false; reason: FeatureLockedReason }
 > {
-  const access = await checkFeatureAccess(
-    { userId: profile.userId, profileCreatedAt: profile.profileCreatedAt },
-    FEATURE,
-    entitlementDeps(db)
-  );
-  if (access.allowed) return { allowed: true };
-  return {
-    allowed: false,
-    reason:
-      access.reason === 'trial_expired' ? 'trial_expired' : 'not_entitled',
-  };
+  return checkFeatureAccess({ userId }, FEATURE, entitlementDeps(db));
 }
 
-/** Display names live on `public_profiles`; the trial clock on `user_profiles`. */
+/** Display names live on `public_profiles`. */
 async function loadProfiles(
   db: CircleQuotaDb,
   userIds: string[]
@@ -137,11 +125,8 @@ async function loadProfiles(
       userId: publicProfiles.userId,
       displayName: publicProfiles.displayName,
       handle: publicProfiles.handle,
-      publicCreatedAt: publicProfiles.createdAt,
-      profileCreatedAt: userProfiles.createdAt,
     })
     .from(publicProfiles)
-    .leftJoin(userProfiles, eq(userProfiles.userId, publicProfiles.userId))
     .where(inArray(publicProfiles.userId, userIds));
 
   return new Map(
@@ -150,7 +135,6 @@ async function loadProfiles(
       {
         userId: row.userId,
         name: row.displayName?.trim() || row.handle,
-        profileCreatedAt: row.profileCreatedAt ?? row.publicCreatedAt,
       },
     ])
   );
@@ -158,8 +142,7 @@ async function loadProfiles(
 
 /**
  * The actor must hold `unlimited_circle` at all: free users cannot create
- * groups, add members, or send group chat messages. Chat actions authenticate
- * with `requireUserId()` alone, so the trial clock is read here.
+ * groups, add members, or send group chat messages.
  */
 export async function assertUnlimitedCircleActor(
   db: CircleQuotaDb,
@@ -167,19 +150,7 @@ export async function assertUnlimitedCircleActor(
 ): Promise<void> {
   if (enforcementOff()) return;
 
-  const rows = await db
-    .select({ profileCreatedAt: userProfiles.createdAt })
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, actorId))
-    .limit(1);
-  const profileCreatedAt = rows[0]?.profileCreatedAt;
-  if (!profileCreatedAt) throw Errors.profileNotFound();
-
-  const access = await isAllowed(db, {
-    userId: actorId,
-    name: '',
-    profileCreatedAt,
-  });
+  const access = await isAllowed(db, actorId);
   if (!access.allowed) throw Errors.featureLocked(FEATURE, access.reason);
 }
 
@@ -222,10 +193,10 @@ export async function assertGroupCapacity(
   const profiles = await loadProfiles(db, atCap);
   for (const userId of atCap) {
     const profile = profiles.get(userId);
-    // No profile row → nothing to evaluate the trial against; fail open
-    // rather than block a group on missing identity data.
+    // No profile row → no name to show; fail open rather than block a group
+    // on missing identity data.
     if (!profile) continue;
-    const access = await isAllowed(db, profile);
+    const access = await isAllowed(db, userId);
     if (access.allowed) continue;
     throw Errors.circleLimitReached(
       `${profile.name} đã đạt giới hạn ${FREE_GROUP_LIMIT} nhóm của gói miễn phí.`
@@ -283,7 +254,7 @@ export async function assertFriendCapacity(
   if (accepterFull) {
     const profile = profiles.get(accepterId);
     if (profile) {
-      const access = await isAllowed(db, profile);
+      const access = await isAllowed(db, profile.userId);
       if (!access.allowed) throw Errors.featureLocked(FEATURE, access.reason);
     }
   }
@@ -291,7 +262,7 @@ export async function assertFriendCapacity(
   if (inviterFull) {
     const profile = profiles.get(inviterId);
     if (profile) {
-      const access = await isAllowed(db, profile);
+      const access = await isAllowed(db, profile.userId);
       if (!access.allowed) {
         const name = profile.name || inviterName;
         throw Errors.circleLimitReached(

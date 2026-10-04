@@ -36,7 +36,6 @@ const {
 const ACTOR = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const MEMBER = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 const INVITER = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
-const CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 
 // A drizzle-shaped fake: `select()` hands back a real Promise of the next
 // queued result set with every builder method attached, so any chain
@@ -84,8 +83,6 @@ function profileRow(userId: string, displayName: string | null) {
     userId,
     displayName,
     handle: 'handle',
-    publicCreatedAt: CREATED_AT,
-    profileCreatedAt: CREATED_AT,
   };
 }
 
@@ -156,8 +153,7 @@ describe('advisory locking', () => {
   });
 
   it('does not lock for the actor-entitlement check', async () => {
-    const { db, queue, execute } = makeDb();
-    queue.push([{ profileCreatedAt: CREATED_AT }]);
+    const { db, execute } = makeDb();
     mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
 
     await assertUnlimitedCircleActor(db, ACTOR);
@@ -167,26 +163,24 @@ describe('advisory locking', () => {
 
 describe('assertUnlimitedCircleActor', () => {
   it('passes an entitled actor', async () => {
-    const { db, queue } = makeDb();
-    queue.push([{ profileCreatedAt: CREATED_AT }]);
+    const { db } = makeDb();
     mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
 
     await expect(
       assertUnlimitedCircleActor(db, ACTOR)
     ).resolves.toBeUndefined();
     expect(mockCheckFeatureAccess).toHaveBeenCalledWith(
-      { userId: ACTOR, profileCreatedAt: CREATED_AT },
+      { userId: ACTOR },
       'unlimited_circle',
       { db }
     );
   });
 
   it('throws a 402 for a free actor', async () => {
-    const { db, queue } = makeDb();
-    queue.push([{ profileCreatedAt: CREATED_AT }]);
+    const { db } = makeDb();
     mockCheckFeatureAccess.mockResolvedValue({
       allowed: false,
-      reason: 'trial_expired',
+      reason: 'not_entitled',
     });
 
     const error = await assertUnlimitedCircleActor(db, ACTOR).catch(
@@ -194,18 +188,7 @@ describe('assertUnlimitedCircleActor', () => {
     );
     expect(error).toBeInstanceOf(FeatureLockedError);
     expect((error as FeatureLockedError).status).toBe(402);
-    expect((error as FeatureLockedError).reason).toBe('trial_expired');
-  });
-
-  it('throws PROFILE_NOT_FOUND when the actor has no profile row', async () => {
-    const { db, queue } = makeDb();
-    queue.push([]);
-
-    const error = await assertUnlimitedCircleActor(db, ACTOR).catch(
-      (e: unknown) => e
-    );
-    expect((error as AppError).code).toBe('PROFILE_NOT_FOUND');
-    expect(mockCheckFeatureAccess).not.toHaveBeenCalled();
+    expect((error as FeatureLockedError).reason).toBe('not_entitled');
   });
 });
 

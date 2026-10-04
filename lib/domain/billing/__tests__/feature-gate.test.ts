@@ -24,10 +24,7 @@ const { assertFeatureAccess, checkFeatureGate } = await import(
   '@/lib/domain/billing/feature-gate'
 );
 
-const input = {
-  userId: '11111111-1111-1111-1111-111111111111',
-  profileCreatedAt: new Date('2026-01-01T00:00:00.000Z'),
-};
+const input = { userId: '11111111-1111-1111-1111-111111111111' };
 
 beforeEach(() => {
   mockCheckFeatureAccess.mockReset();
@@ -53,19 +50,6 @@ describe('checkFeatureGate', () => {
       input,
       'micronutrients'
     );
-  });
-
-  it('enforcement on + trial_expired → locked with that reason', async () => {
-    setEnforcement(true);
-    mockCheckFeatureAccess.mockResolvedValue({
-      allowed: false,
-      reason: 'trial_expired',
-    });
-
-    await expect(checkFeatureGate(input, 'cheat_meal')).resolves.toEqual({
-      locked: true,
-      reason: 'trial_expired',
-    });
   });
 
   it('enforcement on + not_entitled → locked with that reason', async () => {

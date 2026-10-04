@@ -128,7 +128,8 @@ export class RateLimitUnavailableError extends AppError {
 export type RateLimitUnavailableKind = 'timeout' | 'error';
 
 // Reasons a gated feature is locked, mirrored from the entitlement service.
-export type FeatureLockedReason = 'trial_expired' | 'not_entitled';
+// A union of one: the wire field stays so clients can key on it.
+export type FeatureLockedReason = 'not_entitled';
 
 // FeatureLockedError — a 402 with the extra `feature` + `reason` fields the
 // client keys on to open the paywall. Extends AppError so serializeError and

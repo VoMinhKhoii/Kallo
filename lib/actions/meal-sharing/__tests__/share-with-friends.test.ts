@@ -114,7 +114,6 @@ import {
   friendEdge,
   type InsertCaptures,
   MOCK_USER as mockUser,
-  PROFILE_CREATED_AT,
   routeInserts,
   sourceItem,
   sourceMeal,
@@ -716,7 +715,7 @@ describe('shareMealWithFriendsAction — premium (copy_split)', () => {
     ).rejects.toBeInstanceOf(FeatureLockedError);
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      { userId: mockUser.id },
       'copy_split'
     );
     expect(mockTxSelect).not.toHaveBeenCalled();

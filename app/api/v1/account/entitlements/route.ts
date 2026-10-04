@@ -6,14 +6,11 @@ import {
 } from '@/lib/domain/billing/billing';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-/** Derived entitlement/trial view for the authenticated user. */
+/** Derived entitlement view for the authenticated user. */
 export async function GET() {
   try {
     const { profile } = await requireAuthAndProfile();
-    const state = await getEntitlementState({
-      userId: profile.userId,
-      profileCreatedAt: profile.createdAt,
-    });
+    const state = await getEntitlementState({ userId: profile.userId });
     const purchasesEnabled =
       getBillingConfig().purchasesEnabled ||
       isBillingSandboxUser(profile.userId);
@@ -32,11 +29,6 @@ export async function GET() {
       managementUrl: state.managementUrl,
       managementStore: state.managementStore,
       hasActiveSubscription: state.hasActiveSubscription,
-      trial: {
-        active: state.trial.active,
-        endsAt: state.trial.endsAt?.toISOString() ?? null,
-        daysRemaining: state.trial.daysRemaining,
-      },
       features: state.features,
     });
   } catch (error) {

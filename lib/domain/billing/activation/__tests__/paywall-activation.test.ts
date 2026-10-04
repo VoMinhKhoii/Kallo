@@ -33,7 +33,6 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: false, endsAt: null, daysRemaining: 0 },
     features: entitlementFeatures(tier === 'premium'),
   };
 }

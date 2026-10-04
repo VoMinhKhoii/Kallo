@@ -99,15 +99,6 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
         namedArgs: {'date': formatted},
       );
     }
-    if (value.isTrialing) {
-      final days = value.trial.daysRemaining;
-      return days <= 1
-          ? tr('settings.subscription.statusTrialLastDay')
-          : tr(
-            'settings.subscription.statusTrial',
-            namedArgs: {'days': '$days'},
-          );
-    }
     return tr('settings.subscription.statusFree');
   }
 

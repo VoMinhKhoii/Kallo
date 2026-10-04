@@ -165,10 +165,7 @@ export async function getNutritionOverview(
 
   // Started before the window queries so the entitlement read (when
   // enforcement is on at all) overlaps them instead of adding a round trip.
-  const gatePromise = checkFeatureGate(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'micronutrients'
-  );
+  const gatePromise = checkFeatureGate({ userId: user.id }, 'micronutrients');
   // It is only awaited AFTER `buildOverview`, so a window-query failure would
   // leave this one rejecting with nobody listening — an unhandled rejection
   // that can take the process down. A detached no-op observer marks it handled

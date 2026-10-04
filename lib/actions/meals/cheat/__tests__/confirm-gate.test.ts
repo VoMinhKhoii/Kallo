@@ -36,11 +36,7 @@ vi.mock(
     (await import('@/lib/actions/meals/__tests__/meal-doubles')).schema
 );
 
-import {
-  MOCK_PROFILE,
-  MOCK_USER,
-  UUID_1,
-} from '@/lib/actions/meals/__tests__/meal-doubles';
+import { MOCK_USER, UUID_1 } from '@/lib/actions/meals/__tests__/meal-doubles';
 import { assertCheatConfirmAllowed } from '@/lib/actions/meals/cheat/confirm';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 
@@ -54,8 +50,7 @@ function queuePending(rows: unknown[]) {
   });
 }
 
-const call = () =>
-  assertCheatConfirmAllowed(MOCK_USER.id, MOCK_PROFILE.createdAt, UUID_1);
+const call = () => assertCheatConfirmAllowed(MOCK_USER.id, UUID_1);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -79,7 +74,7 @@ describe('assertCheatConfirmAllowed', () => {
     await call();
 
     expect(assertFeatureAccess).toHaveBeenCalledWith(
-      { userId: MOCK_USER.id, profileCreatedAt: MOCK_PROFILE.createdAt },
+      { userId: MOCK_USER.id },
       'cheat_meal'
     );
   });

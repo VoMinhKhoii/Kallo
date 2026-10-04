@@ -7,23 +7,21 @@
 export type EntitlementKey = 'premium';
 
 export interface FeatureRule {
-  // The entitlement a user must hold for this feature (outside of trial).
+  // The entitlement a user must hold for this feature.
   required: EntitlementKey;
-  // Whether the app-level trial grants access to this feature.
-  trialCovered: boolean;
 }
 
 export const FEATURES = {
-  ai_analysis: { required: 'premium', trialCovered: true },
-  label_scan: { required: 'premium', trialCovered: true },
-  micronutrients: { required: 'premium', trialCovered: true },
-  relog: { required: 'premium', trialCovered: true },
-  cheat_meal: { required: 'premium', trialCovered: true },
+  ai_analysis: { required: 'premium' },
+  label_scan: { required: 'premium' },
+  micronutrients: { required: 'premium' },
+  relog: { required: 'premium' },
+  cheat_meal: { required: 'premium' },
   // Charged to whoever INITIATES the copy/split (sending an offer, or pulling a
   // copy off the feed). Responding to an offer is deliberately ungated — see
   // lib/actions/meal-sharing/invite-response.ts.
-  copy_split: { required: 'premium', trialCovered: true },
-  unlimited_circle: { required: 'premium', trialCovered: true },
+  copy_split: { required: 'premium' },
+  unlimited_circle: { required: 'premium' },
 } as const satisfies Record<string, FeatureRule>;
 
 export type FeatureKey = keyof typeof FEATURES;

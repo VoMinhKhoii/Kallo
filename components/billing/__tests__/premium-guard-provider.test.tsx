@@ -43,7 +43,6 @@ function entitlements(
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: false, endsAt: null, daysRemaining: 0 },
     enforcementEnabled: true,
     features: {
       ai_analysis: { allowed: false, reason: 'not_entitled' },

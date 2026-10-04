@@ -12,11 +12,7 @@ import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 // that subscribes to it lives in `@/hooks/billing/use-entitlements`.
 
 /** Feature-gate reasons mirrored from the server entitlement service. */
-export type FeatureAccessReason =
-  | 'entitled'
-  | 'trial'
-  | 'trial_expired'
-  | 'not_entitled';
+export type FeatureAccessReason = 'entitled' | 'not_entitled';
 
 /** Shape of GET /api/v1/account/entitlements (the fixed server contract). */
 export interface EntitlementsResponse {
@@ -39,11 +35,6 @@ export interface EntitlementsResponse {
   managementUrl: string | null;
   managementStore: string | null;
   hasActiveSubscription: boolean;
-  trial: {
-    active: boolean;
-    endsAt: string | null;
-    daysRemaining: number;
-  };
   // The BILLING_ENFORCEMENT_ENABLED kill-switch as the server sees it. With it
   // off the server gates nothing, so the client must not lock anything either
   // — `featureLocked` reads this before it reads `features`.
@@ -110,11 +101,9 @@ export async function reconcileEntitlements(
  * cache away several times per checkout and once per tab focus forever after.
  *
  * It compares the FEATURE, not `tier`, because the feature is what the server
- * strips on: a free-tier trial carries `micronutrients.allowed: true`, so at
- * trial expiry the tier never moves while the response shape does — a tier
- * comparison would keep serving the unstripped overview. It also cuts the other
- * way: converting a trial to premium changes the tier but not the shape, so
- * there is nothing to refetch.
+ * strips on — the two could only diverge if a tier ever stopped implying the
+ * same feature set, and the feature is the one that decides the response
+ * shape.
  *
  * Scope: nutrition is the ONLY cached GET whose response SHAPE depends on an
  * entitlement (`stripMicronutrients`). The other gates — relog, cheat repeat,
@@ -155,12 +144,6 @@ export function applyEntitlementSnapshot(
 
 export function isPremium(data: EntitlementsResponse | undefined): boolean {
   return data?.tier === 'premium';
-}
-
-export function trialDaysRemaining(
-  data: EntitlementsResponse | undefined
-): number {
-  return data?.trial.active ? data.trial.daysRemaining : 0;
 }
 
 /** Does the server say this feature is available? Defaults to false. */

@@ -77,7 +77,6 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     final offer = paywallOffer(
       packages: widget.state.packages,
       yearlyPicked: _yearly,
-      trial: widget.entitlement.trial,
       trialEligibleProductIds: widget.state.trialEligibleProductIds,
       locale: context.locale.toString(),
       now: ref.read(paywallClockProvider)(),

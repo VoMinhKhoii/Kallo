@@ -36,7 +36,7 @@ export async function stageCheatInviteAction(input: {
   inviteId: string;
 }): Promise<StagedCheatAnalysis> {
   const parsed = stageCheatInviteSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
 
   // Gated HERE, before the invite is consumed, and not at confirm.
   //
@@ -49,10 +49,7 @@ export async function stageCheatInviteAction(input: {
   // Outside the transaction on purpose: DB_POOL_MAX defaults to 2, so an
   // entitlement read inside an open transaction can deadlock the pool (the
   // same reason documented in cheat/confirm.ts).
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'cheat_meal'
-  );
+  await assertFeatureAccess({ userId: user.id }, 'cheat_meal');
 
   return withNotifications(db, async (tx, notify) => {
     // Everything up to and including the claim is shared with the precise

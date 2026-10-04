@@ -1,5 +1,4 @@
 import { and, eq } from 'drizzle-orm';
-import { getBillingConfig } from '@/lib/domain/billing/entitlement/config';
 import {
   FEATURES,
   type FeatureKey,
@@ -15,17 +14,7 @@ import { entitlementGrants } from '@/lib/infra/db/schema';
 
 export type Tier = 'free' | 'premium';
 
-export type FeatureAccessReason =
-  | 'entitled'
-  | 'trial'
-  | 'trial_expired'
-  | 'not_entitled';
-
-export interface TrialState {
-  active: boolean;
-  endsAt: Date | null;
-  daysRemaining: number;
-}
+export type FeatureAccessReason = 'entitled' | 'not_entitled';
 
 export interface FeatureAccess {
   allowed: boolean;
@@ -46,7 +35,6 @@ export interface EntitlementState {
   managementUrl: string | null;
   managementStore: string | null;
   hasActiveSubscription: boolean;
-  trial: TrialState;
   features: Record<FeatureKey, FeatureAccess>;
 }
 
@@ -58,7 +46,6 @@ export interface EntitlementDeps {
 
 export interface EntitlementInput {
   userId: string;
-  profileCreatedAt: Date;
 }
 
 // A grant only counts when it is BOTH marked active AND still within its
@@ -123,63 +110,10 @@ function pickWinningGrant(grants: GrantRow[]): GrantRow | null {
   return winner;
 }
 
-function computeTrial(profileCreatedAt: Date, now: Date): TrialState {
-  const config = getBillingConfig();
-
-  // No app-level trial configured (the default: the paid first week is sold
-  // by the stores). Not "active with 0 days left" — clients would print a
-  // last-day countdown. Locking nobody out before launch does not depend on
-  // this: enforcement cannot be on without a launch date.
-  if (config.trialDays === 0) {
-    return { active: false, endsAt: null, daysRemaining: 0 };
-  }
-
-  // Fail open: with no launch date configured, the owner has not opened the
-  // paywall yet, so nobody may be locked out — the trial is always active.
-  if (config.launchDate === null) {
-    return { active: true, endsAt: null, daysRemaining: config.trialDays };
-  }
-
-  // Trial starts at the later of signup and launch, so existing users get a
-  // fresh window when the paywall goes live rather than an already-expired one.
-  const trialStart = new Date(
-    Math.max(profileCreatedAt.getTime(), config.launchDate.getTime())
-  );
-  const endsAt = new Date(
-    trialStart.getTime() + config.trialDays * 24 * 60 * 60 * 1000
-  );
-
-  const active = now.getTime() < endsAt.getTime();
-  const remainingMs = endsAt.getTime() - now.getTime();
-  const daysRemaining = Math.max(
-    0,
-    Math.ceil(remainingMs / (24 * 60 * 60 * 1000))
-  );
-
-  return { active, endsAt, daysRemaining };
-}
-
-function evaluateFeature(
-  rule: FeatureRule,
-  tier: Tier,
-  trial: TrialState,
-  trialOffered: boolean
-): FeatureAccess {
-  const entitled = tier === rule.required;
-  if (entitled) return { allowed: true, reason: 'entitled' };
-
-  if (rule.trialCovered && trial.active) {
-    return { allowed: true, reason: 'trial' };
-  }
-
-  // Blocked. If a trial once covered this feature and has since ended, the
-  // reason is 'trial_expired'; otherwise the feature was never trial-covered
-  // or no app-level trial is offered at all.
-  const reason: FeatureAccessReason =
-    rule.trialCovered && !trial.active && trialOffered
-      ? 'trial_expired'
-      : 'not_entitled';
-  return { allowed: false, reason };
+function evaluateFeature(rule: FeatureRule, tier: Tier): FeatureAccess {
+  return tier === rule.required
+    ? { allowed: true, reason: 'entitled' }
+    : { allowed: false, reason: 'not_entitled' };
 }
 
 export async function getEntitlementState(
@@ -214,12 +148,10 @@ export async function getEntitlementState(
   const managementGrant = pickWinningGrant(activeSubscriptions);
 
   const tier: Tier = winner ? 'premium' : 'free';
-  const trial = computeTrial(input.profileCreatedAt, now);
-  const trialOffered = getBillingConfig().trialDays > 0;
 
   const features = {} as Record<FeatureKey, FeatureAccess>;
   for (const key of Object.keys(FEATURES) as FeatureKey[]) {
-    features[key] = evaluateFeature(FEATURES[key], tier, trial, trialOffered);
+    features[key] = evaluateFeature(FEATURES[key], tier);
   }
 
   return {
@@ -236,14 +168,13 @@ export async function getEntitlementState(
       managementGrant?.managementUrl ?? winner?.managementUrl ?? null,
     managementStore: managementGrant?.store ?? null,
     hasActiveSubscription: managementGrant !== null,
-    trial,
     features,
   };
 }
 
 export type FeatureAccessResult =
   | { allowed: true }
-  | { allowed: false; reason: FeatureAccessReason };
+  | { allowed: false; reason: 'not_entitled' };
 
 /**
  * Thin wrapper over getEntitlementState for a single feature.
@@ -258,8 +189,7 @@ export async function checkFeatureAccess(
   deps?: EntitlementDeps
 ): Promise<FeatureAccessResult> {
   const state = await getEntitlementState(input, deps);
-  const access = state.features[feature];
-  return access.allowed
+  return state.features[feature].allowed
     ? { allowed: true }
-    : { allowed: false, reason: access.reason };
+    : { allowed: false, reason: 'not_entitled' };
 }
