@@ -597,11 +597,14 @@ Apply the data boundary first, then ship dark and flip switches:
    and app-ID filtering are verified; only then may the production variable be
    set to `true` for transfer/redemption events that omit environment.
 4. **Configure dashboards**: complete the remaining store checklists.
-5. **Apply welcome premium at launch**: the owner runs
-   `20261002131554_welcome_premium_grants.sql` (14 days for every existing
-   account from that moment, and for each new signup from then on) and
-   `20261004092714_add_premium_grant_audit.sql`. Apply it when the launch clock
-   should start — the backfill window begins at apply time.
+5. **Start welcome premium at launch**: `20261002131554_welcome_premium_grants.sql`
+   gives every existing account 14 days from the moment it applies, and each
+   new signup 14 days from then on. The prod deploy workflow
+   (`cloud-run-prod.yml`) applies pending migrations automatically
+   (`supabase db push`), so **the first prod deploy carrying this migration
+   starts the clock** — deploy it at launch, not days before. Re-running never
+   resets or extends the window (`ON CONFLICT DO NOTHING`); to give a later
+   launch window, use `/admin/premium` → Everyone.
 6. **Announce** the launch to users.
 7. **Open commerce**: set `BILLING_PURCHASES_ENABLED=true`, verify offerings,
    prices, and purchase activation, then set `BILLING_ENFORCEMENT_ENABLED=true`.

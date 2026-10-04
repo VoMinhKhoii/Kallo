@@ -6,7 +6,7 @@ function formatDate(date: Date) {
 
 export function RecentGrantsTable({ grants }: { grants: RecentGrant[] }) {
   return (
-    <div className="rounded-xl border bg-white">
+    <div className="rounded-xl border bg-card text-card-foreground">
       <div className="border-b px-5 py-3">
         <h2 className="font-semibold text-sm">Recent grants</h2>
       </div>

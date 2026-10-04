@@ -167,6 +167,10 @@ export async function getEntitlementState(
     tier,
     reconciliationRequired:
       revenueCatProjectionIsStale(winner, now) ||
+      // A promo can win access while a subscription owns the lifecycle
+      // fields; that subscription still needs its 24h freshness check, or a
+      // missed refund or cancellation would sit until the period ends.
+      revenueCatProjectionIsStale(managementGrant, now) ||
       rows.some((grant) => grantNeedsReconciliation(grant, now)),
     isLifetime: winner?.expiresAt === null && winner !== null,
     expiresAt: renewing?.expiresAt ?? winner?.expiresAt ?? null,

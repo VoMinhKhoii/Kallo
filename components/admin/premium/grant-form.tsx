@@ -63,7 +63,7 @@ export function GrantForm() {
   };
 
   return (
-    <div className="flex flex-col gap-5 rounded-xl border bg-white p-5">
+    <div className="flex flex-col gap-5 rounded-xl border bg-card p-5 text-card-foreground">
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 font-medium text-sm">Who gets Premium</legend>
         <div className="flex gap-2">

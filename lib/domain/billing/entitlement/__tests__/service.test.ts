@@ -184,6 +184,26 @@ describe('getEntitlementState — welcome premium', () => {
     expect(state.expiresAt?.toISOString()).toBe('2026-08-12T00:00:00.000Z');
   });
 
+  it('a stale subscription behind a winning promo still asks for reconciliation', async () => {
+    const stale = introWeek(true).map((grant) =>
+      grant.source === 'revenuecat'
+        ? { ...grant, providerSyncedAt: new Date('2026-08-08T00:00:00.000Z') }
+        : grant
+    );
+    const fresh = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(stale), now }
+    );
+
+    expect(fresh.reconciliationRequired).toBe(false);
+    expect(state.source).toBe('promo');
+    expect(state.reconciliationRequired).toBe(true);
+  });
+
   it('a cancelled subscription reports the furthest access date', async () => {
     const state = await getEntitlementState(
       { userId },
