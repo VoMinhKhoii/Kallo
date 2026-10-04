@@ -47,7 +47,9 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
 | `R2_BUCKET_PREFIX` | runtime env | `kallo-prod` in prod, `kallo-dev` locally |
 | `NEXT_PUBLIC_AVATAR_BASE_URL` | Docker build arg (GitHub variable) | `https://media.kallo.fit` in prod |
 
-A missing credential makes every storage call throw a clear error.
+CI refuses to publish an image without `NEXT_PUBLIC_AVATAR_BASE_URL` and
+`R2_ACCOUNT_ID`, and the prod deploy checks both plus the two secrets before
+deploying. A missing credential makes every storage call throw a clear error.
 `removeMyAvatar` and `deleteAccountAction` check the credentials before their
 first write, so they fail without half-finishing.
 

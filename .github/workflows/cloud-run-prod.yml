@@ -126,6 +126,7 @@ jobs:
           gcloud secrets versions access latest \
             --secret=kallo-prod-apns-key-p8 > /dev/null
           [ -n "${{ vars.R2_ACCOUNT_ID }}" ]
+          [ -n "${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}" ]
           [ -n "${{ vars.APNS_KEY_ID }}" ]
           [ -n "${{ vars.REVENUECAT_ALLOWED_APP_IDS }}" ]
           [ -n "${{ vars.REVENUECAT_PROJECT_ID }}" ]

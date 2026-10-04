@@ -192,6 +192,14 @@ jobs:
       - name: Configure Docker authentication
         if: env.PUBLISH == 'true'
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+      - name: Require the storage build args on published images
+        # Both are baked in at build: an empty avatar origin would ship an image
+        # whose avatarUrlFor() returns null and whose CSP blocks the avatar
+        # domain — every avatar silently missing (docs/STORAGE.md).
+        if: env.PUBLISH == 'true'
+        run: |
+          [ -n "${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}" ] || { echo "Set the NEXT_PUBLIC_AVATAR_BASE_URL repo variable." >&2; exit 1; }
+          [ -n "${{ vars.R2_ACCOUNT_ID }}" ] || { echo "Set the R2_ACCOUNT_ID repo variable." >&2; exit 1; }
       - name: Build container image
         env:
           # Optional: unset → the build skips the Sentry source-map upload.

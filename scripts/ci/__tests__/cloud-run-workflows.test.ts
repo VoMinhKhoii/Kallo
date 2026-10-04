@@ -114,6 +114,11 @@ describe('Cloud Run prod workflow', () => {
     expect(ci).toContain(
       `--build-arg R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`
     );
+    // …and a published image may not be built without them.
+    expect(ci).toContain('Require the storage build args on published images');
+    expect(ci).toContain(
+      `[ -n "\${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}" ] ||`
+    );
   });
 
   it('mounts the Sign in with Apple secrets only once they exist', () => {
