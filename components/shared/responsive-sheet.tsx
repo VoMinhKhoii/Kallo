@@ -1,8 +1,18 @@
 'use client';
 
 import type * as React from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
 import { cn } from '@/lib/core/ui/cn';
 
@@ -32,6 +42,8 @@ export function ResponsiveSheet({
   onOpenChange,
   dismissible = true,
   title,
+  trigger,
+  returnFocusRef,
   className,
   children,
 }: {
@@ -41,6 +53,13 @@ export function ResponsiveSheet({
   /** Accessible name. Rendered visually by `ResponsiveSheetHeader`; this is
    * the screen-reader title Radix and vaul both require. */
   title: string;
+  /** The control that opens the sheet. Registering it is what returns focus
+   *  to it on close; an opener outside the primitive leaves keyboard and
+   *  screen-reader users at the top of the document. */
+  trigger?: React.ReactNode;
+  /** Where focus goes on close for a sheet with no `trigger` of its own —
+   *  one opened from another sheet, whose row is gone by then. */
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -53,6 +72,12 @@ export function ResponsiveSheet({
     if (!next && !dismissible) return;
     onOpenChange(next);
   };
+  // Without a ref the primitive's own close focus (back to `trigger`) runs.
+  const handleCloseAutoFocus = (event: Event) => {
+    if (!returnFocusRef?.current) return;
+    event.preventDefault();
+    returnFocusRef.current.focus();
+  };
 
   if (isMobile) {
     return (
@@ -61,8 +86,10 @@ export function ResponsiveSheet({
         onOpenChange={handleOpenChange}
         dismissible={dismissible}
       >
+        {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
         <DrawerContent
           aria-describedby={undefined}
+          onCloseAutoFocus={handleCloseAutoFocus}
           className={cn(
             surface,
             'max-h-[90dvh] rounded-t-[22px] border-t',
@@ -80,8 +107,10 @@ export function ResponsiveSheet({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
         aria-describedby={undefined}
+        onCloseAutoFocus={handleCloseAutoFocus}
         showCloseButton={false}
         onEscapeKeyDown={(event) => {
           if (!dismissible) event.preventDefault();

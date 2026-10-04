@@ -16,7 +16,8 @@ import {
 } from '@/lib/domain/onboarding/progress';
 import { readStepOneLocaleDraft } from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { DesktopSidebar } from '../navigation/desktop-sidebar';
-import { MobileNav } from '../navigation/mobile-nav';
+import { MobileTabBar } from '../navigation/mobile/mobile-tab-bar';
+import { MobileHeader } from '../navigation/mobile-header';
 import type { UserMenuUser } from '../navigation/user-menu';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -120,6 +121,15 @@ export function AppShell({
     }
   };
 
+  const onboarding = {
+    onboardingIncomplete: showOnboardingNudge,
+    onboardingStep,
+    onResumeOnboarding: handleResume,
+    isOnboardingMinimized,
+    onMinimizeOnboarding: handleMinimizeNudge,
+    onRestoreOnboarding: handleRestoreNudge,
+  };
+
   // Pin the authenticated shell to the viewport. A document-flow `h-dvh`
   // shell still let the document itself scroll beneath Settings on some
   // browsers, exposing a blank page below the sidebar. Public routes remain
@@ -134,40 +144,36 @@ export function AppShell({
   // to cause this: per CSS Overflow 3, `hidden` on one axis computes the other
   // axis to `auto`. Everything in the row must also size off this box (the
   // sidebar uses h-full, not a vh literal) so it can never overflow it.
+  //
+  // Below md the shell is a column — header, page, tab bar — with no outer
+  // padding: each page owns its own 12–16px gutter, which is the phone's whole
+  // margin (the desktop's p-3 frame stacked on top of it read as a web page in
+  // a box). The top edge clears the notch via the safe-area inset.
   return (
-    <div className="fixed inset-0 flex min-w-0 overflow-clip bg-kallo-surface">
-      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip p-3">
+    <div
+      data-app-shell=""
+      className="fixed inset-0 flex min-w-0 flex-col overflow-clip bg-kallo-surface md:flex-row"
+    >
+      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip pt-[env(safe-area-inset-top)] md:p-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">
           <DesktopSidebar
             user={user}
             isAdmin={isAdmin}
-            onboardingIncomplete={showOnboardingNudge}
-            onboardingStep={onboardingStep}
-            onResumeOnboarding={handleResume}
-            isOnboardingMinimized={isOnboardingMinimized}
-            onMinimizeOnboarding={handleMinimizeNudge}
-            onRestoreOnboarding={handleRestoreNudge}
+            {...onboarding}
             initialState={initialSidebarState}
             initialExpandMode={initialSidebarExpandMode}
           />
         </div>
 
-        {/* Page content (mobile gets a hamburger header reserving space above) */}
+        {/* Page content (mobile gets a slim header row above it) */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
-          <MobileNav
-            user={user}
-            isAdmin={isAdmin}
-            onboardingIncomplete={showOnboardingNudge}
-            onboardingStep={onboardingStep}
-            onResumeOnboarding={handleResume}
-            isOnboardingMinimized={isOnboardingMinimized}
-            onMinimizeOnboarding={handleMinimizeNudge}
-            onRestoreOnboarding={handleRestoreNudge}
-          />
+          <MobileHeader user={user} isAdmin={isAdmin} {...onboarding} />
           {children}
         </div>
       </div>
+
+      <MobileTabBar />
 
       {onboardingOpen && (
         <WizardShell

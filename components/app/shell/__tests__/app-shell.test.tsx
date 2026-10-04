@@ -59,8 +59,12 @@ vi.mock('@/components/app/navigation/desktop-sidebar', () => ({
   ),
 }));
 
-vi.mock('@/components/app/navigation/mobile-nav', () => ({
-  MobileNav: () => <div data-testid="mobile-nav" />,
+vi.mock('@/components/app/navigation/mobile-header', () => ({
+  MobileHeader: () => <div data-testid="mobile-header" />,
+}));
+
+vi.mock('@/components/app/navigation/mobile/mobile-tab-bar', () => ({
+  MobileTabBar: () => <nav data-testid="mobile-tab-bar" />,
 }));
 
 describe('AppShell', () => {
@@ -142,6 +146,26 @@ describe('AppShell', () => {
     const shell = container.firstElementChild;
     expect(shell).toHaveClass('fixed', 'inset-0', 'overflow-clip');
     expect(shell).not.toHaveClass('h-dvh');
+  });
+
+  it('stacks the page above the mobile tab bar, edge to edge on phones', () => {
+    const { container } = render(
+      <AppShell onboardingStep={2} initialProfile={null} isFirstSession={false}>
+        <div>Content</div>
+      </AppShell>
+    );
+
+    const shell = container.firstElementChild;
+    // A column on phones (page, then bar), the sidebar row from md up.
+    expect(shell).toHaveClass('flex-col', 'md:flex-row');
+    expect(shell?.lastElementChild).toHaveAttribute(
+      'data-testid',
+      'mobile-tab-bar'
+    );
+    // The desktop frame's p-3 applies from md only — pages own the phone gutter.
+    const row = shell?.firstElementChild;
+    expect(row).toHaveClass('md:p-3');
+    expect(row).not.toHaveClass('p-3');
   });
 
   it('rolls the minimized nudge back when restore persistence fails', async () => {

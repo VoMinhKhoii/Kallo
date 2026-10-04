@@ -1,0 +1,65 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+import type { RefObject } from 'react';
+import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
+import { DashboardSectionState } from '@/components/dashboard/dashboard-section-state';
+import { ResponsiveModal } from '@/components/shared/responsive-modal';
+import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
+import { getTodayDateString } from '@/lib/domain/dashboard/today';
+
+interface QuickWeightSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Where focus returns on close — this sheet has no trigger of its own. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
+}
+
+/**
+ * The weigh-in sheet behind the tab bar's "+" → "Log weight", the web twin of
+ * Flutter's `showWeightLogSheet`. Unlike `WeightLogDialog` it is opened from
+ * outside the dashboard, so it loads the weight it prefills from itself — only
+ * while open, off the same cached summary query the Progress card reads.
+ */
+export function QuickWeightSheet({
+  open,
+  onOpenChange,
+  returnFocusRef,
+}: QuickWeightSheetProps) {
+  const t = useTranslations('dashboard');
+  const tAdd = useTranslations('app.addSheet');
+  const summary = useWeightSummary('30d', { enabled: open });
+
+  return (
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      returnFocusRef={returnFocusRef}
+      title={t('weightCard.logWeight')}
+      dialogClassName="sm:max-w-md"
+    >
+      {summary.data ? (
+        <CompactWeightLog
+          currentWeight={summary.data.currentWeight}
+          todayWeight={summary.data.todayWeight}
+          todayDate={getTodayDateString()}
+          autoFocus
+          onCancel={() => onOpenChange(false)}
+          onSaved={() => onOpenChange(false)}
+        />
+      ) : (
+        <div className="px-[22px] py-6">
+          <DashboardSectionState
+            bare
+            variant={summary.isError ? 'error' : 'loading'}
+            message={
+              summary.isError ? tAdd('weightError') : tAdd('weightLoading')
+            }
+            actionLabel={summary.isError ? t('retry') : undefined}
+            onAction={() => void summary.refetch()}
+          />
+        </div>
+      )}
+    </ResponsiveModal>
+  );
+}

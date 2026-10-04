@@ -75,7 +75,7 @@ export function FeedComposer({
     <motion.div
       layout={animateLayout}
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-      className="relative shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
+      className="relative shrink-0 px-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:px-6 sm:pb-[max(env(safe-area-inset-bottom),1rem)]"
     >
       {isCheat && (
         <CheatOccasionChips

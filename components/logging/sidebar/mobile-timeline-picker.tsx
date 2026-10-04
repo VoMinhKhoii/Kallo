@@ -149,8 +149,8 @@ export function MobileTimelinePicker({
   const pointerStartXRef = useRef<number | null>(null);
   const didSwipeRef = useRef(false);
   const lastSwipeAtRef = useRef(0);
-  // The picker renders into a slot inside MobileNav so the date chip and the
-  // hamburger share a single mobile row. We resolve the slot lazily via
+  // The picker renders into a slot inside MobileHeader so the date chip and
+  // the activity heart share a single mobile row. We resolve the slot lazily via
   // useSyncExternalStore so SSR returns null (no DOM) and the client picks up
   // the slot on the first commit without needing setState in an effect.
   const portalTarget = useMobileHeaderSlot();
@@ -302,7 +302,7 @@ export function MobileTimelinePicker({
     [scrollNext, scrollPrev]
   );
 
-  // Below md the chip rides in MobileNav's header row, beside the hamburger.
+  // Below md the chip rides in MobileHeader's row, beside the activity heart.
   // From md to lg there is no mobile header — the app rail is shown and the
   // timeline sidebar is not — so the chip gets its own row above the feed.
   // That inline path is also the test/Storybook contract: do not delete it when
@@ -332,9 +332,9 @@ export function MobileTimelinePicker({
       {renderIntoSlot(
         <div
           ref={wrapperRef}
-          // Kept for the strip-mode contract; the header slot is now full-width
-          // (the hamburger was retired for the bottom tab bar), so the strip
-          // already owns the whole row.
+          // Strip-mode contract: MobileHeader hides its side clusters
+          // (wordmark, heart, avatar) while this is set, so the strip owns the
+          // whole row.
           data-strip-mode={mode === 'strip'}
           className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:hidden"
         >

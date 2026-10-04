@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * The single Circle header action: one brown button that opens a small menu
- * with the two creation paths. Each item opens the shared invite dialog on the
- * matching tab. Consolidates what used to be a header "Add friend" button plus
+ * The single Circle header action: one button (a bare person-plus glyph on
+ * phones, as in the Flutter header; brown and labelled from md) that opens a
+ * small menu with the two creation paths. Each item opens the shared invite
+ * dialog on the matching tab. Consolidates what used to be a header "Add friend" button plus
  * a "+ New" switcher pill into one control.
  */
 export function CircleAddMenu() {
@@ -28,15 +29,25 @@ export function CircleAddMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
+          {/* Phones get the Flutter Circle header's bare person-plus glyph;
+              from md up it is the brown labelled button. */}
           <button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-kallo-btn px-3 py-2 text-white transition-colors hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface"
+            aria-label={t('addFriend')}
+            className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-xl text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface md:size-auto md:bg-kallo-btn md:px-3 md:py-2 md:text-white md:hover:bg-kallo-btn/90"
           >
-            <UserPlus className="h-3.5 w-3.5" />
-            <span className="font-medium font-sans-display text-[12px]">
+            <UserPlus
+              className="size-6 md:size-3.5"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <span className="hidden font-medium font-sans-display text-[12px] md:inline">
               {t('addFriend')}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+            <ChevronDown
+              className="hidden h-3.5 w-3.5 opacity-80 md:block"
+              aria-hidden="true"
+            />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

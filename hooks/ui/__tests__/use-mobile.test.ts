@@ -1,67 +1,66 @@
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useIsMobile } from '../use-mobile';
 
-// We need to mock React since useEffect/useState won't run
-// in a non-component context. Test the logic directly.
-describe('useIsMobile logic', () => {
-  const MOBILE_BREAKPOINT = 768;
+describe('useIsMobile', () => {
+  let matches: boolean;
+  let listeners: EventListener[];
+  const original = window.matchMedia;
 
-  it('considers width < 768 as mobile', () => {
-    expect(500 < MOBILE_BREAKPOINT).toBe(true);
+  beforeEach(() => {
+    matches = false;
+    listeners = [];
+    window.matchMedia = vi.fn(
+      (query: string): MediaQueryList => ({
+        matches,
+        media: query,
+        onchange: null,
+        addEventListener: (_: string, fn: EventListener) => {
+          listeners.push(fn);
+        },
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: () => false,
+      })
+    );
   });
 
-  it('considers width >= 768 as desktop', () => {
-    expect(768 < MOBILE_BREAKPOINT).toBe(false);
-    expect(1024 < MOBILE_BREAKPOINT).toBe(false);
+  afterEach(() => {
+    window.matchMedia = original;
   });
 
-  it('considers width = 767 as mobile', () => {
-    expect(767 < MOBILE_BREAKPOINT).toBe(true);
+  it('asks for the md breakpoint', () => {
+    renderHook(() => useIsMobile());
+    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 767.98px)');
   });
 
-  describe('matchMedia integration', () => {
-    let listeners: Array<() => void>;
-
-    beforeEach(() => {
-      listeners = [];
-      Object.defineProperty(window, 'innerWidth', {
-        writable: true,
-        configurable: true,
-        value: 1024,
-      });
-      Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        configurable: true,
-        value: vi.fn().mockImplementation((query: string) => ({
-          matches: window.innerWidth < MOBILE_BREAKPOINT,
-          media: query,
-          addEventListener: (_: string, fn: () => void) => {
-            listeners.push(fn);
-          },
-          removeEventListener: vi.fn(),
-        })),
-      });
+  it('is right on the first render — no desktop frame on a phone', () => {
+    matches = true;
+    const seen: boolean[] = [];
+    renderHook(() => {
+      const isMobile = useIsMobile();
+      seen.push(isMobile);
+      return isMobile;
     });
+    expect(seen[0]).toBe(true);
+  });
 
-    afterEach(() => {
-      listeners = [];
+  it('follows the breakpoint as the viewport changes', () => {
+    const { result } = renderHook(() => useIsMobile());
+    expect(result.current).toBe(false);
+
+    matches = true;
+    act(() => {
+      for (const listener of listeners) listener(new Event('change'));
     });
+    expect(result.current).toBe(true);
+  });
 
-    it('creates matchMedia with correct query', () => {
-      window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-      expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 767px)');
-    });
-
-    it('responds to resize events', () => {
-      const _mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-
-      let isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-      expect(isMobile).toBe(false);
-
-      // Simulate resize to mobile
-      Object.defineProperty(window, 'innerWidth', { value: 375 });
-      for (const listener of listeners) listener();
-      isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-      expect(isMobile).toBe(true);
-    });
+  it('answers false where matchMedia does not exist', () => {
+    // @ts-expect-error — simulating a host without matchMedia
+    window.matchMedia = undefined;
+    const { result } = renderHook(() => useIsMobile());
+    expect(result.current).toBe(false);
   });
 });

@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   DropdownMenu,
@@ -19,9 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useSignOut } from '@/hooks/auth/use-sign-out';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { createClient } from '@/lib/infra/supabase/client';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
 
 export interface UserMenuUser {
@@ -66,7 +65,7 @@ export function UserMenu({
 }) {
   const t = useTranslations('app.userMenu');
   const [internalOpen, setInternalOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  const { signOut: handleSignOut, signingOut } = useSignOut();
   const open = openProp ?? internalOpen;
   const handleOpenChange = (next: boolean) => {
     if (openProp === undefined) setInternalOpen(next);
@@ -89,22 +88,6 @@ export function UserMenu({
     isFinePointer &&
     expandMode !== undefined &&
     onExpandModeChange !== undefined;
-
-  const handleSignOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
-      window.location.assign('/');
-    } catch (error) {
-      console.error('Failed to sign out:', error);
-      toast.error(t('signOutError'));
-      setSigningOut(false);
-    }
-  };
 
   const triggerButton = (
     <button

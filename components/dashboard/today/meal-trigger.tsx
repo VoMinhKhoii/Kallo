@@ -1,15 +1,8 @@
 'use client';
 
-import { ArrowUp, UtensilsCrossed, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { ArrowUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
@@ -23,22 +16,15 @@ interface MealTriggerProps {
   restoredDraft?: { text: string } | null;
 }
 
-interface MealInputFormProps extends MealTriggerProps {
-  id: string;
-  autoFocus?: boolean;
-  compact?: boolean;
-  onSubmit?: () => void;
-}
+const INPUT_ID = 'dashboard-inline-meal-input';
 
-function MealInputForm({
-  id,
-  autoFocus = false,
-  compact = false,
-  onSubmit,
+/** The dashboard's in-place meal bar (md and up; phones log through the tab
+ * bar's "+"). */
+export function InlineMealTrigger({
   onSubmitMeal,
   streaming,
   restoredDraft,
-}: MealInputFormProps) {
+}: MealTriggerProps) {
   const tm = useTranslations('dashboard.mealTrigger');
   const tl = useTranslations('logging');
   const [text, setText] = useState('');
@@ -51,15 +37,9 @@ function MealInputForm({
     event.preventDefault();
     const meal = text.trim();
     if (!meal || isStreaming || streaming.error) return;
-    onSubmit?.();
     setText('');
     onSubmitMeal(meal);
   };
-
-  useEffect(() => {
-    if (!autoFocus) return;
-    inputRef.current?.focus();
-  }, [autoFocus]);
 
   useEffect(() => {
     if (!restoredDraft) return;
@@ -82,7 +62,7 @@ function MealInputForm({
       onSubmit={handleSubmit}
       className={cn(
         'flex min-w-0 items-center gap-2 rounded-2xl px-3 transition-colors',
-        compact ? 'h-11' : 'h-12',
+        'h-12',
         isStreamingLive
           ? 'border border-transparent'
           : 'border border-kallo-border/70 bg-card shadow-none focus-within:border-kallo-accent/50 hover:border-kallo-accent/50',
@@ -101,11 +81,11 @@ function MealInputForm({
         />
       ) : (
         <>
-          <label htmlFor={id} className="sr-only">
+          <label htmlFor={INPUT_ID} className="sr-only">
             {tl('placeholder')}
           </label>
           <input
-            id={id}
+            id={INPUT_ID}
             ref={inputRef}
             type="text"
             placeholder={tl('placeholder')}
@@ -125,71 +105,5 @@ function MealInputForm({
         </>
       )}
     </form>
-  );
-}
-
-export function InlineMealTrigger(props: MealTriggerProps) {
-  return <MealInputForm id="dashboard-inline-meal-input" {...props} />;
-}
-
-export function FloatingMealTrigger(props: MealTriggerProps) {
-  const t = useTranslations('dashboard');
-  const tm = useTranslations('dashboard.mealTrigger');
-  const [expanded, setExpanded] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  const handleClose = useCallback(() => {
-    setExpanded(false);
-    triggerRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (!expanded) return;
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [expanded, handleClose]);
-
-  return (
-    <div className="md:hidden">
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            key="meal-input"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.16 }}
-            className="fixed right-4 bottom-20 left-4 z-50"
-          >
-            {/* Stays open on submit so the in-bar stream is visible; Esc or
-                the FAB dismiss it. */}
-            <MealInputForm
-              id="dashboard-floating-meal-input"
-              autoFocus
-              compact
-              {...props}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={expanded ? handleClose : () => setExpanded(true)}
-        aria-label={expanded ? tm('close') : t('logMeal')}
-        aria-expanded={expanded}
-        className="fixed right-4 bottom-5 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-kallo-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-kallo-btn-hover"
-      >
-        {expanded ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <UtensilsCrossed className="h-5 w-5" />
-        )}
-      </button>
-    </div>
   );
 }

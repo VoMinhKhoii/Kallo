@@ -76,3 +76,12 @@ export function visibleNavItems(isAdmin: boolean): readonly NavItemConfig[] {
   if (isAdmin) return NAV_ITEMS;
   return NAV_ITEMS.filter((item) => !item.adminOnly);
 }
+
+/** Phone pages that take the whole screen: no tab bar, a back chevron in the
+ *  header instead. The logging feed, as Flutter pushes its Log screen over
+ *  the tabs — the composer owns the bottom edge there. */
+const FULL_SCREEN_ROUTES = ['/logging'] as const;
+
+export function isFullScreenRoute(pathname: string): boolean {
+  return FULL_SCREEN_ROUTES.some((href) => isActiveRoute(pathname, href));
+}

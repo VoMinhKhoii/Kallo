@@ -18,6 +18,7 @@ vi.mock('@/hooks/profile/use-profile', () => ({
 vi.mock('@/hooks/social/sharing/use-share-meal-with-friends', () => ({
   useShareMealWithFriends: () => ({ isPending: false, mutate: vi.fn() }),
 }));
+vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: () => false }));
 vi.mock('@/components/shared/surface-state/surface-state', () => ({
   SurfaceState: ({ title }: { title: string }) => <p>{title}</p>,
 }));
