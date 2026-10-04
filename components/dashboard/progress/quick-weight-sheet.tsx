@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { RefObject } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { ResponsiveModal } from '@/components/shared/responsive-modal';
 import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
@@ -9,6 +10,8 @@ import { getTodayDateString } from '@/lib/domain/dashboard/today';
 interface QuickWeightSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Where focus returns on close — this sheet has no trigger of its own. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -20,6 +23,7 @@ interface QuickWeightSheetProps {
 export function QuickWeightSheet({
   open,
   onOpenChange,
+  returnFocusRef,
 }: QuickWeightSheetProps) {
   const t = useTranslations('dashboard');
   const tAdd = useTranslations('app.addSheet');
@@ -29,6 +33,7 @@ export function QuickWeightSheet({
     <ResponsiveModal
       open={open}
       onOpenChange={onOpenChange}
+      returnFocusRef={returnFocusRef}
       title={t('weightCard.logWeight')}
       dialogClassName="sm:max-w-md"
     >

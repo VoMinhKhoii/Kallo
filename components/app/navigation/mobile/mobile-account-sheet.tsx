@@ -2,7 +2,7 @@
 
 import { ChevronRight, LogOut, Settings, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { ResponsiveSheet } from '@/components/shared/responsive-sheet';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
@@ -23,8 +23,9 @@ export interface MobileOnboardingProps {
 }
 
 interface MobileAccountSheetProps extends MobileOnboardingProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** The header avatar that opens the sheet, registered as its trigger so
+   *  focus returns to it on close. */
+  trigger: ReactNode;
   user: UserMenuUser;
   isAdmin?: boolean;
 }
@@ -33,15 +34,14 @@ const ROW =
   'flex min-h-12 w-full items-center gap-3 px-4 text-left transition-colors active:bg-kallo-hover';
 
 /**
- * The account surface behind the tab bar's avatar — a bottom sheet in the
+ * The account surface behind the header avatar — a bottom sheet in the
  * shape of an iOS grouped settings list: who you are, the off-bar
  * destinations (Settings, Admin), and sign-out on its own row. It replaces the
  * retired left drawer, which carried these alongside the primary destinations
  * that now live on the tab bar.
  */
 export function MobileAccountSheet({
-  open,
-  onOpenChange,
+  trigger,
   user,
   isAdmin = false,
   onboardingIncomplete = false,
@@ -56,13 +56,15 @@ export function MobileAccountSheet({
   const tMenu = useTranslations('app.userMenu');
   const { signOut, signingOut } = useSignOut();
   const label = deriveLabel(user) || tMenu('account');
-  const close = () => onOpenChange(false);
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   return (
     <ResponsiveSheet
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={setOpen}
       title={tMenu('account')}
+      trigger={trigger}
     >
       <ResponsiveSheetHeader
         title={tMenu('account')}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { MobileActivityButton } from '@/components/activity/mobile-activity-button';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
@@ -40,7 +39,6 @@ export function MobileHeader({
 }: MobileHeaderProps) {
   const pathname = usePathname();
   const tMenu = useTranslations('app.userMenu');
-  const [accountOpen, setAccountOpen] = useState(false);
   const accountActive =
     isActiveRoute(pathname, '/settings') || isActiveRoute(pathname, '/admin');
 
@@ -63,34 +61,31 @@ export function MobileHeader({
       />
       <div className={cn(SIDE, 'justify-end gap-1', STRIP_HIDDEN)}>
         <MobileActivityButton />
-        <button
-          type="button"
-          aria-label={tMenu('openMenu')}
-          aria-haspopup="dialog"
-          aria-expanded={accountOpen}
-          onClick={() => setAccountOpen(true)}
-          className="relative flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-        >
-          <ProfileAvatar
-            avatarUrl={user.avatarUrl}
-            label={deriveLabel(user)}
-            className={cn(
-              'size-9',
-              accountActive && 'ring-2 ring-kallo-text ring-offset-2'
-            )}
-          />
-          {onboarding.onboardingIncomplete ? (
-            <OnboardingDot className="top-1 right-1" />
-          ) : null}
-        </button>
+        <MobileAccountSheet
+          user={user}
+          isAdmin={isAdmin}
+          {...onboarding}
+          trigger={
+            <button
+              type="button"
+              aria-label={tMenu('openMenu')}
+              className="relative flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+            >
+              <ProfileAvatar
+                avatarUrl={user.avatarUrl}
+                label={deriveLabel(user)}
+                className={cn(
+                  'size-9',
+                  accountActive && 'ring-2 ring-kallo-text ring-offset-2'
+                )}
+              />
+              {onboarding.onboardingIncomplete ? (
+                <OnboardingDot className="top-1 right-1" />
+              ) : null}
+            </button>
+          }
+        />
       </div>
-      <MobileAccountSheet
-        open={accountOpen}
-        onOpenChange={setAccountOpen}
-        user={user}
-        isAdmin={isAdmin}
-        {...onboarding}
-      />
     </header>
   );
 }

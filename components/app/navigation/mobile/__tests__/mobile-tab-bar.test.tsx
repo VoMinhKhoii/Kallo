@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileTabBar } from '../mobile-tab-bar';
@@ -116,5 +116,17 @@ describe('MobileTabBar', () => {
       await screen.findByRole('dialog', { name: 'weight-sheet' })
     ).toBeInTheDocument();
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('returns focus to the + button when the Add sheet closes', async () => {
+    const user = userEvent.setup();
+    render(<MobileTabBar />);
+    const plus = screen.getByRole('button', { name: 'add' });
+    await user.click(plus);
+    await screen.findByRole('dialog');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(plus).toHaveFocus());
   });
 });

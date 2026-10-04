@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
@@ -18,6 +18,22 @@ vi.mock('sonner', () => ({
 }));
 
 import { WeightLogDialog } from '../weight-log-dialog';
+
+// Opening vaul's drawer through its trigger runs its Safari toolbar fix, which
+// asks matchMedia whether the page is an installed PWA. jsdom has no
+// matchMedia; every query answers "no".
+beforeAll(() => {
+  window.matchMedia ??= ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+});
 
 function renderDialog(todayWeight: number | null = null) {
   render(
@@ -163,5 +179,22 @@ describe('WeightLogDialog', () => {
     // The round close sits on the left, as in the Flutter sheet header.
     expect(screen.getByRole('button', { name: 'close' })).toBeInTheDocument();
     expect(screen.getByLabelText('weightCard.inputLabel')).toHaveValue('61.5');
+  });
+
+  it('returns focus to its trigger when the phone sheet closes', async () => {
+    mocks.isMobile.mockReturnValue(true);
+    const user = userEvent.setup();
+    renderDialog();
+    const trigger = screen.getByRole('button', {
+      name: 'weightCard.logWeight',
+    });
+    await user.click(trigger);
+    await screen.findByRole('dialog');
+
+    // A plain click: vaul's drag handling on pointerdown needs pointer
+    // capture, which jsdom does not implement.
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

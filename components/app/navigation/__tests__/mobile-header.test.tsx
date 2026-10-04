@@ -130,4 +130,16 @@ describe('MobileHeader', () => {
       expect(button).not.toBeDisabled();
     });
   });
+
+  it('returns focus to the avatar when the account sheet closes', async () => {
+    const u = userEvent.setup();
+    render(<MobileHeader user={user} />);
+    const avatar = screen.getByRole('button', { name: 'openMenu' });
+    await u.click(avatar);
+    await screen.findByRole('dialog');
+
+    await u.keyboard('{Escape}');
+
+    await waitFor(() => expect(avatar).toHaveFocus());
+  });
 });

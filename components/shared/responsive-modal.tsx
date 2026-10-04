@@ -1,8 +1,7 @@
 'use client';
 
-import { Slot } from '@radix-ui/react-slot';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +22,8 @@ interface ResponsiveModalProps {
   onOpenChange: (open: boolean) => void;
   /** The control that opens the modal; omit when `open` is driven elsewhere. */
   trigger?: ReactNode;
+  /** Close-focus target when there is no `trigger` (see `ResponsiveSheet`). */
+  returnFocusRef?: RefObject<HTMLElement | null>;
   title: string;
   /** One muted line under the title (e.g. the meal being shared). */
   subtitle?: string;
@@ -52,6 +53,7 @@ export function ResponsiveModal({
   open,
   onOpenChange,
   trigger,
+  returnFocusRef,
   title,
   subtitle,
   dialogClassName,
@@ -63,34 +65,33 @@ export function ResponsiveModal({
 
   if (isMobile) {
     return (
-      <>
-        {trigger ? (
-          <Slot aria-haspopup="dialog" onClick={() => onOpenChange(true)}>
-            {trigger}
-          </Slot>
+      <ResponsiveSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={title}
+        trigger={trigger}
+        returnFocusRef={returnFocusRef}
+      >
+        <ResponsiveSheetHeader
+          title={title}
+          closeLabel={t('close')}
+          onClose={() => onOpenChange(false)}
+        />
+        {subtitle ? (
+          <p className="-mt-2 truncate px-4 pb-2 text-center text-[13px] text-kallo-text-muted">
+            {subtitle}
+          </p>
         ) : null}
-        <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={title}>
-          <ResponsiveSheetHeader
-            title={title}
-            closeLabel={t('close')}
-            onClose={() => onOpenChange(false)}
-          />
-          {subtitle ? (
-            <p className="-mt-2 truncate px-4 pb-2 text-center text-[13px] text-kallo-text-muted">
-              {subtitle}
-            </p>
-          ) : null}
-          <div
-            className={cn(
-              BODY,
-              'pb-[env(safe-area-inset-bottom)]',
-              bodyClassName
-            )}
-          >
-            {children}
-          </div>
-        </ResponsiveSheet>
-      </>
+        <div
+          className={cn(
+            BODY,
+            'pb-[env(safe-area-inset-bottom)]',
+            bodyClassName
+          )}
+        >
+          {children}
+        </div>
+      </ResponsiveSheet>
     );
   }
 

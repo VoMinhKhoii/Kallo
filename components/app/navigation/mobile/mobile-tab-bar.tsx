@@ -1,15 +1,7 @@
 'use client';
 
-import {
-  Apple,
-  House,
-  type LucideIcon,
-  PencilLine,
-  Plus,
-  Users,
-} from 'lucide-react';
+import { Apple, House, type LucideIcon, PencilLine, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
@@ -55,7 +47,6 @@ export function MobileTabBar() {
   const tNav = useTranslations('app.mainSidebar');
   const pathname = usePathname();
   const badgeCounts = useNavBadgeCounts();
-  const [addOpen, setAddOpen] = useState(false);
   const renderTab = (tab: TabConfig) => (
     <TabLink
       key={tab.id}
@@ -75,20 +66,10 @@ export function MobileTabBar() {
       <ul className="flex h-16 items-center rounded-full bg-white px-3 shadow-nav">
         {LEADING_TABS.map(renderTab)}
         <li className="flex h-full w-16 shrink-0 items-center justify-center">
-          <button
-            type="button"
-            aria-label={t('add')}
-            aria-haspopup="dialog"
-            aria-expanded={addOpen}
-            onClick={() => setAddOpen(true)}
-            className="flex size-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--kallo-brand-apricot),var(--kallo-brand-lilac))] text-kallo-text shadow-[0_4px_12px_rgba(20,20,19,0.14)] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent active:scale-95"
-          >
-            <Plus className="size-6" strokeWidth={2} aria-hidden="true" />
-          </button>
+          <MobileAddSheet />
         </li>
         {TRAILING_TABS.map(renderTab)}
       </ul>
-      <MobileAddSheet open={addOpen} onOpenChange={setAddOpen} />
     </nav>
   );
 }
