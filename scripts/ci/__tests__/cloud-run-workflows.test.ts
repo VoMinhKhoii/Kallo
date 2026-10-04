@@ -93,6 +93,29 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).not.toContain('SUBSCRIPTION_LAUNCH_DATE');
   });
 
+  it('wires the R2 object-storage credentials and buckets into prod', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+
+    for (const secret of [
+      'R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest',
+      'R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest',
+      'gcloud secrets describe kallo-prod-r2-access-key-id',
+      'gcloud secrets describe kallo-prod-r2-secret-access-key',
+      `R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`,
+      'R2_BUCKET_PREFIX=kallo-prod',
+    ]) {
+      expect(workflow).toContain(secret);
+    }
+    // The CSP's img-src is compiled at build from these two.
+    const ci = readWorkflow('ci.yml');
+    expect(ci).toContain(
+      `--build-arg NEXT_PUBLIC_AVATAR_BASE_URL=\${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}`
+    );
+    expect(ci).toContain(
+      `--build-arg R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`
+    );
+  });
+
   it('mounts the Sign in with Apple secrets only once they exist', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 

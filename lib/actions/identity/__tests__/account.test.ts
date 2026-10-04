@@ -23,9 +23,8 @@ const {
   mockPrepareDeletion,
   mockProcessDeletion,
   mockSignOut,
-  mockStorageFrom,
-  mockStorageList,
-  mockStorageRemove,
+  mockRemovePrefix,
+  mockAssertStorage,
 } = vi.hoisted(() => ({
   mockAuthUserIsConfirmedAbsent: vi.fn(),
   mockBuildDataExport: vi.fn(),
@@ -41,9 +40,8 @@ const {
   mockPrepareDeletion: vi.fn(),
   mockProcessDeletion: vi.fn(),
   mockSignOut: vi.fn(),
-  mockStorageFrom: vi.fn(),
-  mockStorageList: vi.fn(),
-  mockStorageRemove: vi.fn(),
+  mockRemovePrefix: vi.fn(),
+  mockAssertStorage: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -62,6 +60,11 @@ vi.mock('@/lib/infra/supabase/server', () => ({
 
 vi.mock('@/lib/infra/supabase/admin', () => ({
   createAdminClient: mockCreateAdminClient,
+}));
+
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  removePrefix: mockRemovePrefix,
+  assertObjectStorageConfigured: mockAssertStorage,
 }));
 
 vi.mock('@/lib/domain/account-deletion/jobs', () => ({
@@ -118,14 +121,8 @@ describe('deleteAccountAction', () => {
     });
     mockCreateAdminClient.mockReturnValue({
       auth: { admin: { deleteUser: mockDeleteUser } },
-      storage: { from: mockStorageFrom },
     });
-    mockStorageFrom.mockReturnValue({
-      list: mockStorageList,
-      remove: mockStorageRemove,
-    });
-    mockStorageList.mockResolvedValue({ data: [], error: null });
-    mockStorageRemove.mockResolvedValue({ error: null });
+    mockRemovePrefix.mockResolvedValue(undefined);
     mockDbDelete.mockReturnValue({ where: mockDeleteWhere });
     mockDeleteWhere.mockResolvedValue(undefined);
     mockDeleteUser.mockResolvedValue({ error: null });
@@ -299,10 +296,7 @@ describe('deleteAccountAction', () => {
   });
 
   it('fails closed when avatar purge cannot be confirmed', async () => {
-    mockStorageList.mockResolvedValue({
-      data: null,
-      error: new Error('storage_unavailable'),
-    });
+    mockRemovePrefix.mockRejectedValue(new Error('storage_unavailable'));
 
     await expect(deleteAccountAction(input)).rejects.toMatchObject({
       code: 'INTERNAL',
@@ -311,44 +305,25 @@ describe('deleteAccountAction', () => {
     expect(mockPrepareDeletion).not.toHaveBeenCalled();
   });
 
-  it('purges kept nutrition-label photos before deleting the auth user', async () => {
-    const buckets: string[] = [];
-    const pages: Record<string, { name: string }[][]> = {
-      avatars: [[]],
-      'nutrition-labels': [
-        [{ name: 'scan-1.jpg' }, { name: 'scan-2.png' }],
-        [],
-      ],
-    };
-    mockStorageFrom.mockImplementation((bucket: string) => {
-      buckets.push(bucket);
-      return {
-        list: async () => ({ data: pages[bucket]?.shift() ?? [], error: null }),
-        remove: mockStorageRemove,
-      };
-    });
-
+  it('purges the avatar and kept label photos before deleting the auth user', async () => {
     await expect(deleteAccountAction(input)).resolves.toEqual({
       success: true,
     });
-    expect(buckets).toEqual(['avatars', 'nutrition-labels']);
-    expect(mockStorageRemove).toHaveBeenCalledWith([
-      `${user.id}/scan-1.jpg`,
-      `${user.id}/scan-2.png`,
+    expect(mockRemovePrefix.mock.calls).toEqual([
+      ['avatars', `${user.id}/`],
+      ['nutrition-labels', `${user.id}/`],
     ]);
-    expect(mockStorageRemove.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(mockRemovePrefix.mock.invocationCallOrder[1]).toBeLessThan(
       mockDeleteUser.mock.invocationCallOrder[0] as number
     );
   });
 
   it('fails closed when the label-photo purge cannot be confirmed', async () => {
-    mockStorageFrom.mockImplementation((bucket: string) => ({
-      list: async () =>
-        bucket === 'nutrition-labels'
-          ? { data: null, error: new Error('storage_unavailable') }
-          : { data: [], error: null },
-      remove: mockStorageRemove,
-    }));
+    mockRemovePrefix.mockImplementation(async (bucket: string) => {
+      if (bucket === 'nutrition-labels') {
+        throw new Error('storage_unavailable');
+      }
+    });
 
     await expect(deleteAccountAction(input)).rejects.toMatchObject({
       code: 'INTERNAL',
@@ -366,9 +341,9 @@ describe('deleteAccountAction', () => {
     expect(mockDeleteUser).toHaveBeenCalledWith(user.id);
     expect(mockSignOut).toHaveBeenCalledTimes(1);
     expect(mockDeleteWhere.mock.invocationCallOrder[0]).toBeLessThan(
-      mockStorageFrom.mock.invocationCallOrder[0] as number
+      mockRemovePrefix.mock.invocationCallOrder[0] as number
     );
-    expect(mockStorageFrom.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(mockRemovePrefix.mock.invocationCallOrder[0]).toBeLessThan(
       mockPrepareDeletion.mock.invocationCallOrder[0] as number
     );
     expect(mockPrepareDeletion.mock.invocationCallOrder[0]).toBeLessThan(
@@ -389,7 +364,18 @@ describe('deleteAccountAction', () => {
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
     expect(mockPrepareDeletion).not.toHaveBeenCalled();
     expect(mockDbDelete).not.toHaveBeenCalled();
-    expect(mockStorageFrom).not.toHaveBeenCalled();
+    expect(mockRemovePrefix).not.toHaveBeenCalled();
+    expect(mockDeleteUser).not.toHaveBeenCalled();
+  });
+
+  it('erases nothing when storage credentials are missing', async () => {
+    mockAssertStorage.mockImplementationOnce(() => {
+      throw new Error('Object storage requires R2_ACCOUNT_ID…');
+    });
+
+    await expect(deleteAccountAction(input)).rejects.toThrow();
+    expect(mockDbDelete).not.toHaveBeenCalled();
+    expect(mockRemovePrefix).not.toHaveBeenCalled();
     expect(mockDeleteUser).not.toHaveBeenCalled();
   });
 

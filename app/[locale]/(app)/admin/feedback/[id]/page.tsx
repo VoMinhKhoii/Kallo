@@ -10,6 +10,7 @@ import {
 import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
 import { cn } from '@/lib/core/ui/cn';
 import { db } from '@/lib/infra/db/client';
+import { signedReadUrl } from '@/lib/infra/storage/object-storage';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 
 export const metadata = {
@@ -46,13 +47,17 @@ export default async function AdminFeedbackDetailPage({
 
   const admin = createAdminClient();
 
-  // Screenshots live in a private bucket; mint a short-lived signed URL.
+  // Screenshots live in a private bucket; mint a short-lived presigned URL.
   let screenshotUrl: string | null = null;
   if (row.screenshotPath) {
-    const { data } = await admin.storage
-      .from('feedback-screenshots')
-      .createSignedUrl(row.screenshotPath, 300);
-    screenshotUrl = data?.signedUrl ?? null;
+    screenshotUrl = await signedReadUrl(
+      'feedback-screenshots',
+      row.screenshotPath,
+      300
+    ).catch((error: unknown) => {
+      console.error('[admin/feedback] screenshot URL failed:', error);
+      return null;
+    });
   }
 
   // Resolve the submitter's email so triage doesn't require a separate lookup.

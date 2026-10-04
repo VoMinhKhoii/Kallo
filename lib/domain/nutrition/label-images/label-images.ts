@@ -45,7 +45,7 @@ import {
 } from '@/lib/domain/nutrition/ocr/schema';
 import { db } from '@/lib/infra/db/client';
 import { nutritionLabelImages } from '@/lib/infra/db/schema';
-import { createAdminClient } from '@/lib/infra/supabase/admin';
+import { signedReadUrl } from '@/lib/infra/storage/object-storage';
 
 /** Let the post-response writes outlive the reply. `after()` throws outside
  *  a request scope; the promise keeps running regardless. */
@@ -196,11 +196,15 @@ export async function createLabelImageUrl(
   // Stamped before the request, so the reported expiry is never later than
   // the real one.
   const expiresAt = new Date(Date.now() + LABEL_IMAGE_URL_TTL_SECONDS * 1000);
-  const { data, error } = await createAdminClient()
-    .storage.from(NUTRITION_LABEL_BUCKET)
-    .createSignedUrl(row.storagePath, LABEL_IMAGE_URL_TTL_SECONDS);
-  if (error || !data?.signedUrl) {
+  let url: string;
+  try {
+    url = await signedReadUrl(
+      NUTRITION_LABEL_BUCKET,
+      row.storagePath,
+      LABEL_IMAGE_URL_TTL_SECONDS
+    );
+  } catch (error) {
     throw Errors.internal(error, 'Could not open the label photo.');
   }
-  return { url: data.signedUrl, expiresAt: expiresAt.toISOString() };
+  return { url, expiresAt: expiresAt.toISOString() };
 }

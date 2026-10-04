@@ -110,6 +110,29 @@ function supabaseOrigins(): { https: string; wss: string } | null {
   }
 }
 
+/**
+ * Kallo's object storage (Cloudflare R2, `lib/infra/storage/`). Avatars are
+ * public on the avatar bucket's custom domain; private objects (the admin's
+ * feedback screenshots) load through presigned path-style URLs on the
+ * account's S3 origin. Both are build-time values, like the Supabase origin.
+ */
+function storageImageOrigins(): string[] {
+  const origins: string[] = [];
+  const avatars = process.env.NEXT_PUBLIC_AVATAR_BASE_URL;
+  if (avatars) {
+    try {
+      origins.push(new URL(avatars).origin);
+    } catch {
+      // Malformed → leave it out rather than emit a broken source.
+    }
+  }
+  const accountId = process.env.R2_ACCOUNT_ID;
+  if (accountId && /^[0-9a-f]{32}$/.test(accountId)) {
+    origins.push(`https://${accountId}.r2.cloudflarestorage.com`);
+  }
+  return origins;
+}
+
 function sources(...values: (string | false | undefined)[]): string {
   return values.filter(Boolean).join(' ');
 }
@@ -129,7 +152,7 @@ export function buildCsp(isDev: boolean): string {
     `default-src 'self'`,
     `script-src ${sources("'self'", "'unsafe-inline'", isDev && "'unsafe-eval'", GOOGLE_IDENTITY_SCRIPT, PADDLE_CDN)}`,
     `style-src ${sources("'self'", "'unsafe-inline'", GOOGLE_IDENTITY_STYLE, PADDLE_CDN)}`,
-    `img-src ${sources("'self'", 'data:', 'blob:', supabase?.https, GOOGLE_AVATAR_ORIGIN, REVENUECAT_ASSETS)}`,
+    `img-src ${sources("'self'", 'data:', 'blob:', ...storageImageOrigins(), GOOGLE_AVATAR_ORIGIN, REVENUECAT_ASSETS)}`,
     `font-src ${sources("'self'", REVENUECAT_ASSETS)}`,
     `connect-src ${sources("'self'", supabase?.https, supabase?.wss, ...BILLING_CONNECT_ORIGINS, GOOGLE_IDENTITY_ORIGIN, ...MONITORING_CONNECT_ORIGINS)}`,
     `frame-src ${sources("'self'", ...BILLING_FRAME_ORIGINS, GOOGLE_IDENTITY_ORIGIN)}`,

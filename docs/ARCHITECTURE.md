@@ -119,6 +119,7 @@ another domain module is a smell worth a second look.
 | `route-template/` | the app's route tree as data (`app-route-patterns.ts`, checked against `app/` by a test) and `routeTemplate`, which redacts a URL path by segment position — shared by CSP reports and telemetry |
 | `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
+| `storage/` | object storage on Cloudflare R2 (`object-storage.ts`: put / list / delete / prefix purge / presigned read over the S3 API; `r2-client.ts` holds the credentials and bucket naming) — `docs/STORAGE.md` |
 | `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
 | `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
 | `uploads/` | image and avatar file handling |
@@ -139,7 +140,7 @@ another domain module is a smell worth a second look.
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
 | `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
-| `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` bucket + `nutrition_label_images`) |
+| `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` R2 bucket + `nutrition_label_images`) |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |

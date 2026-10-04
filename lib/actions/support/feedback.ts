@@ -7,6 +7,12 @@ import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
+import {
+  listObjects,
+  putObject,
+  type StorageBucket,
+  type StoredObject,
+} from '@/lib/infra/storage/object-storage';
 import { createClient } from '@/lib/infra/supabase/server';
 import {
   IMAGE_TYPES,
@@ -14,16 +20,13 @@ import {
   signatureMatches,
 } from '@/lib/infra/uploads/image-file';
 
-/** The request-scoped Supabase client (user's own session, RLS-enforced). */
-type ScopedClient = Awaited<ReturnType<typeof createClient>>;
-
 /** Max feedback submissions a single user may make per rolling hour. */
 const HOURLY_LIMIT = 10;
 /** Max screenshot uploads per rolling hour (higher than submits — re-picks). */
 const UPLOAD_HOURLY_LIMIT = 20;
 
 /** Private bucket holding optional feedback screenshots. */
-const SCREENSHOT_BUCKET = 'feedback-screenshots';
+const SCREENSHOT_BUCKET = 'feedback-screenshots' satisfies StorageBucket;
 
 /**
  * Resolve the current authenticated user WITHOUT requiring a completed
@@ -35,7 +38,7 @@ async function requireUser() {
   if (error || !data.user) {
     throw Errors.notAuthenticated();
   }
-  return { supabase, user: data.user };
+  return { user: data.user };
 }
 
 /**
@@ -109,24 +112,17 @@ export async function submitFeedbackAction(
  * and, on a storage/list error, it allows the upload rather than blocking a
  * legitimate user. Both are intentional given the real cap lives on the submit.
  */
-async function assertUploadQuota(
-  supabase: ScopedClient,
-  userId: string
-): Promise<void> {
-  const { data, error } = await supabase.storage
-    .from(SCREENSHOT_BUCKET)
-    .list(userId, {
-      limit: 100,
-      sortBy: { column: 'created_at', order: 'desc' },
-    });
-  if (error) {
-    console.error('[feedback] upload-quota list failed:', error.message);
+async function assertUploadQuota(userId: string): Promise<void> {
+  let objects: StoredObject[];
+  try {
+    objects = await listObjects(SCREENSHOT_BUCKET, `${userId}/`);
+  } catch (error) {
+    console.error('[feedback] upload-quota list failed:', error);
     return;
   }
-  if (!data) return;
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  const recent = data.filter(
-    (o) => o.created_at && new Date(o.created_at).getTime() > oneHourAgo
+  const recent = objects.filter(
+    (o) => o.lastModified && o.lastModified.getTime() > oneHourAgo
   ).length;
   if (recent >= UPLOAD_HOURLY_LIMIT) {
     throw Errors.rateLimited();
@@ -137,17 +133,17 @@ async function assertUploadQuota(
  * Upload an optional feedback screenshot for the authenticated user and return
  * its storage path (to be passed as `screenshotPath` to `submitFeedbackAction`).
  *
- * The upload runs server-side (the browser/mobile supabase client rides the
- * auth-only `/api/supabase-proxy` origin, which rejects `/storage/v1/*`) but
- * through the user's OWN session client, not the service-role admin client — so
- * the `feedback_screenshots_insert_own` RLS policy enforces that the object
- * lands under the uploader's `{userId}/…` prefix, backing up the code-set path.
- * Admins read it back later via a short-lived signed URL (service-role).
+ * The upload runs server-side with the app's storage credentials — no client
+ * holds a storage token — so the key built here from the session's user id
+ * (`{userId}/{uuid}.{ext}`, nothing caller-supplied) is what keeps a
+ * screenshot under its uploader's prefix; `submitFeedbackAction` re-checks that
+ * prefix before attaching it. Admins read it back later via a short-lived
+ * presigned URL.
  */
 export async function uploadFeedbackScreenshotAction(
   file: File
 ): Promise<{ path: string }> {
-  const { supabase, user } = await requireUser();
+  const { user } = await requireUser();
 
   const ext = IMAGE_TYPES[file.type];
   if (!ext) {
@@ -157,7 +153,7 @@ export async function uploadFeedbackScreenshotAction(
     throw Errors.validationFailed('Image must be between 1 byte and 5 MB.');
   }
 
-  await assertUploadQuota(supabase, user.id);
+  await assertUploadQuota(user.id);
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!signatureMatches(bytes, file.type)) {
@@ -165,14 +161,11 @@ export async function uploadFeedbackScreenshotAction(
   }
 
   const path = `${user.id}/${randomUUID()}.${ext}`;
-  const { error } = await supabase.storage
-    .from(SCREENSHOT_BUCKET)
-    .upload(path, bytes, {
+  try {
+    await putObject(SCREENSHOT_BUCKET, path, bytes, {
       contentType: file.type,
-      upsert: false,
     });
-
-  if (error) {
+  } catch (error) {
     throw Errors.internal(error, 'Could not upload the screenshot.');
   }
 

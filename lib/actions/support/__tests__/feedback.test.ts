@@ -29,7 +29,15 @@ vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({ auth: { getUser: mockGetUser } }),
 }));
 
-vi.mock('@/lib/infra/supabase/admin', () => ({ createAdminClient: vi.fn() }));
+const { putObject, listObjects } = vi.hoisted(() => ({
+  putObject: vi.fn(),
+  listObjects: vi.fn(),
+}));
+
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  putObject,
+  listObjects,
+}));
 
 vi.mock('@/lib/infra/db/client', () => ({
   db: {
@@ -47,7 +55,10 @@ vi.mock('@/lib/infra/db/schema', () => ({
   },
 }));
 
-import { submitFeedbackAction } from '@/lib/actions/support/feedback';
+import {
+  submitFeedbackAction,
+  uploadFeedbackScreenshotAction,
+} from '@/lib/actions/support/feedback';
 
 function stubHourlyCount(count: number) {
   mockTxSelect.mockReturnValue({
@@ -130,5 +141,92 @@ describe('submitFeedbackAction', () => {
       submitFeedbackAction({ type: 'bug', message: 'x' })
     ).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED', status: 401 });
     expect(mockTxSelect).not.toHaveBeenCalled();
+  });
+});
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1]);
+
+function pngFile(bytes: Uint8Array = PNG, type = 'image/png', name = 'a.png') {
+  return new File([bytes as BlobPart], name, { type });
+}
+
+describe('uploadFeedbackScreenshotAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
+    putObject.mockResolvedValue(undefined);
+    listObjects.mockResolvedValue([]);
+  });
+
+  it('stores the bytes under the session user prefix, ignoring the filename', async () => {
+    const result = await uploadFeedbackScreenshotAction(
+      pngFile(PNG, 'image/png', '../someone-else/x.png')
+    );
+
+    expect(result.path).toMatch(/^user-123\/[0-9a-f-]{36}\.png$/i);
+    expect(listObjects).toHaveBeenCalledWith(
+      'feedback-screenshots',
+      'user-123/'
+    );
+    expect(putObject).toHaveBeenCalledWith(
+      'feedback-screenshots',
+      result.path,
+      PNG,
+      { contentType: 'image/png' }
+    );
+  });
+
+  it('never stores bytes whose content does not match the type', async () => {
+    const jpegClaim = pngFile(PNG, 'image/jpeg');
+
+    await expect(
+      uploadFeedbackScreenshotAction(jpegClaim)
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect(putObject).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits after 20 uploads in the last hour', async () => {
+    const recent = new Date(Date.now() - 60_000);
+    const old = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    listObjects.mockResolvedValue([
+      ...Array.from({ length: 20 }, (_, i) => ({
+        key: `user-123/${i}.png`,
+        lastModified: recent,
+      })),
+      { key: 'user-123/old.png', lastModified: old },
+    ]);
+
+    await expect(
+      uploadFeedbackScreenshotAction(pngFile())
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(putObject).not.toHaveBeenCalled();
+  });
+
+  it('allows the upload when the quota listing fails (the submit cap is the hard one)', async () => {
+    listObjects.mockRejectedValue(new Error('r2 down'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await uploadFeedbackScreenshotAction(pngFile());
+
+    expect(putObject).toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it('maps a storage failure to an internal error', async () => {
+    putObject.mockRejectedValue(new Error('r2 down'));
+
+    await expect(
+      uploadFeedbackScreenshotAction(pngFile())
+    ).rejects.toMatchObject({ code: 'INTERNAL' });
+  });
+
+  it('rejects when not authenticated, before touching storage', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+    await expect(
+      uploadFeedbackScreenshotAction(pngFile())
+    ).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+    expect(listObjects).not.toHaveBeenCalled();
+    expect(putObject).not.toHaveBeenCalled();
   });
 });
