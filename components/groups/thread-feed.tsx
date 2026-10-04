@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import {
-  threadDayKey,
+  groupByThreadDay,
   threadDayLabel,
 } from '@/components/groups/timeline/thread-day';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
@@ -97,16 +97,10 @@ export function ThreadFeed({
     );
   }
 
-  // One group per day. Phones set each day's entries on a white card under a
-  // left-aligned day title, as the Flutter Circle feed does; from md the
-  // group is unstyled and the day reads as the centered hairline divider.
-  const days: { key: string; timestamp: string; items: typeof entries }[] = [];
-  for (const entry of entries) {
-    const key = threadDayKey(entry.timestamp);
-    const last = days.at(-1);
-    if (last?.key === key) last.items.push(entry);
-    else days.push({ key, timestamp: entry.timestamp, items: [entry] });
-  }
+  // Phones set each day's entries on a white card under a left-aligned day
+  // title, as the Flutter Circle feed does; from md the group is unstyled and
+  // the day reads as the centered hairline divider.
+  const days = groupByThreadDay(entries);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

@@ -53,7 +53,18 @@ const TAB =
 export function MobileTabBar() {
   const t = useTranslations('app.tabBar');
   const tNav = useTranslations('app.mainSidebar');
+  const pathname = usePathname();
+  const badgeCounts = useNavBadgeCounts();
   const [addOpen, setAddOpen] = useState(false);
+  const renderTab = (tab: TabConfig) => (
+    <TabLink
+      key={tab.id}
+      tab={tab}
+      label={t(tab.labelKey)}
+      active={isActiveRoute(pathname, tab.href)}
+      badged={(badgeCounts[tab.id] ?? 0) > 0}
+    />
+  );
 
   return (
     <nav
@@ -62,9 +73,7 @@ export function MobileTabBar() {
       className="typing:hidden shrink-0 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:hidden"
     >
       <ul className="flex h-16 items-center rounded-full bg-white px-3 shadow-nav">
-        {LEADING_TABS.map((tab) => (
-          <TabLink key={tab.id} tab={tab} label={t(tab.labelKey)} />
-        ))}
+        {LEADING_TABS.map(renderTab)}
         <li className="flex h-full w-16 shrink-0 items-center justify-center">
           <button
             type="button"
@@ -77,19 +86,24 @@ export function MobileTabBar() {
             <Plus className="size-6" strokeWidth={2} aria-hidden="true" />
           </button>
         </li>
-        {TRAILING_TABS.map((tab) => (
-          <TabLink key={tab.id} tab={tab} label={t(tab.labelKey)} />
-        ))}
+        {TRAILING_TABS.map(renderTab)}
       </ul>
       <MobileAddSheet open={addOpen} onOpenChange={setAddOpen} />
     </nav>
   );
 }
 
-function TabLink({ tab, label }: { tab: TabConfig; label: string }) {
-  const pathname = usePathname();
-  const badgeCounts = useNavBadgeCounts();
-  const active = isActiveRoute(pathname, tab.href);
+function TabLink({
+  tab,
+  label,
+  active,
+  badged,
+}: {
+  tab: TabConfig;
+  label: string;
+  active: boolean;
+  badged: boolean;
+}) {
   const Icon = tab.icon;
 
   return (
@@ -109,7 +123,7 @@ function TabLink({ tab, label }: { tab: TabConfig; label: string }) {
             strokeWidth={active ? 2 : 1.5}
             aria-hidden="true"
           />
-          {(badgeCounts[tab.id] ?? 0) > 0 && (
+          {badged && (
             <span
               aria-hidden="true"
               className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-kallo-accent ring-2 ring-white"

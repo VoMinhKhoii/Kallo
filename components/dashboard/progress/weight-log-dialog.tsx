@@ -42,8 +42,7 @@ export function WeightLogDialog({
           {hasTodayWeight ? t('weightCard.update') : t('weightCard.logWeight')}
         </Button>
       }
-      dialogClassName="flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0 sm:max-w-md"
-      dialogHeaderClassName="shrink-0 px-[22px] pt-5"
+      dialogClassName="sm:max-w-md"
     >
       <CompactWeightLog
         currentWeight={currentWeight}

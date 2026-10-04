@@ -60,8 +60,7 @@ export function AddFriendDialog({
       onOpenChange={handleOpenChange}
       trigger={trigger}
       title={tab === 'friend' ? t('title') : tGroup('title')}
-      dialogClassName="gap-5 border-[#E8E6DC] bg-white"
-      sheetBodyClassName="px-4 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)]"
+      bodyClassName="px-4 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)] md:px-[22px] md:pt-4 md:pb-[22px]"
     >
       <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>
         <TabsList className="w-full rounded-xl bg-[#E8E6DC]/60 p-1">

@@ -27,3 +27,25 @@ export function threadDayLabel(
     year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
   });
 }
+
+export interface ThreadDay<T> {
+  key: string;
+  /** The first entry's timestamp — what the day's label is derived from. */
+  timestamp: string;
+  items: T[];
+}
+
+/** Splits an ordered feed into consecutive runs that share a local day, so
+ * each day can render as one group under one label. Order is preserved. */
+export function groupByThreadDay<T extends { timestamp: string }>(
+  entries: readonly T[]
+): ThreadDay<T>[] {
+  const days: ThreadDay<T>[] = [];
+  for (const entry of entries) {
+    const key = threadDayKey(entry.timestamp);
+    const last = days.at(-1);
+    if (last?.key === key) last.items.push(entry);
+    else days.push({ key, timestamp: entry.timestamp, items: [entry] });
+  }
+  return days;
+}

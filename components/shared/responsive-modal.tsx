@@ -15,6 +15,9 @@ import { cn } from '@/lib/core/ui/cn';
 import { ResponsiveSheet } from './responsive-sheet';
 import { ResponsiveSheetHeader } from './responsive-sheet-header';
 
+/** The one scroller, so the header and a body's footer stay in reach. */
+const BODY = 'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain';
+
 interface ResponsiveModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,13 +26,10 @@ interface ResponsiveModalProps {
   title: string;
   /** One muted line under the title (e.g. the meal being shared). */
   subtitle?: string;
-  /** Desktop `DialogContent` classes — the dialog keeps its own anatomy. */
+  /** Extra desktop `DialogContent` classes — in practice only its width. */
   dialogClassName?: string;
-  /** Desktop `DialogHeader` classes. */
-  dialogHeaderClassName?: string;
-  /** Padding around `children` in the phone sheet, when the body brings none
-   *  of its own. */
-  sheetBodyClassName?: string;
+  /** Padding around `children`, for a body that brings none of its own. */
+  bodyClassName?: string;
   children: ReactNode;
 }
 
@@ -41,6 +41,12 @@ interface ResponsiveModalProps {
  * stay, but which read as a web pop-up on a phone. Below `md` the same body
  * rises from the bottom edge under the Flutter sheet header (round close on
  * the left, centred title), the way the app's own sheets do.
+ *
+ * It owns the whole anatomy on both forms — the dialog's editorial header,
+ * the column layout, the single scrolling body — so a caller describes only
+ * its body. The column matters: the primitive's default grid sizes its one
+ * auto column to the widest non-wrapping line, which spilled long meal names
+ * and `whitespace-nowrap` footers outside the card.
  */
 export function ResponsiveModal({
   open,
@@ -49,8 +55,7 @@ export function ResponsiveModal({
   title,
   subtitle,
   dialogClassName,
-  dialogHeaderClassName,
-  sheetBodyClassName,
+  bodyClassName,
   children,
 }: ResponsiveModalProps) {
   const t = useTranslations('common');
@@ -77,8 +82,9 @@ export function ResponsiveModal({
           ) : null}
           <div
             className={cn(
-              'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]',
-              sheetBodyClassName
+              BODY,
+              'pb-[env(safe-area-inset-bottom)]',
+              bodyClassName
             )}
           >
             {children}
@@ -91,8 +97,14 @@ export function ResponsiveModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent aria-describedby={undefined} className={dialogClassName}>
-        <DialogHeader className={dialogHeaderClassName}>
+      <DialogContent
+        aria-describedby={undefined}
+        className={cn(
+          'flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0',
+          dialogClassName
+        )}
+      >
+        <DialogHeader className="shrink-0 px-[22px] pt-5">
           <DialogTitle className="font-serif text-[22px] text-kallo-text">
             {title}
           </DialogTitle>
@@ -103,7 +115,7 @@ export function ResponsiveModal({
             </p>
           ) : null}
         </DialogHeader>
-        {children}
+        <div className={cn(BODY, bodyClassName)}>{children}</div>
       </DialogContent>
     </Dialog>
   );

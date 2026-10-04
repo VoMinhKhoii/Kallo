@@ -97,28 +97,15 @@ export function ShareMealDialog({
   const kept = keptKcal(totalKcal, draft.keptParts(mode === 'split'));
 
   return (
-    // One corner family: dialog 16, controls 12, so the nesting reads as
-    // deliberate rather than as three unrelated radii.
-    //
-    // A COLUMN, not the primitive's grid. A grid item's automatic minimum
-    // size is its min-content width, so one long non-wrapping line — the meal
-    // name, the footer's two `whitespace-nowrap` buttons — sized the single
-    // auto column wider than the dialog and spilled the tabs, the meter and
-    // the footer outside the card. Column flex items stretch to the container
-    // instead, which fixes every child at once and keeps fixing them. `cn()`
-    // merges through tailwind-merge, so `flex` replaces `grid` from out here
-    // without touching CLI-managed `components/ui`.
     <ResponsiveModal
       open={open}
       onOpenChange={handleOpenChange}
       trigger={trigger}
       title={t('title')}
       subtitle={mealName}
-      dialogClassName="flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0"
-      dialogHeaderClassName="shrink-0 px-[22px] pt-5"
     >
-      {/* The only scroller: the header keeps the ×, the footer keeps the
-            primary action, and neither can be scrolled out of reach. */}
+      {/* Scrolls inside the modal body so the footer below keeps the primary
+          action in reach, however long the friend list gets. */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[22px]">
         <ShareMealTabs
           allowSplit={!copyOnly}

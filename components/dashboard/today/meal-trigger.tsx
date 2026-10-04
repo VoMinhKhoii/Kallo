@@ -16,16 +16,15 @@ interface MealTriggerProps {
   restoredDraft?: { text: string } | null;
 }
 
-interface MealInputFormProps extends MealTriggerProps {
-  id: string;
-}
+const INPUT_ID = 'dashboard-inline-meal-input';
 
-function MealInputForm({
-  id,
+/** The dashboard's in-place meal bar (md and up; phones log through the tab
+ * bar's "+"). */
+export function InlineMealTrigger({
   onSubmitMeal,
   streaming,
   restoredDraft,
-}: MealInputFormProps) {
+}: MealTriggerProps) {
   const tm = useTranslations('dashboard.mealTrigger');
   const tl = useTranslations('logging');
   const [text, setText] = useState('');
@@ -82,11 +81,11 @@ function MealInputForm({
         />
       ) : (
         <>
-          <label htmlFor={id} className="sr-only">
+          <label htmlFor={INPUT_ID} className="sr-only">
             {tl('placeholder')}
           </label>
           <input
-            id={id}
+            id={INPUT_ID}
             ref={inputRef}
             type="text"
             placeholder={tl('placeholder')}
@@ -107,8 +106,4 @@ function MealInputForm({
       )}
     </form>
   );
-}
-
-export function InlineMealTrigger(props: MealTriggerProps) {
-  return <MealInputForm id="dashboard-inline-meal-input" {...props} />;
 }
