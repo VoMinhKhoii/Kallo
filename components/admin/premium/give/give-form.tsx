@@ -45,40 +45,50 @@ export function GiveForm() {
   const review = () =>
     startTransition(async () => {
       setError(null);
-      const result = await previewWhoAction(toWhoInput(who));
-      if (!result.success) return setError(result.error);
-      if (result.accounts === 0) {
-        return setError('No account matches — nothing would change.');
+      try {
+        const result = await previewWhoAction(toWhoInput(who));
+        if (!result.success) return setError(result.error);
+        if (result.accounts === 0) {
+          return setError('No account matches — nothing would change.');
+        }
+        const skipped = result.payingSkipped
+          ? ` · ${plural(result.payingSkipped, 'paying account')} skipped`
+          : '';
+        setPreview(`${plural(result.accounts, 'account')}${skipped}`);
+        setConfirming(true);
+      } catch {
+        setError('Could not count the accounts. Try again.');
       }
-      const skipped = result.payingSkipped
-        ? ` · ${plural(result.payingSkipped, 'paying account')} skipped`
-        : '';
-      setPreview(`${plural(result.accounts, 'account')}${skipped}`);
-      setConfirming(true);
     });
 
   const run = (reason: string, typed: string) =>
     startTransition(async () => {
       setConfirming(false);
+      setError(null);
       const input = { who: toWhoInput(who), reason, confirm: typed };
-      if (intent === 'give') {
-        const result = await givePremiumAction({
-          ...input,
-          length: toLength(length),
-          mode,
-        });
-        if (!result.success) return setError(result.error);
-        toast.success(
-          `Gave ${plural(result.userCount, 'account')} Premium, latest until ${formatDay(result.expiresAt)}.`
-        );
-      } else {
-        const result = await endFreePremiumAction(input);
-        if (!result.success) return setError(result.error);
-        toast.success(
-          `Ended free Premium for ${plural(result.userCount, 'account')}.`
-        );
+      try {
+        if (intent === 'give') {
+          const result = await givePremiumAction({
+            ...input,
+            length: toLength(length),
+            mode,
+          });
+          if (!result.success) return setError(result.error);
+          toast.success(
+            `Gave ${plural(result.userCount, 'account')} Premium, latest until ${formatDay(result.expiresAt)}.`
+          );
+        } else {
+          const result = await endFreePremiumAction(input);
+          if (!result.success) return setError(result.error);
+          toast.success(
+            `Ended free Premium for ${plural(result.userCount, 'account')}.`
+          );
+        }
+        setWho(INITIAL_WHO);
+      } catch {
+        // It may have gone through before the connection dropped.
+        setError('The request failed. Check Activity before you retry.');
       }
-      setWho(INITIAL_WHO);
     });
 
   return (

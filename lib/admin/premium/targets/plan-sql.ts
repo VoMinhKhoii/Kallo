@@ -6,7 +6,8 @@ import { type SQL, sql } from 'drizzle-orm';
 // checked against the clock (a stale status alone never counts).
 //
 //  - paying:        any active NON-promo premium grant or active store
-//                   subscription. Paying accounts are never changed here.
+//                   subscription, in any environment (the cautious side:
+//                   paying accounts are never changed here).
 //  - complimentary: an active promo grant and not paying.
 //  - free:          neither.
 
@@ -27,13 +28,17 @@ export function payingSql(userId: SQL): SQL {
   )`;
 }
 
-/** True when the account holds an active free (promo) Premium grant. */
+/**
+ * True when the account holds an active free (promo) Premium grant. Scoped to
+ * production like `promoEndsSql`, so "on free Premium" always has an end date.
+ */
 export function activePromoSql(userId: SQL): SQL {
   return sql`EXISTS (
     SELECT 1 FROM public.entitlement_grants AS cg
     WHERE cg.user_id = ${userId}
       AND cg.source = 'promo'
       AND cg.entitlement_key = 'premium'
+      AND cg.environment = 'production'
       AND ${active('cg')}
   )`;
 }

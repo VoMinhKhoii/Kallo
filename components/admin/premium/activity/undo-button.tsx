@@ -15,16 +15,20 @@ export function UndoButton({ actionId }: { actionId: string }) {
   const undo = (reason: string) =>
     startTransition(async () => {
       setOpen(false);
-      const result = await undoAdminAction({ actionId, reason });
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await undoAdminAction({ actionId, reason });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(
+          result.userCount > 0
+            ? `Undone for ${plural(result.userCount, 'account')}.`
+            : 'Undone.'
+        );
+      } catch {
+        toast.error('The undo failed. Refresh Activity before you retry.');
       }
-      toast.success(
-        result.userCount > 0
-          ? `Undone for ${plural(result.userCount, 'account')}.`
-          : 'Undone.'
-      );
     });
 
   return (

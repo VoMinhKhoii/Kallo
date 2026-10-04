@@ -67,6 +67,8 @@ export async function listEndingSoon(
     SELECT u.id::text AS id, u.email, ${promoEndsSql(sql`u.id`)} AS free_until
     FROM auth.users AS u
     WHERE ${onPromo}
+      -- An open-ended promo grant never "ends soon".
+      AND ${promoEndsSql(sql`u.id`)} IS NOT NULL
     ORDER BY free_until ASC
     LIMIT ${limit}
   `)) as unknown as { id: string; email: string; free_until: string }[];

@@ -38,21 +38,25 @@ export function QuickActions({
       setAction(null);
       if (!current) return;
       const who = { kind: 'users' as const, userIds: [userId] };
-      if (current.kind === 'give') {
-        const result = await givePremiumAction({
-          who,
-          reason,
-          mode: 'extend',
-          length: { unit: 'days', days: current.days },
-        });
-        if (!result.success) return void toast.error(result.error);
-        toast.success(
-          `Free Premium now runs until ${formatDay(result.expiresAt)}.`
-        );
-      } else {
-        const result = await endFreePremiumAction({ who, reason });
-        if (!result.success) return void toast.error(result.error);
-        toast.success('Free Premium ended.');
+      try {
+        if (current.kind === 'give') {
+          const result = await givePremiumAction({
+            who,
+            reason,
+            mode: 'extend',
+            length: { unit: 'days', days: current.days },
+          });
+          if (!result.success) return void toast.error(result.error);
+          toast.success(
+            `Free Premium now runs until ${formatDay(result.expiresAt)}.`
+          );
+        } else {
+          const result = await endFreePremiumAction({ who, reason });
+          if (!result.success) return void toast.error(result.error);
+          toast.success('Free Premium ended.');
+        }
+      } catch {
+        toast.error('The request failed. Refresh before you retry.');
       }
     });
 

@@ -4,10 +4,8 @@ import { z } from 'zod';
 // the server actions (the real check).
 export const MAX_PICKED_ACCOUNTS = 500;
 
-const isoDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a full date.')
-  .optional();
+// A real calendar day (rejects 2026-02-30), so Postgres never sees a bad date.
+const isoDate = z.iso.date('Use a real date.').optional();
 
 export const whoSchema = z.discriminatedUnion('kind', [
   z.object({

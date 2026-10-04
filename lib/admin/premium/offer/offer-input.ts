@@ -9,10 +9,7 @@ export const offerInputSchema = z.object({
     .min(1, 'At least 1 day.')
     .max(365, 'At most 365 days.'),
   // Optional calendar date; the offer stops at the start of that day (UTC).
-  autoOffOn: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a date.')
-    .nullable(),
+  autoOffOn: z.iso.date('Pick a real date.').nullable(),
   reason: z
     .string()
     .trim()

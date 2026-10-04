@@ -30,6 +30,23 @@ describe('giveInputSchema', () => {
     ).toBe(false);
   });
 
+  it('rejects dates that do not exist, before they reach Postgres', () => {
+    const until = (date: string) =>
+      giveInputSchema.safeParse({
+        ...base,
+        length: { unit: 'until', until: date },
+      }).success;
+    const joined = (date: string) =>
+      giveInputSchema.safeParse({
+        ...base,
+        who: { kind: 'group', plan: 'free', joinedFrom: date },
+      }).success;
+    expect(until('2026-02-30')).toBe(false);
+    expect(until('2028-02-29')).toBe(true);
+    expect(joined('2026-13-01')).toBe(false);
+    expect(joined('2026-10-04')).toBe(true);
+  });
+
   it('requires a reason and at least one picked account', () => {
     expect(giveInputSchema.safeParse({ ...base, reason: ' ' }).success).toBe(
       false

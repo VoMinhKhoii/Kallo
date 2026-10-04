@@ -7,7 +7,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getAccount } from '@/lib/admin/premium/accounts/lookup';
-import { getOverview } from '@/lib/admin/premium/accounts/overview';
+import {
+  getOverview,
+  listEndingSoon,
+} from '@/lib/admin/premium/accounts/overview';
 import { searchAccounts } from '@/lib/admin/premium/accounts/search';
 import { undoAction } from '@/lib/admin/premium/activity/undo';
 import { endFreePremium } from '@/lib/admin/premium/grants/end';
@@ -232,6 +235,18 @@ describe.skipIf(!client)('/admin/premium (real Postgres)', () => {
     expect(byEmail[0]?.id).toBe(id);
     // A literal % is not a wildcard.
     expect(await searchAccounts(db, `%${tag}%`)).toEqual([]);
+  });
+
+  it('a sandbox-only promo grant does not count as free Premium', async () => {
+    const id = await user('sandboxonly');
+    await client!`
+      INSERT INTO public.entitlement_grants (user_id, entitlement_key, source,
+        environment, starts_at, expires_at, status, will_renew, external_ref)
+      VALUES (${id}::uuid, 'premium', 'promo', 'sandbox', now(),
+        now() + interval '1 day', 'active', false, ${`sb-${tag}`})`;
+    expect((await getAccount(db, id))?.plan).toBe('free');
+    const ending = await listEndingSoon(db, 1000);
+    expect(ending.some((row) => row.id === id)).toBe(false);
   });
 
   it('reports the overview counts', async () => {

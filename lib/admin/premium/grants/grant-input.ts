@@ -23,7 +23,7 @@ const length = z.discriminatedUnion('unit', [
   z.object({
     unit: z.literal('until'),
     // A calendar date; Premium runs to the end of that day (UTC).
-    until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a date.'),
+    until: z.iso.date('Pick a real date.'),
   }),
 ]);
 

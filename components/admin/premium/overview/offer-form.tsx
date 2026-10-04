@@ -36,8 +36,15 @@ export function OfferForm({ saved }: { saved: OfferFormValue }) {
     value.days !== saved.days ||
     value.autoOffOn !== saved.autoOffOn;
   const days = Number(value.days);
+  // The trigger stops granting from the start of the auto-off day (UTC).
+  const today = new Date().toISOString().slice(0, 10);
+  const autoOffPassed = value.autoOffOn !== '' && value.autoOffOn <= today;
   const sample =
-    value.enabled && Number.isInteger(days) && days >= 1 && days <= 365
+    value.enabled &&
+    !autoOffPassed &&
+    Number.isInteger(days) &&
+    days >= 1 &&
+    days <= 365
       ? `Premium until ${formatDay(new Date(Date.now() + days * DAY_MS))}`
       : 'Nothing — the offer is off';
 
@@ -45,14 +52,18 @@ export function OfferForm({ saved }: { saved: OfferFormValue }) {
     startTransition(async () => {
       setConfirming(false);
       setError(null);
-      const result = await saveWelcomeOfferAction({
-        enabled: value.enabled,
-        days: value.days,
-        autoOffOn: value.autoOffOn || null,
-        reason,
-      });
-      if (!result.success) return setError(result.error);
-      toast.success('Welcome offer saved. It applies to the next signup.');
+      try {
+        const result = await saveWelcomeOfferAction({
+          enabled: value.enabled,
+          days: value.days,
+          autoOffOn: value.autoOffOn || null,
+          reason,
+        });
+        if (!result.success) return setError(result.error);
+        toast.success('Welcome offer saved. It applies to the next signup.');
+      } catch {
+        setError('Saving failed. Refresh to see the current offer.');
+      }
     });
 
   return (
