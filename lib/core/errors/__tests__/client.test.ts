@@ -73,12 +73,12 @@ describe('parseApiError', () => {
         retryable: false,
         message: 'Upgrade to keep using this feature.',
         feature: 'relog',
-        reason: 'trial_expired',
+        reason: 'not_entitled',
       },
     });
     expect(err.status).toBe(402);
     expect(err.feature).toBe('relog');
-    expect(err.reason).toBe('trial_expired');
+    expect(err.reason).toBe('not_entitled');
   });
 
   it('leaves message/feature/reason undefined when absent', () => {
