@@ -80,7 +80,6 @@ async function startAnalysis(
   // entitlement state is authoritative; clients never self-grant access.
   const billingError = await getBillingAccessError({
     userId,
-    profileCreatedAt: profile.createdAt,
     locale: responseLocale,
   });
   if (billingError) return billingError;

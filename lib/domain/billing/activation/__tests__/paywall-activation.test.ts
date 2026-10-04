@@ -33,7 +33,6 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: false, endsAt: null, daysRemaining: 0 },
     features: entitlementFeatures(tier === 'premium'),
   };
 }
@@ -81,6 +80,22 @@ describe('paywall activation polling', () => {
 
     await expect(result).resolves.toBe(true);
     expect(fetchEntitlements).not.toHaveBeenCalled();
+  });
+
+  it('does not mistake complimentary Premium for a landed purchase', async () => {
+    // A welcome-grant user is already tier premium before paying; only the
+    // paid grant (complimentary flips false) proves the purchase landed.
+    const welcome = { ...snapshot('premium'), complimentary: true };
+    reconcileEntitlements.mockResolvedValue(welcome);
+    fetchEntitlements
+      .mockResolvedValueOnce(welcome)
+      .mockResolvedValue({ ...snapshot('premium'), complimentary: false });
+
+    const result = pollUntilPremium(new QueryClient(), 'user-a');
+    await vi.runAllTimersAsync();
+
+    await expect(result).resolves.toBe(true);
+    expect(fetchEntitlements.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
   it('gives up when the deadline elapses without a grant', async () => {

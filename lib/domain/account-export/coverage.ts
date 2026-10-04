@@ -231,6 +231,11 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
       "Raw RevenueCat webhook envelopes kept only for idempotency and retry, pruned by the billing retention job. They are the provider's record of a store event (transaction ids, prices, store metadata, sometimes other aliases) rather than data the user gave us; their effect on the account is exported as billingGrants and billingSyncs. The same table also carries internal account-deletion jobs.",
   },
 
+  premium_grant_audit: {
+    excluded:
+      "The operator's record of who granted complimentary Premium from the admin page, written for accountability. The grant itself is the user's data and is exported as billingGrants.",
+  },
+
   // --- Pipeline traces -----------------------------------------------------
   pipeline_stage_logs: { excluded: PIPELINE_TRACE },
   pipeline_llm_calls: { excluded: PIPELINE_TRACE },

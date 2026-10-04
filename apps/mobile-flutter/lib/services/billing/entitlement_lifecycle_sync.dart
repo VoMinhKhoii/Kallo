@@ -123,7 +123,7 @@ final entitlementLifecycleSyncProvider = Provider<EntitlementLifecycleSync>((
         if (snapshot == null) return false;
 
         final pendingStore = ref.read(activationPendingStoreProvider);
-        if (snapshot.isPremium) {
+        if (snapshot.hasPaidPremium) {
           await pendingStore.clear(userId);
           if (!snapshot.reconciliationRequired) return true;
         }
@@ -137,7 +137,7 @@ final entitlementLifecycleSyncProvider = Provider<EntitlementLifecycleSync>((
         }
 
         final recovered = await controller.reconcile();
-        if (recovered?.isPremium ?? false) {
+        if (recovered?.hasPaidPremium ?? false) {
           await pendingStore.clear(userId);
         } else {
           // The provider may simply not have ingested the transaction yet, so

@@ -4,7 +4,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/paywall/logic/plan_offer.dart';
-import 'package:kallo_mobile/services/billing/entitlement_state.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../l10n_test_loader.dart';
@@ -16,12 +15,10 @@ final _now = DateTime(2026, 9, 6);
 PaywallOffer offerFor(
   List<Package> packages, {
   bool? yearlyPicked,
-  TrialState trial = TrialState.none,
   Set<String> eligible = _eligible,
 }) => paywallOffer(
   packages: packages,
   yearlyPicked: yearlyPicked,
-  trial: trial,
   trialEligibleProductIds: eligible,
   locale: 'en',
   now: _now,
@@ -88,21 +85,6 @@ void main() {
     );
     expect(offer.renewalLine, startsWith(r'$8.99/month'));
     expect(offer.renewalLine, contains('Sep 13'));
-    expect(offer.renewalLine, contains(r'$0.99'));
-  });
-
-  test('the paid week does not wait on an app-level trial', () {
-    // The store charges the intro whatever the server's own trial says, so the
-    // disclosure must follow the store's eligibility alone.
-    final offer = offerFor(const [
-      annualPaidWeekPackage,
-      monthlyPaidWeekPackage,
-    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 3));
-
-    expect(
-      offer.ctaLabel,
-      tr('paywall.startIntro', namedArgs: {'days': '7', 'price': r'$0.99'}),
-    );
     expect(offer.renewalLine, contains(r'$0.99'));
   });
 
@@ -176,25 +158,6 @@ void main() {
     // Even against a stale pick: the toggle is only tappable while a plan
     // exists, so a monthly pick can outlive the offering that allowed it.
     expect(offerFor(const [], yearlyPicked: false).yearly, isTrue);
-  });
-
-  test('a running trial makes the bun count it down instead of boasting', () {
-    final counting = offerFor(const [
-      annualPackage,
-      monthlyPackage,
-    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 3));
-    expect(
-      counting.guideLine,
-      tr('paywall.trialCountdown', namedArgs: {'days': '3'}),
-    );
-    // Mid-trial there is no second trial to start.
-    expect(counting.ctaLabel, tr('paywall.purchaseTrial'));
-
-    final lastDay = offerFor(const [
-      annualPackage,
-      monthlyPackage,
-    ], trial: const TrialState(active: true, endsAt: null, daysRemaining: 1));
-    expect(lastDay.guideLine, tr('paywall.trialCountdownLastDay'));
   });
 
   test(

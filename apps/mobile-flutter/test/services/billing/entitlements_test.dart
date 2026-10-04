@@ -56,7 +56,6 @@ Map<String, dynamic> freeJson({String? source}) => {
   'willRenew': false,
   'source': source,
   'hasActiveSubscription': false,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {'allowed': false, 'reason': 'not_entitled'},
   },
@@ -73,7 +72,6 @@ Map<String, dynamic> premiumJson({
   'willRenew': willRenew,
   'source': 'app_store',
   'hasActiveSubscription': !lifetime,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {'allowed': true, 'reason': 'entitled'},
   },
@@ -111,67 +109,54 @@ void main() {
       expect(e.expiresAt, isNull);
     });
 
-    test('parses an active trial with days remaining', () {
+    test('a pre-launch server\'s trial payload still parses', () {
+      // A server deployed before the welcome-premium grant replaced the
+      // app-level trial still sends `trial` and the two trial reasons. The
+      // client keeps the server's `allowed` verdict and reads the retired
+      // reasons as plain not-entitled — no crash, no over-grant.
       final e = EntitlementState.fromJson({
         'tier': 'free',
-        'purchasesEnabled': true,
-        'isLifetime': false,
-        'expiresAt': null,
-        'willRenew': false,
-        'source': 'trial',
-        'trial': {
-          'active': true,
-          'endsAt': '2026-07-19T00:00:00.000Z',
-          'daysRemaining': 5,
-        },
+        'trial': {'active': true, 'endsAt': null, 'daysRemaining': 5},
         'features': {
           'ai_analysis': {'allowed': true, 'reason': 'trial'},
-        },
-      });
-      expect(e.isTrialing, isTrue);
-      expect(e.trial.active, isTrue);
-      expect(e.trial.daysRemaining, 5);
-      expect(e.trial.endsAt, DateTime.utc(2026, 7, 19));
-      expect(e.aiAnalysis.reason, FeatureReason.trial);
-    });
-
-    test('paid subscription wins when a trial window is also active', () {
-      final e = EntitlementState.fromJson({
-        ...premiumJson(),
-        'hasActiveSubscription': true,
-        'trial': {
-          'active': true,
-          'endsAt': '2026-07-19T00:00:00.000Z',
-          'daysRemaining': 5,
-        },
-      });
-
-      expect(e.isPremium, isTrue);
-      expect(e.trial.active, isTrue);
-      expect(e.isTrialing, isFalse);
-    });
-
-    test('maps trial_expired reason on a free tier', () {
-      final e = EntitlementState.fromJson({
-        'tier': 'free',
-        'isLifetime': false,
-        'expiresAt': null,
-        'willRenew': false,
-        'source': null,
-        'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
-        'features': {
-          'ai_analysis': {'allowed': false, 'reason': 'trial_expired'},
+          'label_scan': {'allowed': false, 'reason': 'trial_expired'},
         },
       });
       expect(e.isPremium, isFalse);
-      expect(e.aiAnalysis.allowed, isFalse);
-      expect(e.aiAnalysis.reason, FeatureReason.trialExpired);
+      expect(e.aiAnalysis.allowed, isTrue);
+      expect(e.aiAnalysis.reason, FeatureReason.notEntitled);
+      expect(e.featureAccess(PremiumFeature.labelScan).allowed, isFalse);
+    });
+
+    test('a welcome premium grant reads as premium with an end date', () {
+      final e = EntitlementState.fromJson({
+        ...premiumJson(expiresAt: '2026-10-16T00:00:00.000Z'),
+        'source': 'promo',
+        'willRenew': false,
+        'hasActiveSubscription': false,
+      });
+      expect(e.isPremium, isTrue);
+      expect(e.complimentary, isFalse);
+      expect(e.hasPaidPremium, isTrue);
+      expect(e.source, 'promo');
+      expect(e.willRenew, isFalse);
+      expect(e.expiresAt, DateTime.utc(2026, 10, 16));
+    });
+
+    test('complimentary Premium unlocks features but is not paid', () {
+      final e = EntitlementState.fromJson({
+        ...premiumJson(willRenew: false),
+        'source': 'promo',
+        'complimentary': true,
+      });
+      expect(e.isPremium, isTrue);
+      expect(e.complimentary, isTrue);
+      expect(e.hasPaidPremium, isFalse);
     });
 
     test('fails CLOSED on unknown / missing fields (never over-grants)', () {
       final e = EntitlementState.fromJson({
         'tier': 'enterprise', // unknown → free
-        'trial': null,
         'features': null,
       });
       expect(e.tier, EntitlementTier.free);
@@ -179,8 +164,6 @@ void main() {
       expect(e.isLifetime, isFalse);
       expect(e.willRenew, isFalse);
       expect(e.reconciliationRequired, isFalse);
-      expect(e.trial.active, isFalse);
-      expect(e.trial.daysRemaining, 0);
       expect(e.aiAnalysis.allowed, isFalse);
       expect(e.aiAnalysis.reason, FeatureReason.notEntitled);
     });
@@ -195,9 +178,9 @@ void main() {
         ...freeJson(),
         'enforcementEnabled': true,
         'features': {
-          'ai_analysis': {'allowed': false, 'reason': 'trial_expired'},
+          'ai_analysis': {'allowed': false, 'reason': 'not_entitled'},
           'label_scan': {'allowed': false, 'reason': 'not_entitled'},
-          'micronutrients': {'allowed': true, 'reason': 'trial'},
+          'micronutrients': {'allowed': true, 'reason': 'entitled'},
           'relog': {'allowed': false, 'reason': 'not_entitled'},
           'cheat_meal': {'allowed': false, 'reason': 'not_entitled'},
           'copy_split': {'allowed': false, 'reason': 'not_entitled'},
@@ -205,12 +188,12 @@ void main() {
         },
       });
       expect(e.features.length, 7);
-      expect(e.aiAnalysis.reason, FeatureReason.trialExpired);
+      expect(e.aiAnalysis.reason, FeatureReason.notEntitled);
       expect(e.featureAccess(PremiumFeature.labelScan).allowed, isFalse);
       expect(e.featureAccess(PremiumFeature.micronutrients).allowed, isTrue);
       expect(
         e.featureAccess(PremiumFeature.micronutrients).reason,
-        FeatureReason.trial,
+        FeatureReason.entitled,
       );
       // Unknown names read denied rather than throwing or over-granting.
       expect(e.featureAccess('not_a_feature').allowed, isFalse);

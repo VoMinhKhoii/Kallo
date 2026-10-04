@@ -88,8 +88,9 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).toContain(
       `BILLING_ENFORCEMENT_ENABLED: \${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}`
     );
-    expect(workflow).toContain(`TRIAL_DAYS: \${{ vars.TRIAL_DAYS || '0' }}`);
-    expect(workflow).toContain('SUBSCRIPTION_LAUNCH_DATE');
+    // The app-level trial is gone (welcome premium is a DB grant instead).
+    expect(workflow).not.toContain('TRIAL_DAYS');
+    expect(workflow).not.toContain('SUBSCRIPTION_LAUNCH_DATE');
   });
 
   it('mounts the Sign in with Apple secrets only once they exist', () => {

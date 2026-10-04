@@ -54,7 +54,7 @@ export async function stageRelogAnalysisAction(
   loggedAt: string;
 }> {
   const parsed = stageRelogAnalysisSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
   // Premium gate BEFORE the rate guard: a locked user must not burn their
   // (shared) relog write budget on a call that can only end in 402.
   //
@@ -63,10 +63,7 @@ export async function stageRelogAnalysisAction(
   // gates nothing), so a scan-only submit arriving through this action must not
   // become the one barcode path behind the paywall.
   if (relogRefsOf(parsed.items).length > 0) {
-    await assertFeatureAccess(
-      { userId: user.id, profileCreatedAt: profile.createdAt },
-      'relog'
-    );
+    await assertFeatureAccess({ userId: user.id }, 'relog');
   }
 
   // Throttled HERE, not at the route: the web composer calls this action

@@ -56,14 +56,11 @@ export async function shareMealWithFriendsAction(input: {
   meal: PersistedMeal | null;
 }> {
   const parsed = shareMealWithFriendsSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
   // Premium (copy_split): gated on the SEND side only, before the transaction.
   // The initiator pays; accept stays free (see invite-response) because a split
   // has already scaled this meal down by the time the recipient sees the offer.
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'copy_split'
-  );
+  await assertFeatureAccess({ userId: user.id }, 'copy_split');
 
   // Dedup and drop self — you cannot share a meal with yourself.
   const recipientIds = Array.from(new Set(parsed.friendUserIds)).filter(

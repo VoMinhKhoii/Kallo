@@ -36,6 +36,7 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
     required this.state,
     required this.onStayFree,
     this.storeUnavailable = false,
+    this.onboarding = false,
     super.key,
   });
 
@@ -46,6 +47,10 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
   /// The screen could not even read the entitlement, so nothing here can be
   /// bought. Same face, dead button — see [_storeClosed].
   final bool storeUnavailable;
+
+  /// The last step of onboarding. With complimentary Premium already running,
+  /// the band leads with starting it rather than buying (see [PaywallWelcome]).
+  final bool onboarding;
 
   /// The design's 20, not the screen's header inset: the table's two columns
   /// are what set this width, and at 24 the Vietnamese labels wrap a row
@@ -77,7 +82,6 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     final offer = paywallOffer(
       packages: widget.state.packages,
       yearlyPicked: _yearly,
-      trial: widget.entitlement.trial,
       trialEligibleProductIds: widget.state.trialEligibleProductIds,
       locale: context.locale.toString(),
       now: ref.read(paywallClockProvider)(),
@@ -96,8 +100,24 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
                   ? null
                   : () => _purchase(plan),
           onStayFree: widget.onStayFree,
+          welcome: _welcome(context),
         ),
       ],
+    );
+  }
+
+  PaywallWelcome? _welcome(BuildContext context) {
+    final entitlement = widget.entitlement;
+    final until = entitlement.expiresAt;
+    if (!widget.onboarding || !entitlement.complimentary || until == null) {
+      return null;
+    }
+    final now = ref.read(paywallClockProvider)();
+    final days = (until.difference(now).inHours / 24).ceil();
+    if (days <= 0) return null;
+    return PaywallWelcome(
+      days: days,
+      until: DateFormat.MMMd(context.locale.toString()).format(until.toLocal()),
     );
   }
 

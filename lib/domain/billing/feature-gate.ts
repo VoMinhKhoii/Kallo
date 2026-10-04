@@ -22,7 +22,6 @@ import type { FeatureKey } from '@/lib/domain/billing/entitlement/features';
 
 export interface FeatureGateInput {
   userId: string;
-  profileCreatedAt: Date;
 }
 
 export type FeatureGateResult =
@@ -38,13 +37,7 @@ export async function checkFeatureGate(
 
   const access = await checkFeatureAccess(input, feature);
   if (access.allowed) return { locked: false };
-
-  // `checkFeatureAccess` may also report 'entitled' / 'trial', but never
-  // alongside allowed:false — anything that is not an expired trial is a
-  // plain missing entitlement.
-  const reason: FeatureLockedReason =
-    access.reason === 'trial_expired' ? 'trial_expired' : 'not_entitled';
-  return { locked: true, reason };
+  return { locked: true, reason: access.reason };
 }
 
 /** Throwing gate: `FeatureLockedError` (402) when the feature is locked. */

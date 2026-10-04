@@ -37,13 +37,10 @@ export async function duplicateMealAction(input: {
   timezoneOffset: number;
 }): Promise<ConfirmMealResponse> {
   const parsed = duplicateMealSchema.parse(input);
-  const { user, profile } = await requireAuthAndProfile();
+  const { user } = await requireAuthAndProfile();
   // Premium: "log again" is a Premium-card feature. Gated BEFORE the
   // transaction — no entitlement read may happen inside an open tx (pool max 2).
-  await assertFeatureAccess(
-    { userId: user.id, profileCreatedAt: profile.createdAt },
-    'relog'
-  );
+  await assertFeatureAccess({ userId: user.id }, 'relog');
 
   return await db.transaction(async (tx) => {
     const [source] = await tx

@@ -445,7 +445,7 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
       async () => {
         const { Errors } = await import('@/lib/core/errors/catalog');
         assertFeatureAccess.mockRejectedValueOnce(
-          Errors.featureLocked('label_scan', 'trial_expired')
+          Errors.featureLocked('label_scan', 'not_entitled')
         );
       },
       validBody,

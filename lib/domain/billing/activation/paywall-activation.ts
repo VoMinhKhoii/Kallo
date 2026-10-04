@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import {
   applyEntitlementSnapshot,
   fetchEntitlements,
+  hasPaidPremium,
   reconcileEntitlements,
 } from '@/lib/domain/billing/entitlements-client';
 
@@ -45,7 +46,7 @@ export async function pollUntilPremium(
       );
       if (!isCurrent()) return false;
       applyEntitlementSnapshot(queryClient, reconciled);
-      return reconciled.tier === 'premium';
+      return hasPaidPremium(reconciled);
     } catch {
       // A webhook may still land even if the explicit recovery request failed.
       return false;
@@ -96,7 +97,7 @@ export async function pollUntilPremium(
       // it would drop a paid user back to free in the UI.
       if (!isCurrent()) return false;
       applyEntitlementSnapshot(queryClient, data);
-      if (data.tier === 'premium') return true;
+      if (hasPaidPremium(data)) return true;
     } catch {
       // Transient failure — the last good snapshot stays cached, and polling
       // continues until the window elapses.

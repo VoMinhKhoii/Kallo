@@ -20,6 +20,7 @@ export const APP_ROUTE_PATTERNS = [
   '/[locale]/admin/feedback',
   '/[locale]/admin/feedback/[id]',
   '/[locale]/admin/health',
+  '/[locale]/admin/premium',
   '/[locale]/admin/prompts',
   '/[locale]/admin/prompts/[name]',
   '/[locale]/admin/requests',

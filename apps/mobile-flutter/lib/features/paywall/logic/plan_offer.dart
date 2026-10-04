@@ -23,7 +23,6 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-import '../../../services/billing/entitlement_state.dart';
 import 'plan_pricing.dart';
 
 /// Everything the decision half renders, in one value.
@@ -63,9 +62,7 @@ class PaywallOffer {
   final String ctaLabel;
   final String renewalLine;
 
-  /// The bun's one line: how much the yearly plan saves, or — while a trial
-  /// is running — how much of it is left, which is the more useful fact at
-  /// that moment.
+  /// The bun's one line: how much the yearly plan saves.
   final String guideLine;
 
   /// "Save 40%", on the yearly button only. Null when the saving cannot be
@@ -82,7 +79,6 @@ class PaywallOffer {
 PaywallOffer paywallOffer({
   required List<Package> packages,
   required bool? yearlyPicked,
-  required TrialState trial,
   required Set<String> trialEligibleProductIds,
   required String locale,
   required DateTime now,
@@ -112,18 +108,14 @@ PaywallOffer paywallOffer({
   final intro =
       plan == null
           ? null
-          : introOffer(
-            plan: plan,
-            trialActive: trial.active,
-            eligibleProductIds: trialEligibleProductIds,
-          );
+          : introOffer(plan: plan, eligibleProductIds: trialEligibleProductIds);
   final savePercent = pricing?.savePercent;
   return PaywallOffer(
     plan: plan,
     yearly: yearly,
     showPeriodToggle:
         (split.annual != null && split.monthly != null) || packages.isEmpty,
-    ctaLabel: _ctaLabel(plan: plan, intro: intro, trialActive: trial.active),
+    ctaLabel: _ctaLabel(plan: plan, intro: intro),
     renewalLine: _renewalLine(
       plan: plan,
       pricing: pricing,
@@ -131,7 +123,7 @@ PaywallOffer paywallOffer({
       locale: locale,
       now: now,
     ),
-    guideLine: _guideLine(trial: trial, savePercent: savePercent),
+    guideLine: _guideLine(savePercent: savePercent),
     chipLabel:
         yearly && savePercent != null
             ? tr('paywall.saveChip', namedArgs: {'percent': '$savePercent'})
@@ -144,25 +136,22 @@ PaywallOffer paywallOffer({
 /// monthly plan names its own price on the button — it has no trial and no
 /// saving to lead with, so the price is the most useful thing there — and the
 /// yearly plan without a trial falls back to the plain "Start Premium".
-String _ctaLabel({
-  required Package? plan,
-  required IntroOffer? intro,
-  required bool trialActive,
-}) => switch (intro) {
-  PaidIntro(:final days, :final price) => tr(
-    'paywall.startIntro',
-    namedArgs: {'days': '$days', 'price': price},
-  ),
-  FreeTrial(:final days) => tr(
-    'paywall.startTrialDays',
-    namedArgs: {'days': '$days'},
-  ),
-  null when plan != null && plan.packageType == PackageType.monthly => tr(
-    'paywall.startMonthly',
-    namedArgs: {'price': plan.storeProduct.priceString},
-  ),
-  null => tr(trialActive ? 'paywall.purchaseTrial' : 'paywall.purchase'),
-};
+String _ctaLabel({required Package? plan, required IntroOffer? intro}) =>
+    switch (intro) {
+      PaidIntro(:final days, :final price) => tr(
+        'paywall.startIntro',
+        namedArgs: {'days': '$days', 'price': price},
+      ),
+      FreeTrial(:final days) => tr(
+        'paywall.startTrialDays',
+        namedArgs: {'days': '$days'},
+      ),
+      null when plan != null && plan.packageType == PackageType.monthly => tr(
+        'paywall.startMonthly',
+        namedArgs: {'price': plan.storeProduct.priceString},
+      ),
+      null => tr('paywall.purchase'),
+    };
 
 /// What will be charged, when it starts, and that it repeats until cancelled.
 ///
@@ -221,15 +210,7 @@ String _renewalLine({
   };
 }
 
-String _guideLine({required TrialState trial, required int? savePercent}) {
-  if (trial.active) {
-    return trial.daysRemaining <= 1
-        ? tr('paywall.trialCountdownLastDay')
-        : tr(
-          'paywall.trialCountdown',
-          namedArgs: {'days': '${trial.daysRemaining}'},
-        );
-  }
+String _guideLine({required int? savePercent}) {
   if (savePercent == null) return tr('paywall.guideUnlock');
   return tr('paywall.guideSavings', namedArgs: {'percent': '$savePercent'});
 }

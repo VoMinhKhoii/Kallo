@@ -23,7 +23,6 @@ class _FailingRefreshApi extends ApiClient {
           'willRenew': false,
           'source': 'test_store',
           'hasActiveSubscription': false,
-          'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
           'features': {
             'ai_analysis': {'allowed': true, 'reason': 'entitled'},
           },
@@ -95,7 +94,6 @@ Map<String, dynamic> _freeEntitlement() => {
   'isLifetime': false,
   'willRenew': false,
   'hasActiveSubscription': false,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {'allowed': false, 'reason': 'not_entitled'},
   },

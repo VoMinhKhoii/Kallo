@@ -27,7 +27,7 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
  * **The order matters, and it is per-user FIRST.** The global budget is a
  * counter that is never refunded, so consuming it before the per-user check
  * meant a request the per-user guard was about to REFUSE still burned one unit
- * of the app-wide 5000/day budget. One trial account posting 5000 empty bodies
+ * of the app-wide 5000/day budget. One account posting 5000 empty bodies
  * therefore took OCR away from everybody for the rest of the UTC day. Charging
  * it only after the per-user slot is held — and only immediately before the
  * provider call, once the body has been read, validated and decoded — means the

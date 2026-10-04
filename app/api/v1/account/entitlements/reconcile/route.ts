@@ -47,7 +47,6 @@ export async function POST() {
     const state = await getEntitlementState(
       {
         userId: profile.userId,
-        profileCreatedAt: profile.createdAt,
       },
       { billingEnvironment }
     );
@@ -69,11 +68,7 @@ export async function POST() {
       managementUrl: state.managementUrl,
       managementStore: state.managementStore,
       hasActiveSubscription: state.hasActiveSubscription,
-      trial: {
-        active: state.trial.active,
-        endsAt: state.trial.endsAt?.toISOString() ?? null,
-        daysRemaining: state.trial.daysRemaining,
-      },
+      complimentary: state.complimentary,
       features: state.features,
     });
   } catch (error) {

@@ -492,11 +492,9 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `REVENUECAT_ALLOWED_APP_IDS` | Comma-separated production RevenueCat app IDs |
 | `REVENUECAT_WEB_API_KEY` | Client-public RevenueCat Web SDK key (Paddle-backed checkout); blank until web billing is configured |
 | `REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT` | Keep `false` until the production webhook is environment-filtered and verified |
-| `BILLING_ENFORCEMENT_ENABLED` | Keep `false` through dark launch and sandbox validation |
+| `BILLING_ENFORCEMENT_ENABLED` | Keep `false` through dark launch and sandbox validation; turn on only after the welcome-premium migration has applied |
 | `BILLING_PURCHASES_ENABLED` | Keep `false` through dark launch; independent new-checkout kill-switch |
 | `BILLING_SANDBOX_USER_IDS` | Dedicated App Review account UUIDs only; blank for normal production users |
-| `SUBSCRIPTION_LAUNCH_DATE` | Valid ISO launch date; required before enforcement can be `true` |
-| `TRIAL_DAYS` | Non-negative integer; defaults to `0` (no free trial — the paid first week is sold by the stores and Paddle) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
 | `NEXT_PUBLIC_SENTRY_DSN` | Optional. Sentry DSN baked into the CI image; empty → error reporting off (`docs/MONITORING.md`) |

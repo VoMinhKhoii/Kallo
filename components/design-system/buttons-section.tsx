@@ -63,7 +63,7 @@ export function ButtonsSection() {
             Get started
           </Button>
           <Button className="h-11" variant="landing-ink">
-            Start free trial
+            Start Premium
           </Button>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">

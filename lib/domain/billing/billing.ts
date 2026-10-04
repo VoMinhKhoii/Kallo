@@ -48,7 +48,6 @@ export type {
   FeatureAccessReason,
   FeatureAccessResult,
   Tier,
-  TrialState,
 } from '@/lib/domain/billing/entitlement/service';
 export {
   checkFeatureAccess,

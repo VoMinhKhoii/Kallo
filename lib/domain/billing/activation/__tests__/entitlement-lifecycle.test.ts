@@ -20,7 +20,6 @@ function snapshot(
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: false, endsAt: null, daysRemaining: 0 },
     features: Object.fromEntries(
       Object.keys(FEATURES).map((key) => [
         key,

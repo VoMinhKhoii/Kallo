@@ -9,9 +9,6 @@ const userId = '11111111-1111-1111-1111-111111111111';
 const fixedNow = new Date('2026-08-10T12:00:00.000Z');
 const now = () => fixedNow;
 
-// Signup well before any launch date used in these tests.
-const oldSignup = new Date('2026-01-01T00:00:00.000Z');
-
 function makeGrant(overrides: Partial<GrantRow>): GrantRow {
   return {
     id: crypto.randomUUID(),
@@ -74,8 +71,6 @@ function extractParams(expression: unknown): unknown[] {
 const originalEnv = { ...process.env };
 
 beforeEach(() => {
-  process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
-  process.env.TRIAL_DAYS = '7';
   process.env.BILLING_ENVIRONMENT = 'production';
   delete process.env.BILLING_ENFORCEMENT_ENABLED;
 });
@@ -84,100 +79,177 @@ afterEach(() => {
   process.env = { ...originalEnv };
 });
 
-describe('getEntitlementState — trial', () => {
-  it('no grants + trial active inside window → free tier, feature allowed via trial', async () => {
-    // launch 2026-08-01, signup older → trial 08-01..08-08, now 08-10 is past…
-    // use a signup after launch so trial is still open.
+describe('getEntitlementState — welcome premium', () => {
+  // The 14-day welcome grant written at signup (migration
+  // 20261002131554_welcome_premium_grants.sql) is an ordinary promo grant:
+  // there is no derived trial, so it must read as real Premium.
+  const welcome = (expiresAt: Date) =>
+    makeGrant({
+      source: 'promo',
+      productId: 'welcome_premium_14d',
+      externalRef: `welcome:${userId}`,
+      startsAt: new Date('2026-08-01T00:00:00.000Z'),
+      expiresAt,
+      willRenew: false,
+      providerSyncedAt: null,
+    });
+
+  it('no grants → free, every feature not_entitled', async () => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: new Date('2026-08-06T00:00:00.000Z') },
+      { userId },
       { db: makeDb([]), now }
     );
 
     expect(state.tier).toBe('free');
-    expect(state.trial.active).toBe(true);
-    expect(state.trial.endsAt?.toISOString()).toBe('2026-08-13T00:00:00.000Z');
-    expect(state.trial.daysRemaining).toBe(3);
-    expect(state.features.ai_analysis).toEqual({
-      allowed: true,
-      reason: 'trial',
-    });
-  });
-
-  it('exactly at endsAt → trial expired, feature blocked with trial_expired', async () => {
-    // trialStart = launch (2026-08-03), ends = 08-10T12:00 == now.
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-03T12:00:00.000Z';
-    const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
-      { db: makeDb([]), now }
-    );
-
-    expect(state.trial.endsAt?.toISOString()).toBe(fixedNow.toISOString());
-    expect(state.trial.active).toBe(false);
-    expect(state.trial.daysRemaining).toBe(0);
-    expect(state.features.ai_analysis).toEqual({
-      allowed: false,
-      reason: 'trial_expired',
-    });
-  });
-
-  it('launch date later than signup → fresh trial window for old users', async () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-08T00:00:00.000Z';
-    const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
-      { db: makeDb([]), now }
-    );
-
-    // trialStart = launch 08-08, ends 08-15; now 08-10 → still active.
-    expect(state.trial.active).toBe(true);
-    expect(state.trial.endsAt?.toISOString()).toBe('2026-08-15T00:00:00.000Z');
-    expect(state.trial.daysRemaining).toBe(5);
-  });
-
-  it('TRIAL_DAYS=0 → no trial at all, and a lock is never "trial expired"', async () => {
-    process.env.TRIAL_DAYS = '0';
-    const state = await getEntitlementState(
-      { userId, profileCreatedAt: new Date('2026-08-06T00:00:00.000Z') },
-      { db: makeDb([]), now }
-    );
-
-    expect(state.trial).toEqual({
-      active: false,
-      endsAt: null,
-      daysRemaining: 0,
-    });
-    // The user never had a trial, so "your trial ended" would be a lie.
     expect(state.features.ai_analysis).toEqual({
       allowed: false,
       reason: 'not_entitled',
     });
   });
 
-  it('TRIAL_DAYS=0 with the launch date unset → still no trial', async () => {
-    process.env.TRIAL_DAYS = '0';
-    delete process.env.SUBSCRIPTION_LAUNCH_DATE;
+  it('an active welcome grant → premium tier with its end date', async () => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
-      { db: makeDb([]), now }
+      { userId },
+      { db: makeDb([welcome(new Date('2026-08-15T00:00:00.000Z'))]), now }
     );
 
-    // Not "active with 0 days left" — the clients would print a last-day
-    // countdown for a trial that does not exist. Nothing is locked out:
-    // enforcement cannot be on without a launch date.
-    expect(state.trial.active).toBe(false);
-    expect(state.trial.daysRemaining).toBe(0);
+    expect(state.tier).toBe('premium');
+    expect(state.source).toBe('promo');
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-15T00:00:00.000Z');
+    expect(state.willRenew).toBe(false);
+    expect(state.hasActiveSubscription).toBe(false);
+    // A promo grant never asks RevenueCat for a refresh.
+    expect(state.reconciliationRequired).toBe(false);
+    expect(state.features.ai_analysis).toEqual({
+      allowed: true,
+      reason: 'entitled',
+    });
   });
 
-  it('launch date unset → fail open, trial active', async () => {
-    delete process.env.SUBSCRIPTION_LAUNCH_DATE;
+  it('exactly at the welcome grant expiry → free', async () => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
-      { db: makeDb([]), now }
+      { userId },
+      { db: makeDb([welcome(fixedNow)]), now }
     );
 
-    expect(state.trial.active).toBe(true);
-    expect(state.trial.endsAt).toBeNull();
-    expect(state.trial.daysRemaining).toBe(7);
-    expect(state.features.ai_analysis.allowed).toBe(true);
+    expect(state.tier).toBe('free');
+    expect(state.features.ai_analysis.allowed).toBe(false);
+  });
+
+  it('a purchase running past the welcome grant wins', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      {
+        db: makeDb([
+          welcome(new Date('2026-08-15T00:00:00.000Z')),
+          makeGrant({ expiresAt: new Date('2026-09-10T00:00:00.000Z') }),
+        ]),
+        now,
+      }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.source).toBe('revenuecat');
+    expect(state.expiresAt?.toISOString()).toBe('2026-09-10T00:00:00.000Z');
+  });
+
+  // A store intro week can end before the welcome grant does. Access is the
+  // promo's, but a renewing subscription must not read as "ends <promo date>"
+  // while the store keeps charging.
+  const introWeek = (willRenew: boolean) => [
+    welcome(new Date('2026-08-15T00:00:00.000Z')),
+    makeGrant({
+      expiresAt: new Date('2026-08-12T00:00:00.000Z'),
+      willRenew,
+      externalRef: 'rc-premium',
+    }),
+    makeGrant({
+      entitlementKey: 'billing_subscription',
+      expiresAt: new Date('2026-08-12T00:00:00.000Z'),
+      willRenew,
+      store: 'app_store',
+      externalRef: 'rc-subscription',
+    }),
+  ];
+
+  it('flags Premium held only through promo grants as complimentary', async () => {
+    const promoOnly = await getEntitlementState(
+      { userId },
+      { db: makeDb([welcome(new Date('2026-08-15T00:00:00.000Z'))]), now }
+    );
+    const subscribed = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+    const free = await getEntitlementState({ userId }, { db: makeDb([]), now });
+
+    expect(promoOnly.complimentary).toBe(true);
+    expect(subscribed.complimentary).toBe(false);
+    expect(free.complimentary).toBe(false);
+  });
+
+  it('a renewing subscription owns the lifecycle fields over a longer promo', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.hasActiveSubscription).toBe(true);
+    expect(state.willRenew).toBe(true);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-12T00:00:00.000Z');
+  });
+
+  it('a stale subscription behind a winning promo still asks for reconciliation', async () => {
+    const stale = introWeek(true).map((grant) =>
+      grant.source === 'revenuecat'
+        ? { ...grant, providerSyncedAt: new Date('2026-08-08T00:00:00.000Z') }
+        : grant
+    );
+    const fresh = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(stale), now }
+    );
+
+    expect(fresh.reconciliationRequired).toBe(false);
+    expect(state.source).toBe('promo');
+    expect(state.reconciliationRequired).toBe(true);
+  });
+
+  it('a renewing subscription wins the lifecycle over a further-out cancelled one', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      {
+        db: makeDb([
+          ...introWeek(true),
+          makeGrant({
+            entitlementKey: 'billing_subscription',
+            expiresAt: new Date('2026-08-14T00:00:00.000Z'),
+            willRenew: false,
+            store: 'play_store',
+            externalRef: 'rc-subscription-cancelled',
+          }),
+        ]),
+        now,
+      }
+    );
+
+    expect(state.willRenew).toBe(true);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-12T00:00:00.000Z');
+  });
+
+  it('a cancelled subscription reports the furthest access date', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(false)), now }
+    );
+
+    expect(state.willRenew).toBe(false);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-15T00:00:00.000Z');
   });
 });
 
@@ -207,7 +279,7 @@ describe('getEntitlementState — grants', () => {
     });
 
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       {
         db: makeDb([production, sandbox]),
         now,
@@ -227,7 +299,7 @@ describe('getEntitlementState — grants', () => {
       store: 'app_store',
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
@@ -250,7 +322,7 @@ describe('getEntitlementState — grants', () => {
       providerSyncedAt: new Date('2026-08-09T11:59:59.999Z'),
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
@@ -263,32 +335,30 @@ describe('getEntitlementState — grants', () => {
       providerSyncedAt: new Date('2026-08-09T12:00:00.001Z'),
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
     expect(state.reconciliationRequired).toBe(false);
   });
 
-  it('expired-by-clock grant with stale active status → not entitled (trial_expired)', async () => {
+  it('expired-by-clock grant with stale active status → not entitled', async () => {
     // status still 'active' but expiresAt already past now.
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
     const grant = makeGrant({
       status: 'active',
       expiresAt: new Date('2026-08-05T00:00:00.000Z'),
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
-    // trial (start 08-01) ended 08-08, now 08-10 → expired.
     expect(state.tier).toBe('free');
     expect(state.reconciliationRequired).toBe(true);
     expect(state.expiresAt).toBeNull();
     expect(state.features.ai_analysis).toEqual({
       allowed: false,
-      reason: 'trial_expired',
+      reason: 'not_entitled',
     });
   });
 
@@ -320,7 +390,7 @@ describe('getEntitlementState — grants', () => {
     },
   ])('does not request reconciliation for $name', async ({ overrides }) => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([makeGrant(overrides)]), now }
     );
 
@@ -338,7 +408,7 @@ describe('getEntitlementState — grants', () => {
     });
 
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([promo, expiredRevenueCat]), now }
     );
 
@@ -358,7 +428,7 @@ describe('getEntitlementState — grants', () => {
       expiresAt,
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
@@ -378,7 +448,7 @@ describe('getEntitlementState — grants', () => {
       productId: 'kallo_premium_lifetime',
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([monthly, lifetime]), now }
     );
 
@@ -396,7 +466,7 @@ describe('getEntitlementState — grants', () => {
       expiresAt: new Date('2026-09-01T00:00:00.000Z'),
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([grant]), now }
     );
 
@@ -406,7 +476,6 @@ describe('getEntitlementState — grants', () => {
   });
 
   it('refunded / expired status rows are ignored', async () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
     const refunded = makeGrant({
       status: 'refunded',
       expiresAt: new Date('2026-09-01T00:00:00.000Z'),
@@ -416,7 +485,7 @@ describe('getEntitlementState — grants', () => {
       expiresAt: new Date('2026-09-01T00:00:00.000Z'),
     });
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([refunded, expired]), now }
     );
 
@@ -428,22 +497,19 @@ describe('getEntitlementState — grants', () => {
 describe('checkFeatureAccess', () => {
   it('returns allowed true when entitled', async () => {
     const grant = makeGrant({});
-    const result = await checkFeatureAccess(
-      { userId, profileCreatedAt: oldSignup },
-      'ai_analysis',
-      { db: makeDb([grant]), now }
-    );
+    const result = await checkFeatureAccess({ userId }, 'ai_analysis', {
+      db: makeDb([grant]),
+      now,
+    });
     expect(result).toEqual({ allowed: true });
   });
 
-  it('returns allowed false with reason when trial expired and no grant', async () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
-    const result = await checkFeatureAccess(
-      { userId, profileCreatedAt: oldSignup },
-      'ai_analysis',
-      { db: makeDb([]), now }
-    );
-    expect(result).toEqual({ allowed: false, reason: 'trial_expired' });
+  it('returns allowed false with not_entitled when there is no grant', async () => {
+    const result = await checkFeatureAccess({ userId }, 'ai_analysis', {
+      db: makeDb([]),
+      now,
+    });
+    expect(result).toEqual({ allowed: false, reason: 'not_entitled' });
   });
 });
 
@@ -463,7 +529,7 @@ const PREMIUM_FEATURES = [
 describe('feature catalog coverage', () => {
   it('exposes every gated feature in the state', async () => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([]), now }
     );
     expect(Object.keys(state.features).sort()).toEqual(
@@ -471,39 +537,23 @@ describe('feature catalog coverage', () => {
     );
   });
 
-  it('all features are trial-covered: active trial allows every one', async () => {
+  it('no grant locks every one as not_entitled', async () => {
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: new Date('2026-08-06T00:00:00.000Z') },
+      { userId },
       { db: makeDb([]), now }
     );
 
-    expect(state.tier).toBe('free');
-    expect(state.trial.active).toBe(true);
-    for (const key of PREMIUM_FEATURES) {
-      expect(state.features[key]).toEqual({ allowed: true, reason: 'trial' });
-    }
-  });
-
-  it('expired trial without a grant locks every one as trial_expired', async () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
-    const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
-      { db: makeDb([]), now }
-    );
-
-    expect(state.trial.active).toBe(false);
     for (const key of PREMIUM_FEATURES) {
       expect(state.features[key]).toEqual({
         allowed: false,
-        reason: 'trial_expired',
+        reason: 'not_entitled',
       });
     }
   });
 
   it('an active premium grant entitles every one', async () => {
-    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
     const state = await getEntitlementState(
-      { userId, profileCreatedAt: oldSignup },
+      { userId },
       { db: makeDb([makeGrant({})]), now }
     );
 

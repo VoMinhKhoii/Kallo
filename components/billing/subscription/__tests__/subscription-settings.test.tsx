@@ -27,7 +27,6 @@ function entitlements(
     managementUrl: null,
     managementStore: null,
     hasActiveSubscription: false,
-    trial: { active: true, endsAt: null, daysRemaining: 5 },
     enforcementEnabled: true,
     features: {} as EntitlementsResponse['features'],
     ...overrides,
@@ -72,5 +71,75 @@ describe('SubscriptionSettings', () => {
       'href',
       'https://customer-portal.paddle.com/cpl_1'
     );
+  });
+
+  // Premium the user never paid for (welcome or an admin grant) has no
+  // subscription to renew, so its last-days reminder must not say "renew".
+  // The copy follows the grant that owns the displayed end date, so a promo
+  // beside a cancelled, sooner-ending subscription is still free Premium.
+  it.each([
+    {
+      source: 'promo',
+      hasActiveSubscription: false,
+      title: 'promoExpiryTitle',
+    },
+    { source: 'promo', hasActiveSubscription: true, title: 'promoExpiryTitle' },
+    { source: 'revenuecat', hasActiveSubscription: true, title: 'expiryTitle' },
+  ])('ending-soon copy for $source (subscription: $hasActiveSubscription)', ({
+    source,
+    hasActiveSubscription,
+    title,
+  }) => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        source,
+        hasActiveSubscription,
+        willRenew: false,
+        expiresAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText(title)).toBeInTheDocument();
+  });
+
+  it('offers Upgrade beside complimentary Premium while purchases are open', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        source: 'promo',
+        complimentary: true,
+        expiresAt: '2026-10-18T00:00:00Z',
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText('premiumPlan')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'upgradeCta' })
+    ).toBeInTheDocument();
+  });
+
+  it('offers no Upgrade beside paid Premium', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        source: 'revenuecat',
+        complimentary: false,
+        hasActiveSubscription: true,
+        willRenew: true,
+        expiresAt: '2026-10-18T00:00:00Z',
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.queryByRole('link', { name: 'upgradeCta' })).toBeNull();
   });
 });

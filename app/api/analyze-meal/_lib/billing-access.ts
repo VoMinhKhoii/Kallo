@@ -4,7 +4,6 @@ import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 
 interface BillingAccessInput {
   locale: string;
-  profileCreatedAt: Date;
   userId: string;
 }
 
@@ -17,23 +16,18 @@ interface BillingAccessInput {
  */
 export async function getBillingAccessError({
   locale,
-  profileCreatedAt,
   userId,
 }: BillingAccessInput): Promise<Response | null> {
-  const gate = await checkFeatureGate(
-    { userId, profileCreatedAt },
-    'ai_analysis'
-  );
+  const gate = await checkFeatureGate({ userId }, 'ai_analysis');
   if (!gate.locked) return null;
 
   const t = await getTranslations({ locale, namespace: 'errors' });
-  const messageKey =
-    gate.reason === 'trial_expired'
-      ? 'featureLockedTrialExpired'
-      : 'featureLockedNotEntitled';
-
   return Response.json(
-    Errors.featureLocked('ai_analysis', gate.reason, t(messageKey)).toJSON(),
+    Errors.featureLocked(
+      'ai_analysis',
+      gate.reason,
+      t('featureLockedNotEntitled')
+    ).toJSON(),
     { status: 402 }
   );
 }

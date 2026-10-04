@@ -30,6 +30,7 @@ class PaywallBuyBand extends StatelessWidget {
     required this.onBuy,
     required this.onStayFree,
     this.loading = false,
+    this.welcome,
     super.key,
   });
 
@@ -41,6 +42,12 @@ class PaywallBuyBand extends StatelessWidget {
   final VoidCallback onStayFree;
   final bool loading;
 
+  /// The end of onboarding for a user already on the complimentary welcome
+  /// grant. Premium is theirs for these days, so the main button starts it
+  /// (no charge, same exit as [onStayFree]) and buying now steps down to the
+  /// secondary button. Null on every other face.
+  final PaywallWelcome? welcome;
+
   /// Above the button: the chip hangs [GoldPlanSurface.chipOverlap] over its
   /// top edge, and this keeps the whole chip inside the band, under the
   /// hairline, rather than poking out over the table.
@@ -49,6 +56,7 @@ class PaywallBuyBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final welcome = this.welcome;
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: kPage,
@@ -66,38 +74,88 @@ class PaywallBuyBand extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PlanCta(
-              label: offer.ctaLabel,
-              chipLabel: offer.chipLabel,
-              gold: offer.yearly,
-              loading: loading,
-              disabled: onBuy == null,
-              onPressed: onBuy,
-            ),
-            // Empty on the store-closed face — no purchase, nothing to
-            // disclose — and then it takes no room either.
-            if (offer.renewalLine.isNotEmpty) ...[
+            if (welcome != null) ...[
+              // Today's band, same shape and height: only the words change.
+              PlanCta(
+                label: tr(
+                  'paywall.welcomeStart',
+                  namedArgs: {'days': '${welcome.days}'},
+                ),
+                gold: offer.yearly,
+                onPressed: onStayFree,
+              ),
               const SizedBox(height: KalloSpacing.sp1_5),
               Text(
-                offer.renewalLine,
+                tr('paywall.welcomeUntil', namedArgs: {'date': welcome.until}),
                 style: dashCaption().copyWith(height: 1.35),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: KalloSpacing.sp2),
+              // Buying is still on offer; the price rides on its own button
+              // so the band keeps today's height.
+              KalloButton(
+                title: _subscribeLabel(),
+                variant: KalloButtonVariant.secondary,
+                loading: loading,
+                onPressed: onBuy,
+              ),
+              const SizedBox(height: KalloSpacing.sp2),
+              const PaywallConsent(),
+            ] else ...[
+              PlanCta(
+                label: offer.ctaLabel,
+                chipLabel: offer.chipLabel,
+                gold: offer.yearly,
+                loading: loading,
+                disabled: onBuy == null,
+                onPressed: onBuy,
+              ),
+              // Empty on the store-closed face — no purchase, nothing to
+              // disclose — and then it takes no room either.
+              if (offer.renewalLine.isNotEmpty) ...[
+                const SizedBox(height: KalloSpacing.sp1_5),
+                Text(
+                  offer.renewalLine,
+                  style: dashCaption().copyWith(height: 1.35),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: KalloSpacing.sp2),
+              // Secondary, not ghost: declining is a real choice and gets a real
+              // button, which is also why the header no longer carries it as a
+              // link. It is the only exit that reads as one from a thumb's reach.
+              KalloButton(
+                title: tr('paywall.stayFree'),
+                variant: KalloButtonVariant.secondary,
+                onPressed: onStayFree,
+              ),
+              const SizedBox(height: KalloSpacing.sp2),
+              const PaywallConsent(),
             ],
-            const SizedBox(height: KalloSpacing.sp2),
-            // Secondary, not ghost: declining is a real choice and gets a real
-            // button, which is also why the header no longer carries it as a
-            // link. It is the only exit that reads as one from a thumb's reach.
-            KalloButton(
-              title: tr('paywall.stayFree'),
-              variant: KalloButtonVariant.secondary,
-              onPressed: onStayFree,
-            ),
-            const SizedBox(height: KalloSpacing.sp2),
-            const PaywallConsent(),
           ],
         ),
       ),
     );
   }
+}
+
+extension on PaywallBuyBand {
+  String _subscribeLabel() {
+    final plan = offer.plan;
+    if (plan == null) return tr('paywall.welcomeSubscribe');
+    final period = tr(offer.yearly ? 'paywall.perYear' : 'paywall.perMonth');
+    return tr(
+      'paywall.welcomeSubscribePrice',
+      namedArgs: {'price': '${plan.storeProduct.priceString}$period'},
+    );
+  }
+}
+
+/// What the welcome face says: how many complimentary days are left and the
+/// date they end, already formatted for the locale.
+class PaywallWelcome {
+  const PaywallWelcome({required this.days, required this.until});
+
+  final int days;
+  final String until;
 }

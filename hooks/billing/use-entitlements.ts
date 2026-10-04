@@ -8,7 +8,7 @@ import {
 } from '@/lib/domain/billing/entitlements-client';
 
 /**
- * The signed-in user's derived entitlement + trial state.
+ * The signed-in user's derived entitlement state.
  *
  * `staleTime` is short (30s) because the tier can flip out-of-band when a
  * RevenueCat webhook lands after a purchase — the paywall's success

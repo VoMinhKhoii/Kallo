@@ -81,7 +81,6 @@ import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
   LOGGED_AT,
-  MOCK_PROFILE,
   makeBoundedNutrition,
   mockInsertRouting,
   MOCK_USER as mockUser,
@@ -619,11 +618,7 @@ describe('confirmAndSaveMealAction', () => {
       confirmAndSaveMealAction({ analysisId: UUID_1 })
     ).rejects.toThrow('Phân tích không tồn tại');
 
-    expect(assertCheatConfirmAllowed).toHaveBeenCalledWith(
-      mockUser.id,
-      MOCK_PROFILE.createdAt,
-      UUID_1
-    );
+    expect(assertCheatConfirmAllowed).toHaveBeenCalledWith(mockUser.id, UUID_1);
     // The gate resolved BEFORE the transaction — an entitlement read inside an
     // open tx can deadlock a pool that defaults to two connections.
     const gateOrder = assertCheatConfirmAllowed.mock.invocationCallOrder[0];

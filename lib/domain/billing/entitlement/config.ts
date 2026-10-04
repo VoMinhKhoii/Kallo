@@ -1,19 +1,11 @@
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 
-// Server-configurable billing knobs. All three are read from env so the owner
-// can tune the launch window, trial length, and enforcement kill-switch
-// without a deploy.
-
-// No free trial: the only trial is the paid first week sold by the stores
-// and Paddle. TRIAL_DAYS can still grant an app-level free window.
-const DEFAULT_TRIAL_DAYS = 0;
+// Server-configurable billing knobs, read from env so the owner can flip them
+// without a deploy. There is no app-level trial: new accounts get a real
+// 14-day Premium grant at signup instead (see docs/BILLING.md → "Welcome
+// premium").
 
 export interface BillingConfig {
-  // Start of the app-level trial window for pre-launch accounts. When null
-  // (env unset or unparseable), callers FAIL OPEN — the trial is treated as
-  // active so nobody is locked out before the owner configures a launch date.
-  launchDate: Date | null;
-  trialDays: number;
   // Global enforcement kill-switch. Default false: gating decisions are
   // computed but routes must not block until the owner flips this on.
   enforcementEnabled: boolean;
@@ -22,40 +14,9 @@ export interface BillingConfig {
   purchasesEnabled: boolean;
 }
 
-function readTrialDays(): number {
-  const raw = process.env.TRIAL_DAYS;
-  if (raw == null || raw.trim() === '') return DEFAULT_TRIAL_DAYS;
-  const parsed = Number(raw);
-  if (Number.isInteger(parsed) && parsed >= 0) return parsed;
-  return DEFAULT_TRIAL_DAYS;
-}
-
-function readLaunchDate(): Date | null {
-  const raw = process.env.SUBSCRIPTION_LAUNCH_DATE;
-  if (raw == null || raw.trim() === '') return null;
-  const parsed = new Date(raw.trim());
-  if (Number.isNaN(parsed.getTime())) {
-    console.warn(
-      `[billing] Invalid SUBSCRIPTION_LAUNCH_DATE (${raw}); treating as unset (trial fails open).`
-    );
-    return null;
-  }
-  return parsed;
-}
-
 export function getBillingConfig(): BillingConfig {
-  const enforcementEnabled = readBooleanEnv(
-    'BILLING_ENFORCEMENT_ENABLED',
-    false
-  );
-  const launchDate = readLaunchDate();
-  if (enforcementEnabled && launchDate === null) {
-    throw new Error('billing_enforcement_requires_valid_launch_date');
-  }
   return {
-    launchDate,
-    trialDays: readTrialDays(),
-    enforcementEnabled,
+    enforcementEnabled: readBooleanEnv('BILLING_ENFORCEMENT_ENABLED', false),
     purchasesEnabled: readBooleanEnv('BILLING_PURCHASES_ENABLED', false),
   };
 }

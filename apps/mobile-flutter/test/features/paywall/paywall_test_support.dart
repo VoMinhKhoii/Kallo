@@ -8,7 +8,6 @@ class PaywallEntitlementsApi extends ApiClient {
   PaywallEntitlementsApi({
     this.failPrePurchaseCheck = false,
     this.premiumBeforePurchase = false,
-    this.trialActive = true,
     this.failGet = false,
   });
 
@@ -17,7 +16,6 @@ class PaywallEntitlementsApi extends ApiClient {
   final bool failGet;
   final bool failPrePurchaseCheck;
   final bool premiumBeforePurchase;
-  final bool trialActive;
   bool purchasesEnabled = true;
   int getCalls = 0;
   int postCalls = 0;
@@ -28,11 +26,7 @@ class PaywallEntitlementsApi extends ApiClient {
     if (failGet) {
       throw ApiError('UPSTREAM_UNAVAILABLE', 503, true, 'No entitlement.');
     }
-    return freeEntitlement(
-          purchasesEnabled: purchasesEnabled,
-          trialActive: trialActive,
-        )
-        as T;
+    return freeEntitlement(purchasesEnabled: purchasesEnabled) as T;
   }
 
   @override
@@ -49,11 +43,7 @@ class PaywallEntitlementsApi extends ApiClient {
     if (premiumBeforePurchase || postCalls > 1) {
       return premiumEntitlement() as T;
     }
-    return freeEntitlement(
-          purchasesEnabled: purchasesEnabled,
-          trialActive: trialActive,
-        )
-        as T;
+    return freeEntitlement(purchasesEnabled: purchasesEnabled) as T;
   }
 }
 
@@ -129,16 +119,12 @@ Map<String, dynamic> premiumEntitlement() => {
   'willRenew': true,
   'source': 'app_store',
   'hasActiveSubscription': true,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {'allowed': true, 'reason': 'entitled'},
   },
 };
 
-Map<String, dynamic> freeEntitlement({
-  bool purchasesEnabled = true,
-  bool trialActive = true,
-}) => {
+Map<String, dynamic> freeEntitlement({bool purchasesEnabled = true}) => {
   'tier': 'free',
   'purchasesEnabled': purchasesEnabled,
   'isLifetime': false,
@@ -146,13 +132,8 @@ Map<String, dynamic> freeEntitlement({
   'willRenew': false,
   'source': null,
   'hasActiveSubscription': false,
-  'trial': {
-    'active': trialActive,
-    'endsAt': null,
-    'daysRemaining': trialActive ? 60 : 0,
-  },
   'features': {
-    'ai_analysis': {'allowed': true, 'reason': 'trial'},
+    'ai_analysis': {'allowed': false, 'reason': 'not_entitled'},
   },
 };
 

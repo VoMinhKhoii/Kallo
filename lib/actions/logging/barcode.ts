@@ -77,13 +77,12 @@ export async function searchBarcodeAction(input: {
 > {
   try {
     const parsed = searchBarcodeSchema.parse(input);
-    const { user, profile } = await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
     // Per-user cap before the Open Food Facts fan-out. `RateLimitedError`
     // surfaces below as the `rate_limited` code.
     await assertRateLimit('barcodeSearch', { kind: 'user', value: user.id });
     const data = await searchBarcodeProductForViewer(parsed.barcode, {
       userId: user.id,
-      profileCreatedAt: profile.createdAt,
     });
     return { success: true, data };
   } catch (error) {

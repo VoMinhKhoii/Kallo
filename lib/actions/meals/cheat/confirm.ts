@@ -43,7 +43,6 @@ type DbTransaction = Parameters<Parameters<AppDb['transaction']>[0]>[0];
  */
 export async function assertCheatConfirmAllowed(
   userId: string,
-  profileCreatedAt: Date,
   analysisId: string
 ): Promise<void> {
   if (!getBillingConfig().enforcementEnabled) return;
@@ -61,7 +60,7 @@ export async function assertCheatConfirmAllowed(
 
   if (pending?.entryMode !== 'cheat') return;
 
-  await assertFeatureAccess({ userId, profileCreatedAt }, 'cheat_meal');
+  await assertFeatureAccess({ userId }, 'cheat_meal');
 }
 
 /**

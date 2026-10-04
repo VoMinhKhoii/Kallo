@@ -15,7 +15,7 @@ import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
  */
 export async function GET(req: NextRequest) {
   try {
-    const { user, profile } = await requireAuthAndProfile();
+    const { user } = await requireAuthAndProfile();
     const { code } = barcodeSearchQuerySchema.parse({
       code: req.nextUrl.searchParams.get('code') ?? undefined,
     });
@@ -27,7 +27,6 @@ export async function GET(req: NextRequest) {
 
     const product = await searchBarcodeProductForViewer(code, {
       userId: user.id,
-      profileCreatedAt: profile.createdAt,
     });
     return Response.json({ product });
   } catch (error) {

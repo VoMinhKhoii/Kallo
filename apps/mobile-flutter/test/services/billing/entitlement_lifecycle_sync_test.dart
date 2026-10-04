@@ -306,7 +306,6 @@ Map<String, dynamic> _entitlement({
   'willRenew': premium,
   'source': premium ? 'revenuecat' : null,
   'hasActiveSubscription': premium,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
   'features': {
     'ai_analysis': {
       'allowed': premium,

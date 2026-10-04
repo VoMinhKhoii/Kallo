@@ -101,7 +101,9 @@ class FirstRunFinishController {
       final entitlement = await _ref
           .read(entitlementsProvider(userId).future)
           .timeout(kFirstRunReadTimeout);
-      return !entitlement.isPremium;
+      // Complimentary Premium still ends on the paywall: it opens on the
+      // welcome face, whose main button starts the free days.
+      return !entitlement.hasPaidPremium;
     } catch (_) {
       return false;
     } finally {

@@ -100,23 +100,64 @@ failed attempt records a `processing_error` but leaves
 `processed_at` NULL, so an RC redelivery **re-runs** the event instead of
 short-circuiting as a duplicate.
 
-### Trial (derived, not stored)
+### Welcome premium (no app-level trial)
 
-**Default: no free trial.** Kallo sells a **paid first week** instead — an
-introductory price on both the monthly and the annual plan, set in each store
-(App Store intro offer, Paddle paid trial `trial_period.unit_price`; see
-[Pricing](#pricing)). `TRIAL_DAYS` defaults to `0`, so the app-level window
-below is empty; a positive value still grants a free window if ever wanted.
+There is **no app-level trial**. Every account instead holds 14 days of real
+Premium, written as an ordinary `entitlement_grants` row (`source = 'promo'`,
+`product_id = 'welcome_premium_14d'`, `external_ref = 'welcome:<user_id>'`) by
+`supabase/migrations/20261002131554_welcome_premium_grants.sql`:
 
-There is no trial row. The app-level trial is computed in
-`lib/domain/billing/entitlement/config.ts` + `service.ts` from the profile:
+- **existing accounts** were backfilled with 14 days from the moment that
+  migration applied;
+- **new signups** get 14 days from signup via the
+  `on_auth_user_created_welcome_premium` trigger on `auth.users`, so every sign-in
+  path (email, OAuth, Apple, mobile) is covered;
+- one welcome grant per account per environment, ever — the
+  `(source, external_ref, environment)` unique key makes the backfill and the
+  trigger idempotent, so re-running never extends anyone;
+- rows are written for **both** billing environments, because prod and non-prod
+  share one database and each reads only its own;
+- because it is a grant, the account reads as `tier: 'premium'` with an
+  `expiresAt` and `willRenew: false` ("Premium · ends <date>"), not a countdown.
+  RevenueCat reconciliation replaces only `source = 'revenuecat'` rows, so a
+  purchase never deletes it; the furthest-out active grant wins.
+- **complimentary is not paid.** When every active Premium grant is a promo
+  and there is no active subscription, the entitlements response carries
+  `complimentary: true`. Features stay unlocked, but every purchase and
+  activation decision keys on *paid* Premium (`hasPaidPremium` on web and
+  mobile), so a welcome user can still check out on `/pricing` or the mobile
+  paywall, settings shows an Upgrade action, and a purchase counts as landed
+  only once the paid grant arrives (`complimentary` flips false).
+- **mobile onboarding ends on the welcome face.** A complimentary user finishing
+  onboarding lands on the normal paywall with today's buy band unchanged in
+  shape: the gold button reads "First {days} days of Premium on us" (no charge,
+  into logging), the caption "Free until {date}. No card needed.", and the
+  secondary slot "Subscribe now · {price}" buys the selected plan. Opened later
+  from settings, the paywall is the ordinary purchase face.
+- **lifecycle fields follow the subscription.** The winning grant decides
+  access, but a renewing store subscription owns `expiresAt`/`willRenew`, so a
+  longer promo never reads "ends <date>" while the store keeps charging. The
+  web ending-soon banner uses free-Premium copy when the winner is a promo.
 
-- trial window = `[max(profile.created_at, SUBSCRIPTION_LAUNCH_DATE), +TRIAL_DAYS]`
-- starting the window at the later of signup and launch gives **existing users
-  a fresh trial** when the paywall goes live, not an already-expired one.
-- while enforcement is off, an unset launch date **fails open** so nobody is
-  locked out during setup;
-- enabling enforcement without a valid launch date fails closed at runtime.
+To stop granting new signups, drop the trigger in a later migration.
+
+Store-side introductory offers (App Store intro offer, Paddle
+`trial_period.unit_price`; see [Pricing](#pricing)) are configured in each store
+and are independent of this — the paywall discloses whatever the store says the
+customer is still eligible for.
+
+### Admin grants (`/admin/premium`)
+
+Admins (`ADMIN_EMAILS`) can grant complimentary Premium to named accounts (up to
+100 emails; all must exist or nothing is granted) or to everyone, for 1–365
+days starting now. `lib/admin/premium/grant-premium-action.ts` re-runs
+`requireAdmin()` itself (a server action is a public POST endpoint), validates
+with the shared zod schema, and writes the grants (`source = 'promo'`,
+`external_ref = 'admin:<audit id>:<user id>'`, both environments) plus one
+`premium_grant_audit` row in a single transaction. The audit table is
+server-only (RLS on, no policies, revoked from `anon`/`authenticated`) and the
+page lists the latest 20 grants. A grant never shortens a longer subscription,
+since the furthest-out active grant wins; there is no revoke from the page.
 
 ### Enforcement kill-switch
 
@@ -199,7 +240,7 @@ Routes that spend no gated capability — `cheat-occasions`, `barcode/*`,
 open on purpose.
 
 `BILLING_PURCHASES_ENABLED` is a separate default-off commerce switch. When it
-is false, free users do not see paywalls/trial upsells and both web and mobile
+is false, free users do not see paywalls/upgrade upsells and both web and mobile
 purchase boundaries refuse to load offerings. Disable purchases first during
 rollback, independently of access enforcement.
 
@@ -216,7 +257,7 @@ in flight.
 
 **The face itself (2026-09-10).** `PaywallScreen` is the `StartAurora` sweep,
 the wordmark header, then `PaywallPurchaseFace`: the guide bun saying what the
-yearly plan saves (or how much trial is left), "Choose your plan", a
+yearly plan saves, "Choose your plan", a
 monthly/yearly toggle whose yearly half wears the gold, and an eight-row
 `PlanComparison` of the gate matrix in `entitlement/features.ts`. Two of those
 rows tick in BOTH columns on purpose — manual entry, barcode and macro tracking
@@ -238,21 +279,23 @@ The 402 body:
     "retryable": false,
     "message": "<localized>",
     "feature": "ai_analysis",
-    "reason": "trial_expired"
+    "reason": "not_entitled"
   }
 }
 ```
 
-`reason` is `trial_expired` or `not_entitled`.
+`reason` is always `not_entitled` (the field stays so clients can key on it).
+Feature entries in the entitlements response carry `reason` `entitled` or
+`not_entitled`; there is no `trial` object. Clients read any retired value
+(`trial`, `trial_expired`) from an older server as `not_entitled` and keep the
+server's `allowed` verdict.
 
 ## Environment variables
 
 | Var | Default | Purpose |
 |---|---|---|
 | `BILLING_ENVIRONMENT` | required | `sandbox` outside production; `production` only in production. Isolates DB projections and webhook idempotency. |
-| `SUBSCRIPTION_LAUNCH_DATE` | unset → trial fails open only while enforcement is off | ISO date the paywall goes live; trial starts at `max(signup, this)` |
-| `TRIAL_DAYS` | `0` | App-level free trial length (non-negative integer; `0` = none — the paid first week is sold by the stores) |
-| `BILLING_ENFORCEMENT_ENABLED` | `false` | Global kill-switch. Requires a valid launch date and RC app allowlist before `true`. |
+| `BILLING_ENFORCEMENT_ENABLED` | `false` | Global kill-switch. Turn on only after the welcome-premium migration has applied (it is what keeps existing accounts unlocked) and the RC app allowlist is set. |
 | `BILLING_PURCHASES_ENABLED` | `false` | Independent commerce switch. Hides and blocks new checkout while false. |
 | `BILLING_SANDBOX_USER_IDS` | empty | Comma-separated UUIDs for dedicated App Review accounts. On production only these users reconcile/read sandbox grants. |
 | `REVENUECAT_REST_API_KEY` | required for reconciliation | App-specific public v1 SDK key used only for CustomerInfo reads. Do not put a project-wide secret key in the runtime. |
@@ -563,17 +606,22 @@ Apply the data boundary first, then ship dark and flip switches:
    tables, RLS, revokes, constraints, indexes, and trial-anchor trigger before
    deploying code. Dark mode still reads these tables, so code must never
    precede the schema.
-2. **Ship dark**: deploy with `BILLING_ENFORCEMENT_ENABLED=false`,
-   `BILLING_PURCHASES_ENABLED=false`, and
-   `SUBSCRIPTION_LAUNCH_DATE` unset. Everything is computed, nothing blocks.
+2. **Ship dark**: deploy with `BILLING_ENFORCEMENT_ENABLED=false` and
+   `BILLING_PURCHASES_ENABLED=false`. Everything is computed, nothing blocks.
 3. **Configure webhooks**: create the production-only integration after the
    endpoint is deployed. Keep
    `REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=false` until production delivery
    and app-ID filtering are verified; only then may the production variable be
    set to `true` for transfer/redemption events that omit environment.
 4. **Configure dashboards**: complete the remaining store checklists.
-5. **Set `SUBSCRIPTION_LAUNCH_DATE`**: this starts trial windows (existing users
-   get a fresh `TRIAL_DAYS` window from the launch date; none at the default `0`).
+5. **Start welcome premium at launch**: `20261002131554_welcome_premium_grants.sql`
+   gives every existing account 14 days from the moment it applies, and each
+   new signup 14 days from then on. The prod deploy workflow
+   (`cloud-run-prod.yml`) applies pending migrations automatically
+   (`supabase db push`), so **the first prod deploy carrying this migration
+   starts the clock** — deploy it at launch, not days before. Re-running never
+   resets or extends the window (`ON CONFLICT DO NOTHING`); to give a later
+   launch window, use `/admin/premium` → Everyone.
 6. **Announce** the launch to users.
 7. **Open commerce**: set `BILLING_PURCHASES_ENABLED=true`, verify offerings,
    prices, and purchase activation, then set `BILLING_ENFORCEMENT_ENABLED=true`.

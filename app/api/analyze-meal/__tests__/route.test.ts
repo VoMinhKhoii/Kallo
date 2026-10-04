@@ -344,8 +344,6 @@ describe('POST /api/analyze-meal', () => {
     // Enforcement OFF by default — existing tests must see no gating call.
     mockGetBillingConfig.mockReset();
     mockGetBillingConfig.mockReturnValue({
-      launchDate: null,
-      trialDays: 7,
       enforcementEnabled: false,
     });
     mockCheckFeatureAccess.mockReset();
@@ -592,8 +590,6 @@ describe('POST /api/analyze-meal', () => {
 
   it('answers a rejected billing check with the JSON 500 envelope', async () => {
     mockGetBillingConfig.mockReturnValue({
-      launchDate: new Date('2026-01-01T00:00:00Z'),
-      trialDays: 7,
       enforcementEnabled: true,
     });
     mockCheckFeatureAccess.mockRejectedValue(new Error('entitlement db down'));
@@ -687,10 +683,8 @@ describe('POST /api/analyze-meal', () => {
     expect(mockCheckFeatureAccess).not.toHaveBeenCalled();
   });
 
-  it('passes through when enforcement is on and the trial is active', async () => {
+  it('passes through when enforcement is on and the user is entitled', async () => {
     mockGetBillingConfig.mockReturnValue({
-      launchDate: null,
-      trialDays: 7,
       enforcementEnabled: true,
     });
     mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
@@ -706,20 +700,18 @@ describe('POST /api/analyze-meal', () => {
     expect(events.map((e) => e.type)).toContain('analysis_complete');
 
     expect(mockCheckFeatureAccess).toHaveBeenCalledWith(
-      { userId: 'user-1', profileCreatedAt: mockProfile.createdAt },
+      { userId: 'user-1' },
       'ai_analysis'
     );
   });
 
   it('returns 402 with the feature_locked body when blocked', async () => {
     mockGetBillingConfig.mockReturnValue({
-      launchDate: new Date('2026-01-01T00:00:00Z'),
-      trialDays: 7,
       enforcementEnabled: true,
     });
     mockCheckFeatureAccess.mockResolvedValue({
       allowed: false,
-      reason: 'trial_expired',
+      reason: 'not_entitled',
     });
 
     const res = await POST(createRequest(mealRequestBody('phở bò')));
@@ -733,9 +725,9 @@ describe('POST /api/analyze-meal', () => {
     expect(json.error.status).toBe(402);
     expect(json.error.retryable).toBe(false);
     expect(json.error.feature).toBe('ai_analysis');
-    expect(json.error.reason).toBe('trial_expired');
-    expect(typeof json.error.message).toBe('string');
-    expect(json.error.message.length).toBeGreaterThan(0);
+    expect(json.error.reason).toBe('not_entitled');
+    // The global next-intl mock echoes the key it was asked for.
+    expect(json.error.message).toBe('featureLockedNotEntitled');
 
     // Blocked BEFORE the pipeline / any streaming starts.
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
@@ -744,8 +736,6 @@ describe('POST /api/analyze-meal', () => {
 
   it('checks entitlement BEFORE the rate-limit guards', async () => {
     mockGetBillingConfig.mockReturnValue({
-      launchDate: new Date('2026-01-01T00:00:00Z'),
-      trialDays: 7,
       enforcementEnabled: true,
     });
     mockCheckFeatureAccess.mockResolvedValue({
@@ -793,13 +783,11 @@ describe('POST /api/analyze-meal', () => {
       ]);
       // Billing would lock this user out too — consent must answer first.
       mockGetBillingConfig.mockReturnValue({
-        launchDate: new Date('2026-01-01T00:00:00Z'),
-        trialDays: 7,
         enforcementEnabled: true,
       });
       mockCheckFeatureAccess.mockResolvedValue({
         allowed: false,
-        reason: 'trial_expired',
+        reason: 'not_entitled',
       });
 
       const res = await POST(createRequest(mealRequestBody('phở bò')));
