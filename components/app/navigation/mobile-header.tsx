@@ -28,9 +28,9 @@ const STRIP_HIDDEN = 'group-has-[[data-strip-mode=true]]/mobileheader:hidden';
 /**
  * The mobile header row above every app page, laid out like the Flutter
  * `AppHeader`: the Kallo wordmark on Today, a back chevron on a full-screen
- * page (the logging feed, which hides the tab bar), a centered slot pages portal into
- * (the logging date chip), and on the right the activity heart and the
- * account avatar, which opens the account sheet (Settings, Admin, sign-out).
+ * page (the logging feed, which hides the tab bar), a centered slot pages
+ * portal into (the logging date chip), and on the right the activity heart and
+ * the account avatar, which opens the account sheet (Settings, Admin, sign-out).
  * Navigation itself lives on the bottom tab bar. Hidden on `md` and up, where
  * the desktop sidebar takes over.
  */
