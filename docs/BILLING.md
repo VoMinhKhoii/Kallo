@@ -121,6 +121,17 @@ Premium, written as an ordinary `entitlement_grants` row (`source = 'promo'`,
   `expiresAt` and `willRenew: false` ("Premium · ends <date>"), not a countdown.
   RevenueCat reconciliation replaces only `source = 'revenuecat'` rows, so a
   purchase never deletes it; the furthest-out active grant wins.
+- **complimentary is not paid.** When every active Premium grant is a promo
+  and there is no active subscription, the entitlements response carries
+  `complimentary: true`. Features stay unlocked, but every purchase and
+  activation decision keys on *paid* Premium (`hasPaidPremium` on web and
+  mobile), so a welcome user can still check out on `/pricing` or the mobile
+  paywall, settings shows an Upgrade action, and a purchase counts as landed
+  only once the paid grant arrives (`complimentary` flips false).
+- **lifecycle fields follow the subscription.** The winning grant decides
+  access, but a renewing store subscription owns `expiresAt`/`willRenew`, so a
+  longer promo never reads "ends <date>" while the store keeps charging. The
+  web ending-soon banner uses free-Premium copy when the winner is a promo.
 
 To stop granting new signups, drop the trigger in a later migration.
 

@@ -34,6 +34,16 @@ class _PendingEntitlementsApi extends ApiClient {
   }
 }
 
+/// A welcome-grant user: Premium access, but nothing paid yet.
+class _ComplimentaryEntitlementsApi extends ApiClient {
+  @override
+  Future<T> get<T>(String path) async =>
+      {...premiumEntitlement(), 'complimentary': true, 'source': 'promo'} as T;
+
+  @override
+  Future<T> post<T>(String path, [Object? body]) => get<T>(path);
+}
+
 Session _session({required String userId, required String accessToken}) {
   return Session(
     accessToken: accessToken,
@@ -223,6 +233,33 @@ void main() {
     expect(purchases.purchaseCalls, 0);
     expect(api.postCalls, 1);
     expect(container.read(paywallControllerProvider).packages, isEmpty);
+  });
+
+  test('complimentary Premium still loads the plans to buy', () async {
+    final container = ProviderContainer(
+      overrides: [
+        currentSessionProvider.overrideWith(
+          (ref) => ref.watch(_testSessionProvider),
+        ),
+        apiClientProvider.overrideWithValue(_ComplimentaryEntitlementsApi()),
+        purchasesServiceProvider.overrideWithValue(PaywallPurchasesService()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final subscription = container.listen(
+      paywallControllerProvider,
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    for (var i = 0; i < 4; i++) {
+      await container.pump();
+    }
+
+    final state = container.read(paywallControllerProvider);
+    expect(state.phase, PaywallPhase.ready);
+    expect(state.packages, hasLength(1));
   });
 
   test('commerce disable blocks store; reconcile follows success', () async {

@@ -68,6 +68,7 @@ export async function POST() {
       managementUrl: state.managementUrl,
       managementStore: state.managementStore,
       hasActiveSubscription: state.hasActiveSubscription,
+      complimentary: state.complimentary,
       features: state.features,
     });
   } catch (error) {

@@ -5,6 +5,7 @@ import { hasActivationPending } from '@/lib/domain/billing/activation/activation
 import {
   entitlementsKeys,
   fetchEntitlements,
+  hasPaidPremium,
   reconcileEntitlements,
 } from '@/lib/domain/billing/entitlements-client';
 import {
@@ -50,7 +51,7 @@ export function usePaywallOfferings({
         ? await reconcileEntitlements(userId)
         : await fetchEntitlements(userId);
       queryClient.setQueryData(entitlementsKeys.user(userId), current);
-      if (current.tier === 'premium') return null;
+      if (hasPaidPremium(current)) return null;
       return getOfferings(userId);
     },
     enabled,

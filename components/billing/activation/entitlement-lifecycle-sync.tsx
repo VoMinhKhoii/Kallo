@@ -14,6 +14,7 @@ import {
 import {
   applyEntitlementSnapshot,
   fetchEntitlements,
+  hasPaidPremium,
   reconcileEntitlements,
 } from '@/lib/domain/billing/entitlements-client';
 
@@ -40,13 +41,13 @@ export function EntitlementLifecycleSync({
       refresh: async (id, signal) => {
         const data = await fetchEntitlements(id, signal);
         applyEntitlementSnapshot(queryClient, data);
-        if (data.tier === 'premium') clearActivationPending(id);
+        if (hasPaidPremium(data)) clearActivationPending(id);
         return data;
       },
       reconcile: async (id, signal) => {
         const data = await reconcileEntitlements(id, signal);
         applyEntitlementSnapshot(queryClient, data);
-        if (data.tier === 'premium') {
+        if (hasPaidPremium(data)) {
           clearActivationPending(id);
         } else {
           // The provider may simply not have ingested the transaction yet, so
@@ -61,7 +62,7 @@ export function EntitlementLifecycleSync({
       // that hole; everything else still keys on the server's own signal.
       shouldRecover: (snapshot) =>
         snapshot.reconciliationRequired ||
-        (snapshot.tier !== 'premium' && hasActivationPending(snapshot.userId)),
+        (!hasPaidPremium(snapshot) && hasActivationPending(snapshot.userId)),
     });
   }
 

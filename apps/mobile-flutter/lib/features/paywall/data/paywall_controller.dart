@@ -175,11 +175,12 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     try {
       final entitlement = await ref.read(entitlementsProvider(userId).future);
       if (!_isCurrentUser(userId)) return;
-      if (!entitlement.purchasesEnabled && !entitlement.isPremium) {
+      if (!entitlement.purchasesEnabled && !entitlement.hasPaidPremium) {
         _set(state.copyWith(phase: PaywallPhase.unavailable));
         return;
       }
-      if (entitlement.isPremium) {
+      // Complimentary Premium still loads offerings: the user has not paid.
+      if (entitlement.hasPaidPremium) {
         _set(state.copyWith(phase: PaywallPhase.ready, packages: const []));
         return;
       }
@@ -224,7 +225,7 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
         _set(state.copyWith(phase: PaywallPhase.ready, clearBusy: true));
         return PaywallActionResult.error;
       }
-      if (entitlement.isPremium) {
+      if (entitlement.hasPaidPremium) {
         _set(
           state.copyWith(
             phase: PaywallPhase.ready,

@@ -194,7 +194,7 @@ class EntitlementsController
               reconciled.hasError && previous != null
                   ? AsyncData(previous)
                   : reconciled;
-          return reconciled.valueOrNull?.isPremium ?? false;
+          return reconciled.valueOrNull?.hasPaidPremium ?? false;
         }
 
         final first = await reconcileOnce();
@@ -244,7 +244,7 @@ class EntitlementsController
               snapshot.hasError && previous != null
                   ? AsyncData(previous)
                   : snapshot;
-          if (snapshot.valueOrNull?.isPremium ?? false) return true;
+          if (snapshot.valueOrNull?.hasPaidPremium ?? false) return true;
         }
 
         return false;

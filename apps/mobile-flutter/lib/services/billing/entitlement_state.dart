@@ -60,6 +60,7 @@ class EntitlementState {
     required this.managementUrl,
     required this.managementStore,
     required this.hasActiveSubscription,
+    this.complimentary = false,
     required this.features,
     required this.enforcementEnabled,
   });
@@ -75,6 +76,12 @@ class EntitlementState {
   final String? managementUrl;
   final String? managementStore;
   final bool hasActiveSubscription;
+
+  /// Premium held only through complimentary grants (the welcome grant or an
+  /// admin grant): access is real, but nothing was paid, so the paywall still
+  /// sells and a purchase has not landed until [hasPaidPremium] flips. Absent
+  /// on an older server, which reads as false.
+  final bool complimentary;
 
   /// Every gated feature the server reported, keyed by [PremiumFeature] name.
   ///
@@ -104,6 +111,10 @@ class EntitlementState {
 
   bool get isPremium => tier == EntitlementTier.premium;
 
+  /// Premium the user paid for (or holds for life) — what every purchase and
+  /// activation decision keys on, unlike [isPremium] which gates features.
+  bool get hasPaidPremium => isPremium && !complimentary;
+
   factory EntitlementState.fromJson(Map<String, dynamic> json) {
     final features = json['features'] as Map<String, dynamic>?;
     return EntitlementState(
@@ -121,6 +132,7 @@ class EntitlementState {
       managementUrl: json['managementUrl'] as String?,
       managementStore: json['managementStore'] as String?,
       hasActiveSubscription: json['hasActiveSubscription'] == true,
+      complimentary: json['complimentary'] == true,
       features: _parseFeatures(features),
       // Absent on a server that predates the rollout flag: default OFF, so an
       // old payload shows no locks rather than locking everything.

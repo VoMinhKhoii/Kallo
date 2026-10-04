@@ -136,9 +136,22 @@ void main() {
         'hasActiveSubscription': false,
       });
       expect(e.isPremium, isTrue);
+      expect(e.complimentary, isFalse);
+      expect(e.hasPaidPremium, isTrue);
       expect(e.source, 'promo');
       expect(e.willRenew, isFalse);
       expect(e.expiresAt, DateTime.utc(2026, 10, 16));
+    });
+
+    test('complimentary Premium unlocks features but is not paid', () {
+      final e = EntitlementState.fromJson({
+        ...premiumJson(willRenew: false),
+        'source': 'promo',
+        'complimentary': true,
+      });
+      expect(e.isPremium, isTrue);
+      expect(e.complimentary, isTrue);
+      expect(e.hasPaidPremium, isFalse);
     });
 
     test('fails CLOSED on unknown / missing fields (never over-grants)', () {

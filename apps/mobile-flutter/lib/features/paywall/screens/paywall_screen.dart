@@ -54,7 +54,7 @@ class PaywallScreen extends ConsumerWidget {
               child: entitlement.when(
                 data:
                     (value) =>
-                        value.isPremium
+                        value.hasPaidPremium
                             ? _premium(context, value)
                             : _purchase(context, value, state),
                 loading:

@@ -7,6 +7,7 @@ import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { usePaywallOfferings } from '@/hooks/billing/use-paywall-offerings';
 import { usePaywallPurchase } from '@/hooks/billing/use-paywall-purchase';
 import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
+import { hasPaidPremium } from '@/lib/domain/billing/entitlements-client';
 import {
   freeCtaState,
   packageForPeriod,
@@ -61,11 +62,12 @@ export function PricingCheckoutProvider({
     enabled:
       userId !== null &&
       data?.purchasesEnabled === true &&
-      data.tier === 'free',
+      !hasPaidPremium(data),
     reconciliationRequired: data?.reconciliationRequired === true,
   });
 
-  const viewing = userId !== null && data?.tier === 'free';
+  const viewing =
+    userId !== null && data !== undefined && !hasPaidPremium(data);
   useEffect(() => {
     if (viewing) track('paywall_viewed', {});
   }, [viewing]);
@@ -85,7 +87,8 @@ export function PricingCheckoutProvider({
       userId === null
         ? 'sign-up'
         : premiumCtaState({
-            tier: data?.tier ?? null,
+            // Complimentary Premium still buys: only a PAID plan is current.
+            tier: data ? (hasPaidPremium(data) ? 'premium' : 'free') : null,
             purchasesEnabled: data?.purchasesEnabled ?? null,
             entitlementsFailed: entitlements.isError,
             offeringsPending: offerings.isPending,

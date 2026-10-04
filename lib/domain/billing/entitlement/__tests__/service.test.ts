@@ -172,6 +172,22 @@ describe('getEntitlementState — welcome premium', () => {
     }),
   ];
 
+  it('flags Premium held only through promo grants as complimentary', async () => {
+    const promoOnly = await getEntitlementState(
+      { userId },
+      { db: makeDb([welcome(new Date('2026-08-15T00:00:00.000Z'))]), now }
+    );
+    const subscribed = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+    const free = await getEntitlementState({ userId }, { db: makeDb([]), now });
+
+    expect(promoOnly.complimentary).toBe(true);
+    expect(subscribed.complimentary).toBe(false);
+    expect(free.complimentary).toBe(false);
+  });
+
   it('a renewing subscription owns the lifecycle fields over a longer promo', async () => {
     const state = await getEntitlementState(
       { userId },

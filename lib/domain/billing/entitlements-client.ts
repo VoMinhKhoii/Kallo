@@ -35,6 +35,10 @@ export interface EntitlementsResponse {
   managementUrl: string | null;
   managementStore: string | null;
   hasActiveSubscription: boolean;
+  // Premium held only through complimentary grants (welcome/admin). Access is
+  // real, but the user has not paid, so checkout stays open. Absent on a
+  // server that predates it, which reads as false (paid).
+  complimentary?: boolean;
   // The BILLING_ENFORCEMENT_ENABLED kill-switch as the server sees it. With it
   // off the server gates nothing, so the client must not lock anything either
   // — `featureLocked` reads this before it reads `features`.
@@ -144,6 +148,17 @@ export function applyEntitlementSnapshot(
 
 export function isPremium(data: EntitlementsResponse | undefined): boolean {
   return data?.tier === 'premium';
+}
+
+/**
+ * Premium the user paid for (or holds for life) — what every purchase and
+ * activation decision keys on. A complimentary-only Premium is NOT paid: the
+ * user can still subscribe, and a purchase has not landed until this flips.
+ */
+export function hasPaidPremium(
+  data: EntitlementsResponse | undefined
+): boolean {
+  return data?.tier === 'premium' && data.complimentary !== true;
 }
 
 /** Does the server say this feature is available? Defaults to false. */

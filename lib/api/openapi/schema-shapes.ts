@@ -215,6 +215,7 @@ const entitlements = object({
   managementUrl: { type: ['string', 'null'], format: 'uri' },
   managementStore: nullableString,
   hasActiveSubscription: { type: 'boolean' },
+  complimentary: { type: 'boolean' },
   features: object({
     ai_analysis: object({
       allowed: { type: 'boolean' },

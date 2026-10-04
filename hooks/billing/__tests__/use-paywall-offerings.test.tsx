@@ -15,7 +15,12 @@ const { hasActivationPending } = vi.hoisted(() => ({
 }));
 const { getOfferings } = vi.hoisted(() => ({ getOfferings: vi.fn() }));
 
-vi.mock('@/lib/domain/billing/entitlements-client', () => ({
+vi.mock('@/lib/domain/billing/entitlements-client', async (importActual) => ({
+  hasPaidPremium: (
+    await importActual<
+      typeof import('@/lib/domain/billing/entitlements-client')
+    >()
+  ).hasPaidPremium,
   entitlementsKeys: {
     all: ['entitlements'],
     user: (userId: string) => ['entitlements', userId],

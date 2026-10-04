@@ -35,6 +35,10 @@ export interface EntitlementState {
   managementUrl: string | null;
   managementStore: string | null;
   hasActiveSubscription: boolean;
+  // Premium that comes ONLY from complimentary grants (welcome or admin): no
+  // paid grant and no active subscription. Clients keep feature access but
+  // still offer checkout, so a welcome user can subscribe before it ends.
+  complimentary: boolean;
   features: Record<FeatureKey, FeatureAccess>;
 }
 
@@ -187,6 +191,10 @@ export async function getEntitlementState(
       managementGrant?.managementUrl ?? winner?.managementUrl ?? null,
     managementStore: managementGrant?.store ?? null,
     hasActiveSubscription: managementGrant !== null,
+    complimentary:
+      activeGrants.length > 0 &&
+      activeSubscriptions.length === 0 &&
+      activeGrants.every((grant) => grant.source === 'promo'),
     features,
   };
 }
