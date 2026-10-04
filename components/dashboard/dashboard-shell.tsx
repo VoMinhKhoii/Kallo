@@ -20,6 +20,7 @@ import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
 import { InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
+import { TodayDockPending } from './today/today-dock-pending';
 
 const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   '30d': 'ranges.thirtyDays',
@@ -27,8 +28,7 @@ const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   year: 'ranges.year',
 };
 
-/** Section titles: the Flutter Today screen's 17px semibold sentence case on
- *  phones, the quiet uppercase eyebrow from md up. */
+/** Section titles: Flutter's sentence case on phones, the eyebrow from md. */
 const SECTION_TITLE =
   'font-semibold text-[17px] text-kallo-text md:font-medium md:text-kallo-text-muted md:text-xs md:uppercase md:tracking-[0.08em]';
 
@@ -110,7 +110,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
               <span className={SECTION_TITLE}>{t('today')}</span>
               <div className="xl:min-h-0 xl:flex-1">
                 {dailyMealsQuery.isPending ? (
-                  <DashboardSectionState message={t('todayLoading')} />
+                  <TodayDockPending message={t('todayLoading')} />
                 ) : dailyMealsQuery.isError ? (
                   <DashboardSectionState
                     message={t('todayLoadError')}

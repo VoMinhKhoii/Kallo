@@ -1,21 +1,32 @@
-import * as React from 'react';
+import { useSyncExternalStore } from 'react';
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_QUERY = '(max-width: 767px)';
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    undefined
+function mobileQuery(): MediaQueryList | null {
+  return typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function'
+    ? window.matchMedia(MOBILE_QUERY)
+    : null;
+}
+
+function subscribe(onChange: () => void) {
+  const mql = mobileQuery();
+  mql?.addEventListener('change', onChange);
+  return () => mql?.removeEventListener('change', onChange);
+}
+
+/**
+ * True below the `md` breakpoint (768px).
+ *
+ * Read synchronously, not from an effect: a component that mounts after
+ * hydration — a modal rendered already open — gets the right answer on its
+ * first render, so a phone never paints the desktop form and then swaps it.
+ * The server (and the hydration pass) answer `false`.
+ */
+export function useIsMobile(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => mobileQuery()?.matches ?? false,
+    () => false
   );
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    mql.addEventListener('change', onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener('change', onChange);
-  }, []);
-
-  return !!isMobile;
 }
