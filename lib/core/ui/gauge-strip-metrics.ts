@@ -30,10 +30,21 @@ export interface StripLayout extends GaugeStripSizes {
   stacked: boolean;
 }
 
-/** Four marks on one line, or — on a card too narrow for that — two. */
-export function sizeStrip(available: number, macroCap: number): StripLayout {
+/**
+ * Four marks on one line, or — on a card too narrow for that — two.
+ *
+ * `forceStacked` asks for the two-row form even where one line would fit: the
+ * dashboard does on a phone, where the Flutter Today screen leads with a
+ * full-width calorie dial over the three macros rather than four small marks
+ * in a row.
+ */
+export function sizeStrip(
+  available: number,
+  macroCap: number,
+  forceStacked = false
+): StripLayout {
   const oneLine = gaugeStripSizes(available, macroCap);
-  return oneLine.wraps
+  return oneLine.wraps || forceStacked
     ? { ...gaugeStackedSizes(available, macroCap), stacked: true }
     : { ...oneLine, stacked: false };
 }

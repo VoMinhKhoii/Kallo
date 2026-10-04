@@ -42,6 +42,9 @@ import type { Goal } from '@/lib/domain/onboarding/types';
  * React renders this on the server — where there is no layout to read anyway.
  * The server pass takes the effect-free branch and renders the spacer.
  */
+/** Below the app's `md` breakpoint — where the mobile shell takes over. */
+const PHONE_QUERY = '(max-width: 767.98px)';
+
 const useMeasureEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
@@ -62,11 +65,19 @@ interface GaugeStripProps {
   goal: Goal | null;
   /** This surface's ceiling on a macro dial's radius. */
   macroCap: number;
+  /** Stack the calorie dial over the macros while the viewport is a phone's
+   *  (below `md`) — the Flutter Today layout. */
+  stackOnPhone?: boolean;
 }
 
-export function GaugeStrip({ macroCap, ...day }: GaugeStripProps) {
+export function GaugeStrip({
+  macroCap,
+  stackOnPhone = false,
+  ...day
+}: GaugeStripProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [available, setAvailable] = useState<number | null>(null);
+  const [isPhone, setIsPhone] = useState(false);
 
   // Before paint, so the strip never renders at one size and visibly jumps to
   // another.
@@ -78,6 +89,8 @@ export function GaugeStrip({ macroCap, ...day }: GaugeStripProps) {
       if (width > 0) {
         setAvailable((previous) => (previous === width ? previous : width));
       }
+      // Read with the width, so a phone never paints the one-line form first.
+      setIsPhone(window.matchMedia?.(PHONE_QUERY).matches ?? false);
     };
 
     // Measure once up front: the observer's first callback is async in some
@@ -99,7 +112,10 @@ export function GaugeStrip({ macroCap, ...day }: GaugeStripProps) {
         // take at this surface's cap, so nothing below it moves when it lands.
         <div style={{ height: stripHeight(sizeAtCap(macroCap)) }} />
       ) : (
-        <StripRow {...day} sizes={sizeStrip(available, macroCap)} />
+        <StripRow
+          {...day}
+          sizes={sizeStrip(available, macroCap, stackOnPhone && isPhone)}
+        />
       )}
     </div>
   );
@@ -111,7 +127,9 @@ function StripRow({
   target,
   goal,
   sizes,
-}: Omit<GaugeStripProps, 'macroCap'> & { sizes: StripLayout }) {
+}: Omit<GaugeStripProps, 'macroCap' | 'stackOnPhone'> & {
+  sizes: StripLayout;
+}) {
   const t = useTranslations('dashboard');
   const { calorieRadius, macroRadius, gap, stacked } = sizes;
   const { calorieShift, macroShift } = alignCentres(sizes);

@@ -12,7 +12,7 @@ Goal: a **Threads/Instagram-style Activity page** (web, mobile-responsive) backe
 
 1. **Group adds** stay instant; the added member gets a `group.added` notification deep-linking to the group (leave stays in group info). Locket model: notify, don't gate.
 2. **Friend connect** stays instant-on-link; NEW `friend.joined` notification to the inviter. Research (Locket/Instagram/BeReal/Snapchat/Discord/LinkedIn/Venmo) showed: a personally shared private link counts as consent; request/approve exists to guard *discovery* surfaces (search/contact sync), which Kallo doesn't have. The schema's unused `friend_request` slot stays reserved for a future discovery path. Link expiry/revocation = separate follow-up.
-3. **Entry points**: desktop sidebar "Activity" item + heart button with unread badge in the mobile header (both → `/activity`); mobile drawer row also gets the badge.
+3. **Entry points**: desktop sidebar "Activity" item + heart button with unread badge in the mobile header (both → `/activity`). The mobile web drawer was retired for the bottom tab bar, which does not carry Activity; the heart is the mobile entry point.
 4. **Channels v1**: web = in-app only via TanStack polling (Supabase Realtime is deliberately deferred repo-wide; data plane locked by `20260825120000_lock_postgrest_data_plane.sql`). Flutter iOS = native push straight to **APNs** (no Firebase anywhere) — this repo ships the token API + send pipeline; Flutter client work is contract-only here (separate branch later).
 
 ## Design principles (from big-tech research)
@@ -66,7 +66,7 @@ flowchart LR
 
     subgraph OUT["DELIVERY"]
         direction TB
-        B["Badge poll 30s<br/>count(seenAt IS NULL)<br/>+ max(updatedAt) watermark<br/>(watermark moves → refetch feed)<br/>desktop sidebar · mobile heart · drawer"]
+        B["Badge poll 30s<br/>count(seenAt IS NULL)<br/>+ max(updatedAt) watermark<br/>(watermark moves → refetch feed)<br/>desktop sidebar · mobile heart"]
         F["/activity page<br/>New / Last 30 days / Older<br/>open → bulk markSeen<br/>tap row → markRead + deep link"]
         AC["Actionable invite card<br/>LIVE status join → Accept/Dismiss<br/>or 'Added' / neutral 'No longer<br/>available' chip<br/>(reuses existing invite mutations)"]
         PUSH["GATE 5, after the tx COMMITS:<br/>after() → APNs HTTP/2<br/>iOS native push (Flutter)<br/>apns-collapse-id per groupKey/group<br/>prune 410 / wrong-topic tokens"]
@@ -316,8 +316,8 @@ Tests: schema round-trips, cursor pagination, invite live-status join, recipient
 
 **Nav** (verified against code):
 - `nav-items.ts`: add `{ id: 'activity', href: '/activity', labelKey: 'activity', icon: Heart }` — **not** Lucide `Activity` (taken by nutrition, nav-items.ts:29).
-- `desktop-sidebar.tsx` / `mobile-nav-list.tsx` / `mobile-nav.tsx`: all three read `useNavBadgeCounts()` (`hooks/ui/use-nav-badges.ts`), a `Record<navItemId, count>` of the pending-invite and unseen-notification counts, so the rail, the drawer row and the header heart can never disagree about which destination carries unread state.
-- **Mobile heart**: new `components/activity/mobile-activity-button.tsx` rendered in `mobile-nav.tsx` **replacing the aria-hidden size-11 spacer div (lines 200–203)** — NOT portaled into `#app-mobile-header-slot` (that slot is a single-filler contract owned by MobileTimelinePicker with a strip-mode protocol; verified in code comments at mobile-nav.tsx:187-199). A size-11 heart button preserves the slot's centering exactly and appears on every screen; hide in strip mode with the spacer's existing `group-has-[[data-strip-mode=true]]/mobileheader:hidden` class.
+- `desktop-sidebar.tsx` / `mobile/mobile-tab-bar.tsx`: both read `useNavBadgeCounts()` (`hooks/ui/use-nav-badges.ts`), a `Record<navItemId, count>` of the pending-invite and unseen-notification counts, so the rail and the mobile tab bar can never disagree about which destination carries unread state. The header heart (`mobile-activity-button.tsx`) reads the unseen count directly.
+- **Mobile heart**: new `components/activity/mobile-activity-button.tsx` rendered in `mobile-header.tsx` (originally `mobile-nav.tsx`) **replacing the aria-hidden size-11 spacer div** — NOT portaled into `#app-mobile-header-slot` (that slot is a single-filler contract owned by MobileTimelinePicker with a strip-mode protocol; see the slot's comment in mobile-header.tsx). A size-11 heart button preserves the slot's centering exactly and appears on every screen; hide in strip mode with the spacer's existing `group-has-[[data-strip-mode=true]]/mobileheader:hidden` class.
 
 **i18n**: register `'activity'` in the `namespaces` array in `i18n/config.ts` (silent failure otherwise); add `messages/en/activity.json` + `messages/vi/activity.json` (row templates under `row.<type>.<one|other>`, nested so the dotted wire type IS the key path, incl. aggregate plurals; plus sections, empty state, buttons) and the sidebar label in both `app.json` files + metadata title.
 

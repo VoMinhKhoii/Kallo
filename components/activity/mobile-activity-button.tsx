@@ -6,11 +6,9 @@ import { useUnseenNotificationCount } from '@/hooks/notifications/use-notificati
 import { Link } from '@/i18n/navigation';
 
 /**
- * The mobile header's activity entry point. It occupies the right-hand slot
- * that used to be an aria-hidden spacer, so it must keep that element's exact
- * footprint (`size-11`) and strip-mode behaviour — the centered header slot
- * between the hamburger and this button is centered by symmetry, and it drops
- * out with the hamburger when the timeline picker goes full-width.
+ * The mobile header's activity entry point, beside the account avatar on the
+ * header's right. It drops out with the rest of the header chrome when the
+ * timeline picker's week strip takes the full row.
  */
 export function MobileActivityButton() {
   const t = useTranslations('activity');

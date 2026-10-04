@@ -3,13 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { ResponsiveModal } from '@/components/shared/responsive-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CircleList } from './invite/circle-list';
 import { CreateGroupForm } from './invite/create-group-form';
@@ -61,49 +55,44 @@ export function AddFriendDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent
-        aria-describedby={undefined}
-        className="gap-5 border-[#E8E6DC] bg-white"
-      >
-        <DialogHeader>
-          <DialogTitle className="font-serif text-[#141413] text-xl">
-            {tab === 'friend' ? t('title') : tGroup('title')}
-          </DialogTitle>
-        </DialogHeader>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={handleOpenChange}
+      trigger={trigger}
+      title={tab === 'friend' ? t('title') : tGroup('title')}
+      dialogClassName="gap-5 border-[#E8E6DC] bg-white"
+      sheetBodyClassName="px-4 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)]"
+    >
+      <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>
+        <TabsList className="w-full rounded-xl bg-[#E8E6DC]/60 p-1">
+          <TabsTrigger
+            value="friend"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
+          >
+            {t('tabAddFriend')}
+          </TabsTrigger>
+          <TabsTrigger
+            value="group"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
+          >
+            {t('tabCreateGroup')}
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>
-          <TabsList className="w-full rounded-xl bg-[#E8E6DC]/60 p-1">
-            <TabsTrigger
-              value="friend"
-              className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
-            >
-              {t('tabAddFriend')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="group"
-              className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
-            >
-              {t('tabCreateGroup')}
-            </TabsTrigger>
-          </TabsList>
+        <TabsContent value="friend" className="space-y-5">
+          <InviteLinkSection />
+          <div className="max-h-[40vh] overflow-y-auto">
+            <CircleList />
+          </div>
+        </TabsContent>
 
-          <TabsContent value="friend" className="space-y-5">
-            <InviteLinkSection />
-            <div className="max-h-[40vh] overflow-y-auto">
-              <CircleList />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="group">
-            <CreateGroupForm
-              onCreated={() => handleOpenChange(false)}
-              onAddFriend={() => setTab('friend')}
-            />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+        <TabsContent value="group">
+          <CreateGroupForm
+            onCreated={() => handleOpenChange(false)}
+            onAddFriend={() => setTab('friend')}
+          />
+        </TabsContent>
+      </Tabs>
+    </ResponsiveModal>
   );
 }

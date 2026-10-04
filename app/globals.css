@@ -3,6 +3,20 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Inside the app shell while a text field has focus — on a phone, the
+   on-screen keyboard is up. The mobile tab bar steps aside then. */
+@custom-variant typing ([data-app-shell]:has(
+    :is(
+        textarea,
+        input:not(
+            [type="checkbox"],
+            [type="radio"],
+            [type="range"],
+            [type="file"]
+          )
+      ):focus
+  )
+  &);
 
 @theme inline {
   --color-background: var(--background);
@@ -123,6 +137,10 @@
   --shadow-xl: 0 8px 24px rgba(44, 36, 22, 0.12);
   --shadow-2xl: 0 16px 40px rgba(44, 36, 22, 0.14);
   --shadow-hero: 0 30px 60px -15px rgba(201, 168, 124, 0.25);
+  /* The mobile tab bar's floating pill — the Flutter app's `kNavShadows`
+     (calm_tokens.dart), so the two bars lift off the page identically. */
+  --shadow-nav:
+    0 10px 30px rgba(20, 20, 19, 0.14), 0 2px 8px rgba(20, 20, 19, 0.06);
   /* Kallo warm palette */
   --color-kallo-surface: var(--kallo-surface);
   --color-kallo-text: var(--kallo-text);

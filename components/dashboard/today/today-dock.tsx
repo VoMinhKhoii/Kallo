@@ -6,6 +6,7 @@ import { GaugeStrip } from '@/components/shared/gauge/gauge-strip';
 import type { MealEntry, NutritionData } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import { DOCK_MACRO_CAP } from '@/lib/core/ui/gauge-strip-layout';
+
 import type { Goal } from '@/lib/domain/onboarding/types';
 import { MealList } from './meal-list';
 
@@ -54,8 +55,8 @@ export function TodayDock({
       animate={{ opacity: 1, y: 0 }}
       aria-label={t('today')}
       className={cn(
-        'flex min-h-0 flex-col gap-4 rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md xl:grid xl:h-full xl:grid-cols-[44%_minmax(0,1fr)] xl:gap-5 xl:overflow-hidden',
-        isStreaming && 'border-kallo-accent/60'
+        'flex min-h-0 flex-col gap-5 transition-[border-color,box-shadow] duration-200 md:gap-4 md:rounded-2xl md:border md:border-kallo-border/60 md:bg-card md:p-4 md:shadow-kallo-text/[0.03] md:shadow-sm md:hover:border-kallo-accent/50 md:hover:shadow-kallo-text/[0.06] md:hover:shadow-md xl:grid xl:h-full xl:grid-cols-[44%_minmax(0,1fr)] xl:gap-5 xl:overflow-hidden',
+        isStreaming && 'md:border-kallo-accent/60'
       )}
       initial={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.45 }}
@@ -72,13 +73,16 @@ export function TodayDock({
           current={current}
           goal={goal}
           macroCap={DOCK_MACRO_CAP}
+          // Phones lead with the Flutter Today layout: a full-width calorie
+          // dial over the three macros.
+          stackOnPhone
           target={target}
         />
       </div>
 
       {/* The meals behind those numbers. A hairline separates them: horizontal
           when stacked, vertical when the list sits beside the dials. */}
-      <div className="min-h-0 border-kallo-border/50 border-t pt-4 xl:overflow-hidden xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
+      <div className="min-h-0 border-kallo-border/50 md:border-t md:pt-4 xl:overflow-hidden xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
         <MealList meals={meals} />
       </div>
     </motion.section>

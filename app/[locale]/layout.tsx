@@ -156,7 +156,13 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
-        <Toaster />
+        {/* Phones: toasts float above the app's bottom tab bar (64px pill +
+            its 6px/8px insets) instead of covering it. */}
+        <Toaster
+          mobileOffset={{
+            bottom: 'calc(max(env(safe-area-inset-bottom), 0.5rem) + 5rem)',
+          }}
+        />
         {/* `usePathname()` is request data under Cache Components: without a
             boundary it blocks prerendering of every dynamic route. */}
         <Suspense fallback={null}>

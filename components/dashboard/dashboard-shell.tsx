@@ -18,7 +18,7 @@ import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
-import { FloatingMealTrigger, InlineMealTrigger } from './today/meal-trigger';
+import { InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
 
 const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
@@ -26,6 +26,11 @@ const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   '90d': 'ranges.ninetyDays',
   year: 'ranges.year',
 };
+
+/** Section titles: the Flutter Today screen's 17px semibold sentence case on
+ *  phones, the quiet uppercase eyebrow from md up. */
+const SECTION_TITLE =
+  'font-semibold text-[17px] text-kallo-text md:font-medium md:text-kallo-text-muted md:text-xs md:uppercase md:tracking-[0.08em]';
 
 export function DashboardShell({ profile }: { profile: DashboardProfile }) {
   const t = useTranslations('dashboard');
@@ -87,7 +92,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
           too short for the rows' content minimums the page degrades to a
           gentle scroll (main is overflow-y-auto) instead of letting cards
           bleed over the section below. */}
-      <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
+      <div className="min-h-full px-4 pt-1 pb-6 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col xl:min-h-0 xl:flex-1">
           <div className="hidden md:mb-6 md:block">
             <InlineMealTrigger
@@ -102,9 +107,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
                 it is gone — the dial's own readout names its figure, and
                 "Calories remaining" was simply wrong for the bulking and
                 maintaining users whose dial counts up. */}
-              <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
-                {t('today')}
-              </span>
+              <span className={SECTION_TITLE}>{t('today')}</span>
               <div className="xl:min-h-0 xl:flex-1">
                 {dailyMealsQuery.isPending ? (
                   <DashboardSectionState message={t('todayLoading')} />
@@ -134,9 +137,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
               )}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
-                  {t('progress')}
-                </span>
+                <span className={SECTION_TITLE}>{t('progress')}</span>
                 <span className="font-medium text-kallo-text-muted text-xs">
                   {t(RANGE_LABEL_KEYS[weightRange])}
                 </span>
@@ -167,9 +168,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
 
             <section className={cn('flex min-w-0 flex-col gap-1.5', dimClass)}>
               <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
-                  {t('consistency')}
-                </span>
+                <span className={SECTION_TITLE}>{t('consistency')}</span>
                 <span className="font-medium text-kallo-text-muted text-xs">
                   {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
                 </span>
@@ -201,12 +200,6 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
           </div>
         </div>
       </div>
-
-      <FloatingMealTrigger
-        onSubmitMeal={submit}
-        streaming={streaming}
-        restoredDraft={restoredDraft}
-      />
     </main>
   );
 }

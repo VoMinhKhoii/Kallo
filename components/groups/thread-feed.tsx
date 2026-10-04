@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Fragment, type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import {
@@ -97,7 +97,16 @@ export function ThreadFeed({
     );
   }
 
-  let lastDayKey: string | null = null;
+  // One group per day. Phones set each day's entries on a white card under a
+  // left-aligned day title, as the Flutter Circle feed does; from md the
+  // group is unstyled and the day reads as the centered hairline divider.
+  const days: { key: string; timestamp: string; items: typeof entries }[] = [];
+  for (const entry of entries) {
+    const key = threadDayKey(entry.timestamp);
+    const last = days.at(-1);
+    if (last?.key === key) last.items.push(entry);
+    else days.push({ key, timestamp: entry.timestamp, items: [entry] });
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -108,30 +117,30 @@ export function ThreadFeed({
       >
         {entries.length > 0 ? (
           <>
-            {entries.map((entry) => {
-              const dayKey = threadDayKey(entry.timestamp);
-              const showSeparator = dayKey !== lastDayKey;
-              lastDayKey = dayKey;
-              return (
-                <Fragment key={entry.id}>
-                  {showSeparator && (
-                    <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[#6E6D66] text-[11px]">
-                      <span className="h-px flex-1 bg-[#E8E6DC]" />
-                      {threadDayLabel(
-                        entry.timestamp,
-                        locale,
-                        t('todayLabel'),
-                        t('yesterdayLabel')
-                      )}
-                      <span className="h-px flex-1 bg-[#E8E6DC]" />
-                    </div>
+            {days.map((day) => (
+              <section key={day.key}>
+                <h2 className="flex items-center gap-2.5 px-1 pt-2 pb-2 font-sans-display text-[15px] text-kallo-text-muted md:px-4 md:pt-5 md:pb-3 md:text-[#6E6D66] md:text-[11px]">
+                  <span className="hidden h-px flex-1 bg-[#E8E6DC] md:block" />
+                  {threadDayLabel(
+                    day.timestamp,
+                    locale,
+                    t('todayLabel'),
+                    t('yesterdayLabel')
                   )}
-                  <div className="border-[#E8E6DC] border-b p-4 last:border-b-0">
-                    {entry.content}
-                  </div>
-                </Fragment>
-              );
-            })}
+                  <span className="hidden h-px flex-1 bg-[#E8E6DC] md:block" />
+                </h2>
+                <div className="overflow-hidden rounded-2xl bg-white md:rounded-none md:bg-transparent">
+                  {day.items.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="border-[#E8E6DC] border-b p-4 last:border-b-0"
+                    >
+                      {entry.content}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
             {isFetchingNextPage && (
               <p className="py-2 text-center font-sans-display text-[#6E6D66] text-[11px]">
                 {t('loadingMore')}

@@ -35,7 +35,7 @@ export default async function GroupsLayout({
       <div className="wide:fixed wide:inset-y-0 wide:left-1/2 mx-auto wide:mx-0 flex h-full min-h-0 w-full max-w-2xl wide:-translate-x-1/2 flex-col px-4 pt-4 pb-4 sm:px-5">
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="font-bold font-sans-display text-[#141413] text-[18px] tracking-[-0.01em]">
+            <h1 className="font-sans-display font-semibold text-[28px] text-kallo-text tracking-[-0.01em] md:font-bold md:text-[18px]">
               {t('title')}
             </h1>
           </div>

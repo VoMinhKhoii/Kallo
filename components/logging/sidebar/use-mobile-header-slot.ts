@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 /**
  * The header slot the date chip renders into, when there is one.
  *
- * `MobileNav` puts the slot in the DOM at every width but only shows its header
+ * `MobileHeader` puts the slot in the DOM at every width but only shows its header
  * below `md`. Portalling into it from `md` up hides the chip completely — which
  * is exactly what happened when the timeline sidebar moved from `md` to `lg`
  * and left 768px with neither the sidebar nor the chip. So the slot counts as a
@@ -14,7 +14,7 @@ import { useSyncExternalStore } from 'react';
  *
  * `matchMedia` is absent in jsdom (and in any host without it). Falling back to
  * `null` is the safe branch: the chip is visible either way, it just does not
- * share the hamburger's row.
+ * share the header's row.
  */
 const MOBILE_HEADER_SLOT_ID = 'app-mobile-header-slot';
 const MOBILE_HEADER_QUERY = '(max-width: 767.98px)';

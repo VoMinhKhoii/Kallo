@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   useLogWeight: vi.fn(),
+  isMobile: vi.fn(() => false),
 }));
+
+vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: mocks.isMobile }));
 
 vi.mock('@/hooks/weight/use-weight-mutations', () => ({
   useLogWeight: mocks.useLogWeight,
@@ -30,6 +33,7 @@ describe('WeightLogDialog', () => {
   beforeEach(() => {
     mocks.mutateAsync.mockReset();
     mocks.mutateAsync.mockResolvedValue(undefined);
+    mocks.isMobile.mockReturnValue(false);
     mocks.useLogWeight.mockReset();
     mocks.useLogWeight.mockReturnValue({
       isPending: false,
@@ -144,5 +148,20 @@ describe('WeightLogDialog', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('weightCard.inputLabel')).toHaveValue('60.8');
     expect(screen.getByRole('button', { name: 'saving' })).toBeDisabled();
+  });
+
+  it('rises as a bottom sheet with the app sheet header on phones', async () => {
+    mocks.isMobile.mockReturnValue(true);
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(
+      screen.getByRole('button', { name: 'weightCard.logWeight' })
+    );
+
+    const sheet = await screen.findByRole('dialog');
+    expect(sheet).toHaveAttribute('data-vaul-drawer-direction', 'bottom');
+    // The round close sits on the left, as in the Flutter sheet header.
+    expect(screen.getByRole('button', { name: 'close' })).toBeInTheDocument();
+    expect(screen.getByLabelText('weightCard.inputLabel')).toHaveValue('61.5');
   });
 });

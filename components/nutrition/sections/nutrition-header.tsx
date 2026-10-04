@@ -32,14 +32,14 @@ export function NutritionHeader({
   const t = useTranslations('nutrition');
 
   return (
-    <header className="flex items-center justify-between gap-4">
-      <h1 className="font-bold font-sans-display text-[18px] text-kallo-text tracking-[-0.01em]">
+    <header className="flex items-center justify-between gap-3 md:gap-4">
+      <h1 className="font-sans-display font-semibold text-[28px] text-kallo-text tracking-[-0.01em] md:font-bold md:text-[18px]">
         {t('title')}
       </h1>
       <div
         role="group"
         aria-label={t('range.label')}
-        className="inline-flex items-center gap-px rounded-full bg-kallo-track p-1"
+        className="inline-flex shrink-0 items-center gap-px rounded-full bg-kallo-track p-1"
       >
         {RANGES.map((range) => {
           const active = resolvedRange === range;
@@ -51,7 +51,7 @@ export function NutritionHeader({
               onClick={() => onRangeChange(range)}
               disabled={disabled}
               className={cn(
-                'touch-manipulation rounded-full px-3 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:opacity-60',
+                'touch-manipulation whitespace-nowrap rounded-full px-2.5 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:opacity-60 md:px-3',
                 active
                   ? 'bg-card text-kallo-text shadow-sm'
                   : 'text-kallo-text-muted hover:text-kallo-text'

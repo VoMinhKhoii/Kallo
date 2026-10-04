@@ -32,8 +32,11 @@ export function MealList({ meals }: MealListProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {/* Phones take the Flutter Today screen's section title (17px semibold,
+          sentence case) and set the rows on their own white card; from md the
+          whole dock is one card and this is its quiet eyebrow. */}
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-medium text-[11px] text-kallo-text-muted uppercase tracking-[0.3px]">
+        <span className="font-semibold text-[17px] text-kallo-text md:font-medium md:text-[11px] md:text-kallo-text-muted md:uppercase md:tracking-[0.3px]">
           {t('recentMeals')}
         </span>
         <span className="text-kallo-text-muted text-xs tabular-nums">
@@ -50,7 +53,7 @@ export function MealList({ meals }: MealListProps) {
           dashboard. The meal name takes the bold-ink identity slot the
           author's name held there. */}
       <div
-        className="flex min-h-0 flex-1 flex-col divide-y divide-kallo-border/50 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-h-0 flex-1 flex-col divide-y divide-kallo-border/50 overflow-y-auto rounded-2xl bg-white px-4 [-ms-overflow-style:none] [scrollbar-width:none] md:rounded-none md:bg-transparent md:px-0 [&::-webkit-scrollbar]:hidden"
         data-testid="meal-list-scroll"
       >
         {meals.map((meal) => (

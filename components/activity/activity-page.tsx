@@ -75,7 +75,7 @@ export function ActivityPage() {
   return (
     <main className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-1 flex-col px-4 pt-4 pb-4 sm:px-5">
       <header className="mb-1 shrink-0">
-        <h1 className="font-bold font-sans-display text-[18px] text-kallo-text tracking-[-0.01em]">
+        <h1 className="font-sans-display font-semibold text-[28px] text-kallo-text tracking-[-0.01em] md:font-bold md:text-[18px]">
           {t('title')}
         </h1>
       </header>
