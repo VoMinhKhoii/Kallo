@@ -543,3 +543,16 @@ body[data-meal-streaming] [data-app-sidebar] {
 svg.lucide {
   stroke-width: 1.5;
 }
+
+/* Toasts float above the mobile tab bar (its 64px pill plus 6px/8px insets)
+   wherever the bar is on screen: through 767.98px, matching its `md:hidden`.
+   Sonner's own `mobileOffset` only applies at 600px and below. This selector
+   outranks Sonner's `[data-sonner-toaster][data-y-position=bottom]` on
+   specificity, so it wins whatever order the two stylesheets load in. Scoped
+   to pages that render the bar; public pages keep the default offset. */
+@media (max-width: 767.98px) {
+  body:has([data-mobile-tab-bar])
+    [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(max(env(safe-area-inset-bottom), 0.5rem) + 5rem);
+  }
+}

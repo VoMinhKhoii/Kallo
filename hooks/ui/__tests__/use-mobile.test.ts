@@ -32,7 +32,7 @@ describe('useIsMobile', () => {
 
   it('asks for the md breakpoint', () => {
     renderHook(() => useIsMobile());
-    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 767px)');
+    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 767.98px)');
   });
 
   it('is right on the first render — no desktop frame on a phone', () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { MOBILE_QUERY } from '@/lib/core/ui/breakpoints';
 
 /**
  * The header slot the date chip renders into, when there is one.
@@ -17,11 +18,10 @@ import { useSyncExternalStore } from 'react';
  * share the header's row.
  */
 const MOBILE_HEADER_SLOT_ID = 'app-mobile-header-slot';
-const MOBILE_HEADER_QUERY = '(max-width: 767.98px)';
 
 const query = () =>
   typeof window.matchMedia === 'function'
-    ? window.matchMedia(MOBILE_HEADER_QUERY)
+    ? window.matchMedia(MOBILE_QUERY)
     : null;
 
 const subscribe = (onChange: () => void) => {

@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react';
-
-const MOBILE_QUERY = '(max-width: 767px)';
+import { MOBILE_QUERY } from '@/lib/core/ui/breakpoints';
 
 function mobileQuery(): MediaQueryList | null {
   return typeof window !== 'undefined' &&

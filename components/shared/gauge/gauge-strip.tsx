@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { MOBILE_QUERY } from '@/lib/core/ui/breakpoints';
 import {
   sizeAtCap,
   sizeStrip,
@@ -31,9 +32,6 @@ import { type StripDay, StripRow } from './gauge-strip-row';
  * which shrinks its dials to fit a narrow phone. This is the same idea with the
  * cap raised, so the marks also grow on a desktop.
  */
-
-/** Below the app's `md` breakpoint — where the mobile shell takes over. */
-const PHONE_QUERY = '(max-width: 767.98px)';
 
 /**
  * The measurement wants to land before paint, but a layout effect warns when
@@ -71,7 +69,7 @@ export function GaugeStrip({
         setAvailable((previous) => (previous === width ? previous : width));
       }
       // Read with the width, so a phone never paints the one-line form first.
-      setIsPhone(window.matchMedia?.(PHONE_QUERY).matches ?? false);
+      setIsPhone(window.matchMedia?.(MOBILE_QUERY).matches ?? false);
     };
 
     // Measure once up front: the observer's first callback is async in some

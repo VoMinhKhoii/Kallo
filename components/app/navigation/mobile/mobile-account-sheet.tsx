@@ -1,16 +1,16 @@
 'use client';
 
-import { ChevronRight, LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { LogOut, Settings, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { ResponsiveSheet } from '@/components/shared/responsive-sheet';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { useSignOut } from '@/hooks/auth/use-sign-out';
-import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { OnboardingNudge } from '../onboarding-nudge';
 import type { UserMenuUser } from '../user-menu';
+import { ACCOUNT_ROW, AccountSheetRow } from './account-sheet-row';
 import { deriveLabel } from './mobile-user-label';
 
 export interface MobileOnboardingProps {
@@ -29,9 +29,6 @@ interface MobileAccountSheetProps extends MobileOnboardingProps {
   user: UserMenuUser;
   isAdmin?: boolean;
 }
-
-const ROW =
-  'flex min-h-12 w-full items-center gap-3 px-4 text-left transition-colors active:bg-kallo-hover';
 
 /**
  * The account surface behind the header avatar — a bottom sheet in the
@@ -105,14 +102,14 @@ export function MobileAccountSheet({
         ) : null}
 
         <ul className="divide-y divide-kallo-border/70 overflow-hidden rounded-2xl bg-white">
-          <SheetLinkRow
+          <AccountSheetRow
             href="/settings"
             icon={<Settings className="size-[18px]" aria-hidden="true" />}
             label={tNav('settings')}
             onNavigate={close}
           />
           {isAdmin ? (
-            <SheetLinkRow
+            <AccountSheetRow
               href="/admin"
               icon={<ShieldCheck className="size-[18px]" aria-hidden="true" />}
               label={tNav('admin')}
@@ -127,7 +124,7 @@ export function MobileAccountSheet({
             onClick={signOut}
             disabled={signingOut}
             aria-busy={signingOut}
-            className={cn(ROW, 'text-kallo-danger disabled:opacity-60')}
+            className={cn(ACCOUNT_ROW, 'text-kallo-danger disabled:opacity-60')}
           >
             <LogOut className="size-[18px]" aria-hidden="true" />
             <span className="font-medium text-[15px]">{tMenu('signOut')}</span>
@@ -135,32 +132,5 @@ export function MobileAccountSheet({
         </div>
       </div>
     </ResponsiveSheet>
-  );
-}
-
-function SheetLinkRow({
-  href,
-  icon,
-  label,
-  onNavigate,
-}: {
-  href: string;
-  icon: ReactNode;
-  label: string;
-  onNavigate: () => void;
-}) {
-  return (
-    <li>
-      <Link href={href} onClick={onNavigate} className={ROW}>
-        <span className="text-kallo-text-muted">{icon}</span>
-        <span className="flex-1 font-medium text-[15px] text-kallo-text">
-          {label}
-        </span>
-        <ChevronRight
-          className="size-4 text-kallo-text-muted"
-          aria-hidden="true"
-        />
-      </Link>
-    </li>
   );
 }

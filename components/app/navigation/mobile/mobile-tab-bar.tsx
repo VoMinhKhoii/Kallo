@@ -3,10 +3,10 @@
 import { Apple, House, type LucideIcon, PencilLine, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
-import { Link, usePathname } from '@/i18n/navigation';
-import { cn } from '@/lib/core/ui/cn';
+import { usePathname } from '@/i18n/navigation';
 import { isActiveRoute, type NavItemId } from '../nav-items';
 import { MobileAddSheet } from './mobile-add-sheet';
+import { MobileTabLink } from './mobile-tab-link';
 
 interface TabConfig {
   id: NavItemId;
@@ -27,9 +27,6 @@ const TRAILING_TABS: readonly TabConfig[] = [
   { id: 'groups', href: '/circle', labelKey: 'circle', icon: Users },
 ];
 
-const TAB =
-  'relative flex h-full flex-1 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent';
-
 /**
  * Mobile primary navigation — the web port of the Flutter app's floating
  * `PillNavBar`: a white capsule inset 8px from the screen edges with the
@@ -48,9 +45,10 @@ export function MobileTabBar() {
   const pathname = usePathname();
   const badgeCounts = useNavBadgeCounts();
   const renderTab = (tab: TabConfig) => (
-    <TabLink
+    <MobileTabLink
       key={tab.id}
-      tab={tab}
+      href={tab.href}
+      icon={tab.icon}
       label={t(tab.labelKey)}
       active={isActiveRoute(pathname, tab.href)}
       badged={(badgeCounts[tab.id] ?? 0) > 0}
@@ -71,47 +69,5 @@ export function MobileTabBar() {
         {TRAILING_TABS.map(renderTab)}
       </ul>
     </nav>
-  );
-}
-
-function TabLink({
-  tab,
-  label,
-  active,
-  badged,
-}: {
-  tab: TabConfig;
-  label: string;
-  active: boolean;
-  badged: boolean;
-}) {
-  const Icon = tab.icon;
-
-  return (
-    <li className="flex h-full flex-1">
-      <Link
-        href={tab.href}
-        aria-label={label}
-        aria-current={active ? 'page' : undefined}
-        className={cn(
-          TAB,
-          active ? 'text-kallo-text' : 'text-kallo-text-muted'
-        )}
-      >
-        <span className="relative">
-          <Icon
-            className="size-6"
-            strokeWidth={active ? 2 : 1.5}
-            aria-hidden="true"
-          />
-          {badged && (
-            <span
-              aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-kallo-accent ring-2 ring-white"
-            />
-          )}
-        </span>
-      </Link>
-    </li>
   );
 }
