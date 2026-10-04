@@ -153,10 +153,14 @@ export async function getEntitlementState(
   // willRenew=false would tell a paying user their Premium "ends" while the
   // store keeps charging them, so a renewing subscription owns the lifecycle
   // fields. A lifetime winner still reads as lifetime.
+  // Several store products can be active at once (snapshot.ts emits one row
+  // per product), so the lifecycle owner is picked among the RENEWING ones —
+  // a further-out cancelled row must not hide one that still charges.
+  const renewingSubscription = pickWinningGrant(
+    activeSubscriptions.filter((grant) => grant.willRenew)
+  );
   const renewing =
-    winner && winner.expiresAt !== null && managementGrant?.willRenew
-      ? managementGrant
-      : null;
+    winner && winner.expiresAt !== null ? renewingSubscription : null;
 
   const features = {} as Record<FeatureKey, FeatureAccess>;
   for (const key of Object.keys(FEATURES) as FeatureKey[]) {
@@ -167,10 +171,12 @@ export async function getEntitlementState(
     tier,
     reconciliationRequired:
       revenueCatProjectionIsStale(winner, now) ||
-      // A promo can win access while a subscription owns the lifecycle
-      // fields; that subscription still needs its 24h freshness check, or a
-      // missed refund or cancellation would sit until the period ends.
-      revenueCatProjectionIsStale(managementGrant, now) ||
+      // A promo can win access while subscriptions own the lifecycle
+      // fields; they still need their 24h freshness check, or a missed
+      // refund or cancellation would sit until the period ends.
+      activeSubscriptions.some((grant) =>
+        revenueCatProjectionIsStale(grant, now)
+      ) ||
       rows.some((grant) => grantNeedsReconciliation(grant, now)),
     isLifetime: winner?.expiresAt === null && winner !== null,
     expiresAt: renewing?.expiresAt ?? winner?.expiresAt ?? null,

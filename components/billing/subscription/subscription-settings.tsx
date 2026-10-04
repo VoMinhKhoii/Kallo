@@ -76,7 +76,12 @@ export function SubscriptionSettings({
 
   return (
     <div className="flex flex-col gap-3 font-sans-display">
-      {showExpiryBanner && <ExpiryReminderBanner daysRemaining={expiryDays} />}
+      {showExpiryBanner && (
+        <ExpiryReminderBanner
+          daysRemaining={expiryDays}
+          complimentary={!data.hasActiveSubscription}
+        />
+      )}
 
       <div className="rounded-2xl border border-kallo-border/70 bg-white px-4 py-4">
         {data.tier === 'premium' ? (

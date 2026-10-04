@@ -72,4 +72,28 @@ describe('SubscriptionSettings', () => {
       'https://customer-portal.paddle.com/cpl_1'
     );
   });
+
+  // Premium the user never paid for (welcome or an admin grant) has no
+  // subscription to renew, so its last-days reminder must not say "renew".
+  it.each([
+    { hasActiveSubscription: false, title: 'promoExpiryTitle' },
+    { hasActiveSubscription: true, title: 'expiryTitle' },
+  ])('ending-soon copy for hasActiveSubscription=$hasActiveSubscription', ({
+    hasActiveSubscription,
+    title,
+  }) => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        hasActiveSubscription,
+        willRenew: false,
+        expiresAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText(title)).toBeInTheDocument();
+  });
 });

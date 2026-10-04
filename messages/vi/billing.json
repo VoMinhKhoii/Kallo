@@ -35,7 +35,9 @@
     "manageWebEmail": "Để cập nhật hoặc hủy gói, liên hệ bộ phận thanh toán từ {email}.",
     "manageWebGeneric": "Để cập nhật hoặc hủy gói, liên hệ hỗ trợ thanh toán.",
     "expiryTitle": "Gói của bạn sắp kết thúc",
-    "expiryBody": "Quyền truy cập kết thúc sau {days} ngày. Gia hạn để giữ phân tích bữa ăn bằng AI."
+    "expiryBody": "Quyền truy cập kết thúc sau {days} ngày. Gia hạn để giữ phân tích bữa ăn bằng AI.",
+    "promoExpiryTitle": "Premium miễn phí của bạn sắp kết thúc",
+    "promoExpiryBody": "Quyền truy cập kết thúc sau {days} ngày. Nâng cấp để giữ phân tích bữa ăn bằng AI."
   },
   "premium": {
     "chip": "Premium",

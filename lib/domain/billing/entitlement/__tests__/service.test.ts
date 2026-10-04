@@ -204,6 +204,28 @@ describe('getEntitlementState — welcome premium', () => {
     expect(state.reconciliationRequired).toBe(true);
   });
 
+  it('a renewing subscription wins the lifecycle over a further-out cancelled one', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      {
+        db: makeDb([
+          ...introWeek(true),
+          makeGrant({
+            entitlementKey: 'billing_subscription',
+            expiresAt: new Date('2026-08-14T00:00:00.000Z'),
+            willRenew: false,
+            store: 'play_store',
+            externalRef: 'rc-subscription-cancelled',
+          }),
+        ]),
+        now,
+      }
+    );
+
+    expect(state.willRenew).toBe(true);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-12T00:00:00.000Z');
+  });
+
   it('a cancelled subscription reports the furthest access date', async () => {
     const state = await getEntitlementState(
       { userId },

@@ -35,7 +35,9 @@
     "manageWebEmail": "To update or cancel your subscription, contact billing from {email}.",
     "manageWebGeneric": "To update or cancel your subscription, contact billing support.",
     "expiryTitle": "Your subscription is ending soon",
-    "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis."
+    "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis.",
+    "promoExpiryTitle": "Your free Premium is ending soon",
+    "promoExpiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Upgrade to keep AI meal analysis."
   },
   "premium": {
     "chip": "Premium",
