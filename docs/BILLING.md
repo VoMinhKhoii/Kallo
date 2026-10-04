@@ -139,25 +139,46 @@ Premium, written as an ordinary `entitlement_grants` row (`source = 'promo'`,
   longer promo never reads "ends <date>" while the store keeps charging. The
   web ending-soon banner uses free-Premium copy when the winner is a promo.
 
-To stop granting new signups, drop the trigger in a later migration.
+To stop granting new signups, switch the welcome offer off in `/admin/premium`
+(or give it an auto-off date); its length is set there too.
 
 Store-side introductory offers (App Store intro offer, Paddle
 `trial_period.unit_price`; see [Pricing](#pricing)) are configured in each store
 and are independent of this — the paywall discloses whatever the store says the
 customer is still eligible for.
 
-### Admin grants (`/admin/premium`)
+### Admin console (`/admin/premium`)
 
-Admins (`ADMIN_EMAILS`) can grant complimentary Premium to named accounts (up to
-100 emails; all must exist or nothing is granted) or to everyone, for 1–365
-days starting now. `lib/admin/premium/grant-premium-action.ts` re-runs
-`requireAdmin()` itself (a server action is a public POST endpoint), validates
-with the shared zod schema, and writes the grants (`source = 'promo'`,
-`external_ref = 'admin:<audit id>:<user id>'`, both environments) plus one
-`premium_grant_audit` row in a single transaction. The audit table is
-server-only (RLS on, no policies, revoked from `anon`/`authenticated`) and the
-page lists the latest 20 grants. A grant never shortens a longer subscription,
-since the furthest-out active grant wins; there is no revoke from the page.
+Admins (`ADMIN_EMAILS`) manage free Premium from four tabs. Paying accounts
+(any active non-promo premium grant or store subscription) are excluded from
+every selection, so nothing here ever changes a subscriber.
+
+- **Overview** — counts (on free Premium, ending in 3 days, paying, upgraded
+  during free Premium), the **welcome offer** form and the soonest endings.
+  The offer is the single `premium_settings` row (on/off, 1–365 days, optional
+  auto-off date) that the signup trigger reads
+  (`20261004145400_welcome_offer_from_settings.sql`), so a change applies to
+  the next signup with no deploy and never touches existing grants.
+- **Give or end** — Who: picked accounts (searched by name, email or handle),
+  a group (plan: on Free / on free Premium / anyone not paying, plus an
+  optional signup window) or everyone. Give: 1–365 days or until a date,
+  *add on top* (from the end of their free time) or *start from today*. End:
+  cancels active promo grants only. Both preview the count first, require a
+  reason, and require typing EVERYONE / END when the Who is everyone.
+- **Look up an account** — plan, every grant with its source, and +7/+14/+30
+  days or end-now buttons.
+- **Activity** — every give, end, offer change and undo with reason and admin.
+  **Undo** reverses exactly one action: grants it created
+  (`external_ref = 'admin:<action id>:<user id>'`) are canceled, grants it ended
+  (`entitlement_grants.canceled_by_action = <action id>`) come back, an offer
+  change restores the previous settings. An action is undone at most once.
+
+Every server action (`lib/admin/premium/actions/`) goes through
+`runAdminAction`: `requireAdmin()` first (a server action is a public POST
+endpoint), then the zod schema, then one transaction that writes the change
+and its `premium_grant_audit` row. Grants are written for both billing
+environments. `premium_settings` and `premium_grant_audit` are server-only
+(RLS on, no policies, revoked from `anon`/`authenticated`).
 
 ### Enforcement kill-switch
 
