@@ -5,6 +5,8 @@ import { MobileHeader } from '../mobile-header';
 
 const mocks = vi.hoisted(() => ({
   pathname: vi.fn(() => '/dashboard'),
+  back: vi.fn(),
+  push: vi.fn(),
   unseen: vi.fn(() => 0),
   createClient: vi.fn(),
   toastError: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock('@/i18n/navigation', () => ({
     </a>
   ),
   usePathname: () => mocks.pathname(),
+  useRouter: () => ({ back: mocks.back, push: mocks.push }),
 }));
 vi.mock('@/hooks/notifications/use-notification-badge', () => ({
   useUnseenNotificationCount: () => mocks.unseen(),
@@ -44,6 +47,8 @@ const user = {
 describe('MobileHeader', () => {
   beforeEach(() => {
     mocks.pathname.mockReturnValue('/dashboard');
+    mocks.back.mockReset();
+    mocks.push.mockReset();
     mocks.unseen.mockReturnValue(0);
     mocks.createClient.mockReset();
     mocks.toastError.mockReset();
@@ -141,5 +146,42 @@ describe('MobileHeader', () => {
     await u.keyboard('{Escape}');
 
     await waitFor(() => expect(avatar).toHaveFocus());
+  });
+
+  it('trades the wordmark for a back chevron on the logging feed', async () => {
+    mocks.pathname.mockReturnValue('/logging');
+    const u = userEvent.setup();
+    const { container } = render(<MobileHeader user={user} />);
+
+    expect(
+      container.querySelector('header svg.lucide-chevron-left')
+    ).not.toBeNull();
+    expect(screen.getAllByRole('button', { name: 'back' })).toHaveLength(1);
+
+    // With no in-app page behind it (a fresh tab, a deep link), back lands on
+    // Today instead of leaving the app.
+    Object.defineProperty(window, 'navigation', {
+      configurable: true,
+      value: { canGoBack: false },
+    });
+    await u.click(screen.getByRole('button', { name: 'back' }));
+    expect(mocks.push).toHaveBeenCalledWith('/dashboard');
+    expect(mocks.back).not.toHaveBeenCalled();
+
+    Object.defineProperty(window, 'navigation', {
+      configurable: true,
+      value: { canGoBack: true },
+    });
+    await u.click(screen.getByRole('button', { name: 'back' }));
+    expect(mocks.back).toHaveBeenCalledTimes(1);
+    Reflect.deleteProperty(window, 'navigation');
+  });
+
+  it('shows no back chevron on tab pages', () => {
+    mocks.pathname.mockReturnValue('/nutrition');
+    render(<MobileHeader user={user} />);
+    expect(
+      screen.queryByRole('button', { name: 'back' })
+    ).not.toBeInTheDocument();
   });
 });

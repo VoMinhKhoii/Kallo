@@ -4,7 +4,7 @@ import { Apple, House, type LucideIcon, PencilLine, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { usePathname } from '@/i18n/navigation';
-import { isActiveRoute, type NavItemId } from '../nav-items';
+import { isActiveRoute, isFullScreenRoute, type NavItemId } from '../nav-items';
 import { MobileAddSheet } from './mobile-add-sheet';
 import { MobileTabLink } from './mobile-tab-link';
 
@@ -37,7 +37,10 @@ const TRAILING_TABS: readonly TabConfig[] = [
  * It sits in flow below the page rather than over it, so no page has to know
  * the bar's height to keep its last row clear. It steps aside while a text
  * field has focus — on a phone that is the on-screen keyboard, and the logging
- * composer owns the bottom edge then (the Flutter bar does the same).
+ * composer owns the bottom edge then (the Flutter bar does the same). On the
+ * logging feed it is not rendered at all: Flutter pushes Log full-screen over
+ * the tabs, so the feed's composer is the bottom edge and the header carries
+ * a back chevron.
  */
 export function MobileTabBar() {
   const t = useTranslations('app.tabBar');
@@ -54,6 +57,9 @@ export function MobileTabBar() {
       badged={(badgeCounts[tab.id] ?? 0) > 0}
     />
   );
+
+  // A full-screen page (the logging feed) has a back chevron instead.
+  if (isFullScreenRoute(pathname)) return null;
 
   return (
     <nav

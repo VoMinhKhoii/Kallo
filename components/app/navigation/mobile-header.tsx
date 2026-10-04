@@ -10,8 +10,9 @@ import {
   MobileAccountSheet,
   type MobileOnboardingProps,
 } from './mobile/mobile-account-sheet';
+import { MobileBackButton } from './mobile/mobile-back-button';
 import { deriveLabel } from './mobile/mobile-user-label';
-import { isActiveRoute } from './nav-items';
+import { isActiveRoute, isFullScreenRoute } from './nav-items';
 import { OnboardingDot } from './onboarding-nudge';
 import type { UserMenuUser } from './user-menu';
 
@@ -26,7 +27,8 @@ const STRIP_HIDDEN = 'group-has-[[data-strip-mode=true]]/mobileheader:hidden';
 
 /**
  * The mobile header row above every app page, laid out like the Flutter
- * `AppHeader`: the Kallo wordmark on Today, a centered slot pages portal into
+ * `AppHeader`: the Kallo wordmark on Today, a back chevron on a full-screen
+ * page (the logging feed, which hides the tab bar), a centered slot pages portal into
  * (the logging date chip), and on the right the activity heart and the
  * account avatar, which opens the account sheet (Settings, Admin, sign-out).
  * Navigation itself lives on the bottom tab bar. Hidden on `md` and up, where
@@ -39,6 +41,7 @@ export function MobileHeader({
 }: MobileHeaderProps) {
   const pathname = usePathname();
   const tMenu = useTranslations('app.userMenu');
+  const isFullScreen = isFullScreenRoute(pathname);
   const accountActive =
     isActiveRoute(pathname, '/settings') || isActiveRoute(pathname, '/admin');
 
@@ -47,6 +50,8 @@ export function MobileHeader({
       <div className={cn(SIDE, 'justify-start', STRIP_HIDDEN)}>
         {isActiveRoute(pathname, '/dashboard') ? (
           <KalloWordmark className="h-[22px] w-auto text-kallo-text" />
+        ) : isFullScreen ? (
+          <MobileBackButton />
         ) : null}
       </div>
       {/* Mobile header center slot. Currently filled (single filler) by

@@ -129,4 +129,14 @@ describe('MobileTabBar', () => {
 
     await waitFor(() => expect(plus).toHaveFocus());
   });
+
+  it('steps aside on the full-screen logging feed', () => {
+    mocks.pathname.mockReturnValue('/logging');
+    const { container, unmount } = render(<MobileTabBar />);
+    expect(container).toBeEmptyDOMElement();
+    unmount();
+
+    mocks.pathname.mockReturnValue('/logging/anything');
+    expect(render(<MobileTabBar />).container).toBeEmptyDOMElement();
+  });
 });
