@@ -236,6 +236,11 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
       "The operator's record of who granted complimentary Premium from the admin page, written for accountability. The grant itself is the user's data and is exported as billingGrants.",
   },
 
+  premium_settings: {
+    excluded:
+      'The single app-wide welcome-offer setting (on/off, length, auto-off date) edited by admins. It holds no per-user data.',
+  },
+
   // --- Pipeline traces -----------------------------------------------------
   pipeline_stage_logs: { excluded: PIPELINE_TRACE },
   pipeline_llm_calls: { excluded: PIPELINE_TRACE },
