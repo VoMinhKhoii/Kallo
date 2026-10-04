@@ -148,6 +148,15 @@ export async function getEntitlementState(
   const managementGrant = pickWinningGrant(activeSubscriptions);
 
   const tier: Tier = winner ? 'premium' : 'free';
+  // The winner decides ACCESS, but a complimentary (promo) grant can outlast
+  // a renewing store subscription. Reporting the promo's end date and
+  // willRenew=false would tell a paying user their Premium "ends" while the
+  // store keeps charging them, so a renewing subscription owns the lifecycle
+  // fields. A lifetime winner still reads as lifetime.
+  const renewing =
+    winner && winner.expiresAt !== null && managementGrant?.willRenew
+      ? managementGrant
+      : null;
 
   const features = {} as Record<FeatureKey, FeatureAccess>;
   for (const key of Object.keys(FEATURES) as FeatureKey[]) {
@@ -160,8 +169,8 @@ export async function getEntitlementState(
       revenueCatProjectionIsStale(winner, now) ||
       rows.some((grant) => grantNeedsReconciliation(grant, now)),
     isLifetime: winner?.expiresAt === null && winner !== null,
-    expiresAt: winner?.expiresAt ?? null,
-    willRenew: winner?.willRenew ?? false,
+    expiresAt: renewing?.expiresAt ?? winner?.expiresAt ?? null,
+    willRenew: renewing !== null || (winner?.willRenew ?? false),
     source: winner?.source ?? null,
     store: winner?.store ?? null,
     managementUrl:

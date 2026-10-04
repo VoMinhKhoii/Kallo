@@ -152,6 +152,47 @@ describe('getEntitlementState — welcome premium', () => {
     expect(state.source).toBe('revenuecat');
     expect(state.expiresAt?.toISOString()).toBe('2026-09-10T00:00:00.000Z');
   });
+
+  // A store intro week can end before the welcome grant does. Access is the
+  // promo's, but a renewing subscription must not read as "ends <promo date>"
+  // while the store keeps charging.
+  const introWeek = (willRenew: boolean) => [
+    welcome(new Date('2026-08-15T00:00:00.000Z')),
+    makeGrant({
+      expiresAt: new Date('2026-08-12T00:00:00.000Z'),
+      willRenew,
+      externalRef: 'rc-premium',
+    }),
+    makeGrant({
+      entitlementKey: 'billing_subscription',
+      expiresAt: new Date('2026-08-12T00:00:00.000Z'),
+      willRenew,
+      store: 'app_store',
+      externalRef: 'rc-subscription',
+    }),
+  ];
+
+  it('a renewing subscription owns the lifecycle fields over a longer promo', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(true)), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.hasActiveSubscription).toBe(true);
+    expect(state.willRenew).toBe(true);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-12T00:00:00.000Z');
+  });
+
+  it('a cancelled subscription reports the furthest access date', async () => {
+    const state = await getEntitlementState(
+      { userId },
+      { db: makeDb(introWeek(false)), now }
+    );
+
+    expect(state.willRenew).toBe(false);
+    expect(state.expiresAt?.toISOString()).toBe('2026-08-15T00:00:00.000Z');
+  });
 });
 
 describe('getEntitlementState — grants', () => {
