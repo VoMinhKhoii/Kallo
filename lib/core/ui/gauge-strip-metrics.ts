@@ -52,9 +52,10 @@ export function sizeStrip(
 /**
  * The biggest the strip can get on this surface — what an unmeasured render
  * reserves, since the cap is the ceiling however wide the column turns out.
+ * Pass `forceStacked` for the two-row form a phone dashboard settles into.
  */
-export const sizeAtCap = (macroCap: number) =>
-  sizeStrip(Number.POSITIVE_INFINITY, macroCap);
+export const sizeAtCap = (macroCap: number, forceStacked = false) =>
+  sizeStrip(Number.POSITIVE_INFINITY, macroCap, forceStacked);
 
 /** A macro label's own line box, above its arc. */
 export const labelLineHeight = (radius: number) =>

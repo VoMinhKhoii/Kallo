@@ -57,6 +57,6 @@
     "logWeight": "Log weight",
     "logWeightHint": "Today's weigh-in",
     "weightLoading": "Loading your weight…",
-    "weightError": "Couldn't load your weight. Try again."
+    "weightError": "Couldn't load your weight."
   }
 }

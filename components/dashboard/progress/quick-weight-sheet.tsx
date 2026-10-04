@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
+import { DashboardSectionState } from '@/components/dashboard/dashboard-section-state';
 import { ResponsiveModal } from '@/components/shared/responsive-modal';
 import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
 import { getTodayDateString } from '@/lib/domain/dashboard/today';
@@ -47,12 +48,17 @@ export function QuickWeightSheet({
           onSaved={() => onOpenChange(false)}
         />
       ) : (
-        <p
-          role={summary.isError ? 'alert' : 'status'}
-          className="px-[22px] py-8 text-center text-[14px] text-kallo-text-muted"
-        >
-          {summary.isError ? tAdd('weightError') : tAdd('weightLoading')}
-        </p>
+        <div className="px-[22px] py-6">
+          <DashboardSectionState
+            bare
+            variant={summary.isError ? 'error' : 'loading'}
+            message={
+              summary.isError ? tAdd('weightError') : tAdd('weightLoading')
+            }
+            actionLabel={summary.isError ? t('retry') : undefined}
+            onAction={() => void summary.refetch()}
+          />
+        </div>
       )}
     </ResponsiveModal>
   );

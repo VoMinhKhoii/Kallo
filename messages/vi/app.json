@@ -57,6 +57,6 @@
     "logWeight": "Ghi cân nặng",
     "logWeightHint": "Cân nặng hôm nay",
     "weightLoading": "Đang tải cân nặng…",
-    "weightError": "Không tải được cân nặng. Vui lòng thử lại."
+    "weightError": "Không tải được cân nặng."
   }
 }
