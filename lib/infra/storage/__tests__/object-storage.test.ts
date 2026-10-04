@@ -16,11 +16,24 @@ import {
   signedReadUrl,
 } from '@/lib/infra/storage/object-storage';
 
+const legacy = vi.hoisted(() => ({
+  from: vi.fn(),
+  list: vi.fn(),
+  remove: vi.fn(),
+}));
+vi.mock('@/lib/infra/supabase/admin', () => ({
+  createAdminClient: () => ({ storage: { from: legacy.from } }),
+}));
+
 const s3 = mockClient(S3Client);
 const ACCOUNT = '0123456789abcdef0123456789abcdef';
 
 beforeEach(() => {
   s3.reset();
+  vi.clearAllMocks();
+  legacy.from.mockReturnValue({ list: legacy.list, remove: legacy.remove });
+  legacy.list.mockResolvedValue({ data: [], error: null });
+  legacy.remove.mockResolvedValue({ data: [], error: null });
   vi.stubEnv('R2_ACCOUNT_ID', ACCOUNT);
   vi.stubEnv('R2_ACCESS_KEY_ID', 'test-access-key');
   vi.stubEnv('R2_SECRET_ACCESS_KEY', 'test-secret');
@@ -132,6 +145,24 @@ describe('removeObjects', () => {
     ]);
   });
 
+  it('also deletes the legacy Supabase copies of the same keys', async () => {
+    s3.on(DeleteObjectsCommand).resolves({});
+
+    await removeObjects('avatars', ['u/a.webp']);
+
+    expect(legacy.from).toHaveBeenCalledWith('avatars');
+    expect(legacy.remove).toHaveBeenCalledWith(['u/a.webp']);
+  });
+
+  it('throws when the legacy delete fails', async () => {
+    s3.on(DeleteObjectsCommand).resolves({});
+    legacy.remove.mockResolvedValue({ data: null, error: new Error('down') });
+
+    await expect(removeObjects('avatars', ['u/a.webp'])).rejects.toThrow(
+      'down'
+    );
+  });
+
   it('throws when R2 reports a per-key failure', async () => {
     s3.on(DeleteObjectsCommand).resolves({
       Errors: [{ Key: 'u/a.jpg', Code: 'InternalError' }],
@@ -163,6 +194,41 @@ describe('removePrefix', () => {
     ]);
   });
 
+  it('then purges the legacy prefix, including keys R2 never had', async () => {
+    s3.on(ListObjectsV2Command).resolves({ Contents: [] });
+    legacy.list
+      .mockResolvedValueOnce({
+        data: [{ id: '1', name: 'late.jpg' }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: [], error: null });
+
+    await removePrefix('nutrition-labels', 'u/');
+
+    expect(legacy.list).toHaveBeenCalledWith('u', { limit: 100, offset: 0 });
+    expect(legacy.remove).toHaveBeenCalledWith(['u/late.jpg']);
+  });
+
+  it('stops on a legacy folder entry instead of looping on it', async () => {
+    s3.on(ListObjectsV2Command).resolves({ Contents: [] });
+    legacy.list.mockResolvedValue({
+      data: [{ id: null, name: 'nested' }],
+      error: null,
+    });
+
+    await removePrefix('avatars', 'u/');
+
+    expect(legacy.list).toHaveBeenCalledTimes(1);
+    expect(legacy.remove).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the legacy listing fails', async () => {
+    s3.on(ListObjectsV2Command).resolves({ Contents: [] });
+    legacy.list.mockResolvedValue({ data: null, error: new Error('down') });
+
+    await expect(removePrefix('avatars', 'u/')).rejects.toThrow('down');
+  });
+
   it('fails closed when a listing fails', async () => {
     s3.on(ListObjectsV2Command).rejects(new Error('unavailable'));
 
@@ -179,6 +245,7 @@ describe('removePrefix', () => {
       'removePrefix'
     );
     expect(s3.calls()).toHaveLength(0);
+    expect(legacy.from).not.toHaveBeenCalled();
   });
 });
 

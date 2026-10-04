@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+import { removeLegacyKeys, removeLegacyPrefix } from './legacy-supabase';
 import {
   assertR2Configured,
   r2BucketName,
@@ -91,7 +92,10 @@ export async function listObjects(
   return objects;
 }
 
-/** Delete these keys. Throws if R2 reports any key it could not delete. */
+/**
+ * Delete these keys, and their legacy Supabase copies (`legacy-supabase.ts`).
+ * Throws if R2 reports any key it could not delete, or the legacy delete fails.
+ */
 export async function removeObjects(
   bucket: StorageBucket,
   keys: string[]
@@ -111,11 +115,13 @@ export async function removeObjects(
       );
     }
   }
+  await removeLegacyKeys(bucket, keys);
 }
 
 /**
  * Delete every object under a `{segment}/` prefix, re-listing until empty so
- * an object written mid-purge is caught too.
+ * an object written mid-purge is caught too, then the same prefix in the
+ * legacy Supabase bucket.
  * Refuses an empty or unterminated prefix so a bad id can never widen the
  * purge to the whole bucket or to a sibling (`abc` would match `abcd/…`).
  */
@@ -128,12 +134,14 @@ export async function removePrefix(
   }
   for (;;) {
     const objects = await listObjects(bucket, prefix);
-    if (objects.length === 0) return;
+    if (objects.length === 0) break;
     await removeObjects(
       bucket,
       objects.map((object) => object.key)
     );
   }
+  // Legacy copies R2 never had (uploaded between the copy and the cutover).
+  await removeLegacyPrefix(bucket, prefix);
 }
 
 /** A presigned GET for one private object, valid for `ttlSeconds`. */

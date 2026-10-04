@@ -30,8 +30,8 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
 - **Private objects** are only reachable through presigned GETs (path-style, on
   `https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com`) with short lifetimes.
 - **Account deletion** purges `{userId}/` in `avatars` and `nutrition-labels`
-  before the Auth user is deleted and fails closed if a purge cannot be
-  confirmed. `removePrefix` refuses an empty or unterminated prefix, so a bad id
+  (R2 and, during the transition, the legacy Supabase copy) before the Auth
+  user is deleted and fails closed if a purge cannot be confirmed. `removePrefix` refuses an empty or unterminated prefix, so a bad id
   can never widen a purge.
 - **Credentials**: one R2 API token per environment, *Object Read & Write*,
   scoped to that environment's three buckets only.
@@ -79,8 +79,20 @@ bun --conditions=react-server --env-file=<env> \
   scripts/ops/copy-supabase-storage-to-r2.ts [--dry-run]
 ```
 
-The Supabase buckets and their `storage.objects` policies stay in place as a
-rollback path; a follow-up migration drops them once R2 has been stable.
+### The legacy Supabase copies (transitional)
+
+The Supabase buckets and their `storage.objects` policies stay in place until a
+follow-up migration drops them once R2 has been stable. Until then:
+
+- **Deletes are mirrored.** `removeObjects` and `removePrefix` also delete the
+  same keys / prefix from the Supabase bucket (`lib/infra/storage/legacy-supabase.ts`),
+  so a removed avatar stops being served at its old public URL and account
+  deletion still erases everything — failing closed if the legacy purge fails.
+  The follow-up deletes that file and its two calls.
+- **Rollback covers objects uploaded before the cutover only.** Redeploying the
+  previous revision serves everything the copy moved; files uploaded after the
+  cutover exist only in R2 and show as missing on the old revision. Accepted
+  for the beta rather than dual-writing every upload.
 
 ## Tests
 
