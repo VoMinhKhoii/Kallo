@@ -45,13 +45,38 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
 | `R2_ACCOUNT_ID` | runtime env + Docker build arg | Cloudflare account id (public) |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | runtime secret | prod: Secret Manager `kallo-prod-r2-access-key-id` / `kallo-prod-r2-secret-access-key` |
 | `R2_BUCKET_PREFIX` | runtime env | `kallo-prod` in prod, `kallo-dev` locally |
-| `NEXT_PUBLIC_AVATAR_BASE_URL` | Docker build arg (GitHub variable) | `https://media.kallo.fit` in prod |
+| `NEXT_PUBLIC_AVATAR_BASE_URL` | Docker build arg (GitHub variable) | `https://media.kallo.fit` in prod; dev uses the `kallo-dev-avatars` r2.dev URL |
+| `CLOUDFLARE_ANALYTICS_TOKEN` | runtime secret | read-only (*Account Analytics: Read*), for the free-tier cap; prod: Secret Manager `kallo-prod-cloudflare-analytics-token` |
 
 CI refuses to publish an image without `NEXT_PUBLIC_AVATAR_BASE_URL` and
 `R2_ACCOUNT_ID`, and the prod deploy checks both plus the two secrets before
 deploying. A missing credential makes every storage call throw a clear error.
 `removeMyAvatar` and `deleteAccountAction` check the credentials before their
 first write, so they fail without half-finishing.
+
+## Free-tier hard cap
+
+Cloudflare has no spend limit for R2 (budget alerts only notify), so the app
+caps itself at **95% of each free-tier meter** — `lib/infra/storage/usage-cap.ts`.
+
+| Meter (free / month) | Cap | Past the cap |
+|---|---|---|
+| Storage, 10 GB-month | 9.5 GB stored now | uploads refused |
+| Class A (PUT, LIST…), 1M | 950k | uploads refused |
+| Class B (GET, HEAD…), 10M | 9.5M | no presigned links; `avatarUrlFor` returns null (clients show initials / the OAuth picture) |
+
+- Refused uploads answer `503 STORAGE_PAUSED` ("Photo uploads are paused…");
+  label scans still work, the photo is just not kept. **Deletes are never
+  capped** (they are free, and erasure must not block).
+- Usage comes from the GraphQL Analytics API for the **whole account** —
+  dev and prod share one free tier — over the **trailing 31 days**, which
+  contains any billing period-to-date whatever day the cycle starts. It only
+  over-counts, so the cap can trip a little early but never late.
+- Read at most every 5 minutes per instance. If a read fails, the last good
+  answer is kept for up to an hour; with no answer, uploads stop and reads go
+  on (an analytics outage should not blank every avatar).
+- Without `CLOUDFLARE_ANALYTICS_TOKEN` the cap is off and logs so; the prod
+  deploy refuses to start without the secret.
 
 ## Provisioning a new environment
 

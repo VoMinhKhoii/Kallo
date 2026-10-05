@@ -130,6 +130,18 @@ describe('uploadMyAvatar', () => {
     ]);
   });
 
+  it('passes the storage cap refusal through as STORAGE_PAUSED', async () => {
+    const { db, set } = fakeDb(null);
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    putObject.mockRejectedValueOnce(Errors.storagePaused());
+
+    await expect(uploadMyAvatar(ACTOR, pngFile(), db)).rejects.toMatchObject({
+      code: 'STORAGE_PAUSED',
+      status: 503,
+    });
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('fails without pointing the profile at an object that never landed', async () => {
     const { db, set } = fakeDb(null);
     putObject.mockRejectedValueOnce(new Error('r2 down'));

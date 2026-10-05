@@ -101,6 +101,9 @@ describe('Cloud Run prod workflow', () => {
       'R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest',
       'gcloud secrets describe kallo-prod-r2-access-key-id',
       'gcloud secrets describe kallo-prod-r2-secret-access-key',
+      // The free-tier cap reads usage with it; without it the cap is off.
+      'CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest',
+      'gcloud secrets describe kallo-prod-cloudflare-analytics-token',
       `R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`,
       'R2_BUCKET_PREFIX=kallo-prod',
     ]) {

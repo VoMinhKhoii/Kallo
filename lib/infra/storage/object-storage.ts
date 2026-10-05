@@ -15,6 +15,11 @@ import {
   r2Client,
   type StorageBucket,
 } from './r2-client';
+import {
+  assertReadsWithinCap,
+  assertWritesWithinCap,
+  readsWithinCap,
+} from './usage-cap';
 
 /**
  * Object storage (Cloudflare R2, S3 API). Every read and write runs on the
@@ -38,12 +43,27 @@ export function assertObjectStorageConfigured(): void {
   assertR2Configured();
 }
 
+/**
+ * Throws `STORAGE_PAUSED` once the R2 free-tier cap stops uploads
+ * (`usage-cap.ts`). `putObject` checks it itself; callers that do Class A work
+ * before the write (a quota listing) check it first.
+ */
+export function assertUploadsAllowed(): Promise<void> {
+  return assertWritesWithinCap();
+}
+
+/** False once the cap stops reads: URL builders hand out no storage URL. */
+export function storageReadsAllowed(): boolean {
+  return readsWithinCap();
+}
+
 /** S3 DeleteObjects takes at most 1000 keys per request. */
 const DELETE_BATCH = 1000;
 
 /**
  * Write a new object. Never overwrites: `If-None-Match: *` makes R2 answer
  * 412 when the key exists (keys carry a random UUID, so that means a bug).
+ * Refused with `STORAGE_PAUSED` past the free-tier cap.
  */
 export async function putObject(
   bucket: StorageBucket,
@@ -51,6 +71,7 @@ export async function putObject(
   body: Uint8Array,
   options: { contentType: string; cacheControl?: string }
 ): Promise<void> {
+  await assertWritesWithinCap();
   await r2Client().send(
     new PutObjectCommand({
       Bucket: r2BucketName(bucket),
@@ -144,12 +165,16 @@ export async function removePrefix(
   await removeLegacyPrefix(bucket, prefix);
 }
 
-/** A presigned GET for one private object, valid for `ttlSeconds`. */
-export function signedReadUrl(
+/**
+ * A presigned GET for one private object, valid for `ttlSeconds`. Refused
+ * with `STORAGE_PAUSED` past the free-tier cap on reads.
+ */
+export async function signedReadUrl(
   bucket: StorageBucket,
   key: string,
   ttlSeconds: number
 ): Promise<string> {
+  await assertReadsWithinCap();
   return getSignedUrl(
     r2Client(),
     new GetObjectCommand({ Bucket: r2BucketName(bucket), Key: key }),

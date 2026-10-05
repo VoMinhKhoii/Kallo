@@ -33,6 +33,7 @@ const DEFAULT_MESSAGES = {
     'Allow Kallo to send this to its AI provider before using AI features.',
   objectionableContent:
     'This contains language that is not allowed on Kallo. Please edit it and try again.',
+  storagePaused: 'Photo uploads are paused for now. Please try again later.',
   internal: 'Something went wrong. Please try again.',
 } as const;
 
@@ -146,6 +147,17 @@ export const Errors = {
       422,
       false,
       message ?? DEFAULT_MESSAGES.objectionableContent
+    ),
+
+  // The R2 free-tier cap (lib/infra/storage/usage-cap.ts) is reached: uploads
+  // or photo links stop until usage falls back. 503 + retryable — nothing is
+  // wrong with the request, the service is holding back.
+  storagePaused: (message?: string) =>
+    new AppError(
+      'STORAGE_PAUSED',
+      503,
+      true,
+      message ?? DEFAULT_MESSAGES.storagePaused
     ),
 
   internal: (cause?: unknown, message?: string) =>

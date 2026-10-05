@@ -29,14 +29,16 @@ vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({ auth: { getUser: mockGetUser } }),
 }));
 
-const { putObject, listObjects } = vi.hoisted(() => ({
+const { putObject, listObjects, assertUploadsAllowed } = vi.hoisted(() => ({
   putObject: vi.fn(),
   listObjects: vi.fn(),
+  assertUploadsAllowed: vi.fn(),
 }));
 
 vi.mock('@/lib/infra/storage/object-storage', () => ({
   putObject,
   listObjects,
+  assertUploadsAllowed,
 }));
 
 vi.mock('@/lib/infra/db/client', () => ({
@@ -156,6 +158,27 @@ describe('uploadFeedbackScreenshotAction', () => {
     mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
     putObject.mockResolvedValue(undefined);
     listObjects.mockResolvedValue([]);
+    assertUploadsAllowed.mockResolvedValue(undefined);
+  });
+
+  it('stops at the storage cap before the (billed) quota listing', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    assertUploadsAllowed.mockRejectedValue(Errors.storagePaused());
+
+    await expect(
+      uploadFeedbackScreenshotAction(pngFile())
+    ).rejects.toMatchObject({ code: 'STORAGE_PAUSED', status: 503 });
+    expect(listObjects).not.toHaveBeenCalled();
+    expect(putObject).not.toHaveBeenCalled();
+  });
+
+  it('passes a cap refusal from the write through unchanged', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    putObject.mockRejectedValue(Errors.storagePaused());
+
+    await expect(
+      uploadFeedbackScreenshotAction(pngFile())
+    ).rejects.toMatchObject({ code: 'STORAGE_PAUSED' });
   });
 
   it('stores the bytes under the session user prefix, ignoring the filename', async () => {

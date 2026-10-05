@@ -27,6 +27,7 @@ import type {
   LabelImageUrl,
   LogNutritionLabelMealInput,
 } from '@/lib/api/contracts/nutrition-label';
+import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   LABEL_IMAGE_URL_TTL_SECONDS,
@@ -204,6 +205,7 @@ export async function createLabelImageUrl(
       LABEL_IMAGE_URL_TTL_SECONDS
     );
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw Errors.internal(error, 'Could not open the label photo.');
   }
   return { url, expiresAt: expiresAt.toISOString() };

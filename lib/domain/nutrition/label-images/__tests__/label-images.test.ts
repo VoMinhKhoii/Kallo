@@ -453,6 +453,19 @@ describe('createLabelImageUrl', () => {
     expect(expiresIn).toBeLessThanOrEqual(600_000 + 1000);
   });
 
+  it('past the read cap it is STORAGE_PAUSED, not a 500', async () => {
+    mocks.selectRows.mockResolvedValue([
+      { storagePath: `${USER}/${IMAGE}.jpg` },
+    ]);
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mocks.signedReadUrl.mockRejectedValue(Errors.storagePaused());
+
+    await expect(createLabelImageUrl(USER, IMAGE)).rejects.toMatchObject({
+      code: 'STORAGE_PAUSED',
+      status: 503,
+    });
+  });
+
   it('a signing failure is a 500, not a URL', async () => {
     mocks.selectRows.mockResolvedValue([
       { storagePath: `${USER}/${IMAGE}.jpg` },

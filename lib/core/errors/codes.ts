@@ -17,6 +17,7 @@ export const ERROR_CODES = [
   'PAYLOAD_TOO_LARGE',
   'RATE_LIMITED',
   'RATE_LIMITER_UNAVAILABLE',
+  'STORAGE_PAUSED',
   'PIPELINE_TIMEOUT',
   'feature_locked',
   'ai_consent_required',

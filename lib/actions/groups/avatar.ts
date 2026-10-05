@@ -9,6 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
+import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
@@ -117,6 +118,8 @@ export async function uploadMyAvatar(
       cacheControl: AVATAR_CACHE_CONTROL,
     });
   } catch (error) {
+    // STORAGE_PAUSED (the free-tier cap) reaches the client as itself.
+    if (error instanceof AppError) throw error;
     throw Errors.internal(error, 'Could not upload the avatar.');
   }
 

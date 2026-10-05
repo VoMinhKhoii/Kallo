@@ -249,6 +249,74 @@ describe('removePrefix', () => {
   });
 });
 
+describe('at the free-tier cap', () => {
+  beforeEach(async () => {
+    const { resetUsageCapForTests } = await import(
+      '@/lib/infra/storage/usage-cap'
+    );
+    resetUsageCapForTests();
+    vi.stubEnv('CLOUDFLARE_ANALYTICS_TOKEN', 'analytics-token');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Every meter over: 10M GetObject, 1M PutObject, 10 GB stored.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              data: {
+                viewer: {
+                  accounts: [
+                    {
+                      ops: [
+                        {
+                          sum: { requests: 1e6 },
+                          dimensions: { actionType: 'PutObject' },
+                        },
+                        {
+                          sum: { requests: 1e7 },
+                          dimensions: { actionType: 'GetObject' },
+                        },
+                      ],
+                      storage: [
+                        { max: { payloadSize: 1e10, metadataSize: 0 } },
+                      ],
+                    },
+                  ],
+                },
+              },
+            })
+          )
+      )
+    );
+  });
+
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    const { resetUsageCapForTests } = await import(
+      '@/lib/infra/storage/usage-cap'
+    );
+    resetUsageCapForTests();
+  });
+
+  it('refuses writes and presigns without touching R2, but still deletes', async () => {
+    s3.on(DeleteObjectsCommand).resolves({});
+
+    await expect(
+      putObject('avatars', 'u/a.webp', new Uint8Array([1]), {
+        contentType: 'image/webp',
+      })
+    ).rejects.toMatchObject({ code: 'STORAGE_PAUSED' });
+    await expect(
+      signedReadUrl('feedback-screenshots', 'u/a.png', 300)
+    ).rejects.toMatchObject({ code: 'STORAGE_PAUSED' });
+    expect(s3.commandCalls(PutObjectCommand)).toHaveLength(0);
+
+    await removeObjects('avatars', ['u/a.webp']);
+    expect(s3.commandCalls(DeleteObjectsCommand)).toHaveLength(1);
+  });
+});
+
 describe('signedReadUrl', () => {
   it('signs a path-style GET on the account origin with the given lifetime', async () => {
     const url = new URL(

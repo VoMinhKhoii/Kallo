@@ -4,10 +4,12 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
+import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
 import {
+  assertUploadsAllowed,
   listObjects,
   putObject,
   type StorageBucket,
@@ -153,6 +155,8 @@ export async function uploadFeedbackScreenshotAction(
     throw Errors.validationFailed('Image must be between 1 byte and 5 MB.');
   }
 
+  // Before the quota listing, which is itself a billed R2 operation.
+  await assertUploadsAllowed();
   await assertUploadQuota(user.id);
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -166,6 +170,7 @@ export async function uploadFeedbackScreenshotAction(
       contentType: file.type,
     });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw Errors.internal(error, 'Could not upload the screenshot.');
   }
 

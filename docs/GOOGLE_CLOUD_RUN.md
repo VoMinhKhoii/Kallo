@@ -406,6 +406,9 @@ printf '%s' 'your-prod-service-role-key' | gcloud secrets create \
   kallo-prod-r2-access-key-id --data-file=-
  printf '%s' 'r2-secret-access-key' | gcloud secrets create \
   kallo-prod-r2-secret-access-key --data-file=-
+# Read-only Cloudflare token (Account Analytics: Read) for the R2 free-tier cap.
+ printf '%s' 'cloudflare-analytics-token' | gcloud secrets create \
+  kallo-prod-cloudflare-analytics-token --data-file=-
 
 printf '%s' 'your-revenuecat-v2-customer-key' | gcloud secrets create \
   kallo-prod-revenuecat-customer-delete-api-key --data-file=-
