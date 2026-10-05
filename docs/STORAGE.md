@@ -100,9 +100,18 @@ afterwards that R2 has every key. Run it once before the deploy and again after,
 to pick up files uploaded in between:
 
 ```bash
+# pass 1, before the deploy
 bun --conditions=react-server --env-file=<env> \
   scripts/ops/copy-supabase-storage-to-r2.ts [--dry-run]
+# pass 2, after it — T is when the new revision took traffic
+bun --conditions=react-server --env-file=<env> \
+  scripts/ops/copy-supabase-storage-to-r2.ts --prune-deleted-before=T
 ```
+
+Between the passes the old revision deletes only from Supabase, so pass 2 also
+removes R2 keys that are gone from Supabase and were written before `T` (pass-1
+copies of avatars removed or accounts deleted in the gap). Keys written after
+`T` are the new revision's own uploads and are never pruned.
 
 ### The legacy Supabase copies (transitional)
 

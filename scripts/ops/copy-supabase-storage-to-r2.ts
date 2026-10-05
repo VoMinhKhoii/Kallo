@@ -5,8 +5,17 @@
  * (the write is `If-None-Match: *`), so a second pass after the deploy picks up
  * only what was uploaded in between. Supabase objects are left in place.
  *
- *   bun --conditions=react-server --env-file=<env> \
- *     scripts/ops/copy-supabase-storage-to-r2.ts [--dry-run]
+ * Between the passes the OLD revision still deletes only from Supabase (a
+ * removed avatar, a deleted account). Pass 2 therefore takes the deploy time:
+ * an R2 key gone from Supabase and last written before it was copied in pass 1
+ * and deleted since, so it is removed. Keys written after it are the new
+ * revision's own uploads (R2-only by design) and are never touched.
+ *
+ *   pass 1, before the deploy:
+ *     bun --conditions=react-server --env-file=<env> \
+ *       scripts/ops/copy-supabase-storage-to-r2.ts [--dry-run]
+ *   pass 2, after it (T = when the new revision took traffic, ISO 8601):
+ *     … copy-supabase-storage-to-r2.ts --prune-deleted-before=T [--dry-run]
  *
  * Source: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
  * Target: the R2_* variables (docs/STORAGE.md).
@@ -15,6 +24,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   listObjects,
   putObject,
+  removeObjects,
   type StorageBucket,
 } from '@/lib/infra/storage/object-storage';
 
@@ -30,6 +40,13 @@ const CACHE_CONTROL: Partial<Record<StorageBucket, string>> = {
 const PAGE = 100;
 
 const dryRun = process.argv.includes('--dry-run');
+const pruneArg = process.argv
+  .find((arg) => arg.startsWith('--prune-deleted-before='))
+  ?.split('=')[1];
+const pruneBefore = pruneArg ? new Date(pruneArg) : null;
+if (pruneBefore && Number.isNaN(pruneBefore.getTime())) {
+  throw new Error('--prune-deleted-before needs an ISO 8601 time.');
+}
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) {
@@ -97,14 +114,32 @@ async function copyBucket(bucket: StorageBucket) {
       console.error(`[${bucket}] ${objectKey}:`, error);
     }
   }
+  const inR2 = await listObjects(bucket, '');
   // R2 must hold at least every Supabase key once the copy is done.
-  const inR2 = new Set<string>();
-  for (const folder of new Set(keys.map((k) => `${k.split('/')[0]}/`))) {
-    for (const object of await listObjects(bucket, folder))
-      inR2.add(object.key);
+  const r2Keys = new Set(inR2.map((object) => object.key));
+  const missing = keys.filter((k) => !r2Keys.has(k));
+
+  // Pass-1 copies whose source was deleted before the cutover.
+  const sourceKeys = new Set(keys);
+  const deletedAtSource = pruneBefore
+    ? inR2
+        .filter(
+          (object) =>
+            !sourceKeys.has(object.key) &&
+            object.lastModified !== null &&
+            object.lastModified < pruneBefore
+        )
+        .map((object) => object.key)
+    : [];
+  if (!dryRun && deletedAtSource.length > 0) {
+    await removeObjects(bucket, deletedAtSource);
   }
-  const missing = keys.filter((k) => !inR2.has(k));
-  return { bucket, ...tally, missingInR2: missing.length };
+  return {
+    bucket,
+    ...tally,
+    missingInR2: missing.length,
+    pruned: deletedAtSource.length,
+  };
 }
 
 const results = [];
