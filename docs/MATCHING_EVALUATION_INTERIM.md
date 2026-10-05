@@ -18,6 +18,34 @@ Prioritize source registry correctness, identity/state-aware exact matching, ret
 
 ## Completion and scores
 
+### Per-example queries and raw matching output
+
+- [Query/result CSV](evaluations/matching-interim-11456.csv): 11,456 rows,
+  one per completed case. Includes successful cases as well as failures.
+- [Raw observation JSONL](evaluations/matching-interim-11456.jsonl): an
+  unchanged copy of the recorded observations, including the returned candidate
+  arrays and the evaluator's gold/score annotations.
+
+The CSV preserves `input_text`, `raw_name`, `canonical_name` and the actual
+`matching_query`. `candidate_1_*` through `candidate_3_*` flatten the returned
+ranking for filtering; `matching_output_json` preserves the exact full candidate
+array, including aliases and original nutrition values. These are the final
+three retrieval candidates, not the unrecorded pre-ranking pool or Call-2 output.
+
+For clustering, filter `outcome`: `identity_miss` (587),
+`gold_rank_2_or_3` (627), `no_gold` (223), or `rank_one_correct` (10,019).
+Use `tier`, `cuisine`, `family`, `origin_source`, state fields and `flag_*`
+columns to group failure signals. Flags overlap and do not prove root causes.
+`manual_cluster` and `manual_note` are empty fields for your annotations.
+
+Empty score cells mean unavailable gold; they are not failures. `first_gold_rank`
+is 1–3 for a retrieved gold row, 0 for a scorable miss, and blank without gold.
+`gold_*_json` fields describe the provisional accepted set; multiple accepted
+rows may be equivalent descriptions rather than an ambiguous query. Nutrition
+columns are source values per 100g of each row's stated basis, not estimated meal
+macros. The CSV uses UTF-8 with a BOM, comma separators, quoted fields and `true`/
+`false` flags. `_json` columns can be parsed directly after CSV import.
+
 | Tier | Completed | Planned | Coverage |
 | --- | ---: | ---: | ---: |
 | scenarios | 340 | 340 | 100.00% |
@@ -497,7 +525,9 @@ nutritional equivalence across trim and preparation.
 - Three key projects were independently verified unbilled; the remaining projects rely on the explicit human confirmation when metadata access returned 403. Invalid key 7 stays administratively excluded. Billing guards remain in the worker.
 - The full 35,122-case report remains pending and must still pass its separate completion audit.
 
-Local evidence, retained in the matching-audit worktree and excluded from this
-report-only PR: `scripts/eval/reports/matching-all-keypool/{manifest.json,status.json,snapshot.json,observations.jsonl}`
-and `/tmp/kallo-workaround-prefix-audit.log`. The evaluation harness and raw
-artifacts are not part of this PR, so this report alone cannot reproduce the run.
+The CSV and raw observation JSONL are included as supporting report data. Other
+local evidence remains in the matching-audit worktree:
+`scripts/eval/reports/matching-all-keypool/{manifest.json,status.json,snapshot.json}`
+and `/tmp/kallo-workaround-prefix-audit.log`. The evaluation harness and complete
+reference snapshot are excluded from this PR, so these files alone cannot
+reproduce fresh retrieval calls.
