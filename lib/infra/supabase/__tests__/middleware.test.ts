@@ -72,6 +72,14 @@ describe('signed-out visitor', () => {
     expect(location.searchParams.get('next')).toBe('/en/logging');
   });
 
+  it('omits next when even the path is not a safe next', async () => {
+    const response = await run('/en/circle/ab:cd');
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.searchParams.get('auth')).toBe('sign-in');
+    expect(location.searchParams.has('next')).toBe(false);
+  });
+
   it('leaves /admin to its 404 rather than naming it', async () => {
     const response = await run('/en/admin/prompts');
     expect(response.headers.get('location')).toBeNull();
@@ -85,11 +93,13 @@ describe('signed-out visitor', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 
-  it('does not treat a Supabase outage as signed out', async () => {
-    signedIn(null, { name: 'AuthRetryableFetchError', status: 0 });
-    expect((await run('/en/dashboard')).headers.get('location')).toBeNull();
-
-    signedIn(null, { name: 'AuthApiError', status: 503 });
+  it.each([
+    { name: 'AuthRetryableFetchError', status: 0 },
+    { name: 'AuthApiError', status: 503 },
+    { name: 'AuthApiError', status: 429 },
+    { name: 'AuthUnknownError' },
+  ])('does not treat a Supabase outage ($name $status) as signed out', async (error) => {
+    signedIn(null, error);
     expect((await run('/en/dashboard')).headers.get('location')).toBeNull();
   });
 
@@ -123,6 +133,22 @@ describe('signed-in visitor', () => {
   it('reaches an app surface', async () => {
     const response = await run('/en/dashboard');
     expect(response.headers.get('location')).toBeNull();
+  });
+
+  it('is sent from the landing page to the page sign-in was holding', async () => {
+    const response = await run(
+      '/en?auth=sign-in&next=%2Fen%2Fsettings%2Faccount'
+    );
+    expect(response.headers.get('location')).toBe(
+      'https://kallo.fit/en/settings/account'
+    );
+  });
+
+  it('ignores an unsafe next on the landing page', async () => {
+    const response = await run('/en?next=%2F%2Fevil.example');
+    expect(response.headers.get('location')).toBe(
+      'https://kallo.fit/en/logging'
+    );
   });
 
   it('is sent from the landing page to logging', async () => {

@@ -50,11 +50,23 @@ export async function updateSession(
   const locale = localeMatch?.[1] ?? 'en';
   const pathWithoutLocale = pathname.replace(/^\/(en|vi)/, '') || '/';
 
-  // Redirect authenticated users from landing page to app
+  // Carry any session cookies `getUser()` just cleared or refreshed: a
+  // rotated refresh token that never reaches the browser signs the user out.
+  const redirectTo = (url: URL) => {
+    const redirect = NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll()) {
+      redirect.cookies.set(cookie);
+    }
+    return redirect;
+  };
+
+  // A signed-in visitor on the landing page goes into the app — to the page
+  // the sign-in redirect below was holding for them, if there is one.
   if (user && pathWithoutLocale === '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/logging`;
-    return NextResponse.redirect(url);
+    const next = safeNextPath(request.nextUrl.searchParams.get('next'));
+    return redirectTo(
+      new URL(next ?? `/${locale}/logging`, request.nextUrl.origin)
+    );
   }
 
   // A signed-out visitor opening an app page goes to the sign-in dialog, which
@@ -63,8 +75,7 @@ export async function updateSession(
   // entry past the app page). Left to render, the page's own session read
   // threw "You need to sign in" (KALLO-WEB-2) before the layout's redirect.
   if (
-    !user &&
-    !isTransientAuthError(error) &&
+    isSignedOut(user, error) &&
     localeMatch &&
     isPageNavigation(request) &&
     needsSignIn(pathWithoutLocale)
@@ -73,16 +84,11 @@ export async function updateSession(
     url.pathname = `/${locale}`;
     url.search = '';
     url.searchParams.set('auth', 'sign-in');
-    url.searchParams.set(
-      'next',
-      safeNextPath(`${pathname}${request.nextUrl.search}`) ?? pathname
-    );
-    const redirect = NextResponse.redirect(url);
-    // Carry any session cookies `getUser()` just cleared or refreshed.
-    for (const cookie of supabaseResponse.cookies.getAll()) {
-      redirect.cookies.set(cookie);
-    }
-    return redirect;
+    const next =
+      safeNextPath(`${pathname}${request.nextUrl.search}`) ??
+      safeNextPath(pathname);
+    if (next) url.searchParams.set('next', next);
+    return redirectTo(url);
   }
 
   return supabaseResponse;
@@ -101,11 +107,22 @@ function isPageNavigation(request: NextRequest) {
 }
 
 /**
- * A Supabase outage is not a signed-out visitor: `getUser()` returns no user
- * then too, and sending a signed-in reader to the sign-in dialog would strand
- * them there. Only a network failure or a 5xx counts as transient.
+ * True only when Supabase positively says there is no session: no cookie at
+ * all, or a token it rejected. Anything else — a network failure, a 5xx, a
+ * 429, an unparseable response — is an outage, not a signed-out visitor, and
+ * sending a signed-in reader to the sign-in dialog would strand them there.
  */
-function isTransientAuthError(error: { name: string; status?: number } | null) {
-  if (!error) return false;
-  return error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500;
+function isSignedOut(
+  user: unknown,
+  error: { name: string; status?: number } | null
+) {
+  if (user) return false;
+  if (!error || error.name === 'AuthSessionMissingError') return true;
+  const status = error.status ?? 0;
+  return (
+    error.name === 'AuthApiError' &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 429
+  );
 }
