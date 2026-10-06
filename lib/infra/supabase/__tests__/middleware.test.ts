@@ -17,14 +17,20 @@ vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_key');
 
 const { updateSession } = await import('@/lib/infra/supabase/middleware');
 
-function signedIn(user: { id: string } | null) {
+function signedIn(
+  user: { id: string } | null,
+  error: { name: string; status?: number } | null = null
+) {
   createServerClient.mockReturnValue({
-    auth: { getUser: async () => ({ data: { user } }) },
+    auth: { getUser: async () => ({ data: { user }, error }) },
   });
 }
 
-function run(path: string) {
-  return updateSession(new NextRequest(`https://kallo.fit${path}`));
+function run(
+  path: string,
+  init?: ConstructorParameters<typeof NextRequest>[1]
+) {
+  return updateSession(new NextRequest(`https://kallo.fit${path}`, init));
 }
 
 beforeEach(() => {
@@ -49,12 +55,50 @@ describe('signed-out visitor', () => {
     expect(location.searchParams.get('next')).toBe(path);
   });
 
-  it('drops the original query rather than forwarding it', async () => {
-    const response = await run('/en/dashboard?auth=sign-up&x=1');
+  it('keeps the query on the way back', async () => {
+    const response = await run('/en/logging?date=2026-10-05&meal=abc');
     const location = new URL(response.headers.get('location') ?? '');
 
     expect([...location.searchParams.keys()]).toEqual(['auth', 'next']);
-    expect(location.searchParams.get('next')).toBe('/en/dashboard');
+    expect(location.searchParams.get('next')).toBe(
+      '/en/logging?date=2026-10-05&meal=abc'
+    );
+  });
+
+  it('falls back to the bare path when the query is not a safe next', async () => {
+    const response = await run('/en/logging?tag=a:b');
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.searchParams.get('next')).toBe('/en/logging');
+  });
+
+  it('leaves /admin to its 404 rather than naming it', async () => {
+    const response = await run('/en/admin/prompts');
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  it('leaves a Server Action POST to the action', async () => {
+    const response = await run('/en/logging', {
+      method: 'POST',
+      headers: { 'next-action': 'abc123' },
+    });
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  it('does not treat a Supabase outage as signed out', async () => {
+    signedIn(null, { name: 'AuthRetryableFetchError', status: 0 });
+    expect((await run('/en/dashboard')).headers.get('location')).toBeNull();
+
+    signedIn(null, { name: 'AuthApiError', status: 503 });
+    expect((await run('/en/dashboard')).headers.get('location')).toBeNull();
+  });
+
+  it('treats a missing or rejected session as signed out', async () => {
+    signedIn(null, { name: 'AuthSessionMissingError', status: 400 });
+    expect((await run('/en/dashboard')).status).toBe(307);
+
+    signedIn(null, { name: 'AuthApiError', status: 403 });
+    expect((await run('/en/dashboard')).status).toBe(307);
   });
 
   it.each([

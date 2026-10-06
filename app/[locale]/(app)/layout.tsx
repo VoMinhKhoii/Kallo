@@ -31,9 +31,11 @@ interface AppLayoutProps {
  * never re-render this layout; each page's `loading.tsx` (or its own boundary)
  * is what shows while that page's data streams.
  *
- * A signed-out visitor never gets here: `updateSession` (proxy) answers every
- * private path with an HTTP 307 to the sign-in dialog. The `redirect('/')`
- * below is the backstop for a session that expires between the two reads.
+ * A signed-out page load normally never gets here: `updateSession` (proxy)
+ * answers it with an HTTP 307 to the sign-in dialog. What the proxy lets
+ * through (a Supabase outage, a session ending mid-request, `/admin`) still
+ * reaches the `redirect('/')` below — but a page rendering beside it may throw
+ * its own "sign in" error first, which `error.tsx` catches.
  */
 export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
   return (
