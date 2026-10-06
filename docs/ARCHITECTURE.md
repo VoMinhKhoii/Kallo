@@ -38,7 +38,11 @@ together give Instant Navigations. The rules the build enforces, and the choices
 
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
   first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
-  session refresh.
+  session refresh. The session step (`lib/infra/supabase/middleware.ts`) also routes: a signed-in
+  visitor on the landing page goes into the app (or to its `?next=`), and a signed-out page load
+  of a private surface (`lib/seo/private-paths.ts`, `/admin` excepted) gets a 307 to
+  `/{locale}?auth=sign-in&next=<path>` before anything renders. A new `(app)` route must join
+  `PRIVATE_PATH_PREFIXES` to get that redirect.
 - **Content-Security-Policy — enforced, static, no nonce.** Set in `next.config.ts` `headers()`
   from `lib/infra/security/csp.ts`, so it also covers prerendered shells and paths outside the
   proxy matcher. A nonce is per-request and a build-time shell cannot carry one (Next documents
