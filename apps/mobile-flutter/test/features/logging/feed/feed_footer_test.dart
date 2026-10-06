@@ -37,7 +37,6 @@ FeedViewState _view({bool streaming = false, bool revealing = false}) =>
       entries: const [],
       isLoading: false,
       hasError: false,
-      hasUnknownDailyMacros: false,
       isStreaming: streaming,
       isRevealing: revealing,
       isCheatRevealing: false,

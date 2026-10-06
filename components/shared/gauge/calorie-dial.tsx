@@ -36,6 +36,8 @@ interface CalorieDialProps {
   goal: Goal | null;
   /** Sized by the strip from the room the surface gave it. */
   radius: number;
+  /** The logged total is a floor — a meal's unknown calories were left out. */
+  atLeast?: boolean;
 }
 
 /**
@@ -52,11 +54,18 @@ const UNIT_KEY = {
 
 type Wording = 'long' | 'short';
 
+/** A floor on what was logged is a ceiling on what is left. */
+const BOUND_MARK = { logged: '≥', remaining: '≤' } as const satisfies Record<
+  CalorieFraming,
+  string
+>;
+
 export function CalorieDial({
   logged,
   target,
   goal,
   radius,
+  atLeast = false,
 }: CalorieDialProps) {
   const t = useTranslations('dashboard');
   const locale = useLocale();
@@ -83,7 +92,7 @@ export function CalorieDial({
 
   const lines = gaugeCalorieLines(
     {
-      figure: format(readout.headline),
+      figure: `${atLeast ? BOUND_MARK[readout.framing] : ''}${format(readout.headline)}`,
       unit: t(UNIT_KEY[readout.framing][wording]),
       detail,
     },

@@ -266,7 +266,8 @@ export function useFeedController(args: {
     isPastDay &&
     !day.isDayLoading &&
     !day.isDayError &&
-    !day.hasUnknownDailyMacros &&
+    // A calorie total missing a meal would read as under-logged when it is not.
+    !day.incompleteTotals.calories &&
     hasPersistedMeals &&
     !hasPendingMessages &&
     !hasStreamingMessages &&

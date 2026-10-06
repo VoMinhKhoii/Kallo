@@ -31,8 +31,20 @@ vi.mock('@/components/privacy/ai-consent-provider', () => ({
 }));
 
 vi.mock('@/components/logging/feed/macro-summary', () => ({
-  MacroSummary: ({ totals }: { totals: { calories: number } }) => (
-    <div data-testid="macro-summary" data-calories={totals.calories} />
+  MacroSummary: ({
+    totals,
+    incomplete,
+  }: {
+    totals: { calories: number; protein: number };
+    incomplete: { calories: boolean; protein: boolean };
+  }) => (
+    <div
+      data-testid="macro-summary"
+      data-calories={totals.calories}
+      data-calories-incomplete={incomplete.calories}
+      data-protein={totals.protein}
+      data-protein-incomplete={incomplete.protein}
+    />
   ),
 }));
 
@@ -201,9 +213,13 @@ const profile = {
 
 const TODAY = '2026-05-31';
 
-// A persisted meal with the four primary macros set (so the day is not flagged
-// as "unknown macros") and a given calorie total.
-function makeMeal(calories: number, id = 'meal-1') {
+// A persisted meal with the four primary macros set (so no daily total is
+// incomplete) and a given calorie total; `overrides` blanks individual values.
+function makeMeal(
+  calories: number,
+  id = 'meal-1',
+  overrides: Record<string, number | null> = {}
+) {
   const base = Object.fromEntries(NUTRITION_KEYS.map((key) => [key, null]));
   return {
     id,
@@ -214,6 +230,7 @@ function makeMeal(calories: number, id = 'meal-1') {
       proteinG: 20,
       carbohydrateG: 40,
       fatG: 10,
+      ...overrides,
     },
   };
 }
@@ -298,6 +315,30 @@ describe('FeedArea', () => {
       'data-calories',
       '750'
     );
+  });
+
+  it('keeps the summary when a meal has an unknown macro, as a floor', () => {
+    // One label that never listed protein used to replace the whole summary
+    // with a note. The known values still add up; only protein is a floor.
+    dayWithMeals([
+      makeMeal(450),
+      makeMeal(119, 'meal-2', { proteinG: null, fatG: null }),
+    ]);
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    const summary = screen.getByTestId('macro-summary');
+    expect(summary).toHaveAttribute('data-calories', '569');
+    expect(summary).toHaveAttribute('data-calories-incomplete', 'false');
+    expect(summary).toHaveAttribute('data-protein', '20');
+    expect(summary).toHaveAttribute('data-protein-incomplete', 'true');
   });
 
   it('renders server-backed pending confirmations in the card scroller', () => {

@@ -62,7 +62,6 @@ const _view = FeedViewState(
   entries: [],
   isLoading: false,
   hasError: false,
-  hasUnknownDailyMacros: false,
   isStreaming: false,
   isRevealing: false,
   isCheatRevealing: false,

@@ -60,7 +60,7 @@ Widget _wrap(
 
 FeedViewState _viewState({
   bool isLoading = false,
-  bool hasUnknownDailyMacros = false,
+  Set<String> incompleteTotals = const {},
 }) => FeedViewState(
   date: '2026-01-01',
   persistedMeals: const [],
@@ -68,7 +68,7 @@ FeedViewState _viewState({
   entries: const [],
   isLoading: isLoading,
   hasError: false,
-  hasUnknownDailyMacros: hasUnknownDailyMacros,
+  incompleteTotals: incompleteTotals,
   isStreaming: false,
   isRevealing: false,
   isCheatRevealing: false,
@@ -95,7 +95,7 @@ Future<void> _pump(
   WidgetTester tester, {
   MacroGoal? goal,
   bool isLoading = false,
-  bool hasUnknownDailyMacros = false,
+  Set<String> incompleteTotals = const {},
   double textScale = 1.0,
   double width = _phoneWidth,
   Locale locale = const Locale('en'),
@@ -105,7 +105,7 @@ Future<void> _pump(
       MacroSummary(
         view: _viewState(
           isLoading: isLoading,
-          hasUnknownDailyMacros: hasUnknownDailyMacros,
+          incompleteTotals: incompleteTotals,
         ),
         profile: _profile(goal: goal),
       ),
@@ -323,13 +323,28 @@ void main() {
     );
   });
 
-  testWidgets('a day it cannot total says so instead of drawing dials', (
+  testWidgets('a total missing a meal\'s value still draws, as a floor', (
     tester,
   ) async {
-    await _pump(tester, hasUnknownDailyMacros: true);
+    // One label that never listed protein used to blank the whole header.
+    await _pump(tester, incompleteTotals: {'protein'});
 
-    expect(find.byType(RoundedGaugeArc), findsNothing);
-    expect(find.textContaining('macros'), findsOneWidget);
+    expect(find.byType(RoundedGaugeArc), findsNWidgets(4));
+    expect(find.text('≥120g'), findsOneWidget);
+    expect(find.text('240g'), findsOneWidget);
+    expect(find.text('1,850'), findsOneWidget);
+  });
+
+  testWidgets('an incomplete calorie total is a ceiling on what is left', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      goal: MacroGoal.cutting,
+      incompleteTotals: {'calories'},
+    );
+
+    expect(find.text('≤150'), findsOneWidget);
   });
 
   testWidgets('stands in with the dial row\'s own silhouette while loading', (

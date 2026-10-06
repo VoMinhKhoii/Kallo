@@ -121,4 +121,27 @@ describe('CalorieDial', () => {
     const detail = screen.getByText('overTargetBy over=341 target=2,000');
     expect(detail.className).toContain('text-kallo-danger');
   });
+
+  describe('with an incomplete total', () => {
+    const renderFloor = (goal: Goal | null) =>
+      render(
+        <CalorieDial
+          atLeast
+          goal={goal}
+          logged={741}
+          radius={LONG}
+          target={TARGET}
+        />
+      );
+
+    it('marks what was logged as a floor', () => {
+      renderFloor('bulking');
+      expect(screen.getByText('≥741')).toBeInTheDocument();
+    });
+
+    it('marks what is left as a ceiling', () => {
+      renderFloor('cutting');
+      expect(screen.getByText('≤1,259')).toBeInTheDocument();
+    });
+  });
 });

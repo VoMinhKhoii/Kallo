@@ -23,6 +23,11 @@ import '../../models/nutrition/nutrition_enums.dart';
 /// Which of the day's two figures the headline is.
 enum CalorieFraming { remaining, logged }
 
+/// The mark before a headline whose logged total is a floor (a meal's unknown
+/// calories were left out): at least that much eaten, at most that much left.
+String calorieBoundMark(CalorieFraming framing) =>
+    framing == CalorieFraming.logged ? '≥' : '≤';
+
 class CalorieReadout {
   const CalorieReadout({
     required this.headline,

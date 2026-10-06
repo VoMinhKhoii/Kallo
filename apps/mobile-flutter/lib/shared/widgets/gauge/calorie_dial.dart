@@ -6,10 +6,8 @@
 /// PRESENTATION: the readout's framing picks the words, and the variant picks
 /// how many of them there is room for.
 ///
-/// Promoted out of the dashboard dock when the logging feed became its second
-/// consumer. The two surfaces must answer "how am I doing today?" with the same
-/// sentence, and re-deriving the goal rule per surface is exactly how they stop
-/// agreeing.
+/// Shared by the dashboard dock and the logging feed so both answer "how am I
+/// doing today?" with the same sentence.
 library;
 
 import 'dart:math' as math;
@@ -69,6 +67,7 @@ class CalorieDial extends StatelessWidget {
     required this.logged,
     required this.target,
     required this.goal,
+    this.atLeast = false,
     super.key,
   }) : radius = kCalorieDialRadius,
        maxWidth = null,
@@ -95,6 +94,7 @@ class CalorieDial extends StatelessWidget {
     required this.logged,
     required this.target,
     required this.goal,
+    this.atLeast = false,
     this.maxWidth,
     super.key,
   }) : radius = kCompactCalorieDialRadius,
@@ -103,6 +103,7 @@ class CalorieDial extends StatelessWidget {
   final double logged;
   final double target;
   final MacroGoal? goal;
+  final bool atLeast; // the logged total is a floor — [calorieBoundMark]
   final double radius;
   final double? maxWidth;
   final bool _isCompact;
@@ -126,14 +127,12 @@ class CalorieDial extends StatelessWidget {
     return GaugeDial(
       progress: target > 0 ? logged / target : 0,
       radius: radius,
-      // The calorie mark's own colour, as on the ring and the week strip.
-      fill: KalloColors.accent,
-      // The headline and the unit step down in the compact variant; the
-      // fraction under the arc is the same size in both — the dial's own type,
-      // sized by the arc rather than by the reading ramp (see
-      // [gaugeDenominator]).
+      fill: KalloColors.accent, // the calorie mark's own colour
+      // The headline and unit step down in the compact variant; the fraction
+      // under the arc keeps the dial's own size in both ([gaugeDenominator]).
       primary: GaugeLine(
-        fmt(readout.headline),
+        '${atLeast ? calorieBoundMark(readout.framing) : ''}'
+        '${fmt(readout.headline)}',
         _isCompact ? gaugeFigure() : gaugeHeroFigure(),
       ),
       secondary: _unit(context, readout.framing, radius),
