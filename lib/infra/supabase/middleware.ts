@@ -5,6 +5,7 @@ import {
   isAuthSessionMissingError,
 } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
+import { locales } from '@/i18n/config';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import {
   sessionCookieOptions,
@@ -53,9 +54,10 @@ export async function updateSession(
   // locale is left alone: next-intl is already redirecting it to one (from the
   // NEXT_LOCALE cookie or Accept-Language), and the next request lands here.
   const pathname = request.nextUrl.pathname;
-  const localeMatch = pathname.match(/^\/(en|vi)(\/|$)/);
-  if (!localeMatch) return supabaseResponse;
-  const locale = localeMatch[1];
+  const locale = locales.find(
+    (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
+  );
+  if (!locale) return supabaseResponse;
   const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
 
   // Carry any session cookies `getUser()` just cleared or refreshed: a
@@ -121,16 +123,29 @@ function decodedPath(path: string) {
 }
 
 /**
+ * The auth-js error codes that mean this visitor's session is gone: the token
+ * was rejected, or the session or user behind it no longer exists. A reused
+ * refresh token is on the list because GoTrue revokes the session for it.
+ */
+const SESSION_GONE_CODES = new Set<string>([
+  'bad_jwt',
+  'session_not_found',
+  'session_expired',
+  'refresh_token_not_found',
+  'refresh_token_already_used',
+  'user_not_found',
+  'user_banned',
+]);
+
+/**
  * True only when Supabase positively says there is no session: no cookie at
- * all, or a token it rejected. Anything else — a network failure, a 5xx, a
- * 429, an unparseable response — is an outage, not a signed-out visitor, and
- * sending a signed-in reader to the sign-in dialog would strand them there.
+ * all, or a session it rejected. Anything else — a network failure, a 5xx, a
+ * 429, a bad API key, an unparseable response — is an outage, not a
+ * signed-out visitor, and sending a signed-in reader to the sign-in dialog
+ * would strand them there.
  */
 function isSignedOut(user: unknown, error: AuthError | null) {
   if (user) return false;
   if (!error || isAuthSessionMissingError(error)) return true;
-  const status = error.status ?? 0;
-  return (
-    isAuthApiError(error) && status >= 400 && status < 500 && status !== 429
-  );
+  return isAuthApiError(error) && SESSION_GONE_CODES.has(error.code ?? '');
 }

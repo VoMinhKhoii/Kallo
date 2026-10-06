@@ -27,14 +27,17 @@ const { updateSession } = await import('@/lib/infra/supabase/middleware');
 function session(
   user: { id: string } | null,
   error: AuthError | null = null,
-  refreshed: { name: string; value: string }[] = []
+  refreshed: { name: string; value: string; maxAge?: number }[] = []
 ) {
   createServerClient.mockImplementation((_url, _key, options) => ({
     auth: {
       getUser: async () => {
         if (refreshed.length > 0) {
           options.cookies.setAll(
-            refreshed.map((c) => ({ ...c, options: { path: '/' } }))
+            refreshed.map(({ maxAge, ...c }) => ({
+              ...c,
+              options: { path: '/', maxAge },
+            }))
           );
         }
         return { data: { user }, error };
@@ -104,13 +107,15 @@ describe('signed-out visitor', () => {
   });
 
   it('carries cleared session cookies onto the redirect', async () => {
-    session(null, null, [{ name: 'sb-project-auth-token', value: '' }]);
+    session(null, null, [
+      { name: 'sb-project-auth-token', value: '', maxAge: 0 },
+    ]);
     const response = await run('/en/dashboard');
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('set-cookie')).toContain(
-      'sb-project-auth-token='
-    );
+    const header = response.headers.get('set-cookie') ?? '';
+    expect(header).toContain('sb-project-auth-token=;');
+    expect(header).toContain('Max-Age=0');
   });
 
   it('leaves /admin to its 404 rather than naming it', async () => {
@@ -140,6 +145,7 @@ describe('signed-out visitor', () => {
     new AuthApiError('unavailable', 503, undefined),
     new AuthApiError('rate limited', 429, 'over_request_rate_limit'),
     new AuthUnknownError('bad json', new Error('parse')),
+    new AuthApiError('Invalid API key', 401, undefined),
   ])('does not treat a Supabase outage ($name $status) as signed out', async (error) => {
     session(null, error);
     expect(await location('/en/dashboard')).toBeNull();
@@ -148,6 +154,7 @@ describe('signed-out visitor', () => {
   it.each([
     new AuthSessionMissingError(),
     new AuthApiError('bad jwt', 403, 'bad_jwt'),
+    new AuthApiError('gone', 400, 'refresh_token_not_found'),
   ])('treats $name $status as signed out', async (error) => {
     session(null, error);
     expect((await run('/en/dashboard')).status).toBe(307);
