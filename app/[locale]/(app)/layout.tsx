@@ -31,9 +31,9 @@ interface AppLayoutProps {
  * never re-render this layout; each page's `loading.tsx` (or its own boundary)
  * is what shows while that page's data streams.
  *
- * Side effect of streaming: a signed-out visitor now gets the static skeleton
- * followed by a client-side redirect to `/`, where it used to be an HTTP 307.
- * Nothing user-specific is in the skeleton, so nothing leaks.
+ * A signed-out visitor never gets here: `updateSession` (proxy) answers every
+ * private path with an HTTP 307 to the sign-in dialog. The `redirect('/')`
+ * below is the backstop for a session that expires between the two reads.
  */
 export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
   return (
