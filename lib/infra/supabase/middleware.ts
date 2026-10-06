@@ -1,4 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
+import {
+  type AuthError,
+  isAuthApiError,
+  isAuthSessionMissingError,
+} from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import {
@@ -44,11 +49,14 @@ export async function updateSession(
     error,
   } = await supabase.auth.getUser();
 
-  // Extract locale from URL path (e.g., /en/logging → en)
+  // Extract locale from URL path (e.g., /en/logging → en). A path with no
+  // locale is left alone: next-intl is already redirecting it to one (from the
+  // NEXT_LOCALE cookie or Accept-Language), and the next request lands here.
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(/^\/(en|vi)(\/|$)/);
-  const locale = localeMatch?.[1] ?? 'en';
-  const pathWithoutLocale = pathname.replace(/^\/(en|vi)/, '') || '/';
+  if (!localeMatch) return supabaseResponse;
+  const locale = localeMatch[1];
+  const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
 
   // Carry any session cookies `getUser()` just cleared or refreshed: a
   // rotated refresh token that never reaches the browser signs the user out.
@@ -64,9 +72,10 @@ export async function updateSession(
   // the sign-in redirect below was holding for them, if there is one.
   if (user && pathWithoutLocale === '/') {
     const next = safeNextPath(request.nextUrl.searchParams.get('next'));
-    return redirectTo(
-      new URL(next ?? `/${locale}/logging`, request.nextUrl.origin)
-    );
+    if (next) return redirectTo(new URL(next, request.nextUrl.origin));
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/logging`;
+    return redirectTo(url);
   }
 
   // A signed-out visitor opening an app page goes to the sign-in dialog, which
@@ -76,9 +85,8 @@ export async function updateSession(
   // threw "You need to sign in" (KALLO-WEB-2) before the layout's redirect.
   if (
     isSignedOut(user, error) &&
-    localeMatch &&
-    isPageNavigation(request) &&
-    needsSignIn(pathWithoutLocale)
+    isPageLoad(request) &&
+    needsSignIn(decodedPath(pathWithoutLocale))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}`;
@@ -95,15 +103,21 @@ export async function updateSession(
 }
 
 /**
- * Only a page load or a client navigation is redirected. A Server Action POST
- * would follow the 307 and replay itself against the landing page, which has
- * no such action; left alone it gets the action's own "sign in" error.
+ * Only a page load or a client navigation (both GET) is redirected. A Server
+ * Action is a POST: following a 307 it would replay against the landing page,
+ * which has no such action, so it is left to return its own "sign in" error.
  */
-function isPageNavigation(request: NextRequest) {
-  return (
-    (request.method === 'GET' || request.method === 'HEAD') &&
-    !request.headers.has('next-action')
-  );
+function isPageLoad(request: NextRequest) {
+  return request.method === 'GET' || request.method === 'HEAD';
+}
+
+/** Next routes on the decoded path, so `/%64ashboard` must match too. */
+function decodedPath(path: string) {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
 }
 
 /**
@@ -112,17 +126,11 @@ function isPageNavigation(request: NextRequest) {
  * 429, an unparseable response — is an outage, not a signed-out visitor, and
  * sending a signed-in reader to the sign-in dialog would strand them there.
  */
-function isSignedOut(
-  user: unknown,
-  error: { name: string; status?: number } | null
-) {
+function isSignedOut(user: unknown, error: AuthError | null) {
   if (user) return false;
-  if (!error || error.name === 'AuthSessionMissingError') return true;
+  if (!error || isAuthSessionMissingError(error)) return true;
   const status = error.status ?? 0;
   return (
-    error.name === 'AuthApiError' &&
-    status >= 400 &&
-    status < 500 &&
-    status !== 429
+    isAuthApiError(error) && status >= 400 && status < 500 && status !== 429
   );
 }

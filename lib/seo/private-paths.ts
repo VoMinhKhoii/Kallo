@@ -60,12 +60,14 @@ function underPrefix(path: string, prefixes: readonly string[]): boolean {
   );
 }
 
+const KNOWN_NON_MARKDOWN_PREFIXES = [
+  ...PRIVATE_PATH_PREFIXES,
+  ...PUBLIC_NON_MARKDOWN_PREFIXES,
+];
+
 /** True when `path` (locale-relative, e.g. `/dashboard/x`) is a known page. */
 export function isKnownNonMarkdownPath(path: string): boolean {
-  return underPrefix(path, [
-    ...PRIVATE_PATH_PREFIXES,
-    ...PUBLIC_NON_MARKDOWN_PREFIXES,
-  ]);
+  return underPrefix(path, KNOWN_NON_MARKDOWN_PREFIXES);
 }
 
 /**

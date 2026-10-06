@@ -1,3 +1,10 @@
+import {
+  AuthApiError,
+  type AuthError,
+  AuthRetryableFetchError,
+  AuthSessionMissingError,
+  AuthUnknownError,
+} from '@supabase/supabase-js';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,13 +24,23 @@ vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_key');
 
 const { updateSession } = await import('@/lib/infra/supabase/middleware');
 
-function signedIn(
+function session(
   user: { id: string } | null,
-  error: { name: string; status?: number } | null = null
+  error: AuthError | null = null,
+  refreshed: { name: string; value: string }[] = []
 ) {
-  createServerClient.mockReturnValue({
-    auth: { getUser: async () => ({ data: { user }, error }) },
-  });
+  createServerClient.mockImplementation((_url, _key, options) => ({
+    auth: {
+      getUser: async () => {
+        if (refreshed.length > 0) {
+          options.cookies.setAll(
+            refreshed.map((c) => ({ ...c, options: { path: '/' } }))
+          );
+        }
+        return { data: { user }, error };
+      },
+    },
+  }));
 }
 
 function run(
@@ -33,12 +50,17 @@ function run(
   return updateSession(new NextRequest(`https://kallo.fit${path}`, init));
 }
 
+async function location(path: string) {
+  const header = (await run(path)).headers.get('location');
+  return header ? new URL(header) : null;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe('signed-out visitor', () => {
-  beforeEach(() => signedIn(null));
+  beforeEach(() => session(null));
 
   it.each([
     '/en/dashboard',
@@ -47,42 +69,52 @@ describe('signed-out visitor', () => {
     '/en/activity',
   ])('is sent from %s to the sign-in dialog with a way back', async (path) => {
     const response = await run(path);
-    const location = new URL(response.headers.get('location') ?? '');
+    const url = new URL(response.headers.get('location') ?? '');
 
     expect(response.status).toBe(307);
-    expect(location.pathname).toBe(`/${path.split('/')[1]}`);
-    expect(location.searchParams.get('auth')).toBe('sign-in');
-    expect(location.searchParams.get('next')).toBe(path);
+    expect(url.pathname).toBe(`/${path.split('/')[1]}`);
+    expect(url.searchParams.get('auth')).toBe('sign-in');
+    expect(url.searchParams.get('next')).toBe(path);
   });
 
   it('keeps the query on the way back', async () => {
-    const response = await run('/en/logging?date=2026-10-05&meal=abc');
-    const location = new URL(response.headers.get('location') ?? '');
+    const url = await location('/en/logging?date=2026-10-05&meal=abc');
 
-    expect([...location.searchParams.keys()]).toEqual(['auth', 'next']);
-    expect(location.searchParams.get('next')).toBe(
+    expect([...(url?.searchParams.keys() ?? [])]).toEqual(['auth', 'next']);
+    expect(url?.searchParams.get('next')).toBe(
       '/en/logging?date=2026-10-05&meal=abc'
     );
   });
 
   it('falls back to the bare path when the query is not a safe next', async () => {
-    const response = await run('/en/logging?tag=a:b');
-    const location = new URL(response.headers.get('location') ?? '');
-
-    expect(location.searchParams.get('next')).toBe('/en/logging');
+    const url = await location('/en/logging?tag=a:b');
+    expect(url?.searchParams.get('next')).toBe('/en/logging');
   });
 
   it('omits next when even the path is not a safe next', async () => {
-    const response = await run('/en/circle/ab:cd');
-    const location = new URL(response.headers.get('location') ?? '');
+    const url = await location('/en/circle/ab:cd');
 
-    expect(location.searchParams.get('auth')).toBe('sign-in');
-    expect(location.searchParams.has('next')).toBe(false);
+    expect(url?.searchParams.get('auth')).toBe('sign-in');
+    expect(url?.searchParams.has('next')).toBe(false);
+  });
+
+  it('matches a percent-encoded spelling of a private path', async () => {
+    const url = await location('/en/%64ashboard');
+    expect(url?.searchParams.get('auth')).toBe('sign-in');
+  });
+
+  it('carries cleared session cookies onto the redirect', async () => {
+    session(null, null, [{ name: 'sb-project-auth-token', value: '' }]);
+    const response = await run('/en/dashboard');
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('set-cookie')).toContain(
+      'sb-project-auth-token='
+    );
   });
 
   it('leaves /admin to its 404 rather than naming it', async () => {
-    const response = await run('/en/admin/prompts');
-    expect(response.headers.get('location')).toBeNull();
+    expect(await location('/en/admin/prompts')).toBeNull();
   });
 
   it('leaves a Server Action POST to the action', async () => {
@@ -94,67 +126,60 @@ describe('signed-out visitor', () => {
   });
 
   it.each([
-    { name: 'AuthRetryableFetchError', status: 0 },
-    { name: 'AuthApiError', status: 503 },
-    { name: 'AuthApiError', status: 429 },
-    { name: 'AuthUnknownError' },
-  ])('does not treat a Supabase outage ($name $status) as signed out', async (error) => {
-    signedIn(null, error);
-    expect((await run('/en/dashboard')).headers.get('location')).toBeNull();
-  });
-
-  it('treats a missing or rejected session as signed out', async () => {
-    signedIn(null, { name: 'AuthSessionMissingError', status: 400 });
-    expect((await run('/en/dashboard')).status).toBe(307);
-
-    signedIn(null, { name: 'AuthApiError', status: 403 });
-    expect((await run('/en/dashboard')).status).toBe(307);
+    ['/en'],
+    ['/en/pricing'],
+    ['/en/invite/abc'],
+    ['/en/dashboards'],
+    ['/dashboard'],
+  ])('passes through %s', async (path) => {
+    expect(await location(path)).toBeNull();
   });
 
   it.each([
-    '/en',
-    '/en/pricing',
-    '/en/invite/abc',
-    '/dashboard',
-  ])('passes through %s', async (path) => {
-    const response = await run(path);
-    expect(response.headers.get('location')).toBeNull();
+    new AuthRetryableFetchError('fetch failed', 0),
+    new AuthApiError('unavailable', 503, undefined),
+    new AuthApiError('rate limited', 429, 'over_request_rate_limit'),
+    new AuthUnknownError('bad json', new Error('parse')),
+  ])('does not treat a Supabase outage ($name $status) as signed out', async (error) => {
+    session(null, error);
+    expect(await location('/en/dashboard')).toBeNull();
   });
 
-  it('does not treat a lookalike prefix as private', async () => {
-    const response = await run('/en/dashboards');
-    expect(response.headers.get('location')).toBeNull();
+  it.each([
+    new AuthSessionMissingError(),
+    new AuthApiError('bad jwt', 403, 'bad_jwt'),
+  ])('treats $name $status as signed out', async (error) => {
+    session(null, error);
+    expect((await run('/en/dashboard')).status).toBe(307);
   });
 });
 
 describe('signed-in visitor', () => {
-  beforeEach(() => signedIn({ id: 'user-1' }));
+  beforeEach(() => session({ id: 'user-1' }));
 
   it('reaches an app surface', async () => {
-    const response = await run('/en/dashboard');
-    expect(response.headers.get('location')).toBeNull();
+    expect(await location('/en/dashboard')).toBeNull();
+  });
+
+  it('is sent from the landing page to logging, keeping the query', async () => {
+    const url = await location('/vi?date=2026-10-05');
+    expect(url?.pathname).toBe('/vi/logging');
+    expect(url?.searchParams.get('date')).toBe('2026-10-05');
   });
 
   it('is sent from the landing page to the page sign-in was holding', async () => {
-    const response = await run(
+    const url = await location(
       '/en?auth=sign-in&next=%2Fen%2Fsettings%2Faccount'
     );
-    expect(response.headers.get('location')).toBe(
-      'https://kallo.fit/en/settings/account'
-    );
+    expect(url?.href).toBe('https://kallo.fit/en/settings/account');
   });
 
   it('ignores an unsafe next on the landing page', async () => {
-    const response = await run('/en?next=%2F%2Fevil.example');
-    expect(response.headers.get('location')).toBe(
-      'https://kallo.fit/en/logging'
-    );
+    const url = await location('/en?next=%2F%2Fevil.example');
+    expect(url?.pathname).toBe('/en/logging');
   });
 
-  it('is sent from the landing page to logging', async () => {
-    const response = await run('/vi');
-    expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
-      '/vi/logging'
-    );
+  it('leaves the bare root to next-intl so the locale is negotiated', async () => {
+    expect(await location('/')).toBeNull();
   });
 });
