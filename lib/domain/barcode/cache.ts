@@ -58,8 +58,10 @@ export const BARCODE_PROVIDER_RANK: readonly BarcodeProviderId[] = [
  * provider adapter starts reading something new: every older row then heals on
  * its next scan, with no backfill. 1 = unit, micronutrients and photo.
  * 2 = macros the label's energy proves zero (`providers/zero-macros.ts`).
+ * 3 = polyols veto that zero-fill, so a v2 row may hold a polyol label's
+ * blank fat as 0g.
  */
-export const BARCODE_DATA_VERSION = 2;
+export const BARCODE_DATA_VERSION = 3;
 
 export function barcodeCacheId(
   providerId: BarcodeProviderId,

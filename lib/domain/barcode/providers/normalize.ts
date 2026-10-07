@@ -101,9 +101,9 @@ const ATWATER_OVERSHOOT_LIMIT = 2.0;
  * one-sided and generously bounded:
  * - Overshoot happens on correct labels whenever the carbohydrate figure
  *   includes carbohydrate that does not deliver 4 kcal/g. Fiber (counted in
- *   total carbs on US labels) is subtracted outright; polyols, which are not a
- *   separate field here, are covered by the 2.0 headroom — a sugar-free
- *   isomalt candy states ~240 kcal against 98 g carbohydrate.
+ *   total carbs on US labels) is subtracted outright; polyols, which most
+ *   labels never list separately, are covered by the 2.0 headroom — a
+ *   sugar-free isomalt candy states ~240 kcal against 98 g carbohydrate.
  * - Undershoot is always legitimate: alcohol carries energy that no macro
  *   field lists, so a symmetric check would reject correct beer and wine.
  *

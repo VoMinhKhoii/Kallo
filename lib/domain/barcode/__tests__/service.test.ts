@@ -173,6 +173,23 @@ describe('searchBarcodeProduct', () => {
     });
   });
 
+  it('keeps the polyol figure out of the client product and the cache row', async () => {
+    mockDbSelect
+      .mockReturnValueOnce(mockSelectOnce([]))
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: offProvider,
+      product: { ...offProduct, polyolsG: 12 },
+    });
+    const capturedValues = mockUpsertCapture();
+
+    const product = await searchBarcodeProduct('8934563138162');
+
+    expect(product).toEqual(offClient);
+    expect(product).not.toHaveProperty('polyolsG');
+    expect(capturedValues[0]).not.toHaveProperty('polyolsG');
+  });
+
   it('caches under the resolving provider prefix and source id', async () => {
     mockDbSelect.mockReturnValueOnce(mockSelectOnce([])).mockReturnValueOnce(
       mockSelectOnce([
