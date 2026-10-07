@@ -134,14 +134,35 @@ describe('CalorieDial', () => {
         />
       );
 
-    it('marks what was logged as a floor', () => {
+    it('marks what was logged as a floor, and what is left under it', () => {
       renderFloor('bulking');
       expect(screen.getByText('≥741')).toBeInTheDocument();
+      expect(
+        screen.getByText('leftOfTarget left=≤1,259 target=2,000')
+      ).toBeInTheDocument();
     });
 
-    it('marks what is left as a ceiling', () => {
+    it('marks what is left as a ceiling, and what was logged under it', () => {
       renderFloor('cutting');
       expect(screen.getByText('≤1,259')).toBeInTheDocument();
+      expect(
+        screen.getByText('loggedOfTarget logged=≥741 target=2,000')
+      ).toBeInTheDocument();
+    });
+
+    it('marks an overshoot as a floor', () => {
+      render(
+        <CalorieDial
+          atLeast
+          goal="bulking"
+          logged={2300}
+          radius={LONG}
+          target={TARGET}
+        />
+      );
+      expect(
+        screen.getByText('overTargetBy over=≥300 target=2,000')
+      ).toBeInTheDocument();
     });
   });
 });

@@ -11,15 +11,17 @@
  * excluded, as in `isPlausiblePer100g`), nothing is left for a missing macro to
  * carry, so zero is the label's own answer. When energy is left unexplained —
  * beer's alcohol, or a label that simply lost its fat line — the blank stays
- * null, because then something real is missing.
+ * null, because then something real is missing. So does a label whose listed
+ * macros carry far MORE energy than it states: it contradicts itself, and the
+ * plausibility gate cannot catch that while a macro is blank.
  */
 import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 
 const MACRO_KEYS = ['proteinG', 'carbohydrateG', 'fatG'] as const;
 const KCAL_PER_G = { proteinG: 4, carbohydrateG: 4, fatG: 9 } as const;
 
-/** Unexplained energy still read as rounding: 10% of the label, at least 5
- *  kcal per 100g — under ~0.6g of fat, ~1.3g of protein. */
+/** A mismatch either way still read as rounding: 10% of the label, at least
+ *  5 kcal per 100g — under ~0.6g of fat, ~1.3g of protein. */
 const TOLERANCE_SHARE = 0.1;
 const TOLERANCE_FLOOR_KCAL = 5;
 
@@ -43,8 +45,11 @@ export function fillZeroMacros(
     explained += effective * KCAL_PER_G[key];
   }
 
+  // Both ways: energy left over means a blank is real, and listed macros that
+  // already exceed the label (0 kcal beside 10g of carbs) mean the label
+  // contradicts itself — neither is evidence of zero.
   const tolerance = Math.max(TOLERANCE_FLOOR_KCAL, kcal * TOLERANCE_SHARE);
-  if (kcal - explained > tolerance) return product;
+  if (Math.abs(kcal - explained) > tolerance) return product;
 
   return {
     ...product,

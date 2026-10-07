@@ -103,7 +103,7 @@ class CalorieDial extends StatelessWidget {
   final double logged;
   final double target;
   final MacroGoal? goal;
-  final bool atLeast; // the logged total is a floor — [calorieBoundMark]
+  final bool atLeast; // the logged total is a floor: a meal's kcal unknown
   final double radius;
   final double? maxWidth;
   final bool _isCompact;
@@ -119,33 +119,35 @@ class CalorieDial extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
     String fmt(num value) => formatCount(value.round(), locale);
+    // A floor on what was eaten (or over) is a ceiling on what is left.
+    String eaten(num value) => '${atLeast ? '≥' : ''}${fmt(value)}';
+    String left(num value) => '${atLeast ? '≤' : ''}${fmt(value)}';
 
     final readout = calorieReadout(logged: logged, target: target, goal: goal);
-    final fraction = {'logged': fmt(logged), 'target': fmt(target)};
+    final fraction = {'logged': eaten(logged), 'target': fmt(target)};
     final radius = _radius;
 
     return GaugeDial(
       progress: target > 0 ? logged / target : 0,
       radius: radius,
       fill: KalloColors.accent, // the calorie mark's own colour
-      // The headline and unit step down in the compact variant; the fraction
-      // under the arc keeps the dial's own size in both ([gaugeDenominator]).
+      // Headline and unit step down when compact; the fraction never does.
       primary: GaugeLine(
-        '${atLeast ? calorieBoundMark(readout.framing) : ''}'
-        '${fmt(readout.headline)}',
+        (readout.framing == CalorieFraming.logged ? eaten : left)(
+          readout.headline,
+        ),
         _isCompact ? gaugeFigure() : gaugeHeroFigure(),
       ),
       secondary: _unit(context, readout.framing, radius),
       tertiary: GaugeLine(
-        _detail(context, readout, fmt, fraction, radius),
+        _detail(context, readout, (eaten: eaten, left: left), fraction, radius),
         gaugeDenominator(),
       ),
     );
   }
 
-  /// The line on the arc's tips. The full dial always says the sentence; the
-  /// compact one measures it at the viewer's text scale first and says the one
-  /// word when the sentence would not clear the tips.
+  /// The line on the arc's tips: the sentence, or — compact, measured at the
+  /// viewer's text scale — the one word when the sentence would not clear.
   GaugeLine _unit(BuildContext context, CalorieFraming framing, double radius) {
     final key = _unitKey[framing]!;
     if (!_isCompact) return GaugeLine(tr(key.long), gaugeUnit());
@@ -163,13 +165,12 @@ class CalorieDial extends StatelessWidget {
   }
 
   /// The line under the arc: the OTHER figure, with a verb whenever it is not
-  /// the headline's own. The compact dial drops the verb when counting up,
-  /// where the fraction already leads with the headline figure, and when the
-  /// verb line would widen the dial past what the surface can spare.
+  /// the headline's own. The compact dial drops the verb when counting up (the
+  /// fraction leads with the headline) or when it would widen the dial.
   String _detail(
     BuildContext context,
     CalorieReadout readout,
-    String Function(num) fmt,
+    ({String Function(num) eaten, String Function(num) left}) fmt,
     Map<String, String> fraction,
     double radius,
   ) {
@@ -189,11 +190,11 @@ class CalorieDial extends StatelessWidget {
     return readout.over == null
         ? tr(
           'dashboard.leftOfTarget',
-          namedArgs: {'left': fmt(readout.left), 'target': target},
+          namedArgs: {'left': fmt.left(readout.left), 'target': target},
         )
         : tr(
           'dashboard.overTargetBy',
-          namedArgs: {'over': fmt(readout.over!), 'target': target},
+          namedArgs: {'over': fmt.eaten(readout.over!), 'target': target},
         );
   }
 }

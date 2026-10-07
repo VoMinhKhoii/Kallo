@@ -345,6 +345,8 @@ void main() {
     );
 
     expect(find.text('≤150'), findsOneWidget);
+    // The detail line is the same incomplete total, so it is a floor too.
+    expect(find.text('Ate ≥1,850/2,000'), findsOneWidget);
   });
 
   testWidgets('stands in with the dial row\'s own silhouette while loading', (

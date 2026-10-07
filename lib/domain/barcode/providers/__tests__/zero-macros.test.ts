@@ -58,6 +58,13 @@ describe('fillZeroMacros', () => {
     expect(fillZeroMacros(noodles).fatG).toBeNull();
   });
 
+  it('keeps a blank when the listed macros exceed the stated energy', () => {
+    // 0 kcal beside 10g of carbs contradicts itself; it is no proof of zero,
+    // and filling it would let the label pass as complete.
+    const contradictory = product({ caloriesKcal: 0, carbohydrateG: 10 });
+    expect(fillZeroMacros(contradictory)).toBe(contradictory);
+  });
+
   it('reads energy within rounding as explained', () => {
     // 4·1 + 4·10 = 44 against 48 kcal: under the 5 kcal floor.
     const filled = fillZeroMacros(
