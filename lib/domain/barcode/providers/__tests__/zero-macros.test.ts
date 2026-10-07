@@ -78,6 +78,23 @@ describe('fillZeroMacros', () => {
     expect(fillZeroMacros(fibrous)).toBe(fibrous);
   });
 
+  it('keeps blanks when polyols make the carbohydrate energy unknown', () => {
+    // 25g of isomalt "explains" 100 kcal at 4 kcal/g but really gives ~60;
+    // the ~40 left could be 4.4g of fat behind the blank.
+    const candy = product({
+      caloriesKcal: 100,
+      proteinG: 0,
+      carbohydrateG: 25,
+      polyolsG: 25,
+    });
+    expect(fillZeroMacros(candy)).toBe(candy);
+  });
+
+  it('still fills when polyols are listed as zero', () => {
+    const tea = product({ caloriesKcal: 34, carbohydrateG: 8.6, polyolsG: 0 });
+    expect(fillZeroMacros(tea)).toMatchObject({ proteinG: 0, fatG: 0 });
+  });
+
   it('reads energy within rounding as explained', () => {
     // 4·1 + 4·10 = 44 against 48 kcal: under the 5 kcal floor.
     const filled = fillZeroMacros(

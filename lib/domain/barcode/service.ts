@@ -32,9 +32,11 @@ export { BarcodeServiceError } from '@/lib/domain/barcode/errors';
  */
 export const STALE_REFRESH_TIMEOUT_MS = 3000;
 
-/** The client shape: the provider's photo URL becomes our proxy path. */
+/** The client shape: the provider's photo URL becomes our proxy path, and
+ *  the server-only polyol figure stays behind. */
 function toClientProduct({
   sourceImageUrl,
+  polyolsG: _polyolsG,
   ...record
 }: BarcodeProductRecord): ParsedBarcodeProduct {
   return {

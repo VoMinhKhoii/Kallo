@@ -52,6 +52,7 @@ const openFoodFactsNutrimentsSchema = z
     proteins_100g: z.union([z.number(), z.string()]).optional().nullable(),
     fat_100g: z.union([z.number(), z.string()]).optional().nullable(),
     fiber_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    polyols_100g: z.union([z.number(), z.string()]).optional().nullable(),
     sodium_100g: z.union([z.number(), z.string()]).optional().nullable(),
     salt_100g: z.union([z.number(), z.string()]).optional().nullable(),
   })
@@ -197,6 +198,7 @@ export async function fetchProductFromOpenFoodFacts(
       amountUnit: resolveAmountUnit(product),
       micronutrients: parseOffMicronutrients(nutriments),
       sourceImageUrl: trustedProductImageUrl(product.image_front_url),
+      polyolsG: parseNumber(nutriments?.polyols_100g),
     };
   } catch (error) {
     console.error(

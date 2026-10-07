@@ -43,6 +43,11 @@ export function fillZeroMacros(
   if (product.carbohydrateG === null && (product.fiberG ?? 0) > 0) {
     return product;
   }
+  // Polyols are carbohydrate at anything from ~0 kcal/g (erythritol) to ~3
+  // (maltitol), so the 4 kcal/g below cannot say what the carbs supply: 25g
+  // of isomalt "explains" 100 kcal while really leaving ~40 for a blank fat
+  // line. With polyols listed, no blank is provably zero.
+  if ((product.polyolsG ?? 0) > 0) return product;
 
   let explained = 0;
   for (const key of MACRO_KEYS) {

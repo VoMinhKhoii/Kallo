@@ -338,6 +338,16 @@ describe('cacheBarcodeProduct', () => {
     expect(dialect.sqlToQuery(set.vitaminB12Mcg).sql).toBe(
       'coalesce(excluded."vitamin_b12_mcg", "vietnamese_food_composition"."vitamin_b12_mcg")'
     );
+    // The one erasure: a macro the zero-fill may have written as 0 is cleared
+    // when the refresh leaves it blank, so a v2 row's unproven 0 cannot
+    // survive under a v3 stamp. Any other stored macro value is kept.
+    expect(dialect.sqlToQuery(set.fatG).sql).toBe(
+      'case when excluded."fat_g" is null and "vietnamese_food_composition"."fat_g" = 0 then null else coalesce(excluded."fat_g", "vietnamese_food_composition"."fat_g") end'
+    );
+    for (const macro of ['proteinG', 'carbohydrateG'] as const) {
+      expect(dialect.sqlToQuery(set[macro]).sql).toMatch(/^case when /);
+    }
+    expect(dialect.sqlToQuery(set.caloriesKcal).sql).toMatch(/^coalesce\(/);
     expect(Object.keys(set)).toEqual(
       expect.arrayContaining([
         'amountUnit',
