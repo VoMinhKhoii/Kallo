@@ -38,6 +38,11 @@ export function fillZeroMacros(
   const kcal = product.caloriesKcal;
   if (kcal === null || kcal < 0) return product;
   if (MACRO_KEYS.every((key) => product[key] !== null)) return product;
+  // Fiber is part of total carbohydrate (as `isPlausiblePer100g` counts it),
+  // so listed fiber proves a blank carbohydrate line is not zero.
+  if (product.carbohydrateG === null && (product.fiberG ?? 0) > 0) {
+    return product;
+  }
 
   let explained = 0;
   for (const key of MACRO_KEYS) {

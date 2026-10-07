@@ -72,6 +72,12 @@ describe('fillZeroMacros', () => {
     expect(fillZeroMacros(dense)).toBe(dense);
   });
 
+  it('never zeroes carbohydrate a listed fiber proves is there', () => {
+    // 10g protein explains 40 kcal, but 5g fiber is carbohydrate by itself.
+    const fibrous = product({ caloriesKcal: 40, proteinG: 10, fiberG: 5 });
+    expect(fillZeroMacros(fibrous)).toBe(fibrous);
+  });
+
   it('reads energy within rounding as explained', () => {
     // 4·1 + 4·10 = 44 against 48 kcal: under the 5 kcal floor.
     const filled = fillZeroMacros(
