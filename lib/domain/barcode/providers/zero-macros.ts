@@ -20,10 +20,15 @@ import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
 const MACRO_KEYS = ['proteinG', 'carbohydrateG', 'fatG'] as const;
 const KCAL_PER_G = { proteinG: 4, carbohydrateG: 4, fatG: 9 } as const;
 
-/** A mismatch either way still read as rounding: 10% of the label, at least
- *  5 kcal per 100g — under ~0.6g of fat, ~1.3g of protein. */
-const TOLERANCE_SHARE = 0.1;
-const TOLERANCE_FLOOR_KCAL = 5;
+/**
+ * A mismatch either way still read as rounding: 5 kcal per 100g, under ~0.6g
+ * of fat or ~1.3g of protein or carbohydrate — about what a label's own
+ * rounding leaves. Fixed, not a share of the label: 10% of a 500 kcal product
+ * is 50 kcal, enough to hide 5g of protein and 7.5g of carbohydrate behind
+ * blanks this would then call zero. A dense label just outside it keeps its
+ * blanks, which is the safe way to be wrong.
+ */
+const TOLERANCE_KCAL = 5;
 
 /** `product` with each missing macro set to 0 when the listed ones already
  *  explain its calories; otherwise unchanged. */
@@ -48,8 +53,7 @@ export function fillZeroMacros(
   // Both ways: energy left over means a blank is real, and listed macros that
   // already exceed the label (0 kcal beside 10g of carbs) mean the label
   // contradicts itself — neither is evidence of zero.
-  const tolerance = Math.max(TOLERANCE_FLOOR_KCAL, kcal * TOLERANCE_SHARE);
-  if (Math.abs(kcal - explained) > tolerance) return product;
+  if (Math.abs(kcal - explained) > TOLERANCE_KCAL) return product;
 
   return {
     ...product,

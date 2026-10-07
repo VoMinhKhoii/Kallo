@@ -65,6 +65,13 @@ describe('fillZeroMacros', () => {
     expect(fillZeroMacros(contradictory)).toBe(contradictory);
   });
 
+  it('keeps blanks a dense label leaves room for', () => {
+    // 50g fat is 450 of 500 kcal: the 50 left is 5g protein + 7.5g carbs as
+    // easily as rounding. A share-of-label tolerance (10%) would call it zero.
+    const dense = product({ caloriesKcal: 500, fatG: 50 });
+    expect(fillZeroMacros(dense)).toBe(dense);
+  });
+
   it('reads energy within rounding as explained', () => {
     // 4·1 + 4·10 = 44 against 48 kcal: under the 5 kcal floor.
     const filled = fillZeroMacros(
