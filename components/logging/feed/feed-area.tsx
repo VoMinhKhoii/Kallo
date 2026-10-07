@@ -77,7 +77,7 @@ export function FeedArea({
       <FeedHeader
         isDayLoading={day.isDayLoading}
         isDayError={day.isDayError}
-        hasUnknownDailyMacros={day.hasUnknownDailyMacros}
+        incompleteTotals={day.incompleteTotals}
         dailyTotals={day.dailyTotals}
         targets={day.targets}
         showPartialDayNotice={feed.showPartialDayNotice}

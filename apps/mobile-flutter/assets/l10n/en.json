@@ -1261,7 +1261,6 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
-      "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
       "loadErrorDescription": "Your saved meals for this date did not load, so try again before logging more.",
       "retryDay": "Retry day",

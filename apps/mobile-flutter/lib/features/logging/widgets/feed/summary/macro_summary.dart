@@ -10,12 +10,10 @@
 /// dials are replaced by a skeleton of the same silhouette.
 library;
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/widgets/gauge/calorie_dial.dart';
 import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
-import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../data/logging_models.dart';
@@ -44,16 +42,6 @@ class MacroSummary extends StatelessWidget {
         child:
             view.isLoading
                 ? const MacroSummarySkeleton()
-                : view.hasUnknownDailyMacros
-                // Some legacy meals have unknown macros — the day can't be
-                // totalled, so say so plainly instead of showing wrong dials.
-                ? Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'logging.feedArea.legacyMacroWarning'.tr(),
-                    style: dashMeta(),
-                  ),
-                )
                 : LayoutBuilder(
                   builder:
                       (context, constraints) => Row(
@@ -63,6 +51,7 @@ class MacroSummary extends StatelessWidget {
                             logged: view.dailyCalories.toDouble(),
                             target: profile.calorieTarget.toDouble(),
                             goal: profile.goal,
+                            atLeast: view.incompleteTotals.contains('calories'),
                             // What the macros can spare at their full size:
                             // the calorie dial shrinks and drops its verb
                             // before it squeezes them (review of #396).
@@ -79,6 +68,7 @@ class MacroSummary extends StatelessWidget {
                           const SizedBox(width: KalloSpacing.sp2),
                           Expanded(
                             child: MacroDialRow.compact(
+                              atLeast: view.incompleteTotals,
                               current: {
                                 'protein': view.dailyProtein,
                                 'carbohydrate': view.dailyCarbs,

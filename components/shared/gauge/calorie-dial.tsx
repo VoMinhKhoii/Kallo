@@ -36,6 +36,8 @@ interface CalorieDialProps {
   goal: Goal | null;
   /** Sized by the strip from the room the surface gave it. */
   radius: number;
+  /** The logged total is a floor — a meal's unknown calories were left out. */
+  atLeast?: boolean;
 }
 
 /**
@@ -57,6 +59,7 @@ export function CalorieDial({
   target,
   goal,
   radius,
+  atLeast = false,
 }: CalorieDialProps) {
   const t = useTranslations('dashboard');
   const locale = useLocale();
@@ -65,7 +68,11 @@ export function CalorieDial({
   const readout = calorieReadout(logged, target, goal);
   // Whether the words FIT, not how big the mark is — see `gaugeFitsLongUnit`.
   const wording: Wording = gaugeFitsLongUnit(radius) ? 'long' : 'short';
-  const fraction = { logged: format(logged), target: format(target) };
+  // A floor on what was eaten (and on any overshoot) is a ceiling on what is
+  // left, so every figure derived from `logged` carries its own mark.
+  const eaten = (value: number) => `${atLeast ? '≥' : ''}${format(value)}`;
+  const left = (value: number) => `${atLeast ? '≤' : ''}${format(value)}`;
+  const fraction = { logged: eaten(logged), target: format(target) };
   const targetOnly = { target: format(target) };
 
   // The detail line carries the OTHER figure: a cutter leads with what is left,
@@ -78,12 +85,15 @@ export function CalorieDial({
       : readout.framing === 'remaining'
         ? t('loggedOfTarget', fraction)
         : readout.over === null
-          ? t('leftOfTarget', { left: format(readout.left), ...targetOnly })
-          : t('overTargetBy', { over: format(readout.over), ...targetOnly });
+          ? t('leftOfTarget', { left: left(readout.left), ...targetOnly })
+          : t('overTargetBy', { over: eaten(readout.over), ...targetOnly });
 
   const lines = gaugeCalorieLines(
     {
-      figure: format(readout.headline),
+      figure:
+        readout.framing === 'logged'
+          ? eaten(readout.headline)
+          : left(readout.headline),
       unit: t(UNIT_KEY[readout.framing][wording]),
       detail,
     },

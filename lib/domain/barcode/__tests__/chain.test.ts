@@ -209,6 +209,28 @@ describe('resolveBarcodeProduct', () => {
     expect(result?.product.name).toBe('FDC kcal only');
   });
 
+  it('fills the zeros a label proves and returns it as complete', async () => {
+    // Calamansi tea: 34 kcal, all of it carbohydrate. FDC left protein and fat
+    // blank; its own energy says they are zero, so it wins outright.
+    mockFetchFdc.mockResolvedValue(
+      product({
+        name: 'Calamansi Tea',
+        caloriesKcal: 34,
+        proteinG: null,
+        carbohydrateG: 8.6,
+        fatG: null,
+        fiberG: null,
+      })
+    );
+    mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
+
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
+    expect(result?.provider.id).toBe('usda_fdc');
+    expect(result?.product).toMatchObject({ proteinG: 0, fatG: 0 });
+  });
+
   it('is null when both providers match but neither has nutrition', async () => {
     const shell = {
       caloriesKcal: null,

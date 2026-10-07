@@ -1,16 +1,15 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { MacroSummarySkeleton } from '@/components/logging/feed/feed-day-states';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { PartialDayNotice } from '@/components/logging/feed/partial-day/partial-day-notice';
-import type { MacroBreakdown } from '@/lib/core/types/meal';
+import type { IncompleteTotals, MacroBreakdown } from '@/lib/core/types/meal';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
 interface FeedHeaderProps {
   isDayLoading: boolean;
   isDayError: boolean;
-  hasUnknownDailyMacros: boolean;
+  incompleteTotals: IncompleteTotals;
   dailyTotals: MacroBreakdown;
   targets: MacroBreakdown;
   showPartialDayNotice: boolean;
@@ -24,7 +23,7 @@ interface FeedHeaderProps {
 export function FeedHeader({
   isDayLoading,
   isDayError,
-  hasUnknownDailyMacros,
+  incompleteTotals,
   dailyTotals,
   targets,
   showPartialDayNotice,
@@ -33,8 +32,6 @@ export function FeedHeader({
   onMarkDayComplete,
   isMarkingDayComplete,
 }: FeedHeaderProps) {
-  const t = useTranslations('logging.feedArea');
-
   return (
     <>
       <div
@@ -44,12 +41,13 @@ export function FeedHeader({
         <div className="mx-auto max-w-3xl">
           {isDayLoading ? (
             <MacroSummarySkeleton />
-          ) : isDayError ? null : hasUnknownDailyMacros ? (
-            <div className="font-medium font-sans-display text-[11px] text-kallo-text-muted/80">
-              {t('legacyMacroWarning')}
-            </div>
-          ) : (
-            <MacroSummary goal={goal} targets={targets} totals={dailyTotals} />
+          ) : isDayError ? null : (
+            <MacroSummary
+              goal={goal}
+              incomplete={incompleteTotals}
+              targets={targets}
+              totals={dailyTotals}
+            />
           )}
         </div>
       </div>

@@ -57,8 +57,9 @@ export const BARCODE_PROVIDER_RANK: readonly BarcodeProviderId[] = [
  * The parser generation a cached row was written by. Bump it whenever a
  * provider adapter starts reading something new: every older row then heals on
  * its next scan, with no backfill. 1 = unit, micronutrients and photo.
+ * 2 = macros the label's energy proves zero (`providers/zero-macros.ts`).
  */
-export const BARCODE_DATA_VERSION = 1;
+export const BARCODE_DATA_VERSION = 2;
 
 export function barcodeCacheId(
   providerId: BarcodeProviderId,
