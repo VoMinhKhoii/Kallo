@@ -73,8 +73,8 @@ caps itself at **95% of each free-tier meter** — `lib/infra/storage/usage-cap.
 stop a URL it already handed out. They are bounded at the edge instead, the
 way CDN-served images usually are: avatars are immutable (a new random key per
 upload) and carry `Cache-Control: public, max-age=300, s-maxage=86400`, the
-zone runs Smart Tiered Cache, and a WAF rule blocks any request to
-`media.kallo.fit` with a query string (no cache-busting). R2 then sees about one
+zone runs Smart Tiered Cache, and a Cache Rule on `media.kallo.fit` respects
+those headers and ignores query strings in the cache key (no cache-busting). R2 then sees about one
 read per avatar per day — ~30k Class B a month for 1,000 avatars. A
 deleted avatar can stay at the edge for up to a day for someone who already has
 its unguessable URL. A Cloudflare budget alert is the safety net.
@@ -101,6 +101,11 @@ bunx wrangler r2 bucket create <prefix>-nutrition-labels
 # Public avatars on a custom domain in a zone on this account:
 bunx wrangler r2 bucket domain add <prefix>-avatars --domain <host> --zone-id <zone>
 ```
+
+**kallo.fit gotcha:** the zone has a Worker route `*.kallo.fit/* → kallo-proxy`
+that forwards every subdomain to Cloud Run, so `media.kallo.fit` needs its own
+route with **no Worker** (`media.kallo.fit/*`, created 2026-10-08) — without it
+the avatar domain answers with the app's locale redirect instead of R2.
 
 Then create an R2 API token (Dashboard → R2 → Manage API tokens → *Object Read
 & Write*, limited to the three buckets) and store its Access Key ID and Secret
