@@ -65,6 +65,11 @@ describe('Cloud Run prod workflow', () => {
       `GOOGLE_CLOUD_PROJECT: \${{ vars.GCP_PROJECT_ID }}`
     );
     expect(workflow).toContain('GOOGLE_CLOUD_LOCATION: global');
+    // Query embeddings go to the regional endpoint next to the service (same
+    // model and vectors as global, a fraction of the latency).
+    expect(workflow).toContain(
+      'GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1'
+    );
     expect(backfill).toContain('vertexai: true');
     expect(backfill).toContain(
       'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
