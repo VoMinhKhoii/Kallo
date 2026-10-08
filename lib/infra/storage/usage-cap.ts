@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { z } from 'zod';
+
 import { Errors } from '@/lib/core/errors/catalog';
 
 /**
@@ -87,22 +89,36 @@ const QUERY = `query R2Usage($accountTag: string!, $since: Time!, $storageSince:
   }
 }`;
 
-interface UsageResponse {
-  data?: {
-    viewer?: {
-      accounts?: {
-        ops?: {
-          sum: { requests: number };
-          dimensions: { actionType: string };
-        }[];
-        storage?: {
-          max: { payloadSize: number; metadataSize: number };
-        }[];
-      }[];
-    };
-  };
-  errors?: { message: string }[] | null;
-}
+const count = z.number().int().nonnegative();
+
+/**
+ * The analytics answer, parsed strictly: both meters must be present (an
+ * empty list is fine — no usage). A payload missing either throws, which the
+ * cap treats as unknown usage (uploads stop) instead of reading it as zero.
+ */
+const usageResponseSchema = z.object({
+  data: z.object({
+    viewer: z.object({
+      accounts: z
+        .array(
+          z.object({
+            ops: z.array(
+              z.object({
+                sum: z.object({ requests: count }),
+                dimensions: z.object({ actionType: z.string() }),
+              })
+            ),
+            storage: z.array(
+              z.object({
+                max: z.object({ payloadSize: count, metadataSize: count }),
+              })
+            ),
+          })
+        )
+        .min(1),
+    }),
+  }),
+});
 
 /** Month-to-date (trailing 31 days) R2 usage for the whole account. */
 export async function fetchR2Usage(
@@ -130,20 +146,22 @@ export async function fetchR2Usage(
   if (!response.ok) {
     throw new Error(`Cloudflare analytics answered ${response.status}`);
   }
-  const body = (await response.json()) as UsageResponse;
+  const body = (await response.json()) as {
+    errors?: { message?: string }[] | null;
+  };
   if (body.errors?.length) {
     throw new Error(`Cloudflare analytics: ${body.errors[0]?.message}`);
   }
-  const account = body.data?.viewer?.accounts?.[0];
+  const [account] = usageResponseSchema.parse(body).data.viewer.accounts;
   if (!account) throw new Error('Cloudflare analytics returned no account');
 
   const usage: R2Usage = { storageBytes: 0, classA: 0, classB: 0 };
-  for (const group of account.ops ?? []) {
+  for (const group of account.ops) {
     const kind = operationClass(group.dimensions.actionType);
     if (kind === 'A') usage.classA += group.sum.requests;
     else if (kind === 'B') usage.classB += group.sum.requests;
   }
-  for (const bucket of account.storage ?? []) {
+  for (const bucket of account.storage) {
     usage.storageBytes += bucket.max.payloadSize + bucket.max.metadataSize;
   }
   return usage;

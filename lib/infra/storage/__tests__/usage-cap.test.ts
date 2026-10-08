@@ -129,6 +129,43 @@ describe('fetchR2Usage', () => {
     expect(usage).toMatchObject({ classA: 5, classB: 5 });
   });
 
+  it.each([
+    ['no ops meter', { storage: [] }],
+    ['no storage meter', { ops: [] }],
+    [
+      'a non-numeric count',
+      {
+        ops: [
+          {
+            sum: { requests: 'many' },
+            dimensions: { actionType: 'PutObject' },
+          },
+        ],
+        storage: [],
+      },
+    ],
+  ])('rejects an incomplete answer (%s) instead of reading it as zero', async (_name, account) => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: { viewer: { accounts: [account] } } })
+      )
+    );
+
+    await expect(fetchR2Usage(ACCOUNT, 't')).rejects.toThrow();
+  });
+
+  it('an incomplete answer stops uploads (fail closed), not opens them', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: { viewer: { accounts: [{ storage: [] }] } } })
+      )
+    );
+
+    await expect(assertWritesWithinCap()).rejects.toMatchObject({
+      code: 'STORAGE_PAUSED',
+    });
+  });
+
   it('rejects a GraphQL error or a non-200', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ errors: [{ message: 'no access' }] }))
