@@ -13,7 +13,7 @@
  * (grade/salt siblings), and cut to `k` (default 8). All sources compete
  * equally — there is no source preference.
  *
- * Returns `null` when the card index is not ready (see `card-catalog.ts`); the
+ * Returns `null` when the card index is not ready (see `catalog.ts`); the
  * caller falls back to the legacy matcher.
  */
 import {
@@ -32,12 +32,8 @@ import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import type { AppDb } from '@/lib/infra/db/client';
-import {
-  type CardCatalog,
-  type CatalogRow,
-  getCardCatalog,
-} from './card-catalog';
-import { cardLabel } from './card-label';
+import { type CardCatalog, type CatalogRow, getCardCatalog } from './catalog';
+import { cardLabel } from './label';
 import { searchCardVectors, type VectorHit } from './vector-arm';
 
 export const CARD_K = 8;

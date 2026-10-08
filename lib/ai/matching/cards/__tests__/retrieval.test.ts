@@ -8,10 +8,10 @@ vi.mock('@/lib/ai/matching/retrieve/top-k-nutrition', () => ({
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
-import { __resetCardCatalogForTests } from '../card-catalog';
-import { cardLabel } from '../card-label';
-import { createCardEmbeddingPrewarm } from '../card-prewarm';
-import { cardQueryStrings, matchCardCandidates } from '../card-retrieval';
+import { __resetCardCatalogForTests } from '../catalog';
+import { cardLabel } from '../label';
+import { createCardEmbeddingPrewarm } from '../prewarm';
+import { cardQueryStrings, matchCardCandidates } from '../retrieval';
 
 const ROWS = [
   {

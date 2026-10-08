@@ -5,7 +5,7 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
-import { matchCardCandidates } from '@/lib/ai/matching/cards/card-retrieval';
+import { matchCardCandidates } from '@/lib/ai/matching/cards/retrieval';
 import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
@@ -63,7 +63,7 @@ export async function prepareGrounding(args: {
       const ingredients = flatIngredients.map((f) => f.ingredient);
       return withDeadline(
         // Card retrieval; the legacy row matcher only until the card index is
-        // ready in this environment (see lib/ai/matching/cards/card-catalog.ts).
+        // ready in this environment (see lib/ai/matching/cards/catalog.ts).
         matchCardCandidates(ingredients, args.db, args.gemini).then(
           (cards) =>
             cards ??

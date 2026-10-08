@@ -1,4 +1,4 @@
-import type { CatalogRow } from './card-catalog';
+import type { CatalogRow } from './catalog';
 
 /**
  * The label Call 2 reads for a card candidate: the curated food and its facets,

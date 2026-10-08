@@ -5,8 +5,8 @@ import {
 import {
   getCardCatalog,
   isCardCatalogReady,
-} from '@/lib/ai/matching/cards/card-catalog';
-import { createCardEmbeddingPrewarm } from '@/lib/ai/matching/cards/card-prewarm';
+} from '@/lib/ai/matching/cards/catalog';
+import { createCardEmbeddingPrewarm } from '@/lib/ai/matching/cards/prewarm';
 import { createV2SpeculativeMatcher } from '@/lib/ai/matching/speculative';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
