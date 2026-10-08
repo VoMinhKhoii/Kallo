@@ -190,19 +190,28 @@ export function createSourceAwareMockDb(
       }
       // Single-statement all-sources matching (v2 hybrid retrieval): combine
       // the per-source routes and tag rows with source_id, the column the
-      // *_all_sources functions add so the caller can re-partition.
-      const withSource = (rows: unknown[] | undefined, sourceId: number) =>
-        (rows ?? []).map((r) => ({ source_id: sourceId, ...(r as object) }));
+      // *_all_sources functions add, and the source_code the caller joins on
+      // to re-partition.
+      const withSource = (
+        rows: unknown[] | undefined,
+        sourceId: number,
+        sourceCode: string
+      ) =>
+        (rows ?? []).map((r) => ({
+          source_id: sourceId,
+          source_code: sourceCode,
+          ...(r as object),
+        }));
       if (q.includes('fuzzy_match_ingredients_all_sources')) {
         return Promise.resolve([
-          ...withSource(routes.fao_fuzzy, 1),
-          ...withSource(routes.usda_fuzzy, 2),
+          ...withSource(routes.fao_fuzzy, 1, 'FAO_VN_2007'),
+          ...withSource(routes.usda_fuzzy, 2, 'USDA_SR'),
         ]);
       }
       if (q.includes('match_ingredients_all_sources')) {
         return Promise.resolve([
-          ...withSource(routes.fao_vector, 1),
-          ...withSource(routes.usda_vector, 2),
+          ...withSource(routes.fao_vector, 1, 'FAO_VN_2007'),
+          ...withSource(routes.usda_vector, 2, 'USDA_SR'),
         ]);
       }
       // Source-aware vector matching (legacy v1 path)
