@@ -180,15 +180,22 @@ jobs:
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
       # Food-card strings (seeded by *_seed_food_cards.sql) need vectors before
       # card retrieval switches on; the matcher keeps the legacy path until every
-      # card string is embedded. to_regclass keeps the check valid before the
-      # table exists.
+      # card string is embedded. The table check is its own statement: Postgres
+      # resolves a table at parse time, so a CASE cannot guard the count when an
+      # older DEPLOY_SHA has no card tables.
       - name: Check for food-card strings needing embeddings
         id: card_embed_check
         run: |
           set -euo pipefail
-          pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
-            -c "SELECT CASE WHEN to_regclass('public.food_card_vectors') IS NULL THEN 0 ELSE (SELECT count(*) FROM food_card_vectors WHERE embedding IS NULL) END" \
+          exists="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
+            -c "SELECT to_regclass('public.food_card_vectors') IS NOT NULL" \
             | tr -d '[:space:]')"
+          pending=0
+          if [ "$exists" = "t" ]; then
+            pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
+              -c 'SELECT count(*) FROM food_card_vectors WHERE embedding IS NULL' \
+              | tr -d '[:space:]')"
+          fi
           echo "Card strings needing embeddings: $pending"
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
       # A failure here deliberately fails the deploy: a row that never gets

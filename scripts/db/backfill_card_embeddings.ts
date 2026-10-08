@@ -14,7 +14,8 @@
  * (GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION, ADC; optional
  * GOOGLE_CLOUD_EMBEDDING_LOCATION, e.g. asia-southeast1) or GEMINI_API_KEY.
  * ~72k strings take ~11 min on Vertex at the pacing below (measured
- * 2026-10-08: 99.8k strings in 674 s, no 429s).
+ * 2026-10-08: 99.8k strings in 674 s, no 429s); AI Studio is paced for the
+ * free tier (see BATCH_DELAY_MS).
  */
 
 import { GoogleGenAI } from '@google/genai';
@@ -22,12 +23,19 @@ import postgres from 'postgres';
 import { encodeDbUrl } from '@/lib/infra/db/client';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
-const BATCH_SIZE = 100;
-const PARALLEL = 2;
 const MAX_RETRIES = 6;
 const PAGE = 2_000;
 
 const useVertex = process.env.AI_PROVIDER?.trim() === 'vertex';
+/**
+ * Pacing per provider. Vertex takes two 100-text batches at a time with no
+ * pause. The AI Studio free tier allows ~100 texts a minute, so it gets the
+ * same pacing as backfill_embeddings.ts — one 50-text batch every 35 s, about
+ * 14 h for the full ~72k strings; use AI_PROVIDER=vertex for a full reset.
+ */
+const BATCH_SIZE = useVertex ? 100 : 50;
+const PARALLEL = useVertex ? 2 : 1;
+const BATCH_DELAY_MS = useVertex ? 0 : 35_000;
 if (!process.env.DATABASE_URL || (!useVertex && !process.env.GEMINI_API_KEY)) {
   console.error(
     'Missing DATABASE_URL, and AI_PROVIDER=vertex or GEMINI_API_KEY'
@@ -76,8 +84,12 @@ async function embed(texts: string[]): Promise<number[][]> {
       return vecs;
     } catch (err) {
       if (attempt >= MAX_RETRIES) throw err;
-      const delay =
-        (/429|RESOURCE_EXHAUSTED/.test(String(err)) ? 5_000 : 1_000) * attempt;
+      // Honor a 429's "retry in Xs" hint; otherwise back off linearly.
+      const hint = String(err).match(/retry in ([\d.]+)s/i);
+      const delay = hint
+        ? Math.ceil(Number.parseFloat(hint[1]) * 1000) + 1000
+        : (/429|RESOURCE_EXHAUSTED/.test(String(err)) ? 5_000 : 1_000) *
+          attempt;
       console.warn(
         `Retry ${attempt}/${MAX_RETRIES} in ${delay / 1000}s: ${String(err).slice(0, 120)}`
       );
@@ -118,6 +130,8 @@ async function main() {
               await store(batch, await embed(batch.map((r) => r.text)));
           })
         );
+        if (BATCH_DELAY_MS)
+          await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
       }
       done += rows.length;
       console.log(

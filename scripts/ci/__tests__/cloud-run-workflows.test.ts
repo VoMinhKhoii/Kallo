@@ -79,6 +79,14 @@ describe('Cloud Run prod workflow', () => {
     // Card retrieval stays on the legacy matcher until the card strings are
     // embedded, so the deploy must backfill them after the seed migration.
     expect(workflow).toContain('id: card_embed_check');
+    // Postgres resolves tables at parse time, so the existence check must be
+    // its own statement for an older DEPLOY_SHA with no card tables.
+    expect(workflow).toContain(
+      `SELECT to_regclass('public.food_card_vectors') IS NOT NULL`
+    );
+    expect(workflow).not.toContain(
+      'ELSE (SELECT count(*) FROM food_card_vectors'
+    );
     expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });
 
