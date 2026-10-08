@@ -6,6 +6,7 @@ import {
   PAYLOAD_TOO_LARGE_ERROR,
   type PathItem,
   ref,
+  STORAGE_PAUSED_ERROR,
 } from '@/lib/api/openapi/components';
 
 const TAGS = ['Support'];
@@ -44,6 +45,7 @@ export const SUPPORT_PATHS: Record<string, PathItem> = {
       bodyMedia: 'multipart/form-data',
       ok: ref('Acknowledgement'),
       okDescription: 'The stored path.',
+      extraErrors: STORAGE_PAUSED_ERROR,
     }),
   },
 };

@@ -219,7 +219,11 @@ export async function assertWritesWithinCap(): Promise<void> {
 
 export async function assertReadsWithinCap(): Promise<void> {
   const current = await currentVerdict();
-  if (current && !current.reads) throw Errors.storagePaused();
+  if (current && !current.reads) {
+    throw Errors.storagePaused(
+      'Photos can’t be opened right now. Please try again later.'
+    );
+  }
 }
 
 /**

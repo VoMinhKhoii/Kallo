@@ -164,6 +164,7 @@ describe('the cap', () => {
 
     await expect(assertReadsWithinCap()).rejects.toMatchObject({
       code: 'STORAGE_PAUSED',
+      userMessage: expect.stringContaining('can’t be opened'),
     });
     expect(readsWithinCap()).toBe(false);
     await expect(assertWritesWithinCap()).resolves.toBeUndefined();
