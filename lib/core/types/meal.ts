@@ -7,6 +7,10 @@ export interface MacroBreakdown {
   fat: number;
 }
 
+/** Which of a {@link MacroBreakdown}'s totals left out an unknown value — each
+ *  such total is a floor ("at least"), not the full figure. */
+export type IncompleteTotals = Record<keyof MacroBreakdown, boolean>;
+
 export interface MealItem {
   id: string;
   name: string;

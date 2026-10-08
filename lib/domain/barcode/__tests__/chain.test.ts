@@ -209,6 +209,54 @@ describe('resolveBarcodeProduct', () => {
     expect(result?.product.name).toBe('FDC kcal only');
   });
 
+  it('fills the zeros a label proves and returns it as complete', async () => {
+    // Calamansi tea: 34 kcal, all of it carbohydrate. FDC left protein and fat
+    // blank; its own energy says they are zero, so it wins outright.
+    mockFetchFdc.mockResolvedValue(
+      product({
+        name: 'Calamansi Tea',
+        caloriesKcal: 34,
+        proteinG: null,
+        carbohydrateG: 8.6,
+        fatG: null,
+        fiberG: null,
+      })
+    );
+    mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
+
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
+    expect(result?.provider.id).toBe('usda_fdc');
+    expect(result?.product).toMatchObject({ proteinG: 0, fatG: 0 });
+  });
+
+  it("keeps a polyol label's blank fat line blank, not zero", async () => {
+    // The same sugar-free candy with and without its polyols listed. 25g of
+    // carbohydrate "explains" 100 kcal only at 4 kcal/g; with the polyols
+    // known, the fat blank is left for what it is instead of cached as 0g.
+    const candy = {
+      name: 'Sugar-free candy',
+      caloriesKcal: 100,
+      proteinG: 0,
+      carbohydrateG: 25,
+      fatG: null,
+      fiberG: null,
+    };
+
+    mockFetchFdc.mockResolvedValue(product({ ...candy, polyolsG: 25 }));
+    const withPolyols = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
+    expect(withPolyols?.product.fatG).toBeNull();
+
+    mockFetchFdc.mockResolvedValue(product({ ...candy, polyolsG: null }));
+    const unlisted = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
+    expect(unlisted?.product.fatG).toBe(0);
+  });
+
   it('is null when both providers match but neither has nutrition', async () => {
     const shell = {
       caloriesKcal: null,

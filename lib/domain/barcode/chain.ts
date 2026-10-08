@@ -39,6 +39,7 @@ import {
   FDC_TIMEOUT_MS,
   fetchProductFromUsdaFdc,
 } from '@/lib/domain/barcode/providers/usda-fdc';
+import { fillZeroMacros } from '@/lib/domain/barcode/providers/zero-macros';
 import type {
   BarcodeProductRecord,
   BarcodeProviderId,
@@ -154,15 +155,20 @@ export async function resolveBarcodeProduct(
   let fallbackScore = -1;
 
   for (const { provider, settled } of inFlight) {
-    const product = await settled;
-    if (!product) continue;
+    const raw = await settled;
+    if (!raw) continue;
 
-    if (!isPlausiblePer100g(product)) {
+    if (!isPlausiblePer100g(raw)) {
       console.warn(
         `Barcode provider ${provider.id} returned implausible per-100g values for ${barcode} — discarded`
       );
       continue;
     }
+
+    // After the plausibility gate, so a blank it filled can never be what let
+    // an impossible label through; before the completeness gates, so a label
+    // whose zeros it proved stands as complete.
+    const product = fillZeroMacros(raw);
 
     if (!hasUsableNutrition(product)) {
       console.info(

@@ -116,7 +116,6 @@
     "undo": "Hoàn tác",
     "deleteError": "Không thể xóa bữa ăn. Vui lòng thử lại.",
     "repeatError": "Không thể mở lại dịp này.",
-    "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
     "loadErrorTitle": "Không thể tải ngày này",
     "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được, hãy thử lại trước khi ghi thêm.",
     "retryDay": "Tải lại ngày",

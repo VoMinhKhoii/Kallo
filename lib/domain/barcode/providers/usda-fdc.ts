@@ -35,6 +35,8 @@ const NUTRIENT_NUMBERS = {
   fatG: '204',
   fiberG: '291',
   sodiumMg: '307',
+  // "Sugar alcohol" on branded labels.
+  polyolsG: '299',
 } as const;
 
 /** Serving units that denote grams or (density-1 approximated) millilitres. */
@@ -132,6 +134,7 @@ function buildProduct(
     micronutrients: {},
     // Branded FDC records carry no product photo.
     sourceImageUrl: null,
+    polyolsG: round2(scaled(nutrients.polyolsG)),
   };
 }
 

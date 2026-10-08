@@ -59,7 +59,33 @@ describe('fetchProductFromOpenFoodFacts', () => {
       amountUnit: 'g',
       micronutrients: {},
       sourceImageUrl: null,
+      polyolsG: null,
     });
+  });
+
+  it('reads sugar alcohols from polyols_100g', async () => {
+    // A sugar-free isomalt candy as OFF serves it: polyols are inside
+    // carbohydrates_100g and also listed on their own, here as a string.
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 1,
+        product: {
+          product_name: 'Sugar-free mints',
+          nutriments: {
+            'energy-kcal_100g': 240,
+            carbohydrates_100g: 98,
+            polyols_100g: '97.5',
+            proteins_100g: 0,
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+
+    expect(result?.polyolsG).toBe(97.5);
+    expect(result?.carbohydrateG).toBe(98);
   });
 
   it('omits serving/package sizes that are absent or non-positive', async () => {

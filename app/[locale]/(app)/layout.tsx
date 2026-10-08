@@ -31,9 +31,11 @@ interface AppLayoutProps {
  * never re-render this layout; each page's `loading.tsx` (or its own boundary)
  * is what shows while that page's data streams.
  *
- * Side effect of streaming: a signed-out visitor now gets the static skeleton
- * followed by a client-side redirect to `/`, where it used to be an HTTP 307.
- * Nothing user-specific is in the skeleton, so nothing leaks.
+ * A signed-out page load normally never gets here: `updateSession` (proxy)
+ * answers it with an HTTP 307 to the sign-in dialog. What the proxy lets
+ * through (a Supabase outage, a session ending mid-request, `/admin`) still
+ * reaches the `redirect('/')` below — but a page rendering beside it may throw
+ * its own "sign in" error first, which `error.tsx` catches.
  */
 export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
   return (

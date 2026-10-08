@@ -24,6 +24,8 @@ export interface StripDay {
   target: MacroGrams;
   /** Which direction the user counts — the calorie readout follows it. */
   goal: Goal | null;
+  /** Figures that are floors — a meal's unknown value was left out. */
+  atLeast?: Partial<Record<'calories' | CompositionKey, boolean>>;
 }
 
 /** The label each dial wears, in the namespace every surface already reads. */
@@ -42,6 +44,7 @@ export function StripRow({
   current,
   target,
   goal,
+  atLeast = {},
   sizes,
 }: StripDay & { sizes: StripLayout }) {
   const t = useTranslations('dashboard');
@@ -50,6 +53,7 @@ export function StripRow({
 
   const macros = COMPOSITION_KEYS.map((key) => (
     <MacroDial
+      atLeast={atLeast[key]}
       current={current[key]}
       dialKey={key}
       key={key}
@@ -61,6 +65,7 @@ export function StripRow({
 
   const calorie = (
     <CalorieDial
+      atLeast={atLeast.calories}
       goal={goal}
       logged={calories.current}
       radius={calorieRadius}

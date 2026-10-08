@@ -30,6 +30,8 @@ interface MacroDialProps {
   target: number;
   /** Sized by the strip from the room the surface gave it. */
   radius: number;
+  /** The figure is a floor — a meal's unknown value was left out. */
+  atLeast?: boolean;
 }
 
 export function MacroDial({
@@ -38,6 +40,7 @@ export function MacroDial({
   current,
   target,
   radius,
+  atLeast = false,
 }: MacroDialProps) {
   const color = COMPOSITION_COLORS[dialKey];
   const Icon = COMPOSITION_ICONS[dialKey];
@@ -73,7 +76,7 @@ export function MacroDial({
           radius={radius}
           {...gaugeMacroLines(
             {
-              figure: `${Math.round(current)}g`,
+              figure: `${atLeast ? '≥' : ''}${Math.round(current)}g`,
               target: `/${Math.round(target)}g`,
             },
             radius

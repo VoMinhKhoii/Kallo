@@ -1261,7 +1261,6 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
-      "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
       "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được, hãy thử lại trước khi ghi thêm.",
       "retryDay": "Tải lại ngày",

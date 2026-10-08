@@ -21,7 +21,7 @@ class FeedViewState {
     required this.entries,
     required this.isLoading,
     required this.hasError,
-    required this.hasUnknownDailyMacros,
+    this.incompleteTotals = const {},
     required this.isStreaming,
     required this.isRevealing,
     required this.isCheatRevealing,
@@ -82,15 +82,17 @@ class FeedViewState {
             .toList()
           ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
-    // Legacy meals can carry unknown macros — when any do, the daily summary
-    // can't be totalled honestly, so we show a quiet note instead of the ring.
-    final hasUnknownDailyMacros = persistedMeals.any(
-      (m) =>
-          m.nutrition.caloriesKcal == null ||
-          m.nutrition.proteinG == null ||
-          m.nutrition.carbohydrateG == null ||
-          m.nutrition.fatG == null,
-    );
+    // A meal with an unknown value still counts what it knows, so a total with
+    // a gap is a floor, not a wrong number: the dial shows it as `≥`. Hiding
+    // the whole summary over one blank threw away every value that WAS known.
+    bool hasGap(double? Function(MealNutrition n) pick) =>
+        persistedMeals.any((m) => pick(m.nutrition) == null);
+    final incompleteTotals = {
+      if (hasGap((n) => n.caloriesKcal)) 'calories',
+      if (hasGap((n) => n.proteinG)) 'protein',
+      if (hasGap((n) => n.carbohydrateG)) 'carbohydrate',
+      if (hasGap((n) => n.fatG)) 'fat',
+    };
 
     // Pin the live stream/reveal cards to the day they were submitted on, so
     // switching the selected date doesn't render them on the wrong day's feed.
@@ -160,7 +162,8 @@ class FeedViewState {
         isPastDay &&
         !isLoading &&
         !dayHasError &&
-        !hasUnknownDailyMacros &&
+        // A calorie total missing a meal would read as under-logged.
+        !incompleteTotals.contains('calories') &&
         persistedMeals.isNotEmpty &&
         pendingConfirmations.isEmpty &&
         !isStreaming &&
@@ -179,7 +182,7 @@ class FeedViewState {
       entries: entries,
       isLoading: isLoading,
       hasError: dayHasError,
-      hasUnknownDailyMacros: hasUnknownDailyMacros,
+      incompleteTotals: incompleteTotals,
       isStreaming: isStreaming,
       isRevealing: isRevealing,
       isCheatRevealing: isCheatRevealing,
@@ -213,8 +216,9 @@ class FeedViewState {
   final bool isLoading;
   final bool hasError;
 
-  /// Some legacy meal is missing a macro, so the day can't be totalled.
-  final bool hasUnknownDailyMacros;
+  /// The daily totals that left out a meal's unknown value — `calories` and
+  /// the composition keys. Each is a floor, drawn as "at least".
+  final Set<String> incompleteTotals;
 
   final bool isStreaming;
   final bool isRevealing;

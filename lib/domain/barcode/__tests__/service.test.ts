@@ -23,6 +23,7 @@ vi.mock('@/lib/domain/barcode/chain', () => ({
 }));
 
 import type { PipelineResult } from '@/lib/ai/types/result';
+import { BARCODE_DATA_VERSION } from '@/lib/domain/barcode/cache';
 import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
 import type { BarcodeProvider } from '@/lib/domain/barcode/providers/types';
 import type { BarcodeProductRecord } from '@/lib/domain/barcode/types';
@@ -117,7 +118,7 @@ describe('searchBarcodeProduct', () => {
           // Beyond the 100kg cap — must be rejected by parseSizeGrams, not
           // passed through raw.
           packageSizeG: '500000',
-          barcodeDataVersion: 1,
+          barcodeDataVersion: BARCODE_DATA_VERSION,
         },
       ])
     );
@@ -168,8 +169,25 @@ describe('searchBarcodeProduct', () => {
       packageSizeG: null,
       amountUnit: 'g',
       imageUrl: null,
-      barcodeDataVersion: 1,
+      barcodeDataVersion: BARCODE_DATA_VERSION,
     });
+  });
+
+  it('keeps the polyol figure out of the client product and the cache row', async () => {
+    mockDbSelect
+      .mockReturnValueOnce(mockSelectOnce([]))
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: offProvider,
+      product: { ...offProduct, polyolsG: 12 },
+    });
+    const capturedValues = mockUpsertCapture();
+
+    const product = await searchBarcodeProduct('8934563138162');
+
+    expect(product).toEqual(offClient);
+    expect(product).not.toHaveProperty('polyolsG');
+    expect(capturedValues[0]).not.toHaveProperty('polyolsG');
   });
 
   it('caches under the resolving provider prefix and source id', async () => {
@@ -259,7 +277,7 @@ describe('searchBarcodeProduct', () => {
           imageUrl:
             'https://images.openfoodfacts.org/images/products/893/850/784/9131/front_en.44.400.jpg',
           calciumMg: '10',
-          barcodeDataVersion: 1,
+          barcodeDataVersion: BARCODE_DATA_VERSION,
         },
       ])
     );
@@ -315,7 +333,7 @@ describe('searchBarcodeProduct', () => {
         amountUnit: 'ml',
         calciumMg: '10',
         potassiumMg: '170',
-        barcodeDataVersion: 1,
+        barcodeDataVersion: BARCODE_DATA_VERSION,
       });
       expect(product.amountUnit).toBe('ml');
       expect(product.imageUrl).toBe('/api/v1/barcode/image/8934563138162');

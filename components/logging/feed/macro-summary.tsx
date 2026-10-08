@@ -2,13 +2,15 @@
 
 import { motion } from 'motion/react';
 import { GaugeStrip } from '@/components/shared/gauge/gauge-strip';
-import type { MacroBreakdown } from '@/lib/core/types/meal';
+import type { IncompleteTotals, MacroBreakdown } from '@/lib/core/types/meal';
 import { FEED_MACRO_CAP } from '@/lib/core/ui/gauge-strip-layout';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;
   targets: MacroBreakdown;
+  /** Totals that left out a meal's unknown value — drawn as "at least". */
+  incomplete: IncompleteTotals;
   /** Which direction the user counts — the dial's headline follows it. */
   goal: Goal | null;
 }
@@ -22,7 +24,12 @@ interface MacroSummaryProps {
  * dial still has room for the sentence the dock's says, so the two pages
  * answer "how am I doing today?" the same way.
  */
-export function MacroSummary({ totals, targets, goal }: MacroSummaryProps) {
+export function MacroSummary({
+  totals,
+  targets,
+  incomplete,
+  goal,
+}: MacroSummaryProps) {
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
@@ -30,6 +37,12 @@ export function MacroSummary({ totals, targets, goal }: MacroSummaryProps) {
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
       <GaugeStrip
+        atLeast={{
+          calories: incomplete.calories,
+          protein: incomplete.protein,
+          carbohydrate: incomplete.carbs,
+          fat: incomplete.fat,
+        }}
         calories={{ current: totals.calories, target: targets.calories }}
         current={{
           protein: totals.protein,

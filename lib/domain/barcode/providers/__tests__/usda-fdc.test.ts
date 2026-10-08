@@ -77,7 +77,35 @@ describe('fetchProductFromUsdaFdc', () => {
       amountUnit: 'ml',
       micronutrients: {},
       sourceImageUrl: null,
+      polyolsG: null,
     });
+  });
+
+  it('reads sugar alcohols from nutrient 299', async () => {
+    // A branded sugar-free candy: 299 is "Sugar alcohol" on the label panel.
+    mockSearch({
+      foods: [
+        food({
+          description: 'Sugar Free Hard Candy',
+          servingSize: 15,
+          servingSizeUnit: 'g',
+          foodNutrients: [
+            nutrient('208', 240),
+            nutrient('205', 98),
+            nutrient('299', 93),
+            nutrient('203', 0),
+          ],
+        }),
+      ],
+    });
+
+    const result = await fetchProductFromUsdaFdc(BARCODE);
+
+    expect(result?.polyolsG).toBe(93);
+    expect(result?.carbohydrateG).toBe(98);
+    // No fat line on this label: the blank stays a blank here; whether it may
+    // be zero is the chain's call (`zero-macros.ts`), which polyols veto.
+    expect(result?.fatG).toBeNull();
   });
 
   it('keeps a gram-served product in grams', async () => {

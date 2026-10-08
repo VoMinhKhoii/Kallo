@@ -38,18 +38,14 @@ const double kCompactMacroDialRadius = 36;
 
 /// Between two dial columns.
 ///
-/// Tighter than the 8 it started at, and the tightening is load-bearing rather
-/// than cosmetic: the row hands each column `(width - gutter * 2) / 3`, and on a
-/// 390pt phone that left the fat label ~58pt for a word that measures ~58-62 —
-/// so Vietnamese "CHẤT BÉO" ellipsized to "CHẤT B…" while "ĐẠM" and "CARB" fit.
-/// The width has to come from somewhere, and the gaps are the only slack in the
-/// row: the arcs already shrink to fit, the label is on the smallest size in the
-/// system, and the screen inset is the app-wide 12px rhythm, which is not spare.
+/// Tighter than the 8 it started at, and load-bearing: at 8 a 390pt phone left
+/// the fat label ~58pt for a word measuring ~58-62, so "CHẤT BÉO" ellipsized.
+/// The gaps are the row's only slack — the arcs already shrink, the label is
+/// the smallest size, and the 12px screen inset is the app-wide rhythm.
 const double _gutter = KalloSpacing.sp1; // 4
 
-/// A dial's glyph and its label. Same reason as [_gutter] — this is the biggest
-/// single win of the three (it is per-column, not shared across the row) and the
-/// glyph reads as part of the word at 2 just as well as at 6.
+/// A dial's glyph and its label. Same reason as [_gutter], and the biggest win
+/// (per-column); the glyph reads as part of the word at 2 as well as at 6.
 const double _iconGap = KalloSpacing.sp0_5; // 2
 
 /// The width a row of three [radius] dials needs to draw them at that size —
@@ -71,14 +67,16 @@ const Map<String, String> _labelKey = {
   'fat': 'dashboard.fat',
 };
 
-/// The row owns the keys, the pigments, the glyphs AND the labels, so a surface
-/// that wants dials hands over two maps and nothing else. Every caller used to
-/// spell the same three-row table itself, which is three chances to disagree
-/// about what "carbs" is called.
+/// The row owns the keys, pigments, glyphs AND labels, so a surface hands over
+/// two maps and nothing else — no caller can disagree about what "carbs" is.
 class MacroDialRow extends StatelessWidget {
-  const MacroDialRow({required this.current, required this.target, super.key})
-    : maxRadius = kMacroDialRadius,
-      _isCompact = false;
+  const MacroDialRow({
+    required this.current,
+    required this.target,
+    this.atLeast = const {},
+    super.key,
+  }) : maxRadius = kMacroDialRadius,
+       _isCompact = false;
 
   /// The variant that sits beside `CalorieDial.compact` in a fixed header:
   /// a smaller radius, and the gram figure steps from the dial's pinned 17 to
@@ -86,6 +84,7 @@ class MacroDialRow extends StatelessWidget {
   const MacroDialRow.compact({
     required this.current,
     required this.target,
+    this.atLeast = const {},
     super.key,
   }) : maxRadius = kCompactMacroDialRadius,
        _isCompact = true;
@@ -95,6 +94,9 @@ class MacroDialRow extends StatelessWidget {
 
   /// Grams the day is aiming at, keyed by [kCompositionKeys].
   final Map<String, int> target;
+
+  /// Keys whose [current] is a floor — a meal's unknown value was left out.
+  final Set<String> atLeast;
 
   final double maxRadius;
   final bool _isCompact;
@@ -117,6 +119,7 @@ class MacroDialRow extends StatelessWidget {
                 compositionKey: kCompositionKeys[i],
                 current: current[kCompositionKeys[i]] ?? 0,
                 target: target[kCompositionKeys[i]] ?? 0,
+                atLeast: atLeast.contains(kCompositionKeys[i]),
                 radius: radius,
                 isCompact: _isCompact,
               ),
@@ -133,6 +136,7 @@ class _MacroDial extends StatelessWidget {
     required this.compositionKey,
     required this.current,
     required this.target,
+    required this.atLeast,
     required this.radius,
     required this.isCompact,
   });
@@ -140,6 +144,7 @@ class _MacroDial extends StatelessWidget {
   final String compositionKey;
   final int current;
   final int target;
+  final bool atLeast;
   final double radius;
   final bool isCompact;
 
@@ -166,22 +171,17 @@ class _MacroDial extends StatelessWidget {
             ),
           ],
         ),
-        // The FULL-SIZE dial gets air here, the compact one does not. Both
-        // gaps used to be 2, which on a 44pt arc reads as a label resting on
-        // the stroke — proportionally half the room the same 2 buys on the
-        // compact dial's 30pt arc, which is the one the reference screenshot
-        // shows and which looked right on device. So the compact keeps 2, and
-        // the Today row's dials get the 6 that restores the same optical gap
-        // at their size.
+        // The FULL-SIZE dial gets air here, the compact one does not: 2 on a
+        // 44pt arc read as a label resting on the stroke — half the optical
+        // room it buys on the compact arc, which looked right on device. 6
+        // restores the same gap at the Today row's size.
         SizedBox(height: isCompact ? KalloSpacing.sp0_5 : KalloSpacing.sp1_5),
         GaugeDial(
           progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
-          // Both lines here are bare figures, so they must stay inside the
-          // ring: on device (2026-09-01) `202g` and `547g` ran across the
-          // stroke on both sides once a macro reached three digits, on the
-          // Today row and the Log header alike.
+          // Bare figures must stay inside the ring: on device (2026-09-01)
+          // three-digit `202g` ran across the stroke on both surfaces.
           clampReadout: true,
           // The figure steps down with the radius; the denominator does not.
           // Holding `/140g` at one size across both variants is what makes the
@@ -189,7 +189,7 @@ class _MacroDial extends StatelessWidget {
           // arbitrary weight — and it is the relationship the reference
           // screenshot measures (14 over 12 compact, 17 over 12 full).
           primary: GaugeLine(
-            '${current}g',
+            '${atLeast ? '≥' : ''}${current}g',
             isCompact ? gaugeCompactFigure() : gaugeFigure(),
           ),
           secondary: GaugeLine('/${target}g', gaugeDenominator()),

@@ -57,8 +57,11 @@ export const BARCODE_PROVIDER_RANK: readonly BarcodeProviderId[] = [
  * The parser generation a cached row was written by. Bump it whenever a
  * provider adapter starts reading something new: every older row then heals on
  * its next scan, with no backfill. 1 = unit, micronutrients and photo.
+ * 2 = macros the label's energy proves zero (`providers/zero-macros.ts`).
+ * 3 = polyols veto that zero-fill, so a v2 row may hold a polyol label's
+ * blank fat as 0g.
  */
-export const BARCODE_DATA_VERSION = 1;
+export const BARCODE_DATA_VERSION = 3;
 
 export function barcodeCacheId(
   providerId: BarcodeProviderId,
@@ -221,6 +224,7 @@ export async function getBarcodeSourceIds(): Promise<Map<string, number>> {
  * already-logged meals never move under a refresh. A refresh fills and
  * corrects but never ERASES: a field the provider now omits keeps its stored
  * value, because OFF has been seen silently dropping fields from a response.
+ * The one exception is a stored 0 macro (see {@link ZERO_FILLED_MACROS}).
  * Two concurrent first scans both write the same provider answer, so the race
  * is harmless.
  */
@@ -278,7 +282,18 @@ export async function cacheBarcodeProduct(params: {
     });
 }
 
-/** `coalesce(excluded.<col>, <col>)` for each key: the fresh value, else the stored one. */
+/**
+ * The macros the zero-fill (`providers/zero-macros.ts`) may have written as 0.
+ * For these, a fresh blank clears a stored 0 instead of keeping it: a v2 row
+ * can hold a 0 that the polyol rule now says was never proven, and keeping it
+ * while stamping the row current would serve that false 0 on every later
+ * scan. A real 0 a provider later drops becomes a blank, which the day totals
+ * show as a floor rather than a wrong figure.
+ */
+const ZERO_FILLED_MACROS = new Set(['proteinG', 'carbohydrateG', 'fatG']);
+
+/** `coalesce(excluded.<col>, <col>)` for each key: the fresh value, else the
+ *  stored one — except a stored 0 macro, which a fresh blank clears. */
 function keepStoredWhenOmitted(keys: string[]): Record<string, SQL> {
   const columns = getTableColumns(vietnameseFoodComposition) as Record<
     string,
@@ -287,9 +302,12 @@ function keepStoredWhenOmitted(keys: string[]): Record<string, SQL> {
   return Object.fromEntries(
     keys.map((key) => {
       const column = columns[key];
+      const fresh = sql`excluded.${sql.identifier(column.name)}`;
       return [
         key,
-        sql`coalesce(excluded.${sql.identifier(column.name)}, ${column})`,
+        ZERO_FILLED_MACROS.has(key)
+          ? sql`case when ${fresh} is null and ${column} = 0 then null else coalesce(${fresh}, ${column}) end`
+          : sql`coalesce(${fresh}, ${column})`,
       ];
     })
   );
