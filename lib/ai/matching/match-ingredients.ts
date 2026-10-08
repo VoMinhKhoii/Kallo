@@ -5,16 +5,14 @@
  * legacy row matcher (`retrieve/`) does. The choice lives here so the
  * pipeline stages stay one call each.
  */
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import {
   getCardCatalog,
   isCardCatalogReady,
 } from '@/lib/ai/matching/cards/catalog';
 import { createCardEmbeddingPrewarm } from '@/lib/ai/matching/cards/prewarm';
 import { matchCardCandidates } from '@/lib/ai/matching/cards/retrieval';
-import {
-  type IngredientV2MatchResult,
-  matchTopKPerIngredient,
-} from '@/lib/ai/matching/retrieve/top-k-cascade';
+import { matchTopKPerIngredient } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import { createV2SpeculativeMatcher } from '@/lib/ai/matching/speculative';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';

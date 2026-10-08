@@ -15,7 +15,7 @@
  *      run unchanged.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
   GroundedIngredientEstimate,

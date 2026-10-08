@@ -17,7 +17,7 @@
  * item is ever emitted twice.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type {
   GroundedEstimation,
   GroundedMealItem,

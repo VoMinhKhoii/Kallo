@@ -8,7 +8,7 @@
  * needs for its post-assembly flush.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';

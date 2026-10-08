@@ -7,6 +7,7 @@ import {
   STATE_MISMATCH_PENALTY,
 } from '@/lib/ai/matching/match-constants';
 import { isCandidateEligibleForIngredient } from '@/lib/ai/matching/rank/candidate-eligibility';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { MatchSource, MatchType } from '@/lib/ai/types/matching';
 
 /**
@@ -162,4 +163,13 @@ export function filterByExplicitState(
   const opposite = explicitState === 'raw' ? 'cooked' : 'raw';
   const kept = candidates.filter((c) => c.state !== opposite);
   return kept.length > 0 ? kept : candidates;
+}
+
+/** Explicit user-stated weighing basis, or null when the user said nothing. */
+export function explicitWeighState(
+  ingredient: DecomposedIngredientV2
+): 'raw' | 'cooked' | null {
+  if (ingredient.stateHint === 'raw_weight') return 'raw';
+  if (ingredient.stateHint === 'cooked_weight') return 'cooked';
+  return null;
 }

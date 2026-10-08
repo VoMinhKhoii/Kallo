@@ -3,14 +3,35 @@ import {
   getInedibleCache,
   isNutritionCacheInitialized,
 } from '@/lib/ai/cache/nutrition-cache';
+import type { MatchInfo } from '@/lib/ai/matching/match-constants';
 import { batchFetchNutrition } from '@/lib/ai/matching/retrieve/nutrition-batch';
-// Type-only import — erased at compile time, so this is not a runtime cycle.
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
- * Phase 5 of the v2 cascade: batch-fetch nutrition + inedible pct for all
- * unique candidate ids and attach them to the candidates in place.
+ * What every matcher hands the pipeline: per ingredient, the candidates Call 2
+ * chooses from (best first), with their nutrition attached.
+ */
+export interface IngredientV2MatchResult {
+  ingredientIndex: number;
+  candidates: V2MatchCandidate[];
+}
+
+export interface V2MatchCandidate {
+  info: MatchInfo;
+  nutrition: NutritionPer100g | null;
+  inediblePct: number | null;
+  /**
+   * How Call 2 sees this candidate, owned by the matcher that produced it:
+   * the legacy matcher shows the row name and its similarity; card retrieval
+   * shows the card label and a rank score (its order is the signal).
+   */
+  prompt: { name: string; score: number };
+}
+
+/**
+ * Batch-fetch nutrition + inedible pct for all unique candidate ids and
+ * attach them to the candidates in place (the last step of every matcher).
  *
  * USDA rows are intentionally not back-filled: `inedible_portion_pct` is
  * VN-FCT–specific and USDA imports leave it NULL, so they stay `null` by

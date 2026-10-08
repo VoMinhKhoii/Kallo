@@ -5,8 +5,8 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import { matchIngredients } from '@/lib/ai/matching/match-ingredients';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';

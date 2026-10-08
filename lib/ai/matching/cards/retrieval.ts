@@ -13,20 +13,22 @@
  * Returns `null` when the card index is not ready (see `catalog.ts`).
  */
 import {
+  attachCandidateNutrition,
+  type IngredientV2MatchResult,
+  type V2MatchCandidate,
+} from '@/lib/ai/matching/candidate';
+import {
   classifyConfidence,
   type FuzzyMatchRow,
   type MatchInfo,
   normalizeState,
 } from '@/lib/ai/matching/match-constants';
 import { isCandidateEligibleForIngredient } from '@/lib/ai/matching/rank/candidate-eligibility';
-import { filterByExplicitState } from '@/lib/ai/matching/rank/candidate-ranking';
+import {
+  explicitWeighState,
+  filterByExplicitState,
+} from '@/lib/ai/matching/rank/candidate-ranking';
 import { rrfOrder } from '@/lib/ai/matching/rank/rrf-fusion';
-import type {
-  IngredientV2MatchResult,
-  V2MatchCandidate,
-} from '@/lib/ai/matching/retrieve/top-k-cascade';
-import { explicitWeighState } from '@/lib/ai/matching/retrieve/top-k-context';
-import { attachCandidateNutrition } from '@/lib/ai/matching/retrieve/top-k-nutrition';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { withDeadline } from '@/lib/core/async/with-deadline';
