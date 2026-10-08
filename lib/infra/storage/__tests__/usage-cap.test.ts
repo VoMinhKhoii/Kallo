@@ -111,6 +111,24 @@ describe('fetchR2Usage', () => {
     expect(variables.until).toBe('2026-10-05T12:00:00.000Z');
   });
 
+  it('counts operations the pricing page does not name, never drops them', async () => {
+    fetchMock.mockResolvedValue(
+      analytics({
+        ops: {
+          ListObjectsV2: 3,
+          ListBuckets: 2,
+          GetBucketSippyConfiguration: 4,
+          HeadBucket: 1,
+          AbortMultipartUpload: 9,
+        },
+      })
+    );
+
+    const usage = await fetchR2Usage(ACCOUNT, 'analytics-token');
+
+    expect(usage).toMatchObject({ classA: 5, classB: 5 });
+  });
+
   it('rejects a GraphQL error or a non-200', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ errors: [{ message: 'no access' }] }))

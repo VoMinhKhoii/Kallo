@@ -305,15 +305,16 @@ describe('deleteAccountAction', () => {
     expect(mockPrepareDeletion).not.toHaveBeenCalled();
   });
 
-  it('purges the avatar and kept label photos before deleting the auth user', async () => {
+  it('purges the avatar, label photos and feedback screenshots before deleting the auth user', async () => {
     await expect(deleteAccountAction(input)).resolves.toEqual({
       success: true,
     });
     expect(mockRemovePrefix.mock.calls).toEqual([
       ['avatars', `${user.id}/`],
       ['nutrition-labels', `${user.id}/`],
+      ['feedback-screenshots', `${user.id}/`],
     ]);
-    expect(mockRemovePrefix.mock.invocationCallOrder[1]).toBeLessThan(
+    expect(mockRemovePrefix.mock.invocationCallOrder[2]).toBeLessThan(
       mockDeleteUser.mock.invocationCallOrder[0] as number
     );
   });
@@ -321,6 +322,20 @@ describe('deleteAccountAction', () => {
   it('fails closed when the label-photo purge cannot be confirmed', async () => {
     mockRemovePrefix.mockImplementation(async (bucket: string) => {
       if (bucket === 'nutrition-labels') {
+        throw new Error('storage_unavailable');
+      }
+    });
+
+    await expect(deleteAccountAction(input)).rejects.toMatchObject({
+      code: 'INTERNAL',
+    });
+    expect(mockDeleteUser).not.toHaveBeenCalled();
+    expect(mockPrepareDeletion).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the feedback-screenshot purge cannot be confirmed', async () => {
+    mockRemovePrefix.mockImplementation(async (bucket: string) => {
+      if (bucket === 'feedback-screenshots') {
         throw new Error('storage_unavailable');
       }
     });

@@ -22,34 +22,26 @@ const FREE_TIER = {
 };
 const CAP_RATIO = 0.95;
 
-/** R2 pricing, operation → class. Everything else (deletes) is free. */
-const CLASS_A = new Set([
-  'ListBuckets',
-  'PutBucket',
-  'ListObjects',
-  'PutObject',
-  'CopyObject',
-  'CompleteMultipartUpload',
-  'CreateMultipartUpload',
-  'LifecycleStorageTierTransition',
-  'ListMultipartUploads',
-  'UploadPart',
-  'UploadPartCopy',
-  'ListParts',
-  'PutBucketEncryption',
-  'PutBucketCors',
-  'PutBucketLifecycleConfiguration',
+/**
+ * R2 pricing, operation → class. Only the free operations are named; every
+ * other operation counts — Get and Head operations as Class B, the rest as
+ * Class A. An operation the pricing page doesn't list (the dashboard's
+ * GetBucketSippyConfiguration, a future ListObjectsV2 label) is therefore
+ * counted, never silently dropped: the cap can only trip early, not late.
+ */
+const FREE = new Set([
+  'DeleteObject',
+  'DeleteObjects',
+  'DeleteBucket',
+  'AbortMultipartUpload',
 ]);
-const CLASS_B = new Set([
-  'HeadBucket',
-  'HeadObject',
-  'GetObject',
-  'UsageSummary',
-  'GetBucketEncryption',
-  'GetBucketLocation',
-  'GetBucketCors',
-  'GetBucketLifecycleConfiguration',
-]);
+
+function operationClass(actionType: string): 'A' | 'B' | null {
+  if (FREE.has(actionType)) return null;
+  return /^(Get|Head)/.test(actionType) || actionType === 'UsageSummary'
+    ? 'B'
+    : 'A';
+}
 
 const WINDOW_MS = 31 * 24 * 60 * 60 * 1000;
 /** Storage is sampled; the last day's max per bucket is its current size. */
@@ -147,11 +139,9 @@ export async function fetchR2Usage(
 
   const usage: R2Usage = { storageBytes: 0, classA: 0, classB: 0 };
   for (const group of account.ops ?? []) {
-    if (CLASS_A.has(group.dimensions.actionType)) {
-      usage.classA += group.sum.requests;
-    } else if (CLASS_B.has(group.dimensions.actionType)) {
-      usage.classB += group.sum.requests;
-    }
+    const kind = operationClass(group.dimensions.actionType);
+    if (kind === 'A') usage.classA += group.sum.requests;
+    else if (kind === 'B') usage.classB += group.sum.requests;
   }
   for (const bucket of account.storage ?? []) {
     usage.storageBytes += bucket.max.payloadSize + bucket.max.metadataSize;

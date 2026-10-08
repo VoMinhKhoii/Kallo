@@ -141,7 +141,7 @@ export async function exportMyDataAction(input: unknown): Promise<DataExport> {
  * references it (`onDelete: 'cascade'` on profiles, meals → items, weights,
  * friendships, meal shares, coach assignments, circle events, pipeline rows…),
  * so the Auth deletion removes app-owned relational data atomically. Storage
- * (avatars, kept label photos) is purged first; provider erasure is persisted
+ * (avatars, kept label photos, feedback screenshots) is purged first; provider erasure is persisted
  * in an outbox and retried after the local account is gone. There is no undo.
  */
 export async function deleteAccountAction(
@@ -187,6 +187,16 @@ export async function deleteAccountAction(
     throw Errors.internal(
       storageError,
       'Could not remove your scanned label photos. Please try again.'
+    );
+  }
+  // Feedback screenshots: their user_feedback rows cascade with Auth, so the
+  // private images would be orphaned for good. Same fail-closed purge.
+  try {
+    await removePrefix('feedback-screenshots', `${user.id}/`);
+  } catch (storageError) {
+    throw Errors.internal(
+      storageError,
+      'Could not remove your feedback screenshots. Please try again.'
     );
   }
 

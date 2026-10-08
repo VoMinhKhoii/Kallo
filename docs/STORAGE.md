@@ -33,9 +33,11 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
   `feedback-screenshots` JPEG/PNG/WebP ≤ 5 MB. Checked on every `putObject`.
 - **Private objects** are only reachable through presigned GETs (path-style, on
   `https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com`) with short lifetimes.
-- **Account deletion** purges `{userId}/` in `avatars` and `nutrition-labels`
-  (R2 and, during the transition, the legacy Supabase copy) before the Auth
-  user is deleted and fails closed if a purge cannot be confirmed. `removePrefix` refuses an empty or unterminated prefix, so a bad id
+- **Account deletion** purges `{userId}/` in all three buckets — R2 and,
+  during the transition, the legacy Supabase copy — before the Auth user is
+  deleted, and fails closed if a purge cannot be confirmed. Feedback
+  screenshots are new here: on Supabase they were never purged, and their
+  `user_feedback` rows cascade with Auth, which left the images orphaned. `removePrefix` refuses an empty or unterminated prefix, so a bad id
   can never widen a purge.
 - **Credentials**: one R2 API token per environment, *Object Read & Write*,
   scoped to that environment's three buckets only.
