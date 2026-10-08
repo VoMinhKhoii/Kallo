@@ -74,6 +74,36 @@ const ROWS = [
     fat_level: null,
     brand: null,
   },
+  {
+    id: 'usda_chicken_skin',
+    source_code: 'USDA_SR',
+    state: 'raw',
+    name_en: 'Chicken, broilers or fryers, skin only, raw',
+    name_primary: 'Da gà',
+    food: 'chicken skin, raw',
+    aliases_en: ['chicken skin'],
+    names_vi: ['da gà'],
+    part_cut: 'skin',
+    form_processing: null,
+    cooking_method: null,
+    fat_level: null,
+    brand: null,
+  },
+  {
+    id: 'usda_chicken_breast',
+    source_code: 'USDA_SR',
+    state: 'raw',
+    name_en: 'Chicken, broilers or fryers, breast, meat only, raw',
+    name_primary: 'Ức gà',
+    food: 'chicken breast, raw',
+    aliases_en: ['chicken breast'],
+    names_vi: ['ức gà'],
+    part_cut: 'breast',
+    form_processing: null,
+    cooking_method: null,
+    fat_level: null,
+    brand: null,
+  },
 ];
 
 function mockDb(
@@ -172,6 +202,44 @@ describe('matchCardCandidates', () => {
     expect(result.candidates.length).toBeGreaterThan(0);
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
+  });
+
+  it('applies the legacy eligibility guards (no skin-only row for a meat query)', async () => {
+    const chicken: DecomposedIngredientV2 = {
+      rawName: 'Ức gà',
+      canonicalName: 'Chicken breast',
+    };
+    const hits = [
+      {
+        query_index: 1,
+        food_composition_id: 'usda_chicken_skin',
+        similarity: 0.95,
+      },
+      {
+        query_index: 1,
+        food_composition_id: 'usda_chicken_breast',
+        similarity: 0.9,
+      },
+    ];
+    const [result] =
+      (await matchCardCandidates([chicken], mockDb(true, hits), gemini)) ?? [];
+    const ids = result.candidates.map((c) => c.info.foodCompositionId);
+    expect(ids).toContain('usda_chicken_breast');
+    expect(ids).not.toContain('usda_chicken_skin');
+  });
+
+  it('falls back to the lexical arms when the vector arm stalls', async () => {
+    vi.useFakeTimers();
+    const stalled = {
+      generateEmbeddingBatch: vi.fn(() => new Promise<number[][]>(() => {})),
+    } as unknown as GeminiClient;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const pending = matchCardCandidates([ing], mockDb(true, []), stalled);
+    await vi.advanceTimersByTimeAsync(4_000);
+    const [result] = (await pending) ?? [];
+    expect(result.candidates.length).toBeGreaterThan(0);
+    errorSpy.mockRestore();
+    vi.useRealTimers();
   });
 
   it('drops opposite-state rows when the user stated the weighing basis', async () => {

@@ -18,16 +18,19 @@
  */
 import {
   classifyConfidence,
+  type FuzzyMatchRow,
   MATCHING_SOURCE_BUCKETS,
   type MatchInfo,
   normalizeState,
 } from '@/lib/ai/matching/match-constants';
+import { isCandidateEligibleForIngredient } from '@/lib/ai/matching/rank/candidate-eligibility';
 import { filterByExplicitState } from '@/lib/ai/matching/rank/candidate-ranking';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import { explicitWeighState } from '@/lib/ai/matching/retrieve/top-k-context';
 import { attachCandidateNutrition } from '@/lib/ai/matching/retrieve/top-k-nutrition';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
+import { withDeadline } from '@/lib/core/async/with-deadline';
 import type { AppDb } from '@/lib/infra/db/client';
 import {
   type CardCatalog,
@@ -40,6 +43,11 @@ import { searchCardVectors, type VectorHit } from './vector-arm';
 export const CARD_K = 8;
 const ARM_DEPTH = 30;
 const RRF_K = 60;
+/**
+ * The vector arm's own budget, well inside the matching stage deadline, so a
+ * stalled embedding or vector query still leaves time for the lexical arms.
+ */
+const VECTOR_ARM_TIMEOUT_MS = 4_000;
 
 /** The four strings each ingredient is searched by, in vector-arm order. */
 export function cardQueryStrings(ing: DecomposedIngredientV2): string[] {
@@ -49,6 +57,17 @@ export function cardQueryStrings(ing: DecomposedIngredientV2): string[] {
     ing.queryEn ?? ing.canonicalName,
     ing.nameVi ?? ing.rawName,
   ];
+}
+
+function eligibilityRow(row: CatalogRow): FuzzyMatchRow {
+  return {
+    id: row.id,
+    name_primary: row.namePrimary,
+    name_alt: null,
+    name_en: row.nameEn,
+    state: row.state,
+    similarity: 0,
+  };
 }
 
 function rrf(lists: string[][]): string[] {
@@ -64,6 +83,7 @@ function rrf(lists: string[][]): string[] {
 function topByConcept(
   ids: string[],
   catalog: CardCatalog,
+  ingredientNames: string,
   k: number
 ): CatalogRow[] {
   const seen = new Set<string>();
@@ -71,6 +91,10 @@ function topByConcept(
   for (const id of ids) {
     const row = catalog.rows.get(id);
     if (!row || seen.has(row.concept)) continue;
+    // The legacy matcher's categorical guards (no other bird for a bare
+    // chicken query, no skin- or fat-only row unless the user asked for it).
+    if (!isCandidateEligibleForIngredient(ingredientNames, eligibilityRow(row)))
+      continue;
     seen.add(row.concept);
     out.push(row);
     if (out.length >= k) break;
@@ -95,8 +119,12 @@ export async function matchCardCandidates(
   // dialect arms — matching never blanks out because one arm is down.
   let vectorHits = new Map<number, VectorHit[]>();
   try {
-    const embeddings = await gemini.generateEmbeddingBatch(queries);
-    vectorHits = await searchCardVectors(embeddings, db);
+    vectorHits = await withDeadline(
+      gemini
+        .generateEmbeddingBatch(queries)
+        .then((embeddings) => searchCardVectors(embeddings, db)),
+      VECTOR_ARM_TIMEOUT_MS
+    );
   } catch (err) {
     console.error(
       '[card-matching] vector arm failed; using lexical arms only:',
@@ -116,23 +144,26 @@ export async function matchCardCandidates(
       for (const h of vectorHits.get(4 * i + j) ?? [])
         best.set(h.id, Math.max(best.get(h.id) ?? 0, h.similarity));
 
-    const candidates: MatchInfo[] = topByConcept(rrf(arms), catalog, k).map(
-      (row) => {
-        const similarity = best.get(row.id) ?? 0;
-        return {
-          ingredientName: ing.canonicalName,
-          foodCompositionId: row.id,
-          matchedName: row.namePrimary,
-          ...(row.nameEn ? { matchedNameEn: row.nameEn } : {}),
-          similarity,
-          confidence: classifyConfidence(similarity),
-          state: normalizeState(row.state),
-          source: MATCHING_SOURCE_BUCKETS[row.sourceCode] ?? 'fao',
-          matchType: 'vector',
-          ...(row.card ? { cardLabel: cardLabel(row) } : {}),
-        };
-      }
-    );
+    const candidates: MatchInfo[] = topByConcept(
+      rrf(arms),
+      catalog,
+      `${ing.rawName} ${ing.canonicalName}`,
+      k
+    ).map((row) => {
+      const similarity = best.get(row.id) ?? 0;
+      return {
+        ingredientName: ing.canonicalName,
+        foodCompositionId: row.id,
+        matchedName: row.namePrimary,
+        ...(row.nameEn ? { matchedNameEn: row.nameEn } : {}),
+        similarity,
+        confidence: classifyConfidence(similarity),
+        state: normalizeState(row.state),
+        source: MATCHING_SOURCE_BUCKETS[row.sourceCode] ?? 'fao',
+        matchType: 'vector',
+        ...(row.card ? { cardLabel: cardLabel(row) } : {}),
+      };
+    });
     return {
       ingredientIndex: i,
       candidates: filterByExplicitState(
