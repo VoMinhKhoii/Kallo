@@ -19,7 +19,6 @@ import {
 } from '@/lib/ai/matching/candidate';
 import {
   classifyConfidence,
-  type FuzzyMatchRow,
   type MatchInfo,
   normalizeState,
 } from '@/lib/ai/matching/match-constants';
@@ -70,16 +69,6 @@ async function vectorArms(
   }
 }
 
-/** The legacy eligibility guards read a row through this shape. */
-const eligibilityRow = (row: CatalogRow): FuzzyMatchRow => ({
-  id: row.id,
-  name_primary: row.namePrimary,
-  name_alt: null,
-  name_en: row.nameEn,
-  state: row.state,
-  similarity: 0,
-});
-
 function pickRows(
   ranked: string[],
   catalog: CardCatalog,
@@ -93,7 +82,12 @@ function pickRows(
   for (const id of ranked) {
     const row = catalog.rows.get(id);
     if (!row || concepts.has(row.concept)) continue;
-    if (!isCandidateEligibleForIngredient(names, eligibilityRow(row))) continue;
+    const rowNames = {
+      name_primary: row.namePrimary,
+      name_en: row.nameEn,
+      name_alt: null,
+    };
+    if (!isCandidateEligibleForIngredient(names, rowNames)) continue;
     concepts.add(row.concept);
     out.push(row);
     if (out.length >= CARD_K) break;
@@ -170,7 +164,11 @@ export async function matchCardCandidates(
           info: p.info,
           nutrition: null,
           inediblePct: null,
-          prompt: { name: cardLabel(p.row), score: 1 - rank * 0.01 },
+          prompt: {
+            name: cardLabel(p.row),
+            nameEn: p.row.nameEn || null,
+            score: 1 - rank * 0.01,
+          },
         })
       );
     return { ingredientIndex: i, candidates };

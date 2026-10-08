@@ -23,10 +23,10 @@ export interface V2MatchCandidate {
   inediblePct: number | null;
   /**
    * How Call 2 sees this candidate, owned by the matcher that produced it:
-   * the legacy matcher shows the row name and its similarity; card retrieval
-   * shows the card label and a rank score (its order is the signal).
+   * the legacy matcher shows the row's names and its similarity; card
+   * retrieval shows the card label and a rank score (its order is the signal).
    */
-  prompt: { name: string; score: number };
+  prompt: { name: string; nameEn: string | null; score: number };
 }
 
 /**

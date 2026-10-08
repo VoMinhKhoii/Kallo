@@ -58,7 +58,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
           fatG: 4.4,
         },
         inediblePct: null,
-        prompt: { name: 'Sữa bò tươi', score: 0.95 },
+        prompt: { name: 'Sữa bò tươi', nameEn: null, score: 0.95 },
       },
     ],
   };

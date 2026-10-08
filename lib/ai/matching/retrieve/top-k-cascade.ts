@@ -27,7 +27,11 @@ export function legacyCandidate(info: MatchInfo): V2MatchCandidate {
     info,
     nutrition: null,
     inediblePct: null,
-    prompt: { name: info.matchedName, score: info.similarity },
+    prompt: {
+      name: info.matchedName,
+      nameEn: info.matchedNameEn ?? null,
+      score: info.similarity,
+    },
   };
 }
 

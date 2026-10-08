@@ -122,7 +122,7 @@ export function buildCallTwoPayload(
         id: `c${i + 1}`,
         similarity: c.prompt.score,
         dbName: c.prompt.name,
-        dbNameEn: c.info.matchedNameEn ?? null,
+        dbNameEn: c.prompt.nameEn,
         dbState: c.info.state,
         source: c.info.source ?? ('fao' as const),
         per100gKcal: c.nutrition?.caloriesKcal ?? null,
