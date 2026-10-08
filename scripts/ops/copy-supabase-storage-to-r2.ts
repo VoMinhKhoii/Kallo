@@ -35,7 +35,7 @@ const BUCKETS: StorageBucket[] = [
 ];
 /** Mirrors `AVATAR_CACHE_CONTROL` in lib/actions/groups/avatar.ts. */
 const CACHE_CONTROL: Partial<Record<StorageBucket, string>> = {
-  avatars: 'public, max-age=300',
+  avatars: 'public, max-age=300, s-maxage=86400',
 };
 const PAGE = 100;
 

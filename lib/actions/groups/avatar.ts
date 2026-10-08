@@ -31,11 +31,14 @@ import type { Db, PublicProfile } from './types';
 
 const AVATAR_BUCKET = 'avatars' satisfies StorageBucket;
 
-/** CDN/browser freshness for a stored avatar. Each upload gets a fresh random
- * filename, so a replaced avatar's NEW url is never stale; the short TTL only
- * bounds how long a deleted/replaced object keeps being served from edge
- * caches. */
-export const AVATAR_CACHE_CONTROL = 'public, max-age=300';
+/** Freshness for a stored avatar. Each upload gets a fresh random filename, so
+ * a file never changes and a replaced avatar's NEW url is never stale.
+ * Browsers re-check after 5 minutes; Cloudflare's edge keeps it for a day, so
+ * R2 sees about one read per avatar per day (with Tiered Cache) — that is what
+ * keeps public reads inside the free tier (docs/STORAGE.md → Free-tier hard
+ * cap). The cost: a deleted avatar can stay at the edge for up to a day for
+ * someone who already holds its unguessable URL. */
+export const AVATAR_CACHE_CONTROL = 'public, max-age=300, s-maxage=86400';
 
 /** Best-effort delete of a replaced/removed avatar object — a stale orphan in
  * the bucket is harmless, so a storage error never fails the mutation. The

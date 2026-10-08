@@ -81,7 +81,7 @@ describe('uploadMyAvatar', () => {
       contentType: 'image/webp',
       cacheControl: AVATAR_CACHE_CONTROL,
     });
-    expect(AVATAR_CACHE_CONTROL).toBe('public, max-age=300');
+    expect(AVATAR_CACHE_CONTROL).toBe('public, max-age=300, s-maxage=86400');
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({ avatarPath: path })
     );

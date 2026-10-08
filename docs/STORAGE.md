@@ -69,6 +69,16 @@ caps itself at **95% of each free-tier meter** — `lib/infra/storage/usage-cap.
 | Class A (PUT, LIST…), 1M | 950k | uploads refused |
 | Class B (GET, HEAD…), 10M | 9.5M | no presigned links; `avatarUrlFor` returns null (clients show initials / the OAuth picture) |
 
+**Public avatar reads** go straight to `media.kallo.fit`, so the app cannot
+stop a URL it already handed out. They are bounded at the edge instead, the
+way CDN-served images usually are: avatars are immutable (a new random key per
+upload) and carry `Cache-Control: public, max-age=300, s-maxage=86400`, the
+zone runs Smart Tiered Cache, and a WAF rule blocks any request to
+`media.kallo.fit` with a query string (no cache-busting). R2 then sees about one
+read per avatar per day — ~30k Class B a month for 1,000 avatars. A
+deleted avatar can stay at the edge for up to a day for someone who already has
+its unguessable URL. A Cloudflare budget alert is the safety net.
+
 - Refused uploads answer `503 STORAGE_PAUSED` ("Photo uploads are paused…");
   label scans still work, the photo is just not kept. **Deletes are never
   capped** (they are free, and erasure must not block).

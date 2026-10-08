@@ -75,12 +75,14 @@ describe('object storage on R2', () => {
     const key = `${PREFIX}face.webp`;
     await putObject('avatars', key, BYTES, {
       contentType: 'image/webp',
-      cacheControl: 'public, max-age=300',
+      cacheControl: 'public, max-age=300, s-maxage=86400',
     });
 
     const res = await fetch(`${base?.replace(/\/+$/, '')}/${key}`);
     expect(res.status).toBe(200);
-    expect(res.headers.get('cache-control')).toBe('public, max-age=300');
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=300, s-maxage=86400'
+    );
     // The public domain serves objects, never a listing of the bucket.
     const root = await fetch(`${base?.replace(/\/+$/, '')}/`);
     expect(root.ok).toBe(false);
