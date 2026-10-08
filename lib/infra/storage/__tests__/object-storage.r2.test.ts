@@ -87,9 +87,9 @@ describe('object storage on R2', () => {
   });
 
   it('purges every object under a prefix', async () => {
-    const keys = Array.from({ length: 3 }, (_, i) => `${PREFIX}p/${i}.png`);
+    const keys = Array.from({ length: 3 }, (_, i) => `${PREFIX}p/${i}.webp`);
     for (const key of keys) {
-      await putObject('avatars', key, BYTES, { contentType: 'image/png' });
+      await putObject('avatars', key, BYTES, { contentType: 'image/webp' });
     }
     await removePrefix('avatars', `${PREFIX}p/`);
     expect(await listObjects('avatars', `${PREFIX}p/`)).toEqual([]);

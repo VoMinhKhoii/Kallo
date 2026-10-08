@@ -84,6 +84,42 @@ describe('putObject', () => {
     });
   });
 
+  it.each([
+    ['avatars', 'image/png', 10, 'does not accept image/png'],
+    ['avatars', 'image/webp', 512_001, 'takes 1–512000 bytes'],
+    ['nutrition-labels', 'image/jpeg', 4 * 1024 * 1024 + 1, 'takes 1–4194304'],
+    ['nutrition-labels', 'image/gif', 10, 'does not accept image/gif'],
+    ['feedback-screenshots', 'text/html', 10, 'does not accept text/html'],
+    [
+      'feedback-screenshots',
+      'image/svg+xml',
+      10,
+      'does not accept image/svg+xml',
+    ],
+    ['feedback-screenshots', 'image/png', 0, 'takes 1–'],
+  ] as const)('keeps the Supabase bucket rule: %s refuses %s at %i bytes', async (bucket, contentType, size, message) => {
+    await expect(
+      putObject(bucket, 'u/x', new Uint8Array(size), { contentType })
+    ).rejects.toThrow(message);
+    expect(s3.calls()).toHaveLength(0);
+  });
+
+  it('accepts the largest object each bucket allows', async () => {
+    s3.on(PutObjectCommand).resolves({});
+
+    await putObject('avatars', 'u/a.webp', new Uint8Array(512_000), {
+      contentType: 'image/webp',
+    });
+    await putObject(
+      'nutrition-labels',
+      'u/l.png',
+      new Uint8Array(4 * 1024 * 1024),
+      { contentType: 'image/png' }
+    );
+
+    expect(s3.commandCalls(PutObjectCommand)).toHaveLength(2);
+  });
+
   it('surfaces a refused write', async () => {
     s3.on(PutObjectCommand).rejects(new Error('PreconditionFailed'));
 

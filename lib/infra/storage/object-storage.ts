@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+import { assertFitsBucket } from './bucket-rules';
 import { removeLegacyKeys, removeLegacyPrefix } from './legacy-supabase';
 import {
   assertR2Configured,
@@ -63,7 +64,8 @@ const DELETE_BATCH = 1000;
 /**
  * Write a new object. Never overwrites: `If-None-Match: *` makes R2 answer
  * 412 when the key exists (keys carry a random UUID, so that means a bug).
- * Refused with `STORAGE_PAUSED` past the free-tier cap.
+ * Refused with `STORAGE_PAUSED` past the free-tier cap, and refused outright
+ * when the bytes break the bucket's size/type rule (`bucket-rules.ts`).
  */
 export async function putObject(
   bucket: StorageBucket,
@@ -71,6 +73,7 @@ export async function putObject(
   body: Uint8Array,
   options: { contentType: string; cacheControl?: string }
 ): Promise<void> {
+  assertFitsBucket(bucket, body, options.contentType);
   await assertWritesWithinCap();
   await r2Client().send(
     new PutObjectCommand({

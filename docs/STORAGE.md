@@ -27,6 +27,10 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
   `isOwnAvatarPath` re-check the `{userId}/` prefix on any key read back from a
   row.
 - **Writes never overwrite** (`If-None-Match: *`).
+- **Bucket size/type rules carried over** from the Supabase buckets
+  (`bucket-rules.ts`): `avatars` WebP only, ≤ 500 KB, so a public object can
+  never be served as HTML/SVG; `nutrition-labels` JPEG/PNG/WebP ≤ 4 MiB;
+  `feedback-screenshots` JPEG/PNG/WebP ≤ 5 MB. Checked on every `putObject`.
 - **Private objects** are only reachable through presigned GETs (path-style, on
   `https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com`) with short lifetimes.
 - **Account deletion** purges `{userId}/` in `avatars` and `nutrition-labels`
