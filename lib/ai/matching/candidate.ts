@@ -4,7 +4,7 @@ import {
   isNutritionCacheInitialized,
 } from '@/lib/ai/cache/nutrition-cache';
 import type { MatchInfo } from '@/lib/ai/matching/match-constants';
-import { batchFetchNutrition } from '@/lib/ai/matching/retrieve/nutrition-batch';
+import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
 import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import type { AppDb } from '@/lib/infra/db/client';
 

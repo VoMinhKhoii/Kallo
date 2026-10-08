@@ -173,7 +173,7 @@ another domain module is a smell worth a second look.
 | `cache/` | every pipeline cache in one place | ok |
 | `prompts/` | `text/` (the strings) vs `build/` (the builders) | ok |
 | `portion/` | `data/` (the tables) vs the resolver logic | ok |
-| `matching/` | `cards/` (food-card retrieval, the current matcher) `retrieve/` (legacy row matcher, fallback until card vectors exist) `rank/` `alias/` | ok |
+| `matching/` | `match-ingredients.ts` (the entry: card matcher, else the row fallback) and `candidate.ts` (the candidate contract + nutrition attach); `cards/` (food-card retrieval, the current matcher), `retrieve/` (`top-k-*`: the v2 row matcher, fallback until card vectors exist; `legacy/`: the v1 pipeline's matcher), `rank/`, `alias/` | ok |
 | `streaming/` | SSE event encoding and parsing, plus the browser side of the stream: `client-state.ts` (the state an analysis streams into, folded frame by frame) and `pre-stream-refusal.ts` (402 paywall / `ai_consent_required` / error, read from the body code — never a bare 403) | ok |
 | `language/` | language detect + guard | ok |
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |

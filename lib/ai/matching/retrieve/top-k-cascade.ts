@@ -22,7 +22,7 @@ import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /** The legacy matcher's Call 2 view of a candidate: row name and similarity. */
-export function legacyCandidate(info: MatchInfo): V2MatchCandidate {
+function legacyCandidate(info: MatchInfo): V2MatchCandidate {
   return {
     info,
     nutrition: null,

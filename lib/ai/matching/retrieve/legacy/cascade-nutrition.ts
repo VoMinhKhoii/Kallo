@@ -2,7 +2,7 @@ import type { MatchInfo } from '@/lib/ai/matching/match-constants';
 import {
   batchFetchNutrition,
   type MatchedFoodData,
-} from '@/lib/ai/matching/retrieve/nutrition-batch';
+} from '@/lib/ai/matching/nutrition-batch';
 import type {
   MatchedIngredient,
   UnmatchedIngredient,
