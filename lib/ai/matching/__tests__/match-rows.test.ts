@@ -7,7 +7,8 @@ import {
 /**
  * One row exactly as the `*_match_ingredients_*` functions return it:
  * id text, name_primary text, name_alt text[], name_en text, state text,
- * source_id int, similarity float.
+ * source_id int, similarity float — plus the `source_code` the retrieval
+ * query joins on from `ingredient_sources`.
  */
 const RAW_ROW = {
   id: 'fao_vn_2007_1013_raw',
@@ -16,6 +17,7 @@ const RAW_ROW = {
   name_en: 'Rice noodles',
   state: 'raw',
   source_id: 1,
+  source_code: 'FAO_VN_2007',
   similarity: 0.92,
 };
 
@@ -51,6 +53,12 @@ describe('parseSourcedMatchRows', () => {
     ]);
     expect(row.name_en).toBe('');
     expect(row.state).toBe('');
+  });
+
+  it('reads a row without a joined source_code as an empty code', () => {
+    const { source_code: _code, ...unjoined } = RAW_ROW;
+    const [row] = parseSourcedMatchRows([unjoined]);
+    expect(row.source_code).toBe('');
   });
 
   it('returns an empty list for a non-array result set', () => {
