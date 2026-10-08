@@ -73,8 +73,11 @@ caps itself at **95% of each free-tier meter** — `lib/infra/storage/usage-cap.
 stop a URL it already handed out. They are bounded at the edge instead, the
 way CDN-served images usually are: avatars are immutable (a new random key per
 upload) and carry `Cache-Control: public, max-age=300, s-maxage=86400`, the
-zone runs Smart Tiered Cache, and a Cache Rule on `media.kallo.fit` respects
-those headers and ignores query strings in the cache key (no cache-busting). R2 then sees about one
+zone runs Smart Tiered Cache, a Cache Rule on `media.kallo.fit` respects those
+headers (edge and browser TTL from the origin), and a WAF custom rule blocks
+any `media.kallo.fit` request with a query string — ignoring the query string
+in the cache key is Enterprise-only, and without the block every `?x=…` would
+be a fresh R2 read. R2 then sees about one
 read per avatar per day — ~30k Class B a month for 1,000 avatars. A
 deleted avatar can stay at the edge for up to a day for someone who already has
 its unguessable URL. A Cloudflare budget alert is the safety net.
