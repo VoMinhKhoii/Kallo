@@ -10,7 +10,8 @@ one-line sentence. Nutrients are never edited on a card.
 - Source of truth: `data/food-cards/cards.jsonl` (one JSON object per row id).
 - To change cards: edit that file, run
   `bun scripts/data/food-cards/build-seed-migration.ts supabase/migrations/<new timestamp>_seed_food_cards.sql`,
-  and ship the migration. The SQL also deletes strings a card no longer has. The prod deploy
+  and ship the migration. The SQL also deletes cards removed from the file and strings a card
+  no longer has. The prod deploy
   embeds any new strings (`scripts/db/backfill_card_embeddings.ts`); locally run that script
   against `.env.local`.
 - After a `supabase db reset` (the base rows arrive from `seed.sql`, after migrations),

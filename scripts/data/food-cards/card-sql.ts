@@ -3,7 +3,8 @@
  * script: upsert every card in data/food-cards/cards.jsonl, then make each
  * card's `food_card_vectors` strings match its current definition (row
  * name_en / name_primary, card food and sentence, EN aliases, VI names) —
- * retired strings are deleted, new ones inserted with a NULL embedding for
+ * cards no longer in the file are deleted with their strings, retired strings
+ * are deleted, new ones inserted with a NULL embedding for
  * scripts/db/backfill_card_embeddings.ts. Cards whose composition row does not
  * exist yet are skipped, so the SQL applies to any environment and is safe to
  * re-run.
@@ -98,6 +99,14 @@ ON CONFLICT ("food_composition_id") DO UPDATE SET
 -- fills food_card_vectors.embedding (the prod deploy runs it automatically).
 
 ${inserts.join('\n\n')}
+
+-- Cards removed from the source file, and every string that named them.
+DELETE FROM "food_cards"
+WHERE NOT ("food_composition_id" = ANY(${arr(cards.map((c) => c.id))}));
+DELETE FROM "food_card_vectors" v
+WHERE NOT EXISTS (
+  SELECT 1 FROM "food_cards" c WHERE c."food_composition_id" = v."food_composition_id"
+);
 
 -- Strings a card no longer has (an alias removed, a card sentence rewritten).
 DELETE FROM "food_card_vectors" v

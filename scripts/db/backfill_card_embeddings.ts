@@ -63,8 +63,11 @@ function createGenAI(): GoogleGenAI {
 }
 
 const genai = createGenAI();
+// search_path as a startup parameter, so every pooled connection resolves the
+// unqualified ::vector cast (pgvector lives in `extensions` on Supabase).
 const sql = postgres(encodeDbUrl(process.env.DATABASE_URL!), {
   max: PARALLEL + 1,
+  connection: { search_path: 'public, extensions' },
 });
 
 async function embed(texts: string[]): Promise<number[][]> {
@@ -110,7 +113,6 @@ async function store(rows: { id: number }[], vecs: number[][]) {
 
 async function main() {
   try {
-    await sql`SET search_path TO public, extensions`;
     let done = 0;
     const t0 = Date.now();
     for (;;) {
