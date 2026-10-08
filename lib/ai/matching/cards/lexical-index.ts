@@ -12,9 +12,17 @@
 
 import { fold } from '@/lib/core/text/fold';
 
-/** Lower-cased word tokens; shared with the BM25 index. */
+/**
+ * Lower-cased NFC word tokens; shared with the BM25 index. NFC first, so a
+ * decomposed "bơ" is one token, not "bo" plus a stray combining mark.
+ */
 export function wordTokens(text: string): string[] {
-  return (text ?? '').toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? [];
+  return (
+    (text ?? '')
+      .normalize('NFC')
+      .toLowerCase()
+      .match(/[\p{L}\p{N}_]+/gu) ?? []
+  );
 }
 
 /** True when folding diacritics would not change the query (ASCII-only). */

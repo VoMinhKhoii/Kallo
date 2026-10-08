@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildBm25Index } from '../bm25-index';
 import { conceptKey } from '../concept-key';
-import { buildLexicalIndex } from '../lexical-index';
+import { buildLexicalIndex, wordTokens } from '../lexical-index';
 
 const row = (nameEn: string, state = 'raw') => ({
   sourceCode: 'USDA_SR',
@@ -45,6 +45,12 @@ describe('buildLexicalIndex', () => {
   it('matches names with diacritics as written', () => {
     expect(index.search('thịt bò')[0]).toBe('bo');
     expect(index.search('bơ')[0]).toBe('bo-butter');
+  });
+
+  it('treats decomposed (NFD) and composed (NFC) spellings alike', () => {
+    expect(wordTokens('thịt bơ'.normalize('NFD'))).toEqual(['thịt', 'bơ']);
+    for (const q of ['bơ', 'thịt bò', 'ức gà'])
+      expect(index.search(q.normalize('NFD'))).toEqual(index.search(q));
   });
 
   it('matches an ASCII-only query against unaccented names', () => {
