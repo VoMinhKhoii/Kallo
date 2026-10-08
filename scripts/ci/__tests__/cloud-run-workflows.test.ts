@@ -76,6 +76,10 @@ describe('Cloud Run prod workflow', () => {
     );
     // The AI Studio path stays intact for local `dbr:reset` against .env.local.
     expect(backfill).toContain('apiKey: process.env.GEMINI_API_KEY');
+    // Card retrieval stays on the legacy matcher until the card strings are
+    // embedded, so the deploy must backfill them after the seed migration.
+    expect(workflow).toContain('id: card_embed_check');
+    expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });
 
   it('wires billing secrets and dark-launch controls into prod', () => {

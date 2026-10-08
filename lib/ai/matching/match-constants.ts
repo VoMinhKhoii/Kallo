@@ -29,11 +29,12 @@ export const SOURCE_USDA = 2;
  * barcode scans — and any future source never reach ingredient matching until
  * they are added here.
  */
-const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
-  FAO_VN_2007: 'fao',
-  NIN_WEB_2026: 'fao',
-  USDA_SR: 'usda',
-};
+export const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> =
+  {
+    FAO_VN_2007: 'fao',
+    NIN_WEB_2026: 'fao',
+    USDA_SR: 'usda',
+  };
 
 /** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
 export const FAO_VECTOR_THRESHOLD = 0.8;
@@ -137,6 +138,12 @@ export interface MatchInfo {
   latencyMs?: number;
   /** Set by the cascade when an alias-fallback rescued the original name. */
   viaAlias?: boolean;
+  /**
+   * Card retrieval only: the compact card label Call 2 reads instead of
+   * `matchedName` (food + facets / VI name [row: name_en]). Never shown to
+   * users or persisted — `matchedName` stays the row's own name.
+   */
+  cardLabel?: string;
 }
 
 export interface PickBestSourceContext {

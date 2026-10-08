@@ -2,6 +2,11 @@ import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '@/lib/ai/language/guard';
+import {
+  getCardCatalog,
+  isCardCatalogReady,
+} from '@/lib/ai/matching/cards/card-catalog';
+import { createCardEmbeddingPrewarm } from '@/lib/ai/matching/cards/card-prewarm';
 import { createV2SpeculativeMatcher } from '@/lib/ai/matching/speculative';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
@@ -9,7 +14,7 @@ import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { DECOMPOSITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import {
   type MealDecompositionV2,
-  mealDecompositionV2Schema,
+  mealDecompositionV2CallSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { EstimatorAttemptUsage } from '@/lib/ai/pipeline/estimator/types';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
@@ -76,9 +81,25 @@ export async function runGroundedDecomposition(args: {
   // stream (the matcher is fully catch-guarded).
   const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
   const prewarmAbort = new AbortController();
-  const prewarm = prewarmEnabled
-    ? createV2SpeculativeMatcher(db, gemini, prewarmAbort.signal)
-    : () => {};
+  // Card retrieval embeds four strings per ingredient; once its catalog is
+  // loaded, warm those instead of the legacy matcher's canonical name. The
+  // load is started here so a cold instance overlaps it with Call 1.
+  // Readiness is re-read per chunk: on a cold instance the catalog finishes
+  // loading mid-stream, and the strings left to stream then warm the matcher
+  // that will actually run.
+  void getCardCatalog(db);
+  const cardPrewarm = createCardEmbeddingPrewarm(gemini, prewarmAbort.signal);
+  const legacyPrewarm = createV2SpeculativeMatcher(
+    db,
+    gemini,
+    prewarmAbort.signal
+  );
+  const prewarm = !prewarmEnabled
+    ? () => {}
+    : (accumulated: string) =>
+        isCardCatalogReady()
+          ? cardPrewarm(accumulated)
+          : legacyPrewarm(accumulated);
   const decompositionInput = rawInput;
 
   const bufferedItemNameEvents: Array<
@@ -140,7 +161,7 @@ export async function runGroundedDecomposition(args: {
         });
         return gemini.generateStructuredOutputStream(
           {
-            schema: mealDecompositionV2Schema,
+            schema: mealDecompositionV2CallSchema,
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,

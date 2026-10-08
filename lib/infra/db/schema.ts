@@ -259,6 +259,54 @@ export const vietnameseFoodComposition = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Food cards — a curated description of each composition row, the unit
+// ingredient matching retrieves and Call 2 reads (lib/ai/matching/cards/).
+// Seeded by a generated data migration from data/food-cards/cards.jsonl.
+// ---------------------------------------------------------------------------
+
+export const foodCards = pgTable('food_cards', {
+  foodCompositionId: text('food_composition_id')
+    .primaryKey()
+    .references(() => vietnameseFoodComposition.id, { onDelete: 'cascade' }),
+  /** The food as a user would name it, e.g. "beef brisket, flat half, raw". */
+  food: text('food').notNull(),
+  aliasesEn: text('aliases_en').array().notNull().default(sql`'{}'::text[]`),
+  /** Vietnamese names with diacritics; the first is the display name. */
+  namesVi: text('names_vi').array().notNull().default(sql`'{}'::text[]`),
+  partCut: text('part_cut'),
+  formProcessing: text('form_processing'),
+  cookingMethod: text('cooking_method'),
+  fatLevel: text('fat_level'),
+  brand: text('brand'),
+  /** One-sentence description embedded alongside the names. */
+  card: text('card').notNull(),
+});
+
+/**
+ * Every string that names a card (row names, card food/sentence, aliases,
+ * Vietnamese names), one vector each. Retrieval scores a row by its
+ * best-matching string (max-sim). `embedding` is filled by
+ * scripts/db/backfill_embeddings.ts after the seed migration lands.
+ */
+export const foodCardVectors = pgTable(
+  'food_card_vectors',
+  {
+    id: serial('id').primaryKey(),
+    foodCompositionId: text('food_composition_id')
+      .notNull()
+      .references(() => vietnameseFoodComposition.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    embedding: vector('embedding', { dimensions: 768 }),
+  },
+  (table) => [
+    uniqueIndex('food_card_vectors_row_text_key').on(
+      table.foodCompositionId,
+      table.text
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Meals
 // ---------------------------------------------------------------------------
 

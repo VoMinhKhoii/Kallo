@@ -5,6 +5,7 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
+import { matchCardCandidates } from '@/lib/ai/matching/cards/card-retrieval';
 import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
@@ -59,13 +60,20 @@ export async function prepareGrounding(args: {
     { ingredientCount: flatIngredients.length, topK: args.topK },
     async (_ctx) => {
       emit({ type: 'stage', stage: 'matching' });
+      const ingredients = flatIngredients.map((f) => f.ingredient);
       return withDeadline(
-        matchTopKPerIngredient(
-          flatIngredients.map((f) => f.ingredient),
-          flatIngredients.map((f) => f.dishCookingMethod),
-          args.db,
-          args.gemini,
-          { k: args.topK, concurrency: args.matchConcurrency }
+        // Card retrieval; the legacy row matcher only until the card index is
+        // ready in this environment (see lib/ai/matching/cards/card-catalog.ts).
+        matchCardCandidates(ingredients, args.db, args.gemini).then(
+          (cards) =>
+            cards ??
+            matchTopKPerIngredient(
+              ingredients,
+              flatIngredients.map((f) => f.dishCookingMethod),
+              args.db,
+              args.gemini,
+              { k: args.topK, concurrency: args.matchConcurrency }
+            )
         ),
         MATCHING_TIMEOUT_MS
       );
@@ -122,8 +130,10 @@ export function buildCallTwoPayload(
       flatIdx++;
       const candidates = (matchResult?.candidates ?? []).map((c, i) => ({
         id: `c${i + 1}`,
-        similarity: c.info.similarity,
-        dbName: c.info.matchedName,
+        // Card candidates arrive fused and ranked; their order is the signal
+        // Call 2 reads (as on the matching gate), not a raw cosine score.
+        similarity: c.info.cardLabel ? 1 - i * 0.01 : c.info.similarity,
+        dbName: c.info.cardLabel ?? c.info.matchedName,
         dbNameEn: c.info.matchedNameEn ?? null,
         dbState: c.info.state,
         source: c.info.source ?? ('fao' as const),

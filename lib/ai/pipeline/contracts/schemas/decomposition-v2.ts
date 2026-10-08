@@ -28,6 +28,31 @@ export const decomposedIngredientV2Schema = z
       .describe(
         'Disambiguated food-composition vocabulary name used for DB matching.'
       ),
+    // Card-retrieval query strings (lib/ai/matching/cards/). Placed right after
+    // the names so they stream early enough for the embedding prewarm.
+    // Optional in the stored shape (fixtures, cached decompositions predate
+    // them); `mealDecompositionV2CallSchema` makes Call 1 always emit them.
+    queryEn: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.'
+      ),
+    nameVi: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).'
+      ),
+    tableName: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.'
+      ),
     cookingMethod: z
       .string()
       .min(1)
@@ -153,3 +178,26 @@ export type DecomposedIngredientV2 = z.infer<
 >;
 export type DecomposedDishV2 = z.infer<typeof decomposedDishV2Schema>;
 export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
+
+/**
+ * The schema Call 1 is asked to fill: the stored shape with the card-retrieval
+ * query strings required, so the model always writes them. Its output is a
+ * valid `MealDecompositionV2`.
+ */
+const callIngredientSchema = decomposedIngredientV2Schema.required({
+  queryEn: true,
+  nameVi: true,
+  tableName: true,
+});
+export const mealDecompositionV2CallSchema = mealDecompositionV2Schema.extend({
+  mealItems: z
+    .array(
+      decomposedDishV2Schema.extend({
+        ingredients: z
+          .array(callIngredientSchema)
+          .min(1)
+          .describe(decomposedDishV2Schema.shape.ingredients.description ?? ''),
+      })
+    )
+    .describe(mealDecompositionV2Schema.shape.mealItems.description ?? ''),
+});

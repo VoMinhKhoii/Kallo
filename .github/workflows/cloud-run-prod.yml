@@ -178,6 +178,18 @@ jobs:
             | tr -d '[:space:]')"
           echo "Rows needing embeddings: $pending"
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
+      # Food-card strings (seeded by *_seed_food_cards.sql) need vectors before
+      # card retrieval switches on; the matcher keeps the legacy path until the
+      # index has any. to_regclass keeps the check valid before the table exists.
+      - name: Check for food-card strings needing embeddings
+        id: card_embed_check
+        run: |
+          set -euo pipefail
+          pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
+            -c "SELECT CASE WHEN to_regclass('public.food_card_vectors') IS NULL THEN 0 ELSE (SELECT count(*) FROM food_card_vectors WHERE embedding IS NULL) END" \
+            | tr -d '[:space:]')"
+          echo "Card strings needing embeddings: $pending"
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
       # A failure here deliberately fails the deploy: a row that never gets
       # embedded is dead weight, and a silently skipped backfill is worse than a
       # red build. The script verifies that no rows in its scope remain NULL after
@@ -191,7 +203,7 @@ jobs:
       # pacing drops from 35s to 2s (the 35s existed only for the AI Studio free
       # tier's 100 req/min), so the step is no longer rate-limit bound.
       - uses: ./.github/actions/setup-bun
-        if: steps.embed_check.outputs.pending != '0'
+        if: steps.embed_check.outputs.pending != '0' || steps.card_embed_check.outputs.pending != '0'
       - name: Backfill food embeddings
         if: steps.embed_check.outputs.pending != '0'
         timeout-minutes: 15
@@ -201,6 +213,18 @@ jobs:
           GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
           GOOGLE_CLOUD_LOCATION: global
         run: bun scripts/db/backfill_embeddings.ts
+      # First run embeds ~71k strings (~11 min on Vertex at the script's pacing);
+      # later deploys only embed strings a card migration added or changed.
+      - name: Backfill food-card embeddings
+        if: steps.card_embed_check.outputs.pending != '0'
+        timeout-minutes: 30
+        env:
+          DATABASE_URL: ${{ env.PROD_DATABASE_URL }}
+          AI_PROVIDER: vertex
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: global
+          GOOGLE_CLOUD_EMBEDDING_LOCATION: asia-southeast1
+        run: bun scripts/db/backfill_card_embeddings.ts
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"

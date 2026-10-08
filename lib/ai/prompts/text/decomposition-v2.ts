@@ -40,6 +40,9 @@ const NAMING_RULE: Record<DecompositionPromptLocale, string> = {
   vi: `  <ingredient_naming_rule>
     rawName = natural, specific ingredient name in the user's language reflecting what the user described.
     canonicalName = disambiguated FCT/USDA-friendly food-composition vocabulary name used for matching.
+    queryEn = plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.
+    nameVi = the natural Vietnamese name of that food with diacritics (restore them if the user typed without).
+    tableName = the USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA's own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.
     Specificity matters for matching precision:
     - "đùi gà" (thigh) → keep as "đùi gà", NOT generic "thịt gà".
     - "ức gà" (breast) → keep as "ức gà".
@@ -51,6 +54,9 @@ const NAMING_RULE: Record<DecompositionPromptLocale, string> = {
   global: `  <ingredient_naming_rule>
     rawName = natural, specific ingredient name in the user's language reflecting what the user described.
     canonicalName = disambiguated FCT/USDA-friendly food-composition vocabulary name used for matching.
+    queryEn = plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.
+    nameVi = the natural Vietnamese name of that food with diacritics (restore them if the user typed without).
+    tableName = the USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA's own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.
     Specificity matters for matching precision:
     - "chicken thigh" → keep as "chicken thigh", NOT generic "chicken".
     - "salmon fillet" → keep as "salmon fillet", NOT generic "fish".
