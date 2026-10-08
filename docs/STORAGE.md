@@ -130,6 +130,11 @@ bun --conditions=react-server --env-file=<env> \
   scripts/ops/copy-supabase-storage-to-r2.ts --prune-deleted-before=T
 ```
 
+Copies get the copy time as their R2 `LastModified`, so for an hour after a
+pass the feedback upload quota (20/hour, counted from `LastModified`) sees a
+user's copied screenshots as fresh uploads. Harmless at Kallo's volume (4 prod
+screenshots at cutover); re-check before a bulk copy of a large bucket.
+
 Between the passes the old revision deletes only from Supabase, so pass 2 also
 removes R2 keys that are gone from Supabase and were written before `T` (pass-1
 copies of avatars removed or accounts deleted in the gap). Keys written after
