@@ -7,7 +7,8 @@
  *   dialect arm   tableName → BM25 over the rows' English names
  *
  * Arms are fused by reciprocal rank, filtered by the legacy eligibility guards,
- * collapsed to one row per concept (grade/salt siblings) and cut to CARD_K.
+ * collapsed to one row per concept (grade/salt siblings), narrowed to the
+ * user's stated weighing basis (raw / cooked), and cut to CARD_K.
  * All sources compete equally — there is no source preference.
  *
  * Returns `null` when the card index is not ready (see `catalog.ts`).
@@ -69,7 +70,8 @@ async function vectorArms(
   }
 }
 
-function pickRows(
+/** Eligible rows in rank order, one per concept (uncapped: the state filter runs first). */
+function eligibleRows(
   ranked: string[],
   catalog: CardCatalog,
   ing: DecomposedIngredientV2
@@ -90,7 +92,6 @@ function pickRows(
     if (!isCandidateEligibleForIngredient(names, rowNames)) continue;
     concepts.add(row.concept);
     out.push(row);
-    if (out.length >= CARD_K) break;
   }
   return out;
 }
@@ -147,18 +148,21 @@ export async function matchCardCandidates(
     if (ing.tableName)
       arms.push(catalog.bm25En.search(ing.tableName, ARM_DEPTH));
 
-    const picked = pickRows(rrfOrder(arms), catalog, ing).map((row) => ({
+    const eligible = eligibleRows(rrfOrder(arms), catalog, ing).map((row) => ({
       row,
       info: toMatchInfo(row, ing, bestVector),
     }));
+    // The user's stated weighing basis filters the whole pool before the cap,
+    // so opposite-state rows ranked above cannot crowd out matching ones.
     const allowed = new Set(
       filterByExplicitState(
-        picked.map((p) => p.info),
+        eligible.map((p) => p.info),
         explicitWeighState(ing)
       )
     );
-    const candidates = picked
+    const candidates = eligible
       .filter((p) => allowed.has(p.info))
+      .slice(0, CARD_K)
       .map(
         (p, rank): V2MatchCandidate => ({
           info: p.info,

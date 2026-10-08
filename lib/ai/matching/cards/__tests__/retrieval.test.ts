@@ -113,13 +113,14 @@ function mockDb(
     query_index: number;
     food_composition_id: string;
     similarity: number;
-  }[]
+  }[],
+  rows: typeof ROWS = ROWS
 ) {
   const execute = vi.fn(async (q: unknown) => {
     const text = JSON.stringify(q);
     if (text.includes('to_regclass')) return [{ ready }];
     if (text.includes('match_food_cards')) return hits;
-    return ROWS;
+    return rows;
   });
   return { execute } as unknown as AppDb;
 }
@@ -263,6 +264,35 @@ describe('matchCardCandidates', () => {
         gemini
       )) ?? [];
     expect(result.candidates.map((c) => c.info.state)).not.toContain('cooked');
+  });
+
+  it('fills the list with stated-state rows ranked below eight opposite-state ones', async () => {
+    const cooked = Array.from({ length: 8 }, (_, i) => ({
+      ...ROWS[3],
+      id: `usda_cooked_${i}`,
+      name_en: `Beef, brisket, cut ${i}, braised`,
+    }));
+    const rows = [...cooked, ROWS[0]];
+    const hits = rows.map((r, i) => ({
+      query_index: 1,
+      food_composition_id: r.id,
+      similarity: 0.95 - i * 0.01,
+    }));
+    // Names no row shares, so only the vector arm ranks (lexical arms stay empty).
+    const vectorOnly: DecomposedIngredientV2 = {
+      rawName: 'Zzq',
+      canonicalName: 'Zzq',
+      stateHint: 'raw_weight',
+    };
+    const [result] =
+      (await matchCardCandidates(
+        [vectorOnly],
+        mockDb(true, hits, rows),
+        gemini
+      )) ?? [];
+    expect(result.candidates.map((c) => c.info.foodCompositionId)).toEqual([
+      'usda_brisket_choice',
+    ]);
   });
 });
 
