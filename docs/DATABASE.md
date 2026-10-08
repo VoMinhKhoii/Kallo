@@ -392,7 +392,8 @@ with `--ids` so existing non-null vectors are regenerated from the new names.
 Every label photo the scanner sends to the vision model is kept, with what the
 model made of it — the future OCR eval set. Code: `lib/domain/nutrition/label-images/`.
 
-- **What is stored.** The photo in the PRIVATE `nutrition-labels` bucket at
+- **What is stored.** The photo in the PRIVATE `nutrition-labels` R2 bucket
+  (`docs/STORAGE.md`) at
   `{user_id}/{id}.{ext}` — re-encoded server-side in its own format with the
   EXIF orientation applied and ALL metadata (EXIF incl. GPS, XMP, IPTC)
   dropped; the row's `mime_type`/`byte_size` describe that stored copy. The

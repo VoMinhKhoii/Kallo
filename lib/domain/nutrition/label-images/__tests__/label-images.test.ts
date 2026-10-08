@@ -14,11 +14,9 @@ import { z } from 'zod';
 
 const mocks = vi.hoisted(() => ({
   after: vi.fn(),
-  createAdminClient: vi.fn(),
-  storageFrom: vi.fn(),
-  upload: vi.fn(),
-  remove: vi.fn(),
-  createSignedUrl: vi.fn(),
+  putObject: vi.fn(),
+  removeObjects: vi.fn(),
+  signedReadUrl: vi.fn(),
   insertValues: vi.fn(),
   updateSet: vi.fn(),
   updateWhere: vi.fn(),
@@ -27,8 +25,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/server', () => ({ after: mocks.after }));
-vi.mock('@/lib/infra/supabase/admin', () => ({
-  createAdminClient: mocks.createAdminClient,
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  putObject: mocks.putObject,
+  removeObjects: mocks.removeObjects,
+  signedReadUrl: mocks.signedReadUrl,
 }));
 vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
   NUTRITION_LABEL_OCR_MODEL: 'test-ocr-model',
@@ -107,7 +107,7 @@ beforeAll(async () => {
 /** A model call that answers only once the photo is stored — the normal
  *  order, since a vision call takes seconds and a storage PUT milliseconds. */
 async function answersAfterUpload() {
-  await vi.waitFor(() => expect(mocks.upload).toHaveBeenCalled());
+  await vi.waitFor(() => expect(mocks.putObject).toHaveBeenCalled());
   await new Promise((resolve) => setTimeout(resolve, 0));
   return label;
 }
@@ -119,8 +119,13 @@ async function settleAfter() {
 
 /** The bytes and options the bucket actually received. */
 function uploaded() {
-  const [path, bytes, options] = mocks.upload.mock.calls[0];
-  return { path: path as string, bytes: bytes as Buffer, options };
+  const [bucket, path, bytes, options] = mocks.putObject.mock.calls[0];
+  return {
+    bucket: bucket as string,
+    path: path as string,
+    bytes: bytes as Buffer,
+    options,
+  };
 }
 
 function compile(where: SQL) {
@@ -133,16 +138,8 @@ afterEach(settleAfter);
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  mocks.createAdminClient.mockReturnValue({
-    storage: { from: mocks.storageFrom },
-  });
-  mocks.storageFrom.mockReturnValue({
-    upload: mocks.upload,
-    remove: mocks.remove,
-    createSignedUrl: mocks.createSignedUrl,
-  });
-  mocks.upload.mockResolvedValue({ data: {}, error: null });
-  mocks.remove.mockResolvedValue({ data: [], error: null });
+  mocks.putObject.mockResolvedValue(undefined);
+  mocks.removeObjects.mockResolvedValue(undefined);
   mocks.insertValues.mockResolvedValue(undefined);
   mocks.updateWhere.mockResolvedValue(undefined);
 });
@@ -157,10 +154,10 @@ describe('scanWithStoredLabelImage — success', () => {
     expect(result).toBe(label);
     expect(labelImageId).toMatch(UUID_RE);
     expect(NUTRITION_LABEL_BUCKET).toBe('nutrition-labels');
-    expect(mocks.storageFrom).toHaveBeenCalledWith('nutrition-labels');
-    const { path, bytes, options } = uploaded();
+    const { bucket, path, bytes, options } = uploaded();
+    expect(bucket).toBe('nutrition-labels');
     expect(path).toBe(`${USER}/${labelImageId}.jpg`);
-    expect(options).toEqual({ contentType: 'image/jpeg', upsert: false });
+    expect(options).toEqual({ contentType: 'image/jpeg' });
 
     // The row already exists when the id is handed out: no after() needed.
     expect(mocks.after).not.toHaveBeenCalled();
@@ -199,9 +196,8 @@ describe('scanWithStoredLabelImage — success', () => {
 
   it('dispatches the model call before storing anything', async () => {
     const seen: string[] = [];
-    mocks.upload.mockImplementation(async () => {
+    mocks.putObject.mockImplementation(async () => {
       seen.push('upload');
-      return { data: {}, error: null };
     });
     const scan = vi.fn(async () => {
       seen.push('model call');
@@ -214,7 +210,7 @@ describe('scanWithStoredLabelImage — success', () => {
 
   it('never waits for a slow upload: no id in the reply, row written after it', async () => {
     let finishUpload: (value: unknown) => void = () => {};
-    mocks.upload.mockReturnValue(
+    mocks.putObject.mockReturnValue(
       new Promise((resolve) => {
         finishUpload = resolve;
       })
@@ -228,7 +224,7 @@ describe('scanWithStoredLabelImage — success', () => {
     expect(labelImageId).toBeNull();
     expect(mocks.insertValues).not.toHaveBeenCalled();
 
-    finishUpload({ data: {}, error: null });
+    finishUpload(undefined);
     await settleAfter();
     expect(mocks.insertValues).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'succeeded', result: label })
@@ -287,12 +283,14 @@ describe('scanWithStoredLabelImage — photo and row never diverge', () => {
 
     const outcome = await scanWithStoredLabelImage(input, answersAfterUpload);
     expect(outcome).toEqual({ result: label, labelImageId: null });
-    expect(mocks.remove).toHaveBeenCalledWith([uploaded().path]);
+    expect(mocks.removeObjects).toHaveBeenCalledWith('nutrition-labels', [
+      uploaded().path,
+    ]);
   });
 
   it('a failed post-response insert (e.g. account deleted meanwhile) removes the photo', async () => {
     let finishUpload: (value: unknown) => void = () => {};
-    mocks.upload.mockReturnValue(
+    mocks.putObject.mockReturnValue(
       new Promise((resolve) => {
         finishUpload = resolve;
       })
@@ -302,14 +300,16 @@ describe('scanWithStoredLabelImage — photo and row never diverge', () => {
     );
 
     await scanWithStoredLabelImage(input, answersAfterUpload);
-    finishUpload({ data: {}, error: null });
+    finishUpload(undefined);
     await settleAfter();
-    expect(mocks.remove).toHaveBeenCalledWith([uploaded().path]);
+    expect(mocks.removeObjects).toHaveBeenCalledWith('nutrition-labels', [
+      uploaded().path,
+    ]);
   });
 
   it('a failed removal is only logged', async () => {
     mocks.insertValues.mockRejectedValue(new Error('db down'));
-    mocks.remove.mockResolvedValue({ data: null, error: new Error('down') });
+    mocks.removeObjects.mockRejectedValue(new Error('down'));
 
     const outcome = await scanWithStoredLabelImage(input, answersAfterUpload);
     expect(outcome).toEqual({ result: label, labelImageId: null });
@@ -323,7 +323,7 @@ describe('scanWithStoredLabelImage — photo and row never diverge', () => {
 
 describe('scanWithStoredLabelImage — storage is best-effort', () => {
   it('a refused upload leaves the result untouched and writes no row', async () => {
-    mocks.upload.mockResolvedValue({ data: null, error: new Error('down') });
+    mocks.putObject.mockRejectedValue(new Error('down'));
 
     const outcome = await scanWithStoredLabelImage(input, answersAfterUpload);
     expect(outcome).toEqual({ result: label, labelImageId: null });
@@ -339,13 +339,13 @@ describe('scanWithStoredLabelImage — storage is best-effort', () => {
     const outcome = await scanWithStoredLabelImage(junk, async () => label);
     await settleAfter();
     expect(outcome).toEqual({ result: label, labelImageId: null });
-    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.putObject).not.toHaveBeenCalled();
     expect(mocks.insertValues).not.toHaveBeenCalled();
   });
 
-  it('a missing service-role credential does not surface', async () => {
-    mocks.createAdminClient.mockImplementation(() => {
-      throw new Error('service_role_missing');
+  it('a missing storage credential does not surface', async () => {
+    mocks.putObject.mockImplementation(() => {
+      throw new Error('Object storage requires R2_ACCOUNT_ID…');
     });
 
     const outcome = await scanWithStoredLabelImage(input, async () => {
@@ -356,7 +356,7 @@ describe('scanWithStoredLabelImage — storage is best-effort', () => {
   });
 
   it('a storage failure does not change the scan error either', async () => {
-    mocks.upload.mockRejectedValue(new Error('network'));
+    mocks.putObject.mockRejectedValue(new Error('network'));
     const error = new NutritionLabelOcrError('no_label_detected');
 
     await expect(
@@ -430,22 +430,20 @@ describe('createLabelImageUrl', () => {
     });
     const { params } = compile(mocks.selectWhere.mock.calls[0][0]);
     expect(params).toEqual([IMAGE, OTHER]);
-    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+    expect(mocks.signedReadUrl).not.toHaveBeenCalled();
   });
 
   it('signs a 10-minute URL for the owner', async () => {
     mocks.selectRows.mockResolvedValue([
       { storagePath: `${USER}/${IMAGE}.jpg` },
     ]);
-    mocks.createSignedUrl.mockResolvedValue({
-      data: { signedUrl: 'https://storage.example/signed' },
-      error: null,
-    });
+    mocks.signedReadUrl.mockResolvedValue('https://storage.example/signed');
     const before = Date.now();
 
     const view = await createLabelImageUrl(USER, IMAGE);
 
-    expect(mocks.createSignedUrl).toHaveBeenCalledWith(
+    expect(mocks.signedReadUrl).toHaveBeenCalledWith(
+      'nutrition-labels',
       `${USER}/${IMAGE}.jpg`,
       600
     );
@@ -455,14 +453,24 @@ describe('createLabelImageUrl', () => {
     expect(expiresIn).toBeLessThanOrEqual(600_000 + 1000);
   });
 
+  it('past the read cap it is STORAGE_PAUSED, not a 500', async () => {
+    mocks.selectRows.mockResolvedValue([
+      { storagePath: `${USER}/${IMAGE}.jpg` },
+    ]);
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mocks.signedReadUrl.mockRejectedValue(Errors.storagePaused());
+
+    await expect(createLabelImageUrl(USER, IMAGE)).rejects.toMatchObject({
+      code: 'STORAGE_PAUSED',
+      status: 503,
+    });
+  });
+
   it('a signing failure is a 500, not a URL', async () => {
     mocks.selectRows.mockResolvedValue([
       { storagePath: `${USER}/${IMAGE}.jpg` },
     ]);
-    mocks.createSignedUrl.mockResolvedValue({
-      data: null,
-      error: new Error('storage down'),
-    });
+    mocks.signedReadUrl.mockRejectedValue(new Error('storage down'));
 
     await expect(createLabelImageUrl(USER, IMAGE)).rejects.toMatchObject({
       code: 'INTERNAL',

@@ -7,6 +7,7 @@ import {
   type PathItem,
   pathParam,
   ref,
+  STORAGE_PAUSED_ERROR,
 } from '@/lib/api/openapi/components';
 import { fileUploadBody } from '@/lib/api/openapi/paths/support';
 
@@ -284,11 +285,12 @@ export const SHARE_PATHS: Record<string, PathItem> = {
       operationId: 'uploadAvatar',
       summary: 'Upload an avatar photo',
       description:
-        'Multipart upload with a single `file` field, under 5 MB. The upload goes through the caller’s own storage session so row-level security applies to it.',
+        'Multipart upload with a single `file` field, under 5 MB (PNG, JPEG or WebP). The server checks the bytes, re-encodes them to a 512px WebP and stores that — never the upload itself — under a path built from the caller’s id.',
       tags: TAGS,
       body: fileUploadBody('The avatar image, under 5 MB.'),
       bodyMedia: 'multipart/form-data',
       ok: profileResponse,
+      extraErrors: STORAGE_PAUSED_ERROR,
     }),
     delete: authed({
       operationId: 'deleteAvatar',
