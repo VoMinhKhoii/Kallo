@@ -5,11 +5,8 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
-import { matchCardCandidates } from '@/lib/ai/matching/cards/retrieval';
-import {
-  type IngredientV2MatchResult,
-  matchTopKPerIngredient,
-} from '@/lib/ai/matching/retrieve/top-k-cascade';
+import { matchIngredients } from '@/lib/ai/matching/match-ingredients';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -57,23 +54,16 @@ export async function prepareGrounding(args: {
     traceContext,
     'matching',
     2,
-    { ingredientCount: flatIngredients.length, topK: args.topK },
+    { ingredientCount: flatIngredients.length },
     async (_ctx) => {
       emit({ type: 'stage', stage: 'matching' });
-      const ingredients = flatIngredients.map((f) => f.ingredient);
       return withDeadline(
-        // Card retrieval; the legacy row matcher only until the card index is
-        // ready in this environment (see lib/ai/matching/cards/catalog.ts).
-        matchCardCandidates(ingredients, args.db, args.gemini).then(
-          (cards) =>
-            cards ??
-            matchTopKPerIngredient(
-              ingredients,
-              flatIngredients.map((f) => f.dishCookingMethod),
-              args.db,
-              args.gemini,
-              { k: args.topK, concurrency: args.matchConcurrency }
-            )
+        matchIngredients(
+          flatIngredients.map((f) => f.ingredient),
+          flatIngredients.map((f) => f.dishCookingMethod),
+          args.db,
+          args.gemini,
+          { k: args.topK, concurrency: args.matchConcurrency }
         ),
         MATCHING_TIMEOUT_MS
       );
@@ -105,7 +95,7 @@ export async function prepareGrounding(args: {
 
 /** Build the per-meal-item payload for the grounded-estimation prompt.
  *
- * `matchResults` is built in flat-ingredient order by `matchTopKPerIngredient`
+ * `matchResults` is built in flat-ingredient order by `matchIngredients`
  * (one entry per ingredient with `ingredientIndex === position`), so direct
  * indexing is correct and avoids an O(N²) scan.
  */
@@ -130,10 +120,8 @@ export function buildCallTwoPayload(
       flatIdx++;
       const candidates = (matchResult?.candidates ?? []).map((c, i) => ({
         id: `c${i + 1}`,
-        // Card candidates arrive fused and ranked; their order is the signal
-        // Call 2 reads (as on the matching gate), not a raw cosine score.
-        similarity: c.info.cardLabel ? 1 - i * 0.01 : c.info.similarity,
-        dbName: c.info.cardLabel ?? c.info.matchedName,
+        similarity: c.prompt.score,
+        dbName: c.prompt.name,
         dbNameEn: c.info.matchedNameEn ?? null,
         dbState: c.info.state,
         source: c.info.source ?? ('fao' as const),

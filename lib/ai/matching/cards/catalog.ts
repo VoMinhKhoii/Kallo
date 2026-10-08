@@ -1,16 +1,21 @@
 /**
  * The in-memory side of card retrieval: every matchable composition row with
  * its card, its concept key, and the lexical + BM25 indexes. Loaded once per
- * process (~7.7k rows, ~0.6 s, ~60 MB) — cards only change through a migration
- * and a deploy.
+ * process (~7.7k rows, ~0.6 s, ~60 MB) — cards only change through a
+ * migration and a deploy.
  *
- * `null` means "not ready" (tables missing, empty, or any card string not
- * embedded yet — e.g. between a migration and its backfill, so a half-built
- * index never serves); the caller then uses the legacy matcher. A not-ready answer is re-checked after a minute, so a fresh
- * backfill is picked up without a restart.
+ * `null` means "not ready": the tables are missing or empty, or a card string
+ * is not embedded yet (between a migration and its backfill), so a half-built
+ * index never serves. The caller then uses the legacy matcher. A not-ready
+ * answer is re-checked after a minute, so a fresh backfill is picked up
+ * without a restart.
  */
 import { sql } from 'drizzle-orm';
-import { MATCHING_SOURCE_BUCKETS } from '@/lib/ai/matching/match-constants';
+import {
+  MATCHABLE_SOURCE_CODES,
+  sourceBucket,
+} from '@/lib/ai/matching/match-constants';
+import type { MatchSource } from '@/lib/ai/types/matching';
 import type { AppDb } from '@/lib/infra/db/client';
 import { type Bm25Index, buildBm25Index } from './bm25-index';
 import { conceptKey } from './concept-key';
@@ -18,16 +23,12 @@ import { buildLexicalIndex, type LexicalIndex } from './lexical-index';
 
 export interface CatalogRow {
   id: string;
-  sourceCode: string;
+  source: MatchSource;
   state: string;
   nameEn: string;
   namePrimary: string;
   concept: string;
-  card: {
-    food: string;
-    namesVi: string[];
-    facets: string[];
-  } | null;
+  card: { food: string; namesVi: string[]; facets: string[] } | null;
 }
 
 export interface CardCatalog {
@@ -35,6 +36,22 @@ export interface CardCatalog {
   lexical: LexicalIndex;
   bm25En: Bm25Index;
 }
+
+type CatalogQueryRow = {
+  id: string;
+  source_code: string;
+  state: string;
+  name_en: string | null;
+  name_primary: string;
+  food: string | null;
+  aliases_en: string[] | null;
+  names_vi: string[] | null;
+  part_cut: string | null;
+  form_processing: string | null;
+  cooking_method: string | null;
+  fat_level: string | null;
+  brand: string | null;
+};
 
 const NOT_READY_RETRY_MS = 60_000;
 let cache: {
@@ -75,16 +92,19 @@ export function __resetCardCatalogForTests() {
   cache = null;
 }
 
+const present = (s: string | null | undefined): s is string =>
+  typeof s === 'string' && s.trim().length > 0;
+
 async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
-  const [ready] = (await db.execute(sql`
+  const [state] = await db.execute<{ ready: boolean }>(sql`
     SELECT to_regclass('public.food_card_vectors') IS NOT NULL
       AND EXISTS (SELECT 1 FROM food_card_vectors)
       AND NOT EXISTS (SELECT 1 FROM food_card_vectors WHERE embedding IS NULL) AS ready
-  `)) as unknown as { ready: boolean }[];
-  if (!ready?.ready) return null;
+  `);
+  if (!state?.ready) return null;
 
   const t0 = Date.now();
-  const result = (await db.execute(sql`
+  const result = await db.execute<CatalogQueryRow>(sql`
     SELECT v.id, s.code AS source_code, v.state, v.name_en, v.name_primary,
            c.food, c.aliases_en, c.names_vi, c.part_cut, c.form_processing,
            c.cooking_method, c.fat_level, c.brand
@@ -92,50 +112,50 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
     JOIN ingredient_sources s ON s.id = v.source_id
     LEFT JOIN food_cards c ON c.food_composition_id = v.id
     WHERE s.code IN (${sql.join(
-      Object.keys(MATCHING_SOURCE_BUCKETS).map((c) => sql`${c}`),
+      MATCHABLE_SOURCE_CODES.map((c) => sql`${c}`),
       sql`, `
     )})
-  `)) as unknown as Record<string, unknown>[];
+  `);
 
   const rows = new Map<string, CatalogRow>();
   const names = new Map<string, Set<string>>();
   for (const r of result) {
-    const id = r.id as string;
-    const row: CatalogRow = {
-      id,
-      sourceCode: r.source_code as string,
-      state: r.state as string,
-      nameEn: (r.name_en as string) ?? '',
-      namePrimary: (r.name_primary as string) ?? '',
-      concept: '',
+    const source = sourceBucket(r.source_code);
+    if (!source) continue;
+    const base = {
+      id: r.id,
+      source,
+      state: r.state,
+      nameEn: r.name_en ?? '',
+      namePrimary: r.name_primary,
       card: r.food
         ? {
-            food: r.food as string,
-            namesVi: (r.names_vi as string[]) ?? [],
+            food: r.food,
+            namesVi: r.names_vi ?? [],
             facets: [
               r.part_cut,
               r.form_processing,
               r.cooking_method,
               r.fat_level,
               r.brand,
-            ].filter((f): f is string => typeof f === 'string' && f.length > 0),
+            ].filter(present),
           }
         : null,
     };
-    row.concept = conceptKey(row);
-    rows.set(id, row);
+    rows.set(r.id, {
+      ...base,
+      concept: conceptKey({ ...base, sourceCode: r.source_code }),
+    });
     names.set(
-      id,
+      r.id,
       new Set(
         [
-          row.nameEn,
-          row.namePrimary,
-          row.card?.food,
-          ...((r.aliases_en as string[]) ?? []),
-          ...(row.card?.namesVi ?? []),
-        ].filter(
-          (n): n is string => typeof n === 'string' && n.trim().length > 0
-        )
+          base.nameEn,
+          base.namePrimary,
+          base.card?.food,
+          ...(r.aliases_en ?? []),
+          ...(base.card?.namesVi ?? []),
+        ].filter(present)
       )
     );
   }

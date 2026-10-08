@@ -65,6 +65,7 @@ function exactMatch(
         },
         nutrition: NUTRITION,
         inediblePct: 0,
+        prompt: { name: 'Ức gà', score: 1 },
       },
     ],
   };

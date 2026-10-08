@@ -165,7 +165,6 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261008030200_food_cards_rls_and_index.sql` | B (Manual) | Read-only RLS on both card tables; HNSW over the first 256 dims as `halfvec` (`subvector(embedding,1,256)`, ~40 MB) |
 | `20261008030300_seed_food_cards.sql` | Data (generated) | 7,729 cards from `data/food-cards/cards.jsonl` via `scripts/data/food-cards/build-seed-migration.ts`; derives `food_card_vectors` strings in SQL; embeddings omitted (deploy backfills them) |
 | `20261008030400_match_food_cards_function.sql` | B (Manual) | `match_food_cards(vector[], per_query)` — nearest card strings per query vector, max-sim per row, `hnsw.ef_search` raised per call via `set_config` |
-| `20261008030500_food_cards_halfvec_index.sql`, `20261008030600_food_cards_index_256.sql` | B (Manual) | Converge databases that ran an earlier card-index version (dev) to the 256-dim halfvec index; no-ops on a fresh database |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

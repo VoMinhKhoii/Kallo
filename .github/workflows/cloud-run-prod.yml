@@ -179,8 +179,9 @@ jobs:
           echo "Rows needing embeddings: $pending"
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
       # Food-card strings (seeded by *_seed_food_cards.sql) need vectors before
-      # card retrieval switches on; the matcher keeps the legacy path until the
-      # index has any. to_regclass keeps the check valid before the table exists.
+      # card retrieval switches on; the matcher keeps the legacy path until every
+      # card string is embedded. to_regclass keeps the check valid before the
+      # table exists.
       - name: Check for food-card strings needing embeddings
         id: card_embed_check
         run: |

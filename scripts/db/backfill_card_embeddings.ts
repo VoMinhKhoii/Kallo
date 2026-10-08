@@ -35,6 +35,9 @@ if (!process.env.DATABASE_URL || (!useVertex && !process.env.GEMINI_API_KEY)) {
   process.exit(1);
 }
 
+// Its own SDK client, like backfill_embeddings.ts: the app's provider module
+// imports `server-only`, which a plain `bun scripts/…` run (the deploy step)
+// cannot load.
 function createGenAI(): GoogleGenAI {
   if (!useVertex)
     return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });

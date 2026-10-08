@@ -16,13 +16,13 @@
  */
 
 import { INSTANT_NOODLE_ROW } from '@/lib/ai/matching/alias/aliases';
+import { collisionsFor, fold, foldedLookupFor } from '@/lib/core/text/fold';
 import type { ConceptId, FoodConcept } from '../types';
 import {
   ALIAS_TO_CONCEPT,
   AMBIGUOUS,
   type ConceptResolution,
 } from './concept-aliases';
-import { collisionsFor, fold, foldedLookupFor } from './fold';
 
 function normalize(s: string): string {
   return s.normalize('NFC').toLowerCase().trim();

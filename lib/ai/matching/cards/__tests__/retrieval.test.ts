@@ -11,7 +11,8 @@ import type { AppDb } from '@/lib/infra/db/client';
 import { __resetCardCatalogForTests } from '../catalog';
 import { cardLabel } from '../label';
 import { createCardEmbeddingPrewarm } from '../prewarm';
-import { cardQueryStrings, matchCardCandidates } from '../retrieval';
+import { cardQueryStrings } from '../query-strings';
+import { matchCardCandidates } from '../retrieval';
 
 const ROWS = [
   {
@@ -171,7 +172,7 @@ describe('matchCardCandidates', () => {
     expect(ids).toContain('fao_beef'); // sources compete equally
     const top = result.candidates[0].info;
     expect(top.matchedName).toBe('Ức bò'); // the row's own name, not the label
-    expect(top.cardLabel).toContain(
+    expect(result.candidates[0].prompt.name).toContain(
       '[row: Beef, brisket, flat half, choice, raw]'
     );
     expect(top.similarity).toBeCloseTo(0.91);
@@ -270,7 +271,7 @@ describe('cardLabel', () => {
     expect(
       cardLabel({
         id: 'x',
-        sourceCode: 'USDA_SR',
+        source: 'usda',
         state: 'raw',
         nameEn: 'Peppers, serrano, raw',
         namePrimary: 'Ớt',

@@ -32,6 +32,22 @@ export interface V2MatchCandidate {
   info: MatchInfo;
   nutrition: NutritionPer100g | null;
   inediblePct: number | null;
+  /**
+   * How Call 2 sees this candidate, owned by the matcher that produced it:
+   * the legacy matcher shows the row name and its similarity; card retrieval
+   * shows the card label and a rank score (its order is the signal).
+   */
+  prompt: { name: string; score: number };
+}
+
+/** The legacy matcher's Call 2 view of a candidate: row name and similarity. */
+export function legacyCandidate(info: MatchInfo): V2MatchCandidate {
+  return {
+    info,
+    nutrition: null,
+    inediblePct: null,
+    prompt: { name: info.matchedName, score: info.similarity },
+  };
 }
 
 export interface MatchTopKOptions {
@@ -111,7 +127,7 @@ export async function matchTopKPerIngredient(
       exactHitCount++;
       results[i] = {
         ingredientIndex: ctxs[i].index,
-        candidates: [{ info: r.value, nutrition: null, inediblePct: null }],
+        candidates: [legacyCandidate(r.value)],
       };
     }
   }
@@ -182,11 +198,7 @@ export async function matchTopKPerIngredient(
     );
     results[r.value.ingredientIndex] = {
       ingredientIndex: r.value.ingredientIndex,
-      candidates: stateFiltered.map((info) => ({
-        info,
-        nutrition: null,
-        inediblePct: null,
-      })),
+      candidates: stateFiltered.map(legacyCandidate),
     };
   }
 

@@ -2,12 +2,7 @@ import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '@/lib/ai/language/guard';
-import {
-  getCardCatalog,
-  isCardCatalogReady,
-} from '@/lib/ai/matching/cards/catalog';
-import { createCardEmbeddingPrewarm } from '@/lib/ai/matching/cards/prewarm';
-import { createV2SpeculativeMatcher } from '@/lib/ai/matching/speculative';
+import { createMatchingPrewarm } from '@/lib/ai/matching/match-ingredients';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
@@ -74,32 +69,14 @@ export async function runGroundedDecomposition(args: {
     args;
   const profile = args.profile;
 
-  // v2-aware speculative prewarm: as Call-1 decomposition streams, warm the
-  // embedding cache for each ingredient's canonicalName in the background so
-  // embeddings are ready when matching runs. Feature-flagged; on abort the
-  // matcher stops firing new embeds. A prewarm error can never reject the
-  // stream (the matcher is fully catch-guarded).
+  // Speculative prewarm: as Call 1 streams, warm the embeddings the matcher
+  // will ask for (`createMatchingPrewarm`). Feature-flagged; on abort it stops
+  // firing new embeds, and a prewarm error can never reject the stream.
   const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
   const prewarmAbort = new AbortController();
-  // Card retrieval embeds four strings per ingredient; once its catalog is
-  // loaded, warm those instead of the legacy matcher's canonical name. The
-  // load is started here so a cold instance overlaps it with Call 1.
-  // Readiness is re-read per chunk: on a cold instance the catalog finishes
-  // loading mid-stream, and the strings left to stream then warm the matcher
-  // that will actually run.
-  void getCardCatalog(db);
-  const cardPrewarm = createCardEmbeddingPrewarm(gemini, prewarmAbort.signal);
-  const legacyPrewarm = createV2SpeculativeMatcher(
-    db,
-    gemini,
-    prewarmAbort.signal
-  );
-  const prewarm = !prewarmEnabled
-    ? () => {}
-    : (accumulated: string) =>
-        isCardCatalogReady()
-          ? cardPrewarm(accumulated)
-          : legacyPrewarm(accumulated);
+  const prewarm = prewarmEnabled
+    ? createMatchingPrewarm(db, gemini, prewarmAbort.signal)
+    : () => {};
   const decompositionInput = rawInput;
 
   const bufferedItemNameEvents: Array<

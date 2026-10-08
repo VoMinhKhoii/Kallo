@@ -5,8 +5,7 @@
  * rows plain similarity misses. k1 = 1.2, b = 0.75.
  */
 
-const tokens = (s: string) =>
-  (s ?? '').toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? [];
+import { wordTokens } from './lexical-index';
 
 export interface Bm25Index {
   search(query: string, k?: number): string[];
@@ -16,12 +15,12 @@ export function buildBm25Index(
   docs: { id: string; text: string }[]
 ): Bm25Index {
   const n = docs.length;
-  const lens = docs.map((d) => tokens(d.text).length);
+  const lens = docs.map((d) => wordTokens(d.text).length);
   const avg = lens.reduce((a, b) => a + b, 0) / Math.max(1, n);
   const postings = new Map<string, { doc: number; tf: number }[]>();
   docs.forEach((d, i) => {
     const tf = new Map<string, number>();
-    for (const w of tokens(d.text)) tf.set(w, (tf.get(w) ?? 0) + 1);
+    for (const w of wordTokens(d.text)) tf.set(w, (tf.get(w) ?? 0) + 1);
     for (const [w, f] of tf) {
       const list = postings.get(w);
       if (list) list.push({ doc: i, tf: f });
@@ -35,7 +34,7 @@ export function buildBm25Index(
   return {
     search(query, k = 30) {
       const scores = new Map<number, number>();
-      for (const w of new Set(tokens(query))) {
+      for (const w of new Set(wordTokens(query))) {
         const list = postings.get(w);
         if (!list) continue;
         const wIdf = idf.get(w) ?? 0;

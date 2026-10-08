@@ -29,12 +29,21 @@ export const SOURCE_USDA = 2;
  * barcode scans — and any future source never reach ingredient matching until
  * they are added here.
  */
-export const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> =
-  {
-    FAO_VN_2007: 'fao',
-    NIN_WEB_2026: 'fao',
-    USDA_SR: 'usda',
-  };
+const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
+  FAO_VN_2007: 'fao',
+  NIN_WEB_2026: 'fao',
+  USDA_SR: 'usda',
+};
+
+/** The `ingredient_sources.code`s that take part in ingredient matching. */
+export const MATCHABLE_SOURCE_CODES: readonly string[] = Object.keys(
+  MATCHING_SOURCE_BUCKETS
+);
+
+/** The acceptance bucket of a matchable source; undefined for any other code. */
+export function sourceBucket(code: string): 'fao' | 'usda' | undefined {
+  return MATCHING_SOURCE_BUCKETS[code];
+}
 
 /** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
 export const FAO_VECTOR_THRESHOLD = 0.8;
@@ -92,7 +101,7 @@ export function splitBySource(rows: SourcedMatchRow[]): {
   const fao: FuzzyMatchRow[] = [];
   const usda: FuzzyMatchRow[] = [];
   for (const row of rows) {
-    const bucket = MATCHING_SOURCE_BUCKETS[row.source_code];
+    const bucket = sourceBucket(row.source_code);
     if (bucket === 'usda') usda.push(row);
     else if (bucket === 'fao') fao.push(row);
   }
@@ -138,12 +147,6 @@ export interface MatchInfo {
   latencyMs?: number;
   /** Set by the cascade when an alias-fallback rescued the original name. */
   viaAlias?: boolean;
-  /**
-   * Card retrieval only: the compact card label Call 2 reads instead of
-   * `matchedName` (food + facets / VI name [row: name_en]). Never shown to
-   * users or persisted — `matchedName` stays the row's own name.
-   */
-  cardLabel?: string;
 }
 
 export interface PickBestSourceContext {

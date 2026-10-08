@@ -59,6 +59,28 @@ export function memoizeEmbedding(text: string, embedding: number[]): void {
   }
 }
 
+/**
+ * Requests still in flight, by exact text: a caller that misses the memo while
+ * another request for the same text is running (the stream prewarm, then
+ * matching) joins it instead of paying for a second embedding.
+ */
+const inFlight = new Map<string, Promise<number[]>>();
+
+export function inFlightEmbedding(text: string): Promise<number[]> | undefined {
+  return inFlight.get(text);
+}
+
+export function trackInFlightEmbedding(
+  text: string,
+  pending: Promise<number[]>
+): void {
+  inFlight.set(text, pending);
+  const clear = () => {
+    if (inFlight.get(text) === pending) inFlight.delete(text);
+  };
+  pending.then(clear, clear);
+}
+
 /** Entry count, for the miss-logging line in the provider. */
 export function memoizedEmbeddingCount(): number {
   return memo.size;

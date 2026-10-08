@@ -10,16 +10,20 @@
  * names as written; only an ASCII-only query matches unaccented names.
  */
 
-const unaccent = (t: string) =>
-  t
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .normalize('NFD')
-    .replace(/\p{Mn}/gu, '');
+import { fold } from '@/lib/core/text/fold';
+
+/** Lower-cased word tokens; shared with the BM25 index. */
+export function wordTokens(text: string): string[] {
+  return (text ?? '').toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? [];
+}
+
+/** True when folding diacritics would not change the query (ASCII-only). */
+const hasNoDiacritics = (query: string) =>
+  fold(query) === query.normalize('NFC').toLowerCase().trim();
 
 function trigrams(t: string): Set<string> {
   const out = new Set<string>();
-  for (const w of t.toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? []) {
+  for (const w of wordTokens(t)) {
     const p = `  ${w} `;
     for (let i = 0; i < p.length - 2; i++) out.add(p.slice(i, i + 3));
   }
@@ -37,7 +41,7 @@ function buildSide(names: Map<string, Set<string>>, ascii: boolean): Side {
   const inv = new Map<string, number[]>();
   for (const [row, ns] of names)
     for (const n of ns) {
-      const t = trigrams(ascii ? unaccent(n) : n);
+      const t = trigrams(ascii ? fold(n) : n);
       const i = strs.push({ row, len: n.length, size: t.size }) - 1;
       for (const g of t) {
         const list = inv.get(g);
@@ -60,7 +64,7 @@ export function buildLexicalIndex(
   const ascii = buildSide(names, true);
   return {
     search(query, k = 30) {
-      const side = unaccent(query) === query ? ascii : raw;
+      const side = hasNoDiacritics(query) ? ascii : raw;
       const tq = trigrams(query);
       if (tq.size === 0) return [];
       const touched: number[] = [];

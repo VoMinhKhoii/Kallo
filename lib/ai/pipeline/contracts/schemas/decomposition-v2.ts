@@ -6,6 +6,21 @@ import {
 } from './portion-evidence';
 
 /**
+ * What Call 1 writes into the card-retrieval query fields. The one definition:
+ * the field descriptions below and the decomposition prompt both read it (the
+ * provider's slim schema strips descriptions, so the prompt copy is the one
+ * the model sees).
+ */
+export const CARD_QUERY_RULES = {
+  queryEn:
+    'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.',
+  nameVi:
+    'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).',
+  tableName:
+    'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.',
+} as const;
+
+/**
  * V2 Call 1 ingredient — pure decomposition. Notably absent: `grams`,
  * `weightBasis`, `expectedState`. Those move to Call 2 where the LLM sees
  * the matched DB row and can reason with full context (eliminates the
@@ -32,27 +47,13 @@ export const decomposedIngredientV2Schema = z
     // the names so they stream early enough for the embedding prewarm.
     // Optional in the stored shape (fixtures, cached decompositions predate
     // them); `mealDecompositionV2CallSchema` makes Call 1 always emit them.
-    queryEn: z
-      .string()
-      .min(1)
-      .optional()
-      .describe(
-        'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.'
-      ),
-    nameVi: z
-      .string()
-      .min(1)
-      .optional()
-      .describe(
-        'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).'
-      ),
+    queryEn: z.string().min(1).optional().describe(CARD_QUERY_RULES.queryEn),
+    nameVi: z.string().min(1).optional().describe(CARD_QUERY_RULES.nameVi),
     tableName: z
       .string()
       .min(1)
       .optional()
-      .describe(
-        'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.'
-      ),
+      .describe(CARD_QUERY_RULES.tableName),
     cookingMethod: z
       .string()
       .min(1)

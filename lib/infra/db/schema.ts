@@ -286,7 +286,7 @@ export const foodCards = pgTable('food_cards', {
  * Every string that names a card (row names, card food/sentence, aliases,
  * Vietnamese names), one vector each. Retrieval scores a row by its
  * best-matching string (max-sim). `embedding` is filled by
- * scripts/db/backfill_embeddings.ts after the seed migration lands.
+ * scripts/db/backfill_card_embeddings.ts after the seed migration lands.
  */
 export const foodCardVectors = pgTable(
   'food_card_vectors',

@@ -1,4 +1,4 @@
-import { fold } from '@/lib/ai/portion/lexicon/fold';
+import { fold } from '@/lib/core/text/fold';
 
 export type RefuseCutClass =
   | 'rib'
