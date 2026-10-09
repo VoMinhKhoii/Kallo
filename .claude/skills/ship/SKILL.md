@@ -271,7 +271,7 @@ Post the brief from Phase 5 as a PR comment. The first line must be exactly
 `@codex review`; the rest tells Codex what the change is and where to look:
 
 ```bash
-gh pr comment <pr-number> --body "$(cat <<'BODY'
+REQUEST_URL=$(gh pr comment <pr-number> --body "$(cat <<'BODY'
 @codex review
 
 **Change:** <what changed and why, 2-4 sentences>
@@ -282,7 +282,8 @@ gh pr comment <pr-number> --body "$(cat <<'BODY'
 
 **Out of scope:** <what was deliberately left alone>
 BODY
-)"
+)")
+REQUEST_ID=${REQUEST_URL##*issuecomment-}   # needed to read Codex's 👍 reaction
 ```
 
 On every later round, the comment names what changed since the last round:
@@ -298,26 +299,34 @@ Please re-check <the area the fix touched>.
 
 #### Wait for the verdict
 
-Codex reacts 👀 while it runs (usually 2-10 minutes). Never use foreground
-`sleep`; run a background poll or a Monitor until a verdict on the current head
-appears. The verdict is one of:
+Codex reacts 👀 while it runs (usually 2-10 minutes) and keeps a
+`## Codex Review Summary` status table comment up to date. That table is status,
+not a verdict. **Do not push while a round is running**: a 👍 carries no commit,
+so it only counts if `HEAD` is still the commit the round was requested on.
+Never use foreground `sleep`; run a background poll or a Monitor until a verdict
+on the current head appears. The verdict is one of:
 
-- **Approved** — an issue comment from `chatgpt-codex-connector[bot]` reading
-  `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**` matches
-  `git rev-parse --short=10 HEAD`, or a 👍 reaction from the bot on our latest
-  `@codex review` comment.
-- **Findings** — a review from the bot with inline comments tagged P0/P1/P2/P3.
+- **Approved**: either an issue comment from `chatgpt-codex-connector[bot]`
+  starting `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
+  matches `git rev-parse --short=10 HEAD`, or a `+1` reaction from the bot on
+  `REQUEST_ID` with no push since the request.
+- **Findings**: a review from the bot whose `commit_id` is `HEAD`, with inline
+  comments tagged P0/P1/P2/P3.
 
 ```bash
 HEAD_SHA=$(git rev-parse HEAD)
-# Verdict comments (approval text + reviewed commit)
+BOT='chatgpt-codex-connector[bot]'
+# Approval comment (ignores the status table)
 gh api repos/{owner}/{repo}/issues/<pr-number>/comments --paginate \
-  --jq '.[] | select(.user.login=="chatgpt-codex-connector[bot]") | {created_at, body: .body[0:200]}'
-# Reviews and inline findings on the current head
-gh api repos/{owner}/{repo}/pulls/<pr-number>/reviews --paginate \
-  --jq '.[] | select(.user.login=="chatgpt-codex-connector[bot]") | {id, commit_id, submitted_at}'
+  --jq ".[] | select(.user.login==\"$BOT\" and (.body | startswith(\"Codex Review:\"))) | {created_at, body: .body[0:200]}"
+# Approval reaction on our request
+gh api repos/{owner}/{repo}/issues/comments/$REQUEST_ID/reactions \
+  --jq ".[] | select(.user.login==\"$BOT\") | .content"
+# Findings raised on this head. Filter on original_commit_id: GitHub moves
+# commit_id forward on older comments that still apply, which would resurface
+# findings from earlier rounds as if they were new.
 gh api repos/{owner}/{repo}/pulls/<pr-number>/comments --paginate \
-  --jq ".[] | select(.user.login==\"chatgpt-codex-connector[bot]\" and .commit_id==\"$HEAD_SHA\") | {id, path, line, body}"
+  --jq ".[] | select(.user.login==\"$BOT\" and .original_commit_id==\"$HEAD_SHA\") | {id, path, line, body}"
 ```
 
 An approval for an **older** commit does not count. If nothing arrives after
@@ -355,8 +364,11 @@ wait for CI (6a), then request the next round. Repeat until the bot approves the
 Do not loop forever and do not cave to win the approval:
 - If Codex re-raises a finding we rejected with evidence, do not change the code
   just to quiet it. Stop and put both positions to the user; they decide.
-- After 5 rounds without approval, stop and summarize for the user: open findings,
-  what was fixed, what was disputed, and why.
+- **Cap: 5 Codex requests per ship, total.** Every `@codex review` counts,
+  including rounds that approved and were then invalidated by a CodeRabbit or CI
+  fix, so the 6a → 6c → 6d cycle cannot run forever. At the cap, stop and
+  summarize for the user: open findings, what was fixed, what was disputed, and
+  why.
 
 ### 6d. Triage CodeRabbit Comments
 
@@ -459,6 +471,7 @@ Status:  Draft — ready to mark as ready-for-review when you're happy
 
 CI:      All checks green
 Codex:   Approved on <sha> after <n> rounds
+         (or: Not approved; user accepted open dispute(s): <finding>, on <date>)
          Fixed: <count>  Disputed (with reasons): <count>
 Review:  All CodeRabbit comments resolved or dismissed
 
