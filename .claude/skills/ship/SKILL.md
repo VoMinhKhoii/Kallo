@@ -4,10 +4,12 @@ description: |
   MANUAL TRIGGER ONLY: invoke only when user types /ship.
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
   Handles: git add, branch creation (with meaningful name), conventional commit,
-  push, draft PR creation, CI monitoring and fixing, CodeRabbit comment triage
-  (auto-fix reasonable ones, dismiss false positives with explanation, escalate
-  architectural issues). Loops until all CI checks are green and all actionable
-  review comments are resolved. Use when the user says "ship this", "commit and PR", "push and open a PR", "send this for review", "submit my changes", or anything that implies taking local changes all the way to a reviewable pull request.
+  push, draft PR creation, CI monitoring and fixing, an always-on Codex review
+  loop (`@codex review` with a change brief, iterated until Codex approves the
+  current head, every finding judged on its merits, not blindly applied),
+  CodeRabbit comment triage (auto-fix reasonable ones, dismiss false positives
+  with explanation, escalate architectural issues). Loops until all CI checks are
+  green, Codex approves, and all actionable review comments are resolved. Use when the user says "ship this", "commit and PR", "push and open a PR", "send this for review", "submit my changes", or anything that implies taking local changes all the way to a reviewable pull request.
   Proactively suggest after any significant code change session.
 allowed-tools:
   - Bash
@@ -22,7 +24,9 @@ allowed-tools:
 # Ship Skill
 
 Takes your working directory from unstaged changes to a clean draft PR, then loops
-until all CI checks are green and all CodeRabbit comments are resolved.
+until all CI checks are green, **Codex has approved the current head**, and all
+CodeRabbit comments are resolved. The Codex review is not optional and is never
+skipped; neither is our own judgment: Codex is a second reviewer, not the authority.
 
 ---
 
@@ -175,6 +179,20 @@ gh pr create \
 
 Print the PR URL. Save the PR number for polling later.
 
+**Before leaving this phase, write the Codex brief** (used in 6c) while the diff is
+fresh. It is also our own review of the change, so do it honestly:
+
+1. **What changed and why** — 2-4 sentences in plain words: the behavior before,
+   the behavior after, and the reason.
+2. **Where it could break** — the 2-5 spots *we* consider riskiest (a boundary
+   condition, a cache, a migration, a trust boundary, a concurrency path), each
+   with file path and what to check. Name the function, field or invariant.
+3. **Out of scope** — anything deliberately not changed, so Codex does not flag it
+   as missing.
+
+If writing point 2 surfaces a real bug, fix it now, before asking Codex. We do
+not outsource finding our own bugs.
+
 ---
 
 ## Phase 6: CI + CodeRabbit Loop
@@ -198,7 +216,7 @@ States to handle:
 
 | State | Action |
 |-------|--------|
-| All green ✅ | Proceed to 6c |
+| All green ✅ | Proceed to 6c (Codex) |
 | Any pending ⏳ | Wait 30s, re-poll |
 | Any failed ❌ | Go to **[CI Failure Triage]** |
 
@@ -241,7 +259,105 @@ For each failure:
 - If CI would benefit from a new check (e.g., missing lint step, no test for
   a new module), add it and note it in the next commit message
 
-### 6c. Triage CodeRabbit Comments
+### 6c. Codex Review Loop (always runs)
+
+Codex is the `chatgpt-codex-connector[bot]` GitHub app. It reviews on demand when
+the PR gets a comment starting with `@codex review`; drafts are fine.
+
+#### Request a review
+
+Post the brief from Phase 5 as a PR comment. The first line must be exactly
+`@codex review`; the rest tells Codex what the change is and where to look:
+
+```bash
+gh pr comment <pr-number> --body "$(cat <<'BODY'
+@codex review
+
+**Change:** <what changed and why, 2-4 sentences>
+
+**Please check in particular:**
+- `<path>`: <the invariant or edge case to verify>
+- `<path>`: <...>
+
+**Out of scope:** <what was deliberately left alone>
+BODY
+)"
+```
+
+On every later round, the comment names what changed since the last round:
+
+```text
+@codex review
+
+Round <n>. Since the last review (`<old-sha>`):
+- Fixed: <finding> in `<sha>`
+- Not changed, by design: <finding>: <one-line reason> (replied on the thread)
+Please re-check <the area the fix touched>.
+```
+
+#### Wait for the verdict
+
+Codex reacts 👀 while it runs (usually 2-10 minutes). Never use foreground
+`sleep`; run a background poll or a Monitor until a verdict on the current head
+appears. The verdict is one of:
+
+- **Approved** — an issue comment from `chatgpt-codex-connector[bot]` reading
+  `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**` matches
+  `git rev-parse --short=10 HEAD`, or a 👍 reaction from the bot on our latest
+  `@codex review` comment.
+- **Findings** — a review from the bot with inline comments tagged P0/P1/P2/P3.
+
+```bash
+HEAD_SHA=$(git rev-parse HEAD)
+# Verdict comments (approval text + reviewed commit)
+gh api repos/{owner}/{repo}/issues/<pr-number>/comments --paginate \
+  --jq '.[] | select(.user.login=="chatgpt-codex-connector[bot]") | {created_at, body: .body[0:200]}'
+# Reviews and inline findings on the current head
+gh api repos/{owner}/{repo}/pulls/<pr-number>/reviews --paginate \
+  --jq '.[] | select(.user.login=="chatgpt-codex-connector[bot]") | {id, commit_id, submitted_at}'
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments --paginate \
+  --jq ".[] | select(.user.login==\"chatgpt-codex-connector[bot]\" and .commit_id==\"$HEAD_SHA\") | {id, path, line, body}"
+```
+
+An approval for an **older** commit does not count. If nothing arrives after
+20 minutes, re-post the `@codex review` comment once; if it is silent again, tell
+the user Codex is not responding and continue with 6d, leaving the loop open.
+
+#### Judge every finding ourselves
+
+Codex findings are claims to verify, not orders. For each one:
+
+1. **Reproduce the reasoning.** Read the code it points at and trace a real
+   caller or input to the failure. Write a failing test when the path is real.
+2. **Decide**, using the 6d framework (ACT / DISMISS / ESCALATE):
+   - Real bug, real path → fix at the root cause, add or extend a test.
+   - Real path, but the fix costs more than it prevents, or contradicts a repo
+     rule (`AGENTS.md`, a decision log entry) → do not change the code; reply on
+     the thread with the path traced and why.
+   - Wrong (misread the code, flags intended behavior) → reply with the evidence
+     (file:line, test name) and resolve.
+   - Architectural or ambiguous → escalate to the user.
+3. **Also ask what Codex missed.** A finding often points at a class of bug:
+   look for the same mistake elsewhere in the diff and fix those too. If our own
+   brief named a risk Codex did not comment on, check it again ourselves before
+   treating silence as clearance.
+
+Every Codex thread gets a reply (`Fixed in <sha>.` or `Not changing: <reason>.`)
+before the next round is requested.
+
+#### Iterate until approval
+
+Commit fixes with explicit paths (`fix: address Codex review round <n>`), push,
+wait for CI (6a), then request the next round. Repeat until the bot approves the
+**current** head.
+
+Do not loop forever and do not cave to win the approval:
+- If Codex re-raises a finding we rejected with evidence, do not change the code
+  just to quiet it. Stop and put both positions to the user; they decide.
+- After 5 rounds without approval, stop and summarize for the user: open findings,
+  what was fixed, what was disputed, and why.
+
+### 6d. Triage CodeRabbit Comments
 
 After CI is green, fetch all open review comments:
 
@@ -299,7 +415,8 @@ git commit -m "fix: address CodeRabbit review comments"
 git push
 ```
 
-After pushing, CI re-runs. Return to **Phase 6a**.
+After pushing, CI re-runs. Return to **Phase 6a**, and request a fresh Codex round
+(6c): any push after Codex's approval invalidates it.
 
 #### Resolving / Dismissing Comments
 
@@ -315,11 +432,14 @@ gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
   -f body="Not acting on this: <brief technical reason>."
 ```
 
-### 6d. Loop Exit Condition
+### 6e. Loop Exit Condition
 
-Exit the loop when **both** are true:
+Exit the loop when **all** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
-2. No unresolved actionable CodeRabbit comments remain
+2. Codex has approved the current `HEAD` (6c), or the user explicitly accepted
+   an open dispute
+3. Every Codex and CodeRabbit thread has a fix or a reasoned reply
+4. No unresolved actionable CodeRabbit comments remain
 
 Then print a final summary (see Phase 7).
 
@@ -337,6 +457,8 @@ PR:      <url>
 Status:  Draft — ready to mark as ready-for-review when you're happy
 
 CI:      All checks green
+Codex:   Approved on <sha> after <n> rounds
+         Fixed: <count>  Disputed (with reasons): <count>
 Review:  All CodeRabbit comments resolved or dismissed
 
 Commits this session:
