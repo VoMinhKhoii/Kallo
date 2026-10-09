@@ -195,9 +195,10 @@ not outsource finding our own bugs.
 
 ---
 
-## Phase 6: CI + CodeRabbit Loop
+## Phase 6: CI + Codex + CodeRabbit Loop
 
-This is the main loop. Repeat until **all CI checks pass** AND **no unresolved
+This is the main loop. Repeat until the exit condition in 6e holds: **all CI
+checks pass**, **Codex has approved the current head**, and **no unresolved
 actionable comments remain**.
 
 ### 6a. Wait for CI
