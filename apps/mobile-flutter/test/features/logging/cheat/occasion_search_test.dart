@@ -52,6 +52,15 @@ void main() {
     expect(_search('Korean BBQ buffet'), isEmpty);
   });
 
+  test('a decomposed (NFD) query or occasion still matches', () {
+    // "bò" as b + o + combining grave: a different code-point sequence from
+    // the composed "bò", which an exact `contains` would reject.
+    const nfd = 'bò';
+    expect(_search(nfd), contains(_bo.rawInput));
+    final stored = [_o('phở $nfd')];
+    expect(filterCheatOccasions(stored, 'bò'), stored);
+  });
+
   test('foldVietnamese strips composed and decomposed marks alike', () {
     expect(foldVietnamese('đồ thái'), 'do thai');
     // "ồ" as o + combining circumflex + combining grave (NFD).

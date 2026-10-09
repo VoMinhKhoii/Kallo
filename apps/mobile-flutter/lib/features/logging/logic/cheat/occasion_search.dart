@@ -16,7 +16,8 @@ import '../../../../models/logging/cheat.dart';
 ///   are load-bearing in Vietnamese (bò is beef, bơ is butter);
 /// - a word typed WITHOUT them compares against the text with its diacritics
 ///   folded, so "do thai" still finds "đồ thái". The same split the server's
-///   ingredient search makes (`search_text` vs `search_text_ascii`).
+///   ingredient search makes (`search_text` vs `search_text_ascii`);
+/// - if either side is decomposed (NFD), the accented word is folded too.
 ///
 /// Order is kept: the server returns newest first, and the newest match is the
 /// likeliest repeat.
@@ -35,12 +36,25 @@ List<RecentCheatOccasion> filterCheatOccasions(
 bool _matches(String text, List<String> words) {
   final lower = text.toLowerCase();
   final folded = foldVietnamese(lower);
+  final textDecomposed = _hasCombiningMark(lower);
   for (final word in words) {
-    final haystack = _isAscii(word) ? folded : lower;
-    if (!haystack.contains(word)) return false;
+    final bool hit;
+    if (_isAscii(word)) {
+      hit = folded.contains(word);
+    } else if (textDecomposed || _hasCombiningMark(word)) {
+      // One side is decomposed (NFD — pasted from macOS, say) and Dart has no
+      // normaliser to compose it, so an exact `bò` cannot be compared. Fold
+      // both: the match is found, at the cost of bò/bơ in this rare case.
+      hit = folded.contains(foldVietnamese(word));
+    } else {
+      hit = lower.contains(word);
+    }
+    if (!hit) return false;
   }
   return true;
 }
+
+bool _hasCombiningMark(String s) => s.runes.any(_isCombiningMark);
 
 List<String> _words(String query) =>
     query.toLowerCase().split(_separator).where((w) => w.isNotEmpty).toList();
