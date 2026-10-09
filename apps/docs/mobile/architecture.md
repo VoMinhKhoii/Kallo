@@ -67,7 +67,8 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
 - **dashboard** — calorie-remaining ring, macro bars, adherence heatmap, weight chart, recent meals.
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.
   Composer modes: normal (AI), cheat meal (AI slider estimate — intensity strip, clarify
-  fallback, "log it again" chips via `/api/v1/meals/cheat-*`), manual, barcode.
+  fallback, and a "log it again" list via `/api/v1/meals/cheat-*` on the `/` picker's
+  grey band (`widgets/picker/`), filtered on the device by what you type), manual, barcode.
   Instant mode also carries **picks**: typing `/` opens a picker of dishes and meals you
   have logged before (`/api/v1/meals/relog/candidates`), and the composer's own scan icon
   opens the barcode sheet in PICK mode, which hands the product back instead of logging

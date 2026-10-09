@@ -1,10 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/logging/relog.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import 'relog_picker_option.dart';
+import '../../logic/format.dart';
+import '../picker/picker_option.dart';
+import '../picker/picker_styles.dart';
 
 /// One labelled group of the `/` picker — the dishes or the meals. Renders
 /// nothing when empty, so a query that only matches dishes shows no meals
@@ -43,20 +44,30 @@ class RelogPickerGroup extends StatelessWidget {
           // Full white, not a translucent one: at 11px this is small text, and
           // white@70% on the band falls under 4.5:1. It still recedes from the
           // dish names, by size and letter-spacing rather than by opacity.
-          child: Text(
-            label.toUpperCase(),
-            style: dashEyebrow(color: KalloColors.bandForeground),
-          ),
+          child: Text(label.toUpperCase(), style: PickerStyles.eyebrow),
         ),
         for (final candidate in candidates)
-          RelogPickerOption(
+          PickerOption(
             key: ValueKey(optionKey(candidate)),
-            candidate: candidate,
+            title: candidate.name,
+            // The macro split either way, dish or meal.
+            subtitle: macroSplit(candidate.summary),
+            kcal: candidate.summary.caloriesKcal,
             onSelect: () => onSelect(candidate),
           ),
       ],
     );
   }
+
+  /// `P 22g · C 40g · F 9g` — the subtitle of every relog row.
+  static String macroSplit(RelogMacroSummary summary) =>
+      'logging.relog.macroSplit'.tr(
+        namedArgs: {
+          'protein': fmtMacroValue(summary.proteinG),
+          'carbs': fmtMacroValue(summary.carbohydrateG),
+          'fat': fmtMacroValue(summary.fatG),
+        },
+      );
 
   /// Stable identity for a row. A dish is identified by its source meal AND its
   /// item order — the same meal can contribute several dishes.

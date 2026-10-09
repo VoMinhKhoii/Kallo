@@ -13,7 +13,7 @@ import 'package:kallo_mobile/features/logging/widgets/composer/feed_composer.dar
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input_controls.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:kallo_mobile/features/logging/widgets/relog/relog_picker_option.dart';
+import 'package:kallo_mobile/features/logging/widgets/picker/picker_option.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/relog_picker_popup.dart';
 import 'package:kallo_mobile/models/logging/cheat.dart';
 import 'package:kallo_mobile/models/logging/relog.dart';
@@ -379,7 +379,7 @@ void main() {
   testWidgets('no picker while no token is open', (tester) async {
     await tester.pumpWidget(composer());
     await tester.pumpAndSettle();
-    expect(find.byType(RelogPickerOption), findsNothing);
+    expect(find.byType(PickerOption), findsNothing);
   });
 
   testWidgets('the picker never opens in cheat mode', (tester) async {
@@ -387,7 +387,7 @@ void main() {
     // carries picks, so the picker must not be reachable there at all.
     await tester.pumpWidget(composer(relogQuery: '', mode: MealLogMode.cheat));
     await tester.pumpAndSettle();
-    expect(find.byType(RelogPickerOption), findsNothing);
+    expect(find.byType(PickerOption), findsNothing);
   });
 
   group('committed picks', () {

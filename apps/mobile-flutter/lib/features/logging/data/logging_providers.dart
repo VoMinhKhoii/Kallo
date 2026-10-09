@@ -115,16 +115,20 @@ final mealDatesProvider = FutureProvider.autoDispose.family<
       .then((list) => list.cast<String>());
 });
 
-/// Recent, de-duplicated cheat occasions — the "log it again" chips shown
+/// Recent, de-duplicated cheat occasions — the "log it again" picker shown
 /// above the composer while in cheat mode (`GET /api/v1/meals/cheat-occasions`).
 /// Keyed per-user; invalidated by [invalidateMealSurfaces] so a fresh cheat
-/// save refreshes the chips.
+/// save refreshes the list.
+///
+/// Fetches the server's ceiling (12), not the handful on screen: the picker
+/// filters THIS list as you type (`filterCheatOccasions`), on the device and
+/// without a request per keystroke, so the list is the whole search space.
 final recentCheatOccasionsProvider = FutureProvider.autoDispose
     .family<List<RecentCheatOccasion>, String?>((ref, userId) async {
       if (userId == null) return const [];
       final api = ref.watch(apiClientProvider);
       final list = await api.get<List<dynamic>>(
-        '/api/v1/meals/cheat-occasions?limit=5',
+        '/api/v1/meals/cheat-occasions?limit=12',
       );
       return list
           .map((e) => RecentCheatOccasion.fromJson(e as Map<String, dynamic>))

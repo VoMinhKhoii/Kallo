@@ -4,18 +4,19 @@ import 'package:flutter/material.dart';
 /// Rendering nothing is not closing: the query stayed live, so every keystroke
 /// still ran a search whose rows could never be seen. It dismisses instead —
 /// ONCE, from [initState] (a StatelessWidget's build may run several times in a
-/// frame) and post-frame, because this runs during layout. `dismiss` remembers
-/// the token, so typing on stays closed and a fresh `/` re-opens.
-class RelogPickerCollapsed extends StatefulWidget {
-  const RelogPickerCollapsed({super.key, required this.onDismiss});
+/// frame) and post-frame, because this runs during layout. Each band's dismiss
+/// remembers why it closed (the `/` token; cheat mode's field), so typing on
+/// stays closed.
+class PickerCollapsed extends StatefulWidget {
+  const PickerCollapsed({super.key, required this.onDismiss});
 
   final VoidCallback onDismiss;
 
   @override
-  State<RelogPickerCollapsed> createState() => _RelogPickerCollapsedState();
+  State<PickerCollapsed> createState() => _PickerCollapsedState();
 }
 
-class _RelogPickerCollapsedState extends State<RelogPickerCollapsed> {
+class _PickerCollapsedState extends State<PickerCollapsed> {
   @override
   void initState() {
     super.initState();
