@@ -101,4 +101,9 @@ export interface RecentCheatOccasion {
   /** The occasion text (e.g. "Korean BBQ buffet"), shown on the chip. */
   rawInput: string;
   loggedAt: string;
+  /**
+   * The newest grouped meal's saved total — last time's figure, so a re-log
+   * shows what it is about to add. Null when that meal saved no total.
+   */
+  caloriesKcal: number | null;
 }

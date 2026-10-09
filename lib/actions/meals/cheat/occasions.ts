@@ -45,6 +45,7 @@ export async function loadRecentCheatOccasionsAction(input: {
       id: meals.id,
       rawInput: meals.rawInput,
       loggedAt: meals.loggedAt,
+      caloriesKcal: meals.caloriesKcal,
     })
     .from(meals)
     .where(and(eq(meals.userId, user.id), eq(meals.entryMode, 'cheat')))
@@ -57,6 +58,7 @@ export async function loadRecentCheatOccasionsAction(input: {
     mealId: row.id,
     rawInput: row.rawInput,
     loggedAt: row.loggedAt.toISOString(),
+    caloriesKcal: row.caloriesKcal ?? null,
   }));
 }
 
