@@ -271,9 +271,12 @@ Post the brief from Phase 5 as a PR comment. The first line must be exactly
 `@codex review`; the rest tells Codex what the change is and where to look:
 
 ```bash
-REQUEST_URL=$(gh pr comment <pr-number> --body "$(cat <<'BODY'
-@codex review
+REQUEST_SHA=$(git rev-parse HEAD)
+REQUEST_URL=$(gh pr comment <pr-number> --body "@codex review
 
+**Review commit:** $REQUEST_SHA
+
+$(cat <<'BODY'
 **Change:** <what changed and why, 2-4 sentences>
 
 **Please check in particular:**
@@ -290,6 +293,8 @@ On every later round, the comment names what changed since the last round:
 
 ```text
 @codex review
+
+**Review commit:** <full HEAD sha>
 
 Round <n>. Since the last review (`<old-sha>`):
 - Fixed: <finding> in `<sha>`
@@ -309,9 +314,11 @@ on the current head appears. The verdict is one of:
 - **Approved**: either an issue comment from `chatgpt-codex-connector[bot]`
   starting `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
   matches `git rev-parse --short=10 HEAD`, or a `+1` reaction from the bot on
-  `REQUEST_ID` with no push since the request.
-- **Findings**: a review from the bot whose `commit_id` is `HEAD`, with inline
-  comments tagged P0/P1/P2/P3.
+  `REQUEST_ID` while `REQUEST_SHA` still equals `HEAD`.
+- **Findings**: a bot review whose `**Reviewed commit:**` is `HEAD`. Its findings
+  are the bot's inline comments with `original_commit_id == HEAD` (tagged
+  P0/P1/P2/P3). Never match inline comments on `commit_id`: GitHub moves it
+  forward on older comments that still apply.
 
 ```bash
 HEAD_SHA=$(git rev-parse HEAD)
@@ -354,6 +361,11 @@ Codex findings are claims to verify, not orders. For each one:
 
 Every Codex thread gets a reply (`Fixed in <sha>.` or `Not changing: <reason>.`)
 before the next round is requested.
+
+Codex sometimes answers a thread reply by running its own cloud task and posting
+a `### Summary` comment with a commit and "PR metadata" on another branch. That
+patch is a suggestion: read it, take any idea that holds up into our own commit,
+and never merge or cherry-pick its branch.
 
 #### Iterate until approval
 
