@@ -355,6 +355,7 @@ export const RESPONSE_SCHEMAS: Record<string, JsonSchema> = {
     mealId: uuid,
     rawInput: { type: 'string' },
     loggedAt: { type: 'string', format: 'date-time' },
+    caloriesKcal: nullableNumber,
   }),
   RelogCandidates: object({
     dishes: array(relogDishCandidate),

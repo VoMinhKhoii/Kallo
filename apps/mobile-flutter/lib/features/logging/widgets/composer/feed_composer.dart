@@ -11,7 +11,7 @@ import '../../logic/logging_spacing.dart';
 import '../../logic/feed/day_actions.dart';
 import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_group.dart';
-import '../cheat/cheat_occasion_chips.dart';
+import '../cheat/cheat_recents_picker.dart';
 import 'composer_dock.dart';
 import 'meal_input.dart';
 import '../timeline/partial_day_notice.dart';
@@ -131,6 +131,8 @@ class FeedComposer extends ConsumerWidget {
       onSubmit: onSubmit,
       onCancel: onCancel,
       analyzing: analyzing,
+      // One band at a time, and both ride the slot that yields to the field:
+      // the `/` picker in normal mode, "log it again" in cheat mode.
       popupSlot:
           isNormal && relogQuery != null
               ? RelogPickerSection(
@@ -138,6 +140,13 @@ class FeedComposer extends ConsumerWidget {
                 query: relogQuery!,
                 onSelect: onSelectRelog,
                 onDismiss: onDismissRelog,
+              )
+              : mode == MealLogMode.cheat
+              ? CheatRecentsPicker(
+                userId: userId,
+                text: textController,
+                disabled: stagingRepeat || analyzing,
+                onSelect: onRepeatCheat,
               )
               : null,
       // Under-logged past day: the note rides INSIDE the field's card, because
@@ -180,17 +189,6 @@ class FeedComposer extends ConsumerWidget {
               style: dashMeta(),
             ),
           ),
-        // Cheat mode's "log it again" chips sit above the composer, as on the
-        // web. The intensity moved OUT of here: it now hangs off the mode sheet
-        // that sets the mode, and reads back on the composer's mode pill.
-        if (mode == MealLogMode.cheat) ...[
-          CheatOccasionChips(
-            userId: userId,
-            disabled: stagingRepeat || analyzing,
-            onSelect: onRepeatCheat,
-          ),
-          const SizedBox(height: LoggingSpacing.block),
-        ],
         // The flexible half of the dock — inside it the `/` picker is in
         // turn the half that yields, so the field never shrinks.
         Flexible(child: input),
