@@ -114,7 +114,7 @@ function mockDb(
     food_composition_id: string;
     similarity: number;
   }[],
-  rows: typeof ROWS = ROWS
+  rows: readonly object[] = ROWS
 ) {
   const execute = vi.fn(async (q: unknown) => {
     const text = JSON.stringify(q);
