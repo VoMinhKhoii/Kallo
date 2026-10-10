@@ -154,7 +154,7 @@ export async function runCallTwoStage(args: {
         templateSample: call2SystemPrompt,
         model: args.profile.nutritionModel,
       });
-      return runCallTwo({
+      const result = await runCallTwo({
         estimator,
         mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
@@ -173,30 +173,28 @@ export async function runCallTwoStage(args: {
         onAttemptComplete: args.onAttemptComplete,
         ...(callTrace ? { trace: callTrace } : {}),
       });
+      if (!selector) return result;
+      // Inside the stage, so its trace output and duration are the final picks.
+      const selection = applySelection({
+        decomposition,
+        grounded: result.grounded,
+        mealItems: mealItemsWithCandidates,
+        picks: await selector.settle(),
+      });
+      // Streamed item_macros used Call 2's own picks; let the final flush
+      // re-send every dish (clients upsert by id).
+      if (selection.overrides > 0) itemMacrosStreamed.clear();
+      console.info(`[selector] ${selection.overrides} picks overridden`);
+      return { ...result, grounded: selection.grounded };
     }
   ).catch((err) => {
     selector?.abort();
     throw err;
   });
 
-  let grounded = call2.grounded;
-  if (selector) {
-    const selection = applySelection({
-      decomposition,
-      grounded,
-      mealItems: mealItemsWithCandidates,
-      picks: await selector.settle(),
-    });
-    grounded = selection.grounded;
-    // Streamed item_macros used Call 2's own picks; let the final flush
-    // re-send every dish (clients upsert by id).
-    if (selection.overrides > 0) itemMacrosStreamed.clear();
-    console.info(`[selector] ${selection.overrides} picks overridden`);
-  }
-
   return {
     call2,
-    grounded,
+    grounded: call2.grounded,
     promptCharsCall2,
     nutritionMaxAttempt,
     offsetByName,
