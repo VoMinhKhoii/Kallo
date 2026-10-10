@@ -141,10 +141,16 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
         const raw = repairPipelineOutput(JSON.parse(accumulated));
         if (isEmptyFoodAnswer(raw))
           throw schemaSlip('food answer with no meal items');
-        let parsed = params.schema.safeParse(raw);
-        if (!parsed.success)
-          parsed = params.schema.safeParse(withoutEmptyStrings(raw));
+        let answer = raw;
+        let parsed = params.schema.safeParse(answer);
+        if (!parsed.success) {
+          answer = withoutEmptyStrings(raw);
+          parsed = params.schema.safeParse(answer);
+        }
         if (!parsed.success) throw parsed.error;
+        // Trace the answer the pipeline used, so a dry-run replay of it
+        // (which skips repair and validation) matches the live run.
+        state.accumulated = JSON.stringify(answer);
         onAttempt(attempt, t0, parsed.data, undefined);
         return parsed.data;
       } catch (err) {

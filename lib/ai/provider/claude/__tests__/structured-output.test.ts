@@ -1,11 +1,22 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import type { StructuredOutputParams } from '../../types';
+import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
+import type { GeminiCallTrace, StructuredOutputParams } from '../../types';
 import {
   createClaudeStructuredOutput,
   systemBlocks,
 } from '../structured-output';
+
+vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({ logLlmCall: vi.fn() }));
+
+const TRACE = {
+  db: {},
+  requestId: 'r',
+  stageLogId: 's',
+  promptVersionId: null,
+  promptRendered: '',
+} as unknown as GeminiCallTrace;
 
 interface Reply {
   text: string;
@@ -201,6 +212,33 @@ describe('createClaudeStructuredOutput', () => {
       error: dropped,
       inputTokens: 3100,
       cachedTokens: 3000,
+    });
+  });
+
+  it('traces the repaired answer, the one the pipeline used', async () => {
+    const dishes = z.object({
+      mealItems: z.array(
+        z.object({
+          mealItemName: z.string(),
+          ingredients: z.array(z.object({ refusePct: z.number().max(80) })),
+        })
+      ),
+    });
+    const { client } = fakeClaude([
+      {
+        text: '{"mealItems":[{"mealItemName":"Cá","ingredients":[{"refusePct":95}]}]}',
+      },
+    ]);
+    await createClaudeStructuredOutput(client).generateStructuredOutputStream(
+      {
+        ...params(),
+        schema: dishes,
+      } as unknown as StructuredOutputParams<z.infer<typeof dishes>>,
+      { trace: TRACE }
+    );
+    const logged = vi.mocked(logLlmCall).mock.calls[0][0];
+    expect(JSON.parse(logged.responseRaw ?? '')).toEqual({
+      mealItems: [{ mealItemName: 'Cá', ingredients: [{ refusePct: 80 }] }],
     });
   });
 });
