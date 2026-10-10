@@ -376,3 +376,29 @@ describe('streamed ingredient names that differ only in Unicode normalization', 
     expect(events[0].calories).toBeGreaterThan(150);
   });
 });
+
+describe('item_macros ids announced under another Unicode form', () => {
+  it('reuses the announced id for every fragment of a split dish', () => {
+    const nfdDish = 'Cá rau'; // Call 1 wrote "Cá rau" decomposed
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [{ ...oneDish().mealItems[0], name: nfdDish }],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map([[`${nfdDish}::1`, 'dish-id']]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // Call 2 echoes the composed spelling and splits the dish.
+    const fish = streamedItem('Cá rau', 'cá');
+    const veg = streamedItem('Cá rau', 'rau');
+    handler.handleChunk(`{"mealItems":[${fish},${veg},${END}]}`);
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['dish-id', 'dish-id']);
+  });
+});

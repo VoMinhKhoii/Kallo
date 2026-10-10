@@ -38,6 +38,7 @@ import { computeStreamingMealItem } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
+import { nameKey } from '@/lib/core/text/name-key';
 
 // ---------------------------------------------------------------------------
 // Shared: dish identity and one emission.
@@ -50,6 +51,8 @@ interface DishMatch {
   item: GroundedMealItem;
   /** How many Call 2 items `item` merges; above 1 only for a split dish. */
   fragments: number;
+  /** Stream index of the dish's first item, so a split dish keeps one fallback id. */
+  index: number;
 }
 
 /**
@@ -64,14 +67,15 @@ function createDishMatcher(offsetByName: Map<string, MealItemOffset>) {
   let slotOf = createDishSlots(dishNames);
   const fragments = new Map<
     string,
-    { item: GroundedMealItem; count: number }
+    { item: GroundedMealItem; count: number; index: number }
   >();
   return {
-    match(rawItem: GroundedMealItem): DishMatch | null {
+    match(rawItem: GroundedMealItem, index: number): DishMatch | null {
       const slot = slotOf(rawItem.mealItemName);
       const offset = offsetByName.get(`${slot.key}::${slot.occ}`);
       if (!offset) return null;
-      if (!slot.pooled) return { slot, offset, item: rawItem, fragments: 1 };
+      if (!slot.pooled)
+        return { slot, offset, item: rawItem, fragments: 1, index };
       const prev = fragments.get(slot.key);
       const merged = prev
         ? {
@@ -80,10 +84,17 @@ function createDishMatcher(offsetByName: Map<string, MealItemOffset>) {
               ingredients: [...prev.item.ingredients, ...rawItem.ingredients],
             },
             count: prev.count + 1,
+            index: prev.index,
           }
-        : { item: rawItem, count: 1 };
+        : { item: rawItem, count: 1, index };
       fragments.set(slot.key, merged);
-      return { slot, offset, item: merged.item, fragments: merged.count };
+      return {
+        slot,
+        offset,
+        item: merged.item,
+        fragments: merged.count,
+        index: merged.index,
+      };
     },
     reset() {
       slotOf = createDishSlots(dishNames);
@@ -102,10 +113,35 @@ interface EmitTarget {
 }
 
 /**
+ * The id `item_name` announced for this dish (keys are "<display name>::<occ>").
+ * Exact spellings first, then by normalized name, since Call 2 may echo the
+ * name with another Unicode form or casing than Call 1 wrote.
+ */
+function announcedMealItemId(
+  ids: Map<string, string>,
+  rawName: string,
+  slot: DishSlot
+): string | undefined {
+  const exact =
+    ids.get(`${capitalizeFirst(rawName)}::${slot.occ}`) ??
+    ids.get(`${rawName}::${slot.occ}`);
+  if (exact) return exact;
+  for (const [key, id] of ids) {
+    const at = key.lastIndexOf('::');
+    if (
+      key.slice(at + 2) === String(slot.occ) &&
+      nameKey(key.slice(0, at)) === slot.key
+    )
+      return id;
+  }
+  return undefined;
+}
+
+/**
  * Resolve one matched dish and emit its `item_macros`: once per dish, except
  * that a split dish is re-emitted as each fragment grows its total.
  */
-function emitDish(target: EmitTarget, match: DishMatch, itemIdx: number): void {
+function emitDish(target: EmitTarget, match: DishMatch): void {
   const { nutrition, totalGrams } = resolveStreamingV2MealItem(
     match.item,
     match.offset.decomposedIngredients,
@@ -116,18 +152,17 @@ function emitDish(target: EmitTarget, match: DishMatch, itemIdx: number): void {
   const streamItem = computeStreamingMealItem(
     nutrition,
     totalGrams,
-    itemIdx,
+    match.index,
     target.goal,
     target.aggression
   );
   streamItem.name = capitalizeFirst(streamItem.name);
-  const rawName = match.item.mealItemName;
   const mealItemId =
-    target.streamedMealItemIds.get(
-      `${capitalizeFirst(rawName)}::${match.slot.occ}`
-    ) ??
-    target.streamedMealItemIds.get(`${rawName}::${match.slot.occ}`) ??
-    streamItem.id;
+    announcedMealItemId(
+      target.streamedMealItemIds,
+      match.item.mealItemName,
+      match.slot
+    ) ?? streamItem.id;
   if (match.fragments === 1 && target.itemMacrosStreamed.has(mealItemId))
     return;
   target.itemMacrosStreamed.add(mealItemId);
@@ -159,8 +194,8 @@ export function createCall2StreamHandler(
     const indexBase = lastExtractedCount;
     lastExtractedCount = newCount;
     items.forEach((rawItem, i) => {
-      const match = dishes.match(rawItem);
-      if (match) emitDish(args, match, indexBase + i);
+      const match = dishes.match(rawItem, indexBase + i);
+      if (match) emitDish(args, match);
     });
   };
 
@@ -195,16 +230,15 @@ export function flushUnstreamedItemMacros(args: {
     itemMacrosStreamed: args.alreadyStreamed,
   };
   const dishes = createDishMatcher(args.offsetByName);
-  const pooled = new Map<string, { match: DishMatch; itemIdx: number }>();
+  const pooled = new Map<string, DishMatch>();
   args.grounded.mealItems.forEach((rawItem, itemIdx) => {
-    const match = dishes.match(rawItem);
+    const match = dishes.match(rawItem, itemIdx);
     if (!match) return;
-    if (match.slot.pooled) pooled.set(match.slot.key, { match, itemIdx });
-    else emitDish(target, match, itemIdx);
+    if (match.slot.pooled) pooled.set(match.slot.key, match);
+    else emitDish(target, match);
   });
   // A pooled dish emits after the walk, with every fragment merged.
-  for (const { match, itemIdx } of pooled.values())
-    emitDish(target, match, itemIdx);
+  for (const match of pooled.values()) emitDish(target, match);
 }
 
 // ---------------------------------------------------------------------------
@@ -254,9 +288,9 @@ export function emitChunkItemMacros(
   items: GroundedMealItem[]
 ): void {
   for (const rawItem of items) {
-    const match = ctx.dishes.match(rawItem);
+    const match = ctx.dishes.match(rawItem, ctx.itemIndex.value);
     if (!match) continue;
-    emitDish(ctx, match, ctx.itemIndex.value);
+    emitDish(ctx, match);
     ctx.itemIndex.value++;
   }
 }
