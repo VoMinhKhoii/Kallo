@@ -162,6 +162,21 @@ describe('startDishRescue deadline', () => {
   });
 });
 
+describe('startDishRescue past the deadline', () => {
+  it('starts no new mini-meal once the run budget is spent', async () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = startDishRescue({
+      state,
+      language: 'vi',
+      runStartedAt: Date.now() - 36_000,
+      runSubMeal,
+    });
+    runSubMeal.mockClear(); // the certain (no-candidate) one started at once
+    await rescue.apply(call2('none'));
+    expect(runSubMeal).not.toHaveBeenCalled();
+  });
+});
+
 describe('startDishRescue cleanup', () => {
   it('starts no queued mini-meal once apply has returned', async () => {
     vi.useFakeTimers();

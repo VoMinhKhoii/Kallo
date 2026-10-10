@@ -163,16 +163,19 @@ export function startDishRescue(args: {
         close();
         return null;
       }
-      for (const f of needed) start(f);
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      await Promise.race([
-        Promise.all(needed.map((f) => runs.get(f))),
-        new Promise((resolve) => {
-          const left = args.runStartedAt + RUN_DEADLINE_MS - Date.now();
-          timer = setTimeout(resolve, Math.max(0, Math.min(GRACE_MS, left)));
-        }),
-      ]);
-      clearTimeout(timer);
+      const left = args.runStartedAt + RUN_DEADLINE_MS - Date.now();
+      // Past the deadline a new mini-meal could not reach the response.
+      if (left > 0) {
+        for (const f of needed) start(f);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await Promise.race([
+          Promise.all(needed.map((f) => runs.get(f))),
+          new Promise((resolve) => {
+            timer = setTimeout(resolve, Math.min(GRACE_MS, left));
+          }),
+        ]);
+        clearTimeout(timer);
+      }
       close();
       const parts = new Map(
         needed.flatMap((f) => {
