@@ -21,10 +21,9 @@ vi.mock('next/server', async (importActual) => ({
   ...(await importActual<typeof import('next/server')>()),
   after,
 }));
-vi.mock('@/lib/infra/supabase/admin', () => ({
-  createAdminClient: () => ({
-    storage: { from: () => ({ upload, remove }) },
-  }),
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  putObject: upload,
+  removeObjects: remove,
 }));
 vi.mock('@/lib/infra/db/client', () => ({
   db: { insert: () => ({ values: insertValues }) },
@@ -121,12 +120,12 @@ beforeEach(() => {
   assertFeatureAccess.mockReset();
   assertFeatureAccess.mockResolvedValue(undefined);
   upload.mockReset();
-  upload.mockResolvedValue({ data: {}, error: null });
+  upload.mockResolvedValue(undefined);
   insertValues.mockReset();
   insertValues.mockResolvedValue(undefined);
   after.mockReset();
   remove.mockReset();
-  remove.mockResolvedValue({ data: [], error: null });
+  remove.mockResolvedValue(undefined);
 });
 
 /** Resolve the post-response writes handed to `after()`. */
@@ -361,9 +360,10 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
     expect(label).toEqual(parsedLabel);
     expect(labelImageId).toMatch(/^[0-9a-f-]{36}$/);
     expect(upload).toHaveBeenCalledWith(
+      'nutrition-labels',
       `user-123/${labelImageId}.jpg`,
       expect.any(Buffer),
-      { contentType: 'image/jpeg', upsert: false }
+      { contentType: 'image/jpeg' }
     );
 
     // Inserted before the reply, so the id always names an existing row.
@@ -381,7 +381,7 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
   });
 
   it('a storage failure leaves the success reply exactly as before', async () => {
-    upload.mockResolvedValue({ data: null, error: new Error('down') });
+    upload.mockRejectedValue(new Error('down'));
     geminiAfterUpload(() => parsedLabel);
 
     const res = await POST(makeRequest(validBody));
@@ -425,7 +425,7 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
     });
     expect(row.storagePath).toBe(`user-123/${row.id}.jpg`);
 
-    upload.mockResolvedValue({ data: null, error: new Error('down') });
+    upload.mockRejectedValue(new Error('down'));
     scanNutritionLabelWithGemini.mockRejectedValueOnce(makeError());
     const notKept = await observe(await POST(makeRequest(validBody)));
     expect(notKept).toEqual(kept);

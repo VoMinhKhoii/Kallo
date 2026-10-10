@@ -15,6 +15,7 @@ import {
   pathParam,
   RATE_LIMITER_UNAVAILABLE_ERROR,
   ref,
+  STORAGE_PAUSED_ERROR,
 } from '@/lib/api/openapi/components';
 
 const TAGS = ['Nutrition'];
@@ -113,6 +114,7 @@ export const NUTRITION_PATHS: Record<string, PathItem> = {
       ],
       ok: fromZod(labelImageUrlSchema),
       okDescription: 'The signed URL and the instant it stops working.',
+      extraErrors: STORAGE_PAUSED_ERROR,
     }),
   },
 };

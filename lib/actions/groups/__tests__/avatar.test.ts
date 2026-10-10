@@ -1,28 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// KALLO-05: users hold no write policy on the `avatars` bucket, so these
-// actions are the only way bytes land there. They must write through the
-// service-role client, only AFTER the checks + sharp re-encode, at a path the
-// server builds from the actor id, and never delete outside that prefix.
+// KALLO-05: no client holds a storage token, so these actions are the only
+// way bytes land in the `avatars` bucket. They must write through the
+// server-side object store, only AFTER the checks + sharp re-encode, at a path
+// the server builds from the actor id, and never delete outside that prefix.
 // ---------------------------------------------------------------------------
 
-const { upload, remove, from, createAdminClient, processAvatarImage } =
-  vi.hoisted(() => {
-    const upload = vi.fn();
-    const remove = vi.fn();
-    const from = vi.fn(() => ({ upload, remove }));
-    return {
-      upload,
-      remove,
-      from,
-      createAdminClient: vi.fn(() => ({ storage: { from } })),
-      processAvatarImage: vi.fn(),
-    };
-  });
+const { putObject, removeObjects, assertConfigured, processAvatarImage } =
+  vi.hoisted(() => ({
+    putObject: vi.fn(),
+    removeObjects: vi.fn(),
+    assertConfigured: vi.fn(),
+    processAvatarImage: vi.fn(),
+  }));
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
-vi.mock('@/lib/infra/supabase/admin', () => ({ createAdminClient }));
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  putObject,
+  removeObjects,
+  assertObjectStorageConfigured: assertConfigured,
+}));
 vi.mock('@/lib/infra/uploads/avatar-image', () => ({ processAvatarImage }));
 vi.mock('@/lib/actions/groups/profile', () => ({
   getMyPublicProfile: vi.fn(async () => ({ avatarUrl: 'x' })),
@@ -30,7 +28,7 @@ vi.mock('@/lib/actions/groups/profile', () => ({
 }));
 
 import {
-  AVATAR_CACHE_CONTROL_SECONDS,
+  AVATAR_CACHE_CONTROL,
   isOwnAvatarPath,
   removeMyAvatar,
   uploadMyAvatar,
@@ -62,30 +60,28 @@ function pngFile(bytes: Uint8Array = PNG, type = 'image/png') {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  upload.mockResolvedValue({ data: {}, error: null });
-  remove.mockResolvedValue({ data: [], error: null });
+  putObject.mockResolvedValue(undefined);
+  removeObjects.mockResolvedValue(undefined);
   processAvatarImage.mockResolvedValue(PROCESSED);
 });
 
 describe('uploadMyAvatar', () => {
-  it('uploads the sharp output via the admin client at {actor}/{uuid}.webp', async () => {
+  it('uploads the sharp output to the avatars bucket at {actor}/{uuid}.webp', async () => {
     const { db, set } = fakeDb(null);
 
     await uploadMyAvatar(ACTOR, pngFile(), db);
 
-    expect(createAdminClient).toHaveBeenCalled();
-    expect(from).toHaveBeenCalledWith('avatars');
     expect(processAvatarImage).toHaveBeenCalledWith(PNG);
-    const [path, body, options] = upload.mock.calls[0];
+    const [bucket, path, body, options] = putObject.mock.calls[0];
+    expect(bucket).toBe('avatars');
     expect(path).toMatch(new RegExp(`^${ACTOR}/[0-9a-f-]{36}\\.webp$`, 'i'));
     // The stored bytes are the re-encode, never the caller's upload.
     expect(body).toBe(PROCESSED);
     expect(options).toEqual({
       contentType: 'image/webp',
-      cacheControl: AVATAR_CACHE_CONTROL_SECONDS,
-      upsert: false,
+      cacheControl: AVATAR_CACHE_CONTROL,
     });
-    expect(AVATAR_CACHE_CONTROL_SECONDS).toBe('300');
+    expect(AVATAR_CACHE_CONTROL).toBe('public, max-age=300, s-maxage=86400');
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({ avatarPath: path })
     );
@@ -99,7 +95,7 @@ describe('uploadMyAvatar', () => {
 
     await uploadMyAvatar(ACTOR, evil, db);
 
-    expect(upload.mock.calls[0][0].startsWith(`${ACTOR}/`)).toBe(true);
+    expect(putObject.mock.calls[0][1].startsWith(`${ACTOR}/`)).toBe(true);
   });
 
   it('never touches storage when the bytes fail the checks', async () => {
@@ -111,8 +107,7 @@ describe('uploadMyAvatar', () => {
       uploadMyAvatar(ACTOR, pngFile(avif, 'image/webp'), db)
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     expect(processAvatarImage).not.toHaveBeenCalled();
-    expect(createAdminClient).not.toHaveBeenCalled();
-    expect(upload).not.toHaveBeenCalled();
+    expect(putObject).not.toHaveBeenCalled();
   });
 
   it('never uploads when the sharp decode fails', async () => {
@@ -122,15 +117,41 @@ describe('uploadMyAvatar', () => {
     await expect(uploadMyAvatar(ACTOR, pngFile(), db)).rejects.toMatchObject({
       code: 'VALIDATION_FAILED',
     });
-    expect(upload).not.toHaveBeenCalled();
+    expect(putObject).not.toHaveBeenCalled();
   });
 
-  it('removes the replaced object via admin when it is under the prefix', async () => {
+  it('removes the replaced object when it is under the prefix', async () => {
     const { db } = fakeDb(`${ACTOR}/old.webp`);
 
     await uploadMyAvatar(ACTOR, pngFile(), db);
 
-    expect(remove).toHaveBeenCalledWith([`${ACTOR}/old.webp`]);
+    expect(removeObjects).toHaveBeenCalledWith('avatars', [
+      `${ACTOR}/old.webp`,
+    ]);
+  });
+
+  it('passes the storage cap refusal through as STORAGE_PAUSED', async () => {
+    const { db, set } = fakeDb(null);
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    putObject.mockRejectedValueOnce(Errors.storagePaused());
+
+    await expect(uploadMyAvatar(ACTOR, pngFile(), db)).rejects.toMatchObject({
+      code: 'STORAGE_PAUSED',
+      status: 503,
+    });
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('fails without pointing the profile at an object that never landed', async () => {
+    const { db, set } = fakeDb(null);
+    putObject.mockRejectedValueOnce(new Error('r2 down'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(uploadMyAvatar(ACTOR, pngFile(), db)).rejects.toMatchObject({
+      code: 'INTERNAL',
+    });
+    expect(set).not.toHaveBeenCalled();
+    log.mockRestore();
   });
 
   it('refuses to remove a replaced object outside the prefix', async () => {
@@ -139,13 +160,13 @@ describe('uploadMyAvatar', () => {
 
     await uploadMyAvatar(ACTOR, pngFile(), db);
 
-    expect(remove).not.toHaveBeenCalled();
+    expect(removeObjects).not.toHaveBeenCalled();
     log.mockRestore();
   });
 });
 
 describe('removeMyAvatar', () => {
-  it('clears the row and removes the object via the admin client', async () => {
+  it('clears the row and removes the object', async () => {
     const { db, set } = fakeDb(`${ACTOR}/current.webp`);
 
     await removeMyAvatar(ACTOR, db);
@@ -153,8 +174,33 @@ describe('removeMyAvatar', () => {
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({ avatarPath: null })
     );
-    expect(createAdminClient).toHaveBeenCalled();
-    expect(remove).toHaveBeenCalledWith([`${ACTOR}/current.webp`]);
+    expect(removeObjects).toHaveBeenCalledWith('avatars', [
+      `${ACTOR}/current.webp`,
+    ]);
+  });
+
+  it('keeps the row when storage is not configured', async () => {
+    const { db, set } = fakeDb(`${ACTOR}/current.webp`);
+    assertConfigured.mockImplementationOnce(() => {
+      throw new Error('Object storage requires R2_…');
+    });
+
+    await expect(removeMyAvatar(ACTOR, db)).rejects.toThrow();
+    expect(set).not.toHaveBeenCalled();
+    expect(removeObjects).not.toHaveBeenCalled();
+  });
+
+  it('still clears the row when the object delete fails', async () => {
+    const { db, set } = fakeDb(`${ACTOR}/current.webp`);
+    removeObjects.mockRejectedValueOnce(new Error('r2 down'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await removeMyAvatar(ACTOR, db);
+
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ avatarPath: null })
+    );
+    log.mockRestore();
   });
 
   it('refuses a stored path outside the actor prefix', async () => {
@@ -163,7 +209,7 @@ describe('removeMyAvatar', () => {
 
     await removeMyAvatar(ACTOR, db);
 
-    expect(remove).not.toHaveBeenCalled();
+    expect(removeObjects).not.toHaveBeenCalled();
     log.mockRestore();
   });
 });

@@ -97,6 +97,24 @@ describe('loadRecentCheatOccasionsAction', () => {
     expect(result).toHaveLength(1);
     expect(assertFeatureAccess).not.toHaveBeenCalled();
   });
+
+  // The picker shows last time's kcal beside each occasion, like the relog
+  // rows. A meal saved without a total must read as unknown, never as 0.
+  it('carries the saved kcal, null when the meal has none', async () => {
+    queueHistorySelect([
+      {
+        id: UUID_MEAL,
+        rawInput: 'Korean BBQ',
+        loggedAt: LOGGED_AT,
+        caloriesKcal: 1240,
+      },
+      { id: UUID_MEAL, rawInput: 'phở bò', loggedAt: LOGGED_AT },
+    ]);
+
+    const result = await loadRecentCheatOccasionsAction({ limit: 3 });
+
+    expect(result.map((o) => o.caloriesKcal)).toEqual([1240, null]);
+  });
 });
 
 describe('stageCheatRepeatAction', () => {

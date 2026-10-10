@@ -148,6 +148,39 @@ describe('buildCsp (enforced policy)', () => {
     expect(directive(csp, 'report-to')).toEqual(['csp-endpoint']);
   });
 
+  it('allows images from the avatar domain and the R2 presign origin only', async () => {
+    process.env.NEXT_PUBLIC_AVATAR_BASE_URL = 'https://media.example.com/';
+    process.env.R2_ACCOUNT_ID = '0123456789abcdef0123456789abcdef';
+    try {
+      const img = directive(await build(), 'img-src');
+      expect(img).toEqual(
+        expect.arrayContaining([
+          'https://media.example.com',
+          'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com',
+        ])
+      );
+      // Storage moved off Supabase: its origin no longer serves images.
+      expect(img).not.toContain('https://abc.supabase.co');
+      expect(img.join(' ')).not.toContain('*.r2.cloudflarestorage.com');
+    } finally {
+      delete process.env.NEXT_PUBLIC_AVATAR_BASE_URL;
+      delete process.env.R2_ACCOUNT_ID;
+    }
+  });
+
+  it('drops a malformed storage origin instead of emitting it', async () => {
+    process.env.NEXT_PUBLIC_AVATAR_BASE_URL = 'not a url';
+    process.env.R2_ACCOUNT_ID = 'evil.example.com/x';
+    try {
+      const csp = await build();
+      expect(csp).not.toContain('not a url');
+      expect(csp).not.toContain('evil.example.com');
+    } finally {
+      delete process.env.NEXT_PUBLIC_AVATAR_BASE_URL;
+      delete process.env.R2_ACCOUNT_ID;
+    }
+  });
+
   it('degrades gracefully when the Supabase URL is unset', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = '';
     const csp = await build();

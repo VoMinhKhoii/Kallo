@@ -401,10 +401,16 @@ async function runBenchmarkMeal(
 ): Promise<BenchmarkResult> {
   applyVariantEnv(variant);
 
-  const [{ analyzeMeal }, { createGeminiClient }, { db }] = await Promise.all([
+  const [
+    { analyzeMeal },
+    { createPipelineLlm },
+    { db },
+    { CLAUDE_FALLBACK_MODEL },
+  ] = await Promise.all([
     import('@/lib/ai/pipeline/analyze-meal'),
     import('@/lib/ai/provider/provider'),
     import('@/lib/infra/db/client'),
+    import('@/lib/ai/pipeline/config/model-profile'),
   ]);
 
   const apiKey = nextApiKey();
@@ -483,7 +489,10 @@ async function runBenchmarkMeal(
       meal,
       userContext,
       db,
-      createGeminiClient({ provider: 'ai-studio', apiKey }),
+      createPipelineLlm(
+        { provider: 'ai-studio', apiKey },
+        { fallbackModel: CLAUDE_FALLBACK_MODEL }
+      ),
       (event) => {
         if (event.type === 'stage') {
           currentStage = event.stage as typeof currentStage;

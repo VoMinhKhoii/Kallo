@@ -1,8 +1,11 @@
 /**
  * Live per-1M-token USD rates for the models we call.
  *
- * Source: https://ai.google.dev/gemini-api/docs/pricing (paid tier, text
- * input), read 2026-09-25. Vertex bills the same list rates for these models.
+ * Sources: https://ai.google.dev/gemini-api/docs/pricing (paid tier, text
+ * input), read 2026-09-25 — Vertex bills the same list rates for these
+ * models; https://platform.claude.com/docs/en/about-claude/pricing, read
+ * 2026-10-10 (Claude: prompts up to 100k tokens; a 5-minute cache write bills
+ * 1.25x input, which these three fields do not carry).
  * Re-check the page when a model is added or a cost number looks wrong — a
  * stale rate silently skews every cost report built on this file.
  */
@@ -45,5 +48,10 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     inputPerMTokUsd: 0.3,
     cachedInputPerMTokUsd: 0.03,
     outputPerMTokUsd: 2.5,
+  },
+  'claude-haiku-5-5': {
+    inputPerMTokUsd: 0.1,
+    cachedInputPerMTokUsd: 0.01,
+    outputPerMTokUsd: 0.5,
   },
 };

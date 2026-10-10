@@ -115,4 +115,11 @@ export interface BarcodeProductRecord
   extends Omit<ParsedBarcodeProduct, 'imageUrl' | 'micronutrients'> {
   micronutrients: BarcodeMicronutrients;
   sourceImageUrl: string | null;
+  /**
+   * Per-100 sugar alcohols (polyols), part of the carbohydrate figure but not
+   * 4 kcal/g of it. Read only to decide whether a blank macro may be zero
+   * (`providers/zero-macros.ts`); never persisted or sent to a client, so a
+   * cached row or a test double may leave it out.
+   */
+  polyolsG?: number | null;
 }

@@ -19,7 +19,7 @@
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bunx drizzle-kit migrate",
     "db:studio": "bunx drizzle-kit studio",
-    "dbr:reset": "supabase db reset --linked && bun --env-file=.env.local scripts/db/backfill_embeddings.ts",
+    "dbr:reset": "supabase db reset --linked && bun --env-file=.env.local scripts/db/backfill_embeddings.ts && bun --env-file=.env.local scripts/data/food-cards/sync-cards.ts && bun --env-file=.env.local scripts/db/backfill_card_embeddings.ts",
     "dbr:reset:nobackfill": "supabase db reset --linked",
     "dbr:push": "supabase db push",
     "dbr:pull": "supabase db pull",
@@ -27,6 +27,9 @@
     "dbr:status": "supabase migration list --linked"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@base-ui/react": "^1.2.0",
     "@google/genai": "^1.42.0",
     "@hookform/resolvers": "^5.2.2",
@@ -92,6 +95,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.4",
+    "aws-sdk-client-mock": "^4.1.0",
     "drizzle-kit": "^0.31.9",
     "jsdom": "^28.1.0",
     "shadcn": "^3.8.5",

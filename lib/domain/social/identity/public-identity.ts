@@ -37,6 +37,8 @@ export function toPublicIdentity(
     displayName: row.displayName,
     avatarSeed: row.avatarSeed,
     avatarUrl: uploadedUrl ?? row.avatarUrl,
-    hasCustomAvatar: uploadedUrl !== null,
+    // From the stored path, not the URL: past the storage read cap the URL is
+    // withheld, but the photo still exists and must stay removable.
+    hasCustomAvatar: Boolean(row.avatarPath),
   };
 }

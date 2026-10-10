@@ -32,7 +32,7 @@ export async function runCheatBranch({
     initCheatBudgetAccounting({
       db,
       requestId,
-      model: resolveModelProfile().nutritionModel,
+      model: resolveModelProfile().cheatModel,
     })
   );
 

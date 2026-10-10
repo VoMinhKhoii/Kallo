@@ -17,7 +17,7 @@
  * `ensureIdsOnDecomposition` has run.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,

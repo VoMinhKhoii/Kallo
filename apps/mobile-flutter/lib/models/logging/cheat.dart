@@ -214,10 +214,16 @@ class RecentCheatOccasion {
   final String rawInput;
   final String loggedAt;
 
+  /// Last time's saved total, shown beside the occasion like a relog row's
+  /// kcal. Null when that meal saved none — or from a server that predates the
+  /// field — and renders as unknown, never as 0.
+  final double? caloriesKcal;
+
   const RecentCheatOccasion({
     required this.mealId,
     required this.rawInput,
     required this.loggedAt,
+    this.caloriesKcal,
   });
 
   factory RecentCheatOccasion.fromJson(Map<String, dynamic> json) =>
@@ -225,5 +231,6 @@ class RecentCheatOccasion {
         mealId: json['mealId'] as String,
         rawInput: json['rawInput'] as String? ?? '',
         loggedAt: json['loggedAt'] as String,
+        caloriesKcal: (json['caloriesKcal'] as num?)?.toDouble(),
       );
 }

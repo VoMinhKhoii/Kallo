@@ -230,16 +230,24 @@ const SAMPLES: Sample[] = [
 
 const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
-const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all(
-  [
-    import('@/lib/ai/pipeline/grounded/orchestrator'),
-    import('@/lib/ai/provider/provider'),
-    import('@/lib/infra/db/client'),
-    import('@/lib/ai/adapters/parsed-meal'),
-  ]
-);
+const [
+  { analyzeMealV2 },
+  gemini,
+  { db },
+  { toParsedMeal },
+  { CLAUDE_FALLBACK_MODEL },
+] = await Promise.all([
+  import('@/lib/ai/pipeline/grounded/orchestrator'),
+  import('@/lib/ai/provider/provider'),
+  import('@/lib/infra/db/client'),
+  import('@/lib/ai/adapters/parsed-meal'),
+  import('@/lib/ai/pipeline/config/model-profile'),
+]);
 const provider = gemini.resolveGeminiProvider();
-const client = gemini.createGeminiClient(provider);
+// Routed like production: a Claude profile runs on Claude, Gemini fallback.
+const client = gemini.createPipelineLlm(provider, {
+  fallbackModel: CLAUDE_FALLBACK_MODEL,
+});
 
 async function run(text: string, attempts = 3) {
   for (let attempt = 1; attempt <= attempts; attempt++) {

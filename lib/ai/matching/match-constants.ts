@@ -11,11 +11,39 @@ export const CONFIDENCE_THRESHOLDS = {
   medium: 0.7,
 } as const;
 
-/** Source IDs for food composition databases */
+/**
+ * Source IDs for food composition databases. Only these two are fixed: the
+ * migration that created `ingredient_sources` inserted them first. Later
+ * sources took whatever `serial` value their insert drew (NIN is 6 and OFF 5
+ * on the dev DB), so they are identified by `code` — see
+ * `MATCHING_SOURCE_BUCKETS`.
+ */
 export const SOURCE_FAO = 1;
 export const SOURCE_USDA = 2;
-export const SOURCE_OPEN_FOOD_FACTS = 3;
-export const SOURCE_NIN = 4;
+
+/**
+ * Which acceptance bucket each `ingredient_sources.code` matches through.
+ * Curated Vietnamese sources (FAO and the additive NIN snapshot) share the
+ * stricter domestic threshold. Codes left out — packaged products from Open
+ * Food Facts (`OFF`) and FoodData Central Branded (`USDA_FDC`), which belong to
+ * barcode scans — and any future source never reach ingredient matching until
+ * they are added here.
+ */
+const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
+  FAO_VN_2007: 'fao',
+  NIN_WEB_2026: 'fao',
+  USDA_SR: 'usda',
+};
+
+/** The `ingredient_sources.code`s that take part in ingredient matching. */
+export const MATCHABLE_SOURCE_CODES: readonly string[] = Object.keys(
+  MATCHING_SOURCE_BUCKETS
+);
+
+/** The acceptance bucket of a matchable source; undefined for any other code. */
+export function sourceBucket(code: string): 'fao' | 'usda' | undefined {
+  return MATCHING_SOURCE_BUCKETS[code];
+}
 
 /** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
 export const FAO_VECTOR_THRESHOLD = 0.8;
@@ -56,8 +84,14 @@ export interface FuzzyMatchRow {
   similarity: number;
 }
 
-/** Row from the *_all_sources match functions: FuzzyMatchRow + source_id. */
-export type SourcedMatchRow = FuzzyMatchRow & { source_id: number };
+/**
+ * Row from the *_all_sources match functions: FuzzyMatchRow + source_id, plus
+ * the `ingredient_sources.code` the caller joins on.
+ */
+export type SourcedMatchRow = FuzzyMatchRow & {
+  source_id: number;
+  source_code: string;
+};
 
 /** Demux an *_all_sources result set back into per-source candidate lists. */
 export function splitBySource(rows: SourcedMatchRow[]): {
@@ -67,12 +101,9 @@ export function splitBySource(rows: SourcedMatchRow[]): {
   const fao: FuzzyMatchRow[] = [];
   const usda: FuzzyMatchRow[] = [];
   for (const row of rows) {
-    if (row.source_id === SOURCE_USDA) usda.push(row);
-    else if (row.source_id === SOURCE_FAO || row.source_id === SOURCE_NIN) {
-      // Curated Vietnamese sources (FAO and additive NIN snapshots) share the
-      // stricter domestic-source acceptance threshold.
-      fao.push(row);
-    }
+    const bucket = sourceBucket(row.source_code);
+    if (bucket === 'usda') usda.push(row);
+    else if (bucket === 'fao') fao.push(row);
   }
   return { fao, usda };
 }

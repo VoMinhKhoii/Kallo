@@ -45,15 +45,6 @@ function deriveExpectedStateFromV2(
   return source === 'unknown' ? 'unknown' : state;
 }
 
-/** Explicit user-stated weighing basis, or null when the user said nothing. */
-export function explicitWeighState(
-  ingredient: DecomposedIngredientV2
-): 'raw' | 'cooked' | null {
-  if (ingredient.stateHint === 'raw_weight') return 'raw';
-  if (ingredient.stateHint === 'cooked_weight') return 'cooked';
-  return null;
-}
-
 /**
  * Build the per-ingredient lookup context.
  *

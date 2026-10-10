@@ -38,6 +38,54 @@ describe('resolveGeminiProvider', () => {
     });
   });
 
+  it('adds a separate embedding location only when it differs', () => {
+    const base = {
+      AI_PROVIDER: 'vertex',
+      GOOGLE_CLOUD_PROJECT: 'cal-487315',
+      GOOGLE_CLOUD_LOCATION: 'global',
+    };
+    expect(
+      resolveGeminiProvider({
+        ...base,
+        GOOGLE_CLOUD_EMBEDDING_LOCATION: 'asia-southeast1',
+      })
+    ).toEqual({
+      provider: 'vertex',
+      project: 'cal-487315',
+      location: 'global',
+      embeddingLocation: 'asia-southeast1',
+    });
+    expect(
+      resolveGeminiProvider({
+        ...base,
+        GOOGLE_CLOUD_EMBEDDING_LOCATION: 'global',
+      })
+    ).toEqual({
+      provider: 'vertex',
+      project: 'cal-487315',
+      location: 'global',
+    });
+  });
+
+  it('builds the embedding client on the embedding location', async () => {
+    const { GoogleGenAI } = await import('@google/genai');
+    const { createGeminiClient, __resetAiClientCacheForTests } = await import(
+      '../provider'
+    );
+    __resetAiClientCacheForTests();
+    vi.mocked(GoogleGenAI).mockClear();
+    createGeminiClient({
+      provider: 'vertex',
+      project: 'cal-487315',
+      location: 'global',
+      embeddingLocation: 'asia-southeast1',
+    });
+    const locations = vi
+      .mocked(GoogleGenAI)
+      .mock.calls.map((c) => (c[0] as { location?: string }).location);
+    expect(locations).toEqual(['global', 'asia-southeast1']);
+  });
+
   it('throws when AI_PROVIDER=vertex but project/location is missing', () => {
     expect(() =>
       resolveGeminiProvider({

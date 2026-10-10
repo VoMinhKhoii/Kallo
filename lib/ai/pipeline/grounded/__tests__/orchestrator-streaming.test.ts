@@ -543,4 +543,80 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
     const itemMacrosEvents = events.filter((e) => e.type === 'item_macros');
     expect(itemMacrosEvents).toHaveLength(1);
   });
+
+  it('re-sends item_macros from a retry, so it overwrites the abandoned attempt', async () => {
+    const dish = (name: string) => ({
+      name,
+      cookingMethod: 'nấu',
+      ingredients: [{ rawName: name, canonicalName: name }],
+    });
+    const estimate = (name: string, carbs: number) => ({
+      mealItemName: name,
+      ingredients: [
+        {
+          ingredientName: name,
+          selectedCandidateId: 'none',
+          grossG: 200,
+          refusePct: 0,
+          proteinG: { low: 5, mid: 5, high: 5 },
+          carbohydrateG: { low: carbs, mid: carbs, high: carbs },
+          fatG: { low: 0.5, mid: 0.6, high: 0.7 },
+        },
+      ],
+    });
+    const call1: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [dish('cơm'), dish('canh')],
+    };
+    const call2: GroundedEstimation = {
+      mealItems: [estimate('cơm', 56), estimate('canh', 4)],
+    };
+    let invocation = 0;
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi.fn().mockImplementation(
+        async (
+          _params: unknown,
+          opts?: {
+            onAttemptStart?: (attempt: number) => void;
+            onChunk?: (s: string) => void;
+          }
+        ) => {
+          if (invocation++ === 0) {
+            opts?.onChunk?.(JSON.stringify(call1));
+            return call1;
+          }
+          // Attempt 1 (e.g. Claude) completes "cơm" with other numbers, then
+          // fails mid-stream; attempt 2 (e.g. the Gemini fallback) is kept.
+          opts?.onAttemptStart?.(1);
+          opts?.onChunk?.(
+            `{"mealItems":[${JSON.stringify(estimate('cơm', 90))},{"mealItemName":"canh"`
+          );
+          opts?.onAttemptStart?.(2);
+          opts?.onChunk?.(JSON.stringify(call2));
+          return call2;
+        }
+      ),
+    });
+    const { events, emit } = recordEvents();
+
+    await analyzeMealV2(
+      'cơm, canh',
+      userContext,
+      createSourceAwareMockDb({}),
+      gemini,
+      emit
+    );
+
+    const rice = events.filter(
+      (e): e is Extract<StreamEvent, { type: 'item_macros' }> =>
+        e.type === 'item_macros' && e.item.name.toLowerCase() === 'cơm'
+    );
+    expect(rice.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(rice.map((e) => e.mealItemId)).size).toBe(1);
+    // The last word for the dish is the kept attempt's.
+    expect(rice.at(-1)?.item.macros.carbs).toBeLessThan(
+      rice[0].item.macros.carbs
+    );
+  });
 });

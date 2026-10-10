@@ -159,10 +159,31 @@ Create or confirm these resources:
   - optional: `kallo-prod-apple-signin-key-p8` and
     `kallo-prod-apple-token-encryption-key` — mounted only when both exist
     (see "Sign in with Apple token revocation")
+  - only for the Haiku trial: `kallo-prod-anthropic-api-key` (see "Meal
+    pipeline model")
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
 otherwise the automatic prod deploy stops during pre-deploy validation.
+
+## Meal pipeline model
+
+The repository variable `PIPELINE_MODEL_PROFILE` picks the models both meal
+analysis calls run on (`lib/ai/pipeline/config/model-profile.ts`). Unset
+deploys `stable` (Gemini flash-lite). `haiku` runs both calls on Claude Haiku
+5.5; any failed Claude call re-runs on the stable Gemini model, so an Anthropic
+outage degrades to today's pipeline instead of failing meals.
+
+To start the trial:
+
+1. `printf %s "$KEY" | gcloud secrets create kallo-prod-anthropic-api-key --data-file=-`
+   and grant `roles/secretmanager.secretAccessor` to the runtime and deployer
+   service accounts.
+2. `gh variable set PIPELINE_MODEL_PROFILE --body haiku`, then deploy.
+
+To stop it, `gh variable delete PIPELINE_MODEL_PROFILE` and deploy. The secret is
+mounted only while the variable is `haiku`; with `haiku` set and the secret
+missing or unreadable, the deploy fails before it starts.
 
 ## GCS preview seed bucket setup
 
@@ -401,6 +422,15 @@ printf '%s' 'your-gemini-api-key' | gcloud secrets create kallo-prod-gemini-api-
 printf '%s' 'your-prod-service-role-key' | gcloud secrets create \
   kallo-prod-supabase-service-role-key --data-file=-
 
+# R2 API token for the kallo-prod-* buckets (docs/STORAGE.md).
+ printf '%s' 'r2-access-key-id' | gcloud secrets create \
+  kallo-prod-r2-access-key-id --data-file=-
+ printf '%s' 'r2-secret-access-key' | gcloud secrets create \
+  kallo-prod-r2-secret-access-key --data-file=-
+# Read-only Cloudflare token (Account Analytics: Read) for the R2 free-tier cap.
+ printf '%s' 'cloudflare-analytics-token' | gcloud secrets create \
+  kallo-prod-cloudflare-analytics-token --data-file=-
+
 printf '%s' 'your-revenuecat-v2-customer-key' | gcloud secrets create \
   kallo-prod-revenuecat-customer-delete-api-key --data-file=-
 printf '%s' 'your-revenuecat-v1-app-key' | gcloud secrets create \
@@ -499,6 +529,8 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
 | `NEXT_PUBLIC_SENTRY_DSN` | Optional. Sentry DSN baked into the CI image; empty → error reporting off (`docs/MONITORING.md`) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Optional. PostHog project key baked into the CI image; empty → analytics off |
+| `NEXT_PUBLIC_AVATAR_BASE_URL` | Public origin of the avatars R2 bucket (`https://media.kallo.fit`), baked into the CI image for avatar URLs and the CSP (`docs/STORAGE.md`) |
+| `R2_ACCOUNT_ID` | Cloudflare account id: the R2 S3 endpoint at runtime, and the presign origin in the CSP at build |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Optional. Source-map upload target, used only when the `SENTRY_AUTH_TOKEN` secret is set |
 | `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
 | `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
@@ -607,7 +639,7 @@ The selection is controlled by `AI_PROVIDER` in `lib/ai/provider/client.ts:resol
 | `AI_PROVIDER` | Auth | Required env |
 | --- | --- | --- |
 | unset or `ai-studio` | API key | `GEMINI_API_KEY` |
-| `vertex` | ADC (service account on Cloud Run) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` |
+| `vertex` | ADC (service account on Cloud Run) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (optional `GOOGLE_CLOUD_EMBEDDING_LOCATION`) |
 
 Prerequisites the Cloud Run service account needs **before** flipping
 `AI_PROVIDER=vertex`:
@@ -623,6 +655,11 @@ Prerequisites the Cloud Run service account needs **before** flipping
    itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
    Supabase database, while internal and staging run in `asia-southeast3`
    (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
+4. `GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1` (optional; defaults to
+   `GOOGLE_CLOUD_LOCATION`). Query embeddings (`gemini-embedding-001`) use their
+   own client on this location. Measured 2026-10-08: 0.27–0.49 s per warm call
+   in `asia-southeast1` vs 0.57–1.67 s on `global`, with identical vectors
+   (cosine 1.000000), so embeddings stored from `global` stay valid.
 
 Rollback is a single env-var flip: set `AI_PROVIDER=ai-studio` on the Cloud Run
 service and redeploy (or `gcloud run services update --update-env-vars`). The

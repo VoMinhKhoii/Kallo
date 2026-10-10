@@ -65,12 +65,29 @@ describe('Cloud Run prod workflow', () => {
       `GOOGLE_CLOUD_PROJECT: \${{ vars.GCP_PROJECT_ID }}`
     );
     expect(workflow).toContain('GOOGLE_CLOUD_LOCATION: global');
+    // Query embeddings go to the regional endpoint next to the service (same
+    // model and vectors as global, a fraction of the latency).
+    expect(workflow).toContain(
+      'GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1'
+    );
     expect(backfill).toContain('vertexai: true');
     expect(backfill).toContain(
       'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
     );
     // The AI Studio path stays intact for local `dbr:reset` against .env.local.
     expect(backfill).toContain('apiKey: process.env.GEMINI_API_KEY');
+    // Card retrieval stays on the legacy matcher until the card strings are
+    // embedded, so the deploy must backfill them after the seed migration.
+    expect(workflow).toContain('id: card_embed_check');
+    // Postgres resolves tables at parse time, so the existence check must be
+    // its own statement for an older DEPLOY_SHA with no card tables.
+    expect(workflow).toContain(
+      `SELECT to_regclass('public.food_card_vectors') IS NOT NULL`
+    );
+    expect(workflow).not.toContain(
+      'ELSE (SELECT count(*) FROM food_card_vectors'
+    );
+    expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });
 
   it('wires billing secrets and dark-launch controls into prod', () => {
@@ -91,6 +108,37 @@ describe('Cloud Run prod workflow', () => {
     // The app-level trial is gone (welcome premium is a DB grant instead).
     expect(workflow).not.toContain('TRIAL_DAYS');
     expect(workflow).not.toContain('SUBSCRIPTION_LAUNCH_DATE');
+  });
+
+  it('wires the R2 object-storage credentials and buckets into prod', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+
+    for (const secret of [
+      'R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest',
+      'R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest',
+      'gcloud secrets describe kallo-prod-r2-access-key-id',
+      'gcloud secrets describe kallo-prod-r2-secret-access-key',
+      // The free-tier cap reads usage with it; without it the cap is off.
+      'CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest',
+      'gcloud secrets describe kallo-prod-cloudflare-analytics-token',
+      `R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`,
+      'R2_BUCKET_PREFIX=kallo-prod',
+    ]) {
+      expect(workflow).toContain(secret);
+    }
+    // The CSP's img-src is compiled at build from these two.
+    const ci = readWorkflow('ci.yml');
+    expect(ci).toContain(
+      `--build-arg NEXT_PUBLIC_AVATAR_BASE_URL=\${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}`
+    );
+    expect(ci).toContain(
+      `--build-arg R2_ACCOUNT_ID=\${{ vars.R2_ACCOUNT_ID }}`
+    );
+    // …and a published image may not be built without them.
+    expect(ci).toContain('Require the storage build args on published images');
+    expect(ci).toContain(
+      `[ -n "\${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}" ] ||`
+    );
   });
 
   it('mounts the Sign in with Apple secrets only once they exist', () => {

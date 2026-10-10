@@ -24,6 +24,13 @@ ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
 # shows the message-file prices. See docs/BILLING.md → Pricing.
 ARG NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
 ENV NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=$NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+# Object storage (Cloudflare R2, docs/STORAGE.md). Both public: the avatar
+# bucket's custom domain and the account id. The CSP's img-src is compiled at
+# build from them; the R2 credentials themselves are runtime secrets only.
+ARG NEXT_PUBLIC_AVATAR_BASE_URL
+ARG R2_ACCOUNT_ID
+ENV NEXT_PUBLIC_AVATAR_BASE_URL=$NEXT_PUBLIC_AVATAR_BASE_URL
+ENV R2_ACCOUNT_ID=$R2_ACCOUNT_ID
 # Source-map upload target; the auth token itself arrives as a BuildKit secret
 # below so it never lands in an image layer.
 ARG SENTRY_ORG
@@ -43,12 +50,14 @@ WORKDIR /app
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_AVATAR_BASE_URL
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 # Read at runtime by the server-side Sentry init (instrumentation.ts).
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_AVATAR_BASE_URL=$NEXT_PUBLIC_AVATAR_BASE_URL
 
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs

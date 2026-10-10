@@ -1,8 +1,10 @@
 import type { GoogleGenAI } from '@google/genai';
 import {
   getMemoizedEmbedding,
+  inFlightEmbedding,
   memoizedEmbeddingCount,
   memoizeEmbedding,
+  trackInFlightEmbedding,
 } from '@/lib/ai/cache/provider-embedding-memo';
 import type { WithRetry } from './retry';
 
@@ -64,41 +66,57 @@ export function createEmbeddingMethods({
         return results as number[][];
       }
 
-      const uncachedTexts = uncachedIndices.map((i) => texts[i]);
+      // Join requests already in flight for the same text; request the rest
+      // once each (a batch may repeat a string).
+      const pending = new Map<string, Promise<number[]>>();
+      for (const i of uncachedIndices) {
+        const joined = inFlightEmbedding(texts[i]);
+        if (joined) pending.set(texts[i], joined);
+      }
+      const uncachedTexts = [
+        ...new Set(uncachedIndices.map((i) => texts[i])),
+      ].filter((t) => !pending.has(t));
       console.info(
-        `[gemini] batch embed: ${uncachedTexts.length} uncached / ${texts.length} total`
+        `[gemini] batch embed: ${uncachedTexts.length} uncached, ${pending.size} in flight / ${texts.length} total`
       );
 
-      const embeddings = await withRetry(
-        async (_attempt) => {
-          const result = await ai.models.embedContent({
-            model: EMBEDDING_MODEL,
-            contents: uncachedTexts,
-            config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+      if (uncachedTexts.length > 0) {
+        const batch = withRetry(
+          async (_attempt) => {
+            const result = await ai.models.embedContent({
+              model: EMBEDDING_MODEL,
+              contents: uncachedTexts,
+              config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+            });
+
+            if (
+              !result.embeddings ||
+              result.embeddings.length !== uncachedTexts.length
+            ) {
+              throw new Error(
+                `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
+              );
+            }
+
+            return result.embeddings.map((e) => {
+              if (!e.values) throw new Error('Gemini returned null embedding');
+              return e.values;
+            });
+          },
+          { label: `batch-embed(${uncachedTexts.length})` }
+        );
+        uncachedTexts.forEach((text, j) => {
+          const one = batch.then((embeddings) => {
+            memoizeEmbedding(text, embeddings[j]);
+            return embeddings[j];
           });
+          trackInFlightEmbedding(text, one);
+          pending.set(text, one);
+        });
+      }
 
-          if (
-            !result.embeddings ||
-            result.embeddings.length !== uncachedTexts.length
-          ) {
-            throw new Error(
-              `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
-            );
-          }
-
-          return result.embeddings.map((e) => {
-            if (!e.values) throw new Error('Gemini returned null embedding');
-            return e.values;
-          });
-        },
-        { label: `batch-embed(${uncachedTexts.length})` }
-      );
-
-      // Populate cache and fill results
-      for (let j = 0; j < uncachedIndices.length; j++) {
-        const idx = uncachedIndices[j];
-        results[idx] = embeddings[j];
-        memoizeEmbedding(texts[idx], embeddings[j]);
+      for (const i of uncachedIndices) {
+        results[i] = await (pending.get(texts[i]) as Promise<number[]>);
       }
 
       return results as number[][];

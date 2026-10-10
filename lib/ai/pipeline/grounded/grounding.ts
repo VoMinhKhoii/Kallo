@@ -5,10 +5,8 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
-import {
-  type IngredientV2MatchResult,
-  matchTopKPerIngredient,
-} from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
+import { matchIngredients } from '@/lib/ai/matching/match-ingredients';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -56,11 +54,11 @@ export async function prepareGrounding(args: {
     traceContext,
     'matching',
     2,
-    { ingredientCount: flatIngredients.length, topK: args.topK },
+    { ingredientCount: flatIngredients.length },
     async (_ctx) => {
       emit({ type: 'stage', stage: 'matching' });
       return withDeadline(
-        matchTopKPerIngredient(
+        matchIngredients(
           flatIngredients.map((f) => f.ingredient),
           flatIngredients.map((f) => f.dishCookingMethod),
           args.db,
@@ -97,7 +95,7 @@ export async function prepareGrounding(args: {
 
 /** Build the per-meal-item payload for the grounded-estimation prompt.
  *
- * `matchResults` is built in flat-ingredient order by `matchTopKPerIngredient`
+ * `matchResults` is built in flat-ingredient order by `matchIngredients`
  * (one entry per ingredient with `ingredientIndex === position`), so direct
  * indexing is correct and avoids an O(N²) scan.
  */
@@ -122,9 +120,9 @@ export function buildCallTwoPayload(
       flatIdx++;
       const candidates = (matchResult?.candidates ?? []).map((c, i) => ({
         id: `c${i + 1}`,
-        similarity: c.info.similarity,
-        dbName: c.info.matchedName,
-        dbNameEn: c.info.matchedNameEn ?? null,
+        similarity: c.prompt.score,
+        dbName: c.prompt.name,
+        dbNameEn: c.prompt.nameEn,
         dbState: c.info.state,
         source: c.info.source ?? ('fao' as const),
         per100gKcal: c.nutrition?.caloriesKcal ?? null,

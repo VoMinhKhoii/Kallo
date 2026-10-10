@@ -8,7 +8,7 @@
  * needs for its post-assembly flush.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -149,7 +149,13 @@ export async function runCallTwoStage(args: {
           resetForRetry: call2Stream.resetForRetry,
           onAttemptStart: (attempt) => {
             nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
-            if (attempt > 1) call2Stream.resetForRetry();
+            if (attempt > 1) {
+              call2Stream.resetForRetry();
+              // The retry (a provider retry or the Gemini fallback) re-sends
+              // its own item_macros; clients upsert by id, so they overwrite
+              // the abandoned attempt's.
+              itemMacrosStreamed.clear();
+            }
           },
           onChunkTick: args.onChunkTick,
         },

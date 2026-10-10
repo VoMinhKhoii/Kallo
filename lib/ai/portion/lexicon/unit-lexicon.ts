@@ -12,8 +12,8 @@
  * later phase reason about per-locale coverage.
  */
 
+import { collisionsFor, fold, foldedLookupFor } from '@/lib/core/text/fold';
 import type { Locale, UnitLexiconEntry, UnitType } from '../types';
-import { collisionsFor, fold, foldedLookupFor } from './fold';
 
 function normalize(token: string): string {
   // Internal runs collapse too, not just the ends: the multi-word entries

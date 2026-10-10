@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
@@ -65,6 +65,7 @@ function exactMatch(
         },
         nutrition: NUTRITION,
         inediblePct: 0,
+        prompt: { name: 'Ức gà', nameEn: null, score: 1 },
       },
     ],
   };

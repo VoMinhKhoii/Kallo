@@ -54,10 +54,9 @@ const {
 
 // The kept-scan photo upload (lib/domain/nutrition/label-images/) and the
 // post-response hook its row write rides on.
-vi.mock('@/lib/infra/supabase/admin', () => ({
-  createAdminClient: () => ({
-    storage: { from: () => ({ upload: mockUpload }) },
-  }),
+vi.mock('@/lib/infra/storage/object-storage', () => ({
+  putObject: mockUpload,
+  removeObjects: vi.fn(),
 }));
 vi.mock('next/server', async (importActual) => ({
   ...(await importActual<typeof import('next/server')>()),
@@ -439,7 +438,7 @@ describe('scanNutritionLabelAction — keeping the scan', () => {
     const { db } = await import('@/lib/infra/db/client');
     vi.mocked(db.insert).mockReturnValue({ values: mockValues } as never);
     mockValues.mockResolvedValue(undefined);
-    mockUpload.mockResolvedValue({ data: {}, error: null });
+    mockUpload.mockResolvedValue(undefined);
   });
 
   it('records the result with the photo path; the reply carries no kept id', async () => {
@@ -464,15 +463,16 @@ describe('scanNutritionLabelAction — keeping the scan', () => {
       result: label,
     });
     expect(mockUpload).toHaveBeenCalledWith(
+      'nutrition-labels',
       `${mockUser.id}/${row.id}.png`,
       expect.any(Buffer),
-      { contentType: 'image/png', upsert: false }
+      { contentType: 'image/png' }
     );
   });
 
   it('a storage failure leaves the success result exactly as before', async () => {
     const label = servingLabel(nutrition({ calories: 350 }));
-    mockUpload.mockResolvedValue({ data: null, error: new Error('down') });
+    mockUpload.mockRejectedValue(new Error('down'));
     geminiAfterATick(() => label);
 
     expect(await scanNutritionLabelAction(input())).toEqual({
@@ -499,7 +499,7 @@ describe('scanNutritionLabelAction — keeping the scan', () => {
       })
     );
 
-    mockUpload.mockResolvedValue({ data: null, error: new Error('down') });
+    mockUpload.mockRejectedValue(new Error('down'));
     vi.mocked(scanNutritionLabelWithGemini).mockRejectedValueOnce(error);
     expect(await scanNutritionLabelAction(input())).toEqual(kept);
   });

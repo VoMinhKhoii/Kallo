@@ -23,6 +23,10 @@ import {
 import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
+import {
+  assertObjectStorageConfigured,
+  removePrefix,
+} from '@/lib/infra/storage/object-storage';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 import { createClient } from '@/lib/infra/supabase/server';
 
@@ -106,28 +110,6 @@ async function requireExpectedUser(
   return session;
 }
 
-/** Remove every object under `{userId}/` in one bucket, paginating until the
- *  listing comes back empty. Throws on any list/remove error (fail closed). */
-async function purgeUserObjects(
-  admin: ReturnType<typeof createAdminClient>,
-  bucketId: string,
-  userId: string
-): Promise<void> {
-  const bucket = admin.storage.from(bucketId);
-  for (;;) {
-    const { data: objects, error: listError } = await bucket.list(userId, {
-      limit: 100,
-      offset: 0,
-    });
-    if (listError) throw listError;
-    if (!objects?.length) return;
-    const { error: removeError } = await bucket.remove(
-      objects.map((object) => `${userId}/${object.name}`)
-    );
-    if (removeError) throw removeError;
-  }
-}
-
 async function deleteBillingAuditRowsForUser(userId: string): Promise<void> {
   await db.delete(billingWebhookEvents).where(sql`
     ${billingWebhookEvents.userId} = ${userId}::uuid
@@ -159,7 +141,7 @@ export async function exportMyDataAction(input: unknown): Promise<DataExport> {
  * references it (`onDelete: 'cascade'` on profiles, meals → items, weights,
  * friendships, meal shares, coach assignments, circle events, pipeline rows…),
  * so the Auth deletion removes app-owned relational data atomically. Storage
- * (avatars, kept label photos) is purged first; provider erasure is persisted
+ * (avatars, kept label photos, feedback screenshots) is purged first; provider erasure is persisted
  * in an outbox and retried after the local account is gone. There is no undo.
  */
 export async function deleteAccountAction(
@@ -168,10 +150,11 @@ export async function deleteAccountAction(
   const { user, supabase } = await requireExpectedUser(input, {
     recentAuth: true,
   });
-  // Resolve the privileged dependency before deleting anything. Preview/local
-  // deployments intentionally omit this credential; they must fail without
+  // Resolve the privileged dependencies before deleting anything. Preview/local
+  // deployments intentionally omit these credentials; they must fail without
   // partially erasing billing audit rows.
   const admin = createAdminClient();
+  assertObjectStorageConfigured();
 
   // Erasure is fail-closed while the user can still retry. A second pass after
   // auth deletion closes the narrow race with a webhook arriving between the
@@ -190,7 +173,7 @@ export async function deleteAccountAction(
   // fail closed: once Auth is gone the user cannot retry an orphaned public
   // avatar cleanup.
   try {
-    await purgeUserObjects(admin, 'avatars', user.id);
+    await removePrefix('avatars', `${user.id}/`);
   } catch (storageError) {
     throw Errors.internal(
       storageError,
@@ -199,11 +182,21 @@ export async function deleteAccountAction(
   }
   // Kept nutrition-label scans (private bucket), same fail-closed purge.
   try {
-    await purgeUserObjects(admin, NUTRITION_LABEL_BUCKET, user.id);
+    await removePrefix(NUTRITION_LABEL_BUCKET, `${user.id}/`);
   } catch (storageError) {
     throw Errors.internal(
       storageError,
       'Could not remove your scanned label photos. Please try again.'
+    );
+  }
+  // Feedback screenshots: their user_feedback rows cascade with Auth, so the
+  // private images would be orphaned for good. Same fail-closed purge.
+  try {
+    await removePrefix('feedback-screenshots', `${user.id}/`);
+  } catch (storageError) {
+    throw Errors.internal(
+      storageError,
+      'Could not remove your feedback screenshots. Please try again.'
     );
   }
 

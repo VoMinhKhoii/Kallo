@@ -343,7 +343,7 @@ describe('getMyPublicProfile avatar URL', () => {
   });
 
   it('maps a stored avatar path to the public bucket URL over the OAuth one', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://proj.supabase.co');
+    vi.stubEnv('NEXT_PUBLIC_AVATAR_BASE_URL', 'https://media.example.com/');
     mockDbSelect.mockReturnValueOnce(
       selectRows([
         {
@@ -360,7 +360,7 @@ describe('getMyPublicProfile avatar URL', () => {
     const result = await getMyPublicProfile(ACTOR);
 
     expect(result?.avatarUrl).toBe(
-      `https://proj.supabase.co/storage/v1/object/public/avatars/${ACTOR}/abc.jpg`
+      `https://media.example.com/${ACTOR}/abc.jpg`
     );
     vi.unstubAllEnvs();
   });

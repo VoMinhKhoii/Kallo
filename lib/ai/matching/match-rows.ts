@@ -39,13 +39,15 @@ function readMatchRow(row: Record<string, unknown>): SourcedMatchRow {
     name_en: (row.name_en ?? '') as string,
     state: (row.state ?? '') as string,
     source_id: row.source_id as number,
+    source_code: (row.source_code ?? '') as string,
     similarity: Number(row.similarity),
   };
 }
 
 /**
- * Read a result set from one of the `*_all_sources` functions, whose rows carry
- * the `source_id` the caller demuxes on via `splitBySource`.
+ * Read a result set from one of the `*_all_sources` functions. The caller joins
+ * `ingredient_sources` onto it, so each row also carries the `source_code` it
+ * demuxes on via `splitBySource`.
  */
 export function parseSourcedMatchRows(result: unknown): SourcedMatchRow[] {
   if (!Array.isArray(result)) return [];

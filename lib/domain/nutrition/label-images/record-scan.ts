@@ -19,7 +19,7 @@ import {
 import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
 import { db } from '@/lib/infra/db/client';
 import { nutritionLabelImages } from '@/lib/infra/db/schema';
-import { createAdminClient } from '@/lib/infra/supabase/admin';
+import { putObject, removeObjects } from '@/lib/infra/storage/object-storage';
 
 export interface LabelImageInput {
   userId: string;
@@ -94,10 +94,9 @@ export async function uploadLabelImage(
   try {
     const { bytes, mimeType } = await stripMetadata(input);
     const storagePath = labelImagePath(input.userId, imageId, mimeType);
-    const { error } = await createAdminClient()
-      .storage.from(NUTRITION_LABEL_BUCKET)
-      .upload(storagePath, bytes, { contentType: mimeType, upsert: false });
-    if (error) throw error;
+    await putObject(NUTRITION_LABEL_BUCKET, storagePath, bytes, {
+      contentType: mimeType,
+    });
     return {
       userId: input.userId,
       imageId,
@@ -119,10 +118,7 @@ export async function uploadLabelImage(
  */
 async function removeOrphanedImage(stored: StoredLabelImage): Promise<void> {
   try {
-    const { error } = await createAdminClient()
-      .storage.from(NUTRITION_LABEL_BUCKET)
-      .remove([stored.storagePath]);
-    if (error) throw error;
+    await removeObjects(NUTRITION_LABEL_BUCKET, [stored.storagePath]);
   } catch (error) {
     console.error(
       '[label-images] Removing a label photo without a row failed:',

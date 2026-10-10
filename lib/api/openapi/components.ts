@@ -108,6 +108,17 @@ export const RATE_LIMITER_UNAVAILABLE_ERROR: JsonSchema = {
 };
 
 /**
+ * The 503 a storage route answers once the R2 free-tier cap
+ * (`lib/infra/storage/usage-cap.ts`) holds uploads or photo links back.
+ * Retryable later; nothing is wrong with the request.
+ */
+export const STORAGE_PAUSED_ERROR: JsonSchema = {
+  '503': errorResponse(
+    'Storage is holding back at its free-tier cap (`STORAGE_PAUSED`): uploads, or links to stored photos, are paused. Retryable later.'
+  ),
+};
+
+/**
  * The 403 an AI-processing route answers while the user has not consented to
  * sending their content to the third-party AI provider (App Store 5.1.2(i)).
  * Only the routes that call the provider can give it.
