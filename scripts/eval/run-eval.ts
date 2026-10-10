@@ -222,13 +222,17 @@ async function runCase(
 }
 
 async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
-  const [{ analyzeMealV2 }, geminiModule, { db }, { resolveModelProfile }] =
-    await Promise.all([
-      import('@/lib/ai/pipeline/grounded/orchestrator'),
-      import('@/lib/ai/provider/provider'),
-      import('@/lib/infra/db/client'),
-      import('@/lib/ai/pipeline/config/model-profile'),
-    ]);
+  const [
+    { analyzeMealV2 },
+    geminiModule,
+    { db },
+    { CLAUDE_FALLBACK_MODEL, resolveModelProfile },
+  ] = await Promise.all([
+    import('@/lib/ai/pipeline/grounded/orchestrator'),
+    import('@/lib/ai/provider/provider'),
+    import('@/lib/infra/db/client'),
+    import('@/lib/ai/pipeline/config/model-profile'),
+  ]);
   // Local quota spreading: GEMINI_API_KEYS_EXTRA (comma-separated) adds
   // AI Studio keys the harness round-robins per client method call. Each key
   // has its own free-tier quota, so N keys ≈ N× local eval throughput.
@@ -248,8 +252,11 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
     primaryProvider,
     ...extraKeys.map((apiKey) => ({ provider: 'ai-studio' as const, apiKey })),
   ];
+  // Routed like production: a Claude profile runs on Claude, Gemini fallback.
   const clients = providerConfigs.map((config) =>
-    geminiModule.createGeminiClient(config)
+    geminiModule.createPipelineLlm(config, {
+      fallbackModel: CLAUDE_FALLBACK_MODEL,
+    })
   );
   let rotation = 0;
   const gemini =

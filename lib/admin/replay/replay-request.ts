@@ -6,13 +6,14 @@ import { redirect } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { buildDryRunGeminiClient } from '@/lib/admin/replay/dry-run-client';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
+import { CLAUDE_FALLBACK_MODEL } from '@/lib/ai/pipeline/config/model-profile';
 import {
   logPipelineStart,
   setPipelineFinalState,
 } from '@/lib/ai/pipeline/telemetry/logging';
 import { hashUserId } from '@/lib/ai/pipeline/telemetry/run-telemetry';
 import {
-  createGeminiClient,
+  createPipelineLlm,
   type GeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
@@ -131,7 +132,9 @@ export async function replayRequest(
     gemini = await buildDryRunGeminiClient(originalId);
   } else {
     try {
-      gemini = createGeminiClient(resolveGeminiProvider());
+      gemini = createPipelineLlm(resolveGeminiProvider(), {
+        fallbackModel: CLAUDE_FALLBACK_MODEL,
+      });
     } catch (error) {
       console.error('[admin] AI provider misconfigured:', error);
       throw new Error('AI provider is not configured for replay');

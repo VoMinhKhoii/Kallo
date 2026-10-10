@@ -167,7 +167,7 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern | Status |
 |---|---|---|
-| `provider/` | the only folder allowed to touch an LLM SDK | ok |
+| `provider/` | the only folder allowed to touch an LLM SDK: Gemini (AI Studio / Vertex), plus `claude/` — Claude structured output and the router that sends `claude-*` models there with a per-call Gemini fallback (`createPipelineLlm`) | ok |
 | `cost/` | the model rate card, mirrored by `scripts/bench/ai-cost.sql` (`docs/AI_COST.md`) | ok |
 | `types/` | the shared vocabulary, split by stage | ok |
 | `cache/` | every pipeline cache in one place | ok |

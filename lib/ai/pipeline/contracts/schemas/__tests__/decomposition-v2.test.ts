@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   decomposedIngredientV2Schema,
+  decompositionCallSchema,
+  mealDecompositionV2CallSchema,
   mealDecompositionV2Schema,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { toProviderJsonSchema } from '@/lib/ai/prompts/schema';
 
 describe('decomposedIngredientV2Schema', () => {
   it('accepts the minimum required fields (rawName + canonicalName)', () => {
@@ -277,5 +280,26 @@ describe('mealDecompositionV2Schema', () => {
       mealSlot: null,
     });
     expect(parsed.isFood).toBe(false);
+  });
+});
+
+describe('decompositionCallSchema', () => {
+  it('puts plan first, so the model writes it before mealItems', () => {
+    const json = toProviderJsonSchema(decompositionCallSchema) as {
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+    expect(Object.keys(json.properties)[0]).toBe('plan');
+    expect(json.required).toContain('plan');
+  });
+
+  it("is Call 1's decomposition schema plus a plan", () => {
+    expect(decompositionCallSchema.shape.mealItems).toBe(
+      mealDecompositionV2CallSchema.shape.mealItems
+    );
+    expect(Object.keys(decompositionCallSchema.shape)).toEqual([
+      'plan',
+      ...Object.keys(mealDecompositionV2CallSchema.shape),
+    ]);
   });
 });

@@ -51,6 +51,34 @@ describe('createBudgetAttemptRecorder', () => {
     );
   });
 
+  it('files each attempt under the provider that ran it', () => {
+    const record = createBudgetAttemptRecorder({
+      db,
+      requestId: 'r1',
+      workKind: 'primary',
+      model: 'claude-haiku-5-5',
+    });
+    const attempt = {
+      inputTokens: 100,
+      outputTokens: 10,
+      cachedTokens: 0,
+      thoughtTokens: 0,
+      error: new Error('429 rate limited'),
+    };
+    record({ ...attempt, attempt: 1, model: 'claude-haiku-5-5' });
+    // The Gemini fallback of the same call.
+    record({ ...attempt, attempt: 2, model: 'gemini-3.1-flash-lite' });
+
+    expect(mockRecord).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ provider: 'anthropic' })
+    );
+    expect(mockRecord).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ provider: 'gemini' })
+    );
+  });
+
   it('tags non-meal callers with their own route', () => {
     createBudgetAttemptRecorder({
       db,
