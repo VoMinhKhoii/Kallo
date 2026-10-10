@@ -150,7 +150,7 @@ describe('startDishRescue deadline', () => {
     const rescue = startDishRescue({
       state,
       language: 'vi',
-      runStartedAt: Date.now() - 40_000, // 5 s of the 45 s budget left
+      runStartedAt: Date.now() - 30_000, // 5 s of the 35 s budget left
       runSubMeal: () => new Promise(() => {}),
     });
     let settled = false;
