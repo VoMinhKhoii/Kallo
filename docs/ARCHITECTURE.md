@@ -178,6 +178,7 @@ another domain module is a smell worth a second look.
 | `language/` | language detect + guard | ok |
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
+| `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 
 ### `lib/admin/`
