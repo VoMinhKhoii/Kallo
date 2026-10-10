@@ -113,26 +113,22 @@ interface EmitTarget {
 }
 
 /**
- * The id `item_name` announced for this dish (keys are "<display name>::<occ>").
- * Exact spellings first, then by normalized name, since Call 2 may echo the
- * name with another Unicode form or casing than Call 1 wrote.
+ * The id `item_name` announced for this dish. Announced keys are
+ * "<display name>::<occurrence>" in announcement (decomposition) order, but
+ * their occurrence counts raw spellings, so the same dish written in two
+ * Unicode forms would count twice. The lookup therefore re-counts
+ * occurrences by normalized name, in announcement order — the same rule
+ * `createDishSlots` applies to the decomposition.
  */
 function announcedMealItemId(
   ids: Map<string, string>,
-  rawName: string,
   slot: DishSlot
 ): string | undefined {
-  const exact =
-    ids.get(`${capitalizeFirst(rawName)}::${slot.occ}`) ??
-    ids.get(`${rawName}::${slot.occ}`);
-  if (exact) return exact;
+  let occ = 0;
   for (const [key, id] of ids) {
-    const at = key.lastIndexOf('::');
-    if (
-      key.slice(at + 2) === String(slot.occ) &&
-      nameKey(key.slice(0, at)) === slot.key
-    )
-      return id;
+    if (nameKey(key.slice(0, key.lastIndexOf('::'))) !== slot.key) continue;
+    occ++;
+    if (occ === slot.occ) return id;
   }
   return undefined;
 }
@@ -158,11 +154,8 @@ function emitDish(target: EmitTarget, match: DishMatch): void {
   );
   streamItem.name = capitalizeFirst(streamItem.name);
   const mealItemId =
-    announcedMealItemId(
-      target.streamedMealItemIds,
-      match.item.mealItemName,
-      match.slot
-    ) ?? streamItem.id;
+    announcedMealItemId(target.streamedMealItemIds, match.slot) ??
+    streamItem.id;
   if (match.fragments === 1 && target.itemMacrosStreamed.has(mealItemId))
     return;
   target.itemMacrosStreamed.add(mealItemId);

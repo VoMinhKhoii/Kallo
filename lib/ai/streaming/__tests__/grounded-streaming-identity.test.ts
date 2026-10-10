@@ -402,3 +402,37 @@ describe('item_macros ids announced under another Unicode form', () => {
     expect(events.map((e) => e.mealItemId)).toEqual(['dish-id', 'dish-id']);
   });
 });
+
+describe('item_macros ids for a repeated dish spelled in two Unicode forms', () => {
+  it('counts announced occurrences by normalized name, in order', () => {
+    const nfd = 'Cá rau';
+    const nfc = 'Cá rau';
+    const dish = oneDish().mealItems[0];
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [
+        { ...dish, name: nfd },
+        { ...dish, name: nfc },
+      ],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: [...matchResults(), ...matchResults()],
+      // Call 1 counted the raw spellings, so both were announced as ::1.
+      streamedMealItemIds: new Map([
+        [`${nfd}::1`, 'first-id'],
+        [`${nfc}::1`, 'second-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    const first = streamedItem(nfc, 'cá');
+    const second = streamedItem(nfc, 'cá');
+    handler.handleChunk(`{"mealItems":[${first},${second},${END}]}`);
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['first-id', 'second-id']);
+  });
+});
