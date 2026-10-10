@@ -97,6 +97,19 @@ describe('decomposition-v2 prompt', () => {
     expect(out).not.toMatch(/broth_consumption/);
   });
 
+  it('ends with the decomposition rules and the plan field, after the per-user blocks', () => {
+    const out = buildDecompositionV2Prompt(baseUserContext);
+    const userContext = out.indexOf('<user_context>');
+    for (const block of [
+      '<decomposition_check>',
+      '<implied_components>',
+      '<product_attributes>',
+      '<plan_field>',
+    ]) {
+      expect(out.indexOf(block)).toBeGreaterThan(userContext);
+    }
+  });
+
   it('builder carries the injection-hardening input_handling rule', () => {
     {
       const build = buildDecompositionV2Prompt;
