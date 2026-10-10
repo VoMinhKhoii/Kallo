@@ -589,6 +589,13 @@
       "when": 1791125621474,
       "tag": "20261004145341_premium_admin_console",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791428498595,
+      "tag": "20261008030138_add_food_cards",
+      "breakpoints": true
     }
   ]
 }

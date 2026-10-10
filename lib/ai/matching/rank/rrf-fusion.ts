@@ -86,3 +86,17 @@ export function rrfFuseCandidates(
     .slice(0, k)
     .map((entry) => entry.candidate);
 }
+
+/**
+ * Plain RRF order of any number of ranked id lists (no per-arm tie rules):
+ * the card matcher's fusion of its vector, lexical and dialect arms.
+ */
+export function rrfOrder(lists: readonly string[][]): string[] {
+  const score = new Map<string, number>();
+  for (const list of lists) {
+    for (let i = 0; i < list.length; i++) {
+      score.set(list[i], (score.get(list[i]) ?? 0) + 1 / (RRF_K + i + 1));
+    }
+  }
+  return [...score].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+}

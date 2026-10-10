@@ -1,5 +1,33 @@
 # Data Sources
 
+## Food cards (what the matcher searches)
+
+Ingredient matching retrieves **food cards** (`lib/ai/matching/cards/`), not raw rows. A card
+is a curated description of one composition row: the food as people name it, English aliases,
+Vietnamese names with diacritics, facets (cut, processing, cooking, fat level, brand) and a
+one-line sentence. Nutrients are never edited on a card.
+
+- Source of truth: `data/food-cards/cards.jsonl` (one JSON object per row id).
+- To change cards: edit that file, run
+  `bun scripts/data/food-cards/build-seed-migration.ts supabase/migrations/<new timestamp>_seed_food_cards.sql`,
+  and ship the migration. The SQL also deletes cards removed from the file and strings a card
+  no longer has. The prod deploy
+  embeds any new strings (`scripts/db/backfill_card_embeddings.ts`); locally run that script
+  against `.env.local`.
+- After a `supabase db reset` (the base rows arrive from `seed.sql`, after migrations),
+  `scripts/data/food-cards/sync-cards.ts` re-applies the cards; `bun dbr:reset` runs it and the
+  card backfill.
+- A **new data source** needs its rows in `vietnamese_food_composition`, its
+  `ingredient_sources.code` in `MATCHING_SOURCE_BUCKETS` (`lib/ai/matching/match-constants.ts`),
+  and cards for its rows. No retrieval code changes. Curation runs on the `food-data-curator`
+  agent (Opus, high effort).
+- Only rows with a card are matchable: a row without one is not loaded into the catalog, so
+  removing a card from `cards.jsonl` excludes its row from card retrieval. Every matchable row
+  needs a card.
+
+The section below covers the legacy row matcher, which still serves until a database has embedded
+card vectors.
+
 ## Diagnosing a food that finds no candidates
 
 When an ingredient comes back with `candidates: []`, settle first whether the

@@ -28,10 +28,11 @@
  *    raw key line up with the matcher's `matchingName`.
  * 2. With the embedding-cache flag disabled, this is the sole cache.
  *
- * It is unbounded and never evicted — safe today because the key space is the
- * recurring Vietnamese ingredient vocabulary, but it has no TTL and no cap,
- * unlike `@/lib/ai/cache/l4-cache`.
+ * Bounded LRU: card retrieval embeds free-form query strings (`queryEn`,
+ * `nameVi`), so the key space is no longer just the recurring ingredient
+ * vocabulary. 5,000 vectors × 768 numbers ≈ 31 MB.
  */
+const MAX_ENTRIES = 5_000;
 const memo = new Map<string, number[]>();
 
 /** Visible for testing/diagnostics */
@@ -40,11 +41,44 @@ export function getEmbeddingCacheStats() {
 }
 
 export function getMemoizedEmbedding(text: string): number[] | undefined {
-  return memo.get(text);
+  const hit = memo.get(text);
+  if (hit) {
+    // Refresh recency: Map iteration order is insertion order.
+    memo.delete(text);
+    memo.set(text, hit);
+  }
+  return hit;
 }
 
 export function memoizeEmbedding(text: string, embedding: number[]): void {
+  memo.delete(text);
   memo.set(text, embedding);
+  if (memo.size > MAX_ENTRIES) {
+    const oldest = memo.keys().next().value;
+    if (oldest !== undefined) memo.delete(oldest);
+  }
+}
+
+/**
+ * Requests still in flight, by exact text: a caller that misses the memo while
+ * another request for the same text is running (the stream prewarm, then
+ * matching) joins it instead of paying for a second embedding.
+ */
+const inFlight = new Map<string, Promise<number[]>>();
+
+export function inFlightEmbedding(text: string): Promise<number[]> | undefined {
+  return inFlight.get(text);
+}
+
+export function trackInFlightEmbedding(
+  text: string,
+  pending: Promise<number[]>
+): void {
+  inFlight.set(text, pending);
+  const clear = () => {
+    if (inFlight.get(text) === pending) inFlight.delete(text);
+  };
+  pending.then(clear, clear);
 }
 
 /** Entry count, for the miss-logging line in the provider. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
@@ -64,6 +64,7 @@ function matchResults(): IngredientV2MatchResult[] {
             fatG: 12,
           },
           inediblePct: null,
+          prompt: { name: 'Cá', nameEn: null, score: 0.9 },
         },
       ],
     },
@@ -89,6 +90,7 @@ function matchResults(): IngredientV2MatchResult[] {
             fatG: 0.2,
           },
           inediblePct: null,
+          prompt: { name: 'Rau', nameEn: null, score: 0.9 },
         },
       ],
     },

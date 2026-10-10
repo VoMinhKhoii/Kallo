@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
@@ -58,6 +58,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
           fatG: 4.4,
         },
         inediblePct: null,
+        prompt: { name: 'Sữa bò tươi', nameEn: null, score: 0.95 },
       },
     ],
   };

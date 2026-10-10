@@ -1,12 +1,16 @@
-import type { MatchInfo } from '@/lib/ai/matching/match-constants';
-import { filterByExplicitState } from '@/lib/ai/matching/rank/candidate-ranking';
-import { resolveExactMatch } from '@/lib/ai/matching/retrieve/exact-match';
 import {
-  buildIngredientContexts,
+  attachCandidateNutrition,
+  type IngredientV2MatchResult,
+  type V2MatchCandidate,
+} from '@/lib/ai/matching/candidate';
+import type { MatchInfo } from '@/lib/ai/matching/match-constants';
+import {
   explicitWeighState,
-} from '@/lib/ai/matching/retrieve/top-k-context';
+  filterByExplicitState,
+} from '@/lib/ai/matching/rank/candidate-ranking';
+import { resolveExactMatch } from '@/lib/ai/matching/retrieve/exact-match';
+import { buildIngredientContexts } from '@/lib/ai/matching/retrieve/top-k-context';
 import { resolveTopKEmbeddings } from '@/lib/ai/matching/retrieve/top-k-embeddings';
-import { attachCandidateNutrition } from '@/lib/ai/matching/retrieve/top-k-nutrition';
 import {
   retrieveHybridTopK,
   retrieveLexicalTopK,
@@ -14,24 +18,21 @@ import {
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
 import type { AppDb } from '@/lib/infra/db/client';
 
-/**
- * V2 match result per ingredient — up to `k` candidates (sorted by similarity
- * desc) with their nutrition already attached. The grounded-estimation prompt
- * embeds these in the Call 2 XML so the LLM can run a CRAG judgment.
- */
-export interface IngredientV2MatchResult {
-  ingredientIndex: number;
-  candidates: V2MatchCandidate[];
-}
-
-export interface V2MatchCandidate {
-  info: MatchInfo;
-  nutrition: NutritionPer100g | null;
-  inediblePct: number | null;
+/** The legacy matcher's Call 2 view of a candidate: row name and similarity. */
+function legacyCandidate(info: MatchInfo): V2MatchCandidate {
+  return {
+    info,
+    nutrition: null,
+    inediblePct: null,
+    prompt: {
+      name: info.matchedName,
+      nameEn: info.matchedNameEn ?? null,
+      score: info.similarity,
+    },
+  };
 }
 
 export interface MatchTopKOptions {
@@ -63,7 +64,7 @@ const DEFAULT_SOURCE_LIMIT = 3;
  *      are not on comparable scales). The LLM in Call 2 still makes the final
  *      pick.
  *   5. Batch-fetch nutrition for all unique candidate IDs once and attach
- *      `per_100g` + `inediblePct` to each candidate (`top-k-nutrition.ts`).
+ *      `per_100g` + `inediblePct` to each candidate (`matching/candidate.ts`).
  */
 export async function matchTopKPerIngredient(
   ingredients: DecomposedIngredientV2[],
@@ -111,7 +112,7 @@ export async function matchTopKPerIngredient(
       exactHitCount++;
       results[i] = {
         ingredientIndex: ctxs[i].index,
-        candidates: [{ info: r.value, nutrition: null, inediblePct: null }],
+        candidates: [legacyCandidate(r.value)],
       };
     }
   }
@@ -182,11 +183,7 @@ export async function matchTopKPerIngredient(
     );
     results[r.value.ingredientIndex] = {
       ingredientIndex: r.value.ingredientIndex,
-      candidates: stateFiltered.map((info) => ({
-        info,
-        nutrition: null,
-        inediblePct: null,
-      })),
+      candidates: stateFiltered.map(legacyCandidate),
     };
   }
 

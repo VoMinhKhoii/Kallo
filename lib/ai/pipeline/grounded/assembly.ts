@@ -7,7 +7,7 @@
  * ONE `assembly` stage log so the admin timeline shows a single row for the
  * whole bridge → reconcile → assemble hop.
  */
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
