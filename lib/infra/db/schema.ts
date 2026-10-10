@@ -4,6 +4,7 @@ import {
   check,
   date,
   decimal,
+  halfvec,
   foreignKey,
   index,
   integer,
@@ -296,7 +297,9 @@ export const foodCardVectors = pgTable(
       .notNull()
       .references(() => vietnameseFoodComposition.id, { onDelete: 'cascade' }),
     text: text('text').notNull(),
-    embedding: vector('embedding', { dimensions: 768 }),
+    // Half precision: the full 768 floats were ~280 MB out of line for a
+    // reference table whose search reads a 256-dim prefix (match_food_cards).
+    embedding: halfvec('embedding', { dimensions: 768 }),
   },
   (table) => [
     uniqueIndex('food_card_vectors_row_text_key').on(
