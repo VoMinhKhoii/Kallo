@@ -25,6 +25,7 @@ import {
 } from '@/lib/ai/pipeline/resolve/verdicts';
 import { nameKey } from '@/lib/core/text/name-key';
 import { type RescuePart, type RunState, spliceRescue } from './splice';
+import { runRescueSubMeal, type SubMealDeps } from './sub-meal';
 
 export type { RescuePart } from './splice';
 
@@ -107,7 +108,8 @@ export function startDishRescue(args: {
   language: 'en' | 'vi';
   /** `Date.now()` when the whole analysis started. */
   runStartedAt: number;
-  runSubMeal: (text: string) => Promise<RescuePart[] | null>;
+  /** What a mini-meal needs to run the pipeline stages (`./sub-meal`). */
+  subMeal: SubMealDeps;
 }): {
   started: () => number[];
   close: () => void;
@@ -131,7 +133,10 @@ export function startDishRescue(args: {
         // Queued work starts later; recheck when it actually begins.
         closed || timeLeft() <= 0
           ? null
-          : args.runSubMeal(rescueMealText(ingredients[f], args.language))
+          : runRescueSubMeal(
+              rescueMealText(ingredients[f], args.language),
+              args.subMeal
+            )
       ).then(
         (parts) => {
           if (parts?.length) ready.set(f, parts);

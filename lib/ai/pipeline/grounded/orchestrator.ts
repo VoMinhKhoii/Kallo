@@ -44,7 +44,6 @@ import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
-import { runRescueSubMeal } from './rescue/sub-meal';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -167,21 +166,20 @@ export async function analyzeMealV2(
           state: { decomposition, matchResults, portionResolutions },
           language: userContext.outputLanguage === 'vi' ? 'vi' : 'en',
           runStartedAt: t0,
-          runSubMeal: (text) =>
-            runRescueSubMeal(text, {
-              userContext,
-              promptCtx,
-              db,
-              gemini,
-              profile,
-              topK,
-              matchConcurrency,
-              vesselEnabled,
-              temperature: call2Temperature,
-              estimator: options.estimator,
-              decompositionRecorder: budget.decompositionRecorder,
-              nutritionRecorder: budget.nutritionRecorder,
-            }),
+          subMeal: {
+            userContext,
+            promptCtx,
+            db,
+            gemini,
+            profile,
+            topK,
+            matchConcurrency,
+            vesselEnabled,
+            temperature: call2Temperature,
+            estimator: options.estimator,
+            decompositionRecorder: budget.decompositionRecorder,
+            nutritionRecorder: budget.nutritionRecorder,
+          },
         })
       : null;
     if (rescue) closeRescue = rescue.close;

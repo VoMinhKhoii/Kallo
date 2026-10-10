@@ -7,6 +7,20 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { type RescuePart, rescueMealText, startDishRescue } from '../rescue';
+import type { SubMealDeps } from '../sub-meal';
+
+const { subMealMock } = vi.hoisted(() => ({ subMealMock: vi.fn() }));
+vi.mock('../sub-meal', () => ({ runRescueSubMeal: subMealMock }));
+const DEPS = {} as SubMealDeps;
+
+/** Start a rescue whose mini-meals are answered by `runSubMeal(text)`. */
+function rescueWith(
+  runSubMeal: (text: string) => Promise<RescuePart[] | null>,
+  args: Omit<Parameters<typeof startDishRescue>[0], 'subMeal'>
+) {
+  subMealMock.mockImplementation((text: string) => runSubMeal(text));
+  return startDishRescue({ ...args, subMeal: DEPS });
+}
 
 const triple = { low: 1, mid: 2, high: 3 };
 const estimate = (
@@ -75,11 +89,10 @@ afterEach(() => vi.useRealTimers());
 describe('startDishRescue', () => {
   it('starts only the certain mini-meals before Call 2 answers', () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state,
       language: 'vi',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
 
     expect(rescue.started()).toEqual([0]);
@@ -88,11 +101,10 @@ describe('startDishRescue', () => {
 
   it('rescues what Call 2 rejected and leaves what it accepted', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state,
       language: 'vi',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
     const out = await rescue.apply(call2('c1'));
 
@@ -105,11 +117,10 @@ describe('startDishRescue', () => {
 
   it('starts a mini-meal after Call 2 for a dish it rejected', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state,
       language: 'en',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
     const out = await rescue.apply(call2('none'));
 
@@ -119,11 +130,10 @@ describe('startDishRescue', () => {
 
   it('treats a pick outside the candidate list as a rejection', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state,
       language: 'vi',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
     const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
     expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm');
@@ -132,11 +142,10 @@ describe('startDishRescue', () => {
 
   it('stops waiting for a slow mini-meal and keeps the main answer', async () => {
     vi.useFakeTimers();
-    const rescue = startDishRescue({
+    const rescue = rescueWith(() => new Promise(() => {}), {
       state,
       language: 'vi',
       runStartedAt: Date.now(),
-      runSubMeal: () => new Promise(() => {}),
     });
     const out = rescue.apply(call2('c1'));
     await vi.advanceTimersByTimeAsync(12_000);
@@ -147,11 +156,10 @@ describe('startDishRescue', () => {
 describe('startDishRescue deadline', () => {
   it('waits only as long as the run budget allows', async () => {
     vi.useFakeTimers();
-    const rescue = startDishRescue({
+    const rescue = rescueWith(() => new Promise(() => {}), {
       state,
       language: 'vi',
       runStartedAt: Date.now() - 30_000, // 5 s of the 35 s budget left
-      runSubMeal: () => new Promise(() => {}),
     });
     let settled = false;
     void rescue.apply(call2('c1')).then(() => {
@@ -165,11 +173,10 @@ describe('startDishRescue deadline', () => {
 describe('startDishRescue past the deadline', () => {
   it('starts no new mini-meal once the run budget is spent', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state,
       language: 'vi',
       runStartedAt: Date.now() - 36_000,
-      runSubMeal,
     });
     // Neither the certain (no-candidate) one nor a post-Call-2 one starts.
     expect(rescue.started()).toEqual([]);
@@ -193,7 +200,7 @@ describe('startDishRescue queue and deadline', () => {
           finish.push(() => resolve(null));
         })
     );
-    startDishRescue({
+    rescueWith(runSubMeal, {
       state: {
         decomposition: four,
         matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
@@ -201,7 +208,6 @@ describe('startDishRescue queue and deadline', () => {
       },
       language: 'en',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
     await vi.advanceTimersByTimeAsync(36_000); // past the 35 s budget
     finish[0](); // a slot frees; the fourth would start now
@@ -225,7 +231,7 @@ describe('startDishRescue cleanup', () => {
           finish.push(() => resolve(null));
         })
     );
-    const rescue = startDishRescue({
+    const rescue = rescueWith(runSubMeal, {
       state: {
         decomposition: four,
         matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
@@ -233,7 +239,6 @@ describe('startDishRescue cleanup', () => {
       },
       language: 'en',
       runStartedAt: Date.now(),
-      runSubMeal,
     });
     await vi.advanceTimersByTimeAsync(0);
     expect(runSubMeal).toHaveBeenCalledTimes(3); // the fourth waits its turn
