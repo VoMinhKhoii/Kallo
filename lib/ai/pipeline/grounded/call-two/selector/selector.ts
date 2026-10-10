@@ -50,10 +50,10 @@ export function startCandidateSelector(args: {
   const controller = new AbortController();
   const picks = new Map<number, string>();
   const choices = args.mealItems
-    .flatMap((mi) => mi.ingredients)
-    .map((ing, flat) => ({ ing, flat }))
+    .flatMap((mi) => mi.ingredients.map((ing) => ({ ing, dish: mi.mealItem })))
+    .map((entry, flat) => ({ ...entry, flat }))
     .filter(({ ing }) => ing.candidates.length >= 2);
-  const ask = async ({ ing, flat }: (typeof choices)[number]) => {
+  const ask = async ({ ing, dish, flat }: (typeof choices)[number]) => {
     if (controller.signal.aborted) return;
     const ids = ing.candidates.map((c) => c.id);
     const out = await args.gemini.generateStructuredOutput(
@@ -62,7 +62,7 @@ export function startCandidateSelector(args: {
           ranking: z.array(z.enum([ids[0], ...ids.slice(1), 'none'])),
         }),
         systemPrompt: SELECTOR_SYSTEM_PROMPT,
-        userMessage: selectorUserMessage(args.mealText, ing),
+        userMessage: selectorUserMessage(args.mealText, ing, dish),
         model: args.model,
         temperature: 0,
         abortSignal: controller.signal,
