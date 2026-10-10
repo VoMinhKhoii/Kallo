@@ -85,6 +85,7 @@ vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
 }));
 vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: createGeminiClientSpy,
+  createPipelineLlm: (config: unknown) => createGeminiClientSpy(config),
   resolveGeminiProvider: () => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY missing');

@@ -242,6 +242,22 @@ jobs:
             echo "secrets=" >> "$GITHUB_OUTPUT"
             echo "::notice::Sign in with Apple secrets not found; token revocation stays off for this deploy."
           fi
+      # The meal pipeline's model profile (lib/ai/pipeline/config/model-profile.ts)
+      # comes from the PIPELINE_MODEL_PROFILE repo variable; unset deploys
+      # `stable` (Gemini). `haiku` runs both calls on Claude Haiku 5.5, with a
+      # per-call Gemini fallback, and needs the Anthropic key, so that secret is
+      # mounted only for `haiku` and must then exist with a readable version.
+      # Output is discarded: the value must never reach the log.
+      - id: llm
+        name: Resolve the pipeline model profile
+        run: |
+          if [ "${{ vars.PIPELINE_MODEL_PROFILE }}" = "haiku" ]; then
+            gcloud secrets versions access latest \
+              --secret=kallo-prod-anthropic-api-key > /dev/null
+            echo "secrets=,ANTHROPIC_API_KEY=kallo-prod-anthropic-api-key:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "secrets=" >> "$GITHUB_OUTPUT"
+          fi
       - id: svc
         name: Check if service already exists
         # --no-traffic + --tag are only valid once a first revision exists. On the
@@ -299,7 +315,8 @@ jobs:
           # above describes each one so a missing secret fails early and loudly
           # rather than mid-deploy. The one exception is the optional Sign in
           # with Apple pair, appended by the "Detect optional Sign in with Apple
-          # secrets" step only when both exist.
+          # secrets" step only when both exist, and the Anthropic key, appended
+          # by "Resolve the pipeline model profile" only for the haiku profile.
           #
           # Webhook signing: if signature signing is enabled in RevenueCat, the
           # server needs REVENUECAT_WEBHOOK_HMAC_SECRET or every production
@@ -320,8 +337,8 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=20
-            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}
-            --update-env-vars=^|^AI_PROVIDER=vertex|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod
+            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}${{ steps.llm.outputs.secrets }}
+            --update-env-vars=^|^AI_PROVIDER=vertex|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).

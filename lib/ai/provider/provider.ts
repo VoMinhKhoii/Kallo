@@ -1,3 +1,4 @@
+import { getClaudeStructuredOutput, withClaudeRouting } from './claude/routing';
 import { type GeminiProviderConfig, getOrCreateAiClient } from './client';
 import { createEmbeddingMethods } from './embeddings';
 import { createWithRetry, DEFAULT_RETRY, type RetryOptions } from './retry';
@@ -25,6 +26,22 @@ export type {
   StreamOptions,
   StructuredOutputParams,
 } from './types';
+
+/**
+ * The meal pipeline's client: Claude models (`claude-*`, the `haiku` model
+ * profile) run on the Claude API with a per-call Gemini fallback on
+ * `fallbackModel`; everything else, embeddings included, runs on Gemini.
+ */
+export function createPipelineLlm(
+  config: GeminiProviderConfig,
+  options: { fallbackModel: string }
+): GeminiClient {
+  return withClaudeRouting(
+    createGeminiClient(config),
+    getClaudeStructuredOutput(),
+    options
+  );
+}
 
 export function createGeminiClient(
   config: GeminiProviderConfig,
