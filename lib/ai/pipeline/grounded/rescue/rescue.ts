@@ -121,8 +121,10 @@ export function startDishRescue(args: {
   const runs = new Map<number, Promise<void>>();
   const ready = new Map<number, RescuePart[]>();
   let closed = false;
+  const timeLeft = () => args.runStartedAt + RUN_DEADLINE_MS - Date.now();
+  // Past the deadline a new mini-meal could not reach the response.
   const start = (f: number) => {
-    if (runs.has(f) || closed) return;
+    if (runs.has(f) || closed || timeLeft() <= 0) return;
     runs.set(
       f,
       limit(async () =>
@@ -163,8 +165,7 @@ export function startDishRescue(args: {
         close();
         return null;
       }
-      const left = args.runStartedAt + RUN_DEADLINE_MS - Date.now();
-      // Past the deadline a new mini-meal could not reach the response.
+      const left = timeLeft();
       if (left > 0) {
         for (const f of needed) start(f);
         let timer: ReturnType<typeof setTimeout> | undefined;

@@ -171,7 +171,8 @@ describe('startDishRescue past the deadline', () => {
       runStartedAt: Date.now() - 36_000,
       runSubMeal,
     });
-    runSubMeal.mockClear(); // the certain (no-candidate) one started at once
+    // Neither the certain (no-candidate) one nor a post-Call-2 one starts.
+    expect(rescue.started()).toEqual([]);
     await rescue.apply(call2('none'));
     expect(runSubMeal).not.toHaveBeenCalled();
   });
