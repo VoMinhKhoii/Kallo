@@ -75,7 +75,12 @@ afterEach(() => vi.useRealTimers());
 describe('startDishRescue', () => {
   it('starts only the certain mini-meals before Call 2 answers', () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({ state, language: 'vi', runSubMeal });
+    const rescue = startDishRescue({
+      state,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      runSubMeal,
+    });
 
     expect(rescue.started()).toEqual([0]);
     expect(runSubMeal).toHaveBeenCalledWith('1 phần bánh flan');
@@ -83,7 +88,12 @@ describe('startDishRescue', () => {
 
   it('rescues what Call 2 rejected and leaves what it accepted', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({ state, language: 'vi', runSubMeal });
+    const rescue = startDishRescue({
+      state,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      runSubMeal,
+    });
     const out = await rescue.apply(call2('c1'));
 
     expect(out?.rescued).toBe(1);
@@ -95,7 +105,12 @@ describe('startDishRescue', () => {
 
   it('starts a mini-meal after Call 2 for a dish it rejected', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({ state, language: 'en', runSubMeal });
+    const rescue = startDishRescue({
+      state,
+      language: 'en',
+      runStartedAt: Date.now(),
+      runSubMeal,
+    });
     const out = await rescue.apply(call2('none'));
 
     expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm');
@@ -104,7 +119,12 @@ describe('startDishRescue', () => {
 
   it('treats a pick outside the candidate list as a rejection', async () => {
     const runSubMeal = vi.fn(async () => parts);
-    const rescue = startDishRescue({ state, language: 'vi', runSubMeal });
+    const rescue = startDishRescue({
+      state,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      runSubMeal,
+    });
     const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
     expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm');
     expect(out?.rescued).toBe(2);
@@ -115,11 +135,30 @@ describe('startDishRescue', () => {
     const rescue = startDishRescue({
       state,
       language: 'vi',
+      runStartedAt: Date.now(),
       runSubMeal: () => new Promise(() => {}),
     });
     const out = rescue.apply(call2('c1'));
     await vi.advanceTimersByTimeAsync(12_000);
     expect(await out).toBeNull();
+  });
+});
+
+describe('startDishRescue deadline', () => {
+  it('waits only as long as the run budget allows', async () => {
+    vi.useFakeTimers();
+    const rescue = startDishRescue({
+      state,
+      language: 'vi',
+      runStartedAt: Date.now() - 40_000, // 5 s of the 45 s budget left
+      runSubMeal: () => new Promise(() => {}),
+    });
+    let settled = false;
+    void rescue.apply(call2('c1')).then(() => {
+      settled = true;
+    });
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(settled).toBe(true);
   });
 });
 
@@ -145,6 +184,7 @@ describe('startDishRescue cleanup', () => {
         portionResolutions: [defer, defer, defer, defer],
       },
       language: 'en',
+      runStartedAt: Date.now(),
       runSubMeal,
     });
     await vi.advanceTimersByTimeAsync(0);

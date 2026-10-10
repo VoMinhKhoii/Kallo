@@ -166,6 +166,7 @@ export async function analyzeMealV2(
       ? startDishRescue({
           state: { decomposition, matchResults, portionResolutions },
           language: userContext.outputLanguage === 'vi' ? 'vi' : 'en',
+          runStartedAt: t0,
           runSubMeal: (text) =>
             runRescueSubMeal(text, {
               userContext,

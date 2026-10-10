@@ -37,6 +37,11 @@ export function isDishRescueEnabled(): boolean {
 const CONCURRENCY = 3;
 /** How long the main run waits past Call 2 for the mini-meals it needs. */
 const GRACE_MS = 12_000;
+/**
+ * Never wait past this point of the whole run: the route stops at 60 s, and
+ * assembly, persistence and the final events need the rest.
+ */
+const RUN_DEADLINE_MS = 45_000;
 /** Plain additions a mini-meal cannot split further. */
 const NOT_A_DISH =
   /^(n[uư][oớ]c( lọc| đá)?|water|ice|đá|đường( kính)?|sugar|muối|salt|tiêu|pepper|ớt|chili|nước mắm|fish sauce)$/i;
@@ -98,6 +103,8 @@ function createLimiter(limit: number) {
 export function startDishRescue(args: {
   state: Omit<RunState, 'grounded'>;
   language: 'en' | 'vi';
+  /** `Date.now()` when the whole analysis started. */
+  runStartedAt: number;
   runSubMeal: (text: string) => Promise<RescuePart[] | null>;
 }): {
   started: () => number[];
@@ -159,7 +166,8 @@ export function startDishRescue(args: {
       await Promise.race([
         Promise.all(needed.map((f) => runs.get(f))),
         new Promise((resolve) => {
-          timer = setTimeout(resolve, GRACE_MS);
+          const left = args.runStartedAt + RUN_DEADLINE_MS - Date.now();
+          timer = setTimeout(resolve, Math.max(0, Math.min(GRACE_MS, left)));
         }),
       ]);
       clearTimeout(timer);
