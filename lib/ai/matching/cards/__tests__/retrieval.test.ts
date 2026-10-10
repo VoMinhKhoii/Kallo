@@ -361,6 +361,39 @@ describe('matchCardCandidates', () => {
     vi.useRealTimers();
   });
 
+  it('retries a failed refresh after a minute, keeping the loaded catalog meanwhile', async () => {
+    vi.useFakeTimers();
+    let failing = false;
+    const execute = vi.fn(async (q: unknown) => {
+      const text = JSON.stringify(q);
+      if (failing) throw new Error('connection reset');
+      if (text.includes('to_regclass')) return [{ present: true }];
+      if (text.includes('embedding IS NULL')) return [{ ready: true }];
+      return ROWS;
+    });
+    const db = {
+      execute,
+      transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
+        fn({ execute })
+      ),
+    } as unknown as AppDb;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(await getCardCatalog(db)).not.toBeNull();
+    failing = true;
+    vi.advanceTimersByTime(31 * 60_000);
+    expect(await getCardCatalog(db)).not.toBeNull(); // the refresh fails
+    await vi.runAllTimersAsync();
+    const callsAfterFailure = execute.mock.calls.length;
+    failing = false;
+    vi.advanceTimersByTime(61_000);
+    expect(await getCardCatalog(db)).not.toBeNull(); // retried after a minute
+    await vi.runAllTimersAsync();
+    expect(execute.mock.calls.length).toBeGreaterThan(callsAfterFailure);
+    errorSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
   it('drops opposite-state rows when the user stated the weighing basis', async () => {
     const hits = [
       {

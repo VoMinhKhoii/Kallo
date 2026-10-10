@@ -21,8 +21,9 @@ one-line sentence. Nutrients are never edited on a card.
   `ingredient_sources.code` in `MATCHING_SOURCE_BUCKETS` (`lib/ai/matching/match-constants.ts`),
   and cards for its rows. No retrieval code changes. Curation runs on the `food-data-curator`
   agent (Opus, high effort).
-- A row without a card is still reachable through its own names (lexical + BM25 arms), but not
-  through the vector arm.
+- Only rows with a card are matchable: a row without one is not loaded into the catalog, so
+  removing a card from `cards.jsonl` excludes its row from card retrieval. Every matchable row
+  needs a card.
 
 The section below covers the legacy row matcher, which still serves until a database has embedded
 card vectors.

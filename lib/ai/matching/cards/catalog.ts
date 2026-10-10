@@ -108,7 +108,8 @@ function refresh(db: AppDb): void {
         '[card-matching] catalog refresh failed; keeping the loaded catalog:',
         err
       );
-      if (cache) cache.at = at;
+      // Retry after the not-ready interval, not a full refresh interval.
+      if (cache) cache.at = Date.now() - READY_REFRESH_MS + NOT_READY_RETRY_MS;
     })
     .finally(() => {
       refreshing = false;
