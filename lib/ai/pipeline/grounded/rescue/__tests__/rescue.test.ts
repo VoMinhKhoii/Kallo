@@ -102,6 +102,14 @@ describe('startDishRescue', () => {
     expect(out?.rescued).toBe(2);
   });
 
+  it('treats a pick outside the candidate list as a rejection', async () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = startDishRescue({ state, language: 'vi', runSubMeal });
+    const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
+    expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm');
+    expect(out?.rescued).toBe(2);
+  });
+
   it('stops waiting for a slow mini-meal and keeps the main answer', async () => {
     vi.useFakeTimers();
     const rescue = startDishRescue({

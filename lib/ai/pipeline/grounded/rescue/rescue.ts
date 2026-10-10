@@ -19,7 +19,10 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
+import {
+  classifyVerdict,
+  pairIngredientsWithGrounded,
+} from '@/lib/ai/pipeline/resolve/verdicts';
 import { nameKey } from '@/lib/core/text/name-key';
 import { type RescuePart, type RunState, spliceRescue } from './splice';
 
@@ -46,9 +49,15 @@ const rescuable = (
 ) =>
   !NOT_A_DISH.test(ing.rawName.trim()) && portion?.provenance !== 'unresolved';
 
-const rejected = (g: GroundedIngredientEstimate | null | undefined) =>
-  g != null &&
-  (g.selectedCandidateId === undefined || g.selectedCandidateId === 'none');
+/** Rejected exactly as resolution classifies it (none, no pick, a bad id). */
+const rejected = (
+  g: GroundedIngredientEstimate | null | undefined,
+  candidates: number
+) => {
+  if (g == null) return false;
+  const { verdict } = classifyVerdict(g, candidates);
+  return verdict === 'rejected' || verdict === 'unmatched';
+};
 
 /** The mini-meal text for an ingredient, in the user's language. */
 export function rescueMealText(
@@ -136,7 +145,8 @@ export function startDishRescue(args: {
     async apply(grounded) {
       const pairs = pairIngredientsWithGrounded(decomposition, grounded);
       const needed = ingredients.flatMap((ing, f) =>
-        rescuable(ing, portionResolutions[f]) && rejected(pairs[f]?.ground)
+        rescuable(ing, portionResolutions[f]) &&
+        rejected(pairs[f]?.ground, matchResults[f]?.candidates.length ?? 0)
           ? [f]
           : []
       );
