@@ -119,15 +119,18 @@ export async function runCallTwoStage(args: {
     emit,
   });
 
-  const selector = isCandidateSelectorEnabled()
-    ? startCandidateSelector({
-        gemini: args.gemini,
-        model: args.profile.nutritionModel,
-        mealText: rawInput,
-        mealItems: mealItemsWithCandidates,
-        onAttemptComplete: args.onAttemptComplete,
-      })
-    : null;
+  // An estimator override is an offline bakeoff of one estimator: a Gemini
+  // selector over its picks would blur the comparison.
+  const selector =
+    isCandidateSelectorEnabled() && !args.estimatorOverride
+      ? startCandidateSelector({
+          gemini: args.gemini,
+          model: args.profile.nutritionModel,
+          mealText: rawInput,
+          mealItems: mealItemsWithCandidates,
+          onAttemptComplete: args.onAttemptComplete,
+        })
+      : null;
 
   let nutritionMaxAttempt = 0;
   const call2 = await withStageLogV2(

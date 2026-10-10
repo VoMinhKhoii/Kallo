@@ -2,10 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { STABLE_PROFILE } from '@/lib/ai/pipeline/config/model-profile';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type {
-  GroundedEstimator,
-  GroundedEstimatorInput,
-} from '@/lib/ai/pipeline/estimator/types';
+import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import type {
   MatchCandidate,
   MealItemWithCandidates,
@@ -83,17 +80,19 @@ const call2Answer: GroundedEstimation = {
   ],
 };
 
-function stage(selectorRanking: string[]) {
-  let seen: GroundedEstimatorInput | undefined;
-  const estimator: GroundedEstimator = {
-    id: 'fake',
-    model: 'fake',
-    estimate: vi.fn(async (input) => {
-      seen = input;
-      return { estimation: call2Answer };
-    }),
-  };
+/** Call 2 runs on the default (Gemini) estimator; the selector on the same client. */
+function stage(
+  selectorRanking: string[],
+  estimatorOverride?: GroundedEstimator
+) {
+  let call2Prompt = '';
   const gemini = {
+    generateStructuredOutputStream: vi.fn(
+      async (p: { systemPrompt: string }) => {
+        call2Prompt = p.systemPrompt;
+        return call2Answer;
+      }
+    ),
     generateStructuredOutput: vi.fn(async () => ({ ranking: selectorRanking })),
   } as unknown as GeminiClient;
   const run = runCallTwoStage({
@@ -101,7 +100,7 @@ function stage(selectorRanking: string[]) {
     emit: () => {},
     gemini,
     profile: STABLE_PROFILE,
-    estimatorOverride: estimator,
+    estimatorOverride,
     decomposition,
     matchResults: [{ ingredientIndex: 0, candidates: [] }],
     mealItemsWithCandidates: mealItems,
@@ -113,7 +112,7 @@ function stage(selectorRanking: string[]) {
     onAttemptComplete: () => {},
     onChunkTick: () => {},
   });
-  return { run, gemini, seen: () => seen };
+  return { run, gemini, call2Prompt: () => call2Prompt };
 }
 
 afterEach(() => {
@@ -124,10 +123,10 @@ afterEach(() => {
 describe('runCallTwoStage with the candidate selector', () => {
   it('lets the selector rank the candidates Call 2 saw and takes its pick', async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
-    const { run, seen } = stage(['c6', 'c2']);
+    const { run, call2Prompt } = stage(['c6', 'c2']);
     const result = await run;
 
-    expect(seen()?.mealItems[0].ingredients[0].candidates).toHaveLength(8);
+    expect(call2Prompt()).toContain('Row 8');
     expect(
       result.grounded.mealItems[0].ingredients[0].selectedCandidateId
     ).toBe('c6');
@@ -138,6 +137,21 @@ describe('runCallTwoStage with the candidate selector', () => {
   it('keeps Call 2 alone when the selector is switched off', async () => {
     vi.stubEnv('CANDIDATE_SELECTOR_ENABLED', 'false');
     const { run, gemini } = stage(['c6']);
+    const result = await run;
+
+    expect(gemini.generateStructuredOutput).not.toHaveBeenCalled();
+    expect(
+      result.grounded.mealItems[0].ingredients[0].selectedCandidateId
+    ).toBe('c1');
+  });
+
+  it('stays off for an offline estimator override', async () => {
+    const estimator: GroundedEstimator = {
+      id: 'fake',
+      model: 'fake',
+      estimate: vi.fn(async () => ({ estimation: call2Answer })),
+    };
+    const { run, gemini } = stage(['c6'], estimator);
     const result = await run;
 
     expect(gemini.generateStructuredOutput).not.toHaveBeenCalled();

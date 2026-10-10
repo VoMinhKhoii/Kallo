@@ -240,7 +240,7 @@ describe('applySelection', () => {
     expect(grounded.mealItems[0].ingredients[0].selectedCandidateId).toBe('c1');
   });
 
-  it("rescales Call 2's macros to the new row", () => {
+  it("moves Call 2's macros to the new row's base, keeping its adjustment", () => {
     const lean = { ...candidate(1), per100gFatG: 1, per100gProteinG: 0 };
     const rich = { ...candidate(2), per100gFatG: 4, per100gProteinG: 3 };
     const { decomposition, mealItems } = meal([
@@ -267,10 +267,11 @@ describe('applySelection', () => {
       picks: new Map([[0, 'c2']]),
     }).grounded.mealItems[0].ingredients;
 
-    // Fat scales 1 → 4 g/100 g; protein the old row lacked takes the new
-    // row's value at Call 2's 200 g.
-    expect(ing.fatG).toEqual({ low: 6, mid: 8, high: 10 });
-    expect(ing.proteinG).toEqual({ low: 6, mid: 6, high: 6 });
+    // At 200 g the fat base moves 2 → 8 g; Call 2's spread around it (its
+    // frying oil or prep adjustment) carries over as the same offset.
+    expect(ing.fatG).toEqual({ low: 7.5, mid: 8, high: 8.5 });
+    // Protein base moves 0 → 6 g on top of Call 2's 1–3 g.
+    expect(ing.proteinG).toEqual({ low: 7, mid: 8, high: 9 });
   });
 
   it('pairs a dish Call 2 split into same-name items the way resolution does', () => {

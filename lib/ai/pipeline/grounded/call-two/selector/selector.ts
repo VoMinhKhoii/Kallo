@@ -136,10 +136,10 @@ const MACRO_FIELDS = [
 ] as const;
 
 /**
- * Call 2 wrote its macro triples for the row it picked; carry them to the new
- * row in proportion to the two rows' per-100 g values, which keeps Call 2's
- * own adjustments (prep notes, cooking fat). A macro the old row lacked takes
- * the new row's value at Call 2's edible mass.
+ * Call 2 wrote its macro triples for the row it picked: that row's value at
+ * Call 2's edible mass, plus Call 2's own adjustments (frying oil, prep notes).
+ * Move the base to the new row and keep the adjustment as the same offset,
+ * so an additive frying oil is not multiplied by the new row's density.
  */
 function rescaleMacros(
   ground: GroundedIngredientEstimate,
@@ -151,13 +151,9 @@ function rescaleMacros(
     const before = from[per100];
     const after = to[per100];
     if (before == null || after == null) continue;
+    const shift = ((after - before) * edibleG) / 100;
     const t = ground[field];
-    if (before > 0) {
-      const k = after / before;
-      ground[field] = { low: t.low * k, mid: t.mid * k, high: t.high * k };
-    } else {
-      const v = (after * edibleG) / 100;
-      ground[field] = { low: v, mid: v, high: v };
-    }
+    const move = (v: number) => Math.max(0, v + shift);
+    ground[field] = { low: move(t.low), mid: move(t.mid), high: move(t.high) };
   }
 }
