@@ -208,3 +208,17 @@ export const mealDecompositionV2CallSchema = mealSchemaOf(
     tableName: true,
   })
 );
+
+/**
+ * What Call 1 returns: a `plan` written first — each dish and the single foods
+ * it is made of, implied ones included — then the decomposition. The plan is
+ * reasoning only; the decomposition stage drops it.
+ */
+export const decompositionCallSchema = z.object({
+  plan: z
+    .string()
+    .describe(
+      'One short line per dish or drink: the dish, then the single foods it is made of, including implied ones.'
+    ),
+  ...mealDecompositionV2CallSchema.shape,
+});

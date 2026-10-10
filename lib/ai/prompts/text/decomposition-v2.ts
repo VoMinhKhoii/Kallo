@@ -648,5 +648,49 @@ ${outputLanguage ? languageSection(outputLanguage) : ''}<user_context>
 ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
 </user_context>
 
-Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. You MAY emit count/unitToken/sizeModifier/explicitMass when the user expressed them, but do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.`;
+Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. You MAY emit count/unitToken/sizeModifier/explicitMass when the user expressed them, but do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.
+
+${DECOMPOSITION_RULES}
+
+${PLAN_FIELD_RULE}`;
 }
+
+/**
+ * Decomposition rules from the Meal Arena hill climb (ttr DEV-129): Call 1
+ * caused ~75% of misses, mostly dishes logged as one ingredient and implied
+ * foods left out. Appended after the per-user blocks, where the benchmark
+ * measured them (with the plan field: test first pick 75.2 → 83.4 with the
+ * selector, on Haiku).
+ */
+const DECOMPOSITION_RULES = `<decomposition_check>
+  Before you answer, check every ingredient you listed. This check overrides any habit of logging a dish as one ingredient.
+  - An ingredient is ONE food that a food-composition table lists on its own: a meat, poultry, fish or seafood (with its cut or part), an egg, a grain, rice or noodle, a bread or wrapper, a vegetable or fruit, a legume or nut, a dairy product, an oil or fat, a sugar or syrup, a sauce or condiment base (fish sauce, soy sauce, chili sauce, mayonnaise), a drink base (coffee, tea, beer, soda, juice), or one packaged product sold as a single item (a branded milk carton, a yogurt cup, a candy bar, an instant-noodle pack).
+  - A dish is never an ingredient. Fried rice, biryani, curries, stews, soups and noodle soups, porridges, salads, sandwiches, burgers, wraps, rolls, dumplings and buns, fritters and pancakes, desserts made from several foods, milk tea, milk coffee, smoothies, and a dipping sauce mixed at the table must each be replaced by their parts: the starch, the protein, the vegetables, the cooking fat, the sauce or broth, the sugar, the milk. Name each part as the single food it is.
+  - If an ingredient's rawName repeats or paraphrases its dish's name, or names something made of several foods, split it into those foods.
+  - Keep an item whole only when it is genuinely one product or one food (a bread roll, a cheese, a sausage, a branded packaged item, plain cooked rice, a single fruit or vegetable).
+</decomposition_check>
+
+<implied_components>
+  Strict adherence forbids optional extras, not the foods a dish or drink is made of. When the user names only a dish or drink, still emit every calorie-bearing food it contains as its own ingredient:
+  - Coffee and tea drinks: "cà phê sữa", "cà phê nâu", "nâu đá", "bạc xỉu" and Vietnamese milk coffee contain sweetened condensed milk ("sữa đặc"). Milk teas and milk coffees of every cuisine (bubble tea, "trà sữa", masala chai, Thai or Hong Kong milk tea, filter coffee, latte) contain their milk (fresh, evaporated, condensed or creamer) and their sugar, plus toppings such as pearls. Malted and cocoa drinks contain the powder and the milk. Sweetened drinks (fruit teas, lemonade, "trà tắc", "trà chanh", iced tea, "sinh tố", smoothies; sugarcane juice and plain fruit juice need none) contain sugar or syrup. "Ít đường", "less sugar" and "30% đường" still mean sugar, only less; only "không đường", "no sugar" or "unsweetened" remove it.
+  - Dipping sauces mixed for the meal ("nước mắm pha", "nước chấm", "nước mắm chua ngọt", "mắm nêm pha") contain fish sauce or the named base AND sugar.
+  - Sweet soups and desserts ("chè", puddings, sweetened yogurt) contain their sugar, and their coconut milk or condensed milk when the dish is made with it.
+  - Braised, stewed, simmered-in-sauce and curried dishes (kho, rim, om, sốt, bò kho, cà ri, curries, dals, stews) contain cooking oil or ghee and often sugar; emit the cooking fat as for fried dishes. Dishes cooked in coconut milk or cream contain it as its own ingredient.
+  - Batter- and dough-based items without a single composition row (bánh xèo, bánh khọt, bột chiên, pancakes, fritters, crepes, breaded or battered fried meat) contain their batter or breading: flour or starch, plus coconut milk where it is part of the recipe, plus the frying oil. Filled dumplings and buns contain their wrapper and their filling.
+  - Porridge, congee and rice soups ("cháo") contain their rice.
+</implied_components>
+
+<product_attributes>
+  canonicalName and queryEn must keep every attribute that decides which composition row is right, translated faithfully, never dropped or swapped:
+  - sweetened / unsweetened / less sugar ("ít đường" is reduced-sugar, still sweetened; it is never "diet" or "sugar-free");
+  - flavour (plain vs chocolate vs fruit), fat or milk level (whole, low-fat, skim), and the kind of product (fresh milk vs UHT milk vs flavoured milk vs yogurt drink vs drinkable yogurt);
+  - ready-to-drink or bottled vs brewed or home-made; canned, dried, instant, cured, smoked, pickled, fried;
+  - the cut or part (breast vs thigh vs drumstick, belly vs loin, yolk vs whole egg).
+  For a branded or packaged product, name the generic product it is (brand + "plain UHT milk, reduced sugar") so the search finds that product type.
+  Translate the food itself, not a look-alike: an unaccented or abbreviated Vietnamese word is the same food as its accented form ("suon nuong" = "sườn nướng"), and a cooking word changes the preparation, never the food itself.
+</product_attributes>`;
+
+/** The `plan` string Call 1 writes before mealItems (stripped after parsing). */
+const PLAN_FIELD_RULE = `<plan_field>
+Your JSON starts with "plan": one short line per dish or drink the user ate, written before mealItems: the dish, then the single foods it is made of, including the implied ones (milk and sugar in drinks, sugar in dipping sauces, cooking fat, broth, batter or dough, fillings). Then write mealItems so that every food in the plan is its own ingredient. Keep the plan under 60 words per dish.
+</plan_field>`;

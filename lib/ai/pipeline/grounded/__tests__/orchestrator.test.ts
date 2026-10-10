@@ -3,7 +3,10 @@ import {
   createMockGemini,
   createSourceAwareMockDb,
 } from '@/lib/ai/__fixtures__/test-helpers';
-import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import {
+  decompositionCallSchema,
+  type MealDecompositionV2,
+} from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { analyzeMealV2 } from '@/lib/ai/pipeline/grounded/orchestrator';
 import type { UserContext } from '@/lib/ai/types/user-context';
@@ -341,5 +344,52 @@ describe('analyzeMealV2 — non-food fast path', () => {
     if (!result.success) {
       expect(result.error.type).toBe('non_food_input');
     }
+  });
+});
+
+describe('analyzeMealV2 — the Call 1 plan', () => {
+  it('asks Call 1 for a plan and keeps it out of everything downstream', async () => {
+    const call1 = {
+      plan: 'PLAN-MARKER nem lụi: pork, fat',
+      isFood: true,
+      mealSlot: 'snack',
+      mealItems: [
+        {
+          name: 'nem lụi',
+          cookingMethod: 'nướng',
+          ingredients: [{ rawName: 'nem lụi', canonicalName: 'Nem lụi' }],
+        },
+      ],
+    } as MealDecompositionV2;
+    const call2: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'nem lụi',
+          ingredients: [
+            {
+              ingredientName: 'nem lụi',
+              grossG: 200,
+              refusePct: 0,
+              proteinG: { low: 28, mid: 32, high: 36 },
+              carbohydrateG: { low: 4, mid: 5, high: 6 },
+              fatG: { low: 28, mid: 34, high: 40 },
+            },
+          ],
+        },
+      ],
+    };
+    const gemini = geminiReturning(call1, call2);
+    const result = await analyzeMealV2(
+      '8 cây nem lụi',
+      userContext,
+      createSourceAwareMockDb({}),
+      gemini
+    );
+
+    expect(result.success).toBe(true);
+    const calls = vi.mocked(gemini.generateStructuredOutputStream).mock.calls;
+    expect(calls[0][0].schema).toBe(decompositionCallSchema);
+    expect(calls[1][0].systemPrompt).not.toContain('PLAN-MARKER');
+    expect(JSON.stringify(result)).not.toContain('PLAN-MARKER');
   });
 });

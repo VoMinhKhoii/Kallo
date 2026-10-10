@@ -8,8 +8,8 @@ import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { DECOMPOSITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import {
+  decompositionCallSchema,
   type MealDecompositionV2,
-  mealDecompositionV2CallSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { EstimatorAttemptUsage } from '@/lib/ai/pipeline/estimator/types';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
@@ -138,7 +138,7 @@ export async function runGroundedDecomposition(args: {
         });
         return gemini.generateStructuredOutputStream(
           {
-            schema: mealDecompositionV2CallSchema,
+            schema: decompositionCallSchema,
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,
@@ -168,7 +168,8 @@ export async function runGroundedDecomposition(args: {
       'grounded-decomposition'
     );
     providerRetryCount += Math.max(0, maxAttempt - 1);
-    return result;
+    const { plan: _plan, ...decomposition } = result;
+    return decomposition;
   };
 
   let decomposition: MealDecompositionV2 = await withStageLogV2(
