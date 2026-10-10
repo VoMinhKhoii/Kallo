@@ -48,6 +48,7 @@ const prevPipelineTraceEnabled = process.env.PIPELINE_TRACE_ENABLED;
 afterEach(() => {
   vi.useRealTimers();
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
   if (prevPipelineTraceEnabled === undefined) {
     delete process.env.PIPELINE_TRACE_ENABLED;
   } else {
@@ -304,6 +305,8 @@ describe('analyzeMealV2 — admin/audit observability', () => {
 
   it('aborts Call 2 at the nutrition deadline and records the timeout', async () => {
     vi.useFakeTimers();
+    // Matching finds nothing here, which would start a rescue mini-meal.
+    vi.stubEnv('DISH_RESCUE_ENABLED', 'false');
     const call1: MealDecompositionV2 = {
       isFood: true,
       mealSlot: 'lunch',

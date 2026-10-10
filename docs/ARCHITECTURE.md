@@ -179,6 +179,7 @@ another domain module is a smell worth a second look.
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
 | `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
+| `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 
 ### `lib/admin/`
