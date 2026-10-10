@@ -1,7 +1,7 @@
 /**
  * The candidate selector: one small LLM call per ingredient, beside Call 2,
- * that ranks the whole retrieval pool (`CARD_K`) while Call 2 sees only the
- * first `CALL_TWO_CANDIDATES`. Its pick replaces Call 2's only when the two
+ * that ranks the same candidates Call 2 sees, judged only against the user's
+ * own words. Its pick replaces Call 2's only when the two
  * rows share a state (raw/cooked), so the grams Call 2 estimated keep their
  * basis, and Call 2's macros are rescaled to the new row. A "none" from Call 2
  * is kept: its grams are as-eaten, and a raw or dry row would inflate them.
@@ -25,8 +25,6 @@ import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
 import { SELECTOR_SYSTEM_PROMPT, selectorUserMessage } from './prompt';
 
-/** Candidates per ingredient Call 2 sees; the selector ranks all of them. */
-export const CALL_TWO_CANDIDATES = 8;
 /** How long the selector may run past Call 2 before its open calls are dropped. */
 const GRACE_MS = 3_000;
 /** Selector calls in flight at once, so a large meal cannot crowd out Call 2. */
@@ -35,19 +33,6 @@ const CONCURRENCY = 6;
 /** `CANDIDATE_SELECTOR_ENABLED=false` turns the selector off (Call 2 alone picks). */
 export function isCandidateSelectorEnabled(): boolean {
   return readBooleanEnv('CANDIDATE_SELECTOR_ENABLED', true);
-}
-
-/** The meal items as Call 2 sees them: each ingredient's first candidates. */
-export function callTwoView(
-  mealItems: MealItemWithCandidates[]
-): MealItemWithCandidates[] {
-  return mealItems.map((mi) => ({
-    ...mi,
-    ingredients: mi.ingredients.map((ing) => ({
-      ...ing,
-      candidates: ing.candidates.slice(0, CALL_TWO_CANDIDATES),
-    })),
-  }));
 }
 
 /**

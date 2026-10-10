@@ -29,7 +29,7 @@ const userContext: UserContext = {
   },
 };
 
-const pool: MatchCandidate[] = Array.from({ length: 12 }, (_, i) => ({
+const pool: MatchCandidate[] = Array.from({ length: 8 }, (_, i) => ({
   id: `c${i + 1}`,
   similarity: 0.9,
   dbName: `Row ${i + 1}`,
@@ -122,22 +122,22 @@ afterEach(() => {
 });
 
 describe('runCallTwoStage with the candidate selector', () => {
-  it('lets Call 2 see 8 candidates and takes the selector pick from all 12', async () => {
+  it('lets the selector rank the candidates Call 2 saw and takes its pick', async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
-    const { run, seen } = stage(['c11', 'c2']);
+    const { run, seen } = stage(['c6', 'c2']);
     const result = await run;
 
     expect(seen()?.mealItems[0].ingredients[0].candidates).toHaveLength(8);
     expect(
       result.grounded.mealItems[0].ingredients[0].selectedCandidateId
-    ).toBe('c11');
+    ).toBe('c6');
     // Streamed events used Call 2's pick; the final flush re-sends.
     expect(result.itemMacrosStreamed.size).toBe(0);
   });
 
   it('keeps Call 2 alone when the selector is switched off', async () => {
     vi.stubEnv('CANDIDATE_SELECTOR_ENABLED', 'false');
-    const { run, gemini } = stage(['c11']);
+    const { run, gemini } = stage(['c6']);
     const result = await run;
 
     expect(gemini.generateStructuredOutput).not.toHaveBeenCalled();

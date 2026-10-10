@@ -36,7 +36,6 @@ import {
 import { type RunCallTwoResult, runCallTwo } from './modes';
 import {
   applySelection,
-  callTwoView,
   isCandidateSelectorEnabled,
   startCandidateSelector,
 } from './selector/selector';
@@ -89,11 +88,9 @@ export async function runCallTwoStage(args: {
   const estimator =
     args.estimatorOverride ??
     createGeminiEstimator(args.gemini, args.profile.nutritionModel);
-  // Call 2 sees each ingredient's first candidates; the selector ranks them all.
-  const callTwoItems = callTwoView(mealItemsWithCandidates);
   const call2SystemPrompt = renderGeminiEstimatorPrompt({
     originalPrompt: rawInput,
-    mealItems: callTwoItems,
+    mealItems: mealItemsWithCandidates,
     userContext: promptCtx,
     temperature: args.temperature,
   });
@@ -159,7 +156,7 @@ export async function runCallTwoStage(args: {
       });
       return runCallTwo({
         estimator,
-        mealItems: callTwoItems,
+        mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
         promptCtx,
         temperature: args.temperature,

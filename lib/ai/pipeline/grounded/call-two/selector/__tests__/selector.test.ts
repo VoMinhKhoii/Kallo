@@ -9,12 +9,7 @@ import type {
   MealItemWithCandidates,
 } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import {
-  applySelection,
-  CALL_TWO_CANDIDATES,
-  callTwoView,
-  startCandidateSelector,
-} from '../selector';
+import { applySelection, startCandidateSelector } from '../selector';
 
 const candidate = (
   n: number,
@@ -84,18 +79,6 @@ function selectorLlm(
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
-});
-
-describe('callTwoView', () => {
-  it('shows Call 2 only the first candidates and leaves the pool whole', () => {
-    const pool = Array.from({ length: 16 }, (_, i) => candidate(i + 1));
-    const { mealItems } = meal([['Cơm', [['cơm', pool]]]]);
-    const view = callTwoView(mealItems);
-    expect(view[0].ingredients[0].candidates.map((c) => c.id)).toEqual(
-      pool.slice(0, CALL_TWO_CANDIDATES).map((c) => c.id)
-    );
-    expect(mealItems[0].ingredients[0].candidates).toHaveLength(16);
-  });
 });
 
 describe('startCandidateSelector', () => {
