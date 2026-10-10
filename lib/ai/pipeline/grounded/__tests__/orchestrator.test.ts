@@ -410,4 +410,69 @@ describe('analyzeMealV2 — dish rescue', () => {
       expect(ings.map((i) => i.estimatedGrams)).toEqual([150, 150]);
     }
   });
+  it('keeps the dish when the mini-meal left one of its foods unestimated', async () => {
+    const flanDish = (ingredients: string[]) => ({
+      isFood: true,
+      mealSlot: 'snack' as const,
+      mealItems: [
+        {
+          name: 'bánh flan',
+          cookingMethod: 'hấp',
+          ingredients: ingredients.map((n) => ({
+            rawName: n,
+            canonicalName: n,
+          })),
+        },
+      ],
+    });
+    const llmEstimate = (name: string, grossG: number) => ({
+      ingredientName: name,
+      grossG,
+      refusePct: 0,
+      proteinG: { low: grossG / 10, mid: grossG / 10, high: grossG / 10 },
+      carbohydrateG: { low: grossG / 5, mid: grossG / 5, high: grossG / 5 },
+      fatG: { low: grossG / 20, mid: grossG / 20, high: grossG / 20 },
+    });
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockImplementation(
+          async (p: { systemPrompt: string; userMessage: string }) => {
+            const call2 = p.systemPrompt.includes('<ingredient_data>');
+            const mini = call2
+              ? p.systemPrompt.includes('<original_prompt>\n1 phần')
+              : p.userMessage.includes('1 phần');
+            if (!call2)
+              return mini
+                ? flanDish(['trứng', 'sữa'])
+                : flanDish(['bánh flan']);
+            return {
+              mealItems: [
+                {
+                  mealItemName: 'bánh flan',
+                  ingredients: mini
+                    ? [llmEstimate('trứng', 50)]
+                    : [llmEstimate('bánh flan', 300)],
+                },
+              ],
+            };
+          }
+        ),
+    });
+
+    const result = await analyzeMealV2(
+      '3 bánh flan',
+      userContext,
+      createSourceAwareMockDb({}),
+      gemini
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // Scaling the egg alone to the flan's 300 g would invent 300 g of egg.
+      expect(
+        result.data.mealItems[0].ingredients.map((i) => i.ingredientName)
+      ).toEqual(['Bánh flan']);
+    }
+  });
 });

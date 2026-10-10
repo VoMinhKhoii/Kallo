@@ -115,6 +115,7 @@ export async function analyzeMealV2(
 
   let promptCharsCall2 = 0;
   let nutritionChunkCount = 0;
+  let closeRescue = () => {};
 
   try {
     // ---- Stage 1: Call 1 — pure decomposition (grounded-decomposition) --
@@ -180,6 +181,7 @@ export async function analyzeMealV2(
             }),
         })
       : null;
+    if (rescue) closeRescue = rescue.close;
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
@@ -314,6 +316,7 @@ export async function analyzeMealV2(
       ? { success: true, data: assembly.result, unresolved }
       : { success: true, data: assembly.result };
   } catch (error) {
+    closeRescue();
     budget.recordCatchError(error);
     return handleError(error);
   }

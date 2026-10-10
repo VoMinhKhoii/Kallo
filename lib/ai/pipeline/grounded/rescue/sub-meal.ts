@@ -1,7 +1,9 @@
 /**
  * One rescue mini-meal: the same Call 1 → matching → Call 2 stages the main
  * run uses, on a one-dish text, with no client events and no stage traces.
- * Returns the single foods it found, each with its candidates and estimate.
+ * Returns the single foods it found, each with its candidates and estimate,
+ * or null when it is not food or Call 2 left any of its foods without an
+ * estimate: scaling the survivors to the dish's mass would inflate them.
  */
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { EstimatorAttemptUsage } from '@/lib/ai/pipeline/estimator/types';
@@ -76,21 +78,19 @@ export async function runRescueSubMeal(
     onAttemptComplete: deps.nutritionRecorder,
     onChunkTick: silent,
   });
-  // A part inherits its mini-dish's cooking method, which the main dish's
-  // method would otherwise replace.
-  return pairIngredientsWithGrounded(decomposition, grounded).flatMap(
-    ({ ingredient, dishCookingMethod, ground }, f) =>
-      ground
-        ? [
-            {
-              ingredient:
-                ingredient.cookingMethod || !dishCookingMethod
-                  ? ingredient
-                  : { ...ingredient, cookingMethod: dishCookingMethod },
-              match: prep.matchResults[f],
-              estimate: ground,
-            },
-          ]
-        : []
-  );
+  const parts: RescuePart[] = [];
+  for (const [f, p] of pairIngredientsWithGrounded(
+    decomposition,
+    grounded
+  ).entries()) {
+    if (!p.ground) return null;
+    // A part inherits its mini-dish's cooking method, which the main dish's
+    // method would otherwise replace.
+    const ingredient =
+      p.ingredient.cookingMethod || !p.dishCookingMethod
+        ? p.ingredient
+        : { ...p.ingredient, cookingMethod: p.dishCookingMethod };
+    parts.push({ ingredient, match: prep.matchResults[f], estimate: p.ground });
+  }
+  return parts.length > 0 ? parts : null;
 }

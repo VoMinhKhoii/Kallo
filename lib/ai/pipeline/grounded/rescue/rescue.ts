@@ -38,8 +38,13 @@ const GRACE_MS = 12_000;
 const NOT_A_DISH =
   /^(n[uư][oớ]c( lọc| đá)?|water|ice|đá|đường( kính)?|sugar|muối|salt|tiêu|pepper|ớt|chili|nước mắm|fish sauce)$/i;
 
-const rescuable = (ing: { rawName: string }) =>
-  !NOT_A_DISH.test(ing.rawName.trim());
+/** Never rescued: plain additions, and what the portion resolver withheld or
+ *  wants clarified (`unresolved` includes a typed zero). */
+const rescuable = (
+  ing: { rawName: string },
+  portion?: { provenance: string }
+) =>
+  !NOT_A_DISH.test(ing.rawName.trim()) && portion?.provenance !== 'unresolved';
 
 const rejected = (g: GroundedIngredientEstimate | null | undefined) =>
   g != null &&
@@ -77,7 +82,9 @@ function createLimiter(limit: number) {
 /**
  * Start the certain mini-meals now. After Call 2, `apply` starts the rest for
  * what Call 2 rejected, waits up to `GRACE_MS` for all it needs, and splices
- * in those that finished; it returns null when nothing was rescued.
+ * in those that finished; it returns null when nothing was rescued. Once
+ * `apply` returns or `close` is called, no queued mini-meal starts (one
+ * already running finishes in the background; the stages take no signal).
  */
 export function startDishRescue(args: {
   state: Omit<RunState, 'grounded'>;
@@ -85,21 +92,25 @@ export function startDishRescue(args: {
   runSubMeal: (text: string) => Promise<RescuePart[] | null>;
 }): {
   started: () => number[];
+  close: () => void;
   apply: (
     grounded: GroundedEstimation
   ) => Promise<{ state: RunState; rescued: number } | null>;
 } {
-  const { decomposition, matchResults } = args.state;
+  const { decomposition, matchResults, portionResolutions } = args.state;
   const ingredients = decomposition.mealItems.flatMap((mi) => mi.ingredients);
   const limit = createLimiter(CONCURRENCY);
   const runs = new Map<number, Promise<void>>();
   const ready = new Map<number, RescuePart[]>();
+  let closed = false;
   const start = (f: number) => {
-    if (runs.has(f)) return;
+    if (runs.has(f) || closed) return;
     runs.set(
       f,
-      limit(() =>
-        args.runSubMeal(rescueMealText(ingredients[f], args.language))
+      limit(async () =>
+        closed
+          ? null
+          : args.runSubMeal(rescueMealText(ingredients[f], args.language))
       ).then(
         (parts) => {
           if (parts?.length) ready.set(f, parts);
@@ -109,18 +120,30 @@ export function startDishRescue(args: {
     );
   };
   ingredients.forEach((ing, f) => {
-    if (rescuable(ing) && (matchResults[f]?.candidates.length ?? 0) === 0)
+    if (
+      rescuable(ing, portionResolutions[f]) &&
+      (matchResults[f]?.candidates.length ?? 0) === 0
+    )
       start(f);
   });
+  const close = () => {
+    closed = true;
+  };
 
   return {
     started: () => [...runs.keys()],
+    close,
     async apply(grounded) {
       const pairs = pairIngredientsWithGrounded(decomposition, grounded);
       const needed = ingredients.flatMap((ing, f) =>
-        rescuable(ing) && rejected(pairs[f]?.ground) ? [f] : []
+        rescuable(ing, portionResolutions[f]) && rejected(pairs[f]?.ground)
+          ? [f]
+          : []
       );
-      if (needed.length === 0) return null;
+      if (needed.length === 0) {
+        close();
+        return null;
+      }
       for (const f of needed) start(f);
       let timer: ReturnType<typeof setTimeout> | undefined;
       await Promise.race([
@@ -130,6 +153,7 @@ export function startDishRescue(args: {
         }),
       ]);
       clearTimeout(timer);
+      close();
       const parts = new Map(
         needed.flatMap((f) => {
           const p = ready.get(f);

@@ -115,6 +115,48 @@ describe('startDishRescue', () => {
   });
 });
 
+describe('startDishRescue cleanup', () => {
+  it('starts no queued mini-meal once apply has returned', async () => {
+    vi.useFakeTimers();
+    const four: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: ['a', 'b', 'c', 'd'].map((n) => dish(n, [n])),
+    };
+    const finish: Array<() => void> = [];
+    const runSubMeal = vi.fn(
+      () =>
+        new Promise<RescuePart[] | null>((resolve) => {
+          finish.push(() => resolve(null));
+        })
+    );
+    const rescue = startDishRescue({
+      state: {
+        decomposition: four,
+        matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
+        portionResolutions: [defer, defer, defer, defer],
+      },
+      language: 'en',
+      runSubMeal,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(runSubMeal).toHaveBeenCalledTimes(3); // the fourth waits its turn
+    const out = rescue.apply({
+      mealItems: ['a', 'b', 'c', 'd'].map((n) => ({
+        mealItemName: n,
+        ingredients: [estimate(n)],
+      })),
+    });
+    await vi.advanceTimersByTimeAsync(12_000);
+    expect(await out).toBeNull();
+    // A running mini-meal finishing after that frees a slot, but the queued
+    // one must not start.
+    finish[0]();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(runSubMeal).toHaveBeenCalledTimes(3);
+  });
+});
+
 describe('rescueMealText', () => {
   it('adds the canonical name only when it says more', () => {
     expect(

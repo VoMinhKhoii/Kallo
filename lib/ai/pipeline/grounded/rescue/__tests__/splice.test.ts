@@ -5,6 +5,8 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { type RescuePart, spliceRescue } from '../splice';
 
@@ -138,5 +140,80 @@ describe('spliceRescue', () => {
     expect(rescued).toBe(0);
     expect(out.decomposition).toEqual(decomposition);
     expect(out.grounded).toEqual(grounded);
+  });
+
+  it('never rescues an ingredient the portion resolver withheld (a typed zero)', () => {
+    const zero: PortionResolution = {
+      ...defer,
+      provenance: 'unresolved',
+      unresolvedReason: 'explicit_zero',
+    };
+    const { rescued } = spliceRescue(
+      { ...state, portionResolutions: [zero, defer] },
+      new Map([[0, flanParts]])
+    );
+    expect(rescued).toBe(0);
+  });
+
+  it('ships the parts at exactly the mass the bridge would ship for the dish', () => {
+    // A part whose model refuse differs from the parent's: scaling goes
+    // through the bridge's own mass rules, so the shipped total still matches.
+    const boned = {
+      ...part('cá thu', 100, 2),
+      estimate: { ...estimate('cá thu', 100, 'c1'), refusePct: 40 },
+    };
+    const { state: out } = spliceRescue(state, new Map([[0, [boned]]]));
+    const [fish] = out.grounded.mealItems[0].ingredients;
+    const shipped = resolveGroundedMass({
+      ground: fish,
+      candidateInediblePct: null,
+      canonicalName: 'cá thu',
+      rawName: 'cá thu',
+    }).edibleG;
+    expect(shipped).toBeCloseTo(300);
+  });
+
+  it('keeps a part and a same-named ingredient of the dish paired to their own estimates', () => {
+    const plate: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Cơm gà',
+          cookingMethod: 'nấu',
+          ingredients: [
+            { rawName: 'cơm', canonicalName: 'cơm' },
+            { rawName: 'gà xối mỡ', canonicalName: 'gà xối mỡ' },
+          ],
+        },
+      ],
+    };
+    const call2: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Cơm gà',
+          // Call 2 wrote the rejected dish first; plain rice second.
+          ingredients: [estimate('gà xối mỡ', 300), estimate('cơm', 100, 'c1')],
+        },
+      ],
+    };
+    const { state: out } = spliceRescue(
+      {
+        decomposition: plate,
+        matchResults: [match(0, 3), match(1, 0)],
+        portionResolutions: [defer, defer],
+        grounded: call2,
+      },
+      new Map([[1, [part('gà', 100, 2), part('cơm', 50, 2)]]])
+    );
+    const paired = pairIngredientsWithGrounded(
+      out.decomposition,
+      out.grounded
+    ).map((p) => [p.ingredient.rawName, p.ground?.grossG]);
+    expect(paired).toEqual([
+      ['cơm', 100],
+      ['gà', 200],
+      ['cơm', 100],
+    ]);
   });
 });
