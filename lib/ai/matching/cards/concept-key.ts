@@ -20,6 +20,26 @@ const DROP = [
   /\bwithout calcium propionate\b/g,
 ];
 
+/**
+ * The salt variant a text names, for picking between concept siblings that
+ * differ only by salt (see DROP): "without" for unsalted / no salt added /
+ * low sodium / không muối, "with" for salted / có muối, else null. Checked in
+ * that order because "unsalted" contains "salted".
+ */
+export function saltVariant(text: string): 'with' | 'without' | null {
+  const t = text.normalize('NFC').toLowerCase();
+  if (
+    /\b(unsalted|salt[- ]free|low[- ]sodium|no (added )?salt( added)?|without (added )?salt)\b/.test(
+      t
+    ) ||
+    /không muối|ít muối|không thêm muối/.test(t)
+  )
+    return 'without';
+  if (/\b(salted|with (added )?salt)\b/.test(t) || /có muối|rang muối/.test(t))
+    return 'with';
+  return null;
+}
+
 export function conceptKey(row: {
   sourceCode: string;
   state: string;

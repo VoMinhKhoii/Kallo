@@ -96,26 +96,34 @@ const present = (s: string | null | undefined): s is string =>
   typeof s === 'string' && s.trim().length > 0;
 
 async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
-  const [state] = await db.execute<{ ready: boolean }>(sql`
-    SELECT to_regclass('public.food_card_vectors') IS NOT NULL
-      AND EXISTS (SELECT 1 FROM food_card_vectors)
-      AND NOT EXISTS (SELECT 1 FROM food_card_vectors WHERE embedding IS NULL) AS ready
-  `);
-  if (!state?.ready) return null;
-
   const t0 = Date.now();
-  const result = await db.execute<CatalogQueryRow>(sql`
-    SELECT v.id, s.code AS source_code, v.state, v.name_en, v.name_primary,
-           c.food, c.aliases_en, c.names_vi, c.part_cut, c.form_processing,
-           c.cooking_method, c.fat_level, c.brand
-    FROM vietnamese_food_composition v
-    JOIN ingredient_sources s ON s.id = v.source_id
-    LEFT JOIN food_cards c ON c.food_composition_id = v.id
-    WHERE s.code IN (${sql.join(
-      MATCHABLE_SOURCE_CODES.map((c) => sql`${c}`),
-      sql`, `
-    )})
-  `);
+  // Readiness and rows from one snapshot: a card migration committing between
+  // two separate reads could load cards whose vectors are still NULL and mark
+  // the catalog ready anyway.
+  const result = await db.transaction(
+    async (tx) => {
+      const [state] = await tx.execute<{ ready: boolean }>(sql`
+        SELECT to_regclass('public.food_card_vectors') IS NOT NULL
+          AND EXISTS (SELECT 1 FROM food_card_vectors)
+          AND NOT EXISTS (SELECT 1 FROM food_card_vectors WHERE embedding IS NULL) AS ready
+      `);
+      if (!state?.ready) return null;
+      return tx.execute<CatalogQueryRow>(sql`
+        SELECT v.id, s.code AS source_code, v.state, v.name_en, v.name_primary,
+               c.food, c.aliases_en, c.names_vi, c.part_cut, c.form_processing,
+               c.cooking_method, c.fat_level, c.brand
+        FROM vietnamese_food_composition v
+        JOIN ingredient_sources s ON s.id = v.source_id
+        LEFT JOIN food_cards c ON c.food_composition_id = v.id
+        WHERE s.code IN (${sql.join(
+          MATCHABLE_SOURCE_CODES.map((c) => sql`${c}`),
+          sql`, `
+        )})
+      `);
+    },
+    { isolationLevel: 'repeatable read', accessMode: 'read only' }
+  );
+  if (!result) return null;
 
   const rows = new Map<string, CatalogRow>();
   const names = new Map<string, Set<string>>();

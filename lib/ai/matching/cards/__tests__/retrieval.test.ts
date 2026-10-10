@@ -122,7 +122,11 @@ function mockDb(
     if (text.includes('match_food_cards')) return hits;
     return rows;
   });
-  return { execute } as unknown as AppDb;
+  // The catalog reads readiness and rows inside one transaction.
+  const transaction = vi.fn(async (fn: (tx: unknown) => unknown) =>
+    fn({ execute })
+  );
+  return { execute, transaction } as unknown as AppDb;
 }
 
 const gemini = {
@@ -242,6 +246,80 @@ describe('matchCardCandidates', () => {
     expect(result.candidates.length).toBeGreaterThan(0);
     errorSpy.mockRestore();
     vi.useRealTimers();
+  });
+
+  it('starts no vector query once the vector arm has timed out', async () => {
+    vi.useFakeTimers();
+    let land: (v: number[][]) => void = () => {};
+    const late = {
+      generateEmbeddingBatch: vi.fn(
+        (texts: string[]) =>
+          new Promise<number[][]>((resolve) => {
+            land = () => resolve(texts.map(() => [0.1, 0.2]));
+          })
+      ),
+    } as unknown as GeminiClient;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const db = mockDb(true, []);
+    const pending = matchCardCandidates([ing], db, late);
+    await vi.advanceTimersByTimeAsync(4_000);
+    await pending;
+    land([]);
+    await vi.advanceTimersByTimeAsync(10);
+    const vectorQueries = vi
+      .mocked(db.execute)
+      .mock.calls.filter(([q]) =>
+        JSON.stringify(q).includes('match_food_cards')
+      );
+    expect(vectorQueries).toHaveLength(0);
+    errorSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('keeps the salt variant the user asked for when siblings collapse', async () => {
+    const peanut = (id: string, salt: string) => ({
+      ...ROWS[0],
+      id,
+      name_en: `Peanuts, all types, dry-roasted, ${salt}`,
+      name_primary: 'Đậu phộng rang',
+      food: 'peanuts, dry-roasted',
+      aliases_en: ['roasted peanuts'],
+      names_vi: ['đậu phộng rang'],
+      part_cut: null,
+    });
+    const rows = [
+      peanut('usda_peanut_salt', 'with salt'),
+      peanut('usda_peanut_nosalt', 'without salt'),
+    ];
+    // The salted row ranks first on every vector arm.
+    const hits = [0, 1, 2, 3].flatMap((q) => [
+      {
+        query_index: q,
+        food_composition_id: 'usda_peanut_salt',
+        similarity: 0.92,
+      },
+      {
+        query_index: q,
+        food_composition_id: 'usda_peanut_nosalt',
+        similarity: 0.9,
+      },
+    ]);
+    const unsalted: DecomposedIngredientV2 = {
+      rawName: 'Đậu phộng rang không muối',
+      canonicalName: 'Peanuts, unsalted',
+      queryEn: 'unsalted dry roasted peanuts',
+      nameVi: 'đậu phộng rang không muối',
+      tableName: 'Peanuts, dry-roasted, without salt',
+    };
+    const [result] =
+      (await matchCardCandidates(
+        [unsalted],
+        mockDb(true, hits, rows),
+        gemini
+      )) ?? [];
+    const ids = result.candidates.map((c) => c.info.foodCompositionId);
+    expect(ids).toContain('usda_peanut_nosalt');
+    expect(ids).not.toContain('usda_peanut_salt');
   });
 
   it('drops opposite-state rows when the user stated the weighing basis', async () => {

@@ -34,6 +34,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import type { AppDb } from '@/lib/infra/db/client';
 import { type CardCatalog, type CatalogRow, getCardCatalog } from './catalog';
+import { saltVariant } from './concept-key';
 import { cardLabel } from './label';
 import { cardQueryStrings, QUERY_FIELDS } from './query-strings';
 import { searchCardVectors, type VectorHit } from './vector-arm';
@@ -53,14 +54,20 @@ async function vectorArms(
   db: AppDb,
   gemini: GeminiClient
 ): Promise<VectorHit[][]> {
+  // Set once the deadline passes: an embedding that lands later must not still
+  // start a vector query nobody will read (it would hold a pool connection).
+  let expired = false;
   try {
     return await withDeadline(
       gemini
         .generateEmbeddingBatch(queries)
-        .then((embeddings) => searchCardVectors(embeddings, db)),
+        .then((embeddings) =>
+          expired ? queries.map(() => []) : searchCardVectors(embeddings, db)
+        ),
       VECTOR_ARM_TIMEOUT_MS
     );
   } catch (err) {
+    expired = true;
     // Matching never blanks out because one arm is down.
     console.error(
       '[card-matching] vector arm failed; using lexical arms only:',
@@ -70,7 +77,14 @@ async function vectorArms(
   }
 }
 
-/** Eligible rows in rank order, one per concept (uncapped: the state filter runs first). */
+const rowName = (row: CatalogRow) => row.nameEn || row.namePrimary;
+
+/**
+ * Eligible rows in rank order, one per concept (uncapped: the state filter
+ * runs first). The first-ranked row represents its concept, unless the user
+ * asked for a salt variant ("unsalted", "không muối") and a lower-ranked
+ * sibling is that variant: it then takes the representative's place.
+ */
 function eligibleRows(
   ranked: string[],
   catalog: CardCatalog,
@@ -79,18 +93,31 @@ function eligibleRows(
   // Raw and canonical names together, so the user's own words ("da gà")
   // count as skin intent for the guards.
   const names = `${ing.rawName} ${ing.canonicalName}`;
-  const concepts = new Set<string>();
-  const out: CatalogRow[] = [];
-  for (const id of ranked) {
-    const row = catalog.rows.get(id);
-    if (!row || concepts.has(row.concept)) continue;
-    const rowNames = {
+  const wantedSalt = saltVariant(`${names} ${ing.queryEn ?? ''}`);
+  const eligible = (row: CatalogRow) =>
+    isCandidateEligibleForIngredient(names, {
       name_primary: row.namePrimary,
       name_en: row.nameEn,
       name_alt: null,
-    };
-    if (!isCandidateEligibleForIngredient(names, rowNames)) continue;
-    concepts.add(row.concept);
+    });
+  const slotOfConcept = new Map<string, number>();
+  const out: CatalogRow[] = [];
+  for (const id of ranked) {
+    const row = catalog.rows.get(id);
+    if (!row) continue;
+    const slot = slotOfConcept.get(row.concept);
+    if (slot !== undefined) {
+      if (
+        wantedSalt &&
+        saltVariant(rowName(out[slot])) !== wantedSalt &&
+        saltVariant(rowName(row)) === wantedSalt &&
+        eligible(row)
+      )
+        out[slot] = row;
+      continue;
+    }
+    if (!eligible(row)) continue;
+    slotOfConcept.set(row.concept, out.length);
     out.push(row);
   }
   return out;
