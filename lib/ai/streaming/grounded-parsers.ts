@@ -30,6 +30,7 @@ import type {
   MacroBase,
   MealItemNutrition,
 } from '@/lib/ai/types/nutrition-adjustment';
+import { nameKey } from '@/lib/core/text/name-key';
 import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
@@ -127,7 +128,7 @@ export function resolveStreamingV2MealItem(
   // pairing) so candidates/nutrition never attach to the wrong ingredient.
   const localIdxByName = new Map<string, number[]>();
   decomposedIngredients.forEach((d, i) => {
-    const key = d.rawName.trim().toLocaleLowerCase('vi-VN');
+    const key = nameKey(d.rawName);
     const queue = localIdxByName.get(key);
     if (queue) queue.push(i);
     else localIdxByName.set(key, [i]);
@@ -142,8 +143,8 @@ export function resolveStreamingV2MealItem(
   );
 
   rawItem.ingredients.forEach((rawIng, streamIdx) => {
-    const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
-    const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
+    const localIdx =
+      localIdxByName.get(nameKey(rawIng.ingredientName))?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
     const matchResult = matchResults[flatIdx];
     const candidates = matchResult?.candidates ?? [];
@@ -252,10 +253,23 @@ function candidateFromVerdict(
   return idx >= 0 && idx < candidates.length ? candidates[idx] : null;
 }
 
+/** A contiguous run of decomposition dishes, e.g. one Call 2 chunk. */
+export interface MealItemRange {
+  first: number;
+  count: number;
+}
+
 export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
   dishCookingMethod: string | null;
   flatIngredientStart: number;
+  /**
+   * The dish's key in the streamed `item_name` id map, built the way final
+   * assembly looks it up (`bridgeV2ToV1`): the decomposition's own spelling
+   * and its occurrence among identical spellings. Streaming reads the id
+   * through this key, so `item_macros` and the final result never disagree.
+   */
+  announcedKey: string;
 }
 
 /**
@@ -277,21 +291,34 @@ export function buildMealItemOffsetByName(
     name: string;
     ingredients: DecomposedIngredientV2[];
     cookingMethod: string;
-  }>
+  }>,
+  /**
+   * Key only these dishes (a Call 2 chunk), counting occurrences among them.
+   * Offsets and announced keys stay whole-meal.
+   */
+  range?: MealItemRange
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
+  const spellingOcc = new Map<string, number>();
+  const first = range?.first ?? 0;
+  const end = range ? first + range.count : v2MealItems.length;
   let start = 0;
-  for (const mi of v2MealItems) {
-    const key = mi.name.trim().toLocaleLowerCase('vi-VN');
-    const n = (occ.get(key) ?? 0) + 1;
-    occ.set(key, n);
-    byName.set(`${key}::${n}`, {
-      decomposedIngredients: mi.ingredients,
-      dishCookingMethod: mi.cookingMethod,
-      flatIngredientStart: start,
-    });
+  v2MealItems.forEach((mi, i) => {
+    const m = (spellingOcc.get(mi.name) ?? 0) + 1;
+    spellingOcc.set(mi.name, m);
+    if (i >= first && i < end) {
+      const key = nameKey(mi.name);
+      const n = (occ.get(key) ?? 0) + 1;
+      occ.set(key, n);
+      byName.set(`${key}::${n}`, {
+        decomposedIngredients: mi.ingredients,
+        dishCookingMethod: mi.cookingMethod,
+        flatIngredientStart: start,
+        announcedKey: `${mi.name}::${m}`,
+      });
+    }
     start += mi.ingredients.length;
-  }
+  });
   return byName;
 }
