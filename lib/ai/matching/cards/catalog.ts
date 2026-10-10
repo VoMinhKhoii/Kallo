@@ -1,8 +1,9 @@
 /**
- * The in-memory side of card retrieval: every matchable composition row with
- * its card, its concept key, and the lexical + BM25 indexes. Loaded once per
- * process (~7.7k rows, ~0.6 s, ~60 MB) — cards only change through a
- * migration and a deploy.
+ * The in-memory side of card retrieval: the composition row of every curated
+ * card, its concept key, and the lexical + BM25 indexes. Loaded once per
+ * process (~7.7k rows, ~0.6 s, ~60 MB) and re-read in the background every
+ * 30 minutes, so a card migration applied while an instance is warm is picked
+ * up without a restart.
  *
  * `null` means "not ready": the tables are missing or empty, or a card string
  * is not embedded yet (between a migration and its backfill), so a half-built
@@ -54,16 +55,20 @@ type CatalogQueryRow = {
 };
 
 const NOT_READY_RETRY_MS = 60_000;
+const READY_REFRESH_MS = 30 * 60_000;
 let cache: {
   at: number;
   ready: boolean;
   catalog: Promise<CardCatalog | null>;
 } | null = null;
+let refreshing = false;
 
 export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
-  if (cache && (cache.ready || Date.now() - cache.at < NOT_READY_RETRY_MS)) {
+  if (cache?.ready) {
+    if (Date.now() - cache.at >= READY_REFRESH_MS && !refreshing) refresh(db);
     return cache.catalog;
   }
+  if (cache && Date.now() - cache.at < NOT_READY_RETRY_MS) return cache.catalog;
   const entry = {
     at: Date.now(),
     ready: false,
@@ -82,6 +87,34 @@ export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
   return entry.catalog;
 }
 
+/**
+ * Re-read a ready catalog in the background; the loaded one serves until the
+ * read finishes. A read that finds the cards mid-backfill hands back to the
+ * legacy matcher (not ready) instead of mixing two card generations.
+ */
+function refresh(db: AppDb): void {
+  refreshing = true;
+  const at = Date.now();
+  loadCatalog(db)
+    .then((catalog) => {
+      cache = {
+        at,
+        ready: catalog !== null,
+        catalog: Promise.resolve(catalog),
+      };
+    })
+    .catch((err) => {
+      console.error(
+        '[card-matching] catalog refresh failed; keeping the loaded catalog:',
+        err
+      );
+      if (cache) cache.at = at;
+    })
+    .finally(() => {
+      refreshing = false;
+    });
+}
+
 /** True once the catalog has loaded in this process (sync, no I/O). */
 export function isCardCatalogReady(): boolean {
   return cache?.ready ?? false;
@@ -90,6 +123,7 @@ export function isCardCatalogReady(): boolean {
 /** Visible for testing. */
 export function __resetCardCatalogForTests() {
   cache = null;
+  refreshing = false;
 }
 
 const present = (s: string | null | undefined): s is string =>
@@ -102,9 +136,15 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
   // the catalog ready anyway.
   const result = await db.transaction(
     async (tx) => {
+      // Its own statement: Postgres resolves table names when it parses a
+      // statement, so on a database without the card tables a combined query
+      // would fail instead of answering "not ready".
+      const [table] = await tx.execute<{ present: boolean }>(sql`
+        SELECT to_regclass('public.food_card_vectors') IS NOT NULL AS present
+      `);
+      if (!table?.present) return null;
       const [state] = await tx.execute<{ ready: boolean }>(sql`
-        SELECT to_regclass('public.food_card_vectors') IS NOT NULL
-          AND EXISTS (SELECT 1 FROM food_card_vectors)
+        SELECT EXISTS (SELECT 1 FROM food_card_vectors)
           AND NOT EXISTS (SELECT 1 FROM food_card_vectors WHERE embedding IS NULL) AS ready
       `);
       if (!state?.ready) return null;
@@ -114,7 +154,7 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
                c.cooking_method, c.fat_level, c.brand
         FROM vietnamese_food_composition v
         JOIN ingredient_sources s ON s.id = v.source_id
-        LEFT JOIN food_cards c ON c.food_composition_id = v.id
+        JOIN food_cards c ON c.food_composition_id = v.id
         WHERE s.code IN (${sql.join(
           MATCHABLE_SOURCE_CODES.map((c) => sql`${c}`),
           sql`, `

@@ -8,7 +8,7 @@ vi.mock('@/lib/ai/matching/candidate', () => ({
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
-import { __resetCardCatalogForTests } from '../catalog';
+import { __resetCardCatalogForTests, getCardCatalog } from '../catalog';
 import { cardLabel } from '../label';
 import { createCardEmbeddingPrewarm } from '../prewarm';
 import { cardQueryStrings } from '../query-strings';
@@ -118,7 +118,8 @@ function mockDb(
 ) {
   const execute = vi.fn(async (q: unknown) => {
     const text = JSON.stringify(q);
-    if (text.includes('to_regclass')) return [{ ready }];
+    if (text.includes('to_regclass')) return [{ present: ready }];
+    if (text.includes('embedding IS NULL')) return [{ ready }];
     if (text.includes('match_food_cards')) return hits;
     return rows;
   });
@@ -320,6 +321,44 @@ describe('matchCardCandidates', () => {
     const ids = result.candidates.map((c) => c.info.foodCompositionId);
     expect(ids).toContain('usda_peanut_nosalt');
     expect(ids).not.toContain('usda_peanut_salt');
+  });
+
+  it('probes for the card tables before any query that names them', async () => {
+    const db = mockDb(false, []);
+    expect(await getCardCatalog(db)).toBeNull();
+    const texts = vi
+      .mocked(db.execute)
+      .mock.calls.map(([q]) => JSON.stringify(q));
+    expect(texts).toHaveLength(1);
+    expect(texts[0]).toContain('to_regclass');
+  });
+
+  it('re-reads a ready catalog after 30 minutes and hands back to legacy mid-backfill', async () => {
+    vi.useFakeTimers();
+    let ready = true;
+    const execute = vi.fn(async (q: unknown) => {
+      const text = JSON.stringify(q);
+      if (text.includes('to_regclass')) return [{ present: true }];
+      if (text.includes('embedding IS NULL')) return [{ ready }];
+      return ROWS;
+    });
+    const db = {
+      execute,
+      transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
+        fn({ execute })
+      ),
+    } as unknown as AppDb;
+
+    expect(await getCardCatalog(db)).not.toBeNull();
+    // A card migration lands; its new strings are not embedded yet.
+    ready = false;
+    vi.advanceTimersByTime(29 * 60_000);
+    expect(await getCardCatalog(db)).not.toBeNull(); // still fresh: no re-read
+    vi.advanceTimersByTime(2 * 60_000);
+    expect(await getCardCatalog(db)).not.toBeNull(); // serves while re-reading
+    await vi.runAllTimersAsync();
+    expect(await getCardCatalog(db)).toBeNull(); // legacy until the backfill ends
+    vi.useRealTimers();
   });
 
   it('drops opposite-state rows when the user stated the weighing basis', async () => {
