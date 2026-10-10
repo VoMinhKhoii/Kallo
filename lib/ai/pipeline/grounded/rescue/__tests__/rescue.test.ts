@@ -178,6 +178,38 @@ describe('startDishRescue past the deadline', () => {
   });
 });
 
+describe('startDishRescue queue and deadline', () => {
+  it('does not start a queued mini-meal that reaches the front after the deadline', async () => {
+    vi.useFakeTimers();
+    const four: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: ['a', 'b', 'c', 'd'].map((n) => dish(n, [n])),
+    };
+    const finish: Array<() => void> = [];
+    const runSubMeal = vi.fn(
+      () =>
+        new Promise<RescuePart[] | null>((resolve) => {
+          finish.push(() => resolve(null));
+        })
+    );
+    startDishRescue({
+      state: {
+        decomposition: four,
+        matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
+        portionResolutions: [defer, defer, defer, defer],
+      },
+      language: 'en',
+      runStartedAt: Date.now(),
+      runSubMeal,
+    });
+    await vi.advanceTimersByTimeAsync(36_000); // past the 35 s budget
+    finish[0](); // a slot frees; the fourth would start now
+    await vi.advanceTimersByTimeAsync(0);
+    expect(runSubMeal).toHaveBeenCalledTimes(3);
+  });
+});
+
 describe('startDishRescue cleanup', () => {
   it('starts no queued mini-meal once apply has returned', async () => {
     vi.useFakeTimers();

@@ -128,7 +128,8 @@ export function startDishRescue(args: {
     runs.set(
       f,
       limit(async () =>
-        closed
+        // Queued work starts later; recheck when it actually begins.
+        closed || timeLeft() <= 0
           ? null
           : args.runSubMeal(rescueMealText(ingredients[f], args.language))
       ).then(
