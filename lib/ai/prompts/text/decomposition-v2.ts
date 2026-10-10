@@ -693,5 +693,5 @@ const DECOMPOSITION_RULES = `<decomposition_check>
 
 /** The `plan` string Call 1 writes before mealItems (stripped after parsing). */
 const PLAN_FIELD_RULE = `<plan_field>
-Your JSON starts with "plan": one short line per dish or drink the user ate, written before mealItems: the dish, then the single foods it is made of, including the implied ones (milk and sugar in drinks unless the user excluded the sugar or the product's row already contains it, sugar in dipping sauces, cooking fat, broth, batter or dough, fillings). Then write mealItems so that every food in the plan is its own ingredient. Keep the plan under 60 words per dish.
+Your JSON starts with "plan": one short line per dish or drink the user ate, written before mealItems: the dish, then the single foods it is made of, including the implied ones (the milk and sugar a drink's name implies, unless the user excluded the sugar or the product's row already contains it, sugar in dipping sauces, cooking fat, broth, batter or dough, fillings). Then write mealItems so that every food in the plan is its own ingredient. Keep the plan under 60 words per dish.
 </plan_field>`;
