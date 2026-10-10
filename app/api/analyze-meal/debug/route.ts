@@ -4,12 +4,15 @@ import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { buildUserContext } from '@/lib/ai/adapters/user-context';
 import { getMemoryCacheStats } from '@/lib/ai/cache/embedding-cache';
-import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
+import {
+  CLAUDE_FALLBACK_MODEL,
+  resolveModelProfile,
+} from '@/lib/ai/pipeline/config/model-profile';
 import { getDecompositionPromptLabel } from '@/lib/ai/prompts/build/decomposition';
 import { getNutritionPromptLabel } from '@/lib/ai/prompts/build/nutrition';
 import { getProviderJsonSchemaMode } from '@/lib/ai/prompts/schema';
 import {
-  createGeminiClient,
+  createPipelineLlm,
   type GeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
@@ -89,7 +92,9 @@ export async function POST(request: NextRequest) {
 
   let gemini: GeminiClient;
   try {
-    gemini = createGeminiClient(resolveGeminiProvider());
+    gemini = createPipelineLlm(resolveGeminiProvider(), {
+      fallbackModel: CLAUDE_FALLBACK_MODEL,
+    });
   } catch (error) {
     return NextResponse.json(
       {

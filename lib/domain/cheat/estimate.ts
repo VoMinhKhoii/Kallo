@@ -114,14 +114,14 @@ export async function estimateCheatMeal(
   };
 
   const systemPrompt = buildCheatEstimatePrompt(promptInput);
-  const { nutritionModel } = resolveModelProfile();
+  const { cheatModel } = resolveModelProfile();
 
   const raw = await gemini.generateStructuredOutput<CheatEstimate>(
     {
       schema: cheatEstimateSchema,
       systemPrompt,
       userMessage: description,
-      model: nutritionModel,
+      model: cheatModel,
       // Label quality (occasion-specific anchors, fat-source synthesis) depends
       // on reasoning — turn it up for this one call.
       thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },

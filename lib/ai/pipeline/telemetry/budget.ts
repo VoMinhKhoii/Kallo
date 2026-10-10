@@ -1,5 +1,5 @@
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import type { StreamOptions } from '@/lib/ai/provider/provider';
+import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
 import type {
   AnalysisModelBudgetWorkKind,
@@ -18,6 +18,11 @@ export type BudgetRoute =
   | typeof CHEAT_BUDGET_ROUTE
   | typeof LABEL_OCR_BUDGET_ROUTE;
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';
+
+/** The provider a budget row is filed under: the one that ran `model`. */
+function providerOf(model: string): string {
+  return isClaudeModel(model) ? 'anthropic' : ANALYSIS_MODEL_PROVIDER;
+}
 
 /** Model-budget attribution for a pipeline run (primary vs shadow work). */
 export interface PipelineBudget {
@@ -71,7 +76,7 @@ export function createBudgetAttemptRecorder(args: {
       requestId: args.requestId,
       route: args.route ?? ANALYSIS_MODEL_BUDGET_ROUTE,
       workKind: args.workKind,
-      provider: ANALYSIS_MODEL_PROVIDER,
+      provider: providerOf(model || args.model),
       model: model || args.model,
       requestCount: 0,
       inputTokens,
@@ -155,7 +160,7 @@ function recordAnalysisReservation(args: {
   recordAnalysisModelBudgetEventBestEffort({
     ...args,
     workKind: 'primary',
-    provider: ANALYSIS_MODEL_PROVIDER,
+    provider: providerOf(args.model),
     requestCount: 1,
   });
 }
@@ -224,7 +229,7 @@ export function initV2BudgetAccounting(args: {
         requestId: args.requestId,
         route: ANALYSIS_MODEL_BUDGET_ROUTE,
         workKind: 'primary',
-        provider: ANALYSIS_MODEL_PROVIDER,
+        provider: providerOf(args.nutritionModel),
         model: args.nutritionModel,
         requestCount: 0,
         errorCategory: category,

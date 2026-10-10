@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  CLAUDE_FALLBACK_MODEL,
+  HAIKU_PROFILE,
   type ModelProfile,
   NEXT_PROFILE,
   resolveModelProfile,
@@ -39,6 +41,21 @@ describe('resolveModelProfile', () => {
     expect(resolveModelProfile()).toEqual(NEXT_PROFILE);
   });
 
+  it('returns HAIKU_PROFILE for "haiku": both calls on Claude, no escalation', () => {
+    process.env.PIPELINE_MODEL_PROFILE = 'haiku';
+
+    expect(resolveModelProfile()).toEqual(HAIKU_PROFILE);
+    expect(HAIKU_PROFILE.decompositionModel).toBe('claude-haiku-5-5');
+    expect(HAIKU_PROFILE.nutritionModel).toBe('claude-haiku-5-5');
+    expect(HAIKU_PROFILE.escalationModel).toBeNull();
+    // The cheat-meal estimate was never benchmarked on Claude.
+    expect(HAIKU_PROFILE.cheatModel).toBe(STABLE_PROFILE.cheatModel);
+  });
+
+  it('a Claude call falls back to the stable Gemini model', () => {
+    expect(CLAUDE_FALLBACK_MODEL).toBe(STABLE_PROFILE.nutritionModel);
+  });
+
   it('falls back to STABLE_PROFILE for unknown values', () => {
     process.env.PIPELINE_MODEL_PROFILE = 'experimental-rollout-v9';
 
@@ -50,6 +67,7 @@ describe('resolveModelProfile', () => {
       decompositionModel: 'gemini-3.1-flash-lite',
       nutritionModel: 'gemini-3.1-flash-lite',
       escalationModel: null,
+      cheatModel: 'gemini-3.1-flash-lite',
     } satisfies ModelProfile);
   });
 

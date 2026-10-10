@@ -159,10 +159,31 @@ Create or confirm these resources:
   - optional: `kallo-prod-apple-signin-key-p8` and
     `kallo-prod-apple-token-encryption-key` — mounted only when both exist
     (see "Sign in with Apple token revocation")
+  - only for the Haiku trial: `kallo-prod-anthropic-api-key` (see "Meal
+    pipeline model")
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
 otherwise the automatic prod deploy stops during pre-deploy validation.
+
+## Meal pipeline model
+
+The repository variable `PIPELINE_MODEL_PROFILE` picks the models both meal
+analysis calls run on (`lib/ai/pipeline/config/model-profile.ts`). Unset
+deploys `stable` (Gemini flash-lite). `haiku` runs both calls on Claude Haiku
+5.5; any failed Claude call re-runs on the stable Gemini model, so an Anthropic
+outage degrades to today's pipeline instead of failing meals.
+
+To start the trial:
+
+1. `printf %s "$KEY" | gcloud secrets create kallo-prod-anthropic-api-key --data-file=-`
+   and grant `roles/secretmanager.secretAccessor` to the runtime and deployer
+   service accounts.
+2. `gh variable set PIPELINE_MODEL_PROFILE --body haiku`, then deploy.
+
+To stop it, `gh variable delete PIPELINE_MODEL_PROFILE` and deploy. The secret is
+mounted only while the variable is `haiku`; with `haiku` set and the secret
+missing or unreadable, the deploy fails before it starts.
 
 ## GCS preview seed bucket setup
 
