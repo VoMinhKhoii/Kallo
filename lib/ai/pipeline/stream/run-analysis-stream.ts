@@ -16,9 +16,10 @@
  * `cheat-branch.ts` and `precise-branch.ts`.
  */
 
+import { CLAUDE_FALLBACK_MODEL } from '@/lib/ai/pipeline/config/model-profile';
 import { isNonFoodError } from '@/lib/ai/pipeline/contracts/failure';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
-import { createGeminiClient } from '@/lib/ai/provider/provider';
+import { createPipelineLlm } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { runCheatBranch } from './cheat-branch';
@@ -44,7 +45,9 @@ export async function runAnalysisStream({
     const run = {
       emit,
       ctx,
-      gemini: createGeminiClient(ctx.geminiConfig),
+      gemini: createPipelineLlm(ctx.geminiConfig, {
+        fallbackModel: CLAUDE_FALLBACK_MODEL,
+      }),
       startTime,
       promptVersionsUsed,
     };
