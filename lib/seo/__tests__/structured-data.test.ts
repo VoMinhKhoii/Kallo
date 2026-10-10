@@ -36,6 +36,24 @@ describe('the Organization node', () => {
     expect(support?.availableLanguage).toEqual(['en', 'vi']);
   });
 
+  it('publishes only company-domain contact addresses', () => {
+    const points = organization?.contactPoint as Array<Record<string, string>>;
+    for (const point of points) {
+      expect(point.email, point.contactType).toMatch(/@kallo\.fit$/);
+    }
+  });
+
+  it('links the company page and names the founder', () => {
+    expect(organization?.sameAs).toContain(
+      'https://www.linkedin.com/company/kallo-fit/'
+    );
+    expect(organization?.founder).toMatchObject({
+      '@type': 'Person',
+      name: 'Võ Minh Khôi',
+      email: 'founder@kallo.fit',
+    });
+  });
+
   it('carries a PostalAddress with a country', () => {
     const address = organization?.address as Record<string, string>;
     expect(address['@type']).toBe('PostalAddress');
