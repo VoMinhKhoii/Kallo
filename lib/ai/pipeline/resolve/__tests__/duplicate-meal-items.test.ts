@@ -124,6 +124,114 @@ describe('pairIngredientsWithGrounded — duplicate meal-item names', () => {
     expect(paired[0].ground?.grossG).toBe(60);
     expect(paired[1].ground?.grossG).toBe(50);
   });
+
+  // Claude Haiku returns one dish as several same-name meal items, one
+  // ingredient each, in its own (alphabetical) order. Every ingredient must
+  // still find its estimate instead of only those in the first copy.
+  it('pairs every ingredient of a dish Call 2 split into same-name items', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'dinner',
+      mealItems: [
+        {
+          name: 'Gà rang gừng',
+          cookingMethod: 'rang',
+          ingredients: [
+            { rawName: 'Gà', canonicalName: 'Thịt gà' },
+            { rawName: 'Gừng', canonicalName: 'Gừng' },
+            { rawName: 'Dầu ăn', canonicalName: 'Dầu đậu nành' },
+          ],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: ['Dầu ăn', 'Gà', 'Gừng'].map((name, i) => ({
+        mealItemName: 'Gà rang gừng',
+        ingredients: [{ ...riceEstimate(10 + i), ingredientName: name }],
+      })),
+    };
+
+    const paired = pairIngredientsWithGrounded(v2, grounded);
+
+    expect(paired.map((p) => p.ground?.grossG)).toEqual([11, 12, 10]);
+  });
+
+  it('keeps two different same-name dishes from trading estimates', () => {
+    // Two soups the decomposition keeps apart; Call 2 forgot the first one's oil.
+    const soup = (meat: string) => ({
+      name: 'Soup',
+      cookingMethod: 'nấu',
+      ingredients: [
+        { rawName: meat, canonicalName: meat },
+        { rawName: 'Dầu ăn', canonicalName: 'Dầu đậu nành' },
+      ],
+    });
+    const v2: MealDecompositionV2 = {
+      ...twoBowlsOfRice(),
+      mealItems: [soup('Gà'), soup('Bò')],
+    };
+    const est = (name: string, grossG: number) => ({
+      ...riceEstimate(grossG),
+      ingredientName: name,
+    });
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        { mealItemName: 'Soup', ingredients: [est('Gà', 120)] },
+        {
+          mealItemName: 'Soup',
+          ingredients: [est('Bò', 130), est('Dầu ăn', 20)],
+        },
+      ],
+    };
+
+    const paired = pairIngredientsWithGrounded(v2, grounded);
+
+    expect(paired.map((p) => p.ground?.grossG ?? null)).toEqual([
+      120,
+      null,
+      130,
+      20,
+    ]);
+  });
+
+  it('pairs names that differ only in Unicode normalization', () => {
+    const decomposedGa = 'Gà'; // "Gà" as G + a + combining grave
+    const v2: MealDecompositionV2 = {
+      ...twoBowlsOfRice(),
+      mealItems: [
+        {
+          name: decomposedGa,
+          cookingMethod: 'luộc',
+          ingredients: [{ rawName: decomposedGa, canonicalName: 'Gà' }],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Gà',
+          ingredients: [{ ...riceEstimate(150), ingredientName: 'Gà' }],
+        },
+      ],
+    };
+
+    expect(pairIngredientsWithGrounded(v2, grounded)[0].ground?.grossG).toBe(
+      150
+    );
+  });
+
+  it('leaves an ingredient unpaired when Call 2 returned no estimate for it', () => {
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        { mealItemName: 'Cơm trắng', ingredients: [riceEstimate(200)] },
+      ],
+    };
+
+    const paired = pairIngredientsWithGrounded(twoBowlsOfRice(), grounded);
+
+    expect(paired[0].ground?.grossG).toBe(200);
+    expect(paired[1].ground).toBeNull();
+  });
 });
 
 describe('bridgeV2ToV1 — duplicate meal-item names', () => {

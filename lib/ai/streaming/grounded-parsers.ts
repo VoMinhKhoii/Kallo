@@ -30,6 +30,7 @@ import type {
   MacroBase,
   MealItemNutrition,
 } from '@/lib/ai/types/nutrition-adjustment';
+import { nameKey } from '@/lib/core/text/name-key';
 import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
@@ -127,7 +128,7 @@ export function resolveStreamingV2MealItem(
   // pairing) so candidates/nutrition never attach to the wrong ingredient.
   const localIdxByName = new Map<string, number[]>();
   decomposedIngredients.forEach((d, i) => {
-    const key = d.rawName.trim().toLocaleLowerCase('vi-VN');
+    const key = nameKey(d.rawName);
     const queue = localIdxByName.get(key);
     if (queue) queue.push(i);
     else localIdxByName.set(key, [i]);
@@ -142,8 +143,8 @@ export function resolveStreamingV2MealItem(
   );
 
   rawItem.ingredients.forEach((rawIng, streamIdx) => {
-    const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
-    const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
+    const localIdx =
+      localIdxByName.get(nameKey(rawIng.ingredientName))?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
     const matchResult = matchResults[flatIdx];
     const candidates = matchResult?.candidates ?? [];
@@ -283,7 +284,7 @@ export function buildMealItemOffsetByName(
   const occ = new Map<string, number>();
   let start = 0;
   for (const mi of v2MealItems) {
-    const key = mi.name.trim().toLocaleLowerCase('vi-VN');
+    const key = nameKey(mi.name);
     const n = (occ.get(key) ?? 0) + 1;
     occ.set(key, n);
     byName.set(`${key}::${n}`, {
