@@ -31,6 +31,7 @@ import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
+import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
@@ -41,6 +42,8 @@ import { flushUnstreamedItemMacros } from './call-two/item-macros';
 import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
+import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
+import { runRescueSubMeal } from './rescue/sub-meal';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -156,6 +159,28 @@ export async function analyzeMealV2(
       vesselEnabled,
     });
 
+    // Dish rescue mini-meals start now, beside Call 2 (see ./rescue/rescue).
+    const rescue = isDishRescueEnabled()
+      ? startDishRescue({
+          state: { decomposition, matchResults, portionResolutions },
+          language: userContext.outputLanguage === 'vi' ? 'vi' : 'en',
+          runSubMeal: (text) =>
+            runRescueSubMeal(text, {
+              userContext,
+              promptCtx,
+              db,
+              gemini,
+              profile,
+              topK,
+              matchConcurrency,
+              vesselEnabled,
+              temperature: call2Temperature,
+              decompositionRecorder: budget.decompositionRecorder,
+              nutritionRecorder: budget.nutritionRecorder,
+            }),
+        })
+      : null;
+
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
       traceContext,
@@ -176,17 +201,31 @@ export async function analyzeMealV2(
         nutritionChunkCount++;
       },
     });
-    const { call2, grounded } = stage3;
+    const { call2 } = stage3;
     promptCharsCall2 = stage3.promptCharsCall2;
+
+    // Ingredients Call 2 rejected are replaced by their rescue parts. The
+    // streamed dishes then changed, so the final flush re-sends every dish.
+    const rescued = rescue ? await rescue.apply(stage3.grounded) : null;
+    const run = rescued?.state ?? {
+      decomposition,
+      matchResults,
+      portionResolutions,
+      grounded: stage3.grounded,
+    };
+    if (rescued) {
+      stage3.itemMacrosStreamed.clear();
+      console.info(`[rescue] ${rescued.rescued} ingredients rescued`);
+    }
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
     const assembly = await runAssemblyStage({
       traceContext,
       emit,
-      decomposition,
-      matchResults,
-      grounded,
-      portionResolutions,
+      decomposition: run.decomposition,
+      matchResults: run.matchResults,
+      grounded: run.grounded,
+      portionResolutions: run.portionResolutions,
       streamedMealItemIds,
       vesselEnvelopes,
       vesselEnabled,
@@ -195,9 +234,9 @@ export async function analyzeMealV2(
     });
     const bridged = assembly.bridged;
     options.onDiagnostics?.({
-      decomposition,
-      matchResults,
-      portionResolutions,
+      decomposition: run.decomposition,
+      matchResults: run.matchResults,
+      portionResolutions: run.portionResolutions,
       verdicts: bridged.verdicts,
       plausibility: bridged.plausibility,
     });
@@ -206,11 +245,13 @@ export async function analyzeMealV2(
     // brace arrived without a separator marker, so the regex didn't catch
     // them). Re-emit in stream order using the resolved nutrition shape.
     flushUnstreamedItemMacros({
-      matchResults,
-      grounded,
+      matchResults: run.matchResults,
+      grounded: run.grounded,
       streamedMealItemIds,
       alreadyStreamed: stage3.itemMacrosStreamed,
-      offsetByName: stage3.offsetByName,
+      offsetByName: rescued
+        ? buildMealItemOffsetByName(run.decomposition.mealItems)
+        : stage3.offsetByName,
       goal: userContext.goal,
       aggression: userContext.aggression,
       emit,
@@ -224,7 +265,7 @@ export async function analyzeMealV2(
       result: assembly.result,
       matched: bridged.matched,
       unmatched: bridged.unmatched,
-      decomposition,
+      decomposition: run.decomposition,
     });
     const escalated = shouldEscalateV2({ profile, summary: anomalySummary });
     if (escalated) {
@@ -233,22 +274,22 @@ export async function analyzeMealV2(
 
     await recordV2RunTelemetry({
       log: {
-        decomposition,
-        matchResults,
-        grounded,
+        decomposition: run.decomposition,
+        matchResults: run.matchResults,
+        grounded: run.grounded,
         verdicts: bridged.verdicts,
         promptCharsCall1,
         promptCharsCall2,
         decomposeChunkCount,
         nutritionChunkCount,
         languageRetryCount,
-        portionProvenance: portionResolutions.map((r) => r.provenance),
+        portionProvenance: run.portionResolutions.map((r) => r.provenance),
       },
       persist: {
         traceContext,
         userContext,
         profile,
-        decomposition,
+        decomposition: run.decomposition,
         matched: bridged.matched,
         unmatched: bridged.unmatched,
         verdicts: bridged.verdicts,

@@ -343,3 +343,71 @@ describe('analyzeMealV2 — non-food fast path', () => {
     }
   });
 });
+
+describe('analyzeMealV2 — dish rescue', () => {
+  it('replaces a dish Call 2 could not match with its parts, at the main grams', async () => {
+    const flanDish = (ingredients: string[]) => ({
+      isFood: true,
+      mealSlot: 'snack' as const,
+      mealItems: [
+        {
+          name: 'bánh flan',
+          cookingMethod: 'hấp',
+          ingredients: ingredients.map((n) => ({
+            rawName: n,
+            canonicalName: n,
+          })),
+        },
+      ],
+    });
+    const llmEstimate = (name: string, grossG: number) => ({
+      ingredientName: name,
+      grossG,
+      refusePct: 0,
+      proteinG: { low: grossG / 10, mid: grossG / 10, high: grossG / 10 },
+      carbohydrateG: { low: grossG / 5, mid: grossG / 5, high: grossG / 5 },
+      fatG: { low: grossG / 20, mid: grossG / 20, high: grossG / 20 },
+    });
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockImplementation(
+          async (p: { systemPrompt: string; userMessage: string }) => {
+            const call2 = p.systemPrompt.includes('<ingredient_data>');
+            const mini = call2
+              ? p.systemPrompt.includes('<original_prompt>\n1 phần')
+              : p.userMessage.includes('1 phần');
+            if (!call2)
+              return mini
+                ? flanDish(['trứng', 'sữa'])
+                : flanDish(['bánh flan']);
+            return {
+              mealItems: [
+                {
+                  mealItemName: 'bánh flan',
+                  ingredients: mini
+                    ? [llmEstimate('trứng', 50), llmEstimate('sữa', 50)]
+                    : [llmEstimate('bánh flan', 300)],
+                },
+              ],
+            };
+          }
+        ),
+    });
+
+    const result = await analyzeMealV2(
+      '3 bánh flan',
+      userContext,
+      createSourceAwareMockDb({}),
+      gemini
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const ings = result.data.mealItems[0].ingredients;
+      expect(ings.map((i) => i.ingredientName)).toEqual(['Trứng', 'Sữa']);
+      // The parts split the 300 g the main Call 2 gave the three flans.
+      expect(ings.map((i) => i.estimatedGrams)).toEqual([150, 150]);
+    }
+  });
+});
