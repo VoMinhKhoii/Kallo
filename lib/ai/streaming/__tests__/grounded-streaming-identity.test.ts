@@ -404,7 +404,7 @@ describe('item_macros ids announced under another Unicode form', () => {
 });
 
 describe('item_macros ids for a repeated dish spelled in two Unicode forms', () => {
-  it('counts announced occurrences by normalized name, in order', () => {
+  it('looks each dish up by its own decomposition spelling, as assembly does', () => {
     const nfd = 'Cá rau';
     const nfc = 'Cá rau';
     const dish = oneDish().mealItems[0];
@@ -434,5 +434,37 @@ describe('item_macros ids for a repeated dish spelled in two Unicode forms', () 
     handler.handleChunk(`{"mealItems":[${first},${second},${END}]}`);
 
     expect(events.map((e) => e.mealItemId)).toEqual(['first-id', 'second-id']);
+  });
+});
+
+describe('item_macros ids after a Call 1 retry changed the spelling', () => {
+  it("uses the final attempt's id, not the stale first-attempt one", () => {
+    const nfc = 'Cá rau'.normalize('NFC');
+    const nfd = nfc.normalize('NFD');
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [{ ...oneDish().mealItems[0], name: nfc }],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: matchResults(),
+      // The id map keeps the first attempt's key across a retry.
+      streamedMealItemIds: new Map([
+        [`${nfd}::1`, 'stale-id'],
+        [`${nfc}::1`, 'final-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    handler.handleChunk(
+      `{"mealItems":[${streamedItem(nfd, 'cá')},${streamedItem(nfd, 'rau')},${END}]}`
+    );
+
+    expect(new Set(events.map((e) => e.mealItemId))).toEqual(
+      new Set(['final-id'])
+    );
   });
 });

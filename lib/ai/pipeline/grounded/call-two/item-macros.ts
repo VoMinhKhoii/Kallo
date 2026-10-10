@@ -38,7 +38,6 @@ import { computeStreamingMealItem } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
-import { nameKey } from '@/lib/core/text/name-key';
 
 // ---------------------------------------------------------------------------
 // Shared: dish identity and one emission.
@@ -113,27 +112,6 @@ interface EmitTarget {
 }
 
 /**
- * The id `item_name` announced for this dish. Announced keys are
- * "<display name>::<occurrence>" in announcement (decomposition) order, but
- * their occurrence counts raw spellings, so the same dish written in two
- * Unicode forms would count twice. The lookup therefore re-counts
- * occurrences by normalized name, in announcement order — the same rule
- * `createDishSlots` applies to the decomposition.
- */
-function announcedMealItemId(
-  ids: Map<string, string>,
-  slot: DishSlot
-): string | undefined {
-  let occ = 0;
-  for (const [key, id] of ids) {
-    if (nameKey(key.slice(0, key.lastIndexOf('::'))) !== slot.key) continue;
-    occ++;
-    if (occ === slot.occ) return id;
-  }
-  return undefined;
-}
-
-/**
  * Resolve one matched dish and emit its `item_macros`: once per dish, except
  * that a split dish is re-emitted as each fragment grows its total.
  */
@@ -154,8 +132,7 @@ function emitDish(target: EmitTarget, match: DishMatch): void {
   );
   streamItem.name = capitalizeFirst(streamItem.name);
   const mealItemId =
-    announcedMealItemId(target.streamedMealItemIds, match.slot) ??
-    streamItem.id;
+    target.streamedMealItemIds.get(match.offset.announcedKey) ?? streamItem.id;
   if (match.fragments === 1 && target.itemMacrosStreamed.has(mealItemId))
     return;
   target.itemMacrosStreamed.add(mealItemId);

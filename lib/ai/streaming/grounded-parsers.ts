@@ -257,6 +257,13 @@ export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
   dishCookingMethod: string | null;
   flatIngredientStart: number;
+  /**
+   * The dish's key in the streamed `item_name` id map, built the way final
+   * assembly looks it up (`bridgeV2ToV1`): the decomposition's own spelling
+   * and its occurrence among identical spellings. Streaming reads the id
+   * through this key, so `item_macros` and the final result never disagree.
+   */
+  announcedKey: string;
 }
 
 /**
@@ -282,15 +289,19 @@ export function buildMealItemOffsetByName(
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
+  const spellingOcc = new Map<string, number>();
   let start = 0;
   for (const mi of v2MealItems) {
     const key = nameKey(mi.name);
     const n = (occ.get(key) ?? 0) + 1;
     occ.set(key, n);
+    const m = (spellingOcc.get(mi.name) ?? 0) + 1;
+    spellingOcc.set(mi.name, m);
     byName.set(`${key}::${n}`, {
       decomposedIngredients: mi.ingredients,
       dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
+      announcedKey: `${mi.name}::${m}`,
     });
     start += mi.ingredients.length;
   }
