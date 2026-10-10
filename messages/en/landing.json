@@ -208,7 +208,8 @@
     "currentPlan": "Current plan"
   },
   "footer": {
-    "copyright": "© {year} Kallo. All rights reserved."
+    "copyright": "© {year} Kallo. All rights reserved.",
+    "linkedin": "LinkedIn"
   },
   "waitlistStatus": {
     "confirmed": "You're on the list. We'll email you when the mobile app is out.",

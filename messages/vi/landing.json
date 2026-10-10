@@ -207,7 +207,8 @@
     "currentPlan": "Gói hiện tại"
   },
   "footer": {
-    "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."
+    "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
+    "linkedin": "LinkedIn"
   },
   "waitlistStatus": {
     "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi ứng dụng di động ra mắt.",

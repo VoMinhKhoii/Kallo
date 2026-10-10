@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { LINKEDIN_URL } from '@/lib/seo/structured-data';
 
 /**
  * The docs navigation, as a footer.
@@ -95,6 +96,14 @@ export async function DocsFooter({
           <p className="text-caption text-kallo-stone">
             {tFooter('copyright', { year: '2026' })}
           </p>
+          <a
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:ml-auto"
+            href={LINKEDIN_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {tFooter('linkedin')}
+          </a>
         </div>
       </div>
     </footer>

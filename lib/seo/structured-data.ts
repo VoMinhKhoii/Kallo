@@ -3,7 +3,11 @@ import { SITE_URL } from '@/lib/seo/site';
 /** Where a reader — or an agent answering "how do I contact them" — should write. */
 export const SUPPORT_EMAIL = 'support@kallo.fit';
 /** The address SECURITY.md publishes for private vulnerability reports. */
-export const SECURITY_EMAIL = 'minhkhoitdn@gmail.com';
+export const SECURITY_EMAIL = 'security@kallo.fit';
+/** Partnerships, press and commercial licensing — reaches the founder directly. */
+export const FOUNDER_EMAIL = 'founder@kallo.fit';
+/** The Kallo company page, linked from the site footer and `sameAs`. */
+export const LINKEDIN_URL = 'https://www.linkedin.com/company/kallo-fit/';
 
 /**
  * The landing page's JSON-LD graph.
@@ -40,6 +44,14 @@ export function landingStructuredData({
         url: SITE_URL,
         logo: `${SITE_URL}/icon-512.png`,
         email: SUPPORT_EMAIL,
+        founder: {
+          '@type': 'Person',
+          name: 'Võ Minh Khôi',
+          jobTitle: 'Founder',
+          email: FOUNDER_EMAIL,
+          sameAs: ['https://www.linkedin.com/in/khoi-vo-1648112a0/'],
+        },
+        sameAs: [LINKEDIN_URL, 'https://github.com/VoMinhKhoii/Kallo'],
         // Locality and country, not the street address. The full address is
         // published in the privacy policy because data protection law requires
         // a controller to give one; repeating it in markup that gets scraped
@@ -65,6 +77,12 @@ export function landingStructuredData({
             '@type': 'ContactPoint',
             contactType: 'security',
             email: SECURITY_EMAIL,
+            availableLanguage: ['en', 'vi'],
+          },
+          {
+            '@type': 'ContactPoint',
+            contactType: 'partnerships',
+            email: FOUNDER_EMAIL,
             availableLanguage: ['en', 'vi'],
           },
         ],
