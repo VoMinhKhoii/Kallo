@@ -32,6 +32,7 @@ import {
   buildMealItemOffsetByName,
   extractCompletedGroundedMealItems,
   type MealItemOffset,
+  type MealItemRange,
   resolveStreamingV2MealItem,
 } from '@/lib/ai/streaming/grounded-parsers';
 import { computeStreamingMealItem } from '@/lib/ai/streaming/parsers';
@@ -215,9 +216,11 @@ export function flushUnstreamedItemMacros(args: {
 // Progressive item_macros for the fast + chunked paths.
 // ---------------------------------------------------------------------------
 
+type OffsetMealItems = Parameters<typeof buildMealItemOffsetByName>[0];
+
 export interface ChunkEmitContext extends EmitTarget {
-  /** Dish matcher shared across chunk deliveries. */
-  dishes: ReturnType<typeof createDishMatcher>;
+  /** The decomposition's dishes; each delivery matches against its own range. */
+  mealItems: OffsetMealItems;
   itemIndex: { value: number };
 }
 
@@ -231,34 +234,31 @@ export function createChunkEmitContext(
     }>;
   }
 ): ChunkEmitContext {
-  const { mealItems, ...target } = args;
   return {
-    ...target,
-    dishes: createDishMatcher(
-      buildMealItemOffsetByName(
-        mealItems as Array<{
-          name: string;
-          ingredients: never[];
-          cookingMethod: string;
-        }>
-      )
-    ),
+    ...args,
+    mealItems: args.mealItems as OffsetMealItems,
     itemIndex: { value: 0 },
   };
 }
 
 /**
  * Emit `item_macros` for a batch of already-parsed grounded meal items through
- * the same dish identity the single-call stream handler uses. De-dupes via the
- * shared `itemMacrosStreamed` set so the orchestrator's final flush never
- * double-emits a whole dish.
+ * the same dish identity the single-call stream handler uses. A Call 2 chunk
+ * passes its dish range: chunks finish in any order, so its items are matched
+ * only against its own dishes, never by a count shared across chunks. De-dupes
+ * via the shared `itemMacrosStreamed` set so the orchestrator's final flush
+ * never double-emits a whole dish.
  */
 export function emitChunkItemMacros(
   ctx: ChunkEmitContext,
-  items: GroundedMealItem[]
+  items: GroundedMealItem[],
+  range?: MealItemRange
 ): void {
+  const dishes = createDishMatcher(
+    buildMealItemOffsetByName(ctx.mealItems, range)
+  );
   for (const rawItem of items) {
-    const match = ctx.dishes.match(rawItem, ctx.itemIndex.value);
+    const match = dishes.match(rawItem, ctx.itemIndex.value);
     if (!match) continue;
     emitDish(ctx, match);
     ctx.itemIndex.value++;

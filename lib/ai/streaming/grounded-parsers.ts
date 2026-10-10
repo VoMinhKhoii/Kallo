@@ -253,6 +253,12 @@ function candidateFromVerdict(
   return idx >= 0 && idx < candidates.length ? candidates[idx] : null;
 }
 
+/** A contiguous run of decomposition dishes, e.g. one Call 2 chunk. */
+export interface MealItemRange {
+  first: number;
+  count: number;
+}
+
 export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
   dishCookingMethod: string | null;
@@ -285,25 +291,34 @@ export function buildMealItemOffsetByName(
     name: string;
     ingredients: DecomposedIngredientV2[];
     cookingMethod: string;
-  }>
+  }>,
+  /**
+   * Key only these dishes (a Call 2 chunk), counting occurrences among them.
+   * Offsets and announced keys stay whole-meal.
+   */
+  range?: MealItemRange
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
   const spellingOcc = new Map<string, number>();
+  const first = range?.first ?? 0;
+  const end = range ? first + range.count : v2MealItems.length;
   let start = 0;
-  for (const mi of v2MealItems) {
-    const key = nameKey(mi.name);
-    const n = (occ.get(key) ?? 0) + 1;
-    occ.set(key, n);
+  v2MealItems.forEach((mi, i) => {
     const m = (spellingOcc.get(mi.name) ?? 0) + 1;
     spellingOcc.set(mi.name, m);
-    byName.set(`${key}::${n}`, {
-      decomposedIngredients: mi.ingredients,
-      dishCookingMethod: mi.cookingMethod,
-      flatIngredientStart: start,
-      announcedKey: `${mi.name}::${m}`,
-    });
+    if (i >= first && i < end) {
+      const key = nameKey(mi.name);
+      const n = (occ.get(key) ?? 0) + 1;
+      occ.set(key, n);
+      byName.set(`${key}::${n}`, {
+        decomposedIngredients: mi.ingredients,
+        dishCookingMethod: mi.cookingMethod,
+        flatIngredientStart: start,
+        announcedKey: `${mi.name}::${m}`,
+      });
+    }
     start += mi.ingredients.length;
-  }
+  });
   return byName;
 }

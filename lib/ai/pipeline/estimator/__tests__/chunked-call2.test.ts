@@ -136,5 +136,15 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
       expect(Array.isArray(call[0])).toBe(true);
       expect(call[0].length).toBeGreaterThan(0);
     }
+    // ...and which meal items it held: contiguous runs covering the meal.
+    const ranges = onChunkComplete.mock.calls
+      .map((call) => call[1] as { first: number; count: number })
+      .sort((a, b) => a.first - b.first);
+    let next = 0;
+    for (const r of ranges) {
+      expect(r.first).toBe(next);
+      next += r.count;
+    }
+    expect(next).toBe(20);
   });
 });

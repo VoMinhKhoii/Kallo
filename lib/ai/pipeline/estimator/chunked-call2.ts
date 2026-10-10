@@ -50,6 +50,11 @@ export interface ChunkedCall2Result {
   chunkCount: number;
 }
 
+type ChunkSink = (
+  mealItems: GroundedMealItem[],
+  range: { first: number; count: number }
+) => void;
+
 export interface RunChunkedCall2Args {
   estimator: GroundedEstimator;
   mealItems: MealItemWithCandidates[];
@@ -60,9 +65,10 @@ export interface RunChunkedCall2Args {
   phaseDeadlineMs: number;
   /**
    * Per-completed-chunk sink so item_macros still emit progressively as chunks
-   * land (identity-mapped downstream). Receives the chunk's parsed meal items.
+   * land (identity-mapped downstream). Receives the chunk's parsed meal items
+   * and which input meal items the chunk held (chunks are contiguous runs).
    */
-  onChunkComplete?: (mealItems: GroundedMealItem[]) => void;
+  onChunkComplete?: ChunkSink;
   /** Per-attempt token/error usage recorder (model-budget guards). */
   onAttemptComplete?: NonNullable<
     import('./types').GroundedEstimatorStreamHooks['onAttemptComplete']
@@ -93,15 +99,22 @@ export async function runChunkedCall2(
   const maxAttempts = args.maxAttempts ?? CHUNK_MAX_ATTEMPTS;
 
   const chunks = chunkMealItems(mealItems);
+  let first = 0;
+  const placed = chunks.map((chunk) => {
+    const at = { chunk, first };
+    first += chunk.length;
+    return at;
+  });
   const phaseStart = Date.now();
 
   // Each chunk resolves to its parsed meal items, or null on hard failure.
   const settled = await mapWithConcurrency(
-    chunks,
-    (chunk) =>
+    placed,
+    ({ chunk, first }) =>
       runOneChunk({
         estimator,
         chunk,
+        first,
         originalPrompt,
         userContext,
         temperature,
@@ -146,13 +159,15 @@ export async function runChunkedCall2(
 async function runOneChunk(args: {
   estimator: GroundedEstimator;
   chunk: MealItemWithCandidates[];
+  /** Index of the chunk's first meal item in the whole meal. */
+  first: number;
   originalPrompt: string;
   userContext: PromptPersonalizationContext;
   temperature: number;
   phaseStart: number;
   phaseDeadlineMs: number;
   maxAttempts: number;
-  onChunkComplete?: (mealItems: GroundedMealItem[]) => void;
+  onChunkComplete?: ChunkSink;
   /** Per-attempt token/error usage recorder (model-budget guards). */
   onAttemptComplete?: NonNullable<
     import('./types').GroundedEstimatorStreamHooks['onAttemptComplete']
@@ -187,7 +202,10 @@ async function runOneChunk(args: {
       // Callback failures are OUR bug (emitter/parser), not the provider's —
       // never let them re-trigger a provider retry or discard a valid chunk.
       try {
-        args.onChunkComplete?.(result.estimation.mealItems);
+        args.onChunkComplete?.(result.estimation.mealItems, {
+          first: args.first,
+          count: args.chunk.length,
+        });
       } catch (callbackErr) {
         console.error(
           '[v2-pipeline] chunk onChunkComplete callback failed (chunk kept):',

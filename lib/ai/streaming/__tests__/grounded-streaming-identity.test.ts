@@ -5,6 +5,8 @@ import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/de
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   createCall2StreamHandler,
+  createChunkEmitContext,
+  emitChunkItemMacros,
   flushUnstreamedItemMacros,
 } from '@/lib/ai/pipeline/grounded/call-two/item-macros';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
@@ -466,5 +468,42 @@ describe('item_macros ids after a Call 1 retry changed the spelling', () => {
     expect(new Set(events.map((e) => e.mealItemId))).toEqual(
       new Set(['final-id'])
     );
+  });
+});
+
+describe('item_macros for chunks that finish out of order', () => {
+  it('matches each chunk against its own dishes, not a shared count', () => {
+    // Two "Cơm" dishes in different chunks: the first holds fish, the second veg.
+    const base = decomposition().mealItems;
+    const mealItems = [
+      { ...base[0], name: 'Cơm' },
+      { ...base[1], name: 'Cơm' },
+    ];
+    const { emit, events } = collect();
+    const ctx = createChunkEmitContext({
+      mealItems,
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map([
+        ['Cơm::1', 'first-id'],
+        ['Cơm::2', 'second-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // The second chunk lands first.
+    emitChunkItemMacros(ctx, [groundedItem('Cơm', 'rau')], {
+      first: 1,
+      count: 1,
+    });
+    emitChunkItemMacros(ctx, [groundedItem('Cơm', 'cá')], {
+      first: 0,
+      count: 1,
+    });
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['second-id', 'first-id']);
+    // Each dish priced from its own row: veg (~20 kcal/100g), fish (~200).
+    expect(events[0].calories).toBeLessThan(events[1].calories);
   });
 });
