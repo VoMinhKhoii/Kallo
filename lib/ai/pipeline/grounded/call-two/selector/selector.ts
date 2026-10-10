@@ -120,13 +120,29 @@ export function applySelection(args: {
       const rowOf = (id: string) => candidates[flat]?.find((c) => c.id === id);
       const from = rowOf(current);
       const to = rowOf(pick);
-      if (!from || !to || from.dbState !== to.dbState) return;
+      if (!from || !to || !massEquivalent(from, to)) return;
       ground.selectedCandidateId = pick;
       rescaleMacros(ground, from, to);
       overrides++;
     }
   );
   return { grounded, overrides };
+}
+
+/** Points of inedible share two rows may differ by and still share grams. */
+const REFUSE_TOLERANCE = 5;
+
+/**
+ * Call 2's grams (`grossG`, `refusePct`) are scoped to its row: the same
+ * state (raw/cooked) and the same inedible share (bone-in vs boneless), so
+ * only a row matching both can take them over.
+ */
+function massEquivalent(from: MatchCandidate, to: MatchCandidate): boolean {
+  return (
+    from.dbState === to.dbState &&
+    Math.abs((from.inediblePct ?? 0) - (to.inediblePct ?? 0)) <=
+      REFUSE_TOLERANCE
+  );
 }
 
 const MACRO_FIELDS = [

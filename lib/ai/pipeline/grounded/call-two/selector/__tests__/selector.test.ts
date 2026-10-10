@@ -274,6 +274,24 @@ describe('applySelection', () => {
     expect(ing.proteinG).toEqual({ low: 7, mid: 8, high: 9 });
   });
 
+  it("keeps Call 2's row when the pick differs in bones, at the same state", () => {
+    const boneIn = { ...candidate(1), inediblePct: 30 };
+    const boneless = { ...candidate(2), inediblePct: 0 };
+    const { decomposition, mealItems } = meal([
+      ['Gà', [['gà', [boneIn, boneless]]]],
+    ]);
+    const grounded: GroundedEstimation = {
+      mealItems: [{ mealItemName: 'Gà', ingredients: [estimate('gà', 'c1')] }],
+    };
+    const out = applySelection({
+      decomposition,
+      grounded,
+      mealItems,
+      picks: new Map([[0, 'c2']]),
+    });
+    expect(out.overrides).toBe(0);
+  });
+
   it('pairs a dish Call 2 split into same-name items the way resolution does', () => {
     const { decomposition, mealItems } = meal([
       [
