@@ -103,7 +103,7 @@ async function embed(texts: string[]): Promise<number[][]> {
 
 async function store(rows: { id: number }[], vecs: number[][]) {
   const values = rows.map(
-    (r, i) => `(${r.id}, '[${vecs[i].join(',')}]'::vector(768))`
+    (r, i) => `(${r.id}, '[${vecs[i].join(',')}]'::halfvec(768))`
   );
   await sql.unsafe(`
     UPDATE food_card_vectors AS v SET embedding = d.vec
