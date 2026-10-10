@@ -37,8 +37,9 @@ export function isCandidateSelectorEnabled(): boolean {
 
 /**
  * Start one selector call per ingredient with two or more candidates. Call
- * `settle()` after Call 2: it waits up to `GRACE_MS` for the calls still open,
- * aborts the rest, and returns the picks by flat ingredient index.
+ * `settle(deadlineAt)` after Call 2: it waits up to `GRACE_MS`, and never past
+ * Call 2's own stage deadline, for the calls still open, aborts the rest, and
+ * returns the picks by flat ingredient index.
  */
 export function startCandidateSelector(args: {
   gemini: GeminiClient;
@@ -46,7 +47,10 @@ export function startCandidateSelector(args: {
   mealText: string;
   mealItems: MealItemWithCandidates[];
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
-}): { settle: () => Promise<Map<number, string>>; abort: () => void } {
+}): {
+  settle: (deadlineAt: number) => Promise<Map<number, string>>;
+  abort: () => void;
+} {
   const controller = new AbortController();
   const picks = new Map<number, string>();
   const choices = args.mealItems
@@ -81,12 +85,13 @@ export function startCandidateSelector(args: {
   });
 
   return {
-    async settle() {
+    async settle(deadlineAt) {
+      const wait = Math.max(0, Math.min(GRACE_MS, deadlineAt - Date.now()));
       let timer: ReturnType<typeof setTimeout> | undefined;
       await Promise.race([
         done,
         new Promise((resolve) => {
-          timer = setTimeout(resolve, GRACE_MS);
+          timer = setTimeout(resolve, wait);
         }),
       ]);
       clearTimeout(timer);

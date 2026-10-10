@@ -104,7 +104,7 @@ describe('startCandidateSelector', () => {
       model: 'm',
       mealText: 'cơm gà',
       mealItems,
-    }).settle();
+    }).settle(Date.now() + 60_000);
 
     expect(llm.generateStructuredOutput).toHaveBeenCalledTimes(2);
     expect([...picks]).toEqual([[0, 'c2']]);
@@ -135,7 +135,7 @@ describe('startCandidateSelector', () => {
       model: 'm',
       mealText: 'mâm',
       mealItems,
-    }).settle();
+    }).settle(Date.now() + 60_000);
     expect(picks.size).toBe(10);
     expect(peak).toBe(6);
   });
@@ -160,8 +160,31 @@ describe('startCandidateSelector', () => {
       model: 'm',
       mealText: 'cơm, canh',
       mealItems,
-    }).settle();
+    }).settle(Date.now() + 60_000);
     expect([...picks]).toEqual([[0, 'c2']]);
+  });
+
+  it('never waits past the deadline it is given', async () => {
+    vi.useFakeTimers();
+    const { mealItems } = meal([
+      ['Cơm', [['cơm', [candidate(1), candidate(2)]]]],
+    ]);
+    const llm = {
+      generateStructuredOutput: vi.fn(() => new Promise(() => {})),
+    } as unknown as GeminiClient;
+    let done = false;
+    void startCandidateSelector({
+      gemini: llm,
+      model: 'm',
+      mealText: 'cơm',
+      mealItems,
+    })
+      .settle(Date.now() + 1_000)
+      .then(() => {
+        done = true;
+      });
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(done).toBe(true);
   });
 
   it('stops waiting a few seconds after Call 2 and aborts the open calls', async () => {
@@ -183,7 +206,7 @@ describe('startCandidateSelector', () => {
       model: 'm',
       mealText: 'cơm',
       mealItems,
-    }).settle();
+    }).settle(Date.now() + 60_000);
     await vi.advanceTimersByTimeAsync(3_000);
 
     expect((await settled).size).toBe(0);

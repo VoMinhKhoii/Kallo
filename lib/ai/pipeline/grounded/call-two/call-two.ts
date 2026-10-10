@@ -12,6 +12,7 @@
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
+import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
@@ -33,7 +34,11 @@ import {
   createCall2StreamHandler,
   createChunkEmitContext,
 } from './item-macros';
-import { type RunCallTwoResult, runCallTwo } from './modes';
+import {
+  chunkedPhaseDeadlineMs,
+  type RunCallTwoResult,
+  runCallTwo,
+} from './modes';
 import {
   applySelection,
   isCandidateSelectorEnabled,
@@ -145,6 +150,7 @@ export async function runCallTwoStage(args: {
       model: args.profile.nutritionModel,
     },
     async ({ stageLogId }) => {
+      const stageStart = Date.now();
       emit({ type: 'stage', stage: 'estimating' });
       const callTrace = buildLlmStageTrace({
         trace: traceContext,
@@ -182,7 +188,13 @@ export async function runCallTwoStage(args: {
         decomposition,
         grounded: result.grounded,
         mealItems: mealItemsWithCandidates,
-        picks: await selector.settle(),
+        // Never past Call 2's own deadline for the path it took.
+        picks: await selector.settle(
+          stageStart +
+            (result.mode === 'chunked'
+              ? chunkedPhaseDeadlineMs()
+              : NUTRITION_TIMEOUT_MS)
+        ),
       });
       // Streamed item_macros used Call 2's own picks; let the final flush
       // re-send every dish (clients upsert by id).
