@@ -62,8 +62,7 @@ type Loose = Record<string, unknown>;
 /**
  * Fix the value slips seen from Claude on the two pipeline schemas
  * (decomposition and grounded estimation) before the Zod parse: an explicit
- * mass of 0 g means no mass; a missing `nameVi` falls back to the canonical
- * name; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
+ * mass of 0 g means no mass; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
  * 0-80; a meal item with no ingredients is dropped. Fields a schema does not
  * have are left alone.
@@ -84,8 +83,6 @@ export function repairPipelineOutput(raw: unknown): unknown {
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       const mass = g.explicitMass as Loose | undefined;
       if (mass && !(Number(mass.grams) > 0)) delete g.explicitMass;
-      if ('rawName' in g && typeof g.nameVi !== 'string')
-        g.nameVi = g.canonicalName ?? g.rawName;
       if (typeof g.rejectReason === 'string' && g.rejectReason.length > 120)
         g.rejectReason = g.rejectReason.slice(0, 120);
       if (Array.isArray(g.prepNotes))

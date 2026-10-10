@@ -99,8 +99,9 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
       opts?.onAttemptStart?.(attempt);
       state.accumulated = null;
       state.usage = null;
+      let stream: ReturnType<typeof anthropic.messages.stream> | undefined;
       try {
-        const stream = anthropic.messages.stream(
+        stream = anthropic.messages.stream(
           {
             model: params.model,
             max_tokens: 16_000,
@@ -147,6 +148,9 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
         onAttempt(attempt, t0, parsed.data, undefined);
         return parsed.data;
       } catch (err) {
+        // A stream that failed mid-way still billed its input; keep the counters.
+        const partial = stream?.currentMessage?.usage;
+        if (!state.usage && partial) state.usage = toUsageMetadata(partial);
         onAttempt(attempt, t0, undefined, err);
         const slip = err instanceof Error && err.name === 'ZodError';
         if (!slip || attempt >= MAX_ATTEMPTS || params.abortSignal?.aborted)

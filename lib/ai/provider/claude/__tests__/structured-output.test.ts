@@ -11,6 +11,8 @@ interface Reply {
   text: string;
   stop?: string;
   error?: Error;
+  /** The SDK's message snapshot when the stream fails (after message_start). */
+  current?: { usage: typeof USAGE };
 }
 
 const USAGE = {
@@ -27,6 +29,7 @@ function fakeClaude(replies: Reply[]) {
     if (!reply) throw new Error('no reply scripted');
     let onText: (delta: string) => void = () => {};
     return {
+      currentMessage: reply.current,
       on(event: string, cb: (delta: string) => void) {
         if (event === 'text') onText = cb;
       },
@@ -178,6 +181,26 @@ describe('createClaudeStructuredOutput', () => {
       outputTokens: 40,
       cachedTokens: 3000,
       thoughtTokens: 0,
+    });
+  });
+
+  it('keeps the input counters of a stream that failed mid-way', async () => {
+    const dropped = Object.assign(new Error('connection reset'), {
+      status: 500,
+    });
+    const { client } = fakeClaude([
+      { text: '', error: dropped, current: { usage: USAGE } },
+    ]);
+    const onAttemptComplete = vi.fn();
+    await expect(
+      createClaudeStructuredOutput(client).generateStructuredOutput(params(), {
+        onAttemptComplete,
+      })
+    ).rejects.toBe(dropped);
+    expect(onAttemptComplete.mock.calls[0][0]).toMatchObject({
+      error: dropped,
+      inputTokens: 3100,
+      cachedTokens: 3000,
     });
   });
 });

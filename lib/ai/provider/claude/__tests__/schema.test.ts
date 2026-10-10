@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { mealDecompositionV2Schema } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { groundedEstimationSchema } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   isEmptyFoodAnswer,
   repairPipelineOutput,
@@ -97,11 +99,56 @@ describe('repairPipelineOutput', () => {
     const [pho, rice] = out.mealItems;
     expect(pho.cookingMethod).toBe('');
     expect(pho.ingredients[0].explicitMass).toBeUndefined();
-    expect(pho.ingredients[0].nameVi).toBe('Rice noodles');
+    // nameVi is not filled in: it is optional, and absent on main's schema.
+    expect('nameVi' in pho.ingredients[0]).toBe(false);
     expect((pho.ingredients[0].prepNotes as string[])[0]).toHaveLength(60);
     expect(rice.ingredients[0].refusePct).toBe(80);
     expect(rice.ingredients[0].rejectReason as string).toHaveLength(120);
     expect('nameVi' in rice.ingredients[0]).toBe(false);
+  });
+
+  it('keeps valid answers valid against the real pipeline schemas', () => {
+    const call1 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Phở bò',
+          cookingMethod: 'boiled',
+          ingredients: [{ rawName: 'bánh phở', canonicalName: 'Rice noodles' }],
+        },
+      ],
+    };
+    const call2 = {
+      mealItems: [
+        {
+          mealItemName: 'Phở bò',
+          ingredients: [
+            {
+              ingredientName: 'bánh phở',
+              selectedCandidateId: 'c1',
+              grossG: 200,
+              refusePct: 0,
+              proteinG: { low: 1, mid: 2, high: 3 },
+              carbohydrateG: { low: 40, mid: 45, high: 50 },
+              fatG: { low: 0, mid: 1, high: 2 },
+            },
+          ],
+        },
+      ],
+    };
+    expect(mealDecompositionV2Schema.safeParse(call1).success).toBe(true);
+    expect(groundedEstimationSchema.safeParse(call2).success).toBe(true);
+    expect(
+      mealDecompositionV2Schema.safeParse(
+        repairPipelineOutput(structuredClone(call1))
+      ).success
+    ).toBe(true);
+    expect(
+      groundedEstimationSchema.safeParse(
+        repairPipelineOutput(structuredClone(call2))
+      ).success
+    ).toBe(true);
   });
 
   it('leaves non-pipeline shapes alone', () => {

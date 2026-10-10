@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type {
+  GeminiAttemptMetadata,
   GeminiClient,
   StreamOptions,
   StructuredOutputOptions,
@@ -22,13 +23,17 @@ export const isClaudeModel = (model: string): boolean =>
  * slip that survived its re-ask — re-runs that one call on Gemini with
  * `fallbackModel`, so a Claude outage degrades to today's pipeline instead of
  * failing meals. A call the caller aborted (a stage deadline) is not re-run.
+ *
+ * The re-run continues Claude's attempt numbering: callers reset their stream
+ * parsers on any attempt after the first, so Claude's partial output never
+ * mixes with Gemini's.
  */
 export function withClaudeRouting(
   gemini: GeminiClient,
   claude: ClaudeStructuredOutput | null,
   options: { fallbackModel: string }
 ): GeminiClient {
-  function route<O>(
+  function route<O extends AttemptHooks>(
     viaClaude: (
       c: ClaudeStructuredOutput
     ) => <T>(params: StructuredOutputParams<T>, opts?: O) => Promise<T>,
@@ -45,14 +50,15 @@ export function withClaudeRouting(
         return viaGemini(fallback, opts);
       }
       if (params.image) return viaGemini(fallback, opts);
+      const counted = countAttempts(opts);
       try {
-        return await viaClaude(claude)(params, opts);
+        return await viaClaude(claude)(params, counted.opts);
       } catch (err) {
         if (params.abortSignal?.aborted) throw err;
         console.warn(
           `[llm] ${params.model} failed (${describe(err)}); re-running on ${options.fallbackModel}`
         );
-        return viaGemini(fallback, opts);
+        return viaGemini(fallback, shiftAttempts(opts, counted.attempts()));
       }
     };
   }
@@ -67,6 +73,48 @@ export function withClaudeRouting(
       (c) => c.generateStructuredOutputStream,
       gemini.generateStructuredOutputStream
     ),
+  };
+}
+
+type AttemptHooks = Pick<StreamOptions, 'onAttemptStart' | 'onAttemptComplete'>;
+
+/** Wrap the hooks to record the highest attempt number they see. */
+function countAttempts<O extends AttemptHooks>(opts: O | undefined) {
+  let attempts = 0;
+  const seen = (n: number) => {
+    attempts = Math.max(attempts, n);
+  };
+  return {
+    attempts: () => attempts,
+    opts: opts && {
+      ...opts,
+      onAttemptStart: (n: number) => {
+        seen(n);
+        opts.onAttemptStart?.(n);
+      },
+      onAttemptComplete: (m: GeminiAttemptMetadata) => {
+        seen(m.attempt);
+        opts.onAttemptComplete?.(m);
+      },
+    },
+  };
+}
+
+/** Number the hooks' attempts from `offset + 1`. */
+function shiftAttempts<O extends AttemptHooks>(
+  opts: O | undefined,
+  offset: number
+): O | undefined {
+  if (!opts || offset === 0) return opts;
+  return {
+    ...opts,
+    onAttemptStart: opts.onAttemptStart
+      ? (n: number) => opts.onAttemptStart?.(offset + n)
+      : undefined,
+    onAttemptComplete: opts.onAttemptComplete
+      ? (m: GeminiAttemptMetadata) =>
+          opts.onAttemptComplete?.({ ...m, attempt: offset + m.attempt })
+      : undefined,
   };
 }
 

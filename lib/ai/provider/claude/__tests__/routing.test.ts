@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import type { GeminiClient, StructuredOutputParams } from '../../types';
+import type {
+  GeminiClient,
+  StreamOptions,
+  StructuredOutputParams,
+} from '../../types';
 import {
   type ClaudeStructuredOutput,
   isClaudeModel,
@@ -69,6 +73,44 @@ describe('withClaudeRouting', () => {
     expect(
       await llm.generateStructuredOutputStream(params('claude-haiku-5-5'))
     ).toEqual({ by: 'gemini-stream', model: FALLBACK });
+  });
+
+  it("numbers the fallback attempts after Claude's, so callers reset their parsers", async () => {
+    const claudeTwice = {
+      generateStructuredOutputStream: vi.fn(
+        async (_p: unknown, o?: StreamOptions) => {
+          o?.onAttemptStart?.(1);
+          o?.onAttemptStart?.(2);
+          throw new Error('schema slip twice');
+        }
+      ),
+    } as unknown as ClaudeStructuredOutput;
+    const g = gemini();
+    vi.mocked(g.generateStructuredOutputStream).mockImplementation(
+      async (p, o) => {
+        o?.onAttemptStart?.(1);
+        o?.onAttemptComplete?.({
+          attempt: 1,
+          model: p.model,
+          error: null,
+          inputTokens: 1,
+          outputTokens: 1,
+          cachedTokens: 0,
+          thoughtTokens: 0,
+        });
+        return {} as never;
+      }
+    );
+    const starts: number[] = [];
+    const completes: number[] = [];
+    const llm = withClaudeRouting(g, claudeTwice, { fallbackModel: FALLBACK });
+    await llm.generateStructuredOutputStream(params('claude-haiku-5-5'), {
+      onAttemptStart: (n) => starts.push(n),
+      onAttemptComplete: (m) => completes.push(m.attempt),
+    });
+
+    expect(starts).toEqual([1, 2, 3]);
+    expect(completes).toEqual([3]);
   });
 
   it('does not re-run a call its caller aborted', async () => {

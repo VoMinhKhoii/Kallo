@@ -13,6 +13,7 @@ import type { GeminiClient } from './types';
  */
 
 export { getEmbeddingCacheStats } from '@/lib/ai/cache/provider-embedding-memo';
+export { isClaudeModel } from './claude/routing';
 export {
   __resetAiClientCacheForTests,
   type GeminiProviderConfig,

@@ -114,6 +114,7 @@ vi.mock('@/lib/infra/db/schema', () => ({
 vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
   createPipelineLlm: (config: unknown) => mockCreateGeminiClient(config),
+  isClaudeModel: (model: string) => model.startsWith('claude-'),
   resolveGeminiProvider: () => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY missing');
