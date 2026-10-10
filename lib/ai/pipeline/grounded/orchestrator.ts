@@ -29,6 +29,7 @@ import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
 import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PortionResolution } from '@/lib/ai/portion/types';
+import { resolveVesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
@@ -176,6 +177,7 @@ export async function analyzeMealV2(
               matchConcurrency,
               vesselEnabled,
               temperature: call2Temperature,
+              estimator: options.estimator,
               decompositionRecorder: budget.decompositionRecorder,
               nutritionRecorder: budget.nutritionRecorder,
             }),
@@ -215,6 +217,12 @@ export async function analyzeMealV2(
       portionResolutions,
       grounded: stage3.grounded,
     };
+    // A rescued dish's parts can change its class (a broth part makes it a
+    // soup), so its vessel envelope is recomputed from the spliced dish.
+    const envelopes =
+      rescued && vesselEnabled
+        ? run.decomposition.mealItems.map(resolveVesselEnvelope)
+        : vesselEnvelopes;
     if (rescued) {
       stage3.itemMacrosStreamed.clear();
       console.info(`[rescue] ${rescued.rescued} ingredients rescued`);
@@ -229,7 +237,7 @@ export async function analyzeMealV2(
       grounded: run.grounded,
       portionResolutions: run.portionResolutions,
       streamedMealItemIds,
-      vesselEnvelopes,
+      vesselEnvelopes: envelopes,
       vesselEnabled,
       rawInput,
       userContext,

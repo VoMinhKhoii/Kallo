@@ -6,7 +6,10 @@
  * estimate: scaling the survivors to the dish's mass would inflate them.
  */
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import type { EstimatorAttemptUsage } from '@/lib/ai/pipeline/estimator/types';
+import type {
+  EstimatorAttemptUsage,
+  GroundedEstimator,
+} from '@/lib/ai/pipeline/estimator/types';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
@@ -27,6 +30,8 @@ export interface SubMealDeps {
   matchConcurrency: number;
   vesselEnabled: boolean;
   temperature: number;
+  /** The main run's Call 2 estimator override (offline bakeoffs), if any. */
+  estimator: GroundedEstimator | undefined;
   decompositionRecorder: (usage: EstimatorAttemptUsage) => void;
   nutritionRecorder: (usage: EstimatorAttemptUsage) => void;
 }
@@ -66,7 +71,7 @@ export async function runRescueSubMeal(
     emit: silent,
     gemini: deps.gemini,
     profile: deps.profile,
-    estimatorOverride: undefined,
+    estimatorOverride: deps.estimator,
     decomposition,
     matchResults: prep.matchResults,
     mealItemsWithCandidates: prep.mealItemsWithCandidates,
