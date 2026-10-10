@@ -65,12 +65,29 @@ describe('Cloud Run prod workflow', () => {
       `GOOGLE_CLOUD_PROJECT: \${{ vars.GCP_PROJECT_ID }}`
     );
     expect(workflow).toContain('GOOGLE_CLOUD_LOCATION: global');
+    // Query embeddings go to the regional endpoint next to the service (same
+    // model and vectors as global, a fraction of the latency).
+    expect(workflow).toContain(
+      'GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1'
+    );
     expect(backfill).toContain('vertexai: true');
     expect(backfill).toContain(
       'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
     );
     // The AI Studio path stays intact for local `dbr:reset` against .env.local.
     expect(backfill).toContain('apiKey: process.env.GEMINI_API_KEY');
+    // Card retrieval stays on the legacy matcher until the card strings are
+    // embedded, so the deploy must backfill them after the seed migration.
+    expect(workflow).toContain('id: card_embed_check');
+    // Postgres resolves tables at parse time, so the existence check must be
+    // its own statement for an older DEPLOY_SHA with no card tables.
+    expect(workflow).toContain(
+      `SELECT to_regclass('public.food_card_vectors') IS NOT NULL`
+    );
+    expect(workflow).not.toContain(
+      'ELSE (SELECT count(*) FROM food_card_vectors'
+    );
+    expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });
 
   it('wires billing secrets and dark-launch controls into prod', () => {

@@ -161,6 +161,10 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261004092714_add_premium_grant_audit.sql` | A + deny boundary | `premium_grant_audit` — who granted complimentary Premium from `/admin/premium`, scope, days, account count; RLS on with no policies and REVOKE from `anon`/`authenticated` in the same file |
 | `20261004145341_premium_admin_console.sql` | A + deny boundary | `premium_settings` singleton (welcome offer: on/off, days 1–365, auto-off); `premium_grant_audit` gains `action`/`mode`/`reason`/`details`/`undone_*` and nullable `days`/`expires_at`; `entitlement_grants.canceled_by_action` (the admin action that ended a grant, for undo); RLS + REVOKE on `premium_settings` |
 | `20261004145400_welcome_offer_from_settings.sql` | B (Manual) | Seeds `premium_settings` (on, 14 days) and rewrites `handle_new_user_welcome_premium()` to read it — off, past auto-off or missing grants nothing |
+| `20261008030138_add_food_cards.sql` | A (Drizzle) | `food_cards` (one curated card per composition row: food, EN aliases, VI names, facets, card sentence) and `food_card_vectors` (one row per string that names a card, `embedding vector(768)` NULL until backfilled; unique per row+text) |
+| `20261008030200_food_cards_rls_and_index.sql` | B (Manual) | Read-only RLS on both card tables; HNSW over the first 256 dims as `halfvec` (`subvector(embedding,1,256)`, ~40 MB) |
+| `20261008030300_seed_food_cards.sql` | Data (generated) | 7,729 cards from `data/food-cards/cards.jsonl` via `scripts/data/food-cards/build-seed-migration.ts`; derives `food_card_vectors` strings in SQL; embeddings omitted (deploy backfills them) |
+| `20261008030400_match_food_cards_function.sql` | B (Manual) | `match_food_cards(vector[], per_query)` — nearest card strings per query vector, max-sim per row, `hnsw.ef_search` raised per call via `set_config` |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -196,6 +200,16 @@ Once the new revision is fully promoted and no older revision can serve traffic,
   not show contradictory totals vs item/group subtotals.
 
 ## Ingredient Search Architecture
+
+> **Current matcher: food-card retrieval** (`lib/ai/matching/cards/`, since 2026-10). Each
+> ingredient is searched by four strings Call 1 writes (rawName, canonicalName, queryEn,
+> nameVi) against every string that names a card (`match_food_cards`, HNSW, max-sim per row),
+> plus an in-memory trigram index over card names and BM25 of Call 1's USDA-style `tableName`
+> over row English names. Arms are fused by RRF, collapsed to one row per concept (grade/salt
+> siblings) and cut to 8 candidates; all sources compete equally. Until a database has embedded
+> card vectors, the legacy tiers below still serve (they remain as that fallback).
+> Cards are curated data: edit `data/food-cards/cards.jsonl`, regenerate the seed migration, and
+> the deploy's `backfill_card_embeddings.ts` step embeds new strings.
 
 The app uses a two-tier search pipeline to match user meal descriptions to the 526 food composition records:
 

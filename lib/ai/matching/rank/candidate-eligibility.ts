@@ -37,7 +37,13 @@ function matchesAny(text: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(text));
 }
 
-function candidateIdentityText(candidate: FuzzyMatchRow): string {
+/** The row names the guards read. */
+type CandidateNames = Pick<
+  FuzzyMatchRow,
+  'name_primary' | 'name_en' | 'name_alt'
+>;
+
+function candidateIdentityText(candidate: CandidateNames): string {
   return [
     candidate.name_primary,
     candidate.name_en,
@@ -55,7 +61,7 @@ function candidateIdentityText(candidate: FuzzyMatchRow): string {
  */
 export function isCandidateEligibleForIngredient(
   ingredientName: string,
-  candidate: FuzzyMatchRow
+  candidate: CandidateNames
 ): boolean {
   const candidateText = candidateIdentityText(candidate);
   const isBareChickenQuery =

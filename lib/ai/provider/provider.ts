@@ -59,6 +59,16 @@ export function createGeminiClient(
       retry,
       withRetry,
     }),
-    ...createEmbeddingMethods({ ai, withRetry }),
+    ...createEmbeddingMethods({
+      ai:
+        config.provider === 'vertex' && config.embeddingLocation
+          ? getOrCreateAiClient({
+              provider: 'vertex',
+              project: config.project,
+              location: config.embeddingLocation,
+            })
+          : ai,
+      withRetry,
+    }),
   };
 }

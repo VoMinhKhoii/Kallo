@@ -115,6 +115,7 @@ describe('matchTopKPerIngredient — exact/alias-first + lexical fallback', () =
           state: 'raw',
           similarity: 0.92,
           source_id: 1,
+          source_code: 'FAO_VN_2007',
         },
       ],
       nutrition: [
@@ -157,6 +158,7 @@ describe('matchTopKPerIngredient — exact/alias-first + lexical fallback', () =
           state: 'cooked',
           similarity: 0.9,
           source_id: 1,
+          source_code: 'FAO_VN_2007',
         },
       ],
       nutrition: [{ id: 'v1', calories_kcal: 165, protein_g: 31 }],

@@ -8,7 +8,7 @@
  */
 
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 
@@ -56,6 +56,7 @@ export function matchResultWithCandidate(): IngredientV2MatchResult[] {
             fatG: 14,
           },
           inediblePct: null,
+          prompt: { name: 'Đùi gà', nameEn: null, score: 0.92 },
         },
       ],
     },
@@ -103,6 +104,7 @@ export function nullNutritionMatch(): IngredientV2MatchResult[] {
           },
           nutrition: null,
           inediblePct: null,
+          prompt: { name: 'Bún tươi', nameEn: null, score: 1 },
         },
       ],
     },

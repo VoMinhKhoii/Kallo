@@ -11,10 +11,10 @@
  * + gated re-run), `run-record.ts` (console telemetry + `pipeline_runs`).
  */
 
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import {
   DEFAULT_K,
   DEFAULT_MATCH_CONCURRENCY,
-  type IngredientV2MatchResult,
 } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';

@@ -2,7 +2,19 @@ import { GoogleGenAI } from '@google/genai';
 
 export type GeminiProviderConfig =
   | { provider: 'ai-studio'; apiKey: string }
-  | { provider: 'vertex'; project: string; location: string };
+  | {
+      provider: 'vertex';
+      project: string;
+      location: string;
+      /**
+       * Vertex location for embeddings when it differs from `location`.
+       * `gemini-3.1-flash-lite` exists only on `global`, but
+       * `gemini-embedding-001` is regional too, and the endpoint next to Cloud
+       * Run answers in ~0.3-0.5 s vs ~0.6-1.7 s on `global` with identical
+       * vectors (cosine 1.0), so stored embeddings stay valid.
+       */
+      embeddingLocation?: string;
+    };
 
 /**
  * Resolve the Gemini provider config from environment variables.
@@ -11,6 +23,7 @@ export type GeminiProviderConfig =
  * - AI_PROVIDER="vertex": uses GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION via
  *   Application Default Credentials. On Cloud Run, ADC comes from the service
  *   account; locally it comes from `gcloud auth application-default login`.
+ *   Optional GOOGLE_CLOUD_EMBEDDING_LOCATION sends embeddings to that location.
  *
  * Throws with a clear message if the required variables for the chosen
  * provider are missing or if AI_PROVIDER has an unknown value.
@@ -29,7 +42,15 @@ export function resolveGeminiProvider(
         'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
       );
     }
-    return { provider: 'vertex', project, location };
+    const embeddingLocation = env.GOOGLE_CLOUD_EMBEDDING_LOCATION?.trim();
+    return {
+      provider: 'vertex',
+      project,
+      location,
+      ...(embeddingLocation && embeddingLocation !== location
+        ? { embeddingLocation }
+        : {}),
+    };
   }
 
   if (provider === 'ai-studio') {

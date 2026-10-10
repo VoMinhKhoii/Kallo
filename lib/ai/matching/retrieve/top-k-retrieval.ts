@@ -59,7 +59,14 @@ function armTopK(
   );
 }
 
-/** Fuzzy/trigram arm alone — one statement returning both sources. */
+/**
+ * Tags each `*_all_sources` row with its `ingredient_sources.code`, so
+ * `splitBySource` buckets by code instead of by a serial id that differs
+ * between databases.
+ */
+const SOURCE_CODE_JOIN = sql`JOIN ingredient_sources s ON s.id = m.source_id`;
+
+/** Fuzzy/trigram arm alone — one statement returning all sources. */
 async function fuzzyArm(
   matchingName: string,
   db: AppDb,
@@ -68,7 +75,7 @@ async function fuzzyArm(
   const effectiveLimit = sourceLimitForIngredient(matchingName, sourceLimit);
   return parseSourcedMatchRows(
     await db.execute(
-      sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${matchingName}, ${effectiveLimit}, 0.15)`
+      sql`SELECT m.*, s.code AS source_code FROM fuzzy_match_ingredients_all_sources(${matchingName}, ${effectiveLimit}, 0.15) m ${SOURCE_CODE_JOIN}`
     )
   );
 }
@@ -99,7 +106,7 @@ export async function retrieveHybridTopK(args: {
   // fuzzy arm still yields candidates through a vector outage, and vice versa).
   const [vectorSettled, fuzzySettled] = await Promise.allSettled([
     db.execute(
-      sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${effectiveLimit}, 0.5)`
+      sql`SELECT m.*, s.code AS source_code FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${effectiveLimit}, 0.5) m ${SOURCE_CODE_JOIN}`
     ),
     fuzzyArm(matchingName, db, sourceLimit),
   ]);

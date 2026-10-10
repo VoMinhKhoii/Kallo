@@ -639,7 +639,7 @@ The selection is controlled by `AI_PROVIDER` in `lib/ai/provider/client.ts:resol
 | `AI_PROVIDER` | Auth | Required env |
 | --- | --- | --- |
 | unset or `ai-studio` | API key | `GEMINI_API_KEY` |
-| `vertex` | ADC (service account on Cloud Run) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` |
+| `vertex` | ADC (service account on Cloud Run) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (optional `GOOGLE_CLOUD_EMBEDDING_LOCATION`) |
 
 Prerequisites the Cloud Run service account needs **before** flipping
 `AI_PROVIDER=vertex`:
@@ -655,6 +655,11 @@ Prerequisites the Cloud Run service account needs **before** flipping
    itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
    Supabase database, while internal and staging run in `asia-southeast3`
    (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
+4. `GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1` (optional; defaults to
+   `GOOGLE_CLOUD_LOCATION`). Query embeddings (`gemini-embedding-001`) use their
+   own client on this location. Measured 2026-10-08: 0.27–0.49 s per warm call
+   in `asia-southeast1` vs 0.57–1.67 s on `global`, with identical vectors
+   (cosine 1.000000), so embeddings stored from `global` stay valid.
 
 Rollback is a single env-var flip: set `AI_PROVIDER=ai-studio` on the Cloud Run
 service and redeploy (or `gcloud run services update --update-env-vars`). The

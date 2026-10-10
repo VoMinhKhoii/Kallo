@@ -6,6 +6,21 @@ import {
 } from './portion-evidence';
 
 /**
+ * What Call 1 writes into the card-retrieval query fields. The one definition:
+ * the field descriptions below and the decomposition prompt both read it (the
+ * provider's slim schema strips descriptions, so the prompt copy is the one
+ * the model sees).
+ */
+export const CARD_QUERY_RULES = {
+  queryEn:
+    'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.',
+  nameVi:
+    'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).',
+  tableName:
+    'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.',
+} as const;
+
+/**
  * V2 Call 1 ingredient — pure decomposition. Notably absent: `grams`,
  * `weightBasis`, `expectedState`. Those move to Call 2 where the LLM sees
  * the matched DB row and can reason with full context (eliminates the
@@ -28,6 +43,17 @@ export const decomposedIngredientV2Schema = z
       .describe(
         'Disambiguated food-composition vocabulary name used for DB matching.'
       ),
+    // Card-retrieval query strings (lib/ai/matching/cards/). Placed right after
+    // the names so they stream early enough for the embedding prewarm.
+    // Optional in the stored shape (fixtures, cached decompositions predate
+    // them); `mealDecompositionV2CallSchema` makes Call 1 always emit them.
+    queryEn: z.string().min(1).optional().describe(CARD_QUERY_RULES.queryEn),
+    nameVi: z.string().min(1).optional().describe(CARD_QUERY_RULES.nameVi),
+    tableName: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(CARD_QUERY_RULES.tableName),
     cookingMethod: z
       .string()
       .min(1)
@@ -88,62 +114,78 @@ export const decomposedIngredientV2Schema = z
   })
   .strict();
 
-export const decomposedDishV2Schema = z
-  .object({
-    name: z
-      .string()
-      .min(1)
-      .describe(
-        'User-facing dish name (e.g., "bún bò Huế", "cơm", "thịt kho").'
-      ),
-    cookingMethod: z
-      .string()
-      .min(1)
-      .describe(
-        "Free-form default cooking method for the dish in the user's language. It applies only to ingredients without their own cookingMethod override."
-      ),
-    cuisineNote: z
-      .string()
-      .optional()
-      .describe('Optional regional/style note for disambiguation.'),
-    vesselToken: z
-      .string()
-      .min(1)
-      .max(16)
-      .optional()
-      .describe(
-        'Verbatim vessel/container word the WHOLE dish was served in ("tô", "chén", "dĩa", "ly", "bowl", "plate", "cup", "mug"). Set only when the user quantified the DISH by a vessel; never invent.'
-      ),
-    vesselSize: sizeModifierSchema
-      .optional()
-      .describe(
-        'Size cue attached to the dish vessel word ("tô nhỏ"→small). Omit when unspecified.'
-      ),
-    ingredients: z
-      .array(decomposedIngredientV2Schema)
-      .min(1)
-      .describe('Internal ingredient breakdown for DB matching'),
-  })
-  .strict();
+/**
+ * The dish and meal shapes are built from the ingredient shape, so the stored
+ * schema and the schema Call 1 fills (`mealDecompositionV2CallSchema`) differ
+ * only where their ingredient schemas do.
+ */
+function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
+  return z
+    .object({
+      name: z
+        .string()
+        .min(1)
+        .describe(
+          'User-facing dish name (e.g., "bún bò Huế", "cơm", "thịt kho").'
+        ),
+      cookingMethod: z
+        .string()
+        .min(1)
+        .describe(
+          "Free-form default cooking method for the dish in the user's language. It applies only to ingredients without their own cookingMethod override."
+        ),
+      cuisineNote: z
+        .string()
+        .optional()
+        .describe('Optional regional/style note for disambiguation.'),
+      vesselToken: z
+        .string()
+        .min(1)
+        .max(16)
+        .optional()
+        .describe(
+          'Verbatim vessel/container word the WHOLE dish was served in ("tô", "chén", "dĩa", "ly", "bowl", "plate", "cup", "mug"). Set only when the user quantified the DISH by a vessel; never invent.'
+        ),
+      vesselSize: sizeModifierSchema
+        .optional()
+        .describe(
+          'Size cue attached to the dish vessel word ("tô nhỏ"→small). Omit when unspecified.'
+        ),
+      ingredients: z
+        .array(ingredient)
+        .min(1)
+        .describe('Internal ingredient breakdown for DB matching'),
+    })
+    .strict();
+}
 
-export const mealDecompositionV2Schema = z.object({
-  isFood: z
-    .boolean()
-    .describe(
-      'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
-    ),
-  mealItems: z
-    .array(decomposedDishV2Schema)
-    .describe(
-      'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
-    ),
-  mealSlot: z
-    .enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snack'])
-    .nullable()
-    .describe(
-      'Classified meal slot if confident (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack, Brunch→brunch), null if uncertain'
-    ),
-});
+function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
+  return z.object({
+    isFood: z
+      .boolean()
+      .describe(
+        'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
+      ),
+    mealItems: z
+      .array(dishSchemaOf(ingredient))
+      .describe(
+        'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
+      ),
+    mealSlot: z
+      .enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snack'])
+      .nullable()
+      .describe(
+        'Classified meal slot if confident (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack, Brunch→brunch), null if uncertain'
+      ),
+  });
+}
+
+export const decomposedDishV2Schema = dishSchemaOf(
+  decomposedIngredientV2Schema
+);
+export const mealDecompositionV2Schema = mealSchemaOf(
+  decomposedIngredientV2Schema
+);
 
 export type StateHint = z.infer<typeof stateHintSchema>;
 export type SizeModifier = z.infer<typeof sizeModifierSchema>;
@@ -153,3 +195,16 @@ export type DecomposedIngredientV2 = z.infer<
 >;
 export type DecomposedDishV2 = z.infer<typeof decomposedDishV2Schema>;
 export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
+
+/**
+ * The schema Call 1 is asked to fill: the stored shape with the card-retrieval
+ * query strings required, so the model always writes them. Its output is a
+ * valid `MealDecompositionV2`.
+ */
+export const mealDecompositionV2CallSchema = mealSchemaOf(
+  decomposedIngredientV2Schema.required({
+    queryEn: true,
+    nameVi: true,
+    tableName: true,
+  })
+);

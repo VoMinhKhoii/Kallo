@@ -47,6 +47,12 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
  * `pipeline/contracts/schemas/grounded-estimation.ts`.
  */
 
+/**
+ * Candidate ranking (matching gate 2026-10-08): most wrong picks were the
+ * generic sibling of a row that named the user's specific variety/flavor/form.
+ */
+const RANKING_RULES = `Ranking: when the user names a specific variety, flavor, form, preparation or brand, the candidate whose name states those words ranks above a generic sibling that omits them; never choose the generic row while a candidate states the user's specific words.`;
+
 function buildUserContextBlock(
   userContext: PromptPersonalizationContext
 ): string {
@@ -104,5 +110,7 @@ ${userContextBlock}
 
 ${originalPromptBlock}
 
-${ingredientDataBlock}`;
+${ingredientDataBlock}
+
+${RANKING_RULES}`;
 }

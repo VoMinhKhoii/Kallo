@@ -2,14 +2,14 @@ import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '@/lib/ai/language/guard';
-import { createV2SpeculativeMatcher } from '@/lib/ai/matching/speculative';
+import { createMatchingPrewarm } from '@/lib/ai/matching/match-ingredients';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { DECOMPOSITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import {
   type MealDecompositionV2,
-  mealDecompositionV2Schema,
+  mealDecompositionV2CallSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { EstimatorAttemptUsage } from '@/lib/ai/pipeline/estimator/types';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
@@ -69,15 +69,13 @@ export async function runGroundedDecomposition(args: {
     args;
   const profile = args.profile;
 
-  // v2-aware speculative prewarm: as Call-1 decomposition streams, warm the
-  // embedding cache for each ingredient's canonicalName in the background so
-  // embeddings are ready when matching runs. Feature-flagged; on abort the
-  // matcher stops firing new embeds. A prewarm error can never reject the
-  // stream (the matcher is fully catch-guarded).
+  // Speculative prewarm: as Call 1 streams, warm the embeddings the matcher
+  // will ask for (`createMatchingPrewarm`). Feature-flagged; on abort it stops
+  // firing new embeds, and a prewarm error can never reject the stream.
   const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
   const prewarmAbort = new AbortController();
   const prewarm = prewarmEnabled
-    ? createV2SpeculativeMatcher(db, gemini, prewarmAbort.signal)
+    ? createMatchingPrewarm(db, gemini, prewarmAbort.signal)
     : () => {};
   const decompositionInput = rawInput;
 
@@ -140,7 +138,7 @@ export async function runGroundedDecomposition(args: {
         });
         return gemini.generateStructuredOutputStream(
           {
-            schema: mealDecompositionV2Schema,
+            schema: mealDecompositionV2CallSchema,
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,

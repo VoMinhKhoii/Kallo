@@ -102,7 +102,8 @@ export async function runCallTwo(
       userContext: args.promptCtx,
       temperature: args.temperature,
       phaseDeadlineMs: chunkedPhaseDeadlineMs(),
-      onChunkComplete: (items) => emitChunkItemMacros(args.chunkEmit, items),
+      onChunkComplete: (items, range) =>
+        emitChunkItemMacros(args.chunkEmit, items, range),
       onAttemptComplete: args.onAttemptComplete,
     });
     return {

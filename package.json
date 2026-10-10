@@ -19,7 +19,7 @@
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bunx drizzle-kit migrate",
     "db:studio": "bunx drizzle-kit studio",
-    "dbr:reset": "supabase db reset --linked && bun --env-file=.env.local scripts/db/backfill_embeddings.ts",
+    "dbr:reset": "supabase db reset --linked && bun --env-file=.env.local scripts/db/backfill_embeddings.ts && bun --env-file=.env.local scripts/data/food-cards/sync-cards.ts && bun --env-file=.env.local scripts/db/backfill_card_embeddings.ts",
     "dbr:reset:nobackfill": "supabase db reset --linked",
     "dbr:push": "supabase db push",
     "dbr:pull": "supabase db pull",
