@@ -39,8 +39,11 @@ import { cardLabel } from './label';
 import { cardQueryStrings, QUERY_FIELDS } from './query-strings';
 import { searchCardVectors, type VectorHit } from './vector-arm';
 
-/** Candidates per ingredient Call 2 sees from card retrieval. */
-export const CARD_K = 8;
+/**
+ * Candidates per ingredient from card retrieval. The candidate selector ranks
+ * all of them; Call 2 sees the first eight (`CALL_TWO_CANDIDATES`).
+ */
+export const CARD_K = 16;
 const ARM_DEPTH = 30;
 /**
  * The vector arm's own budget, well inside the matching stage deadline, so a

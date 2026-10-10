@@ -4,8 +4,9 @@
  * The folder's public entry: builds the provider adapter, renders the
  * estimation prompt, wires the progressive `item_macros` emitters, and runs
  * `runCallTwo` (fast / chunked / single, see `./modes`) inside the `nutrition`
- * stage log. Returns the estimation plus the streaming state the orchestrator
- * needs for its post-assembly flush.
+ * stage log, with the candidate selector (`./selector`) beside it. Returns the
+ * estimation plus the streaming state the orchestrator needs for its
+ * post-assembly flush.
  */
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
@@ -33,6 +34,12 @@ import {
   createChunkEmitContext,
 } from './item-macros';
 import { type RunCallTwoResult, runCallTwo } from './modes';
+import {
+  applySelection,
+  callTwoView,
+  isCandidateSelectorEnabled,
+  startCandidateSelector,
+} from './selector/selector';
 
 export interface CallTwoStageResult {
   call2: RunCallTwoResult;
@@ -82,9 +89,11 @@ export async function runCallTwoStage(args: {
   const estimator =
     args.estimatorOverride ??
     createGeminiEstimator(args.gemini, args.profile.nutritionModel);
+  // Call 2 sees each ingredient's first candidates; the selector ranks them all.
+  const callTwoItems = callTwoView(mealItemsWithCandidates);
   const call2SystemPrompt = renderGeminiEstimatorPrompt({
     originalPrompt: rawInput,
-    mealItems: mealItemsWithCandidates,
+    mealItems: callTwoItems,
     userContext: promptCtx,
     temperature: args.temperature,
   });
@@ -113,6 +122,16 @@ export async function runCallTwoStage(args: {
     emit,
   });
 
+  const selector = isCandidateSelectorEnabled()
+    ? startCandidateSelector({
+        gemini: args.gemini,
+        model: args.profile.nutritionModel,
+        mealText: rawInput,
+        mealItems: mealItemsWithCandidates,
+        onAttemptComplete: args.onAttemptComplete,
+      })
+    : null;
+
   let nutritionMaxAttempt = 0;
   const call2 = await withStageLogV2(
     traceContext,
@@ -140,7 +159,7 @@ export async function runCallTwoStage(args: {
       });
       return runCallTwo({
         estimator,
-        mealItems: mealItemsWithCandidates,
+        mealItems: callTwoItems,
         originalPrompt: rawInput,
         promptCtx,
         temperature: args.temperature,
@@ -158,11 +177,29 @@ export async function runCallTwoStage(args: {
         ...(callTrace ? { trace: callTrace } : {}),
       });
     }
-  );
+  ).catch((err) => {
+    selector?.abort();
+    throw err;
+  });
+
+  let grounded = call2.grounded;
+  if (selector) {
+    const selection = applySelection({
+      decomposition,
+      grounded,
+      mealItems: mealItemsWithCandidates,
+      picks: await selector.settle(),
+    });
+    grounded = selection.grounded;
+    // Streamed item_macros used Call 2's own picks; let the final flush
+    // re-send every dish (clients upsert by id).
+    if (selection.overrides > 0) itemMacrosStreamed.clear();
+    console.info(`[selector] ${selection.overrides} picks overridden`);
+  }
 
   return {
     call2,
-    grounded: call2.grounded,
+    grounded,
     promptCharsCall2,
     nutritionMaxAttempt,
     offsetByName,
