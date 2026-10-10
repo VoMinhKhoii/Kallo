@@ -5,6 +5,8 @@ import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/de
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   createCall2StreamHandler,
+  createChunkEmitContext,
+  emitChunkItemMacros,
   flushUnstreamedItemMacros,
 } from '@/lib/ai/pipeline/grounded/call-two/item-macros';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
@@ -265,5 +267,245 @@ describe('flushUnstreamedItemMacros — identity-based mapping', () => {
       name: 'Cá kho',
     });
     expect(events[0].calories).toBeGreaterThan(120);
+  });
+});
+
+// One dish ("Cá rau": cá then rau, flat slots 0 and 1) that Call 2 may split
+// into same-name items, one ingredient each.
+function oneDish(): MealDecompositionV2 {
+  return {
+    isFood: true,
+    mealSlot: 'lunch',
+    mealItems: [
+      {
+        name: 'Cá rau',
+        cookingMethod: 'kho',
+        ingredients: [
+          { rawName: 'cá', canonicalName: 'Cá' },
+          { rawName: 'rau', canonicalName: 'Rau' },
+        ],
+      },
+    ],
+  };
+}
+
+const END = '{"mealItemName":"__end__","ingredients":[]}';
+
+describe('item_macros for a dish Call 2 split into same-name items', () => {
+  it('re-emits the dish with a growing total as each fragment completes', () => {
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(oneDish().mealItems),
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map([['Cá rau::1', 'dish-id']]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+
+    const fish = streamedItem('Cá rau', 'cá');
+    const veg = streamedItem('Cá rau', 'rau');
+    handler.handleChunk(`{"mealItems":[${fish},${veg}`);
+    handler.handleChunk(`{"mealItems":[${fish},${veg},${END}]}`);
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['dish-id', 'dish-id']);
+    expect(events[1].calories).toBeGreaterThan(events[0].calories);
+  });
+
+  it('flushes the whole dish when the stream never confirmed its last fragment', () => {
+    const { emit, events } = collect();
+    const offsetByName = buildMealItemOffsetByName(oneDish().mealItems);
+    const streamedMealItemIds = new Map([['Cá rau::1', 'dish-id']]);
+    const itemMacrosStreamed = new Set<string>();
+    const handler = createCall2StreamHandler({
+      offsetByName,
+      matchResults: matchResults(),
+      streamedMealItemIds,
+      itemMacrosStreamed,
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // Only the fish fragment is confirmed (no marker after the veg one).
+    handler.handleChunk(
+      `{"mealItems":[${streamedItem('Cá rau', 'cá')},${streamedItem('Cá rau', 'rau')}]}`
+    );
+    const fishOnly = events[0].calories;
+
+    flushUnstreamedItemMacros({
+      matchResults: matchResults(),
+      grounded: {
+        mealItems: [
+          groundedItem('Cá rau', 'cá'),
+          groundedItem('Cá rau', 'rau'),
+        ],
+      },
+      streamedMealItemIds,
+      alreadyStreamed: itemMacrosStreamed,
+      offsetByName,
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+
+    expect(events.at(-1)?.mealItemId).toBe('dish-id');
+    expect(events.at(-1)?.calories).toBeGreaterThan(fishOnly);
+  });
+});
+
+describe('streamed ingredient names that differ only in Unicode normalization', () => {
+  it('maps a decomposed (NFD) name to its own decomposition slot', () => {
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(oneDish().mealItems),
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map(),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // Sorted output: rau first, then cá spelled as c + a + combining acute.
+    const ingredient = (name: string) =>
+      groundedItem('Cá rau', name).ingredients[0];
+    const item = JSON.stringify({
+      mealItemName: 'Cá rau',
+      ingredients: [ingredient('rau'), ingredient('cá')],
+    });
+    handler.handleChunk(`{"mealItems":[${item},${END}]}`);
+
+    // Fish (~188 kcal) + veg (~29): a missed lookup falls back to the stream
+    // index and prices the fish with the veg row (~60 in total).
+    expect(events[0].calories).toBeGreaterThan(150);
+  });
+});
+
+describe('item_macros ids announced under another Unicode form', () => {
+  it('reuses the announced id for every fragment of a split dish', () => {
+    const nfdDish = 'Cá rau'; // Call 1 wrote "Cá rau" decomposed
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [{ ...oneDish().mealItems[0], name: nfdDish }],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map([[`${nfdDish}::1`, 'dish-id']]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // Call 2 echoes the composed spelling and splits the dish.
+    const fish = streamedItem('Cá rau', 'cá');
+    const veg = streamedItem('Cá rau', 'rau');
+    handler.handleChunk(`{"mealItems":[${fish},${veg},${END}]}`);
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['dish-id', 'dish-id']);
+  });
+});
+
+describe('item_macros ids for a repeated dish spelled in two Unicode forms', () => {
+  it('looks each dish up by its own decomposition spelling, as assembly does', () => {
+    const nfd = 'Cá rau';
+    const nfc = 'Cá rau';
+    const dish = oneDish().mealItems[0];
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [
+        { ...dish, name: nfd },
+        { ...dish, name: nfc },
+      ],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: [...matchResults(), ...matchResults()],
+      // Call 1 counted the raw spellings, so both were announced as ::1.
+      streamedMealItemIds: new Map([
+        [`${nfd}::1`, 'first-id'],
+        [`${nfc}::1`, 'second-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    const first = streamedItem(nfc, 'cá');
+    const second = streamedItem(nfc, 'cá');
+    handler.handleChunk(`{"mealItems":[${first},${second},${END}]}`);
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['first-id', 'second-id']);
+  });
+});
+
+describe('item_macros ids after a Call 1 retry changed the spelling', () => {
+  it("uses the final attempt's id, not the stale first-attempt one", () => {
+    const nfc = 'Cá rau'.normalize('NFC');
+    const nfd = nfc.normalize('NFD');
+    const decomp: MealDecompositionV2 = {
+      ...oneDish(),
+      mealItems: [{ ...oneDish().mealItems[0], name: nfc }],
+    };
+    const { emit, events } = collect();
+    const handler = createCall2StreamHandler({
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      matchResults: matchResults(),
+      // The id map keeps the first attempt's key across a retry.
+      streamedMealItemIds: new Map([
+        [`${nfd}::1`, 'stale-id'],
+        [`${nfc}::1`, 'final-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    handler.handleChunk(
+      `{"mealItems":[${streamedItem(nfd, 'cá')},${streamedItem(nfd, 'rau')},${END}]}`
+    );
+
+    expect(new Set(events.map((e) => e.mealItemId))).toEqual(
+      new Set(['final-id'])
+    );
+  });
+});
+
+describe('item_macros for chunks that finish out of order', () => {
+  it('matches each chunk against its own dishes, not a shared count', () => {
+    // Two "Cơm" dishes in different chunks: the first holds fish, the second veg.
+    const base = decomposition().mealItems;
+    const mealItems = [
+      { ...base[0], name: 'Cơm' },
+      { ...base[1], name: 'Cơm' },
+    ];
+    const { emit, events } = collect();
+    const ctx = createChunkEmitContext({
+      mealItems,
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map([
+        ['Cơm::1', 'first-id'],
+        ['Cơm::2', 'second-id'],
+      ]),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    // The second chunk lands first.
+    emitChunkItemMacros(ctx, [groundedItem('Cơm', 'rau')], {
+      first: 1,
+      count: 1,
+    });
+    emitChunkItemMacros(ctx, [groundedItem('Cơm', 'cá')], {
+      first: 0,
+      count: 1,
+    });
+
+    expect(events.map((e) => e.mealItemId)).toEqual(['second-id', 'first-id']);
+    // Each dish priced from its own row: veg (~20 kcal/100g), fish (~200).
+    expect(events[0].calories).toBeLessThan(events[1].calories);
   });
 });
