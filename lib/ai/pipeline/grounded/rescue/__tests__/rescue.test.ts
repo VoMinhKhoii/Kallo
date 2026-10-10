@@ -96,7 +96,7 @@ describe('startDishRescue', () => {
     });
 
     expect(rescue.started()).toEqual([0]);
-    expect(runSubMeal).toHaveBeenCalledWith('1 phần bánh flan');
+    expect(runSubMeal).toHaveBeenCalledWith('1 phần bánh flan, nấu');
   });
 
   it('rescues what Call 2 rejected and leaves what it accepted', async () => {
@@ -124,7 +124,7 @@ describe('startDishRescue', () => {
     });
     const out = await rescue.apply(call2('none'));
 
-    expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm');
+    expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
     expect(out?.rescued).toBe(2);
   });
 
@@ -136,7 +136,7 @@ describe('startDishRescue', () => {
       runStartedAt: Date.now(),
     });
     const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
-    expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm');
+    expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm, nấu');
     expect(out?.rescued).toBe(2);
   });
 
@@ -269,5 +269,25 @@ describe('rescueMealText', () => {
         'en'
       )
     ).toBe('1 portion of flan (Caramel custard)');
+  });
+
+  it('keeps the cooking method and preparation notes the name does not say', () => {
+    expect(
+      rescueMealText(
+        {
+          rawName: 'chè đậu xanh',
+          canonicalName: 'Chè đậu xanh',
+          cookingMethod: 'nấu',
+          prepNotes: ['không đường', 'ít đá'],
+        },
+        'vi'
+      )
+    ).toBe('1 phần chè đậu xanh, nấu, không đường, ít đá');
+    expect(
+      rescueMealText(
+        { rawName: 'gà luộc', canonicalName: 'Gà luộc', cookingMethod: 'luộc' },
+        'vi'
+      )
+    ).toBe('1 phần gà luộc');
   });
 });

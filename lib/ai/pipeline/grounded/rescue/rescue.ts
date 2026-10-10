@@ -67,9 +67,18 @@ const rejected = (
   return verdict === 'rejected' || verdict === 'unmatched';
 };
 
-/** The mini-meal text for an ingredient, in the user's language. */
+/**
+ * The mini-meal text for an ingredient, in the user's language. The cooking
+ * method and preparation notes Call 1 kept beside the name ("hấp",
+ * "không đường") go along, so the mini-meal matches the variant the user ate.
+ */
 export function rescueMealText(
-  ingredient: { rawName: string; canonicalName: string },
+  ingredient: {
+    rawName: string;
+    canonicalName: string;
+    cookingMethod?: string;
+    prepNotes?: string[];
+  },
   language: 'en' | 'vi'
 ): string {
   const { rawName, canonicalName } = ingredient;
@@ -77,7 +86,14 @@ export function rescueMealText(
     nameKey(rawName) === nameKey(canonicalName)
       ? rawName
       : `${rawName} (${canonicalName})`;
-  return language === 'vi' ? `1 phần ${name}` : `1 portion of ${name}`;
+  const said = nameKey(name);
+  const modifiers = [ingredient.cookingMethod, ...(ingredient.prepNotes ?? [])]
+    .filter((m): m is string => !!m && !said.includes(nameKey(m)))
+    .map((m) => `, ${m}`)
+    .join('');
+  return language === 'vi'
+    ? `1 phần ${name}${modifiers}`
+    : `1 portion of ${name}${modifiers}`;
 }
 
 /** Run at most `limit` tasks at once; later tasks wait their turn. */
@@ -118,7 +134,13 @@ export function startDishRescue(args: {
   ) => Promise<{ state: RunState; rescued: number } | null>;
 } {
   const { decomposition, matchResults, portionResolutions } = args.state;
-  const ingredients = decomposition.mealItems.flatMap((mi) => mi.ingredients);
+  // Each ingredient with the dish's cooking method when it has none of its own.
+  const ingredients = decomposition.mealItems.flatMap((mi) =>
+    mi.ingredients.map((ing) => ({
+      ...ing,
+      cookingMethod: ing.cookingMethod ?? mi.cookingMethod,
+    }))
+  );
   const limit = createLimiter(CONCURRENCY);
   const runs = new Map<number, Promise<void>>();
   const ready = new Map<number, RescuePart[]>();
