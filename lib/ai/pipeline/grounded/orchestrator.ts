@@ -219,13 +219,19 @@ export async function analyzeMealV2(
     };
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
-    // the container evidence sat on the replaced ingredient itself, the
-    // recomputation finds none, and the original envelope is kept.
+    // the container word sat on the replaced ingredient itself, it is carried
+    // onto the dish so the container stays and only the class is recomputed.
     const envelopes =
       rescued && vesselEnabled
-        ? run.decomposition.mealItems.map(
-            (mi, d) => resolveVesselEnvelope(mi) ?? vesselEnvelopes[d] ?? null
-          )
+        ? run.decomposition.mealItems.map((mi, d) => {
+            const before = vesselEnvelopes[d] ?? null;
+            return (
+              resolveVesselEnvelope(mi) ??
+              (before
+                ? resolveVesselEnvelope({ ...mi, vesselToken: before.token })
+                : null)
+            );
+          })
         : vesselEnvelopes;
     if (rescued) {
       stage3.itemMacrosStreamed.clear();
