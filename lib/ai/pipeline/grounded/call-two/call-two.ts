@@ -4,13 +4,15 @@
  * The folder's public entry: builds the provider adapter, renders the
  * estimation prompt, wires the progressive `item_macros` emitters, and runs
  * `runCallTwo` (fast / chunked / single, see `./modes`) inside the `nutrition`
- * stage log. Returns the estimation plus the streaming state the orchestrator
- * needs for its post-assembly flush.
+ * stage log, with the candidate selector (`./selector`) beside it. Returns the
+ * estimation plus the streaming state the orchestrator needs for its
+ * post-assembly flush.
  */
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
+import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
@@ -32,7 +34,16 @@ import {
   createCall2StreamHandler,
   createChunkEmitContext,
 } from './item-macros';
-import { type RunCallTwoResult, runCallTwo } from './modes';
+import {
+  chunkedPhaseDeadlineMs,
+  type RunCallTwoResult,
+  runCallTwo,
+} from './modes';
+import {
+  applySelection,
+  isCandidateSelectorEnabled,
+  startCandidateSelector,
+} from './selector/selector';
 
 export interface CallTwoStageResult {
   call2: RunCallTwoResult;
@@ -113,6 +124,19 @@ export async function runCallTwoStage(args: {
     emit,
   });
 
+  // An estimator override is an offline bakeoff of one estimator: a Gemini
+  // selector over its picks would blur the comparison.
+  const selector =
+    isCandidateSelectorEnabled() && !args.estimatorOverride
+      ? startCandidateSelector({
+          gemini: args.gemini,
+          model: args.profile.nutritionModel,
+          mealText: rawInput,
+          mealItems: mealItemsWithCandidates,
+          onAttemptComplete: args.onAttemptComplete,
+        })
+      : null;
+
   let nutritionMaxAttempt = 0;
   const call2 = await withStageLogV2(
     traceContext,
@@ -126,6 +150,7 @@ export async function runCallTwoStage(args: {
       model: args.profile.nutritionModel,
     },
     async ({ stageLogId }) => {
+      const stageStart = Date.now();
       emit({ type: 'stage', stage: 'estimating' });
       const callTrace = buildLlmStageTrace({
         trace: traceContext,
@@ -138,7 +163,7 @@ export async function runCallTwoStage(args: {
         templateSample: call2SystemPrompt,
         model: args.profile.nutritionModel,
       });
-      return runCallTwo({
+      const result = await runCallTwo({
         estimator,
         mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
@@ -163,8 +188,30 @@ export async function runCallTwoStage(args: {
         onAttemptComplete: args.onAttemptComplete,
         ...(callTrace ? { trace: callTrace } : {}),
       });
+      if (!selector) return result;
+      // Inside the stage, so its trace output and duration are the final picks.
+      const selection = applySelection({
+        decomposition,
+        grounded: result.grounded,
+        mealItems: mealItemsWithCandidates,
+        // Never past Call 2's own deadline for the path it took.
+        picks: await selector.settle(
+          stageStart +
+            (result.mode === 'chunked'
+              ? chunkedPhaseDeadlineMs()
+              : NUTRITION_TIMEOUT_MS)
+        ),
+      });
+      // Streamed item_macros used Call 2's own picks; let the final flush
+      // re-send every dish (clients upsert by id).
+      if (selection.overrides > 0) itemMacrosStreamed.clear();
+      console.info(`[selector] ${selection.overrides} picks overridden`);
+      return { ...result, grounded: selection.grounded };
     }
-  );
+  ).catch((err) => {
+    selector?.abort();
+    throw err;
+  });
 
   return {
     call2,
