@@ -289,5 +289,11 @@ describe('rescueMealText', () => {
         'vi'
       )
     ).toBe('1 phần gà luộc');
+    expect(
+      rescueMealText(
+        { rawName: 'prawn', canonicalName: 'Prawn', cookingMethod: 'raw' },
+        'en'
+      )
+    ).toBe('1 portion of prawn, raw');
   });
 });

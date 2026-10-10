@@ -67,6 +67,13 @@ const rejected = (
   return verdict === 'rejected' || verdict === 'unmatched';
 };
 
+/** A name as space-padded whole words, so " raw " is not found in " prawn ". */
+const words = (text: string) =>
+  ` ${nameKey(text)
+    .split(/[^\p{L}\p{M}\p{N}]+/u)
+    .filter(Boolean)
+    .join(' ')} `;
+
 /**
  * The mini-meal text for an ingredient, in the user's language. The cooking
  * method and preparation notes Call 1 kept beside the name ("hấp",
@@ -86,9 +93,9 @@ export function rescueMealText(
     nameKey(rawName) === nameKey(canonicalName)
       ? rawName
       : `${rawName} (${canonicalName})`;
-  const said = nameKey(name);
+  const said = words(name);
   const modifiers = [ingredient.cookingMethod, ...(ingredient.prepNotes ?? [])]
-    .filter((m): m is string => !!m && !said.includes(nameKey(m)))
+    .filter((m): m is string => !!m && !said.includes(words(m)))
     .map((m) => `, ${m}`)
     .join('');
   return language === 'vi'
