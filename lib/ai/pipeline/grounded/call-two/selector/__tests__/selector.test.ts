@@ -126,6 +126,36 @@ describe('startCandidateSelector', () => {
     expect([...picks]).toEqual([[0, 'c2']]);
   });
 
+  it('keeps at most six calls in flight', async () => {
+    const pool2 = [candidate(1), candidate(2)];
+    const { mealItems } = meal([
+      [
+        'Mâm',
+        Array.from({ length: 10 }, (_, i): [string, MatchCandidate[]] => [
+          `món ${i}`,
+          pool2,
+        ]),
+      ],
+    ]);
+    let inFlight = 0;
+    let peak = 0;
+    const llm = selectorLlm(async () => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return { ranking: ['c2'] };
+    });
+    const picks = await startCandidateSelector({
+      gemini: llm,
+      model: 'm',
+      mealText: 'mâm',
+      mealItems,
+    }).settle();
+    expect(picks.size).toBe(10);
+    expect(peak).toBe(6);
+  });
+
   it('ignores a failed call', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { mealItems } = meal([
@@ -180,7 +210,7 @@ describe('startCandidateSelector', () => {
 describe('applySelection', () => {
   const pool = [candidate(1), candidate(2), candidate(3, 'raw')];
 
-  it('overrides Call 2 when the rows share a state, or when Call 2 picked none', () => {
+  it('overrides Call 2 only between rows of the same state, never a none', () => {
     const { decomposition, mealItems } = meal([
       [
         'Cơm',
@@ -207,8 +237,9 @@ describe('applySelection', () => {
       decomposition,
       grounded,
       mealItems,
-      // cơm: same state (cooked → cooked); canh: Call 2 said none;
-      // rau: cooked → raw would change the grams basis, so it is kept.
+      // cơm: same state (cooked → cooked) is taken. canh: Call 2's none is
+      // kept (its grams are as-eaten). rau: cooked → raw would change the
+      // grams basis, so it is kept.
       picks: new Map([
         [0, 'c2'],
         [1, 'c2'],
@@ -219,13 +250,43 @@ describe('applySelection', () => {
     const ids = out.grounded.mealItems[0].ingredients.map(
       (g) => g.selectedCandidateId
     );
-    expect(ids).toEqual(['c2', 'c2', 'c1']);
-    expect(out.overrides).toBe(2);
-    expect(
-      out.grounded.mealItems[0].ingredients[1].rejectReason
-    ).toBeUndefined();
+    expect(ids).toEqual(['c2', 'none', 'c1']);
+    expect(out.overrides).toBe(1);
     // The input estimation is untouched.
     expect(grounded.mealItems[0].ingredients[0].selectedCandidateId).toBe('c1');
+  });
+
+  it("rescales Call 2's macros to the new row", () => {
+    const lean = { ...candidate(1), per100gFatG: 1, per100gProteinG: 0 };
+    const rich = { ...candidate(2), per100gFatG: 4, per100gProteinG: 3 };
+    const { decomposition, mealItems } = meal([
+      ['Sữa', [['sữa', [lean, rich]]]],
+    ]);
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Sữa',
+          ingredients: [
+            {
+              ...estimate('sữa', 'c1'),
+              grossG: 200,
+              fatG: { low: 1.5, mid: 2, high: 2.5 },
+            },
+          ],
+        },
+      ],
+    };
+    const [ing] = applySelection({
+      decomposition,
+      grounded,
+      mealItems,
+      picks: new Map([[0, 'c2']]),
+    }).grounded.mealItems[0].ingredients;
+
+    // Fat scales 1 → 4 g/100 g; protein the old row lacked takes the new
+    // row's value at Call 2's 200 g.
+    expect(ing.fatG).toEqual({ low: 6, mid: 8, high: 10 });
+    expect(ing.proteinG).toEqual({ low: 6, mid: 6, high: 6 });
   });
 
   it('pairs a dish Call 2 split into same-name items the way resolution does', () => {

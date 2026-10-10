@@ -1,9 +1,10 @@
 /**
  * The candidate selector: one small LLM call per ingredient, beside Call 2,
  * that ranks the whole retrieval pool (`CARD_K`) while Call 2 sees only the
- * first `CALL_TWO_CANDIDATES`. Its pick replaces Call 2's when the two rows
- * share a state (raw/cooked), or when Call 2 picked none, so the grams Call 2
- * estimated keep their basis.
+ * first `CALL_TWO_CANDIDATES`. Its pick replaces Call 2's only when the two
+ * rows share a state (raw/cooked), so the grams Call 2 estimated keep their
+ * basis, and Call 2's macros are rescaled to the new row. A "none" from Call 2
+ * is kept: its grams are as-eaten, and a raw or dry row would inflate them.
  *
  * Measured on the Meal Arena benchmark (ttr DEV-129): about +4–5.6 first pick
  * across three train runs, and part of the shipped test config.
@@ -11,16 +12,25 @@
 import { z } from 'zod';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type {
+  GroundedEstimation,
+  GroundedIngredientEstimate,
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
+import type {
+  MatchCandidate,
+  MealItemWithCandidates,
+} from '@/lib/ai/prompts/build/grounded-candidates';
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
+import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
 import { SELECTOR_SYSTEM_PROMPT, selectorUserMessage } from './prompt';
 
 /** Candidates per ingredient Call 2 sees; the selector ranks all of them. */
 export const CALL_TWO_CANDIDATES = 8;
 /** How long the selector may run past Call 2 before its open calls are dropped. */
 const GRACE_MS = 3_000;
+/** Selector calls in flight at once, so a large meal cannot crowd out Call 2. */
+const CONCURRENCY = 6;
 
 /** `CANDIDATE_SELECTOR_ENABLED=false` turns the selector off (Call 2 alone picks). */
 export function isCandidateSelectorEnabled(): boolean {
@@ -54,9 +64,12 @@ export function startCandidateSelector(args: {
 }): { settle: () => Promise<Map<number, string>>; abort: () => void } {
   const controller = new AbortController();
   const picks = new Map<number, string>();
-  const ingredients = args.mealItems.flatMap((mi) => mi.ingredients);
-  const jobs = ingredients.map(async (ing, flat) => {
-    if (ing.candidates.length < 2) return;
+  const choices = args.mealItems
+    .flatMap((mi) => mi.ingredients)
+    .map((ing, flat) => ({ ing, flat }))
+    .filter(({ ing }) => ing.candidates.length >= 2);
+  const ask = async ({ ing, flat }: (typeof choices)[number]) => {
+    if (controller.signal.aborted) return;
     const ids = ing.candidates.map((c) => c.id);
     const out = await args.gemini.generateStructuredOutput(
       {
@@ -75,11 +88,11 @@ export function startCandidateSelector(args: {
     );
     const best = out.ranking.find((id) => id !== 'none');
     if (best) picks.set(flat, best);
-  });
-  const done = Promise.allSettled(jobs).then((results) => {
+  };
+  const done = mapWithConcurrency(choices, ask, CONCURRENCY).then((results) => {
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0 && !controller.signal.aborted)
-      console.warn(`[selector] ${failed} of ${jobs.length} calls failed`);
+      console.warn(`[selector] ${failed} of ${choices.length} calls failed`);
   });
 
   return {
@@ -118,15 +131,48 @@ export function applySelection(args: {
     ({ ground }, flat) => {
       const pick = args.picks.get(flat);
       const current = ground?.selectedCandidateId;
-      if (!ground || !pick || current === pick) return;
-      const stateOf = (id: string) =>
-        candidates[flat]?.find((c) => c.id === id)?.dbState;
-      if (current && current !== 'none' && stateOf(current) !== stateOf(pick))
-        return;
+      if (!ground || !pick || !current || current === pick) return;
+      const rowOf = (id: string) => candidates[flat]?.find((c) => c.id === id);
+      const from = rowOf(current);
+      const to = rowOf(pick);
+      if (!from || !to || from.dbState !== to.dbState) return;
       ground.selectedCandidateId = pick;
-      delete ground.rejectReason;
+      rescaleMacros(ground, from, to);
       overrides++;
     }
   );
   return { grounded, overrides };
+}
+
+const MACRO_FIELDS = [
+  ['proteinG', 'per100gProteinG'],
+  ['carbohydrateG', 'per100gCarbohydrateG'],
+  ['fatG', 'per100gFatG'],
+] as const;
+
+/**
+ * Call 2 wrote its macro triples for the row it picked; carry them to the new
+ * row in proportion to the two rows' per-100 g values, which keeps Call 2's
+ * own adjustments (prep notes, cooking fat). A macro the old row lacked takes
+ * the new row's value at Call 2's edible mass.
+ */
+function rescaleMacros(
+  ground: GroundedIngredientEstimate,
+  from: MatchCandidate,
+  to: MatchCandidate
+): void {
+  const edibleG = ground.grossG * (1 - (ground.refusePct ?? 0) / 100);
+  for (const [field, per100] of MACRO_FIELDS) {
+    const before = from[per100];
+    const after = to[per100];
+    if (before == null || after == null) continue;
+    const t = ground[field];
+    if (before > 0) {
+      const k = after / before;
+      ground[field] = { low: t.low * k, mid: t.mid * k, high: t.high * k };
+    } else {
+      const v = (after * edibleG) / 100;
+      ground[field] = { low: v, mid: v, high: v };
+    }
+  }
 }
