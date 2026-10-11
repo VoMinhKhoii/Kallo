@@ -30,14 +30,21 @@ const estimate = (
 const row = (
   i: number,
   nameEn: string,
-  kcalPer100: number
+  kcalPer100: number,
+  /** Energy from protein, carbohydrate and fat, when the row has more (alcohol). */
+  macroKcalPer100 = kcalPer100
 ): IngredientV2MatchResult =>
   ({
     ingredientIndex: i,
     candidates: [
       {
         info: { matchedName: nameEn },
-        nutrition: { caloriesKcal: kcalPer100 },
+        nutrition: {
+          caloriesKcal: kcalPer100,
+          proteinG: 0,
+          carbohydrateG: macroKcalPer100 / 4,
+          fatG: 0,
+        },
         inediblePct: 0,
         prompt: { name: nameEn, nameEn, score: 1 },
       },
@@ -60,7 +67,7 @@ function stateOf(
       name: string;
       g: number;
       kcal: number;
-      row: [string, number];
+      row: [name: string, kcalPer100: number, macroKcalPer100?: number];
     }>;
   }>
 ) {
@@ -85,7 +92,7 @@ function stateOf(
   const flat = dishes.flatMap((d) => d.parts);
   return {
     decomposition,
-    matchResults: flat.map((p, i) => row(i, p.row[0], p.row[1])),
+    matchResults: flat.map((p, i) => row(i, ...p.row)),
     portionResolutions: flat.map(() => defer),
     grounded,
   };
@@ -164,6 +171,63 @@ describe('rejectWrongFormRows', () => {
       },
     ]);
     state.grounded.mealItems[0].ingredients[0].selectedCandidateId = 'none';
+    expect(rejectWrongFormRows(state).rejected).toBe(0);
+  });
+
+  it("never counts a drink's alcohol against Call 2's macros", () => {
+    // 660 g beer: 284 kcal in the row, but only 106 from its macros.
+    const state = stateOf([
+      {
+        name: 'Bia Tiger',
+        cookingMethod: 'raw',
+        parts: [
+          {
+            name: 'bia',
+            g: 660,
+            kcal: 104,
+            row: ['Alcoholic beverage, beer, regular', 43, 16],
+          },
+        ],
+      },
+    ]);
+    expect(rejectWrongFormRows(state).rejected).toBe(0);
+  });
+
+  it('keeps the row when Call 2 did not really estimate the food', () => {
+    // A soda Call 2 put at 1 kcal: the row is the better number.
+    const state = stateOf([
+      {
+        name: 'Ginger beer',
+        cookingMethod: 'raw',
+        parts: [
+          {
+            name: 'ginger beer',
+            g: 440,
+            kcal: 1,
+            row: ['Beverages, carbonated, ginger ale', 34],
+          },
+        ],
+      },
+    ]);
+    expect(rejectWrongFormRows(state).rejected).toBe(0);
+  });
+
+  it('keeps a row less than three times the estimate', () => {
+    // 90 g pork belly: 466 kcal from the row against 231 estimated.
+    const state = stateOf([
+      {
+        name: 'Bún chả',
+        cookingMethod: 'nướng',
+        parts: [
+          {
+            name: 'chả miếng',
+            g: 90,
+            kcal: 231,
+            row: ['Pork, fresh, belly, raw', 518],
+          },
+        ],
+      },
+    ]);
     expect(rejectWrongFormRows(state).rejected).toBe(0);
   });
 });

@@ -14,18 +14,27 @@ import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts'
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 /** A wrong-form pick: the row must give more than this many times Call 2's own energy... */
-const RATIO = 2;
-/** ...and this many kcal more, so a small food's rounding never trips it. */
+const RATIO = 3;
+/** ...and this many kcal more, so a small food's rounding never trips it... */
 const MIN_GAP_KCAL = 100;
+/**
+ * ...from an estimate of at least this many kcal per 100 g. Below it Call 2
+ * did not really estimate the food (a soda at 1 kcal), and the row is the
+ * better number.
+ */
+const MIN_ESTIMATE_PER_100G = 5;
 
 /**
  * A row Call 2 picked but whose numbers it did not believe: it matched a
- * concentrate or a dry form (miso paste for a bowl of miso soup, curry powder
- * for a curry) and then estimated the food the user actually ate. The server
- * ships the row × grams, so the wrong form would win (a bowl of miso soup as
- * 567 kcal). When the row gives more than twice the energy Call 2 estimated
- * for the same grams, the pick becomes a rejection: the ingredient ships Call
- * 2's own macros, and the dish rescue may split it. Returns new state.
+ * concentrate or a dry form (miso paste for a bowl of miso soup, dry oats for
+ * oat milk, a meat row for its broth) and then estimated the food the user
+ * actually ate. The server ships the row × grams, so the wrong form would win
+ * (a bowl of miso soup as 567 kcal). When the row gives more than three times
+ * the energy Call 2 estimated for the same grams, the pick becomes a
+ * rejection: the ingredient ships Call 2's own macros, and the dish rescue may
+ * split it. Both sides count energy as 4P + 4C + 9F, the way the resolver
+ * ships it, so a drink's alcohol (in the row's kcal, never in macros) cannot
+ * trip it. Returns new state.
  */
 export function rejectWrongFormRows(state: RunState): {
   state: RunState;
@@ -37,21 +46,26 @@ export function rejectWrongFormRows(state: RunState): {
     ({ ingredient, ground }, f) => {
       const idx = /^c(\d+)$/.exec(ground?.selectedCandidateId ?? '')?.[1];
       const match = state.matchResults[f];
-      const per100 = idx
-        ? match?.candidates[Number(idx) - 1]?.nutrition?.caloriesKcal
-        : null;
-      if (!ground || per100 == null) return;
+      const row = idx ? match?.candidates[Number(idx) - 1]?.nutrition : null;
+      if (!ground || !row) return;
       const grams = shippedEdibleGrams(
         ground,
         ingredient,
         match,
         state.portionResolutions[f]
       );
-      const rowKcal = (grams * per100) / 100;
+      const rowKcal =
+        (grams *
+          (4 * (row.proteinG ?? 0) +
+            4 * (row.carbohydrateG ?? 0) +
+            9 * (row.fatG ?? 0))) /
+        100;
       const estimateKcal =
         4 * ground.proteinG.mid +
         4 * ground.carbohydrateG.mid +
         9 * ground.fatG.mid;
+      if (grams <= 0 || (estimateKcal / grams) * 100 < MIN_ESTIMATE_PER_100G)
+        return;
       if (rowKcal <= RATIO * estimateKcal) return;
       if (rowKcal - estimateKcal <= MIN_GAP_KCAL) return;
       ground.selectedCandidateId = 'none';
