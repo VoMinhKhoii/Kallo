@@ -21,6 +21,10 @@ one-line sentence. Nutrients are never edited on a card.
   `ingredient_sources.code` in `MATCHING_SOURCE_BUCKETS` (`lib/ai/matching/match-constants.ts`),
   and cards for its rows. No retrieval code changes. Curation runs on the `food-data-curator`
   agent (Opus, high effort).
+- Matched sources today: FAO VN FCT 2007, NIN web 2026, USDA SR Legacy, USDA FNDDS (prepared
+  dishes SR lacks, e.g. miso soup) and MEXT 2020 (Japanese dishes: tonkatsu, ebi fry, curry) —
+  `20261011161000_add_japanese_dish_rows.sql`. Every curated row cites its source ID and is
+  re-read value by value by a second curator.
 - Only rows with a card are matchable: a row without one is not loaded into the catalog, so
   removing a card from `cards.jsonl` excludes its row from card retrieval. Every matchable row
   needs a card.

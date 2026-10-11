@@ -72,7 +72,8 @@ export const HAIKU_PROFILE: ModelProfile = {
     aboveIngredients: 10,
     aboveMealItems: 12,
     targetIngredients: 8,
-    concurrency: 4,
+    // An 18-ingredient meal is 6 chunks: all in one wave, not two (+3 s).
+    concurrency: 6,
   },
 };
 

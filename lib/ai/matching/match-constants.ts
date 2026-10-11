@@ -33,6 +33,10 @@ const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
   FAO_VN_2007: 'fao',
   NIN_WEB_2026: 'fao',
   USDA_SR: 'usda',
+  // Prepared dishes SR Legacy lacks (miso soup), and Japanese dishes from
+  // MEXT (tonkatsu, ebi fry, curry): 20261011161000_add_japanese_dish_rows.sql.
+  USDA_FNDDS: 'usda',
+  MEXT_2020: 'usda',
 };
 
 /** The `ingredient_sources.code`s that take part in ingredient matching. */

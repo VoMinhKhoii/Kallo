@@ -40,6 +40,18 @@ describe('splitBySource', () => {
     expect(result.usda.map((row) => row.id)).toEqual(['source-9']);
   });
 
+  it('matches the prepared-dish sources through the USDA threshold', () => {
+    const result = splitBySource([
+      candidate(11, 'USDA_FNDDS'),
+      candidate(12, 'MEXT_2020'),
+    ]);
+    expect(result.fao).toEqual([]);
+    expect(result.usda.map((row) => row.id)).toEqual([
+      'source-11',
+      'source-12',
+    ]);
+  });
+
   it('keeps packaged-product sources out of ingredient matching', () => {
     const result = splitBySource([
       candidate(5, 'OFF'),
