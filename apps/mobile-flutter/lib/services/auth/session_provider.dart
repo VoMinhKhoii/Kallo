@@ -85,6 +85,20 @@ final currentSessionProvider = Provider<Session?>((ref) {
   return ref.watch(sessionProvider).valueOrNull;
 });
 
+/// The signed-in account's id, or `null` while signed out.
+///
+/// Key a cached per-user fetch on this. Its family args already carry the user
+/// id, but the same user signing out and back in lands on the same entry — so
+/// a 401 the expired session cached there was still served after the fresh
+/// sign-in, and the dashboard opened on its error state until Retry was tapped.
+/// Watching this rebuilds the entry on sign-out and again on sign-in.
+///
+/// Watch this, not [currentSessionProvider]: an hourly token refresh is a new
+/// [Session] but the same account, and must not reload the screen.
+final signedInUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(currentSessionProvider.select((s) => s?.user.id));
+});
+
 /// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
 ///
 /// The RN `SessionProvider` exposed only `signOut`; the sign-in/up screens

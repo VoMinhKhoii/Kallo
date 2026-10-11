@@ -1,4 +1,4 @@
-/// SectionState — the dashboard's shared error card.
+/// SectionState — the dashboard's shared error state.
 ///
 /// Split out of the retired `chrome/section_header.dart`: the uppercase
 /// `SectionHeader` it shared a file with was replaced app-wide by
@@ -12,11 +12,15 @@ import 'package:flutter/material.dart';
 import '../../../../shared/data/surface_cast.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../logic/dashboard_spacing.dart';
 
-/// A white card holding the shared surface state: the hedgehog stuck in a jar,
-/// the reason a section would not load, and one retry — the in-app beige
-/// primary, per the native pass's button tiers.
+/// The shared surface state, straight on the canvas: the hedgehog stuck in a
+/// jar, the reason a section would not load, and one retry.
+///
+/// No card. It used to sit in a white one, which on the screen-level failure
+/// was a lone white slab floating mid-page — a box around nothing, reading as
+/// a broken widget rather than an empty page. The Today section it stands in
+/// for lives on the canvas too (the dial and macros carry no card), and the
+/// Log feed's failure already sat bare; this matches both.
 class SectionState extends StatelessWidget {
   const SectionState({
     super.key,
@@ -37,24 +41,21 @@ class SectionState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAction = actionLabel != null && onAction != null;
-    return KalloCard(
-      padding: DashboardSpacing.card,
-      child: KalloSurfaceState(
-        area: SurfaceArea.dashboard,
-        kind: SurfaceKind.error,
-        compact: compact,
-        minHeight: compact ? 180 : null,
-        title: tr('dashboard.sectionErrorTitle'),
-        subtitle: message,
-        action:
-            hasAction
-                ? KalloButton(
-                  title: actionLabel!,
-                  variant: KalloButtonVariant.cta,
-                  onPressed: onAction,
-                )
-                : null,
-      ),
+    return KalloSurfaceState(
+      area: SurfaceArea.dashboard,
+      kind: SurfaceKind.error,
+      compact: compact,
+      minHeight: compact ? 180 : null,
+      title: tr('dashboard.sectionErrorTitle'),
+      subtitle: message,
+      action:
+          hasAction
+              ? KalloButton(
+                title: actionLabel!,
+                variant: KalloButtonVariant.cta,
+                onPressed: onAction,
+              )
+              : null,
     );
   }
 }

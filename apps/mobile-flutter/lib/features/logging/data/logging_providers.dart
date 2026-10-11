@@ -14,6 +14,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/http/api_error.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/logging/cheat.dart';
 import '../../circle/data/circle_providers.dart'
@@ -52,6 +53,9 @@ class LoggingDayNotifier
     extends FamilyAsyncNotifier<LoggingDayData, LoggingDayArgs> {
   @override
   Future<LoggingDayData> build(LoggingDayArgs arg) async {
+    // Not autoDispose, so an error outlives the session that caused it —
+    // see [signedInUserIdProvider].
+    ref.watch(signedInUserIdProvider);
     final api = ref.watch(apiClientProvider);
     final tz = timezoneOffsetMinutes();
     final path =
