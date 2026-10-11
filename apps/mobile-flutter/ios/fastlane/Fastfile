@@ -18,6 +18,9 @@ default_platform(:ios)
 # ---------------------------------------------------------------------------
 
 APP_ID            = ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"
+# The notification service extension (ios/NotificationService/) is its own
+# bundle, so it needs its own App ID and App Store profile — see Matchfile.
+NSE_ID            = "#{APP_ID}.NotificationService"
 TEAM_ID           = ENV["ASC_TEAM_ID"]        || "ZNG57U88R5"
 API_BASE_URL      = ENV["KALLO_API_BASE_URL"] || ENV["NHAM_API_BASE_URL"] ||
                     "https://kallo.fit"
@@ -109,8 +112,10 @@ platform :ios do
     )
 
     # match names its profile "match AppStore <bundle>"; hand it to the build +
-    # ExportOptions.plist (which references the same name).
-    ENV["sigh_#{APP_ID}_appstore_profile-name"] || "match AppStore #{APP_ID}"
+    # ExportOptions.plist (which references the same names).
+    [APP_ID, NSE_ID].to_h do |bundle|
+      [bundle, ENV["sigh_#{bundle}_appstore_profile-name"] || "match AppStore #{bundle}"]
+    end
   end
 
   desc "Build the Flutter release IPA (prod config) and upload to TestFlight"
@@ -136,7 +141,7 @@ platform :ios do
       UI.important("⚠️  NHAM_GOOGLE_WEB_CLIENT_ID / NHAM_GOOGLE_IOS_CLIENT_ID not set — this build ships with native Google sign-in disabled.")
     end
 
-    profile_name = self.runner.execute(:signing, :ios) # match install; returns profile name
+    profiles = self.runner.execute(:signing, :ios) # match install; bundle id → profile name
 
     # Compile Dart with PROD defines. --no-codesign so the Flutter build phase
     # doesn't need a cert; signing happens in the xcodebuild archive below.
@@ -170,12 +175,15 @@ platform :ios do
       end
     end
 
-    # Manual signing on the Runner target ONLY (never global — breaks deps).
-    update_code_signing_settings(
-      use_automatic_signing: false, path: "Runner.xcodeproj",
-      team_id: TEAM_ID, code_sign_identity: "Apple Distribution",
-      profile_name: profile_name, bundle_identifier: APP_ID, targets: ["Runner"],
-    )
+    # Manual signing per target, each with its own profile — never global,
+    # which breaks the Pod/SwiftPM dependency targets.
+    { "Runner" => APP_ID, "NotificationService" => NSE_ID }.each do |target, bundle|
+      update_code_signing_settings(
+        use_automatic_signing: false, path: "Runner.xcodeproj",
+        team_id: TEAM_ID, code_sign_identity: "Apple Distribution",
+        profile_name: profiles.fetch(bundle), bundle_identifier: bundle, targets: [target],
+      )
+    end
 
     sh("security", "unlock-keychain", "-p", KEYCHAIN_PASS,
        File.expand_path("~/Library/Keychains/#{KEYCHAIN_NAME}"))

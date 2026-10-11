@@ -120,6 +120,23 @@ Push is direct-to-APNs (no Firebase). Three facts about the signing shape above 
   `aps-environment` fails codesign with *"Provisioning profile doesn't include the
   aps-environment entitlement."*
 
+**Sender avatars (communication notifications)** add a second bundle, the notification service
+extension `com.khoivo.nham.NotificationService` (`ios/NotificationService/`, embedded in Runner),
+and one more capability. One-time, by a human, before the next TestFlight build:
+
+1. Apple Developer → Identifiers → `com.khoivo.nham` → enable **Communication Notifications**.
+   The entitlement is already in `Runner.entitlements`; a profile without it fails codesign.
+2. Identifiers → **+** → App ID `com.khoivo.nham.NotificationService` (no capabilities needed).
+3. From `apps/mobile-flutter/ios`, with `MATCH_GIT_URL` / `MATCH_PASSWORD` exported:
+   `bundle exec fastlane match appstore --force`. The Matchfile now lists both bundle ids, so this
+   regenerates the app's profile (new capability) and mints the extension's. CI stays read-only
+   and fails at `match` until this has run.
+
+The lane signs each target with its own profile, and `ExportOptions.plist` maps both.
+`test/ios/communication_notification_test.dart` guards the wiring. Debug builds sign the
+extension automatically with the same team. The avatar only shows on a **physical device**; the
+Simulator renders the plain banner.
+
 Server side, the backend needs an **APNs auth key** (Apple Developer → Keys → enable APNs;
 download the `.p8` once) as `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, and
 `APNS_PRODUCTION`. Development-signed Xcode builds use the **sandbox** host; Ad Hoc, TestFlight and

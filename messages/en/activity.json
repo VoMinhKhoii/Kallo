@@ -50,6 +50,21 @@
       }
     }
   },
+  "push": {
+    "friend": {
+      "joined": "Joined your circle"
+    },
+    "group": {
+      "added": "Added you to {group}"
+    },
+    "share": {
+      "invite": "Sent you a meal",
+      "invite_accepted": "Added your meal to their diary",
+      "reaction": "Reacted to your meal",
+      "reply": "Replied to your meal",
+      "logged": "Logged your meal"
+    }
+  },
   "invite": {
     "accept": "Accept",
     "dismiss": "Dismiss",

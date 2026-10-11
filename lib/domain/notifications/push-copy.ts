@@ -8,11 +8,16 @@
 // lands on the lock screen and in the Activity list together; there is no
 // second copy of these sentences to drift.
 //
-// The lock-screen line is deliberately the SINGULAR row (`.one`) even when an
-// aggregate is behind it: a push says "someone did a thing", the badge and the
-// Activity row carry "and 4 others". Collapse keys mean the later notice
-// replaces the earlier one anyway. The `<b>` around the actor name is markup
-// for the feed, so it is rendered away here (`b: (chunks) => chunks`).
+// A push is titled by the ACTOR, the way a messaging app titles by sender: on
+// iOS the notification service extension swaps the app icon for their avatar,
+// so the banner reads "Mai / Reacted to your meal". The feed's sentence names
+// the actor inside the line ("<b>Mai</b> reacted…"), which under that title
+// would say the name twice — so the body comes from the sibling `push.<type>`
+// rows, the same verbs with the subject lifted into the title. They sit beside
+// `row.*` in the same file, so a wording fix still lands in one place per
+// locale. A push says "someone did a thing", always singular: "and 4 others"
+// is the badge's and the Activity row's job, and collapse keys mean the later
+// notice replaces the earlier one anyway.
 
 import { createTranslator } from 'next-intl';
 import enActivity from '@/messages/en/activity.json';
@@ -33,8 +38,6 @@ export interface PushCopyValues {
   /** `chat.message` body — already truncated by the caller. */
   preview?: string;
 }
-
-const APP_NAME = 'Kallo';
 
 /** Not in the catalogue: the feed always has a real group name to interpolate,
  *  a push fired for a nameless group still has to say something. */
@@ -63,7 +66,7 @@ function createActivityTranslator(locale: PushLocale) {
   });
 }
 
-/** One translator per locale, built on first use and kept — `markup` (not
+/** One translator per locale, built on first use and kept — plain `t` (not
  *  `rich`) because the result must be a plain string for APNs, not a React tree.
  *  Lazy rather than module-scope so importing this module costs nothing: most
  *  of what reaches for `push.ts` never renders a line of copy. */
@@ -82,9 +85,11 @@ export function toPushLocale(preferred: string | null | undefined): PushLocale {
 }
 
 /**
- * The two strings that reach the lock screen. `title` is the app for activity
- * notices (the body already names the actor) and the SENDER for a chat message
- * (the body is their words), which is what makes a chat push read like a chat.
+ * The two strings that reach the lock screen. `title` is always the actor —
+ * the sender of a chat message, whoever reacted/replied/invited for activity —
+ * and `body` is what they did (or, for chat, their words). Without the iOS
+ * extension (an older build, a timed-out avatar fetch) the same two strings
+ * still read correctly under the app icon.
  */
 export function pushCopy(
   type: PushCopyType,
@@ -93,16 +98,13 @@ export function pushCopy(
 ): { title: string; body: string } {
   const t = translatorFor(locale);
   const name = values.actorName?.trim() || t('someone');
-  // A chat push is the message itself: the sender is the title, exactly as
-  // every messaging app renders it. It has no catalogue row — chat lives in
-  // its own surface and never becomes an Activity line.
+  // A chat push is the message itself. It has no catalogue row — chat lives
+  // in its own surface and never becomes an Activity line.
   if (type === 'chat.message') {
     return { title: name, body: values.preview ?? '' };
   }
-  const body = t.markup(`row.${type}.one`, {
-    name,
+  const body = t(`push.${type}`, {
     group: values.groupName ?? A_GROUP[locale],
-    b: (chunks) => chunks,
   });
-  return { title: APP_NAME, body };
+  return { title: name, body };
 }
