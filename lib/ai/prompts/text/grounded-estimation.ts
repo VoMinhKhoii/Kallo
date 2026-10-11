@@ -177,7 +177,8 @@ ${cuisinePriors}  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pa
     - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (${renderAbsorbedOilPromptRule()}; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
-${stapleCarbRule}${proteinPortionRule}  If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
+${stapleCarbRule}${proteinPortionRule}  user_count and user_unit repeat what the user counted. When they sit on one part of a dish that was split into parts (a breaded cutlet, a bun, a sandwich, a spring roll), they count whole pieces of the DISH: size one whole piece as served, then give each part its share of it. Never size the part as one unit of itself: "2 cái bánh bao" split into wrapper + filling is two whole buns (~100–120 g each, mostly wrapper), not two pieces of filling.
+  If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
 ${serverScalingRule}
 </grams_rule>${vesselRule}
 
