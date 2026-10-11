@@ -71,8 +71,9 @@ function queueGrounded(
 
 /**
  * Pair each v2 ingredient with the LLM's grounded estimate for it: the next
- * unconsumed estimate in its (dish slot, ingredient) queue, or null when
- * Call 2 returned none (exhaustion never re-uses an estimate).
+ * unconsumed estimate in its (dish slot, ingredient) queue, else a leftover
+ * estimate with the same ingredient name from a dish name Call 2 changed, or
+ * null when Call 2 returned none (exhaustion never re-uses an estimate).
  */
 export function pairIngredientsWithGrounded(
   v2: MealDecompositionV2,
@@ -106,6 +107,20 @@ export function pairIngredientsWithGrounded(
       });
     });
   });
+
+  // A dish Call 2 renamed ("Trứng chiên" answered as "Trứng ốp la") leaves its
+  // estimates unpaired and its ingredients without any, which the completeness
+  // gate turns into a failed analysis. Pair what is left by ingredient name
+  // alone, still never re-using an estimate.
+  const leftover = new Map<string, GroundedIngredientEstimate[]>();
+  for (const q of queues.values())
+    for (const g of q) {
+      const k = nameKey(g.ingredientName);
+      leftover.set(k, [...(leftover.get(k) ?? []), g]);
+    }
+  for (const entry of out)
+    entry.ground ??=
+      leftover.get(nameKey(entry.ingredient.rawName))?.shift() ?? null;
 
   return out;
 }
