@@ -77,6 +77,8 @@ export async function runCallTwoStage(args: {
     Parameters<typeof runCallTwo>[0]['onAttemptComplete']
   >;
   onChunkTick: () => void;
+  /** The selector found no candidate that fits this flat ingredient. */
+  onSelectorNone?: (flat: number) => void;
 }): Promise<CallTwoStageResult> {
   const {
     traceContext,
@@ -134,6 +136,7 @@ export async function runCallTwoStage(args: {
           mealText: rawInput,
           mealItems: mealItemsWithCandidates,
           onAttemptComplete: args.onAttemptComplete,
+          onNone: args.onSelectorNone,
         })
       : null;
 
@@ -165,6 +168,7 @@ export async function runCallTwoStage(args: {
       });
       const result = await runCallTwo({
         estimator,
+        chunking: args.profile.call2Chunking,
         mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
         promptCtx,

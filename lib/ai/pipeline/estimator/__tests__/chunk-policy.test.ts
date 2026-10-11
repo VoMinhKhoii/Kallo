@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HAIKU_PROFILE } from '@/lib/ai/pipeline/config/model-profile';
 import {
   CHUNK_INGREDIENT_THRESHOLD,
   CHUNK_MEAL_ITEM_THRESHOLD,
@@ -36,6 +37,16 @@ describe('shouldChunkCall2 — gate keeps small meals on the single-call path', 
     expect(
       shouldChunkCall2([item('big', CHUNK_INGREDIENT_THRESHOLD + 1)])
     ).toBe(true);
+  });
+
+  it("follows a profile's own policy (Haiku splits an ordinary plate)", () => {
+    const policy = HAIKU_PROFILE.call2Chunking;
+    expect(policy).toBeDefined();
+    // 7 dishes, 11 ingredients: one call by default, split for Haiku.
+    const plate = [...meal(4, 2), ...meal(3, 1)];
+    expect(shouldChunkCall2(plate)).toBe(false);
+    expect(shouldChunkCall2(plate, policy)).toBe(true);
+    expect(shouldChunkCall2(meal(5, 2), policy)).toBe(false);
   });
 });
 

@@ -14,9 +14,10 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
+import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 /** One single food from a rescue mini-meal, with its row candidates and estimate. */
 export interface RescuePart {
@@ -41,39 +42,6 @@ const DEFER_TO_CALL_TWO: PortionResolution = {
   note: 'rescue part: grams scaled to the main run',
 };
 
-/**
- * The edible grams the bridge ships for one ingredient, by the bridge's own
- * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
- * portion anchor when there is one). Linear in `grossG` when unanchored, which
- * is what lets scaling the parts' gross mass hit a target exactly.
- */
-function shippedEdibleGrams(
-  estimate: GroundedIngredientEstimate,
-  ingredient: DecomposedIngredientV2,
-  match: IngredientV2MatchResult | undefined,
-  portion: PortionResolution | undefined
-): number {
-  const idx = /^c(\d+)$/.exec(estimate.selectedCandidateId ?? '')?.[1];
-  const candidate = idx ? match?.candidates[Number(idx) - 1] : undefined;
-  const anchor =
-    portion?.grams &&
-    portion.provenance !== 'llm_range' &&
-    portion.provenance !== 'unresolved' &&
-    portion.grams.mid > 0
-      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
-      : null;
-  return (
-    resolveGroundedMass({
-      ground: estimate,
-      candidateInediblePct: candidate?.inediblePct ?? null,
-      canonicalName: ingredient.canonicalName,
-      rawName: ingredient.rawName,
-      prepNotes: ingredient.prepNotes,
-      authoritativeMass: anchor,
-    }).edibleG ?? 0
-  );
-}
-
 function scaled(
   e: GroundedIngredientEstimate,
   k: number
@@ -94,7 +62,8 @@ function scaled(
 
 /**
  * Replace each rescued flat ingredient (`parts` key = flat index in the main
- * decomposition) by its parts. Skipped, and left as it was: an ingredient the
+ * decomposition) by its parts, less any oil part when the dish already has its
+ * own oil row. Skipped, and left as it was: an ingredient the
  * portion resolver withheld or wants clarified (`unresolved`, which includes a
  * typed zero), and one whose estimate or parts carry no mass. A dish that got
  * parts has its Call 2 estimates rewritten in decomposition order, so the
@@ -117,11 +86,20 @@ export function spliceRescue(
     const ordered: GroundedIngredientEstimate[] = [];
     const own: GroundedIngredientEstimate[] = [];
     let touched = false;
+    // A dish that keeps its own cooking-oil row already carries the frying
+    // fat; a part that is oil would count it a second time.
+    const dishOil = mi.ingredients.some(
+      (ing, i) => isDiscreteOilIngredient(ing.rawName) && !parts.has(flat + i)
+    );
     for (const ing of mi.ingredients) {
       const f = flat++;
       const ground = pairs[f]?.ground ?? null;
       if (ground) own.push(ground);
-      const subParts = parts.get(f);
+      const subParts = parts
+        .get(f)
+        ?.filter(
+          (p) => !dishOil || !isDiscreteOilIngredient(p.ingredient.rawName)
+        );
       const portion = state.portionResolutions[f];
       const target =
         ground && portion?.provenance !== 'unresolved'

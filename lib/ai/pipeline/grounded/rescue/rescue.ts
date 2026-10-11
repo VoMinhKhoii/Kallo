@@ -6,10 +6,12 @@
  * pick.
  *
  * Timing: an ingredient retrieval found no candidate for will be rejected for
- * certain, so its mini-meal starts right after matching, beside Call 2. Any
- * other ingredient Call 2 rejects (a dish named after itself, a row it
- * refused) starts once Call 2 answers: starting those speculatively would
- * run a mini-meal for nearly every plain "cơm" or banana and throw it away.
+ * certain, so its mini-meal starts right after matching, beside Call 2. So
+ * does one the candidate selector answers "none" for (`startEarly`), a second
+ * or so later. Any other ingredient Call 2 rejects (a dish named after
+ * itself, a row it refused) starts once Call 2 answers: starting those
+ * speculatively would run a mini-meal for nearly every plain "cơm" or banana
+ * and throw it away.
  *
  * The parts' grams are scaled to what the main run would have shipped for the
  * ingredient (`./splice`); the mini-meal supplies only the recipe split.
@@ -27,7 +29,7 @@ import { nameKey } from '@/lib/core/text/name-key';
 import { type RescuePart, type RunState, spliceRescue } from './splice';
 import { runRescueSubMeal, type SubMealDeps } from './sub-meal';
 
-export type { RescuePart } from './splice';
+export type { RescuePart, RunState } from './splice';
 
 /** `DISH_RESCUE_ENABLED=false` turns dish rescue off. */
 export function isDishRescueEnabled(): boolean {
@@ -77,30 +79,38 @@ const words = (text: string) =>
 /**
  * The mini-meal text for an ingredient, in the user's language. The cooking
  * method and preparation notes Call 1 kept beside the name ("hấp",
- * "không đường") go along, so the mini-meal matches the variant the user ate.
+ * "không đường") go along, so the mini-meal matches the variant the user ate,
+ * and so does Call 1's English search description when it says more than the
+ * name ("Japanese-style curry sauce" for a bare "cà ri").
  */
 export function rescueMealText(
   ingredient: {
     rawName: string;
     canonicalName: string;
+    queryEn?: string;
     cookingMethod?: string;
     prepNotes?: string[];
   },
   language: 'en' | 'vi'
 ): string {
-  const { rawName, canonicalName } = ingredient;
+  const { rawName, canonicalName, queryEn } = ingredient;
   const name =
     nameKey(rawName) === nameKey(canonicalName)
       ? rawName
       : `${rawName} (${canonicalName})`;
   const said = words(name);
+  const described =
+    queryEn && !said.includes(words(queryEn)) ? ` — ${queryEn}` : '';
   const modifiers = [ingredient.cookingMethod, ...(ingredient.prepNotes ?? [])]
-    .filter((m): m is string => !!m && !said.includes(words(m)))
+    .filter(
+      (m): m is string =>
+        !!m && !said.includes(words(m)) && !words(described).includes(words(m))
+    )
     .map((m) => `, ${m}`)
     .join('');
   return language === 'vi'
-    ? `1 phần ${name}${modifiers}`
-    : `1 portion of ${name}${modifiers}`;
+    ? `1 phần ${name}${described}${modifiers}`
+    : `1 portion of ${name}${described}${modifiers}`;
 }
 
 /** Run at most `limit` tasks at once; later tasks wait their turn. */
@@ -135,6 +145,8 @@ export function startDishRescue(args: {
   subMeal: SubMealDeps;
 }): {
   started: () => number[];
+  /** Start this flat ingredient's mini-meal now (the selector found no fit). */
+  startEarly: (flat: number) => void;
   close: () => void;
   apply: (
     grounded: GroundedEstimation
@@ -187,6 +199,10 @@ export function startDishRescue(args: {
 
   return {
     started: () => [...runs.keys()],
+    startEarly(f) {
+      if (ingredients[f] && rescuable(ingredients[f], portionResolutions[f]))
+        start(f);
+    },
     close,
     async apply(grounded) {
       const pairs = pairIngredientsWithGrounded(decomposition, grounded);

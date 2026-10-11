@@ -110,6 +110,36 @@ describe('startCandidateSelector', () => {
     expect([...picks]).toEqual([[0, 'c2']]);
   });
 
+  it('reports each ingredient no candidate fits', async () => {
+    const { mealItems } = meal([
+      [
+        'Cơm gà',
+        [
+          ['cơm', [candidate(1), candidate(2)]],
+          ['gà', [candidate(1), candidate(2)]],
+          ['dưa', [candidate(1), candidate(2)]],
+        ],
+      ],
+    ]);
+    const llm = selectorLlm(async (msg) =>
+      msg.includes('<ingredient>cơm')
+        ? { ranking: ['c2', 'c1'] }
+        : msg.includes('<ingredient>gà')
+          ? { ranking: ['none', 'c1'] }
+          : { ranking: ['none'] }
+    );
+    const onNone = vi.fn();
+    await startCandidateSelector({
+      gemini: llm,
+      model: 'm',
+      mealText: 'cơm gà',
+      mealItems,
+      onNone,
+    }).settle(Date.now() + 60_000);
+
+    expect(onNone.mock.calls.map(([flat]) => flat).sort()).toEqual([1, 2]);
+  });
+
   it('keeps at most six calls in flight', async () => {
     const pool2 = [candidate(1), candidate(2)];
     const { mealItems } = meal([

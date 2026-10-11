@@ -17,7 +17,10 @@
 
 import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import { shouldChunkCall2 } from '@/lib/ai/pipeline/estimator/chunk-policy';
+import {
+  type Call2Chunking,
+  shouldChunkCall2,
+} from '@/lib/ai/pipeline/estimator/chunk-policy';
 import { runChunkedCall2 } from '@/lib/ai/pipeline/estimator/chunked-call2';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
@@ -62,6 +65,8 @@ export interface RunCallTwoArgs {
   >;
   /** Chunked-path progressive item_macros emitter context. */
   chunkEmit: ChunkEmitContext;
+  /** The model profile's chunking policy (default: large meals only). */
+  chunking?: Call2Chunking;
 }
 
 export interface RunCallTwoResult {
@@ -94,8 +99,10 @@ export async function runCallTwo(
     };
   }
 
-  if (shouldChunkCall2(args.mealItems)) {
+  if (shouldChunkCall2(args.mealItems, args.chunking)) {
     const result = await runChunkedCall2({
+      concurrency: args.chunking?.concurrency,
+      targetIngredients: args.chunking?.targetIngredients,
       estimator: args.estimator,
       mealItems: args.mealItems,
       originalPrompt: args.originalPrompt,

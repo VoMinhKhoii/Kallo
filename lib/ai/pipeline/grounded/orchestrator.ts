@@ -44,6 +44,7 @@ import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
+import { dropOilInFriedRows, rejectWrongFormRows } from './review';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -203,19 +204,25 @@ export async function analyzeMealV2(
       onChunkTick: () => {
         nutritionChunkCount++;
       },
+      onSelectorNone: rescue?.startEarly,
     });
     const { call2 } = stage3;
     promptCharsCall2 = stage3.promptCharsCall2;
 
-    // Ingredients Call 2 rejected are replaced by their rescue parts. The
-    // streamed dishes then changed, so the final flush re-sends every dish.
-    const rescued = rescue ? await rescue.apply(stage3.grounded) : null;
-    const run = rescued?.state ?? {
+    // A pick whose row contradicts Call 2's own estimate is a rejection
+    // (./review). Ingredients Call 2 rejected are replaced by their rescue
+    // parts; then a fried row's separate oil is dropped. Either way the
+    // streamed dishes changed, so the final flush re-sends every dish.
+    const reviewed = rejectWrongFormRows({
       decomposition,
       matchResults,
       portionResolutions,
       grounded: stage3.grounded,
-    };
+    });
+    const rescued = rescue ? await rescue.apply(reviewed.state.grounded) : null;
+    const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
+    const run = oil.state;
+    const changed = reviewed.rejected > 0 || rescued != null || oil.dropped > 0;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
@@ -232,9 +239,11 @@ export async function analyzeMealV2(
             );
           })
         : vesselEnvelopes;
-    if (rescued) {
+    if (changed) {
       stage3.itemMacrosStreamed.clear();
-      console.info(`[rescue] ${rescued.rescued} ingredients rescued`);
+      console.info(
+        `[review] ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped`
+      );
     }
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
@@ -268,7 +277,7 @@ export async function analyzeMealV2(
       grounded: run.grounded,
       streamedMealItemIds,
       alreadyStreamed: stage3.itemMacrosStreamed,
-      offsetByName: rescued
+      offsetByName: changed
         ? buildMealItemOffsetByName(run.decomposition.mealItems)
         : stage3.offsetByName,
       goal: userContext.goal,

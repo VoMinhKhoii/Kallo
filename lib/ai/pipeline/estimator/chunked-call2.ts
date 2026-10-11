@@ -75,6 +75,8 @@ export interface RunChunkedCall2Args {
   >;
   concurrency?: number;
   maxAttempts?: number;
+  /** Target max ingredients per chunk (`chunkMealItems`). */
+  targetIngredients?: number;
 }
 
 /**
@@ -98,7 +100,7 @@ export async function runChunkedCall2(
   const concurrency = args.concurrency ?? CHUNK_CONCURRENCY;
   const maxAttempts = args.maxAttempts ?? CHUNK_MAX_ATTEMPTS;
 
-  const chunks = chunkMealItems(mealItems);
+  const chunks = chunkMealItems(mealItems, args.targetIngredients);
   let first = 0;
   const placed = chunks.map((chunk) => {
     const at = { chunk, first };

@@ -99,6 +99,21 @@ describe('startDishRescue', () => {
     expect(runSubMeal).toHaveBeenCalledWith('1 phần bánh flan, nấu');
   });
 
+  it('starts a mini-meal early when the selector finds no fit, never for plain water', () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'vi',
+      runStartedAt: Date.now(),
+    });
+
+    rescue.startEarly(1);
+    rescue.startEarly(2);
+    rescue.startEarly(1);
+    expect(rescue.started()).toEqual([0, 1]);
+    expect(runSubMeal).toHaveBeenCalledTimes(2);
+  });
+
   it('rescues what Call 2 rejected and leaves what it accepted', async () => {
     const runSubMeal = vi.fn(async () => parts);
     const rescue = rescueWith(runSubMeal, {
@@ -295,5 +310,27 @@ describe('rescueMealText', () => {
         'en'
       )
     ).toBe('1 portion of prawn, raw');
+  });
+
+  it("carries Call 1's search description when it says more than the name", () => {
+    expect(
+      rescueMealText(
+        {
+          rawName: 'cà ri',
+          canonicalName: 'Curry sauce',
+          queryEn: 'Japanese-style curry sauce with meat and vegetables',
+          cookingMethod: 'simmered',
+        },
+        'vi'
+      )
+    ).toBe(
+      '1 phần cà ri (Curry sauce) — Japanese-style curry sauce with meat and vegetables, simmered'
+    );
+    expect(
+      rescueMealText(
+        { rawName: 'cơm', canonicalName: 'Cơm', queryEn: 'cơm' },
+        'vi'
+      )
+    ).toBe('1 phần cơm');
   });
 });

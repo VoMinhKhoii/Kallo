@@ -37,18 +37,44 @@ export const CHUNK_CONCURRENCY = 3;
 export const CHUNK_MAX_ATTEMPTS = 2;
 
 /**
- * Should this meal take the chunked Call-2 path? Conservative: only large
- * meals qualify, so a 2-ingredient meal is numerically + latency-wise
+ * When a model profile chunks its Call 2 and how finely. A provider whose
+ * output is slower than its round trip (Claude Haiku) gains by splitting
+ * ordinary meals too; the defaults keep chunking for pathological meals only.
+ */
+export interface Call2Chunking {
+  /** Chunk when the meal has more than this many ingredients... */
+  aboveIngredients: number;
+  /** ...or more than this many meal items. */
+  aboveMealItems: number;
+  /** Target max ingredients per chunk. */
+  targetIngredients: number;
+  /** Chunks in flight at once. */
+  concurrency: number;
+}
+
+export const DEFAULT_CALL2_CHUNKING: Call2Chunking = {
+  aboveIngredients: CHUNK_INGREDIENT_THRESHOLD,
+  aboveMealItems: CHUNK_MEAL_ITEM_THRESHOLD,
+  targetIngredients: CHUNK_TARGET_INGREDIENTS,
+  concurrency: CHUNK_CONCURRENCY,
+};
+
+/**
+ * Should this meal take the chunked Call-2 path? With the default policy only
+ * large meals qualify, so a 2-ingredient meal is numerically + latency-wise
  * unchanged (it takes the single-call path).
  */
-export function shouldChunkCall2(mealItems: MealItemWithCandidates[]): boolean {
+export function shouldChunkCall2(
+  mealItems: MealItemWithCandidates[],
+  policy: Call2Chunking = DEFAULT_CALL2_CHUNKING
+): boolean {
   const ingredientCount = mealItems.reduce(
     (sum, mi) => sum + mi.ingredients.length,
     0
   );
   return (
-    mealItems.length > CHUNK_MEAL_ITEM_THRESHOLD ||
-    ingredientCount > CHUNK_INGREDIENT_THRESHOLD
+    mealItems.length > policy.aboveMealItems ||
+    ingredientCount > policy.aboveIngredients
   );
 }
 
