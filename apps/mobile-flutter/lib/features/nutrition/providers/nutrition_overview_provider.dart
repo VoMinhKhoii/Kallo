@@ -68,7 +68,9 @@ class NutritionOverviewNotifier
     extends FamilyAsyncNotifier<NutritionOverview, NutritionOverviewArg> {
   @override
   Future<NutritionOverview> build(NutritionOverviewArg arg) async {
-    final userId = ref.watch(currentSessionProvider)?.user.id;
+    // Signed out it makes no request; a token refresh (same account) does not
+    // refetch.
+    final userId = requireSignedIn(ref);
     // Watched, not read: a purchase (or a lapse) rebuilds this provider, which
     // refetches the overview under the new tier. Null means "not resolved yet"
     // — never a reason to throw away good data.
