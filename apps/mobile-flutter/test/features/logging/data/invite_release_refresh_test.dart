@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
+import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
 // Loading a day sweeps that user's week-abandoned staging cards, and a card
@@ -45,7 +46,11 @@ Future<({int inviteFetches, LoggingDayData day})> loadDay({
 }) async {
   final api = _Api(releasedInvites: releasedInvites);
   final container = ProviderContainer(
-    overrides: [apiClientProvider.overrideWithValue(api)],
+    overrides: [
+      apiClientProvider.overrideWithValue(api),
+      // The day feed only fetches for the account signed in now.
+      signedInUserIdProvider.overrideWithValue(_userId),
+    ],
   );
   addTearDown(container.dispose);
 

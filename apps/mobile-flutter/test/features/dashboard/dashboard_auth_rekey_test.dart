@@ -109,6 +109,25 @@ void main() {
     },
   );
 
+  test('signing out while the screen still listens makes no request', () async {
+    container.read(session.notifier).state = _session('fresh');
+    api.calls = 1; // Past the 401: the first load succeeds.
+    final sub = container.listen(dashboardBundleProvider(_args), (_, __) {});
+    addTearDown(sub.close);
+    await container.read(dashboardBundleProvider(_args).future);
+    expect(api.calls, 2);
+
+    // The router has not swapped the dashboard out yet, so the entry is
+    // still subscribed when the session drops and rebuilds at once.
+    container.read(session.notifier).state = null;
+    await container.pump();
+    await expectLater(
+      container.read(dashboardBundleProvider(_args).future),
+      throwsA(isA<ApiError>()),
+    );
+    expect(api.calls, 2);
+  });
+
   test('a token refresh for the same account does not refetch', () async {
     container.read(session.notifier).state = _session('fresh');
     api.calls = 1; // Past the 401: the first load succeeds.

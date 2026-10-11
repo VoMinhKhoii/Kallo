@@ -78,7 +78,7 @@ final dashboardBundleProvider =
     FutureProvider.family<DashboardBundle, DashboardArgs>((ref, args) async {
       // Not autoDispose, so an error outlives the session that caused it —
       // see [signedInUserIdProvider].
-      ref.watch(signedInUserIdProvider);
+      requireSignedInAs(ref, args.userId);
       final api = ref.watch(apiClientProvider);
       final tz = localTimezoneOffsetMinutes();
       final date = Uri.encodeComponent(args.date);
@@ -117,7 +117,7 @@ final loggingDayProvider = FutureProvider.family<LoggingDayData, DashboardArgs>(
 /// (the feed's swipe-remove) both do.
 final dashboardDayProvider =
     FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
-      ref.watch(signedInUserIdProvider);
+      requireSignedInAs(ref, args.userId);
       final api = ref.watch(apiClientProvider);
       final tz = localTimezoneOffsetMinutes();
       final date = Uri.encodeComponent(args.date);
@@ -160,7 +160,7 @@ final heatmapProvider = FutureProvider.family<HeatmapData, DashboardArgs>((
   ref,
   args,
 ) async {
-  ref.watch(signedInUserIdProvider);
+  requireSignedInAs(ref, args.userId);
   final range = ref.watch(heatmapRangeProvider);
   if (range == HeatmapRange.d90) {
     final bundle = await ref.watch(dashboardBundleProvider(args).future);

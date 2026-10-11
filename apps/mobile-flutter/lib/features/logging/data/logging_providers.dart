@@ -55,7 +55,7 @@ class LoggingDayNotifier
   Future<LoggingDayData> build(LoggingDayArgs arg) async {
     // Not autoDispose, so an error outlives the session that caused it —
     // see [signedInUserIdProvider].
-    ref.watch(signedInUserIdProvider);
+    requireSignedInAs(ref, arg.userId);
     final api = ref.watch(apiClientProvider);
     final tz = timezoneOffsetMinutes();
     final path =
