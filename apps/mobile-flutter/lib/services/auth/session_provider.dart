@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/http/api_error.dart';
 import 'supabase_service.dart';
 
 /// Builds the session stream from a gotrue auth-event stream.
@@ -84,6 +85,33 @@ final sessionProvider = StreamProvider<Session?>((ref) {
 final currentSessionProvider = Provider<Session?>((ref) {
   return ref.watch(sessionProvider).valueOrNull;
 });
+
+/// The signed-in account's id, or `null` while signed out.
+///
+/// Key a cached per-user fetch on this. Its family args already carry the user
+/// id, but the same user signing out and back in lands on the same entry — so
+/// a 401 the expired session cached there was still served after the fresh
+/// sign-in, and the dashboard opened on its error state until Retry was tapped.
+/// Watching this rebuilds the entry on sign-out and again on sign-in.
+///
+/// Watch this, not [currentSessionProvider]: an hourly token refresh is a new
+/// [Session] but the same account, and must not reload the screen.
+final signedInUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(currentSessionProvider.select((s) => s?.user.id));
+});
+
+/// The guard a per-user fetch opens with: watches [signedInUserIdProvider],
+/// then throws a 401 [ApiError] without touching the network unless [userId]
+/// is the account signed in right now.
+///
+/// The watch alone rebuilds the entry on sign-out while the screen is still
+/// subscribed (the router has not swapped it out yet), and the rebuild would
+/// fire the request with no token. The throw also keeps a different account
+/// signing in on the same device from filling the previous user's entry.
+void requireSignedInAs(Ref<Object?> ref, String userId) {
+  if (ref.watch(signedInUserIdProvider) == userId) return;
+  throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in as $userId');
+}
 
 /// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
 ///
