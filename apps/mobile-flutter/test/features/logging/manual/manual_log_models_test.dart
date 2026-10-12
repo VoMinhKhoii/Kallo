@@ -127,30 +127,27 @@ void main() {
       per100g: IngredientMacrosPer100g(caloriesKcal: 130, proteinG: 2.7),
     );
 
-    test('isComplete requires positive finite grams', () {
+    test('an item\'s macros are its food\'s, scaled to its grams', () {
+      final macros =
+          const ManualLogItem(id: '1', ingredient: rice, grams: 150).macros;
+      expect(macros.caloriesKcal, closeTo(195, 1e-9));
+      expect(macros.fatG, isNull);
+    });
+
+    test('an empty plate totals a known 0', () {
+      final totals = totalsForManualItems(const []);
       expect(
-        const ManualLogItem(id: '1', ingredient: rice, grams: 100).isComplete,
-        isTrue,
-      );
-      expect(
-        const ManualLogItem(id: '1', ingredient: rice, grams: null).isComplete,
-        isFalse,
-      );
-      expect(
-        const ManualLogItem(id: '1', ingredient: rice, grams: 0).isComplete,
-        isFalse,
-      );
-      expect(
-        const ManualLogItem(
-          id: '1',
-          ingredient: rice,
-          grams: double.nan,
-        ).isComplete,
-        isFalse,
+        [
+          totals.caloriesKcal,
+          totals.proteinG,
+          totals.carbohydrateG,
+          totals.fatG,
+        ],
+        [0, 0, 0, 0],
       );
     });
 
-    test('totalsForManualItems sums complete items only', () {
+    test('totalsForManualItems sums what each food carries', () {
       const chicken = IngredientSearchResult(
         id: 'fct-chicken',
         namePrimary: 'Thịt gà ta',
@@ -165,7 +162,6 @@ void main() {
       final totals = totalsForManualItems(const [
         ManualLogItem(id: '1', ingredient: rice, grams: 100),
         ManualLogItem(id: '2', ingredient: chicken, grams: 50),
-        ManualLogItem(id: '3', ingredient: rice, grams: null), // incomplete
       ]);
       expect(totals.caloriesKcal, closeTo(230, 1e-9));
       expect(totals.proteinG, closeTo(12.7, 1e-9));

@@ -45,7 +45,8 @@ class ManualAmountCard extends StatelessWidget {
     final claimed =
         anchors == null ? null : claimedAnchor(anchors, grams.round());
     final state = food.stateLabel;
-    double? step(int direction) => steppedManualGrams(grams, direction);
+    final less = steppedManualGrams(grams, -1);
+    final more = steppedManualGrams(grams, 1);
 
     return GroupedListCard(
       separatorInset: 0,
@@ -61,8 +62,8 @@ class ManualAmountCard extends StatelessWidget {
             namedArgs: {'kcal': formatKcal(food.per100g.caloriesKcal)},
           ),
           trailing: ScanAmountStepper(
-            onDecrease: step(-1) == null ? null : () => onGrams(step(-1)!),
-            onIncrease: step(1) == null ? null : () => onGrams(step(1)!),
+            onDecrease: less == null ? null : () => onGrams(less),
+            onIncrease: more == null ? null : () => onGrams(more),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

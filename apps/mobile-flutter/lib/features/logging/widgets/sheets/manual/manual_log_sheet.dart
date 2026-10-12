@@ -106,10 +106,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                       defaultTitle: defaultMealTitle(state.items),
                     ),
                     const SizedBox(height: 12),
-                    ManualMealTotals(
-                      totals: state.totals,
-                      empty: state.items.isEmpty,
-                    ),
+                    ManualMealTotals(totals: state.totals),
                     ManualMealItems(
                       items: state.items,
                       full: state.isFull,
@@ -129,9 +126,9 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
               ),
             ),
             const SizedBox(height: KalloSpacing.sp2),
-            if (_errorText != null) ...[
+            if (_errorText case final error?) ...[
               Text(
-                _errorText!,
+                error,
                 textAlign: TextAlign.center,
                 style: dashMeta(color: KalloColors.danger),
               ),

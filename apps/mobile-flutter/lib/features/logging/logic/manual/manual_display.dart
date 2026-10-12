@@ -56,21 +56,52 @@ String formatKcal(double? kcal) => kcal == null ? '—' : '${kcal.round()}';
 String defaultMealTitle(List<ManualLogItem> items) =>
     items.map((item) => item.ingredient.namePrimary).join(' + ');
 
-/// The meal's calories with [food] at [grams] in it — added, or replacing the
-/// amount of the item [replacing] when that food is already in the meal.
-double mealKcalWith(
-  List<ManualLogItem> items,
-  IngredientSearchResult food,
-  double grams, {
-  String? replacing,
-}) {
-  final total = totalsForManualItems(items).caloriesKcal ?? 0;
-  final before =
-      items
-          .where((item) => item.id == replacing)
-          .firstOrNull
-          ?.macros
-          ?.caloriesKcal ??
-      0;
-  return total - before + (food.per100g.scaledTo(grams).caloriesKcal ?? 0);
+/// A food's page open over the plate: a new food, or the item [itemId] edits.
+typedef ManualPeekPage =
+    ({IngredientSearchResult food, double grams, String? itemId});
+
+/// What the add sheet's peek strip says about the plate under it.
+sealed class ManualPeek {
+  const ManualPeek();
+}
+
+/// Nothing on the plate, and no food's page open.
+final class PeekEmpty extends ManualPeek {
+  const PeekEmpty();
+}
+
+/// What is on the plate: "3 ingredients · 295 kcal" ([kcal] null reads "—").
+final class PeekTotal extends ManualPeek {
+  const PeekTotal(this.count, this.kcal);
+  final int count;
+  final double? kcal;
+}
+
+/// The plate, then what it becomes with the open food: added ("→ 475 kcal
+/// with this"), or at an [edit]ed amount ("→ 420 kcal").
+final class PeekChange extends PeekTotal {
+  const PeekChange(super.count, super.kcal, this.after, {required this.edit});
+  final double after;
+  final bool edit;
+}
+
+/// The peek strip: what is on the plate and — with a food's [page] open —
+/// what the plate becomes with it. Nothing after the arrow for a food with no
+/// calorie figure, or for an edit that has not moved the total. Pass no page
+/// for a food the plate cannot take. Mirrors the web's `manualPeek`.
+ManualPeek manualPeek(List<ManualLogItem> items, ManualPeekPage? page) {
+  if (page == null && items.isEmpty) return const PeekEmpty();
+  final count = items.length;
+  final kcal = totalsForManualItems(items).caloriesKcal;
+  final added = page?.food.per100g.scaledTo(page.grams).caloriesKcal;
+  if (page == null || added == null) return PeekTotal(count, kcal);
+  final kept = [
+    for (final item in items)
+      if (item.id != page.itemId) item,
+  ];
+  final after = (totalsForManualItems(kept).caloriesKcal ?? 0) + added;
+  final unmoved =
+      page.itemId != null && kcal != null && after.round() == kcal.round();
+  if (unmoved) return PeekTotal(count, kcal);
+  return PeekChange(count, kcal, after, edit: page.itemId != null);
 }

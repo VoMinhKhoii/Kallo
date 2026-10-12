@@ -93,7 +93,7 @@ class ManualSearchResults extends StatelessWidget {
         item == null
             ? null
             : 'logging.manualLogging.inMeal'.tr(
-              namedArgs: {'grams': formatGrams(item.grams ?? 0)},
+              namedArgs: {'grams': formatGrams(item.grams)},
             );
     return ManualFoodRow(
       key: ValueKey(result.id),

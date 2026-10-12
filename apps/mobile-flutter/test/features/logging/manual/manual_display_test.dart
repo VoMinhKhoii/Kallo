@@ -88,12 +88,57 @@ void main() {
     });
   });
 
-  test('the meal with a food: added, or replacing its own amount', () {
+  group('the peek strip', () {
     final chicken = food();
+    const mystery = IngredientSearchResult(
+      id: 'm',
+      namePrimary: 'Lá mơ lông',
+      nameEn: null,
+      state: 'raw',
+      per100g: IngredientMacrosPer100g(proteinG: 4.1),
+    );
     final items = [ManualLogItem(id: 'a', ingredient: chicken, grams: 150)];
-    expect(mealKcalWith(items, chicken, 100), 180 + 120);
-    expect(mealKcalWith(items, chicken, 100, replacing: 'a'), 120);
-    expect(mealKcalWith(const [], chicken, 50), 60);
+    ManualPeekPage page(IngredientSearchResult f, double g, [String? id]) => (
+      food: f,
+      grams: g,
+      itemId: id,
+    );
+
+    test('the plate alone', () {
+      expect(manualPeek(const [], null), isA<PeekEmpty>());
+      final total = manualPeek(items, null) as PeekTotal;
+      expect((total.count, total.kcal), (1, 180));
+      expect(total, isNot(isA<PeekChange>()));
+      // Unknown calories stay unknown, never 0.
+      const unknown = [
+        ManualLogItem(id: 'm1', ingredient: mystery, grams: 100),
+      ];
+      expect((manualPeek(unknown, null) as PeekTotal).kcal, isNull);
+    });
+
+    test('with a new food: what the plate becomes', () {
+      final added = manualPeek(items, page(chicken, 100)) as PeekChange;
+      expect((added.kcal, added.after, added.edit), (180, 300, false));
+      // On an empty plate a food's page still counts the plate.
+      final first = manualPeek(const [], page(chicken, 50)) as PeekChange;
+      expect((first.count, first.kcal, first.after), (0, 0, 60));
+    });
+
+    test(
+      'an edit replaces its own amount, and says nothing until it moves',
+      () {
+        final edit = manualPeek(items, page(chicken, 100, 'a')) as PeekChange;
+        expect((edit.after, edit.edit), (120, true));
+        expect(
+          manualPeek(items, page(chicken, 150, 'a')),
+          isNot(isA<PeekChange>()),
+        );
+      },
+    );
+
+    test('a food with no calorie figure promises nothing', () {
+      expect(manualPeek(items, page(mystery, 100)), isNot(isA<PeekChange>()));
+    });
   });
 
   group('amount', () {

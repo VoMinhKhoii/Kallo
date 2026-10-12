@@ -104,9 +104,11 @@ void main() {
       state = container.read(manualLogProvider);
       expect(state.totals.caloriesKcal, closeTo(195, 1e-9));
 
-      notifier.updateGrams(state.items.single.id, null);
-      state = container.read(manualLogProvider);
-      expect(state.canSave, isFalse);
+      // The controller holds every amount to the save contract's bounds.
+      notifier.updateGrams(state.items.single.id, 0);
+      expect(container.read(manualLogProvider).items.single.grams, 1);
+      notifier.updateGrams(state.items.single.id, 9000);
+      expect(container.read(manualLogProvider).items.single.grams, 5000);
 
       notifier.removeItem(state.items.single.id);
       expect(container.read(manualLogProvider).items, isEmpty);
@@ -196,13 +198,10 @@ void main() {
       expect(state.isSaving, isFalse);
     });
 
-    test('save with no complete items is a no-op', () async {
+    test('save with an empty plate is a no-op', () async {
       final notifier = container.read(manualLogProvider.notifier);
       notifier.addIngredient(rice, grams: 100);
-      notifier.updateGrams(
-        container.read(manualLogProvider).items.single.id,
-        null,
-      );
+      notifier.removeItem(container.read(manualLogProvider).items.single.id);
 
       await notifier.save(userId: 'user-1', date: '2026-06-12');
 

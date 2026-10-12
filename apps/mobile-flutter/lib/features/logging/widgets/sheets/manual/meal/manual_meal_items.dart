@@ -73,14 +73,14 @@ class ManualMealItems extends StatelessWidget {
   }
 
   Widget _row(ManualLogItem item) {
-    final grams = '${formatGrams(item.grams ?? 0)} g';
+    final grams = '${formatGrams(item.grams)} g';
     final open = onOpen;
     return ManualFoodRow(
       key: ValueKey(item.id),
       name: item.ingredient.namePrimary,
       nameMaxLines: 1,
       subtitle: mealSubtitle(item.ingredient, manualStateWord, grams),
-      kcal: formatKcal(item.macros?.caloriesKcal),
+      kcal: formatKcal(item.macros.caloriesKcal),
       kcalUnitMuted: false,
       semanticLabel: '${item.ingredient.namePrimary}, $grams',
       onTap: open == null ? null : () => open(item),

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -12,8 +11,11 @@ import '../../../../../../theme/kallo_theme.dart';
 import '../../../../data/manual_log_providers.dart';
 import '../../../../logic/manual/manual_amount.dart';
 import '../food/manual_food_page.dart';
+import '../../../../logic/manual/manual_display.dart';
+import 'manual_open_food.dart';
 import 'manual_peek_strip.dart';
 import 'manual_search_page.dart';
+import 'manual_search_session.dart';
 
 /// Stack the add sheet over the meal sheet. With [editing] it opens straight
 /// onto that item's food page, and leaving the page closes the sheet.
@@ -25,14 +27,13 @@ Future<void> showManualAddSheet(
   builder: (_) => ManualAddSheet(editing: editing),
 );
 
-typedef _OpenFood = ({IngredientSearchResult food, String? itemId});
-
 /// The second sheet: search, then a food's page, then back to search with the
 /// food marked as added — one surface whose content pages ([SheetPageSwap]),
 /// over a strip of the meal sheet that keeps the running total in view.
 ///
-/// The query, the grams and the page live HERE, above the swap: the swap
-/// rebuilds both pages from scratch, so anything kept inside one would reset.
+/// The query and the open food (with its grams) live HERE, above the swap: the
+/// swap rebuilds both pages from scratch, so anything kept inside one would
+/// reset.
 class ManualAddSheet extends ConsumerStatefulWidget {
   const ManualAddSheet({super.key, this.editing});
 
@@ -43,37 +44,22 @@ class ManualAddSheet extends ConsumerStatefulWidget {
 }
 
 class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
-  final TextEditingController _search = TextEditingController();
-  Timer? _debounce;
-  String _query = '';
-  late _OpenFood? _open = _editingFood();
-  late double _grams = widget.editing?.grams ?? 100;
+  final ManualSearchSession _search = ManualSearchSession();
+  late ManualOpenFood? _open = switch (widget.editing) {
+    final item? => MealFood(item),
+    null => null,
+  };
   bool _addedAny = false;
   bool _visitedFood = false;
-
-  /// The last results that arrived, kept on screen while the next query loads
-  /// so typing a letter doesn't blank the list.
-  ({String query, List<IngredientSearchResult> results})? _shown;
-
-  _OpenFood? _editingFood() {
-    final item = widget.editing;
-    return item == null ? null : (food: item.ingredient, itemId: item.id);
-  }
 
   @override
   void initState() {
     super.initState();
-    _search.addListener(() {
-      _debounce?.cancel();
-      _debounce = Timer(const Duration(milliseconds: 300), () {
-        if (mounted) setState(() => _query = _search.text.trim());
-      });
-    });
+    _search.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _search.dispose();
     super.dispose();
   }
@@ -82,8 +68,10 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
     FocusScope.of(context).unfocus();
     final item = ref.read(manualLogProvider).itemFor(food.id);
     setState(() {
-      _open = (food: food, itemId: item?.id);
-      _grams = item?.grams ?? initialManualGrams(food);
+      _open =
+          item == null
+              ? NewFood(food, initialManualGrams(food))
+              : MealFood(item);
       _visitedFood = true;
     });
   }
@@ -98,31 +86,29 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
     }
   }
 
-  void _commit() {
-    final open = _open!;
+  void _commit(ManualOpenFood open) {
     final notifier = ref.read(manualLogProvider.notifier);
-    if (open.itemId != null) {
-      notifier.updateGrams(open.itemId!, _grams);
-    } else {
-      notifier.addIngredient(open.food, grams: _grams);
-      _addedAny = true;
+    switch (open) {
+      case NewFood(:final food, :final grams):
+        notifier.addIngredient(food, grams: grams);
+        _addedAny = true;
+      case MealFood(:final item, :final grams):
+        notifier.updateGrams(item.id, grams);
     }
     _leaveFood();
   }
 
-  void _remove() {
-    ref.read(manualLogProvider.notifier).removeItem(_open!.itemId!);
+  void _remove(ManualLogItem item) {
+    ref.read(manualLogProvider.notifier).removeItem(item.id);
     _leaveFood();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(manualLogProvider);
-    final async = ref.watch(ingredientSearchProvider(_query));
-    if (async.valueOrNull case final results?) {
-      _shown = (query: _query, results: results);
-    }
-    final held = async.isLoading ? _shown : null;
+    final shown = _search.shown(
+      ref.watch(ingredientSearchProvider(_search.query)),
+    );
     final media = MediaQuery.of(context);
     final strip = ManualPeekStrip.visibleHeight(context);
     final height =
@@ -132,13 +118,14 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
         strip -
         media.viewInsets.bottom;
     final open = _open;
-    // A new food on a full plate cannot go in: the strip promises nothing.
-    final blocked = state.isFull && open?.itemId == null;
-    final peek = ManualPeekStrip.texts(
+    // A new food on a full plate cannot go in: its page says so, and the strip
+    // promises nothing for it.
+    final blocked = open is NewFood && state.isFull;
+    final peek = manualPeek(
       state.items,
-      food: blocked ? null : open?.food,
-      grams: _grams,
-      itemId: open?.itemId,
+      open == null || blocked
+          ? null
+          : (food: open.food, grams: open.grams, itemId: open.itemId),
     );
 
     return Stack(
@@ -148,7 +135,7 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
           left: 14,
           right: 14,
           height: strip + kSheetRadius,
-          child: ManualPeekStrip(text: peek.$1, after: peek.$2),
+          child: ManualPeekStrip(peek: peek),
         ),
         Padding(
           padding: EdgeInsets.only(top: strip),
@@ -162,11 +149,10 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
                   open == null
                       ? ManualSearchPage(
                         key: const ValueKey('manual-search'),
-                        controller: _search,
+                        controller: _search.field,
                         autofocus: !_visitedFood,
-                        query: held?.query ?? _query,
-                        resultsAsync:
-                            held == null ? async : AsyncData(held.results),
+                        query: shown.query,
+                        resultsAsync: shown.results,
                         itemFor: state.itemFor,
                         onPick: _pick,
                         showDone: _addedAny,
@@ -174,12 +160,17 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
                       : ManualFoodPage(
                         key: ValueKey('manual-food-${open.food.id}'),
                         food: open.food,
-                        grams: _grams,
-                        inMeal: open.itemId != null,
-                        onGrams: (grams) => setState(() => _grams = grams),
-                        onCommit: _commit,
-                        onRemove: open.itemId == null ? null : _remove,
-                        mealFull: state.isFull,
+                        grams: open.grams,
+                        inMeal: open is MealFood,
+                        blocked: blocked,
+                        onGrams:
+                            (grams) =>
+                                setState(() => _open = open.withGrams(grams)),
+                        onCommit: () => _commit(open),
+                        onRemove: switch (open) {
+                          MealFood(:final item) => () => _remove(item),
+                          NewFood() => null,
+                        },
                         onBack: widget.editing == null ? _leaveFood : null,
                       ),
             ),

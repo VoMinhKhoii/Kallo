@@ -60,10 +60,7 @@ class ManualLogState {
         isSaving: isSaving ?? this.isSaving,
       );
 
-  List<ManualLogItem> get completeItems =>
-      items.where((i) => i.isComplete).toList();
-
-  bool get canSave => !isSaving && completeItems.isNotEmpty;
+  bool get canSave => !isSaving && items.isNotEmpty;
 
   /// The plate holds [maxManualItems]: nothing more can go in, though what is
   /// there still updates.
@@ -95,20 +92,31 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     state = state.copyWith(
       items: [
         ...state.items,
-        ManualLogItem(id: _uuid.v4(), ingredient: ingredient, grams: grams),
+        ManualLogItem(
+          id: _uuid.v4(),
+          ingredient: ingredient,
+          grams: _inBounds(grams),
+        ),
       ],
     );
   }
 
-  void updateGrams(String itemId, double? grams) {
-    final clamped = grams?.clamp(manualGramsMin, manualGramsMax).toDouble();
+  void updateGrams(String itemId, double grams) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          if (item.id == itemId) item.copyWith(grams: () => clamped) else item,
+          if (item.id == itemId)
+            item.copyWith(grams: _inBounds(grams))
+          else
+            item,
       ],
     );
   }
+
+  /// The save contract's bounds, held here so no amount outside them is ever
+  /// on the plate.
+  static double _inBounds(double grams) =>
+      grams.clamp(manualGramsMin, manualGramsMax).toDouble();
 
   void removeItem(String itemId) {
     state = state.copyWith(
@@ -116,7 +124,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     );
   }
 
-  /// Save the complete items as one meal, then run the same cache cascade the
+  /// Save the plate as one meal, then run the same cache cascade the
   /// confirm flow uses (day feed, timeline dots, dashboard bundle). On
   /// failure the server changed nothing, so no surface is invalidated.
   ///
@@ -127,7 +135,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     required String date,
     String? name,
   }) async {
-    final items = state.completeItems;
+    final items = state.items;
     if (items.isEmpty || state.isSaving) return;
 
     final api = ref.read(apiClientProvider);

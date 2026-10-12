@@ -138,14 +138,11 @@ ClientVessel? vesselFromHint(Object? hint) {
   return ClientVessel.fromJson({...hint, 'tier': chen ? 1 : 2});
 }
 
-/// One picked item in the manual-log sheet: an ingredient + editable grams.
+/// One food on the manual-log plate, at the grams its food page settled on.
 class ManualLogItem {
   final String id;
   final IngredientSearchResult ingredient;
-
-  /// Null while the grams field is cleared mid-edit; such rows are excluded
-  /// from totals and from the save payload.
-  final double? grams;
+  final double grams;
 
   const ManualLogItem({
     required this.id,
@@ -153,30 +150,32 @@ class ManualLogItem {
     required this.grams,
   });
 
-  ManualLogItem copyWith({double? Function()? grams}) => ManualLogItem(
-    id: id,
-    ingredient: ingredient,
-    grams: grams != null ? grams() : this.grams,
-  );
+  ManualLogItem copyWith({double? grams}) =>
+      ManualLogItem(id: id, ingredient: ingredient, grams: grams ?? this.grams);
 
-  bool get isComplete => grams != null && grams!.isFinite && grams! > 0;
-
-  /// Live macros for this row (per100g × grams/100), or null when incomplete.
-  IngredientMacrosPer100g? get macros =>
-      isComplete ? ingredient.per100g.scaledTo(grams!) : null;
+  /// This food's macros at its grams (per100g × grams/100).
+  IngredientMacrosPer100g get macros => ingredient.per100g.scaledTo(grams);
 }
 
-/// Sum macros across complete items. Per nutrient: sum of non-null values, or
-/// null when no item carries it.
+/// The plate's macros. Per nutrient: the sum of the values its foods carry,
+/// or null when none carries it — unknown, shown "—", never a false 0. An
+/// empty plate is a known 0.
 IngredientMacrosPer100g totalsForManualItems(List<ManualLogItem> items) {
+  if (items.isEmpty) {
+    return const IngredientMacrosPer100g(
+      caloriesKcal: 0,
+      proteinG: 0,
+      carbohydrateG: 0,
+      fatG: 0,
+    );
+  }
   double? calories;
   double? protein;
   double? carbs;
   double? fat;
+  double? add(double? sum, double? v) => v == null ? sum : (sum ?? 0) + v;
   for (final item in items) {
     final macros = item.macros;
-    if (macros == null) continue;
-    double? add(double? sum, double? v) => v == null ? sum : (sum ?? 0) + v;
     calories = add(calories, macros.caloriesKcal);
     protein = add(protein, macros.proteinG);
     carbs = add(carbs, macros.carbohydrateG);

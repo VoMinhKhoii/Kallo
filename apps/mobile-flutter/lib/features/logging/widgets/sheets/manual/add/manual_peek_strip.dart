@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../../../models/nutrition/ingredient.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../logic/manual/manual_display.dart';
 
@@ -14,67 +13,43 @@ import '../../../../logic/manual/manual_display.dart';
 /// way UIKit does: Flutter's modal route has no presenting-sheet transform, and
 /// the strip is the part of that look that carries information.
 class ManualPeekStrip extends StatelessWidget {
-  const ManualPeekStrip({super.key, required this.text, this.after});
+  const ManualPeekStrip({super.key, required this.peek});
 
-  /// What is on the plate now: "3 ingredients · 295 kcal".
-  final String text;
-
-  /// What it becomes, after an arrow: "475 kcal with this". The arrow is an
-  /// icon because Be Vietnam Pro has no "→" glyph — iOS would set that one
-  /// character in a fallback face.
-  final String? after;
+  /// What to say — `manualPeek`'s reading of the plate and the open food.
+  final ManualPeek peek;
 
   /// How much of the strip shows above the add sheet: its 7pt inset, one
   /// caption line at the reader's text size, and 4pt of air — 26 at 1x.
   static double visibleHeight(BuildContext context) =>
       7 + MediaQuery.textScalerOf(context).scale(12) * 1.25 + 4;
 
-  /// The strip's two halves for the meal [items]: what is on the plate, and —
-  /// with a [food] page open — what the plate becomes with it at [grams]
-  /// (replacing [itemId]'s amount when that food is already in the meal).
-  static (String, String?) texts(
-    List<ManualLogItem> items, {
-    IngredientSearchResult? food,
-    double grams = 0,
-    String? itemId,
-  }) {
-    // Unknown calories read "—"; only an empty plate is a known 0.
-    final total =
-        totalsForManualItems(items).caloriesKcal ?? (items.isEmpty ? 0 : null);
-    final summary = 'logging.manualLogging.peek'.tr(
-      namedArgs: {
-        'count': 'logging.manualLogging.ingredientCount'.plural(items.length),
-        'kcal': formatKcal(total),
-      },
-    );
-    if (food == null) {
-      return (
-        items.isEmpty ? 'logging.manualLogging.peekEmpty'.tr() : summary,
-        null,
-      );
-    }
-    // A food with no calorie figure moves the total by nothing it can name.
-    if (food.per100g.caloriesKcal == null) return (summary, null);
-    final after = formatKcal(
-      mealKcalWith(items, food, grams, replacing: itemId),
-    );
-    // An edit that hasn't moved the total yet has nothing to point at.
-    if (itemId != null && after == formatKcal(total)) return (summary, null);
-    return (
-      summary,
-      (itemId == null
-              ? 'logging.manualLogging.peekWith'
-              : 'logging.manualLogging.peekAfter')
-          .tr(namedArgs: {'kcal': after}),
-    );
-  }
-
   /// The strip's tint: the meal sheet's canvas under the route's dimming.
   static const Color _fill = Color(0xFFD9D6CE);
   static const Color _ink = Color(0xFF55534D);
 
+  static String _summary(int count, double? kcal) =>
+      'logging.manualLogging.peek'.tr(
+        namedArgs: {
+          'count': 'logging.manualLogging.ingredientCount'.plural(count),
+          'kcal': formatKcal(kcal),
+        },
+      );
+
   @override
   Widget build(BuildContext context) {
+    // The arrow is an icon: Be Vietnam Pro has no "→" glyph, and iOS would set
+    // that one character in a fallback face.
+    final (text, after) = switch (peek) {
+      PeekEmpty() => ('logging.manualLogging.peekEmpty'.tr(), null),
+      PeekChange(:final count, :final kcal, :final after, :final edit) => (
+        _summary(count, kcal),
+        (edit
+                ? 'logging.manualLogging.peekAfter'
+                : 'logging.manualLogging.peekWith')
+            .tr(namedArgs: {'kcal': formatKcal(after)}),
+      ),
+      PeekTotal(:final count, :final kcal) => (_summary(count, kcal), null),
+    };
     return Container(
       padding: const EdgeInsets.only(top: 7, left: 24, right: 24),
       decoration: const BoxDecoration(

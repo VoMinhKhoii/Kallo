@@ -26,7 +26,7 @@ class ManualFoodPage extends StatelessWidget {
     required this.onCommit,
     this.onBack,
     this.onRemove,
-    this.mealFull = false,
+    this.blocked = false,
   });
 
   final IngredientSearchResult food;
@@ -40,16 +40,17 @@ class ManualFoodPage extends StatelessWidget {
   /// Back to the results; null when the page was opened from the meal itself,
   /// where the leading control closes the sheet instead.
   final VoidCallback? onBack;
+
+  /// Remove the food from the meal; null for a food not in it.
   final VoidCallback? onRemove;
 
-  /// The meal already holds as many foods as it may: a new one cannot go in,
-  /// and the page says so over the disabled button.
-  final bool mealFull;
+  /// A new food a full meal cannot take: the commit is off, and the page says
+  /// why over it.
+  final bool blocked;
 
   @override
   Widget build(BuildContext context) {
     final macros = food.per100g.scaledTo(grams);
-    final blocked = mealFull && !inMeal;
     final bottomInset = math.max(
       MediaQuery.viewPaddingOf(context).bottom,
       KalloSpacing.sp4,
@@ -101,7 +102,7 @@ class ManualFoodPage extends StatelessWidget {
           disabled: blocked,
           onPressed: onCommit,
         ),
-        if (inMeal && onRemove != null)
+        if (onRemove != null)
           KalloButton(
             title: 'logging.manualLogging.remove'.tr(),
             variant: KalloButtonVariant.danger,

@@ -12,29 +12,19 @@ import '../../../../logic/manual/manual_display.dart';
 /// each row names the colour it sits next to.
 ///
 /// No card behind it (owner review): it is read, never tapped, and a white
-/// slab made the sheet's one summary look like another list.
-///
-/// An empty plate reads 0; a plate whose foods carry no figure for a value
-/// reads "—" there, never a 0 it does not know.
+/// slab made the sheet's one summary look like another list. A value the
+/// totals don't know (null) reads "—", never 0.
 class ManualMealTotals extends StatelessWidget {
-  const ManualMealTotals({
-    super.key,
-    required this.totals,
-    required this.empty,
-  });
+  const ManualMealTotals({super.key, required this.totals});
 
   final IngredientMacrosPer100g totals;
 
-  /// Nothing on the plate yet.
-  final bool empty;
-
   @override
   Widget build(BuildContext context) {
-    double? known(double? value) => value ?? (empty ? 0 : null);
     final grams = {
-      'protein': known(totals.proteinG),
-      'carbohydrate': known(totals.carbohydrateG),
-      'fat': known(totals.fatG),
+      'protein': totals.proteinG,
+      'carbohydrate': totals.carbohydrateG,
+      'fat': totals.fatG,
     };
     final labels = {
       'protein': 'logging.barcode.protein'.tr(),
@@ -46,7 +36,7 @@ class ManualMealTotals extends StatelessWidget {
       child: Row(
         children: [
           MacroRing(
-            kcal: known(totals.caloriesKcal),
+            kcal: totals.caloriesKcal,
             protein: totals.proteinG,
             carbs: totals.carbohydrateG,
             fat: totals.fatG,
