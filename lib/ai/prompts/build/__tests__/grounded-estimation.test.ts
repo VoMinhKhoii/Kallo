@@ -4,9 +4,10 @@ import type {
   DecomposedIngredientV2,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
-import type {
-  MatchCandidate,
-  MealItemWithCandidates,
+import {
+  dishPieceCount,
+  type MatchCandidate,
+  type MealItemWithCandidates,
 } from '@/lib/ai/prompts/build/grounded-candidates';
 import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
 import {
@@ -516,5 +517,60 @@ describe('buildStaticPrefix locale blocks', () => {
     // Shared cap and refuse anchors stay in both variants.
     expect(global).toContain('under 900 kcal/100g');
     expect(global).toContain('rib ≈ 40–60%');
+  });
+});
+
+describe('a piece count on the part a split dish is named after', () => {
+  const dish = (
+    name: string,
+    parts: DecomposedIngredientV2[]
+  ): MealItemWithCandidates => ({
+    mealItem: { name, cookingMethod: 'deep-fried', ingredients: parts },
+    ingredients: parts.map((ingredient) => ({
+      ingredient,
+      candidates: [candidate()],
+    })),
+  });
+  const shrimp: DecomposedIngredientV2 = {
+    rawName: 'tôm',
+    canonicalName: 'Tôm',
+    count: 1,
+    unitToken: 'miếng',
+  };
+  const crumbs: DecomposedIngredientV2 = {
+    rawName: 'bột chiên xù',
+    canonicalName: 'Bột chiên xù',
+  };
+
+  it('moves "1 miếng" from the shrimp onto the shrimp cutlet', () => {
+    const katsu = dish('Tôm tonkatsu', [shrimp, crumbs]);
+    expect(dishPieceCount(katsu)).toMatchObject({ count: 1, unit: 'miếng' });
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: '1 miếng tôm tonkatsu',
+      mealItems: [katsu],
+      userContext: baseUserContext,
+    });
+    expect(out).toContain('dish_count="1" dish_unit="miếng"');
+    expect(out).not.toContain('user_count="1"');
+  });
+
+  it('keeps a count of the food itself on the food', () => {
+    // "5 con tôm" counts shrimp, not pieces of a dish.
+    expect(
+      dishPieceCount(
+        dish('Tôm chiên', [{ ...shrimp, count: 5, unitToken: 'con' }, crumbs])
+      )
+    ).toBeNull();
+    // A one-ingredient dish has nothing to share the count with.
+    expect(dishPieceCount(dish('Tôm tonkatsu', [shrimp]))).toBeNull();
+    // A part the dish is not named after keeps its own count.
+    expect(
+      dishPieceCount(
+        dish('Cơm gà', [
+          { ...shrimp, rawName: 'trứng', canonicalName: 'Trứng' },
+          crumbs,
+        ])
+      )
+    ).toBeNull();
   });
 });
