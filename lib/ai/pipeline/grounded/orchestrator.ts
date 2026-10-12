@@ -44,7 +44,11 @@ import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
-import { dropOilInFriedRows, rejectWrongFormRows } from './review';
+import {
+  dropOilInFriedRows,
+  rejectWrongFormRows,
+  swapFriedRowsWhenNoOil,
+} from './review';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -213,16 +217,21 @@ export async function analyzeMealV2(
     // (./review). Ingredients Call 2 rejected are replaced by their rescue
     // parts; then a fried row's separate oil is dropped. Either way the
     // streamed dishes changed, so the final flush re-sends every dish.
-    const reviewed = rejectWrongFormRows({
+    const plain = swapFriedRowsWhenNoOil({
       decomposition,
       matchResults,
       portionResolutions,
       grounded: stage3.grounded,
     });
+    const reviewed = rejectWrongFormRows(plain.state);
     const rescued = rescue ? await rescue.apply(reviewed.state.grounded) : null;
     const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
     const run = oil.state;
-    const changed = reviewed.rejected > 0 || rescued != null || oil.dropped > 0;
+    const changed =
+      plain.swapped > 0 ||
+      reviewed.rejected > 0 ||
+      rescued != null ||
+      oil.dropped > 0;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
@@ -242,7 +251,7 @@ export async function analyzeMealV2(
     if (changed) {
       stage3.itemMacrosStreamed.clear();
       console.info(
-        `[review] ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped`
+        `[review] ${plain.swapped} fried rows made plain, ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped`
       );
     }
 

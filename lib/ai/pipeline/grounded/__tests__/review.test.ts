@@ -6,7 +6,11 @@ import type {
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import { dropOilInFriedRows, rejectWrongFormRows } from '../review';
+import {
+  dropOilInFriedRows,
+  rejectWrongFormRows,
+  swapFriedRowsWhenNoOil,
+} from '../review';
 
 const triple = (mid: number) => ({ low: mid, mid, high: mid });
 
@@ -348,5 +352,67 @@ describe('dropOilInFriedRows', () => {
       },
     ]);
     expect(dropOilInFriedRows(panFried).dropped).toBe(0);
+  });
+});
+
+describe('swapFriedRowsWhenNoOil', () => {
+  /** "2 fried eggs, cooked without any oil": Call 2 picked the fried-egg row (c1). */
+  function eggs(prepNotes: string[] | undefined) {
+    const state = stateOf([
+      {
+        name: 'Fried eggs',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'eggs',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+        ],
+      },
+    ]);
+    state.decomposition.mealItems[0].ingredients[0].prepNotes = prepNotes;
+    const fried = state.matchResults[0].candidates[0];
+    const plain = {
+      ...fried,
+      info: { matchedName: 'Egg, whole, raw, fresh' },
+      prompt: {
+        name: 'Egg, whole, raw, fresh',
+        nameEn: 'Egg, whole, raw, fresh',
+        score: 1,
+      },
+      nutrition: {
+        caloriesKcal: 143,
+        proteinG: 12.6,
+        carbohydrateG: 0.7,
+        fatG: 9.5,
+      },
+    };
+    fried.nutrition = {
+      caloriesKcal: 196,
+      proteinG: 13.6,
+      carbohydrateG: 0.8,
+      fatG: 14.8,
+    } as never;
+    state.matchResults[0].candidates.push(plain as never);
+    const g = state.grounded.mealItems[0].ingredients[0];
+    g.proteinG = triple(13.6);
+    g.carbohydrateG = triple(0.8);
+    g.fatG = triple(14.8);
+    return state;
+  }
+
+  it("moves a fried row to the same food's plain row when the user said no oil", () => {
+    const out = swapFriedRowsWhenNoOil(eggs(['without any oil']));
+    expect(out.swapped).toBe(1);
+    const g = out.state.grounded.mealItems[0].ingredients[0];
+    expect(g.selectedCandidateId).toBe('c2');
+    expect(g.fatG.mid).toBeCloseTo(9.5);
+    expect(g.proteinG.mid).toBeCloseTo(12.6);
+  });
+
+  it('keeps the fried row when the user said nothing about oil', () => {
+    expect(swapFriedRowsWhenNoOil(eggs(undefined)).swapped).toBe(0);
   });
 });

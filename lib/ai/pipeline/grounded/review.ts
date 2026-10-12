@@ -11,7 +11,10 @@ import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/sch
 import type { RunState } from '@/lib/ai/pipeline/grounded/rescue/rescue';
 import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
-import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
+import {
+  isDiscreteOilIngredient,
+  statesNoOil,
+} from '@/lib/domain/nutrition/absorbed-oil';
 
 /** A wrong-form pick: the row must give more than this many times Call 2's own energy... */
 const RATIO = 3;
@@ -176,4 +179,57 @@ function weighs(
       state.portionResolutions[f]
     ) >= MIN_FOOD_G
   );
+}
+
+const firstWord = (name: string) => name.split(/[ ,]/)[0]?.toLowerCase() ?? '';
+
+/**
+ * The user said a food was cooked without fat ("không dầu", "air-fried",
+ * "without any oil"), but Call 2 picked a row that is already fried in it
+ * ("Egg, whole, cooked, fried"). The pick moves to the same food's first plain
+ * row among its candidates, at Call 2's grams, so fat the user did not use
+ * is not shipped. Returns new state.
+ */
+export function swapFriedRowsWhenNoOil(state: RunState): {
+  state: RunState;
+  swapped: number;
+} {
+  const grounded = structuredClone(state.grounded);
+  let swapped = 0;
+  pairIngredientsWithGrounded(state.decomposition, grounded).forEach(
+    ({ ingredient, ground, cookingMethodForIng }, f) => {
+      const said = [
+        cookingMethodForIng,
+        ingredient.stateNote,
+        ...(ingredient.prepNotes ?? []),
+      ].join(' ');
+      if (!ground || !statesNoOil(said)) return;
+      const from = selectedRow(state, ground, f);
+      if (!from || !isFriedRow(state, ground, f)) return;
+      const candidates = state.matchResults[f]?.candidates ?? [];
+      const food = firstWord(from.prompt.nameEn ?? from.info.matchedName);
+      const to = candidates.findIndex((c) => {
+        const names = `${c.prompt.nameEn ?? ''} | ${c.info.matchedName}`;
+        return (
+          c !== from &&
+          firstWord(c.prompt.nameEn ?? c.info.matchedName) === food &&
+          !FRIED_ROW.test(names)
+        );
+      });
+      if (to < 0) return;
+      // The plain row at Call 2's grams. Call 2's own adjustment is dropped,
+      // not carried: it was the fat the user did not use, and keeping it would
+      // take that fat off twice.
+      const edibleG = ground.grossG * (1 - (ground.refusePct ?? 0) / 100);
+      for (const field of ['proteinG', 'carbohydrateG', 'fatG'] as const) {
+        const per100 = candidates[to].nutrition?.[field];
+        if (per100 == null) continue;
+        const v = (per100 * edibleG) / 100;
+        ground[field] = { low: v, mid: v, high: v };
+      }
+      ground.selectedCandidateId = `c${to + 1}`;
+      swapped++;
+    }
+  );
+  return { state: { ...state, grounded }, swapped };
 }
