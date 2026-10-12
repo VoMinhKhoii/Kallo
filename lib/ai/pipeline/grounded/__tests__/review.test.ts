@@ -7,6 +7,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
+  capCoating,
   dropOilInFriedRows,
   rejectWrongFormRows,
   swapFriedRowsWhenNoOil,
@@ -414,5 +415,106 @@ describe('swapFriedRowsWhenNoOil', () => {
 
   it('keeps the fried row when the user said nothing about oil', () => {
     expect(swapFriedRowsWhenNoOil(eggs(undefined)).swapped).toBe(0);
+  });
+});
+
+describe('breading on a split cutlet', () => {
+  const oil = {
+    name: 'dầu ăn',
+    g: 10,
+    kcal: 88,
+    row: ['Oil, soybean', 884] as [string, number],
+  };
+  const crumbs = {
+    name: 'bột chiên xù',
+    g: 20,
+    kcal: 79,
+    row: ['Bread, crumbs, dry, grated, plain', 395] as [string, number],
+  };
+  const flour = {
+    name: 'bột mì',
+    g: 10,
+    kcal: 36,
+    row: ['Wheat flour, white', 364] as [string, number],
+  };
+  const egg = {
+    name: 'trứng gà',
+    g: 90,
+    kcal: 129,
+    row: ['Egg, whole, raw, fresh', 143] as [string, number],
+  };
+
+  it('drops the breading and oil a breaded row already holds', () => {
+    const state = stateOf([
+      {
+        name: 'Tôm tonkatsu',
+        cookingMethod: 'deep-fried',
+        parts: [
+          {
+            name: 'tôm',
+            g: 100,
+            kcal: 242,
+            row: ['Crustaceans, shrimp, cooked, breaded and fried', 242],
+          },
+          crumbs,
+          flour,
+          egg,
+          oil,
+        ],
+      },
+    ]);
+    const out = dropOilInFriedRows(state);
+    expect(out.dropped).toBe(4);
+    expect(
+      out.state.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
+    ).toEqual(['tôm']);
+  });
+
+  it("caps a hand-breaded cutlet's egg wash at a share of the meat", () => {
+    const state = stateOf([
+      {
+        name: 'Heo tonkatsu',
+        cookingMethod: 'deep-fried',
+        parts: [
+          {
+            name: 'thịt heo',
+            g: 100,
+            kcal: 143,
+            row: ['Pork, loin, raw', 143],
+          },
+          crumbs,
+          flour,
+          egg,
+          oil,
+        ],
+      },
+    ]);
+    const out = capCoating(state);
+    expect(out.capped).toBe(1);
+    const grams = out.state.grounded.mealItems[0].ingredients.map((g) =>
+      Math.round(g.grossG)
+    );
+    // Egg wash 90 g -> 15 g (15% of the pork); crumbs and flour were within their share.
+    expect(grams).toEqual([100, 20, 10, 15, 10]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('leaves an egg dish alone: the egg is the food, not a wash', () => {
+    const state = stateOf([
+      {
+        name: 'Trứng chiên',
+        cookingMethod: 'chiên',
+        parts: [
+          {
+            name: 'trứng gà',
+            g: 100,
+            kcal: 143,
+            row: ['Egg, whole, raw, fresh', 143],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(capCoating(state).capped).toBe(0);
   });
 });

@@ -45,6 +45,7 @@ import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
 import {
+  capCoating,
   dropOilInFriedRows,
   rejectWrongFormRows,
   swapFriedRowsWhenNoOil,
@@ -226,12 +227,14 @@ export async function analyzeMealV2(
     const reviewed = rejectWrongFormRows(plain.state);
     const rescued = rescue ? await rescue.apply(reviewed.state.grounded) : null;
     const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
-    const run = oil.state;
+    const coat = capCoating(oil.state);
+    const run = coat.state;
     const changed =
       plain.swapped > 0 ||
       reviewed.rejected > 0 ||
       rescued != null ||
-      oil.dropped > 0;
+      oil.dropped > 0 ||
+      coat.capped > 0;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
@@ -251,7 +254,7 @@ export async function analyzeMealV2(
     if (changed) {
       stage3.itemMacrosStreamed.clear();
       console.info(
-        `[review] ${plain.swapped} fried rows made plain, ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped`
+        `[review] ${plain.swapped} fried rows made plain, ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil or breading rows dropped, ${coat.capped} breading parts capped`
       );
     }
 
