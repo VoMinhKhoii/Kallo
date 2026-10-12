@@ -197,6 +197,17 @@ describe('matchCardCandidates', () => {
     ]);
   });
 
+  it('never embeds an empty search text: an empty field takes its fallback', () => {
+    expect(
+      cardQueryStrings({
+        rawName: 'a',
+        canonicalName: 'b',
+        queryEn: '',
+        nameVi: '  ',
+      })
+    ).toEqual(['a', 'b', 'b', 'a']);
+  });
+
   it('keeps the lexical arms when the vector arm fails', async () => {
     const failing = {
       generateEmbeddingBatch: vi.fn(async () => {

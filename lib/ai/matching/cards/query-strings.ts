@@ -24,8 +24,14 @@ export const QUERY_FIELDS = [
 export type QueryField = (typeof QUERY_FIELDS)[number]['field'];
 
 export function cardQueryStrings(ing: DecomposedIngredientV2): string[] {
+  // An empty value counts as missing: the embedding API rejects empty text,
+  // and one rejected string fails the vector search for the whole batch.
   return QUERY_FIELDS.map((f) =>
-    'fallback' in f ? (ing[f.field] ?? ing[f.fallback]) : ing[f.field]
+    'fallback' in f
+      ? ing[f.field]?.trim()
+        ? (ing[f.field] as string)
+        : ing[f.fallback]
+      : ing[f.field]
   );
 }
 

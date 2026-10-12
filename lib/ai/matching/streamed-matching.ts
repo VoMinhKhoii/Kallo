@@ -126,13 +126,17 @@ export function createStreamedMatching(
       if (items.length < seen) seen = 0;
       for (const item of items.slice(seen)) {
         for (const raw of item.ingredients ?? []) {
-          if (!raw?.rawName || started.has(matchKey(raw))) continue;
+          // An attempt that left out a name (a schema slip Call 1 is re-asked
+          // for) would embed an empty search text, which fails the whole
+          // batch's vector search; the matching after Call 1 covers it.
+          if (!raw?.rawName?.trim() || !raw.canonicalName?.trim()) continue;
+          if (started.has(matchKey(raw))) continue;
           // Cleaned up exactly as Call 1's result is, so a reused result names
           // the ingredient the way the final decomposition does.
           const ing = {
             ...raw,
             rawName: capitalizeFirst(raw.rawName),
-            canonicalName: capitalizeFirst(raw.canonicalName ?? ''),
+            canonicalName: capitalizeFirst(raw.canonicalName),
           };
           started.set(
             matchKey(ing),

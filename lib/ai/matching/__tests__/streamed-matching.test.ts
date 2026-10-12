@@ -92,4 +92,19 @@ describe('streamed matching batches', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(batches).toEqual([['A'], ['B', 'C']]);
   });
+
+  it('skips an ingredient a slipped attempt left without a name', async () => {
+    const batches: string[][] = [];
+    cardsMock.mockReset();
+    cardsMock.mockImplementation(async (ings: { rawName: string }[]) => {
+      batches.push(ings.map((i) => i.rawName));
+      return ings.map((i) => result(i.rawName));
+    });
+    const streamed = createStreamedMatching({} as AppDb, {} as GeminiClient);
+    streamed.onChunk(
+      '{"mealItems":[{"name":"x","ingredients":[{"rawName":"cơm"},{"rawName":"trứng","canonicalName":"Trứng gà"},{"rawName":"rau","canonicalName":" "}]},'
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    expect(batches).toEqual([['Trứng']]);
+  });
 });

@@ -345,6 +345,8 @@ export async function analyzeMealV2(
       : { success: true, data: assembly.result };
   } catch (error) {
     closeRescue();
+    // The user only sees a generic "try again"; keep the cause in the logs.
+    console.error('[v2-pipeline] analysis failed:', error);
     budget.recordCatchError(error);
     return handleError(error);
   }
