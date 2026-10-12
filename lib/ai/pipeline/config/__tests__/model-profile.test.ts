@@ -68,6 +68,12 @@ describe('resolveModelProfile', () => {
       nutritionModel: 'gemini-3.1-flash-lite',
       escalationModel: null,
       cheatModel: 'gemini-3.1-flash-lite',
+      call2Chunking: {
+        aboveIngredients: 10,
+        aboveMealItems: 12,
+        targetIngredients: 8,
+        concurrency: 6,
+      },
     } satisfies ModelProfile);
   });
 

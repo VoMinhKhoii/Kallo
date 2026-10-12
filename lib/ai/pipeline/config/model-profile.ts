@@ -26,11 +26,25 @@ export interface ModelProfile {
   call2Chunking?: Call2Chunking;
 }
 
+/**
+ * Call 2's time is mostly output, on Gemini and Claude alike, so a meal over
+ * 10 ingredients is split into calls of up to 8 that run side by side (a
+ * 26-ingredient meal measured ~10.5 s → ~5.5 s on Haiku; a single 2,100-token
+ * Gemini Call 2 took 16 s). Six at once keeps an 18-ingredient meal in one wave.
+ */
+const PARALLEL_CALL2: Call2Chunking = {
+  aboveIngredients: 10,
+  aboveMealItems: 12,
+  targetIngredients: 8,
+  concurrency: 6,
+};
+
 export const STABLE_PROFILE: ModelProfile = {
   decompositionModel: 'gemini-3.1-flash-lite',
   nutritionModel: 'gemini-3.1-flash-lite',
   escalationModel: null,
   cheatModel: 'gemini-3.1-flash-lite',
+  call2Chunking: PARALLEL_CALL2,
 };
 
 /**
@@ -50,6 +64,7 @@ export const NEXT_PROFILE: ModelProfile = {
   nutritionModel: 'gemini-3-flash-preview',
   escalationModel: 'gemini-3-flash-preview',
   cheatModel: 'gemini-3-flash-preview',
+  call2Chunking: PARALLEL_CALL2,
 };
 
 /**
@@ -65,16 +80,7 @@ export const HAIKU_PROFILE: ModelProfile = {
   nutritionModel: 'claude-haiku-5-5',
   escalationModel: null,
   cheatModel: STABLE_PROFILE.cheatModel,
-  // Haiku's Call 2 time is mostly output (~2.2 ms per token), so an ordinary
-  // 11-ingredient plate waits ~7–10 s on one call; split, the parts run side
-  // by side (measured ~10.5 s → ~5.5 s on a 26-ingredient meal).
-  call2Chunking: {
-    aboveIngredients: 10,
-    aboveMealItems: 12,
-    targetIngredients: 8,
-    // An 18-ingredient meal is 6 chunks: all in one wave, not two (+3 s).
-    concurrency: 6,
-  },
+  call2Chunking: PARALLEL_CALL2,
 };
 
 /** The Gemini model a Claude call re-runs on when Claude fails. */
