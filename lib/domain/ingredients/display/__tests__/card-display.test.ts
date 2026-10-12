@@ -254,3 +254,181 @@ describe('cardDisplayFields — vessel', () => {
     ).toBeNull();
   });
 });
+
+// Real rows from the seeded Vietnamese table (VTN FCT 2007 groups), the cases
+// a real-database audit of all 787 cards turned up.
+describe('cardDisplayFields — Vietnamese food groups', () => {
+  const vessel = (r: ReturnType<typeof row>) => cardDisplayFields(r).vessel;
+  const label = (r: ReturnType<typeof row>) => cardDisplayFields(r).stateLabel;
+
+  it('pours VN milks, drinks and canned juice into cups', () => {
+    const cup = { family: 'cup', dishClass: 'drink' };
+    expect(
+      vessel(row('Sữa bò tươi', 'Milk and products', "fresh cow's milk"))
+    ).toEqual(cup);
+    expect(vessel(row('Coca cola', 'Soft drinks', 'Coca-Cola'))).toEqual(cup);
+    expect(
+      vessel(row('Nước dứa hộp', 'Canned food', 'canned pineapple juice'))
+    ).toEqual(cup);
+    expect(
+      vessel(
+        row(
+          'Sữa đậu nành',
+          'Pulses, nuts, seeds and products',
+          'homemade soy milk, unsweetened'
+        )
+      )
+    ).toEqual(cup);
+  });
+
+  it('weighs spirits, milk candy and instant mixes in grams', () => {
+    expect(
+      vessel(row('Rượu Whisky (cồn 35,2 g)', 'Beverage and liquor', 'whisky'))
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Rượu trắng (cồn 39 g)',
+          'Beverage and liquor',
+          'vodka / white spirit'
+        )
+      )
+    ).toBeNull();
+    expect(
+      vessel(row('Kẹo sữa', 'Sugar, confectionery', 'milk candy'))
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Cà phê sữa hòa tan',
+          'Soft drinks',
+          'instant milk coffee mix powder'
+        )
+      )
+    ).toBeNull();
+  });
+
+  it('cuts meat and fish but not offal, shellfish, insects or minced meat', () => {
+    expect(
+      vessel(
+        row('Thịt bò loại I', 'Meat and meat products', 'beef, grade I, raw')
+      )
+    ).toEqual({ family: 'piece', kind: 'meat' });
+    expect(
+      vessel(
+        row('Cá bống', 'Fish, shellfish and products', 'goby (cá bống), raw')
+      )
+    ).toEqual({ family: 'piece', kind: 'fish' });
+    for (const [name, food] of [
+      ['Tim gà', 'chicken heart, raw'],
+      ['Mề gà', 'chicken gizzard, raw'],
+      ['Tai lợn', 'pig ears'],
+      ['Da lợn', 'pork skin'],
+      ['Pa tê', 'Vietnamese pâté'],
+      ['Châu chấu', 'locust'],
+      ['Nhộng tằm', 'silkworm pupae'],
+    ]) {
+      expect(
+        vessel(row(name, 'Meat and meat products', food)),
+        food
+      ).toBeNull();
+    }
+    for (const food of [
+      'blue swimmer crab (ghẹ), raw',
+      'sea shrimp, raw',
+      'squid, raw',
+    ]) {
+      expect(
+        vessel(row('x', 'Fish, shellfish and products', food)),
+        food
+      ).toBeNull();
+    }
+  });
+
+  it('bowls rice and noodles, plates boiled vegetables, and skips the rest', () => {
+    const cooked = { cookingMethod: 'boiled' };
+    expect(
+      vessel(
+        row('Bánh ướt', 'Cereal and products', 'rice noodles, cooked', cooked)
+      )
+    ).toEqual({ family: 'bowl', dishClass: 'solid' });
+    expect(
+      vessel(
+        row(
+          'Đậu cô ve, luộc',
+          'Vegetables, fruits, tubers used as vegetables',
+          'green beans, boiled',
+          cooked
+        )
+      )
+    ).toEqual({ family: 'plate', dishClass: 'solid' });
+    expect(
+      vessel(
+        row('Bánh bao chay', 'Cereal and products', 'plain steamed bun', {
+          cookingMethod: 'steamed',
+        })
+      )
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Ngô nếp luộc',
+          'Cereal and products',
+          'boiled glutinous corn',
+          cooked
+        )
+      )
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Khoai tây lát chiên',
+          'Starchy root and products',
+          'potato chips',
+          { cookingMethod: 'fried' }
+        )
+      )
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Trân châu sắn luộc',
+          'Starchy root and products',
+          'boiled tapioca pearls',
+          cooked
+        )
+      )
+    ).toBeNull();
+    expect(
+      vessel(
+        row(
+          'Bột canh',
+          'Condiments, traditional sauces',
+          'Vietnamese seasoning salt'
+        )
+      )
+    ).toBeNull();
+  });
+
+  it('labels raw/cooked only where it changes the weight', () => {
+    expect(
+      label(row('Rau muống, luộc', 'Vegetables', 'water spinach, boiled'))
+    ).toBe('cooked');
+    expect(
+      label(row('Gan gà', 'Meat and meat products', 'chicken liver, raw'))
+    ).toBe('raw');
+    expect(
+      label(
+        row('Bánh bích quy', 'Sugar, confectionery', 'plain sweet biscuits', {
+          cookingMethod: 'baked',
+        })
+      )
+    ).toBeNull();
+    expect(
+      label(row('Chuối xanh', 'Fruits', 'green unripe banana, raw'))
+    ).toBeNull();
+    expect(
+      label(row('Sữa bò tươi', 'Milk and products', "fresh cow's milk, raw"))
+    ).toBeNull();
+  });
+});
