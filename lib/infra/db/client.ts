@@ -34,12 +34,12 @@ function getClient() {
       );
     }
     _client = postgres(encodeDbUrl(url), {
-      // Shared staging can have internal + preview services alive at once.
-      // Keep the per-instance session pool small so a second service doesn't
-      // exhaust Supabase's session-mode pooler during cold starts or health checks.
-      // Env-configurable so an environment that owns its pooler can raise it —
-      // a too-small pool lets one request's concurrent writes starve its own
-      // critical-path insert (see the analyze-meal SSE hang).
+      // Small by default: on Supabase's session-mode pooler (5432) every pool
+      // connection pins one of the database's few real ones. Prod connects
+      // through transaction mode (6543), where connections are shared, and
+      // raises it with DB_POOL_MAX (cloud-run-prod.yml). A too-small pool lets
+      // one request's concurrent writes starve its own critical-path insert
+      // (see the analyze-meal SSE hang).
       max: Number(process.env.DB_POOL_MAX) || 2,
       // Bound establishing a *new* connection so a dead pooler fails fast
       // instead of hanging the acquiring query indefinitely.
