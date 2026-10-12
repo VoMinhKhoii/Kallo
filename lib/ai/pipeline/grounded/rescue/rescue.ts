@@ -47,6 +47,13 @@ const GRACE_MS = 12_000;
  * pre-stream DB work: 35 s keeps all of that inside the route.
  */
 const RUN_DEADLINE_MS = 35_000;
+/**
+ * An ingredient Call 2 sized under this is a placeholder: a dish label whose
+ * parts are already listed beside it ("cà ri" next to its potato, carrot and
+ * onion at 1 g). Rescuing it would scale a whole recipe into a gram and add
+ * zero-gram rows, and spend a mini-meal on it.
+ */
+const MIN_RESCUE_G = 10;
 /** Plain additions a mini-meal cannot split further. */
 const NOT_A_DISH =
   /^(n[uư][oớ]c( lọc| đá)?|water|ice|đá|đường( kính)?|sugar|muối|salt|tiêu|pepper|ớt|chili|nước mắm|fish sauce)$/i;
@@ -208,6 +215,7 @@ export function startDishRescue(args: {
       const pairs = pairIngredientsWithGrounded(decomposition, grounded);
       const needed = ingredients.flatMap((ing, f) =>
         rescuable(ing, portionResolutions[f]) &&
+        (pairs[f]?.ground?.grossG ?? 0) >= MIN_RESCUE_G &&
         rejected(pairs[f]?.ground, matchResults[f]?.candidates.length ?? 0)
           ? [f]
           : []

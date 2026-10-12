@@ -143,6 +143,22 @@ describe('startDishRescue', () => {
     expect(out?.rescued).toBe(2);
   });
 
+  it('never rescues a placeholder Call 2 sized at a gram or two', async () => {
+    // "cà ri" listed beside its own potato, carrot and onion at 1 g: scaling
+    // a whole curry into 1 g would ship zero-gram rows.
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    const placeholder = call2('none');
+    placeholder.mealItems[1].ingredients[0].grossG = 1;
+    await rescue.apply(placeholder);
+
+    expect(runSubMeal).not.toHaveBeenCalledWith('1 portion of cơm, nấu');
+  });
+
   it('treats a pick outside the candidate list as a rejection', async () => {
     const runSubMeal = vi.fn(async () => parts);
     const rescue = rescueWith(runSubMeal, {
