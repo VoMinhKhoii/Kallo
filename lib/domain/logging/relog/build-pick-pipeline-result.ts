@@ -49,6 +49,8 @@ export interface RelogSourceRow extends SourceItemRow {
   userFacingUnit: string | null;
   cookingMethod: string | null;
   matchConfidence: number | null;
+  /** Stored ethanol grams; optional because scanned products carry none. */
+  alcoholG?: number | null;
 }
 
 const CONFIDENCE_VALUES: readonly MealConfidence[] = ['high', 'medium', 'low'];
@@ -103,6 +105,7 @@ export function buildFrozenMealItem<T extends RelogSourceRow>(
       matchConfidence: row.matchConfidence,
       boundedNutrition: toDegenerateBounded(displayed),
       displayedNutrition: displayed,
+      ...(row.alcoholG ? { alcoholG: row.alcoholG } : {}),
     };
   });
 

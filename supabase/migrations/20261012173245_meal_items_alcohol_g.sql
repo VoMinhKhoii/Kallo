@@ -1,0 +1,2 @@
+ALTER TABLE "meal_items" ADD COLUMN "alcohol_g" numeric;--> statement-breakpoint
+ALTER TABLE "meal_items" ADD CONSTRAINT "meal_items_alcohol_g_non_negative_check" CHECK ("meal_items"."alcohol_g" IS NULL OR "meal_items"."alcohol_g" >= 0);

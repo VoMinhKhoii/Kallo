@@ -29,7 +29,11 @@ export async function scaleOwnMealInPlace(
   for (const { row, grams, nutrition } of scaled) {
     await tx
       .update(mealItems)
-      .set({ estimatedGrams: grams, ...nutritionValuesToRow(nutrition) })
+      .set({
+        estimatedGrams: grams,
+        ...nutritionValuesToRow(nutrition),
+        alcoholG: row.alcoholG != null ? row.alcoholG * factor : null,
+      })
       .where(and(eq(mealItems.id, row.id), eq(mealItems.mealId, source.id)));
   }
 

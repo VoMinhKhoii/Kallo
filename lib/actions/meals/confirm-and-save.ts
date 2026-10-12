@@ -9,6 +9,7 @@ import {
   buildPersistedMealItemGroup,
   inferMealSlot,
   nutritionValuesToRow,
+  sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import {
   goalAdjustNutrition,
@@ -240,11 +241,7 @@ export async function confirmAndSaveMealAction(input: {
     );
     const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
     // Ethanol from alcoholic rows; its energy is already in the kcal above.
-    const alcoholTotal = allIngredients.reduce(
-      (sum, ingredient) => sum + (ingredient.alcoholG ?? 0),
-      0
-    );
-    const alcoholG = alcoholTotal > 0 ? alcoholTotal : null;
+    const alcoholG = sumAlcoholG(allIngredients.map((ing) => ing.alcoholG));
 
     // Insert meal
     const [meal] = await guardClientMealId(() =>
@@ -305,6 +302,7 @@ export async function confirmAndSaveMealAction(input: {
         cookingMethod: ing.cookingMethod,
         matchConfidence: ing.matchConfidence,
         ...nutritionValuesToRow(ing.displayedNutrition),
+        alcoholG: ing.alcoholG ?? null,
       }))
     );
 

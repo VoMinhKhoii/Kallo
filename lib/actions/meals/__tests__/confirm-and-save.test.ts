@@ -584,6 +584,9 @@ describe('confirmAndSaveMealAction', () => {
     const mealRow = capturedValues[0] as Record<string, unknown>;
     expect(mealRow.alcoholG).toBe(30);
     expect(result.meal.alcoholG).toBe(30);
+    // Kept per item too, so later edits can re-sum it exactly.
+    const itemRows = capturedValues[1] as Record<string, unknown>[];
+    expect(itemRows.map((row) => row.alcoholG)).toEqual([null, 30]);
   });
 
   it('saves a null alcohol_g when no row carries alcohol', async () => {
