@@ -44,6 +44,7 @@ import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
+import { reviewPicks } from './review';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -140,30 +141,13 @@ export async function analyzeMealV2(
       languageRetryCount,
       providerRetryCount: decompositionProviderRetryCount,
       promptCharsCall1,
+      streamedMatching,
     } = stage1;
 
-    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
-    const {
-      matchResults,
-      portionResolutions,
-      vesselEnvelopes,
-      mealItemsWithCandidates,
-    } = await prepareGrounding({
-      decomposition,
-      userContext,
-      db,
-      gemini,
-      traceContext,
-      emit,
-      topK,
-      matchConcurrency,
-      vesselEnabled,
-    });
-
-    // Dish rescue mini-meals start now, beside Call 2 (see ./rescue/rescue).
+    // Dish rescue starts now, beside everything after Call 1 (./rescue/rescue).
     const rescue = isDishRescueEnabled()
       ? startDishRescue({
-          state: { decomposition, matchResults, portionResolutions },
+          decomposition,
           language: userContext.outputLanguage === 'vi' ? 'vi' : 'en',
           runStartedAt: t0,
           subMeal: {
@@ -184,6 +168,25 @@ export async function analyzeMealV2(
       : null;
     if (rescue) closeRescue = rescue.close;
 
+    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
+    const {
+      matchResults,
+      portionResolutions,
+      vesselEnvelopes,
+      mealItemsWithCandidates,
+    } = await prepareGrounding({
+      decomposition,
+      streamedMatching,
+      userContext,
+      traceContext,
+      emit,
+      topK,
+      matchConcurrency,
+      vesselEnabled,
+    });
+
+    rescue?.matched(matchResults, portionResolutions);
+
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
       traceContext,
@@ -203,25 +206,33 @@ export async function analyzeMealV2(
       onChunkTick: () => {
         nutritionChunkCount++;
       },
+      runStartedAt: t0,
+      onSelectorNone: rescue?.startEarly,
+      // Each dish's Call 2 estimate reaches the rescue as it streams in.
+      onEstimatedItems: rescue?.onEstimates,
     });
     const { call2 } = stage3;
     promptCharsCall2 = stage3.promptCharsCall2;
 
-    // Ingredients Call 2 rejected are replaced by their rescue parts. The
-    // streamed dishes then changed, so the final flush re-sends every dish.
-    const rescued = rescue ? await rescue.apply(stage3.grounded) : null;
-    const run = rescued?.state ?? {
-      decomposition,
-      matchResults,
-      portionResolutions,
-      grounded: stage3.grounded,
-    };
+    // Review the picks around the dish rescue (./review). When anything
+    // changed, the streamed dishes no longer hold, so the final flush
+    // re-sends every dish.
+    const review = await reviewPicks(
+      {
+        decomposition,
+        matchResults,
+        portionResolutions,
+        grounded: stage3.grounded,
+      },
+      rescue
+    );
+    const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
     // onto the dish so the container stays and only the class is recomputed.
     const envelopes =
-      rescued && vesselEnabled
+      review.rescued > 0 && vesselEnabled
         ? run.decomposition.mealItems.map((mi, d) => {
             const before = vesselEnvelopes[d] ?? null;
             return (
@@ -232,9 +243,9 @@ export async function analyzeMealV2(
             );
           })
         : vesselEnvelopes;
-    if (rescued) {
+    if (changed) {
       stage3.itemMacrosStreamed.clear();
-      console.info(`[rescue] ${rescued.rescued} ingredients rescued`);
+      console.info(`[review] ${review.summary}`);
     }
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
@@ -268,7 +279,7 @@ export async function analyzeMealV2(
       grounded: run.grounded,
       streamedMealItemIds,
       alreadyStreamed: stage3.itemMacrosStreamed,
-      offsetByName: rescued
+      offsetByName: changed
         ? buildMealItemOffsetByName(run.decomposition.mealItems)
         : stage3.offsetByName,
       goal: userContext.goal,
@@ -334,6 +345,8 @@ export async function analyzeMealV2(
       : { success: true, data: assembly.result };
   } catch (error) {
     closeRescue();
+    // The user only sees a generic "try again"; keep the cause in the logs.
+    console.error('[v2-pipeline] analysis failed:', error);
     budget.recordCatchError(error);
     return handleError(error);
   }

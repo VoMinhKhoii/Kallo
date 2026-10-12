@@ -7,8 +7,9 @@ import type {
 /**
  * User-facing portion descriptions interpolated into LLM prompts.
  *
- * Rice sizes are derived from PORTION_PRIORS rather than restated, so the
- * number the prompt tells the model matches the anchor the resolver will use.
+ * Rice sizes are derived from PORTION_PRIORS rather than restated, so every
+ * prompt quotes the same bowl size as the table (150 g cooked since
+ * 2026-10-12).
  */
 const riceBowlPrior = PORTION_PRIORS.find(
   (prior) =>

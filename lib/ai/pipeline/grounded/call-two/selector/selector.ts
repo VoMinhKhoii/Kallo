@@ -47,6 +47,8 @@ export function startCandidateSelector(args: {
   mealText: string;
   mealItems: MealItemWithCandidates[];
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
+  /** Called with the flat index of an ingredient no candidate fits. */
+  onNone?: (flat: number) => void;
 }): {
   settle: (deadlineAt: number) => Promise<Map<number, string>>;
   abort: () => void;
@@ -77,6 +79,7 @@ export function startCandidateSelector(args: {
     );
     const best = out.ranking.find((id) => id !== 'none');
     if (best) picks.set(flat, best);
+    if (!best || out.ranking[0] === 'none') args.onNone?.(flat);
   };
   const done = mapWithConcurrency(choices, ask, CONCURRENCY).then((results) => {
     const failed = results.filter((r) => r.status === 'rejected').length;

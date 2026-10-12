@@ -1,9 +1,11 @@
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   classifyRefuseCut,
   type RefuseCutClass,
 } from '@/lib/ai/portion/refuse-cut';
-import type { MassBasis } from '@/lib/ai/portion/types';
+import type { MassBasis, PortionResolution } from '@/lib/ai/portion/types';
 
 export type AppliedRefuseSource =
   | 'authoritative_edible_anchor'
@@ -224,4 +226,48 @@ export function resolveGroundedMass(args: {
       massBasis,
     },
   };
+}
+
+/**
+ * The candidate row Call 2 picked ("c2" is the second), or undefined when it
+ * picked none or an id that names no candidate.
+ */
+export function selectedCandidate(
+  estimate: GroundedIngredientEstimate | null | undefined,
+  match: IngredientV2MatchResult | undefined
+): IngredientV2MatchResult['candidates'][number] | undefined {
+  const idx = /^c(\d+)$/.exec(estimate?.selectedCandidateId ?? '')?.[1];
+  return idx ? match?.candidates[Number(idx) - 1] : undefined;
+}
+
+/**
+ * The edible grams the bridge ships for one ingredient, by the bridge's own
+ * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
+ * portion anchor when there is one). Linear in `grossG` when unanchored, which
+ * is what lets scaling a set of parts' gross mass hit a target exactly.
+ */
+export function shippedEdibleGrams(
+  estimate: GroundedIngredientEstimate,
+  ingredient: DecomposedIngredientV2,
+  match: IngredientV2MatchResult | undefined,
+  portion: PortionResolution | undefined
+): number {
+  const candidate = selectedCandidate(estimate, match);
+  const anchor =
+    portion?.grams &&
+    portion.provenance !== 'llm_range' &&
+    portion.provenance !== 'unresolved' &&
+    portion.grams.mid > 0
+      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
+      : null;
+  return (
+    resolveGroundedMass({
+      ground: estimate,
+      candidateInediblePct: candidate?.inediblePct ?? null,
+      canonicalName: ingredient.canonicalName,
+      rawName: ingredient.rawName,
+      prepNotes: ingredient.prepNotes,
+      authoritativeMass: anchor,
+    }).edibleG ?? 0
+  );
 }

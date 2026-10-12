@@ -86,7 +86,7 @@ function anchor(mid: number): PortionResolution {
   return {
     grams: { low: mid * 0.9, mid, high: mid * 1.1 },
     massBasis: 'edible',
-    provenance: 'curated_prior',
+    provenance: 'packaged_serving',
     confidence: 'high',
     note: 'test anchor',
   };

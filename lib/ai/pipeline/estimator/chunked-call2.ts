@@ -135,17 +135,17 @@ export async function runChunkedCall2(
   let failedChunkCount = 0;
 
   settled.forEach((r, i) => {
-    const parsed = r.status === 'fulfilled' ? r.value : null;
-    if (parsed) {
-      mergedMealItems.push(...parsed);
-      return;
-    }
-    // Hard chunk failure (rejected OR returned null): its meal items are
-    // ABSENT from the estimation. The bridge sees them as verdict='missing'
-    // and routes their ingredients to unresolved_estimate — the meal still
-    // returns with those items flagged, not a 500.
+    // Failed meal items (a rejected chunk, or the part of one that still
+    // failed after its retry) are ABSENT from the estimation. The bridge sees
+    // them as verdict='missing' and routes their ingredients to
+    // unresolved_estimate — the meal still returns with those items flagged,
+    // not a 500.
+    const out =
+      r.status === 'fulfilled' ? r.value : { items: [], failed: chunks[i] };
+    mergedMealItems.push(...out.items);
+    if (out.failed.length === 0) return;
     failedChunkCount++;
-    for (const mi of chunks[i]) failedMealItemNames.push(mi.mealItem.name);
+    for (const mi of out.failed) failedMealItemNames.push(mi.mealItem.name);
   });
 
   return {
@@ -172,7 +172,10 @@ async function runOneChunk(args: {
   onAttemptComplete?: NonNullable<
     import('./types').GroundedEstimatorStreamHooks['onAttemptComplete']
   >;
-}): Promise<GroundedMealItem[] | null> {
+}): Promise<{
+  items: GroundedMealItem[];
+  failed: MealItemWithCandidates[];
+}> {
   const input: GroundedEstimatorInput = {
     originalPrompt: args.originalPrompt,
     mealItems: args.chunk,
@@ -185,7 +188,7 @@ async function runOneChunk(args: {
     // retrying — a late chunk degrades to unresolved rather than blowing the
     // route budget.
     const remaining = args.phaseDeadlineMs - (Date.now() - args.phaseStart);
-    if (remaining <= 0) return null;
+    if (remaining <= 0) return { items: [], failed: args.chunk };
     try {
       const result = await fetchWithTimeout(
         (signal) =>
@@ -212,7 +215,7 @@ async function runOneChunk(args: {
           callbackErr
         );
       }
-      return result.estimation.mealItems;
+      return { items: result.estimation.mealItems, failed: [] };
     } catch (err) {
       const isLast = attempt >= args.maxAttempts;
       console.warn(
@@ -220,8 +223,28 @@ async function runOneChunk(args: {
           `${isLast ? ' (degrading its items to unresolved)' : ', retrying'}:`,
         err instanceof Error ? err.message : err
       );
-      if (isLast) return null;
+      if (isLast) return { items: [], failed: args.chunk };
+      // A chunk of several dishes is re-asked as two halves side by side:
+      // each writes half the output, so the retry costs about half the wait,
+      // and a half that fails again takes only its own dishes with it.
+      if (args.chunk.length >= 2) {
+        const mid = Math.ceil(args.chunk.length / 2);
+        const halves = await Promise.all(
+          [args.chunk.slice(0, mid), args.chunk.slice(mid)].map((chunk, h) =>
+            runOneChunk({
+              ...args,
+              chunk,
+              first: args.first + (h === 0 ? 0 : mid),
+              maxAttempts: args.maxAttempts - attempt,
+            })
+          )
+        );
+        return {
+          items: halves.flatMap((h) => h.items),
+          failed: halves.flatMap((h) => h.failed),
+        };
+      }
     }
   }
-  return null;
+  return { items: [], failed: args.chunk };
 }

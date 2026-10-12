@@ -674,9 +674,9 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
         {
           grams: { low: 300, mid: 330, high: 360 },
           massBasis: 'edible',
-          provenance: 'retrieved_prior',
+          provenance: 'packaged_serving',
           confidence: 'high',
-          note: 'prior',
+          note: 'package',
         },
       ],
     });
@@ -761,9 +761,9 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
         {
           grams: { low: 300, mid: 330, high: 360 },
           massBasis: 'edible',
-          provenance: 'retrieved_prior',
+          provenance: 'packaged_serving',
           confidence: 'high',
-          note: 'prior',
+          note: 'package',
         },
       ],
     });

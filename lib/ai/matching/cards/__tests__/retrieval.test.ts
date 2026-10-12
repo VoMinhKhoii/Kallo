@@ -197,6 +197,17 @@ describe('matchCardCandidates', () => {
     ]);
   });
 
+  it('never embeds an empty search text: an empty field takes its fallback', () => {
+    expect(
+      cardQueryStrings({
+        rawName: 'a',
+        canonicalName: 'b',
+        queryEn: '',
+        nameVi: '  ',
+      })
+    ).toEqual(['a', 'b', 'b', 'a']);
+  });
+
   it('keeps the lexical arms when the vector arm fails', async () => {
     const failing = {
       generateEmbeddingBatch: vi.fn(async () => {
@@ -242,7 +253,7 @@ describe('matchCardCandidates', () => {
     } as unknown as GeminiClient;
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const pending = matchCardCandidates([ing], mockDb(true, []), stalled);
-    await vi.advanceTimersByTimeAsync(4_000);
+    await vi.advanceTimersByTimeAsync(8_000);
     const [result] = (await pending) ?? [];
     expect(result.candidates.length).toBeGreaterThan(0);
     errorSpy.mockRestore();
@@ -263,7 +274,7 @@ describe('matchCardCandidates', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const db = mockDb(true, []);
     const pending = matchCardCandidates([ing], db, late);
-    await vi.advanceTimersByTimeAsync(4_000);
+    await vi.advanceTimersByTimeAsync(8_000);
     await pending;
     land([]);
     await vi.advanceTimersByTimeAsync(10);

@@ -40,7 +40,15 @@ const silent = () => {};
 
 export async function runRescueSubMeal(
   text: string,
-  deps: SubMealDeps
+  deps: SubMealDeps,
+  /** `Date.now()` when the main analysis started: a split Call 2 ends by its deadline. */
+  runStartedAt: number,
+  /**
+   * True once the result can no longer be used (the rescue closed, or the run
+   * deadline passed). Checked between stages, so a discarded mini-meal stops
+   * after the stage in flight instead of running its remaining calls.
+   */
+  shouldStop: () => boolean = () => false
 ): Promise<RescuePart[] | null> {
   const stage1 = await runGroundedDecomposition({
     rawInput: text,
@@ -54,18 +62,23 @@ export async function runRescueSubMeal(
     onAttemptComplete: deps.decompositionRecorder,
   });
   if (stage1.nonFood) return null;
-  const { decomposition } = stage1;
+  const { decomposition, streamedMatching } = stage1;
+  if (shouldStop()) {
+    // Drop the batches Call 1's stream queued: nothing will read them.
+    streamedMatching.close();
+    return null;
+  }
   const prep = await prepareGrounding({
     decomposition,
+    streamedMatching,
     userContext: deps.userContext,
-    db: deps.db,
-    gemini: deps.gemini,
     traceContext: undefined,
     emit: silent,
     topK: deps.topK,
     matchConcurrency: deps.matchConcurrency,
     vesselEnabled: deps.vesselEnabled,
   });
+  if (shouldStop()) return null;
   const { grounded } = await runCallTwoStage({
     traceContext: undefined,
     emit: silent,
@@ -82,6 +95,7 @@ export async function runRescueSubMeal(
     userContext: deps.userContext,
     onAttemptComplete: deps.nutritionRecorder,
     onChunkTick: silent,
+    runStartedAt,
   });
   const parts: RescuePart[] = [];
   for (const [f, p] of pairIngredientsWithGrounded(

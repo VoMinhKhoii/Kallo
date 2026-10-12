@@ -117,7 +117,7 @@ describe('spliceRescue', () => {
     const anchored: PortionResolution = {
       grams: { low: 200, mid: 240, high: 280 },
       massBasis: 'edible',
-      provenance: 'curated_prior',
+      provenance: 'packaged_serving',
       confidence: 'medium',
       note: '',
     };
@@ -215,5 +215,61 @@ describe('spliceRescue', () => {
       ['gà', 200],
       ['cơm', 100],
     ]);
+  });
+});
+
+describe('spliceRescue with a cooking-oil row', () => {
+  it("drops the parts' own oil when the dish already has an oil row", () => {
+    // "1/2 miếng heo tonkatsu": Call 1 logged heo + dầu ăn; the mini-meal
+    // split heo into pork, breadcrumbs and its own frying oil.
+    const dec: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Heo tonkatsu',
+          cookingMethod: 'chiên',
+          ingredients: [
+            { rawName: 'heo', canonicalName: 'Pork cutlet' },
+            { rawName: 'dầu ăn', canonicalName: 'Dầu đậu nành' },
+          ],
+        },
+      ],
+    };
+    const est: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Heo tonkatsu',
+          ingredients: [estimate('heo', 75), estimate('dầu ăn', 12, 'c1')],
+        },
+      ],
+    };
+    const { state: out, rescued } = spliceRescue(
+      {
+        decomposition: dec,
+        matchResults: [match(0, 3), match(1, 3)],
+        portionResolutions: [defer, defer],
+        grounded: est,
+      },
+      new Map([
+        [
+          0,
+          [
+            part('thịt heo', 50, 2),
+            part('bột chiên xù', 15, 2),
+            part('dầu ăn', 6, 2),
+          ],
+        ],
+      ])
+    );
+    expect(rescued).toBe(1);
+    expect(
+      out.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
+    ).toEqual(['thịt heo', 'bột chiên xù', 'dầu ăn']);
+    // The pork and breadcrumbs fill the 75 g; the one oil row is the dish's own 12 g.
+    const grams = out.grounded.mealItems[0].ingredients.map((g) =>
+      Math.round(g.grossG)
+    );
+    expect(grams).toEqual([58, 17, 12]);
   });
 });

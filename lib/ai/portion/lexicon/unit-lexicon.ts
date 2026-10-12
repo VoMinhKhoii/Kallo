@@ -161,34 +161,3 @@ export function unitsForLocale(locale: Locale): UnitLexiconEntry[] {
 export function unitsForType(unitType: UnitType): UnitLexiconEntry[] {
   return ENTRIES.filter((entry) => entry.unitType === unitType);
 }
-
-const PIECE_LIKE_FOLDED = new Set([
-  'mieng',
-  'lat',
-  'khuc',
-  'khua',
-  'khoanh',
-  'phi le',
-  'cuc',
-  'piece',
-  'pieces',
-  'slice',
-  'slices',
-  'steak',
-  'steaks',
-  'fillet',
-  'fillets',
-  'filet',
-  'filets',
-  'chunk',
-  'chunks',
-  'cut',
-  'cuts',
-]);
-
-/** Whether a token describes a cut/piece eligible for slice↔count loosening. */
-export function isPieceLikeUnitToken(token: string | undefined): boolean {
-  return token
-    ? PIECE_LIKE_FOLDED.has(fold(token, { collapseWhitespace: true }))
-    : false;
-}

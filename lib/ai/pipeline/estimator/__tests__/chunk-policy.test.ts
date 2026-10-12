@@ -18,9 +18,9 @@ describe('shouldChunkCall2 — gate keeps small meals on the single-call path', 
   });
 
   it('does NOT chunk right at both thresholds (boundary is exclusive)', () => {
-    // Exactly CHUNK_MEAL_ITEM_THRESHOLD items, each 1 ingredient → below the
-    // ingredient trip too.
-    expect(shouldChunkCall2(meal(CHUNK_MEAL_ITEM_THRESHOLD, 1))).toBe(false);
+    // Exactly CHUNK_INGREDIENT_THRESHOLD items, each 1 ingredient (12 one-food
+    // items would already pass the ingredient trip).
+    expect(shouldChunkCall2(meal(CHUNK_INGREDIENT_THRESHOLD, 1))).toBe(false);
     // Exactly CHUNK_INGREDIENT_THRESHOLD ingredients across few items.
     expect(shouldChunkCall2([item('big', CHUNK_INGREDIENT_THRESHOLD)])).toBe(
       false
@@ -37,6 +37,12 @@ describe('shouldChunkCall2 — gate keeps small meals on the single-call path', 
       shouldChunkCall2([item('big', CHUNK_INGREDIENT_THRESHOLD + 1)])
     ).toBe(true);
   });
+
+  it('splits an ordinary plate over 10 ingredients', () => {
+    // 7 dishes, 11 ingredients: split; 5 dishes, 10 ingredients: one call.
+    expect(shouldChunkCall2([...meal(4, 2), ...meal(3, 1)])).toBe(true);
+    expect(shouldChunkCall2(meal(5, 2))).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -46,10 +52,8 @@ describe('shouldChunkCall2 — gate keeps small meals on the single-call path', 
 describe('chunkMealItems — bounded chunks, item-atomic', () => {
   it('packs items greedily up to the target ingredient count', () => {
     const chunks = chunkMealItems(meal(10, 2), CHUNK_TARGET_INGREDIENTS);
-    // 10 items × 2 ingredients = 20 ingredients; target 10 → 2 chunks of 5 items.
-    expect(chunks).toHaveLength(2);
-    expect(chunks[0]).toHaveLength(5);
-    expect(chunks[1]).toHaveLength(5);
+    // 10 items × 2 ingredients = 20 ingredients; target 8 → 4 + 4 + 2 items.
+    expect(chunks.map((c) => c.length)).toEqual([4, 4, 2]);
   });
 
   it('never splits an item heavier than the target across chunks', () => {

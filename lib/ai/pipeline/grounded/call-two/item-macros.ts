@@ -104,6 +104,8 @@ function createDishMatcher(offsetByName: Map<string, MealItemOffset>) {
 }
 
 interface EmitTarget {
+  /** Every parsed Call 2 meal item, as it arrives (streamed or per chunk). */
+  onItems?: (items: GroundedMealItem[]) => void;
   matchResults: IngredientV2MatchResult[];
   streamedMealItemIds: Map<string, string>;
   itemMacrosStreamed: Set<string>;
@@ -162,6 +164,7 @@ export function createCall2StreamHandler(
       lastExtractedCount
     );
     if (items.length === 0) return;
+    args.onItems?.(items);
     const indexBase = lastExtractedCount;
     lastExtractedCount = newCount;
     items.forEach((rawItem, i) => {
@@ -254,6 +257,7 @@ export function emitChunkItemMacros(
   items: GroundedMealItem[],
   range?: MealItemRange
 ): void {
+  ctx.onItems?.(items);
   const dishes = createDishMatcher(
     buildMealItemOffsetByName(ctx.mealItems, range)
   );

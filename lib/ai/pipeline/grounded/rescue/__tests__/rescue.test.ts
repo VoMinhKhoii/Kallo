@@ -5,6 +5,7 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { type RescuePart, rescueMealText, startDishRescue } from '../rescue';
 import type { SubMealDeps } from '../sub-meal';
@@ -13,13 +14,27 @@ const { subMealMock } = vi.hoisted(() => ({ subMealMock: vi.fn() }));
 vi.mock('../sub-meal', () => ({ runRescueSubMeal: subMealMock }));
 const DEPS = {} as SubMealDeps;
 
-/** Start a rescue whose mini-meals are answered by `runSubMeal(text)`. */
+/**
+ * Start a rescue whose mini-meals are answered by `runSubMeal(text)`, and hand
+ * it the matching results right away (as the orchestrator does after matching).
+ */
 function rescueWith(
   runSubMeal: (text: string) => Promise<RescuePart[] | null>,
-  args: Omit<Parameters<typeof startDishRescue>[0], 'subMeal'>
+  args: {
+    state: Omit<RunState, 'grounded'>;
+    language: 'en' | 'vi';
+    runStartedAt: number;
+  }
 ) {
   subMealMock.mockImplementation((text: string) => runSubMeal(text));
-  return startDishRescue({ ...args, subMeal: DEPS });
+  const rescue = startDishRescue({
+    decomposition: args.state.decomposition,
+    language: args.language,
+    runStartedAt: args.runStartedAt,
+    subMeal: DEPS,
+  });
+  rescue.matched(args.state.matchResults, args.state.portionResolutions);
+  return rescue;
 }
 
 const triple = { low: 1, mid: 2, high: 3 };
@@ -84,6 +99,12 @@ const call2 = (cơm: string | undefined): GroundedEstimation => ({
   ],
 });
 
+/** The main run's state after Call 2, as the orchestrator hands it to `apply`. */
+const run = (grounded: GroundedEstimation): RunState => ({
+  ...state,
+  grounded,
+});
+
 afterEach(() => vi.useRealTimers());
 
 describe('startDishRescue', () => {
@@ -99,6 +120,21 @@ describe('startDishRescue', () => {
     expect(runSubMeal).toHaveBeenCalledWith('1 phần bánh flan, nấu');
   });
 
+  it('starts a mini-meal early when the selector finds no fit, never for plain water', () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'vi',
+      runStartedAt: Date.now(),
+    });
+
+    rescue.startEarly(1);
+    rescue.startEarly(2);
+    rescue.startEarly(1);
+    expect(rescue.started()).toEqual([0, 1]);
+    expect(runSubMeal).toHaveBeenCalledTimes(2);
+  });
+
   it('rescues what Call 2 rejected and leaves what it accepted', async () => {
     const runSubMeal = vi.fn(async () => parts);
     const rescue = rescueWith(runSubMeal, {
@@ -106,7 +142,7 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('c1'));
+    const out = await rescue.apply(run(call2('c1')));
 
     expect(out?.rescued).toBe(1);
     expect(runSubMeal).toHaveBeenCalledTimes(1);
@@ -122,10 +158,26 @@ describe('startDishRescue', () => {
       language: 'en',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('none'));
+    const out = await rescue.apply(run(call2('none')));
 
     expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
     expect(out?.rescued).toBe(2);
+  });
+
+  it('never rescues a placeholder Call 2 sized at a gram or two', async () => {
+    // "cà ri" listed beside its own potato, carrot and onion at 1 g: scaling
+    // a whole curry into 1 g would ship zero-gram rows.
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    const placeholder = call2('none');
+    placeholder.mealItems[1].ingredients[0].grossG = 1;
+    await rescue.apply(run(placeholder));
+
+    expect(runSubMeal).not.toHaveBeenCalledWith('1 portion of cơm, nấu');
   });
 
   it('treats a pick outside the candidate list as a rejection', async () => {
@@ -135,7 +187,7 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
+    const out = await rescue.apply(run(call2('c9'))); // cơm has 3 candidates
     expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm, nấu');
     expect(out?.rescued).toBe(2);
   });
@@ -147,9 +199,80 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = rescue.apply(call2('c1'));
-    await vi.advanceTimersByTimeAsync(12_000);
+    const out = rescue.apply(run(call2('c1')));
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(await out).toBeNull();
+  });
+});
+
+describe('startDishRescue start points', () => {
+  it('starts a mixed dish logged as one item right after Call 1, before matching', () => {
+    subMealMock.mockImplementation(async () => parts);
+    const rescue = startDishRescue({
+      decomposition,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      subMeal: DEPS,
+    });
+    // "bánh flan" names a mixed dish; plain "cơm" and "nước" do not.
+    expect(rescue.started()).toEqual([0]);
+  });
+
+  it('starts a mini-meal the moment a streamed estimate rejects a dish', () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    rescue.onEstimates([
+      { mealItemName: 'Bánh flan', ingredients: [estimate('bánh flan')] },
+    ]);
+    expect(rescue.started()).toEqual([0]);
+    // A later chunk adds to the items already seen.
+    rescue.onEstimates([
+      { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'none')] },
+    ]);
+    expect(rescue.started()).toEqual([0, 1]);
+    expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
+  });
+
+  it('waits for apply on a dish whose name the meal repeats', async () => {
+    // Two "Cơm" dishes: a streamed estimate pairs by arrival order, which
+    // chunks finishing out of order break, so it starts nothing.
+    const twice: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [dish('Cơm', ['cơm']), dish('Cơm', ['cơm'])],
+    };
+    const twiceState = {
+      decomposition: twice,
+      matchResults: [match(0, 3), match(1, 3)],
+      portionResolutions: [defer, defer],
+    };
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state: twiceState,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    const second = {
+      mealItemName: 'Cơm',
+      ingredients: [estimate('cơm', 'none')],
+    };
+    rescue.onEstimates([second]);
+    expect(rescue.started()).toEqual([]);
+    const out = await rescue.apply({
+      ...twiceState,
+      grounded: {
+        mealItems: [
+          { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'c1')] },
+          second,
+        ],
+      },
+    });
+    expect(rescue.started()).toEqual([1]);
+    expect(out?.rescued).toBe(1);
   });
 });
 
@@ -159,13 +282,13 @@ describe('startDishRescue deadline', () => {
     const rescue = rescueWith(() => new Promise(() => {}), {
       state,
       language: 'vi',
-      runStartedAt: Date.now() - 30_000, // 5 s of the 35 s budget left
+      runStartedAt: Date.now() - 32_000, // 3 s of the 35 s budget left
     });
     let settled = false;
-    void rescue.apply(call2('c1')).then(() => {
+    void rescue.apply(run(call2('c1'))).then(() => {
       settled = true;
     });
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(3_000);
     expect(settled).toBe(true);
   });
 });
@@ -180,7 +303,7 @@ describe('startDishRescue past the deadline', () => {
     });
     // Neither the certain (no-candidate) one nor a post-Call-2 one starts.
     expect(rescue.started()).toEqual([]);
-    await rescue.apply(call2('none'));
+    await rescue.apply(run(call2('none')));
     expect(runSubMeal).not.toHaveBeenCalled();
   });
 });
@@ -243,10 +366,15 @@ describe('startDishRescue cleanup', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(runSubMeal).toHaveBeenCalledTimes(3); // the fourth waits its turn
     const out = rescue.apply({
-      mealItems: ['a', 'b', 'c', 'd'].map((n) => ({
-        mealItemName: n,
-        ingredients: [estimate(n)],
-      })),
+      decomposition: four,
+      matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
+      portionResolutions: [defer, defer, defer, defer],
+      grounded: {
+        mealItems: ['a', 'b', 'c', 'd'].map((n) => ({
+          mealItemName: n,
+          ingredients: [estimate(n)],
+        })),
+      },
     });
     await vi.advanceTimersByTimeAsync(12_000);
     expect(await out).toBeNull();
@@ -255,6 +383,22 @@ describe('startDishRescue cleanup', () => {
     finish[0]();
     await vi.advanceTimersByTimeAsync(0);
     expect(runSubMeal).toHaveBeenCalledTimes(3);
+  });
+
+  it('tells a running mini-meal to stop once the rescue closes', async () => {
+    subMealMock.mockImplementation(() => new Promise(() => {}));
+    const rescue = startDishRescue({
+      decomposition,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      subMeal: DEPS,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    // The mixed dish's mini-meal started right after Call 1.
+    const shouldStop = subMealMock.mock.calls.at(-1)?.[3] as () => boolean;
+    expect(shouldStop()).toBe(false);
+    rescue.close();
+    expect(shouldStop()).toBe(true);
   });
 });
 
@@ -295,5 +439,27 @@ describe('rescueMealText', () => {
         'en'
       )
     ).toBe('1 portion of prawn, raw');
+  });
+
+  it("carries Call 1's search description when it says more than the name", () => {
+    expect(
+      rescueMealText(
+        {
+          rawName: 'cà ri',
+          canonicalName: 'Curry sauce',
+          queryEn: 'Japanese-style curry sauce with meat and vegetables',
+          cookingMethod: 'simmered',
+        },
+        'vi'
+      )
+    ).toBe(
+      '1 phần cà ri (Curry sauce) — Japanese-style curry sauce with meat and vegetables, simmered'
+    );
+    expect(
+      rescueMealText(
+        { rawName: 'cơm', canonicalName: 'Cơm', queryEn: 'cơm' },
+        'vi'
+      )
+    ).toBe('1 phần cơm');
   });
 });

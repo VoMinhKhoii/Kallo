@@ -154,18 +154,25 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
   </modifier_routing>`,
 };
 
+/**
+ * Narrowed 2026-10-12 (Meal Arena train200, ttr DEV-129): the old rule ("ONLY
+ * include ingredients explicitly mentioned") let Call 1 drop a named dish's
+ * own body (a tuna salad's vegetables). Narrowed: first pick 84.7 → 84.3
+ * (noise), meal kcal vs key +27.5% → +22.4%; dropping the rule entirely gave
+ * no gain and more matching timeouts.
+ */
 const STRICT_ADHERENCE_RULE: Record<DecompositionPromptLocale, string> = {
   vi: `  <strict_adherence_rule>
-    ONLY include ingredients explicitly mentioned OR fundamental seasonings for the cooking method.
-    Do NOT add ingredients from common variants:
+    Do not add foods from a VARIANT of the dish the user did not name, or optional toppings they did not mention:
     - "thịt kho" → pork + seasonings. Do NOT add trứng (that's "thịt kho trứng").
     - "bún bò" → noodles + beef + aromatics. Do NOT add giò heo unless user said so.
+    The foods a dish is normally made of are not variants or toppings: always list them, even when the user named only the dish. A salad has its greens and vegetables; a soup its broth, its paste or stock and its solids; a breaded or battered item its meat or seafood, its breading and its frying fat; a curry its sauce base, its vegetables and usually its meat.
   </strict_adherence_rule>`,
   global: `  <strict_adherence_rule>
-    ONLY include ingredients explicitly mentioned OR fundamental seasonings for the cooking method.
-    Do NOT add ingredients from common variants:
+    Do not add foods from a VARIANT of the dish the user did not name, or optional toppings they did not mention:
     - "burrito bowl" → only the stated fillings. Do NOT add guacamole or sour cream unless the user said so.
     - "caesar salad" → romaine + dressing + parmesan + croutons. Do NOT add chicken (that's "chicken caesar salad").
+    The foods a dish is normally made of are not variants or toppings: always list them, even when the user named only the dish. A salad has its greens and vegetables; a soup its broth, its paste or stock and its solids; a breaded or battered item its meat or seafood, its breading and its frying fat; a curry its sauce base, its vegetables and usually its meat.
   </strict_adherence_rule>`,
 };
 

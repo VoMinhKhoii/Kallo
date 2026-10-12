@@ -38,6 +38,32 @@ export function chunkedPhaseDeadlineMs(): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 40_000;
 }
 
+/**
+ * The chunked phase must end by this point of the whole run: the route stops
+ * at 60 s, and persistence needs up to 15 s after the pipeline.
+ */
+export const CALL2_RUN_DEADLINE_MS = 45_000;
+
+/**
+ * The chunked phase's budget when it starts at `now`: the phase deadline, cut
+ * to what is left before the run deadline (`chunkedPhaseDeadlineMs` alone
+ * ignores the time Call 1 and matching already spent). Past the run deadline
+ * it is 0: every chunk degrades to unresolved without a call, and the time
+ * stays with assembly and persistence.
+ */
+export function chunkedPhaseBudgetMs(
+  runStartedAt: number,
+  now = Date.now()
+): number {
+  return Math.max(
+    0,
+    Math.min(
+      chunkedPhaseDeadlineMs(),
+      runStartedAt + CALL2_RUN_DEADLINE_MS - now
+    )
+  );
+}
+
 export interface CallTwoStreamDeps {
   /** Per-attempt streaming handler for the single-call path (identity-mapped). */
   handleChunk: (accumulated: string) => void;
@@ -62,6 +88,8 @@ export interface RunCallTwoArgs {
   >;
   /** Chunked-path progressive item_macros emitter context. */
   chunkEmit: ChunkEmitContext;
+  /** `Date.now()` when the whole analysis started (bounds the chunked phase). */
+  runStartedAt: number;
 }
 
 export interface RunCallTwoResult {
@@ -101,7 +129,7 @@ export async function runCallTwo(
       originalPrompt: args.originalPrompt,
       userContext: args.promptCtx,
       temperature: args.temperature,
-      phaseDeadlineMs: chunkedPhaseDeadlineMs(),
+      phaseDeadlineMs: chunkedPhaseBudgetMs(args.runStartedAt),
       onChunkComplete: (items, range) =>
         emitChunkItemMacros(args.chunkEmit, items, range),
       onAttemptComplete: args.onAttemptComplete,

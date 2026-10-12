@@ -42,34 +42,11 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
   db_inedible_pct, when present on a candidate, is that row's own measured inedible share; still emit your independent refusePct (telemetry compares them — the server does not use db_inedible_pct).
   state_hint describes the USER's number, never the basis you emit: "raw_weight" means their figure is already raw (trust it verbatim); "cooked_weight" or absent means the figure is as-eaten — convert it when the row's basis differs.
   For soups, vessel or not, broth/liquid grams follow broth_consumption in <user_context>: leave_it ≈ 10%, some ≈ 50%, finish_it = 100% of served broth.
-  Use cuisine priors:
-    - 1 bánh bao ≈ 165g (150–180g).
-    - 1 trứng cút ≈ 10g (9–11g).
-    - 1 lát bánh mì ≈ 30g (25–35g).
-    - 1 ổ bánh mì ≈ 105g (90–120g).
-    - 1 chén/bát cơm ≈ 200g (180–220g).
-    - 1 ức gà ≈ 175g (150–200g).
-    - 1 miếng sườn (cả xương) ≈ 85g (70–100g).
-    - 1 cánh gà (cả xương) ≈ 85g (70–100g).
-    - 1 đùi gà (cả xương) ≈ 150g (120–180g).
-    - 1 con cá nguyên (cả đầu/xương) ≈ 325g (250–400g).
-    - 1 khúc/khoanh cá (còn xương) ≈ 90g (70–110g).
-    - 1 miếng cá phi lê (không xương) ≈ 90g (70–110g).
-    - 1 con tôm nguyên vỏ ≈ 24g (18–30g).
-    - 1 con tôm đã bóc vỏ ≈ 16g (12–20g).
-    - 1 con cua/ghẹ nguyên (cả vỏ) ≈ 200g (150–250g).
-    - 1 phần thịt cua/ghẹ đã gỡ ≈ 65g (50–80g).
-    - 1 quả trứng còn vỏ ≈ 58g (50–65g).
-    - 1 quả trứng luộc đã bóc vỏ ≈ 50g (45–55g).
-    - 1 cây nem lụi ≈ 25g (22–28g).
-    - 1 phần protein áp chảo ≈ 150g (140–160g).
-    - 1 gói mì ≈ 80g (70–90g).
   Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, the cooking oil MUST be counted exactly ONCE.
     - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
-  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (~1 small bowl (~140–160g cooked rice); ~1 bowl (~200g cooked rice); ~1.5–2 bowls (~300–400g cooked rice)); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)
-  When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.
+  dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — emit normal best-effort fields (grossG must be > 0 and refusePct is required) and never treat the zero as one standard serving in meal-level reasoning.
   The server multiplies DB per_100g × edible mass / 100 and applies NO yield conversion — the raw/cooked basis conversion is yours.
 </grams_rule>

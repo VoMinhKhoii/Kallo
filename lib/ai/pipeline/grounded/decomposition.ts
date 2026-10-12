@@ -3,6 +3,10 @@ import {
   checkDecompositionLanguage,
 } from '@/lib/ai/language/guard';
 import { createMatchingPrewarm } from '@/lib/ai/matching/match-ingredients';
+import {
+  createStreamedMatching,
+  type StreamedMatching,
+} from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
@@ -45,6 +49,8 @@ export type GroundedDecompositionResult =
       languageRetryCount: number;
       providerRetryCount: number;
       promptCharsCall1: number;
+      /** Matching already started for the meal items Call 1 streamed. */
+      streamedMatching: StreamedMatching;
     };
 
 /**
@@ -74,9 +80,15 @@ export async function runGroundedDecomposition(args: {
   // firing new embeds, and a prewarm error can never reject the stream.
   const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
   const prewarmAbort = new AbortController();
-  const prewarm = prewarmEnabled
+  const warm = prewarmEnabled
     ? createMatchingPrewarm(db, gemini, prewarmAbort.signal)
     : () => {};
+  // Each meal item is matched as soon as its object closes in the stream.
+  const streamedMatching = createStreamedMatching(db, gemini);
+  const prewarm = (accumulated: string) => {
+    warm(accumulated);
+    streamedMatching.onChunk(accumulated);
+  };
   const decompositionInput = rawInput;
 
   const bufferedItemNameEvents: Array<
@@ -166,7 +178,12 @@ export async function runGroundedDecomposition(args: {
       },
       DECOMPOSITION_TIMEOUT_MS,
       'grounded-decomposition'
-    );
+    ).catch((err: unknown) => {
+      // A failed Call 1 fails the analysis: nothing will read what the
+      // stream queued for matching.
+      streamedMatching.close();
+      throw err;
+    });
     providerRetryCount += Math.max(0, maxAttempt - 1);
     const { plan: _plan, ...decomposition } = result;
     return decomposition;
@@ -237,6 +254,8 @@ export async function runGroundedDecomposition(args: {
   if (!decomposition.isFood || decomposition.mealItems.length === 0) {
     // Discard buffered item_name events — non-food input has no UI to update.
     bufferedItemNameEvents.length = 0;
+    // Nothing will be matched; stop what the stream queued.
+    streamedMatching.close();
     return { nonFood: true };
   }
 
@@ -262,5 +281,6 @@ export async function runGroundedDecomposition(args: {
     languageRetryCount,
     providerRetryCount,
     promptCharsCall1,
+    streamedMatching,
   };
 }

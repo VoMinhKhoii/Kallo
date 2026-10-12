@@ -9,6 +9,7 @@ import type {
   DecomposedIngredientV2,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { VesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
+import { nameKey } from '@/lib/core/text/name-key';
 
 export const escapeXmlAttribute = (value: string): string =>
   value
@@ -58,9 +59,48 @@ export interface MealItemWithCandidates {
   vesselEnvelope?: VesselEnvelope | null;
 }
 
+/** What may follow the part in the dish name: a space, hyphen or other non-letter. */
+const WORD_BREAK = /^[^\p{L}\p{M}\p{N}]/u;
+
+/** Units that count pieces of a whole dish, not of one of its parts. */
+const PIECE_UNIT =
+  /^(mi[eế]ng|c[aá]i|chi[eế]c|l[aá]t|piece|pieces|pc|pcs|slice|slices)$/i;
+
+/**
+ * "1 miếng tôm tonkatsu": Call 1 puts the count on the shrimp, the part the
+ * dish is named after, and Call 2 then sizes one shrimp (13–40 g) instead of
+ * one shrimp cutlet. When a split dish's only count is a piece count on the
+ * part its name starts from, the count belongs to the whole dish.
+ */
+export function dishPieceCount(mi: MealItemWithCandidates): {
+  ingredient: DecomposedIngredientV2;
+  count: number;
+  unit: string;
+} | null {
+  if (mi.ingredients.length < 2) return null;
+  const counted = mi.ingredients.filter(
+    (i) => i.ingredient.count != null && i.ingredient.unitToken
+  );
+  if (counted.length !== 1) return null;
+  const ingredient = counted[0].ingredient;
+  const { count, unitToken } = ingredient;
+  if (!count || !unitToken || !PIECE_UNIT.test(unitToken.trim())) return null;
+  const dish = nameKey(mi.mealItem.name);
+  const part = nameKey(ingredient.rawName);
+  // The dish must be named FROM the part, as whole words ("tôm tonkatsu" or
+  // "shrimp-katsu" from the shrimp): a dish that only contains it ("cơm gà"
+  // with "2 miếng gà") is one plate with two pieces of chicken, and
+  // "hamburger" is not named from "ham".
+  if (!part || dish === part || !dish.startsWith(part)) return null;
+  if (!WORD_BREAK.test(dish.slice(part.length))) return null;
+  return { ingredient, count, unit: unitToken };
+}
+
 function renderIngredient(
   ing: IngredientWithCandidates,
-  includeNameEn: boolean
+  includeNameEn: boolean,
+  /** The count was moved onto the dish (`dishPieceCount`). */
+  countOnDish = false
 ): string {
   const inputIng = ing.ingredient;
   const cookingMethod = inputIng.cookingMethod;
@@ -84,10 +124,10 @@ function renderIngredient(
   // produced no anchor — without these the count/unit only survive in the raw
   // meal text, which the model can miss ("0 fried chicken" analyzed as one
   // serving; "2 bánh bao" sized as one).
-  if (inputIng.count != null) {
+  if (inputIng.count != null && !countOnDish) {
     attrs.push(`user_count="${inputIng.count}"`);
   }
-  if (inputIng.unitToken) {
+  if (inputIng.unitToken && !countOnDish) {
     attrs.push(`user_unit="${escapeXmlAttribute(inputIng.unitToken)}"`);
   }
   if (inputIng.sizeModifier) {
@@ -199,9 +239,20 @@ export function buildIngredientDataBlock(
         );
       }
     }
+    const dishCount = dishPieceCount(mi);
+    if (dishCount) {
+      attrs.push(
+        `dish_count="${dishCount.count}"`,
+        `dish_unit="${escapeXmlAttribute(dishCount.unit)}"`
+      );
+    }
     out += `  <meal_item ${attrs.join(' ')}>\n`;
     for (const ing of mi.ingredients) {
-      out += renderIngredient(ing, includeNameEn);
+      out += renderIngredient(
+        ing,
+        includeNameEn,
+        ing.ingredient === dishCount?.ingredient
+      );
     }
     out += `  </meal_item>\n`;
   }

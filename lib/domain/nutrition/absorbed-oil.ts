@@ -20,7 +20,7 @@ export const ABSORBED_OIL_RANGES = {
  * they describe the frying itself: `chiên không dầu` is air-frying.
  */
 const OIL_NEGATION =
-  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?oil|without oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)/i;
+  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any )?oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)/i;
 
 // `luộc`, `hấp`, `steamed`, `boiled`, `poached`, `raw` and `sống` are NOT listed
 // as negations. They use no fat, but they do not negate one, so they must lose

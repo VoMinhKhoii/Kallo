@@ -43,10 +43,14 @@ import { searchCardVectors, type VectorHit } from './vector-arm';
 export const CARD_K = 8;
 const ARM_DEPTH = 30;
 /**
- * The vector arm's own budget, well inside the matching stage deadline, so a
- * stalled embedding or vector query still leaves time for the lexical arms.
+ * The vector arm's own budget, inside the matching stage deadline
+ * (`MATCHING_TIMEOUT_MS`, 10 s), so a stalled embedding or vector query still
+ * leaves time for the lexical arms. 8 s, not 4 s: prod's `match_food_cards`
+ * took 2.6 s on average and up to 5.6 s on the free-plan database
+ * (pg_stat_statements, 2026-10-12), so 4 s dropped half the meals to
+ * lexical-only matching.
  */
-const VECTOR_ARM_TIMEOUT_MS = 4_000;
+const VECTOR_ARM_TIMEOUT_MS = 8_000;
 
 /** Vector hits per ingredient (one list per query field); empty when the arm fails. */
 async function vectorArms(

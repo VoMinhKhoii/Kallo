@@ -52,10 +52,10 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
   });
 
   it('degrades a failed chunk to ABSENT items without failing the whole meal', async () => {
-    // 28 items × 1 ingredient → chunks of CHUNK_TARGET_INGREDIENTS (10) items:
-    // [dish1..dish10], [dish11..dish20], [dish21..dish28]. Failing the SECOND
-    // chunk (dish15 lives there) drops exactly that chunk's items; the other
-    // two chunks still return — a partial result, not a 500.
+    // 28 items × 1 ingredient → chunks of CHUNK_TARGET_INGREDIENTS (8) items:
+    // [dish1..dish8], [dish9..dish16], [dish17..dish24], [dish25..dish28].
+    // Failing the SECOND chunk (dish15 lives there) drops exactly that chunk's
+    // items; the other chunks still return — a partial result, not a 500.
     const items = meal(28, 1);
     const chunks = chunkMealItems(items);
     const failingChunk = chunks[1].map((c) => c.mealItem.name);
@@ -98,8 +98,47 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
     // Every chunk failed after 2 attempts each → all items degraded.
     expect(result.failedChunkCount).toBe(result.chunkCount);
     expect(result.estimation.mealItems).toHaveLength(0);
-    // 2 attempts per chunk.
-    expect(attempts).toBe(result.chunkCount * 2);
+    // Per chunk: the first attempt, then its retry as two halves side by side.
+    expect(attempts).toBe(result.chunkCount * 3);
+  });
+
+  it('retries a failed chunk as two halves and keeps the half that succeeds', async () => {
+    let first = true;
+    const calls: number[] = [];
+    const estimator: GroundedEstimator = {
+      id: 'once',
+      model: 'm',
+      async estimate(input) {
+        calls.push(input.mealItems.length);
+        if (first) {
+          first = false;
+          throw new Error('schema: grossG must be > 0');
+        }
+        // The second half fails again; the first succeeds.
+        if (input.mealItems[0].mealItem.name === 'dish3')
+          throw new Error('still bad');
+        return {
+          estimation: {
+            mealItems: input.mealItems.map((mi) => ({
+              mealItemName: mi.mealItem.name,
+              ingredients: [],
+            })),
+          },
+        } as never;
+      },
+    };
+    const result = await runChunkedCall2({
+      ...baseArgs,
+      estimator,
+      mealItems: meal(4, 1),
+      maxAttempts: 2,
+    });
+    expect(calls).toEqual([4, 2, 2]);
+    expect(result.estimation.mealItems.map((m) => m.mealItemName)).toEqual([
+      'dish1',
+      'dish2',
+    ]);
+    expect(result.failedMealItemNames).toEqual(['dish3', 'dish4']);
   });
 
   it('stops retrying once the wall-clock phase deadline is spent', async () => {

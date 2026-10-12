@@ -10,36 +10,33 @@
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 
 /**
- * Chunk Call 2 only when the meal has MORE than this many ingredients total.
- * Rationale: the 28-dish timeout carried well over 60 ingredients; Call-2
- * latency scales with OUTPUT tokens, which scale with ingredient count. A
- * common meal (a bowl of phở, a plate of cơm) has < 15 ingredients and stays
- * on the single-call path with zero added latency. 24 keeps the vast majority
- * of real meals single-call while catching the pathological large ones with
- * headroom below the 60s budget.
+ * Call 2's time is mostly output, on Gemini and Claude alike, so a meal over
+ * 10 ingredients (or 12 meal items) is split into calls of up to 8 that run
+ * side by side: a 26-ingredient meal measured ~10.5 s → ~5.5 s on Haiku; a
+ * single 2,100-token Gemini Call 2 took 16 s. Six at once keeps an
+ * 18-ingredient meal in one wave. A common meal under the thresholds stays on
+ * the single-call path with zero added latency.
+ *
+ * Chunk Call 2 when the meal has MORE than this many ingredients total...
  */
-export const CHUNK_INGREDIENT_THRESHOLD = 24;
+export const CHUNK_INGREDIENT_THRESHOLD = 10;
 
-/**
- * OR chunk when the meal has more than this many meal ITEMS, even if each is
- * light — many items still means a long output stream. The staging timeout was
- * a 28-dish meal, so 12 items is a conservative trip point.
- */
+/** ...or more than this many meal ITEMS, even if each is light. */
 export const CHUNK_MEAL_ITEM_THRESHOLD = 12;
 
 /** Target max ingredients per chunk — keeps each sub-call's output bounded. */
-export const CHUNK_TARGET_INGREDIENTS = 10;
+export const CHUNK_TARGET_INGREDIENTS = 8;
 
-/** Bounded concurrency across chunks. Small on purpose (provider rate limits). */
-export const CHUNK_CONCURRENCY = 3;
+/** Chunks in flight at once. */
+export const CHUNK_CONCURRENCY = 6;
 
 /** Per-chunk phase-level retry cap (on top of the provider client's retries). */
 export const CHUNK_MAX_ATTEMPTS = 2;
 
 /**
- * Should this meal take the chunked Call-2 path? Conservative: only large
- * meals qualify, so a 2-ingredient meal is numerically + latency-wise
- * unchanged (it takes the single-call path).
+ * Should this meal take the chunked Call-2 path? A meal under both thresholds
+ * (a 2-ingredient meal) is numerically + latency-wise unchanged: it takes the
+ * single-call path.
  */
 export function shouldChunkCall2(mealItems: MealItemWithCandidates[]): boolean {
   const ingredientCount = mealItems.reduce(

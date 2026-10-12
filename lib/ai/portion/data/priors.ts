@@ -6,8 +6,11 @@
  * volume/container units, and every entry is CONCEPT-SCOPED. There is no
  * global "1 slice = Ng" — a slice prior exists only inside a concept (a slice
  * of bánh mì differs from a slice of pizza). The table is deliberately
- * head-of-distribution (the staples in the logs + obvious global units); the
- * fallback ladder handles the tail via null → LLM range.
+ * head-of-distribution (the staples in the logs + obvious global units).
+ *
+ * The resolver no longer pins grams from this table (removed 2026-10-12: the
+ * anchors oversized portions on the benchmark). Today it only feeds the rice
+ * bowl size quoted in prompts (`prompts/text/portion-descriptions.ts`).
  *
  * Every grams band declares its physical basis. Legacy priors are EDIBLE mass;
  * refuse-bearing head-portion priors are GROSS as served so they compose with
@@ -25,8 +28,8 @@ const band = (low: number, mid: number, high: number): GramsBand => ({
 });
 
 /**
- * Seeded priors. Keyed for lookup by (conceptId, unitType, locale, form) in
- * `findPrior`. Every entry is head-of-distribution and locale-tagged.
+ * Seeded priors, keyed by (conceptId, unitType, locale, form). Every entry is
+ * head-of-distribution and locale-tagged.
  */
 export const PORTION_PRIORS: PortionPrior[] = [
   {
@@ -80,16 +83,16 @@ export const PORTION_PRIORS: PortionPrior[] = [
     source: 'VN bánh mì loaf (bread only) ~90–120g; excludes fillings.',
   },
   {
-    // 1 chén/bát cơm ≈ 180–220g cooked. Container prior scoped to rice.
+    // 1 chén/bát cơm ≈ 130–170g cooked. Container prior scoped to rice.
     conceptId: 'cooked-rice',
     unitType: 'container',
     locale: 'vi',
     form: 'cooked',
-    perUnit: band(180, 200, 220),
+    perUnit: band(130, 150, 170),
     massBasis: 'edible',
     confidence: 'high',
     source:
-      'VN chén/bát cơm ~200g cooked (household survey); rice-concept-scoped.',
+      'VN chén/bát cơm ~150g cooked: matches the benchmark key and USDA 1 cup cooked rice (158 g); rice-concept-scoped.',
   },
   {
     // 1 ức gà ≈ 150–200g cooked (single breast fillet).
@@ -274,7 +277,7 @@ export const PORTION_PRIORS: PortionPrior[] = [
   {
     // 1 gói mì ≈ 70–90g of DRY noodle block + seasoning sachets. VN retail
     // packets cluster at 65–75g (Hảo Hảo, Omachi) with 85–100g "lớn"/ly
-    // variants, so the band spans both and `applySizeModifier` picks the end.
+    // variants, so the band spans both.
     //
     // `form: 'raw'` is load-bearing. This is the weight of the PACKET, not of
     // the prepared bowl — noodles roughly triple in mass once cooked. The

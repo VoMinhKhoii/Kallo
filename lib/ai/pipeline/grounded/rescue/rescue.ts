@@ -5,26 +5,40 @@
  * replace it. Measured on the Meal Arena benchmark (ttr DEV-129): +1.4 first
  * pick.
  *
- * Timing: an ingredient retrieval found no candidate for will be rejected for
- * certain, so its mini-meal starts right after matching, beside Call 2. Any
- * other ingredient Call 2 rejects (a dish named after itself, a row it
- * refused) starts once Call 2 answers: starting those speculatively would
- * run a mini-meal for nearly every plain "cơm" or banana and throw it away.
+ * Timing: a mini-meal takes ~10 s, so each one starts as early as the signal
+ * that it is needed appears, and they run side by side with the main run:
+ * - right after Call 1, for a dish logged as one ingredient that names a
+ *   mixed dish ("cà ri", "gyoza", "phở cuốn");
+ * - right after matching, for an ingredient with no candidate (`matched`);
+ * - when the candidate selector finds none fitting (`startEarly`);
+ * - as Call 2 streams, the moment a dish's estimate rejects an ingredient or
+ *   picks a row its own numbers contradict (`onEstimates`; not for a dish
+ *   whose name the meal repeats, which waits for `apply`).
+ * A mini-meal started early but not needed is thrown away. After Call 2,
+ * `apply` waits at most `GRACE_MS` for the ones still needed.
  *
  * The parts' grams are scaled to what the main run would have shipped for the
  * ingredient (`./splice`); the mini-meal supplies only the recipe split.
  */
+
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import {
   classifyVerdict,
   pairIngredientsWithGrounded,
 } from '@/lib/ai/pipeline/resolve/verdicts';
+import type { PortionResolution } from '@/lib/ai/portion/types';
 import { nameKey } from '@/lib/core/text/name-key';
-import { type RescuePart, type RunState, spliceRescue } from './splice';
+import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
+import { rejectWrongFormRows } from '../review';
+import { type RescuePart, spliceRescue } from './splice';
 import { runRescueSubMeal, type SubMealDeps } from './sub-meal';
 
 export type { RescuePart } from './splice';
@@ -36,8 +50,15 @@ export function isDishRescueEnabled(): boolean {
 
 /** Mini-meals in flight at once. */
 const CONCURRENCY = 3;
-/** How long the main run waits past Call 2 for the mini-meals it needs. */
-const GRACE_MS = 12_000;
+/**
+ * How long the main run waits past Call 2 for the mini-meals it needs. A
+ * mini-meal takes ~10 s, so one started only after Call 2 rarely makes it in
+ * time and the dish keeps Call 2's own estimate; the ones started early (no
+ * candidate, or the selector found none fitting) have had the whole of Call 2
+ * to finish. Was 12 s: that wait, mostly for a mini-meal then dropped anyway,
+ * was the slowest analyses' extra 10–12 s.
+ */
+const GRACE_MS = 5_000;
 /**
  * Never wait past this point of the whole run. The route stops at 60 s, and
  * after the pipeline the result is persisted under its own 15 s deadline
@@ -45,6 +66,13 @@ const GRACE_MS = 12_000;
  * pre-stream DB work: 35 s keeps all of that inside the route.
  */
 const RUN_DEADLINE_MS = 35_000;
+/**
+ * An ingredient Call 2 sized under this is a placeholder: a dish label whose
+ * parts are already listed beside it ("cà ri" next to its potato, carrot and
+ * onion at 1 g). Rescuing it would scale a whole recipe into a gram and add
+ * zero-gram rows, and spend a mini-meal on it.
+ */
+const MIN_RESCUE_G = 10;
 /** Plain additions a mini-meal cannot split further. */
 const NOT_A_DISH =
   /^(n[uư][oớ]c( lọc| đá)?|water|ice|đá|đường( kính)?|sugar|muối|salt|tiêu|pepper|ớt|chili|nước mắm|fish sauce)$/i;
@@ -77,30 +105,63 @@ const words = (text: string) =>
 /**
  * The mini-meal text for an ingredient, in the user's language. The cooking
  * method and preparation notes Call 1 kept beside the name ("hấp",
- * "không đường") go along, so the mini-meal matches the variant the user ate.
+ * "không đường") go along, so the mini-meal matches the variant the user ate,
+ * and so does Call 1's English search description when it says more than the
+ * name ("Japanese-style curry sauce" for a bare "cà ri").
  */
 export function rescueMealText(
   ingredient: {
     rawName: string;
     canonicalName: string;
+    queryEn?: string;
     cookingMethod?: string;
     prepNotes?: string[];
   },
   language: 'en' | 'vi'
 ): string {
-  const { rawName, canonicalName } = ingredient;
+  const { rawName, canonicalName, queryEn } = ingredient;
   const name =
     nameKey(rawName) === nameKey(canonicalName)
       ? rawName
       : `${rawName} (${canonicalName})`;
   const said = words(name);
+  const described =
+    queryEn && !said.includes(words(queryEn)) ? ` — ${queryEn}` : '';
   const modifiers = [ingredient.cookingMethod, ...(ingredient.prepNotes ?? [])]
-    .filter((m): m is string => !!m && !said.includes(words(m)))
+    .filter(
+      (m): m is string =>
+        !!m && !said.includes(words(m)) && !words(described).includes(words(m))
+    )
     .map((m) => `, ${m}`)
     .join('');
   return language === 'vi'
-    ? `1 phần ${name}${modifiers}`
-    : `1 portion of ${name}${modifiers}`;
+    ? `1 phần ${name}${described}${modifiers}`
+    : `1 portion of ${name}${described}${modifiers}`;
+}
+
+/**
+ * Words that mark a mixed dish rather than one food. Used only to start a
+ * mini-meal early for a dish logged as one ingredient; a miss falls back to
+ * the later starts, a false hit costs one thrown-away mini-meal.
+ */
+const MIXED_DISH =
+  /\b(?:soup|salad|curry|stew|sauce|dumplings?|rolls?|cake|pudding|pie|sandwich|burger|pizza|noodles?|ramen|pho|congee|porridge|casserole|stir[- ]?fry|fried rice|katsu|tempura|wrap|taco|burrito|omelet+e?|pancake|fritters?|gyoza|bibimbap|biryani)\b|canh|s[uú]p|ch[eè]\b|b[aá]nh|b[uú]n|ph[oở]|h[uủ] ti[eế]u|mi[eế]n|ch[aá]o|g[oỏ]i|n[oộ]m|l[aẩ]u|x[oô]i|c[aà] ri|\bkho\b|chả giò|\bnem\b|c[oơ]m (?:chi[eê]n|rang)|x[ií]u m[aạ]i|h[aá] c[aả]o/i;
+
+/** A dish logged as one ingredient named after it, whose name says it is a mixed dish. */
+function likelyMixedDish(
+  dish: MealDecompositionV2['mealItems'][number],
+  ing: MealDecompositionV2['mealItems'][number]['ingredients'][number]
+): boolean {
+  const foods = dish.ingredients.filter(
+    (i) => !isDiscreteOilIngredient(i.rawName)
+  );
+  if (foods.length !== 1 || foods[0] !== ing) return false;
+  const d = nameKey(dish.name);
+  const r = nameKey(ing.rawName);
+  if (!r || !(d.includes(r) || r.includes(d))) return false;
+  return MIXED_DISH.test(
+    [dish.name, ing.rawName, ing.canonicalName, ing.queryEn ?? ''].join(' ')
+  );
 }
 
 /** Run at most `limit` tasks at once; later tasks wait their turn. */
@@ -120,14 +181,15 @@ function createLimiter(limit: number) {
 }
 
 /**
- * Start the certain mini-meals now. After Call 2, `apply` starts the rest for
- * what Call 2 rejected, waits up to `GRACE_MS` for all it needs, and splices
- * in those that finished; it returns null when nothing was rescued. Once
- * `apply` returns or `close` is called, no queued mini-meal starts (one
- * already running finishes in the background; the stages take no signal).
+ * Start dish rescue right after Call 1 (see the module comment for when each
+ * mini-meal starts). `matched` hands it the matching results; `apply`, after
+ * Call 2, waits up to `GRACE_MS` for the mini-meals it needs and splices in
+ * those that finished; it returns null when nothing was rescued. Once `apply`
+ * returns or `close` is called, no queued mini-meal starts (one already
+ * running finishes in the background; the stages take no signal).
  */
 export function startDishRescue(args: {
-  state: Omit<RunState, 'grounded'>;
+  decomposition: MealDecompositionV2;
   language: 'en' | 'vi';
   /** `Date.now()` when the whole analysis started. */
   runStartedAt: number;
@@ -135,12 +197,26 @@ export function startDishRescue(args: {
   subMeal: SubMealDeps;
 }): {
   started: () => number[];
+  /** Matching finished: start what found no candidate. */
+  matched: (
+    matchResults: IngredientV2MatchResult[],
+    portionResolutions: PortionResolution[]
+  ) => void;
+  /** Start this flat ingredient's mini-meal now (the selector found no fit). */
+  startEarly: (flat: number) => void;
+  /** Call 2's meal items as they arrive: start what they reject. */
+  onEstimates: (items: GroundedEstimation['mealItems']) => void;
   close: () => void;
+  /** After Call 2: splice the finished mini-meals into this state. */
   apply: (
-    grounded: GroundedEstimation
+    state: RunState
   ) => Promise<{ state: RunState; rescued: number } | null>;
 } {
-  const { decomposition, matchResults, portionResolutions } = args.state;
+  const { decomposition } = args;
+  // The matching results, saved only to decide what to start early.
+  let state: Omit<RunState, 'grounded'> | null = null;
+  // Call 2's meal items so far, as streamed or per chunk.
+  const estimatedSoFar: GroundedEstimation['mealItems'] = [];
   // Each ingredient with the dish's cooking method when it has none of its own.
   const ingredients = decomposition.mealItems.flatMap((mi) =>
     mi.ingredients.map((ing) => ({
@@ -156,6 +232,11 @@ export function startDishRescue(args: {
   // Past the deadline a new mini-meal could not reach the response.
   const start = (f: number) => {
     if (runs.has(f) || closed || timeLeft() <= 0) return;
+    if (
+      !ingredients[f] ||
+      !rescuable(ingredients[f], state?.portionResolutions[f])
+    )
+      return;
     runs.set(
       f,
       limit(async () =>
@@ -164,7 +245,10 @@ export function startDishRescue(args: {
           ? null
           : runRescueSubMeal(
               rescueMealText(ingredients[f], args.language),
-              args.subMeal
+              args.subMeal,
+              args.runStartedAt,
+              // Discarded once apply returned or the run deadline passed.
+              () => closed || timeLeft() <= 0
             )
       ).then(
         (parts) => {
@@ -174,27 +258,67 @@ export function startDishRescue(args: {
       )
     );
   };
-  ingredients.forEach((ing, f) => {
-    if (
-      rescuable(ing, portionResolutions[f]) &&
-      (matchResults[f]?.candidates.length ?? 0) === 0
-    )
-      start(f);
+  /** The flat ingredients this state's estimates reject (or whose row they contradict). */
+  const rejectedBy = (run: RunState): number[] => {
+    const reviewed = rejectWrongFormRows(run).state.grounded;
+    const pairs = pairIngredientsWithGrounded(run.decomposition, reviewed);
+    return ingredients.flatMap((_, f) => {
+      const ground = pairs[f]?.ground;
+      const grams = ground
+        ? shippedEdibleGrams(
+            ground,
+            pairs[f].ingredient,
+            run.matchResults[f],
+            run.portionResolutions[f]
+          )
+        : 0;
+      return grams >= MIN_RESCUE_G &&
+        rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
+        ? [f]
+        : [];
+    });
+  };
+
+  // A dish whose name the meal repeats ("cơm" twice) pairs with its estimates
+  // by arrival order, which chunks finishing out of order break, so a
+  // streamed estimate never starts its mini-meal; `apply`, after Call 2, still
+  // does.
+  const names = decomposition.mealItems.map((mi) => nameKey(mi.name));
+  const repeated = new Set<number>();
+  let flat = 0;
+  decomposition.mealItems.forEach((mi, d) => {
+    const twice = names.indexOf(names[d]) !== names.lastIndexOf(names[d]);
+    for (const ing of mi.ingredients) {
+      if (twice) repeated.add(flat);
+      if (likelyMixedDish(mi, ing)) start(flat);
+      flat++;
+    }
   });
+
   const close = () => {
     closed = true;
   };
 
   return {
     started: () => [...runs.keys()],
+    matched(matchResults, portionResolutions) {
+      state = { decomposition, matchResults, portionResolutions };
+      ingredients.forEach((_, f) => {
+        if ((matchResults[f]?.candidates.length ?? 0) === 0) start(f);
+      });
+    },
+    startEarly: start,
+    onEstimates(items) {
+      estimatedSoFar.push(...items);
+      if (!state) return;
+      const grounded = { mealItems: estimatedSoFar };
+      for (const f of rejectedBy({ ...state, grounded }))
+        if (!repeated.has(f)) start(f);
+    },
     close,
-    async apply(grounded) {
-      const pairs = pairIngredientsWithGrounded(decomposition, grounded);
-      const needed = ingredients.flatMap((ing, f) =>
-        rescuable(ing, portionResolutions[f]) &&
-        rejected(pairs[f]?.ground, matchResults[f]?.candidates.length ?? 0)
-          ? [f]
-          : []
+    async apply(run) {
+      const needed = rejectedBy(run).filter((f) =>
+        rescuable(ingredients[f], run.portionResolutions[f])
       );
       if (needed.length === 0) {
         close();
@@ -220,7 +344,7 @@ export function startDishRescue(args: {
         })
       );
       if (parts.size === 0) return null;
-      const out = spliceRescue({ ...args.state, grounded }, parts);
+      const out = spliceRescue(run, parts);
       return out.rescued > 0 ? out : null;
     },
   };

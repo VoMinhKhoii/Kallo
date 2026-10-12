@@ -232,6 +232,74 @@ describe('pairIngredientsWithGrounded — duplicate meal-item names', () => {
     expect(paired[0].ground?.grossG).toBe(200);
     expect(paired[1].ground).toBeNull();
   });
+
+  it('pairs the ingredients of a dish Call 2 renamed by ingredient name', () => {
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Trứng chiên',
+          cookingMethod: 'chiên',
+          ingredients: [
+            { rawName: 'trứng', canonicalName: 'Trứng gà' },
+            { rawName: 'dầu ăn', canonicalName: 'Dầu đậu nành' },
+          ],
+        },
+        {
+          name: 'cơm trắng',
+          cookingMethod: 'nấu',
+          ingredients: [{ rawName: 'cơm', canonicalName: 'Cơm' }],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Trứng chiên phủ',
+          ingredients: [
+            { ...riceEstimate(50), ingredientName: 'Trứng' },
+            { ...riceEstimate(5), ingredientName: 'Dầu ăn' },
+          ],
+        },
+        { mealItemName: 'Cơm trắng', ingredients: [riceEstimate(200)] },
+      ],
+    };
+
+    const paired = pairIngredientsWithGrounded(decomposition, grounded);
+
+    expect(paired.map((p) => p.ground?.grossG)).toEqual([50, 5, 200]);
+  });
+
+  it('leaves two renamed dishes that both hold chicken unpaired', () => {
+    const dish = (name: string) => ({
+      name,
+      cookingMethod: 'nướng',
+      ingredients: [{ rawName: 'Chicken', canonicalName: 'Chicken' }],
+    });
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [dish('Chicken salad'), dish('Chicken curry')],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Grilled chicken salad',
+          ingredients: [{ ...riceEstimate(120), ingredientName: 'Chicken' }],
+        },
+        {
+          mealItemName: 'Thai chicken curry',
+          ingredients: [{ ...riceEstimate(150), ingredientName: 'Chicken' }],
+        },
+      ],
+    };
+
+    const paired = pairIngredientsWithGrounded(decomposition, grounded);
+
+    // Which chicken is whose cannot be told by name, so neither is guessed.
+    expect(paired.map((p) => p.ground)).toEqual([null, null]);
+  });
 });
 
 describe('bridgeV2ToV1 — duplicate meal-item names', () => {

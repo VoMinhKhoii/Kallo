@@ -35,7 +35,7 @@ import {
   createChunkEmitContext,
 } from './item-macros';
 import {
-  chunkedPhaseDeadlineMs,
+  chunkedPhaseBudgetMs,
   type RunCallTwoResult,
   runCallTwo,
 } from './modes';
@@ -77,6 +77,12 @@ export async function runCallTwoStage(args: {
     Parameters<typeof runCallTwo>[0]['onAttemptComplete']
   >;
   onChunkTick: () => void;
+  /** `Date.now()` when the whole analysis started (bounds a split Call 2). */
+  runStartedAt: number;
+  /** The selector found no candidate that fits this flat ingredient. */
+  onSelectorNone?: (flat: number) => void;
+  /** Call 2's meal items as they arrive, streamed or per chunk. */
+  onEstimatedItems?: (items: GroundedEstimation['mealItems']) => void;
 }): Promise<CallTwoStageResult> {
   const {
     traceContext,
@@ -106,6 +112,7 @@ export async function runCallTwoStage(args: {
   const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
   const itemMacrosStreamed = new Set<string>();
   const call2Stream = createCall2StreamHandler({
+    onItems: args.onEstimatedItems,
     offsetByName,
     matchResults,
     streamedMealItemIds,
@@ -115,6 +122,7 @@ export async function runCallTwoStage(args: {
     emit,
   });
   const chunkEmit = createChunkEmitContext({
+    onItems: args.onEstimatedItems,
     mealItems: decomposition.mealItems,
     matchResults,
     streamedMealItemIds,
@@ -134,6 +142,7 @@ export async function runCallTwoStage(args: {
           mealText: rawInput,
           mealItems: mealItemsWithCandidates,
           onAttemptComplete: args.onAttemptComplete,
+          onNone: args.onSelectorNone,
         })
       : null;
 
@@ -165,6 +174,7 @@ export async function runCallTwoStage(args: {
       });
       const result = await runCallTwo({
         estimator,
+        runStartedAt: args.runStartedAt,
         mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
         promptCtx,
@@ -198,7 +208,7 @@ export async function runCallTwoStage(args: {
         picks: await selector.settle(
           stageStart +
             (result.mode === 'chunked'
-              ? chunkedPhaseDeadlineMs()
+              ? chunkedPhaseBudgetMs(args.runStartedAt, stageStart)
               : NUTRITION_TIMEOUT_MS)
         ),
       });

@@ -19,8 +19,6 @@ import {
   unitsForLocale,
   unitsForType,
 } from '../lexicon/unit-lexicon';
-import { applySizeModifier, findPrior } from '../priors';
-import { MAX_RELATIVE_BAND_WIDTH } from '../resolver';
 
 describe('unit lexicon', () => {
   it('maps VN counters to unit types (NOT grams)', () => {
@@ -110,113 +108,6 @@ describe('food concepts (alias → concept)', () => {
   });
 });
 
-describe('portion priors', () => {
-  it('finds an exact locale + form prior', () => {
-    const p = findPrior({
-      conceptId: 'banh-bao',
-      unitType: 'count',
-      locale: 'vi',
-      form: 'composed',
-    });
-    expect(p?.perUnit).toEqual({ low: 150, mid: 165, high: 180 });
-    expect(p?.confidence).toBe('high');
-    expect(p?.source).toMatch(/bánh bao/i);
-  });
-
-  it('falls back to a global prior when no locale-specific one exists', () => {
-    const p = findPrior({
-      conceptId: 'chicken-breast',
-      unitType: 'count',
-      locale: 'vi', // no vi prior; global exists
-      form: 'cooked',
-    });
-    expect(p?.locale).toBe('global');
-  });
-
-  it('reaches a locale-tagged prior from any request locale (locale is a prior, not a filter)', () => {
-    // Production regression: nothing populated userContext.inputLanguage, so
-    // every request resolved locale='global' and the vi-tagged bánh bao prior
-    // was unreachable — "2 bánh bao trứng cút" fell to LLM-guess grams again
-    // (293 kcal observed in eval vs the ~750 the prior anchors).
-    for (const locale of ['global', 'en'] as const) {
-      const p = findPrior({
-        conceptId: 'banh-bao',
-        unitType: 'count',
-        locale,
-        form: 'composed',
-      });
-      expect(p?.perUnit).toEqual({ low: 150, mid: 165, high: 180 });
-    }
-  });
-
-  it('returns null when no prior exists for the (concept, unit) pair', () => {
-    expect(
-      findPrior({
-        conceptId: 'banh-bao',
-        unitType: 'volume',
-        locale: 'vi',
-        form: 'composed',
-      })
-    ).toBeNull();
-  });
-
-  it('a slice prior is concept-scoped, never global', () => {
-    // banh-mi-loaf has a slice prior; there is NO cross-concept global slice.
-    const loafSlice = findPrior({
-      conceptId: 'banh-mi-loaf',
-      unitType: 'slice',
-      locale: 'vi',
-      form: 'raw',
-    });
-    expect(loafSlice).not.toBeNull();
-    const banhBaoSlice = findPrior({
-      conceptId: 'banh-bao',
-      unitType: 'slice',
-      locale: 'vi',
-      form: 'composed',
-    });
-    expect(banhBaoSlice).toBeNull();
-  });
-
-  it('loosens slice to count only for a piece-like token after exact miss', () => {
-    const wingPiece = findPrior({
-      conceptId: 'chicken-wing',
-      unitType: 'slice',
-      locale: 'vi',
-      form: 'any',
-      pieceLikeUnit: true,
-    });
-    expect(wingPiece?.conceptId).toBe('chicken-wing');
-    expect(wingPiece?.unitType).toBe('count');
-
-    expect(
-      findPrior({
-        conceptId: 'chicken-wing',
-        unitType: 'slice',
-        locale: 'vi',
-        form: 'any',
-        pieceLikeUnit: false,
-      })
-    ).toBeNull();
-    expect(
-      findPrior({
-        conceptId: 'chicken-wing',
-        unitType: 'container',
-        locale: 'vi',
-        form: 'any',
-        pieceLikeUnit: true,
-      })
-    ).toBeNull();
-  });
-
-  it('applySizeModifier picks low/mid/high', () => {
-    const band = { low: 10, mid: 20, high: 30 };
-    expect(applySizeModifier(band, 'small')).toBe(10);
-    expect(applySizeModifier(band, undefined)).toBe(20);
-    expect(applySizeModifier(band, 'large')).toBe(30);
-  });
-});
-
 /**
  * The unit lexicon and PIECE_UNIT_TOKENS are two hand-maintained lists of the
  * same thing — counter words. They drifted: `steak`, `fillet`, `chunk`, `cut`,
@@ -297,16 +188,9 @@ describe('concept/prior reachability invariants', () => {
   it.each(
     HEAD_PORTION_CASES
   )('reaches %s from the real surface %s and unit %s', (conceptId, surface, unit) => {
-    const unitType = resolveUnitType(unit);
     expect(resolveConcept(surface)).toBe(conceptId);
-    expect(unitType).not.toBeNull();
-    const prior = findPrior({
-      conceptId,
-      unitType: unitType!,
-      locale: 'vi',
-      form: 'any',
-      pieceLikeUnit: true,
-    });
+    expect(resolveUnitType(unit)).not.toBeNull();
+    const prior = PORTION_PRIORS.find((p) => p.conceptId === conceptId);
     const edibleConcepts = new Set([
       'fish-fillet',
       'peeled-shrimp',
@@ -332,32 +216,12 @@ describe('concept/prior reachability invariants', () => {
         `${prior.conceptId}/${prior.unitType} has no real unit surface`
       ).not.toEqual([]);
       expect(resolveConcept(surfaces[0])).toBe(prior.conceptId);
-      const resolvedUnitType = resolveUnitType(units[0].token);
-      expect(resolvedUnitType).toBe(prior.unitType);
-      expect(
-        findPrior({
-          conceptId: prior.conceptId,
-          unitType: resolvedUnitType!,
-          locale: prior.locale,
-          form: prior.form,
-        })
-      ).not.toBeNull();
+      expect(resolveUnitType(units[0].token)).toBe(prior.unitType);
     }
   });
 
   it('does not anchor the ambiguous bare `sườn` surface as an 85g rib piece', () => {
     expect(resolveConcept('sườn')).toBeNull();
-  });
-
-  it('keeps every prior band within the resolver width ceiling', () => {
-    for (const prior of PORTION_PRIORS) {
-      const relativeWidth =
-        (prior.perUnit.high - prior.perUnit.low) / prior.perUnit.mid;
-      expect(
-        relativeWidth,
-        `${prior.conceptId}/${prior.unitType} band is too wide`
-      ).toBeLessThanOrEqual(MAX_RELATIVE_BAND_WIDTH);
-    }
   });
 
   it('keeps folded unit collisions empty', () => {
@@ -395,17 +259,12 @@ describe('instant noodles — the `1 gói mì` path', () => {
     expect(resolveConcept('mì xào')).toBeNull();
   });
 
-  it('supplies a DRY packet weight, and scales with the size cue', () => {
-    const prior = findPrior({
-      conceptId: 'instant-noodle-pack',
-      unitType: 'count',
-      locale: 'vi',
-      form: 'raw',
-    });
-    expect(prior).not.toBeNull();
-    expect(prior?.perUnit.mid).toBe(80);
-    expect(applySizeModifier(prior!.perUnit, 'small')).toBe(70);
-    expect(applySizeModifier(prior!.perUnit, 'large')).toBe(90);
+  it('records a DRY packet weight', () => {
+    const prior = PORTION_PRIORS.find(
+      (p) => p.conceptId === 'instant-noodle-pack' && p.unitType === 'count'
+    );
+    expect(prior).not.toBeUndefined();
+    expect(prior?.perUnit).toEqual({ low: 70, mid: 80, high: 90 });
     // Dry, not prepared: noodles roughly triple in mass once cooked, so a
     // band anywhere near a bowl's mass would be the wrong basis entirely.
     expect(prior?.form).toBe('raw');
