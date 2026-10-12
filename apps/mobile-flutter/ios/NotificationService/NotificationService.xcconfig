@@ -1,0 +1,7 @@
+// The extension's version must equal the app's or App Store Connect rejects
+// the upload ("CFBundleVersion of an app extension must match its parent").
+// The app's comes from `flutter build --build-name/--build-number`, which
+// Flutter writes to Generated.xcconfig; Info.plist reads the same two values.
+// Deliberately NOT Flutter/Release.xcconfig: that also pulls in the Runner's
+// Pods settings, and the extension links no pods.
+#include "../Flutter/Generated.xcconfig"

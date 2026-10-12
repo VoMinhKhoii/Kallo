@@ -138,15 +138,37 @@ function buildHeaders(
   return headers;
 }
 
-/** The native aps dict — the client reads `alert`, the rest is our data map. */
+/**
+ * The native aps dict — the client reads `alert`, the rest is our data map.
+ *
+ * A message with a `sender` sets `mutable-content`, which routes it through
+ * the app's notification service extension (`ios/NotificationService/`)
+ * before it is shown; the extension reads the nested `sender` dict to donate
+ * an INSendMessageIntent, which is what puts the sender's avatar where the app
+ * icon was. It is nested rather than spread so it can never collide with the
+ * flat deep-link keys the tap router reads. A build without the extension
+ * ignores both and shows the alert as sent.
+ */
 function buildApnsPayload(message: PushMessage): string {
+  const { sender, conversationId } = message;
   return JSON.stringify({
     aps: {
       alert: { title: message.title, body: message.body },
       sound: 'default',
       ...(message.badge !== undefined && { badge: message.badge }),
+      ...(sender && { 'mutable-content': 1 }),
+      ...(conversationId && { 'thread-id': conversationId }),
     },
     ...message.data,
+    ...(sender && {
+      sender: {
+        id: sender.id,
+        name: sender.name,
+        ...(sender.avatarUrl && { avatarUrl: sender.avatarUrl }),
+        ...(sender.tintKey && { tintKey: sender.tintKey }),
+        ...(conversationId && { conversationId }),
+      },
+    }),
   });
 }
 

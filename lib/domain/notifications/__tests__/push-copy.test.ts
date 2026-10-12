@@ -1,11 +1,11 @@
-// Push copy is rendered from the SAME `messages/{en,vi}/activity.json` rows the
+// Push copy is rendered from the SAME `messages/{en,vi}/activity.json` file the
 // in-app feed uses, so there is deliberately no second copy of these sentences
 // to assert against. What this suite pins is that the render is faithful: the
-// expectations below are built by naively stripping the `<b>` markup out of the
-// shipped catalogue string and substituting its placeholders, which is an
-// independent path to the same answer. A wording change in the catalogue moves
-// both sides at once — that is the point. What it CANNOT change silently is the
-// shape: the singular row, the anonymous fallbacks, the chat exception.
+// expectations below are built by naively substituting the placeholders of the
+// shipped `push.<type>` strings, which is an independent path to the same
+// answer. A wording change in the catalogue moves both sides at once — that is
+// the point. What it CANNOT change silently is the shape: the actor as title,
+// the name-less body, the anonymous fallbacks, the chat exception.
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -27,54 +27,46 @@ const CATALOGUE: Record<PushLocale, typeof enActivity> = {
   vi: viActivity as typeof enActivity,
 };
 
-/** The raw `row.<type>.one` template, straight out of the shipped file. */
+/** The raw `push.<type>` template, straight out of the shipped file. */
 function template(locale: PushLocale, type: string): string {
   const [head, tail] = type.split('.');
-  const row = CATALOGUE[locale].row as Record<
-    string,
-    Record<string, { one: string }>
-  >;
-  return row[head][tail].one;
+  const push = CATALOGUE[locale].push as Record<string, Record<string, string>>;
+  return push[head][tail];
 }
 
-/** Render it the dumb way: drop the rich tag, substitute the placeholders. */
-function render(
-  locale: PushLocale,
-  type: string,
-  values: { name: string; group?: string }
-): string {
-  return template(locale, type)
-    .replaceAll(/<\/?b>/g, '')
-    .replaceAll('{name}', values.name)
-    .replaceAll('{group}', values.group ?? '');
+/** Render it the dumb way: substitute the one placeholder. */
+function render(locale: PushLocale, type: string, group = ''): string {
+  return template(locale, type).replaceAll('{group}', group);
 }
 
 describe('pushCopy', () => {
   it.each([
     'en',
     'vi',
-  ] as const)('renders every catalogue row verbatim in %s', (locale) => {
+  ] as const)('titles every catalogue row by the actor in %s', (locale) => {
     for (const type of NOTIFICATION_TYPES) {
       const { title, body } = pushCopy(type, locale, {
         actorName: 'Mai',
         groupName: 'Trip',
       });
-      // The app is the title for an activity notice — the body names the
-      // actor, so the title must not repeat them.
-      expect(title).toBe('Kallo');
-      expect(body).toBe(render(locale, type, { name: 'Mai', group: 'Trip' }));
-      // The markup belongs to the feed, never to a lock screen.
-      expect(body).not.toContain('<b>');
+      // The actor is the title — iOS draws their avatar beside it — so the
+      // body must not name them a second time.
+      expect(title).toBe('Mai');
+      expect(body).toBe(render(locale, type, 'Trip'));
+      expect(body).not.toContain('Mai');
+      expect(body).not.toContain('{');
     }
   });
 
-  it('always sends the SINGULAR row, even for an aggregating type', () => {
-    // A push says "someone did a thing"; "and 4 others" is the badge's and the
-    // Activity row's job, and the collapse key means the later notice replaces
-    // the earlier one anyway. There is no way to ask pushCopy for `.other`.
-    const { body } = pushCopy('share.reaction', 'en', { actorName: 'Mai' });
-    expect(body).toBe(render('en', 'share.reaction', { name: 'Mai' }));
-    expect(body).not.toContain('other');
+  it.each([
+    'en',
+    'vi',
+  ] as const)('has a push row for every catalogue type in %s', (locale) => {
+    // A type with a feed row and no push row would render the raw key onto a
+    // lock screen.
+    for (const type of NOTIFICATION_TYPES) {
+      expect(typeof template(locale, type)).toBe('string');
+    }
   });
 
   it.each([
@@ -82,12 +74,10 @@ describe('pushCopy', () => {
     'vi',
   ] as const)('falls back to the catalogue’s own anonymous label in %s', (locale) => {
     const someone = CATALOGUE[locale].someone;
-    expect(pushCopy('friend.joined', locale, {}).body).toBe(
-      render(locale, 'friend.joined', { name: someone })
-    );
+    expect(pushCopy('friend.joined', locale, {}).title).toBe(someone);
     // A blank or whitespace name is as good as no name.
-    expect(pushCopy('friend.joined', locale, { actorName: '  ' }).body).toBe(
-      render(locale, 'friend.joined', { name: someone })
+    expect(pushCopy('friend.joined', locale, { actorName: '  ' }).title).toBe(
+      someone
     );
   });
 
@@ -98,7 +88,7 @@ describe('pushCopy', () => {
     // Not in the catalogue: the feed always has a real group name to
     // interpolate, so this fallback exists only for push.
     expect(pushCopy('group.added', locale, { actorName: 'Mai' }).body).toBe(
-      render(locale, 'group.added', { name: 'Mai', group: aGroup })
+      render(locale, 'group.added', aGroup)
     );
   });
 
