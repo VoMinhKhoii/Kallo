@@ -201,13 +201,10 @@ describe('the phone manual-log sheets at their edges', () => {
     await addYogurt();
 
     // Closed by its own X — a controlled close, which vaul's animation
-    // callbacks never hear about.
+    // callbacks never hear about — then opened again: a new meal. (That the
+    // plate survives the close itself, so it never blanks mid-slide, is the
+    // hook's to say: use-manual-sheet.test.ts. Closed-drawer DOM is not.)
     click(mealClose());
-    // Closed, the plate is still drawn while the sheet slides away…
-    expect(
-      screen.getByRole('button', { name: 'Sữa chua, 100 g', ...hidden })
-    ).toBeInTheDocument();
-    // …and the next open starts a new meal.
     click(screen.getByRole('button', { name: 'sheetTitle', ...hidden }));
     expect(
       screen.queryByRole('button', { name: 'Sữa chua, 100 g', ...hidden })
