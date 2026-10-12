@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.20.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.19.0...v1.20.0) (2026-10-12)
+
+
+### Features
+
+* **logging:** plate-first manual log on iOS and phone web ([#437](https://github.com/VoMinhKhoii/Kallo/issues/437)) ([95a3a47](https://github.com/VoMinhKhoii/Kallo/commit/95a3a475bcd6dab2f2a2fb5ceee026e415ed0211))
+* show the sender's avatar on iOS push notifications ([#439](https://github.com/VoMinhKhoii/Kallo/issues/439)) ([269d40e](https://github.com/VoMinhKhoii/Kallo/commit/269d40ef0b9e86f4ac7805a11dd12a1c1d39cc96))
+
+
+### Bug Fixes
+
+* **mobile:** skip the avatar and nutrition fetches while signed out ([#435](https://github.com/VoMinhKhoii/Kallo/issues/435)) ([095a1c6](https://github.com/VoMinhKhoii/Kallo/commit/095a1c6c6d9f515e3dd71e793523f58f116786f0))
+* **pipeline:** meal accuracy and latency — portions, review, parallel matching and Call 2 ([#438](https://github.com/VoMinhKhoii/Kallo/issues/438)) ([db58771](https://github.com/VoMinhKhoii/Kallo/commit/db58771b4e56ae322e00c03dcee328e0922f6151))
+
 ## [1.19.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.18.0...v1.19.0) (2026-10-11)
 
 
