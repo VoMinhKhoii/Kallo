@@ -38,8 +38,15 @@ export function isDishRescueEnabled(): boolean {
 
 /** Mini-meals in flight at once. */
 const CONCURRENCY = 3;
-/** How long the main run waits past Call 2 for the mini-meals it needs. */
-const GRACE_MS = 12_000;
+/**
+ * How long the main run waits past Call 2 for the mini-meals it needs. A
+ * mini-meal takes ~10 s, so one started only after Call 2 rarely makes it in
+ * time and the dish keeps Call 2's own estimate; the ones started early (no
+ * candidate, or the selector found none fitting) have had the whole of Call 2
+ * to finish. Was 12 s: that wait, mostly for a mini-meal then dropped anyway,
+ * was the slowest analyses' extra 10–12 s.
+ */
+const GRACE_MS = 5_000;
 /**
  * Never wait past this point of the whole run. The route stops at 60 s, and
  * after the pipeline the result is persisted under its own 15 s deadline

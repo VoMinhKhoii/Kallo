@@ -179,7 +179,7 @@ describe('startDishRescue', () => {
       runStartedAt: Date.now(),
     });
     const out = rescue.apply(call2('c1'));
-    await vi.advanceTimersByTimeAsync(12_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(await out).toBeNull();
   });
 });
@@ -190,13 +190,13 @@ describe('startDishRescue deadline', () => {
     const rescue = rescueWith(() => new Promise(() => {}), {
       state,
       language: 'vi',
-      runStartedAt: Date.now() - 30_000, // 5 s of the 35 s budget left
+      runStartedAt: Date.now() - 32_000, // 3 s of the 35 s budget left
     });
     let settled = false;
     void rescue.apply(call2('c1')).then(() => {
       settled = true;
     });
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(3_000);
     expect(settled).toBe(true);
   });
 });
