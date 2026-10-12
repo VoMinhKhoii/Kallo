@@ -89,6 +89,32 @@ export function createStreamedMatching(
   gemini: GeminiClient
 ): StreamedMatching {
   const started = new Map<string, Promise<IngredientV2MatchResult | null>>();
+  // Ingredients waiting for the next batch. One batch runs at a time and takes
+  // everything that streamed in meanwhile: the instance shares two database
+  // connections across all its requests, so a query per meal item would queue
+  // behind each other (and behind every other request) instead of overlapping.
+  let pending: Array<{
+    ing: Ingredient;
+    resolve: (r: IngredientV2MatchResult | null) => void;
+  }> = [];
+  let inFlight = false;
+  const flush = () => {
+    if (inFlight || pending.length === 0) return;
+    inFlight = true;
+    const batch = pending;
+    pending = [];
+    matchCardCandidates(
+      batch.map((p) => p.ing),
+      db,
+      gemini
+    )
+      .catch(() => null)
+      .then((results) => {
+        batch.forEach((p, i) => p.resolve(results?.[i] ?? null));
+        inFlight = false;
+        flush();
+      });
+  };
   let seen = 0;
   return {
     onChunk(accumulated) {
@@ -96,25 +122,23 @@ export function createStreamedMatching(
       // A retried attempt streams from scratch.
       if (items.length < seen) seen = 0;
       for (const item of items.slice(seen)) {
-        // Cleaned up exactly as Call 1's result is, so a reused result names
-        // the ingredient the way the final decomposition does.
-        const fresh = (item.ingredients ?? [])
-          .filter((ing) => ing?.rawName && !started.has(matchKey(ing)))
-          .map((ing) => ({
-            ...ing,
-            rawName: capitalizeFirst(ing.rawName),
-            canonicalName: capitalizeFirst(ing.canonicalName ?? ''),
-          }));
-        if (fresh.length === 0) continue;
-        const batch = matchCardCandidates(fresh, db, gemini).catch(() => null);
-        fresh.forEach((ing, i) =>
+        for (const raw of item.ingredients ?? []) {
+          if (!raw?.rawName || started.has(matchKey(raw))) continue;
+          // Cleaned up exactly as Call 1's result is, so a reused result names
+          // the ingredient the way the final decomposition does.
+          const ing = {
+            ...raw,
+            rawName: capitalizeFirst(raw.rawName),
+            canonicalName: capitalizeFirst(raw.canonicalName ?? ''),
+          };
           started.set(
             matchKey(ing),
-            batch.then((results) => results?.[i] ?? null)
-          )
-        );
+            new Promise((resolve) => pending.push({ ing, resolve }))
+          );
+        }
       }
       seen = items.length;
+      flush();
     },
     async match(ingredients, dishCookingMethods, legacy) {
       const early = await Promise.all(

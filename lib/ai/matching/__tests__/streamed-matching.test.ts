@@ -67,3 +67,29 @@ describe('createStreamedMatching', () => {
     expect(matchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('streamed matching batches', () => {
+  it('runs one batch at a time, the next taking everything that streamed in meanwhile', async () => {
+    const batches: string[][] = [];
+    let release: () => void = () => {};
+    cardsMock.mockReset();
+    cardsMock.mockImplementation((ings: { rawName: string }[]) => {
+      batches.push(ings.map((i) => i.rawName));
+      return batches.length === 1
+        ? new Promise((resolve) => {
+            release = () => resolve(ings.map((i) => result(i.rawName)));
+          })
+        : Promise.resolve(ings.map((i) => result(i.rawName)));
+    });
+    const streamed = createStreamedMatching({} as AppDb, {} as GeminiClient);
+    const item = (n: string) =>
+      `{"name":"${n}","ingredients":[{"rawName":"${n}","canonicalName":"${n}"}]}`;
+    streamed.onChunk(`{"mealItems":[${item('a')},`);
+    streamed.onChunk(`{"mealItems":[${item('a')},${item('b')},`);
+    streamed.onChunk(`{"mealItems":[${item('a')},${item('b')},${item('c')},`);
+    expect(batches).toEqual([['A']]);
+    release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(batches).toEqual([['A'], ['B', 'C']]);
+  });
+});
