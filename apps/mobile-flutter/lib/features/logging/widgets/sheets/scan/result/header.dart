@@ -95,8 +95,13 @@ class ScanResultHeader extends StatelessWidget {
         const SizedBox(height: 14),
         CompositionBar(segments: composition.segments, height: 6),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        // A Wrap that lays out exactly like the spaceEvenly Row it replaced
+        // while the three fit on one line (spacing 0). On a 320pt phone, or at
+        // 1.3x type, three "Carbs 50.4 g" legends need more than the line has:
+        // the Row overflowed by 5–77pt there; the Wrap takes a second line.
+        Wrap(
+          alignment: WrapAlignment.spaceEvenly,
+          runSpacing: 4,
           children: [
             for (final key in kCompositionKeys)
               Row(

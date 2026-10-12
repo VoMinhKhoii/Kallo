@@ -1,11 +1,13 @@
 /// Ingredient-search and manual-logging data models.
 ///
 /// Mirrors the web contracts in `lib/api/contracts/ingredients.ts` and
-/// `lib/logging/manual-logging.ts`: deterministic manual logging where the
-/// user picks a food-composition entry and enters exact grams — nutrition is
-/// per-100g data scaled client-side for live feedback, and recomputed
+/// `lib/domain/logging/manual-logging.ts`: deterministic manual logging where
+/// the user picks a food-composition entry and enters exact grams — nutrition
+/// is per-100g data scaled client-side for live feedback, and recomputed
 /// server-side on save.
 library;
+
+import 'vessel.dart';
 
 /// Per-100g macro snapshot carried with every search result so the client can
 /// compute row/total macros live without another round-trip.
@@ -63,6 +65,22 @@ class IngredientSearchResult {
 
   final IngredientMacrosPer100g per100g;
 
+  /// Clean English name from the row's food card ("Skinless chicken breast").
+  /// Null when the row has no card — fall back to [nameEn].
+  final String? displayNameEn;
+
+  /// 'raw' | 'cooked' only when the card's own wording says so. Null for
+  /// canned, dried, packaged and plain foods, where the table's default 'raw'
+  /// in [state] would mislead — so the UI shows no state at all.
+  final String? stateLabel;
+
+  /// A packaged food's brand, shown where the state label would go.
+  final String? brand;
+
+  /// The vessel the amount ruler offers, at its everyday tier (a medium cut,
+  /// a medium bowl, a regular cup). Null means grams only.
+  final ClientVessel? vessel;
+
   const IngredientSearchResult({
     required this.id,
     required this.namePrimary,
@@ -70,7 +88,17 @@ class IngredientSearchResult {
     required this.state,
     required this.per100g,
     this.semantic = false,
+    this.displayNameEn,
+    this.stateLabel,
+    this.brand,
+    this.vessel,
   });
+
+  /// The English name to show: the card's clean one, else the table's.
+  String? get englishName {
+    final name = displayNameEn ?? nameEn;
+    return name == null || name.trim().isEmpty ? null : name;
+  }
 
   factory IngredientSearchResult.fromJson(Map<String, dynamic> json) =>
       IngredientSearchResult(
@@ -82,7 +110,32 @@ class IngredientSearchResult {
         per100g: IngredientMacrosPer100g.fromJson(
           (json['per100g'] as Map<String, dynamic>?) ?? const {},
         ),
+        displayNameEn: _stringOrNull(json['displayNameEn']),
+        stateLabel: switch (json['stateLabel']) {
+          'raw' => 'raw',
+          'cooked' => 'cooked',
+          _ => null,
+        },
+        brand: _stringOrNull(json['brand']),
+        vessel: vesselFromHint(json['vessel']),
       );
+}
+
+String? _stringOrNull(Object? value) =>
+    value is String && value.trim().isNotEmpty ? value : null;
+
+/// The search's vessel hint (`{family: 'piece', kind}` or `{family, dishClass}`)
+/// as a vessel at its everyday tier: one medium cut; a regular cup or a medium
+/// plate; a small bowl (a chén) of rice or beans, a medium bowl of soup. A
+/// medium bowl of rice is ~390 g, twice what a chén holds. NEVER throws: a hint
+/// is decoration, and an unknown family from a newer server degrades to grams.
+ClientVessel? vesselFromHint(Object? hint) {
+  if (hint is! Map) return null;
+  if (hint['family'] == 'piece') {
+    return ClientVessel.fromJson({...hint, 'tier': 3, 'count': 1});
+  }
+  final chen = hint['family'] == 'bowl' && hint['dishClass'] == 'solid';
+  return ClientVessel.fromJson({...hint, 'tier': chen ? 1 : 2});
 }
 
 /// One picked item in the manual-log sheet: an ingredient + editable grams.

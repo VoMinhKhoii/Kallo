@@ -198,6 +198,6 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
   /// The fixed reading mark, hung clear of the silhouette band it points at.
   Widget _needle(double glyphHeight) => Padding(
     padding: EdgeInsets.only(top: glyphHeight + portionNeedleGap),
-    child: const RulerNeedle(bar: portionRulerHeight + KalloSpacing.sp1),
+    child: RulerNeedle(bar: portionNeedleBar),
   );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/models/nutrition/ingredient.dart';
+import 'package:kallo_mobile/models/nutrition/vessel.dart';
 
 void main() {
   group('IngredientSearchResult.fromJson', () {
@@ -26,6 +27,68 @@ void main() {
       expect(result.per100g.caloriesKcal, 130);
       expect(result.per100g.proteinG, 2.7);
       expect(result.per100g.fatG, isNull);
+    });
+
+    test('reads the card display fields and vessel hint', () {
+      final chicken = IngredientSearchResult.fromJson(const {
+        'id': 'a',
+        'namePrimary': 'Ức gà',
+        'nameEn': 'Chicken, breast, meat only, raw',
+        'state': 'raw',
+        'displayNameEn': 'Skinless chicken breast',
+        'stateLabel': 'raw',
+        'brand': null,
+        'vessel': {'family': 'piece', 'kind': 'poultry'},
+      });
+      expect(chicken.englishName, 'Skinless chicken breast');
+      expect(chicken.stateLabel, 'raw');
+      // Pieces open at the everyday medium cut, one of them.
+      final piece = chicken.vessel as PieceVessel;
+      expect((piece.kind, piece.tier, piece.count), (PieceKind.poultry, 3, 1));
+
+      final milk = IngredientSearchResult.fromJson(const {
+        'id': 'b',
+        'namePrimary': 'Sữa bò tươi',
+        'nameEn': 'Milk',
+        'vessel': {'family': 'cup', 'dishClass': 'drink'},
+      });
+      final cup = milk.vessel as ContainerVessel;
+      expect(
+        (cup.family, cup.tier, cup.dishClass),
+        (ContainerFamily.cup, 2, DishClass.drink),
+      );
+      // No card name: the table's English name stands in.
+      expect(milk.englishName, 'Milk');
+
+      // Rice opens at a chén, not a medium bowl; soup at a medium bowl.
+      ContainerVessel bowl(String dishClass) =>
+          vesselFromHint({'family': 'bowl', 'dishClass': dishClass})!
+              as ContainerVessel;
+      expect(bowl('solid').tier, 1);
+      expect(bowl('soup').tier, 2);
+    });
+
+    test('degrades unknown or malformed hints to nothing, never throws', () {
+      IngredientSearchResult parse(Object? vessel, Object? stateLabel) =>
+          IngredientSearchResult.fromJson({
+            'id': 'x',
+            'namePrimary': 'Cá hộp',
+            'nameEn': '  ',
+            'state': 'raw',
+            'stateLabel': stateLabel,
+            'vessel': vessel,
+          });
+      expect(
+        parse({'family': 'tray', 'dishClass': 'solid'}, null).vessel,
+        isNull,
+      );
+      expect(parse({'family': 'piece', 'kind': 'tofu'}, null).vessel, isNull);
+      expect(parse('bowl', null).vessel, isNull);
+      // A table default of 'raw' is not a state the card claimed.
+      expect(parse(null, null).stateLabel, isNull);
+      expect(parse(null, 'fried').stateLabel, isNull);
+      // A blank English name is no name.
+      expect(parse(null, null).englishName, isNull);
     });
 
     test('tolerates missing optional fields', () {
