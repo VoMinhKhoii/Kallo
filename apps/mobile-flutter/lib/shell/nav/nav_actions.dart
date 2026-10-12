@@ -51,6 +51,16 @@ void pushOverShell(
   required String base,
   required String path,
 }) {
+  // No matches means nothing on screen to push over: the router has not parsed
+  // its first route yet, or it is showing its errorBuilder (go_router's error
+  // match list is empty). `router.state` is `currentConfiguration.last` and
+  // throws "Bad state: No element" on both (KALLO-MOBILE-3, a notification
+  // tap). `go` lands somewhere real from either; the back chevron still works
+  // through [popOr]'s fallback.
+  if (router.routerDelegate.currentConfiguration.isEmpty) {
+    router.go(path);
+    return;
+  }
   final at = router.state.matchedLocation;
   // Already there — do nothing. Falling through would seed [base] and push a
   // SECOND copy: back would then land on the seed instead of where the user

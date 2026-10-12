@@ -163,4 +163,37 @@ void main() {
     expect(stackOf(router), ['/circle', '/circle/thread/1']);
     expect(router.canPop(), isTrue, reason: 'the back gesture has a target');
   });
+
+  // KALLO-MOBILE-3: `router.state` is `currentConfiguration.last`, which throws
+  // "Bad state: No element" whenever the match list is empty. Two real states
+  // have one: the router before its first route parse, and the router showing
+  // its errorBuilder (go_router's error match list carries no matches). A
+  // notification tap landed in one of them and took the app down.
+  testWidgets('a router on its error page still routes the tap', (
+    tester,
+  ) async {
+    final router = await pump(tester, '/no-such-route');
+    expect(router.routerDelegate.currentConfiguration.isError, isTrue);
+
+    pushOverShell(router, base: '/circle', path: '/circle/thread/1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('/circle/thread/1'), findsOneWidget);
+  });
+
+  testWidgets('a router that has not parsed a route yet still routes the tap', (
+    tester,
+  ) async {
+    final router = routerAt('/welcome');
+    addTearDown(router.dispose);
+    expect(router.routerDelegate.currentConfiguration.isEmpty, isTrue);
+
+    pushOverShell(router, base: '/circle', path: '/circle/thread/1');
+    await tester.pumpWidget(
+      WidgetsApp.router(routerConfig: router, color: const Color(0xFF000000)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('/circle/thread/1'), findsOneWidget);
+  });
 }
