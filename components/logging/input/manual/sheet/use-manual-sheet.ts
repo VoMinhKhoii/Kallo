@@ -9,8 +9,7 @@ export const MAX_MANUAL_ITEMS = 30;
 
 /**
  * The phone sheets' meal: the foods on the plate, each weighed as it went in,
- * and the optional name. Held by the composer, not the sheet, so an
- * accidental swipe-down keeps the plate — reopening shows it again.
+ * and the optional name. The launcher resets it as each new sheet opens.
  */
 export function useManualSheet() {
   const [items, setItems] = useState<ManualSheetItem[]>([]);

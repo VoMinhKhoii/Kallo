@@ -2,6 +2,7 @@
 
 import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { Ref } from 'react';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { SheetCapsuleButton } from '@/components/shared/sheet-capsule-button';
 import { useIngredientSearch } from '@/hooks/meals/queries/use-ingredient-search';
@@ -27,6 +28,7 @@ export function ManualSearchPage({
   query,
   onQuery,
   autoFocus,
+  inputRef,
   itemFor,
   onPick,
   onClose,
@@ -35,6 +37,7 @@ export function ManualSearchPage({
   query: string;
   onQuery: (query: string) => void;
   autoFocus: boolean;
+  inputRef?: Ref<HTMLInputElement>;
   itemFor: (ingredientId: string) => ManualSheetItem | null;
   onPick: (food: IngredientSearchResult) => void;
   onClose: () => void;
@@ -66,6 +69,7 @@ export function ManualSearchPage({
         <label className="flex h-[52px] items-center gap-2.5 rounded-full bg-white px-[18px]">
           <Search aria-hidden className="size-[18px] text-kallo-text-muted" />
           <input
+            ref={inputRef}
             type="search"
             spellCheck={false}
             autoComplete="off"

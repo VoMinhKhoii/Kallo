@@ -3,7 +3,7 @@
 import { ArrowRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Drawer as VaulDrawer } from 'vaul';
 import { DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/lib/domain/logging/manual-logging';
 import { ManualFoodPage } from './manual-food-page';
 import { ManualSearchPage } from './manual-search-page';
-import type { ManualSheetState } from './use-manual-sheet';
+import { MAX_MANUAL_ITEMS, type ManualSheetState } from './use-manual-sheet';
 
 /** How much of the meal sheet's strip shows above this one. */
 const PEEK = 26;
@@ -59,6 +59,7 @@ export function ManualAddSheet({
   const [grams, setGrams] = useState(editing?.grams ?? 100);
   const [addedAny, setAddedAny] = useState(false);
   const [visited, setVisited] = useState(false);
+  const search = useRef<HTMLInputElement>(null);
   const close = () => onOpenChange(false);
 
   const pick = (food: IngredientSearchResult) => {
@@ -69,12 +70,22 @@ export function ManualAddSheet({
   };
   const leave = () => (editing ? close() : setPage(null));
 
-  const total = totalsForRows(sheetItemsAsRows(meal.items)).caloriesKcal ?? 0;
+  const full = meal.items.length >= MAX_MANUAL_ITEMS;
+  // Unknown calories read "—"; only an empty plate is a known 0.
+  const total =
+    totalsForRows(sheetItemsAsRows(meal.items)).caloriesKcal ??
+    (meal.items.length ? null : 0);
   const summary = t('peek', {
     count: t('ingredientCount', { count: meal.items.length }),
     kcal: formatKcal(total),
   });
-  const after = page
+  // Nothing to promise for a food with no calorie figure, or a new food that
+  // a full plate cannot take.
+  const promises =
+    page !== null &&
+    page.food.per100g.caloriesKcal != null &&
+    !(full && page.itemId === null);
+  const after = promises
     ? formatKcal(
         mealKcalWith(meal.items, page.food, grams, page.itemId ?? undefined)
       )
@@ -88,6 +99,15 @@ export function ManualAddSheet({
     <VaulDrawer.NestedRoot open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         aria-describedby={undefined}
+        // The search's own autoFocus lands before the meal sheet's focus trap
+        // pauses for this one, and the trap pulls focus straight back; from
+        // here it runs once the trap has paused. Opened onto a food (an
+        // edit), there is no search to focus.
+        onOpenAutoFocus={(event) => {
+          if (page) return;
+          event.preventDefault();
+          search.current?.focus();
+        }}
         className="mt-0 h-[calc(100dvh-env(safe-area-inset-top)-8px)] max-h-none rounded-none border-0 bg-transparent font-sans-display text-kallo-text data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:border-0 [&>div:first-child]:hidden"
       >
         <DrawerTitle className="sr-only">{t('sheetTitle')}</DrawerTitle>
@@ -133,6 +153,7 @@ export function ManualAddSheet({
                   food={page.food}
                   grams={grams}
                   inMeal={page.itemId !== null}
+                  mealFull={full}
                   onGrams={setGrams}
                   onClose={close}
                   onBack={editing ? undefined : leave}
@@ -158,6 +179,7 @@ export function ManualAddSheet({
                   query={query}
                   onQuery={setQuery}
                   autoFocus={!visited}
+                  inputRef={search}
                   itemFor={meal.itemFor}
                   onPick={pick}
                   onClose={close}

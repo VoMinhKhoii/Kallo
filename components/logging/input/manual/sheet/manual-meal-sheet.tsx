@@ -20,7 +20,7 @@ import {
 import { ManualAddSheet } from './manual-add-sheet';
 import { ManualFoodRow, useStateWord } from './manual-food-row';
 import { ManualMealTotals } from './manual-meal-totals';
-import type { ManualSheetState } from './use-manual-sheet';
+import { MAX_MANUAL_ITEMS, type ManualSheetState } from './use-manual-sheet';
 
 /**
  * The phone's manual log (approved canvas, E1) — the Flutter `ManualLogSheet`
@@ -49,6 +49,7 @@ export function ManualMealSheet({
     editing: ManualSheetItem | null;
   }>({ open: false, session: 0, editing: null });
   const totals = totalsForRows(sheetItemsAsRows(meal.items));
+  const full = meal.items.length >= MAX_MANUAL_ITEMS;
   const openAdd = (editing: ManualSheetItem | null) =>
     setAdd((prev) => ({ open: true, session: prev.session + 1, editing }));
 
@@ -108,7 +109,7 @@ export function ManualMealSheet({
             />
           </label>
           <div className="mt-3">
-            <ManualMealTotals totals={totals} />
+            <ManualMealTotals totals={totals} empty={meal.items.length === 0} />
           </div>
           {meal.items.length > 0 && (
             <>
@@ -146,12 +147,19 @@ export function ManualMealSheet({
           )}
           <button
             type="button"
-            disabled={saving}
+            disabled={saving || full}
             onClick={() => openAdd(null)}
-            className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-white px-4 text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
+            className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-white px-4 py-2 text-left text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
           >
-            <Plus aria-hidden className="size-6" strokeWidth={1.5} />
-            {t('addIngredient')}
+            <Plus aria-hidden className="size-6 shrink-0" strokeWidth={1.5} />
+            <span className="flex flex-col">
+              {t('addIngredient')}
+              {full && (
+                <span className="text-[14px] text-kallo-text-muted">
+                  {t('mealFull', { count: MAX_MANUAL_ITEMS })}
+                </span>
+              )}
+            </span>
           </button>
         </div>
         <div className="shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),1rem)]">

@@ -6,9 +6,10 @@ import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-head
 import { englishName } from '@/lib/domain/logging/manual-display';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
 import { ManualAmountCard } from './manual-amount-card';
+import { MAX_MANUAL_ITEMS } from './use-manual-sheet';
 
 const PRIMARY =
-  'flex h-[52px] w-full items-center justify-center rounded-full bg-kallo-hover font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border';
+  'flex h-[52px] w-full items-center justify-center rounded-full bg-kallo-hover font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-55 disabled:hover:bg-kallo-hover';
 
 /**
  * One food, weighed before it goes in (approved canvas, E4): the scan
@@ -21,6 +22,7 @@ export function ManualFoodPage({
   food,
   grams,
   inMeal,
+  mealFull = false,
   onGrams,
   onCommit,
   onBack,
@@ -30,6 +32,8 @@ export function ManualFoodPage({
   food: IngredientSearchResult;
   grams: number;
   inMeal: boolean;
+  /** The meal holds as many foods as it may: a new one cannot go in. */
+  mealFull?: boolean;
   onGrams: (grams: number) => void;
   onCommit: () => void;
   /** Back to the results; absent when opened from the meal itself. */
@@ -42,6 +46,7 @@ export function ManualFoodPage({
   const scale = (value: number | null) =>
     value === null ? null : (value * grams) / 100;
   const per100 = food.per100g;
+  const blocked = mealFull && !inMeal;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ResponsiveSheetHeader
@@ -72,7 +77,17 @@ export function ManualFoodPage({
         </div>
       </div>
       <div className="shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
-        <button type="button" onClick={onCommit} className={PRIMARY}>
+        {blocked && (
+          <p className="mb-2 text-center text-[14px] text-kallo-text-muted">
+            {t('mealFull', { count: MAX_MANUAL_ITEMS })}
+          </p>
+        )}
+        <button
+          type="button"
+          disabled={blocked}
+          onClick={onCommit}
+          className={PRIMARY}
+        >
           {inMeal ? t('update') : t('addToMeal')}
         </button>
         {inMeal && onRemove && (

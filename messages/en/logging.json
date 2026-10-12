@@ -235,6 +235,7 @@
     "peek": "{count} · {kcal} kcal",
     "peekWith": "{kcal} kcal with this",
     "peekAfter": "{kcal} kcal",
+    "mealFull": "A meal holds up to {count} ingredients",
     "close": "Close",
     "back": "Back",
     "decrease": "Less",

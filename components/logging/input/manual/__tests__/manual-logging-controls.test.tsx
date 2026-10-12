@@ -297,4 +297,31 @@ describe('ManualLoggingControls', () => {
     );
     expect(lastPatch).toEqual({ query: 'x', ingredient: null });
   });
+
+  it('stops adding rows at the 30 a meal can hold, and says so', async () => {
+    mockUseIngredientSearch.mockReturnValue({ data: [], isFetching: false });
+    const user = userEvent.setup();
+    const rows = Array.from({ length: 29 }, (_, i) => createEmptyRow(`r${i}`));
+    render(<Harness initialRows={rows} />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'manualLogging.addItem' })
+    );
+    expect(screen.getAllByLabelText('manualLogging.gramsLabel')).toHaveLength(
+      30
+    );
+    const full = screen.getByRole('button', { name: 'manualLogging.mealFull' });
+    expect(full).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'manualLogging.addItem' })
+    ).not.toBeInTheDocument();
+
+    // Removing one opens the way again.
+    await user.click(
+      screen.getAllByRole('button', { name: 'manualLogging.removeItem' })[0]
+    );
+    expect(
+      screen.getByRole('button', { name: 'manualLogging.addItem' })
+    ).toBeEnabled();
+  });
 });

@@ -2,20 +2,19 @@
 
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { sheetItemsAsRows } from '@/lib/domain/logging/manual-display';
-import {
-  type CompleteManualMealRow,
-  formatKcal,
-  totalsForRows,
-} from '@/lib/domain/logging/manual-logging';
+import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
 import { ManualMealSheet } from './manual-meal-sheet';
 import { useManualSheet } from './use-manual-sheet';
 
 /**
  * Manual mode on a phone: the composer's field becomes one tap into the
- * manual-log sheet — the same two stacked sheets the iOS app opens — and
- * says what is already on the plate when there is something. The plate lives
- * here, so closing the sheet by accident keeps it.
+ * manual-log sheet — the same two stacked sheets the iOS app opens.
+ *
+ * Each open is a new meal, as on iOS: whatever plate a closed sheet left
+ * behind is dropped the moment the next one opens — however it was closed,
+ * and never while it is still sliding away.
  */
 export function ManualSheetLauncher({
   open,
@@ -30,7 +29,11 @@ export function ManualSheetLauncher({
 }) {
   const t = useTranslations('logging.manualLogging');
   const meal = useManualSheet();
-  const total = totalsForRows(sheetItemsAsRows(meal.items)).caloriesKcal;
+  const [shown, setShown] = useState(open);
+  if (open !== shown) {
+    setShown(open);
+    if (open) meal.reset();
+  }
 
   return (
     <>
@@ -41,14 +44,7 @@ export function ManualSheetLauncher({
         className="flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-xl px-1 text-left text-[16px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:opacity-50"
       >
         <Plus aria-hidden className="size-5 shrink-0" strokeWidth={1.5} />
-        <span className="truncate">
-          {meal.items.length > 0
-            ? t('peek', {
-                count: t('ingredientCount', { count: meal.items.length }),
-                kcal: formatKcal(total),
-              })
-            : t('sheetTitle')}
-        </span>
+        <span className="truncate">{t('sheetTitle')}</span>
       </button>
       <ManualMealSheet
         open={open}

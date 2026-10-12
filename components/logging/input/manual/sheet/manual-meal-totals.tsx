@@ -16,19 +16,25 @@ import type { IngredientMacrosPer100g } from '@/lib/domain/logging/manual-loggin
  * calories, and the three macros in grams beside it — each row wearing the
  * glyph and pigment of the segment it names. No card behind it: it is read,
  * never tapped. `compact` is the desktop composer's smaller ring.
+ *
+ * An `empty` plate reads 0; foods that carry no figure for a value read "—"
+ * there, never a 0 the meal does not know.
  */
 export function ManualMealTotals({
   totals,
+  empty = false,
   compact = false,
 }: {
   totals: IngredientMacrosPer100g;
+  empty?: boolean;
   compact?: boolean;
 }) {
   const t = useTranslations('logging');
+  const known = (value: number | null) => value ?? (empty ? 0 : null);
   const grams = {
-    protein: totals.proteinG,
-    carbohydrate: totals.carbohydrateG,
-    fat: totals.fatG,
+    protein: known(totals.proteinG),
+    carbohydrate: known(totals.carbohydrateG),
+    fat: known(totals.fatG),
   };
   const labels = {
     protein: t('barcodeProtein'),
@@ -40,7 +46,7 @@ export function ManualMealTotals({
       className={cn('flex items-center', compact ? 'gap-4' : 'gap-6 px-1 pt-1')}
     >
       <MacroRing
-        kcal={totals.caloriesKcal ?? 0}
+        kcal={known(totals.caloriesKcal)}
         grams={grams}
         size={compact ? 72 : 128}
         thickness={compact ? 7 : 12}
@@ -74,7 +80,7 @@ export function ManualMealTotals({
                   compact ? 'text-[14px]' : 'text-[16px] tracking-[-0.2px]'
                 )}
               >
-                {formatGrams(grams[key] ?? 0)} g
+                {grams[key] == null ? '—' : formatGrams(grams[key])} g
               </span>
             </li>
           );
