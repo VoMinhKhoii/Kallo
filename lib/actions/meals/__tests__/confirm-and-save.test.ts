@@ -553,6 +553,62 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.caloriesKcal).toBe(1040); // baseline 520 → 2x
   });
 
+  it('saves an alcoholic row’s ethanol grams, scaled by a gram edit', async () => {
+    const capturedValues: unknown[] = [];
+    const pipelineResult = JSON.parse(
+      JSON.stringify(samplePipelineResult)
+    ) as PipelineResult;
+    // The second ingredient stands in for a beer: 10 g ethanol at 100 g.
+    pipelineResult.mealItems[0].ingredients[1].alcoholG = 10;
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò và bia',
+            pipelineResult,
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
+
+    const result = await confirmAndSaveMealAction({
+      analysisId: UUID_2,
+      edits: [{ mealItemOrder: 0, ingredientIndex: 1, newGrams: 300 }],
+    });
+
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.alcoholG).toBe(30);
+    expect(result.meal.alcoholG).toBe(30);
+  });
+
+  it('saves a null alcohol_g when no row carries alcohol', async () => {
+    const capturedValues: unknown[] = [];
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: JSON.parse(JSON.stringify(samplePipelineResult)),
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
+
+    const result = await confirmAndSaveMealAction({ analysisId: UUID_2 });
+
+    expect((capturedValues[0] as Record<string, unknown>).alcoholG).toBeNull();
+    expect(result.meal.alcoholG).toBeNull();
+  });
+
   it('keeps nutrition intact when a gram edit targets a zero-base dish', async () => {
     // A relogged item whose source row had null `estimated_grams` reaches the
     // pipeline result with estimatedGrams 0. A gram edit on it must NOT scale

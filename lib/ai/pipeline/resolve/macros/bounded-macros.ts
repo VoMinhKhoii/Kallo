@@ -15,6 +15,7 @@ import {
   isDiscreteOilIngredient,
 } from '@/lib/domain/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
+import { ALCOHOL_KCAL_PER_G } from './alcohol';
 import { scalePer100g } from './macro-base';
 import {
   deriveCaloriesFromMacros,
@@ -48,6 +49,8 @@ const UNMATCHED_DENSITY_CEILING = MAX_KCAL_PER_100G;
  *     (P/C ≤ 1.4× / ≥ 0.71× base, F ≤ 2× / ≥ 0.5× base). Calories still
  *     derive from 4P + 4C + 9F so the per-ingredient triple stays
  *     structurally consistent.
+ *   - Either path: an alcoholic row's ethanol energy (`base.alcoholKcal`) is
+ *     added to kcal and reported as `alcoholG`.
  *
  * For UNMATCHED ingredients (no `MacroBase`):
  *   - protein, carb, fat: from the LLM verbatim (no DB anchor to override).
@@ -76,6 +79,7 @@ export function resolveIngredientMacros(
   proteinG: BoundedEstimate;
   carbohydrateG: BoundedEstimate;
   fatG: BoundedEstimate;
+  alcoholG?: number;
 } {
   if (!base) {
     let proteinG = rawIng.proteinG;
@@ -138,8 +142,20 @@ export function resolveIngredientMacros(
     prepNotesPresent ? PREP_NOTES_FAT_MAX_RATIO : HALLUCINATION_GUARD_RATIO,
     oilAllowance
   );
-  const caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
-  return { caloriesKcal, proteinG, carbohydrateG, fatG };
+  const macroKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
+  // Ethanol is in the row's kcal but in none of P/C/F, so the 4/4/9 identity
+  // alone drops it. Added back flat: it comes from the DB row, not the LLM.
+  const alcoholKcal = base.alcoholKcal ?? 0;
+  if (alcoholKcal <= 0) {
+    return { caloriesKcal: macroKcal, proteinG, carbohydrateG, fatG };
+  }
+  const caloriesKcal = {
+    low: macroKcal.low + alcoholKcal,
+    mid: macroKcal.mid + alcoholKcal,
+    high: macroKcal.high + alcoholKcal,
+  };
+  const alcoholG = alcoholKcal / ALCOHOL_KCAL_PER_G;
+  return { caloriesKcal, proteinG, carbohydrateG, fatG, alcoholG };
 }
 
 export const __testing = {

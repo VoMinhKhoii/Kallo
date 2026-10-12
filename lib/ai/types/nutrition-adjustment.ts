@@ -30,6 +30,11 @@ export interface MacroBase {
   proteinG: number;
   carbohydrateG: number;
   fatG: number;
+  /**
+   * Ethanol energy in the row's kcal that P/C/F do not carry (see
+   * `resolve/macros/alcohol.ts`). Absent or 0 for every non-alcoholic row.
+   */
+  alcoholKcal?: number;
 }
 
 /** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient. */
@@ -45,6 +50,8 @@ export interface IngredientLlmNutrition {
   proteinG: BoundedEstimate;
   carbohydrateG: BoundedEstimate;
   fatG: BoundedEstimate;
+  /** Ethanol grams from a matched alcoholic row; absent otherwise. */
+  alcoholG?: number;
 }
 
 /**

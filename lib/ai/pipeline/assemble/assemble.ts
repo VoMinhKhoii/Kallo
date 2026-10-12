@@ -231,6 +231,7 @@ export function assembleResult(
             matchConfidence: matchInfo?.similarity ?? null,
             boundedNutrition,
             displayedNutrition,
+            ...(llmData?.alcoholG ? { alcoholG: llmData.alcoholG } : {}),
           };
         }
       );
