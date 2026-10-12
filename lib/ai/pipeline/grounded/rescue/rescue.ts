@@ -12,7 +12,8 @@
  * - right after matching, for an ingredient with no candidate (`matched`);
  * - when the candidate selector finds none fitting (`startEarly`);
  * - as Call 2 streams, the moment a dish's estimate rejects an ingredient or
- *   picks a row its own numbers contradict (`onEstimates`).
+ *   picks a row its own numbers contradict (`onEstimates`; not for a dish
+ *   whose name the meal repeats, which waits for `apply`).
  * A mini-meal started early but not needed is thrown away. After Call 2,
  * `apply` waits at most `GRACE_MS` for the ones still needed.
  *
@@ -27,6 +28,8 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import {
   classifyVerdict,
   pairIngredientsWithGrounded,
@@ -35,10 +38,10 @@ import type { PortionResolution } from '@/lib/ai/portion/types';
 import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 import { rejectWrongFormRows } from '../review';
-import { type RescuePart, type RunState, spliceRescue } from './splice';
+import { type RescuePart, spliceRescue } from './splice';
 import { runRescueSubMeal, type SubMealDeps } from './sub-meal';
 
-export type { RescuePart, RunState } from './splice';
+export type { RescuePart } from './splice';
 
 /** `DISH_RESCUE_ENABLED=false` turns dish rescue off. */
 export function isDishRescueEnabled(): boolean {
@@ -201,15 +204,19 @@ export function startDishRescue(args: {
   ) => void;
   /** Start this flat ingredient's mini-meal now (the selector found no fit). */
   startEarly: (flat: number) => void;
-  /** Call 2's estimates so far: start what they reject. */
-  onEstimates: (partial: GroundedEstimation) => void;
+  /** Call 2's meal items as they arrive: start what they reject. */
+  onEstimates: (items: GroundedEstimation['mealItems']) => void;
   close: () => void;
+  /** After Call 2: splice the finished mini-meals into this state. */
   apply: (
-    grounded: GroundedEstimation
+    state: RunState
   ) => Promise<{ state: RunState; rescued: number } | null>;
 } {
   const { decomposition } = args;
+  // The matching results, saved only to decide what to start early.
   let state: Omit<RunState, 'grounded'> | null = null;
+  // Call 2's meal items so far, as streamed or per chunk.
+  const estimatedSoFar: GroundedEstimation['mealItems'] = [];
   // Each ingredient with the dish's cooking method when it has none of its own.
   const ingredients = decomposition.mealItems.flatMap((mi) =>
     mi.ingredients.map((ing) => ({
@@ -238,7 +245,8 @@ export function startDishRescue(args: {
           ? null
           : runRescueSubMeal(
               rescueMealText(ingredients[f], args.language),
-              args.subMeal
+              args.subMeal,
+              args.runStartedAt
             )
       ).then(
         (parts) => {
@@ -248,26 +256,42 @@ export function startDishRescue(args: {
       )
     );
   };
-  /** The flat ingredients these estimates reject (or whose row they contradict). */
-  const rejectedBy = (grounded: GroundedEstimation): number[] => {
-    if (!state) return [];
-    const reviewed = rejectWrongFormRows({ ...state, grounded }).state.grounded;
-    const pairs = pairIngredientsWithGrounded(decomposition, reviewed);
-    const matchResults = state.matchResults;
-    return ingredients.flatMap((_, f) =>
-      (pairs[f]?.ground?.grossG ?? 0) >= MIN_RESCUE_G &&
-      rejected(pairs[f]?.ground, matchResults[f]?.candidates.length ?? 0)
+  /** The flat ingredients this state's estimates reject (or whose row they contradict). */
+  const rejectedBy = (run: RunState): number[] => {
+    const reviewed = rejectWrongFormRows(run).state.grounded;
+    const pairs = pairIngredientsWithGrounded(run.decomposition, reviewed);
+    return ingredients.flatMap((_, f) => {
+      const ground = pairs[f]?.ground;
+      const grams = ground
+        ? shippedEdibleGrams(
+            ground,
+            pairs[f].ingredient,
+            run.matchResults[f],
+            run.portionResolutions[f]
+          )
+        : 0;
+      return grams >= MIN_RESCUE_G &&
+        rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
         ? [f]
-        : []
-    );
+        : [];
+    });
   };
 
+  // A dish whose name the meal repeats ("cơm" twice) pairs with its estimates
+  // by arrival order, which chunks finishing out of order break, so a
+  // streamed estimate never starts its mini-meal; `apply`, after Call 2, still
+  // does.
+  const names = decomposition.mealItems.map((mi) => nameKey(mi.name));
+  const repeated = new Set<number>();
   let flat = 0;
-  for (const mi of decomposition.mealItems)
+  decomposition.mealItems.forEach((mi, d) => {
+    const twice = names.indexOf(names[d]) !== names.lastIndexOf(names[d]);
     for (const ing of mi.ingredients) {
+      if (twice) repeated.add(flat);
       if (likelyMixedDish(mi, ing)) start(flat);
       flat++;
     }
+  });
 
   const close = () => {
     closed = true;
@@ -282,17 +306,19 @@ export function startDishRescue(args: {
       });
     },
     startEarly: start,
-    onEstimates(partial) {
-      for (const f of rejectedBy(partial)) start(f);
+    onEstimates(items) {
+      estimatedSoFar.push(...items);
+      if (!state) return;
+      const grounded = { mealItems: estimatedSoFar };
+      for (const f of rejectedBy({ ...state, grounded }))
+        if (!repeated.has(f)) start(f);
     },
     close,
-    async apply(grounded) {
-      const needed = state
-        ? rejectedBy(grounded).filter((f) =>
-            rescuable(ingredients[f], state?.portionResolutions[f])
-          )
-        : [];
-      if (!state || needed.length === 0) {
+    async apply(run) {
+      const needed = rejectedBy(run).filter((f) =>
+        rescuable(ingredients[f], run.portionResolutions[f])
+      );
+      if (needed.length === 0) {
         close();
         return null;
       }
@@ -316,7 +342,7 @@ export function startDishRescue(args: {
         })
       );
       if (parts.size === 0) return null;
-      const out = spliceRescue({ ...state, grounded }, parts);
+      const out = spliceRescue(run, parts);
       return out.rescued > 0 ? out : null;
     },
   };

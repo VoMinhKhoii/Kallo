@@ -5,13 +5,9 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import {
-  type RescuePart,
-  type RunState,
-  rescueMealText,
-  startDishRescue,
-} from '../rescue';
+import { type RescuePart, rescueMealText, startDishRescue } from '../rescue';
 import type { SubMealDeps } from '../sub-meal';
 
 const { subMealMock } = vi.hoisted(() => ({ subMealMock: vi.fn() }));
@@ -103,6 +99,12 @@ const call2 = (cơm: string | undefined): GroundedEstimation => ({
   ],
 });
 
+/** The main run's state after Call 2, as the orchestrator hands it to `apply`. */
+const run = (grounded: GroundedEstimation): RunState => ({
+  ...state,
+  grounded,
+});
+
 afterEach(() => vi.useRealTimers());
 
 describe('startDishRescue', () => {
@@ -140,7 +142,7 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('c1'));
+    const out = await rescue.apply(run(call2('c1')));
 
     expect(out?.rescued).toBe(1);
     expect(runSubMeal).toHaveBeenCalledTimes(1);
@@ -156,7 +158,7 @@ describe('startDishRescue', () => {
       language: 'en',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('none'));
+    const out = await rescue.apply(run(call2('none')));
 
     expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
     expect(out?.rescued).toBe(2);
@@ -173,7 +175,7 @@ describe('startDishRescue', () => {
     });
     const placeholder = call2('none');
     placeholder.mealItems[1].ingredients[0].grossG = 1;
-    await rescue.apply(placeholder);
+    await rescue.apply(run(placeholder));
 
     expect(runSubMeal).not.toHaveBeenCalledWith('1 portion of cơm, nấu');
   });
@@ -185,7 +187,7 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = await rescue.apply(call2('c9')); // cơm has 3 candidates
+    const out = await rescue.apply(run(call2('c9'))); // cơm has 3 candidates
     expect(runSubMeal).toHaveBeenCalledWith('1 phần cơm, nấu');
     expect(out?.rescued).toBe(2);
   });
@@ -197,7 +199,7 @@ describe('startDishRescue', () => {
       language: 'vi',
       runStartedAt: Date.now(),
     });
-    const out = rescue.apply(call2('c1'));
+    const out = rescue.apply(run(call2('c1')));
     await vi.advanceTimersByTimeAsync(5_000);
     expect(await out).toBeNull();
   });
@@ -223,13 +225,54 @@ describe('startDishRescue start points', () => {
       language: 'en',
       runStartedAt: Date.now(),
     });
-    rescue.onEstimates({
-      mealItems: [
-        { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'none')] },
-      ],
-    });
+    rescue.onEstimates([
+      { mealItemName: 'Bánh flan', ingredients: [estimate('bánh flan')] },
+    ]);
+    expect(rescue.started()).toEqual([0]);
+    // A later chunk adds to the items already seen.
+    rescue.onEstimates([
+      { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'none')] },
+    ]);
     expect(rescue.started()).toEqual([0, 1]);
     expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
+  });
+
+  it('waits for apply on a dish whose name the meal repeats', async () => {
+    // Two "Cơm" dishes: a streamed estimate pairs by arrival order, which
+    // chunks finishing out of order break, so it starts nothing.
+    const twice: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [dish('Cơm', ['cơm']), dish('Cơm', ['cơm'])],
+    };
+    const twiceState = {
+      decomposition: twice,
+      matchResults: [match(0, 3), match(1, 3)],
+      portionResolutions: [defer, defer],
+    };
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state: twiceState,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    const second = {
+      mealItemName: 'Cơm',
+      ingredients: [estimate('cơm', 'none')],
+    };
+    rescue.onEstimates([second]);
+    expect(rescue.started()).toEqual([]);
+    const out = await rescue.apply({
+      ...twiceState,
+      grounded: {
+        mealItems: [
+          { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'c1')] },
+          second,
+        ],
+      },
+    });
+    expect(rescue.started()).toEqual([1]);
+    expect(out?.rescued).toBe(1);
   });
 });
 
@@ -242,7 +285,7 @@ describe('startDishRescue deadline', () => {
       runStartedAt: Date.now() - 32_000, // 3 s of the 35 s budget left
     });
     let settled = false;
-    void rescue.apply(call2('c1')).then(() => {
+    void rescue.apply(run(call2('c1'))).then(() => {
       settled = true;
     });
     await vi.advanceTimersByTimeAsync(3_000);
@@ -260,7 +303,7 @@ describe('startDishRescue past the deadline', () => {
     });
     // Neither the certain (no-candidate) one nor a post-Call-2 one starts.
     expect(rescue.started()).toEqual([]);
-    await rescue.apply(call2('none'));
+    await rescue.apply(run(call2('none')));
     expect(runSubMeal).not.toHaveBeenCalled();
   });
 });
@@ -323,10 +366,15 @@ describe('startDishRescue cleanup', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(runSubMeal).toHaveBeenCalledTimes(3); // the fourth waits its turn
     const out = rescue.apply({
-      mealItems: ['a', 'b', 'c', 'd'].map((n) => ({
-        mealItemName: n,
-        ingredients: [estimate(n)],
-      })),
+      decomposition: four,
+      matchResults: [0, 1, 2, 3].map((i) => match(i, 0)),
+      portionResolutions: [defer, defer, defer, defer],
+      grounded: {
+        mealItems: ['a', 'b', 'c', 'd'].map((n) => ({
+          mealItemName: n,
+          ingredients: [estimate(n)],
+        })),
+      },
     });
     await vi.advanceTimersByTimeAsync(12_000);
     expect(await out).toBeNull();

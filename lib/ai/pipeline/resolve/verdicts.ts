@@ -72,8 +72,9 @@ function queueGrounded(
 /**
  * Pair each v2 ingredient with the LLM's grounded estimate for it: the next
  * unconsumed estimate in its (dish slot, ingredient) queue, else a leftover
- * estimate with the same ingredient name from a dish name Call 2 changed, or
- * null when Call 2 returned none (exhaustion never re-uses an estimate).
+ * estimate with the same ingredient name from a dish name Call 2 changed (when
+ * that name is left once on each side), or null when Call 2 returned none
+ * (exhaustion never re-uses an estimate).
  */
 export function pairIngredientsWithGrounded(
   v2: MealDecompositionV2,
@@ -111,16 +112,27 @@ export function pairIngredientsWithGrounded(
   // A dish Call 2 renamed ("Trứng chiên" answered as "Trứng ốp la") leaves its
   // estimates unpaired and its ingredients without any, which the completeness
   // gate turns into a failed analysis. Pair what is left by ingredient name
-  // alone, still never re-using an estimate.
+  // alone, but only a name that is left exactly once on each side: two
+  // renamed dishes that both hold "Chicken" cannot say whose is whose, and a
+  // guess would cross dishes. Never re-uses an estimate.
   const leftover = new Map<string, GroundedIngredientEstimate[]>();
   for (const q of queues.values())
     for (const g of q) {
       const k = nameKey(g.ingredientName);
       leftover.set(k, [...(leftover.get(k) ?? []), g]);
     }
+  const unpaired = new Map<string, number>();
   for (const entry of out)
-    entry.ground ??=
-      leftover.get(nameKey(entry.ingredient.rawName))?.shift() ?? null;
+    if (!entry.ground) {
+      const k = nameKey(entry.ingredient.rawName);
+      unpaired.set(k, (unpaired.get(k) ?? 0) + 1);
+    }
+  for (const entry of out) {
+    if (entry.ground) continue;
+    const k = nameKey(entry.ingredient.rawName);
+    const left = leftover.get(k);
+    if (left?.length === 1 && unpaired.get(k) === 1) entry.ground = left[0];
+  }
 
   return out;
 }

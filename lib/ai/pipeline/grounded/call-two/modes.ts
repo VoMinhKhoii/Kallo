@@ -17,10 +17,7 @@
 
 import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import {
-  type Call2Chunking,
-  shouldChunkCall2,
-} from '@/lib/ai/pipeline/estimator/chunk-policy';
+import { shouldChunkCall2 } from '@/lib/ai/pipeline/estimator/chunk-policy';
 import { runChunkedCall2 } from '@/lib/ai/pipeline/estimator/chunked-call2';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
@@ -39,6 +36,30 @@ export function chunkedPhaseDeadlineMs(): number {
   const raw = process.env.PIPELINE_CALL2_PHASE_DEADLINE_MS;
   const parsed = raw ? Number(raw) : Number.NaN;
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 40_000;
+}
+
+/**
+ * The chunked phase must end by this point of the whole run: the route stops
+ * at 60 s, and persistence needs up to 15 s after the pipeline.
+ */
+export const CALL2_RUN_DEADLINE_MS = 45_000;
+
+/**
+ * The chunked phase's budget when it starts at `now`: the phase deadline, cut
+ * to what is left before the run deadline (`chunkedPhaseDeadlineMs` alone
+ * ignores the time Call 1 and matching already spent), never under 1 s.
+ */
+export function chunkedPhaseBudgetMs(
+  runStartedAt: number,
+  now = Date.now()
+): number {
+  return Math.max(
+    1_000,
+    Math.min(
+      chunkedPhaseDeadlineMs(),
+      runStartedAt + CALL2_RUN_DEADLINE_MS - now
+    )
+  );
 }
 
 export interface CallTwoStreamDeps {
@@ -65,8 +86,8 @@ export interface RunCallTwoArgs {
   >;
   /** Chunked-path progressive item_macros emitter context. */
   chunkEmit: ChunkEmitContext;
-  /** The model profile's chunking policy (default: large meals only). */
-  chunking?: Call2Chunking;
+  /** `Date.now()` when the whole analysis started (bounds the chunked phase). */
+  runStartedAt: number;
 }
 
 export interface RunCallTwoResult {
@@ -99,16 +120,14 @@ export async function runCallTwo(
     };
   }
 
-  if (shouldChunkCall2(args.mealItems, args.chunking)) {
+  if (shouldChunkCall2(args.mealItems)) {
     const result = await runChunkedCall2({
-      concurrency: args.chunking?.concurrency,
-      targetIngredients: args.chunking?.targetIngredients,
       estimator: args.estimator,
       mealItems: args.mealItems,
       originalPrompt: args.originalPrompt,
       userContext: args.promptCtx,
       temperature: args.temperature,
-      phaseDeadlineMs: chunkedPhaseDeadlineMs(),
+      phaseDeadlineMs: chunkedPhaseBudgetMs(args.runStartedAt),
       onChunkComplete: (items, range) =>
         emitChunkItemMacros(args.chunkEmit, items, range),
       onAttemptComplete: args.onAttemptComplete,

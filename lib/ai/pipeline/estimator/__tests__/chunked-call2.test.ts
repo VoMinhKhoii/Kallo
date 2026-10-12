@@ -52,10 +52,10 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
   });
 
   it('degrades a failed chunk to ABSENT items without failing the whole meal', async () => {
-    // 28 items × 1 ingredient → chunks of CHUNK_TARGET_INGREDIENTS (10) items:
-    // [dish1..dish10], [dish11..dish20], [dish21..dish28]. Failing the SECOND
-    // chunk (dish15 lives there) drops exactly that chunk's items; the other
-    // two chunks still return — a partial result, not a 500.
+    // 28 items × 1 ingredient → chunks of CHUNK_TARGET_INGREDIENTS (8) items:
+    // [dish1..dish8], [dish9..dish16], [dish17..dish24], [dish25..dish28].
+    // Failing the SECOND chunk (dish15 lives there) drops exactly that chunk's
+    // items; the other chunks still return — a partial result, not a 500.
     const items = meal(28, 1);
     const chunks = chunkMealItems(items);
     const failingChunk = chunks[1].map((c) => c.mealItem.name);
@@ -131,7 +131,6 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
       ...baseArgs,
       estimator,
       mealItems: meal(4, 1),
-      targetIngredients: 10,
       maxAttempts: 2,
     });
     expect(calls).toEqual([4, 2, 2]);

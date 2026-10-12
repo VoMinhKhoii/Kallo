@@ -6,14 +6,12 @@
  * ingredient, since the main run saw the whole meal and the user's quantity.
  */
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
-import type {
-  DecomposedIngredientV2,
-  MealDecompositionV2,
-} from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
@@ -24,13 +22,6 @@ export interface RescuePart {
   ingredient: DecomposedIngredientV2;
   match: IngredientV2MatchResult;
   estimate: GroundedIngredientEstimate;
-}
-
-export interface RunState {
-  decomposition: MealDecompositionV2;
-  matchResults: IngredientV2MatchResult[];
-  portionResolutions: PortionResolution[];
-  grounded: GroundedEstimation;
 }
 
 /** A rescued part has no portion anchor: its scaled Call 2 grams stand. */

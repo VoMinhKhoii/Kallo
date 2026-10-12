@@ -270,6 +270,36 @@ describe('pairIngredientsWithGrounded — duplicate meal-item names', () => {
 
     expect(paired.map((p) => p.ground?.grossG)).toEqual([50, 5, 200]);
   });
+
+  it('leaves two renamed dishes that both hold chicken unpaired', () => {
+    const dish = (name: string) => ({
+      name,
+      cookingMethod: 'nướng',
+      ingredients: [{ rawName: 'Chicken', canonicalName: 'Chicken' }],
+    });
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [dish('Chicken salad'), dish('Chicken curry')],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Grilled chicken salad',
+          ingredients: [{ ...riceEstimate(120), ingredientName: 'Chicken' }],
+        },
+        {
+          mealItemName: 'Thai chicken curry',
+          ingredients: [{ ...riceEstimate(150), ingredientName: 'Chicken' }],
+        },
+      ],
+    };
+
+    const paired = pairIngredientsWithGrounded(decomposition, grounded);
+
+    // Which chicken is whose cannot be told by name, so neither is guessed.
+    expect(paired.map((p) => p.ground)).toEqual([null, null]);
+  });
 });
 
 describe('bridgeV2ToV1 — duplicate meal-item names', () => {

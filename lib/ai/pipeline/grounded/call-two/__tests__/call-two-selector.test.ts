@@ -111,6 +111,7 @@ function stage(
     userContext,
     onAttemptComplete: () => {},
     onChunkTick: () => {},
+    runStartedAt: Date.now(),
   });
   return { run, gemini, call2Prompt: () => call2Prompt };
 }

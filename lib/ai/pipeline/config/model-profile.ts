@@ -13,8 +13,6 @@
  * If Call 2 quality regresses on shadow A/B, fall back by setting the
  * model env override or rolling NEXT_PROFILE.
  */
-import type { Call2Chunking } from '@/lib/ai/pipeline/estimator/chunk-policy';
-
 export interface ModelProfile {
   decompositionModel: string;
   nutritionModel: string;
@@ -22,29 +20,13 @@ export interface ModelProfile {
   escalationModel: string | null;
   /** The cheat-meal range estimate (`lib/domain/cheat/estimate.ts`). */
   cheatModel: string;
-  /** When Call 2 splits into parallel calls; unset = large meals only. */
-  call2Chunking?: Call2Chunking;
 }
-
-/**
- * Call 2's time is mostly output, on Gemini and Claude alike, so a meal over
- * 10 ingredients is split into calls of up to 8 that run side by side (a
- * 26-ingredient meal measured ~10.5 s → ~5.5 s on Haiku; a single 2,100-token
- * Gemini Call 2 took 16 s). Six at once keeps an 18-ingredient meal in one wave.
- */
-const PARALLEL_CALL2: Call2Chunking = {
-  aboveIngredients: 10,
-  aboveMealItems: 12,
-  targetIngredients: 8,
-  concurrency: 6,
-};
 
 export const STABLE_PROFILE: ModelProfile = {
   decompositionModel: 'gemini-3.1-flash-lite',
   nutritionModel: 'gemini-3.1-flash-lite',
   escalationModel: null,
   cheatModel: 'gemini-3.1-flash-lite',
-  call2Chunking: PARALLEL_CALL2,
 };
 
 /**
@@ -64,7 +46,6 @@ export const NEXT_PROFILE: ModelProfile = {
   nutritionModel: 'gemini-3-flash-preview',
   escalationModel: 'gemini-3-flash-preview',
   cheatModel: 'gemini-3-flash-preview',
-  call2Chunking: PARALLEL_CALL2,
 };
 
 /**
@@ -80,7 +61,6 @@ export const HAIKU_PROFILE: ModelProfile = {
   nutritionModel: 'claude-haiku-5-5',
   escalationModel: null,
   cheatModel: STABLE_PROFILE.cheatModel,
-  call2Chunking: PARALLEL_CALL2,
 };
 
 /** The Gemini model a Claude call re-runs on when Claude fails. */

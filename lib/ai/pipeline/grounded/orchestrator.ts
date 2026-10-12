@@ -24,7 +24,6 @@ import {
   nonFoodResponse,
 } from '@/lib/ai/pipeline/contracts/failure';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
@@ -45,12 +44,7 @@ import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
-import {
-  capCoating,
-  dropOilInFriedRows,
-  rejectWrongFormRows,
-  swapFriedRowsWhenNoOil,
-} from './review';
+import { reviewPicks } from './review';
 import { recordV2RunTelemetry } from './run-record';
 
 export interface AnalyzeMealV2Options {
@@ -184,8 +178,6 @@ export async function analyzeMealV2(
       decomposition,
       streamedMatching,
       userContext,
-      db,
-      gemini,
       traceContext,
       emit,
       topK,
@@ -194,9 +186,6 @@ export async function analyzeMealV2(
     });
 
     rescue?.matched(matchResults, portionResolutions);
-
-    // Each dish's Call 2 estimate reaches the rescue as it streams in.
-    const estimatedSoFar: GroundedEstimation['mealItems'] = [];
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
@@ -217,44 +206,33 @@ export async function analyzeMealV2(
       onChunkTick: () => {
         nutritionChunkCount++;
       },
+      runStartedAt: t0,
       onSelectorNone: rescue?.startEarly,
-      onEstimatedItems: rescue
-        ? (items) => {
-            estimatedSoFar.push(...items);
-            rescue.onEstimates({ mealItems: estimatedSoFar });
-          }
-        : undefined,
+      // Each dish's Call 2 estimate reaches the rescue as it streams in.
+      onEstimatedItems: rescue?.onEstimates,
     });
     const { call2 } = stage3;
     promptCharsCall2 = stage3.promptCharsCall2;
 
-    // A pick whose row contradicts Call 2's own estimate is a rejection
-    // (./review). Ingredients Call 2 rejected are replaced by their rescue
-    // parts; then a fried row's separate oil is dropped. Either way the
-    // streamed dishes changed, so the final flush re-sends every dish.
-    const plain = swapFriedRowsWhenNoOil({
-      decomposition,
-      matchResults,
-      portionResolutions,
-      grounded: stage3.grounded,
-    });
-    const reviewed = rejectWrongFormRows(plain.state);
-    const rescued = rescue ? await rescue.apply(reviewed.state.grounded) : null;
-    const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
-    const coat = capCoating(oil.state);
-    const run = coat.state;
-    const changed =
-      plain.swapped > 0 ||
-      reviewed.rejected > 0 ||
-      rescued != null ||
-      oil.dropped > 0 ||
-      coat.capped > 0;
+    // Review the picks around the dish rescue (./review). When anything
+    // changed, the streamed dishes no longer hold, so the final flush
+    // re-sends every dish.
+    const review = await reviewPicks(
+      {
+        decomposition,
+        matchResults,
+        portionResolutions,
+        grounded: stage3.grounded,
+      },
+      rescue
+    );
+    const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
     // onto the dish so the container stays and only the class is recomputed.
     const envelopes =
-      rescued && vesselEnabled
+      review.rescued > 0 && vesselEnabled
         ? run.decomposition.mealItems.map((mi, d) => {
             const before = vesselEnvelopes[d] ?? null;
             return (
@@ -267,9 +245,7 @@ export async function analyzeMealV2(
         : vesselEnvelopes;
     if (changed) {
       stage3.itemMacrosStreamed.clear();
-      console.info(
-        `[review] ${plain.swapped} fried rows made plain, ${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil or breading rows dropped, ${coat.capped} breading parts capped`
-      );
+      console.info(`[review] ${review.summary}`);
     }
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---

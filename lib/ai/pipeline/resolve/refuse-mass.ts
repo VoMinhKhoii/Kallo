@@ -229,6 +229,18 @@ export function resolveGroundedMass(args: {
 }
 
 /**
+ * The candidate row Call 2 picked ("c2" is the second), or undefined when it
+ * picked none or an id that names no candidate.
+ */
+export function selectedCandidate(
+  estimate: GroundedIngredientEstimate | null | undefined,
+  match: IngredientV2MatchResult | undefined
+): IngredientV2MatchResult['candidates'][number] | undefined {
+  const idx = /^c(\d+)$/.exec(estimate?.selectedCandidateId ?? '')?.[1];
+  return idx ? match?.candidates[Number(idx) - 1] : undefined;
+}
+
+/**
  * The edible grams the bridge ships for one ingredient, by the bridge's own
  * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
  * portion anchor when there is one). Linear in `grossG` when unanchored, which
@@ -240,8 +252,7 @@ export function shippedEdibleGrams(
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  const idx = /^c(\d+)$/.exec(estimate.selectedCandidateId ?? '')?.[1];
-  const candidate = idx ? match?.candidates[Number(idx) - 1] : undefined;
+  const candidate = selectedCandidate(estimate, match);
   const anchor =
     portion?.grams &&
     portion.provenance !== 'llm_range' &&

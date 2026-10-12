@@ -6,7 +6,6 @@
  */
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
-import { matchIngredients } from '@/lib/ai/matching/match-ingredients';
 import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
@@ -18,11 +17,9 @@ import {
   type VesselEnvelope,
 } from '@/lib/ai/portion/vessel/envelope';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
-import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import type { AppDb } from '@/lib/infra/db/client';
 import { withStageLogV2 } from './stage-log';
 
 export interface GroundingPreparation {
@@ -36,10 +33,8 @@ export interface GroundingPreparation {
 export async function prepareGrounding(args: {
   decomposition: MealDecompositionV2;
   /** Matching Call 1's stream already started (`streamed-matching`). */
-  streamedMatching?: StreamedMatching;
+  streamedMatching: StreamedMatching;
   userContext: UserContext;
-  db: AppDb;
-  gemini: GeminiClient;
   traceContext: AnalyzeMealTraceContext | undefined;
   emit: (event: StreamEvent) => void;
   topK: number;
@@ -64,15 +59,7 @@ export async function prepareGrounding(args: {
       const methods = flatIngredients.map((f) => f.dishCookingMethod);
       const legacy = { k: args.topK, concurrency: args.matchConcurrency };
       return withDeadline(
-        args.streamedMatching
-          ? args.streamedMatching.match(ingredients, methods, legacy)
-          : matchIngredients(
-              ingredients,
-              methods,
-              args.db,
-              args.gemini,
-              legacy
-            ),
+        args.streamedMatching.match(ingredients, methods, legacy),
         MATCHING_TIMEOUT_MS
       );
     }

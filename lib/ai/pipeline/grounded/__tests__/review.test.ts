@@ -7,10 +7,9 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
-  capCoating,
   dropOilInFriedRows,
   rejectWrongFormRows,
-  swapFriedRowsWhenNoOil,
+  reviewPicks,
 } from '../review';
 
 const triple = (mid: number) => ({ low: mid, mid, high: mid });
@@ -356,165 +355,58 @@ describe('dropOilInFriedRows', () => {
   });
 });
 
-describe('swapFriedRowsWhenNoOil', () => {
-  /** "2 fried eggs, cooked without any oil": Call 2 picked the fried-egg row (c1). */
-  function eggs(prepNotes: string[] | undefined) {
-    const state = stateOf([
+describe('reviewPicks', () => {
+  const misoAndEgg = () =>
+    stateOf([
       {
-        name: 'Fried eggs',
-        cookingMethod: 'fried',
-        parts: [
-          {
-            name: 'eggs',
-            g: 100,
-            kcal: 196,
-            row: ['Egg, whole, cooked, fried', 196],
-          },
-        ],
+        name: 'Soup miso',
+        cookingMethod: 'nấu',
+        parts: [{ name: 'soup miso', g: 330, kcal: 182, row: ['Miso', 198] }],
       },
-    ]);
-    state.decomposition.mealItems[0].ingredients[0].prepNotes = prepNotes;
-    const fried = state.matchResults[0].candidates[0];
-    const plain = {
-      ...fried,
-      info: { matchedName: 'Egg, whole, raw, fresh' },
-      prompt: {
-        name: 'Egg, whole, raw, fresh',
-        nameEn: 'Egg, whole, raw, fresh',
-        score: 1,
-      },
-      nutrition: {
-        caloriesKcal: 143,
-        proteinG: 12.6,
-        carbohydrateG: 0.7,
-        fatG: 9.5,
-      },
-    };
-    fried.nutrition = {
-      caloriesKcal: 196,
-      proteinG: 13.6,
-      carbohydrateG: 0.8,
-      fatG: 14.8,
-    } as never;
-    state.matchResults[0].candidates.push(plain as never);
-    const g = state.grounded.mealItems[0].ingredients[0];
-    g.proteinG = triple(13.6);
-    g.carbohydrateG = triple(0.8);
-    g.fatG = triple(14.8);
-    return state;
-  }
-
-  it("moves a fried row to the same food's plain row when the user said no oil", () => {
-    const out = swapFriedRowsWhenNoOil(eggs(['without any oil']));
-    expect(out.swapped).toBe(1);
-    const g = out.state.grounded.mealItems[0].ingredients[0];
-    expect(g.selectedCandidateId).toBe('c2');
-    expect(g.fatG.mid).toBeCloseTo(9.5);
-    expect(g.proteinG.mid).toBeCloseTo(12.6);
-  });
-
-  it('keeps the fried row when the user said nothing about oil', () => {
-    expect(swapFriedRowsWhenNoOil(eggs(undefined)).swapped).toBe(0);
-  });
-});
-
-describe('breading on a split cutlet', () => {
-  const oil = {
-    name: 'dầu ăn',
-    g: 10,
-    kcal: 88,
-    row: ['Oil, soybean', 884] as [string, number],
-  };
-  const crumbs = {
-    name: 'bột chiên xù',
-    g: 20,
-    kcal: 79,
-    row: ['Bread, crumbs, dry, grated, plain', 395] as [string, number],
-  };
-  const flour = {
-    name: 'bột mì',
-    g: 10,
-    kcal: 36,
-    row: ['Wheat flour, white', 364] as [string, number],
-  };
-  const egg = {
-    name: 'trứng gà',
-    g: 90,
-    kcal: 129,
-    row: ['Egg, whole, raw, fresh', 143] as [string, number],
-  };
-
-  it('drops the breading and oil a breaded row already holds', () => {
-    const state = stateOf([
-      {
-        name: 'Tôm tonkatsu',
-        cookingMethod: 'deep-fried',
-        parts: [
-          {
-            name: 'tôm',
-            g: 100,
-            kcal: 242,
-            row: ['Crustaceans, shrimp, cooked, breaded and fried', 242],
-          },
-          crumbs,
-          flour,
-          egg,
-          oil,
-        ],
-      },
-    ]);
-    const out = dropOilInFriedRows(state);
-    expect(out.dropped).toBe(4);
-    expect(
-      out.state.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
-    ).toEqual(['tôm']);
-  });
-
-  it("caps a hand-breaded cutlet's egg wash at a share of the meat", () => {
-    const state = stateOf([
-      {
-        name: 'Heo tonkatsu',
-        cookingMethod: 'deep-fried',
-        parts: [
-          {
-            name: 'thịt heo',
-            g: 100,
-            kcal: 143,
-            row: ['Pork, loin, raw', 143],
-          },
-          crumbs,
-          flour,
-          egg,
-          oil,
-        ],
-      },
-    ]);
-    const out = capCoating(state);
-    expect(out.capped).toBe(1);
-    const grams = out.state.grounded.mealItems[0].ingredients.map((g) =>
-      Math.round(g.grossG)
-    );
-    // Egg wash 90 g -> 15 g (15% of the pork); crumbs and flour were within their share.
-    expect(grams).toEqual([100, 20, 10, 15, 10]);
-    expect(dropOilInFriedRows(state).dropped).toBe(0);
-  });
-
-  it('leaves an egg dish alone: the egg is the food, not a wash', () => {
-    const state = stateOf([
       {
         name: 'Trứng chiên',
         cookingMethod: 'chiên',
         parts: [
           {
-            name: 'trứng gà',
+            name: 'trứng',
             g: 100,
-            kcal: 143,
-            row: ['Egg, whole, raw, fresh', 143],
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
           },
-          oil,
+          { name: 'dầu ăn', g: 8, kcal: 71, row: ['Oil, soybean', 884] },
         ],
       },
     ]);
-    expect(capCoating(state).capped).toBe(0);
+
+  it('hands the rescue the reviewed state, then drops the fried dish oil', async () => {
+    let seen: string[] = [];
+    const out = await reviewPicks(misoAndEgg(), {
+      async apply(state) {
+        seen = picks(state.grounded);
+        return null;
+      },
+    });
+    expect(seen).toEqual(['soup miso:none', 'trứng:c1', 'dầu ăn:c1']);
+    expect(picks(out.state.grounded)).toEqual(['soup miso:none', 'trứng:c1']);
+    expect(out.changed).toBe(true);
+    expect(out.rescued).toBe(0);
+    expect(out.summary).toBe(
+      '1 wrong-form rows, 0 ingredients rescued, 1 oil rows dropped'
+    );
+  });
+
+  it('reports no change when nothing was reviewed away', async () => {
+    const state = stateOf([
+      {
+        name: 'Cơm',
+        cookingMethod: 'nấu',
+        parts: [
+          { name: 'cơm', g: 200, kcal: 260, row: ['Rice, white, cooked', 130] },
+        ],
+      },
+    ]);
+    const out = await reviewPicks(state, null);
+    expect(out.changed).toBe(false);
+    expect(out.state).toEqual(state);
   });
 });

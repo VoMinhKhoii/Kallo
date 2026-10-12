@@ -22,6 +22,7 @@ vi.mock('@/lib/ai/portion/ingredient-portion', () => ({
   })),
 }));
 
+import { createStreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { prepareGrounding } from '@/lib/ai/pipeline/grounded/grounding';
@@ -82,8 +83,7 @@ describe('prepareGrounding vessel envelopes', () => {
     const prepared = await prepareGrounding({
       decomposition,
       userContext,
-      db: {} as never,
-      gemini: {} as never,
+      streamedMatching: createStreamedMatching({} as never, {} as never),
       traceContext: undefined,
       emit: vi.fn(),
       topK: 3,
@@ -119,8 +119,7 @@ describe('prepareGrounding vessel envelopes', () => {
     const prepared = await prepareGrounding({
       decomposition,
       userContext,
-      db: {} as never,
-      gemini: {} as never,
+      streamedMatching: createStreamedMatching({} as never, {} as never),
       traceContext: undefined,
       emit: vi.fn(),
       topK: 3,
@@ -152,8 +151,7 @@ describe('prepareGrounding matching deadline', () => {
     const pending = prepareGrounding({
       decomposition,
       userContext,
-      db: {} as never,
-      gemini: {} as never,
+      streamedMatching: createStreamedMatching({} as never, {} as never),
       traceContext: undefined,
       emit: vi.fn(),
       topK: 3,

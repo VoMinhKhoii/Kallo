@@ -40,7 +40,9 @@ const silent = () => {};
 
 export async function runRescueSubMeal(
   text: string,
-  deps: SubMealDeps
+  deps: SubMealDeps,
+  /** `Date.now()` when the main analysis started: a split Call 2 ends by its deadline. */
+  runStartedAt: number
 ): Promise<RescuePart[] | null> {
   const stage1 = await runGroundedDecomposition({
     rawInput: text,
@@ -54,12 +56,11 @@ export async function runRescueSubMeal(
     onAttemptComplete: deps.decompositionRecorder,
   });
   if (stage1.nonFood) return null;
-  const { decomposition } = stage1;
+  const { decomposition, streamedMatching } = stage1;
   const prep = await prepareGrounding({
     decomposition,
+    streamedMatching,
     userContext: deps.userContext,
-    db: deps.db,
-    gemini: deps.gemini,
     traceContext: undefined,
     emit: silent,
     topK: deps.topK,
@@ -82,6 +83,7 @@ export async function runRescueSubMeal(
     userContext: deps.userContext,
     onAttemptComplete: deps.nutritionRecorder,
     onChunkTick: silent,
+    runStartedAt,
   });
   const parts: RescuePart[] = [];
   for (const [f, p] of pairIngredientsWithGrounded(
