@@ -79,6 +79,8 @@ export async function runCallTwoStage(args: {
   onChunkTick: () => void;
   /** The selector found no candidate that fits this flat ingredient. */
   onSelectorNone?: (flat: number) => void;
+  /** Call 2's meal items as they arrive, streamed or per chunk. */
+  onEstimatedItems?: (items: GroundedEstimation['mealItems']) => void;
 }): Promise<CallTwoStageResult> {
   const {
     traceContext,
@@ -108,6 +110,7 @@ export async function runCallTwoStage(args: {
   const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
   const itemMacrosStreamed = new Set<string>();
   const call2Stream = createCall2StreamHandler({
+    onItems: args.onEstimatedItems,
     offsetByName,
     matchResults,
     streamedMealItemIds,
@@ -117,6 +120,7 @@ export async function runCallTwoStage(args: {
     emit,
   });
   const chunkEmit = createChunkEmitContext({
+    onItems: args.onEstimatedItems,
     mealItems: decomposition.mealItems,
     matchResults,
     streamedMealItemIds,

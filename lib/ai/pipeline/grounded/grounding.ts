@@ -7,6 +7,7 @@
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import { matchIngredients } from '@/lib/ai/matching/match-ingredients';
+import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -34,6 +35,8 @@ export interface GroundingPreparation {
 
 export async function prepareGrounding(args: {
   decomposition: MealDecompositionV2;
+  /** Matching Call 1's stream already started (`streamed-matching`). */
+  streamedMatching?: StreamedMatching;
   userContext: UserContext;
   db: AppDb;
   gemini: GeminiClient;
@@ -57,14 +60,19 @@ export async function prepareGrounding(args: {
     { ingredientCount: flatIngredients.length },
     async (_ctx) => {
       emit({ type: 'stage', stage: 'matching' });
+      const ingredients = flatIngredients.map((f) => f.ingredient);
+      const methods = flatIngredients.map((f) => f.dishCookingMethod);
+      const legacy = { k: args.topK, concurrency: args.matchConcurrency };
       return withDeadline(
-        matchIngredients(
-          flatIngredients.map((f) => f.ingredient),
-          flatIngredients.map((f) => f.dishCookingMethod),
-          args.db,
-          args.gemini,
-          { k: args.topK, concurrency: args.matchConcurrency }
-        ),
+        args.streamedMatching
+          ? args.streamedMatching.match(ingredients, methods, legacy)
+          : matchIngredients(
+              ingredients,
+              methods,
+              args.db,
+              args.gemini,
+              legacy
+            ),
         MATCHING_TIMEOUT_MS
       );
     }

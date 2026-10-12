@@ -509,3 +509,27 @@ describe('item_macros for chunks that finish out of order', () => {
     expect(events[0].calories).toBeLessThan(events[1].calories);
   });
 });
+
+describe('Call 2 meal items reach the caller as they arrive', () => {
+  it('hands each completed streamed item to onItems once', () => {
+    const { emit } = collect();
+    const seen: string[] = [];
+    const handler = createCall2StreamHandler({
+      onItems: (items) => seen.push(...items.map((i) => i.mealItemName)),
+      offsetByName: buildMealItemOffsetByName(decomposition().mealItems),
+      matchResults: matchResults(),
+      streamedMealItemIds: new Map(),
+      itemMacrosStreamed: new Set(),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+    const rau = streamedItem('Rau luộc', 'rau');
+    const ca = streamedItem('Cá kho', 'cá');
+    handler.handleChunk(`{"mealItems":[${rau},${ca}`);
+    handler.handleChunk(
+      `{"mealItems":[${rau},${ca},{"mealItemName":"__end__","ingredients":[]}]}`
+    );
+    expect(seen).toEqual(['Rau luộc', 'Cá kho']);
+  });
+});

@@ -6,20 +6,39 @@ import type {
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import { type RescuePart, rescueMealText, startDishRescue } from '../rescue';
+import {
+  type RescuePart,
+  type RunState,
+  rescueMealText,
+  startDishRescue,
+} from '../rescue';
 import type { SubMealDeps } from '../sub-meal';
 
 const { subMealMock } = vi.hoisted(() => ({ subMealMock: vi.fn() }));
 vi.mock('../sub-meal', () => ({ runRescueSubMeal: subMealMock }));
 const DEPS = {} as SubMealDeps;
 
-/** Start a rescue whose mini-meals are answered by `runSubMeal(text)`. */
+/**
+ * Start a rescue whose mini-meals are answered by `runSubMeal(text)`, and hand
+ * it the matching results right away (as the orchestrator does after matching).
+ */
 function rescueWith(
   runSubMeal: (text: string) => Promise<RescuePart[] | null>,
-  args: Omit<Parameters<typeof startDishRescue>[0], 'subMeal'>
+  args: {
+    state: Omit<RunState, 'grounded'>;
+    language: 'en' | 'vi';
+    runStartedAt: number;
+  }
 ) {
   subMealMock.mockImplementation((text: string) => runSubMeal(text));
-  return startDishRescue({ ...args, subMeal: DEPS });
+  const rescue = startDishRescue({
+    decomposition: args.state.decomposition,
+    language: args.language,
+    runStartedAt: args.runStartedAt,
+    subMeal: DEPS,
+  });
+  rescue.matched(args.state.matchResults, args.state.portionResolutions);
+  return rescue;
 }
 
 const triple = { low: 1, mid: 2, high: 3 };
@@ -181,6 +200,36 @@ describe('startDishRescue', () => {
     const out = rescue.apply(call2('c1'));
     await vi.advanceTimersByTimeAsync(5_000);
     expect(await out).toBeNull();
+  });
+});
+
+describe('startDishRescue start points', () => {
+  it('starts a mixed dish logged as one item right after Call 1, before matching', () => {
+    subMealMock.mockImplementation(async () => parts);
+    const rescue = startDishRescue({
+      decomposition,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      subMeal: DEPS,
+    });
+    // "bánh flan" names a mixed dish; plain "cơm" and "nước" do not.
+    expect(rescue.started()).toEqual([0]);
+  });
+
+  it('starts a mini-meal the moment a streamed estimate rejects a dish', () => {
+    const runSubMeal = vi.fn(async () => parts);
+    const rescue = rescueWith(runSubMeal, {
+      state,
+      language: 'en',
+      runStartedAt: Date.now(),
+    });
+    rescue.onEstimates({
+      mealItems: [
+        { mealItemName: 'Cơm', ingredients: [estimate('cơm', 'none')] },
+      ],
+    });
+    expect(rescue.started()).toEqual([0, 1]);
+    expect(runSubMeal).toHaveBeenCalledWith('1 portion of cơm, nấu');
   });
 });
 

@@ -24,6 +24,7 @@ import {
   nonFoodResponse,
 } from '@/lib/ai/pipeline/contracts/failure';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
@@ -146,30 +147,13 @@ export async function analyzeMealV2(
       languageRetryCount,
       providerRetryCount: decompositionProviderRetryCount,
       promptCharsCall1,
+      streamedMatching,
     } = stage1;
 
-    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
-    const {
-      matchResults,
-      portionResolutions,
-      vesselEnvelopes,
-      mealItemsWithCandidates,
-    } = await prepareGrounding({
-      decomposition,
-      userContext,
-      db,
-      gemini,
-      traceContext,
-      emit,
-      topK,
-      matchConcurrency,
-      vesselEnabled,
-    });
-
-    // Dish rescue mini-meals start now, beside Call 2 (see ./rescue/rescue).
+    // Dish rescue starts now, beside everything after Call 1 (./rescue/rescue).
     const rescue = isDishRescueEnabled()
       ? startDishRescue({
-          state: { decomposition, matchResults, portionResolutions },
+          decomposition,
           language: userContext.outputLanguage === 'vi' ? 'vi' : 'en',
           runStartedAt: t0,
           subMeal: {
@@ -189,6 +173,30 @@ export async function analyzeMealV2(
         })
       : null;
     if (rescue) closeRescue = rescue.close;
+
+    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
+    const {
+      matchResults,
+      portionResolutions,
+      vesselEnvelopes,
+      mealItemsWithCandidates,
+    } = await prepareGrounding({
+      decomposition,
+      streamedMatching,
+      userContext,
+      db,
+      gemini,
+      traceContext,
+      emit,
+      topK,
+      matchConcurrency,
+      vesselEnabled,
+    });
+
+    rescue?.matched(matchResults, portionResolutions);
+
+    // Each dish's Call 2 estimate reaches the rescue as it streams in.
+    const estimatedSoFar: GroundedEstimation['mealItems'] = [];
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
@@ -210,6 +218,12 @@ export async function analyzeMealV2(
         nutritionChunkCount++;
       },
       onSelectorNone: rescue?.startEarly,
+      onEstimatedItems: rescue
+        ? (items) => {
+            estimatedSoFar.push(...items);
+            rescue.onEstimates({ mealItems: estimatedSoFar });
+          }
+        : undefined,
     });
     const { call2 } = stage3;
     promptCharsCall2 = stage3.promptCharsCall2;
