@@ -13,6 +13,7 @@ import {
   EMPTY_ENTRANCE,
   ENTRANCE_EASE,
 } from '@/lib/domain/logging/empty-entrance';
+import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import type { InputMode } from '@/lib/domain/logging/types';
 
@@ -26,6 +27,8 @@ interface FeedComposerProps {
   cheatOccasionsDisabled: boolean;
   onSelectCheatOccasion: (occasion: RecentCheatOccasion) => void;
   onSubmit: () => void;
+  /** Saves the phone manual sheets' plate. */
+  onManualSave: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
   onCancel: () => void;
   disabled: boolean;
   mode: InputMode;
@@ -53,6 +56,7 @@ export function FeedComposer({
   cheatOccasionsDisabled,
   onSelectCheatOccasion,
   onSubmit,
+  onManualSave,
   onCancel,
   disabled,
   mode,
@@ -101,6 +105,7 @@ export function FeedComposer({
         <MealInput
           ref={inputRef}
           onSubmit={onSubmit}
+          onManualSave={onManualSave}
           onCancel={onCancel}
           disabled={disabled}
           mode={mode}

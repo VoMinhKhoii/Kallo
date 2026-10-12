@@ -17,6 +17,8 @@ const riceResult: IngredientSearchResult = {
   state: 'cooked',
   similarity: 0.9,
   per100g: { caloriesKcal: 130, proteinG: 2.7, carbohydrateG: 28, fatG: 0.3 },
+  displayNameEn: 'Long-grain white rice, unsalted',
+  stateLabel: 'cooked',
 };
 
 const chickenResult: IngredientSearchResult = {
@@ -27,6 +29,21 @@ const chickenResult: IngredientSearchResult = {
   state: 'raw',
   similarity: 0.8,
   per100g: { caloriesKcal: 199, proteinG: 20.3, carbohydrateG: 0, fatG: 13.1 },
+  displayNameEn: 'Chicken, meat and skin',
+  stateLabel: 'raw',
+};
+
+// A canned food: the table says 'raw', but its card names no state.
+const sardineResult: IngredientSearchResult = {
+  id: 'fct-sardine',
+  namePrimary: 'Cá mòi hộp',
+  nameEn: 'Sardines, canned in oil',
+  nameAlt: null,
+  state: 'raw',
+  similarity: 0.7,
+  per100g: { caloriesKcal: 208, proteinG: 24.6, carbohydrateG: 0, fatG: 11.5 },
+  displayNameEn: 'Canned sardines in oil',
+  stateLabel: null,
 };
 
 const { mockUseIngredientSearch } = vi.hoisted(() => ({
@@ -47,8 +64,11 @@ function Harness({ initialRows }: { initialRows?: ManualMealRow[] }) {
   const [rows, setRows] = useState<ManualMealRow[]>(
     initialRows ?? [createEmptyRow('row-1')]
   );
+  const [name, setName] = useState('');
   return (
     <ManualLoggingControls
+      name={name}
+      onNameChange={setName}
       rows={rows}
       onRowChange={(id, patch) =>
         setRows((prev) =>
@@ -86,16 +106,53 @@ describe('ManualLoggingControls', () => {
     );
     const options = screen.getAllByRole('option');
     expect(options).toHaveLength(2);
-    // Result rows surface the raw/cooked state and kcal/100g.
+    // Result rows: the Vietnamese name, the card's state and English name,
+    // and kcal per 100 g under the column header.
     expect(options[0]).toHaveTextContent('Cơm trắng');
-    expect(options[0]).toHaveTextContent('manualLogging.stateCooked');
-    expect(options[1]).toHaveTextContent('manualLogging.stateRaw');
+    expect(options[0]).toHaveTextContent('stateCooked');
+    expect(options[0]).toHaveTextContent('Long-grain white rice, unsalted');
+    expect(options[0]).toHaveTextContent('130 kcal');
+    expect(options[1]).toHaveTextContent('stateRaw');
+    expect(screen.getByText('manualLogging.per100g')).toBeInTheDocument();
 
     await user.click(options[0]);
     expect(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
     ).toHaveValue('Cơm trắng');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('shows no state for a food whose card names none', async () => {
+    mockUseIngredientSearch.mockReturnValue({
+      data: [sardineResult],
+      isFetching: false,
+    });
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(
+      screen.getByPlaceholderText('manualLogging.searchPlaceholder')
+    );
+    const [option] = screen.getAllByRole('option');
+    expect(option).toHaveTextContent('Canned sardines in oil');
+    expect(option).not.toHaveTextContent('stateRaw');
+  });
+
+  it('names the meal, with its rows as the placeholder', async () => {
+    mockUseIngredientSearch.mockReturnValue({ data: [], isFetching: false });
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialRows={[
+          { id: 'row-1', query: '', ingredient: riceResult, grams: '150' },
+          { id: 'row-2', query: 'gà', ingredient: chickenResult, grams: '100' },
+        ]}
+      />
+    );
+
+    const field = screen.getByPlaceholderText('Cơm trắng + gà');
+    await user.type(field, 'Cơm gà');
+    expect(field).toHaveValue('Cơm gà');
   });
 
   it('keeps the typed text and shows the picked DB name below it', async () => {
@@ -155,19 +212,18 @@ describe('ManualLoggingControls', () => {
       />
     );
 
-    // No grams yet — no totals footer.
-    expect(screen.queryByText('manualLogging.total')).not.toBeInTheDocument();
+    // No grams yet — no totals ring.
+    expect(screen.queryByRole('img', { name: /kcal/ })).not.toBeInTheDocument();
 
     await user.type(
       screen.getByPlaceholderText('manualLogging.gramsPlaceholder'),
       '150'
     );
 
-    // Row kcal + totals footer appear once the row is complete. (The numeric
-    // math — 150g × 130 kcal/100g = 195 — is covered by the pure unit tests in
-    // lib/logging/__tests__/manual-logging.test.ts; the global next-intl mock
-    // here renders keys, not interpolated values.)
-    expect(screen.getByText('manualLogging.total')).toBeInTheDocument();
+    // Row kcal + the macro ring appear once the row is complete: 150 g ×
+    // 130 kcal/100 g = 195 in the ring's middle. (The global next-intl mock
+    // renders the row's key, not its interpolated value.)
+    expect(screen.getByRole('img', { name: '195 kcal' })).toBeInTheDocument();
     expect(screen.getByText('manualLogging.rowKcal')).toBeInTheDocument();
   });
 
@@ -202,7 +258,7 @@ describe('ManualLoggingControls', () => {
     await user.click(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
     );
-    expect(screen.getByText('manualLogging.recentFoods')).toBeInTheDocument();
+    expect(screen.getByText('manualLogging.recent')).toBeInTheDocument();
 
     mockUseIngredientSearch.mockReturnValue({ data: [], isFetching: false });
     await user.type(
@@ -210,9 +266,7 @@ describe('ManualLoggingControls', () => {
       'zzz'
     );
     expect(screen.getByText('manualLogging.noResults')).toBeInTheDocument();
-    expect(
-      screen.queryByText('manualLogging.recentFoods')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('manualLogging.recent')).not.toBeInTheDocument();
   });
 
   it('clears the stale selection when the text is edited', async () => {
@@ -224,6 +278,8 @@ describe('ManualLoggingControls', () => {
     let lastPatch: Partial<ManualMealRow> | null = null;
     render(
       <ManualLoggingControls
+        name=""
+        onNameChange={() => {}}
         rows={[
           { id: 'row-1', query: '', ingredient: riceResult, grams: '100' },
         ]}

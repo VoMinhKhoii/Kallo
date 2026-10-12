@@ -4,7 +4,10 @@ import { useTranslations } from 'next-intl';
 import { type RefObject, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
-import { rowIsComplete } from '@/lib/domain/logging/manual-logging';
+import {
+  type CompleteManualMealRow,
+  rowIsComplete,
+} from '@/lib/domain/logging/manual-logging';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import { track } from '@/lib/infra/telemetry/analytics/track';
 
@@ -34,6 +37,7 @@ export function useManualSubmit(args: {
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         rows,
+        name: inputRef.current?.getManualName(),
       },
       {
         onSuccess: () => {
@@ -51,4 +55,43 @@ export function useManualSubmit(args: {
     );
     scrollToBottom();
   }, [inputRef, saveManualMeal, selectedDate, scrollToBottom, t]);
+}
+
+/**
+ * The phone sheets' save: the plate's rows and its optional name, through the
+ * same optimistic save as the composer rows. Resolves once the server has the
+ * meal so the sheet can close on it; rejects (after saying why) so the sheet
+ * stays open with the plate intact.
+ */
+export function useManualSheetSave(args: {
+  saveManualMeal: ReturnType<typeof useSaveManualMeal>;
+  selectedDate: string;
+  scrollToBottom: () => void;
+}) {
+  const { saveManualMeal, selectedDate, scrollToBottom } = args;
+  const t = useTranslations('logging.feedArea');
+
+  return useCallback(
+    async (rows: CompleteManualMealRow[], name: string) => {
+      const saving = saveManualMeal.mutateAsync({
+        mealId: crypto.randomUUID(),
+        originDate: selectedDate,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        rows,
+        name,
+      });
+      // The optimistic card is in the feed already; bring it into view.
+      scrollToBottom();
+      try {
+        await saving;
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : t('saveError'));
+        throw error;
+      }
+      toast.success(t('savedMeal'));
+      track('meal_logged', { method: 'manual' });
+    },
+    [saveManualMeal, selectedDate, scrollToBottom, t]
+  );
 }

@@ -26,6 +26,9 @@ vi.mock('@/hooks/meals/queries/use-ingredient-search', () => ({
   useIngredientSearch: () => searchHookResult,
 }));
 
+const mobile = vi.hoisted(() => ({ isMobile: vi.fn(() => false) }));
+vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: mobile.isMobile }));
+
 beforeEach(() => {
   localStorage.clear();
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -220,5 +223,40 @@ describe('MealInput localStorage persistence', () => {
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
     ).toHaveValue('');
     expect(ref.current?.getManualRows()[0]?.ingredient).toBeNull();
+  });
+
+  it('getManualName() returns the typed meal name; clear() empties it', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const ref = createRef<MealInputHandle>();
+    render(<MealInput ref={ref} onSubmit={() => {}} mode="manual" />);
+
+    await user.type(
+      screen.getByPlaceholderText('manualLogging.mealNameEmpty'),
+      'Cơm gà'
+    );
+    expect(ref.current?.getManualName()).toBe('Cơm gà');
+
+    act(() => ref.current?.clear());
+    expect(ref.current?.getManualName()).toBe('');
+  });
+
+  it('on a phone, manual mode is one tap into the stacked sheets', () => {
+    mobile.isMobile.mockReturnValue(true);
+    render(
+      <MealInput
+        onSubmit={() => {}}
+        mode="manual"
+        onManualSave={async () => {}}
+      />
+    );
+
+    // No inline rows and no idle send button: the sheet owns Save.
+    expect(
+      screen.queryByPlaceholderText('manualLogging.searchPlaceholder')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'sheetTitle' })
+    ).toBeInTheDocument();
+    mobile.isMobile.mockReturnValue(false);
   });
 });

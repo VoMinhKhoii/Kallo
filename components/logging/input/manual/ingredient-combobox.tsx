@@ -2,9 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { StateBadge } from '@/components/logging/input/manual/state-badge';
+import {
+  ManualSubtitleLine,
+  useStateWord,
+} from '@/components/logging/input/manual/sheet/manual-food-row';
 import { useIngredientSearch } from '@/hooks/meals/queries/use-ingredient-search';
 import { cn } from '@/lib/core/ui/cn';
+import { searchSubtitle } from '@/lib/domain/logging/manual-display';
 import {
   formatKcal,
   type IngredientSearchResult,
@@ -35,6 +39,7 @@ export function IngredientCombobox({
   inputRef,
 }: IngredientComboboxProps) {
   const t = useTranslations('logging');
+  const stateWord = useStateWord();
   const listboxId = useId();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
@@ -108,12 +113,15 @@ export function IngredientCombobox({
       {/* The picked DB entry's name — what's saved is the raw text above; this
           shows which composition entry supplies the nutrition. */}
       {ingredient && ingredient.namePrimary !== query.trim() && (
-        <div className="mt-1 flex items-center gap-1.5 px-1">
-          <span className="truncate font-sans-display text-kallo-text-muted text-xs">
-            {ingredient.namePrimary}
-          </span>
-          <StateBadge state={ingredient.state} />
-        </div>
+        <p className="mt-1 truncate px-1 font-sans-display text-kallo-text-muted text-xs">
+          {ingredient.namePrimary}
+          {ingredient.stateLabel && (
+            <span className="text-kallo-text">
+              {' · '}
+              {stateWord(ingredient.stateLabel)}
+            </span>
+          )}
+        </p>
       )}
       {open && (
         <div
@@ -121,14 +129,19 @@ export function IngredientCombobox({
           role="listbox"
           aria-label={t('manualLogging.searchPlaceholder')}
           // Opens UPWARD — the manual input sits at the bottom of the feed.
-          className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-kallo-border/50 bg-white py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]"
+          className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-96 overflow-y-auto rounded-2xl border border-kallo-border/50 bg-white py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]"
         >
-          {isRecents && results.length > 0 && (
+          {results.length > 0 && (
             <div
               aria-hidden
-              className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-kallo-text-muted/60 uppercase tracking-wide"
+              className="flex items-baseline justify-between gap-3 px-4 pt-2 pb-1 font-sans-display text-[14px] text-kallo-text-muted"
             >
-              {t('manualLogging.recentFoods')}
+              <span className="truncate">
+                {isRecents
+                  ? t('manualLogging.recent')
+                  : t('manualLogging.resultsFor', { query: query.trim() })}
+              </span>
+              <span className="shrink-0">{t('manualLogging.per100g')}</span>
             </div>
           )}
           {results.map((result, idx) => (
@@ -145,32 +158,24 @@ export function IngredientCombobox({
               }}
               onMouseEnter={() => setHighlighted(idx)}
               className={cn(
-                'flex cursor-pointer items-center gap-2 px-3 py-2',
-                idx === highlighted && 'bg-kallo-hover/30'
+                'flex cursor-pointer items-center gap-5 px-4 py-2.5 font-sans-display',
+                idx > 0 && 'border-kallo-border/60 border-t',
+                idx === highlighted && 'bg-kallo-hover/40'
               )}
             >
+              {/* The phone sheets' G2 row: the Vietnamese name, then the state
+                  (only when the food's card names one) and English name. */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate font-sans-display text-kallo-text text-sm">
-                    {result.namePrimary}
-                  </span>
-                  <StateBadge state={result.state} />
-                  {result.semantic && (
-                    <span className="shrink-0 font-sans-display text-[10px] text-kallo-text-muted/60">
-                      ≈ {t('manualLogging.relatedMatch')}
-                    </span>
-                  )}
+                <div className="line-clamp-2 text-[15px] text-kallo-text leading-[1.3]">
+                  {result.namePrimary}
                 </div>
-                {result.nameEn && (
-                  <div className="truncate font-sans-display text-kallo-text-muted/70 text-xs">
-                    {result.nameEn}
-                  </div>
-                )}
+                <ManualSubtitleLine
+                  subtitle={searchSubtitle(result, stateWord)}
+                />
               </div>
-              <span className="shrink-0 font-sans-display text-kallo-text-muted text-xs tabular-nums">
-                {t('manualLogging.kcalPer100g', {
-                  kcal: formatKcal(result.per100g.caloriesKcal),
-                })}
+              <span className="shrink-0 whitespace-nowrap text-[15px] text-kallo-text tabular-nums">
+                {formatKcal(result.per100g.caloriesKcal)}{' '}
+                <span className="text-[13px] text-kallo-text-muted">kcal</span>
               </span>
             </div>
           ))}

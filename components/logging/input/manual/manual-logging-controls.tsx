@@ -4,27 +4,36 @@ import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { IngredientCombobox } from '@/components/logging/input/manual/ingredient-combobox';
+import { ManualMealTotals } from '@/components/logging/input/manual/sheet/manual-meal-totals';
 import { cn } from '@/lib/core/ui/cn';
 import {
   formatKcal,
-  formatMacro,
   type ManualMealRow,
+  manualMealTitle,
+  rowIsComplete,
+  rowLabel,
   rowMacros,
   totalsForRows,
 } from '@/lib/domain/logging/manual-logging';
 
 interface ManualLoggingControlsProps {
   disabled?: boolean;
+  /** The meal's optional name; blank titles it by its rows. */
+  name: string;
+  onNameChange: (name: string) => void;
   rows: ManualMealRow[];
   onRowChange: (id: string, patch: Partial<Omit<ManualMealRow, 'id'>>) => void;
   onRowAdd: (afterId?: string) => string;
   onRowRemove: (id: string) => void;
 }
 
-/** Manual mode's ingredient rows: a searchable food picker plus grams per row,
- *  with a running total underneath. Row state is owned by the composer. */
+/** Manual mode's ingredient rows on a wide screen: the meal's optional name, a
+ *  searchable food picker plus grams per row, and the macro ring underneath.
+ *  Row state is owned by the composer. (Phones open the stacked sheets.) */
 export function ManualLoggingControls({
   disabled,
+  name,
+  onNameChange,
   rows,
   onRowChange,
   onRowAdd,
@@ -44,8 +53,26 @@ export function ManualLoggingControls({
   const totals = totalsForRows(rows);
   const hasTotals = totals.caloriesKcal != null;
 
+  const titled = rows.filter(rowIsComplete).map(rowLabel);
   return (
     <div className="flex flex-col gap-3">
+      <label className="flex items-center gap-3 px-1">
+        <span className="shrink-0 font-sans-display text-kallo-text-muted text-sm">
+          {t('manualLogging.mealName')}
+        </span>
+        <input
+          value={name}
+          maxLength={200}
+          disabled={disabled}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder={
+            titled.length
+              ? manualMealTitle(undefined, titled)
+              : t('manualLogging.mealNameEmpty')
+          }
+          className="min-w-0 flex-1 truncate rounded-xl border border-kallo-border/50 bg-kallo-hover/10 px-3 py-2 font-sans-display text-kallo-text text-sm transition-colors placeholder:text-kallo-text-muted/60 focus:border-kallo-accent/50 focus:outline-none disabled:opacity-50"
+        />
+      </label>
       <div className="flex flex-col gap-1.5">
         {/* "Add food" sits ABOVE the rows; new rows are prepended so the list
             grows upward toward this button. */}
@@ -132,24 +159,8 @@ export function ManualLoggingControls({
       </div>
 
       {hasTotals && (
-        <div className="flex items-baseline justify-between border-kallo-border/30 border-t pt-2.5">
-          <span className="font-sans-display text-kallo-text-muted text-sm">
-            {t('manualLogging.total')}
-          </span>
-          <div className="flex items-baseline gap-3 font-sans-display tabular-nums">
-            <span className="font-medium text-kallo-text text-sm">
-              {t('manualLogging.totalKcal', {
-                kcal: formatKcal(totals.caloriesKcal),
-              })}
-            </span>
-            <span className="text-kallo-text-muted text-xs">
-              {t('manualLogging.totalMacros', {
-                protein: formatMacro(totals.proteinG),
-                carbs: formatMacro(totals.carbohydrateG),
-                fat: formatMacro(totals.fatG),
-              })}
-            </span>
-          </div>
+        <div className="border-kallo-border/30 border-t px-1 pt-3">
+          <ManualMealTotals totals={totals} compact />
         </div>
       )}
     </div>

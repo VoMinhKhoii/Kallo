@@ -11,6 +11,8 @@ import type { ManualMealRow } from '@/lib/domain/logging/manual-logging';
 export interface MealInputHandle {
   getText: () => string;
   getManualRows: () => ManualMealRow[];
+  /** The manual meal's typed name; blank means "title it by its rows". */
+  getManualName: () => string;
   clear: () => void;
   focus: () => void;
   /** `caret` places the cursor after the write — used when a `/` mention token

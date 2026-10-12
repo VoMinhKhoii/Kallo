@@ -140,8 +140,8 @@ another domain module is a smell worth a second look.
 | `cheat/` | cheat-meal slider math |
 | `dashboard/` | dashboard aggregations |
 | `docs/` | in-app docs loader, toc, nav, search |
-| `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
-| `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
+| `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion, then `card-enrichment.ts` attaching each row's display fields in one query; `display/` — those fields from the row's food card: clean English name, a raw/cooked label only where the card says so, brand, and the vessel family its amount ruler offers |
+| `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts`; `manual-logging.ts` / `manual-display.ts` — manual logging's rows, totals, default meal title, and what its sheets print and compute (subtitle, vessel default, gram steps) |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
 | `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` R2 bucket + `nutrition_label_images`) |
@@ -212,7 +212,7 @@ another domain module is a smell worth a second look.
 | `landing-page/` | marketing page | split |
 | `landing-page/pricing/checkout/` | /pricing as the purchase page — the signed-in checkout state, its request-time inputs (session, `?from=`) and the back link | ok |
 | `logging/` | meal logging surface | split |
-| `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
+| `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows on md+; `sheet/` the phone's stacked manual-log sheets — meal, search, food page with the vessel `tape/` — mirroring the Flutter `sheets/manual/`), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
