@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
@@ -78,4 +79,66 @@ void main() {
       );
     },
   );
+
+  group('a still-subscribed profile across auth changes', () {
+    late StreamController<Session?> sessions;
+    late ProviderContainer container;
+    var calls = 0;
+
+    setUp(() {
+      sessions = StreamController<Session?>();
+      calls = 0;
+      final api = FakeApiClient((request) {
+        calls++;
+        return _profileJson('user-a', 'an');
+      });
+      container = ProviderContainer(
+        overrides: [
+          apiClientProvider.overrideWithValue(api),
+          sessionProvider.overrideWith((ref) => sessions.stream),
+        ],
+      );
+      // The header avatar keeps watching until the router swaps the shell out.
+      container.listen(myCircleProfileProvider, (_, __) {});
+    });
+
+    tearDown(() {
+      container.dispose();
+      sessions.close();
+    });
+
+    test('signing out makes no profile request', () async {
+      sessions.add(_sessionFor('user-a'));
+      await Future<void>.delayed(Duration.zero);
+      await container.read(myCircleProfileProvider.future);
+      expect(calls, 1);
+
+      sessions.add(null);
+      await Future<void>.delayed(Duration.zero);
+      await expectLater(
+        container.read(myCircleProfileProvider.future),
+        throwsA(isA<ApiError>()),
+      );
+      expect(calls, 1, reason: 'no request goes out without a session');
+    });
+
+    test('an hourly token refresh does not refetch', () async {
+      sessions.add(_sessionFor('user-a'));
+      await Future<void>.delayed(Duration.zero);
+      await container.read(myCircleProfileProvider.future);
+      expect(calls, 1);
+
+      // Same account, new access token: what gotrue emits every hour.
+      sessions.add(
+        Session(
+          accessToken: 'refreshed',
+          tokenType: 'bearer',
+          user: _sessionFor('user-a').user,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await container.read(myCircleProfileProvider.future);
+      expect(calls, 1);
+    });
+  });
 }
