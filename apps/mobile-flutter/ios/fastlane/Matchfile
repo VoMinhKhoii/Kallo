@@ -12,7 +12,10 @@ git_url(ENV["MATCH_GIT_URL"])
 storage_mode("git")
 
 type("appstore")
-app_identifier([ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"])
+# The app and its notification service extension (one profile each). Both App
+# IDs must exist in the developer portal before the seed run can mint them.
+app_id = ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"
+app_identifier([app_id, "#{app_id}.NotificationService"])
 
 # CI must never mint/mutate certs — it only fetches what the seed run stored.
 readonly(ENV["CI"] == "true")

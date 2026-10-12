@@ -16,6 +16,8 @@
 	<dict>
 		<key>com.khoivo.nham</key>
 		<string>match AppStore com.khoivo.nham</string>
+		<key>com.khoivo.nham.NotificationService</key>
+		<string>match AppStore com.khoivo.nham.NotificationService</string>
 	</dict>
 </dict>
 </plist>

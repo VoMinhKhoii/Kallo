@@ -50,6 +50,21 @@
       }
     }
   },
+  "push": {
+    "friend": {
+      "joined": "Đã tham gia vòng kết nối của bạn"
+    },
+    "group": {
+      "added": "Đã thêm bạn vào {group}"
+    },
+    "share": {
+      "invite": "Đã gửi cho bạn một bữa ăn",
+      "invite_accepted": "Đã thêm bữa ăn của bạn vào nhật ký",
+      "reaction": "Đã thích bữa ăn của bạn",
+      "reply": "Đã phản hồi bữa ăn của bạn",
+      "logged": "Đã ghi lại bữa ăn của bạn"
+    }
+  },
   "invite": {
     "accept": "Nhận",
     "dismiss": "Bỏ qua",

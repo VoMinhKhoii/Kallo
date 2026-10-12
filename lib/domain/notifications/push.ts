@@ -15,6 +15,7 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
+import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { db } from '@/lib/infra/db/client';
 import {
   publicProfiles,
@@ -22,7 +23,11 @@ import {
   userProfiles,
 } from '@/lib/infra/db/schema';
 import { getPushSender } from '@/lib/infra/push/sender';
-import type { PushMessage, PushSender } from '@/lib/infra/push/types';
+import type {
+  PushMessage,
+  PushSender,
+  PushSenderIdentity,
+} from '@/lib/infra/push/types';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import {
   type PushCopyType,
@@ -36,9 +41,10 @@ const PREVIEW_MAX = 140;
 
 export interface NotificationPushPayload {
   type: PushCopyType;
-  /** Whoever acted — the subject of every template. `name` is optional: pass
-   *  it when the producer already holds the display name, otherwise this
-   *  module resolves it from `id` (one extra read, safely after the commit). */
+  /** Whoever acted — the title of every push. `name` is optional: pass it
+   *  when the producer already holds the display name, otherwise this module
+   *  resolves it from `id`. The avatar is always resolved here (one extra
+   *  read, safely after the commit). */
   actor: { id: string; name?: string };
   /** Presentation extras the copy interpolates. Same bag `pushCopy` reads,
    *  minus the actor name, which has its own field above. */
@@ -72,23 +78,45 @@ function toDataPayload(
 
 /**
  * Most producers never load the actor's public profile — they only need the
- * id. Rather than make eight call sites each add a join for a string only push
- * consumes, the name is resolved here, once, after the transaction has already
- * committed. Undefined falls through to the locale's anonymous label.
+ * id. Rather than make eight call sites each add a join for fields only push
+ * consumes, the name and photo are resolved here, once, after the transaction
+ * has already committed. An uploaded photo wins over the OAuth picture, the
+ * same precedence as `toPublicIdentity`; neither → no URL, and the device
+ * draws initials. No name at all comes back undefined and falls through to
+ * the locale's anonymous label in `pushCopy`.
  */
-async function resolveActorName(
+async function resolveActor(
   actor: NotificationPushPayload['actor']
-): Promise<string | undefined> {
-  if (actor.name !== undefined) return actor.name;
+): Promise<{ name?: string; avatarUrl?: string; tintKey?: string }> {
   const [row] = await db
     .select({
       displayName: publicProfiles.displayName,
       handle: publicProfiles.handle,
+      avatarSeed: publicProfiles.avatarSeed,
+      avatarUrl: publicProfiles.avatarUrl,
+      avatarPath: publicProfiles.avatarPath,
     })
     .from(publicProfiles)
     .where(eq(publicProfiles.userId, actor.id))
     .limit(1);
-  return row?.displayName?.trim() || row?.handle || undefined;
+  const name =
+    actor.name ?? (row?.displayName?.trim() || row?.handle || undefined);
+  const avatarUrl =
+    avatarUrlFor(row?.avatarPath ?? null) ?? row?.avatarUrl ?? undefined;
+  return {
+    name,
+    // Only https: the extension fetches it with ATS on, and a stray http
+    // OAuth picture would just burn its time budget on a refused load.
+    avatarUrl: avatarUrl?.startsWith('https://') ? avatarUrl : undefined,
+    tintKey: row?.avatarSeed || row?.handle || undefined,
+  };
+}
+
+/** Chat threads by conversation; activity threads by the person who acted. */
+function conversationIdFor(payload: NotificationPushPayload): string {
+  return payload.type === 'chat.message' && payload.targetId
+    ? `chat:${payload.targetId}`
+    : `person:${payload.actor.id}`;
 }
 
 /** One message per registered device, localized per OWNER of that device. */
@@ -122,7 +150,9 @@ async function buildMessages(
   );
 
   const data = toDataPayload(payload);
-  const actorName = await resolveActorName(payload.actor);
+  const actor = await resolveActor(payload.actor);
+  const actorName = actor.name;
+  const conversationId = conversationIdFor(payload);
   return tokens.map((row) => {
     const { title, body } = pushCopy(
       payload.type,
@@ -133,11 +163,21 @@ async function buildMessages(
         preview: payload.data?.preview,
       }
     );
+    // The title IS the rendered actor name (or the anonymous label), so the
+    // sender identity reuses it rather than re-deriving the fallback.
+    const sender: PushSenderIdentity = {
+      id: payload.actor.id,
+      name: title,
+      ...(actor.avatarUrl ? { avatarUrl: actor.avatarUrl } : {}),
+      ...(actor.tintKey ? { tintKey: actor.tintKey } : {}),
+    };
     return {
       token: row.token,
       title,
       body,
       data,
+      sender,
+      conversationId,
       ...(payload.groupKey ? { collapseKey: payload.groupKey } : {}),
     };
   });

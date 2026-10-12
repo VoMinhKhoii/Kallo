@@ -27,6 +27,13 @@ vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
   assertRateLimit: mockAssertRateLimit,
 }));
 
+// The storage read cap and avatar domain are avatar-url.ts's own concern; here
+// a path just has to become SOME public URL so precedence is observable.
+vi.mock('@/lib/domain/social/identity/avatar-url', () => ({
+  avatarUrlFor: (path: string | null) =>
+    path ? `https://avatars.test/${path}` : null,
+}));
+
 import {
   sendChatMessagePush,
   sendNotificationPush,
@@ -46,7 +53,8 @@ const FRIEND = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 const GROUP = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 
 /** Every select in this module is `.select().from().where()`, except the actor
- *  name lookup which adds `.limit()`; one queue serves both. */
+ *  profile lookup which adds `.limit()`; one queue serves both. A queue that
+ *  runs dry answers `[]`, which is an actor with no profile row. */
 /** Every WHERE clause handed to a queued select, in call order. */
 const selectWheres: unknown[] = [];
 
@@ -181,7 +189,8 @@ describe('sendNotificationPush', () => {
     // Both locales really are distinct — otherwise the routing above proves
     // nothing.
     expect(reaction('vi')).not.toBe(reaction('en'));
-    expect(sent[0].every((message) => message.title === 'Kallo')).toBe(true);
+    // The actor titles the push in every locale; iOS puts their face beside it.
+    expect(sent[0].every((message) => message.title === 'Mai')).toBe(true);
   });
 
   it('falls back to English when the profile carries no locale', async () => {
@@ -217,9 +226,8 @@ describe('sendNotificationPush', () => {
     );
 
     // The handle stood in for a missing display name, resolved post-commit.
-    expect(sent[0][0].body).toBe(
-      pushCopy('share.logged', 'en', { actorName: 'mai' }).body
-    );
+    expect(sent[0][0].title).toBe('mai');
+    expect(sent[0][0].sender?.name).toBe('mai');
   });
 
   it('sends the flat string data payload and the group key as collapse key', async () => {
@@ -245,11 +253,13 @@ describe('sendNotificationPush', () => {
 
     expect(sent[0][0]).toEqual({
       token: 'owner-phone',
-      title: 'Kallo',
+      title: 'Mai',
       body: pushCopy('group.added', 'en', {
         actorName: 'Mai',
         groupName: 'Trip',
       }).body,
+      sender: { id: FRIEND, name: 'Mai' },
+      conversationId: `person:${FRIEND}`,
       data: {
         type: 'group.added',
         targetType: 'chat_group',
@@ -286,6 +296,106 @@ describe('sendNotificationPush', () => {
       objectType: 'share',
       objectId: 'share-1',
     });
+  });
+
+  it('names the actor as the sender, with their uploaded photo first', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }],
+      [
+        {
+          displayName: 'Mai',
+          handle: 'mai',
+          avatarPath: `${FRIEND}/face.jpg`,
+          avatarUrl: 'https://lh3.googleusercontent.com/mai',
+        },
+      ]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reaction', actor: { id: FRIEND } },
+      sender
+    );
+
+    // Same precedence as the in-app identity: the upload beats the OAuth photo.
+    expect(sent[0][0].sender).toEqual({
+      id: FRIEND,
+      name: 'Mai',
+      avatarUrl: `https://avatars.test/${FRIEND}/face.jpg`,
+      // No seed: the handle tints the disc, exactly as the in-app avatar does.
+      tintKey: 'mai',
+    });
+  });
+
+  it('falls back to the OAuth picture, and never hands the device http', async () => {
+    queueSelects(
+      [
+        { userId: OWNER, token: 'owner-phone' },
+        { userId: FRIEND, token: 'friend-phone' },
+      ],
+      [],
+      [
+        {
+          displayName: 'Mai',
+          handle: 'mai',
+          avatarPath: null,
+          avatarUrl: 'https://lh3.googleusercontent.com/mai',
+        },
+      ]
+    );
+    const { sender, sent } = fakeSender(allOk);
+    await sendNotificationPush(
+      [OWNER, FRIEND],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
+    expect(sent[0][0].sender?.avatarUrl).toBe(
+      'https://lh3.googleusercontent.com/mai'
+    );
+
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [],
+      [
+        {
+          displayName: 'Mai',
+          avatarSeed: 'seed-1',
+          handle: 'mai',
+          avatarPath: null,
+          avatarUrl: 'http://x/mai',
+        },
+      ]
+    );
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
+    // ATS would refuse it; the device draws initials instead.
+    expect(sent[1][0].sender).toEqual({
+      id: FRIEND,
+      name: 'Mai',
+      tintKey: 'seed-1',
+    });
+  });
+
+  it('keeps a producer-supplied name over the profile’s', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [],
+      [{ displayName: 'Old name', handle: 'mai', avatarPath: null }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND, name: 'Mai' } },
+      sender
+    );
+
+    expect(sent[0][0].title).toBe('Mai');
   });
 
   it('emits no object keys for an event that has no object', async () => {
@@ -497,6 +607,8 @@ describe('sendChatMessagePush', () => {
       true
     );
     expect(sent[0][0].collapseKey).toBe(`chat:${GROUP}`);
+    // One conversation on the device too: the group, not the sender.
+    expect(sent[0][0].conversationId).toBe(`chat:${GROUP}`);
     expect(sent[0][0].data).toEqual({
       type: 'chat.message',
       targetType: 'chat_group',
