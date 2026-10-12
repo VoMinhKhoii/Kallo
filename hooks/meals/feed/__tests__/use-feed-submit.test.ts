@@ -35,6 +35,7 @@ function useSubmitHarness(outcome: AnalyzeOutcome = 'staged') {
       current: {
         getText: () => 'Phở bò',
         getManualRows: () => [],
+        getManualName: () => '',
         clear,
         focus: vi.fn(),
         setText,

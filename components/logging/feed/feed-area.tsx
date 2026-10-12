@@ -158,6 +158,7 @@ export function FeedArea({
                 // (no picks staged in cheat mode → straight to the estimator).
                 feed.relog.handleNormalSubmit
           }
+          onManualSave={feed.handleManualSheetSave}
           onCancel={feed.handleCancel}
           disabled={feed.stream.isAnalyzing}
           mode={feed.loggingMode}

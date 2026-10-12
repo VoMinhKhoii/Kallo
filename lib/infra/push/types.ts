@@ -7,9 +7,23 @@
 // the APNs sender in ./apns.ts, the no-op used whenever the signing key is
 // unset, or a vi.fn() double in tests.
 //
-// Deliberately not isomorphic with the APNs wire shape: `collapseKey` and
-// `badge` are intents ("supersede the earlier notice about this thing",
-// "the app icon should read N"), and the sender decides how to express them.
+// Deliberately not isomorphic with the APNs wire shape: `collapseKey`,
+// `badge` and `sender` are intents ("supersede the earlier notice about this
+// thing", "the app icon should read N", "this came from a person — show them"),
+// and the sender decides how to express them.
+
+/** The person a push is from. On iOS it becomes a communication
+ *  notification: their avatar in place of the app icon, the app's own icon
+ *  badged in the corner. */
+export interface PushSenderIdentity {
+  id: string;
+  name: string;
+  /** Public https URL of their photo; absent → the device draws initials. */
+  avatarUrl?: string;
+  /** What picks their initials-disc tint (avatar seed, else handle) — the
+   *  same key the in-app disc hashes, so the fallback matches the app. */
+  tintKey?: string;
+}
 
 export interface PushMessage {
   /** The APNs device token this goes to. */
@@ -23,6 +37,11 @@ export interface PushMessage {
   collapseKey?: string;
   /** App icon count (iOS). Omitted leaves the current badge alone. */
   badge?: number;
+  /** Who did it. Omitted renders a plain app notification. */
+  sender?: PushSenderIdentity;
+  /** Which conversation this belongs to (a chat group, or the person for
+   *  activity). iOS uses it to thread the sender's notices together. */
+  conversationId?: string;
 }
 
 export interface PushSendResult {

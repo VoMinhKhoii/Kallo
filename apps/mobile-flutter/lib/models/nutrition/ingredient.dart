@@ -1,11 +1,13 @@
 /// Ingredient-search and manual-logging data models.
 ///
 /// Mirrors the web contracts in `lib/api/contracts/ingredients.ts` and
-/// `lib/logging/manual-logging.ts`: deterministic manual logging where the
-/// user picks a food-composition entry and enters exact grams — nutrition is
-/// per-100g data scaled client-side for live feedback, and recomputed
+/// `lib/domain/logging/manual-logging.ts`: deterministic manual logging where
+/// the user picks a food-composition entry and enters exact grams — nutrition
+/// is per-100g data scaled client-side for live feedback, and recomputed
 /// server-side on save.
 library;
+
+import 'vessel.dart';
 
 /// Per-100g macro snapshot carried with every search result so the client can
 /// compute row/total macros live without another round-trip.
@@ -63,6 +65,22 @@ class IngredientSearchResult {
 
   final IngredientMacrosPer100g per100g;
 
+  /// Clean English name from the row's food card ("Skinless chicken breast").
+  /// Null when the row has no card — fall back to [nameEn].
+  final String? displayNameEn;
+
+  /// 'raw' | 'cooked' only when the card's own wording says so. Null for
+  /// canned, dried, packaged and plain foods, where the table's default 'raw'
+  /// in [state] would mislead — so the UI shows no state at all.
+  final String? stateLabel;
+
+  /// A packaged food's brand, shown where the state label would go.
+  final String? brand;
+
+  /// The vessel the amount ruler offers, at its everyday tier (a medium cut,
+  /// a medium bowl, a regular cup). Null means grams only.
+  final ClientVessel? vessel;
+
   const IngredientSearchResult({
     required this.id,
     required this.namePrimary,
@@ -70,7 +88,17 @@ class IngredientSearchResult {
     required this.state,
     required this.per100g,
     this.semantic = false,
+    this.displayNameEn,
+    this.stateLabel,
+    this.brand,
+    this.vessel,
   });
+
+  /// The English name to show: the card's clean one, else the table's.
+  String? get englishName {
+    final name = displayNameEn ?? nameEn;
+    return name == null || name.trim().isEmpty ? null : name;
+  }
 
   factory IngredientSearchResult.fromJson(Map<String, dynamic> json) =>
       IngredientSearchResult(
@@ -82,17 +110,39 @@ class IngredientSearchResult {
         per100g: IngredientMacrosPer100g.fromJson(
           (json['per100g'] as Map<String, dynamic>?) ?? const {},
         ),
+        displayNameEn: _stringOrNull(json['displayNameEn']),
+        stateLabel: switch (json['stateLabel']) {
+          'raw' => 'raw',
+          'cooked' => 'cooked',
+          _ => null,
+        },
+        brand: _stringOrNull(json['brand']),
+        vessel: vesselFromHint(json['vessel']),
       );
 }
 
-/// One picked item in the manual-log sheet: an ingredient + editable grams.
+String? _stringOrNull(Object? value) =>
+    value is String && value.trim().isNotEmpty ? value : null;
+
+/// The search's vessel hint (`{family: 'piece', kind}` or `{family, dishClass}`)
+/// as a vessel at its everyday tier: one medium cut; a regular cup or a medium
+/// plate; a small bowl (a chén) of rice or beans, a medium bowl of soup. A
+/// medium bowl of rice is ~390 g, twice what a chén holds. NEVER throws: a hint
+/// is decoration, and an unknown family from a newer server degrades to grams.
+ClientVessel? vesselFromHint(Object? hint) {
+  if (hint is! Map) return null;
+  if (hint['family'] == 'piece') {
+    return ClientVessel.fromJson({...hint, 'tier': 3, 'count': 1});
+  }
+  final chen = hint['family'] == 'bowl' && hint['dishClass'] == 'solid';
+  return ClientVessel.fromJson({...hint, 'tier': chen ? 1 : 2});
+}
+
+/// One food on the manual-log plate, at the grams its food page settled on.
 class ManualLogItem {
   final String id;
   final IngredientSearchResult ingredient;
-
-  /// Null while the grams field is cleared mid-edit; such rows are excluded
-  /// from totals and from the save payload.
-  final double? grams;
+  final double grams;
 
   const ManualLogItem({
     required this.id,
@@ -100,30 +150,32 @@ class ManualLogItem {
     required this.grams,
   });
 
-  ManualLogItem copyWith({double? Function()? grams}) => ManualLogItem(
-    id: id,
-    ingredient: ingredient,
-    grams: grams != null ? grams() : this.grams,
-  );
+  ManualLogItem copyWith({double? grams}) =>
+      ManualLogItem(id: id, ingredient: ingredient, grams: grams ?? this.grams);
 
-  bool get isComplete => grams != null && grams!.isFinite && grams! > 0;
-
-  /// Live macros for this row (per100g × grams/100), or null when incomplete.
-  IngredientMacrosPer100g? get macros =>
-      isComplete ? ingredient.per100g.scaledTo(grams!) : null;
+  /// This food's macros at its grams (per100g × grams/100).
+  IngredientMacrosPer100g get macros => ingredient.per100g.scaledTo(grams);
 }
 
-/// Sum macros across complete items. Per nutrient: sum of non-null values, or
-/// null when no item carries it.
+/// The plate's macros. Per nutrient: the sum of the values its foods carry,
+/// or null when none carries it — unknown, shown "—", never a false 0. An
+/// empty plate is a known 0.
 IngredientMacrosPer100g totalsForManualItems(List<ManualLogItem> items) {
+  if (items.isEmpty) {
+    return const IngredientMacrosPer100g(
+      caloriesKcal: 0,
+      proteinG: 0,
+      carbohydrateG: 0,
+      fatG: 0,
+    );
+  }
   double? calories;
   double? protein;
   double? carbs;
   double? fat;
+  double? add(double? sum, double? v) => v == null ? sum : (sum ?? 0) + v;
   for (final item in items) {
     final macros = item.macros;
-    if (macros == null) continue;
-    double? add(double? sum, double? v) => v == null ? sum : (sum ?? 0) + v;
     calories = add(calories, macros.caloriesKcal);
     protein = add(protein, macros.proteinG);
     carbs = add(carbs, macros.carbohydrateG);

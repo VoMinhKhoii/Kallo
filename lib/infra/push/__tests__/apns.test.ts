@@ -274,6 +274,51 @@ describe('createApnsSender', () => {
     });
   });
 
+  it('routes a push with a sender through the service extension', async () => {
+    await createApnsSender(CONFIG).send([
+      message({
+        title: 'Mai',
+        body: 'Reacted to your meal',
+        sender: {
+          id: 'friend-1',
+          name: 'Mai',
+          avatarUrl: 'https://avatars.test/mai.jpg',
+          tintKey: 'mai',
+        },
+        conversationId: 'person:friend-1',
+      }),
+    ]);
+
+    // `mutable-content` is what wakes the extension; the sender rides NESTED
+    // so it can never shadow a flat deep-link key the tap router reads.
+    expect(JSON.parse(requests[0].body)).toEqual({
+      aps: {
+        alert: { title: 'Mai', body: 'Reacted to your meal' },
+        sound: 'default',
+        'mutable-content': 1,
+        'thread-id': 'person:friend-1',
+      },
+      type: 'share.reaction',
+      sender: {
+        id: 'friend-1',
+        name: 'Mai',
+        avatarUrl: 'https://avatars.test/mai.jpg',
+        tintKey: 'mai',
+        conversationId: 'person:friend-1',
+      },
+    });
+  });
+
+  it('leaves out the avatar key when the sender has no photo', async () => {
+    await createApnsSender(CONFIG).send([
+      message({ sender: { id: 'friend-1', name: 'Mai' } }),
+    ]);
+
+    const payload = JSON.parse(requests[0].body);
+    expect(payload.sender).toEqual({ id: 'friend-1', name: 'Mai' });
+    expect(payload.aps['mutable-content']).toBe(1);
+  });
+
   it('includes the badge only when one was asked for', async () => {
     await createApnsSender(CONFIG).send([message({ badge: 4 })]);
 

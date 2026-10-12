@@ -4,7 +4,10 @@ import { useCallback, useRef, useState } from 'react';
 import { useStreamAnalysis } from '@/hooks/meals/analysis/use-stream-analysis';
 import { useStreamingScroll } from '@/hooks/meals/analysis/use-streaming-scroll';
 import { useStreamingTerminalEffects } from '@/hooks/meals/analysis/use-streaming-terminal-effects';
-import { useManualSubmit } from '@/hooks/meals/entry/use-manual-submit';
+import {
+  useManualSave,
+  useManualSubmit,
+} from '@/hooks/meals/entry/use-manual-submit';
 import { useMealPrefill } from '@/hooks/meals/entry/use-meal-prefill';
 import { useClarifyHandlers } from '@/hooks/meals/feed/use-clarify-handlers';
 import { useConfirmHandlers } from '@/hooks/meals/feed/use-confirm-handlers';
@@ -153,11 +156,15 @@ export function useFeedController(args: {
     handleSubmit,
   });
 
-  const handleManualSubmit = useManualSubmit({
-    inputRef,
+  const handleManualSheetSave = useManualSave({
     saveManualMeal,
     selectedDate,
     scrollToBottom,
+  });
+  const handleManualSubmit = useManualSubmit({
+    inputRef,
+    save: handleManualSheetSave,
+    isSaving: saveManualMeal.isPending,
   });
 
   // The `/` relog picker + its staged list. Normal mode only — manual and cheat
@@ -291,6 +298,7 @@ export function useFeedController(args: {
     handleLogAgain,
     handleSubmit,
     handleManualSubmit,
+    handleManualSheetSave,
     relog,
     handleBarcodeSuccess,
     handleCancel,
