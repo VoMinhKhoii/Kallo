@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/http/api_error.dart';
 import 'supabase_service.dart';
 
 /// Builds the session stream from a gotrue auth-event stream.
@@ -84,6 +85,41 @@ final sessionProvider = StreamProvider<Session?>((ref) {
 final currentSessionProvider = Provider<Session?>((ref) {
   return ref.watch(sessionProvider).valueOrNull;
 });
+
+/// The signed-in account's id, or `null` while signed out.
+///
+/// Key a cached per-user fetch on this. Its family args already carry the user
+/// id, but the same user signing out and back in lands on the same entry — so
+/// a 401 the expired session cached there was still served after the fresh
+/// sign-in, and the dashboard opened on its error state until Retry was tapped.
+/// Watching this rebuilds the entry on sign-out and again on sign-in.
+///
+/// Watch this, not [currentSessionProvider]: an hourly token refresh is a new
+/// [Session] but the same account, and must not reload the screen.
+final signedInUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(currentSessionProvider.select((s) => s?.user.id));
+});
+
+/// The guard a fetch for the signed-in user opens with: watches
+/// [signedInUserIdProvider] and returns the account id, or throws a 401
+/// [ApiError] without touching the network while signed out.
+///
+/// The watch alone rebuilds the entry on sign-out while the screen is still
+/// subscribed (the router has not swapped it out yet), and the rebuild would
+/// fire the request with no token.
+String requireSignedIn(Ref<Object?> ref) {
+  final userId = ref.watch(signedInUserIdProvider);
+  if (userId != null) return userId;
+  throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in');
+}
+
+/// [requireSignedIn] for an entry keyed on a user: also throws unless [userId]
+/// is the account signed in right now, so a different account signing in on
+/// the same device cannot fill the previous user's entry.
+void requireSignedInAs(Ref<Object?> ref, String userId) {
+  if (requireSignedIn(ref) == userId) return;
+  throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in as $userId');
+}
 
 /// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
 ///

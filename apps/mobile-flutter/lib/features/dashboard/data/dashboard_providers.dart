@@ -21,6 +21,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../circle/data/circle_providers.dart'
     show refreshInvitesAfterRelease;
@@ -75,6 +76,9 @@ int localTimezoneOffsetMinutes() => -DateTime.now().timeZoneOffset.inMinutes;
 /// `useDashboard` → one aggregate fetch for the whole screen.
 final dashboardBundleProvider =
     FutureProvider.family<DashboardBundle, DashboardArgs>((ref, args) async {
+      // Not autoDispose, so an error outlives the session that caused it —
+      // see [signedInUserIdProvider].
+      requireSignedInAs(ref, args.userId);
       final api = ref.watch(apiClientProvider);
       final tz = localTimezoneOffsetMinutes();
       final date = Uri.encodeComponent(args.date);
@@ -113,6 +117,7 @@ final loggingDayProvider = FutureProvider.family<LoggingDayData, DashboardArgs>(
 /// (the feed's swipe-remove) both do.
 final dashboardDayProvider =
     FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
+      requireSignedInAs(ref, args.userId);
       final api = ref.watch(apiClientProvider);
       final tz = localTimezoneOffsetMinutes();
       final date = Uri.encodeComponent(args.date);
@@ -155,6 +160,7 @@ final heatmapProvider = FutureProvider.family<HeatmapData, DashboardArgs>((
   ref,
   args,
 ) async {
+  requireSignedInAs(ref, args.userId);
   final range = ref.watch(heatmapRangeProvider);
   if (range == HeatmapRange.d90) {
     final bundle = await ref.watch(dashboardBundleProvider(args).future);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_manage_screen.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
@@ -61,7 +62,11 @@ void main() {
       Scaffold(
         body: CircleManageScreen(parentTitle: 'Cài đặt', initialTab: tab),
       ),
-      overrides: [apiClientProvider.overrideWithValue(backend)],
+      overrides: [
+        apiClientProvider.overrideWithValue(backend),
+        // The viewer's own profile only loads while signed in.
+        signedInUserIdProvider.overrideWithValue('me'),
+      ],
     );
     await expectLater(
       find.byType(CircleManageScreen),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/data/relog_providers.dart';
 import 'package:kallo_mobile/models/logging/relog.dart';
@@ -65,7 +66,11 @@ void main() {
   setUp(() {
     api = FakeApiClient();
     container = ProviderContainer(
-      overrides: [apiClientProvider.overrideWithValue(api)],
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        // The day feed only fetches for the account signed in now.
+        signedInUserIdProvider.overrideWithValue('user-1'),
+      ],
     );
     addTearDown(container.dispose);
   });

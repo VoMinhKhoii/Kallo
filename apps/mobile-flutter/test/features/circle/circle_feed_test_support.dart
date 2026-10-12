@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 
@@ -244,6 +245,7 @@ Future<void> pumpCircleScreen(
   tester,
   overrides: [
     if (api != null) apiClientProvider.overrideWithValue(api),
+    _signedInAsViewer,
     ...overrides,
   ],
   size: size,
@@ -269,6 +271,7 @@ Future<void> pumpCircleRouter(
   tester,
   overrides: [
     if (api != null) apiClientProvider.overrideWithValue(api),
+    _signedInAsViewer,
     ...overrides,
   ],
   app:
@@ -282,8 +285,13 @@ Future<void> pumpCircleRouter(
 
 ProviderContainer makeContainer(FakeApiClient api) {
   final container = ProviderContainer(
-    overrides: [apiClientProvider.overrideWithValue(api)],
+    overrides: [apiClientProvider.overrideWithValue(api), _signedInAsViewer],
   );
   addTearDown(container.dispose);
   return container;
 }
+
+/// The viewer the fixtures answer for (`/api/v1/groups/profile` is `me`). The
+/// viewer's own profile only loads while someone is signed in, so a circle
+/// screen without this would render its avatars as if signed out.
+final _signedInAsViewer = signedInUserIdProvider.overrideWithValue('me');
