@@ -15,14 +15,36 @@ const ing = (
 });
 
 describe('resolveIngredientPortion — adapter', () => {
-  it('resolves a count-based VN staple via its prior', () => {
+  // Built-in portion priors no longer pin grams (2026-10-12): a counted food
+  // with a seeded prior goes to Call 2 with no resolved_grams anchor.
+  it.each([
+    ['bánh bao', 'Bánh bao nhân thịt', 2, 'bánh bao', 'hấp'],
+    ['sườn dê', 'rice', 1, 'miếng', 'nướng'],
+    ['cá', 'Unrelated selected nutrition row', 1, 'con', 'nướng'],
+    ['trứng gà', 'Trứng gà', 3, 'quả', 'luộc'],
+    ['cơm', 'Cơm trắng', 1, 'chén', null],
+  ] as const)('gives "%s" × %s no gram anchor', (rawName, canonicalName, count, unitToken, method) => {
     const r = resolveIngredientPortion({
-      ingredient: ing({ count: 2, unitToken: 'bánh bao' }),
-      dishCookingMethod: 'hấp',
+      ingredient: ing({ rawName, canonicalName, count, unitToken }),
+      dishCookingMethod: method,
       inputLanguage: 'vi',
     });
-    expect(r.provenance).toBe('retrieved_prior');
-    expect(r.grams?.mid).toBe(330);
+    expect(r.provenance).toBe('llm_range');
+    expect(anchorGramsFromResolution(r)).toBeNull();
+  });
+
+  it('still anchors an explicit "200g cơm"', () => {
+    const r = resolveIngredientPortion({
+      ingredient: ing({
+        rawName: 'cơm',
+        canonicalName: 'Cơm trắng',
+        explicitMass: { grams: 200, basis: 'unknown' },
+      }),
+      dishCookingMethod: null,
+      inputLanguage: 'vi',
+    });
+    expect(r.provenance).toBe('explicit_user_mass');
+    expect(anchorGramsFromResolution(r)).toBe(200);
   });
 
   it('routes an ambiguous surface form to clarify', () => {
@@ -55,63 +77,6 @@ describe('resolveIngredientPortion — adapter', () => {
     expect(r.grams?.mid).toBe(250);
   });
 
-  it.each([
-    'sườn dê',
-    'suon de',
-  ])('anchors a goat rib piece from %s independently of the nutrition row', (rawName) => {
-    const r = resolveIngredientPortion({
-      ingredient: ing({
-        rawName,
-        canonicalName: 'rice',
-        count: 1,
-        unitToken: 'miếng',
-      }),
-      dishCookingMethod: 'nướng',
-      inputLanguage: 'vi',
-    });
-    expect(r).toMatchObject({
-      grams: { low: 70, mid: 85, high: 100 },
-      massBasis: 'gross_as_served',
-      provenance: 'retrieved_prior',
-    });
-  });
-
-  it('recomposes a split whole-fish count into a scoped concept anchor', () => {
-    const r = resolveIngredientPortion({
-      ingredient: ing({
-        rawName: 'cá',
-        canonicalName: 'Unrelated selected nutrition row',
-        count: 1,
-        unitToken: 'con',
-      }),
-      dishCookingMethod: 'nướng',
-      inputLanguage: 'vi',
-    });
-    expect(r).toMatchObject({
-      grams: { low: 250, mid: 325, high: 400 },
-      massBasis: 'gross_as_served',
-      provenance: 'retrieved_prior',
-    });
-  });
-
-  it('treats a generic boiled chicken egg as peeled before eating', () => {
-    const r = resolveIngredientPortion({
-      ingredient: ing({
-        rawName: 'trứng gà',
-        canonicalName: 'Trứng gà',
-        count: 3,
-        unitToken: 'quả',
-      }),
-      dishCookingMethod: 'luộc',
-      inputLanguage: 'vi',
-    });
-    expect(r).toMatchObject({
-      grams: { low: 135, mid: 150, high: 165 },
-      massBasis: 'edible',
-      provenance: 'retrieved_prior',
-    });
-  });
-
   it('unknown food + no explicit mass → defers to Call 2 (llm_range)', () => {
     const r = resolveIngredientPortion({
       ingredient: ing({ rawName: 'nước dùng', canonicalName: 'nước dùng' }),
@@ -128,7 +93,11 @@ describe('resolvePortionsForCallTwo — orchestrator seam', () => {
     const { resolutions, anchors } = resolvePortionsForCallTwo(
       [
         {
-          ingredient: ing({ count: 2, unitToken: 'bánh bao' }),
+          ingredient: ing({
+            count: 2,
+            unitToken: 'bánh bao',
+            explicitMass: { grams: 300, basis: 'edible' },
+          }),
           dishCookingMethod: 'hấp',
         },
         {
@@ -140,7 +109,7 @@ describe('resolvePortionsForCallTwo — orchestrator seam', () => {
     );
 
     expect(resolutions).toHaveLength(2);
-    expect(anchors).toEqual([330, null]);
+    expect(anchors).toEqual([300, null]);
   });
 });
 
@@ -150,7 +119,7 @@ describe('anchorGramsFromResolution', () => {
       anchorGramsFromResolution({
         grams: { low: 1, mid: 2, high: 3 },
         massBasis: 'edible',
-        provenance: 'retrieved_prior',
+        provenance: 'packaged_serving',
         confidence: 'high',
         note: '',
       })
@@ -183,7 +152,7 @@ describe('anchorGramsFromResolution', () => {
       anchorGramsFromResolution({
         grams: { low: 70, mid: 85, high: 100 },
         massBasis: 'gross_as_served',
-        provenance: 'retrieved_prior',
+        provenance: 'explicit_user_mass',
         confidence: 'high',
         note: '',
       })

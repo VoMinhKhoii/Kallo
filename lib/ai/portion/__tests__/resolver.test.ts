@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { anchorGramsFromResolution } from '../ingredient-portion';
-import { MAX_RELATIVE_BAND_WIDTH, resolvePortion } from '../resolver';
+import { resolvePortion } from '../resolver';
 import type { ResolverConceptInput } from '../types';
 
 const conceptInput = (
@@ -91,68 +91,42 @@ describe('resolvePortion — fallback ladder', () => {
     expect(r.grams?.mid).toBe(80);
   });
 
-  it('step 3: retrieved locale-scoped prior (bánh bao count)', () => {
-    const r = resolvePortion(conceptInput(), {
-      count: 1,
-      unitToken: 'bánh bao',
-    });
-    expect(r.provenance).toBe('retrieved_prior');
-    expect(r.grams).toEqual({ low: 150, mid: 165, high: 180 });
-    expect(r.confidence).toBe('high');
-  });
-
-  it('anchors one rib piece as gross-as-served instead of unresolved', () => {
-    const r = resolvePortion(
-      conceptInput({ conceptId: 'rib-piece', form: 'any' }),
-      { count: 1, unitToken: 'miếng' }
-    );
-    expect(r).toMatchObject({
-      grams: { low: 70, mid: 85, high: 100 },
-      massBasis: 'gross_as_served',
-      provenance: 'retrieved_prior',
-    });
-  });
-
+  // Steps 3–4 (built-in portion priors) were removed on 2026-10-12: a counted
+  // unit with a seeded prior no longer pins grams — Call 2 sizes it.
   it.each([
-    ['fish-fillet', 'miếng', 90],
-    ['peeled-shrimp', 'con', 16],
-    ['picked-crab-meat', 'phần', 65],
-    ['peeled-egg', 'quả', 50],
-  ] as const)('resolves the already-edible %s prior as a promptable anchor', (conceptId, unitToken, expectedGrams) => {
-    const result = resolvePortion(conceptInput({ conceptId, form: 'any' }), {
-      count: 1,
+    ['banh-bao', 'vi', 'composed', 1, 'bánh bao'],
+    ['rib-piece', 'vi', 'any', 1, 'miếng'],
+    ['fish-fillet', 'vi', 'any', 1, 'miếng'],
+    ['peeled-egg', 'vi', 'any', 1, 'quả'],
+    ['chicken-breast', 'en', 'cooked', 1, 'piece'],
+    ['banh-mi-loaf', 'vi', 'raw', 3, 'lát'],
+  ] as const)('defers %s × "%s" to Call 2 instead of a prior anchor', (conceptId, locale, form, count, unitToken) => {
+    const r = resolvePortion(conceptInput({ conceptId, locale, form }), {
+      count,
       unitToken,
-    });
-    expect(result.massBasis).toBe('edible');
-    expect(anchorGramsFromResolution(result)).toBe(expectedGrams);
-  });
-
-  it('step 4: curated global prior (chicken breast count, locale=global)', () => {
-    const r = resolvePortion(
-      conceptInput({
-        conceptId: 'chicken-breast',
-        locale: 'en',
-        form: 'cooked',
-      }),
-      { count: 1, unitToken: 'piece' }
-    );
-    expect(r.provenance).toBe('curated_prior');
-    expect(r.grams?.mid).toBe(175);
-  });
-
-  it('size modifier recentres mid within the band (small → low, large → high)', () => {
-    const small = resolvePortion(conceptInput(), {
-      count: 1,
-      unitToken: 'bánh bao',
-      sizeModifier: 'small',
-    });
-    const large = resolvePortion(conceptInput(), {
-      count: 1,
-      unitToken: 'bánh bao',
       sizeModifier: 'large',
     });
-    expect(small.grams?.mid).toBe(150);
-    expect(large.grams?.mid).toBe(180);
+    expect(r.provenance).toBe('llm_range');
+    expect(r.grams).toBeNull();
+    expect(anchorGramsFromResolution(r)).toBeNull();
+  });
+
+  it('"1 chén cơm" gets no gram anchor; "200g cơm" still anchors 200 g', () => {
+    const rice = conceptInput({
+      conceptId: 'cooked-rice',
+      form: 'cooked',
+      canonicalName: 'Cơm trắng',
+      rawName: 'cơm',
+    });
+    const bowl = resolvePortion(rice, { count: 1, unitToken: 'chén' });
+    expect(bowl.provenance).toBe('llm_range');
+    expect(anchorGramsFromResolution(bowl)).toBeNull();
+
+    const weighed = resolvePortion(rice, {
+      explicitMass: { grams: 200, basis: 'unknown' },
+    });
+    expect(weighed.provenance).toBe('explicit_user_mass');
+    expect(anchorGramsFromResolution(weighed)).toBe(200);
   });
 
   it('step 6: no prior for the unit → null, defer to Call 2 LLM range', () => {
@@ -189,60 +163,11 @@ describe('resolvePortion — fallback ladder', () => {
     const r = resolvePortion(conceptInput(), { count: 100, unitToken: 'g' });
     expect(r.provenance).toBe('llm_range');
   });
-
-  it('threshold constant is exposed and > 0', () => {
-    expect(MAX_RELATIVE_BAND_WIDTH).toBeGreaterThan(0);
-  });
 });
 
 // ---------------------------------------------------------------------------
-// D4 regression fixtures — pure resolver-level (no LLM call). kcal computed
-// from the resolved grams × the verified DB row's per-100g energy.
+// D4 regression fixtures — pure resolver-level (no LLM call).
 // ---------------------------------------------------------------------------
-
-describe('D4 regression — 2 bánh bao trứng cút lands 600–950 kcal', () => {
-  const BANH_BAO_KCAL_PER_100G = 219; // fao_vn_2007_1009_cooked (verified)
-  const QUAIL_EGG_KCAL_PER_100G = 154; // fao_vn_2007_9007_raw (verified)
-
-  it('2 bánh bao → ~150–180g/unit, meal kcal in band', () => {
-    const buns = resolvePortion(conceptInput(), {
-      count: 2,
-      unitToken: 'bánh bao',
-    });
-    expect(buns.provenance).toBe('retrieved_prior');
-    expect(buns.grams?.mid).toBe(330); // 2 × 165g
-
-    // Quail eggs inside the dish (count inherited).
-    const eggs = resolvePortion(
-      conceptInput({ conceptId: 'quail-egg', form: 'cooked' }),
-      { count: 2, unitToken: 'quả' }
-    );
-    expect(eggs.grams?.mid).toBe(20); // 2 × 10g
-
-    const bunKcal = (buns.grams!.mid * BANH_BAO_KCAL_PER_100G) / 100;
-    const eggKcal = (eggs.grams!.mid * QUAIL_EGG_KCAL_PER_100G) / 100;
-    const totalMid = bunKcal + eggKcal;
-
-    // The old bug produced ~390 kcal; the grounded prior lands well inside band.
-    expect(totalMid).toBeGreaterThanOrEqual(600);
-    expect(totalMid).toBeLessThanOrEqual(950);
-    // Even at the LOW end of the band the meal clears 600.
-    const lowKcal =
-      (buns.grams!.low * BANH_BAO_KCAL_PER_100G) / 100 +
-      (eggs.grams!.low * QUAIL_EGG_KCAL_PER_100G) / 100;
-    expect(lowKcal).toBeGreaterThanOrEqual(600);
-  });
-
-  it('2 bánh bao (count-based, no eggs) alone clears the band floor', () => {
-    const buns = resolvePortion(conceptInput(), {
-      count: 2,
-      unitToken: 'bánh bao',
-    });
-    const kcal = (buns.grams!.mid * BANH_BAO_KCAL_PER_100G) / 100;
-    expect(kcal).toBeGreaterThanOrEqual(600); // 330g × 2.19 = 722.7
-    expect(kcal).toBeLessThanOrEqual(950);
-  });
-});
 
 describe('D4 regression — raw-weight honored verbatim', () => {
   it('250gr ức gà cân sống → 250g exactly, no yield conversion', () => {
@@ -282,17 +207,7 @@ describe('D4 regression — raw-weight honored verbatim', () => {
   });
 });
 
-describe('D4 regression — explicit slice case', () => {
-  it('3 lát bánh mì → loaf-scoped slice prior × 3', () => {
-    const r = resolvePortion(
-      conceptInput({ conceptId: 'banh-mi-loaf', locale: 'vi', form: 'raw' }),
-      { count: 3, unitToken: 'lát' }
-    );
-    expect(r.provenance).toBe('retrieved_prior');
-    // 3 × 25–35g = 75–105g, mid 90g.
-    expect(r.grams).toEqual({ low: 75, mid: 90, high: 105 });
-  });
-
+describe('D4 regression — slice with no concept', () => {
   it('a bare "slice" with no concept never resolves to a number', () => {
     const r = resolvePortion(
       conceptInput({ ambiguous: true, conceptId: null }),

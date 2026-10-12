@@ -4,58 +4,39 @@
  * Given a matched food concept + structured quantity evidence + locale/form,
  * return a basis-declared grams band (or null) plus provenance and confidence.
  * Edible anchors bypass refuse conversion; gross-as-served anchors include
- * bone/shell/rind and pass through `refuse-mass.ts` exactly once. The resolver
- * does ALL numeric portion resolution; the LLM only extracted the evidence.
+ * bone/shell/rind and pass through `refuse-mass.ts` exactly once. The LLM only
+ * extracted the evidence.
  *
  * Ladder (strict order — first hit wins):
+ *   0. Explicit zero count → unresolved (clarify).
  *   1. Explicit user mass (explicitMass / raw-weight state hint) — physical
  *      mass basis honored verbatim; raw cooking state gets NO yield fudge.
+ *   -  Ambiguous concept → unresolved (clarify); a mass unit token without
+ *      explicitMass → Call 2 range.
  *   2. Packaged / serving weight carried on the matched DB row (rare; skipped
  *      when the row has none).
- *   3. Retrieved portion prior matching concept + unit-type + locale + form.
- *   4. Curated head-of-distribution prior (locale='global' loosening).
  *   5. User-specific prior — SEAM ONLY (needs confirmed-edit data; not built).
- *   6. Null → defer to Call 2 (LLM estimates grams as today), bounded/flagged.
- *   7. Ambiguous concept OR resulting kcal interval too wide → unresolved
- *      (Phase-1 clarify path fires).
+ *   6. Null → defer to Call 2, which estimates the grams.
  *
- * GLOBAL-CORRECTNESS: a unit never yields grams without a concept-scoped
- * prior. When in doubt the resolver returns null (LLM range) or unresolved
- * (clarify) — never a fabricated number.
+ * Steps 3–4 (pinning grams from the built-in portion priors in
+ * `data/priors.ts`) were removed on 2026-10-12: on 200 benchmark meals the
+ * prior anchors oversized portions, and Call 2 sized them closer to what was
+ * eaten when it was free to. So the only gram anchors are a weight the user
+ * typed and a package size.
+ *
+ * GLOBAL-CORRECTNESS: a unit never yields grams on its own. When in doubt the
+ * resolver returns null (LLM range) or unresolved (clarify) — never a
+ * fabricated number.
  */
 
 import { AMBIGUOUS } from './lexicon/concept-aliases';
-import { isPieceLikeUnitToken, resolveUnitType } from './lexicon/unit-lexicon';
-import { applySizeModifier, findPrior } from './priors';
+import { resolveUnitType } from './lexicon/unit-lexicon';
 import { classifyRefuseCut } from './refuse-cut';
 import type {
-  GramsBand,
   PortionResolution,
   QuantityEvidence,
   ResolverConceptInput,
 } from './types';
-
-/**
- * Calibrated relative-width threshold for step 7. When a resolved band's
- * spread (high−low)/mid exceeds this, the portion is too uncertain to anchor
- * and we prefer a clarify over a confident-looking wide guess. Priced so the
- * seeded head-of-distribution bands (≤ ~0.4 spread) always pass, while an
- * open-ended LLM-style band would not. Only applied to prior-derived bands.
- */
-export const MAX_RELATIVE_BAND_WIDTH = 0.6;
-
-function scaleBand(perUnit: GramsBand, count: number): GramsBand {
-  return {
-    low: perUnit.low * count,
-    mid: perUnit.mid * count,
-    high: perUnit.high * count,
-  };
-}
-
-function relativeWidth(b: GramsBand): number {
-  if (b.mid <= 0) return Number.POSITIVE_INFINITY;
-  return (b.high - b.low) / b.mid;
-}
 
 /**
  * Resolve grams for a single ingredient. Pure and DB-free: the caller passes
@@ -107,9 +88,9 @@ export function resolvePortion(
     };
   }
 
-  // ---- Step 7 (early): ambiguous concept → clarify --------------------
-  // Done before priors so a generic word ("bun"/"slice"/"bowl") never picks up
-  // a fabricated number.
+  // ---- Ambiguous concept → clarify -----------------------------------
+  // Done before the package-size step so a generic word ("bun"/"slice"/
+  // "bowl") never picks up a fabricated number.
   if (concept.ambiguous || concept.conceptId === AMBIGUOUS) {
     return {
       grams: null,
@@ -150,58 +131,6 @@ export function resolvePortion(
     };
   }
 
-  // ---- Steps 3–4: retrieved / curated portion prior -------------------
-  // Requires a concept id AND a resolvable unit type. Without a unit token we
-  // have no basis to scale a count/slice/container prior — fall through to null.
-  const conceptId = concept.conceptId;
-  if (conceptId && conceptId !== AMBIGUOUS && unitType) {
-    const prior = findPrior({
-      conceptId,
-      unitType,
-      locale: concept.locale,
-      form: concept.form,
-      pieceLikeUnit: isPieceLikeUnitToken(quantity.unitToken),
-    });
-    if (prior) {
-      const count = quantity.count && quantity.count > 0 ? quantity.count : 1;
-      const perUnitMid = applySizeModifier(
-        prior.perUnit,
-        quantity.sizeModifier
-      );
-      // Preserve the band shape while honoring the size modifier's centering:
-      // scale low/high by count too, then recentre mid on the size pick.
-      const scaled = scaleBand(prior.perUnit, count);
-      const grams: GramsBand = {
-        low: scaled.low,
-        mid: perUnitMid * count,
-        high: scaled.high,
-      };
-      // Step 7 (width gate): a prior-derived band that is somehow too wide is
-      // safer as a clarify than a confident anchor.
-      if (relativeWidth(prior.perUnit) > MAX_RELATIVE_BAND_WIDTH) {
-        return {
-          grams: null,
-          massBasis: null,
-          provenance: 'unresolved',
-          confidence: 'none',
-          unresolvedReason: 'unresolved_portion',
-          note: `prior band too wide (relWidth ${relativeWidth(prior.perUnit).toFixed(2)}); clarify`,
-        };
-      }
-      const provenance =
-        prior.locale === 'global' ? 'curated_prior' : 'retrieved_prior';
-      return {
-        grams,
-        massBasis: prior.massBasis,
-        provenance,
-        confidence: prior.confidence,
-        note: `prior ${prior.conceptId}/${unitType}/${prior.locale}/${prior.form} × ${count}${
-          quantity.sizeModifier ? ` (size=${quantity.sizeModifier})` : ''
-        } — ${prior.source}`,
-      };
-    }
-  }
-
   // ---- Step 5: user-specific prior — SEAM (not implemented) -----------
   // Intentionally no branch: when confirmed-edit data exists, insert a lookup
   // here BEFORE step 6.
@@ -213,7 +142,7 @@ export function resolvePortion(
     provenance: 'llm_range',
     confidence: 'none',
     note: unitType
-      ? `no prior for concept/${unitType}; defer to Call 2 LLM range`
+      ? `no user mass or package size for ${unitType}; defer to Call 2 LLM range`
       : 'no resolvable unit/quantity; defer to Call 2 LLM range',
   };
 }

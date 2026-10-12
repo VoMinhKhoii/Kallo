@@ -5,76 +5,11 @@
  * Changing a single character here changes model output.
  */
 
-import {
-  isPromptSizingHintsEnabled,
-  isProteinPortionDefaultEnabled,
-  isVesselGuardEnabled,
-} from '@/lib/ai/pipeline/config/prompt-ablation-flags';
-import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
+import { isVesselGuardEnabled } from '@/lib/ai/pipeline/config/prompt-ablation-flags';
 import type { PromptLocale } from '@/lib/ai/prompts/locale';
-import { RICE_PORTION_DESCRIPTION } from '@/lib/ai/prompts/text/portion-descriptions';
 import { renderAbsorbedOilPromptRule } from '@/lib/domain/nutrition/absorbed-oil';
 
 export type EstimationPromptLocale = PromptLocale;
-
-const PRIOR_LABELS: Record<string, string> = {
-  'banh-bao': 'bánh bao',
-  'quail-egg': 'trứng cút',
-  'banh-mi-loaf': 'lát/ổ bánh mì',
-  'cooked-rice': 'chén/bát cơm',
-  'chicken-breast': 'ức gà',
-  'nem-lui': 'cây nem lụi',
-  'pan-seared-protein-serving': 'phần protein áp chảo',
-};
-
-/**
- * English prior labels for the global prompt variant, keyed by the prior's
- * promptLabel when set, otherwise its conceptId. Basis qualifiers
- * ("cả xương"/bone-in) MUST survive translation — they mark gross-as-served
- * priors.
- */
-const PRIOR_LABELS_GLOBAL: Record<string, string> = {
-  'banh-bao': 'steamed bun (bánh bao)',
-  'quail-egg': 'quail egg',
-  'lát bánh mì': 'slice of bread',
-  'ổ bánh mì': 'small baguette loaf (bread only)',
-  'cooked-rice': 'rice bowl (cooked)',
-  'chicken-breast': 'chicken breast fillet',
-  'miếng sườn (cả xương)': 'rib piece (bone-in)',
-  'cánh gà (cả xương)': 'chicken wing (bone-in)',
-  'đùi gà (cả xương)': 'chicken thigh/drumstick (bone-in)',
-  'con cá nguyên (cả đầu/xương)': 'whole fish (head/bones on)',
-  'khúc/khoanh cá (còn xương)': 'fish steak/section (bone-in)',
-  'miếng cá phi lê (không xương)': 'fish fillet (boneless)',
-  'con tôm nguyên vỏ': 'shell-on shrimp',
-  'con tôm đã bóc vỏ': 'peeled shrimp',
-  'con cua/ghẹ nguyên (cả vỏ)': 'whole crab (shell-on)',
-  'phần thịt cua/ghẹ đã gỡ': 'picked crab meat',
-  'quả trứng còn vỏ': 'egg in shell',
-  'quả trứng luộc đã bóc vỏ': 'peeled boiled egg',
-  'nem-lui': 'nem lụi skewer',
-  'pan-seared-protein-serving': 'pan-seared protein serving',
-  'gói mì': 'instant-noodle packet (dry)',
-};
-
-export function renderPriorLines(
-  locale: EstimationPromptLocale = 'vi'
-): string {
-  const render = ({
-    conceptId,
-    perUnit,
-    promptLabel,
-  }: (typeof PORTION_PRIORS)[number]): string => {
-    const viLabel = promptLabel ?? PRIOR_LABELS[conceptId] ?? conceptId;
-    const label =
-      locale === 'global'
-        ? (PRIOR_LABELS_GLOBAL[promptLabel ?? conceptId] ?? viLabel)
-        : viLabel;
-    return `    - 1 ${label} ≈ ${perUnit.mid}g (${perUnit.low}–${perUnit.high}g).`;
-  };
-
-  return PORTION_PRIORS.map(render).join('\n');
-}
 
 /**
  * Fallback kcal-density anchors for UNMATCHED ingredients, per locale. The
@@ -96,19 +31,8 @@ export function buildStaticPrefix(
   hasVessel = false,
   locale: EstimationPromptLocale = 'vi'
 ): string {
-  const sizingHintsEnabled = isPromptSizingHintsEnabled();
   const vesselRule =
     hasVessel && isVesselGuardEnabled() ? REFUSE_VESSEL_RULE : '';
-  const cuisinePriors = sizingHintsEnabled
-    ? `  Use cuisine priors:\n${renderPriorLines(locale)}\n`
-    : '';
-  const stapleCarbRule = sizingHintsEnabled
-    ? `  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (${RICE_PORTION_DESCRIPTION.small}; ${RICE_PORTION_DESCRIPTION.medium}; ${RICE_PORTION_DESCRIPTION.large}); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)\n`
-    : '';
-  const proteinPortionRule =
-    sizingHintsEnabled && isProteinPortionDefaultEnabled()
-      ? '  When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.\n'
-      : '';
   const roleMass = 'estimate the whole as-served mass and its inedible share';
   const outputMassContract =
     'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple you emit ordered low ≤ mid ≤ high, non-negative.';
@@ -173,11 +97,11 @@ export function buildStaticPrefix(
 ${gramsRule}
   state_hint describes the USER's number, never the basis you emit: "raw_weight" means their figure is already raw (trust it verbatim); "cooked_weight" or absent means the figure is as-eaten — convert it when the row's basis differs.
   For soups, vessel or not, broth/liquid grams follow broth_consumption in <user_context>: leave_it ≈ 10%, some ≈ 50%, finish_it = 100% of served broth.
-${cuisinePriors}  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, the cooking oil MUST be counted exactly ONCE.
+  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, the cooking oil MUST be counted exactly ONCE.
     - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (${renderAbsorbedOilPromptRule()}; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
-${stapleCarbRule}${proteinPortionRule}  dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
+  dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
 ${serverScalingRule}
 </grams_rule>${vesselRule}
@@ -224,3 +148,17 @@ ${finalBasisRule}
 ${finalSanityRule}
 </output_format>`;
 }
+
+/**
+ * Closing sizing rules, appended after everything else in the Call 2 prompt
+ * (the request's meal data included). A 200-meal hill climb on 2026-10-12
+ * found Call 2 sized portions about a quarter above what was eaten; these
+ * three, at the end and in this order, were the winning set — the position
+ * was tested too, and the static prefix stays first for prompt caching.
+ * Changing a character changes model output.
+ */
+export const SHARE_RULE = `\n\n<share_rule>\nWhen <original_prompt> says the user ate only part of what was ordered, cooked or served (a quarter, a third, half, "shared between 4", "split with a friend", "I had 1 of the 3"), size every ingredient of those dishes as the user's own share, never the whole table's.\n</share_rule>`;
+
+export const CALIBRATION_RULE = `\n\n<calibration>\nGram estimates for logged meals have run about a quarter above what people actually ate. When the amount is uncertain, lean toward the smaller plausible portion.\n</calibration>`;
+
+export const DISH_SIZING_RULE = `\n\n<dish_sizing>\nFor a dish with several ingredients, first decide how much of the whole dish this person ate, as served (one bowl, one plate, two pieces). Then split that weight across its ingredients in realistic proportions, so the parts add up to the dish. Never size each part as if it were its own full serving.\n</dish_sizing>`;

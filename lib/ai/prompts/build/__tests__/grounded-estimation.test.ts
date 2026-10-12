@@ -3,7 +3,6 @@ import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
 import {
   dishPieceCount,
   type MatchCandidate,
@@ -12,7 +11,9 @@ import {
 import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
 import {
   buildStaticPrefix,
-  renderPriorLines,
+  CALIBRATION_RULE,
+  DISH_SIZING_RULE,
+  SHARE_RULE,
 } from '@/lib/ai/prompts/text/grounded-estimation';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
@@ -30,8 +31,6 @@ const baseUserContext: PromptPersonalizationContext = {
 };
 
 const FLAG_BASELINE = {
-  PROTEIN_PORTION_DEFAULT: 'on',
-  PROMPT_SIZING_HINTS: 'on',
   VESSEL_GUARD: 'on',
 } as const;
 const originalFlags = new Map(
@@ -131,7 +130,9 @@ describe('grounded-estimation prompt structure', () => {
     // the real block; earlier mentions are inline in the rules).
     const staticIdx = out.indexOf('<role>');
     const userCtxIdx = out.lastIndexOf('<user_context>');
-    const originalPromptIdx = out.lastIndexOf('<original_prompt>');
+    // The closing share rule mentions <original_prompt> inline, so match the
+    // block's own opening line.
+    const originalPromptIdx = out.lastIndexOf('<original_prompt>\n');
     const ingDataIdx = out.lastIndexOf('<ingredient_data>');
     expect(staticIdx).toBeGreaterThanOrEqual(0);
     expect(userCtxIdx).toBeGreaterThan(staticIdx);
@@ -298,20 +299,6 @@ describe('grounded-estimation prompt structure', () => {
     expect(out).not.toContain('<vessel_rule>');
   });
 
-  it('toggles both protein-default prompt signals together at build time', () => {
-    withRestoredEnv(['PROTEIN_PORTION_DEFAULT'], () => {
-      process.env.PROTEIN_PORTION_DEFAULT = 'off';
-      const disabled = buildPrompt('thịt ram');
-      expect(disabled).not.toContain('default_protein_portion:');
-      expect(disabled).not.toContain('When a protein has no count/unit/anchor');
-
-      process.env.PROTEIN_PORTION_DEFAULT = 'on';
-      const enabled = buildPrompt('thịt ram');
-      expect(enabled).toContain('default_protein_portion:');
-      expect(enabled).toContain('When a protein has no count/unit/anchor');
-    });
-  });
-
   it('renders refuse fields and never the legacy deduction rule', () => {
     {
       const enabled = buildStaticPrefix();
@@ -347,35 +334,41 @@ describe('grounded-estimation prompt structure', () => {
     expect(enabled).toContain('mass_basis="gross_as_served"');
   });
 
-  it('toggles all sizing-hint prompt signals together at build time', () => {
-    withRestoredEnv(['PROMPT_SIZING_HINTS', 'PROTEIN_PORTION_DEFAULT'], () => {
-      process.env.PROMPT_SIZING_HINTS = 'off';
-      process.env.PROTEIN_PORTION_DEFAULT = 'on';
-      const mealItem = mealItemWithIng(
-        [candidate()],
-        ing({ count: 2, unitToken: 'miếng' })
-      );
-      mealItem.ingredients[0].resolvedGramsAnchor = 180;
-      const disabled = buildPrompt('2 miếng thịt ram với cơm', [mealItem]);
-      expect(disabled).not.toContain('Use cuisine priors:');
-      expect(disabled).not.toContain('phần protein áp chảo');
-      expect(disabled).not.toContain('Staple carb base:');
-      expect(disabled).not.toContain('default_rice_portion:');
-      expect(disabled).not.toContain('default_protein_portion:');
-      expect(disabled).not.toContain('When a protein has no count/unit/anchor');
-      expect(disabled).toContain('BASIS RULE');
-      expect(disabled).toContain('Absorbed cooking fat:');
-      expect(disabled).toContain('broth_consumption:');
-      expect(disabled).toContain('resolved_grams="180.0"');
-      expect(disabled).toContain('user_count="2" user_unit="miếng"');
+  it('carries no built-in sizing hints or portion defaults', () => {
+    const mealItem = mealItemWithIng(
+      [candidate()],
+      ing({ count: 2, unitToken: 'miếng' })
+    );
+    mealItem.ingredients[0].resolvedGramsAnchor = 180;
+    const out = buildPrompt('2 miếng thịt ram với cơm', [mealItem]);
+    expect(out).not.toContain('Use cuisine priors:');
+    expect(out).not.toContain('phần protein áp chảo');
+    expect(out).not.toContain('Staple carb base:');
+    expect(out).not.toContain('When a protein has no count/unit/anchor');
+    expect(out).not.toContain('default_rice_portion');
+    expect(out).not.toContain('default_protein_portion');
+    expect(out).toContain('  oil_usage: normal\n');
+    expect(out).toContain('  broth_consumption: some\n');
+    expect(out).toContain('BASIS RULE');
+    expect(out).toContain('Absorbed cooking fat:');
+    expect(out).toContain('resolved_grams="180.0"');
+    expect(out).toContain('user_count="2" user_unit="miếng"');
+  });
 
-      process.env.PROMPT_SIZING_HINTS = 'on';
-      const enabled = buildPrompt('thịt ram với cơm');
-      expect(enabled).toContain('Use cuisine priors:');
-      expect(enabled).toContain('Staple carb base:');
-      expect(enabled).toContain('default_rice_portion:');
-      expect(enabled).toContain('default_protein_portion:');
-    });
+  it('ends with the share, calibration and dish-sizing rules, in that order', () => {
+    const out = buildPrompt('nửa đĩa cơm tấm chia với bạn');
+    expect(out.startsWith(buildStaticPrefix(false))).toBe(true);
+    expect(
+      out.endsWith(`${SHARE_RULE}${CALIBRATION_RULE}${DISH_SIZING_RULE}`)
+    ).toBe(true);
+    const share = out.indexOf('\n\n<share_rule>\n');
+    const calibration = out.indexOf('\n\n<calibration>\n');
+    const dish = out.indexOf('\n\n<dish_sizing>\n');
+    expect(share).toBeGreaterThan(out.lastIndexOf('</ingredient_data>'));
+    expect(share).toBeGreaterThan(out.indexOf('Ranking: when the user names'));
+    expect(calibration).toBeGreaterThan(share);
+    expect(dish).toBeGreaterThan(calibration);
+    expect(out.endsWith('\n</dish_sizing>')).toBe(true);
   });
 
   it('toggles vessel guard prompt signals together at build time', () => {
@@ -404,53 +397,6 @@ describe('grounded-estimation prompt structure', () => {
       expect(enabled).toContain('vessel_ml="700"');
       expect(enabled).toContain('serve_total_guard_g="470-730"');
     });
-  });
-});
-
-describe('renderPriorLines', () => {
-  it('contains one rendered line for every portion prior', () => {
-    const lines = renderPriorLines().split('\n');
-    expect(lines).toHaveLength(PORTION_PRIORS.length);
-    for (const prior of PORTION_PRIORS) {
-      expect(
-        lines.some((line) =>
-          line.includes(
-            `≈ ${prior.perUnit.mid}g (${prior.perUnit.low}–${prior.perUnit.high}g)`
-          )
-        )
-      ).toBe(true);
-    }
-  });
-
-  it('renders a unique label for every portion prior', () => {
-    const labels = renderPriorLines()
-      .split('\n')
-      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
-
-    expect(labels).not.toContain(undefined);
-    expect(new Set(labels).size).toBe(labels.length);
-    expect(labels).toContain('lát bánh mì');
-    expect(labels).toContain('ổ bánh mì');
-  });
-
-  it('global locale translates every prior label (no untranslated VN fallback)', () => {
-    const viLabels = renderPriorLines('vi')
-      .split('\n')
-      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
-    const globalLabels = renderPriorLines('global')
-      .split('\n')
-      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
-
-    expect(globalLabels).toHaveLength(viLabels.length);
-    expect(new Set(globalLabels).size).toBe(globalLabels.length);
-    // Every VN label must map to a DIFFERENT English label — an identical
-    // pair means the GLOBAL map is missing that key and silently fell back.
-    for (let index = 0; index < viLabels.length; index++) {
-      expect(globalLabels[index]).not.toBe(viLabels[index]);
-    }
-    // Gross-basis qualifiers must survive translation.
-    expect(globalLabels).toContain('rib piece (bone-in)');
-    expect(globalLabels).toContain('whole crab (shell-on)');
   });
 });
 

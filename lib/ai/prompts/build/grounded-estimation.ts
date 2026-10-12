@@ -1,19 +1,16 @@
 import {
-  isPromptSizingHintsEnabled,
-  isProteinPortionDefaultEnabled,
-} from '@/lib/ai/pipeline/config/prompt-ablation-flags';
-import {
   buildIngredientDataBlock,
   escapeXmlAttribute,
   type MealItemWithCandidates,
 } from '@/lib/ai/prompts/build/grounded-candidates';
 import { resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
-import { buildStaticPrefix } from '@/lib/ai/prompts/text/grounded-estimation';
 import {
-  PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
-} from '@/lib/ai/prompts/text/portion-descriptions';
+  buildStaticPrefix,
+  CALIBRATION_RULE,
+  DISH_SIZING_RULE,
+  SHARE_RULE,
+} from '@/lib/ai/prompts/text/grounded-estimation';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
 /**
@@ -64,18 +61,12 @@ function buildUserContextBlock(
       userContext.countryOfResidence
     ),
   ].filter((line): line is string => line !== null);
-  const sizingHintsEnabled = isPromptSizingHintsEnabled();
-  const ricePortionLine = sizingHintsEnabled
-    ? `  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}\n`
-    : '';
-  const proteinPortionLine =
-    sizingHintsEnabled && isProteinPortionDefaultEnabled()
-      ? `  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}\n`
-      : '';
-
+  // No default_rice_portion / default_protein_portion lines: the onboarding
+  // portion defaults pushed Call 2's grams up on the 2026-10-12 benchmark, so
+  // Call 2 sizes from the meal text alone.
   return `<user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-${ricePortionLine}${proteinPortionLine}  broth_consumption: ${cookingHabits.brothConsumption}
+  broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
 }
 
@@ -87,6 +78,9 @@ ${ricePortionLine}${proteinPortionLine}  broth_consumption: ${cookingHabits.brot
  *   2. user_context (cacheable per user)
  *   3. <original_prompt> (request-specific — the user's verbatim meal text)
  *   4. <ingredient_data> (request-specific — decomposed names + candidates)
+ *   5. ranking rules, then the share / calibration / dish-sizing rules —
+ *      static text, but kept last because that is the position that was
+ *      measured (2026-10-12 grams hill climb)
  */
 export function buildGroundedEstimationPrompt(args: {
   originalPrompt: string;
@@ -112,5 +106,5 @@ ${originalPromptBlock}
 
 ${ingredientDataBlock}
 
-${RANKING_RULES}`;
+${RANKING_RULES}${SHARE_RULE}${CALIBRATION_RULE}${DISH_SIZING_RULE}`;
 }

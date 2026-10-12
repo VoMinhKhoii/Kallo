@@ -117,7 +117,7 @@ describe('spliceRescue', () => {
     const anchored: PortionResolution = {
       grams: { low: 200, mid: 240, high: 280 },
       massBasis: 'edible',
-      provenance: 'curated_prior',
+      provenance: 'packaged_serving',
       confidence: 'medium',
       note: '',
     };

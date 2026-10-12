@@ -89,11 +89,9 @@ export interface PortionPrior {
 export type PortionProvenance =
   | 'explicit_user_mass' // step 1
   | 'packaged_serving' // step 2
-  | 'retrieved_prior' // step 3 (locale/form-matched prior)
-  | 'curated_prior' // step 4 (head-of-distribution prior)
   | 'user_prior' // step 5 (SEAM — not implemented)
   | 'llm_range' // step 6 (null → Call 2 estimates)
-  | 'unresolved'; // step 7 (ambiguous / interval too wide → clarify)
+  | 'unresolved'; // explicit zero / ambiguous concept → clarify
 
 /** Structured quantity evidence the resolver consumes (from Call 1 schema). */
 export interface QuantityEvidence {
