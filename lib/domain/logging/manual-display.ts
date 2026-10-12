@@ -174,6 +174,10 @@ export function manualPeek(
   const added = page ? macrosAt(page.food, page.grams).caloriesKcal : null;
   if (!page || added == null) return { kind: 'total', count, kcal };
   const kept = items.filter((item) => item.id !== page.itemId);
+  // What the plate will total once the food is in: a food on it with no
+  // calorie figure counts for nothing here, exactly as in `plateTotals` (the
+  // sum of the values its foods carry), so this is the figure the ring will
+  // show — known even while the plate alone reads "—".
   const after = (plateTotals(kept).caloriesKcal ?? 0) + added;
   const unmoved =
     page.itemId !== null &&

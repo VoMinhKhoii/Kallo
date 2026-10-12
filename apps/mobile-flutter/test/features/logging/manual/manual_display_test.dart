@@ -114,6 +114,17 @@ void main() {
         ManualLogItem(id: 'm1', ingredient: mystery, grams: 100),
       ];
       expect((manualPeek(unknown, null) as PeekTotal).kcal, isNull);
+      // …yet a known food's projection is the figure the plate will show
+      // once it is in: the unknown food counts for nothing, as in the total.
+      final projected = manualPeek(unknown, page(chicken, 150)) as PeekChange;
+      expect((projected.kcal, projected.after), (null, 180));
+      expect(
+        totalsForManualItems([
+          ...unknown,
+          ManualLogItem(id: 'c', ingredient: chicken, grams: 150),
+        ]).caloriesKcal,
+        180,
+      );
     });
 
     test('with a new food: what the plate becomes', () {

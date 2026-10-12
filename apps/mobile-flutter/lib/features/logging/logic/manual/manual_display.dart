@@ -99,6 +99,10 @@ ManualPeek manualPeek(List<ManualLogItem> items, ManualPeekPage? page) {
     for (final item in items)
       if (item.id != page.itemId) item,
   ];
+  // What the plate will total once the food is in: a food on it with no
+  // calorie figure counts for nothing here, exactly as in
+  // [totalsForManualItems] (the sum of the values its foods carry), so this is
+  // the figure the ring will show — known even while the plate alone reads "—".
   final after = (totalsForManualItems(kept).caloriesKcal ?? 0) + added;
   final unmoved =
       page.itemId != null && kcal != null && after.round() == kcal.round();

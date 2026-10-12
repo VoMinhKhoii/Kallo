@@ -20,10 +20,10 @@ export type ManualSave = (
 /**
  * Manual (Cronometer-style) save: ingredient ids + grams straight to the save
  * endpoint — deterministic, no streaming analysis and no AI call — through
- * the optimistic save. Says how it went (one toast either way) and resolves
- * once the server has the meal; rejects after saying why, so a caller can
- * keep what the user built. The phone sheets call it directly; the composer
- * rows through `useManualSubmit`.
+ * the optimistic save. Resolves once the server has the meal, saying so;
+ * rejects on failure — the mutation's rollback has already said why (one
+ * toast either way) — so a caller can keep what the user built. The phone
+ * sheets call it directly; the composer rows through `useManualSubmit`.
  */
 export function useManualSave(args: {
   saveManualMeal: ReturnType<typeof useSaveManualMeal>;
@@ -46,12 +46,9 @@ export function useManualSave(args: {
       });
       // The optimistic card is in the feed already; bring it into view.
       scrollToBottom();
-      try {
-        await saving;
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : t('saveError'));
-        throw error;
-      }
+      // A failure rejects here untouched: `rollbackOptimisticMeal` (the
+      // mutation's onError) has already toasted it.
+      await saving;
       toast.success(t('savedMeal'));
       track('meal_logged', { method: 'manual' });
     },

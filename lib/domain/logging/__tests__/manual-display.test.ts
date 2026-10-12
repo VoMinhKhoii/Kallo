@@ -202,6 +202,17 @@ describe('the meal', () => {
       count: 1,
       kcal: null,
     });
+    // …yet a known food's projection is the figure the plate will show once
+    // it is in: the unknown food counts for nothing, as in the total itself.
+    expect(
+      manualPeek(unknownPlate, { food: chicken, grams: 150, itemId: null })
+    ).toEqual({ kind: 'with', count: 1, kcal: null, after: 180 });
+    expect(
+      plateTotals([
+        ...unknownPlate,
+        { id: 'c1', ingredient: chicken, grams: 150 },
+      ]).caloriesKcal
+    ).toBe(180);
   });
 
   it('saves a sheet item under its food name; a composer row as typed', () => {

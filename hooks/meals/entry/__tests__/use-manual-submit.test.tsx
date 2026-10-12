@@ -123,12 +123,14 @@ describe('useManualSave', () => {
     expect(track).toHaveBeenCalledWith('meal_logged', { method: 'manual' });
   });
 
-  it('says why a save failed, once, and rejects so the caller keeps the plate', async () => {
+  it('rejects a failed save without a second toast — the rollback says why', async () => {
     const { save } = setup(async () => {
       throw new Error('offline');
     });
     await expect(save(items, '')).rejects.toThrow('offline');
-    expect(toast.error).toHaveBeenCalledWith('offline');
+    // The mutation's onError (rollbackOptimisticMeal) owns the error toast.
+    expect(toast.error).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
+    expect(track).not.toHaveBeenCalled();
   });
 });
