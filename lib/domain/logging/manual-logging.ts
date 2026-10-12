@@ -120,6 +120,31 @@ export function manualMealTitle(
   return name?.trim() || labels.join(' + ');
 }
 
+/** The dish a manual meal's food sits under. A named meal is one dish
+ *  holding all its foods ("Cơm gà": rice, chicken, oil); an unnamed one is a
+ *  dish per food, in order. The server and the optimistic card both group by
+ *  it. */
+export function manualDishOf(
+  mealName: string | undefined,
+  label: string,
+  order: number
+): { name: string; order: number } {
+  return mealName ? { name: mealName, order: 0 } : { name: label, order };
+}
+
+/** One food of a manual meal as it is saved: the picked ingredient, its
+ *  grams, and the label it is saved under (the food's own name when absent).
+ *  The phone sheet's items are these; the composer's rows become these. */
+export interface ManualMealItem {
+  ingredient: IngredientSearchResult;
+  grams: number;
+  label?: string;
+}
+
+export function itemLabel(item: ManualMealItem): string {
+  return item.label?.trim() || item.ingredient.namePrimary;
+}
+
 export function parseGrams(grams: string): number | null {
   // Accept a comma decimal separator (Vietnamese keyboards).
   const value = Number(grams.trim().replace(',', '.'));
@@ -138,6 +163,17 @@ export function rowIsComplete(
 
 export function hasCompleteRow(rows: ManualMealRow[]): boolean {
   return rows.some(rowIsComplete);
+}
+
+/** The composer's complete rows as the meal's items, labelled by what the
+ *  user typed. */
+export function completeItems(rows: ManualMealRow[]): ManualMealItem[] {
+  return rows.flatMap((row) => {
+    const grams = parseGrams(row.grams);
+    return row.ingredient && grams !== null
+      ? [{ ingredient: row.ingredient, grams, label: rowLabel(row) }]
+      : [];
+  });
 }
 
 /** Macros for `food` at `grams`: per100g × grams/100. Null nutrients stay

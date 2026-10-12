@@ -13,9 +13,9 @@ import {
   plateTotals,
 } from '@/lib/domain/logging/manual-display';
 import {
-  type CompleteManualMealRow,
   type IngredientSearchResult,
   isManualMealFull,
+  type ManualMealItem,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualFoodPage } from '../manual-food-page';
 import { ManualMealSheet } from '../manual-meal-sheet';
@@ -96,7 +96,7 @@ function plate(items: ManualSheetItem[]): ManualSheetState {
 function Launcher({
   onSave,
 }: {
-  onSave: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
+  onSave: (items: ManualMealItem[], name: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   return (

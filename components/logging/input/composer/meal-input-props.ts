@@ -1,5 +1,5 @@
+import type { ManualSave } from '@/hooks/meals/entry/use-manual-submit';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
-import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
 import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 import type { InputMode } from '@/lib/domain/logging/types';
 
@@ -45,5 +45,5 @@ export interface MealInputProps {
   mentionSegments?: MentionSegment[];
   /** Saves the phone sheets' plate. With it, manual mode on a phone opens the
    *  iOS app's stacked sheets instead of the composer's inline rows. */
-  onManualSave?: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
+  onManualSave?: ManualSave;
 }

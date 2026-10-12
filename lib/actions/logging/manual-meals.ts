@@ -20,6 +20,7 @@ import {
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
+  manualDishOf,
   manualMealTitle,
   scaleNutritionValues,
 } from '@/lib/domain/logging/manual-logging';
@@ -103,12 +104,23 @@ export async function saveManualMealAction(
     parsed.name,
     items.map((item) => item.name)
   );
-  // A named meal is one dish holding all its ingredients ("Cơm gà": rice,
-  // chicken, oil); an unnamed one stays a flat list, one dish per ingredient.
-  const dishOf = (item: (typeof items)[number]) =>
-    parsed.name
-      ? { name: parsed.name, order: 0 }
-      : { name: item.name, order: item.order };
+  // Each ingredient row once, under its dish — inserted below and rebuilt
+  // into groups after, so the two can't drift.
+  const itemRows = items.map((item) => {
+    const dish = manualDishOf(parsed.name, item.name, item.order);
+    return {
+      id: item.id,
+      ingredientName: item.name,
+      mealItemName: dish.name,
+      mealItemOrder: dish.order,
+      foodCompositionId: item.foodCompositionId,
+      estimatedGrams: item.grams,
+      userFacingUnit: 'g',
+      cookingMethod: null,
+      matchConfidence: 1,
+      nutrition: item.nutrition,
+    };
+  });
 
   const { mealId, share } = await db.transaction(async (tx) => {
     const [meal] = await guardClientMealId(() =>
@@ -129,18 +141,10 @@ export async function saveManualMealAction(
     );
 
     await tx.insert(mealItems).values(
-      items.map((item) => ({
-        id: item.id,
+      itemRows.map(({ nutrition, ...row }) => ({
+        ...row,
         mealId: meal.id,
-        ingredientName: item.name,
-        mealItemName: dishOf(item).name,
-        mealItemOrder: dishOf(item).order,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.grams,
-        userFacingUnit: 'g',
-        cookingMethod: null,
-        matchConfidence: 1,
-        ...nutritionValuesToRow(item.nutrition),
+        ...nutritionValuesToRow(nutrition),
       }))
     );
 
@@ -161,20 +165,7 @@ export async function saveManualMealAction(
   // Rebuilt through the day loader's own grouping (by dish name + order), so
   // the returned meal matches what loadMealsByDate reconstructs; group
   // nutrition auto-sums in the builder.
-  const mealItemGroups = buildMealItemGroupsFromRows(
-    items.map((item) => ({
-      id: item.id,
-      ingredientName: item.name,
-      mealItemName: dishOf(item).name,
-      mealItemOrder: dishOf(item).order,
-      foodCompositionId: item.foodCompositionId,
-      estimatedGrams: item.grams,
-      userFacingUnit: 'g',
-      cookingMethod: null,
-      matchConfidence: 1,
-      nutrition: item.nutrition,
-    }))
-  );
+  const mealItemGroups = buildMealItemGroupsFromRows(itemRows);
 
   const savedMeal = buildPersistedMeal({
     id: mealId,

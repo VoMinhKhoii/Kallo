@@ -2,8 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { sheetItemsAsRows } from '@/lib/domain/logging/manual-display';
-import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
+import type { ManualSave } from '@/hooks/meals/entry/use-manual-submit';
 import { ManualMealSheet } from './manual-meal-sheet';
 import { useManualSheet } from './use-manual-sheet';
 
@@ -20,7 +19,7 @@ export function ManualSheetLauncher({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
-  onSave: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
+  onSave: ManualSave;
 }) {
   const t = useTranslations('logging.manualLogging');
   const meal = useManualSheet(open);
@@ -40,7 +39,7 @@ export function ManualSheetLauncher({
         open={open}
         onOpenChange={onOpenChange}
         meal={meal}
-        onSave={(name) => onSave(sheetItemsAsRows(meal.items), name)}
+        onSave={(name) => onSave(meal.items, name)}
       />
     </>
   );

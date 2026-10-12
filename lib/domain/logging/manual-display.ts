@@ -8,7 +8,6 @@ import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
 import { midG } from '@/lib/ai/portion/vessel/geometry';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import {
-  type CompleteManualMealRow,
   type IngredientMacrosPer100g,
   type IngredientSearchResult,
   type IngredientVesselHint,
@@ -124,19 +123,6 @@ export interface ManualSheetItem {
   id: string;
   ingredient: IngredientSearchResult;
   grams: number;
-}
-
-/** The sheet's items as the save path's form rows. The label falls back to
- *  the food's own name (`rowLabel`), so `query` stays empty. */
-export function sheetItemsAsRows(
-  items: ManualSheetItem[]
-): CompleteManualMealRow[] {
-  return items.map((item) => ({
-    id: item.id,
-    query: '',
-    ingredient: item.ingredient,
-    grams: String(item.grams),
-  }));
 }
 
 const EMPTY_PLATE: IngredientMacrosPer100g = {

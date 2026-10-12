@@ -7,11 +7,13 @@ import type {
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
-  type CompleteManualMealRow,
+  type IngredientMacrosPer100g,
+  itemLabel,
+  type ManualMealItem,
+  macrosAt,
+  manualDishOf,
   manualMealTitle,
-  rowLabel,
-  rowMacros,
-  totalsForRows,
+  sumMacros,
 } from '@/lib/domain/logging/manual-logging';
 import { EMPTY_NUTRITION } from './nutrition-row';
 
@@ -21,38 +23,46 @@ export type SaveManualMealVariables = Omit<
 > & {
   mealId: string;
   originDate: string;
-  rows: CompleteManualMealRow[];
+  items: ManualMealItem[];
 };
 
-// Build the optimistic persisted meal from the per-100g macros already held by
-// the form rows. Micros are left null; the server response fills them in.
+// Build the optimistic persisted meal from the per-100g macros the client
+// already holds. Micros are left null; the server response fills them in.
 export function buildOptimisticManualMeal(
   variables: SaveManualMealVariables
 ): PersistedMeal {
-  const { rows, mealId } = variables;
+  const { items, mealId, name } = variables;
   // Same derivation the server applies — no second source of truth.
   const loggedAt = getUtcInstantForLocalDate(
     variables.loggedDate,
     variables.timezoneOffset
   ).toISOString();
-  const nutrition = { ...EMPTY_NUTRITION, ...totalsForRows(rows) };
-  // Trimmed the way the contract trims it, so a blank name is no name here too.
-  const name = variables.name?.trim() || undefined;
-  // Same grouping the server applies: a named meal is one dish, an unnamed
-  // one is a dish per ingredient.
-  const groups: PersistedMealItemGroup[] = name
-    ? [{ name, order: 0, ingredients: [], nutrition }]
-    : rows.map((row, order) => ({
-        name: rowLabel(row),
-        order,
-        ingredients: [],
-        nutrition: { ...EMPTY_NUTRITION, ...rowMacros(row) },
-      }));
+  const macros = items.map((item) => macrosAt(item.ingredient, item.grams));
+  const nutrition = { ...EMPTY_NUTRITION, ...sumMacros(macros) };
+  // The server's grouping: by dish (name + order), each dish's nutrition the
+  // sum of its foods.
+  const dishes = new Map<
+    string,
+    { name: string; order: number; macros: IngredientMacrosPer100g[] }
+  >();
+  items.forEach((item, index) => {
+    const dish = manualDishOf(name, itemLabel(item), index);
+    const key = `${dish.order}:${dish.name}`;
+    const group = dishes.get(key) ?? { ...dish, macros: [] };
+    group.macros.push(macros[index]);
+    dishes.set(key, group);
+  });
+  const groups: PersistedMealItemGroup[] = [...dishes.values()].map((dish) => ({
+    name: dish.name,
+    order: dish.order,
+    ingredients: [],
+    nutrition: { ...EMPTY_NUTRITION, ...sumMacros(dish.macros) },
+  }));
   return {
     // Same id the server will persist — one stable React key from optimistic
     // insert through reconciliation (no re-fade).
     id: mealId,
-    rawInput: manualMealTitle(name, rows.map(rowLabel)),
+    rawInput: manualMealTitle(name, items.map(itemLabel)),
     mealSlot: variables.mealSlot ?? null,
     confidenceOverall: 'high',
     loggedAt,

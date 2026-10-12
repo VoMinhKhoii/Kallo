@@ -9,14 +9,15 @@ import {
   mealSubtitle,
   plateTotals,
   searchSubtitle,
-  sheetItemsAsRows,
   steppedManualGrams,
   vesselFromHint,
 } from '@/lib/domain/logging/manual-display';
 import {
+  completeItems,
   type IngredientSearchResult,
+  itemLabel,
+  manualDishOf,
   manualMealTitle,
-  rowLabel,
 } from '@/lib/domain/logging/manual-logging';
 
 function food(
@@ -203,10 +204,26 @@ describe('the meal', () => {
     });
   });
 
-  it('saves sheet items as rows labelled by the food name', () => {
-    const [row] = sheetItemsAsRows(items);
-    expect(row.grams).toBe('150');
-    expect(rowLabel(row)).toBe('Ức gà');
+  it('saves a sheet item under its food name; a composer row as typed', () => {
+    expect(itemLabel(items[0])).toBe('Ức gà');
+    expect(
+      completeItems([
+        { id: 'r1', query: ' gà luộc ', ingredient: chicken, grams: '120,5' },
+        { id: 'r2', query: 'nothing picked', ingredient: null, grams: '100' },
+        { id: 'r3', query: '', ingredient: chicken, grams: '' },
+      ])
+    ).toEqual([{ ingredient: chicken, grams: 120.5, label: 'gà luộc' }]);
+  });
+
+  it('groups a named meal as one dish, an unnamed one a dish per food', () => {
+    expect(manualDishOf('Cơm gà', 'Ức gà', 2)).toEqual({
+      name: 'Cơm gà',
+      order: 0,
+    });
+    expect(manualDishOf(undefined, 'Ức gà', 2)).toEqual({
+      name: 'Ức gà',
+      order: 2,
+    });
   });
 
   it('titles an unnamed meal with its ingredient names', () => {

@@ -5,81 +5,44 @@ import { type RefObject, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import {
-  type CompleteManualMealRow,
-  rowIsComplete,
+  completeItems,
+  type ManualMealItem,
 } from '@/lib/domain/logging/manual-logging';
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import { track } from '@/lib/infra/telemetry/analytics/track';
 
+/** Save a manual meal: its foods at their grams, and its optional name. */
+export type ManualSave = (
+  items: ManualMealItem[],
+  name: string
+) => Promise<void>;
+
 /**
- * Manual (Cronometer-style) submit: ingredient ids + grams straight to the
- * save endpoint — deterministic, no streaming analysis and no AI call.
+ * Manual (Cronometer-style) save: ingredient ids + grams straight to the save
+ * endpoint — deterministic, no streaming analysis and no AI call — through
+ * the optimistic save. Says how it went (one toast either way) and resolves
+ * once the server has the meal; rejects after saying why, so a caller can
+ * keep what the user built. The phone sheets call it directly; the composer
+ * rows through `useManualSubmit`.
  */
-export function useManualSubmit(args: {
-  inputRef: RefObject<MealInputHandle | null>;
+export function useManualSave(args: {
   saveManualMeal: ReturnType<typeof useSaveManualMeal>;
   selectedDate: string;
   scrollToBottom: () => void;
-}) {
-  const { inputRef, saveManualMeal, selectedDate, scrollToBottom } = args;
-  const t = useTranslations('logging.feedArea');
-
-  return useCallback(() => {
-    const rows = (inputRef.current?.getManualRows() ?? []).filter(
-      rowIsComplete
-    );
-    if (rows.length === 0 || saveManualMeal.isPending) return;
-
-    saveManualMeal.mutate(
-      {
-        mealId: crypto.randomUUID(),
-        originDate: selectedDate,
-        loggedDate: selectedDate,
-        timezoneOffset: new Date().getTimezoneOffset(),
-        rows,
-        name: inputRef.current?.getManualName(),
-      },
-      {
-        onSuccess: () => {
-          // Clear only after the save lands — on failure the rolled-back card
-          // would otherwise leave the user with an empty composer and no way to
-          // recover the rows they typed.
-          inputRef.current?.clear();
-          toast.success(t('savedMeal'));
-          track('meal_logged', { method: 'manual' });
-        },
-        onError: (error) => {
-          toast.error(error instanceof Error ? error.message : t('saveError'));
-        },
-      }
-    );
-    scrollToBottom();
-  }, [inputRef, saveManualMeal, selectedDate, scrollToBottom, t]);
-}
-
-/**
- * The phone sheets' save: the plate's rows and its optional name, through the
- * same optimistic save as the composer rows. Resolves once the server has the
- * meal so the sheet can close on it; rejects (after saying why) so the sheet
- * stays open with the plate intact.
- */
-export function useManualSheetSave(args: {
-  saveManualMeal: ReturnType<typeof useSaveManualMeal>;
-  selectedDate: string;
-  scrollToBottom: () => void;
-}) {
+}): ManualSave {
   const { saveManualMeal, selectedDate, scrollToBottom } = args;
   const t = useTranslations('logging.feedArea');
 
   return useCallback(
-    async (rows: CompleteManualMealRow[], name: string) => {
+    async (items, name) => {
       const saving = saveManualMeal.mutateAsync({
         mealId: crypto.randomUUID(),
         originDate: selectedDate,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
-        rows,
-        name,
+        items,
+        // Blank is no name: the contract would reject an empty string.
+        name: name.trim() || undefined,
       });
       // The optimistic card is in the feed already; bring it into view.
       scrollToBottom();
@@ -94,4 +57,27 @@ export function useManualSheetSave(args: {
     },
     [saveManualMeal, selectedDate, scrollToBottom, t]
   );
+}
+
+/**
+ * The md+ composer's submit: its complete rows through `save`, clearing the
+ * composer only once the save lands — on failure the rows stay, so the user
+ * is never left with an empty composer and nothing to recover.
+ */
+export function useManualSubmit(args: {
+  inputRef: RefObject<MealInputHandle | null>;
+  save: ManualSave;
+  isSaving: boolean;
+}) {
+  const { inputRef, save, isSaving } = args;
+  return useCallback(() => {
+    const input = inputRef.current;
+    const items = completeItems(input?.getManualRows() ?? []);
+    if (items.length === 0 || isSaving) return;
+    save(items, input?.getManualName() ?? '').then(
+      () => input?.clear(),
+      // Already said why; the rows stay for another try.
+      () => {}
+    );
+  }, [inputRef, save, isSaving]);
 }

@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { saveManualMealAction } from '@/lib/actions/logging/manual-meals';
-import { parseGrams, rowLabel } from '@/lib/domain/logging/manual-logging';
+import { itemLabel } from '@/lib/domain/logging/manual-logging';
 import {
   buildOptimisticManualMeal,
   type SaveManualMealVariables,
@@ -20,9 +20,10 @@ import {
  * the logging-day prefix key, in-place authoritative overwrite on success,
  * snapshot rollback on error.
  *
- * `rows` are the complete form rows (ingredient picked + valid grams); the
- * optimistic meal is built from their client-held per-100g macros, then
- * overwritten in place by the server's authoritative meal (same id) on success.
+ * `items` are the meal's foods at their grams; the optimistic meal is built
+ * from their client-held per-100g macros, then overwritten in place by the
+ * server's authoritative meal (same id) on success. `name` arrives trimmed,
+ * and absent when blank (`useManualSave`).
  */
 export function useSaveManualMeal(userId: string) {
   const queryClient = useQueryClient();
@@ -31,14 +32,12 @@ export function useSaveManualMeal(userId: string) {
     mutationFn: (variables: SaveManualMealVariables) =>
       saveManualMealAction({
         mealId: variables.mealId,
-        // Blank is no name: the contract would reject an empty string.
-        name: variables.name?.trim() || undefined,
-        items: variables.rows.map((row) => ({
-          foodCompositionId: row.ingredient.id,
-          // rowIsComplete guaranteed a parseable positive value.
-          grams: parseGrams(row.grams) ?? 0,
-          // Persist the user's raw text as the label.
-          label: rowLabel(row),
+        name: variables.name,
+        items: variables.items.map((item) => ({
+          foodCompositionId: item.ingredient.id,
+          grams: item.grams,
+          // Persist the user's raw text (else the food's name) as the label.
+          label: itemLabel(item),
         })),
         mealSlot: variables.mealSlot,
         loggedDate: variables.loggedDate,

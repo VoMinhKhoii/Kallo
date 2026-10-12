@@ -8,8 +8,8 @@ import {
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
-  CompleteManualMealRow,
   IngredientSearchResult,
+  ManualMealItem,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualSheetLauncher } from '../manual-sheet-launcher';
 
@@ -67,7 +67,7 @@ const hidden = { hidden: true } as const;
 function Harness({
   onSave,
 }: {
-  onSave: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
+  onSave: (items: ManualMealItem[], name: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -158,14 +158,14 @@ describe('the phone manual-log sheets', () => {
     click(screen.getByRole('button', { name: 'save', ...hidden }));
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    const [rows, name] = onSave.mock.calls[0] as unknown as [
-      CompleteManualMealRow[],
+    const [items, name] = onSave.mock.calls[0] as unknown as [
+      ManualMealItem[],
       string,
     ];
     expect(name).toBe('Cơm gà trưa');
-    expect(rows).toHaveLength(1);
-    expect(rows[0].ingredient.id).toBe('fct-chicken');
-    expect(rows[0].grams).toBe('160');
+    expect(items).toHaveLength(1);
+    expect(items[0].ingredient.id).toBe('fct-chicken');
+    expect(items[0].grams).toBe(160);
   });
 
   it('keeps the plate when a save fails', async () => {

@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import type { LoggingDayData } from '@/lib/actions/meals/types';
+import { completeItems } from '@/lib/domain/logging/manual-logging';
 import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import {
   DATE,
@@ -38,7 +39,8 @@ function manualVariables() {
     originDate: DATE,
     loggedDate: DATE,
     timezoneOffset: TZ,
-    rows: makeManualRows(),
+    // The composer's rows, as the save takes them.
+    items: completeItems(makeManualRows()),
   };
 }
 
