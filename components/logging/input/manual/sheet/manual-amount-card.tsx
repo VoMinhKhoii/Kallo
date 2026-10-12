@@ -7,6 +7,7 @@ import {
   buildPieceAnchors,
   claimedAnchor,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { useStateWord } from '@/components/logging/input/manual/manual-food-row';
 import { ScanAmountInput } from '@/components/logging/input/scan/result/amount/input';
 import { cn } from '@/lib/core/ui/cn';
 import {
@@ -20,7 +21,6 @@ import {
   type IngredientSearchResult,
   MANUAL_ITEM_GRAMS_MAX,
 } from '@/lib/domain/logging/manual-logging';
-import { useStateWord } from './manual-food-row';
 import { VesselTape } from './tape/vessel-tape';
 
 const STEP =

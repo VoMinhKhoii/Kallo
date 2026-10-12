@@ -4,7 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { IngredientCombobox } from '@/components/logging/input/manual/ingredient-combobox';
-import { ManualMealTotals } from '@/components/logging/input/manual/sheet/manual-meal-totals';
+import { ManualMealTotals } from '@/components/logging/input/manual/manual-meal-totals';
 import { cn } from '@/lib/core/ui/cn';
 import {
   formatKcal,

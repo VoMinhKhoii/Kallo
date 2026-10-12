@@ -8,10 +8,14 @@ import {
 } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ManualSheetItem } from '@/lib/domain/logging/manual-display';
-import type {
-  CompleteManualMealRow,
-  IngredientSearchResult,
+import {
+  type ManualSheetItem,
+  plateTotals,
+} from '@/lib/domain/logging/manual-display';
+import {
+  type CompleteManualMealRow,
+  type IngredientSearchResult,
+  isManualMealFull,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualFoodPage } from '../manual-food-page';
 import { ManualMealSheet } from '../manual-meal-sheet';
@@ -84,7 +88,8 @@ function plate(items: ManualSheetItem[]): ManualSheetState {
     update: vi.fn(),
     remove: vi.fn(),
     itemFor: (id) => items.find((item) => item.ingredient.id === id) ?? null,
-    reset: vi.fn(),
+    totals: plateTotals(items),
+    full: isManualMealFull(items.length),
   };
 }
 
@@ -160,7 +165,7 @@ describe('the phone manual-log sheets at their edges', () => {
     expect(screen.getAllByText('0 g')).toHaveLength(3);
   });
 
-  it('a full plate blocks a new food on its page, never an update', () => {
+  it('a blocked food page turns its commit off and says why', () => {
     const props = {
       food: yogurt,
       grams: 100,
@@ -169,14 +174,14 @@ describe('the phone manual-log sheets at their edges', () => {
       onClose: vi.fn(),
     };
     const { rerender } = render(
-      <ManualFoodPage {...props} inMeal={false} mealFull />
+      <ManualFoodPage {...props} inMeal={false} blocked />
     );
     expect(screen.getByRole('button', { name: 'addToMeal' })).toBeDisabled();
     expect(screen.getByText('mealFull')).toBeInTheDocument();
     click(screen.getByRole('button', { name: 'addToMeal' }));
     expect(props.onCommit).not.toHaveBeenCalled();
 
-    rerender(<ManualFoodPage {...props} inMeal mealFull />);
+    rerender(<ManualFoodPage {...props} inMeal />);
     expect(screen.getByRole('button', { name: 'update' })).toBeEnabled();
     expect(screen.queryByText('mealFull')).not.toBeInTheDocument();
   });

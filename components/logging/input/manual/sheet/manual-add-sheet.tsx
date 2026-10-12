@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -9,21 +8,13 @@ import { DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import {
   initialManualGrams,
   type ManualSheetItem,
-  mealKcalWith,
-  sheetItemsAsRows,
+  manualPeek,
 } from '@/lib/domain/logging/manual-display';
-import {
-  formatKcal,
-  type IngredientSearchResult,
-  isManualMealFull,
-  totalsForRows,
-} from '@/lib/domain/logging/manual-logging';
+import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
 import { ManualFoodPage } from './manual-food-page';
+import { ManualPeekStrip, PEEK_HEIGHT } from './manual-peek-strip';
 import { ManualSearchPage } from './manual-search-page';
 import type { ManualSheetState } from './use-manual-sheet';
-
-/** How much of the meal sheet's strip shows above this one. */
-const PEEK = 26;
 
 /** A page slides a full width: in from the side it travels toward. */
 const PAGE = {
@@ -71,30 +62,10 @@ export function ManualAddSheet({
   };
   const leave = () => (editing ? close() : setPage(null));
 
-  const full = isManualMealFull(meal.items.length);
-  // Unknown calories read "—"; only an empty plate is a known 0.
-  const total =
-    totalsForRows(sheetItemsAsRows(meal.items)).caloriesKcal ??
-    (meal.items.length ? null : 0);
-  const summary = t('peek', {
-    count: t('ingredientCount', { count: meal.items.length }),
-    kcal: formatKcal(total),
-  });
-  // Nothing to promise for a food with no calorie figure, or a new food that
-  // a full plate cannot take.
-  const promises =
-    page !== null &&
-    page.food.per100g.caloriesKcal != null &&
-    !(full && page.itemId === null);
-  const after = promises
-    ? formatKcal(
-        mealKcalWith(meal.items, page.food, grams, page.itemId ?? undefined)
-      )
-    : null;
-  const peekAfter =
-    page && after !== null && !(page.itemId && after === formatKcal(total))
-      ? t(page.itemId ? 'peekAfter' : 'peekWith', { kcal: after })
-      : null;
+  // A new food on a full plate cannot go in: its page says so, and the strip
+  // promises nothing for it.
+  const itemId = page?.itemId ?? null;
+  const blocked = meal.full && page !== null && itemId === null;
 
   return (
     <VaulDrawer.NestedRoot open={open} onOpenChange={onOpenChange}>
@@ -112,24 +83,15 @@ export function ManualAddSheet({
         className="mt-0 h-[calc(100dvh-env(safe-area-inset-top)-8px)] max-h-none rounded-none border-0 bg-transparent font-sans-display text-kallo-text data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:border-0 [&>div:first-child]:hidden"
       >
         <DrawerTitle className="sr-only">{t('sheetTitle')}</DrawerTitle>
-        <div
-          aria-hidden
-          className="absolute inset-x-3.5 top-0 rounded-t-[30px] bg-[#d9d6ce] px-6 pt-[7px] text-center text-[#55534d] text-[12px] tabular-nums leading-[15px]"
-          style={{ height: PEEK + 34 }}
-        >
-          <span className="inline-flex max-w-full items-center gap-1 truncate">
-            {!page && meal.items.length === 0 ? t('peekEmpty') : summary}
-            {peekAfter && (
-              <>
-                <ArrowRight className="size-3 shrink-0" strokeWidth={1.5} />
-                <span className="truncate">{peekAfter}</span>
-              </>
-            )}
-          </span>
-        </div>
+        <ManualPeekStrip
+          peek={manualPeek(
+            meal.items,
+            page && !blocked ? { ...page, grams } : null
+          )}
+        />
         <div
           className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[34px] bg-kallo-track shadow-[0_-6px_24px_rgba(0,0,0,0.18)]"
-          style={{ marginTop: PEEK }}
+          style={{ marginTop: PEEK_HEIGHT }}
         >
           <div className="absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-kallo-border" />
           {/* `custom` reaches the EXITING page too, so both travel the same
@@ -153,21 +115,21 @@ export function ManualAddSheet({
                 <ManualFoodPage
                   food={page.food}
                   grams={grams}
-                  inMeal={page.itemId !== null}
-                  mealFull={full}
+                  inMeal={itemId !== null}
+                  blocked={blocked}
                   onGrams={setGrams}
                   onClose={close}
                   onBack={editing ? undefined : leave}
                   onRemove={
-                    page.itemId
+                    itemId
                       ? () => {
-                          meal.remove(page.itemId as string);
+                          meal.remove(itemId);
                           leave();
                         }
                       : undefined
                   }
                   onCommit={() => {
-                    if (page.itemId) meal.update(page.itemId, grams);
+                    if (itemId) meal.update(itemId, grams);
                     else {
                       meal.add(page.food, grams);
                       setAddedAny(true);

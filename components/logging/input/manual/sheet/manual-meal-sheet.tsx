@@ -1,28 +1,18 @@
 'use client';
 
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { ManualMealTotals } from '@/components/logging/input/manual/manual-meal-totals';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
+import type { ManualSheetItem } from '@/lib/domain/logging/manual-display';
 import {
-  formatGrams,
-  kcalAt,
-  type ManualSheetItem,
-  mealSubtitle,
-  sheetItemsAsRows,
-} from '@/lib/domain/logging/manual-display';
-import {
-  formatKcal,
-  isManualMealFull,
-  MANUAL_MEAL_MAX_ITEMS,
   MANUAL_NAME_MAX,
   manualMealTitle,
-  totalsForRows,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualAddSheet } from './manual-add-sheet';
-import { ManualFoodRow, useStateWord } from './manual-food-row';
-import { ManualMealTotals } from './manual-meal-totals';
+import { ManualMealItems } from './manual-meal-items';
 import type { ManualSheetState } from './use-manual-sheet';
 
 /**
@@ -44,15 +34,12 @@ export function ManualMealSheet({
   onSave: (name: string) => Promise<void>;
 }) {
   const t = useTranslations('logging.manualLogging');
-  const stateWord = useStateWord();
   const [saving, setSaving] = useState(false);
   const [add, setAdd] = useState<{
     open: boolean;
     session: number;
     editing: ManualSheetItem | null;
   }>({ open: false, session: 0, editing: null });
-  const totals = totalsForRows(sheetItemsAsRows(meal.items));
-  const full = isManualMealFull(meal.items.length);
   const openAdd = (editing: ManualSheetItem | null) =>
     setAdd((prev) => ({ open: true, session: prev.session + 1, editing }));
 
@@ -60,7 +47,7 @@ export function ManualMealSheet({
     setSaving(true);
     try {
       await onSave(meal.name);
-      meal.reset();
+      // The plate goes when the next sheet opens, not while this one slides.
       onOpenChange(false);
     } catch {
       // The save path has already said why (a toast); the plate stays.
@@ -112,58 +99,14 @@ export function ManualMealSheet({
             />
           </label>
           <div className="mt-3">
-            <ManualMealTotals totals={totals} empty={meal.items.length === 0} />
+            <ManualMealTotals totals={meal.totals} />
           </div>
-          {meal.items.length > 0 && (
-            <>
-              <p className="mx-1 mt-4 mb-2 text-[14px] text-kallo-text-muted">
-                {t('ingredientCount', { count: meal.items.length })}
-              </p>
-              <div className="rounded-[22px] bg-white px-4">
-                {meal.items.map((item, index) => {
-                  const grams = `${formatGrams(item.grams)} g`;
-                  return (
-                    <div
-                      key={item.id}
-                      className={
-                        index > 0 ? 'border-kallo-border border-t' : ''
-                      }
-                    >
-                      <ManualFoodRow
-                        name={item.ingredient.namePrimary}
-                        nameLines={1}
-                        subtitle={mealSubtitle(
-                          item.ingredient,
-                          stateWord,
-                          grams
-                        )}
-                        kcal={formatKcal(kcalAt(item.ingredient, item.grams))}
-                        quietKcal
-                        label={`${item.ingredient.namePrimary}, ${grams}`}
-                        onClick={saving ? undefined : () => openAdd(item)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          <button
-            type="button"
-            disabled={saving || full}
-            onClick={() => openAdd(null)}
-            className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-white px-4 py-2 text-left text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
-          >
-            <Plus aria-hidden className="size-6 shrink-0" strokeWidth={1.5} />
-            <span className="flex flex-col">
-              {t('addIngredient')}
-              {full && (
-                <span className="text-[14px] text-kallo-text-muted">
-                  {t('mealFull', { count: MANUAL_MEAL_MAX_ITEMS })}
-                </span>
-              )}
-            </span>
-          </button>
+          <ManualMealItems
+            items={meal.items}
+            full={meal.full}
+            onOpen={saving ? undefined : openAdd}
+            onAdd={saving ? undefined : () => openAdd(null)}
+          />
         </div>
         <div className="shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
           <button

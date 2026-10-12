@@ -1,17 +1,20 @@
-// What the manual-log surfaces print and compute for a food: the subtitle
+// What the manual-log surfaces print and compute for a food — the subtitle
 // under its name, the vessel its amount ruler offers, where its amount opens
-// and how − / + step. Pure — shared by the phone sheets and the desktop
-// composer rows, and mirrored by the Flutter app's
+// and how − / + step — and for the phone sheets' plate: its totals and the
+// peek strip over it. Pure, and mirrored by the Flutter app's
 // `features/logging/logic/manual/` (keep in sync).
 
 import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
 import { midG } from '@/lib/ai/portion/vessel/geometry';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import {
+  type CompleteManualMealRow,
+  type IngredientMacrosPer100g,
   type IngredientSearchResult,
   type IngredientVesselHint,
   MANUAL_ITEM_GRAMS_MAX,
-  totalsForRows,
+  macrosAt,
+  sumMacros,
 } from '@/lib/domain/logging/manual-logging';
 
 /** A food's subtitle: a `lead` in ink (its state, or a packaged food's brand)
@@ -125,7 +128,9 @@ export interface ManualSheetItem {
 
 /** The sheet's items as the save path's form rows. The label falls back to
  *  the food's own name (`rowLabel`), so `query` stays empty. */
-export function sheetItemsAsRows(items: ManualSheetItem[]) {
+export function sheetItemsAsRows(
+  items: ManualSheetItem[]
+): CompleteManualMealRow[] {
   return items.map((item) => ({
     id: item.id,
     query: '',
@@ -134,24 +139,60 @@ export function sheetItemsAsRows(items: ManualSheetItem[]) {
   }));
 }
 
-/** Calories of [food] at [grams]; null stays null (unknown ≠ 0). */
-export function kcalAt(
-  food: IngredientSearchResult,
-  grams: number
-): number | null {
-  const per100 = food.per100g.caloriesKcal;
-  return per100 == null ? null : (per100 * grams) / 100;
+const EMPTY_PLATE: IngredientMacrosPer100g = {
+  caloriesKcal: 0,
+  proteinG: 0,
+  carbohydrateG: 0,
+  fatG: 0,
+};
+
+/** The plate's totals. An empty plate is a known 0; on a plate with food, a
+ *  nutrient none of its foods carries is unknown — null, shown "—". */
+export function plateTotals(items: ManualSheetItem[]): IngredientMacrosPer100g {
+  return items.length === 0
+    ? EMPTY_PLATE
+    : sumMacros(items.map((item) => macrosAt(item.ingredient, item.grams)));
 }
 
-/** The meal's calories with `food` at `grams` in it — added, or replacing
- *  the amount of the item `replacing`. */
-export function mealKcalWith(
+/** A food's page open over the plate: a new food, or the item it edits. */
+export interface ManualPeekPage {
+  food: IngredientSearchResult;
+  grams: number;
+  itemId: string | null;
+}
+
+/** What the add sheet's peek strip says about the plate under it. */
+export type ManualPeek =
+  | { kind: 'empty' }
+  | { kind: 'total'; count: number; kcal: number | null }
+  | {
+      kind: 'with' | 'after';
+      count: number;
+      kcal: number | null;
+      after: number;
+    };
+
+/**
+ * The peek strip: what is on the plate and — with a food's page open — what
+ * the plate becomes with it, added ("with") or at its new amount ("after").
+ * Nothing after the arrow for a food with no calorie figure, or for an edit
+ * that has not moved the total. Pass no page for a food the plate cannot take.
+ */
+export function manualPeek(
   items: ManualSheetItem[],
-  food: IngredientSearchResult,
-  grams: number,
-  replacing?: string
-): number {
-  const kept = items.filter((item) => item.id !== replacing);
-  const total = totalsForRows(sheetItemsAsRows(kept)).caloriesKcal ?? 0;
-  return total + (kcalAt(food, grams) ?? 0);
+  page: ManualPeekPage | null
+): ManualPeek {
+  if (!page && items.length === 0) return { kind: 'empty' };
+  const count = items.length;
+  const kcal = plateTotals(items).caloriesKcal;
+  const added = page ? macrosAt(page.food, page.grams).caloriesKcal : null;
+  if (!page || added == null) return { kind: 'total', count, kcal };
+  const kept = items.filter((item) => item.id !== page.itemId);
+  const after = (plateTotals(kept).caloriesKcal ?? 0) + added;
+  const unmoved =
+    page.itemId !== null &&
+    kcal !== null &&
+    Math.round(after) === Math.round(kcal);
+  if (unmoved) return { kind: 'total', count, kcal };
+  return { kind: page.itemId ? 'after' : 'with', count, kcal, after };
 }

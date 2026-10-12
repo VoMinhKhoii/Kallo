@@ -4,9 +4,10 @@ import {
   formatGrams,
   initialManualGrams,
   type ManualSheetItem,
+  manualPeek,
   manualRulerRange,
-  mealKcalWith,
   mealSubtitle,
+  plateTotals,
   searchSubtitle,
   sheetItemsAsRows,
   steppedManualGrams,
@@ -138,10 +139,68 @@ describe('the meal', () => {
     { id: 'i1', ingredient: chicken, grams: 150 },
   ];
 
-  it('totals with a food added, or replacing its own amount', () => {
-    expect(mealKcalWith(items, chicken, 100)).toBe(180 + 120);
-    expect(mealKcalWith(items, chicken, 100, 'i1')).toBe(120);
-    expect(mealKcalWith([], chicken, 50)).toBe(60);
+  const mystery = food({
+    id: 'm',
+    per100g: {
+      caloriesKcal: null,
+      proteinG: 4.1,
+      carbohydrateG: null,
+      fatG: null,
+    },
+  });
+
+  it('an empty plate is a known 0; a value no food carries is unknown', () => {
+    expect(plateTotals([])).toEqual({
+      caloriesKcal: 0,
+      proteinG: 0,
+      carbohydrateG: 0,
+      fatG: 0,
+    });
+    expect(plateTotals(items).caloriesKcal).toBe(180);
+    const unknown = plateTotals([
+      { id: 'm1', ingredient: mystery, grams: 100 },
+    ]);
+    expect(unknown.caloriesKcal).toBeNull();
+    expect(unknown.proteinG).toBeCloseTo(4.1);
+  });
+
+  it('peeks at the plate, and at what a food would make of it', () => {
+    expect(manualPeek([], null)).toEqual({ kind: 'empty' });
+    expect(manualPeek(items, null)).toEqual({
+      kind: 'total',
+      count: 1,
+      kcal: 180,
+    });
+    // A new food: the plate with it.
+    expect(
+      manualPeek(items, { food: chicken, grams: 100, itemId: null })
+    ).toEqual({ kind: 'with', count: 1, kcal: 180, after: 300 });
+    // On an empty plate a food's page still counts the plate, not "empty".
+    expect(manualPeek([], { food: chicken, grams: 50, itemId: null })).toEqual({
+      kind: 'with',
+      count: 0,
+      kcal: 0,
+      after: 60,
+    });
+    // An edit: its new amount replaces its old one…
+    expect(
+      manualPeek(items, { food: chicken, grams: 100, itemId: 'i1' })
+    ).toEqual({ kind: 'after', count: 1, kcal: 180, after: 120 });
+    // …and promises nothing until it moves the total.
+    expect(
+      manualPeek(items, { food: chicken, grams: 150, itemId: 'i1' })
+    ).toEqual({ kind: 'total', count: 1, kcal: 180 });
+    // A food with no calorie figure promises nothing.
+    expect(
+      manualPeek(items, { food: mystery, grams: 100, itemId: null })
+    ).toEqual({ kind: 'total', count: 1, kcal: 180 });
+    // Unknown plate calories stay unknown, not 0.
+    const unknownPlate = [{ id: 'm1', ingredient: mystery, grams: 100 }];
+    expect(manualPeek(unknownPlate, null)).toEqual({
+      kind: 'total',
+      count: 1,
+      kcal: null,
+    });
   });
 
   it('saves sheet items as rows labelled by the food name', () => {

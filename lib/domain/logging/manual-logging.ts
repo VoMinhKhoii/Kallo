@@ -140,20 +140,49 @@ export function hasCompleteRow(rows: ManualMealRow[]): boolean {
   return rows.some(rowIsComplete);
 }
 
-/** Macros for a single row: per100g × grams/100. Null until the row is
- *  complete; null nutrients stay null (unknown ≠ zero). */
-export function rowMacros(row: ManualMealRow): IngredientMacrosPer100g | null {
-  if (!row.ingredient) return null;
-  const grams = parseGrams(row.grams);
-  if (grams === null) return null;
+/** Macros for `food` at `grams`: per100g × grams/100. Null nutrients stay
+ *  null (unknown ≠ zero). The one scaling rule every manual surface uses. */
+export function macrosAt(
+  food: IngredientSearchResult,
+  grams: number
+): IngredientMacrosPer100g {
   const ratio = grams / 100;
   const scale = (v: number | null) => (v == null ? null : v * ratio);
   return {
-    caloriesKcal: scale(row.ingredient.per100g.caloriesKcal),
-    proteinG: scale(row.ingredient.per100g.proteinG),
-    carbohydrateG: scale(row.ingredient.per100g.carbohydrateG),
-    fatG: scale(row.ingredient.per100g.fatG),
+    caloriesKcal: scale(food.per100g.caloriesKcal),
+    proteinG: scale(food.per100g.proteinG),
+    carbohydrateG: scale(food.per100g.carbohydrateG),
+    fatG: scale(food.per100g.fatG),
   };
+}
+
+/** Sum per nutrient: the sum of the non-null values, or null when none
+ *  carries it — including an empty list. */
+export function sumMacros(
+  list: IngredientMacrosPer100g[]
+): IngredientMacrosPer100g {
+  const totals: IngredientMacrosPer100g = {
+    caloriesKcal: null,
+    proteinG: null,
+    carbohydrateG: null,
+    fatG: null,
+  };
+  for (const macros of list) {
+    for (const key of Object.keys(totals) as (keyof typeof totals)[]) {
+      const value = macros[key];
+      if (value == null) continue;
+      totals[key] = (totals[key] ?? 0) + value;
+    }
+  }
+  return totals;
+}
+
+/** Macros for a single row. Null until the row is complete. */
+export function rowMacros(row: ManualMealRow): IngredientMacrosPer100g | null {
+  const grams = parseGrams(row.grams);
+  return row.ingredient && grams !== null
+    ? macrosAt(row.ingredient, grams)
+    : null;
 }
 
 /**
@@ -175,23 +204,12 @@ export function scaleNutritionValues(
   return result as unknown as NutritionValues;
 }
 
-/** Sum macros across all complete rows. Per nutrient: sum of non-null values,
- *  or null when no row carries it. */
+/** Sum macros across the complete rows; incomplete rows count for nothing,
+ *  and a nutrient no complete row carries stays null. */
 export function totalsForRows(rows: ManualMealRow[]): IngredientMacrosPer100g {
-  const totals: IngredientMacrosPer100g = {
-    caloriesKcal: null,
-    proteinG: null,
-    carbohydrateG: null,
-    fatG: null,
-  };
-  for (const row of rows) {
-    const macros = rowMacros(row);
-    if (!macros) continue;
-    for (const key of Object.keys(totals) as (keyof typeof totals)[]) {
-      const value = macros[key];
-      if (value == null) continue;
-      totals[key] = (totals[key] ?? 0) + value;
-    }
-  }
-  return totals;
+  return sumMacros(
+    rows
+      .map(rowMacros)
+      .filter((macros): macros is IngredientMacrosPer100g => macros !== null)
+  );
 }

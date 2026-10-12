@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { ManualSheetItem } from '@/lib/domain/logging/manual-display';
+import {
+  type ManualSheetItem,
+  plateTotals,
+} from '@/lib/domain/logging/manual-display';
 import {
   type IngredientSearchResult,
   isManualMealFull,
@@ -9,16 +12,32 @@ import {
 
 /**
  * The phone sheets' meal: the foods on the plate, each weighed as it went in,
- * and the optional name. The launcher resets it as each new sheet opens.
+ * the optional name, and what the plate adds up to.
+ *
+ * Each open is a new meal, as on iOS: whatever plate a closed sheet left
+ * behind is dropped the moment the next one opens — however it was closed
+ * (saved, X, swipe, overlay), and never while it is still sliding away.
  */
-export function useManualSheet() {
+export function useManualSheet(open: boolean) {
   const [items, setItems] = useState<ManualSheetItem[]>([]);
   const [name, setName] = useState('');
+  const [shown, setShown] = useState(open);
+  if (open !== shown) {
+    setShown(open);
+    if (open) {
+      setItems([]);
+      setName('');
+    }
+  }
 
   return {
     items,
     name,
     setName,
+    /** Empty plate 0; a nutrient none of its foods carries, null. */
+    totals: plateTotals(items),
+    /** As many foods as a meal may hold: a new one cannot go in. */
+    full: isManualMealFull(items.length),
     add: (ingredient: IngredientSearchResult, grams: number) =>
       setItems((prev) =>
         isManualMealFull(prev.length)
@@ -33,10 +52,6 @@ export function useManualSheet() {
       setItems((prev) => prev.filter((item) => item.id !== id)),
     itemFor: (ingredientId: string) =>
       items.find((item) => item.ingredient.id === ingredientId) ?? null,
-    reset: () => {
-      setItems([]);
-      setName('');
-    },
   };
 }
 

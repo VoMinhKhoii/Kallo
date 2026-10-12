@@ -2,7 +2,6 @@
 
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { sheetItemsAsRows } from '@/lib/domain/logging/manual-display';
 import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
 import { ManualMealSheet } from './manual-meal-sheet';
@@ -11,10 +10,6 @@ import { useManualSheet } from './use-manual-sheet';
 /**
  * Manual mode on a phone: the composer's field becomes one tap into the
  * manual-log sheet — the same two stacked sheets the iOS app opens.
- *
- * Each open is a new meal, as on iOS: whatever plate a closed sheet left
- * behind is dropped the moment the next one opens — however it was closed,
- * and never while it is still sliding away.
  */
 export function ManualSheetLauncher({
   open,
@@ -28,12 +23,7 @@ export function ManualSheetLauncher({
   onSave: (rows: CompleteManualMealRow[], name: string) => Promise<void>;
 }) {
   const t = useTranslations('logging.manualLogging');
-  const meal = useManualSheet();
-  const [shown, setShown] = useState(open);
-  if (open !== shown) {
-    setShown(open);
-    if (open) meal.reset();
-  }
+  const meal = useManualSheet(open);
 
   return (
     <>

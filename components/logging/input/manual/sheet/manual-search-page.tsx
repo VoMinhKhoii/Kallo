@@ -3,6 +3,10 @@
 import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Ref } from 'react';
+import {
+  ManualFoodRow,
+  useStateWord,
+} from '@/components/logging/input/manual/manual-food-row';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { SheetCapsuleButton } from '@/components/shared/sheet-capsule-button';
 import { useIngredientSearch } from '@/hooks/meals/queries/use-ingredient-search';
@@ -16,7 +20,6 @@ import {
   formatKcal,
   type IngredientSearchResult,
 } from '@/lib/domain/logging/manual-logging';
-import { ManualFoodRow, useStateWord } from './manual-food-row';
 
 /**
  * The add sheet's first level (approved canvas, G2): the search pill, then

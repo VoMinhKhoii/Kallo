@@ -5,7 +5,7 @@ import { useId, useState } from 'react';
 import {
   ManualSubtitleLine,
   useStateWord,
-} from '@/components/logging/input/manual/sheet/manual-food-row';
+} from '@/components/logging/input/manual/manual-food-row';
 import { useIngredientSearch } from '@/hooks/meals/queries/use-ingredient-search';
 import { cn } from '@/lib/core/ui/cn';
 import { searchSubtitle } from '@/lib/domain/logging/manual-display';

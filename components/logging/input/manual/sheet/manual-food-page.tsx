@@ -7,6 +7,7 @@ import { englishName } from '@/lib/domain/logging/manual-display';
 import {
   type IngredientSearchResult,
   MANUAL_MEAL_MAX_ITEMS,
+  macrosAt,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualAmountCard } from './manual-amount-card';
 
@@ -24,7 +25,7 @@ export function ManualFoodPage({
   food,
   grams,
   inMeal,
-  mealFull = false,
+  blocked = false,
   onGrams,
   onCommit,
   onBack,
@@ -34,8 +35,8 @@ export function ManualFoodPage({
   food: IngredientSearchResult;
   grams: number;
   inMeal: boolean;
-  /** The meal holds as many foods as it may: a new one cannot go in. */
-  mealFull?: boolean;
+  /** A new food a full meal cannot take: the commit is off, and says why. */
+  blocked?: boolean;
   onGrams: (grams: number) => void;
   onCommit: () => void;
   /** Back to the results; absent when opened from the meal itself. */
@@ -45,10 +46,7 @@ export function ManualFoodPage({
 }) {
   const t = useTranslations('logging.manualLogging');
   const macros = useTranslations('logging');
-  const scale = (value: number | null) =>
-    value === null ? null : (value * grams) / 100;
-  const per100 = food.per100g;
-  const blocked = mealFull && !inMeal;
+  const at = macrosAt(food, grams);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ResponsiveSheetHeader
@@ -62,11 +60,11 @@ export function ManualFoodPage({
         <ScanResultHeader
           name={food.namePrimary}
           subtitle={englishName(food)}
-          kcal={scale(per100.caloriesKcal)}
+          kcal={at.caloriesKcal}
           grams={{
-            protein: scale(per100.proteinG),
-            carbohydrate: scale(per100.carbohydrateG),
-            fat: scale(per100.fatG),
+            protein: at.proteinG,
+            carbohydrate: at.carbohydrateG,
+            fat: at.fatG,
           }}
           labels={{
             protein: macros('barcodeProtein'),
