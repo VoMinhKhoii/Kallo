@@ -8,7 +8,7 @@ import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/surface/kallo_button.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_theme.dart';
-import '../../../../data/manual_log_providers.dart';
+import '../../../../logic/manual/manual_amount.dart';
 import '../../scan/result/header.dart';
 import 'manual_amount_card.dart';
 

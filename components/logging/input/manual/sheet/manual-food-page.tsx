@@ -4,9 +4,11 @@ import { useTranslations } from 'next-intl';
 import { ScanResultHeader } from '@/components/logging/input/scan/result/header';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { englishName } from '@/lib/domain/logging/manual-display';
-import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
+import {
+  type IngredientSearchResult,
+  MANUAL_MEAL_MAX_ITEMS,
+} from '@/lib/domain/logging/manual-logging';
 import { ManualAmountCard } from './manual-amount-card';
-import { MAX_MANUAL_ITEMS } from './use-manual-sheet';
 
 const PRIMARY =
   'flex h-[52px] w-full items-center justify-center rounded-full bg-kallo-hover font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-55 disabled:hover:bg-kallo-hover';
@@ -79,7 +81,7 @@ export function ManualFoodPage({
       <div className="shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
         {blocked && (
           <p className="mb-2 text-center text-[14px] text-kallo-text-muted">
-            {t('mealFull', { count: MAX_MANUAL_ITEMS })}
+            {t('mealFull', { count: MANUAL_MEAL_MAX_ITEMS })}
           </p>
         )}
         <button

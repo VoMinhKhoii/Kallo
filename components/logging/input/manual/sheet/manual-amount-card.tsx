@@ -10,7 +10,6 @@ import {
 import { ScanAmountInput } from '@/components/logging/input/scan/result/amount/input';
 import { cn } from '@/lib/core/ui/cn';
 import {
-  MANUAL_GRAMS_MAX,
   MANUAL_GRAMS_MIN,
   manualRulerRange,
   steppedManualGrams,
@@ -19,6 +18,7 @@ import {
 import {
   formatKcal,
   type IngredientSearchResult,
+  MANUAL_ITEM_GRAMS_MAX,
 } from '@/lib/domain/logging/manual-logging';
 import { useStateWord } from './manual-food-row';
 import { VesselTape } from './tape/vessel-tape';
@@ -98,7 +98,10 @@ export function ManualAmountCard({
               disabled={false}
               onChange={(value) =>
                 onGrams(
-                  Math.min(MANUAL_GRAMS_MAX, Math.max(MANUAL_GRAMS_MIN, value))
+                  Math.min(
+                    MANUAL_ITEM_GRAMS_MAX,
+                    Math.max(MANUAL_GRAMS_MIN, value)
+                  )
                 )
               }
             />

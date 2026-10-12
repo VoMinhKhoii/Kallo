@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../../models/nutrition/ingredient.dart';
-import '../../../../data/manual_log_providers.dart';
+import '../../../../logic/manual/manual_amount.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../theme/calm_tokens.dart';

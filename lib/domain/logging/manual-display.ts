@@ -10,6 +10,7 @@ import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import {
   type IngredientSearchResult,
   type IngredientVesselHint,
+  MANUAL_ITEM_GRAMS_MAX,
   totalsForRows,
 } from '@/lib/domain/logging/manual-logging';
 
@@ -74,9 +75,9 @@ export function vesselFromHint(
   return { family: hint.family, tier: chen ? 1 : 2, dishClass: hint.dishClass };
 }
 
-/** The save contract's bounds on one item, and one − / + press. */
+/** The amount field's floor — whole grams, never 0 (the contract's ceiling is
+ *  `MANUAL_ITEM_GRAMS_MAX`) — and one − / + press. */
 export const MANUAL_GRAMS_MIN = 1;
-export const MANUAL_GRAMS_MAX = 5000;
 export const MANUAL_GRAM_STEP = 10;
 
 /** What a food's page opens at: its vessel's everyday tier, else 100 g. */
@@ -99,7 +100,7 @@ export function steppedManualGrams(
     direction < 0
       ? (Math.ceil(grams / MANUAL_GRAM_STEP) - 1) * MANUAL_GRAM_STEP
       : (Math.floor(grams / MANUAL_GRAM_STEP) + 1) * MANUAL_GRAM_STEP;
-  if (next < MANUAL_GRAM_STEP || next > MANUAL_GRAMS_MAX) return null;
+  if (next < MANUAL_GRAM_STEP || next > MANUAL_ITEM_GRAMS_MAX) return null;
   return next;
 }
 

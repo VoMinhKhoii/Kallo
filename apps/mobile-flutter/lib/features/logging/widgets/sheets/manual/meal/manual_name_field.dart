@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../shared/widgets/form/kallo_text_field.dart';
+import '../../../../logic/manual/manual_amount.dart';
 import '../../../../../../theme/calm_tokens.dart';
 
 /// "Meal name" over an optional pill field. Its placeholder IS the default —
@@ -39,7 +40,7 @@ class ManualNameField extends StatelessWidget {
           child: KalloTextField(
             controller: controller,
             enabled: enabled,
-            maxLength: 200,
+            maxLength: manualNameMaxLength,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.done,
             hintText:

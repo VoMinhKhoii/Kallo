@@ -7,6 +7,18 @@
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 
+/** The manual save contract's bounds — one number each for the contract, the
+ *  phone sheets and the composer rows: the foods one meal holds, the grams one
+ *  food may weigh, and the length of a meal's (or a food's) name. */
+export const MANUAL_MEAL_MAX_ITEMS = 30;
+export const MANUAL_ITEM_GRAMS_MAX = 5000;
+export const MANUAL_NAME_MAX = 200;
+
+/** The meal holds as many foods as it may: a new one cannot go in. */
+export function isManualMealFull(itemCount: number): boolean {
+  return itemCount >= MANUAL_MEAL_MAX_ITEMS;
+}
+
 /** Round a kcal value for display; unknown renders as an em dash, never 0. */
 export function formatKcal(value: number | null): string {
   if (value == null) return '—';

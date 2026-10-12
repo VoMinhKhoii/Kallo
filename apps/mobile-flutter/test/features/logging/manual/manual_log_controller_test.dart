@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/data/manual_log_providers.dart';
+import 'package:kallo_mobile/features/logging/logic/manual/manual_amount.dart';
 import 'package:kallo_mobile/models/nutrition/ingredient.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
 

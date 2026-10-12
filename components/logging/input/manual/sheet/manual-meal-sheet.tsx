@@ -14,13 +14,16 @@ import {
 } from '@/lib/domain/logging/manual-display';
 import {
   formatKcal,
+  isManualMealFull,
+  MANUAL_MEAL_MAX_ITEMS,
+  MANUAL_NAME_MAX,
   manualMealTitle,
   totalsForRows,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualAddSheet } from './manual-add-sheet';
 import { ManualFoodRow, useStateWord } from './manual-food-row';
 import { ManualMealTotals } from './manual-meal-totals';
-import { MAX_MANUAL_ITEMS, type ManualSheetState } from './use-manual-sheet';
+import type { ManualSheetState } from './use-manual-sheet';
 
 /**
  * The phone's manual log (approved canvas, E1) — the Flutter `ManualLogSheet`
@@ -49,7 +52,7 @@ export function ManualMealSheet({
     editing: ManualSheetItem | null;
   }>({ open: false, session: 0, editing: null });
   const totals = totalsForRows(sheetItemsAsRows(meal.items));
-  const full = meal.items.length >= MAX_MANUAL_ITEMS;
+  const full = isManualMealFull(meal.items.length);
   const openAdd = (editing: ManualSheetItem | null) =>
     setAdd((prev) => ({ open: true, session: prev.session + 1, editing }));
 
@@ -94,7 +97,7 @@ export function ManualMealSheet({
             </span>
             <input
               value={meal.name}
-              maxLength={200}
+              maxLength={MANUAL_NAME_MAX}
               disabled={saving}
               onChange={(event) => meal.setName(event.target.value)}
               placeholder={
@@ -156,7 +159,7 @@ export function ManualMealSheet({
               {t('addIngredient')}
               {full && (
                 <span className="text-[14px] text-kallo-text-muted">
-                  {t('mealFull', { count: MAX_MANUAL_ITEMS })}
+                  {t('mealFull', { count: MANUAL_MEAL_MAX_ITEMS })}
                 </span>
               )}
             </span>

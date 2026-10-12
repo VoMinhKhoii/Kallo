@@ -1,5 +1,6 @@
-/// The food page's amount arithmetic: where it opens, how − / + step, and
-/// the range its vessel ruler spans.
+/// The food page's amount arithmetic — where it opens, how − / + step, the
+/// range its vessel ruler spans — and the save contract's bounds the sheets
+/// hold the meal to.
 library;
 
 import 'dart:math' as math;
@@ -8,9 +9,16 @@ import '../../../../models/nutrition/ingredient.dart';
 import '../../../../models/nutrition/vessel.dart';
 import '../portion/portion_anchors.dart';
 
-/// The save contract's bounds on one item's grams.
+/// The save contract's bounds on one item's grams (the floor is the amount
+/// field's: whole grams, never 0).
 const double manualGramsMin = 1;
 const double manualGramsMax = 5000;
+
+/// The most foods one manual meal holds — the save contract's cap.
+const int maxManualItems = 30;
+
+/// The longest meal name the save contract takes.
+const int manualNameMaxLength = 200;
 
 /// One − / + press.
 const double manualGramStep = 10;

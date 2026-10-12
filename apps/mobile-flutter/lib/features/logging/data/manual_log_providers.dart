@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/ingredient.dart';
+import '../logic/manual/manual_amount.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 
@@ -46,9 +47,6 @@ final ingredientSearchProvider = FutureProvider.autoDispose.family<
           .toList();
   return results;
 });
-
-/// The most items one manual meal may hold — the save contract's cap.
-const int maxManualItems = 30;
 
 class ManualLogState {
   final List<ManualLogItem> items;
@@ -93,7 +91,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     IngredientSearchResult ingredient, {
     required double grams,
   }) {
-    if (state.items.length >= maxManualItems) return;
+    if (state.isFull) return;
     state = state.copyWith(
       items: [
         ...state.items,
@@ -103,7 +101,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
   }
 
   void updateGrams(String itemId, double? grams) {
-    final clamped = grams?.clamp(0, 5000).toDouble();
+    final clamped = grams?.clamp(manualGramsMin, manualGramsMax).toDouble();
     state = state.copyWith(
       items: [
         for (final item in state.items)

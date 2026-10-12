@@ -5,10 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { IngredientCombobox } from '@/components/logging/input/manual/ingredient-combobox';
 import { ManualMealTotals } from '@/components/logging/input/manual/sheet/manual-meal-totals';
-import { MAX_MANUAL_ITEMS } from '@/components/logging/input/manual/sheet/use-manual-sheet';
 import { cn } from '@/lib/core/ui/cn';
 import {
   formatKcal,
+  isManualMealFull,
+  MANUAL_MEAL_MAX_ITEMS,
+  MANUAL_NAME_MAX,
   type ManualMealRow,
   manualMealTitle,
   rowIsComplete,
@@ -54,7 +56,7 @@ export function ManualLoggingControls({
   const totals = totalsForRows(rows);
   const hasTotals = totals.caloriesKcal != null;
   // The save takes at most this many foods; past it, "Add food" says why.
-  const full = rows.length >= MAX_MANUAL_ITEMS;
+  const full = isManualMealFull(rows.length);
 
   const titled = rows.filter(rowIsComplete).map(rowLabel);
   return (
@@ -65,7 +67,7 @@ export function ManualLoggingControls({
         </span>
         <input
           value={name}
-          maxLength={200}
+          maxLength={MANUAL_NAME_MAX}
           disabled={disabled}
           onChange={(e) => onNameChange(e.target.value)}
           placeholder={
@@ -89,7 +91,7 @@ export function ManualLoggingControls({
         >
           <Plus className="h-3.5 w-3.5" />
           {full
-            ? t('manualLogging.mealFull', { count: MAX_MANUAL_ITEMS })
+            ? t('manualLogging.mealFull', { count: MANUAL_MEAL_MAX_ITEMS })
             : t('manualLogging.addItem')}
         </button>
 

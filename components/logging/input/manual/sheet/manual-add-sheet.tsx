@@ -15,11 +15,12 @@ import {
 import {
   formatKcal,
   type IngredientSearchResult,
+  isManualMealFull,
   totalsForRows,
 } from '@/lib/domain/logging/manual-logging';
 import { ManualFoodPage } from './manual-food-page';
 import { ManualSearchPage } from './manual-search-page';
-import { MAX_MANUAL_ITEMS, type ManualSheetState } from './use-manual-sheet';
+import type { ManualSheetState } from './use-manual-sheet';
 
 /** How much of the meal sheet's strip shows above this one. */
 const PEEK = 26;
@@ -70,7 +71,7 @@ export function ManualAddSheet({
   };
   const leave = () => (editing ? close() : setPage(null));
 
-  const full = meal.items.length >= MAX_MANUAL_ITEMS;
+  const full = isManualMealFull(meal.items.length);
   // Unknown calories read "—"; only an empty plate is a known 0.
   const total =
     totalsForRows(sheetItemsAsRows(meal.items)).caloriesKcal ??

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import type { ManualSheetItem } from '@/lib/domain/logging/manual-display';
-import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
-
-/** The most items one manual meal may hold — the save contract's cap. */
-export const MAX_MANUAL_ITEMS = 30;
+import {
+  type IngredientSearchResult,
+  isManualMealFull,
+} from '@/lib/domain/logging/manual-logging';
 
 /**
  * The phone sheets' meal: the foods on the plate, each weighed as it went in,
@@ -21,7 +21,7 @@ export function useManualSheet() {
     setName,
     add: (ingredient: IngredientSearchResult, grams: number) =>
       setItems((prev) =>
-        prev.length >= MAX_MANUAL_ITEMS
+        isManualMealFull(prev.length)
           ? prev
           : [...prev, { id: crypto.randomUUID(), ingredient, grams }]
       ),
