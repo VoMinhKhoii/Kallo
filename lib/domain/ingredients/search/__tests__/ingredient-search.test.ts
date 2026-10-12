@@ -19,6 +19,12 @@ vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: () => ({ generateEmbeddingBatch }),
 }));
 
+// These tests count the retrieval queries; the display enrichment that runs
+// after ranking has its own tests (card-enrichment.test.ts).
+vi.mock('../card-enrichment', () => ({
+  attachCardDisplay: async <T>(results: T) => results,
+}));
+
 const { searchIngredients } = await import('../ingredient-search');
 
 // DB rows arrive snake_case with numeric columns as strings.

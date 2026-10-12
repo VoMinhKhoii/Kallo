@@ -115,6 +115,14 @@ const ingredientSearchResult = object(
       carbohydrateG: nullableNumber,
       fatG: nullableNumber,
     }),
+    displayNameEn: nullableString,
+    stateLabel: { type: ['string', 'null'], enum: ['raw', 'cooked', null] },
+    brand: nullableString,
+    vessel: {
+      type: ['object', 'null'],
+      description:
+        '{family:"piece",kind} | {family:"bowl"|"plate"|"cup",dishClass}; null = grams only.',
+    },
   },
   ['id', 'namePrimary', 'nameEn', 'nameAlt', 'state', 'similarity', 'per100g']
 );

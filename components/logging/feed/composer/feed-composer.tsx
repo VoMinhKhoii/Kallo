@@ -6,6 +6,7 @@ import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasi
 import { MealInput } from '@/components/logging/input/composer/meal-input';
 import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-popup';
 import { StagedList } from '@/components/logging/input/relog/staged-list';
+import type { ManualSave } from '@/hooks/meals/entry/use-manual-submit';
 import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
@@ -26,6 +27,8 @@ interface FeedComposerProps {
   cheatOccasionsDisabled: boolean;
   onSelectCheatOccasion: (occasion: RecentCheatOccasion) => void;
   onSubmit: () => void;
+  /** Saves the phone manual sheets' plate. */
+  onManualSave: ManualSave;
   onCancel: () => void;
   disabled: boolean;
   mode: InputMode;
@@ -53,6 +56,7 @@ export function FeedComposer({
   cheatOccasionsDisabled,
   onSelectCheatOccasion,
   onSubmit,
+  onManualSave,
   onCancel,
   disabled,
   mode,
@@ -101,6 +105,7 @@ export function FeedComposer({
         <MealInput
           ref={inputRef}
           onSubmit={onSubmit}
+          onManualSave={onManualSave}
           onCancel={onCancel}
           disabled={disabled}
           mode={mode}

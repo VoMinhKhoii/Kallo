@@ -3,9 +3,8 @@
 import { randomUUID } from 'node:crypto';
 import { inArray } from 'drizzle-orm';
 import {
-  buildPersistedIngredient,
+  buildMealItemGroupsFromRows,
   buildPersistedMeal,
-  buildPersistedMealItemGroup,
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
@@ -20,7 +19,11 @@ import {
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
-import { scaleNutritionValues } from '@/lib/domain/logging/manual-logging';
+import {
+  manualDishOf,
+  manualMealTitle,
+  scaleNutritionValues,
+} from '@/lib/domain/logging/manual-logging';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -97,9 +100,27 @@ export async function saveManualMealAction(
     parsed.timezoneOffset
   );
   const mealSlot = parsed.mealSlot ?? inferMealSlot(loggedAt);
-  const rawInput = items
-    .map((item) => `${item.grams}g ${item.name}`)
-    .join(', ');
+  const rawInput = manualMealTitle(
+    parsed.name,
+    items.map((item) => item.name)
+  );
+  // Each ingredient row once, under its dish — inserted below and rebuilt
+  // into groups after, so the two can't drift.
+  const itemRows = items.map((item) => {
+    const dish = manualDishOf(parsed.name, item.name, item.order);
+    return {
+      id: item.id,
+      ingredientName: item.name,
+      mealItemName: dish.name,
+      mealItemOrder: dish.order,
+      foodCompositionId: item.foodCompositionId,
+      estimatedGrams: item.grams,
+      userFacingUnit: 'g',
+      cookingMethod: null,
+      matchConfidence: 1,
+      nutrition: item.nutrition,
+    };
+  });
 
   const { mealId, share } = await db.transaction(async (tx) => {
     const [meal] = await guardClientMealId(() =>
@@ -120,18 +141,10 @@ export async function saveManualMealAction(
     );
 
     await tx.insert(mealItems).values(
-      items.map((item) => ({
-        id: item.id,
+      itemRows.map(({ nutrition, ...row }) => ({
+        ...row,
         mealId: meal.id,
-        ingredientName: item.name,
-        mealItemName: item.name,
-        mealItemOrder: item.order,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.grams,
-        userFacingUnit: 'g',
-        cookingMethod: null,
-        matchConfidence: 1,
-        ...nutritionValuesToRow(item.nutrition),
+        ...nutritionValuesToRow(nutrition),
       }))
     );
 
@@ -149,23 +162,10 @@ export async function saveManualMealAction(
     return { mealId: meal.id, share };
   });
 
-  // One group per ingredient — a manual meal is a flat Cronometer-style list,
-  // not AI-decomposed dishes. Group nutrition auto-sums in the builder,
-  // guaranteeing parity with loadMealsByDate reconstruction.
-  const mealItemGroups = items.map((item) =>
-    buildPersistedMealItemGroup(item.name, item.order, [
-      buildPersistedIngredient({
-        id: item.id,
-        ingredientName: item.name,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.grams,
-        userFacingUnit: 'g',
-        cookingMethod: null,
-        matchConfidence: 1,
-        nutrition: item.nutrition,
-      }),
-    ])
-  );
+  // Rebuilt through the day loader's own grouping (by dish name + order), so
+  // the returned meal matches what loadMealsByDate reconstructs; group
+  // nutrition auto-sums in the builder.
+  const mealItemGroups = buildMealItemGroupsFromRows(itemRows);
 
   const savedMeal = buildPersistedMeal({
     id: mealId,

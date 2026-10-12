@@ -95,7 +95,9 @@ function pieceKind(names: string): PieceVessel['kind'] {
   return 'meat';
 }
 
-function pieceKindFromFoodGroup(
+/** The piece kind a food group implies, or null when its foods are not cut
+ *  into pieces (sausages and everything outside meat, poultry and fish). */
+export function pieceKindFromFoodGroup(
   foodGroupEn: string,
   names: string
 ): PieceVessel['kind'] | null {

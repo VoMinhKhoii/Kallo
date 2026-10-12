@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/data/manual_log_providers.dart';
+import 'package:kallo_mobile/features/logging/logic/manual/manual_amount.dart';
 import 'package:kallo_mobile/models/nutrition/ingredient.dart';
 import 'package:kallo_mobile/models/http/api_error.dart';
 
@@ -89,21 +90,25 @@ void main() {
     test('add / update / remove rows drive canSave and totals', () {
       final notifier = container.read(manualLogProvider.notifier);
 
-      notifier.addIngredient(rice);
+      notifier.addIngredient(rice, grams: 100);
       var state = container.read(manualLogProvider);
       expect(state.items, hasLength(1));
-      // Default 100g — one tap to add, immediately editable.
+      // Added at the grams its food page settled on.
       expect(state.items.single.grams, 100);
       expect(state.canSave, isTrue);
       expect(state.totals.caloriesKcal, closeTo(130, 1e-9));
+      expect(state.itemFor('fct-rice')?.id, state.items.single.id);
+      expect(state.itemFor('fct-ghost'), isNull);
 
       notifier.updateGrams(state.items.single.id, 150);
       state = container.read(manualLogProvider);
       expect(state.totals.caloriesKcal, closeTo(195, 1e-9));
 
-      notifier.updateGrams(state.items.single.id, null);
-      state = container.read(manualLogProvider);
-      expect(state.canSave, isFalse);
+      // The controller holds every amount to the save contract's bounds.
+      notifier.updateGrams(state.items.single.id, 0);
+      expect(container.read(manualLogProvider).items.single.grams, 1);
+      notifier.updateGrams(state.items.single.id, 9000);
+      expect(container.read(manualLogProvider).items.single.grams, 5000);
 
       notifier.removeItem(state.items.single.id);
       expect(container.read(manualLogProvider).items, isEmpty);
@@ -125,11 +130,7 @@ void main() {
           return <String, dynamic>{};
         };
         final notifier = container.read(manualLogProvider.notifier);
-        notifier.addIngredient(rice);
-        notifier.updateGrams(
-          container.read(manualLogProvider).items.single.id,
-          150,
-        );
+        notifier.addIngredient(rice, grams: 150);
 
         await notifier.save(userId: 'user-1', date: '2026-06-12');
 
@@ -143,16 +144,49 @@ void main() {
         expect(json['items'], [
           {'foodCompositionId': 'fct-rice', 'grams': 150},
         ]);
+        // No name typed: none is sent, and the server titles the meal.
+        expect(json.containsKey('name'), isFalse);
         // Sheet state resets after a successful save.
         expect(container.read(manualLogProvider).items, isEmpty);
         expect(container.read(manualLogProvider).isSaving, isFalse);
       },
     );
 
+    test('save sends a typed meal name, trimmed; blank sends none', () async {
+      api.handler = (method, path, body) {
+        if (path == '/api/v1/meals/manual') {
+          return <String, dynamic>{'mealId': 'm', 'meal': <String, dynamic>{}};
+        }
+        if (path.startsWith('/api/v1/meals/dates')) return <dynamic>[];
+        return <String, dynamic>{};
+      };
+      final notifier = container.read(manualLogProvider.notifier);
+
+      notifier.addIngredient(rice, grams: 150);
+      await notifier.save(userId: 'u', date: '2026-06-12', name: '  Cơm gà ');
+      notifier.addIngredient(rice, grams: 150);
+      await notifier.save(userId: 'u', date: '2026-06-12', name: '   ');
+
+      final bodies = [
+        for (final r in api.requests)
+          if (r.$2 == '/api/v1/meals/manual') r.$3 as Map<String, dynamic>,
+      ];
+      expect(bodies.first['name'], 'Cơm gà');
+      expect(bodies.last.containsKey('name'), isFalse);
+    });
+
+    test('add stops at the 30 items the save contract accepts', () {
+      final notifier = container.read(manualLogProvider.notifier);
+      for (var i = 0; i < maxManualItems + 2; i++) {
+        notifier.addIngredient(rice, grams: 10);
+      }
+      expect(container.read(manualLogProvider).items, hasLength(30));
+    });
+
     test('save failure keeps the items and clears isSaving', () async {
       api.handler = (_, __, ___) => throw ApiError('INTERNAL', 500, false, 'x');
       final notifier = container.read(manualLogProvider.notifier);
-      notifier.addIngredient(rice);
+      notifier.addIngredient(rice, grams: 100);
 
       await expectLater(
         notifier.save(userId: 'user-1', date: '2026-06-12'),
@@ -164,13 +198,10 @@ void main() {
       expect(state.isSaving, isFalse);
     });
 
-    test('save with no complete items is a no-op', () async {
+    test('save with an empty plate is a no-op', () async {
       final notifier = container.read(manualLogProvider.notifier);
-      notifier.addIngredient(rice);
-      notifier.updateGrams(
-        container.read(manualLogProvider).items.single.id,
-        null,
-      );
+      notifier.addIngredient(rice, grams: 100);
+      notifier.removeItem(container.read(manualLogProvider).items.single.id);
 
       await notifier.save(userId: 'user-1', date: '2026-06-12');
 

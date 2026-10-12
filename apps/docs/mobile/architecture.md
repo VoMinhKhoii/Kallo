@@ -91,15 +91,26 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   `CupertinoContextMenu.builder`): the default one clips the child to a flat 12 radius and
   re-lays it out against the screen, which cost the bubble its tightened corner and
   re-flowed a wrapped meal into one long line.
+  Manual logging (`widgets/sheets/manual/` + `logic/manual/`), plate first: the meal
+  sheet (optional name — blank saves as the ingredient names joined with " + " —, a
+  `MacroRing` from `shared/widgets/gauge/`, the plate's rows, Save) stacks an add sheet
+  over itself, drawing a strip of the meal above it with the running total. The add sheet
+  pages between search (`add/`: recents, then flat rows — Vietnamese name, then "Raw ·
+  English name" with the state only where the food's card names one) and a food's page
+  (`food/`: the scan result's header, an amount card, and the vessel tape for foods with
+  a vessel hint), so each food is weighed as it goes in. Mirrored on web phones by
+  `components/logging/input/manual/sheet/`.
   Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
   resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
   sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
   the scale scrolls under a fixed accent needle, tall graduations mark each vessel tier,
   and every graduation gives one haptic detent plus a click. The bowl / plate / cup branch
   and the fish / meat / poultry branch share one control (`widgets/portion/ruler/`); only
-  the art and the tier labels differ. **The ruler is a deliberate mobile-only divergence**
-  — web's plain Radix slider suits a pointer and a keyboard, but on touch there is no
-  hover, arrow key or focus ring, so the bar carries none of that affordance. Otherwise a
+  the art and the tier labels differ. **The ruler is a deliberate divergence from the web
+  portion picker** — its plain Radix slider suits a pointer and a keyboard, but on touch
+  there is no hover, arrow key or focus ring, so the bar carries none of that affordance.
+  (The web's phone-width manual-log sheet draws the same tape, `components/logging/input/
+  manual/sheet/tape/`, since a phone there is touch too.) Otherwise a
   port of `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE
   `result` frame and on restored `/api/v1/meals/pending` rows.
   **Shared with web — keep them in lockstep.** The tier tables, envelope factors and

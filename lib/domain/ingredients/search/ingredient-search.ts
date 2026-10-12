@@ -3,6 +3,7 @@
 // folder-private — the retrieval arms, the fusion, and the row parsers.
 
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
+import { attachCardDisplay } from './card-enrichment';
 import { lexicalSearch } from './lexical-search';
 import { loadRecentIngredients } from './recent-ingredients';
 import { rrfFuse } from './rrf-fusion';
@@ -36,6 +37,17 @@ export interface IngredientSearchParams {
  * lexical ranking, topped up by the substring backfill.
  */
 export async function searchIngredients({
+  userId,
+  q,
+  limit,
+  allowLiveEmbedding,
+}: IngredientSearchParams): Promise<IngredientSearchResult[]> {
+  return attachCardDisplay(
+    await rankedResults({ userId, q, limit, allowLiveEmbedding })
+  );
+}
+
+async function rankedResults({
   userId,
   q,
   limit,

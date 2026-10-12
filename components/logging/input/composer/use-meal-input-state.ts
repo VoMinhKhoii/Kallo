@@ -60,6 +60,11 @@ export function useMealInputState(
   );
   const manualRowsRef = useRef(manualRows);
   manualRowsRef.current = manualRows;
+  // The manual meal's optional name — not drafted: it is a few words, and a
+  // stale name surviving into tomorrow's meal would mislabel it.
+  const [manualName, setManualName] = useState('');
+  const manualNameRef = useRef(manualName);
+  manualNameRef.current = manualName;
 
   const updateText = useCallback((text: string, caret?: number) => {
     const el = textareaRef.current;
@@ -79,9 +84,11 @@ export function useMealInputState(
       getText: () => textareaRef.current?.value ?? '',
       // Read through the ref so the handle isn't rebuilt on every keystroke.
       getManualRows: () => manualRowsRef.current,
+      getManualName: () => manualNameRef.current,
       clear: () => {
         if (isManual) {
           setManualRows([createEmptyRow(crypto.randomUUID())]);
+          setManualName('');
           writeManualRowsDraft([]);
         } else {
           updateText('');
@@ -200,6 +207,8 @@ export function useMealInputState(
   return {
     textareaRef,
     manualRows,
+    manualName,
+    setManualName,
     canSubmit,
     handleChange,
     handleKeyDown,

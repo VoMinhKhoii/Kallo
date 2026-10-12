@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import type { LoggingDayData } from '@/lib/actions/meals/types';
+import { completeItems } from '@/lib/domain/logging/manual-logging';
 import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import {
   DATE,
@@ -38,7 +39,8 @@ function manualVariables() {
     originDate: DATE,
     loggedDate: DATE,
     timezoneOffset: TZ,
-    rows: makeManualRows(),
+    // The composer's rows, as the save takes them.
+    items: completeItems(makeManualRows()),
   };
 }
 
@@ -80,7 +82,8 @@ describe('useSaveManualMeal', () => {
     expect(optimistic?.id).toBe('meal-manual-1');
     // 150g × 130 kcal/100g — computed client-side from the row's per-100g data.
     expect(optimistic?.nutrition.caloriesKcal).toBeCloseTo(195);
-    expect(optimistic?.rawInput).toBe('150g cơm nhà nấu');
+    // Unnamed: the default title is the row labels, as the server derives it.
+    expect(optimistic?.rawInput).toBe('cơm nhà nấu');
     expect(optimistic?.entryMode).toBe('precise');
 
     // Server resolves with the authoritative meal (same id, micros filled in).

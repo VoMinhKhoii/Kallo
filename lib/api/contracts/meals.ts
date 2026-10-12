@@ -18,6 +18,11 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import {
+  MANUAL_ITEM_GRAMS_MAX,
+  MANUAL_MEAL_MAX_ITEMS,
+  MANUAL_NAME_MAX,
+} from '@/lib/domain/logging/manual-logging';
 
 export {
   dateStringSchema,
@@ -109,15 +114,6 @@ export type UpdateMealInput = z.infer<typeof updateMealSchema>;
 export type UpdateMealBody = z.infer<typeof updateMealBodySchema>;
 
 /**
- * Request body for `POST /api/v1/meals/manual` → `saveManualMealAction`.
- *
- * Deterministic manual logging: the client sends ingredient ids + grams; the
- * server computes nutrition from per-100g composition data and persists the
- * meal directly — no AI pipeline, no pendingAnalyses staging. `mealId` is the
- * optional client-generated id so the optimistic card and the persisted row
- * share a stable key.
- */
-/**
  * "Mình ăn đủ rồi" — the user attesting a past day is fully logged. Shared by
  * the server action and the route so the mobile client validates the same
  * shape it will be held to.
@@ -127,20 +123,33 @@ export const markDayCompleteSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/**
+ * Request body for `POST /api/v1/meals/manual` → `saveManualMealAction`.
+ *
+ * Deterministic manual logging: the client sends ingredient ids + grams; the
+ * server computes nutrition from per-100g composition data and persists the
+ * meal directly — no AI pipeline, no pendingAnalyses staging. `mealId` is the
+ * optional client-generated id so the optimistic card and the persisted row
+ * share a stable key.
+ */
 export const saveManualMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  // The meal's own name ("Cơm gà"), saved as its raw input and as the one dish
+  // its ingredients sit under. Absent → the ingredient names joined with " + ",
+  // one dish per ingredient.
+  name: z.string().trim().min(1).max(MANUAL_NAME_MAX).optional(),
   items: z
     .array(
       z.object({
         foodCompositionId: z.string().min(1).max(120),
-        grams: z.number().positive().finite().max(5000),
+        grams: z.number().positive().finite().max(MANUAL_ITEM_GRAMS_MAX),
         // The user's raw typed text, saved as the ingredient label. Falls back
         // to the composition's name server-side when absent.
-        label: z.string().trim().min(1).max(200).optional(),
+        label: z.string().trim().min(1).max(MANUAL_NAME_MAX).optional(),
       })
     )
     .min(1)
-    .max(30),
+    .max(MANUAL_MEAL_MAX_ITEMS),
   mealSlot: z.enum(['breakfast', 'lunch', 'snack', 'dinner']).optional(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,

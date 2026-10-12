@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/ingredient.dart';
+import '../logic/manual/manual_amount.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 
@@ -59,12 +60,21 @@ class ManualLogState {
         isSaving: isSaving ?? this.isSaving,
       );
 
-  List<ManualLogItem> get completeItems =>
-      items.where((i) => i.isComplete).toList();
+  bool get canSave => !isSaving && items.isNotEmpty;
 
-  bool get canSave => !isSaving && completeItems.isNotEmpty;
+  /// The plate holds [maxManualItems]: nothing more can go in, though what is
+  /// there still updates.
+  bool get isFull => items.length >= maxManualItems;
 
   IngredientMacrosPer100g get totals => totalsForManualItems(items);
+
+  /// The meal's item for [ingredientId], if that food is already in it.
+  ManualLogItem? itemFor(String ingredientId) {
+    for (final item in items) {
+      if (item.ingredient.id == ingredientId) return item;
+    }
+    return null;
+  }
 }
 
 /// The picked-items list + save flow for one manual-log sheet session.
@@ -72,27 +82,41 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
   @override
   ManualLogState build() => const ManualLogState();
 
-  /// Add a picked search result with a sensible default portion the user can
-  /// immediately edit inline (one tap to add keeps the flow fast).
-  void addIngredient(IngredientSearchResult ingredient) {
-    if (state.items.length >= 30) return;
+  /// Add a food at the grams its food page settled on. Capped at the 30 items
+  /// the save contract accepts.
+  void addIngredient(
+    IngredientSearchResult ingredient, {
+    required double grams,
+  }) {
+    if (state.isFull) return;
     state = state.copyWith(
       items: [
         ...state.items,
-        ManualLogItem(id: _uuid.v4(), ingredient: ingredient, grams: 100),
+        ManualLogItem(
+          id: _uuid.v4(),
+          ingredient: ingredient,
+          grams: _inBounds(grams),
+        ),
       ],
     );
   }
 
-  void updateGrams(String itemId, double? grams) {
-    final clamped = grams?.clamp(0, 5000).toDouble();
+  void updateGrams(String itemId, double grams) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          if (item.id == itemId) item.copyWith(grams: () => clamped) else item,
+          if (item.id == itemId)
+            item.copyWith(grams: _inBounds(grams))
+          else
+            item,
       ],
     );
   }
+
+  /// The save contract's bounds, held here so no amount outside them is ever
+  /// on the plate.
+  static double _inBounds(double grams) =>
+      grams.clamp(manualGramsMin, manualGramsMax).toDouble();
 
   void removeItem(String itemId) {
     state = state.copyWith(
@@ -100,18 +124,27 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     );
   }
 
-  /// Save the complete items as one meal, then run the same cache cascade the
+  /// Save the plate as one meal, then run the same cache cascade the
   /// confirm flow uses (day feed, timeline dots, dashboard bundle). On
   /// failure the server changed nothing, so no surface is invalidated.
-  Future<void> save({required String userId, required String date}) async {
-    final items = state.completeItems;
+  ///
+  /// [name] is the meal's own name; blank sends none, and the server titles
+  /// the meal with its ingredient names joined by " + ".
+  Future<void> save({
+    required String userId,
+    required String date,
+    String? name,
+  }) async {
+    final items = state.items;
     if (items.isEmpty || state.isSaving) return;
 
     final api = ref.read(apiClientProvider);
+    final trimmed = name?.trim() ?? '';
     state = state.copyWith(isSaving: true);
     try {
       await api.post<Map<String, dynamic>>('/api/v1/meals/manual', {
         'mealId': _uuid.v4(),
+        if (trimmed.isNotEmpty) 'name': trimmed,
         'items': [
           for (final item in items)
             {'foodCompositionId': item.ingredient.id, 'grams': item.grams},
