@@ -84,10 +84,10 @@ export function dishPieceCount(mi: MealItemWithCandidates): {
   if (!count || !unitToken || !PIECE_UNIT.test(unitToken.trim())) return null;
   const dish = nameKey(mi.mealItem.name);
   const part = nameKey(ingredient.rawName);
-  // The dish must be named FROM the part ("tôm tonkatsu" from "tôm"): a dish
-  // that only contains it ("cơm gà" with "2 miếng gà") is a plate of rice
-  // with two pieces of chicken, not two whole dishes.
-  if (!part || dish === part || !dish.startsWith(part)) return null;
+  // The dish must be named FROM the part, as whole words ("tôm tonkatsu" from
+  // "tôm"): a dish that only contains it ("cơm gà" with "2 miếng gà") is one
+  // plate with two pieces of chicken, and "hamburger" is not named from "ham".
+  if (!part || dish === part || !dish.startsWith(`${part} `)) return null;
   return { ingredient, count, unit: unitToken };
 }
 

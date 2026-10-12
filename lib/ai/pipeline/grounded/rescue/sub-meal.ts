@@ -61,8 +61,13 @@ export async function runRescueSubMeal(
     profile: deps.profile,
     onAttemptComplete: deps.decompositionRecorder,
   });
-  if (stage1.nonFood || shouldStop()) return null;
+  if (stage1.nonFood) return null;
   const { decomposition, streamedMatching } = stage1;
+  if (shouldStop()) {
+    // Drop the batches Call 1's stream queued: nothing will read them.
+    streamedMatching.close();
+    return null;
+  }
   const prep = await prepareGrounding({
     decomposition,
     streamedMatching,

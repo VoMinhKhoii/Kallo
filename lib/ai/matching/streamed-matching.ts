@@ -82,6 +82,12 @@ export interface StreamedMatching {
     dishCookingMethods: Array<string | null>,
     legacy: { k: number; concurrency: number }
   ) => Promise<IngredientV2MatchResult[]>;
+  /**
+   * The caller will never call `match` (not food, or a discarded rescue
+   * mini-meal): drop the queued batches so they issue no further database or
+   * embedding work. The batch already running finishes.
+   */
+  close: () => void;
 }
 
 export function createStreamedMatching(
@@ -99,8 +105,9 @@ export function createStreamedMatching(
     resolve: (r: IngredientV2MatchResult | null) => void;
   }> = [];
   let inFlight = false;
+  let closed = false;
   const flush = () => {
-    if (inFlight || pending.length === 0) return;
+    if (closed || inFlight || pending.length === 0) return;
     inFlight = true;
     const batch = pending;
     pending = [];
@@ -121,6 +128,7 @@ export function createStreamedMatching(
   let seen = 0;
   return {
     onChunk(accumulated) {
+      if (closed) return;
       const items = completedMealItems(accumulated);
       // A retried attempt streams from scratch.
       if (items.length < seen) seen = 0;
@@ -166,6 +174,11 @@ export function createStreamedMatching(
         ...(r ?? late[next++]),
         ingredientIndex: i,
       }));
+    },
+    close() {
+      closed = true;
+      for (const p of pending) p.resolve(null);
+      pending = [];
     },
   };
 }

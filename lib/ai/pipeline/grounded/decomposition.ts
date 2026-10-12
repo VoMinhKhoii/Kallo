@@ -249,6 +249,8 @@ export async function runGroundedDecomposition(args: {
   if (!decomposition.isFood || decomposition.mealItems.length === 0) {
     // Discard buffered item_name events — non-food input has no UI to update.
     bufferedItemNameEvents.length = 0;
+    // Nothing will be matched; stop what the stream queued.
+    streamedMatching.close();
     return { nonFood: true };
   }
 

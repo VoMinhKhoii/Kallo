@@ -528,5 +528,20 @@ describe('a piece count on the part a split dish is named after', () => {
         ])
       )
     ).toBeNull();
+    // Named from the part as a whole word only: "hamburger" is not "ham …".
+    expect(
+      dishPieceCount(
+        dish('Hamburger', [
+          {
+            ...shrimp,
+            rawName: 'ham',
+            canonicalName: 'Ham',
+            count: 2,
+            unitToken: 'slices',
+          },
+          { rawName: 'bun', canonicalName: 'Bun' },
+        ])
+      )
+    ).toBeNull();
   });
 });

@@ -93,6 +93,29 @@ describe('streamed matching batches', () => {
     expect(batches).toEqual([['A'], ['B', 'C']]);
   });
 
+  it('runs no queued batch once closed', async () => {
+    const batches: string[][] = [];
+    let release: () => void = () => {};
+    cardsMock.mockReset();
+    cardsMock.mockImplementation((ings: { rawName: string }[]) => {
+      batches.push(ings.map((i) => i.rawName));
+      return new Promise((resolve) => {
+        release = () => resolve(ings.map((i) => result(i.rawName)));
+      });
+    });
+    const streamed = createStreamedMatching({} as AppDb, {} as GeminiClient);
+    const item = (n: string) =>
+      `{"name":"${n}","ingredients":[{"rawName":"${n}","canonicalName":"${n}"}]}`;
+    streamed.onChunk(`{"mealItems":[${item('a')},`);
+    streamed.onChunk(`{"mealItems":[${item('a')},${item('b')},`);
+    streamed.close();
+    streamed.onChunk(`{"mealItems":[${item('a')},${item('b')},${item('c')},`);
+    release();
+    await new Promise((r) => setTimeout(r, 0));
+    // The running batch finishes; the queued "B" and the later "C" never run.
+    expect(batches).toEqual([['A']]);
+  });
+
   it('skips an ingredient a slipped attempt left without a name', async () => {
     const batches: string[][] = [];
     cardsMock.mockReset();
