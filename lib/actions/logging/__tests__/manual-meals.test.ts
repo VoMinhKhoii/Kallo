@@ -202,7 +202,8 @@ describe('saveManualMealAction', () => {
       entryMode: 'precise',
       confidenceOverall: 'high',
       mealSlot: 'lunch',
-      rawInput: '150g Cơm trắng, 100g Thịt gà ta',
+      // Unnamed: the ingredient names joined, the card's default title.
+      rawInput: 'Cơm trắng + Thịt gà ta',
     });
 
     const itemRows = inserted[1] as Record<string, unknown>[];
@@ -231,6 +232,39 @@ describe('saveManualMealAction', () => {
       })
     ).meal.mealItemGroups.map((g) => g.ingredients[0].id);
     expect(returnedIds.every((id) => typeof id === 'string')).toBe(true);
+  });
+
+  it('saves a named meal as one dish holding every ingredient', async () => {
+    mockCompositionRows([riceRow, chickenRow]);
+    const inserted = mockInserts(UUID_MEAL);
+
+    const result = await saveManualMealAction({
+      ...baseInput,
+      name: '  Cơm gà  ',
+      items: [
+        { foodCompositionId: 'fct-rice', grams: 150 },
+        { foodCompositionId: 'fct-chicken', grams: 100 },
+      ],
+    });
+
+    expect((inserted[0] as Record<string, unknown>).rawInput).toBe('Cơm gà');
+    const itemRows = inserted[1] as Record<string, unknown>[];
+    expect(itemRows.map((r) => [r.mealItemName, r.mealItemOrder])).toEqual([
+      ['Cơm gà', 0],
+      ['Cơm gà', 0],
+    ]);
+    // Each ingredient keeps its own name under the dish.
+    expect(itemRows.map((r) => r.ingredientName)).toEqual([
+      'Cơm trắng',
+      'Thịt gà ta',
+    ]);
+
+    expect(result.meal.rawInput).toBe('Cơm gà');
+    expect(result.meal.mealItemGroups).toHaveLength(1);
+    const [dish] = result.meal.mealItemGroups;
+    expect(dish.name).toBe('Cơm gà');
+    expect(dish.ingredients).toHaveLength(2);
+    expect(dish.nutrition.caloriesKcal).toBeCloseTo(195 + 199);
   });
 
   it('rejects when an ingredient id does not exist', async () => {

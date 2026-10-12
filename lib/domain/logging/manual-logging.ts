@@ -45,7 +45,31 @@ export interface IngredientSearchResult {
    *  lexical match — the UI labels these as related, not exact, hits. */
   semantic?: boolean;
   per100g: IngredientMacrosPer100g;
+  /** Clean English name from the row's food card ("Skinless chicken breast"),
+   *  without raw/uncooked words or Vietnamese asides. Null when the row has no
+   *  card; absent from responses older than the field. */
+  displayNameEn?: string | null;
+  /** 'raw' | 'cooked' only when the card's own wording says so. Canned,
+   *  dried, packaged and plain foods (yogurt, tofu) carry null rather than the
+   *  table's default 'raw', which would mislead. */
+  stateLabel?: IngredientStateLabel | null;
+  /** The brand of a packaged food, shown where the state label would go. */
+  brand?: string | null;
+  /** Which vessel the amount ruler offers for this food; null means grams only. */
+  vessel?: IngredientVesselHint | null;
 }
+
+export type IngredientStateLabel = 'raw' | 'cooked';
+
+/** The vessel family a food is portioned with. Pieces carry the art kind;
+ *  containers carry the dish class their fill and density come from. The
+ *  client turns this into gram anchors with its own vessel tables. */
+export type IngredientVesselHint =
+  | { family: 'piece'; kind: 'fish' | 'meat' | 'poultry' }
+  | {
+      family: 'bowl' | 'plate' | 'cup';
+      dishClass: 'soup' | 'solid' | 'airy' | 'drink';
+    };
 
 export interface IngredientSearchResponse {
   results: IngredientSearchResult[];
@@ -72,6 +96,16 @@ export function createEmptyRow(id: string): ManualMealRow {
  *  ingredient's name (e.g. when they tapped a recent without typing). */
 export function rowLabel(row: ManualMealRow): string {
   return row.query.trim() || row.ingredient?.namePrimary || '';
+}
+
+/** A manual meal's raw input — the title its card shows: the name the user
+ *  gave it, else its ingredient labels joined with " + " ("Ức gà + Cơm
+ *  trắng"). The server and the optimistic card both derive it here. */
+export function manualMealTitle(
+  name: string | null | undefined,
+  labels: string[]
+): string {
+  return name?.trim() || labels.join(' + ');
 }
 
 export function parseGrams(grams: string): number | null {

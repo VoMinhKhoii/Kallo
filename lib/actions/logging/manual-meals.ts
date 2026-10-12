@@ -3,9 +3,8 @@
 import { randomUUID } from 'node:crypto';
 import { inArray } from 'drizzle-orm';
 import {
-  buildPersistedIngredient,
+  buildMealItemGroupsFromRows,
   buildPersistedMeal,
-  buildPersistedMealItemGroup,
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
@@ -20,7 +19,10 @@ import {
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
-import { scaleNutritionValues } from '@/lib/domain/logging/manual-logging';
+import {
+  manualMealTitle,
+  scaleNutritionValues,
+} from '@/lib/domain/logging/manual-logging';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -97,9 +99,16 @@ export async function saveManualMealAction(
     parsed.timezoneOffset
   );
   const mealSlot = parsed.mealSlot ?? inferMealSlot(loggedAt);
-  const rawInput = items
-    .map((item) => `${item.grams}g ${item.name}`)
-    .join(', ');
+  const rawInput = manualMealTitle(
+    parsed.name,
+    items.map((item) => item.name)
+  );
+  // A named meal is one dish holding all its ingredients ("Cơm gà": rice,
+  // chicken, oil); an unnamed one stays a flat list, one dish per ingredient.
+  const dishOf = (item: (typeof items)[number]) =>
+    parsed.name
+      ? { name: parsed.name, order: 0 }
+      : { name: item.name, order: item.order };
 
   const { mealId, share } = await db.transaction(async (tx) => {
     const [meal] = await guardClientMealId(() =>
@@ -124,8 +133,8 @@ export async function saveManualMealAction(
         id: item.id,
         mealId: meal.id,
         ingredientName: item.name,
-        mealItemName: item.name,
-        mealItemOrder: item.order,
+        mealItemName: dishOf(item).name,
+        mealItemOrder: dishOf(item).order,
         foodCompositionId: item.foodCompositionId,
         estimatedGrams: item.grams,
         userFacingUnit: 'g',
@@ -149,22 +158,22 @@ export async function saveManualMealAction(
     return { mealId: meal.id, share };
   });
 
-  // One group per ingredient — a manual meal is a flat Cronometer-style list,
-  // not AI-decomposed dishes. Group nutrition auto-sums in the builder,
-  // guaranteeing parity with loadMealsByDate reconstruction.
-  const mealItemGroups = items.map((item) =>
-    buildPersistedMealItemGroup(item.name, item.order, [
-      buildPersistedIngredient({
-        id: item.id,
-        ingredientName: item.name,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.grams,
-        userFacingUnit: 'g',
-        cookingMethod: null,
-        matchConfidence: 1,
-        nutrition: item.nutrition,
-      }),
-    ])
+  // Rebuilt through the day loader's own grouping (by dish name + order), so
+  // the returned meal matches what loadMealsByDate reconstructs; group
+  // nutrition auto-sums in the builder.
+  const mealItemGroups = buildMealItemGroupsFromRows(
+    items.map((item) => ({
+      id: item.id,
+      ingredientName: item.name,
+      mealItemName: dishOf(item).name,
+      mealItemOrder: dishOf(item).order,
+      foodCompositionId: item.foodCompositionId,
+      estimatedGrams: item.grams,
+      userFacingUnit: 'g',
+      cookingMethod: null,
+      matchConfidence: 1,
+      nutrition: item.nutrition,
+    }))
   );
 
   const savedMeal = buildPersistedMeal({

@@ -8,7 +8,7 @@ import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
   type CompleteManualMealRow,
-  parseGrams,
+  manualMealTitle,
   rowLabel,
   rowMacros,
   totalsForRows,
@@ -35,23 +35,28 @@ export function buildOptimisticManualMeal(
     variables.loggedDate,
     variables.timezoneOffset
   ).toISOString();
-  const groups: PersistedMealItemGroup[] = rows.map((row, order) => ({
-    name: rowLabel(row),
-    order,
-    ingredients: [],
-    nutrition: { ...EMPTY_NUTRITION, ...rowMacros(row) },
-  }));
+  const nutrition = { ...EMPTY_NUTRITION, ...totalsForRows(rows) };
+  // Trimmed the way the contract trims it, so a blank name is no name here too.
+  const name = variables.name?.trim() || undefined;
+  // Same grouping the server applies: a named meal is one dish, an unnamed
+  // one is a dish per ingredient.
+  const groups: PersistedMealItemGroup[] = name
+    ? [{ name, order: 0, ingredients: [], nutrition }]
+    : rows.map((row, order) => ({
+        name: rowLabel(row),
+        order,
+        ingredients: [],
+        nutrition: { ...EMPTY_NUTRITION, ...rowMacros(row) },
+      }));
   return {
     // Same id the server will persist — one stable React key from optimistic
     // insert through reconciliation (no re-fade).
     id: mealId,
-    rawInput: rows
-      .map((row) => `${parseGrams(row.grams)}g ${rowLabel(row)}`)
-      .join(', '),
+    rawInput: manualMealTitle(name, rows.map(rowLabel)),
     mealSlot: variables.mealSlot ?? null,
     confidenceOverall: 'high',
     loggedAt,
-    nutrition: { ...EMPTY_NUTRITION, ...totalsForRows(rows) },
+    nutrition,
     mealItemGroups: groups,
     entryMode: 'precise',
     alcoholG: null,

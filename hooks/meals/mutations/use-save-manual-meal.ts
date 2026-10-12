@@ -31,6 +31,8 @@ export function useSaveManualMeal(userId: string) {
     mutationFn: (variables: SaveManualMealVariables) =>
       saveManualMealAction({
         mealId: variables.mealId,
+        // Blank is no name: the contract would reject an empty string.
+        name: variables.name?.trim() || undefined,
         items: variables.rows.map((row) => ({
           foodCompositionId: row.ingredient.id,
           // rowIsComplete guaranteed a parseable positive value.
