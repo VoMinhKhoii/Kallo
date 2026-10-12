@@ -90,9 +90,10 @@ export function createStreamedMatching(
 ): StreamedMatching {
   const started = new Map<string, Promise<IngredientV2MatchResult | null>>();
   // Ingredients waiting for the next batch. One batch runs at a time and takes
-  // everything that streamed in meanwhile: the instance shares two database
-  // connections across all its requests, so a query per meal item would queue
-  // behind each other (and behind every other request) instead of overlapping.
+  // everything that streamed in meanwhile: the instance shares a small pool of
+  // database connections (DB_POOL_MAX) across all its requests, so a query per
+  // meal item would queue behind each other (and behind every other request)
+  // instead of overlapping.
   let pending: Array<{
     ing: Ingredient;
     resolve: (r: IngredientV2MatchResult | null) => void;

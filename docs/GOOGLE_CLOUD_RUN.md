@@ -145,7 +145,10 @@ Create or confirm these resources:
 - Runtime service account for Cloud Run revisions
 - GCS bucket for staging lease state
 - Secret Manager secrets:
-  - `kallo-prod-database-url`
+  - `kallo-prod-database-url` — session-mode pooler URL (port 5432), used
+    only for migrations and the deploy's own DB steps
+  - `kallo-prod-database-url-tx` — the same URL on the transaction-mode port
+    (6543); the running app reads this, with `DB_POOL_MAX=8` per instance
   - `kallo-prod-gemini-api-key`
   - `kallo-prod-analysis-guard-hash-secret`
   - `kallo-prod-origin-shared-secret`
@@ -415,6 +418,12 @@ Create the secrets if they do not exist:
 ```bash
 printf '%s' 'postgres://...' | gcloud secrets create kallo-prod-database-url \
   --data-file=-
+
+# The app's own URL: the same one on the pooler's transaction-mode port, so
+# many app connections share a few real ones. Migrations keep the 5432 URL.
+gcloud secrets versions access latest --secret=kallo-prod-database-url \
+  | sed -E 's#(pooler\.supabase\.com):5432/#\1:6543/#' \
+  | gcloud secrets create kallo-prod-database-url-tx --data-file=-
 
 printf '%s' 'your-gemini-api-key' | gcloud secrets create kallo-prod-gemini-api-key \
   --data-file=-
