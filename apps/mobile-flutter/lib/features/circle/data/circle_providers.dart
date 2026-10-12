@@ -124,7 +124,9 @@ final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
 final myCircleProfileProvider = FutureProvider<CircleProfile>((ref) async {
   // Keyed on the account: without this watch a sign-out/sign-in on a shared
   // device would carry the previous user's avatar, name and invite slug over.
-  ref.watch(currentSessionProvider)?.user.id;
+  // Signed out it makes no request, and an hourly token refresh (same
+  // account) does not refetch.
+  requireSignedIn(ref);
   final api = ref.watch(apiClientProvider);
   return runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/profile');

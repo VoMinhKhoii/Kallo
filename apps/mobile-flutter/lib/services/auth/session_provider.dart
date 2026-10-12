@@ -100,16 +100,24 @@ final signedInUserIdProvider = Provider<String?>((ref) {
   return ref.watch(currentSessionProvider.select((s) => s?.user.id));
 });
 
-/// The guard a per-user fetch opens with: watches [signedInUserIdProvider],
-/// then throws a 401 [ApiError] without touching the network unless [userId]
-/// is the account signed in right now.
+/// The guard a fetch for the signed-in user opens with: watches
+/// [signedInUserIdProvider] and returns the account id, or throws a 401
+/// [ApiError] without touching the network while signed out.
 ///
 /// The watch alone rebuilds the entry on sign-out while the screen is still
 /// subscribed (the router has not swapped it out yet), and the rebuild would
-/// fire the request with no token. The throw also keeps a different account
-/// signing in on the same device from filling the previous user's entry.
+/// fire the request with no token.
+String requireSignedIn(Ref<Object?> ref) {
+  final userId = ref.watch(signedInUserIdProvider);
+  if (userId != null) return userId;
+  throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in');
+}
+
+/// [requireSignedIn] for an entry keyed on a user: also throws unless [userId]
+/// is the account signed in right now, so a different account signing in on
+/// the same device cannot fill the previous user's entry.
 void requireSignedInAs(Ref<Object?> ref, String userId) {
-  if (ref.watch(signedInUserIdProvider) == userId) return;
+  if (requireSignedIn(ref) == userId) return;
   throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in as $userId');
 }
 
