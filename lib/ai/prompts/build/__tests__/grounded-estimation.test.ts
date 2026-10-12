@@ -518,5 +518,15 @@ describe('a piece count on the part a split dish is named after', () => {
         ])
       )
     ).toBeNull();
+    // A dish that only contains the counted part ("2 miếng gà" in "Cơm gà")
+    // is one plate with two pieces of chicken, not two plates.
+    expect(
+      dishPieceCount(
+        dish('Cơm gà', [
+          { ...shrimp, rawName: 'gà', canonicalName: 'Gà', count: 2 },
+          { rawName: 'cơm', canonicalName: 'Cơm' },
+        ])
+      )
+    ).toBeNull();
   });
 });

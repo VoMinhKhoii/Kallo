@@ -23,8 +23,9 @@ describe('chunkedPhaseBudgetMs', () => {
     );
   });
 
-  it('never gives the phase under a second', () => {
-    expect(chunkedPhaseBudgetMs(t0, t0 + 50_000)).toBe(1_000);
+  it('gives no time once the run deadline has passed', () => {
+    expect(chunkedPhaseBudgetMs(t0, t0 + 50_000)).toBe(0);
+    expect(chunkedPhaseBudgetMs(t0, t0 + CALL2_RUN_DEADLINE_MS)).toBe(0);
   });
 
   it('honours a shorter phase deadline override', () => {

@@ -246,7 +246,9 @@ export function startDishRescue(args: {
           : runRescueSubMeal(
               rescueMealText(ingredients[f], args.language),
               args.subMeal,
-              args.runStartedAt
+              args.runStartedAt,
+              // Discarded once apply returned or the run deadline passed.
+              () => closed || timeLeft() <= 0
             )
       ).then(
         (parts) => {

@@ -384,6 +384,22 @@ describe('startDishRescue cleanup', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(runSubMeal).toHaveBeenCalledTimes(3);
   });
+
+  it('tells a running mini-meal to stop once the rescue closes', async () => {
+    subMealMock.mockImplementation(() => new Promise(() => {}));
+    const rescue = startDishRescue({
+      decomposition,
+      language: 'vi',
+      runStartedAt: Date.now(),
+      subMeal: DEPS,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    // The mixed dish's mini-meal started right after Call 1.
+    const shouldStop = subMealMock.mock.calls.at(-1)?.[3] as () => boolean;
+    expect(shouldStop()).toBe(false);
+    rescue.close();
+    expect(shouldStop()).toBe(true);
+  });
 });
 
 describe('rescueMealText', () => {

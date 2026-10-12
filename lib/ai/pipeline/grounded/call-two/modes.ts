@@ -47,14 +47,16 @@ export const CALL2_RUN_DEADLINE_MS = 45_000;
 /**
  * The chunked phase's budget when it starts at `now`: the phase deadline, cut
  * to what is left before the run deadline (`chunkedPhaseDeadlineMs` alone
- * ignores the time Call 1 and matching already spent), never under 1 s.
+ * ignores the time Call 1 and matching already spent). Past the run deadline
+ * it is 0: every chunk degrades to unresolved without a call, and the time
+ * stays with assembly and persistence.
  */
 export function chunkedPhaseBudgetMs(
   runStartedAt: number,
   now = Date.now()
 ): number {
   return Math.max(
-    1_000,
+    0,
     Math.min(
       chunkedPhaseDeadlineMs(),
       runStartedAt + CALL2_RUN_DEADLINE_MS - now
