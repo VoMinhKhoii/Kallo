@@ -500,6 +500,22 @@ describe('a piece count on the part a split dish is named after', () => {
     expect(out).not.toContain('user_count="1"');
   });
 
+  it('moves the count onto a hyphenated dish named from the part', () => {
+    expect(
+      dishPieceCount(
+        dish('Shrimp-katsu', [
+          {
+            ...shrimp,
+            rawName: 'shrimp',
+            canonicalName: 'Shrimp',
+            unitToken: 'piece',
+          },
+          crumbs,
+        ])
+      )
+    ).toMatchObject({ count: 1 });
+  });
+
   it('keeps a count of the food itself on the food', () => {
     // "5 con tôm" counts shrimp, not pieces of a dish.
     expect(

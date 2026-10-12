@@ -59,6 +59,9 @@ export interface MealItemWithCandidates {
   vesselEnvelope?: VesselEnvelope | null;
 }
 
+/** What may follow the part in the dish name: a space, hyphen or other non-letter. */
+const WORD_BREAK = /^[^\p{L}\p{M}\p{N}]/u;
+
 /** Units that count pieces of a whole dish, not of one of its parts. */
 const PIECE_UNIT =
   /^(mi[eế]ng|c[aá]i|chi[eế]c|l[aá]t|piece|pieces|pc|pcs|slice|slices)$/i;
@@ -84,10 +87,12 @@ export function dishPieceCount(mi: MealItemWithCandidates): {
   if (!count || !unitToken || !PIECE_UNIT.test(unitToken.trim())) return null;
   const dish = nameKey(mi.mealItem.name);
   const part = nameKey(ingredient.rawName);
-  // The dish must be named FROM the part, as whole words ("tôm tonkatsu" from
-  // "tôm"): a dish that only contains it ("cơm gà" with "2 miếng gà") is one
-  // plate with two pieces of chicken, and "hamburger" is not named from "ham".
-  if (!part || dish === part || !dish.startsWith(`${part} `)) return null;
+  // The dish must be named FROM the part, as whole words ("tôm tonkatsu" or
+  // "shrimp-katsu" from the shrimp): a dish that only contains it ("cơm gà"
+  // with "2 miếng gà") is one plate with two pieces of chicken, and
+  // "hamburger" is not named from "ham".
+  if (!part || dish === part || !dish.startsWith(part)) return null;
+  if (!WORD_BREAK.test(dish.slice(part.length))) return null;
   return { ingredient, count, unit: unitToken };
 }
 

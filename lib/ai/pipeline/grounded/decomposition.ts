@@ -178,7 +178,12 @@ export async function runGroundedDecomposition(args: {
       },
       DECOMPOSITION_TIMEOUT_MS,
       'grounded-decomposition'
-    );
+    ).catch((err: unknown) => {
+      // A failed Call 1 fails the analysis: nothing will read what the
+      // stream queued for matching.
+      streamedMatching.close();
+      throw err;
+    });
     providerRetryCount += Math.max(0, maxAttempt - 1);
     const { plan: _plan, ...decomposition } = result;
     return decomposition;
