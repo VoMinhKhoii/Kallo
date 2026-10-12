@@ -111,7 +111,9 @@ export function createStreamedMatching(
     )
       .catch(() => null)
       .then((results) => {
-        batch.forEach((p, i) => p.resolve(results?.[i] ?? null));
+        batch.forEach((p, i) => {
+          p.resolve(results?.[i] ?? null);
+        });
         inFlight = false;
         flush();
       });
