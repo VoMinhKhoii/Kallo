@@ -134,8 +134,13 @@ and one more capability. One-time, by a human, before the next TestFlight build:
 
 The lane signs each target with its own profile, and `ExportOptions.plist` maps both.
 `test/ios/communication_notification_test.dart` guards the wiring. Debug builds sign the
-extension automatically with the same team. The avatar only shows on a **physical device**; the
-Simulator renders the plain banner.
+extension automatically with the same team.
+
+To see the avatar without a device: `xcrun simctl push` (or dragging an `.apns` file onto the
+Simulator) **skips the service extension**, so it always shows the plain banner and proves nothing
+about the avatar. A real **sandbox** push to the Simulator does run it (verified 2026-10-12,
+iPhone 17 Pro Max / iOS 26.3): sign it with the sandbox-only key "Kallo APNs Dev"
+(`NDD7LX9P38`, team-scoped) and send it to the Simulator's own device token.
 
 Server side, the backend needs an **APNs auth key** (Apple Developer → Keys → enable APNs;
 download the `.p8` once) as `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, and
