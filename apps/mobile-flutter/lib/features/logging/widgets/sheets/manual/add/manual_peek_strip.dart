@@ -38,7 +38,9 @@ class ManualPeekStrip extends StatelessWidget {
     double grams = 0,
     String? itemId,
   }) {
-    final total = totalsForManualItems(items).caloriesKcal ?? 0;
+    // Unknown calories read "—"; only an empty plate is a known 0.
+    final total =
+        totalsForManualItems(items).caloriesKcal ?? (items.isEmpty ? 0 : null);
     final summary = 'logging.manualLogging.peek'.tr(
       namedArgs: {
         'count': 'logging.manualLogging.ingredientCount'.plural(items.length),
@@ -51,6 +53,8 @@ class ManualPeekStrip extends StatelessWidget {
         null,
       );
     }
+    // A food with no calorie figure moves the total by nothing it can name.
+    if (food.per100g.caloriesKcal == null) return (summary, null);
     final after = formatKcal(
       mealKcalWith(items, food, grams, replacing: itemId),
     );

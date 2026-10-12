@@ -75,64 +75,77 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
 
     // Header and Save are pinned; only the plate between them scrolls, so
     // Save stays on screen on a short phone, in landscape and at 1.3x type.
-    return KalloSheetSurface(
-      color: kPage,
-      constraints: BoxConstraints(
-        maxHeight: (media.size.height - media.viewInsets.bottom) * 0.9,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: kSheetContentInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          KalloSheetHeader(
-            title: 'logging.manualLogging.title'.tr(),
-            closeEnabled: !saving,
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ManualNameField(
-                    controller: _name,
-                    enabled: !saving,
-                    defaultTitle: defaultMealTitle(state.items),
-                  ),
-                  const SizedBox(height: 12),
-                  ManualMealTotals(totals: state.totals),
-                  ManualMealItems(
-                    items: state.items,
-                    onAdd: saving ? null : () => showManualAddSheet(context),
-                    onOpen:
-                        saving
-                            ? null
-                            : (item) =>
-                                showManualAddSheet(context, editing: item),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp6),
-                ],
+    // Mid-save the sheet holds against the barrier and a back gesture, so
+    // Save always answers with what the server stored.
+    return PopScope(
+      canPop: !saving,
+      child: KalloSheetSurface(
+        color: kPage,
+        constraints: BoxConstraints(
+          maxHeight: (media.size.height - media.viewInsets.bottom) * 0.9,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: kSheetContentInset),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            KalloSheetHeader(
+              title: 'logging.manualLogging.title'.tr(),
+              closeEnabled: !saving,
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ManualNameField(
+                      controller: _name,
+                      enabled: !saving,
+                      defaultTitle: defaultMealTitle(state.items),
+                    ),
+                    const SizedBox(height: 12),
+                    ManualMealTotals(
+                      totals: state.totals,
+                      empty: state.items.isEmpty,
+                    ),
+                    ManualMealItems(
+                      items: state.items,
+                      full: state.isFull,
+                      onAdd:
+                          saving || state.isFull
+                              ? null
+                              : () => showManualAddSheet(context),
+                      onOpen:
+                          saving
+                              ? null
+                              : (item) =>
+                                  showManualAddSheet(context, editing: item),
+                    ),
+                    const SizedBox(height: KalloSpacing.sp6),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: KalloSpacing.sp2),
-          if (_errorText != null) ...[
-            Text(
-              _errorText!,
-              textAlign: TextAlign.center,
-              style: dashMeta(color: KalloColors.danger),
-            ),
             const SizedBox(height: KalloSpacing.sp2),
+            if (_errorText != null) ...[
+              Text(
+                _errorText!,
+                textAlign: TextAlign.center,
+                style: dashMeta(color: KalloColors.danger),
+              ),
+              const SizedBox(height: KalloSpacing.sp2),
+            ],
+            KalloButton(
+              title: 'logging.manualLogging.save'.tr(),
+              loading: saving,
+              disabled: !state.canSave,
+              onPressed: _save,
+            ),
+            SizedBox(height: bottomInset),
           ],
-          KalloButton(
-            title: 'logging.manualLogging.save'.tr(),
-            loading: saving,
-            disabled: !state.canSave,
-            onPressed: _save,
-          ),
-          SizedBox(height: bottomInset),
-        ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../../models/nutrition/ingredient.dart';
+import '../../../../data/manual_log_providers.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../theme/calm_tokens.dart';
@@ -19,9 +20,14 @@ class ManualMealItems extends StatelessWidget {
     required this.items,
     required this.onOpen,
     required this.onAdd,
+    this.full = false,
   });
 
   final List<ManualLogItem> items;
+
+  /// The plate holds as many foods as a meal may: "Add ingredient" is off and
+  /// says why.
+  final bool full;
 
   /// Null while saving.
   final ValueChanged<ManualLogItem>? onOpen;
@@ -51,6 +57,12 @@ class ManualMealItems extends StatelessWidget {
             ListRow(
               icon: LucideIcons.plus300,
               label: 'logging.manualLogging.addIngredient'.tr(),
+              subline:
+                  full
+                      ? 'logging.manualLogging.mealFull'.tr(
+                        namedArgs: {'count': '$maxManualItems'},
+                      )
+                      : null,
               onTap: onAdd,
               enabled: onAdd != null,
             ),

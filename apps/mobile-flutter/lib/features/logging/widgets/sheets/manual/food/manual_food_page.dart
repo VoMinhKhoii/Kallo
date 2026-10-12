@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import '../../../../../../models/nutrition/ingredient.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../../../shared/widgets/surface/kallo_button.dart';
+import '../../../../../../theme/calm_tokens.dart';
 import '../../../../../../theme/kallo_theme.dart';
+import '../../../../data/manual_log_providers.dart';
 import '../../scan/result/header.dart';
 import 'manual_amount_card.dart';
 
@@ -24,6 +26,7 @@ class ManualFoodPage extends StatelessWidget {
     required this.onCommit,
     this.onBack,
     this.onRemove,
+    this.mealFull = false,
   });
 
   final IngredientSearchResult food;
@@ -39,9 +42,14 @@ class ManualFoodPage extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onRemove;
 
+  /// The meal already holds as many foods as it may: a new one cannot go in,
+  /// and the page says so over the disabled button.
+  final bool mealFull;
+
   @override
   Widget build(BuildContext context) {
     final macros = food.per100g.scaledTo(grams);
+    final blocked = mealFull && !inMeal;
     final bottomInset = math.max(
       MediaQuery.viewPaddingOf(context).bottom,
       KalloSpacing.sp4,
@@ -74,12 +82,23 @@ class ManualFoodPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: KalloSpacing.sp2),
+        if (blocked) ...[
+          Text(
+            'logging.manualLogging.mealFull'.tr(
+              namedArgs: {'count': '$maxManualItems'},
+            ),
+            textAlign: TextAlign.center,
+            style: dashMeta(),
+          ),
+          const SizedBox(height: KalloSpacing.sp2),
+        ],
         KalloButton(
           title:
               (inMeal
                       ? 'logging.manualLogging.update'
                       : 'logging.manualLogging.addToMeal')
                   .tr(),
+          disabled: blocked,
           onPressed: onCommit,
         ),
         if (inMeal && onRemove != null)

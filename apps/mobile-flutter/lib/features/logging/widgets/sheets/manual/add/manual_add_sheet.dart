@@ -132,9 +132,11 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
         strip -
         media.viewInsets.bottom;
     final open = _open;
+    // A new food on a full plate cannot go in: the strip promises nothing.
+    final blocked = state.isFull && open?.itemId == null;
     final peek = ManualPeekStrip.texts(
       state.items,
-      food: open?.food,
+      food: blocked ? null : open?.food,
       grams: _grams,
       itemId: open?.itemId,
     );
@@ -177,6 +179,7 @@ class _ManualAddSheetState extends ConsumerState<ManualAddSheet> {
                         onGrams: (grams) => setState(() => _grams = grams),
                         onCommit: _commit,
                         onRemove: open.itemId == null ? null : _remove,
+                        mealFull: state.isFull,
                         onBack: widget.editing == null ? _leaveFood : null,
                       ),
             ),

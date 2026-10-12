@@ -1400,7 +1400,8 @@
       "peekEmpty": "Chưa có nguyên liệu",
       "peek": "{count} · {kcal} kcal",
       "peekWith": "{kcal} kcal khi thêm món này",
-      "peekAfter": "{kcal} kcal"
+      "peekAfter": "{kcal} kcal",
+      "mealFull": "Mỗi bữa có tối đa {count} nguyên liệu"
     },
     "relog": {
       "groupDishes": "Món",

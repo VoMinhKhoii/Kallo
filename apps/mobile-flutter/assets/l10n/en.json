@@ -1403,7 +1403,8 @@
       "peekEmpty": "No ingredients yet",
       "peek": "{count} · {kcal} kcal",
       "peekWith": "{kcal} kcal with this",
-      "peekAfter": "{kcal} kcal"
+      "peekAfter": "{kcal} kcal",
+      "mealFull": "A meal holds up to {count} ingredients"
     },
     "relog": {
       "groupDishes": "Dishes",

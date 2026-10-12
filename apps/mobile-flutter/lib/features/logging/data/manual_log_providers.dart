@@ -67,6 +67,10 @@ class ManualLogState {
 
   bool get canSave => !isSaving && completeItems.isNotEmpty;
 
+  /// The plate holds [maxManualItems]: nothing more can go in, though what is
+  /// there still updates.
+  bool get isFull => items.length >= maxManualItems;
+
   IngredientMacrosPer100g get totals => totalsForManualItems(items);
 
   /// The meal's item for [ingredientId], if that food is already in it.
