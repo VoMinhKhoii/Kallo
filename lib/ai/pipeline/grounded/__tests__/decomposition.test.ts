@@ -17,7 +17,10 @@ vi.mock('@/lib/ai/matching/match-ingredients', () => ({
   createMatchingPrewarm: () => () => {},
 }));
 
-import { runGroundedDecomposition } from '../decomposition';
+import {
+  pinOnePartDishWeights,
+  runGroundedDecomposition,
+} from '../decomposition';
 
 function run(stream: GeminiClient['generateStructuredOutputStream']) {
   return runGroundedDecomposition({
@@ -51,5 +54,43 @@ describe('runGroundedDecomposition and streamed matching', () => {
     );
     expect(out).toEqual({ nonFood: true });
     expect(closeMock).toHaveBeenCalled();
+  });
+});
+
+describe('pinOnePartDishWeights', () => {
+  const dish = (servedMassG: number | undefined, names: string[]) => ({
+    name: names.join(' '),
+    cookingMethod: 'raw',
+    servedMassG,
+    ingredients: names.map((n) => ({ rawName: n, canonicalName: n })),
+  });
+  const meal = (...mealItems: ReturnType<typeof dish>[]) => ({
+    isFood: true,
+    mealSlot: 'snack' as const,
+    mealItems,
+  });
+
+  it("moves a one-part dish's typed weight onto its food", () => {
+    const m = meal(dish(100, ['almonds']));
+    pinOnePartDishWeights(m);
+    expect(m.mealItems[0].ingredients[0]).toMatchObject({
+      explicitMass: { grams: 100, basis: 'unknown' },
+    });
+    expect(m.mealItems[0].servedMassG).toBeUndefined();
+  });
+
+  it("keeps a food's own typed weight, and leaves several-part dishes to scaling", () => {
+    const own = dish(100, ['almonds']);
+    Object.assign(own.ingredients[0], {
+      explicitMass: { grams: 80, basis: 'edible' },
+    });
+    const m = meal(own, dish(300, ['rice', 'egg']), dish(undefined, ['pear']));
+    pinOnePartDishWeights(m);
+    expect(m.mealItems[0].ingredients[0]).toMatchObject({
+      explicitMass: { grams: 80 },
+    });
+    expect(m.mealItems[1].servedMassG).toBe(300);
+    expect(m.mealItems[1].ingredients[0]).not.toHaveProperty('explicitMass');
+    expect(m.mealItems[2].ingredients[0]).not.toHaveProperty('explicitMass');
   });
 });

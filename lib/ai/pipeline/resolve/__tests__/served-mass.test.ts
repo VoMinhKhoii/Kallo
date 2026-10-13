@@ -4,7 +4,7 @@ import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/de
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import { scaleToServedMass, withDishWeight } from '../served-mass';
+import { scaleToServedMass } from '../served-mass';
 
 const triple = (mid: number) => ({ low: mid, mid, high: mid });
 
@@ -314,39 +314,5 @@ describe('scaleToServedMass', () => {
       ])
     );
     expect(grams(out.state)).toEqual([200, 100]);
-  });
-});
-
-describe('withDishWeight', () => {
-  const dish = (servedMassG: number | undefined, names: string[]) => ({
-    name: names.join(' '),
-    cookingMethod: 'raw',
-    servedMassG,
-    ingredients: names.map((n) => ({ rawName: n, canonicalName: n })),
-  });
-
-  it("gives a one-part dish's typed weight to its food", () => {
-    const d = dish(100, ['almonds']);
-    expect(withDishWeight(d, d.ingredients[0]).explicitMass).toEqual({
-      grams: 100,
-      basis: 'unknown',
-    });
-  });
-
-  it("keeps a food's own typed weight, and leaves several-part dishes to scaling", () => {
-    const own = dish(100, ['almonds']);
-    const pinned = {
-      ...own.ingredients[0],
-      explicitMass: { grams: 80, basis: 'edible' as const },
-    };
-    expect(withDishWeight(own, pinned).explicitMass?.grams).toBe(80);
-    const many = dish(300, ['rice', 'egg']);
-    expect(
-      withDishWeight(many, many.ingredients[0]).explicitMass
-    ).toBeUndefined();
-    const unweighed = dish(undefined, ['almonds']);
-    expect(
-      withDishWeight(unweighed, unweighed.ingredients[0]).explicitMass
-    ).toBeUndefined();
   });
 });

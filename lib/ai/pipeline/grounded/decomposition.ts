@@ -272,6 +272,7 @@ export async function runGroundedDecomposition(args: {
       ing.canonicalName = capitalizeFirst(ing.canonicalName);
     }
   }
+  pinOnePartDishWeights(decomposition);
 
   return {
     nonFood: false,
@@ -283,4 +284,21 @@ export async function runGroundedDecomposition(args: {
     promptCharsCall1,
     streamedMatching,
   };
+}
+
+/**
+ * A one-part "dish" the user weighed ("almonds 100g") is that food's own typed
+ * weight: Call 1 sometimes writes it on the dish instead of the food. In
+ * place, the weight moves to the food's `explicitMass` (unless it has its
+ * own), so every later step reads it as a typed weight, and leaves the dish.
+ */
+export function pinOnePartDishWeights(
+  decomposition: MealDecompositionV2
+): void {
+  for (const mi of decomposition.mealItems) {
+    const [only, ...rest] = mi.ingredients;
+    if (!mi.servedMassG || !only || rest.length > 0) continue;
+    only.explicitMass ??= { grams: mi.servedMassG, basis: 'unknown' };
+    delete mi.servedMassG;
+  }
 }

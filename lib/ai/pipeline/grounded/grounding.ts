@@ -10,7 +10,6 @@ import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import { withDishWeight } from '@/lib/ai/pipeline/resolve/served-mass';
 import { resolvePortionsForCallTwo } from '@/lib/ai/portion/ingredient-portion';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
@@ -68,18 +67,8 @@ export async function prepareGrounding(args: {
 
   // Portion resolver (Phase 3): a grounded weight becomes a Call-2 ANCHOR;
   // null → LLM estimates; unresolved → Phase-1 clarify. See `resolver.ts`.
-  // A one-part dish's typed weight is its food's (`withDishWeight`); matching
-  // above keeps the food as Call 1 wrote it, so its streamed results hold.
   const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
-    resolvePortionsForCallTwo(
-      decomposition.mealItems.flatMap((mi) =>
-        mi.ingredients.map((ing) => ({
-          ingredient: withDishWeight(mi, ing),
-          dishCookingMethod: mi.cookingMethod,
-        }))
-      ),
-      args.userContext.inputLanguage
-    );
+    resolvePortionsForCallTwo(flatIngredients, args.userContext.inputLanguage);
 
   const vesselEnvelopes = decomposition.mealItems.map((mealItem) =>
     args.vesselEnabled ? resolveVesselEnvelope(mealItem) : null

@@ -241,7 +241,7 @@ export function selectedCandidate(
 }
 
 /** The server portion anchor the bridge ships in place of Call 2's mass. */
-function portionAnchor(portion: PortionResolution | undefined) {
+export function portionAnchor(portion: PortionResolution | undefined) {
   return portion?.grams &&
     portion.provenance !== 'llm_range' &&
     portion.provenance !== 'unresolved' &&
@@ -254,10 +254,9 @@ function shippedMass(
   estimate: GroundedIngredientEstimate,
   ingredient: DecomposedIngredientV2,
   match: IngredientV2MatchResult | undefined,
-  portion: PortionResolution | undefined
+  anchor: ReturnType<typeof portionAnchor>
 ): GroundedMassResolution {
   const candidate = selectedCandidate(estimate, match);
-  const anchor = portionAnchor(portion);
   return resolveGroundedMass({
     ground: estimate,
     candidateInediblePct: candidate?.inediblePct ?? null,
@@ -280,7 +279,10 @@ export function shippedEdibleGrams(
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  return shippedMass(estimate, ingredient, match, portion).edibleG ?? 0;
+  return (
+    shippedMass(estimate, ingredient, match, portionAnchor(portion)).edibleG ??
+    0
+  );
 }
 
 /**
@@ -310,12 +312,12 @@ export function shippedServedGrams(
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  const m = shippedMass(estimate, ingredient, match, portion);
+  const anchor = portionAnchor(portion);
+  const m = shippedMass(estimate, ingredient, match, anchor);
   const rowGrams =
     m.massBasis === 'gross_as_served'
       ? (m.refuse?.grossG ?? 0)
       : (m.edibleG ?? 0);
-  const plateAnchor =
-    portionAnchor(portion) !== null && ingredient.stateHint !== 'raw_weight';
+  const plateAnchor = anchor !== null && ingredient.stateHint !== 'raw_weight';
   return plateAnchor ? rowGrams : rowGrams * servedPerRowGram(estimate, match);
 }

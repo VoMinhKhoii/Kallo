@@ -27,10 +27,6 @@ import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/de
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
-import {
-  logRawRowYields,
-  scaleToServedMass,
-} from '@/lib/ai/pipeline/resolve/served-mass';
 import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { resolveVesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
@@ -230,12 +226,7 @@ export async function analyzeMealV2(
       },
       rescue
     );
-    // A dish the user weighed has its parts scaled to that weight, which also
-    // invalidates what was streamed for it.
-    logRawRowYields(review.state);
-    const served = scaleToServedMass(review.state);
-    const run = served.state;
-    const changed = review.changed || served.scaled > 0;
+    const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a
     // soup), so its vessel envelope is recomputed from the spliced dish. When
     // the container word sat on the replaced ingredient itself, it is carried
@@ -254,9 +245,7 @@ export async function analyzeMealV2(
         : vesselEnvelopes;
     if (changed) {
       stage3.itemMacrosStreamed.clear();
-      console.info(
-        `[review] ${review.summary}, ${served.scaled} weighed dishes scaled`
-      );
+      console.info(`[review] ${review.summary}`);
     }
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---

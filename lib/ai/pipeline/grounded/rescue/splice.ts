@@ -12,8 +12,8 @@ import type {
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
-import { scaleEstimate } from '@/lib/ai/pipeline/resolve/served-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
