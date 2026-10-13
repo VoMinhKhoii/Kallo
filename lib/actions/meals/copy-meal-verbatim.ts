@@ -112,6 +112,7 @@ export async function copyMealVerbatim(
         cookingMethod: row.cookingMethod,
         matchConfidence: row.matchConfidence,
         ...nutritionValuesToRow(nutrition),
+        alcoholG: row.alcoholG == null ? null : row.alcoholG * factor,
       }))
     );
   }

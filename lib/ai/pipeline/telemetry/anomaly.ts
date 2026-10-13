@@ -25,6 +25,7 @@
  */
 
 import { MAX_KCAL_PER_100G } from '@/lib/ai/pipeline/contracts/nutrition-limits';
+import { ALCOHOL_KCAL_PER_G } from '@/lib/ai/pipeline/resolve/macros/alcohol';
 import type {
   MatchedIngredient,
   UnmatchedIngredient,
@@ -139,7 +140,10 @@ export function classifyV2Anomalies(input: {
       }
 
       // --- macro_inconsistent: kcal != 4P+4C+9F -----------------------------
-      const identity = kcalFromMacros(pMid, cMid, fMid);
+      // An alcoholic row's ethanol energy is in kcal by design, not drift.
+      const identity =
+        kcalFromMacros(pMid, cMid, fMid) +
+        ALCOHOL_KCAL_PER_G * (ing.alcoholG ?? 0);
       const denom = Math.max(kcalMid, 1);
       const deviation = Math.abs(kcalMid - identity) / denom;
       if (deviation > V2_ANOMALY_THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {

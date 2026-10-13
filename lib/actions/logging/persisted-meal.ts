@@ -82,6 +82,22 @@ export function scaleNutritionRow(
   return result;
 }
 
+/** A meal's `alcohol_g` is the sum of its items' — null when no item has any,
+ *  so a meal with no alcoholic row keeps the column empty. */
+export function sumAlcoholG(
+  values: (number | null | undefined)[]
+): number | null {
+  let total = 0;
+  let any = false;
+  for (const value of values) {
+    if (value != null && Number.isFinite(value)) {
+      total += value;
+      any = true;
+    }
+  }
+  return any ? total : null;
+}
+
 /** Build a PersistedIngredient — the single construction point for its shape. */
 export function buildPersistedIngredient(
   fields: PersistedIngredient

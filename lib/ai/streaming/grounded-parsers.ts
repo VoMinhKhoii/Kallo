@@ -23,6 +23,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/resolve/macro-resolution';
 import { __testing as nutritionTesting } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { scalePer100g } from '@/lib/ai/pipeline/resolve/macros/macro-base';
 import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { ZERO_TRIPLE } from '@/lib/ai/pipeline/resolve/verdicts';
 import type {
@@ -233,12 +234,7 @@ function computeBaseFromVerdict(
   const candidate = candidates[idx];
   const per100g = candidate.nutrition;
   if (!per100g) return undefined;
-  return {
-    caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
-    proteinG: (per100g.proteinG ?? 0) * (grams / 100),
-    carbohydrateG: (per100g.carbohydrateG ?? 0) * (grams / 100),
-    fatG: (per100g.fatG ?? 0) * (grams / 100),
-  };
+  return scalePer100g(per100g, grams, candidate.info.foodGroupEn);
 }
 
 function candidateFromVerdict(
