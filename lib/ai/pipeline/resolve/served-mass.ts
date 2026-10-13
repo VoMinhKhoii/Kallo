@@ -11,6 +11,7 @@ import type {
   DecomposedIngredientV2,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { isRescuePart } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import {
@@ -20,7 +21,11 @@ import {
 } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 
-/** The parts move by at most this factor either way; past it, trust Call 2. */
+/**
+ * Call 2's parts move by at most this factor either way; past it, trust
+ * Call 2. Parts the rescue spliced in were sized by the server, not Call 2,
+ * so they move freely to the typed weight.
+ */
 const MAX_FACTOR = 3;
 /** Closer than this to the typed weight already, the parts are left alone. */
 const TOLERANCE = 0.02;
@@ -88,6 +93,7 @@ export function scaleToServedMass(state: RunState): {
     if (!target) return;
     let pinned = 0;
     let free = 0;
+    let call2Free = false;
     const freeParts: GroundedIngredientEstimate[] = [];
     pairs.forEach(({ mealItemIdx, ingredient, ground }, f) => {
       if (mealItemIdx !== d || !ground) return;
@@ -105,14 +111,16 @@ export function scaleToServedMass(state: RunState): {
       else {
         free += grams;
         freeParts.push(ground);
+        call2Free ||= !isRescuePart(portion);
       }
     });
     if (free <= 0) return;
     const unlistedLiquid =
       isLiquidDish(dish) && !dish.ingredients.some(isLiquidPart);
+    const cap = call2Free ? MAX_FACTOR : Number.POSITIVE_INFINITY;
     const k = Math.min(
-      unlistedLiquid ? 1 : MAX_FACTOR,
-      Math.max(1 / MAX_FACTOR, (target - pinned) / free)
+      unlistedLiquid ? 1 : cap,
+      Math.max(1 / cap, (target - pinned) / free)
     );
     if (Math.abs(k - 1) < TOLERANCE) return;
     for (const ground of freeParts)

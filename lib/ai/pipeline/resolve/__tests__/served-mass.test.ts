@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { RESCUE_PART_PORTION } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { scaleToServedMass } from '../served-mass';
@@ -160,6 +161,20 @@ describe('scaleToServedMass', () => {
     );
     expect(none.scaled + single.scaled).toBe(0);
     expect(grams(single.state)).toEqual([200]);
+  });
+
+  it('moves rescued parts past the 3× limit to the typed weight', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Seafood platter', servedMassG: 350 }, [
+        {
+          name: 'whole crab',
+          g: 1400,
+          refusePct: 75,
+          portion: RESCUE_PART_PORTION,
+        },
+      ])
+    );
+    expect(grams(out.state)).toEqual([350]);
   });
 
   it('scales a one-part dish the rescue replaced with one free food', () => {

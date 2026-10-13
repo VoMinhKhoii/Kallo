@@ -26,13 +26,18 @@ export interface RescuePart {
 }
 
 /** A rescued part has no portion anchor: its scaled Call 2 grams stand. */
-const DEFER_TO_CALL_TWO: PortionResolution = {
+export const RESCUE_PART_PORTION: PortionResolution = {
   grams: null,
   massBasis: null,
   provenance: 'llm_range',
   confidence: 'none',
   note: 'rescue part: grams scaled to the main run',
 };
+
+/** A part the rescue spliced in, its grams already scaled by the server. */
+export function isRescuePart(portion: PortionResolution | undefined): boolean {
+  return portion === RESCUE_PART_PORTION;
+}
 
 /**
  * Replace each rescued flat ingredient (`parts` key = flat index in the main
@@ -96,7 +101,7 @@ export function spliceRescue(
       for (const p of subParts) {
         ingredients.push(p.ingredient);
         matchResults.push(p.match);
-        portionResolutions.push(DEFER_TO_CALL_TWO);
+        portionResolutions.push(RESCUE_PART_PORTION);
         ordered.push(scaleEstimate(p.estimate, k));
       }
       touched = true;
