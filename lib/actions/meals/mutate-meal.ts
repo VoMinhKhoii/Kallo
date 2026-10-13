@@ -8,6 +8,7 @@ import {
   extractNutritionValues,
   nutritionValuesToRow,
   scaleNutritionRow,
+  sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
@@ -190,8 +191,10 @@ export async function updateMealAction(input: {
       id: string;
       estimatedGrams: number;
       nutrition: NutritionValues;
+      alcoholG: number | null;
     }[] = [];
     const keptNutrition: NutritionValues[] = [];
+    const keptAlcohol: (number | null)[] = [];
 
     for (const row of keptRows) {
       const newGrams = editById.get(row.id);
@@ -204,35 +207,26 @@ export async function updateMealAction(input: {
       ) {
         const ratio = newGrams / currentGrams;
         const scaled = scaleNutritionRow(row, ratio);
+        const alcoholG = row.alcoholG != null ? row.alcoholG * ratio : null;
         updates.push({
           id: row.id,
           estimatedGrams: newGrams,
           nutrition: scaled,
+          alcoholG,
         });
         keptNutrition.push(scaled);
+        keptAlcohol.push(alcoholG);
       } else {
         keptNutrition.push(extractNutritionValues(row));
+        keptAlcohol.push(row.alcoholG);
       }
     }
 
     const mealTotals = sumDisplayedNutrition(keptNutrition);
 
-    // Alcohol is tracked on the meal, not per item, so it can't be recomputed
-    // from rows the way the macros are. Approximate it by the change in total
-    // mass: shrinking or dropping items scales the alcohol down proportionally,
-    // mirroring how the displayed macros fall. (Exact per-ingredient alcohol
-    // would need a schema change; this keeps the number from going stale.)
-    const oldTotalGrams = itemRows.reduce(
-      (sum, row) => sum + (row.estimatedGrams ?? 0),
-      0
-    );
-    const newKeptGrams = keptRows.reduce(
-      (sum, row) => sum + (editById.get(row.id) ?? row.estimatedGrams ?? 0),
-      0
-    );
-    const massRatio = oldTotalGrams > 0 ? newKeptGrams / oldTotalGrams : 0;
-    const newAlcoholG =
-      meal.alcoholG != null ? meal.alcoholG * massRatio : null;
+    // Alcohol is kept per item, so the meal's total is re-summed exactly like
+    // the macros: editing or dropping a food item leaves a beer's alcohol alone.
+    const newAlcoholG = sumAlcoholG(keptAlcohol);
 
     // Apply: scale the edited item rows, drop the removed ones, write the new
     // meal totals — all scoped to this meal's ids.
@@ -242,6 +236,7 @@ export async function updateMealAction(input: {
         .set({
           estimatedGrams: update.estimatedGrams,
           ...nutritionValuesToRow(update.nutrition),
+          alcoholG: update.alcoholG,
         })
         .where(and(eq(mealItems.id, update.id), eq(mealItems.mealId, meal.id)));
     }

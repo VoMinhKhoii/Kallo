@@ -35,6 +35,11 @@ export interface ProcessedIngredient {
   matchConfidence: number | null;
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
+  /**
+   * Ethanol grams from a matched alcoholic row. Its energy is already inside
+   * `caloriesKcal`; this only feeds `meals.alcohol_g`. Absent otherwise.
+   */
+  alcoholG?: number;
 }
 
 /** Final processed meal item in the pipeline result */

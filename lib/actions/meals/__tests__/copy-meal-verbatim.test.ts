@@ -63,7 +63,7 @@ function sourceMeal(overrides: Record<string, unknown> = {}): SourceMeal {
 
 type SourceItem = Parameters<typeof copyMealVerbatim>[2][number];
 
-function sourceItem(): SourceItem {
+function sourceItem(overrides: Record<string, unknown> = {}): SourceItem {
   return {
     id: 'd3bbef22-cf3e-4bb1-9e90-9eecef613d44',
     mealId: SOURCE_MEAL_ID,
@@ -79,12 +79,16 @@ function sourceItem(): SourceItem {
     proteinG: 30,
     carbohydrateG: 70,
     fatG: 20,
+    ...overrides,
   } as unknown as SourceItem;
 }
 
 /** Captures what the copy would have written, and hands `meals` an id back. */
 function fakeTx() {
-  const captured: { meal?: Record<string, unknown> } = {};
+  const captured: {
+    meal?: Record<string, unknown>;
+    items?: Record<string, unknown>[];
+  } = {};
   const tx = {
     insert: vi.fn((table: { id?: string }) => ({
       values: vi.fn((vals: unknown) => {
@@ -94,6 +98,7 @@ function fakeTx() {
             returning: vi.fn().mockResolvedValue([{ id: NEW_MEAL_ID }]),
           };
         }
+        captured.items = vals as Record<string, unknown>[];
         return undefined;
       }),
     })),
@@ -106,6 +111,20 @@ function fakeTx() {
 describe('copyMealVerbatim', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('scales each item’s alcohol with the meal’s on a split', async () => {
+    const { tx, captured } = fakeTx();
+
+    await copyMealVerbatim(
+      tx,
+      sourceMeal({ alcoholG: 20 }),
+      [sourceItem({ alcoholG: 20 }), sourceItem({ alcoholG: null })],
+      { userId: USER_ID, loggedAt: SOURCE_LOGGED_AT, factor: 0.5 }
+    );
+
+    expect(captured.meal?.alcoholG).toBe(10);
+    expect(captured.items?.map((item) => item.alcoholG)).toEqual([10, null]);
   });
 
   it('carries an explicit slot through to the row and the returned card', async () => {

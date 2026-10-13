@@ -337,8 +337,9 @@ export const meals = pgTable(
     // Cheat-meal logging (entry_mode='cheat'): a slider-based occasion estimate
     // that bypasses ingredient decomposition. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
-    // Alcohol (ethanol) grams — the one calorie source the P/C/F sliders can't
-    // hold (~7 kcal/g). Nullable; only populated for cheat meals with drinks.
+    // Alcohol (ethanol) grams — the one calorie source P/C/F can't hold
+    // (~7 kcal/g; already inside caloriesKcal). Nullable. Cheat meals: from the
+    // drinks slider. Precise meals: the sum of their items' alcohol_g.
     alcoholG: numeric('alcohol_g', { mode: 'number' }),
     // Slider spec + the user's chosen levels, so a cheat meal can be re-edited
     // or repeated. Shape: { spec: CheatSliderSpec, levels: CheatSliderLevels }.
@@ -468,6 +469,10 @@ export const mealItems = pgTable(
     vitaminB9Mcg: numeric('vitamin_b9_mcg', { mode: 'number' }),
     vitaminB12Mcg: numeric('vitamin_b12_mcg', { mode: 'number' }),
     vitaminHMcg: numeric('vitamin_h_mcg', { mode: 'number' }),
+    // Ethanol grams from an alcoholic food row (energy already inside
+    // caloriesKcal). Kept per item so edits, removals, relogs and copies can
+    // re-sum `meals.alcohol_g` exactly. Null for every non-alcoholic item.
+    alcoholG: numeric('alcohol_g', { mode: 'number' }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -475,6 +480,10 @@ export const mealItems = pgTable(
   },
   (table) => [
     index('meal_items_meal_order_idx').on(table.mealId, table.mealItemOrder),
+    check(
+      'meal_items_alcohol_g_non_negative_check',
+      sql`${table.alcoholG} IS NULL OR ${table.alcoholG} >= 0`
+    ),
   ]
 );
 

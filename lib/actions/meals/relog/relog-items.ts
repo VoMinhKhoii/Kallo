@@ -7,6 +7,7 @@ import {
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
+  sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
@@ -106,6 +107,7 @@ export async function relogMealItemsAction(
       const mealNutrition = sumDisplayedNutrition(
         copies.map((c) => c.nutrition)
       );
+      const alcoholG = sumAlcoholG(copies.map((c) => c.row.alcoholG));
       // Same derivation the optimistic client card uses — one source of truth.
       const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
       // A composed meal is no more confident than its least confident part.
@@ -122,7 +124,7 @@ export async function relogMealItemsAction(
             confidenceOverall,
             loggedAt,
             entryMode: 'precise',
-            alcoholG: null,
+            alcoholG,
             portionFactor: 1,
             ...nutritionValuesToRow(mealNutrition),
           })
@@ -151,6 +153,7 @@ export async function relogMealItemsAction(
           cookingMethod: row.cookingMethod,
           matchConfidence: row.matchConfidence,
           ...nutritionValuesToRow(nutrition),
+          alcoholG: row.alcoholG,
         }))
       );
 
@@ -174,7 +177,7 @@ export async function relogMealItemsAction(
           nutrition: mealNutrition,
           mealItemGroups,
           entryMode: 'precise',
-          alcoholG: null,
+          alcoholG,
           cheatSliders: null,
           share,
           portionFactor: 1,

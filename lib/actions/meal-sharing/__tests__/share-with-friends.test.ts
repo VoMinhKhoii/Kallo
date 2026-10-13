@@ -416,6 +416,27 @@ describe('shareMealWithFriendsAction', () => {
     expect(invites[0]?.portionFactor).toBe('0.5');
   });
 
+  it('split mode: halves an item’s alcohol along with the meal’s', async () => {
+    queueLimitSelect([sourceMeal({ alcoholG: 20 })]);
+    queueWhereSelect([sourceItem({ alcoholG: 20 })]);
+    queueLimitSelect([]);
+    queueWhereSelect([friendEdge]);
+    queueLimitSelect([]);
+
+    const setValues: Record<string, unknown>[] = [];
+    installUpdate({ captures: setValues });
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'split',
+    });
+
+    expect(setValues[0]?.alcoholG).toBe(10); // the item row
+    expect(setValues[1]?.alcoholG).toBe(10); // the meal row
+  });
+
   it('split mode: three participants → factor 1/3 for two friends', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);
