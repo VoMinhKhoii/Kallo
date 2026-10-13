@@ -70,17 +70,14 @@ export function useDiscardPending(args: {
       const commit = async () => {
         if (undone) return;
         undone = true; // onAutoClose and onDismiss can both fire.
+        // Expired or already saved comes back as `not_found` — either way the
+        // card IS gone, so it stays gone. Only a throw puts it back.
         try {
           await discardPendingAnalysisAction({ analysisId });
-        } catch (error) {
-          // Expired or already saved reads as "not found" — either way the
-          // card IS gone, so it stays gone. Anything else puts it back.
-          const message = error instanceof Error ? error.message : '';
-          if (!message.includes('không tồn tại')) {
-            setHidden(analysisId, false);
-            toast.error(t('discardError'));
-            return;
-          }
+        } catch {
+          setHidden(analysisId, false);
+          toast.error(t('discardError'));
+          return;
         }
         dropEverywhere();
         queryClient.invalidateQueries({

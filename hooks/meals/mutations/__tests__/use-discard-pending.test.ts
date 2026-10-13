@@ -111,9 +111,10 @@ describe('useDiscardPending', () => {
   });
 
   it('treats "not found" (expired or already saved) as gone, silently', async () => {
-    vi.mocked(discardPendingAnalysisAction).mockRejectedValue(
-      new Error('Phân tích không tồn tại hoặc đã được lưu.')
-    );
+    vi.mocked(discardPendingAnalysisAction).mockResolvedValue({
+      success: false,
+      reason: 'not_found',
+    });
     const { queryClient, view, options } = setup();
     await act(() => options.onAutoClose());
     expect(toastMock.error).not.toHaveBeenCalled();
@@ -124,8 +125,10 @@ describe('useDiscardPending', () => {
   });
 
   it('a real failure puts the card back and says so', async () => {
+    // What production delivers for any thrown action error: a generic
+    // message, never the server's own wording.
     vi.mocked(discardPendingAnalysisAction).mockRejectedValue(
-      new Error('network down')
+      new Error('An error occurred in the Server Components render.')
     );
     const { queryClient, view, options } = setup();
     await act(() => options.onAutoClose());
