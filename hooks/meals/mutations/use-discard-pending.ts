@@ -50,8 +50,13 @@ export function useDiscardPending(args: {
 
       let undone = false;
       // Gone for good: drop the local card and the server-pending twin, so
-      // neither resurfaces once the hide is lifted.
-      const dropEverywhere = () => {
+      // neither resurfaces once the hide is lifted. A day fetch already in
+      // flight read the row before the DELETE; cancel it first, or it lands
+      // after the drop and brings the card back (mirrors useDeleteMeal).
+      const dropEverywhere = async () => {
+        await queryClient.cancelQueries({
+          queryKey: loggingDayKeys.byUserDate(userId, selectedDate),
+        });
         setMessages((prev) => prev.filter((m) => m.analysisId !== analysisId));
         queryClient.setQueriesData<LoggingDayData>(
           { queryKey: loggingDayKeys.byUserDate(userId, selectedDate) },
@@ -80,7 +85,7 @@ export function useDiscardPending(args: {
           toast.error(t('discardError'));
           return;
         }
-        dropEverywhere();
+        await dropEverywhere();
         // A real discard changed only what the cache already shows. `not_found`
         // may mean it was SAVED elsewhere (another tab or the app), so the day
         // has a meal this cache lacks — fetch it now rather than on next focus.

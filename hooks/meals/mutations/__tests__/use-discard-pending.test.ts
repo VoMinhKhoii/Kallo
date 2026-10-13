@@ -92,7 +92,13 @@ describe('useDiscardPending', () => {
     });
     const { queryClient, setMessages, options } = setup();
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    const cancel = vi.spyOn(queryClient, 'cancelQueries');
     await act(() => options.onAutoClose());
+    // An in-flight day fetch read the row before the DELETE; it must be
+    // cancelled, or it lands after the drop and resurrects the card.
+    expect(cancel).toHaveBeenCalledWith({
+      queryKey: loggingDayKeys.byUserDate(USER_ID, DATE),
+    });
     await act(() => options.onDismiss());
     // Our own discard: the cache already shows the truth, no refetch.
     expect(invalidate).toHaveBeenCalledWith({
