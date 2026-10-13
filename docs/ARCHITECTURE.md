@@ -179,8 +179,10 @@ another domain module is a smell worth a second look.
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
 | `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
-| `pipeline/grounded/review.ts` | reviews Call 2's row picks around the rescue (`reviewPicks`, the one entry): a row contradicting Call 2's own estimate becomes a rejection; a fried dish's separate oil is dropped when its foods matched rows that are already fried | ok |
+| `pipeline/grounded/review.ts` | reviews Call 2's row picks around the rescue (`reviewPicks`, the one entry): a row contradicting Call 2's own estimate becomes a rejection; a fried dish's separate oil is dropped when its foods matched rows that are already fried; last, weighed dishes are scaled (`resolve/served-mass.ts`) | ok |
 | `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |
+| `pipeline/resolve/estimate-scale.ts` | scales one Call 2 ingredient estimate (mass, plate mass, every macro bound) by one factor; shared by the served-mass step and the dish rescue | ok |
+| `pipeline/resolve/served-mass.ts` | a dish the user weighed (Call 1 `servedMassG`) has its unpinned parts scaled so their plate grams (Call 2's `servedG` for a part on a raw or dry row) add up to the typed weight; a soup or braise with no listed liquid only shrinks | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 
 ### `lib/admin/`

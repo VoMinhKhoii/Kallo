@@ -12,6 +12,7 @@ import type {
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
@@ -25,7 +26,7 @@ export interface RescuePart {
 }
 
 /** A rescued part has no portion anchor: its scaled Call 2 grams stand. */
-const DEFER_TO_CALL_TWO: PortionResolution = {
+export const RESCUE_PART_PORTION: PortionResolution = {
   grams: null,
   massBasis: null,
   provenance: 'llm_range',
@@ -33,22 +34,9 @@ const DEFER_TO_CALL_TWO: PortionResolution = {
   note: 'rescue part: grams scaled to the main run',
 };
 
-function scaled(
-  e: GroundedIngredientEstimate,
-  k: number
-): GroundedIngredientEstimate {
-  const t = (b: GroundedIngredientEstimate['fatG']) => ({
-    low: b.low * k,
-    mid: b.mid * k,
-    high: b.high * k,
-  });
-  return {
-    ...e,
-    grossG: e.grossG * k,
-    proteinG: t(e.proteinG),
-    carbohydrateG: t(e.carbohydrateG),
-    fatG: t(e.fatG),
-  };
+/** A part the rescue spliced in, its grams already scaled by the server. */
+export function isRescuePart(portion: PortionResolution | undefined): boolean {
+  return portion === RESCUE_PART_PORTION;
 }
 
 /**
@@ -113,8 +101,8 @@ export function spliceRescue(
       for (const p of subParts) {
         ingredients.push(p.ingredient);
         matchResults.push(p.match);
-        portionResolutions.push(DEFER_TO_CALL_TWO);
-        ordered.push(scaled(p.estimate, k));
+        portionResolutions.push(RESCUE_PART_PORTION);
+        ordered.push(scaleEstimate(p.estimate, k));
       }
       touched = true;
       rescued++;

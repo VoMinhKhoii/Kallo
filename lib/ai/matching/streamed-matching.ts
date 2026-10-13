@@ -26,7 +26,6 @@ const matchKey = (ing: Ingredient) =>
     ing.nameVi ?? null,
     ing.tableName ?? null,
     ing.stateHint ?? null,
-    ing.explicitMass ?? null,
   ]);
 
 /**

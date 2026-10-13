@@ -391,7 +391,7 @@ describe('reviewPicks', () => {
     expect(out.changed).toBe(true);
     expect(out.rescued).toBe(0);
     expect(out.summary).toBe(
-      '1 wrong-form rows, 0 ingredients rescued, 1 oil rows dropped'
+      '1 wrong-form rows, 0 ingredients rescued, 1 oil rows dropped, 0 weighed dishes scaled'
     );
   });
 

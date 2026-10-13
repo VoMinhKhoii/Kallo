@@ -40,6 +40,14 @@ export function buildGroundedIngredientEstimateSchema() {
       .describe(
         'REQUIRED integer share of grossG that is inedible bone, shell, or rind. Emit explicit 0 for boneless/shell-off foods; never omit.'
       ),
+    servedG: z
+      .number()
+      .positive()
+      .finite()
+      .optional()
+      .describe(
+        'ONLY when the selected candidate is db_state="raw": the same whole piece as it sits on the plate, cooked as served (the portion you converted grossG from), refuse included like grossG. Omit for cooked or unknown rows.'
+      ),
   };
 
   return z

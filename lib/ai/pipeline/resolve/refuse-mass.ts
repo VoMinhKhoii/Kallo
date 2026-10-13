@@ -240,6 +240,33 @@ export function selectedCandidate(
   return idx ? match?.candidates[Number(idx) - 1] : undefined;
 }
 
+/** The server portion anchor the bridge ships in place of Call 2's mass. */
+export function portionAnchor(portion: PortionResolution | undefined) {
+  return portion?.grams &&
+    portion.provenance !== 'llm_range' &&
+    portion.provenance !== 'unresolved' &&
+    portion.grams.mid > 0
+    ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
+    : null;
+}
+
+function shippedMass(
+  estimate: GroundedIngredientEstimate,
+  ingredient: DecomposedIngredientV2,
+  match: IngredientV2MatchResult | undefined,
+  anchor: ReturnType<typeof portionAnchor>
+): GroundedMassResolution {
+  const candidate = selectedCandidate(estimate, match);
+  return resolveGroundedMass({
+    ground: estimate,
+    candidateInediblePct: candidate?.inediblePct ?? null,
+    canonicalName: ingredient.canonicalName,
+    rawName: ingredient.rawName,
+    prepNotes: ingredient.prepNotes,
+    authoritativeMass: anchor,
+  });
+}
+
 /**
  * The edible grams the bridge ships for one ingredient, by the bridge's own
  * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
@@ -252,22 +279,47 @@ export function shippedEdibleGrams(
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  const candidate = selectedCandidate(estimate, match);
-  const anchor =
-    portion?.grams &&
-    portion.provenance !== 'llm_range' &&
-    portion.provenance !== 'unresolved' &&
-    portion.grams.mid > 0
-      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
-      : null;
   return (
-    resolveGroundedMass({
-      ground: estimate,
-      candidateInediblePct: candidate?.inediblePct ?? null,
-      canonicalName: ingredient.canonicalName,
-      rawName: ingredient.rawName,
-      prepNotes: ingredient.prepNotes,
-      authoritativeMass: anchor,
-    }).edibleG ?? 0
+    shippedMass(estimate, ingredient, match, portionAnchor(portion)).edibleG ??
+    0
   );
+}
+
+/**
+ * Call 2's plate grams per row gram for a part priced on a raw or dry row
+ * (`servedG / grossG`: ~2.5 for dry pasta, ~0.75 for raw meat), or 1 when the
+ * row is cooked or Call 2 gave no `servedG`, so its grams are already the
+ * plate's. A raw pick the review rejected keeps no row but still carries the
+ * grams Call 2 emitted for it, so its `servedG` still holds.
+ */
+export function servedPerRowGram(
+  estimate: GroundedIngredientEstimate,
+  match: IngredientV2MatchResult | undefined
+): number {
+  const state = selectedCandidate(estimate, match)?.info.state;
+  const rowGrams = state === 'raw' || state === undefined;
+  return rowGrams && estimate.servedG ? estimate.servedG / estimate.grossG : 1;
+}
+
+/**
+ * The as-served grams behind what the bridge ships for one ingredient: its
+ * gross mass, bones and shells included, unless it ships an edible anchor,
+ * and cooked as on the plate when it is priced on a raw or dry row. A typed
+ * weight is already the plate's unless the user weighed it raw. What a scale
+ * reads for the food on the plate; also linear in `grossG`.
+ */
+export function shippedServedGrams(
+  estimate: GroundedIngredientEstimate,
+  ingredient: DecomposedIngredientV2,
+  match: IngredientV2MatchResult | undefined,
+  portion: PortionResolution | undefined
+): number {
+  const anchor = portionAnchor(portion);
+  const m = shippedMass(estimate, ingredient, match, anchor);
+  const rowGrams =
+    m.massBasis === 'gross_as_served'
+      ? (m.refuse?.grossG ?? 0)
+      : (m.edibleG ?? 0);
+  const plateAnchor = anchor !== null && ingredient.stateHint !== 'raw_weight';
+  return plateAnchor ? rowGrams : rowGrams * servedPerRowGram(estimate, match);
 }
