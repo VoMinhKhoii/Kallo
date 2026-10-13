@@ -177,6 +177,50 @@ describe('decomposition-v2 locale blocks', () => {
     }
   });
 
+  it('both locales scale a typed weight to the eaten share, not a weight unit', () => {
+    const vi = buildDecompositionV2Prompt(baseUserContext);
+    expect(vi).toMatch(/\*\*Shared weights\*\*/);
+    expect(vi).toMatch(/"ăn nửa miếng bít tết 400g" → 200/);
+    expect(vi).toMatch(/"nửa ký thịt bò" → 500/);
+
+    const en = buildDecompositionV2Prompt(enUserContext);
+    expect(en).toMatch(/\*\*Shared weights\*\*/);
+    expect(en).toMatch(/"half of a 400g steak" → 200/);
+    expect(en).toMatch(/"half a pound of ground beef" → 227/);
+  });
+
+  it('both locales keep a whole dish weight off every ingredient, with a worked example', () => {
+    const vi = buildDecompositionV2Prompt(baseUserContext);
+    expect(vi).toMatch(/\*\*Dish weights\*\*/);
+    expect(vi).toMatch(/<input>300g mì xào bò<\/input>/);
+    expect(vi).not.toMatch(/"rawName":"mì"[^}]*explicitMass/);
+    expect(vi).toMatch(
+      /"name":"mì xào bò","cookingMethod":"xào","servedMassG":300/
+    );
+
+    const en = buildDecompositionV2Prompt(enUserContext);
+    expect(en).toMatch(/\*\*Dish weights\*\*/);
+    expect(en).toMatch(/<input>350g chicken alfredo pasta<\/input>/);
+    expect(en).not.toMatch(/"rawName":"fettuccine"[^}]*explicitMass/);
+    expect(en).toMatch(/"servedMassG":350/);
+    expect(en).toMatch(/weighs both: put them in ONE meal item/);
+    expect(en).toMatch(/is that food.s alone; its side stays a separate item/);
+  });
+
+  it('the weighed-dish examples show every field the call schema requires', () => {
+    // Call 1's schema requires queryEn, nameVi and tableName on every
+    // ingredient; examples without them raised schema re-asks (Haiku probe:
+    // 16 → 2 per 170 calls once these examples carried them).
+    const en = buildDecompositionV2Prompt(enUserContext);
+    expect(en).toMatch(
+      /"rawName":"fettuccine","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+","tableName":"[^"]+"/
+    );
+    const vi = buildDecompositionV2Prompt(baseUserContext);
+    expect(vi).toMatch(
+      /"rawName":"mì","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+","tableName":"[^"]+"/
+    );
+  });
+
   it('both locales carry a deep composed-dish decomposition example', () => {
     const vi = buildDecompositionV2Prompt(baseUserContext);
     // cơm tấm plate: dish names become meal items, ingredients are single

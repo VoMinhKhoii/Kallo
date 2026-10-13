@@ -102,7 +102,7 @@ export const decomposedIngredientV2Schema = z
     explicitMass: explicitMassSchema
       .optional()
       .describe(
-        'Set ONLY when the user typed an explicit weight. `basis` is the physical mass basis: gross_as_served for a named bone-in/shell-on object, edible for a boneless/peeled/fillet form, otherwise unknown. Cooking state belongs in stateHint. Never invent a mass.'
+        'Set ONLY when the user typed an explicit weight for this one food — never a weight typed for a whole dish split into several ingredients. `basis` is the physical mass basis: gross_as_served for a named bone-in/shell-on object, edible for a boneless/peeled/fillet form, otherwise unknown. Cooking state belongs in stateHint. Never invent a mass.'
       ),
     prepNotes: z
       .array(z.string().min(1).max(60))
@@ -150,6 +150,14 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .optional()
         .describe(
           'Size cue attached to the dish vessel word ("tô nhỏ"→small). Omit when unspecified.'
+        ),
+      servedMassG: z
+        .number()
+        .positive()
+        .finite()
+        .optional()
+        .describe(
+          'Grams of this WHOLE dish as served that THIS user ate, when the user typed a weight for the whole dish (their share of it when they shared it: "a third of a 900g tray" → 300). Omit when no weight was typed for the whole dish.'
         ),
       ingredients: z
         .array(ingredient)

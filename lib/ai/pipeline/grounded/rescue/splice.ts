@@ -13,6 +13,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { scaleEstimate } from '@/lib/ai/pipeline/resolve/served-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
@@ -32,24 +33,6 @@ const DEFER_TO_CALL_TWO: PortionResolution = {
   confidence: 'none',
   note: 'rescue part: grams scaled to the main run',
 };
-
-function scaled(
-  e: GroundedIngredientEstimate,
-  k: number
-): GroundedIngredientEstimate {
-  const t = (b: GroundedIngredientEstimate['fatG']) => ({
-    low: b.low * k,
-    mid: b.mid * k,
-    high: b.high * k,
-  });
-  return {
-    ...e,
-    grossG: e.grossG * k,
-    proteinG: t(e.proteinG),
-    carbohydrateG: t(e.carbohydrateG),
-    fatG: t(e.fatG),
-  };
-}
 
 /**
  * Replace each rescued flat ingredient (`parts` key = flat index in the main
@@ -114,7 +97,7 @@ export function spliceRescue(
         ingredients.push(p.ingredient);
         matchResults.push(p.match);
         portionResolutions.push(DEFER_TO_CALL_TWO);
-        ordered.push(scaled(p.estimate, k));
+        ordered.push(scaleEstimate(p.estimate, k));
       }
       touched = true;
       rescued++;
