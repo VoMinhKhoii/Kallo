@@ -85,7 +85,7 @@ export function scaleToServedMass(state: RunState): {
   let scaled = 0;
   state.decomposition.mealItems.forEach((dish, d) => {
     const target = dish.servedMassG;
-    if (!target || dish.ingredients.length < 2) return;
+    if (!target) return;
     let pinned = 0;
     let free = 0;
     const freeParts: GroundedIngredientEstimate[] = [];

@@ -291,8 +291,8 @@ export async function runGroundedDecomposition(args: {
  * weight: Call 1 sometimes writes it on the dish instead of the food. In
  * place, the weight is copied to the food's `explicitMass` (unless it has its
  * own), so every later step reads it as a typed weight. It stays on the dish
- * too: scaling skips a one-part dish, but if the dish rescue splits the food
- * into parts, they are scaled back to it.
+ * too: the pinned food leaves scaling nothing to move, but if the dish rescue
+ * replaces the food, its replacements are scaled back to it.
  */
 export function pinOnePartDishWeights(
   decomposition: MealDecompositionV2

@@ -146,7 +146,7 @@ describe('scaleToServedMass', () => {
     expect(grams(out.state)).toEqual([150, 214, 36]);
   });
 
-  it('leaves dishes without a typed weight, and single-food dishes, alone', () => {
+  it('leaves dishes without a typed weight, and a single food pinned by it, alone', () => {
     const none = scaleToServedMass(
       stateOf({ name: 'Fried rice' }, [
         { name: 'rice', g: 300 },
@@ -154,10 +154,21 @@ describe('scaleToServedMass', () => {
       ])
     );
     const single = scaleToServedMass(
-      stateOf({ name: 'Rice', servedMassG: 100 }, [{ name: 'rice', g: 200 }])
+      stateOf({ name: 'Rice', servedMassG: 100 }, [
+        { name: 'rice', g: 200, portion: typed(100) },
+      ])
     );
     expect(none.scaled + single.scaled).toBe(0);
     expect(grams(single.state)).toEqual([200]);
+  });
+
+  it('scales a one-part dish the rescue replaced with one free food', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Seafood boil', servedMassG: 350 }, [
+        { name: 'shell-on shrimp', g: 175, refusePct: 40 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([350]);
   });
 
   it('never grows a soup whose broth is not one of its parts, but may shrink it', () => {
