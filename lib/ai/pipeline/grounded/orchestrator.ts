@@ -27,7 +27,10 @@ import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/de
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
-import { scaleToServedMass } from '@/lib/ai/pipeline/resolve/served-mass';
+import {
+  logRawRowYields,
+  scaleToServedMass,
+} from '@/lib/ai/pipeline/resolve/served-mass';
 import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { resolveVesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
@@ -229,6 +232,7 @@ export async function analyzeMealV2(
     );
     // A dish the user weighed has its parts scaled to that weight, which also
     // invalidates what was streamed for it.
+    logRawRowYields(review.state);
     const served = scaleToServedMass(review.state);
     const run = served.state;
     const changed = review.changed || served.scaled > 0;

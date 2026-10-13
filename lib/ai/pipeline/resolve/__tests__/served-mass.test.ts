@@ -28,6 +28,8 @@ type Part = {
   name: string;
   g: number;
   refusePct?: number;
+  /** Priced on a raw/dry row, with Call 2's plate grams. */
+  raw?: { servedG?: number };
   portion?: PortionResolution;
 };
 
@@ -60,6 +62,7 @@ function stateOf(
           selectedCandidateId: 'c1',
           grossG: p.g,
           refusePct: p.refusePct ?? 0,
+          ...(p.raw?.servedG ? { servedG: p.raw.servedG } : {}),
           proteinG: triple(0),
           carbohydrateG: triple(p.g / 4),
           fatG: triple(0),
@@ -75,7 +78,10 @@ function stateOf(
           ingredientIndex: i,
           candidates: [
             {
-              info: { matchedName: p.name },
+              info: {
+                matchedName: p.name,
+                state: p.raw ? 'raw' : 'cooked',
+              },
               nutrition: {
                 caloriesKcal: 100,
                 proteinG: 0,
@@ -240,6 +246,35 @@ describe('scaleToServedMass', () => {
       ])
     );
     expect(grams(out.state)).toEqual([300, 200]);
+  });
+
+  it('counts a part on a dry row by its plate grams, not its dry grams', () => {
+    const fits = scaleToServedMass(
+      stateOf({ name: 'Mac and cheese', servedMassG: 300 }, [
+        { name: 'dry macaroni', g: 80, raw: { servedG: 200 } },
+        { name: 'cheese sauce', g: 100 },
+      ])
+    );
+    expect(fits.scaled).toBe(0);
+
+    const grows = scaleToServedMass(
+      stateOf({ name: 'Mac and cheese', servedMassG: 450 }, [
+        { name: 'dry macaroni', g: 80, raw: { servedG: 200 } },
+        { name: 'cheese sauce', g: 100 },
+      ])
+    );
+    expect(grams(grows.state)).toEqual([120, 150]);
+    expect(grows.state.grounded.mealItems[0].ingredients[0].servedG).toBe(300);
+  });
+
+  it('falls back to row grams when Call 2 gave no plate grams for a dry row', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Mac and cheese', servedMassG: 360 }, [
+        { name: 'dry macaroni', g: 80, raw: {} },
+        { name: 'cheese sauce', g: 100 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([160, 200]);
   });
 
   it('moves the parts by at most 3× either way', () => {

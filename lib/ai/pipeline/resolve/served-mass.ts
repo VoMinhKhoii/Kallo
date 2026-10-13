@@ -12,7 +12,10 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
-import { shippedServedGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import {
+  selectedCandidate,
+  shippedServedGrams,
+} from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 
 /** The parts move by at most this factor either way; past it, trust Call 2. */
@@ -96,6 +99,7 @@ export function scaleEstimate(
   return {
     ...e,
     grossG: e.grossG * k,
+    ...(e.servedG ? { servedG: e.servedG * k } : {}),
     proteinG: t(e.proteinG),
     carbohydrateG: t(e.carbohydrateG),
     fatG: t(e.fatG),
@@ -154,4 +158,26 @@ export function scaleToServedMass(state: RunState): {
     scaled++;
   });
   return { state: { ...state, grounded }, scaled };
+}
+
+/**
+ * Telemetry: one line per part priced on a raw or dry row, with Call 2's
+ * plate-to-row ratio. A dry staple in a cooked dish near 1 suggests cooked
+ * grams on a dry row; read before deciding how to repair that.
+ */
+export function logRawRowYields(state: RunState): void {
+  pairIngredientsWithGrounded(state.decomposition, state.grounded).forEach(
+    ({ mealItemIdx, ingredient, ground }, f) => {
+      const row = state.matchResults[f];
+      if (!ground || selectedCandidate(ground, row)?.info.state !== 'raw')
+        return;
+      const dish = state.decomposition.mealItems[mealItemIdx];
+      const ratio = ground.servedG
+        ? (ground.servedG / ground.grossG).toFixed(2)
+        : 'none';
+      console.info(
+        `[raw-row-yield] ${ingredient.canonicalName} | dish=${dish?.name} method=${dish?.cookingMethod} grossG=${Math.round(ground.grossG)} servedG=${ground.servedG ? Math.round(ground.servedG) : 'none'} ratio=${ratio}`
+      );
+    }
+  );
 }

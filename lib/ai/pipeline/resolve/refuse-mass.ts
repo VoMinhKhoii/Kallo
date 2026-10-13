@@ -280,9 +280,24 @@ export function shippedEdibleGrams(
 }
 
 /**
+ * Call 2's plate grams per row gram for a part priced on a raw or dry row
+ * (`servedG / grossG`: ~2.5 for dry pasta, ~0.75 for raw meat), or 1 when the
+ * row is cooked or Call 2 gave no `servedG`, so its grams are already the
+ * plate's.
+ */
+export function servedPerRowGram(
+  estimate: GroundedIngredientEstimate,
+  match: IngredientV2MatchResult | undefined
+): number {
+  const raw = selectedCandidate(estimate, match)?.info.state === 'raw';
+  return raw && estimate.servedG ? estimate.servedG / estimate.grossG : 1;
+}
+
+/**
  * The as-served grams behind what the bridge ships for one ingredient: its
- * gross mass, bones and shells included, unless it ships an edible anchor.
- * What a scale reads for the food on the plate; also linear in `grossG`.
+ * gross mass, bones and shells included, unless it ships an edible anchor,
+ * and cooked as on the plate when it is priced on a raw or dry row. What a
+ * scale reads for the food on the plate; also linear in `grossG`.
  */
 export function shippedServedGrams(
   estimate: GroundedIngredientEstimate,
@@ -291,7 +306,9 @@ export function shippedServedGrams(
   portion: PortionResolution | undefined
 ): number {
   const m = shippedMass(estimate, ingredient, match, portion);
-  return m.massBasis === 'gross_as_served'
-    ? (m.refuse?.grossG ?? 0)
-    : (m.edibleG ?? 0);
+  const rowGrams =
+    m.massBasis === 'gross_as_served'
+      ? (m.refuse?.grossG ?? 0)
+      : (m.edibleG ?? 0);
+  return rowGrams * servedPerRowGram(estimate, match);
 }

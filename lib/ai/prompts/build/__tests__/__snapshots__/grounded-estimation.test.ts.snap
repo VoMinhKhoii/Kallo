@@ -36,7 +36,7 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
   If an ingredient carries user_mass_g="N" with mass_basis="gross_as_served", N is AUTHORITATIVE grossG; emit grossG=N and estimate refusePct. With mass_basis="edible", resolved_grams is authoritative. With mass_basis="unknown", infer conservatively from the named physical form.
   Otherwise, estimate the portion served. BASIS RULE — overrides every other sizing hint in this section: grossG is the WHOLE piece as served, INCLUDING bone/shell/skin/rind not eaten, in the SAME state as the selected candidate's db_state. refusePct is the integer share of grossG that is inedible; boneless/shell-off foods MUST emit 0. The SERVER computes edible mass = grossG × (1 − refusePct/100); never emit edibleG.
     - db_state="cooked": grossG = cooked / as-served whole mass.
-    - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grossG = raw/dry whole mass. Convert from the as-served portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check edible mass with db_per_100g_kcal: edibleG × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high.
+    - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grossG = raw/dry whole mass. Convert from the as-served portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check edible mass with db_per_100g_kcal: edibleG × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high. Also emit servedG = the as-served (cooked, on the plate) whole mass you converted from, e.g. 200g cooked pasta on a dry row → grossG 80, servedG 200.
     - db_state="unknown": treat as cooked unless the user weighed raw.
   Refuse anchors: rib ≈ 40–60%; wing ≈ 30–50%; whole fish ≈ 35–50%; fish steak/section ≈ 15–30%; shell-on shrimp ≈ 35–55%; whole crab ≈ 55–75%; egg still in shell ≈ 10–15%; bone-in thigh/drumstick ≈ 25–35%; bare stock/soup bones (xương heo/bò/gà, xương ống, cục xương) ≈ 50–75% — only clinging meat and marrow are edible, and a candidate named "chỉ lấy phần nạc"/"separable lean only" still describes edible flesh per 100 g, so grossG stays the whole bone-in mass with a matching nonzero refusePct; boneless/peeled/picked/shell-off = 0.
   db_inedible_pct, when present on a candidate, is that row's own measured inedible share; still emit your independent refusePct (telemetry compares them — the server does not use db_inedible_pct).
@@ -83,7 +83,7 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
-  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, servedG? (raw rows only), proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
   proteinG, carbohydrateG and fatG are REQUIRED on every ingredient, matched or not — never calories. 0 is a valid value; an omitted field is a schema violation and the whole response is rejected.
   Round numerical fields to 1 decimal place.
 
