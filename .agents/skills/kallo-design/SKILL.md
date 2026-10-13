@@ -72,7 +72,7 @@ The README has a full **Drift watchlist** section calling out 8 anti-patterns th
 - **No emoji.** Anywhere. Use Lucide icons instead.
 - **Icon allowance is small**: `ArrowRight`, `ArrowUp`, `Sparkles`, `Flame` (once, the calorie ring), `Check`, `ChevronDown`, and the four nav-rail icons. Anything else needs to justify itself.
 - **No pure red, no pure green, no purple gradients.** Status colors are sage `#7ca368` and terracotta `#d37b69`. One exception (owner, 2026-10-14): the delete action inside a confirm uses conventional error red `--kallo-error` (`#dc2626`), and every web confirm goes through `components/shared/confirm-dialog` (bold Lora title, one filled action, Cancel bare until hover).
-- **Lora is never bold** — 400 normal or 300 italic light. The signature treatment is the second clause of a headline in italic 300 at `--kallo-accent` (`#c9a87c`).
+- **Lora is never bold** — 400 normal or 300 italic light. Exception (owner, 2026-10-14): dialog titles — `ResponsiveModal` (Log weight) and `ConfirmDialog` — are Lora semibold (600). The signature treatment is the second clause of a headline in italic 300 at `--kallo-accent` (`#c9a87c`).
 - **No photography in the product.** Marketing imagery, if used, must be warm-toned (tungsten/golden hour), grainy, never blue-cast.
 - **Preserve Vietnamese diacritics** in dish names — never anglicize `phở`, `bún chả`, `mực kho`.
 - **Bounded estimates, never fake precision.** When generating sample data, write ranges (`760–845 kcal`) and confidence labels, not single-decimal numbers.
