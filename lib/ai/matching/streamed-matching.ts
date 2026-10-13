@@ -95,20 +95,23 @@ export function createStreamedMatching(
   gemini: GeminiClient
 ): StreamedMatching {
   const started = new Map<string, Promise<IngredientV2MatchResult | null>>();
-  // Ingredients waiting for the next batch. One batch runs at a time and takes
-  // everything that streamed in meanwhile: the instance shares a small pool of
-  // database connections (DB_POOL_MAX) across all its requests, so a query per
-  // meal item would queue behind each other (and behind every other request)
-  // instead of overlapping.
+  // Ingredients waiting for the next batch. While Call 1 streams, one batch
+  // runs at a time and takes everything that streamed in meanwhile: the
+  // instance shares a small pool of database connections (DB_POOL_MAX) across
+  // all its requests, so a query per meal item would queue behind each other
+  // (and behind every other request) instead of overlapping. Once Call 1 is
+  // done, `match` sends what is still queued at once: on a cold instance the
+  // running batch can be the first meal item alone, still waiting for the card
+  // catalog, and the rest of the meal would otherwise start only after it.
   let pending: Array<{
     ing: Ingredient;
     resolve: (r: IngredientV2MatchResult | null) => void;
   }> = [];
-  let inFlight = false;
+  let inFlight = 0;
   let closed = false;
-  const flush = () => {
-    if (closed || inFlight || pending.length === 0) return;
-    inFlight = true;
+  const flush = (now = false) => {
+    if (closed || pending.length === 0 || (inFlight > 0 && !now)) return;
+    inFlight++;
     const batch = pending;
     pending = [];
     matchCardCandidates(
@@ -121,7 +124,7 @@ export function createStreamedMatching(
         batch.forEach((p, i) => {
           p.resolve(results?.[i] ?? null);
         });
-        inFlight = false;
+        inFlight--;
         flush();
       });
   };
@@ -156,6 +159,7 @@ export function createStreamedMatching(
       flush();
     },
     async match(ingredients, dishCookingMethods, legacy) {
+      flush(true);
       const early = await Promise.all(
         ingredients.map((ing) => started.get(matchKey(ing)) ?? null)
       );
