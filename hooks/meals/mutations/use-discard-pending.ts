@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { discardPendingAnalysisAction } from '@/lib/actions/meals/mutate-meal';
 import type { LoggingDayData } from '@/lib/actions/meals/types';
 import type { ChatMessage } from '@/lib/core/types/meal';
-import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
+import { dailyMealsKeys, loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import { mealShareInvitesKeys } from '@/lib/domain/social/query-keys';
 
 /**
@@ -72,18 +72,29 @@ export function useDiscardPending(args: {
         undone = true; // onAutoClose and onDismiss can both fire.
         // Expired or already saved comes back as `not_found` — either way the
         // card IS gone, so it stays gone. Only a throw puts it back.
+        let result: Awaited<ReturnType<typeof discardPendingAnalysisAction>>;
         try {
-          await discardPendingAnalysisAction({ analysisId });
+          result = await discardPendingAnalysisAction({ analysisId });
         } catch {
           setHidden(analysisId, false);
           toast.error(t('discardError'));
           return;
         }
         dropEverywhere();
+        // A real discard changed only what the cache already shows. `not_found`
+        // may mean it was SAVED elsewhere (another tab or the app), so the day
+        // has a meal this cache lacks — fetch it now rather than on next focus.
+        const goneElsewhere = !result.success;
         queryClient.invalidateQueries({
           queryKey: loggingDayKeys.byUserDate(userId, selectedDate),
-          refetchType: 'none',
+          refetchType: goneElsewhere ? 'active' : 'none',
         });
+        if (goneElsewhere) {
+          queryClient.invalidateQueries({
+            queryKey: dailyMealsKeys.byDate(selectedDate),
+          });
+          queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+        }
         // A card staged from a friend's cheat offer hands that offer back, so
         // the inbox must refetch. Only the server knows whether this one did.
         queryClient.invalidateQueries({ queryKey: mealShareInvitesKeys.all });

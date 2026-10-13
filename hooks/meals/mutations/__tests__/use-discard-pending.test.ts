@@ -9,6 +9,7 @@ import type {
   PendingMealConfirmation,
 } from '@/lib/actions/meals/types';
 import type { ChatMessage } from '@/lib/core/types/meal';
+import { dailyMealsKeys, loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import { mealShareInvitesKeys } from '@/lib/domain/social/query-keys';
 import { DATE, DAY_KEY, dayData, makeWrapper, USER_ID } from './fixtures';
 
@@ -93,6 +94,11 @@ describe('useDiscardPending', () => {
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await act(() => options.onAutoClose());
     await act(() => options.onDismiss());
+    // Our own discard: the cache already shows the truth, no refetch.
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: loggingDayKeys.byUserDate(USER_ID, DATE),
+      refetchType: 'none',
+    });
 
     expect(discardPendingAnalysisAction).toHaveBeenCalledTimes(1);
     expect(discardPendingAnalysisAction).toHaveBeenCalledWith({
@@ -116,8 +122,18 @@ describe('useDiscardPending', () => {
       reason: 'not_found',
     });
     const { queryClient, view, options } = setup();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await act(() => options.onAutoClose());
     expect(toastMock.error).not.toHaveBeenCalled();
+    // Possibly saved on another device: the day must refetch NOW, or that
+    // meal and its calories stay missing from the open feed.
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: loggingDayKeys.byUserDate(USER_ID, DATE),
+      refetchType: 'active',
+    });
+    expect(invalidate.mock.calls.map((c) => c[0]?.queryKey)).toContainEqual(
+      dailyMealsKeys.byDate(DATE)
+    );
     expect(view.result.current.hiddenAnalysisIds.size).toBe(0);
     expect(dayData(queryClient)?.pendingConfirmations.map((p) => p.id)).toEqual(
       ['other']
