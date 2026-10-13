@@ -168,6 +168,9 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261010163635_card_vectors_halfvec.sql` | A (Drizzle) | `food_card_vectors.embedding` `vector(768)` → `halfvec(768)` (~280 MB of out-of-line floats → rows ~1.5 KB inline); drops the 256-dim index first |
 | `20261010163700_card_vectors_halfvec_index_and_function.sql` | B (Manual) | Rebuilds the 256-dim HNSW on the `halfvec` column; `match_food_cards` rescores with `q.v::halfvec(768)` |
 | `20261013060331_card_vectors_unembedded_index.sql` | A (Drizzle) | Partial index `food_card_vectors_unembedded_idx` on rows `WHERE embedding IS NULL`: the card catalog's readiness check was a 6.6 s seq scan of ~71k inline vectors on prod's Nano instance; the index is empty outside a backfill, so the check is instant |
+| `20261013070517_add_food_card_texts.sql` | A (Drizzle) | `food_card_texts` (each card string once, `embedding halfvec(768)` NULL until backfilled; unique text) and `food_card_text_rows` (which rows each string names; PK text+row, row index); partial index `food_card_texts_unembedded_idx` on not-yet-embedded strings for the readiness check. Replace `food_card_vectors`, which stays (deprecated, unread) until a later migration drops it with `match_food_cards` |
+| `20261013070600_food_card_texts_index_and_function.sql` | B (Manual) | Fills both tables from `food_card_vectors` (existing vectors reused, nothing re-embedded); read-only RLS; 256-dim `halfvec` HNSW; `match_food_card_texts(vector[], per_query)` — nearest `per_query` distinct strings per query vector, expanded to their rows, max-sim per row |
+| `20261013070700_seed_food_cards.sql` | Data (generated) | Re-seeds the 7,729 cards after duplicate-name pruning (case/punctuation copies, unaccented VI copies, word-order paraphrases): 71,342 row strings → 66,803 pairs over 57,843 distinct strings |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -206,7 +209,8 @@ Once the new revision is fully promoted and no older revision can serve traffic,
 
 > **Current matcher: food-card retrieval** (`lib/ai/matching/cards/`, since 2026-10). Each
 > ingredient is searched by four strings Call 1 writes (rawName, canonicalName, queryEn,
-> nameVi) against every string that names a card (`match_food_cards`, HNSW, max-sim per row),
+> nameVi) against every distinct string that names a card (`match_food_card_texts`, HNSW over
+> `food_card_texts`, expanded to rows via `food_card_text_rows`, max-sim per row),
 > plus an in-memory trigram index over card names and BM25 of Call 1's USDA-style `tableName`
 > over row English names. Arms are fused by RRF, collapsed to one row per concept (grade/salt
 > siblings) and cut to 8 candidates; all sources compete equally. Until a database has embedded

@@ -82,10 +82,10 @@ describe('Cloud Run prod workflow', () => {
     // Postgres resolves tables at parse time, so the existence check must be
     // its own statement for an older DEPLOY_SHA with no card tables.
     expect(workflow).toContain(
-      `SELECT to_regclass('public.food_card_vectors') IS NOT NULL`
+      `SELECT to_regclass('public.food_card_texts') IS NOT NULL`
     );
     expect(workflow).not.toContain(
-      'ELSE (SELECT count(*) FROM food_card_vectors'
+      'ELSE (SELECT count(*) FROM food_card_texts'
     );
     expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });

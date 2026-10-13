@@ -13,7 +13,8 @@ type CardMatchRow = {
 };
 
 /**
- * Nearest cards for each query vector via `match_food_cards` (one round trip).
+ * Nearest cards for each query vector via `match_food_card_texts` (one round
+ * trip; each distinct card string is one hit, expanded to the rows it names).
  * Returns one list per input vector, in input order, best similarity first.
  */
 export async function searchCardVectors(
@@ -24,7 +25,7 @@ export async function searchCardVectors(
   if (embeddings.length === 0) return out;
   const literal = `{${embeddings.map((v) => `"[${v.join(',')}]"`).join(',')}}`;
   const rows = await db.execute<CardMatchRow>(
-    sql`SELECT query_index, food_composition_id, similarity FROM match_food_cards(${literal}::vector[])`
+    sql`SELECT query_index, food_composition_id, similarity FROM match_food_card_texts(${literal}::vector[])`
   );
   for (const r of rows) {
     out[Number(r.query_index) - 1]?.push({

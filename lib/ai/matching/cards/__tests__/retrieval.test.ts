@@ -120,7 +120,7 @@ function mockDb(
     const text = JSON.stringify(q);
     if (text.includes('to_regclass')) return [{ present: ready }];
     if (text.includes('embedding IS NULL')) return [{ ready }];
-    if (text.includes('match_food_cards')) return hits;
+    if (text.includes('match_food_card_texts')) return hits;
     return rows;
   });
   // The catalog reads readiness and rows inside one transaction.
@@ -208,6 +208,40 @@ describe('matchCardCandidates', () => {
     ).toEqual(['a', 'b', 'b', 'a']);
   });
 
+  it('searches a repeated query string once and shares its hits', async () => {
+    // queryEn and nameVi fall back to the other two fields, and the same food
+    // is logged twice: eight query strings, two distinct.
+    const sparse = { rawName: 'Ức bò', canonicalName: 'Beef' };
+    const hits = [
+      {
+        query_index: 1,
+        food_composition_id: 'usda_brisket_choice',
+        similarity: 0.9,
+      },
+      { query_index: 2, food_composition_id: 'fao_beef', similarity: 0.85 },
+    ];
+    const db = mockDb(true, hits);
+    const results =
+      (await matchCardCandidates([sparse, sparse], db, gemini)) ?? [];
+    expect(gemini.generateEmbeddingBatch).toHaveBeenCalledWith([
+      'Ức bò',
+      'Beef',
+    ]);
+    const search = vi
+      .mocked(db.execute)
+      .mock.calls.map(([q]) => JSON.stringify(q))
+      .find((text) => text.includes('match_food_card_texts'));
+    expect(search?.match(/\[0\.1,0\.2\]/g)).toHaveLength(2);
+    for (const result of results) {
+      const vectorIds = result.candidates
+        .filter((c) => c.info.matchType === 'vector')
+        .map((c) => c.info.foodCompositionId);
+      expect(vectorIds).toEqual(
+        expect.arrayContaining(['usda_brisket_choice', 'fao_beef'])
+      );
+    }
+  });
+
   it('keeps the lexical arms when the vector arm fails', async () => {
     const failing = {
       generateEmbeddingBatch: vi.fn(async () => {
@@ -281,7 +315,7 @@ describe('matchCardCandidates', () => {
     const vectorQueries = vi
       .mocked(db.execute)
       .mock.calls.filter(([q]) =>
-        JSON.stringify(q).includes('match_food_cards')
+        JSON.stringify(q).includes('match_food_card_texts')
       );
     expect(vectorQueries).toHaveLength(0);
     errorSpy.mockRestore();
