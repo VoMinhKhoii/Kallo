@@ -2,17 +2,7 @@
 
 import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 
 interface MarkDayCompleteButtonProps {
   /** The day's logged calories — what the trends will count it at. */
@@ -29,8 +19,8 @@ interface MarkDayCompleteButtonProps {
  * action — the primary fix is still to type the missing meal — so this reads
  * as the second option it is.
  *
- * The dialog is NOT destructive-styled: nothing is deleted, and terracotta is
- * reserved in this palette for "something is gone", never for "your numbers
+ * The dialog is NOT destructive-styled: nothing is deleted, and the error red is
+ * reserved for "something is gone", never for "your numbers
  * are off". The irreversibility is carried by the body copy, which is where a
  * user actually reads it.
  */
@@ -42,8 +32,8 @@ export function MarkDayCompleteButton({
   const t = useTranslations('logging.feedArea.partialDayNotice');
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
+    <ConfirmDialog
+      trigger={
         <button
           type="button"
           disabled={isPending}
@@ -52,23 +42,12 @@ export function MarkDayCompleteButton({
           <Check className="size-4" aria-hidden="true" />
           {t('markComplete')}
         </button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-normal font-sans-display text-[18px]">
-            {t('confirmTitle')}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
-            {t('confirmBody', { calories })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('confirmCancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
-            {t('confirmAccept')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      }
+      title={t('confirmTitle')}
+      description={t('confirmBody', { calories })}
+      confirmLabel={t('confirmAccept')}
+      cancelLabel={t('confirmCancel')}
+      onConfirm={onConfirm}
+    />
   );
 }

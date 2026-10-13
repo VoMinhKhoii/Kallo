@@ -71,7 +71,7 @@ The README has a full **Drift watchlist** section calling out 8 anti-patterns th
 - **Sentence case** for every button, link and heading. UPPERCASE only for 10px eyebrow labels.
 - **No emoji.** Anywhere. Use Lucide icons instead.
 - **Icon allowance is small**: `ArrowRight`, `ArrowUp`, `Sparkles`, `Flame` (once, the calorie ring), `Check`, `ChevronDown`, and the four nav-rail icons. Anything else needs to justify itself.
-- **No pure red, no pure green, no purple gradients.** Status colors are sage `#7ca368` and terracotta `#d37b69`.
+- **No pure red, no pure green, no purple gradients.** Status colors are sage `#7ca368` and terracotta `#d37b69`. One exception (owner, 2026-10-14): the delete action inside a confirm uses conventional error red `--kallo-error` (`#dc2626`), and every web confirm goes through `components/shared/confirm-dialog` (bold Lora title, one filled action, Cancel bare until hover).
 - **Lora is never bold** — 400 normal or 300 italic light. The signature treatment is the second clause of a headline in italic 300 at `--kallo-accent` (`#c9a87c`).
 - **No photography in the product.** Marketing imagery, if used, must be warm-toned (tungsten/golden hour), grainy, never blue-cast.
 - **Preserve Vietnamese diacritics** in dish names — never anglicize `phở`, `bún chả`, `mực kho`.

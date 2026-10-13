@@ -21,7 +21,9 @@ export function DiscardStagedButton({
   const tFeed = useTranslations('logging.feedArea');
 
   return (
-    <div className="mt-1 flex justify-end">
+    // Left-aligned, like the action row under a saved meal. (iOS keeps it on
+    // the right, under the thumb.)
+    <div className="mt-1 flex justify-start">
       <RemoveMealButton
         label={t('discard')}
         onConfirm={onConfirm}

@@ -4,18 +4,8 @@ import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { useRemoveGroupMember } from '@/hooks/social/circle/use-chat-groups';
 import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
@@ -46,8 +36,8 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
               </span>
             ) : (
               isOwner && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                <ConfirmDialog
+                  trigger={
                     <button
                       type="button"
                       aria-label={t('removeLabel', { name })}
@@ -55,34 +45,20 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
                     >
                       <X className="size-3.5" />
                     </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-normal font-serif text-[18px]">
-                        {t('removeTitle', { name })}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
-                        {t('removeDescription')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{tFeed('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="ghost"
-                        disabled={removeMember.isPending}
-                        className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          removeMember.mutate(member.userId, {
-                            onError: () => toast.error(t('removeError')),
-                          });
-                        }}
-                      >
-                        {t('removeConfirm')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  }
+                  title={t('removeTitle', { name })}
+                  description={t('removeDescription')}
+                  confirmLabel={t('removeConfirm')}
+                  cancelLabel={tFeed('cancel')}
+                  tone="destructive"
+                  pending={removeMember.isPending}
+                  onConfirm={(event) => {
+                    event.preventDefault();
+                    removeMember.mutate(member.userId, {
+                      onError: () => toast.error(t('removeError')),
+                    });
+                  }}
+                />
               )
             )}
           </li>
