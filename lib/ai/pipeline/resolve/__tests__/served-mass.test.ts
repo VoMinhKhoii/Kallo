@@ -267,6 +267,21 @@ describe('scaleToServedMass', () => {
     expect(grows.state.grounded.mealItems[0].ingredients[0].servedG).toBe(300);
   });
 
+  it("keeps a typed weight on a raw row as the plate's grams", () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Chicken and rice', servedMassG: 400 }, [
+        {
+          name: 'chicken breast',
+          g: 200,
+          raw: { servedG: 150 },
+          portion: typed(150),
+        },
+        { name: 'white rice', g: 100 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([200, 250]);
+  });
+
   it('falls back to row grams when Call 2 gave no plate grams for a dry row', () => {
     const out = scaleToServedMass(
       stateOf({ name: 'Mac and cheese', servedMassG: 360 }, [

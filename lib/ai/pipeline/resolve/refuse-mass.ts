@@ -240,6 +240,16 @@ export function selectedCandidate(
   return idx ? match?.candidates[Number(idx) - 1] : undefined;
 }
 
+/** The server portion anchor the bridge ships in place of Call 2's mass. */
+function portionAnchor(portion: PortionResolution | undefined) {
+  return portion?.grams &&
+    portion.provenance !== 'llm_range' &&
+    portion.provenance !== 'unresolved' &&
+    portion.grams.mid > 0
+    ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
+    : null;
+}
+
 function shippedMass(
   estimate: GroundedIngredientEstimate,
   ingredient: DecomposedIngredientV2,
@@ -247,13 +257,7 @@ function shippedMass(
   portion: PortionResolution | undefined
 ): GroundedMassResolution {
   const candidate = selectedCandidate(estimate, match);
-  const anchor =
-    portion?.grams &&
-    portion.provenance !== 'llm_range' &&
-    portion.provenance !== 'unresolved' &&
-    portion.grams.mid > 0
-      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
-      : null;
+  const anchor = portionAnchor(portion);
   return resolveGroundedMass({
     ground: estimate,
     candidateInediblePct: candidate?.inediblePct ?? null,
@@ -296,8 +300,9 @@ export function servedPerRowGram(
 /**
  * The as-served grams behind what the bridge ships for one ingredient: its
  * gross mass, bones and shells included, unless it ships an edible anchor,
- * and cooked as on the plate when it is priced on a raw or dry row. What a
- * scale reads for the food on the plate; also linear in `grossG`.
+ * and cooked as on the plate when it is priced on a raw or dry row. A typed
+ * weight is already the plate's unless the user weighed it raw. What a scale
+ * reads for the food on the plate; also linear in `grossG`.
  */
 export function shippedServedGrams(
   estimate: GroundedIngredientEstimate,
@@ -310,5 +315,7 @@ export function shippedServedGrams(
     m.massBasis === 'gross_as_served'
       ? (m.refuse?.grossG ?? 0)
       : (m.edibleG ?? 0);
-  return rowGrams * servedPerRowGram(estimate, match);
+  const plateAnchor =
+    portionAnchor(portion) !== null && ingredient.stateHint !== 'raw_weight';
+  return plateAnchor ? rowGrams : rowGrams * servedPerRowGram(estimate, match);
 }
