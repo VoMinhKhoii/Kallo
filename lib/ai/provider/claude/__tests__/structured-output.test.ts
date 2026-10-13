@@ -159,6 +159,36 @@ describe('createClaudeStructuredOutput', () => {
     expect(stream).toHaveBeenCalledTimes(2);
   });
 
+  it('re-asks a Call 1 answer that stops before the dishes its plan numbers', async () => {
+    const call1 = z.object({
+      plan: z.string(),
+      isFood: z.boolean(),
+      mealItems: z.array(
+        z.object({ name: z.string(), ingredients: z.array(z.object({})) })
+      ),
+    });
+    const plan = 'Dish 1: cơm. Dish 2: gà kho.';
+    const item = (name: string) => ({ name, ingredients: [{}] });
+    const { client, stream } = fakeClaude([
+      {
+        text: JSON.stringify({ plan, isFood: true, mealItems: [item('Cơm')] }),
+      },
+      {
+        text: JSON.stringify({
+          plan,
+          isFood: true,
+          mealItems: [item('Cơm'), item('Gà kho')],
+        }),
+      },
+    ]);
+    const out = await createClaudeStructuredOutput(
+      client
+    ).generateStructuredOutputStream({ ...params(), schema: call1 } as never);
+
+    expect((out as z.infer<typeof call1>).mealItems).toHaveLength(2);
+    expect(stream).toHaveBeenCalledTimes(2);
+  });
+
   it('throws an API error at once, so the router can fall back', async () => {
     const overloaded = Object.assign(new Error('overloaded'), { status: 529 });
     const { client, stream } = fakeClaude([

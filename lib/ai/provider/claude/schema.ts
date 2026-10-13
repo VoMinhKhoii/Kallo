@@ -96,6 +96,28 @@ export function repairPipelineOutput(raw: unknown): unknown {
   return out;
 }
 
+/** A numbered dish or drink label in Call 1's plan ("Dish 2:", "Drink 1:"). */
+const PLAN_LABEL = /\b(dish|drink)\s+(\d+)\s*:/gi;
+
+/**
+ * A Call 1 answer whose plan numbers more dishes than its meal items hold.
+ * Prod 8cb1a999: the plan named rice, braised chicken and stir-fried cabbage
+ * as "Dish 1–3", then mealItems closed after the rice and the meal shipped as
+ * 189 kcal of rice. Only a numbered plan is counted; a free-form plan is never
+ * flagged.
+ */
+export function isShortOfPlan(raw: unknown): boolean {
+  const out = raw as Loose | null;
+  if (!out || out.isFood !== true || typeof out.plan !== 'string') return false;
+  if (!Array.isArray(out.mealItems)) return false;
+  const labels = new Set(
+    [...out.plan.matchAll(PLAN_LABEL)].map(
+      (m) => `${m[1].toLowerCase()} ${m[2]}`
+    )
+  );
+  return out.mealItems.length < labels.size;
+}
+
 /**
  * A food answer with no meal items (`isFood: true, mealItems: []`) parses
  * but reads downstream as "not food". Claude produced it occasionally, so it
