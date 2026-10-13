@@ -176,6 +176,30 @@ describe('classifyV2Anomalies — cause classification', () => {
     expect(m?.action).toBe('flag_only');
   });
 
+  it('does not flag a beer whose kcal carries its ethanol', () => {
+    // 660 g beer: 4P+4C+9F = 106, plus 25.4 g ethanol × 7 = 284.
+    const result = makeResult([
+      makeIngredient({
+        ingredientName: 'Bia',
+        alcoholG: 25.4,
+        boundedNutrition: {
+          ...NULL_BOUNDED_NUTRITION,
+          caloriesKcal: triple(284, 284, 284),
+          proteinG: triple(3, 3, 3),
+          carbohydrateG: triple(23.5, 23.5, 23.5),
+          fatG: triple(0, 0, 0),
+        },
+      }),
+    ]);
+    const anomalies = classifyV2Anomalies({
+      result,
+      matched: [makeMatched('Bia')],
+      unmatched: [],
+      prepNoteIngredientNames: NO_PREP,
+    });
+    expect(anomalies.map((a) => a.cause)).not.toContain('macro_inconsistent');
+  });
+
   it('classifies macro_inconsistent on an UNMATCHED ingredient as flag_only (LLM owns macros)', () => {
     const result = makeResult([
       makeIngredient({

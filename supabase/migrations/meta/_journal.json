@@ -607,8 +607,22 @@
     {
       "idx": 86,
       "version": "7",
-      "when": 1791874598217,
-      "tag": "20261013065638_add_food_card_texts",
+      "when": 1791826365403,
+      "tag": "20261012173245_meal_items_alcohol_g",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791871411006,
+      "tag": "20261013060331_card_vectors_unembedded_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1791875117297,
+      "tag": "20261013070517_add_food_card_texts",
       "breakpoints": true
     }
   ]

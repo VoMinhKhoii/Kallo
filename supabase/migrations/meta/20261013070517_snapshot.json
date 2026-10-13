@@ -1,6 +1,6 @@
 {
-  "id": "d2ee32d1-b10c-4f19-8fa3-1b69e5bae209",
-  "prevId": "8f39e229-f31c-4050-996a-91111c073a83",
+  "id": "c83b35be-ebf6-4cb1-bda9-4ab428883369",
+  "prevId": "2bd35728-080f-43f3-a3c4-35ff9cee26be",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2153,7 +2153,24 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "food_card_texts_unembedded_idx": {
+          "name": "food_card_texts_unembedded_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"food_card_texts\".\"embedding\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -2216,6 +2233,22 @@
             }
           ],
           "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "food_card_vectors_unembedded_idx": {
+          "name": "food_card_vectors_unembedded_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"food_card_vectors\".\"embedding\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2825,6 +2858,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "alcohol_g": {
+          "name": "alcohol_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2887,7 +2926,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "meal_items_alcohol_g_non_negative_check": {
+          "name": "meal_items_alcohol_g_non_negative_check",
+          "value": "\"meal_items\".\"alcohol_g\" IS NULL OR \"meal_items\".\"alcohol_g\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.meal_share_invites": {

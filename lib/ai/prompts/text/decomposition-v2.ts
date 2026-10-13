@@ -89,6 +89,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small"). A typed ZERO ("0 fried chicken", "0 ổ bánh mì") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
        - **Dish vessels** — a vessel word quantifying the WHOLE dish ("1 tô phở", "dĩa cơm tấm", "ly trà sữa lớn", "a big bowl of ramen") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. NEVER attach the dish's vessel to an ingredient. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 chén cơm"), STILL emit ingredient-level count:1 + unitToken:"chén" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250gr ức gà", "100g cơm") → explicitMass: grams + physical basis. Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("1 miếng sườn 200g", "500g tôm nguyên vỏ"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "cân sống" → stateHint="raw_weight"), never in explicitMass.basis.
+       - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "ăn nửa miếng bít tết 400g" → 200; "ăn chung 1kg tôm luộc với 3 đứa bạn" (4 người) → 250; "chia đôi bịch snack 300g với bạn" → 150. When they typed their own part ("tôi ăn 200g trong 600g gà nướng") → 200 as typed. A weight unit is not a share: "nửa ký thịt bò" → 500.
+       - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("tô phở bò 600g", "300g mì xào bò"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("gà kho gừng với cơm, cân cả đĩa 450g"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("ức gà 200g với rau xào") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("ức gà 200g với một dĩa mì xào" → ức gà 200).
        - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so the resolver / Call 2 can bias the estimate.
 
     2. **Identity changes** — the modifier names a different DB food entity:
@@ -124,6 +126,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — downstream steps size them from the count and unit; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
        - **Dish vessels** — a vessel word quantifying the WHOLE dish ("a big bowl of ramen", "a plate of spaghetti", "a large glass of milk") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. NEVER attach the dish's vessel to an ingredient. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 bowl of rice"), STILL emit ingredient-level count:1 + unitToken:"bowl" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250g chicken breast", "6 oz sirloin", "half a pound of ground beef") → explicitMass: grams + physical basis. Convert imperial weights to grams (1 oz ≈ 28 g so "6 oz" ≈ 170; 1 lb ≈ 454 g). Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("a 300g T-bone", "500g shell-on shrimp"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "weighed raw" → stateHint="raw_weight"), never in explicitMass.basis.
+       - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "half of a 400g steak" → 200; "split 600g of ribs between the 3 of us" → 200; "shared a 300g bag of chips with a friend" → 150. When they typed their own part ("I had 150g of the 500g salmon fillet") → 150 as typed. A weight unit is not a share: "half a pound of ground beef" → 227.
+       - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("300g of pad thai", "a 400g burrito"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("teriyaki salmon and rice, 450g total"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("200g grilled chicken with a side of coleslaw") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("200g grilled chicken with a side of coleslaw" → chicken 200).
        - **Vague portion cues** ("extra rice", "light on the dressing", "a heaping plate", "just a little pasta", "half portion") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "extra rice" / "heaping plate") so the resolver / Call 2 can bias the estimate.
 
     2. **Identity changes** — the modifier names a different DB food entity:
@@ -300,6 +304,30 @@ const EXAMPLES: Record<DecompositionPromptLocale, string> = {
   </example>
 
   <example>
+    <input>300g mì xào bò</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "mì xào bò",
+          "cookingMethod": "xào",
+          "servedMassG": 300,
+          "ingredients": [
+            { "rawName": "mì", "canonicalName": "Mì trứng", "queryEn": "stir-fried egg noodles", "nameVi": "mì trứng", "tableName": "Noodles, egg, cooked, enriched" },
+            { "rawName": "thịt bò", "canonicalName": "Thịt bò", "queryEn": "stir-fried thin-sliced lean beef", "nameVi": "thịt bò", "tableName": "Beef, round, top round, separable lean only, cooked, braised" },
+            { "rawName": "cải ngọt", "canonicalName": "Cải ngọt", "queryEn": "stir-fried choy sum greens", "nameVi": "cải ngọt", "tableName": "Cabbage, chinese (pak-choi), cooked, boiled, drained, without salt" },
+            { "rawName": "dầu ăn", "canonicalName": "Dầu ăn", "queryEn": "vegetable cooking oil", "nameVi": "dầu ăn", "tableName": "Oil, soybean, salad or cooking" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- 300g weighs the WHOLE dish, which splits into several ingredients → servedMassG 300 on the dish, explicitMass on none of the parts; the next step splits the 300g across the parts. Pinning 300 on the noodles would count the beef, greens and oil on top. -->
+  </example>
+
+  <example>
     <input>1 tô phở bò tái</input>
     <!-- Plausible ingredients for phở bò in VN: bánh phở, thịt bò tái, nước dùng bò, hành lá, rau thơm, chanh/ớt garnish; omit optional table garnish per strict adherence; broth is calorie-bearing → include. tô quantifies the dish → vesselToken. -->
     <output>
@@ -463,6 +491,29 @@ ${INJECTION_EXAMPLE}`,
     }
     </output>
     <!-- "6oz" ≈ 170g → explicitMass with basis="edible" (boneless cut). prepNotes carries "fat trimmed" verbatim; Call 2 pulls fat down. Pan-searing implies cooking fat → separate "oil" ingredient. -->
+  </example>
+
+  <example>
+    <input>350g chicken alfredo pasta</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "chicken alfredo pasta",
+          "cookingMethod": "boiled",
+          "servedMassG": 350,
+          "ingredients": [
+            { "rawName": "fettuccine", "canonicalName": "Fettuccine pasta, cooked", "queryEn": "cooked fettuccine pasta", "nameVi": "mì fettuccine", "tableName": "Pasta, cooked, enriched, without added salt" },
+            { "rawName": "chicken", "canonicalName": "Chicken breast", "queryEn": "cooked chicken breast pieces", "nameVi": "ức gà", "tableName": "Chicken, broilers or fryers, breast, meat only, cooked, roasted" },
+            { "rawName": "alfredo sauce", "canonicalName": "Alfredo sauce", "queryEn": "creamy alfredo pasta sauce", "nameVi": "sốt alfredo", "tableName": "Sauce, alfredo, ready-to-serve" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- 350g weighs the WHOLE dish, which splits into several ingredients → servedMassG 350 on the dish, explicitMass on none of the parts; the next step splits the 350g across the parts. Pinning 350 on the pasta would count the chicken and sauce on top. -->
   </example>
 
   <example>
@@ -632,7 +683,7 @@ export function decompositionV2PromptText(
     2. Identify each user-facing meal item, then list its ingredients. Decompose composed dishes into SINGLE-FOOD ingredients the composition database can match — a dish or component name ("chả trứng", "coleslaw") is not an ingredient when it is itself made of simpler foods.
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
-       mealItems[]: { name, cookingMethod, cuisineNote?, vesselToken?, vesselSize?, ingredients[] }
+       mealItems[]: { name, cookingMethod, cuisineNote?, vesselToken?, vesselSize?, servedMassG?, ingredients[] }
        ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
   </task>
 

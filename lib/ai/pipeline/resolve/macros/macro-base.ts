@@ -15,6 +15,7 @@ import type {
   NutritionPer100g,
 } from '@/lib/ai/types/matching';
 import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
+import { alcoholKcalPer100g } from './alcohol';
 
 const ingredientCookingMethod = (
   mealItem: MealDecompositionWithIds['mealItems'][number],
@@ -59,7 +60,10 @@ export function computeMacroBaseMap(
         cookingMethod,
         weightBasis: ing.weightBasis,
       });
-      baseMap.set(id, scalePer100g(match.nutritionPer100g, dbScalingGrams));
+      baseMap.set(
+        id,
+        scalePer100g(match.nutritionPer100g, dbScalingGrams, match.foodGroupEn)
+      );
     }
   }
   return baseMap;
@@ -90,12 +94,14 @@ export function computeDbScalingGrams(input: {
 
 export function scalePer100g(
   per100g: NutritionPer100g,
-  grams: number
+  grams: number,
+  foodGroupEn?: string
 ): MacroBase {
   return {
     caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
     proteinG: (per100g.proteinG ?? 0) * (grams / 100),
     carbohydrateG: (per100g.carbohydrateG ?? 0) * (grams / 100),
     fatG: (per100g.fatG ?? 0) * (grams / 100),
+    alcoholKcal: alcoholKcalPer100g(per100g, foodGroupEn) * (grams / 100),
   };
 }

@@ -306,6 +306,13 @@ export const foodCardVectors = pgTable(
       table.foodCompositionId,
       table.text
     ),
+    // The card catalog's readiness check ("any string not embedded yet?")
+    // seq-scanned all ~71k rows, vectors inline, in 6.6 s on prod. This index
+    // holds only the not-yet-embedded rows, so outside a backfill it is empty
+    // and the check is instant.
+    index('food_card_vectors_unembedded_idx')
+      .on(table.id)
+      .where(sql`${table.embedding} IS NULL`),
   ]
 );
 
@@ -316,13 +323,24 @@ export const foodCardVectors = pgTable(
  * `embedding` is filled by scripts/db/backfill_card_embeddings.ts after a card
  * migration adds the string.
  */
-export const foodCardTexts = pgTable('food_card_texts', {
-  id: serial('id').primaryKey(),
-  text: text('text').notNull().unique(),
-  // Half precision: match_food_card_texts searches a 256-dim prefix and
-  // rescores with all 768.
-  embedding: halfvec('embedding', { dimensions: 768 }),
-});
+export const foodCardTexts = pgTable(
+  'food_card_texts',
+  {
+    id: serial('id').primaryKey(),
+    text: text('text').notNull().unique(),
+    // Half precision: match_food_card_texts searches a 256-dim prefix and
+    // rescores with all 768.
+    embedding: halfvec('embedding', { dimensions: 768 }),
+  },
+  (table) => [
+    // The catalog's readiness check ("any string not embedded yet?") and the
+    // backfill read only these rows; outside a backfill the index is empty, so
+    // the check never scans the inline vectors (see food_card_vectors_unembedded_idx).
+    index('food_card_texts_unembedded_idx')
+      .on(table.id)
+      .where(sql`${table.embedding} IS NULL`),
+  ]
+);
 
 /** Which rows each card string names. Retrieval scores a row by its best string (max-sim). */
 export const foodCardTextRows = pgTable(
@@ -369,8 +387,9 @@ export const meals = pgTable(
     // Cheat-meal logging (entry_mode='cheat'): a slider-based occasion estimate
     // that bypasses ingredient decomposition. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
-    // Alcohol (ethanol) grams — the one calorie source the P/C/F sliders can't
-    // hold (~7 kcal/g). Nullable; only populated for cheat meals with drinks.
+    // Alcohol (ethanol) grams — the one calorie source P/C/F can't hold
+    // (~7 kcal/g; already inside caloriesKcal). Nullable. Cheat meals: from the
+    // drinks slider. Precise meals: the sum of their items' alcohol_g.
     alcoholG: numeric('alcohol_g', { mode: 'number' }),
     // Slider spec + the user's chosen levels, so a cheat meal can be re-edited
     // or repeated. Shape: { spec: CheatSliderSpec, levels: CheatSliderLevels }.
@@ -500,6 +519,10 @@ export const mealItems = pgTable(
     vitaminB9Mcg: numeric('vitamin_b9_mcg', { mode: 'number' }),
     vitaminB12Mcg: numeric('vitamin_b12_mcg', { mode: 'number' }),
     vitaminHMcg: numeric('vitamin_h_mcg', { mode: 'number' }),
+    // Ethanol grams from an alcoholic food row (energy already inside
+    // caloriesKcal). Kept per item so edits, removals, relogs and copies can
+    // re-sum `meals.alcohol_g` exactly. Null for every non-alcoholic item.
+    alcoholG: numeric('alcohol_g', { mode: 'number' }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -507,6 +530,10 @@ export const mealItems = pgTable(
   },
   (table) => [
     index('meal_items_meal_order_idx').on(table.mealId, table.mealItemOrder),
+    check(
+      'meal_items_alcohol_g_non_negative_check',
+      sql`${table.alcoholG} IS NULL OR ${table.alcoholG} >= 0`
+    ),
   ]
 );
 

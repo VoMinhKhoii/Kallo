@@ -424,11 +424,10 @@ describe('updateMealAction', () => {
     ).rejects.toThrow('bữa xả');
   });
 
-  it('scales the meal-level alcohol by the change in total mass', async () => {
-    // Alcohol lives on the meal, not the rows, so it tracks the total-mass
-    // ratio: halving the only item's grams halves the alcohol.
+  it('scales an edited item’s alcohol and re-sums the meal’s', async () => {
+    // Halving the beer's grams halves its ethanol, on the row and the meal.
     queueMealLookup([mealRow({ alcoholG: 40 })]);
-    queueItemLookup([itemRow()]); // single 200g item
+    queueItemLookup([itemRow({ alcoholG: 40 })]); // single 200g item
     queueShareLookup([]);
 
     const itemUpdates: Record<string, unknown>[] = [];
@@ -446,8 +445,42 @@ describe('updateMealAction', () => {
       edits: [{ id: UUID_1, newGrams: 100 }], // 200g → 100g, ratio 0.5
     });
 
+    expect(itemUpdates[0]?.alcoholG).toBe(20);
     expect(mealUpdates[0]?.alcoholG).toBe(20);
     expect(result.meal.alcoholG).toBe(20);
+  });
+
+  it('keeps a beer’s alcohol when only the food beside it is removed', async () => {
+    queueMealLookup([mealRow({ alcoholG: 25 })]);
+    queueItemLookup([
+      itemRow(), // 200 g bánh phở, no alcohol
+      itemRow({
+        id: UUID_2,
+        ingredientName: 'Bia',
+        estimatedGrams: 660,
+        caloriesKcal: 284,
+        proteinG: 3,
+        carbohydrateG: 23,
+        fatG: 0,
+        alcoholG: 25,
+      }),
+    ]);
+    queueShareLookup([]);
+
+    const mealUpdates: Record<string, unknown>[] = [];
+    mockTxUpdate.mockImplementation(() => captureUpdate(mealUpdates));
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      removeIds: [UUID_1],
+    });
+
+    // The old total-mass approximation would have cut this to 25 × 660/860.
+    expect(mealUpdates[0]?.alcoholG).toBe(25);
+    expect(result.meal.alcoholG).toBe(25);
   });
 
   it('leaves a null alcohol value null after an edit', async () => {

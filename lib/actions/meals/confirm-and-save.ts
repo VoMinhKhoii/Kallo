@@ -9,6 +9,7 @@ import {
   buildPersistedMealItemGroup,
   inferMealSlot,
   nutritionValuesToRow,
+  sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import {
   goalAdjustNutrition,
@@ -138,6 +139,7 @@ export async function confirmAndSaveMealAction(input: {
             };
           }
         }
+        if (ingredient.alcoholG) ingredient.alcoholG *= ratio;
       };
 
       for (const edit of parsed.edits) {
@@ -238,6 +240,8 @@ export async function confirmAndSaveMealAction(input: {
       allIngredients.map((ingredient) => ingredient.boundedNutrition)
     );
     const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
+    // Ethanol from alcoholic rows; its energy is already in the kcal above.
+    const alcoholG = sumAlcoholG(allIngredients.map((ing) => ing.alcoholG));
 
     // Insert meal
     const [meal] = await guardClientMealId(() =>
@@ -252,6 +256,7 @@ export async function confirmAndSaveMealAction(input: {
           confidenceOverall: pipelineResult.confidenceOverall,
           loggedAt,
           ...nutritionValuesToRow(mealDisplayed),
+          alcoholG,
         })
         .returning({ id: meals.id })
     );
@@ -297,6 +302,7 @@ export async function confirmAndSaveMealAction(input: {
         cookingMethod: ing.cookingMethod,
         matchConfidence: ing.matchConfidence,
         ...nutritionValuesToRow(ing.displayedNutrition),
+        alcoholG: ing.alcoholG ?? null,
       }))
     );
 
@@ -356,7 +362,7 @@ export async function confirmAndSaveMealAction(input: {
       nutrition: mealDisplayed,
       mealItemGroups,
       entryMode: 'precise',
-      alcoholG: null,
+      alcoholG,
       cheatSliders: null,
       // Null (private) unless auto-share inserted a row above.
       share,

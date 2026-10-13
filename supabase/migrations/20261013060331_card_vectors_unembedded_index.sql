@@ -1,0 +1,1 @@
+CREATE INDEX "food_card_vectors_unembedded_idx" ON "food_card_vectors" USING btree ("id") WHERE "food_card_vectors"."embedding" IS NULL;

@@ -101,6 +101,19 @@ describe('degenerate triple survives goal adjustment (confirm no-op)', () => {
 });
 
 describe('buildFrozenMealItem', () => {
+  it('carries a stored item’s alcohol so confirm re-sums it', () => {
+    const item = buildFrozenMealItem(
+      dish('Bia', [
+        row({ mealItemName: 'Bia', alcoholG: 25, caloriesKcal: 284 }),
+        row({ mealItemName: 'Bia', alcoholG: null }),
+      ])
+    );
+    expect(item.ingredients.map((ing) => ing.alcoholG)).toEqual([
+      25,
+      undefined,
+    ]);
+  });
+
   it('copies per-ingredient metadata verbatim', () => {
     const item = buildFrozenMealItem(
       dish('Phở bò', [

@@ -65,6 +65,8 @@ Validated on the Vertex golden set (core tier) against a same-day baseline:
   `lib/ai/prompts/text/decomposition-v2.ts`) — source stays pretty.
 - **Call 1 per-user blocks render after the examples**, so every user of a
   locale shares the cacheable prefix.
-- **Call 2 never emits kcal** — the server derives it from 4P + 4C + 9F.
+- **Call 2 never emits kcal** — the server derives it from 4P + 4C + 9F, plus
+  the ethanol energy of a matched alcoholic beverage row
+  (`lib/ai/pipeline/resolve/macros/alcohol.ts`).
   P/C/F stay required on every ingredient: optional or nullable P/C was tried
   and the model dropped them on unmatched rows (the mì-gói C:0g failure mode).
