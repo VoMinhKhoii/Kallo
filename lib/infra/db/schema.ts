@@ -306,6 +306,13 @@ export const foodCardVectors = pgTable(
       table.foodCompositionId,
       table.text
     ),
+    // The card catalog's readiness check ("any string not embedded yet?")
+    // seq-scanned all ~71k rows, vectors inline, in 6.6 s on prod. This index
+    // holds only the not-yet-embedded rows, so outside a backfill it is empty
+    // and the check is instant.
+    index('food_card_vectors_unembedded_idx')
+      .on(table.id)
+      .where(sql`${table.embedding} IS NULL`),
   ]
 );
 
