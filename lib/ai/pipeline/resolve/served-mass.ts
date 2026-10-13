@@ -25,10 +25,33 @@ const TOLERANCE = 0.02;
  * water), so the parts may only shrink to it, never grow into it.
  */
 const LIQUID_DISH =
-  /soup|stew|curry|braise|chili|hotpot|ramen|pho\b|phở|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|congee|laksa|canh|lẩu|\bkho\b|cà ri|cari|ninh|hầm/i;
-/** A part that is the dish's liquid. Fish sauce and soy sauce are seasonings. */
-const LIQUID_PART =
-  /broth|stock|nước dùng|nước lèo|nước súp|nước canh|nước kho|coconut milk|nước cốt dừa|cream|gravy|curry sauce|sốt cà ri|water|nước lọc/i;
+  /(?<!\p{L})(?:soup|stew(?:ed)?|curry|curried|braised?|chil(?:i|li)|hot ?pot|ramen|pho|phở|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|congee|laksa|canh|lẩu|kho|cà ri|cari|ninh|hầm)(?!\p{L})/iu;
+/**
+ * A solid food named after a liquid dish ("curry puff", "chili dog") or its
+ * dry form ("miến xào", "hủ tiếu khô"): its typed weight is all food.
+ */
+const SOLID_FORM =
+  /(?<!\p{L})(?:puff|dog|burger|bun|bread|pie|roll|crisp|fries|chips|fried rice|fried noodles|dry|xào|khô)(?!\p{L})|stir[-_ ]?fr/iu;
+/**
+ * A part that is the dish's liquid, by its whole name: English names end on
+ * the liquid ("beef broth", not "water spinach" or "cream cheese"); the
+ * Vietnamese ones name it outright. Fish sauce and soy sauce are seasonings.
+ */
+const LIQUID_PART_EN =
+  /(?<!\p{L})(?:broth|stock|coconut milk|(?<!(?:sour|ice) )cream|gravy|curry sauce|water)$/iu;
+const LIQUID_PART_VI =
+  /(?<!\p{L})(?:nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc)(?!\p{L})/iu;
+
+function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
+  return [ingredient.rawName, ingredient.canonicalName].some(
+    (n) => LIQUID_PART_EN.test(n.trim()) || LIQUID_PART_VI.test(n)
+  );
+}
+
+function isLiquidDish(dish: DecomposedDishV2): boolean {
+  const label = `${dish.name} ${dish.cookingMethod}`;
+  return LIQUID_DISH.test(label) && !SOLID_FORM.test(label);
+}
 
 /**
  * A one-part "dish" the user weighed ("almonds 100g") is that food's own typed
@@ -107,12 +130,8 @@ export function scaleToServedMass(state: RunState): {
       }
     });
     if (free <= 0) return;
-    const parts = dish.ingredients
-      .map((i) => `${i.rawName} ${i.canonicalName}`)
-      .join(' | ');
     const unlistedLiquid =
-      LIQUID_DISH.test(`${dish.name} ${dish.cookingMethod}`) &&
-      !LIQUID_PART.test(parts);
+      isLiquidDish(dish) && !dish.ingredients.some(isLiquidPart);
     const k = Math.min(
       unlistedLiquid ? 1 : MAX_FACTOR,
       Math.max(1 / MAX_FACTOR, (target - pinned) / free)

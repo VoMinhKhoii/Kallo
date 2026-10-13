@@ -176,6 +176,36 @@ describe('scaleToServedMass', () => {
     expect(grams(out.state)).toEqual([300, 300]);
   });
 
+  it('does not take a food named after a liquid for the broth', () => {
+    const lau = scaleToServedMass(
+      stateOf({ name: 'Lẩu bò', servedMassG: 800 }, [
+        { name: 'water spinach', g: 100 },
+        { name: 'beef', g: 150 },
+      ])
+    );
+    expect(lau.scaled).toBe(0);
+
+    const chili = scaleToServedMass(
+      stateOf({ name: 'Cream cheese chicken chili', servedMassG: 600 }, [
+        { name: 'cream cheese', g: 50 },
+        { name: 'chicken', g: 150 },
+      ])
+    );
+    expect(chili.scaled).toBe(0);
+  });
+
+  it('grows a solid or dry dish named after a liquid one', () => {
+    for (const name of ['Curry puff', 'Chili dog', 'Miến xào cua']) {
+      const out = scaleToServedMass(
+        stateOf({ name, servedMassG: 300 }, [
+          { name: 'filling', g: 100 },
+          { name: 'wrapper', g: 50 },
+        ])
+      );
+      expect(grams(out.state)).toEqual([200, 100]);
+    }
+  });
+
   it('moves the parts by at most 3× either way', () => {
     const out = scaleToServedMass(
       stateOf({ name: 'Salad', servedMassG: 1000 }, [
