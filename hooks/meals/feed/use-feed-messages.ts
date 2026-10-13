@@ -35,13 +35,18 @@ export function useFeedMessages(args: {
   streamingMsgId: string | null;
   stream: ReturnType<typeof useStreamAnalysis>;
   pendingConfirmations: PendingMealConfirmation[];
+  /** Cards discarded but still inside their undo window. */
+  hiddenAnalysisIds: ReadonlySet<string>;
 }) {
-  const { messages, selectedDate, streamingMsgId, stream } = args;
+  const { messages, selectedDate, streamingMsgId, stream, hiddenAnalysisIds } =
+    args;
 
   // Derive display messages: overlay live streaming state onto the active message.
   const displayMessages = useMemo(() => {
     const selectedMessages = messages.filter(
-      (message) => message.loggedDate === selectedDate
+      (message) =>
+        message.loggedDate === selectedDate &&
+        !(message.analysisId && hiddenAnalysisIds.has(message.analysisId))
     );
 
     if (!streamingMsgId || stream.status === 'idle') return selectedMessages;
@@ -63,6 +68,7 @@ export function useFeedMessages(args: {
   }, [
     messages,
     selectedDate,
+    hiddenAnalysisIds,
     streamingMsgId,
     stream.status,
     stream.items,
@@ -88,7 +94,11 @@ export function useFeedMessages(args: {
   const pendingMessages = useMemo<ChatMessage[]>(
     () =>
       args.pendingConfirmations
-        .filter((pending) => !localAnalysisIds.has(pending.id))
+        .filter(
+          (pending) =>
+            !localAnalysisIds.has(pending.id) &&
+            !hiddenAnalysisIds.has(pending.id)
+        )
         .map((pending) => ({
           id: `pending-${pending.id}`,
           role: 'assistant',
@@ -100,7 +110,12 @@ export function useFeedMessages(args: {
           loggedDate: selectedDate,
           analysisId: pending.id,
         })),
-    [args.pendingConfirmations, selectedDate, localAnalysisIds]
+    [
+      args.pendingConfirmations,
+      selectedDate,
+      localAnalysisIds,
+      hiddenAnalysisIds,
+    ]
   );
 
   const unconfirmedMessages = [

@@ -9,6 +9,7 @@ import '../../../circle/data/circle_providers.dart'
     show mealShareInvitesProvider;
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
+import '../../data/stream_analysis_controller.dart';
 import '../../data/mutations/persisted_meal_mutations.dart';
 
 /// Everything the feed does to a meal card that already exists server-side:
@@ -60,9 +61,14 @@ class FeedMealActions {
   /// DELETE like any other, and the user should get the same five seconds to
   /// change their mind. Before this there was no way out of a staged card at
   /// all except confirming it or waiting out its 30-minute expiry.
-  void discardPending(PendingMealConfirmation pending) {
-    onHoldRemoval(pending.id);
-    _finalizeDiscard(pending);
+  void discardPending(PendingMealConfirmation pending) =>
+      discardStaged(pending.id);
+
+  /// [discardPending] by id — what the footer's freshly revealed answer has,
+  /// since it is the same staged row before the day list has picked it up.
+  void discardStaged(String analysisId) {
+    onHoldRemoval(analysisId);
+    _finalizeDiscard(analysisId);
   }
 
   /// Persist an amount edit (gram overrides + per-row removals) on a saved meal.
@@ -93,22 +99,28 @@ class FeedMealActions {
         .refresh();
   }
 
-  Future<void> _finalizeDiscard(PendingMealConfirmation pending) =>
-      _deleteAfterUndoWindow(
-        id: pending.id,
-        toast: 'logging.pendingDiscarded'.tr(),
-        path: '/api/v1/meals/pending/${Uri.encodeComponent(pending.id)}',
-        // A staged row expires on its own, and confirming it consumes it.
-        // Either way the server says "not found" — and either way it IS gone,
-        // so the card must stay gone. Only a real failure puts it back.
-        goneMeansDeleted: true,
-        // Discarding a card staged from a friend's cheat offer hands that offer
-        // back (`releaseInvite`), so it belongs in the inbox again — and the
-        // pill-nav badge keeps that provider alive, so without this both serve
-        // a cached empty list until a pull-to-refresh. Only the server knows
-        // whether THIS card owed an offer, so the refetch is unconditional.
-        onDeleted: (scope) => scope.invalidate(mealShareInvitesProvider),
-      );
+  Future<void> _finalizeDiscard(String analysisId) => _deleteAfterUndoWindow(
+    id: analysisId,
+    toast: 'logging.pendingDiscarded'.tr(),
+    path: '/api/v1/meals/pending/${Uri.encodeComponent(analysisId)}',
+    // A staged row expires on its own, and confirming it consumes it.
+    // Either way the server says "not found" — and either way it IS gone,
+    // so the card must stay gone. Only a real failure puts it back.
+    goneMeansDeleted: true,
+    // Discarding a card staged from a friend's cheat offer hands that offer
+    // back (`releaseInvite`), so it belongs in the inbox again — and the
+    // pill-nav badge keeps that provider alive, so without this both serve
+    // a cached empty list until a pull-to-refresh. Only the server knows
+    // whether THIS card owed an offer, so the refetch is unconditional.
+    onDeleted: (scope) {
+      scope.invalidate(mealShareInvitesProvider);
+      // If this was the answer still revealed in the footer, retire the
+      // stream too — otherwise it reappears once the id is released.
+      if (scope.read(streamAnalysisProvider).analysisId == analysisId) {
+        scope.read(streamAnalysisProvider.notifier).reset();
+      }
+    },
+  );
 
   Future<void> _finalizeRemoval(PersistedMeal meal) => _deleteAfterUndoWindow(
     id: meal.id,

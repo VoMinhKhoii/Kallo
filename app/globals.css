@@ -72,7 +72,7 @@
      Metrics calibrated to Anthropic's display ramp (64/48/36/28/22 with
      1.05→1.3 leading and per-size negative tracking), expressed in the
      Kallo faces: display + headings render in Lora via `font-serif`,
-     always weight 400 (never bold). Each size carries its line-height /
+     always weight 400 (never bold; dialog titles are the one medium-500 exception). Each size carries its line-height /
      tracking / weight, so `text-h2` is the complete role. */
   --text-display: clamp(2rem, 5vw, 4rem); /* 32→64px, hero only */
   --text-display--line-height: 1.05;
@@ -184,6 +184,7 @@
   --color-kallo-success-accent: var(--kallo-success-accent);
   --color-kallo-success-dark: var(--kallo-success-dark);
   --color-kallo-danger: var(--kallo-danger);
+  --color-kallo-error: var(--kallo-error);
   /* Heatmap gradient tokens */
   --color-kallo-heatmap-on-target: var(--kallo-heatmap-on-target);
   --color-kallo-heatmap-close: var(--kallo-heatmap-close);
@@ -307,6 +308,9 @@
   --kallo-success-accent: #1fa971;
   --kallo-success-dark: #14855a;
   --kallo-danger: #d37b69;
+  /* Conventional error red, for a confirm that deletes. Owner's call
+     (2026-10-14): terracotta read as a style, not a warning. */
+  --kallo-error: #dc2626;
   /* Heatmap gradient tokens */
   --kallo-heatmap-on-target: #7ca368;
   --kallo-heatmap-close: #a6c495;
@@ -391,6 +395,7 @@
   --kallo-success-accent: #34c891;
   --kallo-success-dark: #34c891;
   --kallo-danger: #e08878;
+  --kallo-error: #ef4444;
   /* Heatmap gradient tokens */
   --kallo-heatmap-on-target: #7faf6a;
   --kallo-heatmap-close: #9bbe8a;

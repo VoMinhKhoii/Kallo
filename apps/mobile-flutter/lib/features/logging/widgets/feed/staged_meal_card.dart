@@ -1,14 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/meal.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../cheat/cheat_slider_card.dart';
-import '../actions/confirm_meal_removal.dart';
-import '../actions/meal_action_icon_button.dart';
+import '../actions/discard_staged_button.dart';
 import '../entry/meal_entry.dart';
 import '../turn/turn_header.dart';
 
@@ -49,6 +47,7 @@ class StagedMealCard extends StatelessWidget {
     // drops them rather than leaving an empty slot in the list.
     final parsedMeal = pending.parsedMeal;
     if (cheatSpec == null && parsedMeal == null) return const SizedBox.shrink();
+    final discard = DiscardStagedButton(busy: busy, onDiscard: onDiscard);
 
     final loggedAt = DateTime.tryParse(pending.loggedAt)?.toLocal();
     return Column(
@@ -84,32 +83,16 @@ class StagedMealCard extends StatelessWidget {
             busy: busy,
             onConfirm: (edits) => onConfirm(pending.id, edits),
             // The way out: a quiet trash in its own row under the confirm pill.
-            actions: [_discard(context)],
+            actions: [discard],
           ),
         ],
         // The cheat slider draws its own body but no action row, so it gets
         // one here rather than by reaching into CheatSliderCard.
         if (cheatSpec != null) ...[
           const SizedBox(height: LoggingSpacing.actions),
-          Row(children: [const Spacer(), _discard(context)]),
+          Row(children: [const Spacer(), discard]),
         ],
       ],
     );
   }
-
-  Widget _discard(BuildContext context) => MealActionIconButton(
-    icon: LucideIcons.trash2300,
-    label: 'logging.stagedMealCard.discard'.tr(),
-    danger: true,
-    // Inert while a confirm is in flight: the row is about to become a saved
-    // meal, and deleting it mid-flight would race that.
-    onTap:
-        busy
-            ? null
-            : () async {
-              if (await confirmPendingDiscard(context) && context.mounted) {
-                onDiscard();
-              }
-            },
-  );
 }

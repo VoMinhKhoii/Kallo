@@ -3,17 +3,7 @@
 import { LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { useLeaveChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useRouter } from '@/i18n/navigation';
 
@@ -25,8 +15,8 @@ export function GroupLeaveButton({ groupId }: { groupId: string }) {
   const leave = useLeaveChatGroup();
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
+    <ConfirmDialog
+      trigger={
         <button
           type="button"
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[#6E6D66] transition-colors duration-200 hover:bg-kallo-hover hover:text-[#141413]"
@@ -36,34 +26,20 @@ export function GroupLeaveButton({ groupId }: { groupId: string }) {
             {t('leave')}
           </span>
         </button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-normal font-serif text-[18px]">
-            {t('leaveTitle')}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
-            {t('leaveDescription')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            variant="ghost"
-            disabled={leave.isPending}
-            className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
-            onClick={(event) => {
-              event.preventDefault();
-              leave.mutate(groupId, {
-                onSuccess: () => router.push('/circle'),
-                onError: () => toast.error(t('leaveError')),
-              });
-            }}
-          >
-            {t('leaveConfirm')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      }
+      title={t('leaveTitle')}
+      description={t('leaveDescription')}
+      confirmLabel={t('leaveConfirm')}
+      cancelLabel={t('cancel')}
+      tone="destructive"
+      pending={leave.isPending}
+      onConfirm={(event) => {
+        event.preventDefault();
+        leave.mutate(groupId, {
+          onSuccess: () => router.push('/circle'),
+          onError: () => toast.error(t('leaveError')),
+        });
+      }}
+    />
   );
 }

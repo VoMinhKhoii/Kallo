@@ -220,11 +220,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       date: widget.date,
       onHoldRemoval: (id) => _rebuild(() => _pendingRemovalIds.add(id)),
       onReleaseRemoval: (id) => _rebuild(() => _pendingRemovalIds.remove(id)),
-      onRemovalFailed:
-          (id) => _rebuild(() {
-            _pendingRemovalIds.remove(id);
-            _errorText = 'errors.internal'.tr();
-          }),
+      onRemovalFailed: (id) {
+        _pendingRemovalIds.remove(id);
+        _showActionError();
+      },
     );
 
     final cheatActions = FeedCheatActions(
@@ -271,6 +270,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             date: widget.date,
           ),
       onDiscardFailed: _analysis.discardFailed,
+      onDiscardReveal: mealActions.discardStaged,
     );
 
     // The hairline anchors under the macro summary, not under the date strip

@@ -131,6 +131,7 @@ export function FeedArea({
               onRefineMeal={REFINE_ENABLED ? feed.handleRefineMeal : undefined}
               onConfirmMeal={feed.handleConfirmMeal}
               onConfirmCheatMeal={feed.handleConfirmCheatMeal}
+              onDiscardPending={feed.handleDiscardPending}
               onCheatClarify={feed.handleCheatClarify}
             />
           )}

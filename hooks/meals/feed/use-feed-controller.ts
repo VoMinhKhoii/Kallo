@@ -19,6 +19,7 @@ import { useLoggingMode } from '@/hooks/meals/feed/use-logging-mode';
 import { useMealCardActions } from '@/hooks/meals/feed/use-meal-card-actions';
 import { useSettledOnce } from '@/hooks/meals/feed/use-settled-once';
 import { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
+import { useDiscardPending } from '@/hooks/meals/mutations/use-discard-pending';
 import { useMarkDayComplete } from '@/hooks/meals/mutations/use-mark-day-complete';
 import { useSaveManualMeal } from '@/hooks/meals/mutations/use-save-manual-meal';
 import { useRecentCheatOccasions } from '@/hooks/meals/queries/use-recent-cheat-occasions';
@@ -76,6 +77,11 @@ export function useFeedController(args: {
   // log again, and the silent supersede used by NL-refine).
   const { handleDeleteMeal, handleUpdateMeal, handleLogAgain, replaceOldMeal } =
     useMealCardActions({ userId: profile.userId, selectedDate });
+  const { hiddenAnalysisIds, handleDiscardPending } = useDiscardPending({
+    userId: profile.userId,
+    selectedDate,
+    setMessages,
+  });
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   // Session-scoped dismissal for the "yesterday under-logged" prompt. The feed
   // stays mounted across date navigation, so this survives clicking through to
@@ -220,6 +226,7 @@ export function useFeedController(args: {
       streamingMsgId,
       stream,
       pendingConfirmations: day.pendingConfirmations,
+      hiddenAnalysisIds,
     });
 
   useStreamingScroll({ stream, scrollToBottom });
@@ -294,6 +301,7 @@ export function useFeedController(args: {
     ...confirmHandlers,
     ...clarifyHandlers,
     handleDeleteMeal,
+    handleDiscardPending,
     handleUpdateMeal,
     handleLogAgain,
     handleSubmit,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_footer.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
@@ -56,6 +57,7 @@ Widget _wrap({
   String? streamingRawInput,
   String? revealRawInput,
   DateTime? sentAt,
+  ValueChanged<String>? onDiscardReveal,
 }) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
   path: 'assets/l10n',
@@ -87,6 +89,7 @@ Widget _wrap({
                   failedRetryable: true,
                   onRetry: () {},
                   onDiscardFailed: () {},
+                  onDiscardReveal: onDiscardReveal ?? (_) {},
                 ),
               ),
             ),
@@ -149,6 +152,40 @@ void main() {
     expect(find.byType(UserMessageBubble), findsOneWidget);
     expect(find.byType(StreamingEntry), findsNothing);
     expect(find.text(_raw), findsNWidgets(2));
+  });
+
+  testWidgets('the revealed answer can be discarded, once confirmed', (
+    tester,
+  ) async {
+    final discarded = <String>[];
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(revealing: true),
+        stream: const StreamAnalysisState(
+          status: StreamStatus.done,
+          result: _meal,
+          analysisId: 'a1',
+        ),
+        revealRawInput: _raw,
+        onDiscardReveal: discarded.add,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The card a user sees right after analysing is the one they most often
+    // want gone; before this its only way out was a day reload.
+    await tester.tap(find.bySemanticsLabel('Discard'));
+    await tester.pumpAndSettle();
+    expect(discarded, isEmpty, reason: 'the confirm must come first');
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(kKalloConfirmSurface),
+        matching: find.text('Discard'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(discarded, ['a1']);
   });
 
   testWidgets('the turn is stamped from the moment of sending, once', (

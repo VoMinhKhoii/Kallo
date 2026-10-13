@@ -208,15 +208,16 @@ describe('discardPendingAnalysisAction', () => {
     expect(JSON.stringify(captured.where)).toBe(JSON.stringify(expected));
   });
 
-  it("should throw for an analysis that is gone or someone else's", async () => {
+  it("should report not_found for an analysis that is gone or someone else's", async () => {
     // The WHERE userId filter is the only tenant guard (Drizzle bypasses RLS),
     // so another user's row comes back as no rows — indistinguishable from an
     // expired or already-confirmed one, and reported the same way.
     queueDiscard([]);
 
+    // Returned, not thrown: production redacts thrown Server Action messages.
     await expect(
       discardPendingAnalysisAction({ analysisId: UUID_2 })
-    ).rejects.toThrow('Phân tích không tồn tại');
+    ).resolves.toEqual({ success: false, reason: 'not_found' });
   });
 
   it('should reject an analysisId that is not a uuid', async () => {

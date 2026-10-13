@@ -6,6 +6,7 @@ import '../../../../models/logging/meal.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
+import '../actions/discard_staged_button.dart';
 import '../cheat/cheat_slider_card.dart';
 import '../composer/entrances.dart';
 import '../entry/meal_entry.dart';
@@ -35,6 +36,7 @@ class FeedFooter extends StatelessWidget {
     required this.failedRetryable,
     required this.onRetry,
     required this.onDiscardFailed,
+    required this.onDiscardReveal,
     required this.loaderIndex,
     required this.sentAt,
   });
@@ -63,6 +65,10 @@ class FeedFooter extends StatelessWidget {
   final bool failedRetryable;
   final VoidCallback onRetry;
   final VoidCallback onDiscardFailed;
+
+  /// Throw away the revealed answer — it is already staged server-side, so
+  /// this is the same discard a staged card in the list offers.
+  final ValueChanged<String> onDiscardReveal;
 
   @override
   Widget build(BuildContext context) {
@@ -124,19 +130,44 @@ class FeedFooter extends StatelessWidget {
             busy: confirmPending,
             revealing: true,
             onConfirm: (edits) => onConfirmReveal(stream.analysisId!, edits),
+            actions: [
+              DiscardStagedButton(
+                busy: confirmPending,
+                onDiscard: () => onDiscardReveal(stream.analysisId!),
+              ),
+            ],
           ),
         // The cheat reveal: an interactive slider card when the estimate is
         // staged (analysisId set), or the clarifying-question card when the
         // input was too vague (no analysisId — answering re-runs the
         // estimator).
         if (view.isCheatRevealing)
-          CheatSliderCard(
+          Column(
             key: ValueKey('cheat-reveal-${stream.analysisId ?? 'clarify'}'),
-            spec: stream.cheatSpec!,
-            rawInput: revealRawInput ?? '',
-            busy: confirmPending,
-            onConfirm: onConfirmCheatReveal,
-            onClarify: onClarifyCheat,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: LoggingSpacing.actions,
+            children: [
+              CheatSliderCard(
+                spec: stream.cheatSpec!,
+                rawInput: revealRawInput ?? '',
+                busy: confirmPending,
+                onConfirm: onConfirmCheatReveal,
+                onClarify: onClarifyCheat,
+              ),
+              // The slider draws no action row of its own, so it gets one
+              // here. A clarifying question (no analysisId) staged nothing,
+              // so there is nothing to discard.
+              if (stream.analysisId != null)
+                Row(
+                  children: [
+                    const Spacer(),
+                    DiscardStagedButton(
+                      busy: confirmPending,
+                      onDiscard: () => onDiscardReveal(stream.analysisId!),
+                    ),
+                  ],
+                ),
+            ],
           ),
         if (hasFailed)
           FailedAttemptCard(
