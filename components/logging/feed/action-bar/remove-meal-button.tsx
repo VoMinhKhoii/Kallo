@@ -2,8 +2,8 @@
 
 import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { ActionIconButton } from './action-icon-button';
+import { ConfirmDialog } from './confirm-dialog';
 
 interface RemoveMealButtonProps {
   label: string;
