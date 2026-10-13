@@ -264,6 +264,64 @@ void main() {
       expect(router.canPop(), isTrue);
     });
 
+    testWidgets('a tap that launched the app waits for the first screen', (
+      tester,
+    ) async {
+      // Sentry KALLO-MOBILE-3: the launch tap arrived before go_router had
+      // parsed a location, and `router.state` threw "Bad state: No element".
+      // It also must not route while the splash still holds `/` — the
+      // redirect that leaves it would replace the stack built over it.
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const SizedBox.shrink()),
+          ...testRouter().configuration.routes,
+        ],
+      );
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+
+      routePushTap(container, {
+        'type': 'share.reply',
+        'objectType': 'share',
+        'objectId': 's3',
+      });
+      await pump(tester, router);
+      expect(locationOf(router), '/');
+
+      router.go('/dashboard');
+      await tester.pumpAndSettle();
+
+      expect(locationOf(router), '/circle/s3');
+      expect(router.canPop(), isTrue);
+    });
+
+    testWidgets('a launch tap routes once the first redirect lands', (
+      tester,
+    ) async {
+      // The usual cold start: the session is already restored, so the
+      // redirect leaves `/` during the router's first build.
+      final router = GoRouter(
+        initialLocation: '/',
+        redirect:
+            (_, state) => state.matchedLocation == '/' ? '/dashboard' : null,
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const SizedBox.shrink()),
+          ...testRouter().configuration.routes,
+        ],
+      );
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+      routePushTap(container, {
+        'type': 'share.reply',
+        'objectType': 'share',
+        'objectId': 's4',
+      });
+      await pump(tester, router);
+      expect(locationOf(router), '/circle/s4');
+      expect(router.canPop(), isTrue);
+    });
+
     testWidgets('an unroutable payload is a no-op', (tester) async {
       final router = testRouter();
       addTearDown(router.dispose);

@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../router.dart';
+import '../../../shell/launch/route_settled.dart';
 import '../../../shell/nav/nav_actions.dart';
 import '../../../services/push/push_channel.dart';
 import '../../circle/data/feed_providers.dart';
@@ -89,9 +91,33 @@ PushDestination? pushDestinationFor(PushPayload payload) {
 
 /// Navigate for a tapped notification. A payload with no destination is a
 /// deliberate no-op.
+///
+/// A tap that launched the app is held until the first screen is decided
+/// ([launchReadyProvider]). Before that the router may not have parsed a
+/// location at all — `router.state` then throws "Bad state: No element"
+/// (Sentry KALLO-MOBILE-3) — and while the splash holds `/`, the redirect
+/// that leaves it would replace any stack built over it.
 void routePushTap(ProviderContainer container, PushPayload payload) {
   final destination = pushDestinationFor(payload);
   if (destination == null) return;
+  _whenReady(
+    container.read(launchReadyProvider),
+    () => _routeTo(container, destination),
+  );
+}
+
+void _whenReady(ValueListenable<bool> ready, VoidCallback run) {
+  if (ready.value) return run();
+  void listener() {
+    if (!ready.value) return;
+    ready.removeListener(listener);
+    run();
+  }
+
+  ready.addListener(listener);
+}
+
+void _routeTo(ProviderContainer container, PushDestination destination) {
   // Always assign: null means the combined feed, so a share or friend tap
   // after a group tap must not stay scoped to that earlier group.
   container.read(circleSelectedViewProvider.notifier).state =
