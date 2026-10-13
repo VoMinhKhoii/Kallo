@@ -26,6 +26,11 @@ export const onRequestError = Sentry.captureRequestError;
  * Errors are swallowed by `ensureInitialized` — the lazy-init paths remain
  * the source of truth on failure.
  *
+ * The card catalog (`getCardCatalog`, ~3.3 s on prod's database) starts
+ * loading here too but is not awaited: `register` must finish before the
+ * server takes requests, and a page load should not wait on it. A meal that
+ * arrives while it loads joins the same load instead of starting its own.
+ *
  * Sentry is initialised first, in BOTH runtimes (middleware runs on Edge), so
  * a failure while warming caches is itself reported. `onRequestError` hands
  * every uncaught route / Server Component / Server Action error to Sentry.
@@ -41,11 +46,16 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const [{ db }, { getNutritionCache }] = await Promise.all([
-    import('@/lib/infra/db/client'),
-    import('@/lib/ai/cache/nutrition-cache'),
-  ]);
+  const [{ db }, { getNutritionCache }, { getCardCatalog }] = await Promise.all(
+    [
+      import('@/lib/infra/db/client'),
+      import('@/lib/ai/cache/nutrition-cache'),
+      import('@/lib/ai/matching/cards/catalog'),
+    ]
+  );
 
+  // Failures are caught and logged inside getCardCatalog.
+  void getCardCatalog(db);
   const t0 = Date.now();
   await getNutritionCache(db);
   console.info(
