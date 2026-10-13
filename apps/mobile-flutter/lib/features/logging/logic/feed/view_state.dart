@@ -97,6 +97,11 @@ class FeedViewState {
     // Pin the live stream/reveal cards to the day they were submitted on, so
     // switching the selected date doesn't render them on the wrong day's feed.
     final streamIsForThisDay = stream.loggedDate == date;
+    // A revealed answer the user discarded is held out for its undo window the
+    // same way its staged twin is — by its analysis id in the removal set.
+    final revealDiscarded =
+        stream.analysisId != null &&
+        pendingRemovalIds.contains(stream.analysisId);
 
     final isStreaming =
         streamIsForThisDay &&
@@ -110,14 +115,16 @@ class FeedViewState {
         streamIsForThisDay &&
         stream.status == StreamStatus.done &&
         stream.result != null &&
-        stream.analysisId != null;
+        stream.analysisId != null &&
+        !revealDiscarded;
 
     // The cheat counterpart: a completed slider estimate (analysisId set) or a
     // clarifying question (no analysisId — nothing staged; the user re-asks).
     final isCheatRevealing =
         streamIsForThisDay &&
         stream.status == StreamStatus.done &&
-        stream.cheatSpec != null;
+        stream.cheatSpec != null &&
+        !revealDiscarded;
 
     final dailyCalories = round0(
       persistedMeals.fold<double>(

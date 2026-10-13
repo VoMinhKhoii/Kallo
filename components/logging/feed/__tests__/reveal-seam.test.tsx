@@ -79,6 +79,7 @@ function cards(messages: ChatMessage[]) {
       onUpdateMeal={async () => {}}
       onConfirmMeal={() => {}}
       onConfirmCheatMeal={() => {}}
+      onDiscardPending={() => {}}
       onCheatClarify={() => {}}
     />
   );

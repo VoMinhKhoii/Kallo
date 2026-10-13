@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
+import { DiscardStagedButton } from '@/components/logging/feed/action-bar/discard-staged-button';
 import { CheatSliderCard } from '@/components/logging/feed/cheat/cheat-slider-card';
 import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
 import {
@@ -27,6 +28,7 @@ interface FeedCardsProps {
   ) => void;
   onConfirmMeal: (message: ChatMessage, edits: MealQuantityEdit[]) => void;
   onConfirmCheatMeal: (message: ChatMessage, levels: CheatSliderLevels) => void;
+  onDiscardPending: (message: ChatMessage) => void;
   onCheatClarify: (message: ChatMessage, answer: string) => void;
 }
 
@@ -41,6 +43,7 @@ export function FeedCards({
   onRefineMeal,
   onConfirmMeal,
   onConfirmCheatMeal,
+  onDiscardPending,
   onCheatClarify,
 }: FeedCardsProps) {
   // Which messages the user actually watched stream. The reveal has to know:
@@ -86,29 +89,43 @@ export function FeedCards({
               return <StreamingMealEntry key={msg.id} message={msg} />;
             }
 
+            // An unsaved card is a staged server row: it can be thrown away.
+            // A clarifying question staged nothing, so it has no way out here.
+            const discard = msg.analysisId &&
+              !msg.cheatSpec?.clarifyingQuestion && (
+                <DiscardStagedButton
+                  onConfirm={() => onDiscardPending(msg)}
+                  disabled={isConfirming}
+                />
+              );
+
             if (msg.cheatSpec) {
               return (
-                <CheatSliderCard
-                  key={msg.id}
-                  spec={msg.cheatSpec}
-                  userInput={msg.userInput}
-                  timestamp={msg.timestamp}
-                  isConfirming={isConfirming}
-                  onConfirm={(levels) => onConfirmCheatMeal(msg, levels)}
-                  onClarify={(answer) => onCheatClarify(msg, answer)}
-                />
+                <div key={msg.id}>
+                  <CheatSliderCard
+                    spec={msg.cheatSpec}
+                    userInput={msg.userInput}
+                    timestamp={msg.timestamp}
+                    isConfirming={isConfirming}
+                    onConfirm={(levels) => onConfirmCheatMeal(msg, levels)}
+                    onClarify={(answer) => onCheatClarify(msg, answer)}
+                  />
+                  {discard}
+                </div>
               );
             }
 
             if (msg.parsedMeal) {
               return (
-                <MealEntry
-                  key={msg.id}
-                  message={msg}
-                  isConfirming={isConfirming}
-                  revealing={streamedIds.current.has(msg.id)}
-                  onConfirm={(edits) => onConfirmMeal(msg, edits)}
-                />
+                <div key={msg.id}>
+                  <MealEntry
+                    message={msg}
+                    isConfirming={isConfirming}
+                    revealing={streamedIds.current.has(msg.id)}
+                    onConfirm={(edits) => onConfirmMeal(msg, edits)}
+                  />
+                  {discard}
+                </div>
               );
             }
 

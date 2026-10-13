@@ -18,24 +18,37 @@ import { ActionIconButton } from './action-icon-button';
 interface RemoveMealButtonProps {
   label: string;
   onConfirm: () => void;
+  disabled?: boolean;
+  /** Dialog copy override — a staged card is discarded, not removed. */
+  copy?: { title: string; description: string; action: string };
 }
 
-export function RemoveMealButton({ label, onConfirm }: RemoveMealButtonProps) {
+export function RemoveMealButton({
+  label,
+  onConfirm,
+  disabled,
+  copy,
+}: RemoveMealButtonProps) {
   const t = useTranslations('logging.persistedMealCard');
   const tCommon = useTranslations('common');
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <ActionIconButton icon={Trash2} label={label} danger />
+        <ActionIconButton
+          icon={Trash2}
+          label={label}
+          danger
+          disabled={disabled}
+        />
       </AlertDialogTrigger>
       <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
         <AlertDialogHeader>
           <AlertDialogTitle className="font-normal font-sans-display text-[18px]">
-            {t('removeConfirmTitle')}
+            {copy?.title ?? t('removeConfirmTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
-            {t('removeConfirmDescription')}
+            {copy?.description ?? t('removeConfirmDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -45,7 +58,7 @@ export function RemoveMealButton({ label, onConfirm }: RemoveMealButtonProps) {
             className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
             onClick={onConfirm}
           >
-            {t('remove')}
+            {copy?.action ?? t('remove')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
