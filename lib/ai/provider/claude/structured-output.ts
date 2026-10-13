@@ -21,6 +21,7 @@ import type {
 } from '../types';
 import {
   isEmptyFoodAnswer,
+  isShortOfPlan,
   repairPipelineOutput,
   toClaudeSchema,
   withoutEmptyStrings,
@@ -141,6 +142,8 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
         const raw = repairPipelineOutput(JSON.parse(accumulated));
         if (isEmptyFoodAnswer(raw))
           throw schemaSlip('food answer with no meal items');
+        if (isShortOfPlan(raw))
+          throw schemaSlip('fewer meal items than the plan numbers');
         let answer = raw;
         let parsed = params.schema.safeParse(answer);
         if (!parsed.success) {

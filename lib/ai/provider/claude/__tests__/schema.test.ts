@@ -3,6 +3,7 @@ import { mealDecompositionV2Schema } from '@/lib/ai/pipeline/contracts/schemas/d
 import { groundedEstimationSchema } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   isEmptyFoodAnswer,
+  isShortOfPlan,
   repairPipelineOutput,
   toClaudeSchema,
   withoutEmptyStrings,
@@ -162,5 +163,40 @@ describe('isEmptyFoodAnswer', () => {
     expect(isEmptyFoodAnswer({ isFood: true, mealItems: [] })).toBe(true);
     expect(isEmptyFoodAnswer({ isFood: false, mealItems: [] })).toBe(false);
     expect(isEmptyFoodAnswer({ isFood: true, mealItems: [{}] })).toBe(false);
+  });
+});
+
+describe('isShortOfPlan', () => {
+  const plan =
+    'Dish 1: cơm trắng (rice). Dish 2: đùi gà kho nấm rơm (chicken thigh, straw mushroom, sugar, fish sauce, oil). Dish 3: bắp cải xào (cabbage, oil).';
+  const items = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ name: `m${i}`, ingredients: [{}] }));
+
+  it('flags an answer that stops before the dishes its plan numbers (prod 8cb1a999)', () => {
+    expect(isShortOfPlan({ plan, isFood: true, mealItems: items(1) })).toBe(
+      true
+    );
+    expect(isShortOfPlan({ plan, isFood: true, mealItems: items(3) })).toBe(
+      false
+    );
+  });
+
+  it('counts dishes and drinks separately and each label once', () => {
+    const p = 'Dish 1: phở. Drink 1: trà đá. Dish 1: phở (again)';
+    expect(isShortOfPlan({ plan: p, isFood: true, mealItems: items(1) })).toBe(
+      true
+    );
+    expect(isShortOfPlan({ plan: p, isFood: true, mealItems: items(2) })).toBe(
+      false
+    );
+  });
+
+  it('never flags a free-form plan, a non-food answer or a schema without a plan', () => {
+    const free = 'cơm trắng; đùi gà kho (gà, nấm, nước mắm); bắp cải xào.';
+    expect(
+      isShortOfPlan({ plan: free, isFood: true, mealItems: items(1) })
+    ).toBe(false);
+    expect(isShortOfPlan({ plan, isFood: false, mealItems: [] })).toBe(false);
+    expect(isShortOfPlan({ mealItems: items(1) })).toBe(false);
   });
 });

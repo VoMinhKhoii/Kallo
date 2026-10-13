@@ -93,6 +93,40 @@ describe('streamed matching batches', () => {
     expect(batches).toEqual([['A'], ['B', 'C']]);
   });
 
+  it('sends what is still queued at once when matching starts, beside the running batch', async () => {
+    // Prod 7acaa6ba: on a cold instance the first batch (the rice alone) waited
+    // 9 s for the card catalog and the other 7 ingredients queued behind it,
+    // so the matching stage ran out its 10 s.
+    const batches: string[][] = [];
+    let release: () => void = () => {};
+    cardsMock.mockReset();
+    cardsMock.mockImplementation((ings: { rawName: string }[]) => {
+      batches.push(ings.map((i) => i.rawName));
+      return batches.length === 1
+        ? new Promise((resolve) => {
+            release = () => resolve(ings.map((i) => result(i.rawName)));
+          })
+        : Promise.resolve(ings.map((i) => result(i.rawName)));
+    });
+    const streamed = createStreamedMatching({} as AppDb, {} as GeminiClient);
+    const item = (n: string) =>
+      `{"name":"${n}","ingredients":[{"rawName":"${n}","canonicalName":"${n}"}]}`;
+    streamed.onChunk(`{"mealItems":[${item('a')},`);
+    streamed.onChunk(`{"mealItems":[${item('a')},${item('b')},${item('c')}]}`);
+    expect(batches).toEqual([['A']]);
+    const done = streamed.match(
+      ['A', 'B', 'C'].map((n) => ({ rawName: n, canonicalName: n })),
+      [null, null, null],
+      { k: 8, concurrency: 4 }
+    );
+    expect(batches).toEqual([['A'], ['B', 'C']]);
+    release();
+    const out = await done;
+    expect(
+      out.map((r) => (r.candidates[0] as never as { label: string }).label)
+    ).toEqual(['A', 'B', 'C']);
+  });
+
   it('runs no queued batch once closed', async () => {
     const batches: string[][] = [];
     let release: () => void = () => {};

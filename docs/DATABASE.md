@@ -167,6 +167,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261008030400_match_food_cards_function.sql` | B (Manual) | `match_food_cards(vector[], per_query)` — nearest card strings per query vector, max-sim per row, `hnsw.ef_search` raised per call via `set_config` |
 | `20261010163635_card_vectors_halfvec.sql` | A (Drizzle) | `food_card_vectors.embedding` `vector(768)` → `halfvec(768)` (~280 MB of out-of-line floats → rows ~1.5 KB inline); drops the 256-dim index first |
 | `20261010163700_card_vectors_halfvec_index_and_function.sql` | B (Manual) | Rebuilds the 256-dim HNSW on the `halfvec` column; `match_food_cards` rescores with `q.v::halfvec(768)` |
+| `20261013060331_card_vectors_unembedded_index.sql` | A (Drizzle) | Partial index `food_card_vectors_unembedded_idx` on rows `WHERE embedding IS NULL`: the card catalog's readiness check was a 6.6 s seq scan of ~71k inline vectors on prod's Nano instance; the index is empty outside a backfill, so the check is instant |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

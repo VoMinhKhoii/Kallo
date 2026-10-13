@@ -610,6 +610,13 @@
       "when": 1791826365403,
       "tag": "20261012173245_meal_items_alcohol_g",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791871411006,
+      "tag": "20261013060331_card_vectors_unembedded_index",
+      "breakpoints": true
     }
   ]
 }
