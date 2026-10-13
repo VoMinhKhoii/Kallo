@@ -180,7 +180,8 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-/* Headings — always Lora, normal weight, tight tracking */
+/* Headings — always Lora, normal weight, tight tracking. The one exception:
+   dialog titles (ResponsiveModal, ConfirmDialog) are semibold 600 (owner, 2026-10-14). */
 .h-display, .h1, .h2, .h3, .h4,
 h1, h2, h3, h4 {
   font-family: var(--font-display);

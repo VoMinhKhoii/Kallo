@@ -72,7 +72,7 @@ export function TypographySection() {
       accent="never bold Lora"
       eyebrow="Typography"
       id="typography"
-      intro="Two typefaces with strict jobs, on Anthropic's ramp (64/48/36/28/22, tightening leading as size grows). Lora (serif) carries every headline, number above 18px, and quoted meal string — always weight 400 or lighter. Be Vietnam Pro (sans) carries every button, label, and paragraph below 18px. Sentence case everywhere; UPPERCASE only in the 10px eyebrow."
+      intro="Two typefaces with strict jobs, on Anthropic's ramp (64/48/36/28/22, tightening leading as size grows). Lora (serif) carries every headline, number above 18px, and quoted meal string — always weight 400 or lighter, except dialog titles, which are semibold. Be Vietnam Pro (sans) carries every button, label, and paragraph below 18px. Sentence case everywhere; UPPERCASE only in the 10px eyebrow."
       title="Two faces,"
     >
       <DsCard title="The ramp — each utility carries size, leading, tracking and weight">
