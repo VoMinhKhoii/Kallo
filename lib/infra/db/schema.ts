@@ -284,39 +284,6 @@ export const foodCards = pgTable('food_cards', {
 });
 
 /**
- * @deprecated Replaced by `food_card_texts` + `food_card_text_rows`, which
- * store each string once instead of once per row. Nothing reads or writes it;
- * kept until the release that stopped using it is deployed, then dropped in
- * its own migration (docs/DATABASE.md, "Shared staging preview rule").
- */
-export const foodCardVectors = pgTable(
-  'food_card_vectors',
-  {
-    id: serial('id').primaryKey(),
-    foodCompositionId: text('food_composition_id')
-      .notNull()
-      .references(() => vietnameseFoodComposition.id, { onDelete: 'cascade' }),
-    text: text('text').notNull(),
-    // Half precision: the full 768 floats were ~280 MB out of line for a
-    // reference table whose search reads a 256-dim prefix (match_food_cards).
-    embedding: halfvec('embedding', { dimensions: 768 }),
-  },
-  (table) => [
-    uniqueIndex('food_card_vectors_row_text_key').on(
-      table.foodCompositionId,
-      table.text
-    ),
-    // The card catalog's readiness check ("any string not embedded yet?")
-    // seq-scanned all ~71k rows, vectors inline, in 6.6 s on prod. This index
-    // holds only the not-yet-embedded rows, so outside a backfill it is empty
-    // and the check is instant.
-    index('food_card_vectors_unembedded_idx')
-      .on(table.id)
-      .where(sql`${table.embedding} IS NULL`),
-  ]
-);
-
-/**
  * Every distinct string that names a card (row names, card food/sentence,
  * aliases, Vietnamese names), one vector each — a string shared by many rows
  * ("thịt đùi bò" on dozens of beef cuts) is stored and searched once.
@@ -335,7 +302,7 @@ export const foodCardTexts = pgTable(
   (table) => [
     // The catalog's readiness check ("any string not embedded yet?") and the
     // backfill read only these rows; outside a backfill the index is empty, so
-    // the check never scans the inline vectors (see food_card_vectors_unembedded_idx).
+    // the check never scans the inline vectors (a full scan took 6.6 s on prod).
     index('food_card_texts_unembedded_idx')
       .on(table.id)
       .where(sql`${table.embedding} IS NULL`),

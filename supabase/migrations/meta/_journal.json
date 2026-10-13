@@ -624,6 +624,13 @@
       "when": 1791875117297,
       "tag": "20261013070517_add_food_card_texts",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791883815423,
+      "tag": "20261013093015_drop_food_card_vectors",
+      "breakpoints": true
     }
   ]
 }
