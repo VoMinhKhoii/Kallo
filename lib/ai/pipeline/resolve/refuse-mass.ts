@@ -240,6 +240,30 @@ export function selectedCandidate(
   return idx ? match?.candidates[Number(idx) - 1] : undefined;
 }
 
+function shippedMass(
+  estimate: GroundedIngredientEstimate,
+  ingredient: DecomposedIngredientV2,
+  match: IngredientV2MatchResult | undefined,
+  portion: PortionResolution | undefined
+): GroundedMassResolution {
+  const candidate = selectedCandidate(estimate, match);
+  const anchor =
+    portion?.grams &&
+    portion.provenance !== 'llm_range' &&
+    portion.provenance !== 'unresolved' &&
+    portion.grams.mid > 0
+      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
+      : null;
+  return resolveGroundedMass({
+    ground: estimate,
+    candidateInediblePct: candidate?.inediblePct ?? null,
+    canonicalName: ingredient.canonicalName,
+    rawName: ingredient.rawName,
+    prepNotes: ingredient.prepNotes,
+    authoritativeMass: anchor,
+  });
+}
+
 /**
  * The edible grams the bridge ships for one ingredient, by the bridge's own
  * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
@@ -252,22 +276,22 @@ export function shippedEdibleGrams(
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  const candidate = selectedCandidate(estimate, match);
-  const anchor =
-    portion?.grams &&
-    portion.provenance !== 'llm_range' &&
-    portion.provenance !== 'unresolved' &&
-    portion.grams.mid > 0
-      ? { grams: portion.grams.mid, basis: portion.massBasis ?? 'unknown' }
-      : null;
-  return (
-    resolveGroundedMass({
-      ground: estimate,
-      candidateInediblePct: candidate?.inediblePct ?? null,
-      canonicalName: ingredient.canonicalName,
-      rawName: ingredient.rawName,
-      prepNotes: ingredient.prepNotes,
-      authoritativeMass: anchor,
-    }).edibleG ?? 0
-  );
+  return shippedMass(estimate, ingredient, match, portion).edibleG ?? 0;
+}
+
+/**
+ * The as-served grams behind what the bridge ships for one ingredient: its
+ * gross mass, bones and shells included, unless it ships an edible anchor.
+ * What a scale reads for the food on the plate; also linear in `grossG`.
+ */
+export function shippedServedGrams(
+  estimate: GroundedIngredientEstimate,
+  ingredient: DecomposedIngredientV2,
+  match: IngredientV2MatchResult | undefined,
+  portion: PortionResolution | undefined
+): number {
+  const m = shippedMass(estimate, ingredient, match, portion);
+  return m.massBasis === 'gross_as_served'
+    ? (m.refuse?.grossG ?? 0)
+    : (m.edibleG ?? 0);
 }

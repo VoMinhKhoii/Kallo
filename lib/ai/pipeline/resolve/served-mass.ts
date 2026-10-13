@@ -2,8 +2,9 @@
  * A dish the user weighed ("350g chicken tikka masala") carries that weight
  * from Call 1 as `servedMassG`, and no part of it is pinned. Call 2 sizes the
  * parts from a sense of a normal serving, so they rarely add up to the typed
- * weight. Here each weighed dish's parts are scaled so the mass the bridge
- * ships for them adds up to what the user typed.
+ * weight. Here each weighed dish's parts are scaled so the as-served mass
+ * behind what the bridge ships (bones and shells included: what the scale
+ * read) adds up to what the user typed.
  */
 import type {
   DecomposedDishV2,
@@ -11,7 +12,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
-import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { shippedServedGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 
 /** The parts move by at most this factor either way; past it, trust Call 2. */
@@ -102,7 +103,7 @@ export function scaleEstimate(
 }
 
 /**
- * Scale every weighed dish's free parts so the shipped grams of the dish add
+ * Scale every weighed dish's free parts so the as-served grams of the dish add
  * up to its `servedMassG`. A part pinned by a weight or package size of its
  * own keeps it and counts toward the total; a part the resolver withheld
  * ships nothing and is skipped. Returns new state and how many dishes moved.
@@ -124,13 +125,13 @@ export function scaleToServedMass(state: RunState): {
       if (mealItemIdx !== d || !ground) return;
       const portion = state.portionResolutions[f];
       if (portion?.provenance === 'unresolved') return;
-      const grams = shippedEdibleGrams(
+      const grams = shippedServedGrams(
         ground,
         ingredient,
         state.matchResults[f],
         portion
       );
-      // The same anchor test `shippedEdibleGrams` applies: an anchored part
+      // The same anchor test `shippedServedGrams` applies: an anchored part
       // ships its anchor whatever its grossG, so it cannot be scaled.
       const anchored =
         portion?.provenance !== 'llm_range' && (portion?.grams?.mid ?? 0) > 0;

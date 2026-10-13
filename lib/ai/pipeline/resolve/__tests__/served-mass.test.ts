@@ -24,7 +24,12 @@ const typed = (g: number): PortionResolution => ({
   note: '',
 });
 
-type Part = { name: string; g: number; portion?: PortionResolution };
+type Part = {
+  name: string;
+  g: number;
+  refusePct?: number;
+  portion?: PortionResolution;
+};
 
 /** One dish; every part matched one row (c1) and Call 2 gave it `g` grams and g/4 g carbohydrate. */
 function stateOf(
@@ -54,7 +59,7 @@ function stateOf(
           ingredientName: p.name,
           selectedCandidateId: 'c1',
           grossG: p.g,
-          refusePct: 0,
+          refusePct: p.refusePct ?? 0,
           proteinG: triple(0),
           carbohydrateG: triple(p.g / 4),
           fatG: triple(0),
@@ -225,6 +230,16 @@ describe('scaleToServedMass', () => {
       );
       expect(grams(out.state)).toEqual([200, 100]);
     }
+  });
+
+  it('sizes a dish weighed with its shells on by as-served grams', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Seafood boil', servedMassG: 500 }, [
+        { name: 'shell-on shrimp', g: 150, refusePct: 40 },
+        { name: 'corn on the cob', g: 100, refusePct: 30 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([300, 200]);
   });
 
   it('moves the parts by at most 3× either way', () => {
