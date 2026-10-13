@@ -25,13 +25,17 @@ const TOLERANCE = 0.02;
  * water), so the parts may only shrink to it, never grow into it.
  */
 const LIQUID_DISH =
-  /(?<!\p{L})(?:soup|stew(?:ed)?|curry|curried|braised?|chil(?:i|li)|hot ?pot|ramen|pho|phở|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|congee|laksa|canh|lẩu|kho|cà ri|cari|ninh|hầm)(?!\p{L})/iu;
+  /(?<!\p{L})(?:soup|súp|stew(?:ed)?|curry|curried|braised?|chil(?:i|li)|hot ?pot|ramen|pho|phở|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|congee|laksa|canh|lẩu|kho|cà ri|cari|ninh|hầm)(?!\p{L})/iu;
 /**
  * A solid food named after a liquid dish ("curry puff", "chili dog") or its
- * dry form ("miến xào", "hủ tiếu khô"): its typed weight is all food.
+ * dry form ("miến xào", "miến trộn", "hủ tiếu khô"): its typed weight is all
+ * food.
  */
 const SOLID_FORM =
-  /(?<!\p{L})(?:puff|dog|burger|bun|bread|pie|roll|crisp|fries|chips|fried rice|fried noodles|dry|xào|khô)(?!\p{L})|stir[-_ ]?fr/iu;
+  /(?<!\p{L})(?:puff|dog|burger|bun|bread|pie|roll|crisp|fries|chips|fried rice|fried noodles|dry|xào|trộn|khô)(?!\p{L})|stir[-_ ]?fr/iu;
+/** Where a dish weighed with its side splits into its foods. */
+const SIDE_JOIN =
+  /\s*(?:[,+&]|(?<!\p{L})(?:with|and|plus|kèm|với|và|thêm)(?!\p{L}))\s*/iu;
 /**
  * A part that is the dish's liquid, by its whole name: English names end on
  * the liquid ("beef broth", not "water spinach" or "cream cheese"); the
@@ -48,9 +52,16 @@ function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
   );
 }
 
+/**
+ * Any food in the item's name is a liquid dish not in a solid or dry form.
+ * Each food is judged on its own, so "beef stew with bread" stays a stew; the
+ * cooking method describes the first (main) food.
+ */
 function isLiquidDish(dish: DecomposedDishV2): boolean {
-  const label = `${dish.name} ${dish.cookingMethod}`;
-  return LIQUID_DISH.test(label) && !SOLID_FORM.test(label);
+  return dish.name
+    .split(SIDE_JOIN)
+    .map((food, i) => (i === 0 ? `${food} ${dish.cookingMethod}` : food))
+    .some((food) => LIQUID_DISH.test(food) && !SOLID_FORM.test(food));
 }
 
 /**

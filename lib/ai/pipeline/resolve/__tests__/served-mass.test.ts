@@ -194,8 +194,29 @@ describe('scaleToServedMass', () => {
     expect(chili.scaled).toBe(0);
   });
 
+  it('keeps a liquid dish weighed with a solid side, or named in Vietnamese, from growing', () => {
+    for (const name of [
+      'Beef stew with bread',
+      'Curry with a roll',
+      'Súp cua',
+    ]) {
+      const out = scaleToServedMass(
+        stateOf({ name, servedMassG: 600 }, [
+          { name: 'beef', g: 150 },
+          { name: 'bread', g: 60 },
+        ])
+      );
+      expect(out.scaled).toBe(0);
+    }
+  });
+
   it('grows a solid or dry dish named after a liquid one', () => {
-    for (const name of ['Curry puff', 'Chili dog', 'Miến xào cua']) {
+    for (const name of [
+      'Curry puff',
+      'Chili dog',
+      'Miến xào cua',
+      'Miến trộn',
+    ]) {
       const out = scaleToServedMass(
         stateOf({ name, servedMassG: 300 }, [
           { name: 'filling', g: 100 },
