@@ -2,17 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { ActionIconButton } from './action-icon-button';
 
 interface RemoveMealButtonProps {
@@ -33,35 +23,21 @@ export function RemoveMealButton({
   const tCommon = useTranslations('common');
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
+    <ConfirmDialog
+      trigger={
         <ActionIconButton
           icon={Trash2}
           label={label}
           danger
           disabled={disabled}
         />
-      </AlertDialogTrigger>
-      <AlertDialogContent className="border-[#E8E6DC] bg-white text-[#141413]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-normal font-sans-display text-[18px]">
-            {copy?.title ?? t('removeConfirmTitle')}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[#6E6D66] text-[13px]">
-            {copy?.description ?? t('removeConfirmDescription')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            variant="ghost"
-            className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
-            onClick={onConfirm}
-          >
-            {copy?.action ?? t('remove')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      }
+      title={copy?.title ?? t('removeConfirmTitle')}
+      description={copy?.description ?? t('removeConfirmDescription')}
+      confirmLabel={copy?.action ?? t('remove')}
+      cancelLabel={tCommon('cancel')}
+      destructive
+      onConfirm={onConfirm}
+    />
   );
 }
