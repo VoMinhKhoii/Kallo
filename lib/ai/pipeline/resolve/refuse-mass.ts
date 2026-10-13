@@ -289,14 +289,16 @@ export function shippedEdibleGrams(
  * Call 2's plate grams per row gram for a part priced on a raw or dry row
  * (`servedG / grossG`: ~2.5 for dry pasta, ~0.75 for raw meat), or 1 when the
  * row is cooked or Call 2 gave no `servedG`, so its grams are already the
- * plate's.
+ * plate's. A raw pick the review rejected keeps no row but still carries the
+ * grams Call 2 emitted for it, so its `servedG` still holds.
  */
 export function servedPerRowGram(
   estimate: GroundedIngredientEstimate,
   match: IngredientV2MatchResult | undefined
 ): number {
-  const raw = selectedCandidate(estimate, match)?.info.state === 'raw';
-  return raw && estimate.servedG ? estimate.servedG / estimate.grossG : 1;
+  const state = selectedCandidate(estimate, match)?.info.state;
+  const rowGrams = state === 'raw' || state === undefined;
+  return rowGrams && estimate.servedG ? estimate.servedG / estimate.grossG : 1;
 }
 
 /**

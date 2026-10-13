@@ -30,6 +30,8 @@ type Part = {
   refusePct?: number;
   /** Priced on a raw/dry row, with Call 2's plate grams. */
   raw?: { servedG?: number };
+  /** The review turned the pick into a rejection (no row selected). */
+  rejected?: boolean;
   portion?: PortionResolution;
 };
 
@@ -59,7 +61,7 @@ function stateOf(
         mealItemName: dish.name,
         ingredients: parts.map((p) => ({
           ingredientName: p.name,
-          selectedCandidateId: 'c1',
+          selectedCandidateId: p.rejected ? 'none' : 'c1',
           grossG: p.g,
           refusePct: p.refusePct ?? 0,
           ...(p.raw?.servedG ? { servedG: p.raw.servedG } : {}),
@@ -280,6 +282,16 @@ describe('scaleToServedMass', () => {
       ])
     );
     expect(grams(out.state)).toEqual([200, 250]);
+  });
+
+  it('keeps plate grams for a dry-row pick the review rejected', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Mac and cheese', servedMassG: 300 }, [
+        { name: 'dry macaroni', g: 80, raw: { servedG: 200 }, rejected: true },
+        { name: 'cheese sauce', g: 100 },
+      ])
+    );
+    expect(out.scaled).toBe(0);
   });
 
   it('falls back to row grams when Call 2 gave no plate grams for a dry row', () => {

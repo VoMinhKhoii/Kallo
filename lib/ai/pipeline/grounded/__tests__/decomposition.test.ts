@@ -70,13 +70,13 @@ describe('pinOnePartDishWeights', () => {
     mealItems,
   });
 
-  it("moves a one-part dish's typed weight onto its food", () => {
+  it("copies a one-part dish's typed weight onto its food, keeping the dish's", () => {
     const m = meal(dish(100, ['almonds']));
     pinOnePartDishWeights(m);
     expect(m.mealItems[0].ingredients[0]).toMatchObject({
       explicitMass: { grams: 100, basis: 'unknown' },
     });
-    expect(m.mealItems[0].servedMassG).toBeUndefined();
+    expect(m.mealItems[0].servedMassG).toBe(100);
   });
 
   it("keeps a food's own typed weight, and leaves several-part dishes to scaling", () => {

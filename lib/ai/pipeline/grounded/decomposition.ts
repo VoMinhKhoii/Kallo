@@ -289,8 +289,10 @@ export async function runGroundedDecomposition(args: {
 /**
  * A one-part "dish" the user weighed ("almonds 100g") is that food's own typed
  * weight: Call 1 sometimes writes it on the dish instead of the food. In
- * place, the weight moves to the food's `explicitMass` (unless it has its
- * own), so every later step reads it as a typed weight, and leaves the dish.
+ * place, the weight is copied to the food's `explicitMass` (unless it has its
+ * own), so every later step reads it as a typed weight. It stays on the dish
+ * too: scaling skips a one-part dish, but if the dish rescue splits the food
+ * into parts, they are scaled back to it.
  */
 export function pinOnePartDishWeights(
   decomposition: MealDecompositionV2
@@ -299,6 +301,5 @@ export function pinOnePartDishWeights(
     const [only, ...rest] = mi.ingredients;
     if (!mi.servedMassG || !only || rest.length > 0) continue;
     only.explicitMass ??= { grams: mi.servedMassG, basis: 'unknown' };
-    delete mi.servedMassG;
   }
 }
