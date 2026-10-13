@@ -41,6 +41,7 @@
   /* Semantic status — kept warm, never pure red/green */
   --kallo-success:       #7ca368; /* leafy sage */
   --kallo-danger:        #d37b69; /* terracotta */
+  --kallo-error:         #dc2626; /* conventional red — a confirm's delete action only */
 
   /* Adherence heatmap — diverging warm scale */
   --kallo-heatmap-on-target: #7ca368;
@@ -161,6 +162,7 @@
   --kallo-macro-fat:    #8a8580;
   --kallo-success:      #7faf6a;
   --kallo-danger:       #e08878;
+  --kallo-error:        #ef4444;
   --kallo-bar-miss:     #6b6054;
   --bg-elev: #251f15;
 }
@@ -181,7 +183,7 @@ html, body {
 }
 
 /* Headings — always Lora, normal weight, tight tracking. The one exception:
-   dialog titles (ResponsiveModal, ConfirmDialog) are semibold 600 (owner, 2026-10-14). */
+   dialog titles (ResponsiveModal, ConfirmDialog) are medium 500 (owner, 2026-10-14). */
 .h-display, .h1, .h2, .h3, .h4,
 h1, h2, h3, h4 {
   font-family: var(--font-display);

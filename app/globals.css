@@ -72,7 +72,7 @@
      Metrics calibrated to Anthropic's display ramp (64/48/36/28/22 with
      1.05→1.3 leading and per-size negative tracking), expressed in the
      Kallo faces: display + headings render in Lora via `font-serif`,
-     always weight 400 (never bold; dialog titles are the one semibold exception). Each size carries its line-height /
+     always weight 400 (never bold; dialog titles are the one medium-500 exception). Each size carries its line-height /
      tracking / weight, so `text-h2` is the complete role. */
   --text-display: clamp(2rem, 5vw, 4rem); /* 32→64px, hero only */
   --text-display--line-height: 1.05;

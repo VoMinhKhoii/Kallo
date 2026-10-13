@@ -2,6 +2,7 @@
 
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
 import type { MouseEvent, ReactNode } from 'react';
+import { dialogShell } from '@/components/shared/dialog-shell/dialog-shell';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -36,8 +37,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * The app's one "are you sure?". Dressed like its other dialogs — the bold
- * Lora title and rounded white card `ResponsiveModal` gives Log weight — with
+ * The app's one "are you sure?". Its card and title come from `dialogShell`,
+ * the same as `ResponsiveModal` (Log weight), so every dialog matches — with
  * the answer as the only filled button (umber, or error red when it deletes)
  * and Cancel as bare text that only takes a wash on hover.
  */
@@ -58,12 +59,16 @@ export function ConfirmDialog({
       {trigger ? (
         <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       ) : null}
-      <AlertDialogContent className="gap-5 rounded-2xl border-kallo-border/60 bg-white p-[22px] text-kallo-text sm:max-w-md">
+      <AlertDialogContent
+        className={cn(dialogShell.card, 'gap-5 p-[22px] sm:max-w-md')}
+      >
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-semibold font-serif text-[22px] leading-snug">
+          <AlertDialogTitle className={dialogShell.title}>
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[13px] text-kallo-text-muted leading-relaxed">
+          <AlertDialogDescription
+            className={cn(dialogShell.description, 'leading-relaxed')}
+          >
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
