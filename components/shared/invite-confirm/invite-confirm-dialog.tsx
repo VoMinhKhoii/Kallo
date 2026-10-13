@@ -2,16 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 
 /** Which response to a meal-share offer is being confirmed. `null` = closed. */
 export type InviteConfirmKind = 'accept' | 'acceptCheat' | 'dismiss';
@@ -46,36 +37,19 @@ export function InviteConfirmDialog({
   // would flash the accept copy over a dismiss for the length of the fade.
   const [shown, setShown] = useState<InviteConfirmKind>(kind ?? 'accept');
   if (kind && kind !== shown) setShown(kind);
-  const destructive = shown === 'dismiss';
 
   return (
-    <AlertDialog open={kind !== null} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="border-kallo-border bg-card text-kallo-text">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-normal font-sans-display text-[18px]">
-            {t(`${shown}Title`)}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans-display text-[13px] text-kallo-text-muted">
-            {t(`${shown}Description`, { name: senderLabel })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            variant={destructive ? 'ghost' : 'default'}
-            className={
-              destructive
-                ? 'text-kallo-danger hover:bg-transparent hover:text-kallo-danger'
-                : undefined
-            }
-            onClick={() => {
-              if (kind) onConfirm(kind);
-            }}
-          >
-            {t(`${shown}Action`)}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={kind !== null}
+      onOpenChange={onOpenChange}
+      title={t(`${shown}Title`)}
+      description={t(`${shown}Description`, { name: senderLabel })}
+      confirmLabel={t(`${shown}Action`)}
+      cancelLabel={t('cancel')}
+      tone={shown === 'dismiss' ? 'destructive' : 'default'}
+      onConfirm={() => {
+        if (kind) onConfirm(kind);
+      }}
+    />
   );
 }

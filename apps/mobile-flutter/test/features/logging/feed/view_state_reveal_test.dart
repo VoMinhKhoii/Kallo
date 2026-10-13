@@ -3,6 +3,7 @@ import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/feed_entries.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:kallo_mobile/models/logging/cheat.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 
@@ -89,6 +90,43 @@ void main() {
       expect(view.isEmpty, isFalse);
       expect(view.hasLiveTail, isFalse);
       expect(view.entries.single, isA<StagedEntry>());
+    });
+
+    test('a discarded reveal hides with its twin, and undo restores it', () {
+      const stream = StreamAnalysisState(
+        status: StreamStatus.done,
+        result: _parsed,
+        analysisId: 'a1',
+        loggedDate: _date,
+      );
+      final held = _view(
+        pending: const [_staged],
+        stream: stream,
+        removed: {'a1'},
+      );
+
+      // Inside the undo window neither the reveal nor its staged row shows —
+      // nor the bubble above it, which keys off isRevealing.
+      expect(held.isRevealing, isFalse);
+      expect(held.pendingConfirmations, isEmpty);
+      expect(held.isEmpty, isTrue);
+
+      final undone = _view(pending: const [_staged], stream: stream);
+      expect(undone.isRevealing, isTrue);
+    });
+
+    test('a discarded cheat reveal hides too', () {
+      final view = _view(
+        stream: const StreamAnalysisState(
+          status: StreamStatus.done,
+          cheatSpec: CheatSliderSpec(sliders: []),
+          analysisId: 'c1',
+          loggedDate: _date,
+        ),
+        removed: {'c1'},
+      );
+      expect(view.isCheatRevealing, isFalse);
+      expect(view.hasLiveTail, isFalse);
     });
 
     test('another meal staged alongside the reveal still shows', () {

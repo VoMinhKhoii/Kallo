@@ -73,8 +73,9 @@ export default function DesignSystemPage() {
         <footer className="mt-16 border-kallo-border/60 border-t pt-6">
           <p className="text-kallo-stone text-xs leading-relaxed">
             Hard rules: sentence case everywhere · no emoji, Lucide only · Lora
-            is never bold · no pure red or green · preserve Vietnamese
-            diacritics · bounded estimates, never fake precision. Full guide:
+            is never bold (dialog titles excepted) · no pure red or green (a
+            confirm's delete button excepted) · preserve Vietnamese diacritics ·
+            bounded estimates, never fake precision. Full guide:
             .agents/skills/kallo-design/README.md
           </p>
         </footer>

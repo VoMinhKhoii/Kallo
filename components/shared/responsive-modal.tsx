@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
 import { cn } from '@/lib/core/ui/cn';
+import { dialogShell } from './dialog-shell/dialog-shell';
 import { ResponsiveSheet } from './responsive-sheet';
 import { ResponsiveSheetHeader } from './responsive-sheet-header';
 
@@ -101,17 +102,16 @@ export function ResponsiveModal({
       <DialogContent
         aria-describedby={undefined}
         className={cn(
-          'flex max-h-[min(90dvh,44rem)] flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0',
+          'flex max-h-[min(90dvh,44rem)] flex-col gap-0 p-0',
+          dialogShell.card,
           dialogClassName
         )}
       >
         <DialogHeader className="shrink-0 px-[22px] pt-5">
-          <DialogTitle className="font-serif text-[22px] text-kallo-text">
-            {title}
-          </DialogTitle>
+          <DialogTitle className={dialogShell.title}>{title}</DialogTitle>
           {subtitle ? (
             // Clears the close button, which the primitive pins at `right-4`.
-            <p className="truncate pr-[26px] font-sans-display text-[13px] text-kallo-text-muted">
+            <p className={cn(dialogShell.description, 'truncate pr-[26px]')}>
               {subtitle}
             </p>
           ) : null}

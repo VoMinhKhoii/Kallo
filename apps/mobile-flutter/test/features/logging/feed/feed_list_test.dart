@@ -131,6 +131,7 @@ Widget _liveFooter(FeedViewState view, StreamAnalysisState stream) =>
       failedRetryable: true,
       onRetry: () {},
       onDiscardFailed: () {},
+      onDiscardReveal: (_) {},
     );
 
 void main() {

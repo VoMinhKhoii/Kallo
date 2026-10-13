@@ -78,10 +78,14 @@ export async function deleteMealAction(input: { mealId: string }) {
  * already expired or been confirmed reports the same "not found" as one that
  * never existed; the client treats both as "it is gone", which is the honest
  * answer either way.
+ *
+ * That outcome is RETURNED, not thrown: production Next.js replaces a thrown
+ * Server Action error's message with a generic one, so a web caller could not
+ * tell "already gone" from a real failure. The route maps it back to its 400.
  */
 export async function discardPendingAnalysisAction(input: {
   analysisId: string;
-}) {
+}): Promise<{ success: true } | { success: false; reason: 'not_found' }> {
   const parsed = discardPendingSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
@@ -102,11 +106,7 @@ export async function discardPendingAnalysisAction(input: {
         sourceInviteId: pendingAnalyses.sourceInviteId,
       });
 
-    if (!discarded) {
-      throw Errors.validationFailed(
-        'Phân tích không tồn tại hoặc đã được lưu.'
-      );
-    }
+    if (!discarded) return { success: false, reason: 'not_found' } as const;
 
     // A card staged from a friend's cheat offer owes that offer back. Throwing
     // this card away is the recipient saying "not now", and "not now" must not
@@ -119,7 +119,7 @@ export async function discardPendingAnalysisAction(input: {
       });
     }
 
-    return { success: true };
+    return { success: true } as const;
   });
 }
 
