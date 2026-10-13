@@ -189,12 +189,12 @@ jobs:
         run: |
           set -euo pipefail
           exists="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
-            -c "SELECT to_regclass('public.food_card_vectors') IS NOT NULL" \
+            -c "SELECT to_regclass('public.food_card_texts') IS NOT NULL" \
             | tr -d '[:space:]')"
           pending=0
           if [ "$exists" = "t" ]; then
             pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
-              -c 'SELECT count(*) FROM food_card_vectors WHERE embedding IS NULL' \
+              -c 'SELECT count(*) FROM food_card_texts WHERE embedding IS NULL' \
               | tr -d '[:space:]')"
           fi
           echo "Card strings needing embeddings: $pending"

@@ -1,8 +1,8 @@
 /**
- * Backfill embeddings for food_card_vectors (the card retrieval index).
+ * Backfill embeddings for food_card_texts (the card retrieval index).
  *
- * The seed migration (supabase/migrations/*_seed_food_cards.sql) inserts one
- * row per string that names a card, with `embedding` NULL. This script embeds
+ * A card migration (supabase/migrations/*_seed_food_cards.sql) inserts each
+ * new string that names a card once, with `embedding` NULL. This script embeds
  * every NULL row with gemini-embedding-001 (768 dimensions, default task type —
  * the same call lib/ai/provider/embeddings.ts makes for queries, so stored and
  * query vectors share a space) and verifies none remain.
@@ -106,7 +106,7 @@ async function store(rows: { id: number }[], vecs: number[][]) {
     (r, i) => `(${r.id}, '[${vecs[i].join(',')}]'::halfvec(768))`
   );
   await sql.unsafe(`
-    UPDATE food_card_vectors AS v SET embedding = d.vec
+    UPDATE food_card_texts AS v SET embedding = d.vec
     FROM (VALUES ${values.join(',')}) AS d(id, vec)
     WHERE v.id = d.id`);
 }
@@ -118,7 +118,7 @@ async function main() {
     for (;;) {
       // Re-select each page: rows embedded by the previous page drop out.
       const rows = await sql<{ id: number; text: string }[]>`
-        SELECT id, text FROM food_card_vectors
+        SELECT id, text FROM food_card_texts
         WHERE embedding IS NULL ORDER BY id LIMIT ${PAGE}`;
       if (rows.length === 0) break;
       for (let i = 0; i < rows.length; i += BATCH_SIZE * PARALLEL) {
@@ -141,7 +141,7 @@ async function main() {
       );
     }
     const [{ remaining }] = await sql<{ remaining: number }[]>`
-      SELECT count(*)::int AS remaining FROM food_card_vectors WHERE embedding IS NULL`;
+      SELECT count(*)::int AS remaining FROM food_card_texts WHERE embedding IS NULL`;
     if (remaining > 0)
       throw new Error(`${remaining} card vector(s) still NULL`);
     console.log(`Done. ${done} card vectors embedded; none remain NULL.`);

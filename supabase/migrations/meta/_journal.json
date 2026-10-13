@@ -603,6 +603,13 @@
       "when": 1791650195098,
       "tag": "20261010163635_card_vectors_halfvec",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1791874598217,
+      "tag": "20261013065638_add_food_card_texts",
+      "breakpoints": true
     }
   ]
 }

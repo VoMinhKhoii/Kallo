@@ -1,11 +1,12 @@
 /**
  * The food-card SQL shared by the seed migration generator and the sync
- * script: upsert every card in data/food-cards/cards.jsonl, then make each
- * card's `food_card_vectors` strings match its current definition (row
- * name_en / name_primary, card food and sentence, EN aliases, VI names) —
- * cards no longer in the file are deleted with their strings, retired strings
- * are deleted, new ones inserted with a NULL embedding for
- * scripts/db/backfill_card_embeddings.ts. Cards whose composition row does not
+ * script: upsert every card in data/food-cards/cards.jsonl, then make the
+ * card strings (`food_card_texts`, one per distinct string, and
+ * `food_card_text_rows`, the rows each names) match the cards' current
+ * definition (row name_en / name_primary, card food and sentence, EN aliases,
+ * VI names) — cards no longer in the file are deleted, retired pairs and
+ * strings no row uses are deleted, new strings inserted with a NULL embedding
+ * for scripts/db/backfill_card_embeddings.ts. Cards whose composition row does not
  * exist yet are skipped, so the SQL applies to any environment and is safe to
  * re-run.
  */
@@ -96,36 +97,52 @@ ON CONFLICT ("food_composition_id") DO UPDATE SET
 -- Source: ${SOURCE} (${cards.length} cards, sha256 ${sha})
 -- Curated with Opus (rewrite + independent audit); nutrients are never edited.
 -- Embeddings are intentionally omitted: scripts/db/backfill_card_embeddings.ts
--- fills food_card_vectors.embedding (the prod deploy runs it automatically).
+-- fills food_card_texts.embedding (the prod deploy runs it automatically).
 
 ${inserts.join('\n\n')}
 
--- Cards removed from the source file, and every string that named them.
+-- Cards removed from the source file.
 DELETE FROM "food_cards"
 WHERE NOT ("food_composition_id" = ANY(${arr(cards.map((c) => c.id))}));
-DELETE FROM "food_card_vectors" v
-WHERE NOT EXISTS (
-  SELECT 1 FROM "food_cards" c WHERE c."food_composition_id" = v."food_composition_id"
-);
 
--- Strings a card no longer has (an alias removed, a card sentence rewritten).
-DELETE FROM "food_card_vectors" v
-USING "food_cards" c
-JOIN "vietnamese_food_composition" f ON f."id" = c."food_composition_id"
-WHERE v."food_composition_id" = c."food_composition_id"
-  AND NOT EXISTS (
-    SELECT 1 FROM ${CARD_STRINGS}
-    WHERE btrim(t.text) = v."text"
-  );
-
--- Every string that names a card, one vector row each (max-sim retrieval).
-INSERT INTO "food_card_vectors" ("food_composition_id", "text")
-SELECT DISTINCT c."food_composition_id", btrim(t.text)
+-- Every (row, string) pair the cards name now: row name_en / name_primary,
+-- card food and sentence, EN aliases, VI names.
+-- A session temp table, dropped at the end: not ON COMMIT DROP, which would
+-- drop it after this statement wherever the SQL runs without a transaction.
+DROP TABLE IF EXISTS pg_temp."card_strings";
+CREATE TEMP TABLE "card_strings" AS
+SELECT DISTINCT c."food_composition_id", btrim(t.text) AS "text"
 FROM "food_cards" c
 JOIN "vietnamese_food_composition" f ON f."id" = c."food_composition_id"
 CROSS JOIN LATERAL ${CARD_STRINGS}
-WHERE t.text IS NOT NULL AND btrim(t.text) <> ''
-ON CONFLICT ("food_composition_id", "text") DO NOTHING;
+WHERE t.text IS NOT NULL AND btrim(t.text) <> '';
+
+-- Pairs no card has any more (a card removed, an alias dropped, a sentence
+-- rewritten).
+DELETE FROM "food_card_text_rows" r
+USING "food_card_texts" t
+WHERE t."id" = r."text_id"
+  AND NOT EXISTS (
+    SELECT 1 FROM "card_strings" s
+    WHERE s."food_composition_id" = r."food_composition_id" AND s."text" = t."text"
+  );
+
+-- New strings, once each, with a NULL embedding; then their pairs.
+INSERT INTO "food_card_texts" ("text")
+SELECT DISTINCT "text" FROM "card_strings"
+ON CONFLICT ("text") DO NOTHING;
+
+INSERT INTO "food_card_text_rows" ("text_id", "food_composition_id")
+SELECT t."id", s."food_composition_id"
+FROM "card_strings" s
+JOIN "food_card_texts" t ON t."text" = s."text"
+ON CONFLICT DO NOTHING;
+
+-- Strings no row uses any more.
+DELETE FROM "food_card_texts" t
+WHERE NOT EXISTS (SELECT 1 FROM "food_card_text_rows" r WHERE r."text_id" = t."id");
+
+DROP TABLE pg_temp."card_strings";
 `;
   return { sql, cards: cards.length, sha };
 }

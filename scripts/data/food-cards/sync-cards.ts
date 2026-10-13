@@ -18,7 +18,7 @@ try {
   await sql.begin((tx) => tx.unsafe(text));
   const [{ n, pending }] = await sql<{ n: number; pending: number }[]>`
     SELECT (SELECT count(*) FROM food_cards)::int AS n,
-           (SELECT count(*) FROM food_card_vectors WHERE embedding IS NULL)::int AS pending`;
+           (SELECT count(*) FROM food_card_texts WHERE embedding IS NULL)::int AS pending`;
   console.log(
     `synced ${cards} cards from the file; ${n} in the database; ${pending} strings to embed`
   );

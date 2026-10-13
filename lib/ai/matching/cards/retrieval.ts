@@ -1,8 +1,9 @@
 /**
  * Card retrieval: searches curated food cards instead of raw table rows.
  *
- *   vector arms   one per QUERY_FIELDS string → `match_food_cards` (every
- *                 string that names a card, max-sim per row; one round trip)
+ *   vector arms   one per QUERY_FIELDS string → `match_food_card_texts`
+ *                 (every distinct string that names a card, max-sim per
+ *                 row; one round trip)
  *   lexical arm   rawName → in-memory trigram index over card names
  *   dialect arm   tableName → BM25 over the rows' English names
  *
@@ -52,24 +53,31 @@ const ARM_DEPTH = 30;
  */
 const VECTOR_ARM_TIMEOUT_MS = 8_000;
 
-/** Vector hits per ingredient (one list per query field); empty when the arm fails. */
+/**
+ * Vector hits per query string (one list per query field); empty when the arm
+ * fails. A string repeated across fields or ingredients (a field falling back
+ * to another, the same food logged twice) is searched once and its hits are
+ * shared, since `match_food_card_texts` runs one index search per vector.
+ */
 async function vectorArms(
   queries: string[],
   db: AppDb,
   gemini: GeminiClient
 ): Promise<VectorHit[][]> {
+  const distinct = [...new Set(queries)];
   // Set once the deadline passes: an embedding that lands later must not still
   // start a vector query nobody will read (it would hold a pool connection).
   let expired = false;
   try {
-    return await withDeadline(
+    const hits = await withDeadline(
       gemini
-        .generateEmbeddingBatch(queries)
+        .generateEmbeddingBatch(distinct)
         .then((embeddings) =>
-          expired ? queries.map(() => []) : searchCardVectors(embeddings, db)
+          expired ? distinct.map(() => []) : searchCardVectors(embeddings, db)
         ),
       VECTOR_ARM_TIMEOUT_MS
     );
+    return queries.map((q) => hits[distinct.indexOf(q)]);
   } catch (err) {
     expired = true;
     // Matching never blanks out because one arm is down.

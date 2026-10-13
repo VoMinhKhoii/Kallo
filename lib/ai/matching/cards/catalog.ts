@@ -141,12 +141,12 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
       // statement, so on a database without the card tables a combined query
       // would fail instead of answering "not ready".
       const [table] = await tx.execute<{ present: boolean }>(sql`
-        SELECT to_regclass('public.food_card_vectors') IS NOT NULL AS present
+        SELECT to_regclass('public.food_card_texts') IS NOT NULL AS present
       `);
       if (!table?.present) return null;
       const [state] = await tx.execute<{ ready: boolean }>(sql`
-        SELECT EXISTS (SELECT 1 FROM food_card_vectors)
-          AND NOT EXISTS (SELECT 1 FROM food_card_vectors WHERE embedding IS NULL) AS ready
+        SELECT EXISTS (SELECT 1 FROM food_card_text_rows)
+          AND NOT EXISTS (SELECT 1 FROM food_card_texts WHERE embedding IS NULL) AS ready
       `);
       if (!state?.ready) return null;
       return tx.execute<CatalogQueryRow>(sql`

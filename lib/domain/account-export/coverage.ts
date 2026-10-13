@@ -274,6 +274,8 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   vietnamese_food_composition: { excluded: REFERENCE_DATA },
   food_cards: { excluded: REFERENCE_DATA },
   food_card_vectors: { excluded: REFERENCE_DATA },
+  food_card_texts: { excluded: REFERENCE_DATA },
+  food_card_text_rows: { excluded: REFERENCE_DATA },
   ingredient_query_embeddings: { excluded: REFERENCE_DATA },
   synonym_candidates: { excluded: REFERENCE_DATA },
 

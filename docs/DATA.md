@@ -10,8 +10,10 @@ one-line sentence. Nutrients are never edited on a card.
 - Source of truth: `data/food-cards/cards.jsonl` (one JSON object per row id).
 - To change cards: edit that file, run
   `bun scripts/data/food-cards/build-seed-migration.ts supabase/migrations/<new timestamp>_seed_food_cards.sql`,
-  and ship the migration. The SQL also deletes cards removed from the file and strings a card
-  no longer has. The prod deploy
+  and ship the migration. Each distinct string is stored and embedded once
+  (`food_card_texts`), linked to every row it names (`food_card_text_rows`), so a name shared by
+  sibling rows costs one vector. The SQL also deletes cards removed from the file, pairs a card
+  no longer has, and strings no row uses. The prod deploy
   embeds any new strings (`scripts/db/backfill_card_embeddings.ts`); locally run that script
   against `.env.local`.
 - After a `supabase db reset` (the base rows arrive from `seed.sql`, after migrations),
@@ -21,6 +23,11 @@ one-line sentence. Nutrients are never edited on a card.
   `ingredient_sources.code` in `MATCHING_SOURCE_BUCKETS` (`lib/ai/matching/match-constants.ts`),
   and cards for its rows. No retrieval code changes. Curation runs on the `food-data-curator`
   agent (Opus, high effort).
+- Names on a card must differ from each other by more than case, punctuation, missing
+  diacritics or word order (each copy is another vector that crowds the search). A plain
+  generic name ("beef", "thịt heo") stays on the generic row of every source that has one:
+  removing it from one source's row because another source also has it cost first-pick
+  accuracy in the 2026-10-13 replay.
 - Only rows with a card are matchable: a row without one is not loaded into the catalog, so
   removing a card from `cards.jsonl` excludes its row from card retrieval. Every matchable row
   needs a card.
