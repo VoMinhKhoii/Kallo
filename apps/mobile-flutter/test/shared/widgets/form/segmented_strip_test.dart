@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
-import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_thumb.dart';
-import 'package:kallo_mobile/theme/kallo_motion.dart';
+import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_label.dart';
+import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_motion.dart';
 
 /// The thumb's motion, sampled frame by frame.
 ///
@@ -24,11 +24,16 @@ const int _frameMs = 16;
 const Duration _frame = Duration(milliseconds: _frameMs);
 
 class _Host extends StatefulWidget {
-  const _Host();
+  const _Host({this.refuse});
+
+  /// A value the caller will not take — the scan camera's gated segment.
+  final String? refuse;
 
   @override
   State<_Host> createState() => _HostState();
 }
+
+final List<String> _picks = [];
 
 class _HostState extends State<_Host> {
   String _value = 'a';
@@ -42,7 +47,10 @@ class _HostState extends State<_Host> {
         child: SegmentedStrip(
           options: _options,
           activeIndex: _options.indexWhere((o) => o.value == _value),
-          onChange: (v) => setState(() => _value = v),
+          onChange: (v) {
+            _picks.add(v);
+            if (v != widget.refuse) setState(() => _value = v);
+          },
         ),
       ),
     ),
@@ -58,27 +66,42 @@ Rect _thumb(WidgetTester tester) => tester.getRect(
   ),
 );
 
-/// The tap target over segment [i] — the labels sit UNDER it, so tapping the
-/// text would miss.
-Finder _target(int i) => find
-    .descendant(
-      of: find.byType(SegmentedStrip),
-      matching: find.byType(GestureDetector),
-    )
-    .at(i);
+/// The centre of segment [i], in global coordinates.
+Offset _segment(WidgetTester tester, int i) {
+  final strip = tester.getRect(find.byType(SegmentedStrip));
+  final width = strip.width / _options.length;
+  return Offset(strip.left + width * (i + 0.5), strip.center.dy);
+}
+
+/// Moves [finger] by [by] in ten steps, as a real finger reports a drag.
+Future<void> _drag(TestGesture finger, Offset by) async {
+  for (var i = 0; i < 10; i++) {
+    await finger.moveBy(by / 10);
+  }
+}
+
+/// How far segment [i]'s label has faded.
+double _labelOpacity(WidgetTester tester, int i) =>
+    tester
+        .widget<AnimatedOpacity>(
+          find
+              .descendant(
+                of: find.byType(SegmentedLabel).at(i),
+                matching: find.byType(AnimatedOpacity),
+              )
+              .first,
+        )
+        .opacity;
 
 /// Every frame of one full A → C switch, sampled at 16ms.
 Future<List<Rect>> _travel(WidgetTester tester) async {
   await tester.pumpWidget(const _Host());
   final samples = <Rect>[_thumb(tester)];
-  await tester.tap(_target(2));
+  await tester.tapAt(_segment(tester, 2));
   await tester.pump();
   samples.add(_thumb(tester));
-  // press (the pop) + emphasis (the slide), plus a frame of slack.
-  final frames =
-      ((KalloMotion.press + KalloMotion.emphasis).inMilliseconds / _frameMs)
-          .ceil() +
-      2;
+  // The spring's settle time, plus a frame of slack.
+  final frames = (SegmentedMotion.settle.inMilliseconds / _frameMs).ceil() + 2;
   for (var i = 0; i < frames; i++) {
     await tester.pump(_frame);
     samples.add(_thumb(tester));
@@ -136,26 +159,99 @@ void main() {
     );
   });
 
-  testWidgets('the thumb pops above 1.0 inside the press window, then eases '
-      'back to 1.0', (tester) async {
+  testWidgets('a tap moves the thumb on the next frame, at full size — iOS '
+      'has no beat before the slide', (tester) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+    final before = _thumb(tester);
+
+    await tester.tapAt(_segment(tester, 1));
+    await tester.pump();
+    await tester.pump(_frame);
+    final moving = _thumb(tester);
+    expect(moving.center.dx, greaterThan(before.center.dx + 0.5));
+    expect(moving.width, closeTo(before.width, 0.01));
+    expect(_picks, ['b']);
+  });
+
+  testWidgets('holding the thumb shrinks it to 95%; letting go restores it', (
+    tester,
+  ) async {
     await tester.pumpWidget(const _Host());
     final base = _thumb(tester).width;
 
-    await tester.tap(_target(1));
-    await tester.pump();
+    final finger = await tester.startGesture(_segment(tester, 0));
+    await tester.pumpAndSettle();
+    expect(
+      _thumb(tester).width,
+      closeTo(base * SegmentedMotion.heldScale, 0.05),
+    );
 
-    var peak = base;
-    final popFrames = (KalloMotion.press.inMilliseconds / _frameMs).floor();
-    for (var i = 0; i < popFrames; i++) {
-      await tester.pump(_frame);
-      peak = peak > _thumb(tester).width ? peak : _thumb(tester).width;
-    }
-    // ~1.04: enough to read as the control answering the tap, not as growth.
-    expect(peak, greaterThan(base));
-    expect(peak, closeTo(base * SegmentedThumb.peakScale, base * 0.01));
-
+    await finger.up();
     await tester.pumpAndSettle();
     expect(_thumb(tester).width, closeTo(base, 0.01));
+  });
+
+  testWidgets('dragging the thumb slides it along and chooses only on '
+      'release', (tester) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+    final start = _thumb(tester).center.dx;
+
+    final finger = await tester.startGesture(_segment(tester, 0));
+    await _drag(finger, _segment(tester, 2) - _segment(tester, 0));
+    await tester.pumpAndSettle();
+    expect(_thumb(tester).center.dx, greaterThan(start + 100));
+    expect(_picks, isEmpty, reason: 'nothing is chosen mid-drag');
+
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(_picks, ['c']);
+  });
+
+  testWidgets('pressing another segment fades its label to 20%; lifting '
+      'there chooses it', (tester) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+
+    final finger = await tester.startGesture(_segment(tester, 2));
+    await tester.pump();
+    expect(_labelOpacity(tester, 2), SegmentedLabel.pressedOpacity);
+    expect(_labelOpacity(tester, 0), 1, reason: 'the thumb label never fades');
+
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(_labelOpacity(tester, 2), 1);
+    expect(_picks, ['c']);
+  });
+
+  testWidgets('a press dragged well clear of the control chooses nothing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+
+    final finger = await tester.startGesture(_segment(tester, 2));
+    await _drag(finger, const Offset(0, 120));
+    await tester.pump();
+    expect(_labelOpacity(tester, 2), 1);
+
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(_picks, isEmpty);
+  });
+
+  testWidgets('a pick the caller refuses sends a dragged thumb back', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _Host(refuse: 'c'));
+    final start = _thumb(tester).center.dx;
+
+    final finger = await tester.startGesture(_segment(tester, 0));
+    await _drag(finger, _segment(tester, 2) - _segment(tester, 0));
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(_thumb(tester).center.dx, closeTo(start, 0.5));
   });
 
   testWidgets('nothing is selected: the thumb is absent, not parked', (

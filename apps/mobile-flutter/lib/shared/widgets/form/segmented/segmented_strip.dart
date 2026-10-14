@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
+import 'segmented_gestures.dart';
+import 'segmented_label.dart';
+import 'segmented_motion.dart';
 import 'segmented_thumb.dart';
 import 'segmented_tone.dart';
 
@@ -53,8 +55,8 @@ class OptionStripItem {
 /// (Be Vietnam Pro's 600 reads heavier than SF's). The 36pt track with muted
 /// labels it replaced read as a web toggle. Taps still span the full 44pt.
 ///
-/// **The thumb pops, then travels** — [SegmentedThumb] owns that motion and
-/// the reasoning behind it.
+/// **It moves like iOS's own control**: [SegmentedMotion] has the springs,
+/// [SegmentedGestures] the touch rules, both ported from the system control.
 class SegmentedStrip extends StatefulWidget {
   const SegmentedStrip({
     super.key,
@@ -79,49 +81,70 @@ class SegmentedStrip extends StatefulWidget {
 }
 
 class _SegmentedStripState extends State<SegmentedStrip> {
+  /// Where the thumb is or is sliding to. Runs ahead of [activeIndex] while a
+  /// finger drags the thumb, which reports nothing until it lets go.
+  late int _thumb = widget.activeIndex;
+  int? _pressed;
+  bool _held = false;
+
+  @override
+  void didUpdateWidget(SegmentedStrip old) {
+    super.didUpdateWidget(old);
+    if (!_held) _thumb = widget.activeIndex;
+  }
+
   void _select(int index) {
-    if (index == widget.activeIndex) return;
-    HapticFeedback.selectionClick();
-    widget.onChange(widget.options[index].value);
+    if (index != widget.activeIndex) {
+      HapticFeedback.selectionClick();
+      widget.onChange(widget.options[index].value);
+    }
+    // A caller may refuse the pick (the scan camera's gated segment opens the
+    // paywall instead), leaving a dragged thumb on a segment that is not
+    // chosen. After the caller has rebuilt, the thumb goes back to the truth.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_held) setState(() => _thumb = widget.activeIndex);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final strip = _strip();
+    final strip = SizedBox(
+      height: SegmentedStrip.target,
+      child: SegmentedGestures(
+        count: widget.options.length,
+        thumb: _thumb,
+        onPressed: (i) => setState(() => _pressed = i),
+        onHold: (held) => setState(() => _held = held),
+        onSlide: (i) => setState(() => _thumb = i),
+        onSelect: _select,
+        // The touch layer spans the full 44 above the track, so a thumb
+        // touched near its top or bottom edge still registers.
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(height: SegmentedStrip.height, child: _track()),
+            Row(
+              children: [
+                for (var i = 0; i < widget.options.length; i++)
+                  Expanded(child: _semantics(i)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
     // Equal segments either way; a strip that hugs its words takes the widest
     // label's width for each.
     return widget.tone.hugsLabels ? IntrinsicWidth(child: strip) : strip;
   }
 
-  Widget _strip() => SizedBox(
-    height: SegmentedStrip.target,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(height: SegmentedStrip.height, child: _track()),
-        // The tap layer spans the full 44 above the track, so a thumb tapped
-        // near its top or bottom edge still registers.
-        Row(
-          children: [
-            for (var i = 0; i < widget.options.length; i++)
-              Expanded(child: _tapTarget(i)),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  Widget _tapTarget(int i) => Semantics(
+  Widget _semantics(int i) => Semantics(
     button: true,
     selected: i == widget.activeIndex,
     excludeSemantics: true,
     label: widget.options[i].label,
     onTap: () => _select(i),
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _select(i),
-      child: const SizedBox(height: SegmentedStrip.target),
-    ),
+    child: const SizedBox(height: SegmentedStrip.target),
   );
 
   Widget _track() => Container(
@@ -130,70 +153,44 @@ class _SegmentedStripState extends State<SegmentedStrip> {
       color: widget.tone.track,
       borderRadius: BorderRadius.circular(KalloRadii.pill),
     ),
-    child: Stack(
-      children: [
-        if (widget.activeIndex >= 0)
-          SegmentedThumb(
-            activeIndex: widget.activeIndex,
-            count: widget.options.length,
-            color: widget.tone.thumb,
-            rim: widget.tone.rim,
-            raised: widget.tone.thumbShadow,
+    child: SegmentedMotion(
+      index: _thumb < 0 ? 0 : _thumb,
+      held: _held,
+      builder:
+          (context, position, scale) => Stack(
+            children: [
+              if (_thumb >= 0)
+                SegmentedThumb(
+                  position: position,
+                  scale: scale,
+                  count: widget.options.length,
+                  color: widget.tone.thumb,
+                  rim: widget.tone.rim,
+                  raised: widget.tone.thumbShadow,
+                ),
+              Row(
+                children: [
+                  for (var i = 0; i < widget.options.length; i++)
+                    Expanded(child: _label(i, i == _thumb ? scale : 1)),
+                ],
+              ),
+            ],
           ),
-        Row(
-          children: [
-            for (var i = 0; i < widget.options.length; i++)
-              Expanded(child: _label(i)),
-          ],
-        ),
-      ],
     ),
   );
 
-  /// A glyph inside a segment's text run (`OptionStripItem.icon`).
-  static const double _inlineGlyph = 16;
-
-  /// One colour for every label; the active one is medium, as iOS sets its
-  /// selected segment a weight up. The
-  /// weight changes on the tap, while the thumb is still on its way — the
-  /// system control does the same. [FittedBox] shrinks the longest label at
-  /// the top of the Dynamic Type range (or a heavier one in a tight segment)
-  /// instead of clipping it.
-  Widget _label(int i) => Padding(
-    padding: EdgeInsets.symmetric(horizontal: widget.tone.labelInset),
-    child: Center(child: _labelText(i)),
-  );
-
-  Widget _labelText(int i) {
-    final color = widget.tone.label;
+  Widget _label(int i, double scale) {
     final option = widget.options[i];
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // An item's glyph rides inside the text run, so it takes the
-          // label's colour and the inline 16 — not a 24pt tier glyph.
-          if (option.icon != null) ...[
-            Icon(option.icon, size: _inlineGlyph, color: color),
-            const SizedBox(width: KalloSpacing.sp1 + 2),
-          ],
-          Text(
-            option.label,
-            maxLines: 1,
-            softWrap: false,
-            style: dashBody(
-              color: color,
-              weight:
-                  i == widget.activeIndex ? FontWeight.w500 : FontWeight.w400,
-            ),
-          ),
-          if (option.badge != null) ...[
-            const SizedBox(width: KalloSpacing.sp2),
-            option.badge!,
-          ],
-        ],
-      ),
+    return SegmentedLabel(
+      label: option.label,
+      icon: option.icon,
+      badge: option.badge,
+      color: widget.tone.label,
+      selected: i == _thumb,
+      pressed: _pressed == i,
+      scale: scale,
+      anchor: SegmentedThumb.anchor(i.toDouble(), widget.options.length),
+      inset: widget.tone.labelInset,
     );
   }
 }
